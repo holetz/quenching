@@ -67,7 +67,7 @@ def root_too_high_message(root: str) -> str:
 CONFIG_FILE = os.path.join(".claude", "quenching.json")
 LEGACY_CONFIG_FILE = "config.json"
 CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates",
-               "integrationBranch", "releaseBranch", "hooks", "profiles",
+               "hooks", "profiles",
                "azurePlacement", "azureColumns", "subjects", "tagCatalog",
                "workItemTypes", "fanoutMinComplexity")
 BACKENDS = ("files", "github", "azure-boards")
@@ -200,7 +200,6 @@ def load_config(root: str) -> dict:
            "unknownKeys": [], "backend": DEFAULT_BACKEND, "unknownBackend": None,
            "specsBranch": DEFAULT_SPECS_BRANCH, "worktreeSetup": None,
            "azureStates": None, "hooks": {}, "profiles": None,
-           "integrationBranch": None, "releaseBranch": None,
            "azurePlacement": {}, "azureColumns": {}, "subjects": {}, "tagCatalog": {},
            "workItemTypes": {},
            "fanoutMinComplexity": DEFAULT_FANOUT_MIN_COMPLEXITY, "unknownFanoutMinComplexity": None,
@@ -235,10 +234,6 @@ def load_config(root: str) -> dict:
     if isinstance(val, str) and val.strip():
         out["worktreeSetup"] = val.strip()
 
-    integration = obj.get("integrationBranch")
-    if isinstance(integration, str) and integration.strip():
-        out["integrationBranch"] = integration.strip()
-
     fanout_floor = obj.get("fanoutMinComplexity")
     if isinstance(fanout_floor, str) and fanout_floor.strip():
         if fanout_floor.strip() in COMPLEXITY_LEVELS:
@@ -247,10 +242,6 @@ def load_config(root: str) -> dict:
             # Same shape as `unknownBackend` above: the declared value is kept, not discarded,
             # and the effective floor stays at the default rather than at no floor at all.
             out["unknownFanoutMinComplexity"] = fanout_floor.strip()
-
-    release = obj.get("releaseBranch")
-    if isinstance(release, str) and release.strip():
-        out["releaseBranch"] = release.strip()
 
     # Both phases or neither. A half-declared mapping is worse than none: it would archive a
     # spec into a state the project has and then fail to recognise it on the way back.
@@ -381,16 +372,9 @@ def infer_base_branch(cfg: dict, origin_head: str | None, init_default: str | No
     record is absent, and the caller's own git facts (`origin_head`, `init_default`)
     already resolved: this function decides only the ORDER, never runs git itself.
 
-    A DECLARED `integrationBranch` must win over `origin_head`. Under the develop/main
-    flow (/.knowledge/standards/git/branching.md) `origin/HEAD` resolves to `main` — the
-    PUBLICATION branch — so falling through to it by default would merge an unstamped
-    spec into the one branch that must only ever receive a deliberate release. Left
-    undeclared, this function changes nothing: most repositories have no `develop`
-    branch at all, and defaulting to one that does not exist would break them the
-    moment a spec started with no `branch` record."""
-    declared = cfg.get("integrationBranch")
-    if declared:
-        return declared
+    `origin/HEAD` leads: under the PR-on-the-primary flow it resolves to the branch the
+    repository publishes to, which is where an unstamped spec's work belongs. `cfg` is
+    kept for the callers that pass it; no declared key enters the chain any more."""
     if origin_head:
         return origin_head
     if init_default:

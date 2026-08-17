@@ -1,72 +1,72 @@
 ---
 type: standard
-title: Fluxo de branches — develop integra, main publica
-description: A main acumulava duas funções que este standard separa — develop como branch de integração onde as specs mergeiam, main como canal de publicação que só recebe o merge deliberado develop → main — o gatilho por demanda e sem cadência, a pergunta que empurra para o agrupamento quando develop carrega um só merge desde a última tag, a publicação sempre local, e os dois consumidores que leem os nomes das branches declarados em .claude/quenching.json
-resource: .claude/quenching.json, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md
-tags: [git, branching, release, workflow, develop, main]
-timestamp: 2026-08-04
+title: Fluxo de branches — PR na primária, release deliberado
+description: Uma branch única de longa duração — a primária (main) — onde todo PR mergeia e a revisão vive, o release como ato deliberado local que bumpe, tageia e publica o que a primária acumulou, o gatilho por demanda e sem cadência, a pergunta que empurra para o agrupamento quando a primária carrega um só PR desde a última tag, e a transição para quem vinha do fluxo de duas branches
+resource: .claude/commands/release.md, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/cycle.md, plugins/quenching/assets/references/align/convergence.md
+tags: [git, branching, release, workflow, main]
+timestamp: 2026-08-17
 audience: both
 authority: current
-source: spec plan/configurable-branch-strategy (task 1.1) — a main acumulava integração e publicação na mesma branch, sem que nada marcasse a segunda como um ato deliberado; hoje o gatilho é "todo merge" e não existe momento em que alguém decide publicar; §Adotando o fluxo num repositório já em andamento acrescentado pela revisão da própria branch ao concluir (2026-08-04), que notou que esta spec é o próprio caso de bootstrap que ela descreve
+source: reescrito pelo spec eliminar-branch-de-integracao (2026-08-17) — o fluxo de duas branches (develop integra, main publica) deixou de existir: a primária recebe todo PR e o release é o ato deliberado local que a publica; a transição para quem vinha do fluxo antigo acrescentada na mesma reescrita
 maintainer: quenching
 ---
 
-# Fluxo de branches — develop integra, main publica
+# Fluxo de branches — PR na primária, release deliberado
 
-Este repositório usa duas branches de longa duração, cada uma com uma função só.
+Este repositório publica a partir de **uma** branch de longa duração. Não há branch de integração
+separada: todo trabalho entra por pull request e o release é o único ato que publica.
 
-## As duas branches
+## A branch única
 
 | Branch | Função |
 | --- | --- |
-| `develop` | **Integra.** As branches `plan/<slug>` são cortadas dela e mergeiam nela. Várias specs se acumulam aqui sem que nada seja publicado. |
-| `main` | **Publica.** Só recebe o merge `develop → main`, e é o ato de release — nunca outro — que move o lockstep de versão ([versioning-release.md](../ci-cd/versioning-release.md)) e cria a tag. |
+| `main` | **Publica.** É a branch default do repositório e onde todo PR mergeia. O release é o único ato que move o lockstep de versão ([versioning-release.md](../ci-cd/versioning-release.md)) e cria a tag. |
 
-`main` continua sendo a branch default do repositório no GitHub — ver
-[§O consumidor não muda nada](#o-consumidor-não-muda-nada) — e é por isso que quem já instalou o
-plugin não precisa agir.
+A branch primária não é configurada — resolve-se pela cadeia `origin/HEAD → init.defaultBranch →
+main` ([plan-git-record.md](../workflows/plan-git-record.md)).
+
+## O PR é a rota de entrada
+
+Todo trabalho entra em `main` por pull request: o ciclo de specs (`/quenching:specs:cycle`,
+`/quenching:specs:execute`, `/quenching:specs:execute-queue`) abre o PR contra a branch primária e
+a revisão humana vive no PR. Não há merge local de specs — a revisão de cada mudança acontece
+antes de entrar, não depois.
 
 ## O gatilho é a demanda, não a cadência
 
 A release é um ato deliberado do mantenedor. Não há cadência, não há contador de merges, não há
-janela de tempo. Antes deste standard o gatilho era "todo merge em `main`" — o que, na prática,
-significava que não existia nenhum momento em que alguém decidisse publicar.
+janela de tempo — o gatilho é "decidi publicar", nunca "passou tempo" nem "mergeou".
 
 **A mitigação contra o hábito.** Nada no fluxo obriga a agrupar várias specs numa release: o
-mantenedor é uma pessoa só, então o cenário em que cada spec vira uma release por hábito produz o
-estado de hoje **mais** uma branch a manter, sem ganhar nada. Por isso, quando `develop` carrega **um
-só merge** desde a última tag, o comando de release pergunta se aquilo é uma release ou é hábito —
-sem contador, sem bloqueio, uma pergunta só, no único momento em que ela cabe.
+mantenedor é uma pessoa só, então o cenário em que cada spec vira uma release por hábito custa uma
+release por spec sem ganhar nada. Por isso, quando a primária carrega **um só PR** desde a última
+tag, o comando de release pergunta se aquilo é uma release ou é hábito — sem contador, sem
+bloqueio, uma pergunta só, no único momento em que ela cabe.
 
 ## Onde o fluxo é declarado
 
 | O quê | Onde | Consumidores |
 | --- | --- | --- |
-| Os nomes das duas branches | `.claude/quenching.json` (chaves `integrationBranch` e `releaseBranch`, degradando para `develop`/`main`) | o verbo de release, e a cadeia de inferência de `base` de uma spec não carimbada |
 | A política em prosa | este documento | `/quenching:specs:execute` e `/quenching:specs:conclude`, como read-if-present |
 | O bump de versão | [versioning-release.md](../ci-cd/versioning-release.md) | o verbo de release |
+| A cadeia de inferência de `base` | [plan-git-record.md](../workflows/plan-git-record.md) | a spec não carimbada |
 
 A cadeia de inferência de `base` — usada quando uma spec começa numa branch que ninguém carimbou —
-consulta a branch de integração declarada antes de cair em `origin/HEAD` e em `main`, porque sem
-isso uma spec não carimbada mergearia por padrão na branch de **publicação**. Ver
-[plan-git-record.md](../workflows/plan-git-record.md).
+resolve `origin/HEAD → init.defaultBranch → main`, a branch primária, que é onde o trabalho
+pertence.
 
-## Adotando o fluxo num repositório já em andamento
+## Adotando o fluxo num repositório que tinha develop
+
+Um repositório que vinha do fluxo de duas branches (develop integra, main publica) tem um
+acumulado em `develop` que `main` ainda não recebeu. A transição é **um ato do mantenedor**: um
+último PR `develop → main` publica o acumulado de uma vez, e a partir dele develop vira órfã e o
+fluxo de uma branch rege. O release novo (sem merge `develop → main`) não publica esse acumulado —
+a transição usa a própria rota que o novo fluxo adota, o PR.
 
 O `branch.base` de uma spec é carimbado uma vez, no início do trabalho, e nunca re-inferido depois
-— ver [plan-git-record.md](../workflows/plan-git-record.md). Uma spec cortada **antes** de
-`integrationBranch` estar declarado carrega `base: main`, como toda spec anterior a este standard;
-o `/quenching:specs:conclude` dela mergeia direto em `main`, exatamente como sempre mergeou. Só uma
-spec cortada **depois** da declaração ganha `base: develop` automaticamente, pela cadeia de
-inferência.
-
-A própria spec que introduziu este standard, `plan/configurable-branch-strategy`, é o caso: sua
-branch foi cortada com `base: main` porque `integrationBranch` ainda não existia quando o trabalho
-começou. Recarimbar esse valor para `develop` depois do fato reescreveria um registro write-once
-para caber numa regra que ainda não existia quando ele foi feito — por isso ele fica como está, e o
-merge dela em `main` segue o registro, não o fluxo que ela mesma declara. Isso deixa `develop`
-temporariamente atrás de `main`; trazer as duas de volta à paridade, e decidir quando rodar a
-primeira release de verdade, é uma decisão humana — nenhum comando deste front a toma sozinho.
+— ver [plan-git-record.md](../workflows/plan-git-record.md). Uma spec em flight com `base: develop`
+segue o registro write-once até concluir; só as specs cortadas depois da transição nascem com a
+primária como base.
 
 ## A publicação, em duas metades
 
@@ -74,20 +74,17 @@ primeira release de verdade, é uma decisão humana — nenhum comando deste fro
   instala — é **julgamento humano**, conduzido por um comando dedicado. Esse julgamento não é
   automatizável: ver [versioning-release.md](../ci-cd/versioning-release.md) sobre por que uma
   política de versionamento fica fora de escopo.
-- **Como a release é executada** — o lockstep dos sete artefatos e a tag, mecanicamente — é o verbo
+- **Como a release é executada** — o lockstep dos artefatos e a tag, mecanicamente — é o verbo
   `cq specs release`. Sem string surgery, coberto pela suíte de testes.
 
 ## A publicação é sempre local
 
-O merge `develop → main` nunca passa por pull request. A rota PR continua existindo — é a escolha
-de cada spec ao concluir **na `develop`**, não da publicação. Um merge local para o ato de publicar
-é o que permite ao mantenedor decidir "publico agora" sem depender de nenhuma revisão externa: a
-revisão de cada spec já aconteceu ao entrar em `develop`.
+O bump, o commit e a tag acontecem na branch primária, sem PR de release. Um ato local permite ao
+mantenedor decidir "publico agora" sem depender de nenhuma revisão externa: a revisão de cada spec
+já aconteceu no PR de entrada, e o release só escolhe quando o acumulado vira versão.
 
 ## O consumidor não muda nada
 
 Um marketplace aceita `ref` — branch, tag ou commit — e, na ausência dele, resolve pela branch
-default do repositório. `main` continua sendo essa default e passa a receber só releases; quem já
-instalou (com `ref` ou sem) passa a receber publicações em vez de todo merge, sem tocar em nada.
-É essa propriedade que torna outras formas — mudar a branch default, ou exigir que o consumidor
-fixe um `ref` — desnecessárias.
+default do repositório. `main` é essa default e recebe tudo o que o repo publica; quem já instalou
+(com `ref` ou sem) continua recebendo o que `main` carrega, sem tocar em nada.

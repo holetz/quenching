@@ -12,8 +12,6 @@
   "azureStates": null,
   "hooks": {},
   "profiles": null,
-  "integrationBranch": "develop",
-  "releaseBranch": "main",
   "azurePlacement": {},
   "azureColumns": {},
   "subjects": {},

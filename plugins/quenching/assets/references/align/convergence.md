@@ -90,8 +90,8 @@ run, always; under the cycle's minimal gear
 ([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §Deriving the
 gears plan, the `low` row) neither stops — the building half runs in one session on its own
 authorization and ends opening a pull request, so the human review the gates would have hosted
-moves to the PR instead: opened against the integration branch declared in `.claude/quenching.json`
-(`integrationBranch`), where the merge waits on review and on the checks before it lands. The
+moves to the PR instead: opened against the repository's primary branch, where the merge waits
+on review and on the checks before it lands. The
 trade is said out loud: if the PR is merged unread, no gate was left anywhere on the path — which
 is what the gear re-evaluation exists to bound, as a run that outgrows the minimal gear climbs
 back into a run with gates before it reaches the PR.
