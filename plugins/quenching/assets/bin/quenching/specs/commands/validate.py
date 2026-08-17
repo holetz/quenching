@@ -8,7 +8,7 @@ from quenching.common.frontmatter import frontmatter_anomalies
 from quenching.common.output import exit_for
 from quenching.specs.backends import open_backend
 from quenching.specs.backends.base import SpecBackend
-from quenching.specs.commands.output import Emitter
+from quenching.specs.commands.output import Emitter, front_fields
 from quenching.specs.parse import LEGACY_DATED_FILE_RE, PHASES, SPEC_FILE_RE
 from quenching.specs.parse.sections import (gate_report, parse_impact_standards, ready_report,
                                             section_state, stray_headings)
@@ -240,7 +240,7 @@ def _emit_by_code(args, root: str, specs: list, findings: list, errors: list) ->
     rows = [{"code": code, "severity": sev, "count": len(slugs),
              "specs": sorted(set(slugs))} for (code, sev), slugs in ordered]
     if args.json:
-        print(json.dumps({"ok": not errors, "root": root, "specs": len(specs),
+        print(json.dumps({"ok": not errors, **front_fields(root), "specs": len(specs),
                           "byCode": rows}, indent=2, ensure_ascii=False))
         return exit_for(findings)
     print(f"specs validate — {root} ({len(errors)} error(s), "
@@ -315,7 +315,7 @@ def cmd_validate(args, root: str, out: Emitter) -> int:
     if getattr(args, "by_code", False):
         return _emit_by_code(args, root, specs, findings, errors)
     if args.json:
-        print(json.dumps({"ok": not errors, "root": root, "specs": len(specs),
+        print(json.dumps({"ok": not errors, **front_fields(root), "specs": len(specs),
                           "findings": findings}, indent=2, ensure_ascii=False))
     else:
         print(f"specs validate — {root} ({len(errors)} error(s), "
