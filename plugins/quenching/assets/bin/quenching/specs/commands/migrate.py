@@ -22,7 +22,7 @@ from quenching.specs.backends import open_backend
 from quenching.specs.backends.hybrid import (GH_PART_MAX, hybrid_join, hybrid_project,
                                              hybrid_split, hybrid_title_join,
                                              hybrid_title_split)
-from quenching.specs.commands.output import Emitter
+from quenching.specs.commands.output import Emitter, front_fields
 from quenching.specs.config import load_config
 from quenching.specs.parse import LEGACY_DATED_FILE_RE, SPEC_FILE_RE, titleize
 from quenching.specs.parse.derive import _policy
@@ -327,7 +327,7 @@ def cmd_migrate(args, root: str, out: Emitter) -> int:
             if markers:
                 broken = [r for r in markers if not r["roundTrip"]]
                 out.emit(args.json,
-                         {"ok": not broken, "root": root, "dryRun": bool(args.dry_run),
+                         {"ok": not broken, **front_fields(root), "dryRun": bool(args.dry_run),
                           "kind": "markers", "count": len(markers),
                           "projected": sum(1 for r in markers if r["projectedTitle"]),
                           "spilled": sum(1 for r in markers if r["parts"] > 1),
@@ -339,7 +339,7 @@ def cmd_migrate(args, root: str, out: Emitter) -> int:
                 return 1 if broken else 0
 
     if not plans and not tasks and not v2:
-        out.emit(args.json, {"ok": False, "code": "sp-nothing-to-migrate", "root": root,
+        out.emit(args.json, {"ok": False, "code": "sp-nothing-to-migrate", **front_fields(root),
                              "message": "no v1 plan folders, no v1 backlog tasks, no specs in "
                                         "backlog/ or ready/ and no dated markers — this workspace "
                                         "is already current"},
@@ -360,7 +360,7 @@ def cmd_migrate(args, root: str, out: Emitter) -> int:
         seen[it["file"]] = it["folder"]
     if clashes:
         out.emit(args.json,
-                 {"ok": False, "code": "sp-migrate-collision", "root": root,
+                 {"ok": False, "code": "sp-migrate-collision", **front_fields(root),
                   "collisions": clashes,
                   "message": f"{len(clashes)} destination collision(s) — nothing moved"},
                  f"refused: {len(clashes)} destination collision(s) — nothing moved\n" +
@@ -384,7 +384,7 @@ def cmd_migrate(args, root: str, out: Emitter) -> int:
             except OSError:
                 kept_dirs.append(f"{folder}/ ({', '.join(sorted(os.listdir(d))[:4])})")
 
-    obj = {"ok": True, "dryRun": bool(args.dry_run), "root": root,
+    obj = {"ok": True, "dryRun": bool(args.dry_run), **front_fields(root),
            "migrated": migrated,
            "archiveUntouched": True,
            "keptFolders": kept_dirs,

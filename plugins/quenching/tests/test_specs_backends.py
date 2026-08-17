@@ -16,6 +16,7 @@ import json
 import os
 import socket
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -989,6 +990,90 @@ class MergePr(unittest.TestCase):
         finding = merge_record_finding({"merge": ff_with_pr}, "plans/a.md", "a")
         self.assertIsNotNone(finding)
         self.assertEqual(finding.get("code"), "sp-bad-merge")
+
+
+# --------------------------------------------------------------------------- #
+# front_fields — the emitted value, end to end, through the real binary
+# --------------------------------------------------------------------------- #
+CQ = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                  "assets", "bin", "cq")
+
+# Every workspace-wide `--json` verb that carries the front's own fields, and whether it can
+# answer without opening a backend. `config` and `doctor` never open one, which is what lets the
+# external arm run offline; the rest do, so they are asked only of the `files` workspace.
+FRONT_VERBS = ((("config",), True), (("doctor",), True), (("list",), False),
+               (("next", "--front"), False), (("validate",), False), (("migrate",), False))
+
+
+class FrontFieldsEndToEnd(unittest.TestCase):
+    """The pair from `## Validation`: the field that answered a path under `github` answers
+    `null`, and the backend's name travels beside it.
+
+    THROUGH THE REAL BINARY, because that is where the claim lives. `front_fields` returning
+    the right dict proves nothing about ten call sites that might still build the key by hand,
+    and the defect being fixed was never in a helper — it was that every site had its own copy
+    of the wrong answer. So one arm runs `cq` over a `files` workspace and one over a `github`
+    one, and a third assertion reads the sources to make sure no eleventh site can be added
+    with the old shape.
+
+    Self-contained: temp directories, `git init`, no network. The external arm asks only the
+    two verbs that never open a backend, so no `gh` is required to prove the field."""
+
+    def _cq(self, ws: str, *argv: str) -> tuple[int, dict]:
+        proc = subprocess.run([sys.executable, CQ, "--root", ws, "specs", *argv, "--json"],
+                              capture_output=True, text=True)
+        return proc.returncode, json.loads(proc.stdout)
+
+    def _workspace(self, tmp: str, backend: str | None) -> str:
+        top = os.path.join(tmp, "repo")
+        ws = os.path.join(top, ".specs")
+        os.makedirs(os.path.join(ws, "plans"))
+        os.makedirs(os.path.join(ws, "archive"))
+        subprocess.run(["git", "init", "-q", "-b", "main", top], check=True,
+                       capture_output=True, text=True)
+        if backend:
+            os.makedirs(os.path.join(top, ".claude"))
+            with open(os.path.join(top, ".claude", "quenching.json"), "w",
+                      encoding="utf-8") as fh:
+                json.dump({"backend": backend}, fh)
+        return ws
+
+    def test_under_files_every_verb_reports_the_resolved_workspace(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ws = self._workspace(tmp, None)
+            for argv, _offline in FRONT_VERBS:
+                with self.subTest(verb=" ".join(argv)):
+                    _code, payload = self._cq(ws, *argv)
+                    self.assertEqual(payload["backend"], "files")
+                    self.assertEqual(payload["root"], ws)
+
+    def test_under_github_the_field_is_null_and_the_backend_names_itself(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ws = self._workspace(tmp, "github")
+            for argv, offline in FRONT_VERBS:
+                if not offline:
+                    continue
+                with self.subTest(verb=" ".join(argv)):
+                    _code, payload = self._cq(ws, *argv)
+                    self.assertEqual(payload["backend"], "github")
+                    self.assertIsNone(payload["root"],
+                                      "the declared root is a folder that does not exist")
+
+    def test_no_emit_site_still_builds_the_field_by_hand(self):
+        # Ten sites carried the same wrong answer because each wrote it itself. The helper is
+        # only a fix while it is the ONLY producer — an eleventh site added with the old shape
+        # would reintroduce the defect one payload at a time.
+        commands = os.path.join(os.path.dirname(CQ), "quenching", "specs", "commands")
+        offenders = []
+        for name in sorted(os.listdir(commands)):
+            if not name.endswith(".py"):
+                continue
+            with open(os.path.join(commands, name), encoding="utf-8") as fh:
+                if '"root": root' in fh.read():
+                    offenders.append(name)
+        self.assertEqual(offenders, [],
+                         "an emit site builds the front's `root` by hand instead of through "
+                         "`front_fields`, so it emits the DECLARED root")
 
 
 if __name__ == "__main__":

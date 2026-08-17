@@ -11,7 +11,7 @@ import os
 from quenching.specs.backends import backend_root
 from quenching.specs.backends.azure import open_azure_backend
 from quenching.specs.commands.migrate import _v1_leftovers
-from quenching.specs.commands.output import Emitter
+from quenching.specs.commands.output import Emitter, front_fields
 from quenching.specs.commands.validate import _finding
 from quenching.specs.config import (BACKENDS, COMPLEXITY_LEVELS, CONFIG_FILE, CONFIG_KEYS,
                                     DEFAULT_INTEGRATION_BRANCH, DEFAULT_RELEASE_BRANCH,
@@ -43,7 +43,7 @@ def cmd_config(args, root: str, out: Emitter) -> int:
                                     or f"(none declared, defaults to {DEFAULT_RELEASE_BRANCH})")]
     if cfg["legacyPath"]:
         lines.append(f"  legacy config still on disk, unread: {cfg['legacyPath']}")
-    out.emit(args.json, {"ok": True, "root": root, **cfg}, "\n".join(lines))
+    out.emit(args.json, {"ok": True, **front_fields(root), **cfg}, "\n".join(lines))
     return 0
 
 
@@ -246,7 +246,7 @@ def cmd_doctor(args, root: str, out: Emitter) -> int:
 def _emit_doctor(args, root: str, findings: list[dict]) -> int:
     errors = [f for f in findings if f["severity"] == "error"]
     if args.json:
-        print(json.dumps({"ok": not errors, "root": root, "findings": findings},
+        print(json.dumps({"ok": not errors, **front_fields(root), "findings": findings},
                          indent=2, ensure_ascii=False))
     else:
         print(f"specs doctor — {root} ({len(errors)} error(s), "
