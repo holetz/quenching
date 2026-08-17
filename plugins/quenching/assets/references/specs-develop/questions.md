@@ -148,8 +148,11 @@ bank has a claim to attack.
 
 **Shape.** Sequential (§1) — what is actually wrong decides which shapes are worth tabling at all.
 
-**Where the questions come from.** The problem statement itself, read against the codebase. Ask
-about, roughly in this order:
+**Where the questions come from.** The dependency sweep first: selecting this bank triggers the
+mandatory sweep of [dependency-sweep.md](/.knowledge/standards/automation/dependency-sweep.md),
+and its map lands in `### Mapa de dependências` under `## Design` — written by the orchestrator,
+never the sub-agent — before anything below is asked. Then the problem statement itself, read
+against the codebase. Ask about, roughly in this order:
 
 - **What is actually wrong.** Is the `## Problem` describing a symptom or a cause? What does the
   code do today — read it, do not theorize.
@@ -181,6 +184,13 @@ disagreement the gate never requires: nothing about filling sections forces anyo
 **Goal.** Make the proposal survive the argument, or change it.
 
 **Shape.** Sequential (§1) — a criticism once answered rewrites the next one.
+
+**The dependency sweep's second trigger.** A spec that reached this bank already `proposed` —
+born with `## Proposal` filled — and never swept gets the same mandatory sweep here, on first
+entry, before any lens below runs: the closed path
+[dependency-sweep.md](/.knowledge/standards/automation/dependency-sweep.md) exists to cover, so a
+spec born past the shape bank is never argued over without a map either. Its result lands in the
+same `### Mapa de dependências` under `## Design`, written by the orchestrator.
 
 It runs three lenses. Use the one the spec's own state argues for; a spec that deserves two gets
 two, in this order.
@@ -351,7 +361,7 @@ and stamps rather than refusing, so declining here costs nothing but a question 
 
 **Stop when** the human has answered. One question, one answer, done.
 
-## Gathering the evidence — economically, and delegated for two banks
+## Gathering the evidence — economically, and delegated for three banks
 
 <!-- rules -->
 
@@ -362,13 +372,23 @@ the aggregate a `grep`/`gh`/`cq` call produces, never the raw dump; `cq componen
 --sections "§X"` for `knowledge/standards/` and `knowledge/glossary.md`, the same way this
 plugin's own references already address a section instead of a whole file.
 
+Three uses delegate that reading to a sub-agent, and they do not share one tool profile.
+
+**The dependency sweep** is the **shape** bank's own use, and the one mandatory reading of the
+three: a cross-file dependency map gathered before the bank asks anything, never in place of
+asking. Its trigger, what the map covers and where it lands are
+[dependency-sweep.md](/.knowledge/standards/automation/dependency-sweep.md)'s contract, not
+restated here. Its sub-agent runs the **wider** profile — read-only in full, everything but
+`Edit`, `Write`, `NotebookEdit` and `Agent`, `Bash` included — because a dependency map is exactly
+the aggregate a `grep`/`gh`/`cq` call produces, and the narrower profile below could not return it.
+
 The **adversarial** and **gate** banks additionally ask questions that only a reading answers:
 which alternatives the codebase actually admits, which `knowledge/standards/` contract a task would
 violate, which term the spec uses in a sense the glossary does not. That reading is **optional and
 delegable**; the interrogation never is.
 
-Where it is taken, the sub-agent is `Read, Grep, Glob` and nothing else, and it returns **one
-compact table** and no trail:
+Where it is taken, the sub-agent runs the **narrower** profile — `Read, Grep, Glob` and nothing
+else — and returns **one compact table** and no trail:
 
 | Bank | What it is asked for |
 | --- | --- |
@@ -377,12 +397,15 @@ compact table** and no trail:
 | gate | terms the spec uses in a sense `glossary.md` does not |
 | gate | `## Impact` paths no `## Tasks` item names, and tasks naming paths `## Impact` never declared |
 
-It follows the verifier shape: it **inspects and reports, never edits**, and it states an explicit
-*not checked here* list, which is the false-positive control.
+All three sub-agents follow the verifier shape: they **inspect and report, never edit**. The
+narrower two state an explicit *not checked here* list, which is the false-positive control; the
+dependency sweep returns a table with no verdict to hedge, so it carries none.
 
 **The orchestrator keeps every question, every write and every confirmation.** The sub-agent never
-talks to the human and never touches the spec. Its findings are material for questions the
-orchestrator still asks itself, under §1 — never answers substituted for them.
+talks to the human and never touches the spec — the dependency map included, which the
+orchestrator writes into `### Mapa de dependências` under `## Design`, never the sub-agent. Every
+sub-agent's findings are material for questions the orchestrator still asks itself, under §1 —
+never answers substituted for them.
 
 <!-- rationale -->
 
