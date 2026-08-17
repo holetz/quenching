@@ -18,7 +18,7 @@ The layout, the fourteen canonical sections, the gates, the front's on-write che
 `cq specs` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
 §The `specs/` layout §The fourteen sections §The gates and the stage-scoped explicit-none rule
-§The `cq specs` tool surface §The report mold, which owns the shape step 8 prints in.
+§The `cq specs` tool surface §The report mold, which owns the shape step 9 prints in.
 
 ## The one rule: effort proportional to input
 
@@ -31,7 +31,7 @@ what you were given, and nothing more.**
 | a sentence              | `## Problem`, alone                      |
 | a Claude Code plan file | every section the plan actually supports |
 
-The same richness decides the `complexity` this command computes and proposes (step 6): a
+The same richness decides the `complexity` this command computes and proposes (step 7): a
 sentence is the smallest problem a capture can hold, and a plan file is the largest — the
 levels in between are the develop pass's to re-evaluate when it closes.
 
@@ -168,16 +168,32 @@ is a complete answer.
 cq specs section <slug> Problem --write   # body on stdin
 ```
 
+**Then always write a first-pass `## Overview`, one more call, on the same material** — a
+sentence or two of orientation from what `## Problem` already carries; there is nothing else yet
+to orient. The template's own guidance still holds ("written last, once every other section has
+settled") — treat this pass as a placeholder any later `/quenching:specs:develop` bank corrects,
+never as the final word, but a spec is never born without the field `cq specs list` projects.
+
+```bash
+cq specs section <slug> Overview --write   # body on stdin
+```
+
+**Never folded into `cq specs new`'s own slice.** `capture_form()` cuts the captured spec by the
+`plans` entry gate — `## Problem` alone — and stays that way; the call above is `## Overview`'s
+only writer at capture. Bundling it into that slice is the exact mistake `capture_form()`'s own
+docstring already records having happened once.
+
 **Sentence path: stop here.** Write nothing into any other heading.
 
 **Plan-file path:** additionally write every section the plan actually supports, in ONE call —
 `cq specs section <slug> "<Heading>,<Heading>…" --write`, the bodies on stdin delimited by their
-own `## <Heading>` lines, the set matching what was declared. Where the plan was silent on a
-section you are writing others around, write `- none — <what the source did not record>`. Never
-fabricate.
-**Done when:** `## Problem` is filled, and no section beyond what the input supported exists.
+own `## <Heading>` lines, the set matching what was declared — `## Overview` is already written
+above, never repeated in this batch. Where the plan was silent on a section you are writing others
+around, write `- none — <what the source did not record>`. Never fabricate.
+**Done when:** `## Problem` and `## Overview` are filled, and no section beyond what the input
+supported exists.
 
-### 6. Compute and propose `complexity`
+### 7. Compute and propose `complexity`
 
 The level this command writes is the orchestrator's own input — each one changes the gears
 plan the orchestrator will present for this spec. It answers how much a human needs to be part of
@@ -209,12 +225,12 @@ The tool merges — `level`, `criticality` and any earlier fields survive, and `
 record's own, never the capture `date:`. A rejection writes nothing and stops.
 **Done when:** `complexity` is on disk with the human's level, or the human declined and
 nothing was written.
-### 7. Check
+### 8. Check
 
 Run `cq specs validate --spec <slug>` — the spec's own conformance, and the whole check.
 **Done when:** the check is clean, or the residue is reported verbatim.
 
-### 8. Report
+### 9. Report
 
 ```bash
 cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \

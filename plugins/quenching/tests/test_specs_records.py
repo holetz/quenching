@@ -9,8 +9,11 @@ import unittest
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.common.frontmatter import parse_frontmatter
+from quenching.specs.backends.memory import MemoryBackend
 from quenching.specs.commands.fields import parse_field_date, record_field_value_error
+from quenching.specs.commands.validate import validate_spec
 from quenching.specs.parse.fields import FIELD_KEYS, carry_forward_fields, set_frontmatter_record
+from quenching.specs.schema import capture_form
 
 
 class CarryForwardFields(unittest.TestCase):
@@ -111,6 +114,36 @@ class RecordFieldValueError(unittest.TestCase):
 
     def test_a_field_without_a_levels_block_stays_unrestricted(self):
         self.assertIsNone(record_field_value_error(self.RSPEC, "level", "1"))
+
+
+def _spec_doc(complexity: str, slug: str = "alpha") -> str:
+    """A minimal captured spec, its `priority.complexity` set directly in frontmatter — the
+    write path `record_field_value_error` already guards, bypassed on purpose, the same way
+    the invalid specs on disk today (`priority: {complexity: "4"}`) got there: written before
+    the scale existed, never through `cq specs record`."""
+    doc = (capture_form().replace("<SLUG>", slug).replace("<TITLE>", "Alpha")
+           .replace("<DATE>", "2026-01-01").replace("<VERIFICATION>", "per-task"))
+    return set_frontmatter_record(doc, "priority", {"complexity": complexity})
+
+
+class SpBadComplexity(unittest.TestCase):
+    """`validate_spec` flags a `priority.complexity` outside the four declared levels — the
+    write-side guard above only ever sees a value passed through `cq specs record`, and the
+    specs already on disk with a numeric complexity (written before the scale existed) predate
+    it entirely. Warn, not error: the record is a hint for the orchestrator's gear derivation,
+    and a bad one blocks nothing else."""
+
+    def test_a_value_outside_the_four_levels_is_flagged(self):
+        b = MemoryBackend()
+        b.create_spec("plans", "alpha.md", _spec_doc("3"))
+        codes = [f["code"] for f in validate_spec(b, b.list_specs()[0])]
+        self.assertIn("sp-bad-complexity", codes)
+
+    def test_one_of_the_four_levels_is_not_flagged(self):
+        b = MemoryBackend()
+        b.create_spec("plans", "alpha.md", _spec_doc("medium"))
+        codes = [f["code"] for f in validate_spec(b, b.list_specs()[0])]
+        self.assertNotIn("sp-bad-complexity", codes)
 
 
 if __name__ == "__main__":
