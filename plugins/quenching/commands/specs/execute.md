@@ -237,7 +237,19 @@ cq specs next --spec "<slug>" --json
 ```
 It returns that task's `verify`, `files`, `pattern` and `parallel`, plus the spec's `verification`
 policy, and it **skips `[!]` blocked tasks** (`action: "blocked"` once every remaining task is).
-Then, for that task:
+
+**When the task it hands back OPENS a new `### N.` section, capture that section's base sha first**
+— one call, before anything is committed, because 5h resets to it and a ref resolved later resolves
+to wherever it has moved by then:
+
+```bash
+git rev-parse HEAD^{commit}    # <section-base-sha> for this section
+```
+
+Resumed mid-section with no capture in hand, derive it instead of naming a commit by description:
+the first task's own anchor — `commit:` where the backend records a sha, else
+`git log --grep "<its recorded subject>" --fixed-strings --format=%H` — and then that commit's
+parent. Then, for that task:
 
 a. **Show what is being worked on** — the id, its declared `files:` and its `verify:`.
 
@@ -331,13 +343,17 @@ g. **Announce the declared hook for this event, and move on.** Once the task has
 h. **On a section boundary with no `[!]`, squash and repair** — per §The section squash, loaded once alongside 5d:
 
    ```bash
-   git reset --soft <the commit immediately BEFORE this section's first task> \
+   git merge-base --is-ancestor <section-base-sha> HEAD \
+     && git reset --soft <section-base-sha> \
      && git commit -m "plan/<slug>: <N> <section title>"
    cq specs task --check <id> --spec "<slug>" --subject "plan/<slug>: <N> <section title>"   # per task
    ```
 
-   A `[!]` in the section skips both calls whole; a failed squash reports as a finding and leaves
-   the per-task commits untouched.
+   `<section-base-sha>` is the sha captured (or derived) when the section opened, above — **never a
+   branch name and never a hand-counted `HEAD~n`**. The ancestry check is the reset's condition, not
+   a comment on it: a target outside this branch's history exits non-zero, and the `&&` stops there.
+   A `[!]` in the section skips both calls whole; a failed squash — the guard refusing, or the reset
+   or recommit failing — reports as a finding and leaves the per-task commits untouched.
 
 i. **On a section boundary, OFFER to stop — and keep going if nobody says otherwise.** The branch
    is already at its final shape (one commit), another section still ahead. Say it and continue:

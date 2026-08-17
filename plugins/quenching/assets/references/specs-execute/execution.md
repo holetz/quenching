@@ -242,15 +242,48 @@ while the retry safety net during the section stays exactly what §The commit ab
 it.
 
 ```bash
-git reset --soft <the commit immediately BEFORE this section's first task> \
+git merge-base --is-ancestor <section-base-sha> HEAD \
+  && git reset --soft <section-base-sha> \
   && git commit -m "plan/<slug>: <N> <section title>"
 ```
+
+**`<section-base-sha>` is a sha — never a branch name, and never a `HEAD~n` counted by hand.** A ref
+is resolved at the moment it is used, and the moment it is used is after everything that can move
+it; a `HEAD~n` is a count that a retry or a fixup commit invalidates silently. The target of a
+`reset` that rewrites history is always a sha.
+
+**Capture it once, before the section's first task commits:**
+
+```bash
+git rev-parse HEAD^{commit}
+```
+
+That is the commit the section found. On a plan's first section it is the tip the branch already
+carried before this run's first task.
+
+**A run that resumed mid-section derives it** from the anchor the first task's line already carries,
+rather than naming a commit by description again — `commit:` where the backend records a sha, else
+the subject:
+
+```bash
+git log --grep "<the first task's recorded subject>" --fixed-strings --format=%H
+```
+
+and then that commit's parent (`<sha>^`). Capture and derivation answer the same commit; the
+derivation exists because the capture lives in the session's head, and a section can be interrupted
+mid-way — a blocked task, an interruption, a new session — while §The section boundary only
+guarantees a clean stopping point at the section's *end*.
 
 **The reset target is the commit before the section's first task — never that task's own commit.**
 `git reset --soft <sha>` moves HEAD to `<sha>` while leaving the index exactly as it stands;
 resetting to the first task's own commit would leave that task's changes already "consumed" by the
-reset and out of the new commit. On a plan's first section, the target is whatever commit stood on
-the branch before this run's first task.
+reset and out of the new commit.
+
+**The ancestry guard runs before the reset, and its exit 0 is the reset's condition.** A target
+outside the branch's own history is refused: `git merge-base --is-ancestor <section-base-sha> HEAD`
+exiting non-zero is a finding, reported with the section's per-task commits left intact — the same
+treatment a failed squash already gets below. The guard catches the whole class regardless of how
+the target was named, which is why it is not merely a second opinion on the capture.
 
 **Then repair every squashed task's commit record**, so `subject:` (or `commit:`, on a backend that
 carries it) resolves to the commit that now actually exists rather than the one the squash just
@@ -525,6 +558,28 @@ The record cannot go stale: the rules above forbid amending an earlier *section'
 forbid force-push — a section may only ever rewrite its own, at its own close. Unlike a sha it also
 **survives a rebase**, so the one merge strategy that used to destroy every recorded link no longer
 does.
+
+### Why the squash target is a captured sha, and why ancestry is checked
+
+<!-- rationale -->
+
+**Measured on 2026-08-16**, branch `holetz/fast-status`, spec `listagem-ranqueada-nativa-no-cq-specs`.
+The prose said *"the commit immediately BEFORE this section's first task"* and left the naming to
+whoever executed it; on a first section that commit **is** the base's tip, so the executor reached
+for the cheapest ref that satisfied the description — `develop`. Mid-run, another checkout
+fast-forwarded `develop` by a whole front. Three section squashes resolved that ref to the **new**
+tip, and the three commits went on to declare the removal of 17 files and the reversion of 45 more
+the branch had never opened.
+
+Nothing caught it: the tree was clean before and after, `cq specs validate` exited 0, and the suite
+passed — the deleted files belonged to another front, with no test reaching them. Repair cost its
+own commit and a manual re-application of the edits that collided.
+
+The capture fixes the naming; the ancestry guard fixes the class. On that run the new tip of
+`develop` was **not** an ancestor of the work branch, which is precisely why the reset carried the
+branch onto a tree it had never built — so `git merge-base --is-ancestor` refuses it no matter how
+the target was spelled. `assets/checks/section-squash-check.sh` is the fixture that holds the
+property: history is not a claim any file's contents can carry, so it is proved by building one.
 
 ### Why squash is `conclude`'s caveat and not this loop's
 
