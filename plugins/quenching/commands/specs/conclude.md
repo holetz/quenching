@@ -71,6 +71,7 @@ gate the merge. Its read-only siblings are scoped to `python3`/`py`.
 - **An abandoned spec's branch is never merged on this command's initiative.** Partial work on a
   branch nobody adopted is history, not a change; offer to keep it or delete it, and default to
   keeping.
+- **Everything `abandoned` writes lands in the checkout holding `<base>`, never this branch** — see [specs-conclude/abandoned.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/abandoned.md).
 - **Declared rules were already written.** The `/.knowledge/standards/` a task explicitly named went in
   during execution, honestly graded. What lands here is what the work *revealed* — and there is no
   delta and no second store to sync either way.
@@ -108,7 +109,8 @@ from a merge this command did not make, and is a finding to report.
 
 `reviewed` is `writeOnce: false` on purpose: a diff that changed and was read again is a new fact.
 `merge` and `outcome` are `writeOnce: true` — if either is already set and reality disagrees, that
-is a **finding to report**, never a value to overwrite.
+is a **finding to report**, never a value to overwrite. `abandoned` reads the archive row above from
+the base checkout (Doctrine), never wherever this run stands.
 
 ## Workflow
 
@@ -169,7 +171,7 @@ Decide what crosses with the table in
 §The frontmatter stamp §Updating `index.md` §Enriching the glossary §Self-check, stamping
 `authority` honestly. Present them as ONE plan and take one confirmation.
 
-These land **on the branch**, in their own commit, so the rule ships with the code that proved it.
+These land on the branch, in their own commit — or, for `abandoned`, the base checkout (Doctrine).
 A `## Discoveries` line that gets a doc is resolved in place. No OKF bundle → skip silently.
 **Done when:** the emergent docs are written and committed, or the offer was declined, or there is
 no bundle.
@@ -205,13 +207,13 @@ the reason it will not be built is the whole content.
 
 A refusal (exit 2) lists exactly what is missing or which boxes are open — surface it verbatim and
 let the human decide; **never pass `--force` on your own initiative.** Commit the move on the
-branch.
+branch — or, for `abandoned`, computed here but committed into the base checkout (Doctrine).
 **Done when:** the strategy is chosen, the file is in `archive/` with its `outcome:` stamped and
 committed, or the run stopped at a refusal the human declined to override.
 
 ### 5. Distil, settle the release obligations, and stamp the merge record — all on the work branch
-This is the last writing step, and everything it writes lands on the **work branch**, before any
-merge. Three things happen here, in this order.
+This is the last writing step, landing on the **work branch** before any merge — or, for
+`abandoned`, the base checkout (Doctrine above). Three things happen here, in this order.
 
 **First, the distillation pass** — the single bridge into `/.knowledge/`, per
 [distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)
@@ -227,7 +229,7 @@ merge. Three things happen here, in this order.
 One plan, one OK. Every write goes through
 [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)
 §The frontmatter stamp §Updating `index.md` §Enriching the glossary §Self-check. No bundle → skip
-silently. Commit what it writes **on the work branch**.
+silently, landing per Doctrine: the work branch for `done`, the base checkout for `abandoned`.
 
 **Then settle the release obligations the repo's standards attach to the merge itself.** With an
 OKF bundle present, derive which standards the branch diff's own paths answer to — an aggregate in
@@ -428,8 +430,8 @@ This runs only after a merge verified at exit 0 — a merge that failed or was r
 the worktree exactly where it is. Removing the worktree does not delete the branch: that stays the
 separate offer it already was.
 
-For `abandoned`, do not merge and do not remove the worktree. Offer to keep the branch (default) or
-delete it, and record the choice in the report.
+For `abandoned`, do not merge and do not remove the worktree — frame and make the delete offer per
+[specs-conclude/abandoned.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/abandoned.md), and record the choice and fate.
 **Done when:** the gate ran green on the branch and the merge landed with its subject asserted, any
 worktree was removed or its refusal reported, or the run recorded why nothing was merged — a red
 gate among them, or (PR route, minimal-gear authorization) the PR opened and `pr:` was stamped with
@@ -472,6 +474,7 @@ block are all reported.
   `git worktree remove` never pass it **at all**: git's refusal over modified or untracked files is
   the safety, and forcing past it destroys uncommitted work at the moment the human is least
   watching.
+- **Never `git branch -D`, at all** — mirrors the rule above: git's own refusal is the safety.
 - Never merge an abandoned spec's branch, and never merge without the human choosing the strategy.
 - **Never `git checkout <base>` to merge.** Merge into the checkout that already holds the base with
   `git -C`; when none does, stop and say so rather than manufacturing one.

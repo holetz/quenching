@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
-"""Freeze the `--json` contract of the four shipped scripts as golden outputs.
+"""Historical golden bytes for the `--json` contract of four pre-refactor scripts, replayed
+against `cq` by `test_golden.Replay` to prove the replacement still reproduces them.
 
-DO NOT RUN THIS FILE DIRECTLY. `SPECS_PY`/`SKILLS_PY`/`SESSION_PY`/`OKF_PY` name the
-four pre-refactor scripts `plan/modularizar-specs-knowledge-components` (task 10.1)
-deleted. `main()` still deletes every existing golden first, then shells out to
-those paths; each `Capture.run` gets an empty stdout back (`python3: can't open
-file ...`, exit 2, recorded in `INDEX.json` but never checked), and `main()`
-reports success regardless. Running it today does not regenerate the goldens —
-it silently empties them.
+`main()` is retired — see its own body. `SPECS_PY`/`SKILLS_PY`/`SESSION_PY`/`OKF_PY` name the
+four scripts `plan/modularizar-specs-knowledge-components` (task 10.1) deleted, so there is
+nothing left for `Capture.run` to shell out to; every invocation returned an empty stdout
+(`python3: can't open file ...`, exit 2), which `main()` used to write as the golden and report
+as success regardless. That is not fixable by repointing `SCRIPTS` at `cq`: a golden captured
+from `cq` would compare `cq` against itself, which can never fail — defeating the reason this
+file exists.
 
-The four `capture_*` functions below are still live: `test_golden.Replay` imports
-and reuses them, pointed at `cq` instead of `SCRIPTS`, to both compare against and
-(`renomear-docs-para-knowledge`, task 6.1, 2026-08-13) refresh the frozen bytes.
-`main()` itself has had no working target since that refactor; fix `SCRIPTS` before
-ever invoking it again.
+The four `capture_*` functions below are still live: `test_golden.Replay` imports and reuses
+them, pointed at `cq` instead of `SCRIPTS`, to compare against the frozen bytes and — one golden
+at a time, never in bulk — to refresh a byte that legitimately changed (`UNROUTED` in
+test_golden.py names the documented cases). Refreshing a golden this way means: run it through
+`Replay`, confirm the diff is exactly the change expected, and hand-edit that one file.
 
-Everything that varies between machines or runs goes through `normalize`, which
-the regression suite re-imports so both sides of a comparison are normalized by
-the same code.
+Everything that varies between machines or runs goes through `normalize`, which the regression
+suite re-imports so both sides of a comparison are normalized by the same code.
 """
 from __future__ import annotations
 
@@ -28,7 +28,6 @@ import pathlib
 import shutil
 import subprocess
 import sys
-import tempfile
 
 HERE = pathlib.Path(__file__).resolve().parent
 PLUGIN_ROOT = HERE.parent
@@ -530,40 +529,11 @@ def capture_okf(cap: Capture) -> None:
 # main
 # --------------------------------------------------------------------------- #
 def main() -> int:
-    GOLDEN_DIR.mkdir(parents=True, exist_ok=True)
-    for stale in GOLDEN_DIR.iterdir():
-        stale.unlink()
-
-    with tempfile.TemporaryDirectory(prefix="quenching-golden-") as raw:
-        tmp = pathlib.Path(raw)
-        (tmp / "tmpdir").mkdir()
-        cap = Capture(tmp)
-        capture_specs(cap)
-        capture_skills(cap)
-        capture_session(cap)
-        capture_okf(cap)
-
-    index = {
-        "capturedFromVersion": VERSION,
-        "notes": [
-            "Captured by tests/capture_golden.py while specs.py, skills.py, session.py and "
-            "okf-validate.py are four separate scripts. A later refactor cannot recapture "
-            "these — it can only be measured against them.",
-            "Every golden holds the normalized STDOUT of one invocation; the exit code and "
-            "the normalized stderr live in this index, because the command bodies branch on "
-            "the exit code (0 ok / 1 findings / 2 refusal) as much as on the payload.",
-            "Paths are normalized to <REPO> and <WS>, the plugin version to <VERSION>, and "
-            "the capture date to <TODAY>. Re-import capture_golden.normalize to compare.",
-        ],
-        "captured": cap.entries,
-        "skipped": cap.skipped,
-    }
-    (GOLDEN_DIR / "INDEX.json").write_text(
-        json.dumps(index, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"{len(cap.entries)} golden(s) in {GOLDEN_DIR.relative_to(REPO_ROOT)}, "
-          f"{len(cap.skipped)} skipped")
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+    """Retired. Used to delete every golden and recapture from the four pre-refactor scripts;
+    those scripts no longer exist (see the module docstring), and repointing this at `cq`
+    would make every golden capture `cq`'s own current output — a comparison that can never
+    catch a regression. Refresh one golden at a time instead, through `test_golden.Replay`."""
+    raise RuntimeError(
+        "capture_golden.main() is retired — see its docstring. Refresh one golden at a time "
+        "through test_golden.Replay, never in bulk through this function."
+    )

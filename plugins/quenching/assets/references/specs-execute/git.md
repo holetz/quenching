@@ -480,6 +480,22 @@ the worktree stays.
 Three bounds: only after a merge verified at exit 0, never for an abandoned spec, and it does
 **not** delete the branch — that stays the separate offer it already was.
 
+### The branch is deleted with `-d`, never `-D`
+
+<!-- rules -->
+
+The same shape as the rule above: git's own refusal is the safety, and forcing past it destroys
+something. `git branch -d plan/<slug>` refuses a branch not fully merged into the one it is deleted
+from (`error: the branch … is not fully merged`, exit 1) — that refusal is the only thing standing
+between "nobody adopted this work" and "this work no longer exists anywhere". `-D` is **never**
+passed: on a refusal, report git's own output verbatim and keep the branch, exactly as a refused
+`worktree remove` above.
+
+A branch checked out somewhere — in a worktree, or in the checkout that would run the deletion —
+refuses first, with "Cannot delete branch checked out at". `git worktree list --porcelain` already
+answers this, so it is checked before the deletion is even offered, rather than discovered from the
+refusal.
+
 ## The pull-request route
 
 <!-- rules -->

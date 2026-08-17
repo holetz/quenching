@@ -31,10 +31,11 @@ when the doc has to exist:
 
 | Moment | What it catches | Where it lands |
 | --- | --- | --- |
-| **emergent** — right after the branch review | a rule the work *revealed*: a `## Discoveries` line worth a doc, something the branch review surfaced | on the **work branch**, in its own commit, so the rule ships with the code that proved it |
-| **distillation** — right after the archive move | the by-products that outlive the spec: a decision still in `## Design`, an understanding, a term, a follow-up | on the **work branch** too, still before the merge |
+| **emergent** — right after the branch review | a rule the work *revealed*: a `## Discoveries` line worth a doc, something the branch review surfaced | `done` — the **work branch**, in its own commit, so the rule ships with the code that proved it. `abandoned` — the checkout holding `<base>`, since there is no merge left to carry it there |
+| **distillation** — right after the archive move | the by-products that outlive the spec: a decision still in `## Design`, an understanding, a term, a follow-up | `done` — the **work branch** too, still before the merge. `abandoned` — the same checkout holding `<base>` as the row above |
 
-**Both moments land on the work branch, so one merge carries everything.**
+**Both moments land in the same place: the work branch for `done`, so one merge carries everything;
+the checkout holding `<base>` for `abandoned`, because there is no merge to carry anything at all.**
 
 <!-- rationale -->
 The top row is the load-bearing difference from the old delta model: because a task writes the
