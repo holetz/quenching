@@ -129,7 +129,7 @@ command owns.
 §The spec table, in its proposal form — the shared columns carrying each spec's **current** state,
 then the four this command adds:
 
-| Spec | Title | Stage | Tasks | Priority | Complexity | Proposed `level` | Proposed `criticality` | Proposed `complexity` | Reason |
+| Spec | Summary | Stage | Tasks | Priority | Complexity | Proposed `level` | Proposed `criticality` | Proposed `complexity` | Reason |
 
 Rules for the table:
 - **Every spec in scope gets a row** — including "stays unranked, because …".

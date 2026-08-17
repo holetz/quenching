@@ -42,20 +42,45 @@ An omission and a null are different facts. "We drew the boundary and nothing fe
 is safe to build on. An explicit null is strictly more information than an absent heading, and it
 costs one line.
 
-## `## Overview` — connective tissue, not a summary
+## `## Overview` — the ELI5: what is wrong, and how it will be fixed
 
 Position 1, ahead of `## Problem`. Warn-only, like `## Handoff` — never part of the `ready` gate
 (spec-driven.md §The fourteen sections).
 
-**Register.** Plain language, assuming no prior context. No jargon the spec itself introduces — a
-reader who has not yet read `## Design` should not need a term `## Design` coins. Connective, not
-compressive: link the sections to each other so the dense material that follows has somewhere to
-attach, rather than restating what each one already says.
+**Register.** Explain it to somebody who has never opened this repository: what is broken or
+missing today, why that costs something, and what will be different afterwards. Plain language, one
+to three short paragraphs, no jargon the spec itself introduces — a reader who has not yet read
+`## Design` should not need a term `## Design` coins. Concrete beats abstract: a number the spec
+measured is worth a paragraph of adjectives.
+
+**The negative test, and it is the whole rule: an `## Overview` that has to name a section of the
+spec in order to explain itself is wrong.** *"`## Design` decides how it behaves; `## Out of Scope`
+is the part that stops the idea coming back"* is a table of contents. A reader who wanted the order
+to read the sections in can see the headings; what they cannot get anywhere else is the problem and
+the fix in words they already know. Where the reading order genuinely earns saying, it is one line
+at the end — never the body.
+
+<!-- rationale -->
+This register **replaced** an earlier one that asked for connective tissue — *"link the sections to
+each other"*, explicitly *"not a summary"* and *"connective, not compressive"* — and the specs
+obeyed it. MEASURED on this repository on 2026-08-16, across the 45 specs then in `plans/`: 28
+carried real `## Overview` prose, median 2,028 characters, and **25 of those 28 (89%) narrated the
+sections**, 237 mentions of `## <Section>` across the set. The rule was working exactly as written,
+and what it produced was a second table of contents for a file whose headings are already a table
+of contents. The section that a reader opens first was the one section that never told them what
+the spec was about.
+<!-- rules -->
+
+**Not the one-line summary either.** That is `summary:`, a frontmatter field
+(spec-driven.md §Frontmatter): one line, what every ranked listing prints, written at capture and
+refreshed by every bank. `## Overview` is the paragraph a reader gets when they open the spec;
+`summary:` is the line they get when they do not. Both are compressive, at different lengths, and
+neither indexes the file.
 
 **Written last.** The shape bank is where it is first written; every later bank's consolidated edit
-refreshes it — always authored last within that edit, because it can only be correct once the
-sections it connects have settled. It still sits first in the file: only the authoring order within
-a pass is last, never its position.
+refreshes it — always authored last within that edit, alongside `summary:`, because both can only
+be correct once the sections they compress have settled. It still sits first in the file: only the
+authoring order within a pass is last, never its position.
 
 ## The nine definition sections
 
