@@ -223,6 +223,38 @@ def merge_record_finding(fm: dict, where: str, slug: str) -> dict | None:
     return None
 
 
+BY_CODE_SPECS_SHOWN = 6
+
+
+def _emit_by_code(args, root: str, specs: list, findings: list, errors: list) -> int:
+    """The same sweep, one line per `(code, severity)` instead of one per finding.
+
+    A front large enough to need this is exactly the one whose full payload will not fit: 147
+    specs here produce 26 KB of findings that a reader turns into this counting anyway. The
+    grouping never filters — every finding is counted, and the elision is of the SLUG list,
+    which is why the count and the shown names can differ."""
+    groups: dict[tuple[str, str], list[str]] = {}
+    for f in findings:
+        groups.setdefault((f["code"], f["severity"]), []).append(f.get("spec") or "—")
+    ordered = sorted(groups.items(), key=lambda kv: (kv[0][1] != "error", -len(kv[1]), kv[0][0]))
+    rows = [{"code": code, "severity": sev, "count": len(slugs),
+             "specs": sorted(set(slugs))} for (code, sev), slugs in ordered]
+    if args.json:
+        print(json.dumps({"ok": not errors, "root": root, "specs": len(specs),
+                          "byCode": rows}, indent=2, ensure_ascii=False))
+        return exit_for(findings)
+    print(f"specs validate — {root} ({len(errors)} error(s), "
+          f"{len(findings) - len(errors)} warning(s)) by code")
+    if not rows:
+        print("  OK — every spec conforms.")
+    for r in rows:
+        shown = r["specs"][:BY_CODE_SPECS_SHOWN]
+        more = len(r["specs"]) - len(shown)
+        tail = ", ".join(shown) + (f", … {more} more" if more else "")
+        print(f"  [{r['severity']:<5}] {r['code']:<26} {r['count']:>3}  {tail}")
+    return exit_for(findings)
+
+
 def cmd_validate(args, root: str, out: Emitter) -> int:
     backend, err = open_backend(root)
     if err:
@@ -280,6 +312,8 @@ def cmd_validate(args, root: str, out: Emitter) -> int:
         findings.extend(validate_spec(backend, s))
 
     errors = [f for f in findings if f["severity"] == "error"]
+    if getattr(args, "by_code", False):
+        return _emit_by_code(args, root, specs, findings, errors)
     if args.json:
         print(json.dumps({"ok": not errors, "root": root, "specs": len(specs),
                           "findings": findings}, indent=2, ensure_ascii=False))

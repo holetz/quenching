@@ -11,7 +11,7 @@
 
   "frontmatter": {
     "required": ["slug", "title", "date"],
-    "optional": ["verification", "priority", "refined", "approved", "branch", "pr", "reviewed", "merge", "outcome", "workItemType", "tags", "assignee", "start", "target"],
+    "optional": ["verification", "priority", "refined", "approved", "branch", "pr", "reviewed", "merge", "outcome", "workItemType", "tags", "assignee", "start", "target", "summary"],
     "verification": ["per-task", "per-section", "end-of-plan"],
     "outcome": ["done", "abandoned"],
 

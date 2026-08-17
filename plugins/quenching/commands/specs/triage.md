@@ -129,7 +129,7 @@ command owns.
 §The spec table, in its proposal form — the shared columns carrying each spec's **current** state,
 then the four this command adds:
 
-| Spec | Title | Stage | Tasks | Priority | Complexity | Proposed `level` | Proposed `criticality` | Proposed `complexity` | Reason |
+| Spec | Summary | Stage | Tasks | Priority | Complexity | Proposed `level` | Proposed `criticality` | Proposed `complexity` | Reason |
 
 Rules for the table:
 - **Every spec in scope gets a row** — including "stays unranked, because …".
@@ -198,37 +198,25 @@ Emit §The report mold. Two body blocks:
    composed at step 2 — the ranking now on disk is a tool call away, so run one and quote its
    output verbatim (§Quoting a tool's own output) rather than recomposing it in prose:
    ```bash
-   cq specs list --phase plans --json | python3 -c '
-   import json, sys
-   rows = json.load(sys.stdin)["specs"]
-   def rank(s):
-       try:
-           return (0, int((s["records"].get("priority") or {}).get("level")))
-       except (TypeError, ValueError):
-           return (1, 0)
-   print("| Spec | Title | Stage | Tasks | Priority | Complexity |")
-   print("| --- | --- | --- | --- | --- | --- |")
-   for s in sorted(rows, key=rank):
-       slug, title, stage = s["slug"], s["title"], s["stage"]
-       t = s["tasks"]
-       checked, total, blocked = t["checked"], t["total"], t["blocked"]
-       tasks = "—" if not total else f"{checked}/{total}" + (f" · {blocked} blocked" if blocked else "")
-       p = s["records"].get("priority") or {}
-       level, crit = p.get("level", "—"), p.get("criticality", "—")
-       priority = "—" if not p else f"{level} · {crit}"
-       complexity = p.get("complexity") or "—"
-       print(f"| {slug} | {title} | {stage} | {tasks} | {priority} | {complexity} |")
-   '
+   cq specs next --front --table --order priority \
+     --columns "spec,summary,stage,tasks,priority,complexity"
    ```
    §The spec table, the four proposal columns dropped, `Priority` and `Complexity` showing the
    values now on disk — this is the same shape, printed by the tool instead of retyped by the model.
    Specs that stayed unranked keep their row, `Priority` and `Complexity` both reading `—` — the two
    empty together, because a row this sweep could not place is the only row that carries neither.
 
-   **`sorted(rows, key=rank)` is the point of the block, not a flourish.** `list --json` returns the
-   front in slug order, and a block titled *the ranking as it now stands* that prints alphabetically
-   has shown the reader everything except the ranking. Unranked specs sort last, together, where
-   they read as the tail the sweep could not place.
+   **`--order priority` is the point of the call, not a flourish.** The default ordering is the
+   four-factor one `next` owns — executing first, then closest to done — and a block titled *the
+   ranking as it now stands* that leads with what is in flight has shown the reader everything
+   except the ranking. Under `priority` the unranked sort last, together, where they read as the
+   tail the sweep could not place.
+
+   **The rendering is the tool's, and this command holds no copy of it.** This block used to carry
+   a `python3 -c` heredoc that re-sorted `list --json` and printed the table itself — one of three
+   divergent hand-written renderers of one ranking, which is exactly the fan-out
+   `knowledge/standards/architecture/report-mold.md` forbids. Quote the output; never re-sort it,
+   re-tally it, or reach for the payload behind it.
 2. **Observations** — optional, omitted whole when there are none. §The observations table, each
    row's `Recommended action` **runnable as printed**: the command with its real argument
    substituted, never a bare command name the reader has to complete.
