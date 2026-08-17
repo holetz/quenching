@@ -29,7 +29,8 @@ from quenching.specs.backends.azure import AzureBoardsBackend
 from quenching.specs.backends.base import BackendRefusal, SpecBackend
 from quenching.specs.backends.files import FilesBackend
 from quenching.specs.backends.github import (GH_MISSING, GH_NOT_AUTHENTICATED, GitHubBackend,
-                                             empty_listing_refusal, gh_refusal)
+                                             empty_listing_refusal, gh_refusal,
+                                             listing_is_suspect)
 from quenching.specs.backends.hybrid import (GH_BODY_MAX, GH_PART_MAX, HYBRID_TITLE_MAX,
                                              hybrid_join, hybrid_project, hybrid_short_title,
                                              hybrid_split, hybrid_title_join, hybrid_title_split,
@@ -287,6 +288,65 @@ class GhEmptyListing(unittest.TestCase):
 
     def test_a_healthy_listing_passes_the_predicate_untouched(self):
         self.assertIsNone(empty_listing_refusal("listing", [[{"number": 1}], [{"number": 2}]]))
+
+
+# --------------------------------------------------------------------------- #
+# the OTHER half: an empty front that may be genuine, said out loud as a suspicion
+# --------------------------------------------------------------------------- #
+class GhListingSuspect(unittest.TestCase):
+    """`[[]]` — one empty page — is a shape that proves nothing, so this half warns and never
+    refuses. The corroboration is the open-issue count the repository resolution already paid
+    for, and the three states it separates are asserted here.
+
+    A repository that adopted this backend over an existing tracker and has created no spec
+    yet IS the warning state, legitimately, which is exactly why the assertion below checks
+    that the call still SUCCEEDS while it warns.
+
+    The process-level flag is restored, so this class cannot change what a later test or a
+    later command prints."""
+
+    def setUp(self):
+        self._held = set(gh_mod._LISTING_SUSPECT_ANNOUNCED)
+        gh_mod._LISTING_SUSPECT_ANNOUNCED.clear()
+        self.addCleanup(self._restore)
+
+    def _restore(self):
+        gh_mod._LISTING_SUSPECT_ANNOUNCED.clear()
+        gh_mod._LISTING_SUSPECT_ANNOUNCED.update(self._held)
+
+    def _load_empty(self, open_issues):
+        backend = GitHubBackend("owner/repo", os.getcwd(), open_issues=open_issues)
+        err, out = io.StringIO(), io.StringIO()
+        with mock.patch.object(gh_mod, "_gh_run", lambda cwd, *a, **k: (0, "[[]]", "")), \
+                contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
+            rows = backend._load()
+        return rows, err.getvalue(), out.getvalue()
+
+    def test_zero_rows_with_open_issues_warns_and_does_not_refuse(self):
+        rows, said, _ = self._load_empty(38)
+        self.assertEqual(rows, [])
+        self.assertIn("38 open issue(s)", said)
+
+    def test_zero_rows_with_no_open_issues_says_nothing(self):
+        # A repository with no issues at all corroborates nothing, and a warning here would
+        # fire on every fresh workspace — the noise that trains a reader to ignore the line.
+        self.assertEqual(self._load_empty(0)[1], "")
+
+    def test_an_unknown_count_is_never_read_as_zero_and_never_as_proof(self):
+        self.assertEqual(self._load_empty(None)[1], "")
+
+    def test_the_warning_never_reaches_stdout_where_the_json_payload_is(self):
+        self.assertEqual(self._load_empty(38)[2], "")
+
+    def test_the_warning_is_one_line_per_process_and_not_one_per_call(self):
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            gh_mod.announce_listing_suspect("owner/repo", 38)
+            gh_mod.announce_listing_suspect("owner/repo", 38)
+        self.assertEqual(err.getvalue().count("warning:"), 1)
+
+    def test_a_front_that_read_rows_is_never_suspect_however_many_issues_are_open(self):
+        self.assertFalse(listing_is_suspect(1, 38))
 
 
 # --------------------------------------------------------------------------- #
