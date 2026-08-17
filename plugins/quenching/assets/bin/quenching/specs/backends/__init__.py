@@ -22,6 +22,26 @@ from quenching.specs.worktree import resolve_files_root
 _BACKEND_CACHE: dict[str, SpecBackend] = {}
 
 
+def backend_root(root: str, cfg: dict) -> str | None:
+    """Where the declared backend keeps its documents — measured, and never created.
+
+    THE ANSWER `open_backend` CANNOT BE ASKED FOR. Opening the backend is what makes the specs
+    worktree exist, deliberately (see `open_backend` below), so a diagnostic that opened one to
+    learn its root would create the very thing it was sent to report on. This resolves the same
+    directory arithmetically instead: `doctor` and `migrate --dry-run` get the truth, and a
+    read-only command stays read-only.
+
+    `None` under an external backend, because there is no directory. GitHub and Azure Boards
+    keep the documents outside the filesystem entirely, and the declared root there names a
+    folder that does not exist — emitting it is the lie this replaces, and an empty string would
+    only move the problem into every consumer's own vacuity test."""
+    if cfg["backend"] != "files":
+        return None
+    # The non-creating mode has no failure path — see `resolve_files_root`'s own contract.
+    target, _ = resolve_files_root(root, cfg, create=False)
+    return target
+
+
 def open_backend(root: str) -> tuple[SpecBackend | None, dict]:
     """The backend this workspace declares, or a ready-to-emit refusal.
 

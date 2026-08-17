@@ -94,9 +94,17 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                          "here; a stream carrying no heading is one raw body under the one "
                          "heading declared")
     sp.add_argument("--scope", choices=["global", "current"],
-                    help="with --write on ## Handoff only: replace just the evergreen "
-                         "global block, or just the ### N. block matching the next "
-                         "actionable task's section — every other block is left untouched")
+                    help="narrow ## Handoff to one block — the evergreen global one, or that "
+                         "one plus the ### N. matching the next actionable task's section. "
+                         "Reading, it composes with the other headings asked for (--moment "
+                         "build included), which come back whole; writing, it replaces just "
+                         "that block, leaves every other untouched, and takes ## Handoff alone")
+    sp.add_argument("--fold", metavar="STRAY",
+                    help="close an sp-stray-heading: demote `## <STRAY>` to `### <STRAY>` so "
+                         "it folds into the canonical section that precedes it, text "
+                         "preserved. The ONE path that admits a heading outside the fourteen "
+                         "— every other way of naming one still exits 2 — and it takes no "
+                         "heading, --moment, --write or --scope beside it")
 
     sp = add_json(sub.add_parser("verification",
                                  help="read or set ONE spec's verification policy"))

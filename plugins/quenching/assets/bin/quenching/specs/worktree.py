@@ -191,9 +191,19 @@ def _holds_phase_folder(root: str) -> bool:
     return any(os.path.isdir(os.path.join(root, p)) for p in PHASE_DIRS)
 
 
-def resolve_files_root(root: str, cfg: dict) -> tuple[str, dict]:
+def resolve_files_root(root: str, cfg: dict, create: bool = True) -> tuple[str, dict]:
     """Which directory the `files` backend actually operates on: the workspace as declared, or
     the persistent worktree of the specs branch. Returns `(root, err)`.
+
+    `create=False` IS THE DIAGNOSTIC'S MODE: the same answer, with the worktree derived rather
+    than checked out. `doctor` and `migrate --dry-run` have to know where the backend would
+    write in order to measure it, and opening the backend to find out would make a read-only
+    diagnostic create a branch and a checkout — which is why they used to read the DECLARED
+    root instead and report `sp-no-workspace` falsely on every migrated repository. The mode
+    lives here, in the one function that knows the answer, rather than as a second resolution
+    somewhere else that could disagree with this one. It cannot fail: every path below either
+    answers from the filesystem or derives the worktree path arithmetically, so `err` is always
+    empty when `create` is false.
 
     Three shapes answer WITHOUT git, and they answer first — which is what keeps the resolution
     free for everything that is not a migrated repository, and what lets the backend be
@@ -217,29 +227,39 @@ def resolve_files_root(root: str, cfg: dict) -> tuple[str, dict]:
     workspace keeps its own basename inside it, so `SPECS_ROOT=<x>/design` resolves to
     `<worktree>/design` and the layout is the same on both sides of the migration.
 
-    Memoised per declared root: the answer costs subprocesses, and it is asked twice per
-    writing command — once by `writer_lock`, once by `open_backend`. The cache is what makes
-    the lock and the backend point at the SAME worktree by construction rather than by two
-    resolutions agreeing."""
-    if root in _FILES_ROOT_CACHE:
-        return _FILES_ROOT_CACHE[root]
-    out = _resolve_files_root(root, cfg)
-    _FILES_ROOT_CACHE[root] = out
+    Memoised per declared root AND per mode: the answer costs subprocesses, and it is asked
+    twice per writing command — once by `writer_lock`, once by `open_backend`. The cache is what
+    makes the lock and the backend point at the SAME worktree by construction rather than by two
+    resolutions agreeing. The mode is part of the key because the two answers are the same path
+    by different means: a `create=False` probe that landed in the creating mode's slot would let
+    the next real write skip the checkout and operate on a directory that was never made."""
+    key = (root, create)
+    if key in _FILES_ROOT_CACHE:
+        return _FILES_ROOT_CACHE[key]
+    out = _resolve_files_root(root, cfg, create)
+    _FILES_ROOT_CACHE[key] = out
     return out
 
 
-_FILES_ROOT_CACHE: dict[str, tuple[str, dict]] = {}
+_FILES_ROOT_CACHE: dict[tuple[str, bool], tuple[str, dict]] = {}
 
 
-def _resolve_files_root(root: str, cfg: dict) -> tuple[str, dict]:
+def _resolve_files_root(root: str, cfg: dict, create: bool) -> tuple[str, dict]:
     if _inside_worktree_dir(root) or _holds_phase_folder(root):
         return root, {}
     top = _repo_main_worktree(root)
     if not top:
         return root, {}
-    path, err = specs_worktree(top, cfg.get("specsBranch") or DEFAULT_SPECS_BRANCH)
-    if err:
-        return root, err
+    branch = cfg.get("specsBranch") or DEFAULT_SPECS_BRANCH
+    if not create:
+        # Derived, never checked out. `specs_worktree_path` is the same fixed, recomputable
+        # path `specs_worktree` would create, which is what lets a diagnostic name the
+        # directory the backend would use without becoming the thing that makes it exist.
+        path = specs_worktree_path(top, branch)
+    else:
+        path, err = specs_worktree(top, branch)
+        if err:
+            return root, err
     return os.path.join(path, os.path.basename(os.path.normpath(root)) or ".specs"), {}
 
 

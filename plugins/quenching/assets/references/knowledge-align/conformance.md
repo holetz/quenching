@@ -103,6 +103,13 @@ this walk.
   links **are** its content: an entry pointing at a deleted doc is a dead lookup. It needs its own
   code because `index-broken-link` is only ever judged on an `index.md`, and the glossary is a
   concept doc. Same resolver, so the two never diverge on what a link means.
+- **WARN `generated-listing-missing`** — a `standards/**` doc no row inside the
+  `<!-- BEGIN GENERATED -->` zone of `standards/index.md` links. Distinct from `index-orphan`,
+  which any sibling citation disarms: a doc cited elsewhere and absent from the listing is
+  unreachable by browsing and passes every other check. The fix is to regenerate the zone.
+- **WARN `generated-listing-drift`** — a row inside that zone whose text no longer equals the
+  `description:` of the doc it links (whitespace-insensitive). The zone is derived from disk, so
+  the comparison is exact rather than a judgement; the fix is the same regeneration.
 
 ## Resource integrity (per-doc — every mode)
 
@@ -163,14 +170,19 @@ paths from the scan.
 
 A bundle is **aligned** when `cq knowledge validate /.knowledge` exits 0 **and** the structural-integrity and
 resource-integrity WARNs are all cleared — **zero** `dir-no-index`, `index-broken-link`,
-`index-orphan`, `glossary-broken-link`, `resource-unresolved`, `resource-self`. (These are WARN,
+`index-orphan`, `glossary-broken-link`, `generated-listing-missing`, `generated-listing-drift`,
+`resource-unresolved`, `resource-self`. (These are WARN,
 so they do not fail exit-0; the skill reads them from `--json` and treats them as blocking.)
 **`stale-doc` is excluded from this gate.**
 The skill also confirms the method-level completeness the validator can't see:
 applicable homes present, each standards subject's **coverage/deferral ledger** filled (every
-candidate present or listed), and the GENERATED zones matching disk — `standards/index.md`'s
-"Current docs" tables and `backlog/index.md`'s task listing (each rebuilt exclusively from
-the frontmatter on disk).
+candidate present or listed), and `backlog/index.md`'s task listing rebuilt exclusively from
+the frontmatter on disk.
+
+**`standards/index.md`'s "Current docs" zone left that prose list on 2026-08-17.** Its membership
+and its descriptions are now decided by `generated-listing-missing`/`generated-listing-drift`,
+which are in the blocking set above — so the gate no longer claims a match a human was asked to
+eyeball. A clause a program can evaluate is never handed back to prose.
 
 <!-- rationale -->
 
