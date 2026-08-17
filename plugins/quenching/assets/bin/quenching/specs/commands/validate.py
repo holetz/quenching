@@ -89,7 +89,14 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
         out.append(_finding("sp-stray-heading", "warn",
                             f"{where}: `## {h}` is not one of the fourteen canonical headings",
                             spec=s["slug"], path=where, heading=h,
-                            remedy="rename it to a canonical heading or fold it into one"))
+                            # A REMEDY NAMES AN ACTION THE SURFACE OFFERS. This one read "fold
+                            # it into one" for as long as no command could — `cmd_section`
+                            # refused a non-canonical heading before it ever looked at
+                            # `--write`, so the only way to close the finding was to edit the
+                            # document outside the tool. `--fold` is that action now.
+                            remedy=(f"close it with `cq specs section --fold` — `cq specs "
+                                    f"section {s['slug']} --fold \"{h}\"` demotes it into the "
+                                    "canonical section above, text preserved")))
 
     # The phase-scoped rule governs whether a heading must be PRESENT — so `missing` is
     # checked only against the gate of the phase this spec is IN.
