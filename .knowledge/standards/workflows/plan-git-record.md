@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plan git record contract
-description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, one commit per task while its section is open squashed to one commit per section at that section's boundary and what that does to the anchor's granularity, the branch, pr and merge frontmatter records, the in-place pair `work == base` and the single case where the record rather than git liveness is the signal because that ref can never die, the git-native `quenching-slugs:` branch mark that lets `conclude` self-discover its spec with no frontmatter involved, the base-inference chain a declared integration branch now wins ahead of origin/HEAD, the pull-request route with the write-many `pr` record it alone writes and the minimal-gear run that stops at the open PR without ever stamping `merge`, why every record is written before the thing it describes, the squash-merge caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own /.knowledge/standards/git/
-resource: plugins/quenching/assets/references/git/**, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-conclude/auto-discover.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
+description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, one commit per task while its section is open squashed to one commit per section at that section's boundary and what that does to the anchor's granularity, the branch, pr and merge frontmatter records — `pr:` stamped by `/quenching:git:pr:create` and `merge:` by `/quenching:git:merge`, each on its own confirmation, and read-on-demand rather than a mandatory stamp once `cq git base` reports the resolved base is the host's own default branch — the in-place pair `work == base` and the single case where the record rather than git liveness is the signal because that ref can never die, the git-native `quenching-slugs:` branch mark that lets `conclude` self-discover its spec with no frontmatter involved, the base-inference chain a declared integration branch now wins ahead of origin/HEAD, why every record is written before the thing it describes, the squash-merge caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own /.knowledge/standards/git/
+resource: plugins/quenching/assets/references/git/**, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-conclude/auto-discover.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/git/merge.md, plugins/quenching/commands/git/pr/create.md
 tags: [workflows, specs, git, commits, records]
-timestamp: 2026-08-12
+timestamp: 2026-08-16
 audience: both
 authority: background
-source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption; the pull-request route and `merge.pr` added by that same plan's branch review at conclude, which found the `## Impact` path declared for this file and written only in plan-lifecycle.md; the declared-integration-branch step added ahead of origin/HEAD by the configurable-branch-strategy plan (task 2.3, 2026-08-04), proved in code by `infer_base_branch`'s `selftest` fixture; the section squash and its narrowing of the task→commit anchor to section granularity by the reduzir-commits-por-secao spec (2026-08-11); the `quenching-slugs:` branch mark and the auto-discover fallback added by the conclude-detecta-slug-por-marcacao-de-worktree plan (task 3.1, 2026-08-12); the `pr` record, the in-place `work == base` pair and the liveness exception it forces added by vincular-spec-a-branch-commits-e-pr at its conclude — this file was never named under that spec's `## Impact`, and the branch review is what found it contradicted, after `cq specs next` was measured ranking every in-place spec as permanently in flight on a base branch that cannot die
+source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption; the pull-request route and `merge.pr` added by that same plan's branch review at conclude, which found the `## Impact` path declared for this file and written only in plan-lifecycle.md; the declared-integration-branch step added ahead of origin/HEAD by the configurable-branch-strategy plan (task 2.3, 2026-08-04), proved in code by `infer_base_branch`'s `selftest` fixture; the section squash and its narrowing of the task→commit anchor to section granularity by the reduzir-commits-por-secao spec (2026-08-11); the `quenching-slugs:` branch mark and the auto-discover fallback added by the conclude-detecta-slug-por-marcacao-de-worktree plan (task 3.1, 2026-08-12); the `pr` record, the in-place `work == base` pair and the liveness exception it forces added by vincular-spec-a-branch-commits-e-pr at its conclude — this file was never named under that spec's `## Impact`, and the branch review is what found it contradicted, after `cq specs next` was measured ranking every in-place spec as permanently in flight on a base branch that cannot die; `pr:`/`merge:` ownership moved to `/quenching:git:pr:create`/`/quenching:git:merge` and the host-link conditionality (measured in task 1.1) added by pilar-git-e-specs-agnosticas-ao-git (task 6.4)
 maintainer: quenching
 ---
 
@@ -32,10 +32,11 @@ Two consequences, and they are why the anchor changed:
   bookkeeping commit is gone, and the section's own commits squash to one at that section's own
   boundary ([execution.md](/plugins/quenching/assets/references/specs-execute/execution.md) §The
   section squash — §The task→commit link below is what the anchor does across that squash).
-- **`/quenching:specs:conclude` stamps `merge:` on the work branch**, so the merge is the last action of the
-  run and **nothing is ever committed to the base branch after it**. One merge carries the code,
-  the emergent docs, the archived spec and the distillation; reverting it reverts the spec's whole
-  footprint.
+- **`/quenching:git:merge` stamps `merge:` on the work branch before merging**, so the merge is the
+  last action of *that* command and **nothing is ever committed to the base branch after it**. One
+  merge carries the code, the emergent docs (written earlier, by `/quenching:specs:conclude`, which
+  stops before the merge and hands off to this command) and the archived spec's distillation;
+  reverting it reverts the spec's whole footprint.
 
 A record that cannot be written beforehand is a record that forces a write afterwards, and a write
 after the merge lands where the spec's own branch cannot account for it.
@@ -134,7 +135,8 @@ same admission test — a fact no derivation can reproduce:
 
   **Every branch that is not the repository's base gets this stamped**, including one the plugin
   never cut. A human may check one out by hand before running `execute`; a spec built there with
-  nothing stamped leaves `conclude` unable to say what it merges into. `base` is then **inferred**
+  nothing stamped leaves `conclude` unable to diff the right range and leaves `git:merge` unable to
+  say what it merges into. `base` is then **inferred**
   rather than observed, stopping at the first that answers: the spec's own `branch.base` record,
   when one already exists; the repo's own **declared** `integrationBranch`
   ([plugin-configuration.md](plugin-configuration.md), read via `cq specs config --json`);
@@ -155,27 +157,51 @@ same admission test — a fact no derivation can reproduce:
   name, and a commit ancestral to three branches identifies none of them. The mechanics live in
   [git/isolation.md](/plugins/quenching/assets/references/git/isolation.md) §Recording the
   isolation, cited rather than restated.
-- **`pr: {number, url, date}`** — stamped by `conclude` the moment `gh pr create` returns, on the
-  PR route only, and **write-many** where the other two are write-once: a PR may be closed and
-  reopened, or force-pushed to a fresh number, and each is a new fact rather than a falsification
-  of the old one — which is why it carries its own `date`.
+- **`pr: {number, url, date}`** — stamped by `/quenching:git:pr:create` the moment `gh pr create`
+  returns, and **write-many** where the other two are write-once: a PR may be closed and reopened,
+  or force-pushed to a fresh number, and each is a new fact rather than a falsification of the old
+  one — which is why it carries its own `date`. `/quenching:specs:conclude` never opens a PR or
+  writes this record itself; it stops before either, naming `git:pr:create` as the human's own next
+  command.
 
   It is distinct from `merge.pr` below, and the distinction is the whole reason it exists. `merge`
   is stamped only once the merge is about to happen; under `/quenching:specs:cycle`'s minimal
-  gear the PR route deliberately **stops** at the open PR, leaving the merge to human review. With
-  only `merge.pr` to write into, that run had no honest way to record the PR it had just opened —
-  stamping the write-once `merge` for a merge that had not been decided would have burned the one
-  write it gets.
+  gear the PR route deliberately **stops** at the open PR, leaving the merge to human review — the
+  one case this run invokes `git:pr:create` itself rather than leaving the name for a human. With
+  only `merge.pr` to write into, that run would have had no honest way to record the PR it had just
+  opened — stamping the write-once `merge` for a merge that had not been decided would have burned
+  the one write it gets.
 
-- **`merge: {strategy, subject, pr}`** — stamped by `conclude`, write-once, **on the work branch
-  before the merge**. The strategy was a human choice and the subject names the merge it will
-  produce. Under `rebase` and `fast-forward` no merge commit exists, so the subject is an explicit
-  none; `cq specs validate` reports a record that gets this backwards either way, as `sp-bad-merge`.
+- **`merge: {strategy, subject, pr}`** — stamped by `/quenching:git:merge`, write-once, **on the
+  work branch before the merge**. The strategy is a human choice, offered by that command, and the
+  subject names the merge it will produce. Under `rebase` and `fast-forward` no merge commit
+  exists, so the subject is an explicit none; `cq specs validate` reports a record that gets this
+  backwards either way, as `sp-bad-merge`.
 
-  **`pr` names the pull request, and exists only on the PR route.** Most conclusions are local and
-  carry no `pr:` at all — its absence is never a finding. Where it is present it records a fact the
-  base branch's history cannot reproduce: which pull request the merge went through, and therefore
-  where the review and the checks still live once the branch is gone.
+  **`pr` names the pull request, and exists only when one was opened first.** Most merges are local
+  and carry no `pr:` at all — its absence is never a finding. Where it is present it records a fact
+  the base branch's history cannot reproduce: which pull request the merge went through, and
+  therefore where the review and the checks still live once the branch is gone.
+
+**Where the host links the merge back to the branch, both records shed the "mandatory" half of
+their name.** `cq git base --json` reports `isDefault` alongside the resolved base — whether that
+base is the host's own default branch. **Measured for GitHub (task 1.1):** `Closes #<n>` only
+populates `closingIssuesReferences` — the fact a caller can read back — when the PR's base *is*
+that default; on any other base (this repo's own `develop`) the same keyword still cross-references
+the issue but never closes it, so nothing readable exists to fall back on. The rule this forces:
+
+| `cq git base`'s `isDefault` | `pr:`/`merge:` |
+| --- | --- |
+| `true` | **read on demand** — `gh pr view`/`git log` already answer the same question the record would, so a caller may skip stamping and read the host directly |
+| `false` (this repo's own case, base `develop`) | **mandatory stamp** — unchanged from above; nothing on the host names the link back |
+
+`/quenching:git:pr:create` and `/quenching:git:merge` both consult this fact before deciding
+whether to stamp; `/quenching:specs:conclude` consults it only to decide which of the two to name
+in its own handoff. **The same rule is assumed, not yet measured, for `azure-boards`** — its
+`--work-items` link is a structurally different mechanism (an explicit API link, not keyword
+parsing), so the branch restriction may not apply there at all; task 1.2 remains blocked (no
+authority to create artifacts in a real corporate org from an autonomous run) and is what would
+prove or break the assumption.
 
 **The record is never the signal.** A human may cut `plan/<slug>` by hand and stamp nothing, and a
 record outlives the branch it names. Anything asking whether a spec is in flight asks git for a
@@ -227,12 +253,15 @@ the mark.
 
 ## The route is a second choice, and it moves when `merge:` is stamped
 
-`conclude` offers a **route** — pull request, or local — alongside the strategy. The route decides
-how the merge reaches the base; the strategy decides what shape it takes once it does. Three of the
-four strategies map one-to-one onto a `gh pr merge` flag (`--merge`, `--squash`, `--rebase`), so the
-route borrows the strategy vocabulary rather than inventing one. **`fast-forward` has no `gh`
-equivalent**, so the PR route is never offered under it: `cq specs record` refuses `pr:` set
-alongside that strategy (`sp-merge-pr-no-route`) and `validate` warns on one already written.
+The **route** — pull request, or local — is which of `/quenching:git:pr:create` and
+`/quenching:git:merge` the human runs, and in which order; `conclude` chooses neither, it only
+proves the branch ready and names both by way of §What conclude hands off, below. The route decides
+how the merge reaches the base; `git:merge`'s own strategy offer decides what shape it takes once
+it does. Three of the four strategies map one-to-one onto a `gh pr merge` flag (`--merge`,
+`--squash`, `--rebase`), so the route borrows the strategy vocabulary rather than inventing one.
+**`fast-forward` has no `gh` equivalent**, so the PR route makes no sense under it: `cq specs
+record` refuses `pr:` set alongside that strategy (`sp-merge-pr-no-route`) and `validate` warns on
+one already written.
 
 The route also decides **when** the record can be stamped, and this is the one place the
 write-before-the-thing rule bends without breaking:
@@ -241,13 +270,24 @@ write-before-the-thing rule bends without breaking:
 | --- | --- | --- |
 | local | on the branch, before the merge | the subject is knowable the moment the strategy is chosen |
 | pull request | on the branch, after the PR is opened and before it is merged | `merge.pr` names something that does not exist until `gh pr create` returns, and the record is write-once — stamping without it would burn the single write |
-| pull request, minimal gear | **never, this run** | the run stops at the open PR by design, leaving the merge to human review; the write-many `pr:` record carries the PR until a later run merges it |
+| pull request, minimal gear | **never, this run** | `/quenching:specs:cycle` stops at the open PR by design, leaving the merge to human review; the write-many `pr:` record carries the PR until a later run merges it |
 
 Both stamps still land **before** the merge and **on the work branch**, which is the invariant that
 matters: nothing is written to the base after it. A run interrupted between the stamp and the merge
 leaves the record written and the branch unmerged, which is recoverable — the next run reads the
-recorded subject and merges with it. The reverse can only come from a merge `conclude` did not
-make, and is reported rather than repaired.
+recorded subject and merges with it. The reverse can only come from a merge outside these two
+commands' own runs, and is reported rather than repaired.
+
+### What `conclude` hands off
+
+`/quenching:specs:conclude` proves the branch reviewed, distilled and gate-green, then **names**
+the route rather than choosing it: `/quenching:git:pr:create` where `gh` resolves the repository,
+`/quenching:git:merge` either way, in its own next-step block. Neither is invoked from `conclude`
+itself — the one exception is `/quenching:specs:cycle`'s minimal gear, which invokes
+`git:pr:create` under the same run's own authorization because there is no human mid-flow to hand
+the name to ([align/convergence.md](/plugins/quenching/assets/references/align/convergence.md)
+§The PR route). Every other run reads the name and runs the
+command on its own word.
 
 ## The squash caveat, and what rebase no longer costs
 
@@ -262,8 +302,11 @@ the recorded subjects resolve against:
 | rebase | **survive**: the rewrite carries the message, so every record still resolves |
 
 A squash is a common house style and is not argued against — but its consequence is said out loud:
-when squash is chosen, `conclude` records it in `merge:`, states it in `## Outcome`, and offers
-**not** to delete the branch, the only way the archived spec's `subject:` fields stay resolvable.
+when squash is chosen, `/quenching:git:merge` records it in `merge:` and offers **not** to delete
+the branch, the only way the archived spec's `subject:` fields stay resolvable. `## Outcome` no
+longer names the strategy — it is decided after `conclude` has already written and archived it — so
+the branch's own `merge:` record and `git log` are where a later reader resolves which strategy
+ran.
 
 **Rebase is no longer the strategy that destroys the record.** Under the sha anchor it rewrote every
 recorded commit and left the archived spec pointing at commits that no longer existed — the one
@@ -296,7 +339,7 @@ It never manufactures a temporary checkout. This costs nothing, because `merge:`
 
 Isolation that is not cleaned up accumulates: directories beside the repo, each pointing at a
 branch already integrated, none of them obviously safe to delete. So once the merge exits 0,
-`/quenching:specs:conclude` removes the worktree — run from the base's checkout, because nothing removes the
+`/quenching:git:merge` removes the worktree — run from the base's checkout, because nothing removes the
 tree it is standing in:
 
 ```bash
