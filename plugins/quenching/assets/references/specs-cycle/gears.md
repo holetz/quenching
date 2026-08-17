@@ -78,6 +78,15 @@ The scale — four levels, each changing some gear, so no level is vocabulary wi
 | `high` | the stage-by-stage stops and confirmations are kept |
 | `xhigh` | at least one judgment stage (adversarial review, premortem) joins the plan |
 
+**What the scale actually measures.** `complexity` is not the size of the change, its scope or its
+difficulty — a small change can still need a human at every step, and a large mechanical one can
+need almost none. It measures how much a human needs to be part of the process: `low` says the LLM
+can be trusted to carry the whole half with close to no supervision; `medium` accepts some real
+risk in leaving stage-by-stage judgment to the LLM alone; `high` and `xhigh` escalate the need for
+a human's presence, which the table above already encodes as stops, isolation and judgment stages.
+`triage`, `create` and `develop` propose a level against this criterion, never against the word's
+plain reading.
+
 `complexity` is written by `triage`, `create` and `develop` — never silently: every write is
 proposed with the scale in front of the human and lands on a confirmation, under a record whose
 owner stays `triage`. The defining half derives its plan from this level before the build, when the

@@ -16,6 +16,7 @@ from quenching.specs.parse.sections import (gate_report, ready_report, section_s
                                             stray_headings)
 from quenching.specs.parse.spec import LEGACY_PHASES, PHASE_DIRS
 from quenching.specs.parse.tasks import task_progress
+from quenching.specs.parse.text import real_prose_or_none
 from quenching.specs.schema import canonical_headings, load_schema
 
 
@@ -23,7 +24,8 @@ def cmd_list(args, root: str, out: Emitter) -> int:
     backend, err = open_backend(root)
     if err:
         return out.emit_err(args.json, err)
-    specs = backend.list_specs()
+    phase = getattr(args, "phase", None)
+    specs = backend.list_specs(phase)
     rows = []
     for s in specs:
         # ASKED OF THE BACKEND, never of the path. This was the last command reading
@@ -46,6 +48,7 @@ def cmd_list(args, root: str, out: Emitter) -> int:
             "slug": s["slug"], "phase": s["phase"], "folder": s["folder"],
             "legacy": s["legacy"], "file": s["file"], "date": info["date"],
             "title": info["frontmatter"].get("title", titleize(s["slug"])),
+            "overview": real_prose_or_none(info["sections"].get("Overview", {}).get("body", "")),
             "stage": info["stage"],
             "outcome": info["frontmatter"].get("outcome") or None,
             # The seven records, on every row. Without them a caller that wants the front's
