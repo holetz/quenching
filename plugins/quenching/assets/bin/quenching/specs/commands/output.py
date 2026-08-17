@@ -13,7 +13,31 @@ from __future__ import annotations
 import os
 
 from quenching.common.output import emit as _emit
+from quenching.specs.backends import backend_root
 from quenching.specs.backends.base import SpecBackend
+from quenching.specs.config import load_config
+
+
+def front_fields(root: str) -> dict:
+    """`{"backend": …, "root": …}` — the two fields a workspace-wide payload opens with.
+
+    ONE HELPER FOR TEN EMIT SITES, because the field was wrong at all ten in the same way and
+    a fix applied ten times is a fix nine of which can rot. `root` used to be whatever `--root`
+    resolved to — the DECLARED workspace — which under `github` or `azure-boards` names a
+    folder that does not exist, and under `files` with the specs worktree in use names the one
+    the backend does not write to. What comes out now is the resolved directory under `files`
+    and `null` under an external backend, with the backend's own name beside it saying which
+    world the reader is in.
+
+    THE KEY IS NOT RENAMED. `root` stays `root`: the swept consumers read it as a locator to
+    show, never to compose a path from, so correcting the value is additive while renaming the
+    key would break every installed target for nothing.
+
+    `null` rather than the empty string, and rather than the declared path: an empty string
+    makes every consumer invent its own vacuity test, and the declared path is the lie itself.
+    `None` is the one value nobody can mistake for a directory."""
+    cfg = load_config(root)
+    return {"backend": cfg["backend"], "root": backend_root(root, cfg)}
 
 
 def display_locator(locator: str, root: str) -> str:

@@ -1,8 +1,6 @@
 """`promote` — the one remaining transition, `plans/` -> `archive/`."""
 from __future__ import annotations
 
-import os
-
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, read_one
 from quenching.specs.commands.read import _next_phase
@@ -91,7 +89,6 @@ def cmd_promote(args, root: str, out: Emitter) -> int:
                      "\n  pass --force to archive anyway, or --outcome abandoned")
             return 2
 
-    dest_path = os.path.join(root, dest, info["file"])
     rel = f"{dest}/{info['file']}"
     if args.dry_run:
         out.emit(args.json,
@@ -101,11 +98,15 @@ def cmd_promote(args, root: str, out: Emitter) -> int:
                  f"dry-run: would move {info['folder']}/{info['file']} → {rel}" +
                  (f"  (outcome: {outcome})" if outcome else ""))
         return 0
-    if os.path.exists(dest_path):
-        out.emit(args.json, {"ok": False, "code": "sp-dest-exists", "dest": rel,
-                             "message": f"{rel} already exists"},
-                 f"error: {rel} already exists")
-        return 1
+    # NO OCCUPIED-DESTINATION CHECK HERE ANY MORE. This verb used to join the DECLARED root
+    # with `dest` and call `os.path.exists` on it — a question only a filesystem can answer,
+    # asked by shared code that does not know whether one is involved. Under `github` or
+    # `azure-boards` the path never exists and the check always passed; under `files` with the
+    # specs worktree in use it measured a directory the backend does not write to. "Destination
+    # taken" is now `FilesBackend.move_spec`'s to answer, and it raises `BackendRefusal` —
+    # carried to exit 2 by `main`'s single conversion, like every other backend refusal, since
+    # no command body ever branched on the old `sp-dest-exists` exit 1.
+    #
     # The outcome is stamped BEFORE the hop, so the document that moves already carries it —
     # a backend whose move is not atomic must never be able to land an archived spec with no
     # outcome on it.

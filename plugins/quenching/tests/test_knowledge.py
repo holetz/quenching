@@ -199,5 +199,117 @@ class LegacyGlossaryDetector(unittest.TestCase):
         self.assertNotIn("okf-legacy-glossary", codes)
 
 
+# --------------------------------------------------------------------------- #
+# `generated-listing-missing` / `generated-listing-drift` — the GENERATED zone of
+# `standards/index.md` against the docs on disk (validar-a-zona-generated-contra-o-disco)
+#
+# Both directions are proved, because a check with only the positive arm cannot be told apart
+# from one that fires on everything. The two arms are the SAME bundle — identical file set,
+# identical prose — differing only inside the zone, so the control below can assert that every
+# OTHER finding is identical between them: a fixture that drifted into firing for an unrelated
+# reason fails that assertion even while the positive arm still passes.
+# --------------------------------------------------------------------------- #
+_ZONE_MOLD = ("<!-- BEGIN GENERATED: rebuilt from disk — DO NOT edit by hand.\n"
+              "     Row model per subfolder:\n"
+              "       | [imports.md](code/imports.md) | <the doc's description:> |\n"
+              "-->\n")
+
+_ROWS = {
+    "imports.md": "| [imports.md](code/imports.md) | {} |",
+    # Written WITHOUT the closing pipe, which GFM makes optional and this bundle's own zone
+    # already does. A parser that requires it drops the row and reports the doc it lists as
+    # unlisted — the one false positive a membership check cannot afford.
+    "exports.md": "| [exports.md](code/exports.md) | How we export",
+}
+
+
+def _standard(title: str, description: str) -> str:
+    return f"---\ntype: standard\ntitle: {title}\ndescription: {description}\n---\n\n# {title}\n"
+
+
+def _generated_fixture(listed: tuple[str, ...], imports_row: str) -> dict:
+    """The same four-doc bundle every time; only the zone's rows move.
+
+    `exports.md` is linked from `standards/code/index.md` in BOTH arms, so dropping its row
+    from the zone never makes it an `index-orphan` — that is the measured case this check
+    exists for (`architecture/bundle-root.md`, cited by four siblings and absent from the
+    listing, with the validator green throughout).
+    """
+    table = "\n".join(_ROWS[name].format(imports_row) for name in listed)
+    return {
+        "index.md": '---\nokf_version: "0.1"\n---\n\n# Bundle\n\n- [Standards](standards/index.md)\n',
+        "standards/index.md": ("# Standards\n\n## Current docs\n\n" + _ZONE_MOLD +
+                               "\n### code/\n\n| Doc | Covers |\n| --- | --- |\n" + table +
+                               "\n\n<!-- END GENERATED -->\n"),
+        "standards/code/index.md": "# code/\n\n- [imports.md](imports.md)\n- [exports.md](exports.md)\n",
+        "standards/code/imports.md": _standard("Imports", "How we import"),
+        "standards/code/exports.md": _standard("Exports", "How we export"),
+    }
+
+
+CONFORMANT_ZONE = _generated_fixture(("imports.md", "exports.md"), "How we import")
+STALE_ZONE = _generated_fixture(("imports.md",), "How we imported, once")
+
+
+class GeneratedListingChecker(unittest.TestCase):
+    """The zone against disk — fires on a stale copy, silent on a conformant one."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.stale = _validated(STALE_ZONE)
+        cls.clean = _validated(CONFORMANT_ZONE)
+
+    @staticmethod
+    def _new_codes(findings):
+        return {(rel, code, msg) for sev, rel, code, msg in findings
+                if code.startswith("generated-listing")}
+
+    def test_a_doc_the_zone_does_not_link_is_reported_against_the_listing(self):
+        missing = [(rel, msg) for rel, code, msg in self._new_codes(self.stale)
+                   if code == "generated-listing-missing"]
+        self.assertEqual(len(missing), 1, missing)
+        rel, msg = missing[0]
+        self.assertEqual(rel, "standards/index.md")   # the file the fix is made in
+        self.assertIn("standards/code/exports.md", msg)
+
+    def test_that_doc_is_not_an_orphan_which_is_why_index_orphan_never_saw_it(self):
+        orphans = {rel for sev, rel, code, msg in self.stale if code == "index-orphan"}
+        self.assertEqual(orphans, set())
+
+    def test_a_row_whose_description_no_longer_matches_the_doc_is_reported(self):
+        drift = [(rel, msg) for rel, code, msg in self._new_codes(self.stale)
+                 if code == "generated-listing-drift"]
+        self.assertEqual(len(drift), 1, drift)
+        rel, msg = drift[0]
+        self.assertEqual(rel, "standards/index.md")
+        self.assertIn("standards/code/imports.md", msg)
+
+    def test_a_conformant_zone_says_nothing(self):
+        self.assertEqual(self._new_codes(self.clean), set())
+
+    def test_the_two_arms_differ_by_the_new_codes_and_by_nothing_else(self):
+        # The control. Without it the positive arm cannot distinguish "the check fired" from
+        # "the stale fixture broke in some unrelated way and the check fired on the wreckage".
+        def rest(findings):
+            return sorted(f for f in findings if not f[2].startswith("generated-listing"))
+        self.assertEqual(rest(self.stale), rest(self.clean))
+
+    def test_the_row_mold_inside_the_opening_comment_is_never_read_as_a_row(self):
+        # The mold links `code/imports.md` for real. Counted as a row, it would vouch for a doc
+        # the zone does not actually list — and the drift check would compare against the mold's
+        # `<the doc's description:>` slot.
+        findings = _validated(_generated_fixture((), ""))
+        missing = {msg for sev, rel, code, msg in findings
+                   if code == "generated-listing-missing"}
+        self.assertEqual(len(missing), 2, missing)
+        self.assertTrue(any("standards/code/imports.md" in m for m in missing), missing)
+
+    def test_whitespace_around_a_cell_is_not_drift(self):
+        fixture = _generated_fixture(("imports.md",), "How we import   ")
+        drift = {code for sev, rel, code, msg in _validated(fixture)
+                 if code == "generated-listing-drift"}
+        self.assertEqual(drift, set())
+
+
 if __name__ == "__main__":
     unittest.main()

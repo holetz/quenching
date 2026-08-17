@@ -9,7 +9,7 @@ import json
 import os
 
 from quenching.specs.backends import open_backend
-from quenching.specs.commands.output import Emitter, display_locator, read_one
+from quenching.specs.commands.output import Emitter, display_locator, front_fields, read_one
 from quenching.specs.parse import PHASES, derive_info, titleize
 from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.sections import (gate_report, ready_report, section_state,
@@ -62,7 +62,7 @@ def cmd_list(args, root: str, out: Emitter) -> int:
             "path": display_locator(s["path"], root),
         })
     if args.json:
-        print(json.dumps({"ok": True, "root": root, "count": len(rows), "specs": rows},
+        print(json.dumps({"ok": True, **front_fields(root), "count": len(rows), "specs": rows},
                          indent=2, ensure_ascii=False))
         return 0
     if not rows:

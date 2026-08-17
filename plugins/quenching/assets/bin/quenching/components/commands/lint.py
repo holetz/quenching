@@ -114,6 +114,13 @@ def _step_criteria(body: str) -> tuple[int, int]:
 SKILL_TOOL_RE = re.compile(r"[*`_]*Skill[*`_]*\s+tool", re.I)
 SKILL_TOOL_WINDOW = 1           # lines either side of the name, so a wrapped sentence counts
 
+# The shape of a command's registry path, `specs:develop` or a one-segment `align` — the
+# same generic-form-then-membership pattern CITATION_RE above uses, and for the same
+# reason: one regex over each body, never one regex per target name repeated for every
+# caller. `*` rather than `+` because the path IS the identity and a command sitting at
+# the root of `commands/` has exactly one segment.
+NAME_SHAPE = r"([a-z0-9-]+(?::[a-z0-9-]+)*)"
+
 
 def named_by_bodies(commands: list[dict], prefix: str) -> dict[str, set[str]]:
     """Which commands another command's BODY reaches BY NAME — derived from disk, never
@@ -134,23 +141,35 @@ def named_by_bodies(commands: list[dict], prefix: str) -> dict[str, set[str]]:
     The union is deliberately the WIDER read. The two errors are not symmetric: a false
     positive costs a command its place in the typed-only class, which is an argument; a
     false negative lets a real conductor stage be flagged typed-only and go silently
-    inert, which is the failure this check exists to prevent."""
+    inert, which is the failure this check exists to prevent.
+
+    Each body is read ONCE, for names of the generic shape, and every name found is decided
+    by membership in the surface's own set — never one regex per target name re-run for
+    every caller, which cost the square of the surface's size."""
+    by_name = {c["command"].lstrip("/"): c["command"] for c in commands}
+    esc = re.escape(prefix)
+    registry_re = re.compile(rf"(?<![\w:/-]){esc}:{NAME_SHAPE}(?![\w:-])")
+    adjacent_re = re.compile(rf"(?<![\w:-])/?({esc}:)?{NAME_SHAPE}(?![\w:-])")
+
     out: dict[str, set[str]] = {}
     for caller in commands:
         lines = caller["body"].splitlines()
         skill_lines = [i for i, _ in enumerate(lines)
                        if SKILL_TOOL_RE.search("\n".join(
                            lines[max(0, i - SKILL_TOOL_WINDOW): i + SKILL_TOOL_WINDOW + 1]))]
-        for target in commands:
-            name = target["command"]
-            if name == caller["command"]:
-                continue
-            path = re.escape(name.lstrip("/"))
-            registry = rf"(?<![\w:/-]){re.escape(prefix)}:{path}(?![\w:-])"
-            adjacent = rf"(?<![\w:-])/?(?:{re.escape(prefix)}:)?{path}(?![\w:-])"
-            if (re.search(registry, caller["body"])
-                    or any(re.search(adjacent, lines[i]) for i in skill_lines)):
-                out.setdefault(name, set()).add(caller["command"])
+        found = {m.group(1) for m in registry_re.finditer(caller["body"])}
+        for i in skill_lines:
+            for m in adjacent_re.finditer(lines[i]):
+                # Both readings of the optional prefix the adjacent form allows: `foo:bar`
+                # is the command `bar` reached through plugin `foo`, and is also the name
+                # of a command `foo:bar` on a surface whose own tree starts with `foo/`.
+                found.add(m.group(2))
+                if m.group(1):
+                    found.add(m.group(1) + m.group(2))
+        found.discard(caller["command"].lstrip("/"))
+        for cand in found:
+            if cand in by_name:
+                out.setdefault(by_name[cand], set()).add(caller["command"])
     return out
 
 

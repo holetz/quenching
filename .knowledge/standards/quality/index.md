@@ -20,9 +20,18 @@ the checks that hold it honest. The *modeling* that defines data lives in
   allowlist — the three scope rules read from the script's own header, that it runs manually and
   is documented rather than gated automatically, and why the "every red is a harness defect"
   precedent stays scoped to `functional-checks.sh` alone.
+* [empty-response-honesty.md](empty-response-honesty.md) — uma resposta vazia de um transporte de
+  terceiro são dois estados e só um se prova: a recusa exit 2 no choke point de leitura onde há
+  discriminante estrutural medido, o finding `warn` mais a linha em `stderr` onde há apenas suspeita
+  corroborada, por que a guarda é do chamador e nunca do transporte compartilhado, e por que o
+  diagnóstico completa sempre.
 * [parse-honesty.md](parse-honesty.md) — a verifier names its own parse failure instead of reporting
   it as a content gap: the sidecar that adds the signal without changing a return type, why the
   finding is a warn, and why a lossy transform never ships without the diagnostic for it.
+* [finding-remedy-applicability.md](finding-remedy-applicability.md) — um `remedy` declarado nomeia
+  uma ação que a superfície que emitiu o finding realmente oferece: o caso medido em que a mesma CLI
+  recusava as duas ações que aconselhava, por que um remédio inaplicável gasta a confiança de toda a
+  saída e não só a daquele item, e a recusa própria que um caso sem caminho ainda deve dar.
 * [prose-sweeps.md](prose-sweeps.md) — a mechanical find-and-replace over prose corrupts exactly the
   sentences that talk *about* the form being swept, the checker that guards the sweep reports them
   clean, and the mitigation is to write a mention as a placeholder rather than an instance.
@@ -50,6 +59,10 @@ the checks that hold it honest. The *modeling* that defines data lives in
   standing fact as a verifier finding and the moment-of-risk line once per process on stderr, why a
   per-operation warning is a permanent context tax and silence is not the alternative, and the one
   edit that retires both together.
+* [unanswerable-verify-lines.md](unanswerable-verify-lines.md) — um `verify:` cujo veredito é
+  decidido pela própria grafia antes de qualquer coisa ser medida: o padrão com crases que a shell
+  desfigura, o escalar YAML que o `#` trunca, o ponto de entrada morto que sai 0 sem executar nada,
+  e a regra de exercitar a linha nos dois sentidos na hora em que ela é escrita.
 * [surface-verification.md](surface-verification.md) — how a change to the command surface is
   proven: a fresh process because the registry is built at session start, assertions on captured
   `tool_use` rather than prose, and the five preconditions a functional check must satisfy.

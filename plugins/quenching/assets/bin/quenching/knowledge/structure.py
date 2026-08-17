@@ -1,6 +1,9 @@
-"""Structural integrity — the bundle's own link graph, read off the shared corpus.
+"""Structural integrity — the bundle's own link graph, and the one listing derived from disk.
 
-Moved verbatim out of the pre-refactor OKF validator script.
+Moved verbatim out of the pre-refactor OKF validator script, then widened once: the module used to
+declare itself the link graph alone, and `generated-listing-drift` is not a link check but an
+equality between two texts. The scope is stated as it now is rather than left saying something
+false (`validar-a-zona-generated-contra-o-disco`, `## Open Decisions`).
 
 STRUCTURAL INTEGRITY (whole-tree only — CLI + Stop; all WARN, OKF-tolerant)
 - **`dir-no-index`**      a directory holds concept docs but has no `index.md` listing.
@@ -9,6 +12,11 @@ STRUCTURAL INTEGRITY (whole-tree only — CLI + Stop; all WARN, OKF-tolerant)
 - **`glossary-broken-link`** the same link rule applied to `glossary.md`,
   whose links ARE its content — a dead entry is a dead lookup, and `index-broken-link`
   never reached it because the glossary is a concept doc, not an `index.md`.
+- **`generated-listing-missing`** a `standards/**` doc no row inside the `<!-- BEGIN GENERATED -->`
+  zone of `standards/index.md` links. `index-orphan` does not reach it: any sibling doc citing it
+  disarms that check, and a doc outside the listing is still unreachable by navigation.
+- **`generated-listing-drift`** a row inside that zone whose description no longer equals the
+  `description:` of the doc it links.
 These stay WARN by design (OKF says consumers MUST tolerate broken links and MAY
 synthesize a missing index); the `quenching-knowledge-align`/`quenching-knowledge-add` skills treat them as must-fix
 in their own verify gate.
@@ -18,8 +26,27 @@ from __future__ import annotations
 import os
 import re
 
+from quenching.common.frontmatter import parse_frontmatter
 from quenching.knowledge.resource import _is_uri
 from quenching.knowledge.schema import EXEMPT, GLOSSARY_REL, LINK_RE, RESERVED
+
+# The bundle's one generated listing. Pinned to this path rather than discovered, because it is the
+# only `<!-- BEGIN GENERATED -->` zone that exists: a second one is speculative generalization for a
+# population of one (`standards/architecture/generated-listings.md`).
+GENERATED_LISTING_REL = "standards/index.md"
+
+# The zone is what sits AFTER the opening comment closes, so the row mold inside that comment —
+# a real markdown link to `code/imports.md` — can never be read as a listed row.
+GENERATED_ZONE_RE = re.compile(
+    r"<!--\s*BEGIN GENERATED\b.*?-->(?P<zone>.*?)<!--\s*END GENERATED\s*-->", re.DOTALL)
+
+# `| [imports.md](code/imports.md) | <the doc's description> |` — a table row whose first cell holds
+# a link. The `| Doc | Covers |` header and the `| --- | --- |` separator carry none and never match.
+# The **closing** pipe is optional because GFM makes it optional, and this bundle's own zone already
+# holds a row written without one — requiring it dropped that row from the parse and reported the
+# doc it lists as unlisted, which is the false positive a membership check can least afford.
+GENERATED_ROW_RE = re.compile(r"^\|[^|\n]*\[[^\]]*\]\(([^)\n]+)\)[^|\n]*\|([^|\n]*)\|?\s*$",
+                              re.MULTILINE)
 
 
 def _strip_noise(text: str) -> str:
@@ -179,4 +206,63 @@ def validate_structure(bundle_root: str, corpus: dict) -> list[tuple[str, str, s
             findings.append(("WARN", rel, "index-orphan",
                              "concept doc is not linked from any index.md or sibling doc "
                              "(unlisted — regenerate the folder's index.md)"))
+    return findings
+
+
+def _squash_ws(text: str) -> str:
+    """Whitespace-insensitive form of a description. A table cell is one line and a YAML
+    scalar may be wrapped across several, so comparing them byte-for-byte would report a
+    line break as drift; every other difference still counts."""
+    return " ".join(text.split())
+
+
+def validate_generated_listing(bundle_root: str, corpus: dict) -> list[tuple[str, str, str, str]]:
+    """The `<!-- BEGIN GENERATED -->` zone of `standards/index.md` against the docs on disk
+    (both WARN, same class and same gate as the codes above):
+      - `generated-listing-missing` a `standards/**` doc no row in the zone links.
+      - `generated-listing-drift`   a row whose description no longer equals the doc's own.
+    Consumes the `_build_corpus` dict — no disk reads of its own. Both findings are reported
+    against the listing, because the listing is the file either one is fixed in.
+    """
+    root = os.path.abspath(bundle_root)
+    listing = os.path.join(root, *GENERATED_LISTING_REL.split("/"))
+    text = corpus.get(listing)
+    if text is None:
+        return []
+    zone = GENERATED_ZONE_RE.search(text)
+    if zone is None:
+        return []
+
+    findings: list[tuple[str, str, str, str]] = []
+    subject_root = os.path.dirname(listing)
+    listed: dict[str, str] = {}
+    for target, cell in GENERATED_ROW_RE.findall(zone.group("zone")):
+        res = _resolve_link(target.strip(), subject_root, root)
+        if res and res[1] == "md":
+            listed.setdefault(os.path.normpath(res[0]), cell)
+
+    for ap in sorted(corpus):
+        fn = os.path.basename(ap)
+        if fn in RESERVED or fn in EXEMPT or fn == "README.md":
+            continue
+        if not ap.startswith(subject_root + os.sep):
+            continue
+        if os.path.normpath(ap) not in listed:
+            rel = os.path.relpath(ap, root).replace(os.sep, "/")
+            findings.append(("WARN", GENERATED_LISTING_REL, "generated-listing-missing",
+                             f"`{rel}` is on disk but no row inside the GENERATED zone links it "
+                             "(regenerate the zone)"))
+
+    for ap, cell in sorted(listed.items()):
+        doc = corpus.get(ap)
+        if doc is None:
+            continue          # a row pointing at nothing on disk is `index-broken-link`'s finding
+        described = _squash_ws(str(parse_frontmatter(doc).get("description") or ""))
+        if not described:
+            continue          # no `description:` to compare against — `missing-description`'s
+        if _squash_ws(cell) != described:
+            rel = os.path.relpath(ap, root).replace(os.sep, "/")
+            findings.append(("WARN", GENERATED_LISTING_REL, "generated-listing-drift",
+                             f"the row for `{rel}` no longer matches that doc's frontmatter "
+                             "`description` (regenerate the zone)"))
     return findings

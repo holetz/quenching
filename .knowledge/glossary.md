@@ -174,11 +174,26 @@ sentence, and **link out** rather than explaining in full here.
   shim in the directory Claude Code appends to `PATH`, is what lets a body write the name bare; the
   plugin path is what it falls to wherever the PATH does not hold — including work on the quenching
   repository itself, where that entry names the *installed* checkout.
+- [**Declared root / resolved root**](../standards/architecture/spec-backend.md) — the pair the
+  shared layer of `cq specs` must never confuse. The **declared** root is the configuration entry
+  (`--root`, `SPECS_ROOT`, the default) — not an address: under an external backend it points at
+  nothing, and under `files` with the specs worktree in use it points at the directory the backend
+  does not write to. The **resolved** root is where documents actually land, known only to the
+  backend that stored them. Shared code deriving a path from the declared one is the single cause
+  behind a destination check that could not see the destination, a diagnostic reporting a workspace
+  nobody has, and a `root` payload field naming a folder that does not exist.
 - [**Derived stage**](../standards/workflows/plan-lifecycle.md) — a spec's position in its life
   (`captured` → `proposed` → `designed` → `refined` → `ready` → `approved` → `executing`),
   COMPUTED from which headings are filled and which records frontmatter carries rather than
   declared in a field, so it regresses on its own when a section empties instead of going stale;
   resolution is last-match-wins, which is why `executing` sorts last.
+- [**Empty-response honesty**](../standards/quality/empty-response-honesty.md) — a obrigação de
+  separar, num payload vazio vindo de um processo de terceiro, a resposta que **não chegou** da que
+  legitimamente **não tem nada**: recusa exit 2 no choke point de leitura onde existe discriminante
+  estrutural medido (para o `gh`, zero páginas `[]` contra uma página vazia `[[]]`), finding `warn`
+  mais uma linha em `stderr` onde há só suspeita corroborada, e a guarda no chamador e nunca no
+  transporte compartilhado, cuja resposta vazia pode ser a correta (um DELETE 204). É o irmão de
+  **Parse honesty** um nível abaixo: aquele governa o transform com perda, este o payload que chegou.
 - [**Entry point**](../standards/naming/command-surface.md) — one `commands/<path>.md` file, whose
   path IS its identity (`commands/knowledge/add.md` → `/quenching:knowledge:add`); since Claude
   Code merged commands into skills there is no second file to mirror, so there is nothing an entry
@@ -369,6 +384,10 @@ sentence, and **link out** rather than explaining in full here.
 - [**Refinement record**](../standards/workflows/plan-artifacts.md) — the `refined: {mode, date}`
   entry a spec's **frontmatter** gains once it has been interrogated, whose absence raises the
   non-gating `sp-unrefined` warning.
+- [**Remedy**](../standards/quality/finding-remedy-applicability.md) — o campo `remedy` que todo
+  finding dos verificadores carrega, e o contrato que ele assume: nomear uma ação que a superfície
+  que emitiu o finding realmente oferece. Um remédio que descreve o estado desejado, ou uma ação que
+  a mesma CLI recusa, gasta a confiança de toda a saída — não só a do item que o carrega.
 - [**Reserved tag prefix**](../standards/architecture/spec-backend.md) — `spec:`, the half of a
   tracker's native tag surface (`github` issue labels, `azure-boards` `System.Tags`) that belongs
   to the TOOL rather than to the document, and the rule that lets **storage** and **rendering**
@@ -455,7 +474,11 @@ sentence, and **link out** rather than explaining in full here.
   the fourteen canonical headings carry no comma and it refuses any name outside them.
 - [**Section squash**](../standards/workflows/task-execution.md) — the local `git reset --soft`
   plus recommit that collapses a `## N.` section's own per-task commits into one, at that
-  section's own **Section boundary**, provided none of its tasks is `[!]`. The per-task chain that
+  section's own **Section boundary**, provided none of its tasks is `[!]`. Its target is a **sha
+  captured when the section opened** — derived from the first task's own anchor on a run that
+  resumed mid-section, and never a branch name, whose tip can move under the run — and
+  `git merge-base --is-ancestor` runs before the reset, refusing any target not ancestral to
+  `HEAD`. The per-task chain that
   verifies, ticks and commits stays exactly what it always was — this is what buys resumability
   *while the section runs*; the squash only ever reaches back into commits its own section just
   made, never a prior section's or anything already shared, which is the narrow, explicit exception

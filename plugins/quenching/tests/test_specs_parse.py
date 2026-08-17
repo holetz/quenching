@@ -21,7 +21,7 @@ import unittest
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.common.text import slugify
-from quenching.specs.commands.cli import DISPATCH, main
+from quenching.specs.commands.cli import DISPATCH, build_parser, main
 from quenching.specs.commands.output import Emitter
 from quenching.specs.config import infer_base_branch, load_config, resolve_subject
 from quenching.specs.parse.derive import derive_info
@@ -555,6 +555,36 @@ class ListProjectsOverview(unittest.TestCase):
             self.assertIsNone(rows["empty"])
             self.assertIsNone(rows["explicit"])
             self.assertEqual(rows["real"], "Conecta as outras seções.")
+
+
+class ParserContract(unittest.TestCase):
+    """The two surfaces of this pillar's CLI name exactly the same subcommands.
+
+    THE FORM OF A PARTIAL REVERT. `argparse` decides what a human may type and `DISPATCH`
+    decides what runs; a subcommand registered in only one of them is a verb that parses and
+    dies on a `KeyError`, or a handler nothing can ever reach. The old selftest asserted the
+    specific case it had been bitten by (`sp-plans-subcommand-back`) and that assertion is gone
+    — a specific case only ever catches the failure that already happened once.
+
+    Read off the parser's own `_actions` rather than off what `build_parser` returns, in the
+    mold `test_session.py::ParserContract` uses for the `session` pillar: what argparse
+    actually registered is the surface a human meets, and a function free to return something
+    else is exactly the drift worth not trusting."""
+
+    def _choices(self) -> dict:
+        parser, _sub = build_parser()
+        subparsers = [a for a in parser._actions
+                      if isinstance(a, argparse._SubParsersAction)]
+        self.assertEqual(len(subparsers), 1,
+                         "the pillar registers no subparsers action, or more than one — the "
+                         "comparison below would measure the wrong surface")
+        return subparsers[0].choices
+
+    def test_the_parser_and_dispatch_name_exactly_the_same_subcommands(self):
+        choices = self._choices()
+        self.assertTrue(choices, "no subcommands registered — the comparison would pass "
+                                 "vacuously against an empty DISPATCH")
+        self.assertEqual(set(choices), set(DISPATCH))
 
 
 if __name__ == "__main__":
