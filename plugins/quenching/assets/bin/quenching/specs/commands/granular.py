@@ -13,8 +13,9 @@ from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, display_locator, read_one
 from quenching.specs.commands.task import _find_task
 from quenching.specs.parse import derive_info
-from quenching.specs.parse.edit import (_match_heading, split_section_stream, upsert_section,
-                                        write_handoff_block)
+from quenching.specs.parse.edit import (_match_heading, fold_stray_heading,
+                                        resolve_heading_name, split_section_stream,
+                                        upsert_section, write_handoff_block)
 from quenching.specs.parse.handoff import current_handoff_section, parse_handoff
 from quenching.specs.parse.sections import section_state, stray_headings
 from quenching.specs.parse.text import body_after_frontmatter
@@ -59,6 +60,68 @@ def _scoped_handoff(info: dict, scope: str) -> str:
     return "\n\n".join(p.strip("\n") for p in parts if p.strip())
 
 
+def _fold_stray(args, backend, info: dict, root: str, out: Emitter) -> int:
+    """`--fold` — the ONE path on this surface that admits a heading outside the fourteen.
+
+    `validate` emits `sp-stray-heading` with a remedy ("fold it into a canonical one") that
+    nothing could apply: `cmd_section` resolves every requested heading against the canonical
+    list and exits 2 on the first that misses, *before* looking at `--write`, so a stray could
+    not even be NAMED. This is that exit, opened exactly once and exactly here.
+
+    **The admission is local, and the negative pair is the proof.** The stray is resolved
+    against the strays the DOCUMENT actually carries — never against the canonical list — so
+    nothing here widens what any other path accepts, and the `sp-stray-heading` the stream
+    write raises stays untouched.
+
+    Three refusals, each with its own code, because they are fixed by different things: a
+    canonical heading handed to `--fold` is not a stray; a name matching no stray in this
+    document is a typo the candidate list answers; and a stray with no canonical section above
+    it has no honest host — inventing one is worse than the refusal, so it writes nothing."""
+    beside = [flag for flag, val in (("--moment", args.moment), ("--write", args.write),
+                                     ("--scope", getattr(args, "scope", None)),
+                                     ("a heading", args.heading)) if val]
+    if beside:
+        msg = f"--fold takes the stray heading alone; drop {', '.join(beside)}"
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-fold-exclusive", "beside": beside, "message": msg},
+                 f"error: {msg}")
+        return 2
+
+    strays = stray_headings(info["sections"])
+    hit = resolve_heading_name(args.fold, strays)
+    if hit is None:
+        canonical = _match_heading(args.fold)
+        if canonical:
+            msg = (f"`## {canonical}` is one of the fourteen canonical headings — --fold "
+                   "closes a stray, and a canonical section is never one")
+            code = "sp-fold-not-stray"
+        else:
+            msg = (f"no stray heading matching '{args.fold}' in this spec — "
+                   f"strays: {', '.join(strays) or 'none'}")
+            code = "sp-fold-unknown-stray"
+        out.emit(args.json,
+                 {"ok": False, "code": code, "heading": args.fold, "strays": strays,
+                  "message": msg},
+                 f"error: {msg}")
+        return 2
+
+    new_text, host = fold_stray_heading(info, hit)
+    if host is None:
+        msg = (f"`## {hit}` has no canonical section before it — there is nothing to fold it "
+               "into, and picking a host would invent an owner for the text")
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-fold-no-anchor", "heading": hit, "message": msg},
+                 f"error: {msg}")
+        return 2
+
+    backend.write_spec(info, new_text)
+    out.emit(args.json,
+             {"ok": True, "slug": info["slug"], "heading": hit, "action": "folded",
+              "host": host, "path": display_locator(info["path"], root)},
+             f"folded ## {hit} into ## {host} in {info['phase']}/{info['file']}")
+    return 0
+
+
 def cmd_section(args, root: str, out: Emitter) -> int:
     """Deterministic partial read/write of N sections — what makes lean agent context real.
 
@@ -88,6 +151,8 @@ def cmd_section(args, root: str, out: Emitter) -> int:
     info, err = read_one(backend, args.spec, out)
     if err:
         return out.emit_err(args.json, err)
+    if getattr(args, "fold", None):
+        return _fold_stray(args, backend, info, root, out)
     if args.moment:
         wanted = headings_for_moment(args.moment)
         if not wanted:
