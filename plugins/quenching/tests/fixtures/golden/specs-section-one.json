@@ -11,5 +11,6 @@
       "body": "\nThe loader and the renderer each keep their own copy of the widget list, so a widget added to\none is invisible to the other.\n"
     }
   ],
-  "absent": []
+  "absent": [],
+  "scope": null
 }

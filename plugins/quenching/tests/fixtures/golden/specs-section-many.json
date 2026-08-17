@@ -13,5 +13,6 @@
       "body": "\n- ACCEPTED — a third reader could appear and skip the registry; nothing enforces it yet.\n"
     }
   ],
-  "absent": []
+  "absent": [],
+  "scope": null
 }
