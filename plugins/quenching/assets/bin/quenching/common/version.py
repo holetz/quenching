@@ -3,4 +3,4 @@
 Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
-VERSION = "6.2.0"  # kept in lockstep with the plugin VERSION file, plugin.json and marketplace.json
+VERSION = "6.3.0"  # kept in lockstep with the plugin VERSION file, plugin.json and marketplace.json
