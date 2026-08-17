@@ -372,16 +372,9 @@ def infer_base_branch(cfg: dict, origin_head: str | None, init_default: str | No
     record is absent, and the caller's own git facts (`origin_head`, `init_default`)
     already resolved: this function decides only the ORDER, never runs git itself.
 
-    A DECLARED `integrationBranch` must win over `origin_head`. Under the develop/main
-    flow (/.knowledge/standards/git/branching.md) `origin/HEAD` resolves to `main` — the
-    PUBLICATION branch — so falling through to it by default would merge an unstamped
-    spec into the one branch that must only ever receive a deliberate release. Left
-    undeclared, this function changes nothing: most repositories have no `develop`
-    branch at all, and defaulting to one that does not exist would break them the
-    moment a spec started with no `branch` record."""
-    declared = cfg.get("integrationBranch")
-    if declared:
-        return declared
+    `origin/HEAD` leads: under the PR-on-the-primary flow it resolves to the branch the
+    repository publishes to, which is where an unstamped spec's work belongs. `cfg` is
+    kept for the callers that pass it; no declared key enters the chain any more."""
     if origin_head:
         return origin_head
     if init_default:
