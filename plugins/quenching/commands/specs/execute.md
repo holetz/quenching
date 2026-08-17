@@ -304,7 +304,10 @@ e. **Then run verify, tick and commit as ONE chained call.** Decide the subject 
    verify precedes the tick, the tick precedes the commit so the box travels *inside* the commit
    that implements it, and any link failing short-circuits every link after it. Run `verify:` only
    when the spec's declared policy says this task is a gate ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
-   §The verification policy); otherwise the chain starts at `cq specs task`. A `branch:` record
+   §The verification policy); otherwise the chain starts at `cq specs task`. A task with
+   **no `files:` declared** — the line absent, or `files: []` — has no diff to commit, so its
+   chain *ends* at the tick, run without `--subject` and with neither `git add` nor `git commit`;
+   a subject recorded there would point at a commit that was never made. A `branch:` record
    also gets the branch marked, per the rule loaded in 5d.
 
 f. **Read the chain's tail, and act on which link broke** — per §The commit, already loaded in
