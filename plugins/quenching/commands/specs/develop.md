@@ -97,7 +97,7 @@ is the multiplier — not the size of any one turn. Three points of the workflow
 | --- | --- |
 | steps 1+2 | `cq specs status --spec <slug> --json`, which also carries the `path` step 1 announces. Only a slug that must be *chosen* splits this: `cq specs list --json` runs first, because the question depends on its output |
 | step 3b | the bank's own section and the spec sections it reads — `cq components read` and `cq specs section` together, never one call per source |
-| step 6 | the entire application — the section write, every `cq specs discover` line, every `cq specs record`, `cq specs verification`, and the closing `cq specs validate` (plus `cq specs parallel` where `## Tasks` moved) |
+| step 6 | the entire application — the section write, every `cq specs discover` line, every `cq specs record`, `cq specs verification`, `cq specs summary`, and the closing `cq specs validate` (plus `cq specs parallel` where `## Tasks` moved) |
 
 A call splits only where the next command's **input** depends on the previous one's output. Splitting
 for tidiness, or to report progress between two commands, buys nothing and is paid by every turn
@@ -297,7 +297,16 @@ editing the frontmatter**, which merges nothing and works only while the backend
 | `refined: {mode, date}` | the adversarial or gate bank ran | `cq specs record <slug> refined --set mode=<per questions.md §Recording the pass> --set date=<today>` |
 | `approved: {date}` | the human said go in the approval bank | `cq specs record <slug> approved --set date=<today>` |
 | `verification` | the gate bank settled the policy | `cq specs verification <slug> <per-task\|per-section\|end-of-plan>` |
+| `summary` | **every bank**, in the same edit that refreshes `## Overview` | `cq specs summary <slug> "<one line>"` |
 | `complexity` (in `priority`) | the plan proposed a re-evaluation, and the human approved it | `cq specs record <slug> priority --set complexity=<level> --set date=<today>` |
+
+`summary:` is the one line every ranked listing prints (`cq specs next --front --table`), and it
+is the only field here that **every** bank owes: a bank that changed what the spec is has
+invalidated it, exactly as it invalidated `## Overview`. Refresh it last, with the Overview, for
+the same reason — it can only be right once the sections it compresses have settled. Say what the
+spec IS and why it matters, in one line, never what it will do to the codebase; the ranked table
+falls back to `title:` where none is written and reports how many rows did, so an unwritten
+`summary:` is visible rather than silent.
 
 `verification` is a plain frontmatter key rather than a record, which is why it has a verb of its
 own instead of a `--set`. **It is written through that verb and never by editing the frontmatter**
