@@ -74,15 +74,11 @@ class Base(RepoCase):
         _run(self.repo, "config", "init.defaultBranch", "trunk")
         self.assertEqual(_init_default_branch(self.repo), "trunk")
 
-    def test_declared_integration_branch_wins_ahead_of_origin_head(self):
+    def test_origin_head_resolves_as_base_when_nothing_declared(self):
         _run(self.repo, "update-ref", "refs/remotes/origin/main", "HEAD")
         _run(self.repo, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main")
-        os.makedirs(os.path.join(self.repo, ".claude"))
-        with open(os.path.join(self.repo, ".claude", "quenching.json"), "w",
-                 encoding="utf-8") as f:
-            f.write('{"integrationBranch": "develop"}')
         base, _is_default = resolve_base(self.repo)
-        self.assertEqual(base, "develop")
+        self.assertEqual(base, "main")
 
     def test_origin_head_symbolic_ref_resolves_to_the_branch_name(self):
         self.assertIsNone(_origin_head_branch(self.repo))
