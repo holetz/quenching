@@ -218,6 +218,20 @@ link: **report it as a finding and write nothing.**
 With no git in the repo there is nothing to anchor to: tick the box without `--subject` and say so
 once in the report, rather than inventing a placeholder.
 
+**A task with no `files:` declared** — the line absent, or written `files: []` — is the same rule one
+level down: it produces no diff of its own, so there is no commit to anchor to and no subject to
+record. Its chain ends at the tick:
+
+```bash
+<the task's verify:> && cq specs task --check <id> --spec "<slug>"
+```
+
+— no `--subject`, no `git add`, no `git commit`. The box still ticks. Where the backend keeps the
+spec in the tree, that tick rides along in the next task's commit or in the section's squash; under
+an external backend it was never a local diff at all. Passing `--subject` here would write a
+`subject:` onto the task line that `git log --grep` can never resolve, which is exactly the
+placeholder the paragraph above refuses.
+
 ## The section squash
 
 <!-- rules -->
