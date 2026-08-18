@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: /.knowledge/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-08-11
+timestamp: 2026-08-18
 audience: both
 authority: current
 source: quenching skeleton
@@ -240,6 +240,13 @@ sentence, and **link out** rather than explaining in full here.
   form was chosen for. **Silence is not a default of `en`**; a repo that declares nothing is under no
   constraint, and adoption is opt-in per repo. Nothing machine-checks it, so `/quenching:components:harness:align` classing
   the line **KEEP** is the only thing between it and a silent deletion.
+- [**Mapa de dependências**](../standards/automation/dependency-sweep.md) — a tabela que a
+  **Varredura de dependências** devolve, escrita pelo orquestrador em `### Mapa de dependências`
+  sob o `## Design` da própria spec e **datada**: nomeia cada arquivo que a área da proposta toca
+  ou pela qual é tocada, e o que quebra ou fica órfão se ela mudar. Vive na spec — não no contexto
+  da sessão — para que os bancos seguintes o leiam de graça em vez de re-varrer, e para que o
+  humano o veja na issue. A data existe porque uma spec cujo escopo mudou depois nunca é
+  re-varrida, e sem ela o mapa envelheceria em silêncio.
 - [**Merge record**](../standards/workflows/plan-git-record.md) — the
   `merge: {strategy, subject, pr}` frontmatter entry stamped by `/quenching:specs:conclude`, write-once,
   **on the work branch before the merge** — which is what makes the merge that command's last
@@ -527,6 +534,15 @@ sentence, and **link out** rather than explaining in full here.
   assumed: the field also makes the command unreachable **by name** through the Skill tool, so
   putting it on a stage another body invokes leaves that stage silently inert (`sk-inert-stage`,
   error). The complement is a **Routed command**.
+- [**Varredura de dependências**](../standards/automation/dependency-sweep.md) — a leitura
+  read-only por sub-agente que o `/quenching:specs:develop` roda **antes** de o banco perguntar,
+  para que a pergunta certa tenha com que ser respondida; dispara ao selecionar o banco *shape*, e
+  na primeira entrada do banco *adversarial* para a spec que nasceu já `proposed` e nunca foi
+  varrida. Cada spec é varrida **no máximo uma vez**, e nunca por ter cruzado um nível de
+  `complexity` — uma spec parece pequena exatamente enquanto ninguém leu suas dependências. Roda
+  sob o perfil de ferramentas **mais largo** dos três sub-agentes do comando (tudo menos `Edit`,
+  `Write`, `NotebookEdit` e `Agent`, com `Bash`), porque o entregável é o agregado que um
+  `grep`/`gh`/`cq` produz. Devolve o **Mapa de dependências** e não toca em nada.
 - [**Verification policy**](../standards/workflows/task-execution.md) — the per-spec declaration
   (`per-task`, `per-section`, `end-of-plan`) written at creation that decides when a task's
   `verify:` command runs, so execution never guesses and never asks mid-task.
