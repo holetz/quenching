@@ -4,10 +4,10 @@ title: Citation verification
 description: How citation-check.sh proves a citation resolves against the base it claims — half 1 that the old name died and half 2 that the new name was born, blind and with no allowlist, and half 3 that the prose the plugin SHIPS promises only what the published skeleton delivers, since a command body and a reference are read inside a target checkout where our standards do not exist — the three scope rules read from the script's own header (the instrument does not measure itself, .specs/ is out of scope, golden/eval fixtures are frozen data), the spelling rule half 3 rests on (a markdown link promises a destination, a bare inline-code path names a doc the target may not have), that it runs manually and is documented rather than gated automatically (Open Decision 2, with a second real use case as the trigger to revisit), and why the "every red is a harness defect" precedent stays scoped to functional-checks.sh alone until citation-check.sh earns its own evidence (Open Decision 3, opportunistic)
 resource: plugins/quenching/assets/checks/citation-check.sh
 tags: [quality, verification, citations, automation]
-timestamp: 2026-08-17
+timestamp: 2026-08-18
 audience: both
 authority: current
-source: revisar-politica-de-assets-checks spec (task 1.1); references-citam-standards-fora-do-esqueleto spec (task 1.2, half 3); citation-check-dedup-esconde-citadores-repetidos spec (task 2.1, a granularidade do relatório de half 2)
+source: revisar-politica-de-assets-checks spec (task 1.1); references-citam-standards-fora-do-esqueleto spec (task 1.2, half 3); citation-check-dedup-esconde-citadores-repetidos spec (task 2.1, a granularidade do relatório de half 2); the second real use case for half 3 and the widened trigger set, by varredura-de-dependencias-antes-do-banco-shape at its branch review (2026-08-18), on four links to a standard that spec had just minted
 maintainer: quenching
 ---
 
@@ -120,14 +120,28 @@ Decision 2 of the spec that wrote this standard). Unlike `functional-checks.sh`
 ([surface-verification.md](surface-verification.md) §The harness belongs to the components
 front), `citation-check.sh` is not wired into `/quenching:components:align`, into
 `/quenching:specs:conclude`'s merge gate, or into any spec's `## Validation`. It is run by hand,
-from the repo root, when a rename or a repo-wide restructuring makes half-finished citations
-plausible — a precedent this repository already has one of
-(`modularizar-specs-knowledge-components`, the spec that wrote the script).
+from the repo root, when a change makes half-finished citations plausible.
 
-**The trigger to revisit this decision is a second real use case**, not a schedule. One dated
-manual invocation is a data point, not a pattern; automating on the strength of a single run would
-be exactly the kind of unmeasured generalization §Scoped, not general below refuses to make about
-the harness's own failure history.
+**Two shapes of change do, and they are not the same shape.** The first is a **rename or a
+repo-wide restructuring**, which halves 1 and 2 were built for — the precedent this repository
+started with (`modularizar-specs-knowledge-components`, the spec that wrote the script,
+2026-08-11). The second is **minting a `/.knowledge/standards/` doc and citing it from shipped
+prose**: no rename, no restructuring, and structurally invisible to halves 1 and 2, because the
+link resolves perfectly *here*. Only half 3 sees it — and it is what a spec that writes a standard
+produces **by default**, since the natural way to cite a rule you just wrote is a markdown link to
+where you wrote it. Measured on `varredura-de-dependencias-antes-do-banco-shape`, whose branch
+review found four such links across `commands/specs/develop.md` and
+`assets/references/specs-develop/questions.md` (2026-08-18).
+
+**The trigger to revisit the manual decision has therefore arrived — and the decision has not been
+retaken here.** Two dated cases establish *when* the script is needed, not yet where it should be
+wired; both were found by a human choosing to run it at a moment they could name, neither by a
+schedule that had to catch them. Automating on this much would still be the unmeasured
+generalization §Scoped, not general below refuses to make about the harness's own failure history.
+
+What the second case does settle is **who** needs it: the author who mints a standard and cites it
+from `commands/**` or `assets/references/**` is the one producing the defect, in the same pass, and
+half 3 is the only instrument that can tell them.
 
 ## Scoped, not general: the "every red is a harness defect" rule does not extend here
 
