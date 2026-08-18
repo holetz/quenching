@@ -67,8 +67,10 @@ Runs **after** the archive move succeeds, as the command's distillation step:
    **remaining** candidate as *one line*: what it is → proposed home + `type` + path (per the table
    above). Expect **zero to a few** — a spec that captured its rules as it went, and taught nothing
    else durable, is normal; say so and skip to done.
-2. **One plan, one OK.** Present the candidate list as a single distillation plan and ask one
-   confirmation. The user may strike items. If the OKF bundle is missing (no `knowledge/index.md` with
+2. **One plan, one OK — taken with the others, not on its own.** The candidate list is one question
+   of `/quenching:specs:conclude`'s single screen (its §Four decisions, one screen), presented
+   whole and answered once. The user may strike items, and a struck item is named in the terminal
+   report rather than dropped silently. If the OKF bundle is missing (no `knowledge/index.md` with
    `okf_version`), offer `/quenching:knowledge:align` first, or skip distillation entirely — never scaffold ad hoc.
 3. **Mint each approved doc** under the insert procedure
    ([homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)): fill the home's mold, stamp the
@@ -99,7 +101,8 @@ to it. Any third exception should be argued for, not assumed from these two.
 - **Never delete or revise** the archived spec while distilling — the archive is history. The one
   write permitted here is step 4's append to `## Outcome`, which records what the distillation
   produced and changes nothing the spec claimed.
-- **Never mint without the one confirmation**, and never fabricate a candidate to have something
-  to distill: an empty harvest is a valid outcome.
+- **Never mint without the one confirmation** — which is taken on the conclude screen that carries
+  it, never re-asked here — and never fabricate a candidate to have something to distill: an empty
+  harvest is a valid outcome, and an empty list is not a question at all.
 - A distilled `standard` claims `authority: current` **only** when the spec actually implemented
   and proved it; otherwise stamp `authority: background`.

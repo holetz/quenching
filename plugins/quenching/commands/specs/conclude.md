@@ -1,5 +1,5 @@
 ---
-description: Close ONE spec out — review the whole branch, write the /.knowledge/ the work revealed, archive, distil, prove the pre-merge gate green — and stop, handing off to /quenching:git:pr:create or /quenching:git:merge. Triggers on "conclude this spec", "close it out", "wrap up the plan", "review the branch", "archive this spec", "abandon this spec", "it will not be built". Everything lands on the work branch; nothing is ever committed to the base by this command. Settles pre-merge release obligations. Resumable: the reviewed and outcome records plus git say which stages already ran. Archiving as done refuses while boxes are open unless forced; abandoned is always allowed and distils at most a background note. Never infers the outcome or treats staleness as abandonment. Not for: building a spec's tasks → /quenching:specs:execute; sharpening or interrogating one → /quenching:specs:develop; creating one → /quenching:specs:create; taking a branch or worktree → /quenching:git:branch; the merge or the PR route → /quenching:git:merge, /quenching:git:pr:create; ranking the whole front → /quenching:specs:triage.
+description: Close ONE spec out — review the whole branch, write the /.knowledge/ the work revealed, archive, distil, prove the pre-merge gate green — and stop, handing off to /quenching:git:pr:create or /quenching:git:merge. Triggers on "conclude this spec", "close it out", "wrap up the plan", "review the branch", "archive this spec", "abandon this spec", "it will not be built". Everything lands on the work branch; nothing is ever committed to the base. Settles pre-merge release obligations. Every box ticked derives done and says so; anything else asks, and abandoned is only ever the human's word, never read off staleness. One screen takes the review, the docs and the harvest together. Not for: building a spec's tasks → /quenching:specs:execute; sharpening or interrogating one → /quenching:specs:develop; creating one → /quenching:specs:create; taking a branch or worktree → /quenching:git:branch; the merge or the PR route → /quenching:git:merge, /quenching:git:pr:create; ranking the whole front → /quenching:specs:triage.
 argument-hint: [slug] [--outcome done|abandoned]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Skill
 model: opus
@@ -37,6 +37,23 @@ a run that died after task nine had to redo tasks one through eight to reach the
 records the human judgments (`reviewed`, `outcome`); git and the filesystem record everything else.
 A second call reads both and skips what already happened — see §Resuming.
 
+**Four decisions, one screen.** The evidence for everything this run decides is in hand the moment
+the branch diff has been read: which findings to fix, which `/.knowledge/` the work revealed, what
+the harvest carries, and what a standard attaches to the merge. They are therefore asked **once**,
+in a single **AskUserQuestion**, under
+[specs-develop/questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md)
+§1. Grouped by dependency — a question travels with the ones whose answers cannot change it, up to
+the harness cap of four per call. The **writes** still happen in the order the workflow below
+states; only the asking is gathered. Asked one at a time they cost a full round trip per
+ratification and showed the human nothing a single screen does not.
+
+**Invoked as a stage, the screen goes too.** This command carries
+[align/convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
+§The cycle-authorization contract: a run declared under an align's or a conductor's authorization
+presents step 2's screen as **narration** and executes it, never asking. What still stops the run
+in every mode is what no authorization covers — the outcome question when the boxes are not all
+ticked, a `promote` refusal, a red `## Validation` gate, and a check that came back inconclusive.
+
 The distillation doctrine — what crosses into `/.knowledge/`, what stays, and how it is graded — lives in
 [specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)
 §What crosses, what stays. The layout, the gates and the
@@ -59,13 +76,19 @@ repo's own checks to prove the pre-merge gate. Its read-only siblings are scoped
 
 ## Doctrine
 
-- **The outcome is stated, never inferred.** `done` and `abandoned` are opposite claims about the
-  same file, and nothing — not task progress, not staleness, not a sweep — may decide which was
-  meant. If the human has not said, ask.
+- **`done` is derived from the boxes; `abandoned` is only ever the human's word.** Every box
+  ticked and none blocked derives `done` — **announced rather than asked**, because the derivation
+  cannot produce a claim the tool would accept if it were false (next bullet). Anything else — an
+  open box, a `- [!]` box, a spec carrying no tasks at all — **is asked**, and that question is
+  where abandonment lives. An `--outcome` given in the input always wins over the derivation.
+  What is never derived is the opposite claim: no count of ticked boxes, and no `--force`, makes
+  `abandoned` true without the human saying it.
 - **Concluding as `done` refuses to lie.** Open `- [ ]` boxes with `--outcome done` is exit 2 with
   the list. That refusal is the point: a spec archived as done with half its boxes unticked is a
   green checkbox over work nobody did. `--force` exists for the case where the human knows why —
-  the work was descoped, or proven elsewhere — and says so.
+  the work was descoped, or proven elsewhere — and says so. **This refusal is also what makes the
+  derivation above safe**: a derivation that got `done` wrong would have to get past `cq specs
+  promote`'s own exit 2 to land, and it cannot.
 - **Abandoning is always allowed.** Open tasks are precisely what you expect when closing out work
   that will not be built, so `--outcome abandoned` never refuses and never needs `--force`.
 - **`done` distils; `abandoned` does not.** Concluding as done mints by-products into `/.knowledge/` as
@@ -117,7 +140,7 @@ that read happens from the base checkout (Doctrine), never wherever this run sta
 
 ## Workflow
 
-### 1. Resolve the spec, the outcome, and what already happened
+### 1. Resolve the spec, derive the outcome, and get the branch onto the base
 A slug in the input → use it. **No slug given → try auto-discovery first**, off the current
 branch's own marking:
 [auto-discover.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/auto-discover.md)
@@ -127,39 +150,85 @@ which, via **AskUserQuestion**. No valid marking → §The fallback there measur
 asks whether to materialize a minimal spec — accepted, its new slug is used from here on exactly
 like a marked one. **Declined, headless completion — closing with no spec file at all — is not yet
 built**: say so, record it with `cq specs discover`, and fall back to `cq specs list --json` and
-ask, exactly as before this spec. Establish the outcome — **ask if it was not stated**, via
-**AskUserQuestion**: *done* (it shipped) or *abandoned* (it will not be built).
+ask, exactly as before this spec.
 ```bash
 cq specs status --spec "<slug>" --json
 ```
 Read task progress, the `## Outcome` state, and the records — `branch`, `reviewed`, `merge`, `pr`,
 `outcome` — from that payload. Then, for the `## Discoveries` lines themselves, the one body this
-step needs: `cq specs section "<slug>" Discoveries --json`. Then read git: the
-current branch, whether the work branch exists, and whether it is already merged. Announce the
-outcome and, per §Resuming, which stages this run will actually perform.
+step needs: `cq specs section "<slug>" Discoveries --json`. Then read git: the current branch,
+whether the work branch exists, and whether it is already merged.
 
-Open tasks under a `done` outcome are surfaced **now**, before anything is written, so the human
-can choose between finishing them, forcing, or switching to `abandoned`.
-**Done when:** one spec, one outcome, and the list of stages still to run are all settled.
+**Derive the outcome from `tasks` in that same payload** — no extra call, and no question in the
+ordinary case:
 
-### 2. Review the whole branch diff
+| `tasks` says | Outcome | How it is settled |
+| --- | --- | --- |
+| `total > 0` and `checked == total` and `blocked == 0` | `done` | **derived — announce it, do not ask.** Name the count that decided it |
+| an open box, a `blocked` box, or `total == 0` | unknown | **ask, via AskUserQuestion**: finish the open boxes first, archive `done` anyway with `--force` and the reason, or `abandoned` |
+| `--outcome` was given in the input | that value | it outranks the derivation, both ways |
+
+The derivation is safe because it cannot land a false claim: `cq specs promote` refuses `done` over
+an open box on its own (Doctrine). `abandoned` is never derived from anything. Announce the outcome
+naming what settled it — the derivation and its count, the input's `--outcome`, or the answer — and,
+per §Resuming, which stages this run will actually perform.
+
+**Then get the branch onto its base, before step 2 reads a diff.** The gate in step 6 grades the
+branch, so the branch must already carry the base — and the *review* has the same interest, since a
+diff read against a stale base is a reading of a tree nobody will merge:
+
+```bash
+git rev-list --count plan/<slug>..<base>      # commits on the base the branch does not have
+```
+
+Non-zero → **say so, naming the count, and settle it here**. Bringing the branch up to date is a
+write and which way is the human's call — `/quenching:git:sync`'s rebase, which carries the recorded
+task subjects through the rewrite, or merging the base in. **Reading the diff anyway is not on the
+menu**, and neither is running step 6's gate over it: both would be verdicts about a tree that is
+not the one being merged (Invariants). Zero → say so in one line and carry on.
+**Done when:** one spec, one outcome, a branch that carries its base, and the list of stages still
+to run are all settled.
+
+### 2. Review the whole branch diff, and take the one screen
 ```bash
 git diff <base>...HEAD          # <base> is the branch record's `base`
 ```
+**Whether there is a diff at all is `branch.work != branch.base`, never the record's presence** —
+in-place work stamps one too (`/.knowledge/standards/workflows/plan-git-record.md` §Three frontmatter
+records carry the underivable git facts). No record, `work` equal to `base`, or no git → say so and
+skip to step 4; there is no branch diff to read, and no screen to take.
+
 This is a different thing at a different scale from execute's per-task self-review, and does not
 replace it: that one asks four cheap questions of one task's diff, this one reads the whole change
 for **coherence** — two tasks that solved the same problem differently, an abstraction that wanted
 extracting once the third caller appeared, a `## Impact` path nothing ever wrote, a standard the
 diff contradicts.
 
-Present the findings. Fixes go in as ordinary commits on the branch, before the merge. Then stamp
-the record — `cq specs record "<slug>" reviewed --set date=<today>`, never by editing the
-frontmatter.
+**Gather every decision this run still owes before asking anything.** With the diff in hand, work
+all four out at once — they read the same evidence, and asking them one at a time buys nothing
+(§Four decisions, one screen):
 
-**The test is `branch.work != branch.base`, never the record's presence** — in-place work stamps
-one too (`/.knowledge/standards/workflows/plan-git-record.md` §Three frontmatter records carry the
-underivable git facts). No record, `work` equal to `base`, or no git → say so and skip to step 4;
-there is no branch diff to read.
+1. **The findings worth fixing** — one item per finding, each naming the instrument or the standard
+   behind it. Fixes go in as ordinary commits on the branch, before the merge.
+2. **The emergent `/.knowledge/`** — step 3's candidate list, decided by the table step 3 cites.
+3. **The harvest** — step 5's candidate list, decided by the same table at its other moment.
+4. **The release obligations** — step 5's second half, and a question **only** when a standard
+   actually requires something of the merge. Nothing required is not a question; it is one line in
+   the report.
+
+Present them as **ONE AskUserQuestion** — each question a multiSelect over its own list, recommended
+items first, the reasoning in each option's own description rather than in a turn of prose in front
+of it. Questions 2 and 3 are kept independent by construction: **compute 3's list as though every
+item in 2 were accepted**, and report an item the human strikes from 2 as an unresolved discovery in
+step 7 rather than silently promoting it into the harvest. **A list with no candidates is not
+asked** — say it is empty and drop the question; four empty lists means no screen at all.
+
+Under an authorization (§Invoked as a stage) the same four are presented as narration and executed.
+
+Then apply what was taken, commit it, and stamp the record — `cq specs record "<slug>" reviewed
+--set date=<today>`, never by editing the frontmatter. **Nothing below this point asks again**: the
+steps that follow write what this screen already settled, in the order they state.
+
 **Done when:** the diff was read and `reviewed` is stamped, or the run recorded why there was
 nothing to review.
 
@@ -173,15 +242,18 @@ Decide what crosses with the table in
 §What crosses, what stays; write each through the insert procedure in
 [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)
 §The frontmatter stamp §Updating `index.md` §Enriching the glossary §Self-check, stamping
-`authority` honestly. Present them as ONE plan and take one confirmation.
+`authority` honestly. **The list was settled by step 2's screen (question 2) — write what it kept
+and nothing else.** An item the human struck is carried to step 7 as an unresolved discovery.
 
 These land on the branch, in their own commit — or, for `abandoned`, the base checkout (Doctrine).
 A `## Discoveries` line that gets a doc is resolved in place. No OKF bundle → skip silently.
-**Done when:** the emergent docs are written and committed, or the offer was declined, or there is
-no bundle.
+**Done when:** the docs step 2's screen kept are written and committed, or it kept none, or there
+is no bundle.
 
 ### 4. Write `## Outcome` and archive
-`## Outcome` is the archive gate — the spec cannot move without it. Draft it, confirm it, write it:
+`## Outcome` is the archive gate — the spec cannot move without it. **It is composed, never asked**:
+what it asserts is what step 2's screen already settled and steps 2 and 3 already wrote. Draft it
+from those facts and write it, then move the spec:
 ```bash
 cq specs section "<slug>" Outcome --write     # body on stdin
 cq specs promote "<slug>" --to archive --outcome done|abandoned [--force]
@@ -204,7 +276,8 @@ This is the last writing step, and everything it writes lands on the **work bran
 
 **First, the distillation pass** — the single bridge into `/.knowledge/`, per
 [distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)
-§The procedure (one confirmation), **branching on the outcome**:
+§The procedure, whose one confirmation was taken as question 3 of step 2's screen,
+**branching on the outcome**:
 
 - **`done`** — the full pass over what is *left*: a decision still sitting in `## Design`, a generic
   understanding, a term the spec coined, a follow-up worth its own spec. Most of the harvest was
@@ -213,7 +286,7 @@ This is the last writing step, and everything it writes lands on the **work bran
   `authority: background`. Never mint a decision the spec *would* have made. Most abandonments
   distil nothing, and that is the correct result.
 
-One plan, one OK. Every write goes through
+Write what the screen kept. Every write goes through
 [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)
 §The frontmatter stamp §Updating `index.md` §Enriching the glossary §Self-check. No bundle → skip
 silently, landing per Doctrine: the work branch for `done`, the base checkout for `abandoned`.
@@ -227,14 +300,14 @@ artifacts a standard says must move together, a changelog entry, a manifest re-s
 only correct moment for it: the whole branch is written, so what the release *is* is knowable.
 
 Nothing is invented. A repo whose standards attach nothing to a merge gets nothing, silently, and
-so does a repo with no bundle. What a standard *does* require is presented as ONE plan with the
-standard quoted, taken on one confirmation, and committed on the branch. A requirement the diff
+so does a repo with no bundle. What a standard *does* require was question 4 of step 2's screen,
+with the standard quoted there; apply what it kept and commit it on the branch. A requirement the diff
 already satisfies is reported as already done, never redone.
 
 For `abandoned`, **no release obligation is settled** — a version nobody adopted is a claim the
 history should not carry. The distillation above still runs.
-**Done when:** the distillation offer was made and applied or declined, and the release obligations
-were applied, reported as already satisfied, or reported as none.
+**Done when:** what the screen kept of the harvest is applied, and the release obligations were
+applied, reported as already satisfied, or reported as none.
 
 ### 6. Prove the gate green, then hand off
 Nothing after this point writes anything — the last commit this run makes is step 5's.
@@ -258,19 +331,12 @@ behind it that a later run cannot re-derive: `## Outcome` and the archive move a
 step 4, on the branch, and a red gate found here is reported and fixed on that same branch before
 anyone hands off toward a merge.
 
-**The gate grades the branch, so the branch must already carry the base.** If the base moved since
-the branch was cut, the merge produces a tree *neither* side ever validated, and a green gate says
-nothing about it:
-
-```bash
-git rev-list --count plan/<slug>..<base>      # commits on the base the branch does not have
-```
-
-Non-zero → **say so and stop before the gate**, naming the count. Bringing the branch up to date is
-a write, and it is the human's call which way — merging the base in, or `/quenching:git:sync`'s own
-rebase, which carries the recorded task subjects through the rewrite. Never do it unasked, and
-never run the gate over a branch you know is behind: that is a verdict about a tree that is not
-being merged.
+**The gate grades the branch, so the branch must already carry the base** — settled back in step 1,
+before the diff was read, precisely so that no decision taken since was taken over the wrong tree.
+Re-check the count is still zero here, since step 5's own commits cannot move it but a base that
+advanced during the run can. Non-zero → **say so and stop before the gate**, naming the count, and
+settle it exactly as step 1 does. A gate run over a branch known to be behind is a verdict about a
+tree that is not being merged.
 
 **An inconclusive result is not a green one.** A check that cannot tell "this failed" from "this
 could not be measured" has returned no verdict — say which it was, and ask, rather than merging on
@@ -321,7 +387,10 @@ body blocks:
    passed**.
 3. **Unresolved `## Discoveries`** — optional, each line named. They are
    `/quenching:specs:develop`'s discoveries bank to close, and they are easiest to lose at exactly
-   this moment.
+   this moment. **Every item the human struck from step 2's screen is named here too**, with which
+   question it came from: a candidate the one screen offered and the human declined has nowhere
+   else left to be recorded, and dropping it silently is how a consolidated ask would lose what
+   four separate ones could not.
 
 Close on §The next-step block, its recommended line naming step 6's handoff — `/quenching:git:pr:create`
 or `/quenching:git:merge`, whichever was recommended, or `/quenching:specs:develop <slug>` when
@@ -331,8 +400,15 @@ reported.
 
 ## Invariants to never violate
 
-- Never infer the outcome. `done` and `abandoned` are the human's word, always.
+- Never derive `abandoned`. `done` derives from every box being ticked and none blocked; the
+  opposite claim is the human's word, always, and an `--outcome` in the input outranks either.
 - Never treat staleness as evidence of abandonment.
+- **Never let the one screen swallow what four separate asks could not lose.** Every candidate the
+  human strikes is named in step 7's report; a consolidated ask that drops a declined item silently
+  has traded the human's sight for the turn it saved.
+- **Never put two questions on the screen when one answer would move the other.** The rule is
+  `questions.md` §1's and outranks any turn count; where the coupling is real, make the questions
+  independent first (step 2's construction) or ask them apart.
 - Never pass `--force` unprompted — a refusal is information, not an obstacle.
 - Never hand off an abandoned spec's branch toward a merge — offer to keep or delete it instead.
 - **Never `git branch -D`, at all**, when framing the abandoned branch-delete offer — git's own
