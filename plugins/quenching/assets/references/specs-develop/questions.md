@@ -149,10 +149,10 @@ bank has a claim to attack.
 **Shape.** Sequential (§1) — what is actually wrong decides which shapes are worth tabling at all.
 
 **Where the questions come from.** The dependency sweep first: selecting this bank triggers the
-mandatory sweep of [dependency-sweep.md](/.knowledge/standards/automation/dependency-sweep.md),
-and its map lands in `### Mapa de dependências` under `## Design` — written by the orchestrator,
-never the sub-agent — before anything below is asked. Then the problem statement itself, read
-against the codebase. Ask about, roughly in this order:
+mandatory sweep of §Gathering the evidence below, whose map lands in `### Mapa de dependências`
+under `## Design` — written by the orchestrator, never the sub-agent — before anything below is
+asked. Then the problem statement itself, read against the codebase. Ask about, roughly in this
+order:
 
 - **What is actually wrong.** Is the `## Problem` describing a symptom or a cause? What does the
   code do today — read it, do not theorize.
@@ -187,10 +187,9 @@ disagreement the gate never requires: nothing about filling sections forces anyo
 
 **The dependency sweep's second trigger.** A spec that reached this bank already `proposed` —
 born with `## Proposal` filled — and never swept gets the same mandatory sweep here, on first
-entry, before any lens below runs: the closed path
-[dependency-sweep.md](/.knowledge/standards/automation/dependency-sweep.md) exists to cover, so a
-spec born past the shape bank is never argued over without a map either. Its result lands in the
-same `### Mapa de dependências` under `## Design`, written by the orchestrator.
+entry, before any lens below runs: it is the closed path §Gathering the evidence exists to cover,
+so a spec born past the shape bank is never argued over without a map either. Its result lands in
+the same `### Mapa de dependências` under `## Design`, written by the orchestrator.
 
 It runs three lenses. Use the one the spec's own state argues for; a spec that deserves two gets
 two, in this order.
@@ -374,13 +373,16 @@ plugin's own references already address a section instead of a whole file.
 
 Three uses delegate that reading to a sub-agent, and they do not share one tool profile.
 
-**The dependency sweep** is the **shape** bank's own use, and the one mandatory reading of the
-three: a cross-file dependency map gathered before the bank asks anything, never in place of
-asking. Its trigger, what the map covers and where it lands are
-[dependency-sweep.md](/.knowledge/standards/automation/dependency-sweep.md)'s contract, not
-restated here. Its sub-agent runs the **wider** profile — read-only in full, everything but
-`Edit`, `Write`, `NotebookEdit` and `Agent`, `Bash` included — because a dependency map is exactly
-the aggregate a `grep`/`gh`/`cq` call produces, and the narrower profile below could not return it.
+**The dependency sweep** serves the **shape** bank, and by §Bank: adversarial's second trigger the
+**adversarial** one too — and it is the only mandatory reading of the three: a cross-file
+dependency map gathered before the bank asks anything, never in place of asking. It is asked for
+**one table** — every file the proposal's own area touches or is touched by, and what breaks or
+goes orphaned if it changes — which lands **dated** in `### Mapa de dependências` under
+`## Design`. A spec is swept **at most once**, and never for having crossed a `complexity` level: a
+spec looks small exactly while nobody has read its dependencies. Its sub-agent runs the **wider**
+profile — read-only in full, everything but `Edit`, `Write`, `NotebookEdit` and `Agent`, `Bash`
+included — because a dependency map is exactly the aggregate a `grep`/`gh`/`cq` call produces, and
+the narrower profile below could not return it.
 
 The **adversarial** and **gate** banks additionally ask questions that only a reading answers:
 which alternatives the codebase actually admits, which `knowledge/standards/` contract a task would
@@ -419,6 +421,10 @@ delegation here is never a cache play.
 What it *is* is the delegation test met exactly: the returned table is far smaller than the sweep
 that produced it, and the sweep's file reads stay out of the long context that the interrogation
 then pays for on **every** turn that follows.
+
+Why the dependency sweep exists at all, and the measurement that would graduate it, are recorded in
+`/.knowledge/standards/automation/dependency-sweep.md` — this plugin's own bundle, not a target's.
+Named bare because the rules above stand without it; every binding half is here.
 
 ## Recording the pass
 
