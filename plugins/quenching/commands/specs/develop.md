@@ -96,7 +96,7 @@ is the multiplier — not the size of any one turn. Three points of the workflow
 | Where | The one call |
 | --- | --- |
 | steps 1+2 | `cq specs status --spec <slug> --json`, which also carries the `path` step 1 announces. Only a slug that must be *chosen* splits this: `cq specs list --json` runs first, because the question depends on its output |
-| step 3b | the bank's own section and the spec sections it reads — `cq components read` and `cq specs section` together, never one call per source |
+| step 3b | the bank's own section and the spec sections it reads — `cq components read` and `cq specs section` together, never one call per source. For **shape** and **adversarial** the sweep's own profile and the `## Design` it checks ride these same two calls, so step 3c opens nothing |
 | step 6 | the entire application — the section write, every `cq specs discover` line, every `cq specs record`, `cq specs verification`, `cq specs summary`, and the closing `cq specs validate` (plus `cq specs parallel` where `## Tasks` moved) |
 
 A call splits only where the next command's **input** depends on the previous one's output. Splitting
@@ -167,13 +167,13 @@ commands together:
 
 ```bash
 cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md \
-  --sections "§Bank: <name>"
+  --sections "§Bank: <name>"          # + ",§Gathering the evidence" for shape and adversarial
 cq specs section <slug> "<Heading1>,<Heading2>,…"     # only the sections this bank reads or writes
 ```
 
 | Bank | Spec sections | `artifacts.md` (loaded at step 5) |
 | --- | --- | --- |
-| shape | `## Problem` | §The explicit-none rule §`## Overview` §The nine definition sections |
+| shape | `## Problem` `## Design` — the second only to let step 3c see whether a map is already there | §The explicit-none rule §`## Overview` §The nine definition sections |
 | adversarial | `## Problem` `## Proposal` `## Design` `## Alternatives Considered` `## Risks` | §The nine definition sections §`## Overview` |
 | gate | the headings `cq specs next --spec <slug> --json` reports, plus `## Impact` and `## Tasks` | §The explicit-none rule §The nine definition sections §`## Impact` §`## Tasks` §Execution metadata |
 | discoveries | `## Discoveries` | §`## Discoveries` and `## Outcome` |
@@ -184,33 +184,22 @@ cq specs section <slug> "<Heading1>,<Heading2>,…"     # only the sections this
 `/.knowledge/glossary.md`. Those two banks **may** delegate that reading to a read-only
 sub-agent under
 [questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §Gathering the
-evidence, which returns one compact table and keeps the file reads out of the context every later
-turn pays for. It is an option, not a step: for a two-file spec, keep the reading.
+evidence — already in hand for adversarial, from the call above — which returns one compact table
+and keeps the file reads out of the context every later turn pays for. It is an option, not a step:
+for a two-file spec, keep the reading.
 **Done when:** the bank's sections are in hand and nothing else was opened.
 
 ### 3c. Run the dependency sweep — shape and adversarial only
-Only the **shape** and **adversarial** banks reach this step — any other bank skips it whole. The
-trigger and what the map covers are
-[dependency-sweep.md](/.knowledge/standards/automation/dependency-sweep.md)'s own contract, not
-restated here.
+Only the **shape** and **adversarial** banks reach this step — any other bank skips it whole, and
+never loaded what it needs. **This step opens nothing**: step 3b's two calls already carry both
+the `## Design` it reads and the §Gathering the evidence that governs it, which is why the sweep
+costs no turn of its own.
 
-Check once, cheaply, whether this spec was already swept:
-
-```bash
-cq specs section <slug> "Design"
-```
-
-`### Mapa de dependências` present in the body → already swept; go straight to step 4. Absent →
-load the sub-agent's wider profile:
-
-```bash
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md \
-  --sections "§Gathering the evidence"
-```
-
-then dispatch one read-only `Task` sub-agent under that profile, briefed with whichever of
-`## Problem` / `## Proposal` is filled, asked for one table: every file the proposal's own area
-touches or is touched by, and what breaks or goes orphaned if it changes.
+`### Mapa de dependências` already in that `## Design` → this spec was swept; go straight to step
+4. Absent → dispatch one read-only `Task` sub-agent under the **wider** profile of §Gathering the
+evidence, briefed with whichever of `## Problem` / `## Proposal` is filled, asked for the one table
+that section names: every file the proposal's own area touches or is touched by, and what breaks or
+goes orphaned if it changes.
 
 **The orchestrator holds the result; the sub-agent never writes it.** The table waits for step 6's
 own consolidated write, landing as `### Mapa de dependências` under `## Design`, dated — never a
