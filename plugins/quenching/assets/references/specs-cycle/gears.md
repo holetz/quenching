@@ -89,9 +89,13 @@ plain reading.
 
 `complexity` is written by `triage`, `create` and `develop` — never silently: every write is
 proposed with the scale in front of the human and lands on a confirmation, under a record whose
-owner stays `triage`. The defining half derives its plan from this level before the build, when the
-sections that would evidence the size do not exist yet — which is why the field lives in
-frontmatter at all.
+owner stays `triage`. **`create` is the one exception to the ordering, never to the rule.** It
+writes the level it computed from the input BEFORE anyone sees it, because the spec does not exist
+yet for a confirmation to gate on — but the scale still reaches the human, on the capture's own
+closing screen, or on `/quenching:specs:develop`'s first pass over a spec nobody looked at. The
+proposal survives; only its position relative to the write moves. The defining half derives its
+plan from this level before the build, when the sections that would evidence the size do not exist
+yet — which is why the field lives in frontmatter at all.
 
 ## Re-evaluating a gear
 

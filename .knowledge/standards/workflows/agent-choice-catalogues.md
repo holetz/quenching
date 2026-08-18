@@ -31,16 +31,17 @@ rather than leaving it to be re-derived by whoever reads the third.
 
 Every instance is a map from an **abstract key** — a short, stable name a human never has to
 retype after choosing it once — to an object carrying at least a **`description`**, prose written
-for a reader that is not human: `/quenching:specs:create` reads it to judge which entry the input best fits,
-proposes a candidate, and a human confirms with one `AskUserQuestion`. `tagCatalog`'s shape is the
+for a reader that is not human: `/quenching:specs:create` reads it to judge which entry the input
+best fits, resolves a candidate and writes it with the capture, and a human confirms it on the
+screen that closes the capture — never before the write. `tagCatalog`'s shape is the
 degenerate case — the object collapses to a bare string, because a tag needs nothing beyond its
 own description — and it is still the same shape: a key, and prose an agent reads.
 
 | Catalogue | Key names | Extra fields beside `description` | Read by |
 | --- | --- | --- | --- |
-| `subjects` | a project area (`framework`, `gold`) | `name`, `parent`, `tags` | `/quenching:specs:create`'s subject proposal, every backend's `create_spec` |
-| `tagCatalog` | the tag itself | none — the value IS the description | `/quenching:specs:create`'s tag proposal |
-| `workItemTypes` | a nature of work (`incidente`, `tarefa`) | `azure`, `github`, `default` | `/quenching:specs:create`'s type proposal, `cq specs new --type`, every backend's `create_spec` |
+| `subjects` | a project area (`framework`, `gold`) | `name`, `parent`, `tags` | `/quenching:specs:create`'s subject resolution, every backend's `create_spec` |
+| `tagCatalog` | the tag itself | none — the value IS the description | `/quenching:specs:create`'s tag resolution |
+| `workItemTypes` | a nature of work (`incidente`, `tarefa`) | `azure`, `github`, `default` | `/quenching:specs:create`'s type resolution, `cq specs new --type`, every backend's `create_spec` |
 
 ## Why three arrived at the same answer independently
 
@@ -55,12 +56,19 @@ convention.
 
 ## The one invariant every consumer must keep
 
-**Never silently pick.** `/quenching:specs:create` proposes with `AskUserQuestion`, naming the candidate and
-its description, for all three catalogues alike — never a subject, tag or type chosen without the
-screen the human reads the reasoning on. A `default`/`defaultSubject` entry existing is not license
-to skip the confirmation: `cq specs new` falls back to it on its own once nothing was resolved, but
-the choice a human makes when authoring the spec is not the same fact as the fallback a tool
-applies when nobody did, and conflating them would remove the one point a human's judgment enters.
+**Never presume without showing.** `/quenching:specs:create` resolves all three catalogues before
+asking anyone anything, and writes the result with the spec's very first capture (`cq specs new`)
+— there is no locator, no text and nothing yet for a human to judge before that write exists. What
+this invariant forbids is not the presumption; it is a presumption that never surfaces. The
+confirmation is RELOCATED, never removed — the same figure
+[convergence.md](/plugins/quenching/assets/references/align/convergence.md) §The PR route argues
+for a review moved out of a gate and into the artifact that carries it: here it moves to the screen
+that closes the capture, which names every candidate and the one-line reason it was chosen, or —
+where nobody looks at that screen — to the first pass `/quenching:specs:develop` runs over a
+still-`captured` spec, which reviews `tags` and `complexity` on its own. A `default`/`defaultSubject`
+entry existing is not license to skip that later confirmation: the choice a human makes when
+authoring the spec is not the same fact as the fallback a tool applies when nobody did, and
+conflating them would remove the one point a human's judgment enters.
 
 This is also why **the description is prompt material, not documentation**
 ([plugin-configuration.md](plugin-configuration.md) §Three keys are prompt material argues the
