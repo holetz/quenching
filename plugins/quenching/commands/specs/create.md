@@ -1,10 +1,10 @@
 ---
 description: Capture or create a spec. Triggers on "convert to a spec", "add to the backlog", "create a spec". Not for: filling a spec's remaining sections or building one.
 argument-hint: [what to capture, or a path to a plan file]
-allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion
+allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion, Skill
 model: sonnet
 ---
-# /quenching:specs:create — capture one spec
+# /quenching:specs:create — capture one spec, one screen, one turn
 
 **Input**: `$ARGUMENTS` — a short description of the problem, **or** a path to a Claude Code plan
 file. With neither, glob `~/.claude/plans/*.md`; if that is empty too, ask what to capture.
@@ -18,7 +18,12 @@ The layout, the fourteen canonical sections, the gates, the front's on-write che
 `cq specs` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
 §The `specs/` layout §The fourteen sections §The gates and the stage-scoped explicit-none rule
-§The `cq specs` tool surface §The report mold, which owns the shape step 9 prints in.
+§The `cq specs` tool surface §The report mold, which owns the shape step 6's report prints in.
+
+**One screen, at the end, with the work already done.** Every field this command presumes —
+subject, type, tags, `complexity` — is resolved and WRITTEN before anyone is asked anything; the
+one human touchpoint is the closing screen (step 6), where what was written and what was presumed
+are both on the table, next to the one open question: develop it now, or stop here.
 
 ## The one rule: effort proportional to input
 
@@ -27,24 +32,25 @@ what you were given, and nothing more.**
 
 
 | Input                   | What gets written                        |
-| ----------------------- | ---------------------------------------- |
-| a sentence              | `## Problem`, alone                      |
+| ----------------------- | ----------------------------------------- |
+| a sentence              | `## Problem`, `## Overview`, `summary:`  |
 | a Claude Code plan file | every section the plan actually supports |
 
-The same richness decides the `complexity` this command computes and proposes (step 7): a
+The same richness decides the `complexity` this command computes and writes (step 4): a
 sentence is the smallest problem a capture can hold, and a plan file is the largest — the
 levels in between are the develop pass's to re-evaluate when it closes.
 
 
 ## Doctrine
 
-- **A sentence becomes `## Problem` and stops.** `cq specs new` stamps the frontmatter (`slug`,
-`title`, `date`, `verification`) and that one heading. `date` is the capture date, written here and
-never again. Every other canonical heading is left ABSENT,
-which the stage-scoped explicit-none rule
-([spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §The gates)
-makes legal. Writing fourteen `- none` headings here would make a fresh capture derive as
-`designed` and clear the whole ready gate without anyone having thought anything.
+- **A sentence becomes `## Problem`, `## Overview` and `summary:` in ONE call, and stops.**
+  `cq specs new` stamps the frontmatter (`slug`, `title`, `date`, `verification`) and, through the
+  flags and stdin step 5 always supplies, those two headings and the one-line précis together —
+  never as three follow-up calls. Every other canonical heading is left ABSENT, which the
+  stage-scoped explicit-none rule
+  ([spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §The gates)
+  makes legal. Writing fourteen `- none` headings here would make a fresh capture derive as
+  `designed` and clear the whole ready gate without anyone having thought anything.
 - **Never invent what the input lacks.** On the plan-file path, `- none — the plan recorded no alternatives` is honest; a fabricated risk is not. Where the source said nothing, either leave
 the heading absent or write an explicit none that *says* the source was silent.
 - **Kebab slug in the repo's declared language.** `slugify` folds accents (`criação` → `criacao`)
@@ -52,9 +58,12 @@ and `SLUG_RE` refuses (exit 2) on a bad one — derive it in the language
 [communication.md](/.knowledge/standards/agents/communication.md) §Declaring it declares.
 - **MERGE, never clobber.** `cq specs new` refuses (exit 2) on an existing slug. Take that as the
 answer: sharpen the existing spec instead, or pick a different slug.
-- **Compute `complexity`, never ask for it.** The level derives from the classification (step 1),
-is proposed with the scale in front of the human, and is written only on confirmation — the
-same proposal the triage sweep makes, narrowed to the one field this command computes.
+- **Never ask for a metadata field before the spec exists.** Subject, type, tags and `complexity`
+  are each computed from the input, written WITH the capture, and shown — never gated on a question
+  asked before there is a spec, a locator or a text for the human to judge. The confirmation moves
+  to AFTER the write: the closing screen (step 6) is where a wrong presumption gets corrected, or —
+  if nobody looks — `/quenching:specs:develop`'s first pass reviews them
+  ([spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §Frontmatter).
 
 ## Resolving the tool
 
@@ -68,7 +77,7 @@ Resolve `cq specs` per
 
 **Prose** → the sentence path. **A path to an existing `.md`**, or an explicit ask to convert a
 plan → the plan-file path. This is the one decision the CLI cannot make for you: `cq specs new`
-(step 4) resolves the backend, the workspace and the seed on its own, and reports a legacy
+(step 5) resolves the backend, the workspace and the seed on its own, and reports a legacy
 `backlog/`/`ready/` folder as a finding rather than writing into one.
 **Done when:** the path is chosen.
 
@@ -92,125 +101,36 @@ Read the whole plan file, then read
 exactly the cost this command exists to avoid.
 **Done when:** the plan's parts are classified, or the sentence path skipped this.
 
-### 4. Propose a subject, a type and tags, where the target declares them
+### 4. Resolve a subject, a type, tags and `complexity` — decide, never ask
 
 ```bash
 cq specs config --json
 ```
 
 Read `subjects`, `workItemTypes` and `tagCatalog`. **All three absent or empty → skip this step
-whole** — most repositories declare none of them, and proposing from nothing is not a lighter
-version of this step, it is the wrong step. Where only one or two are declared, propose only
+whole** — most repositories declare none of them, and resolving from nothing is not a lighter
+version of this step, it is the wrong step. Where only one or two are declared, resolve only
 those — this is per-key, never all-or-nothing.
 
 **A declared `subjects`:** read each key's `name`/`description`, judge which one the input best
-fits, and confirm with **one** `AskUserQuestion` naming the candidate and its description —
-never silently pick one, and never skip the confirmation because a `defaultSubject` exists:
-`cq specs new` falls back to it on its own where nothing was resolved, but a human still chose
-this spec's content and gets the same say over where it is filed.
+fits — or fall back to `azurePlacement.defaultSubject` where nothing beats it — and carry the
+chosen key to step 5's `--subject`. Keep the one-line reason it was chosen: the closing screen
+(step 6) shows it, which is where a wrong presumption is caught, not here.
 
 **A declared `workItemTypes`:** read each key's `description` — the same prompt material a
-`tagCatalog` value already is — judge which entry the input best fits, and confirm with **one**
-`AskUserQuestion` naming the candidate and its description, in the SAME question as the subject
-where both apply. Never skip the confirmation because a `default` entry exists: `cq specs new`
-falls back to it on its own where nothing was resolved, but a human still chose what kind of
-work this is and gets the same say `subjects` already gets.
+`tagCatalog` value already is — judge which entry the input best fits, or fall back to a declared
+`default`, and carry the chosen key to step 5's `--type`. Keep the one-line reason for step 6.
 
-**A declared `tagCatalog`:** read each tag's description — this prose is prompt material, not
-documentation, written for exactly this judgment — and propose zero or more that fit the input, in
-the SAME
-question as the subject and the type where all apply, or its own `AskUserQuestion` otherwise. A
-tag outside the declared catalog is never proposed: `tagCatalog` is the closed set this judgment
-draws from.
+**A declared `tagCatalog`:** read each tag's description — prompt material, not documentation,
+written for exactly this judgment — and resolve zero or more that fit the input. A tag outside the
+declared catalog is never chosen: `tagCatalog` is the closed set this judgment draws from. Carry
+whatever was resolved to step 5's `--tags`; the subject's own fixed tags need not be repeated —
+`cq specs new` folds them in on its own.
 
-**The write is always the deterministic verb, never this command inventing its own.** The chosen
-subject's key is carried to step 5's `--subject`, the chosen type's key to step 5's `--type`; any
-confirmed catalog tag beyond the subject's own fixed ones is carried to step 5's follow-up
-`cq specs tags` call — nothing is written here, only decided.
-**Done when:** a subject (or none), a type (or none) and zero or more tags are confirmed, or the
-step was skipped whole.
-
-### 5. Create the plan
-
-```bash
-cq specs new <slug> --title "<title>" [--subject <key>] [--type <key>]
-```
-
-`--subject`/`--type` only where step 4 resolved one. Exit 2 means the slug already exists — say
-so and stop, never invent a variant to get past it. `sp-no-subject`/`sp-subject-unknown`/
-`sp-type-unknown` means step 4's own resolution disagrees with the target's declared config RIGHT
-NOW (a race, or a stale read) — re-run `cq specs config --json` and redo step 4 rather than
-retrying blind. `sp-az-workitemtype-only-answer` means the target still declares the retired
-`azurePlacement.workItemType` with no `workItemTypes` catalog resolving one — name the finding
-and its remedy verbatim, and stop; migrating the target's config is not this command's call to
-make. Any other backend failure (`sp-backend-unavailable`, `sp-worktree-unusable`,
-`sp-worktree-failed`) is reported verbatim, naming `/quenching:specs:align`.
-
-**Where step 4 confirmed a catalog tag beyond the subject's own fixed ones**, one follow-up call,
-right after this one succeeds:
-
-```bash
-cq specs tags <slug> "<subject's fixed tags>,<confirmed catalog tag>,..."
-```
-
-`cq specs tags` **replaces** the whole list, never appends — the full set, fixed tags included,
-or the fixed ones `--subject` just applied are lost. Skip this call whole when no catalog tag was
-confirmed beyond what `--subject` already applied.
-**Done when:** the tool exited 0 and reported the locator it created, and any confirmed catalog
-tag is applied.
-
-### 6. Write the sections
-
-Always write `## Problem` — the problem or opportunity in the source's own framing. Two sentences
-is a complete answer.
-
-```bash
-cq specs section <slug> Problem --write   # body on stdin
-```
-
-**Then always write a first-pass `## Overview`, one more call, on the same material** — an ELI5
-of the problem and of how it will be solved, in plain language, from what `## Problem` already
-carries. The template's own guidance still holds ("written last, once every other section has
-settled") — treat this pass as a placeholder any later `/quenching:specs:develop` bank corrects,
-never as the final word, but a spec is never born without it. **Never a list of what each section
-says**: a capture has one section, so there is nothing to index, and
-[artifacts.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/artifacts.md) §`## Overview`
-owns the register.
-
-```bash
-cq specs section <slug> Overview --write   # body on stdin
-```
-
-**And always write `summary:` — ONE line, in the same edit.** It is the précis every ranked
-listing prints (`cq specs next --front --table`), and capture is the only moment at which the
-problem has just been read and compressing it costs nothing. A spec without one still lists: the
-table falls back to `title:` and reports how many rows did. Write what the spec IS and why it
-matters, never what it will do to the codebase:
-
-```bash
-cq specs summary <slug> "<one line>"
-```
-
-**Neither is folded into `cq specs new`'s own slice.** `capture_form()` cuts the captured spec by
-the `plans` entry gate — `## Problem` alone — and stays that way; the calls above are the only
-writers of `## Overview` and `summary:` at capture. Bundling either into that slice is the exact
-mistake `capture_form()`'s own docstring already records having happened once.
-
-**Sentence path: stop here.** Write nothing into any other heading.
-
-**Plan-file path:** additionally write every section the plan actually supports, in ONE call —
-`cq specs section <slug> "<Heading>,<Heading>…" --write`, the bodies on stdin delimited by their
-own `## <Heading>` lines, the set matching what was declared — `## Overview` is already written
-above, never repeated in this batch. Where the plan was silent on a section you are writing others
-around, write `- none — <what the source did not record>`. Never fabricate.
-**Done when:** `## Problem`, `## Overview` and `summary:` are filled, and no section beyond what the input
-supported exists.
-
-### 7. Compute and propose `complexity`
-
-The level this command writes is the orchestrator's own input — each one changes the gears
-plan the orchestrator will present for this spec. It answers how much a human needs to be part of
-that plan, never the size or difficulty of the input
+**Compute `complexity`** from the classification (step 1), never by interrogating: the sentence
+path yields `low`, the plan-file path yields `medium` — the input is all the evidence a capture is
+allowed to hold. The level answers how much a human needs to be part of the gears plan, never the
+size or difficulty of the input
 ([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §Deriving the gears
 plan states the criterion):
 
@@ -221,48 +141,130 @@ plan states the criterion):
 | `high` | the stage-by-stage stops and confirmations are kept |
 | `xhigh` | at least one judgment stage (adversarial review, premortem) joins the plan |
 
-**Compute it from the classification, never by interrogating.** The sentence path yields
-`low`, the plan-file path yields `medium` — the input is all the evidence a capture is
-allowed to hold, and anything else is the interrogation this command never does. The close
-of the develop pass re-evaluates it, so a `medium` that grew stays honest.
+Carry the level to step 5's `--complexity`, and the one-line reason ("a sentence — the smallest
+problem a capture can hold") to step 6. The close of the develop pass re-evaluates it, so a level
+that turns out too small stays correctable.
 
-**Propose it, and let the human adjust it on the same screen.** Present the computed level
-with the table above, using **AskUserQuestion** with the four levels as the choice — the
-human's word decides, and the proposal only starts the conversation.
+**Every one of these four is a presumption, not a verdict.** Nothing here is confirmed before it is
+written — step 6 is where the human sees it and can correct it in one answer.
+**Done when:** a subject, a type, zero or more tags and a `complexity` level are each resolved (to
+a value, or explicitly to none) and reasoned, or the step was skipped whole.
 
-Then stamp, **on the human's confirmation only**:
+### 5. Capture in ONE call
+
+Write `## Problem` — the problem or opportunity in the source's own framing, two sentences on the
+sentence path — and a first-pass `## Overview` — an ELI5 of the problem and of how it will be
+solved, in plain language, from what `## Problem` already carries. The template's own guidance
+still holds ("written last, once every other section has settled"): treat this pass as a
+placeholder any later `/quenching:specs:develop` bank corrects, never as the final word, but a spec
+is never born without it. **Never a list of what each section says**: a capture has one section on
+the sentence path, so there is nothing to index, and
+[artifacts.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/artifacts.md) §`## Overview`
+owns the register.
+
+**Plan-file path:** additionally write every section the plan actually supports, its own
+`## <Heading>` block in the same stream — `## Overview` above is never repeated. Where the plan was
+silent on a section you are writing others around, write `- none — <what the source did not
+record>`. Never fabricate.
+
+**`summary:` goes in the same call** — ONE line, the précis every ranked listing prints
+(`cq specs next --front --table`). Capture is the only moment at which the problem has just been
+read and compressing it costs nothing. Write what the spec IS and why it matters, never what it
+will do to the codebase.
+
+Everything step 4 resolved, everything above, and the closing `validate` — **one Bash block**,
+chained with `&&` per
+[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+§Resolving the tool:
+
 ```bash
-cq specs record <slug> priority --set complexity=<level> --set date=<today>
+cq specs new <slug> --title "<title>" \
+  [--subject <key>] [--type <key>] [--tags "<subject's fixed tags>,<confirmed catalog tags>"] \
+  --summary "<one line>" --complexity <level> <<'EOF' \
+&& cq specs validate --spec <slug>
+## Problem
+
+<two sentences, or what the source supports>
+
+## Overview
+
+<an ELI5, in plain language>
+
+## <Heading>
+
+<plan-file path only: every other section the plan actually supports>
+EOF
 ```
-The tool merges — `level`, `criticality` and any earlier fields survive, and `date` is the
-record's own, never the capture `date:`. A rejection writes nothing and stops.
-**Done when:** `complexity` is on disk with the human's level, or the human declined and
-nothing was written.
-### 8. Check
 
-Run `cq specs validate --spec <slug>` — the spec's own conformance, and the whole check.
-**Done when:** the check is clean, or the residue is reported verbatim.
+Quote the delimiter (`<<'EOF'`) so nothing in the prose is expanded by the shell. `--subject`/
+`--type`/`--tags` only where step 4 resolved one; `--tags`, when present, carries the **whole**
+list — the subject's own fixed tags are folded in by the tool, never lost.
 
-### 9. Report
+**Refusals, all before anything is written:** exit 2 means the slug already exists
+(`sp-slug-exists`) — say so and stop, never invent a variant. `sp-bad-complexity` means step 4's
+computed level is wrong — recompute and retry the same call. `sp-stray-heading` (`source: stream`)
+or `sp-write-duplicate-heading` means the stdin stream is malformed — fix the stream and retry the
+same call, never split it into smaller ones. `sp-no-subject`/`sp-subject-unknown`/`sp-type-unknown`
+means step 4's own resolution disagrees with the target's declared config RIGHT NOW (a race, or a
+stale read) — re-run `cq specs config --json` and redo step 4 rather than retrying blind.
+`sp-az-workitemtype-only-answer` means the target still declares the retired
+`azurePlacement.workItemType` with no `workItemTypes` catalog resolving one — name the finding and
+its remedy verbatim, and stop; migrating the target's config is not this command's call to make.
+Any other backend failure (`sp-backend-unavailable`, `sp-worktree-unusable`,
+`sp-worktree-failed`) is reported verbatim, naming `/quenching:specs:align`.
+
+The chained `cq specs validate --spec <slug>` is the whole of what checking this spec means — its
+own finding, if any, is named verbatim in step 6, never silently swallowed by the `&&`.
+**Sentence path: nothing beyond `## Problem` and `## Overview` is in the stream.**
+**Done when:** `cq specs new` exited 0, `validate` ran in the same call, and the locator it
+returned is in hand.
+
+### 6. The one screen — summary, correction and direction
 
 ```bash
 cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
   --sections "§The report mold" --rules-only
 ```
 
-Emit §The report mold. Its single-spec header line carries the locator `cq specs new` returned — the
-`path` field, `plans/<slug>.md` under `files` and an issue URL under `github` — which the mold
-already requires be the tool's own answer rather than a filename this command assembled.
+Emit §The report mold's fixed header, then one body block showing what was written and what was
+presumed and why — the shape differs by path:
 
-One body block, **optional**: on the plan-file path, which sections were filled from which part of
-the source, the task count derived, which sections carry an explicit none — and plainly that the
-source file was **read, never moved or deleted**. A one-line capture has none of this, and the block
-is omitted whole rather than printed empty.
+| Path | What the body block shows |
+| --- | --- |
+| sentence | `summary:`, and the drafted text **in full** — `## Problem` and `## Overview`, two sentences each, exactly what a human wants to check about "the writing got better." Plus subject, type, tags and `complexity`, each with its one-line reason |
+| plan-file | subject, type, tags and `complexity` (each reasoned), and the **list** of sections filled with the task count. **Never the bodies** — the plan is large and the human just wrote it |
 
-Close on §The next-step block: `/quenching:specs:develop <slug>` to take it further, or
-`/quenching:specs:cycle <slug>` to run its whole lifecycle from here on one authorization.
+Then the next-step block — `/quenching:specs:develop <slug>` and `/quenching:specs:cycle <slug>`
+named as the two forward candidates — and **one** `AskUserQuestion`, immediately after, exactly as
+`/quenching:specs:execute` prints the same block and then opens its own `AskUserQuestion` at 100%:
+the block is the suggestion, the question is the offer that follows it, and only
+`/quenching:specs:create` and `/quenching:specs:execute` carry that second half.
 
-**Done when:** the summary is shown.
+Three options:
+
+1. **Develop now, no questions (Recommended)** — narrate, then invoke `quenching:specs:develop
+   <slug>` through the **Skill** tool, declaring first: *"Ask the human nothing: a question no
+   evidence answers goes to `## Open Decisions` with how it will be decided."* On the plan-file
+   path the plan itself is the evidence; on the sentence path, whatever has none becomes an Open
+   Decision instead of a question.
+2. **Develop now, with questions** — the same invocation, with no declared sentence: the banks
+   `/quenching:specs:develop` selects ask normally.
+3. **Stop here** — nothing more is invoked; the report above is the whole of this run.
+
+**The correction is `Other`**, which the tool always offers and which the question text invites
+explicitly ("…or answer `Other` to correct any presumption before continuing"). A correction is
+applied with the deterministic verb that owns the field — `cq specs tags <slug> "<whole list>"`
+(fixed tags included, or they are lost), `cq specs record <slug> priority --set
+complexity=<level> --set date=<today>`, `cq specs summary <slug> "<line>"`, `cq specs section
+<slug> "<Heading>" --write` — **and only then** honour whichever of the three options the same
+answer also names. An `Other` answer that names no direction falls to option 3.
+
+There is no patch-then-edit sequence to reason about: the capture already made ONE write with
+everything the input supported (step 5); a correction, when there is one, is one more write; and
+each bank `/quenching:specs:develop` runs makes ONE write of its own — its own batching contract
+already requires this.
+**Done when:** the screen has been shown and the human's answer — a correction, a direction, or
+both — has been fully honoured.
 
 ## Invariants to never violate
 
@@ -275,5 +277,10 @@ Close on §The next-step block: `/quenching:specs:develop <slug>` to take it fur
   `/quenching:specs:conclude` owns them, along with the `/.knowledge/` the work *reveals* and the cycle's
   own closing actions. A standard the plan declares the spec will write still becomes a checkbox.
 - Never work around `cq specs new`'s exit 2 by inventing a slug variant.
-- Never interrogate the human for `complexity` — compute it from the input and propose it; a
-  rejected proposal writes nothing.
+- **Never ask for a metadata field before the spec exists.** Subject, type, tags and `complexity`
+  are resolved and written in step 5; the human is asked only after, on the closing screen.
+- **Never invoke `/quenching:specs:develop` without the human having chosen a direction** on the
+  closing screen — a correction alone, with no direction named, ends the run at option 3.
+- **Never print the closing screen without naming what was presumed and why.** A subject, a type, a
+  tag or a `complexity` level with no stated reason costs the human a re-read of the config to judge
+  it; the reason is what makes disagreeing cost one second instead.
