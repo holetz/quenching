@@ -86,6 +86,12 @@ there is no second store to bridge to: nothing here writes a delta and nothing l
   input could not support. The re-evaluation is the bank's **last question** (step 5): the evidence
   that moved it is named, the new level recommended, and the human's answer applies it. A pass
   that changed no size asks nothing — the level on disk is still the latest word on it.
+- **Capture confirms no classification at all — every bank reviews it in silence.**
+  `/quenching:specs:create` writes subject, tags and `complexity` as presumptions the human may
+  never have looked at: its own closing screen offers the correction, but nothing forces it. So
+  every bank here also reviews `tags` and the `summary:` line — silently, narrated in step 5's
+  consolidated plan and applied in step 6's single edit. No new screen, anywhere: the review rides
+  the bank that was already going to write.
 
 ## The batching contract
 
@@ -261,8 +267,14 @@ plan states the criterion):
 | `xhigh` | at least one judgment stage (adversarial review, premortem) joins the plan |
 
 A pass that changed no size asks nothing — the level on disk is still the latest word on it.
-**Done when:** the plan has been narrated in full, and `complexity`, where the pass moved it, has
-been answered.
+
+**Exception: the first pass over a spec still at `captured`.** `/quenching:specs:create` computed
+this level without asking, so nobody has confirmed it yet — the first bank that touches such a spec
+treats `complexity` as presumed rather than settled, and folds a confirm-or-adjust into this same
+question even when this pass moved no size of its own. Every later pass returns to the ordinary
+rule above: ask only when the size moved.
+**Done when:** the plan has been narrated in full, and `complexity` — where the pass moved it, or
+where this is the first pass over a `captured` spec — has been answered.
 
 ### 6. Apply, and record what the pass earned
 **Every write of this step is ONE call** — §The batching contract's third row: the section write,
@@ -317,7 +329,11 @@ editing the frontmatter**, which merges nothing and works only while the backend
 | `approved: {date}` | the human said go in the approval bank | `cq specs record <slug> approved --set date=<today>` |
 | `verification` | the gate bank settled the policy | `cq specs verification <slug> <per-task\|per-section\|end-of-plan>` |
 | `summary` | **every bank**, in the same edit that refreshes `## Overview` | `cq specs summary <slug> "<one line>"` |
+| `tags` | the pass changed the spec's scope, or the capture presumed wrong | `cq specs tags <slug> "<whole list>"` |
 | `complexity` (in `priority`) | the plan proposed a re-evaluation, and the human approved it | `cq specs record <slug> priority --set complexity=<level> --set date=<today>` |
+
+`cq specs tags` **replaces** the whole list, never appends — reissue the subject's own fixed tags
+together with whatever this pass adds, or the fixed ones are lost.
 
 `summary:` is the one line every ranked listing prints (`cq specs next --front --table`), and it
 is the only field here that **every** bank owes: a bank that changed what the spec is has
