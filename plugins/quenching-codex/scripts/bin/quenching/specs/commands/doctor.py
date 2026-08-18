@@ -1,0 +1,288 @@
+"""`config` and `doctor` — the workspace's declared parameters, and its shape.
+
+The two verbs that ask about the WORKSPACE rather than about a spec, which is why `config`
+never opens a backend and `doctor` opens one only where the configured backend holds a finding
+nothing else can ever catch: `azure-boards` for a card a human untagged, `github` for a listing
+that came back empty. Every such check is a `warn` at worst — `doctor`'s contract is to reach
+the end and report, never to refuse."""
+from __future__ import annotations
+
+import json
+import os
+
+from quenching.specs.backends import backend_root
+from quenching.specs.backends.azure import open_azure_backend
+from quenching.specs.backends.base import BackendRefusal
+from quenching.specs.backends.github import (GH_LISTING_SUSPECT_REMEDY, listing_is_suspect,
+                                             listing_suspect_message, open_github_backend)
+from quenching.specs.commands.migrate import _v1_leftovers
+from quenching.specs.commands.output import Emitter, front_fields
+from quenching.specs.commands.validate import _finding
+from quenching.specs.config import (BACKENDS, COMPLEXITY_LEVELS, CONFIG_FILE, CONFIG_KEYS,
+                                    LEGACY_CONFIG_FILE, ROOT_TOO_HIGH_REMEDY,
+                                    UNPROVED_BACKENDS, azure_workitemtype_retirement,
+                                    is_root_too_high, load_config, root_too_high_message)
+from quenching.specs.parse import PHASES, spec_files
+from quenching.specs.parse.spec import LEGACY_PHASES
+
+
+def cmd_config(args, root: str, out: Emitter) -> int:
+    """The workspace's declared parameters, as data. Exit 0 even with nothing declared —
+    a missing config is the normal case, and `doctor` is where a malformed one is judged."""
+    cfg = load_config(root)
+    lines = [f"quenching config — {cfg['path']}",
+             f"  backend: {cfg['backend']}"
+             + (" (default)" if not cfg["present"] else ""),
+             f"  specsBranch: {cfg['specsBranch']}",
+             "  worktreeSetup: " + (cfg["worktreeSetup"] or "(none declared)"),
+             "  azureStates: " + (", ".join(f"{p}={s}" for p, s in cfg["azureStates"].items())
+                                  if cfg["azureStates"] else "(none declared)"),
+             "  hooks: " + (", ".join(f"{event}: {len(entries)}" for event, entries in cfg["hooks"].items())
+                            if cfg["hooks"] else "(none declared)"),
+             "  profiles: " + (", ".join(cfg["profiles"]["installed"])
+                               if cfg["profiles"] else "(none declared)")]
+    if cfg["legacyPath"]:
+        lines.append(f"  legacy config still on disk, unread: {cfg['legacyPath']}")
+    out.emit(args.json, {"ok": True, **front_fields(root), **cfg}, "\n".join(lines))
+    return 0
+
+
+def cmd_doctor(args, root: str, out: Emitter) -> int:
+    findings: list[dict] = []
+    # The config findings come first, and reading the config here also decides whether
+    # the workspace-shape half below applies at all. Under an external backend there
+    # may be no specs/ folder: its layout is then not a finding to suppress after the
+    # fact, it is one that never made sense to produce — the guard sits before the
+    # PHASES loop, never a filter after it.
+    # The real failure mode of a machine-read config is `worktree_setup` written where
+    # `worktreeSetup` was expected, followed by silence — the file is valid JSON, the key
+    # is simply never looked at, and the setup that was declared never runs. Both findings
+    # exist so that silence cannot happen; neither is an error, because a workspace with a
+    # malformed config is still a workspace and every other command still works.
+    cfg = load_config(root)
+    if cfg["unparseable"]:
+        findings.append(_finding("sp-config-unparseable", "warn",
+                                 f"{CONFIG_FILE} is not valid JSON: {cfg['unparseable']}",
+                                 path=CONFIG_FILE,
+                                 remedy=f"fix the JSON, or remove {CONFIG_FILE} — an absent "
+                                        f"config declares nothing and is not a finding"))
+    for key in cfg["unknownKeys"]:
+        findings.append(_finding("sp-config-unknown-key", "warn",
+                                 f"{CONFIG_FILE} declares `{key}`, which nothing reads",
+                                 path=CONFIG_FILE, key=key,
+                                 remedy=f"the recognised key(s): {', '.join(CONFIG_KEYS)}"))
+    if cfg["unknownBackend"]:
+        findings.append(_finding("sp-config-unknown-backend", "warn",
+                                 f"{CONFIG_FILE} declares backend `{cfg['unknownBackend']}`, "
+                                 f"which is not one this tool implements — `{cfg['backend']}` "
+                                 f"is in effect instead",
+                                 path=CONFIG_FILE, backend=cfg["unknownBackend"],
+                                 remedy=f"the implemented backend(s): {', '.join(BACKENDS)}"))
+    if cfg["unknownFanoutMinComplexity"]:
+        findings.append(_finding("sp-config-unknown-fanout-min-complexity", "warn",
+                                 f"{CONFIG_FILE} declares fanoutMinComplexity "
+                                 f"`{cfg['unknownFanoutMinComplexity']}`, which is not one of "
+                                 f"the four levels — `{cfg['fanoutMinComplexity']}` is in "
+                                 f"effect instead",
+                                 path=CONFIG_FILE,
+                                 fanoutMinComplexity=cfg["unknownFanoutMinComplexity"],
+                                 remedy=f"the recognised level(s): {', '.join(COMPLEXITY_LEVELS)}"))
+    # The permanent half of the "warn or stay silent" answer, and the reason it is a finding
+    # and not a line on every call: a backend that was never run against a real target is a
+    # fact about the CONFIGURATION, unchanged between operations, so it belongs where a
+    # human goes to ask what is wrong with this workspace rather than in the output of every
+    # command. The write-time line in `announce_unproved` is the other half. A warning on
+    # every operation would be noise nobody reads twice; silence would let the untested
+    # guesses (AZ_SPEC_TYPE, the state mapping) surface only when they are
+    # already wrong in a real project. `doctor` is the middle the Open Decision asked for.
+    if cfg["backend"] in UNPROVED_BACKENDS:
+        findings.append(_finding("sp-backend-unproved", "warn",
+                                 f"{CONFIG_FILE} declares backend `{cfg['backend']}`, which "
+                                 f"ships without ever having been run against a real target "
+                                 f"— its writes are unproved",
+                                 path=CONFIG_FILE, backend=cfg["backend"],
+                                 remedy="verify AZ_SPEC_TYPE matches this "
+                                        "project's process template before relying on it, "
+                                        "or declare a proven backend: "
+                                        f"{', '.join(b for b in BACKENDS if b not in UNPROVED_BACKENDS)}"))
+    # The config moved to `.agents/`, and a repo that upgrades without moving its file is the
+    # one shape where every command keeps working while nothing it declared is read — the
+    # silence the two findings above exist to prevent, reappearing one directory over. Named
+    # here rather than merged in load_config: two configs with no stated winner is worse than
+    # one that is plainly stranded.
+    if cfg["legacyPath"]:
+        findings.append(_finding("sp-config-legacy-location", "warn",
+                                 f"`/.specs/{LEGACY_CONFIG_FILE}` is still on disk and is no "
+                                 f"longer read — the plugin's config is {CONFIG_FILE}",
+                                 path=f".specs/{LEGACY_CONFIG_FILE}",
+                                 remedy=f"move its keys into {CONFIG_FILE} and delete it; "
+                                        f"whatever it declares is doing nothing today"))
+
+    # The one doctor check that reaches the network — every other finding above is local by
+    # construction. Justified because it is the only place that can ever catch it: a card a
+    # human untagged is invisible to every OTHER command, which all read through the
+    # tag-scoped listing. Runs only when `azure-boards` is actually configured, so a
+    # workspace on `files` or `github` — or on `azure-boards` with nothing declared yet —
+    # never pays for it.
+    if cfg["backend"] == "azure-boards":
+        retirement = azure_workitemtype_retirement(cfg, None)
+        if retirement:
+            findings.append(_finding(retirement["code"], retirement["severity"],
+                                     retirement["message"], path=CONFIG_FILE,
+                                     remedy="migrate the type into a `workItemTypes` entry"))
+        az, az_err = open_azure_backend(root)
+        if not az_err:
+            for row in az.marker_without_discovery_tag():
+                findings.append(_finding("sp-az-marker-untagged", "warn",
+                                         f"work item {row['id']} (spec '{row['slug']}') "
+                                         f"carries the quenching-spec marker but not the "
+                                         f"discovery tag '{az.discovery_tag}' — invisible to "
+                                         f"every command's tag-scoped listing",
+                                         path=str(row["id"]), slug=row["slug"],
+                                         remedy=f"re-apply the '{az.discovery_tag}' tag on "
+                                                f"the board; until then this spec exists "
+                                                f"only there"))
+            # The three per-spec findings §2.13 adds — cost is the tag-scoped listing (the
+            # specs this repository actually has), not the whole area the sweep above pays.
+            for row in az.board_findings():
+                if row["kind"] == "column":
+                    findings.append(_finding("sp-az-column-drift", "warn",
+                                             f"work item {row['id']} (spec '{row['slug']}') "
+                                             f"is in column '{row['actual']}', not "
+                                             f"'{row['expected']}' — the next write brings "
+                                             f"it back",
+                                             path=str(row["id"]), slug=row["slug"],
+                                             remedy="the board is the projection; move the "
+                                                    "spec through its stage/records instead "
+                                                    "of the card, or declare a different "
+                                                    "azureColumns mapping"))
+                elif row["kind"] == "tag":
+                    findings.append(_finding("sp-az-tag-uncatalogued", "warn",
+                                             f"work item {row['id']} (spec '{row['slug']}') "
+                                             f"carries tag '{row['tag']}', which is not in "
+                                             f"the declared `tagCatalog`",
+                                             path=str(row["id"]), slug=row["slug"],
+                                             tag=row["tag"],
+                                             remedy="add the tag to `tagCatalog` in "
+                                                    f"{CONFIG_FILE}, or remove it from the "
+                                                    f"work item"))
+                elif row["kind"] == "dates":
+                    findings.append(_finding("sp-az-dates-missing", "warn",
+                                             f"work item {row['id']} (spec '{row['slug']}') "
+                                             f"is past the captured stage with no `start`/"
+                                             f"`target` — the team's own rule expects both "
+                                             f"from Entendimento Técnico on",
+                                             path=str(row["id"]), slug=row["slug"],
+                                             remedy="record `start`/`target` on the spec"))
+    # The `github` counterpart of the network check above, and the same justification: a
+    # listing that comes back empty is invisible to every OTHER command, which all read
+    # through it and report the resulting nothing as the front's real state. This is where a
+    # human already goes to ask what is wrong with the workspace, so it is where the standing
+    # half of the answer belongs — the `stderr` line at the moment of the read is the other.
+    #
+    # NEITHER BRANCH REFUSES, which is the point: `doctor` has to reach the end. The exit-2
+    # the same evidence produces at the read choke point becomes a `warn` here, quoting the
+    # refusal's own message and remedy rather than composing a second wording for them.
+    if cfg["backend"] == "github":
+        gh, gh_err = open_github_backend(root)
+        if not gh_err:
+            try:
+                rows = gh.list_specs()
+            except BackendRefusal as refusal:
+                # Every way the listing can fail lands here, not only the empty one — a 503
+                # mid-diagnostic must not abort the diagnostic either. Only some refusals
+                # carry a `remedy` of their own; the rest get the one true thing that can be
+                # said, which is that nothing was read.
+                findings.append(_finding(
+                    refusal.err["code"], "warn", refusal.err["message"],
+                    remedy=refusal.err.get("remedy")
+                    or "the specs front could not be read, so nothing about it was measured"))
+            else:
+                if listing_is_suspect(len(rows), gh.open_issues):
+                    findings.append(_finding("sp-gh-listing-suspect", "warn",
+                                             listing_suspect_message(gh.repo, gh.open_issues),
+                                             openIssues=gh.open_issues,
+                                             remedy=GH_LISTING_SUSPECT_REMEDY))
+    # The workspace shape — the folder IS the phase, but only under the `files` backend,
+    # the one backend that has a folder. An external backend's workspace is the tracker
+    # itself, so none of these findings apply there: producing them would describe a
+    # world this repo does not inhabit.
+    #
+    # THE ROOT THE BACKEND WOULD USE, and `None` where there is no folder to shape-check at
+    # all — which is also what selects the block, since "has a folder" and "is the `files`
+    # backend" are the same fact and are better asked once, of the component that knows it.
+    # This block used to read the DECLARED root, which is where `sp-no-workspace` and
+    # `sp-missing-phase` came from on every migrated `files` repository: the specs live in the
+    # specs worktree, the declared path in the code tree is empty or absent, and the diagnostic
+    # measured the empty one. It could not simply open the backend to find out — that is what
+    # CREATES the worktree, and a diagnostic with that side effect is not one.
+    measured = backend_root(root, cfg)
+    if measured is not None:
+        if is_root_too_high(root):
+            # Same predicate `open_backend` refuses on — `doctor`'s own contract is to always
+            # complete and report, never refuse, so this is a finding rather than an exit-2.
+            # Returning early here keeps the harmless `sp-missing-phase` warnings below from
+            # also firing over the same mis-levelled root. Judged on the DECLARED root, which
+            # is the one a human mis-levelled; `measured` answers for a root that is already
+            # correct.
+            findings.append(_finding("sp-root-too-high", "error", root_too_high_message(root),
+                                     remedy=ROOT_TOO_HIGH_REMEDY))
+            return _emit_doctor(args, root, findings)
+
+        if not os.path.isdir(measured):
+            findings.append(_finding("sp-no-workspace", "error",
+                                     f"no `/.specs/` workspace at {measured}",
+                                     remedy="scaffold specs/ (copy the plugin's assets/specs skeleton)"))
+            return _emit_doctor(args, root, findings)
+
+        for ph in PHASES:
+            if not os.path.isdir(os.path.join(measured, ph)):
+                findings.append(_finding("sp-missing-phase", "warn", f"no {ph}/ folder",
+                                         path=ph, remedy=f"mkdir {ph}/ (the folder IS the phase)"))
+        # A v2 folder that still holds specs is the one shape `list` reads correctly but
+        # reports as out of date — surfaced here so it is fixed by a migrate, not by hand.
+        for folder in LEGACY_PHASES:
+            held = [s for s in spec_files(measured) if s["folder"] == folder]
+            if held:
+                findings.append(_finding("sp-v2-layout", "error",
+                                         f"`{folder}/` still holds {len(held)} spec(s) — v3 "
+                                         f"folded backlog/ and ready/ into plans/",
+                                         path=folder, count=len(held),
+                                         remedy="cq specs migrate  (moves them into plans/ "
+                                                "unrenamed; `/.specs/archive/**` is never touched)"))
+
+        leftovers = _v1_leftovers(measured)
+        for name in leftovers:
+            findings.append(_finding("sp-v1-leftover", "error",
+                                     f"`{name}/` is a v1 three-file plan folder",
+                                     path=name,
+                                     remedy=f"cq specs migrate  (folds {name}/ into one v2 file; "
+                                            f"`/.specs/archive/**` is never touched)"))
+        for entry in sorted(os.listdir(measured)):
+            full = os.path.join(measured, entry)
+            # `config.json` stays exempt even though nothing reads it any more: it has its own
+            # finding above, which says where it went. Reporting it as a stray would offer
+            # "move it into a phase folder", which is the one thing that must not happen to it.
+            if os.path.isfile(full) \
+                    and entry not in ("schema.json", LEGACY_CONFIG_FILE) \
+                    and not entry.startswith("."):
+                findings.append(_finding("sp-stray-file", "warn",
+                                         f"stray file at the specs root: {entry}", path=entry,
+                                         remedy="move it into a phase folder or remove it"))
+    return _emit_doctor(args, root, findings)
+
+
+def _emit_doctor(args, root: str, findings: list[dict]) -> int:
+    errors = [f for f in findings if f["severity"] == "error"]
+    if args.json:
+        print(json.dumps({"ok": not errors, **front_fields(root), "findings": findings},
+                         indent=2, ensure_ascii=False))
+    else:
+        print(f"specs doctor — {root} ({len(errors)} error(s), "
+              f"{len(findings) - len(errors)} warning(s))")
+        for f in findings:
+            print(f"  [{f['severity']:<5}] {f['message']}  ({f['code']})")
+            print(f"          remedy: {f['remedy']}")
+        if not findings:
+            print("  OK — workspace conforms.")
+    return 1 if errors else 0
