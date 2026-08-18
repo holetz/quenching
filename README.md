@@ -9,6 +9,18 @@ between repos sees one structure.
 This repository is a **plugin marketplace**. The plugin itself lives in
 [`plugins/quenching/`](plugins/quenching/).
 
+The Codex sibling lives in [`plugins/quenching-codex/`](plugins/quenching-codex/). Claude remains
+the only editable source; refresh the Codex snapshot locally with:
+
+```bash
+python3 scripts/sync_codex_plugin.py --write
+python3 scripts/sync_codex_plugin.py --check
+```
+
+The same conversion can be requested manually through the `Sync Codex plugin` workflow. It does
+not run automatically on Claude changes; it generates an artifact only when a human dispatches it
+with `apply` enabled.
+
 ## What it does
 
 Twenty-five commands acting on three fronts of a target repository — the `docs/` OKF bundle

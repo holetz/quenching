@@ -1,0 +1,36 @@
+{
+  "name": "quenching-codex",
+  "version": "6.3.0",
+  "description": "Codex translation of the quenching Claude plugin, generated from the Claude source plugin.",
+  "author": {
+    "name": "Israel Holetz",
+    "email": "holetz@gmail.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "knowledge-management",
+    "documentation",
+    "spec-driven",
+    "automation"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Quenching Codex",
+    "shortDescription": "Deterministic knowledge and spec alignment workflows for Codex",
+    "longDescription": "Generated Codex sibling of the Claude quenching plugin. Claude is the source of truth.",
+    "developerName": "Israel Holetz",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Align this repository with quenching.",
+      "Run the quenching knowledge workflow.",
+      "Check the Codex plugin for drift."
+    ],
+    "brandColor": "#0F766E",
+    "screenshots": []
+  }
+}

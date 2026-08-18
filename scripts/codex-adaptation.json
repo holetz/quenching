@@ -1,0 +1,32 @@
+{
+  "replacements": {
+    "${CLAUDE_PLUGIN_ROOT}/assets/references/": "../../references/",
+    "${CLAUDE_PLUGIN_ROOT}/assets/templates/": "../../templates/",
+    "${CLAUDE_PLUGIN_ROOT}/assets/specs/": "../../specs/",
+    "${CLAUDE_PLUGIN_ROOT}/assets/knowledge/": "../../knowledge/",
+    "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq": "../../scripts/cq",
+    "assets/bin/cq": "scripts/bin/cq",
+    "\"assets\", \"bin\", \"cq\"": "\"scripts\", \"bin\", \"cq\"",
+    "${CLAUDE_PLUGIN_ROOT}/assets/checks/": "../../checks/",
+    "${CLAUDE_PLUGIN_ROOT}": "../..",
+    "${CLAUDE_PROJECT_DIR}": ".",
+    "~/.claude/projects/": "~/.codex/projects/",
+    ".claude/commands/": ".agents/skills/",
+    ".claude/skills/": ".agents/skills/",
+    ".claude/": ".agents/",
+    "CLAUDE.md": "AGENTS.md",
+    "CLAUDE_PLUGIN_ROOT": "CODEX_PLUGIN_ROOT",
+    "COMMANDS_DIR = \"commands\"": "COMMANDS_DIR = \"skills\"",
+    "CLAUDE_DIR = \".claude\"": "CLAUDE_DIR = \".agents\"",
+    "PLUGIN_MANIFEST = os.path.join(\".claude-plugin\", \"plugin.json\")": "PLUGIN_MANIFEST = os.path.join(\".codex-plugin\", \"plugin.json\")",
+    "REFERENCES_DIR = os.path.join(\"assets\", \"references\")": "REFERENCES_DIR = \"references\""
+  },
+  "dropped_frontmatter": ["argument-hint", "allowed-tools", "model", "context", "hooks"],
+  "manual_review": [
+    "AskUserQuestion",
+    "Task",
+    "Skill",
+    "context: fork",
+    "hooks"
+  ]
+}
