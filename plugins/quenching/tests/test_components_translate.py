@@ -27,6 +27,9 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         claude = self.root / ".claude"
         (claude / "commands" / "specs").mkdir(parents=True)
         (claude / "commands" / "specs" / "status.md").write_text(COMMAND, encoding="utf-8")
+        (claude / "references" / "specs").mkdir(parents=True)
+        (claude / "references" / "specs" / "guide.md").write_text(
+            "Read .claude/commands/specs/status.md with Claude.\n", encoding="utf-8")
         (claude / "quenching.json").write_text('{"backend": "github"}\n', encoding="utf-8")
         (self.root / "CLAUDE.md").write_text("# Claude harness\n", encoding="utf-8")
 
@@ -41,6 +44,9 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         self.assertTrue(skill.is_file())
         self.assertIn("name: quenching-specs-status", skill.read_text(encoding="utf-8"))
         self.assertNotIn("allowed-tools:", skill.read_text(encoding="utf-8"))
+        self.assertEqual((self.root / ".agents" / "references" / "specs" / "guide.md")
+                         .read_text(encoding="utf-8"),
+                         "Read .agents/skills/specs/status.md with Codex.\n")
         self.assertEqual((self.root / ".agents" / "AGENTS.md").read_text(encoding="utf-8"), "# Codex harness\n")
         self.assertEqual(json.loads((self.root / ".claude" / "quenching.json").read_text(encoding="utf-8")),
                          {"backend": "github"})
@@ -52,6 +58,15 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         self.assertEqual(translate.differences(translate.generated_tree()), [])
         self.assertTrue((self.root / ".claude" / "commands" / "specs" / "status.md").is_file())
         self.assertTrue((self.root / ".agents" / "skills" / "specs" / "status" / "SKILL.md").is_file())
+
+    def test_preserves_codex_marketplace_configuration(self):
+        marketplace = self.root / ".agents" / "plugins" / "marketplace.json"
+        marketplace.parent.mkdir(parents=True)
+        marketplace.write_text('{"plugins": []}\n', encoding="utf-8")
+        translate.configure(str(self.root), str(self.root))
+        translate.write_tree(translate.generated_tree())
+        self.assertTrue(marketplace.is_file())
+        self.assertEqual(translate.differences(translate.generated_tree()), [])
 
     def test_reconciliation_classifies_source_and_codex_body_changes(self):
         translate.configure(str(self.root), str(self.root))

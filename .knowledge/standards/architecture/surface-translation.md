@@ -1,7 +1,7 @@
 ---
 type: standard
 title: Surface translation — Claude and Codex coexistence
-description: A repository may carry Claude and Codex surfaces together; Claude owns configuration and deterministic translation keeps their command and harness artifacts aligned
+description: A repository may carry Claude and Codex surfaces together; Claude owns configuration and deterministic translation keeps their command, reference, and harness artifacts aligned
 resource: plugins/quenching/assets/bin/quenching/components/commands/translate.py, plugins/quenching/assets/translation/codex-adaptation.json
 tags: [architecture, claude-code, codex, translation, surfaces]
 timestamp: 2026-08-18
@@ -21,8 +21,12 @@ generates the Codex representation deterministically.
 
 `cq components translate --source <repo> --target <repo>` maps each
 `.claude/commands/<path>.md` to `.agents/skills/<path>/SKILL.md`, preserving the command body
-while adapting platform vocabulary and retaining only frontmatter Codex can use. It maps the root
-`CLAUDE.md` harness to `.agents/AGENTS.md` when that harness exists.
+while adapting platform vocabulary and retaining only frontmatter Codex can use. It also copies
+and adapts `.claude/references/**` to `.agents/references/**`, so translated skills retain valid
+local citations, and maps the root `CLAUDE.md` harness to `.agents/AGENTS.md` when it exists.
+
+The translator owns only those generated artifacts. Existing Codex configuration, including
+`.agents/plugins/marketplace.json`, stays in place and is excluded from translation-drift checks.
 
 The generated `.agents/.generated-from.json` and `.generated-files.json` record the source digest
 and generated set. A check compares the deterministic result to that set without changing either

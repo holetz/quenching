@@ -64,7 +64,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 | [root-migration.md](architecture/root-migration.md) | When a plugin release renames a root it itself declares — the bundle root moved from `/.docs/` to `/.knowledge/` once — the migration is detected site by site from what sits on disk, never gated on a version bump, and resolved through exactly one route, `/quenching:knowledge:align` |
 | [shared-mold-keys.md](architecture/shared-mold-keys.md) | A frontmatter mold cited by several commands is a fill-in invitation, so a key only one writer may legitimately set stays out of it and lives with that writer's own contract — prevention where a deterministic check is not available |
 | [spec-backend.md](architecture/spec-backend.md) | Where a repo's specs live is configurable, and the interface that makes every backend behave identically — five primitives over the canonical document rather than one method per CLI verb, a single shared derivation, the selected backend as sole source of truth, hybrid serialisation confined to each external implementation with the whole document (not just the parts it models) as its reassembly obligation, rendering derived state onto a native surface as a third category beside projection and storage, a relation to a git artifact (branch, commit, PR) as a fourth — attempted once, never atomic with the document — the receipt a tolerant slug resolution owes every payload and why it is folded in at a choke point rather than written verb by verb, the inverse corollary that the shared layer never derives a path from the declared root — a configuration entry and not an address — which is the single cause behind an occupied-destination check that could not see the destination, a diagnostic that reported a workspace nobody has, and a `root` field that named a folder that does not exist, and the in-memory fake that turns "identical" into a checked property |
-| [surface-translation.md](architecture/surface-translation.md) | A repository may carry Claude and Codex surfaces together; Claude owns configuration and deterministic translation keeps their command and harness artifacts aligned |
+| [surface-translation.md](architecture/surface-translation.md) | A repository may carry Claude and Codex surfaces together; Claude owns configuration and deterministic translation keeps their command, reference, and harness artifacts aligned |
 | [type-follows-home.md](architecture/type-follows-home.md) | Every home in the canonical tree owns exactly one `type:` value (`standards/` → `standard`, `concepts/` → `concept`, and so on) — a home that renames without restamping every doc's `type:` recreates the naming complaint one level down, in the most greppable field of the bundle, and nothing today checks for the mismatch |
 
 ### automation/
@@ -85,7 +85,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 
 | Doc | Covers |
 | --- | --- |
-| [versioning-release.md](ci-cd/versioning-release.md) | Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and the one shared version module is what every pillar's --version reads — bumped once per release, on the primary branch, never at conclude and never as a task |
+| [versioning-release.md](ci-cd/versioning-release.md) | Every published Claude and Codex version surface must agree at release time, including both marketplace entries and the generated Codex manifest |
 
 ### code/
 
