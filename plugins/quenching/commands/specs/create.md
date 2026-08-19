@@ -7,12 +7,11 @@ model: sonnet
 # /quenching:specs:create — capture one spec, one screen, one turn
 
 **Input**: `$ARGUMENTS` — a short description of the problem, **or** a path to a Claude Code plan
-file. With neither, glob `~/.claude/plans/*.md`; if that is empty too, ask what to capture.
+file. With neither, ask what to capture.
 
 Creates ONE spec. That locator is a spec's whole active life, so what is created here is what gets
 built: this command creates it, `/quenching:specs:develop` fills its sections, `/quenching:specs:execute` builds it, and
-`/quenching:specs:conclude` closes it out under the same identity. Nothing here to retire, hand off, or
-reconcile — and no ledger.
+`/quenching:specs:conclude` closes it out under the same identity.
 
 The layout, the fourteen canonical sections, the gates, the front's on-write check and the
 `cq specs` surface live in
