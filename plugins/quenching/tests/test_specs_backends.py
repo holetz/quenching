@@ -23,6 +23,7 @@ from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.common.frontmatter import parse_frontmatter
+from quenching.specs.backends import azure as az_mod
 from quenching.specs.backends import backend_root
 from quenching.specs.backends import github as gh_mod
 from quenching.specs.backends.azure import AzureBoardsBackend
@@ -241,6 +242,151 @@ class GithubExternalRoundTrip(unittest.TestCase):
         self.assertEqual(api_calls[3]["payload"]["labels"], ["fixture", "updated"])
         self.assertEqual(api_calls[5]["payload"], {"state": "closed"})
         self.assertEqual(transport.type_edits, [(101, "Bug")])
+
+
+class AzureRemoteFixture:
+    """A strict offline `az` transport with one work item as its remote state."""
+
+    def __init__(self):
+        self.calls: list[dict] = []
+        self.items: dict[int, dict] = {}
+        self.format_writes: list[str] = []
+
+    @staticmethod
+    def _copy(item: dict) -> dict:
+        return json.loads(json.dumps(item))
+
+    def _patch(self, argv: tuple[str, ...]) -> dict:
+        if argv[0:2] != ("rest", "--method") or argv[2] != "PATCH":
+            raise AssertionError(f"unexpected Azure mutation: {argv!r}")
+        if argv[argv.index("--resource") + 1] != az_mod.AZ_DEVOPS_RESOURCE_ID:
+            raise AssertionError(f"Azure PATCH used the wrong resource: {argv!r}")
+        if argv[argv.index("--headers") + 1] != "Content-Type=application/json-patch+json":
+            raise AssertionError(f"Azure PATCH used the wrong content type: {argv!r}")
+        uri = argv[argv.index("--uri") + 1]
+        item_id = int(uri.rsplit("/", 1)[1].split("?", 1)[0])
+        path = argv[argv.index("--body") + 1]
+        if not path.startswith("@"):
+            raise AssertionError("Azure PATCH did not use a request body file")
+        with open(path[1:], encoding="utf-8") as stream:
+            operations = json.load(stream)
+        self.calls.append({"kind": "patch", "uri": uri, "argv": argv,
+                           "operations": operations})
+        item = self.items[item_id]
+        for operation in operations:
+            target = operation["path"]
+            if target.startswith("/fields/"):
+                item["fields"][target.rsplit("/", 1)[1]] = operation["value"]
+            elif target.startswith("/multilineFieldsFormat/"):
+                self.format_writes.append(target.rsplit("/", 1)[1])
+            elif target == "/relations/-":
+                item.setdefault("relations", []).append(operation["value"])
+            else:
+                raise AssertionError(f"unexpected Azure PATCH path: {target}")
+        return self._copy(item)
+
+    def __call__(self, cwd: str, *argv: str, stdin: str | None = None):
+        del stdin
+        if argv[:3] == ("boards", "work-item", "create"):
+            if "--project" not in argv or "--type" not in argv or "--title" not in argv:
+                raise AssertionError(f"unexpected Azure create request: {argv!r}")
+            if "--state" in argv or "--fields" in argv \
+                    or argv[argv.index("--org") + 1] != "org":
+                raise AssertionError(f"Azure create bypassed the PATCH placement: {argv!r}")
+            project = argv[argv.index("--project") + 1]
+            title = argv[argv.index("--title") + 1]
+            item_id = 201
+            self.items[item_id] = {"id": item_id, "fields": {
+                "System.Id": item_id, "System.Title": title, "System.State": "New",
+            }}
+            self.calls.append({"kind": "create", "argv": argv,
+                               "project": project, "title": title,
+                               "type": argv[argv.index("--type") + 1]})
+            return 0, json.dumps({"id": item_id, "fields": self.items[item_id]["fields"]}), ""
+
+        if argv[:2] == ("boards", "query"):
+            if argv[argv.index("--org") + 1] != "org":
+                raise AssertionError(f"Azure query used the wrong organization: {argv!r}")
+            wiql = argv[argv.index("--wiql") + 1]
+            expected = az_mod.azure_query_wiql("proj", None, "quenching-spec")
+            if wiql != expected:
+                raise AssertionError(f"unexpected Azure WIQL: {wiql!r}")
+            self.calls.append({"kind": "query", "argv": argv, "wiql": wiql})
+            return 0, json.dumps([{"id": item_id} for item_id in self.items]), ""
+
+        if argv[:4] == ("devops", "invoke", "--area", "wit"):
+            if argv[argv.index("--resource") + 1] != "workitemsbatch":
+                raise AssertionError(f"unexpected Azure batch resource: {argv!r}")
+            if argv[argv.index("--org") + 1] != "org":
+                raise AssertionError(f"Azure batch used the wrong organization: {argv!r}")
+            path = argv[argv.index("--in-file") + 1]
+            with open(path, encoding="utf-8") as stream:
+                request = json.load(stream)
+            fields = request.get("fields") or []
+            for required in ("System.Id", "System.Title", "System.State",
+                              "System.Description", "System.Tags", "System.AssignedTo",
+                              "Microsoft.VSTS.Scheduling.StartDate",
+                              "Microsoft.VSTS.Scheduling.TargetDate", "System.Parent"):
+                if required not in fields:
+                    raise AssertionError(f"Azure batch omitted {required}")
+            self.calls.append({"kind": "batch", "argv": argv, "request": request})
+            return 0, json.dumps({"value": [self._copy(item) for item in self.items.values()]}), ""
+
+        if argv[:1] == ("rest",):
+            return 0, json.dumps(self._patch(argv)), ""
+        raise AssertionError(f"unexpected Azure command: {argv!r}")
+
+
+class AzureExternalRoundTrip(unittest.TestCase):
+    """The Azure backend's five primitives over a strict, request-driven remote."""
+
+    def test_real_backend_closes_the_common_sequence_over_az_wire_format(self):
+        transport = AzureRemoteFixture()
+        backend = AzureBoardsBackend(
+            "org", "proj", {"plans": "Active", "archive": "Closed"}, os.getcwd(),
+            discovery_tag="quenching-spec",
+            types={"incidente": {"description": "fixture", "azure": "Bug"}},
+        )
+        with mock.patch.object(az_mod, "_az_run", side_effect=transport), \
+                contextlib.redirect_stderr(io.StringIO()):
+            result = _external_sequence(backend)
+
+        self.assertEqual(result["empty"], [])
+        self.assertEqual(result["after_create"][0]["phase"], "plans")
+        self.assertEqual(result["read"]["frontmatter"]["tags"], ["fixture"])
+        self.assertEqual(result["read"]["frontmatter"]["assignee"], "fixture@example.test")
+        self.assertEqual(result["after_write"]["frontmatter"]["tags"],
+                         ["fixture", "updated"])
+        self.assertEqual(result["after_write"]["frontmatter"]["assignee"],
+                         "updated@example.test")
+        self.assertEqual(result["after_write"]["frontmatter"]["target"], "2026-02-01")
+        self.assertEqual(result["after_move"]["phase"], "archive")
+        self.assertEqual(result["archive_listing"][0]["phase"], "archive")
+
+        self.assertEqual([call["kind"] for call in transport.calls], [
+            "query", "create", "patch", "query", "batch", "patch", "batch", "patch",
+            "batch", "query", "batch",
+        ])
+        create = next(call for call in transport.calls if call["kind"] == "create")
+        self.assertEqual(create["type"], "Bug")
+        patches = [call for call in transport.calls if call["kind"] == "patch"]
+        create_paths = [op["path"] for op in patches[0]["operations"]]
+        self.assertIn("/fields/System.Description", create_paths)
+        self.assertIn("/multilineFieldsFormat/System.Description", create_paths)
+        self.assertEqual(transport.format_writes, ["System.Description"] * 2)
+        self.assertTrue(patches[0]["operations"])
+        self.assertIn(
+            '<div style="display:none;">quenching-spec: alpha.md ',
+            next(op["value"] for op in patches[0]["operations"]
+                 if op["path"] == "/fields/System.Description"),
+        )
+        write_paths = [op["path"] for op in patches[1]["operations"]]
+        self.assertIn("/fields/System.Tags", write_paths)
+        self.assertIn("/fields/Microsoft.VSTS.Scheduling.StartDate", write_paths)
+        self.assertIn("/fields/Microsoft.VSTS.Scheduling.TargetDate", write_paths)
+        self.assertEqual(patches[2]["operations"], [{
+            "op": "add", "path": "/fields/System.State", "value": "Closed",
+        }])
 
 
 # --------------------------------------------------------------------------- #
