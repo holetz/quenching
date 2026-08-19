@@ -13,6 +13,19 @@ maintainer: quenching
 
 # Plugin layout — what may live under `commands/`
 
+## The surface translator ships under `assets/`
+
+`cq components translate` is shared procedure that operates on the plugin's two automation
+surfaces. It therefore lives under
+`plugins/quenching/assets/bin/quenching/components/commands/translate.py`, together with its
+adaptation map in `assets/translation/`: a target repository receives the plugin payload, but it
+does not receive this marketplace repository's root `scripts/` directory.
+
+The root `scripts/sync_codex_plugin.py` is only a compatibility launcher for maintainers. New
+automation and CI invoke `assets/bin/cq components translate`; placing the implementation in
+`scripts/` would make that entry point unavailable to an installed plugin and turn its advertised
+translation capability into a checkout-only accident.
+
 The rule the collapse to one file per entry point created, and that nothing previously stated.
 
 ## `commands/**` is the only tree Claude Code registers

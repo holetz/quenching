@@ -27,6 +27,8 @@ from quenching.components.commands.doctor import cmd_doctor
 from quenching.components.commands.lint import cmd_lint
 from quenching.components.commands.read import cmd_read
 from quenching.components.commands.registry import REGISTRY_RELPATH, cmd_registry
+from quenching.components.commands.translate import add_arguments as add_translate_arguments
+from quenching.components.commands.translate import cmd_translate
 from quenching.components.sections import RULES_MARKER
 from quenching.components.surface import find_surface_root
 from quenching.session.commands.cli import add_subcommands as add_session_subcommands
@@ -71,6 +73,10 @@ def build_parser() -> argparse.ArgumentParser:
                          f"says so")
     add_json(sp)
 
+    sp = sub.add_parser("translate",
+                        help="translate and reconcile the Claude and Codex surfaces")
+    add_translate_arguments(sp)
+
     sp = sub.add_parser("session",
                         help="read a Claude Code session transcript as evidence")
     add_session_subcommands(sp.add_subparsers(dest="session_cmd", required=True))
@@ -96,6 +102,7 @@ DISPATCH: dict = {
     "doctor": cmd_doctor,
     "registry": cmd_registry,
     "read": cmd_read,
+    "translate": cmd_translate,
     "session": cmd_session,
 }
 
