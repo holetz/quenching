@@ -61,6 +61,19 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--type",
                     help="a key from `workItemTypes` — recorded as `workItemType:` in the "
                          "new spec's frontmatter; omit to resolve one later, at build time")
+    sp.add_argument("--summary",
+                    help="ONE line — the summary line the ranked table prints; written the "
+                         "same as `cq specs summary`")
+    sp.add_argument("--tags",
+                    help="a comma-separated list — REPLACES the whole list, same as "
+                         "`cq specs tags`; the subject's fixed tags are folded in "
+                         "automatically and need not be repeated")
+    # No `choices=`: argparse would refuse a bad value with a usage message on stderr and no
+    # JSON, the same reason `verification`'s `policy` argument below has none. The refusal
+    # carries `sp-bad-complexity` and the declared levels like every other refusal here.
+    sp.add_argument("--complexity",
+                    help="one of low/medium/high/xhigh — written into the new spec's "
+                         "`priority.complexity` record")
 
     sp = add_json(sub.add_parser("list", help="every spec, by folder and derived stage"))
     sp.add_argument("--phase", choices=list(PHASES),

@@ -74,6 +74,11 @@ Read it as this skill's doctrine. What follows is only what is **specific to `.a
 - **The registry ends the run honest.** `cq components registry reindex` regenerates the GENERATED
   zone from the post-migration surface, and a second run reporting `changed: false` is what
   proves it matches disk; residue is reported, never silently dropped.
+- **Codex translation drift is reported, never repaired here.** When this checkout carries the
+  generated Codex sibling, `cq components translate --check --json` names every divergent file
+  with `ct-translation-drift`. The align report includes those findings and routes the repair to
+  `cq components translate --write`; this sweep does not overwrite a generated surface while
+  aligning the Codex command taxonomy.
 
 ## Resolving the tool
 
@@ -108,15 +113,17 @@ cq components doctor --json   # descriptions, duplicate / paths, non-canonical s
 cq components lint --json     # per-command conformance, one sk-* code per gap — including the
                           # description codes §8 reports before → after (sk-metadata-cap,
                           # sk-description-portable, sk-trigger-position, sk-no-boundary)
+cq components translate --check --json  # generated Codex sibling, when present; ct-translation-drift
 ```
 plus one `Glob` for the legacy pairs the tool cannot see (below). Branch as
 [sweep-doctrine](../../references/align/sweep-doctrine.md) §1. Probe before the inventory prescribes:
 
 | Probe result | What happens |
 | --- | --- |
-| both exit 0 with no findings, and no legacy pair | **STOP.** Report "`.agents/` conformant, N commands, nothing to align" and end. No inventory, no plan, no confirmation. |
+| both exit 0 with no findings, no translation drift, and no legacy pair | **STOP.** Report "`.agents/` conformant, N commands, nothing to align" and end. No inventory, no plan, no confirmation. |
 | both exit 0 and the only findings are the report-only wider surface (`sk-agent-*`, `sk-hook-*`) | STOP the same way, then list them with the mint that closes each. Nothing here is this sweep's to write. |
 | the only findings are description codes (`sk-metadata-cap`, `sk-description-portable`, `sk-trigger-position`, `sk-no-boundary`) | **Skip to §8.** There is nothing to migrate, and an inventory, a plan and a confirmation for zero renames is ceremony — §8 carries its own gate. |
+| translation reports `ct-translation-drift` only | Report every divergent path and route to `cq components translate --write`; continue no migration for it. |
 | anything else exits 1 or 2, or a legacy pair exists | Continue to step 2. |
 
 **`lint` carries §8's before-image.** Descriptions can be structurally perfect — every trigger in
