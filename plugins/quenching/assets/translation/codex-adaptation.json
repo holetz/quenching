@@ -22,11 +22,5 @@
     "REFERENCES_DIR = os.path.join(\"assets\", \"references\")": "REFERENCES_DIR = \"references\""
   },
   "dropped_frontmatter": ["argument-hint", "allowed-tools", "model", "context", "hooks"],
-  "manual_review": [
-    "AskUserQuestion",
-    "Task",
-    "Skill",
-    "context: fork",
-    "hooks"
-  ]
+  "manual_review": ["AskUserQuestion", "Task", "Skill", "context: fork", "hooks"]
 }
