@@ -31,9 +31,6 @@
 #     a proof that goes false exactly when the rename finishes. What can go silently wrong is the
 #     sweep reading an empty corpus — a `git grep` that fails, a pathspec that excludes
 #     everything — and then every pattern reports zero hits and half 1 passes over nothing.
-#   - `.specs/` is out of scope. It is the planning workspace — the record of what was decided,
-#     not a description of the present — and every task-level `verify:` in this plan excludes it
-#     the same way.
 #   - `tests/fixtures/golden/`, `tests/capture_golden.py` and `assets/evals/**/runs/` are data, not
 #     citations. A golden is STDOUT a pre-refactor script actually printed, frozen the day task 1.1
 #     captured it — task 1.1's own constraint is that nothing later may recapture one, so a golden
@@ -65,9 +62,9 @@ REPO="${REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)}"
 SELF="plugins/quenching/assets/checks/citation-check.sh"
 cd "$REPO" || { echo "citation-check: cannot enter $REPO"; exit 2; }
 
-# Half 1's own scope, beyond `.specs/`: frozen golden data, not live citations — see the header's
-# third scope rule for why.
-SCOPE_EXCLUDE=(':!.specs/' ':!plugins/quenching/tests/fixtures/golden/'
+# Half 1's own scope, beyond frozen golden data, not live citations — see the header's third scope
+# rule for why.
+SCOPE_EXCLUDE=(':!plugins/quenching/tests/fixtures/golden/'
                ':!plugins/quenching/tests/capture_golden.py'
                ':(exclude,glob)plugins/quenching/assets/evals/**/runs/**')
 
@@ -200,7 +197,7 @@ fi
 # --------------------------------------------------------------------------- #
 if want 2; then
   echo "2. the new names were born"
-  git ls-files -z -- ':!.specs/' | python3 -c '
+  git ls-files -z | python3 -c '
 import os, re, sys
 
 plugin = "plugins/quenching"
