@@ -246,6 +246,53 @@ def reconciliation(changed: list[str], digest: str) -> str:
     return "both-changed" if changed else "source-changed"
 
 
+def _body(text: str) -> str:
+    """Return a translated skill's body, excluding generated metadata."""
+    if text.startswith("---\n"):
+        end = text.find("\n---\n", 4)
+        if end >= 0:
+            text = text[end + len("\n---\n"):]
+    if text.startswith("\n<!-- GENERATED FROM"):
+        marker_end = text.find("-->\n\n")
+        if marker_end >= 0:
+            text = text[marker_end + len("-->\n\n"):]
+    return text
+
+
+def _claude_body(text: str) -> str:
+    return (text.replace("${CODEX_PLUGIN_ROOT}", "${CLAUDE_PLUGIN_ROOT}")
+                .replace(".agents/", ".claude/")
+                .replace("AGENTS.md", "CLAUDE.md")
+                .replace("Codex", "Claude"))
+
+
+def propagate_bodies_from_codex(tree: dict[str, bytes]) -> None:
+    """Apply only body edits from a changed Codex tree back to its Claude source.
+
+    Frontmatter and path changes are intentionally refused: the forward map drops information,
+    so only the source side can author that structure.
+    """
+    destination = target() if plugin_translation() else codex_surface()
+    for rel in differences(tree):
+        if not rel.startswith("skills/") or not rel.endswith("/SKILL.md") or rel not in tree:
+            raise ValueError(f"Codex structural change at {rel}; edit the Claude side instead")
+        actual = (destination / rel).read_text(encoding="utf-8")
+        expected = tree[rel].decode("utf-8")
+        actual_header = actual.split("---\n", 2)[:2]
+        expected_header = expected.split("---\n", 2)[:2]
+        if actual_header != expected_header:
+            raise ValueError(f"Codex frontmatter change at {rel}; edit the Claude side instead")
+        parts = Path(rel).parts[1:-1]
+        source_command = ((source() / "commands") if plugin_translation() else claude_surface() / "commands")
+        command = source_command.joinpath(*parts).with_suffix(".md")
+        raw = command.read_text(encoding="utf-8")
+        header_end = raw.find("\n---\n", 4)
+        if header_end < 0:
+            raise ValueError(f"Claude command has malformed frontmatter: {command}")
+        command.write_text(raw[:header_end + len("\n---\n")] + "\n" + _claude_body(_body(actual)),
+                           encoding="utf-8")
+
+
 def write_tree(tree: dict[str, bytes]) -> None:
     destination = target() if plugin_translation() else codex_surface()
     destination.mkdir(parents=True, exist_ok=True)
@@ -282,6 +329,12 @@ def cmd_translate(args, _root: str) -> int:
     payload = {"changed": changed, "count": len(changed), "source_sha256": digest,
                "reconciliation": reconciliation(changed, digest)}
     if args.write:
+        if reconciliation(changed, digest) == "target-changed":
+            try:
+                propagate_bodies_from_codex(tree)
+            except ValueError as exc:
+                return refuse({"code": "ct-reverse-refused", "message": str(exc)}, args.json)
+            tree = generated_tree()
         write_tree(tree)
         payload["changed"] = []
         payload["count"] = 0
