@@ -26,6 +26,22 @@ COPY_FILES = ("bin/cq", "README.md", "VERSION")
 DROP_FRONTMATTER = {"argument-hint", "allowed-tools", "model", "context", "hooks"}
 FORBIDDEN_AFTER_TRANSLATION = ("${CLAUDE_PLUGIN_ROOT}", "${CLAUDE_PROJECT_DIR}", "CLAUDE_PLUGIN_ROOT")
 
+CODEX_CQ_WRAPPER = r'''cq() {
+  local plugin_root="${PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-}}"
+  [ -n "$plugin_root" ] || plugin_root="$(codex plugin list 2>/dev/null | awk '$1 ~ /^quenching-codex@/ {print $NF; exit}')"
+  [ -n "$plugin_root" ] || plugin_root="$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f \( -path '*/quenching-codex/*/scripts/cq' -o -path '*/quenching-codex/scripts/cq' \) -print -quit 2>/dev/null | sed 's#/scripts/cq$##')"
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}'''
+
+CQ_INVOCATION = re.compile(r"(?<![A-Za-z0-9_./-])cq(?=\s+(?:specs|knowledge|components|git)\b)")
+EXPLICIT_CQ_INVOCATION = re.compile(r"python3\s+(?:\"?\.\./\.\./scripts/cq\"?|\"?scripts/bin/cq\"?)")
+RELATIVE_CQ_PATH = re.compile(r"(?<![A-Za-z0-9_./])(?:python3\s+)?\"?\.\./\.\./scripts/cq\"?")
+CODEX_CQ_COMMAND = 'python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path \'*/quenching-codex*/scripts/cq\' -print -quit 2>/dev/null)"'
+
 
 def read_adaptation() -> dict:
     return json.loads(MANIFEST.read_text(encoding="utf-8"))
@@ -59,9 +75,148 @@ def transform_platform(text: str, adaptation: dict) -> str:
     return text
 
 
+def has_cq_invocation(text: str) -> bool:
+    return bool(CQ_INVOCATION.search(text) or EXPLICIT_CQ_INVOCATION.search(text))
+
+
+def transform_codex_cq_references(text: str) -> str:
+    """Keep generated Codex prose from teaching an unusable relative CLI path."""
+    text = RELATIVE_CQ_PATH.sub("cq", text)
+    text = text.replace(
+        "§Resolving the tool, §Write the resolved path literally on every invocation: bare `cq specs` where\n"
+        "the `bin/` shim is on `PATH`, else the plugin path `cq specs`\n"
+        "invoked with `python3` or `py` (`allowed-tools: Bash(python3:*), Bash(py:*)`) — **two doors onto one\n"
+        "file, and no third rung**.",
+        "§Resolving the tool: define the per-call wrapper there, then invoke the bundled `cq specs`\n"
+        "function in the same Bash call — **one door onto one file, and no third rung**.",
+    )
+    text = text.replace(
+        "The executable checker is `cq`\n(`cq knowledge validate /.knowledge` → exit 0 = conforms). Invoke it by its **literal quoted\n"
+        "path** on every call, never through a shell variable holding the interpreter plus the path —",
+        "The executable checker is `cq`\n(`cq knowledge validate /.knowledge` → exit 0 = conforms). Define the per-call wrapper from\n"
+        "the tool-resolution reference, then invoke `cq` in that same Bash call —",
+    )
+    text = text.replace(
+        "Every rung above that fallback is the plugin's own file — bare `cq` through the `bin/` shim on\n"
+        "`PATH`, or the plugin path — and nothing else is one. This sentence used to name a rung outside the",
+        "The only supported route above that fallback is the plugin's own per-call `cq` wrapper; it resolves\n"
+        "the installed plugin copy and nothing else. This sentence used to name a rung outside the",
+    )
+    return text
+
+
+def transform_codex_shell_blocks(text: str) -> str:
+    """Make every generated shell invocation independent of the user's PATH.
+
+    A Codex Bash call starts a fresh shell, so each cq invocation carries its own
+    one-line lookup of the installed plugin copy instead of relying on state from a
+    previous call or on a host-specific PATH mutation.
+    """
+    lines = text.splitlines()
+    output: list[str] = []
+    in_bash = False
+    block: list[str] = []
+
+    def flush_block() -> None:
+        if has_cq_invocation("\n".join(block)):
+            body = [EXPLICIT_CQ_INVOCATION.sub(CODEX_CQ_COMMAND, line) for line in block]
+            body = [CQ_INVOCATION.sub(CODEX_CQ_COMMAND, line) for line in body]
+            output.extend(body)
+        else:
+            output.extend(block)
+
+    for line in lines:
+        opening = re.match(r"^\s*```bash\s*$", line)
+        if opening:
+            in_bash = True
+            block = []
+            output.append(line)
+        elif in_bash and re.match(r"^\s*```\s*$", line):
+            flush_block()
+            output.append(line)
+            in_bash = False
+        elif in_bash:
+            block.append(line)
+        else:
+            output.append(line)
+    if in_bash:
+        output.extend(block)
+    return "\n".join(output) + ("\n" if text.endswith("\n") else "")
+
+
+def codex_tool_resolution(text: str) -> str:
+    """Replace the Claude/host-PATH contract with Codex's per-call resolver."""
+    start = text.index("## Resolving the tool")
+    resolution = f'''## Resolving the tool
+
+Codex does **not** require `cq` to be installed in the user's PATH.  A bare `cq` in the
+examples below means the shell function defined at the start of the same Bash call; never
+assume that `cq` is an independently installed command, and never ask the user to add it to
+their shell startup files.
+
+```bash
+{CODEX_CQ_WRAPPER}
+```
+
+The function uses the plugin-provided root when the host exposes one, otherwise it resolves the
+installed `quenching-codex` copy through `codex plugin list` or the standard Codex cache.  It then
+executes the bundled `scripts/cq` by absolute path.  Defining it again in each Bash call is
+intentional: shell state does not survive between calls, and sub-agents may receive a fresh
+environment.
+
+There is no target-repository installation step and no third rung: never look for a copy under a
+target's `.agents/hooks/`, never install one there, and never modify the user's PATH to make this
+tool resolve.
+
+Branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json` payload, never on
+prose.
+
+### Write the resolved path literally on every invocation
+
+The wrapper resolves the installed plugin at the point of execution.  Do not copy a relative path
+from this reference into a command: a fresh Bash call has no shared working-directory or shell
+state to make a plugin-relative path reliable.  Defining the function again in every Bash call is
+the portable form, including for sub-agents.
+
+**Chain several writes so a failure stops the run** — `set -e`, or `&&` between them.
+'''
+    return text[:start] + resolution
+
+
+def codex_readme(text: str) -> str:
+    """Keep the generated README aligned with Codex's actual tool-loading contract."""
+    install = text.index("The tool itself is reached through **two doors onto one file**.")
+    upgrade = text.index("## Upgrade", install)
+    text = (
+        text[:install]
+        + "The CLI is bundled inside the plugin and is **not** installed in the user's PATH. "
+          "Codex skills define a per-call `cq` wrapper that resolves the installed plugin and "
+          "executes `scripts/cq` by absolute path; the wrapper is repeated because each Bash call "
+          "and each sub-agent may start with a fresh shell. The resolver and its no-global-install "
+          "rule live in `references/align/tool-resolution.md`.\n\n"
+        + text[upgrade:]
+    )
+    upgrade = text.index("## Upgrade")
+    publishing = text.index("Publishing the bump itself is mechanized", upgrade)
+    text = (
+        text[:upgrade]
+        + "## Upgrade\n\n"
+          "Resolution is **plugin-first, with no user-level install**: every skill resolves the "
+          "installed plugin copy at call time, so a version bump reaches consumers when Codex "
+          "refreshes the plugin. There is no global `cq` executable to keep in sync.\n\n"
+        + text[publishing:]
+    )
+    return text
+
+
 def transform_asset(relative: Path, text: str, adaptation: dict) -> str:
     """Apply the few structural adaptations that cannot be expressed as token swaps."""
     text = transform_platform(text, adaptation)
+    if relative.as_posix() == "align/tool-resolution.md":
+        text = codex_tool_resolution(text)
+    if relative.suffix == ".md":
+        text = transform_codex_cq_references(text)
+        text = transform_codex_shell_blocks(text)
     if relative.as_posix() == "quenching/components/surface.py":
         start = text.index("def discover_commands(")
         end = text.index("\ndef discover_references(", start)
@@ -130,6 +285,8 @@ def command_to_skill(command: Path, adaptation: dict) -> str:
         raise ValueError(f"command has no description: {command}")
     description = transform_platform(fields["description"], adaptation)
     body = transform_platform(body, adaptation)
+    body = transform_codex_cq_references(body)
+    body = transform_codex_shell_blocks(body)
     header = (
         "---\n"
         f"name: {fields['name']}\n"
@@ -181,6 +338,7 @@ def generated_tree() -> dict[str, bytes]:
             destination = Path("README.md")
         content = transform_platform((SOURCE / rel).read_text(encoding="utf-8"), adaptation)
         if rel == "README.md":
+            content = codex_readme(content)
             content = ("# quenching-codex (generated)\n\n"
                        "This plugin is generated from `plugins/quenching/`, which is the only editable source.\n"
                        "Run `python3 scripts/sync_codex_plugin.py --write` to refresh it.\n\n" + content)

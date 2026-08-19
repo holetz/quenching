@@ -105,7 +105,7 @@ else.**
 | `title` | always | `create` | one human-readable line |
 | `date` | always | `create` | `YYYY-MM-DD`, the capture date — stamped once and never rewritten (why it is not the basename's prefix: §Identity) |
 | `verification` | **optional** | `create` / `develop` | `per-task` · `per-section` · `end-of-plan` — when `verify:` runs. Absent means the default (`per-section`), applied on read; written after capture with `cq specs verification`, **never** by editing the frontmatter |
-| `priority` | once ranked | `triage` | `{level, criticality, complexity, date}` — a human's ranking against every other spec |
+| `priority` | once ranked | `triage` | `{level, criticality, complexity, date}` — a human's ranking against every other spec. `complexity` alone is also written at capture, by `create` — the one field of this record a second command may write (`assets/specs/schema.json`'s `complexity.writtenBy: [triage, create, develop]`) |
 | `refined` | once interrogated | `develop` | `{mode, date}` — that a real interrogation happened, and which bank ran it |
 | `approved` | once approved | `develop`, or `execute` inline | `{date}` — **a human said go**; the one fact the old folder hop carried |
 | `branch` | once building | `execute` | `{base, work}` — after a merge, git cannot say what the base was |
@@ -136,7 +136,10 @@ There is no attempt counter and no `.specs.json`.
 
 **Four more keys — `tags`, `assignee`, `start`, `target` — are STATE, never records.** Each is a
 first-level frontmatter key with its own deterministic verb (`cq specs tags|assignee|start|target
-<slug> [value]`), not a `{field: value}` record and not owned by one lifecycle command. Where a
+<slug> [value]`), not a `{field: value}` record and not owned by one lifecycle command. `tags` is
+also written at capture — `cq specs new --tags` folds a resolved `subjects.<KEY>`'s own fixed tags
+in automatically, so the whole list still lands in ONE write rather than the capture's own tags
+followed by a second, separate `cq specs tags` call. Where a
 backend has a faithful native counterpart — issue labels/assignees on `github`,
 `System.Tags`/`System.AssignedTo`/`Microsoft.VSTS.Scheduling.StartDate`/`TargetDate` on
 `azure-boards` — that counterpart IS the storage: reassembled on every read, never kept in the
@@ -156,7 +159,7 @@ change; `## Overview` explains it to a newcomer; `summary:` is what a listing pr
 one row per spec and no room to explain anything. It exists because every consumer that needed
 that line used to build it by reading the spec — measured on a 45-spec front, three commands had
 three different hand-written renderings of the same ranked table, and each one paid to read what
-none of them stored. Written at capture from `## Problem`, refreshed by every
+none of them stored. Written with the capture itself (`cq specs new --summary`, from `## Problem`), refreshed by every
 `quenching-specs-develop` bank in the same edit that refreshes `## Overview`, and never inferred:
 a listing with no `summary:` falls back to `title:` and **says how many rows did**, so the gap is
 visible rather than silently papered over.
@@ -403,7 +406,7 @@ missing one is a **refusal (exit 2) naming it, never a traceback**.
 
 | Command | Use |
 | --- | --- |
-| `cq specs new <slug> [--title T] [--verification P] [--subject KEY]` | scaffold `plans/<slug>.md` with `## Problem` as its only section; the capture date is stamped into `date:` here and never again. `--subject` applies a declared `subjects.<KEY>`'s parent (where the backend has one) and fixed tags |
+| `cq specs new <slug> [--title T] [--verification P] [--subject KEY] [--type KEY] [--summary LINE] [--tags LIST] [--complexity LEVEL]` | scaffold `plans/<slug>.md` with `## Problem` as its only section by default; the capture date is stamped into `date:` here and never again. `--subject` applies a declared `subjects.<KEY>`'s parent (where the backend has one) and fixed tags — folded into `--tags` where both are given, never overwritten by it. `--summary`/`--complexity` write the scalar/record the same way `summary`/`record priority` do. Stdin, read when it is not a tty, carries N sections in the SAME multi-heading stream `section --write` reads and writes — the stream self-declares by opening on a canonical `## <Heading>`, with no single implied heading to fall back on, so an unopened or malformed stream refuses (`sp-stray-heading`/`sp-write-duplicate-heading`) before `create_spec` ever runs |
 | `cq specs list [--json]` | every spec, by folder and derived stage |
 | `cq specs status --spec <slug> [--json]` | sections present, derived stage, task progress with recorded subjects, the records, and the outstanding gates |
 | `cq specs section <slug> "<heading>[,<heading>…]" [--write]` | deterministic partial read of N sections in ONE call, returned in the order asked; `--write` writes N in one call too, each created in canonical position — the bodies arrive on stdin delimited by the same `## <Heading>` lines the read prints, and the set the stream carries must equal the set declared here or the call refuses without writing any of them. A stream that does not open on a canonical heading is one raw body under the one heading declared, exactly as before |
@@ -444,10 +447,8 @@ and HTML comments, with any example inside a comment or written as a `<placehold
 
 Owned by
 [align/tool-resolution.md](../../references/align/tool-resolution.md)
-§Resolving the tool, §Write the resolved path literally on every invocation: bare `cq specs` where
-the `bin/` shim is on `PATH`, else the plugin path `../../scripts/cq specs`
-invoked with `python3` or `py` (`allowed-tools: Bash(python3:*), Bash(py:*)`) — **two doors onto one
-file, and no third rung**.
+§Resolving the tool: define the per-call wrapper there, then invoke the bundled `cq specs`
+function in the same Bash call — **one door onto one file, and no third rung**.
 
 ## Boundary: `specs/` vs the OKF `knowledge/` bundle
 
@@ -687,9 +688,12 @@ Next step
   forms are owned by
   [align/sweep-doctrine.md](../../references/align/sweep-doctrine.md) §7,
   which this mold selects from rather than restates.
-- **The block is a suggestion, never an offer.** `quenching-specs-status` and `quenching-specs-align` print it and
-  stop — no plan, no "shall I". `quenching-specs-execute` at 100% prints the same block
-  and *then* opens the `AskUserQuestion`. The form is identical; only what follows it differs.
+- **The block is a suggestion, never an offer** — with two named exceptions, both printing the
+  block and *then* opening an `AskUserQuestion` rather than stopping: `quenching-specs-execute` at
+  100%, and `quenching-specs-create`, whose closing screen is exactly that offer (§The one screen
+  in its own body) — develop it now, with or without questions, or stop here. `quenching-specs-status`
+  and `quenching-specs-align` print the block and stop — no plan, no "shall I". The form is
+  identical across all four; only what follows it differs.
 
 <!-- rationale -->
 

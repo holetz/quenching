@@ -19,7 +19,7 @@ which stops a stacked branch from being silently orphaned by a rewrite it was ne
 ### 1. Confirm a clean tree, and snapshot the refs before rewriting
 ```bash
 git status --porcelain
-python3 ../../scripts/cq git base --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git base --json
 git for-each-ref --format='%(refname:short) %(objectname)' refs/heads
 ```
 Non-empty `git status --porcelain` → refuse and name the paths; a rebase on a dirty tree can turn

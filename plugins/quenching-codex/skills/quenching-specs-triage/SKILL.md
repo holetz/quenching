@@ -113,8 +113,8 @@ upward is free; guessing downward is not.
 Find `/.specs/plans/` at the target repo root. Missing → stop and offer `quenching-specs-create`, which
 installs the seed. Then:
 ```bash
-cq specs list --phase plans --json      # every spec in plans/: folder, derived stage, and its records
-cq specs section <slug> Problem         # per spec being ranked, for the reason column
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs list --phase plans --json      # every spec in plans/: folder, derived stage, and its records
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs section <slug> Problem         # per spec being ranked, for the reason column
 ```
 `list --phase plans --json` carries the seven `records` for exactly the front this sweep ranks —
 never the `archive/` history alongside it — so the current `priority` of every spec in scope arrives
@@ -162,8 +162,8 @@ what blew past a 120s timeout in the measured session — `xargs -P 8`, the same
 session already improvised on the read side, generalized here to the write:
 ```bash
 printf '%s\0' \
-  'cq specs record <slug1> priority --set level=<n1> --set criticality=<word1> --set complexity=<word1> --set date=<today>' \
-  'cq specs record <slug2> priority --set level=<n2> --set criticality=<word2> --set complexity=<word2> --set date=<today>' \
+  'python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record <slug1> priority --set level=<n1> --set criticality=<word1> --set complexity=<word1> --set date=<today>' \
+  'python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record <slug2> priority --set level=<n2> --set criticality=<word2> --set complexity=<word2> --set date=<today>' \
   ... \
 | xargs -0 -P 8 -I{} sh -c '{}'
 ```
@@ -179,7 +179,7 @@ file to edit.
 
 ### 5. Check
 ```bash
-cq specs validate --phase plans --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs validate --phase plans --json
 ```
 That is the whole check, and it must exit 0. Nothing else was written: the ranking lives in each
 spec's own `priority` record, there is no listing to regenerate, and nothing goes into the `/.knowledge/`
@@ -189,7 +189,7 @@ bundle — the log this used to append to is retired.
 ### 6. Report
 
 ```bash
-cq components read ../../references/specs-develop/spec-driven.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/spec-driven.md \
   --sections "§The report mold" --rules-only
 ```
 
@@ -199,7 +199,7 @@ Emit §The report mold. Two body blocks:
    composed at step 2 — the ranking now on disk is a tool call away, so run one and quote its
    output verbatim (§Quoting a tool's own output) rather than recomposing it in prose:
    ```bash
-   cq specs next --front --table --order priority \
+   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs next --front --table --order priority \
      --columns "spec,summary,stage,tasks,priority,complexity"
    ```
    §The spec table, the four proposal columns dropped, `Priority` and `Complexity` showing the

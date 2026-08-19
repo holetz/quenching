@@ -88,7 +88,7 @@ the user decides both. **Done when:** each offer is answered.
 
 ### 8. Self-check
 ```bash
-cq components doctor --json   # the definition carries a description — no sk-agent-no-description
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components doctor --json   # the definition carries a description — no sk-agent-no-description
 ```
 Then read the definition against the contract by eye: tools scoped, voice second-person, a
 verifier states it never edits. Report what was written and the always-on cost the

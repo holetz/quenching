@@ -18,9 +18,9 @@ this command runs.
 
 ### 1. Read-if-present, and the staged diff
 ```bash
-cq components read ../../references/git/conventions.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/conventions.md \
   --sections "§The read-if-present rule"
-python3 ../../scripts/cq git conventions --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git conventions --json
 git diff --cached --name-only
 ```
 Nothing staged → refuse: name that the index is empty and say what to stage, never fall back to
@@ -32,7 +32,7 @@ and the staged file list are both known.
 target doc covering only part of it governs that part, the default below fills the rest. With
 nothing declared:
 ```bash
-cq components read ../../references/git/commit.md --sections "§Commit messages"
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/commit.md --sections "§Commit messages"
 ```
 `$ARGUMENTS` given → use it verbatim, wrapped rather than truncated past 72 characters where the
 title allows. Omitted → ask. **Done when:** the exact subject string is fixed.

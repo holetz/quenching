@@ -147,7 +147,7 @@ authorisation. A failing setup is reported and **never undoes the worktree**.
 <!-- rules -->
 
 ```bash
-cq specs record <slug> branch --set base=main --set work=plan/<slug>
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record <slug> branch --set base=main --set work=plan/<slug>
 ```
 
 `base` is whatever was checked out when the branch was cut. It is **not** assumed to be `main`.

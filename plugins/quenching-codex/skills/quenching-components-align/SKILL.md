@@ -103,9 +103,9 @@ and reported by this sweep, never by a `sk-*` code.
 ### 1. Probe — the two calls that decide whether anything else runs
 Before any inventory, ask the tool whether there is work at all:
 ```bash
-cq components doctor --json   # descriptions, duplicate / paths, non-canonical segments — plus
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components doctor --json   # descriptions, duplicate / paths, non-canonical segments — plus
                           # the report-only wider surface: agents/ and wired hooks (sk-agent-*, sk-hook-*)
-cq components lint --json     # per-command conformance, one sk-* code per gap — including the
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components lint --json     # per-command conformance, one sk-* code per gap — including the
                           # description codes §8 reports before → after (sk-metadata-cap,
                           # sk-description-portable, sk-trigger-position, sk-no-boundary)
 ```
@@ -310,10 +310,10 @@ deleted.
 ### 9. Verify, decide, report
 Regenerate the zone, then let the tool judge the surface the migration produced:
 ```bash
-cq components registry reindex --json   # the zone, from the post-migration surface and §8's descriptions
-cq components doctor --json             # the surface invariant the migration just changed
-cq components lint --json               # the gaps the migration was supposed to close — §8's codes
-cq components registry reindex --json   # `changed: false` — the zone now matches disk
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components registry reindex --json   # the zone, from the post-migration surface and §8's descriptions
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components doctor --json             # the surface invariant the migration just changed
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components lint --json               # the gaps the migration was supposed to close — §8's codes
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components registry reindex --json   # `changed: false` — the zone now matches disk
 ```
 Every renamed reference site greps clean, and no citation still points into a deleted
 `skills/` tree. `reindex` runs **after** §8, never before: the zone's `Typical trigger` column is

@@ -21,7 +21,7 @@ policy, reviewing its diff, and committing it alone with the box already ticked 
 The example uses `§A` / `§B` as placeholders — they are not addresses.
 
 ```bash
-cq components read <the cited file> --sections "§A" --sections "§B"
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read <the cited file> --sections "§A" --sections "§B"
 ```
 
 One call, N sections, no frontmatter; a unique prefix resolves, so `§B` is enough. The reason is
@@ -53,7 +53,7 @@ is under way, or run `cq specs list --json` and pick with **AskUserQuestion**. A
 **The precondition comes first.** Load the rule that binds this step:
 
 ```bash
-cq components read ../../references/specs-execute/execution.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-execute/execution.md \
   --sections "§The precondition"
 ```
 
@@ -66,8 +66,8 @@ git branch --list "plan/<slug>"
 git branch --show-current
 git worktree list
 git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null
-cq specs status --spec "<slug>" --json
-cq specs config --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs status --spec "<slug>" --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs config --json
 # and the hook probe of 2b, in this same call
 ```
 
@@ -103,7 +103,7 @@ checkout. Show the inference on the same line as the confirmation, before stampi
 `base: main — inferred; this branch was not cut by this command` — and stamp:
 
 ```bash
-cq specs record "<slug>" branch --set base=<resolved base> --set work=<current branch>
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record "<slug>" branch --set base=<resolved base> --set work=<current branch>
 ```
 
 Never derive `base` from `git merge-base` or `--fork-point` here: both answer a commit, not a
@@ -130,7 +130,7 @@ It runs its own **AskUserQuestion**, still mid-flow and still gated — invoking
 re-read the state it left:
 
 ```bash
-cq specs status --spec "<slug>" --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs status --spec "<slug>" --json
 ```
 
 `branch.work` now set → the chosen form was taken, or **In place** was chosen and stamped `work`
@@ -158,7 +158,7 @@ found already held, or declined, and any unresolved hook has been reported.
 **Load the stage ladder first** — what the derived stage names and means:
 
 ```bash
-cq components read ../../references/specs-develop/spec-driven.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/spec-driven.md \
   --sections "§Derived stages"
 ```
 
@@ -187,7 +187,7 @@ this spec), `sp-impact-uncovered` (a declared standard no task writes) — and o
 Ask for the `build` moment — the six sections an executor needs — never by naming them:
 
 ```bash
-cq specs section "<slug>" --moment build --scope current --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs section "<slug>" --moment build --scope current --json
 ```
 
 Branch on the payload, never the exit code. `sections[].state`, already read once in step 2, is
@@ -229,7 +229,7 @@ repairs `## Impact`.
 ### 5. Implement tasks — loop until done or blocked
 Ask the tool for the next task; **never pick one by reading the file**:
 ```bash
-cq specs next --spec "<slug>" --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs next --spec "<slug>" --json
 ```
 It returns that task's `verify`, `files`, `pattern` and `parallel`, plus the spec's `verification`
 policy, and it **skips `[!]` blocked tasks** (`action: "blocked"` once every remaining task is).
@@ -256,7 +256,7 @@ b. **Write the code**, minimal and scoped to the declared files. A task that dec
    that rule untouched; when it is, load the rules that bound it before dispatching:
 
    ```bash
-   cq components read ../../references/specs-execute/execution.md \
+   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-execute/execution.md \
      --sections "§Delegating an executor"
    ```
 
@@ -264,9 +264,9 @@ c. **Write only the `/.knowledge/` this task names.** When this task writes `/.k
    draws the line between declared and emergent, and the boundary it crosses:
 
    ```bash
-   cq components read ../../references/specs-execute/execution.md \
+   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-execute/execution.md \
      --sections "§Declared versus emergent"
-   cq components read ../../references/specs-develop/spec-driven.md \
+   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/spec-driven.md \
      --sections "§Boundary"
    ```
 
@@ -283,12 +283,12 @@ d. **On the first pass through 5d–5e, load the rules the chain runs under — 
    the section squash; then the git conventions that name the subject — one call per file:
 
    ```bash
-   cq components read ../../references/specs-execute/execution.md \
+   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-execute/execution.md \
      --sections "§The verification policy" --sections "§The validation loop" \
      --sections "§The diff self-review" --sections "§The commit" --sections "§The section squash"
-   cq components read ../../references/git/conventions.md --sections "§The read-if-present rule"
-   cq components read ../../references/git/commit.md --sections "§Commit messages" --sections "§The subject is the anchor"
-   cq components read ../../references/git/isolation.md --sections "§Marking the branch with the specs it built"
+   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/conventions.md --sections "§The read-if-present rule"
+   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/commit.md --sections "§Commit messages" --sections "§The subject is the anchor"
+   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/isolation.md --sections "§Marking the branch with the specs it built"
    ```
 
    **Self-review the task's diff** on the four items — reuse · useless defense · obvious comment ·
@@ -301,7 +301,7 @@ e. **Then run verify, tick and commit as ONE chained call.** Decide the subject 
 
    ```bash
    <the task's verify:> \
-     && cq specs task --check <id> --spec "<slug>" --subject "plan/<slug>: <id> <title>" \
+     && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <id> --spec "<slug>" --subject "plan/<slug>: <id> <title>" \
      && git add <the task's declared files> <the spec file> \
      && git commit -m "plan/<slug>: <id> <title>" \
      && git log -1 --format=%s
@@ -342,7 +342,7 @@ h. **On a section boundary with no `[!]`, squash and repair** — per §The sect
    git merge-base --is-ancestor <section-base-sha> HEAD \
      && git reset --soft <section-base-sha> \
      && git commit -m "plan/<slug>: <N> <section title>"
-   cq specs task --check <id> --spec "<slug>" --subject "plan/<slug>: <N> <section title>"   # per task
+   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <id> --spec "<slug>" --subject "plan/<slug>: <N> <section title>"   # per task
    ```
 
    `<section-base-sha>` is the sha captured (or derived) when the section opened, above — **never a
@@ -382,8 +382,8 @@ Rewrite the **relevant block** of `## Handoff` to the state of play a fresh exec
 A rewrite touches ONE of the two — never both, never a closed section's:
 
 ```bash
-cq specs section "<slug>" Handoff --write --scope global   # the evergreen block
-cq specs section "<slug>" Handoff --write --scope current  # the block of the open section
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs section "<slug>" Handoff --write --scope global   # the evergreen block
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs section "<slug>" Handoff --write --scope current  # the block of the open section
 ```
 
 Everything a resumed run *can* derive — which tasks are done, which commit carried each — is
@@ -410,7 +410,7 @@ it stands after the run's last commit.
 ### 7. Report, and hand off
 
 ```bash
-cq components read ../../references/specs-develop/spec-driven.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/spec-driven.md \
   --sections "§The report mold" --rules-only
 ```
 

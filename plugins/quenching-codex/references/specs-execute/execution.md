@@ -128,7 +128,7 @@ Two rules bound the loop:
   When the orchestrator judges that further attempts are repeating rather than converging, it
   writes the task blocked, with the reason:
   ```bash
-  cq specs task --spec "<slug>" --block <id> --reason "<why, one line>"
+  python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --spec "<slug>" --block <id> --reason "<why, one line>"
   ```
   That writes a **visible marker into `## Tasks`** — `- [!] <id> <title> — blocked: <reason>` —
   and `cq specs next` then skips it and offers the following task, so one bad task never stalls
@@ -169,7 +169,7 @@ Run it as **one chained call**, gate included:
 
 ```bash
 <the task's verify:> \
-  && cq specs task --check <id> --spec "<slug>" --subject "<subject>" \
+  && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <id> --spec "<slug>" --subject "<subject>" \
   && git add <the task's files> <the spec file> \
   && git commit -m "<subject>" \
   && git log -1 --format=%s
@@ -223,7 +223,7 @@ level down: it produces no diff of its own, so there is no commit to anchor to a
 record. Its chain ends at the tick:
 
 ```bash
-<the task's verify:> && cq specs task --check <id> --spec "<slug>"
+<the task's verify:> && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <id> --spec "<slug>"
 ```
 
 — no `--subject`, no `git add`, no `git commit`. The box still ticks. Where the backend keeps the
@@ -290,7 +290,7 @@ carries it) resolves to the commit that now actually exists rather than the one 
 replaced. The same `task --check` call, re-run per task, upserts the metadata in place:
 
 ```bash
-cq specs task --check <id> --spec "<slug>" --subject "plan/<slug>: <N> <section title>"
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <id> --spec "<slug>" --subject "plan/<slug>: <N> <section title>"
 ```
 
 Every task in the section ends up sharing that one subject — the anchor's granularity narrows from
@@ -326,7 +326,7 @@ Everything else the work reveals — a gotcha, a second-order consequence, a rul
 of — costs **one line and no authoring**:
 
 ```bash
-cq specs discover "<slug>" "<what was found, one line>"
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs discover "<slug>" "<what was found, one line>"
 ```
 
 It is captured **indiscriminately**. The lines are resolved by `quenching-specs-develop`'s
@@ -388,7 +388,7 @@ trades wall-clock for merge conflicts and loses on both.
 <!-- rules -->
 
 ```bash
-cq specs parallel --spec "<slug>" [--json]
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs parallel --spec "<slug>" [--json]
 ```
 
 Reports each `[P]` group and whether it is `eligible`. Exit **0** when every marked group is
@@ -451,8 +451,8 @@ scoped to `python3`/`py` because they only ever talk to `cq specs`.
 When `cq` does not resolve, the body falls back to `Read`ing the cited file whole and says so in
 the report — because that is the run's context cost changing, not a cosmetic difference.
 
-Every rung above that fallback is the plugin's own file — bare `cq` through the `bin/` shim on
-`PATH`, or the plugin path — and nothing else is one. This sentence used to name a rung outside the
+The only supported route above that fallback is the plugin's own per-call `cq` wrapper; it resolves
+the installed plugin copy and nothing else. This sentence used to name a rung outside the
 plugin, "the target's `.agents/hooks/cq`", which
 [align/tool-resolution.md](../align/tool-resolution.md) §Resolving the tool forbids outright:
 *there is no third rung*, never a copy under a target's `.agents/hooks/`. A copy that lives there is
