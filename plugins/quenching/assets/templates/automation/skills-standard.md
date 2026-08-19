@@ -7,7 +7,7 @@ tags: [automation, commands, naming]
 timestamp: <ISO 8601 — e.g. 2026-07-20>
 audience: both
 authority: background   # born background (agreed-but-unproven); graduates to current once the surface follows it in practice
-source: <who agreed the rule — e.g. quenching-components-command-new first run, team decision>
+source: <who agreed the rule — e.g. quenching:components:command:new first run, team decision>
 maintainer: <owner>
 ---
 
