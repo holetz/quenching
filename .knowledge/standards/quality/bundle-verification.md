@@ -15,15 +15,15 @@ maintainer: quenching
 
 What the `knowledge` front proves mechanically, what it leaves to a skill reading its own work, and
 how to tell which a given invariant deserves. `assets/bin/cq knowledge` is the
-implementation; `quenching-knowledge-align/references/conformance.md` is the code-by-code contract.
+implementation; `quenching:knowledge:align/references/conformance.md` is the code-by-code contract.
 This standard is the rule *behind* both.
 
 ## An invariant restated in more than two skills is owed a deterministic check
 
 The rule this front learned the hard way. The glossary tail step — "after a capture, check whether
 the new concept introduced a term that belongs in `glossary.md`" — is specified in **six**
-places: `homes.md` §Enriching the glossary, `quenching-knowledge-add`, `quenching-knowledge-learn`,
-`quenching-knowledge-import-memory`, `quenching-knowledge-define`, and `/quenching:specs:conclude`'s
+places: `homes.md` §Enriching the glossary, `quenching:knowledge:add`, `quenching:knowledge:learn`,
+`quenching:knowledge:import-memory`, `quenching:knowledge:define`, and `/quenching:specs:conclude`'s
 `distill.md`. Across two real distillation runs it produced **zero** entries.
 
 An invariant written six times and executed zero times is not under-specified. It is evidence that
