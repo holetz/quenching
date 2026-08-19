@@ -1,7 +1,7 @@
 ---
 type: standard
 title: Plan git record contract
-description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, one commit per task while its section is open squashed to one commit per section at that section's boundary and what that does to the anchor's granularity, the branch, pr and merge frontmatter records — `pr:` stamped by `/quenching:git:pr:create` and `merge:` by `/quenching:git:merge`, each on its own confirmation, read-on-demand rather than a mandatory stamp once `cq git base` reports the resolved base is the host's own default branch, the write-many `pr` record and the minimal-gear run that stops at the open PR without ever stamping `merge`, where a record lands when there is no merge to carry it — the in-place pair `work == base` and the single case where the record rather than git liveness is the signal because that ref can never die, the git-native `quenching-slugs:` branch mark that lets `conclude` self-discover its spec with no frontmatter involved, the base-inference chain `origin/HEAD → init.defaultBranch → main`, why every record is written before the thing it describes, the squash-merge caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, why a branch is deleted with `-d` and never `-D`, and the read-if-present contract for a target's own /.knowledge/standards/git/
+description: How a provider-owned spec records the git facts that cannot be derived later — commit shas for task anchors, branch, pull request and merge records, section squashes, branch marks for conclude discovery, base inference, merge routes, and safe branch cleanup
 resource: plugins/quenching/assets/references/git/**, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-conclude/auto-discover.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/git/merge.md, plugins/quenching/commands/git/pr/create.md
 tags: [workflows, specs, git, commits, records]
 timestamp: 2026-08-16
@@ -64,7 +64,7 @@ A spec built **in place** (`branch.work == branch.base`) needs no version of thi
 it is already standing in is both the branch and the base, so there is nowhere else a record could
 go.
 
-## The task→commit link is the commit's own sha, where the spec no longer shares a branch with it
+## The task→commit link is the commit's own sha for every provider-owned spec
 
 Each completed task line carries a fact about the commit that implements it, in the metadata
 grammar `files:` and `verify:` already use:
@@ -84,30 +84,22 @@ git add <the task's files> && git commit -m "<subject>"
 cq specs task --spec <slug> --check <id> --commit "$(git rev-parse HEAD)"
 ```
 
-### Why a post-commit write stopped being the thing this contract forbade
+### Why the provider write does not create a second code commit
 
 §Every record is written before the thing it describes is still the rule, and reads for a reason
 that has not changed: a record naming something only the commit can produce, written into a file
 that shares the commit's own branch, forces a second commit on that branch to carry the record —
 turning "one commit per task" into two.
 
-**What changed is which branch the record lands on.** [The spec backend](../architecture/spec-backend.md)
-guarantees no backend lets a spec share a branch with the code being committed: the `files` backend
-writes the tick to its own dedicated specs branch (by way of a worktree, not by way of a second
-commit on the code branch — see [worktree-setup.md](worktree-setup.md)), and an external backend
-writes it outside git entirely. Writing `commit: <sha>` after the code commit no longer touches the
-code branch a second time, because the write was never going to land there. The rule that forced
-subject-before-commit was never "sha is illegal" — it was "never a second commit on the branch
-being committed to", and a sha-carrying write that lands on a different store altogether does not
-break it.
+The provider document is outside the code branch. Writing `commit: <sha>` after the code commit
+does not create a second code commit, because the provider write is not a git operation. The rule
+that forced subject-before-commit was never "sha is illegal" — it was "never a second commit on the
+branch being committed to"; the provider contract removes that collision for every spec.
 
-### Subject is not deprecated; it is what a co-branching spec still needs
+### Subject remains legacy compatibility
 
-A repository whose specs still live on the code branch — this repository's own `plans/`/`archive/`
-at the time of writing, per [spec-backend.md](../architecture/spec-backend.md) §The selected
-backend is the source of truth — still pays the cost a second commit would carry, because for that
-spec the record and the code genuinely do share a branch. `cq specs task --check <id> --subject
-<line>` is unchanged and still the right tool there, ticked **before** the commit so the box travels
+Older provider documents may carry `subject:` anchors. `cq specs task --check <id> --subject
+<line>` remains supported for those records and is ticked **before** the commit so the box travels
 inside it:
 
 ```markdown
@@ -122,11 +114,10 @@ still **not a trailer and not a machine-readable anchor bolted into the message*
 target repo's own convention produced, recorded verbatim. `--subject` and `--commit` are accepted
 together or alone by the same `task --check`; neither is a special case of the other.
 
-**Both forms are read, forever, and both are now written.** A spec built before subject was
-introduced carries `commit: <sha>` from that era; one built during co-branching carries `subject:`;
-one built on a non-co-branching backend carries `commit: <sha>` again, for the opposite reason.
-Nothing is backfilled and neither form is an error: rewriting an archived spec to modernise its
-anchor would falsify when the record was actually made.
+**Both forms are read, forever, and both remain supported.** A provider document built before the
+sha anchor carries `subject:` from that era; current execution records `commit: <sha>`. Nothing is
+backfilled and neither form is an error: rewriting an archived spec to modernise its anchor would
+falsify when the record was actually made.
 
 ### Where each form can fail
 
