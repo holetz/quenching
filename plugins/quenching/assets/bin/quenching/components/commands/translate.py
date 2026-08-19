@@ -239,11 +239,19 @@ def reconciliation(changed: list[str], digest: str) -> str:
         previous = json.loads(recorded.read_text(encoding="utf-8")).get("source_sha256")
     except (OSError, ValueError, AttributeError):
         previous = None
-    if previous is None:
+    generated = destination / ".generated-files.json"
+    try:
+        hashes = json.loads(generated.read_text(encoding="utf-8")).get("sha256", {})
+    except (OSError, ValueError, AttributeError):
+        hashes = {}
+    target_changed = any(not (destination / rel).is_file()
+                         or hashes.get(rel) != hashlib.sha256((destination / rel).read_bytes()).hexdigest()
+                         for rel in hashes)
+    if previous is None or not hashes:
         return "untracked"
     if previous == digest:
-        return "target-changed" if changed else "in-sync"
-    return "both-changed" if changed else "source-changed"
+        return "target-changed" if target_changed else "in-sync"
+    return "both-changed" if target_changed else "source-changed"
 
 
 def _body(text: str) -> str:
@@ -276,6 +284,8 @@ def propagate_bodies_from_codex(tree: dict[str, bytes]) -> None:
     for rel in differences(tree):
         if not rel.startswith("skills/") or not rel.endswith("/SKILL.md") or rel not in tree:
             raise ValueError(f"Codex structural change at {rel}; the Claude side is authoritative")
+        if not (destination / rel).is_file():
+            raise ValueError(f"Codex structural change at {rel}; the Claude side is authoritative")
         actual = (destination / rel).read_text(encoding="utf-8")
         expected = tree[rel].decode("utf-8")
         actual_header = actual.split("---\n", 2)[:2]
@@ -297,7 +307,11 @@ def write_tree(tree: dict[str, bytes]) -> None:
     destination = target() if plugin_translation() else codex_surface()
     destination.mkdir(parents=True, exist_ok=True)
     generated_manifest = destination / ".generated-files.json"
-    old = set(json.loads(generated_manifest.read_text(encoding="utf-8"))["files"]) if generated_manifest.exists() else set()
+    if generated_manifest.exists():
+        previous = json.loads(generated_manifest.read_text(encoding="utf-8"))["files"]
+        old = set(previous if isinstance(previous, list) else previous.keys())
+    else:
+        old = set()
     for rel in old - set(tree):
         path = destination / rel
         if path.exists():
@@ -306,7 +320,9 @@ def write_tree(tree: dict[str, bytes]) -> None:
         path = destination / rel
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(content)
-    generated_manifest.write_text(json.dumps({"files": sorted(tree)}, indent=2) + "\n", encoding="utf-8")
+    generated_manifest.write_text(json.dumps({"files": sorted(tree), "sha256": {
+        rel: hashlib.sha256(content).hexdigest() for rel, content in sorted(tree.items())}}, indent=2) + "\n",
+                                  encoding="utf-8")
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
