@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 
-def main(path: str) -> int:
+def main(path: str = "plugins/quenching-codex") -> int:
     root = Path(path)
     manifest = json.loads((root / ".codex-plugin/plugin.json").read_text(encoding="utf-8"))
     assert manifest["name"] == "quenching-codex"
