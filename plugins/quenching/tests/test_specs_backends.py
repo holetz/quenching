@@ -23,6 +23,7 @@ from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.common.frontmatter import parse_frontmatter
+from quenching.specs.backends import azure as az_mod
 from quenching.specs.backends import backend_root
 from quenching.specs.backends import github as gh_mod
 from quenching.specs.backends.azure import AzureBoardsBackend
@@ -43,7 +44,7 @@ from quenching.specs.commands.output import Emitter
 from quenching.specs.commands.validate import merge_record_finding, validate_spec
 from quenching.specs.config import (BACKENDS, DEFAULT_SPECS_BRANCH, UNPROVED_BACKENDS,
                                     _UNPROVED_ANNOUNCED, announce_unproved, is_root_too_high)
-from quenching.specs.parse import FIELD_KEYS, PHASES, derive_labels
+from quenching.specs.parse import FIELD_KEYS, PHASES, derive_info, derive_labels
 from quenching.specs.parse.edit import upsert_section
 from quenching.specs.parse.fields import (legacy_marker_fold, set_frontmatter_key,
                                           set_frontmatter_record)
@@ -60,6 +61,403 @@ def _case_doc(slug: str = "alpha") -> str:
     # either backend did with it.
     return (capture_form().replace("<SLUG>", slug).replace("<TITLE>", "Alpha")
             .replace("<DATE>", "2026-01-01").replace("<VERIFICATION>", "per-task"))
+
+
+def _external_case_doc(slug: str = "alpha") -> str:
+    """One small, discriminant document shared by the two external-backend fixtures.
+
+    The document carries every value whose storage is split between the canonical body and
+    native tracker fields: title, declared tag, assignee, work-item type, one section and one
+    task.  The sequence below owns the order; each transport fixture owns its wire shape and
+    remote state.
+    """
+    doc = _case_doc(slug)
+    close = doc.index("\n---\n")
+    doc = (doc[:close]
+           + '\ntags: ["fixture"]\nassignee: fixture@example.test\n'
+           + 'workItemType: incidente'
+           + doc[close:])
+    info = derive_info({"phase": "plans"}, doc)
+    doc, _ = upsert_section(info, "Problem", "## Problem\n\nA discriminant fixture.\n")
+    info = derive_info({"phase": "plans"}, doc)
+    doc, _ = upsert_section(info, "Tasks", "## Tasks\n\n- [ ] 1.1 fixture task\n")
+    return doc
+
+
+def _external_updated_doc(text: str) -> str:
+    """Make one write that changes both canonical content and native-backed fields."""
+    info = derive_info({"phase": "plans"}, text)
+    text, _ = upsert_section(info, "Problem", "## Problem\n\nUpdated by the fixture.\n")
+    for key, value in (("tags", '["fixture", "updated"]'),
+                       ("assignee", "updated@example.test"),
+                       ("start", "2026-01-01"), ("target", "2026-02-01")):
+        text = set_frontmatter_key(text, key, value)
+    return text
+
+
+def _external_observable(info: dict | None) -> dict:
+    """Canonical read result, excluding locators and parser-only positions."""
+    if info is None:
+        return {}
+    result = {key: value for key, value in info.items()
+              if key not in ("path", "text", "sections", "tasks")}
+    result["sections"] = {
+        heading: {key: section[key] for key in ("filled", "body")}
+        for heading, section in info["sections"].items()
+    }
+    positional = {"lineno", "blockEndLineno", "subjectLineno", "commitLineno",
+                  "metaInsertAt", "metaIndent"}
+    result["tasks"] = [{key: value for key, value in task.items() if key not in positional}
+                       for task in info["tasks"]]
+    return result
+
+
+def _external_sequence(backend: SpecBackend) -> dict:
+    """Exercise the five primitives in one shared order against a real backend class.
+
+    The return value is deliberately transport-blind: the later GitHub and Azure tests compare
+    these observations while their fixtures separately assert every request they consumed.
+    """
+    result = {"empty": _listing(backend)}
+    backend.create_spec("plans", "alpha.md", _external_case_doc())
+    result["after_create"] = _listing(backend)
+
+    info, error = backend.read_spec("alpha")
+    if error or info is None:
+        raise AssertionError(f"fixture could not read created spec: {error}")
+    result["read"] = _external_observable(info)
+
+    backend.write_spec(info, _external_updated_doc(info["text"]))
+    updated, error = backend.read_spec("alpha")
+    if error or updated is None:
+        raise AssertionError(f"fixture could not read written spec: {error}")
+    result["after_write"] = _external_observable(updated)
+
+    backend.move_spec(updated, "archive")
+    moved, error = backend.read_spec("alpha")
+    if error or moved is None:
+        raise AssertionError(f"fixture could not read moved spec: {error}")
+    result["after_move"] = _external_observable(moved)
+    result["archive_listing"] = _listing(backend)
+    return result
+
+
+class GithubRemoteFixture:
+    """A strict offline `gh` transport with one issue as its remote state."""
+
+    def __init__(self):
+        self.calls: list[dict] = []
+        self.issues: dict[int, dict] = {}
+        self.type_edits: list[tuple[int, str]] = []
+
+    @staticmethod
+    def _copy(issue: dict) -> dict:
+        return json.loads(json.dumps(issue))
+
+    def _record_api(self, argv: tuple[str, ...], stdin: str | None) -> dict:
+        args = list(argv[1:])
+        path = next((arg for arg in args if arg.startswith("repos/")), None)
+        if path is None:
+            raise AssertionError(f"GitHub fixture received no repository endpoint: {argv!r}")
+        method = args[args.index("-X") + 1] if "-X" in args else "GET"
+        payload = json.loads(stdin) if stdin else None
+        self.calls.append({"kind": "api", "method": method, "path": path,
+                           "argv": args, "payload": payload})
+
+        if path.endswith("/issues?state=all&per_page=100") and method == "GET":
+            return [[self._copy(issue) for issue in self.issues.values()]]
+
+        if path.endswith("/issues") and method == "POST":
+            if not isinstance(payload, dict) or set(payload) != {"title", "body", "labels",
+                                                                  "assignees"}:
+                raise AssertionError(f"unexpected GitHub create payload: {payload!r}")
+            number = 101
+            self.issues[number] = {
+                "number": number, "state": "open", "title": payload["title"],
+                "body": payload["body"],
+                "labels": [{"name": name} for name in payload["labels"]],
+                "assignees": [{"login": name} for name in payload["assignees"]],
+                "html_url": f"https://github.test/issues/{number}",
+            }
+            return self._copy(self.issues[number])
+
+        marker = "/issues/"
+        if marker in path and method == "PATCH":
+            number = int(path.rsplit(marker, 1)[1])
+            issue = self.issues[number]
+            if not isinstance(payload, dict):
+                raise AssertionError("GitHub mutation did not carry JSON on stdin")
+            for key in ("title", "body", "state"):
+                if key in payload:
+                    issue[key] = payload[key]
+            if "labels" in payload:
+                issue["labels"] = [{"name": name} for name in payload["labels"]]
+            if "assignees" in payload:
+                issue["assignees"] = [{"login": name} for name in payload["assignees"]]
+            return self._copy(issue)
+
+        raise AssertionError(f"unexpected GitHub API request: {argv!r}, {payload!r}")
+
+    def __call__(self, cwd: str, *argv: str, stdin: str | None = None):
+        if argv[:2] == ("issue", "edit"):
+            if argv[2:4] != ("101", "--repo") or "--type" not in argv:
+                raise AssertionError(f"unexpected GitHub type request: {argv!r}")
+            self.type_edits.append((int(argv[2]), argv[argv.index("--type") + 1]))
+            return 0, "", ""
+        if argv[:1] == ("api",):
+            return 0, json.dumps(self._record_api(argv, stdin)), ""
+        raise AssertionError(f"unexpected GitHub command: {argv!r}")
+
+
+class GithubExternalRoundTrip(unittest.TestCase):
+    """The GitHub backend's five primitives over a strict, request-driven remote."""
+
+    def test_real_backend_closes_the_common_sequence_over_gh_wire_format(self):
+        transport = GithubRemoteFixture()
+        backend = GitHubBackend("owner/repo", os.getcwd(),
+                                types={"incidente": "Bug"}, open_issues=0)
+        with mock.patch.object(gh_mod, "_gh_run", side_effect=transport):
+            result = _external_sequence(backend)
+
+        self.assertEqual(result["empty"], [])
+        self.assertEqual(result["after_create"][0]["phase"], "plans")
+        self.assertEqual(result["read"]["frontmatter"]["tags"], ["fixture"])
+        self.assertEqual(result["read"]["frontmatter"]["assignee"], "fixture@example.test")
+        self.assertEqual(result["after_write"]["frontmatter"]["tags"],
+                         ["fixture", "updated"])
+        self.assertEqual(result["after_write"]["frontmatter"]["assignee"],
+                         "updated@example.test")
+        self.assertEqual(result["after_write"]["frontmatter"]["start"], "2026-01-01")
+        self.assertEqual(result["after_move"]["phase"], "archive")
+        self.assertEqual(result["archive_listing"][0]["phase"], "archive")
+
+        api_calls = [call for call in transport.calls if call["kind"] == "api"]
+        self.assertEqual([(call["method"], call["path"].split("?")[0])
+                          for call in api_calls], [
+                              ("GET", "repos/owner/repo/issues"),
+                              ("POST", "repos/owner/repo/issues"),
+                              ("GET", "repos/owner/repo/issues"),
+                              ("PATCH", "repos/owner/repo/issues/101"),
+                              ("GET", "repos/owner/repo/issues"),
+                              ("PATCH", "repos/owner/repo/issues/101"),
+                              ("GET", "repos/owner/repo/issues"),
+                          ])
+        mutations = [call for call in api_calls if call["method"] in ("POST", "PATCH")]
+        self.assertTrue(all(call["argv"][-2:] == ["--input", "-"] for call in mutations))
+        self.assertTrue(all(call["payload"] for call in mutations))
+        self.assertTrue(api_calls[1]["payload"]["body"].startswith(
+            "<!-- quenching-spec: alpha.md -->\n"))
+        self.assertIn("Updated by the fixture.", api_calls[3]["payload"]["body"])
+        self.assertEqual(api_calls[1]["payload"]["labels"], ["fixture"])
+        self.assertEqual(api_calls[3]["payload"]["labels"], ["fixture", "updated"])
+        self.assertEqual(api_calls[5]["payload"], {"state": "closed"})
+        self.assertEqual(transport.type_edits, [(101, "Bug")])
+
+
+class AzureRemoteFixture:
+    """A strict offline `az` transport with one work item as its remote state."""
+
+    def __init__(self):
+        self.calls: list[dict] = []
+        self.items: dict[int, dict] = {}
+        self.format_writes: list[str] = []
+
+    @staticmethod
+    def _copy(item: dict) -> dict:
+        return json.loads(json.dumps(item))
+
+    def _patch(self, argv: tuple[str, ...]) -> dict:
+        if argv[0:2] != ("rest", "--method") or argv[2] != "PATCH":
+            raise AssertionError(f"unexpected Azure mutation: {argv!r}")
+        if argv[argv.index("--resource") + 1] != az_mod.AZ_DEVOPS_RESOURCE_ID:
+            raise AssertionError(f"Azure PATCH used the wrong resource: {argv!r}")
+        if argv[argv.index("--headers") + 1] != "Content-Type=application/json-patch+json":
+            raise AssertionError(f"Azure PATCH used the wrong content type: {argv!r}")
+        uri = argv[argv.index("--uri") + 1]
+        item_id = int(uri.rsplit("/", 1)[1].split("?", 1)[0])
+        path = argv[argv.index("--body") + 1]
+        if not path.startswith("@"):
+            raise AssertionError("Azure PATCH did not use a request body file")
+        with open(path[1:], encoding="utf-8") as stream:
+            operations = json.load(stream)
+        self.calls.append({"kind": "patch", "uri": uri, "argv": argv,
+                           "operations": operations})
+        item = self.items[item_id]
+        for operation in operations:
+            target = operation["path"]
+            if target.startswith("/fields/"):
+                item["fields"][target.rsplit("/", 1)[1]] = operation["value"]
+            elif target.startswith("/multilineFieldsFormat/"):
+                self.format_writes.append(target.rsplit("/", 1)[1])
+            elif target == "/relations/-":
+                item.setdefault("relations", []).append(operation["value"])
+            else:
+                raise AssertionError(f"unexpected Azure PATCH path: {target}")
+        return self._copy(item)
+
+    def __call__(self, cwd: str, *argv: str, stdin: str | None = None):
+        del stdin
+        if argv[:3] == ("boards", "work-item", "create"):
+            if "--project" not in argv or "--type" not in argv or "--title" not in argv:
+                raise AssertionError(f"unexpected Azure create request: {argv!r}")
+            if "--state" in argv or "--fields" in argv \
+                    or argv[argv.index("--org") + 1] != "org":
+                raise AssertionError(f"Azure create bypassed the PATCH placement: {argv!r}")
+            project = argv[argv.index("--project") + 1]
+            title = argv[argv.index("--title") + 1]
+            item_id = 201
+            self.items[item_id] = {"id": item_id, "fields": {
+                "System.Id": item_id, "System.Title": title, "System.State": "New",
+            }}
+            self.calls.append({"kind": "create", "argv": argv,
+                               "project": project, "title": title,
+                               "type": argv[argv.index("--type") + 1]})
+            return 0, json.dumps({"id": item_id, "fields": self.items[item_id]["fields"]}), ""
+
+        if argv[:2] == ("boards", "query"):
+            if argv[argv.index("--org") + 1] != "org":
+                raise AssertionError(f"Azure query used the wrong organization: {argv!r}")
+            wiql = argv[argv.index("--wiql") + 1]
+            expected = az_mod.azure_query_wiql("proj", None, "quenching-spec")
+            if wiql != expected:
+                raise AssertionError(f"unexpected Azure WIQL: {wiql!r}")
+            self.calls.append({"kind": "query", "argv": argv, "wiql": wiql})
+            return 0, json.dumps([{"id": item_id} for item_id in self.items]), ""
+
+        if argv[:4] == ("devops", "invoke", "--area", "wit"):
+            if argv[argv.index("--resource") + 1] != "workitemsbatch":
+                raise AssertionError(f"unexpected Azure batch resource: {argv!r}")
+            if argv[argv.index("--org") + 1] != "org":
+                raise AssertionError(f"Azure batch used the wrong organization: {argv!r}")
+            path = argv[argv.index("--in-file") + 1]
+            with open(path, encoding="utf-8") as stream:
+                request = json.load(stream)
+            fields = request.get("fields") or []
+            for required in ("System.Id", "System.Title", "System.State",
+                              "System.Description", "System.Tags", "System.AssignedTo",
+                              "Microsoft.VSTS.Scheduling.StartDate",
+                              "Microsoft.VSTS.Scheduling.TargetDate", "System.Parent"):
+                if required not in fields:
+                    raise AssertionError(f"Azure batch omitted {required}")
+            self.calls.append({"kind": "batch", "argv": argv, "request": request})
+            return 0, json.dumps({"value": [self._copy(item) for item in self.items.values()]}), ""
+
+        if argv[:1] == ("rest",):
+            return 0, json.dumps(self._patch(argv)), ""
+        raise AssertionError(f"unexpected Azure command: {argv!r}")
+
+
+class AzureExternalRoundTrip(unittest.TestCase):
+    """The Azure backend's five primitives over a strict, request-driven remote."""
+
+    def test_real_backend_closes_the_common_sequence_over_az_wire_format(self):
+        transport = AzureRemoteFixture()
+        backend = AzureBoardsBackend(
+            "org", "proj", {"plans": "Active", "archive": "Closed"}, os.getcwd(),
+            discovery_tag="quenching-spec",
+            types={"incidente": {"description": "fixture", "azure": "Bug"}},
+        )
+        with mock.patch.object(az_mod, "_az_run", side_effect=transport), \
+                contextlib.redirect_stderr(io.StringIO()):
+            result = _external_sequence(backend)
+
+        self.assertEqual(result["empty"], [])
+        self.assertEqual(result["after_create"][0]["phase"], "plans")
+        self.assertEqual(result["read"]["frontmatter"]["tags"], ["fixture"])
+        self.assertEqual(result["read"]["frontmatter"]["assignee"], "fixture@example.test")
+        self.assertEqual(result["after_write"]["frontmatter"]["tags"],
+                         ["fixture", "updated"])
+        self.assertEqual(result["after_write"]["frontmatter"]["assignee"],
+                         "updated@example.test")
+        self.assertEqual(result["after_write"]["frontmatter"]["target"], "2026-02-01")
+        self.assertEqual(result["after_move"]["phase"], "archive")
+        self.assertEqual(result["archive_listing"][0]["phase"], "archive")
+
+        self.assertEqual([call["kind"] for call in transport.calls], [
+            "query", "create", "patch", "query", "batch", "patch", "batch", "patch",
+            "batch", "query", "batch",
+        ])
+        create = next(call for call in transport.calls if call["kind"] == "create")
+        self.assertEqual(create["type"], "Bug")
+        patches = [call for call in transport.calls if call["kind"] == "patch"]
+        create_paths = [op["path"] for op in patches[0]["operations"]]
+        self.assertIn("/fields/System.Description", create_paths)
+        self.assertIn("/multilineFieldsFormat/System.Description", create_paths)
+        self.assertEqual(transport.format_writes, ["System.Description"] * 2)
+        self.assertTrue(patches[0]["operations"])
+        self.assertIn(
+            '<div style="display:none;">quenching-spec: alpha.md ',
+            next(op["value"] for op in patches[0]["operations"]
+                 if op["path"] == "/fields/System.Description"),
+        )
+        write_paths = [op["path"] for op in patches[1]["operations"]]
+        self.assertIn("/fields/System.Tags", write_paths)
+        self.assertIn("/fields/Microsoft.VSTS.Scheduling.StartDate", write_paths)
+        self.assertIn("/fields/Microsoft.VSTS.Scheduling.TargetDate", write_paths)
+        self.assertEqual(patches[2]["operations"], [{
+            "op": "add", "path": "/fields/System.State", "value": "Closed",
+        }])
+
+
+class ExternalBackendDiscrimination(unittest.TestCase):
+    """The common observations agree while the two remote machines stay independent."""
+
+    def _run_github(self):
+        transport = GithubRemoteFixture()
+        backend = GitHubBackend("owner/repo", os.getcwd(),
+                                types={"incidente": "Bug"}, open_issues=0)
+        with mock.patch.object(gh_mod, "_gh_run", side_effect=transport):
+            result = _external_sequence(backend)
+        return result, transport
+
+    def _run_azure(self):
+        transport = AzureRemoteFixture()
+        backend = AzureBoardsBackend(
+            "org", "proj", {"plans": "Active", "archive": "Closed"}, os.getcwd(),
+            discovery_tag="quenching-spec",
+            types={"incidente": {"description": "fixture", "azure": "Bug"}},
+        )
+        with mock.patch.object(az_mod, "_az_run", side_effect=transport), \
+                contextlib.redirect_stderr(io.StringIO()):
+            result = _external_sequence(backend)
+        return result, transport
+
+    def test_the_two_real_classes_agree_on_every_canonical_observation(self):
+        github_result, _ = self._run_github()
+        azure_result, _ = self._run_azure()
+        self.assertEqual(set(github_result), set(azure_result))
+        for step in github_result:
+            with self.subTest(step=step):
+                self.assertEqual(
+                    json.dumps(github_result[step], sort_keys=True, default=str),
+                    json.dumps(azure_result[step], sort_keys=True, default=str),
+                )
+
+    def test_each_transport_has_its_own_state_and_a_request_for_each_wire_operation(self):
+        github_result, github = self._run_github()
+        azure_result, azure = self._run_azure()
+        del github_result, azure_result
+
+        github_api = [call for call in github.calls if call["kind"] == "api"]
+        self.assertEqual(len(github_api), 7)
+        self.assertEqual(sum(call["method"] == "POST" for call in github_api), 1)
+        self.assertEqual(sum(call["method"] == "PATCH" for call in github_api), 2)
+        self.assertEqual(len(github.type_edits), 1)
+
+        self.assertEqual([call["kind"] for call in azure.calls], [
+            "query", "create", "patch", "query", "batch", "patch", "batch", "patch",
+            "batch", "query", "batch",
+        ])
+        self.assertEqual(sum(call["kind"] == "query" for call in azure.calls), 3)
+        self.assertEqual(sum(call["kind"] == "batch" for call in azure.calls), 4)
+        self.assertEqual(sum(call["kind"] == "patch" for call in azure.calls), 3)
+        self.assertEqual(len(azure.items), 1)
+        self.assertEqual(len(github.issues), 1)
+        self.assertIsNot(github.issues, azure.items)
+        self.assertEqual(github.issues[101]["state"], "closed")
+        self.assertEqual(azure.items[201]["fields"]["System.State"], "Closed")
+        self.assertIn("Updated by the fixture.", github.issues[101]["body"])
+        self.assertIn("Updated by the fixture.", azure.items[201]["fields"]["System.Description"])
 
 
 # --------------------------------------------------------------------------- #
