@@ -3,6 +3,7 @@
 Moved verbatim out of the pre-refactor session script."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 # Claude Code encodes a project's cwd by replacing \ / : . with '-'. chr(92) IS the
@@ -16,7 +17,12 @@ def encode_cwd(path) -> str:
 
 
 def projects_root() -> Path:
-    return Path.home() / ".claude" / "projects"
+    """Return an explicitly configured transcript root or the active platform's root."""
+    configured = os.environ.get("QUENCHING_TRANSCRIPTS_ROOT")
+    if configured:
+        return Path(configured).expanduser()
+    roots = (Path.home() / ".claude" / "projects", Path.home() / ".codex" / "projects")
+    return next((root for root in roots if root.is_dir()), roots[0])
 
 
 def resolve_project_dir(cwd: Path) -> tuple[Path | None, str]:

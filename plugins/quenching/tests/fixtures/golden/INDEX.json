@@ -827,7 +827,7 @@
       "cwd": "<REPO>/plugins/quenching",
       "stdin": null,
       "exit": 2,
-      "stderr": "usage: cq components [-h] [--root ROOT]\n                     {lint,doctor,registry,read,session} ...\ncq components: error: argument cmd: invalid choice: 'selftest' (choose from 'lint', 'doctor', 'registry', 'read', 'session')\n"
+      "stderr": "usage: cq components [-h] [--root ROOT]\n                     {lint,doctor,registry,read,translate,session} ...\ncq components: error: argument cmd: invalid choice: 'selftest' (choose from 'lint', 'doctor', 'registry', 'read', 'translate', 'session')\n"
     },
     {
       "golden": "skills-drift.json",
@@ -841,7 +841,7 @@
       "cwd": "<REPO>/plugins/quenching",
       "stdin": null,
       "exit": 2,
-      "stderr": "usage: cq components [-h] [--root ROOT]\n                     {lint,doctor,registry,read,session} ...\ncq components: error: argument cmd: invalid choice: 'drift' (choose from 'lint', 'doctor', 'registry', 'read', 'session')\n"
+      "stderr": "usage: cq components [-h] [--root ROOT]\n                     {lint,doctor,registry,read,translate,session} ...\ncq components: error: argument cmd: invalid choice: 'drift' (choose from 'lint', 'doctor', 'registry', 'read', 'translate', 'session')\n"
     },
     {
       "golden": "skills-read-index.json",
