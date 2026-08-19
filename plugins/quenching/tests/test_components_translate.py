@@ -1,4 +1,7 @@
 """Repository-surface translation keeps Claude configuration authoritative."""
+import argparse
+import contextlib
+import io
 import json
 import tempfile
 import unittest
@@ -50,3 +53,34 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         self.assertTrue((self.root / ".claude" / "commands" / "specs" / "status.md").is_file())
         self.assertTrue((self.root / ".agents" / "skills" / "specs" / "status" / "SKILL.md").is_file())
 
+    def test_reconciliation_classifies_source_and_codex_body_changes(self):
+        translate.configure(str(self.root), str(self.root))
+        translate.write_tree(translate.generated_tree())
+        command = self.root / ".claude" / "commands" / "specs" / "status.md"
+        command.write_text(COMMAND + "\nSource edit.\n", encoding="utf-8")
+        tree = translate.generated_tree()
+        self.assertEqual(translate.reconciliation(translate.differences(tree), translate.source_digest()),
+                         "source-changed")
+        translate.write_tree(tree)
+        skill = self.root / ".agents" / "skills" / "specs" / "status" / "SKILL.md"
+        skill.write_text(skill.read_text(encoding="utf-8") + "\nCodex body edit.\n", encoding="utf-8")
+        tree = translate.generated_tree()
+        self.assertEqual(translate.reconciliation(translate.differences(tree), translate.source_digest()),
+                         "target-changed")
+
+    def test_reverse_write_propagates_body_and_refuses_frontmatter(self):
+        translate.configure(str(self.root), str(self.root))
+        translate.write_tree(translate.generated_tree())
+        skill = self.root / ".agents" / "skills" / "specs" / "status" / "SKILL.md"
+        skill.write_text(skill.read_text(encoding="utf-8") + "\nCodex body edit.\n", encoding="utf-8")
+        args = argparse.Namespace(source=str(self.root), target=str(self.root), check=False, write=True,
+                                  diff=False, json=True)
+        self.assertEqual(translate.cmd_translate(args, str(self.root)), 0)
+        self.assertIn("Claude body edit.", (self.root / ".claude" / "commands" / "specs" / "status.md")
+                      .read_text(encoding="utf-8"))
+        skill.write_text(skill.read_text(encoding="utf-8").replace("name: quenching-specs-status",
+                                                                     "name: changed"), encoding="utf-8")
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            self.assertEqual(translate.cmd_translate(args, str(self.root)), 2)
+        self.assertIn("Claude side is authoritative", output.getvalue())
