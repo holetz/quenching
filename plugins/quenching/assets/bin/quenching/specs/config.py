@@ -70,7 +70,7 @@ CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates",
                "hooks", "profiles",
                "azurePlacement", "azureColumns", "subjects", "tagCatalog",
                "workItemTypes", "fanoutMinComplexity")
-BACKENDS = ("files", "github", "azure-boards")
+BACKENDS = ("github", "azure-boards")
 # Mirrors `schema.py`'s declared `priority.complexity` levels. Redeclared rather than imported —
 # `config.py` and `schema.py` do not import each other today, and a four-word tuple does not earn
 # that coupling.
@@ -86,7 +86,7 @@ AZURE_PLACEMENT_KEYS = ("areaPath", "workItemType", "discoveryTag", "team",
 # same argument `specsBranch` already carries — so it defaults rather than refuses;
 # configurable only to resolve a collision with a tag the project already uses.
 AZ_DEFAULT_DISCOVERY_TAG = "quenching-spec"
-DEFAULT_BACKEND = "files"
+DEFAULT_BACKEND = None
 DEFAULT_SPECS_BRANCH = "specs"
 # Unlike `specsBranch`, these two default to `None` in `load_config`'s own return — never
 # to the literal "develop"/"main" below. The base-inference chain
@@ -170,6 +170,29 @@ def find_repo_root(specs_root: str) -> str:
     return top or os.path.dirname(os.path.abspath(specs_root))
 
 
+def _remote_host(remote: str) -> str:
+    host = remote.strip().split("#", 1)[0]
+    if "://" in host:
+        host = host.split("://", 1)[1]
+    host = host.rsplit("@", 1)[-1]
+    return host.split("/", 1)[0].split(":", 1)[0].lower()
+
+
+def detect_provider(root: str) -> tuple[str | None, str | None]:
+    """Derive the external provider from the repository's origin URL."""
+    repo = find_repo_root(root)
+    remote = _git(repo, "remote", "get-url", "origin").strip()
+    if not remote:
+        return None, None
+    host = _remote_host(remote)
+    if host == "github.com" or host.endswith(".github.com"):
+        return "github", host
+    if (host == "dev.azure.com" or host.endswith(".dev.azure.com")
+            or host == "visualstudio.com" or host.endswith(".visualstudio.com")):
+        return "azure-boards", host
+    return None, host
+
+
 def load_config(root: str) -> dict:
     """`.claude/quenching.json` — the plugin's declared parameters, read as data and never
     as a refusal.
@@ -196,8 +219,11 @@ def load_config(root: str) -> dict:
     repo = find_repo_root(root)
     path = os.path.join(repo, CONFIG_FILE)
     legacy = os.path.join(root, LEGACY_CONFIG_FILE)
+    provider, provider_host = detect_provider(root)
     out = {"path": path, "present": os.path.isfile(path), "unparseable": None,
-           "unknownKeys": [], "backend": DEFAULT_BACKEND, "unknownBackend": None,
+           "unknownKeys": [], "backend": provider, "provider": provider,
+           "unknownProvider": provider_host if provider is None else None,
+           "unknownBackend": None,
            "specsBranch": DEFAULT_SPECS_BRANCH, "worktreeSetup": None,
            "azureStates": None, "hooks": {}, "profiles": None,
            "azurePlacement": {}, "azureColumns": {}, "subjects": {}, "tagCatalog": {},
@@ -217,14 +243,8 @@ def load_config(root: str) -> dict:
     out["unknownKeys"] = sorted(k for k in obj if k not in CONFIG_KEYS)
 
     backend = obj.get("backend")
-    if isinstance(backend, str) and backend.strip():
-        if backend.strip() in BACKENDS:
-            out["backend"] = backend.strip()
-        else:
-            # The declared value is kept, not discarded: `doctor` must be able to quote back
-            # what was typed. The effective backend stays the default, so a typo degrades to
-            # the local one rather than to no backend at all.
-            out["unknownBackend"] = backend.strip()
+    if isinstance(backend, str) and backend.strip() and backend.strip() not in BACKENDS:
+        out["unknownBackend"] = backend.strip()
 
     branch = obj.get("specsBranch")
     if isinstance(branch, str) and branch.strip():
