@@ -275,13 +275,13 @@ def propagate_bodies_from_codex(tree: dict[str, bytes]) -> None:
     destination = target() if plugin_translation() else codex_surface()
     for rel in differences(tree):
         if not rel.startswith("skills/") or not rel.endswith("/SKILL.md") or rel not in tree:
-            raise ValueError(f"Codex structural change at {rel}; edit the Claude side instead")
+            raise ValueError(f"Codex structural change at {rel}; the Claude side is authoritative")
         actual = (destination / rel).read_text(encoding="utf-8")
         expected = tree[rel].decode("utf-8")
         actual_header = actual.split("---\n", 2)[:2]
         expected_header = expected.split("---\n", 2)[:2]
         if actual_header != expected_header:
-            raise ValueError(f"Codex frontmatter change at {rel}; edit the Claude side instead")
+            raise ValueError(f"Codex frontmatter change at {rel}; the Claude side is authoritative")
         parts = Path(rel).parts[1:-1]
         source_command = ((source() / "commands") if plugin_translation() else claude_surface() / "commands")
         command = source_command.joinpath(*parts).with_suffix(".md")
