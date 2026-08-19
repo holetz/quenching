@@ -43,7 +43,7 @@ from quenching.specs.commands.output import Emitter
 from quenching.specs.commands.validate import merge_record_finding, validate_spec
 from quenching.specs.config import (BACKENDS, DEFAULT_SPECS_BRANCH, UNPROVED_BACKENDS,
                                     _UNPROVED_ANNOUNCED, announce_unproved, is_root_too_high)
-from quenching.specs.parse import FIELD_KEYS, PHASES, derive_labels
+from quenching.specs.parse import FIELD_KEYS, PHASES, derive_info, derive_labels
 from quenching.specs.parse.edit import upsert_section
 from quenching.specs.parse.fields import (legacy_marker_fold, set_frontmatter_key,
                                           set_frontmatter_record)
@@ -76,14 +76,17 @@ def _external_case_doc(slug: str = "alpha") -> str:
            + '\ntags: ["fixture"]\nassignee: fixture@example.test\n'
            + 'workItemType: incidente'
            + doc[close:])
-    doc, _ = upsert_section(doc, "Problem", "## Problem\n\nA discriminant fixture.\n")
-    doc, _ = upsert_section(doc, "Tasks", "## Tasks\n\n- [ ] 1.1 fixture task\n")
+    info = derive_info({"phase": "plans"}, doc)
+    doc, _ = upsert_section(info, "Problem", "## Problem\n\nA discriminant fixture.\n")
+    info = derive_info({"phase": "plans"}, doc)
+    doc, _ = upsert_section(info, "Tasks", "## Tasks\n\n- [ ] 1.1 fixture task\n")
     return doc
 
 
 def _external_updated_doc(text: str) -> str:
     """Make one write that changes both canonical content and native-backed fields."""
-    text, _ = upsert_section(text, "Problem", "## Problem\n\nUpdated by the fixture.\n")
+    info = derive_info({"phase": "plans"}, text)
+    text, _ = upsert_section(info, "Problem", "## Problem\n\nUpdated by the fixture.\n")
     for key, value in (("tags", '["fixture", "updated"]'),
                        ("assignee", "updated@example.test"),
                        ("start", "2026-01-01"), ("target", "2026-02-01")):
@@ -126,6 +129,118 @@ def _external_sequence(backend: SpecBackend) -> dict:
     result["after_move"] = _external_observable(moved)
     result["archive_listing"] = _listing(backend)
     return result
+
+
+class GithubRemoteFixture:
+    """A strict offline `gh` transport with one issue as its remote state."""
+
+    def __init__(self):
+        self.calls: list[dict] = []
+        self.issues: dict[int, dict] = {}
+        self.type_edits: list[tuple[int, str]] = []
+
+    @staticmethod
+    def _copy(issue: dict) -> dict:
+        return json.loads(json.dumps(issue))
+
+    def _record_api(self, argv: tuple[str, ...], stdin: str | None) -> dict:
+        args = list(argv[1:])
+        path = next((arg for arg in args if arg.startswith("repos/")), None)
+        if path is None:
+            raise AssertionError(f"GitHub fixture received no repository endpoint: {argv!r}")
+        method = args[args.index("-X") + 1] if "-X" in args else "GET"
+        payload = json.loads(stdin) if stdin else None
+        self.calls.append({"kind": "api", "method": method, "path": path,
+                           "argv": args, "payload": payload})
+
+        if path.endswith("/issues?state=all&per_page=100") and method == "GET":
+            return [[self._copy(issue) for issue in self.issues.values()]]
+
+        if path.endswith("/issues") and method == "POST":
+            if not isinstance(payload, dict) or set(payload) != {"title", "body", "labels",
+                                                                  "assignees"}:
+                raise AssertionError(f"unexpected GitHub create payload: {payload!r}")
+            number = 101
+            self.issues[number] = {
+                "number": number, "state": "open", "title": payload["title"],
+                "body": payload["body"],
+                "labels": [{"name": name} for name in payload["labels"]],
+                "assignees": [{"login": name} for name in payload["assignees"]],
+                "html_url": f"https://github.test/issues/{number}",
+            }
+            return self._copy(self.issues[number])
+
+        marker = "/issues/"
+        if marker in path and method == "PATCH":
+            number = int(path.rsplit(marker, 1)[1])
+            issue = self.issues[number]
+            if not isinstance(payload, dict):
+                raise AssertionError("GitHub mutation did not carry JSON on stdin")
+            for key in ("title", "body", "state"):
+                if key in payload:
+                    issue[key] = payload[key]
+            if "labels" in payload:
+                issue["labels"] = [{"name": name} for name in payload["labels"]]
+            if "assignees" in payload:
+                issue["assignees"] = [{"login": name} for name in payload["assignees"]]
+            return self._copy(issue)
+
+        raise AssertionError(f"unexpected GitHub API request: {argv!r}, {payload!r}")
+
+    def __call__(self, cwd: str, *argv: str, stdin: str | None = None):
+        if argv[:2] == ("issue", "edit"):
+            if argv[2:4] != ("101", "--repo") or "--type" not in argv:
+                raise AssertionError(f"unexpected GitHub type request: {argv!r}")
+            self.type_edits.append((int(argv[2]), argv[argv.index("--type") + 1]))
+            return 0, "", ""
+        if argv[:1] == ("api",):
+            return 0, json.dumps(self._record_api(argv, stdin)), ""
+        raise AssertionError(f"unexpected GitHub command: {argv!r}")
+
+
+class GithubExternalRoundTrip(unittest.TestCase):
+    """The GitHub backend's five primitives over a strict, request-driven remote."""
+
+    def test_real_backend_closes_the_common_sequence_over_gh_wire_format(self):
+        transport = GithubRemoteFixture()
+        backend = GitHubBackend("owner/repo", os.getcwd(),
+                                types={"incidente": "Bug"}, open_issues=0)
+        with mock.patch.object(gh_mod, "_gh_run", side_effect=transport):
+            result = _external_sequence(backend)
+
+        self.assertEqual(result["empty"], [])
+        self.assertEqual(result["after_create"][0]["phase"], "plans")
+        self.assertEqual(result["read"]["frontmatter"]["tags"], ["fixture"])
+        self.assertEqual(result["read"]["frontmatter"]["assignee"], "fixture@example.test")
+        self.assertEqual(result["after_write"]["frontmatter"]["tags"],
+                         ["fixture", "updated"])
+        self.assertEqual(result["after_write"]["frontmatter"]["assignee"],
+                         "updated@example.test")
+        self.assertEqual(result["after_write"]["frontmatter"]["start"], "2026-01-01")
+        self.assertEqual(result["after_move"]["phase"], "archive")
+        self.assertEqual(result["archive_listing"][0]["phase"], "archive")
+
+        api_calls = [call for call in transport.calls if call["kind"] == "api"]
+        self.assertEqual([(call["method"], call["path"].split("?")[0])
+                          for call in api_calls], [
+                              ("GET", "repos/owner/repo/issues"),
+                              ("POST", "repos/owner/repo/issues"),
+                              ("GET", "repos/owner/repo/issues"),
+                              ("PATCH", "repos/owner/repo/issues/101"),
+                              ("GET", "repos/owner/repo/issues"),
+                              ("PATCH", "repos/owner/repo/issues/101"),
+                              ("GET", "repos/owner/repo/issues"),
+                          ])
+        mutations = [call for call in api_calls if call["method"] in ("POST", "PATCH")]
+        self.assertTrue(all(call["argv"][-2:] == ["--input", "-"] for call in mutations))
+        self.assertTrue(all(call["payload"] for call in mutations))
+        self.assertTrue(api_calls[1]["payload"]["body"].startswith(
+            "<!-- quenching-spec: alpha.md -->\n"))
+        self.assertIn("Updated by the fixture.", api_calls[3]["payload"]["body"])
+        self.assertEqual(api_calls[1]["payload"]["labels"], ["fixture"])
+        self.assertEqual(api_calls[3]["payload"]["labels"], ["fixture", "updated"])
+        self.assertEqual(api_calls[5]["payload"], {"state": "closed"})
+        self.assertEqual(transport.type_edits, [(101, "Bug")])
 
 
 # --------------------------------------------------------------------------- #
