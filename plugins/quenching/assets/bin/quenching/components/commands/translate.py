@@ -231,6 +231,21 @@ def differences(tree: dict[str, bytes]) -> list[str]:
     return [rel for rel in sorted(set(tree) | actual) if rel not in tree or not (destination / rel).exists() or (destination / rel).read_bytes() != tree[rel]]
 
 
+def reconciliation(changed: list[str], digest: str) -> str:
+    """Classify source and generated-tree changes from their recorded source hash."""
+    destination = target() if plugin_translation() else codex_surface()
+    recorded = destination / ".generated-from.json"
+    try:
+        previous = json.loads(recorded.read_text(encoding="utf-8")).get("source_sha256")
+    except (OSError, ValueError, AttributeError):
+        previous = None
+    if previous is None:
+        return "untracked"
+    if previous == digest:
+        return "target-changed" if changed else "in-sync"
+    return "both-changed" if changed else "source-changed"
+
+
 def write_tree(tree: dict[str, bytes]) -> None:
     destination = target() if plugin_translation() else codex_surface()
     destination.mkdir(parents=True, exist_ok=True)
@@ -263,8 +278,9 @@ def cmd_translate(args, _root: str) -> int:
         tree = generated_tree()
     except ValueError as exc:
         return refuse({"code": "ct-translation-refused", "message": str(exc)}, args.json)
-    changed = differences(tree)
-    payload = {"changed": changed, "count": len(changed), "source_sha256": source_digest()}
+    changed, digest = differences(tree), source_digest()
+    payload = {"changed": changed, "count": len(changed), "source_sha256": digest,
+               "reconciliation": reconciliation(changed, digest)}
     if args.write:
         write_tree(tree)
         payload["changed"] = []
