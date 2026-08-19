@@ -64,12 +64,10 @@ repo to repo cannot be documented in one sentence, and guessing somebody else's 
 recommended path becomes a silent trap. So choosing Branch is a decision the human read rather than
 a discovery at the first `verify:` that fails.
 
-**The home moved, and the move is the point.** This used to be `specs/config.json`, at the root of
-the specs workspace — which only had a place to live while every repo was guaranteed a `specs/`
-folder. A repo that declares an external backend may hold no `specs/` at all, so the plugin's
-configuration lives in one neutral home shared by all three fronts, and `worktreeSetup` moved there
-with the rest of it. Whether the command resolves can only be judged against the new worktree's
-path, which `cq specs` is never told.
+**The configuration has a neutral home.** The target's `.claude/quenching.json` carries
+`worktreeSetup` alongside the provider placement settings, so the same isolation contract applies
+regardless of where the spec is hosted. Whether the command resolves can only be judged against
+the new worktree's path, which `cq specs` is never told.
 
 **On stamping `branch:` for a branch this plugin never cut.** A human may have checked one out by
 hand before running `execute`, and a spec built there with nothing stamped leaves
@@ -120,7 +118,7 @@ tracks — no installed dependencies, no `.env`, no venv, no build output.
 `.claude/quenching.json`, at the repo root, under the `worktreeSetup` key:
 
 ```json
-{"backend": "files", "worktreeSetup": "./scripts/wt-setup.sh"}
+{"worktreeSetup": "./scripts/wt-setup.sh"}
 ```
 
 See

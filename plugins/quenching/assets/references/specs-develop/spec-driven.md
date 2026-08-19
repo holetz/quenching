@@ -1,88 +1,67 @@
 # Spec-driven facts — the single-file lifecycle, the gates, the `cq specs` tool, the report mold
 
 **This file is the single owner
-of the spec-driven facts** — the `specs/` layout, the spec file's format, the gates, the
+of the spec-driven facts** — the provider document's format, the gates, the
 derived stages, the executor contract, the `cq specs` tool surface, and the shape every
 `/quenching:specs:*` command reports in — and every
 `/quenching:specs:*` command cites these sections instead of restating them. The OKF bridge (what
 durable knowledge crosses from a spec into `knowledge/` and how) lives with the close-out command
 ([specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)).
 
-**Where a spec is stored is declared, not fixed.** A target repo names its backend in
-`.claude/quenching.json` — `files` (on a dedicated branch), `github`, or `azure-boards` — and the
-**selected backend is the source of truth**. The conceptual model below is the same whichever one
-is chosen: the same fourteen sections, the same frontmatter records, the same derived stages. Only
-*where and how* they are serialized differs, which is why every command drives `cq specs` rather
-than a path.
+**A spec is provider-owned.** GitHub issues and Azure Boards work items are the source of truth;
+the provider document carries the same fourteen sections, frontmatter records, and derived stages
+throughout its lifecycle. Only *where and how* it is serialized differs, which is why every
+command drives `cq specs` rather than a repository path.
 
-What every backend owes that model — the five primitives, the obligation to reassemble the whole
-canonical document on read, and the refusal that never falls back to `files` — is owned by
+What every provider owes that model — the five primitives, the obligation to reassemble the whole
+canonical document on read, and refusal on unsupported selection — is owned by
 `/.knowledge/standards/architecture/spec-backend.md` and never restated here.
 
 ## Contents
 
 `cq components read <this file>` returns the heading index; `--sections` addresses one.
 
-## The `specs/` layout
+## The provider-owned document
 
 <!-- rules -->
 
-**One spec is ONE markdown file for its entire lifecycle.** Phases enrich it; they never split it.
-The front lives at the target repo root (never inside `knowledge/`):
-
-```
-specs/
-  plans/                       # a spec's whole active life: captured through executing
-    2026-07-25-session-tokens.md
-    2026-07-14-rate-limiting.md
-  archive/                     # done or abandoned, told apart by `outcome:` frontmatter
-    2026-06-30-audit-log.md
-```
-
-**The folder is the phase, and it is the single truth.** There is no `phase:` frontmatter field:
-two declared sources of one fact will diverge, and a folder cannot lie. There is exactly **one**
-transition left — `plans/` → `archive/`, a `git mv` performed by `cq specs promote` — so `git log`
-narrates the close-out.
-
-`plans/` is **not** part of the OKF `knowledge/` bundle, and `cq knowledge validate` is never pointed at it:
-a spec carries no OKF `type:`, and `cq specs validate` is its contract — the on-write check for
-this front, and the whole of it. The folder carries **no listing file** — `cq specs list` derives
-what it holds from disk on demand.
+**One spec is ONE canonical provider document for its entire lifecycle.** Phases enrich it; they
+never split it. Its issue or work-item body is the serialized source, and `cq specs` reconstructs
+the complete document on every read. Provider state, not a repository path, carries the lifecycle
+stage and outcome.
 
 Isolation-while-building is what a **branch or worktree** provides, with real merge, history, and
 reversion (what crosses into `knowledge/`: §Boundary).
 
-The layout above is the `files` backend's. It is the reference implementation and not the only one:
-under an external backend there may be **no `specs/` folder at all**, the phase is the issue's own
-state rather than a folder, and `promote` moves nothing on disk. What does not change is anything a
-command can observe through `cq specs`.
+The provider owns the locator and lifecycle transition. `promote` updates provider state rather
+than moving anything in the target repository. What does not change is anything a command can
+observe through `cq specs`.
 
 <!-- rationale -->
 
-**Why one active folder.** A `backlog/` ↔ `ready/` split bought exactly one fact no derivation
+**Why one provider document.** A `backlog/` ↔ `ready/` split bought exactly one fact no derivation
 reproduces: *a human said go*. Everything else it implied — that the spec is complete enough to
 build — is computable from the sections themselves, and now is (§Derived stages). The human's word
 is `approved:` in frontmatter, so the fact survived and the folder did not.
 
-## Identity: the slug and the filename
+## Identity: the slug and the provider locator
 
 <!-- rules -->
 
-**Every spec file is named `<slug>.md`, in both folders — the basename IS the slug.** The capture
-date is `date:` in the frontmatter, written **once, at creation**; `promote` moves the file and
-never renames it, so the basename is stable for the whole lifecycle and `git log --follow` reads as
-one history.
+**Every spec has a stable `<slug>` identity.** The capture date is `date:` in the frontmatter,
+written **once, at creation**; provider transitions never rename the slug.
 
-**Identity is the slug, not the path.** Every cross-reference names the bare slug; `cq specs`
-resolves it to the one spec whose basename is `<slug>.md`, wherever it sits — and then, if nothing
+**Identity is the slug, not the locator.** Every cross-reference names the bare slug; `cq specs`
+resolves it to the one provider document with that identity — and then, if nothing
 matched exactly, by title and by one close match above a threshold, announcing that it approximated.
 **Two matches is a refusal (exit 2) at every rung**, never a guess. This is what makes repeated
 folder moves survivable.
 
 <!-- rationale -->
 
-**Why the date is not the basename's prefix.** A leading date makes a plain `ls` chronological,
-which is worth having while every spec is a file. It stops being payable the
+**Why the date is not part of the slug.** A leading date makes a plain listing chronological,
+which is useful only when every spec is a repository file. It stops being payable when the front
+is provider-owned and the locator is not a filename:
 moment the front could live somewhere without filenames: an external backend had to mint a
 synthetic basename purely to carry a date, and the one native value that could have replaced it —
 an issue's `created_at` — is when the ISSUE was made, which a migration sets to the migration's own
@@ -538,7 +517,7 @@ executing · 5/9 tasks · https://github.com/o/r/issues/41
 
 **The third field is the locator the tool returned** — the `path` field `cq specs new`, `status`,
 `list`, `next --front` and `section --write` all carry — never a filename the body assembled. Under
-`backend: github` it is an issue URL, under `files` a repo-relative path.
+`github` returns an issue URL; `azure-boards` returns the work-item URL.
 
 <!-- rationale -->
 
