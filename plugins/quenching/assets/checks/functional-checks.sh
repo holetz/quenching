@@ -48,11 +48,13 @@ set -uo pipefail
 ONLY="1,2"
 REPO=""
 SELF_CHECK=0
+SELF_TEST=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --only)   ONLY="${2:-}"; shift 2 ;;
     --only=*) ONLY="${1#*=}"; shift ;;
     --selfcheck) SELF_CHECK=1; shift ;;
+    --selftest) SELF_TEST=1; shift ;;
     # the whole header comment, however long it grows — a fixed range silently truncates it
     -h|--help) sed -n '2,/^set -uo pipefail/p' "${BASH_SOURCE[0]}" | sed '$d'; exit 0 ;;
     *)        REPO="$1"; shift ;;
@@ -150,6 +152,46 @@ anchored () {
 
   [ "$result" = yes ]
 }
+
+# Exercise both halves of anchored without starting a session. The first event is a valid
+# checkout path; the second is the stale source this guard must reject.
+selftest () {
+  local fixture="$WORK/selftest.jsonl"
+  local result=0
+  local -a inputs=()
+
+  cat > "$fixture" <<EOF
+{"message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"$PLUGIN/assets/references/selftest.md"}}]}}
+{"message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"/plugins/cache/quenching/3.0.0/assets/references/selftest.md"}}]}}
+EOF
+  mapfile -t inputs < <(tools Read "$fixture")
+
+  if [ "${#inputs[@]}" -ne 2 ]; then
+    printf 'FAIL selftest: expected two captured Read inputs, got %s\n' "${#inputs[@]}"
+    return 1
+  fi
+
+  if anchored "${inputs[0]}" >/dev/null; then
+    printf 'PASS selftest: accepted the checkout path\n'
+  else
+    printf 'FAIL selftest: rejected the checkout path\n'
+    result=1
+  fi
+
+  if anchored "${inputs[1]}" >/dev/null; then
+    printf 'FAIL selftest: accepted the cache path\n'
+    result=1
+  else
+    printf 'PASS selftest: rejected the cache path\n'
+  fi
+
+  return "$result"
+}
+
+if [ "$SELF_TEST" -eq 1 ]; then
+  selftest
+  exit $?
+fi
 
 # Did the session act at all? Zero tool_use events of ANY name means the capture carries no
 # evidence — the process died, the stream was unreadable, or nothing ran. Every assertion here
