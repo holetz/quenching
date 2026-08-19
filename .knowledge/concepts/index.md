@@ -27,7 +27,7 @@ but are not a contract, a procedure, or a fact about a specific external asset. 
   bundle and the one deliberate exception to "one concept per file" (a flat, sorted
   bullet list — the same syntax every `index.md` uses — of term → one-line meaning
   → link to the full doc, or unlinked when none exists yet). Enriched by
-  `quenching-knowledge-define` on demand, `quenching-knowledge-glossary-backfill` in bulk, and, as a tail
+  `quenching:knowledge:define` on demand, `quenching:knowledge:glossary-backfill` in bulk, and, as a tail
   step, by the other knowledge skills.
 
 ## Subject subfolders
