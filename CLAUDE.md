@@ -25,6 +25,8 @@ The bundle gate is zero errors; `stale-doc` is advisory. Surface-load checks liv
 spec backend is GitHub, so there is no local `/.specs/` workspace. For the Codex translation, use
 the instructions in `AGENTS.md`.
 
+This size check measures CLAUDE.md only; it does not measure Claude's system prompt.
+
 ## Safety that must stay visible
 
 - Do not add `context: fork` beside a command's mid-flow gate; the minimal building cycle is the
