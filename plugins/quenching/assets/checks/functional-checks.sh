@@ -266,7 +266,7 @@ you to consult, exactly as the body spells them. Then Read the first one. Do not
 copy it from the body you were given." \
   --max-turns 10 --output-format stream-json --verbose < /dev/null > "$WORK/1.jsonl" 2>&1 )
 if evidence "$WORK/1.jsonl"; then
-  if grep -q '/assets/references/' <<<"$(tools Read "$WORK/1.jsonl")"; then r=yes; else r=no; fi
+  if anchored "$(tools Read "$WORK/1.jsonl")"; then r=yes; else r=no; fi
   check "$r" "Read a file under assets/references/ (placeholder substituted)"
   if grep -q '/skills/' <<<"$(tools Read "$WORK/1.jsonl")"; then r=no; else r=yes; fi
   check "$r" "read nothing under a skills/ tree"
