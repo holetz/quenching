@@ -1,6 +1,6 @@
 {
   "source": "plugins/quenching",
-  "source_sha256": "1372f2d51615775a9de084c7f907ae9d5e9d223acc2bfde542f1aebb702de002",
-  "generator": "scripts/sync_codex_plugin.py",
+  "source_sha256": "7263f13078d1b75856fccff7dd98bf220429974f63762890bfcf695cda565e66",
+  "generator": "cq components translate",
   "command_count": 34
 }

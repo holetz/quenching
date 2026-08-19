@@ -29,9 +29,10 @@ The stage always derives **from disk**, never from what the current pass has acc
 what makes the loop honest: a bank's answers reach the file before the next bank is chosen, so a
 re-derived stage is a fact rather than a projection.
 
-**Crossing a bank boundary is offered, never automatic.** When a bank's edit lands and the
-re-derived stage selects a different one, name the next bank and what it will ask, and wait. A
-human who came to sharpen a proposal did not sign up for the whole gate walk.
+**Crossing a bank boundary is automatic and narrated, never offered.** When a bank's edit lands
+and the re-derived stage selects a different one, name the next bank and what it will ask, then
+continue. The stage is a fact derived from disk; offering the crossing asks the human to decide
+again what the completed bank already decided.
 
 ## The four shared mechanics
 

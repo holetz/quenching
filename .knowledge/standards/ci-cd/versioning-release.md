@@ -1,8 +1,8 @@
 ---
 type: standard
-title: Versioning and release — the four-artifact lockstep
-description: Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and the one shared version module is what every pillar's --version reads — bumped once per release, on the primary branch, never at conclude and never as a task
-resource: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py
+title: Versioning and release — the Claude/Codex lockstep
+description: Every published Claude and Codex version surface must agree at release time, including both marketplace entries and the generated Codex manifest
+resource: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, plugins/quenching-codex/.codex-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py
 tags: [release, versioning, lockstep, plugin, distribution]
 timestamp: 2026-08-15
 audience: both
@@ -11,16 +11,16 @@ source: modularizar-specs-knowledge-components spec, tasks 9.2 and 10.2 — rewr
 maintainer: quenching
 ---
 
-# Versioning and release — the four-artifact lockstep
+# Versioning and release — the Claude/Codex lockstep
 
-A release bumps **four** version strings, and they must agree. The rule is not bookkeeping
+A release bumps the Claude source and its published Codex sibling in lockstep. The rule is not bookkeeping
 tidiness: two independent consumers read two different halves of the set, and a partial bump
 makes each one wrong in its own way.
 
-`cq specs release <version>` — the tool this section's *Verifying* block names — moves exactly
-these four, in one two-pass, all-or-nothing write.
+`cq specs release <version>` — the tool this section's *Verifying* block names — moves the source
+version and regenerates the Codex manifest from it in one release operation.
 
-## The four
+## The published set
 
 | # | Artifact | Read by |
 | --- | --- | --- |
@@ -28,10 +28,12 @@ these four, in one two-pass, all-or-nothing write.
 | 2 | `plugins/quenching/VERSION` | the same detection, as the pair's other half |
 | 3 | `.claude-plugin/marketplace.json` → the plugin entry's `version` | the marketplace listing |
 | 4 | `plugins/quenching/assets/bin/quenching/common/version.py` → `VERSION` | every pillar's own `--version` (`cq specs`, `cq knowledge`, `cq components`) |
+| 5 | `plugins/quenching-codex/.codex-plugin/plugin.json` → `version` | Codex marketplace installation and upgrade detection |
+| 6 | `.claude-plugin/marketplace.json` → `plugins[].version` for both `quenching` and `quenching-codex` | the marketplace entries that publish the two installable surfaces |
 
 ## Why each half matters
 
-**Artifacts 1–2 are the upgrade trigger.** The `plugin.json` `version` and the `VERSION` file are
+**Artifacts 1–2 are the Claude upgrade trigger.** The `plugin.json` `version` and the `VERSION` file are
 the pair Claude Code uses to decide that an installed plugin is stale and should be replaced. Bump
 one without the other and the upgrade either never fires or fires against a plugin that reports a
 version it does not have.
@@ -47,6 +49,12 @@ forced, back when each pillar shipped as its own script
 ([frontmatter-parser.md](../code/frontmatter-parser.md), which owns that history). One package with
 internal imports has no such constraint: `common/version.py` is read by every pillar's `--version`,
 not duplicated by it.
+
+**Artifacts 5–6 publish the generated sibling.** The Codex manifest is generated from the same
+source version and marketplace exposes it as a separate installable plugin. A release that bumps
+only Claude leaves Codex pinned to an older generated tree; a release that edits Codex's version
+independently breaks the deterministic generation contract. Regenerate first, then publish both
+marketplace entries at the identical version.
 
 ## When the bump happens — once, at the release, on the primary branch
 

@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mkdocs-storyteller — O Kit do Estúdio de Documentação</title>
+<style>
+  :root{
+    --paper:#f6f4ec; --ink:#26241f; --muted:#6b6558; --line:#e4dfce; --card:#fffdf7;
+    --shadow:0 1px 2px rgba(0,0,0,.05),0 8px 24px rgba(0,0,0,.05);
+    --l1:#3f9d78; --l2:#2f8f9d; --l3:#e08a3c; --l4:#8b6cc9; --l5:#3f6fd1;
+  }
+  :root[data-theme="dark"]{
+    --paper:#1b1a17; --ink:#efece3; --muted:#a49d8c; --line:#332f28; --card:#242219;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--paper); color:var(--ink);
+    font:15px/1.55 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:0 0 92px; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:0 18px}
+
+  .toolbar{position:sticky; top:0; z-index:5; display:flex; justify-content:flex-end;
+    gap:8px; padding:10px 18px; background:color-mix(in srgb,var(--paper) 88%,transparent);
+    backdrop-filter:saturate(1.2) blur(6px); border-bottom:1px solid var(--line)}
+  .btn{font:inherit; font-size:13px; font-weight:600; color:var(--ink); cursor:pointer;
+    background:var(--card); border:1px solid var(--line); border-radius:999px; padding:6px 14px}
+  .btn:hover{border-color:var(--muted)}
+
+  header.hero{text-align:center; padding:34px 18px 8px}
+  .mark{color:var(--l3); font-size:20px; letter-spacing:.3em}
+  header.hero h1{margin:.15em 0 .1em; font-size:clamp(1.9rem,4.4vw,2.7rem);
+    font-weight:800; letter-spacing:-.02em}
+  .sub{color:var(--l2); font-weight:700; letter-spacing:.02em; font-size:1rem}
+  .tag{color:var(--muted); max-width:640px; margin:.5em auto 0}
+  .byline{color:var(--muted); font-size:12px; margin-top:.5em; letter-spacing:.08em; text-transform:uppercase}
+
+  .kit{display:grid; grid-template-columns:186px minmax(0,1fr) 186px; gap:16px; align-items:start; margin-top:22px}
+  .rail{position:sticky; top:58px; display:flex; flex-direction:column; gap:9px}
+  .rail h3{margin:0 0 2px; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+  .chip{display:flex; gap:8px; align-items:flex-start; background:var(--card); border:1px solid var(--line);
+    border-radius:12px; padding:9px 11px; font-size:13px; box-shadow:var(--shadow)}
+  .chip .i{font-size:15px; line-height:1.3}
+  .chip b{display:block; font-size:13px}
+  .chip span{color:var(--muted); font-size:12px}
+  .rail--in .chip{border-left:3px solid var(--l2)}
+  .rail--out .chip{border-left:3px solid var(--l1)}
+
+  .bands{display:flex; flex-direction:column; gap:0}
+  .flow{align-self:center; color:var(--muted); font-size:15px; line-height:1; padding:5px 0}
+  .band{--l:var(--l1); background:color-mix(in srgb,var(--l) 8%,var(--paper));
+    border:1px solid color-mix(in srgb,var(--l) 22%,var(--line)); border-radius:16px; padding:14px 15px 16px}
+  .band-head{display:flex; align-items:center; gap:11px; margin-bottom:11px}
+  .badge{flex:0 0 auto; width:30px; height:30px; border-radius:9px; background:var(--l); color:#fff;
+    font-weight:800; display:grid; place-items:center; box-shadow:var(--shadow)}
+  .band-head h2{margin:0; font-size:1.02rem}
+  .band-head .role{color:var(--l); font-weight:700; font-size:12px; margin-left:auto; text-align:right}
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:9px}
+
+  .card{background:var(--card); border:1px solid var(--line); border-left:3px solid var(--l);
+    border-radius:11px; padding:9px 11px; cursor:pointer; transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}
+  .card:hover,.card:focus-visible{transform:translateY(-3px); box-shadow:var(--shadow);
+    border-color:var(--l); outline:none}
+  .card .h{display:flex; gap:7px; align-items:baseline; font-weight:700; font-size:13.5px}
+  .card .h .i{font-size:14px}
+  .card p{margin:3px 0 0; color:var(--muted); font-size:12px}
+  .card ul{margin:5px 0 0; padding:0; list-style:none; display:flex; flex-wrap:wrap; gap:3px 9px}
+  .card li{color:var(--muted); font-size:11.5px}
+  .card li::before{content:"■ "; color:var(--l); font-size:8px}
+
+  footer.principles{margin-top:22px; border-top:1px dashed var(--line); padding-top:16px}
+  .prow{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; text-align:center}
+  .prow div{color:var(--muted); font-size:12.5px}
+  .prow .i{display:block; font-size:20px; margin-bottom:3px}
+  .prow b{color:var(--ink)}
+
+  .detail{position:fixed; left:0; right:0; bottom:0; transform:translateY(110%);
+    transition:transform .2s ease; z-index:9; padding:0 18px 16px}
+  .detail.open{transform:none}
+  .detail-in{max-width:1080px; margin:0 auto; background:var(--card); border:1px solid var(--line);
+    border-left:5px solid var(--dl,var(--l3)); border-radius:14px; box-shadow:var(--shadow);
+    padding:13px 16px; display:flex; gap:12px; align-items:flex-start}
+  .detail-in h4{margin:0 0 3px; font-size:14px}
+  .detail-in p{margin:0; color:var(--muted); font-size:13px}
+  .detail-x{margin-left:auto; flex:0 0 auto; cursor:pointer; border:1px solid var(--line);
+    background:var(--paper); color:var(--ink); border-radius:8px; padding:3px 9px; font-weight:700}
+
+  @keyframes riseIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  @keyframes twinkle{0%,100%{opacity:.45; letter-spacing:.3em}50%{opacity:1; letter-spacing:.42em}}
+  @keyframes chev{0%,100%{transform:translateY(0); opacity:.5}50%{transform:translateY(4px); opacity:1}}
+  @keyframes badgePop{from{transform:scale(.6); opacity:0}to{transform:scale(1); opacity:1}}
+  header.hero .mark{animation:twinkle 2.6s ease-in-out infinite}
+  header.hero h1{animation:riseIn .7s cubic-bezier(.2,.7,.2,1) both}
+  header.hero .sub{animation:riseIn .7s cubic-bezier(.2,.7,.2,1) .08s both}
+  header.hero .tag{animation:riseIn .7s cubic-bezier(.2,.7,.2,1) .16s both}
+  header.hero .byline{animation:riseIn .7s cubic-bezier(.2,.7,.2,1) .24s both}
+  .flow{animation:chev 1.8s ease-in-out infinite}
+  .band.in .badge{animation:badgePop .45s cubic-bezier(.2,1.3,.5,1) both}
+  .reveal{opacity:0; transform:translateY(14px)}
+  .reveal.in{opacity:1; transform:none; transition:opacity .55s ease, transform .55s ease; transition-delay:var(--d,0ms)}
+
+  @media (max-width:900px){
+    .kit{grid-template-columns:1fr}
+    .rail{position:static; flex-direction:row; flex-wrap:wrap}
+    .rail .chip{flex:1 1 160px}
+    .rail--out{order:3}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important; animation:none !important}
+    .reveal{opacity:1 !important; transform:none !important}
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <button class="btn" id="theme">◐ Tema</button>
+  <button class="btn" id="expand">⤢ Expandir tudo</button>
+</div>
+
+<header class="hero">
+  <div class="mark">✳ ✳ ✳</div>
+  <h1>mkdocs-storyteller</h1>
+  <div class="sub">O Kit do Estúdio de Documentação</div>
+  <p class="tag">Markdown bruto, um README, specs ou uma árvore <code>docs/</code>
+     inteira → um site MkDocs Material que humanos <b>leem</b>, engenheiros
+     <b>executam</b> e LLMs <b>reutilizam e reconstroem</b>. Construído na sessão
+     com Codex.</p>
+  <div class="byline">Diagnosticar · Arquitetar · Escrever · Desenhar · Criticar · Validar</div>
+</header>
+
+<div class="wrap">
+<main class="kit">
+
+  <!-- TRILHO ESQUERDO: entradas -->
+  <aside class="rail rail--in">
+    <h3>Entradas</h3>
+    <div class="chip"><span class="i">📄</span><div><b>Markdown bruto</b><span>.md soltos, rascunhos</span></div></div>
+    <div class="chip"><span class="i">📘</span><div><b>README</b><span>prosa da raiz do repo</span></div></div>
+    <div class="chip"><span class="i">📐</span><div><b>Specs &amp; notas</b><span>docs internas</span></div></div>
+    <div class="chip"><span class="i">🗂️</span><div><b>docs/ existente</b><span>uma árvore inteira</span></div></div>
+  </aside>
+
+  <!-- BANDAS -->
+  <div class="bands">
+
+    <!-- Camada 1 -->
+    <section class="band" style="--l:var(--l1)">
+      <div class="band-head"><div class="badge">1</div><h2>O Ciclo do Estúdio</h2><div class="role">9 fases, em ordem</div></div>
+      <div class="cards">
+        <div class="card" data-label="Diagnosticar" data-detail="Read-only. Mapeia o terreno com rg/Glob (fontes, mkdocs.yml, a árvore docs/). Produz o contrato de Diagnóstico: fontes, público, estado do site, problemas principais, riscos de fonte/verdade, oportunidades visuais.">
+          <div class="h"><span class="i">🔍</span>1 · Diagnosticar</div><p>mapa do terreno (read-only)</p></div>
+        <div class="card" data-label="Arquitetura da Informação" data-detail="Desenha o site como jornada, por intenção e não por nome de arquivo. Produz os contratos de Jornadas do leitor e Proposta de IA (árvore de nav, mapa fonte→destino, intenção de cada página).">
+          <div class="h"><span class="i">🧭</span>2 · IA</div><p>navegação por intenção · jornadas</p></div>
+        <div class="card" data-label="Escrever" data-detail="Reescreve, nunca só realoca: hook → caminho rápido → profundidade progressiva → próximo passo. Exemplos reais. Usa storytelling.md + page-patterns.md.">
+          <div class="h"><span class="i">✍️</span>3 · Escrever</div><p>hook · caminho rápido · profundidade</p></div>
+        <div class="card" data-label="Visual" data-detail="Aplica o Plano visual: todo elemento carrega informação ou é cortado. Cards, tabs, Mermaid, tabelas, hero, badges — escolhidos pela forma do conteúdo.">
+          <div class="h"><span class="i">🎨</span>4 · Visual</div><p>significado, não decoração</p></div>
+        <div class="card" data-label="LLM-legível" data-detail="Torna a mesma página reutilizável por agentes: headings estáveis, âncoras previsíveis, blocos TL;DR-para-agentes, contratos explícitos, glossário.">
+          <div class="h"><span class="i">🤖</span>5 · LLM-legível</div><p>copiável · reconstruível</p></div>
+        <div class="card" data-label="Criticar" data-detail="Passe duro: caça marketing vazio, afirmações sem fonte, visuais inúteis, dumps de README, profundidade falsa. Pontua cada página na rubrica.">
+          <div class="h"><span class="i">🧨</span>6 · Criticar</div><p>caça profundidade falsa · pontua</p></div>
+        <div class="card" data-label="Reconstruir" data-detail="Corrige o que a crítica apontou e re-pontua. Loop crítica→reconstrução no máximo 2–3 rodadas, salvo pedido explícito.">
+          <div class="h"><span class="i">🔧</span>7 · Reconstruir</div><p>corrige &amp; re-pontua · ≤3×</p></div>
+        <div class="card" data-label="Validar" data-detail="Build strict server-safe (mkdocs build --strict --site-dir .mkdocs-check) + QA visual em desktop/mobile, claro/escuro, Mermaid, tabs, movimento.">
+          <div class="h"><span class="i">✅</span>8 · Validar</div><p>build strict + QA visual</p></div>
+        <div class="card" data-label="Entregar com score" data-detail="Reporta os scores por página, o source ledger dos claims fortes, lacunas residuais e o resultado do build. Nada abaixo do limite é entregue sem sinalização.">
+          <div class="h"><span class="i">🏁</span>9 · Entregar</div><p>score · ledger · lacunas</p></div>
+      </div>
+    </section>
+    <div class="flow">▾</div>
+
+    <!-- Camada 2 -->
+    <section class="band" style="--l:var(--l2)">
+      <div class="band-head"><div class="badge">2</div><h2>A Biblioteca de Referências</h2><div class="role">A Camada de Conhecimento · sob demanda</div></div>
+      <div class="cards">
+        <div class="card" data-label="Ofício (Craft)" data-detail="storytelling.md (voz, arco da página, disclosure progressivo) · page-patterns.md (12 esqueletos de página) · rewrite-examples.md (transformações antes→depois).">
+          <div class="h"><span class="i">✍️</span>Ofício</div>
+          <ul><li>storytelling</li><li>page-patterns</li><li>rewrite-examples</li></ul></div>
+        <div class="card" data-label="Arquitetura" data-detail="information-architecture.md (nav por intenção, jornadas, routing table) · output-contracts.md (as 6 saídas obrigatórias antes de editar).">
+          <div class="h"><span class="i">🧭</span>Arquitetura</div>
+          <ul><li>information-architecture</li><li>output-contracts</li></ul></div>
+        <div class="card" data-label="Visual" data-detail="visual-language.md (qual visual para qual conteúdo) · material-toolkit.md (sintaxe MkDocs + extensões) · signature-experience.md (torná-la icônica).">
+          <div class="h"><span class="i">🎨</span>Visual</div>
+          <ul><li>visual-language</li><li>material-toolkit</li><li>signature-experience</li></ul></div>
+        <div class="card" data-label="Agente" data-detail="llm-readability.md — a doutrina de docs que um LLM consegue copiar, navegar e reconstruir (headings estáveis, âncoras, TL;DR, contratos, nunca fato só em imagem).">
+          <div class="h"><span class="i">🤖</span>Agente</div>
+          <ul><li>llm-readability</li></ul></div>
+        <div class="card" data-label="Qualidade" data-detail="quality-rubric.md (0–5 × 10 dims + portão) · source-ledger.md (rastreabilidade) · engagement-checklist.md (a definição dura de pronto).">
+          <div class="h"><span class="i">📊</span>Qualidade</div>
+          <ul><li>quality-rubric</li><li>source-ledger</li><li>engagement-checklist</li></ul></div>
+        <div class="card" data-label="Operação" data-detail="live-preview.md (dev server + build server-safe) · visual-qa.md (checagens do site renderizado) · editorial-loop.md (os 6 papéis + o loop rascunho→crítica→reconstrução).">
+          <div class="h"><span class="i">⚙️</span>Operação</div>
+          <ul><li>live-preview</li><li>visual-qa</li><li>editorial-loop</li></ul></div>
+      </div>
+    </section>
+    <div class="flow">▾</div>
+
+    <!-- Camada 3 -->
+    <section class="band" style="--l:var(--l3)">
+      <div class="band-head"><div class="badge">3</div><h2>O Loop Editorial</h2><div class="role">A Camada de Delegação · 6 sub-agents</div></div>
+      <div class="cards">
+        <div class="card" data-label="docs-architect" data-detail="Lê fontes; produz os contratos de Diagnóstico + Jornadas + Proposta de IA. Read-only — nunca escreve prosa.">
+          <div class="h"><span class="i">🏛️</span>docs-architect</div><p>planeja · read-only</p></div>
+        <div class="card" data-label="docs-storyteller" data-detail="Transforma conteúdo bruto em páginas prontas nos arquivos designados (hooks, caminhos rápidos, exemplos). Edita. Nunca decide a nav nem inventa fatos.">
+          <div class="h"><span class="i">✒️</span>docs-storyteller</div><p>escreve páginas · edita</p></div>
+        <div class="card" data-label="docs-visual-director" data-detail="Decide a linguagem visual e aplica edições cirúrgicas (cards/tabs/Mermaid/hero/badges). Rejeita decoração sem função.">
+          <div class="h"><span class="i">🎨</span>docs-visual-director</div><p>visual · edita</p></div>
+        <div class="card" data-label="docs-agent-reader" data-detail="Revisa se um LLM consegue reutilizar as páginas (headings, âncoras, TL;DR, contratos, exemplos copiáveis). Parecer read-only + lista de correções.">
+          <div class="h"><span class="i">🤖</span>docs-agent-reader</div><p>QA de LLM · read-only</p></div>
+        <div class="card" data-label="docs-critic" data-detail="Crítica dura + scores da rubrica: marketing vazio, claims sem fonte, visuais inúteis, dumps de README, profundidade falsa. Read-only; nunca edita.">
+          <div class="h"><span class="i">🧨</span>docs-critic</div><p>crítica + score · read-only</p></div>
+        <div class="card" data-label="docs-validator" data-detail="Build strict server-safe, links/nav/órfãos, componentes renderizados, QA visual (ou fallback estático honesto). Produz o parecer entregar/não-entregar.">
+          <div class="h"><span class="i">✅</span>docs-validator</div><p>build + QA · read-only</p></div>
+        <div class="card" data-label="O loop" data-detail="Orquestra: architect → storyteller → visual-director → agent-reader → critic (score) → reconstrução → validator. Limitado a 2–3 rodadas. Cada papel devolve parecer condensado; só dois papéis editam.">
+          <div class="h"><span class="i">🔁</span>rascunho → crítica → reconstrução → validação</div><p>≤ 2–3 rodadas · pareceres condensados</p></div>
+      </div>
+    </section>
+    <div class="flow">▾</div>
+
+    <!-- Camada 4 -->
+    <section class="band" style="--l:var(--l4)">
+      <div class="band-head"><div class="badge">4</div><h2>Portões de Qualidade</h2><div class="role">A Camada de Guardrails · nada abaixo do limite passa</div></div>
+      <div class="cards">
+        <div class="card" data-label="A rubrica (0–5)" data-detail="Dez dimensões: hook · intenção · IA · escaneabilidade · densidade · exemplos · visual · LLM-legível · integridade/fonte · navegação. Portão: nenhuma dim 0; dims críticas ≥2; média ≥2,5 (landings ≥3,5).">
+          <div class="h"><span class="i">📊</span>Rubrica 0–5</div><p>10 dims · média ≥ 2,5</p></div>
+        <div class="card" data-label="Os cinco proibidos" data-detail="Reprovação automática: nada de profundidade falsa · nada de bonito-mas-inútil · nada de dump de README · nada de claim sem fonte · nada de seção sem intenção.">
+          <div class="h"><span class="i">🚫</span>Cinco proibidos</div><p>reprovação automática</p></div>
+        <div class="card" data-label="Source ledger" data-detail="Todo claim forte rastreia até arquivo / código / doc fornecida / link do usuário / inferência marcada. Sem origem → 'source gap', nunca fabricado.">
+          <div class="h"><span class="i">🧾</span>Source ledger</div><p>claim · fonte · confiança</p></div>
+        <div class="card" data-label="Build strict" data-detail="mkdocs build --strict --site-dir .mkdocs-check (server-safe) → zero warnings, sem órfãos, links resolvem. Build vermelho nunca é 'pronto'.">
+          <div class="h"><span class="i">🟢</span>--strict build</div><p>o piso, não o teto</p></div>
+      </div>
+    </section>
+    <div class="flow">▾</div>
+
+    <!-- Camada 5 -->
+    <section class="band" style="--l:var(--l5)">
+      <div class="band-head"><div class="badge">5</div><h2>Contratos de Saída</h2><div class="role">A Camada de Plano · antes de qualquer edição</div></div>
+      <div class="cards">
+        <div class="card" data-label="Diagnóstico" data-detail="Fontes · público · estado do site · problemas principais · riscos de fonte/verdade · oportunidades visuais.">
+          <div class="h"><span class="i">🔍</span>Diagnóstico</div></div>
+        <div class="card" data-label="Jornadas do leitor" data-detail="Pelo menos três, ponta a ponta: avaliador de 5 min · implementador em sessão · agente/LLM. Sem becos sem saída.">
+          <div class="h"><span class="i">🧑‍🤝‍🧑</span>Jornadas do leitor</div></div>
+        <div class="card" data-label="Proposta de IA" data-detail="Nova árvore de nav · mapa fonte→destino · uma intenção por página · o que sai · divisão referência/guia/conceito.">
+          <div class="h"><span class="i">🗺️</span>Proposta de IA</div></div>
+        <div class="card" data-label="Plano visual" data-detail="Onde vão cards/tabs/Mermaid/tabelas/hero/badges/assets — e o que fica texto puro.">
+          <div class="h"><span class="i">🎨</span>Plano visual</div></div>
+        <div class="card" data-label="Plano LLM-legível" data-detail="Blocos TL;DR · contratos in/out · headings estáveis · âncoras-chave · glossário/mapa conceitual · exemplos copiáveis.">
+          <div class="h"><span class="i">🤖</span>Plano LLM</div></div>
+        <div class="card" data-label="Plano de execução" data-detail="Arquivos a editar · extensões MkDocs necessárias · risco por mudança · validação final.">
+          <div class="h"><span class="i">🧩</span>Plano de execução</div></div>
+      </div>
+    </section>
+
+  </div><!-- /bands -->
+
+  <!-- TRILHO DIREITO: saídas -->
+  <aside class="rail rail--out">
+    <h3>Saídas</h3>
+    <div class="chip"><span class="i">🌐</span><div><b>MkDocs Material</b><span>um site strict</span></div></div>
+    <div class="chip"><span class="i">👀</span><div><b>Humanos</b><span>querem ler</span></div></div>
+    <div class="chip"><span class="i">🛠️</span><div><b>Engenheiros</b><span>conseguem executar</span></div></div>
+    <div class="chip"><span class="i">🤖</span><div><b>LLMs</b><span>reutilizam e reconstroem</span></div></div>
+  </aside>
+
+</main>
+
+<footer class="principles">
+  <div class="prow">
+    <div><span class="i">📜</span><b>Contratos antes de editar</b><br>planeje as 6 saídas primeiro</div>
+    <div><span class="i">📊</span><b>Pontue tudo</b><br>abaixo do limite = não pronto</div>
+    <div><span class="i">🔒</span><b>Nada de fato inventado</b><br>rastreie todo claim forte</div>
+    <div><span class="i">🟢</span><b>--strict é o piso</b><br>nunca entregue build vermelho</div>
+    <div><span class="i">⚖️</span><b>Beleza ≠ precisão</b><br>imagem ≠ fato, slogan ≠ contrato</div>
+  </div>
+</footer>
+</div><!-- /wrap -->
+
+<div class="detail" id="detail" aria-live="polite">
+  <div class="detail-in">
+    <div><h4 id="d-title">—</h4><p id="d-body">—</p></div>
+    <button class="detail-x" id="d-close" aria-label="Fechar">✕</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  if(matchMedia('(prefers-color-scheme: dark)').matches) root.dataset.theme='dark';
+  document.getElementById('theme').onclick=function(){
+    root.dataset.theme = root.dataset.theme==='dark' ? 'light':'dark';
+  };
+  var panel=document.getElementById('detail'),
+      dt=document.getElementById('d-title'), db=document.getElementById('d-body');
+  function open(card){
+    dt.textContent=card.getAttribute('data-label')||'';
+    db.textContent=card.getAttribute('data-detail')||'';
+    var band=card.closest('.band');
+    panel.querySelector('.detail-in').style.setProperty('--dl',
+      band?getComputedStyle(band).getPropertyValue('--l'):'var(--l3)');
+    panel.classList.add('open');
+  }
+  function close(){panel.classList.remove('open');}
+  document.getElementById('d-close').onclick=close;
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+  document.querySelectorAll('.card').forEach(function(c){
+    c.setAttribute('tabindex','0'); c.setAttribute('role','button');
+    c.setAttribute('title', c.getAttribute('data-detail')||'');
+    c.addEventListener('click',function(){open(c);});
+    c.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();open(c);}});
+  });
+
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var items=document.querySelectorAll('.chip, .band, .card, .prow div');
+  if(reduce || !('IntersectionObserver' in window)){
+    items.forEach(function(el){el.classList.add('reveal','in');});
+  }else{
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+    },{threshold:.08, rootMargin:'0px 0px -6% 0px'});
+    items.forEach(function(el,i){ el.classList.add('reveal'); el.style.setProperty('--d',(i%8)*45+'ms'); io.observe(el); });
+  }
+
+  document.getElementById('expand').onclick=function(){
+    dt.textContent='mkdocs-storyteller — o kit inteiro';
+    db.textContent='5 camadas · ciclo de estúdio de 9 fases · 15 referências · 6 sub-agents · portão de rubrica 0–5 · 6 contratos de saída. Clique em qualquer card para o detalhe. Entradas (esquerda) → um site MkDocs Material (direita) que humanos leem, engenheiros executam e LLMs reconstroem.';
+    panel.classList.add('open');
+  };
+})();
+</script>
+</body>
+</html>
