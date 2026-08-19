@@ -13,7 +13,8 @@ from contextlib import redirect_stdout
 from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
-from quenching.specs.backends import open_backend
+from quenching.specs.backends.memory import MemoryBackend
+from quenching.specs.commands import create as create_module
 from quenching.specs.commands.create import cmd_new
 from quenching.specs.commands.output import Emitter
 from quenching.specs.schema import capture_form
@@ -36,14 +37,23 @@ class _Args:
 
 
 class _Workspace(unittest.TestCase):
-    """A bare, non-git workspace — `open_backend` resolves it unchanged (no branch to check
-    out), exactly the fixture `test_specs_section_write.py`'s own `_Workspace` already relies
-    on for the write path."""
+    """An in-memory external-provider fixture for the one-call capture path."""
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.root = os.path.join(self.tmp.name, ".specs")
+        self.root = self.tmp.name
+        self.backend = MemoryBackend()
+        self._open = mock.patch.object(
+            create_module, "open_backend", lambda _root: (self.backend, {}))
+        self._config = mock.patch.object(
+            create_module, "load_config",
+            return_value={"backend": "github", "subjects": {},
+                          "azurePlacement": {}, "workItemTypes": {}})
+        self._open.start()
+        self._config.start()
+        self.addCleanup(self._open.stop)
+        self.addCleanup(self._config.stop)
 
     def run_new(self, stdin=None, **kw):
         buf, stream = io.StringIO(), io.StringIO(stdin or "")
@@ -53,16 +63,12 @@ class _Workspace(unittest.TestCase):
         return code, json.loads(buf.getvalue())
 
     def read_back(self, slug="gamma-lever"):
-        backend, err = open_backend(self.root)
-        self.assertFalse(err, err)
-        info, err = backend.read_spec(slug)
+        info, err = self.backend.read_spec(slug)
         self.assertFalse(err, err)
         return info
 
     def list_slugs(self):
-        backend, err = open_backend(self.root)
-        self.assertFalse(err, err)
-        return [s["slug"] for s in backend.list_specs()]
+        return [s["slug"] for s in self.backend.list_specs()]
 
 
 class TheCollapsedCapture(_Workspace):

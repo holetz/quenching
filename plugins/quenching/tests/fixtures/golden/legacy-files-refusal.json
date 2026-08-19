@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "code": "sp-backend-removed",
+  "backend": "files",
+  "message": "backend 'files' was removed; configure a supported external provider instead — no local store was created"
+}

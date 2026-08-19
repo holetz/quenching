@@ -1,22 +1,21 @@
 ---
 type: standard
 title: Spec backend interface
-description: Where a repo's specs live is configurable, and the interface that makes every backend behave identically — five primitives over the canonical document rather than one method per CLI verb, a single shared derivation, the selected backend as sole source of truth, hybrid serialisation confined to each external implementation with the whole document (not just the parts it models) as its reassembly obligation, rendering derived state onto a native surface as a third category beside projection and storage, a relation to a git artifact (branch, commit, PR) as a fourth — attempted once, never atomic with the document — the receipt a tolerant slug resolution owes every payload and why it is folded in at a choke point rather than written verb by verb, the inverse corollary that the shared layer never derives a path from the declared root — a configuration entry and not an address — which is the single cause behind an occupied-destination check that could not see the destination, a diagnostic that reported a workspace nobody has, and a `root` field that named a folder that does not exist, and the in-memory fake that turns "identical" into a checked property
-resource: plugins/quenching/assets/bin/quenching/specs/backends/**, plugins/quenching/assets/bin/quenching/specs/worktree.py, plugins/quenching/assets/bin/quenching/specs/commands/**, plugins/quenching/assets/references/specs-develop/spec-driven.md
+description: Provider-owned GitHub and Azure Boards specs share five document primitives, one derivation and one refusal boundary; external serialisation may use native fields only when it reassembles the canonical document, while locators, resolution receipts, placement, and the memory fake keep every consumer on the same contract
+resource: plugins/quenching/assets/bin/quenching/specs/backends/**, plugins/quenching/assets/bin/quenching/specs/commands/**, plugins/quenching/assets/references/specs-develop/spec-driven.md
 tags: [architecture, specs, backend, interface, serialization]
 timestamp: 2026-08-17
 audience: both
 authority: current
-source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back; the issue title turned from a projection into storage, and the criterion refusing the capture date's, by evaluate-spec-creation-flow (tasks 2.2-2.3, 5.4) — 68 of 70 dates would have been rewritten to the migration's own day; §Rendering derived state is a third category added by labels-historico-spec-issue (task 6.1), after the `spec:` label/tag reconciliation it documents was measured live against a throwaway issue, catching an order-sensitive comparison that cost an extra round trip on every write; §Placement is declared, and reaffirmed on every write added by provar-e-posicionar-o-backend-azure-boards (task 2.7), measured against the `azure-boards` backend's own `azurePlacement`; §Armazenado não é projetado added by the same plan (task 3.6), after `not found` was measured on this repository's own tracker for a label GitHub does not already have, and reconciled with the third category above at that plan's conclude, when the two mechanisms met on the same field; §What this standard does not yet cover updated by the same plan (task 7.3), after task 6.3 ran `azure-boards` end to end against a real Azure DevOps project; §A tolerant resolution announces itself added by anunciar-resolucao-aproximada-em-todos-os-verbos (task 2.1), after the count of verbs owing the receipt was measured moving three times — six at capture, ten at design, eleven at build — and the structural guard it describes was proved firing on a reintroduced bypass; §Placement is declared, and reaffirmed on every write and §Granular reading is about context, not I/O both rewritten by reduzir-as-chamadas-az-por-escrita-no-azure-boards (task 5.1), after one `azure-boards` section edit was measured spending nine `az` calls and 8,5s — four of them writes to the same work item — and the sentence claiming those fields cost 'never a round trip of their own' turned out to be a description that had been false for a year; §What this standard does not yet cover updated by the same plan (task 6.1), whose live run found four ways a write was not idempotent that no offline check could have seen; §What is declared stops at placement — never at the connection distilled from the same plan's §Alternatives Considered at its conclude, where declaring the organisation and project in `azurePlacement` was rejected as a second source of truth that fails silently by writing into somebody else's board; §Armazenado não é projetado extended by suportar-tipo-workitem-azure-por-tags (task 6.2) for `workItemType`, a fifth first-level key that fails the twin test on purpose — the abstract catalogue key and the concrete native name differ by a translation table — and stays in the document on every backend while its native name rides a write-only, never-read-back projection at creation; §What this standard does not yet cover extended by the same plan's conclude review (task 4.3), after a live run against a board that does not accept a spec's type measured `create_spec` leaving an unfiled item behind before `_resolve_board_field` refuses — a pre-existing gap, made reachable per spec rather than per repository once the type varies by create; §A record renders onto a native surface too added by vincular-spec-a-branch-commits-e-pr (tasks 5.1-5.4), the first time the twin test was applied to a RECORD (`branch`, the new write-many `pr`) rather than a first-level state key — `github`'s own GraphQL schema measured, live against issue 917, to admit no mapping for an already-existing branch (`createLinkedBranch` creates one, never attaches one); `azure-boards`' `ArtifactLink` proved live (org `unicredbr`, project `TI`, a throwaway work item against the `hello-world-java` repository) to need a second, independent field — `attributes.name` — beside the vstfs `url` a correct URL alone was measured refused without; §The shared layer never derives a path from the declared root added by close-the-files-backend-leaks-in-specs-py (task 5.1), after the same branch closed all three defects it names — the occupied-destination check moved into `FilesBackend.move_spec`, the resolve-but-do-not-create mode given to `resolve_files_root`, and ten emit sites folded onto one `front_fields` helper measured emitting `null` under this repository's own `github` backend where it had emitted a path that does not exist
+source: remover-backend-local-do-plugin (task 4.1) — the provider contract was made explicit after retiring the repository store; the document, provider locator, refusal boundary, native-field same-fact test, and memory fake remain the durable interface
 maintainer: quenching
 ---
 
 # Spec backend interface
 
-Where a repository's specs live is a choice it declares — markdown files on a dedicated branch,
-GitHub issues, Azure Boards work items. This standard is the interface that lets that choice change
-nothing else: the conceptual model, the fourteen sections, the frontmatter records and the derived
-stages are the same on every backend, and only the serialisation moves.
+Where a repository's specs live is provider-owned — GitHub issues or Azure Boards work items. This
+standard is the interface that keeps the conceptual model, the fourteen sections, the frontmatter
+records and the derived stages identical while only the provider serialisation changes.
 
 ## The interface is the document, not the verbs
 
@@ -29,8 +28,8 @@ markdown document:
 | `list_specs(phase=None)` | which specs exist, as descriptors |
 | `read_spec(slug)` | the document for one spec, plus everything derived from it |
 | `write_spec(info, text)` | replace one spec's whole document |
-| `create_spec(phase, filename, text)` | store a new spec |
-| `move_spec(info, dest_phase)` | the one lifecycle hop, `plans/` → `archive/` |
+| `create_spec(phase, filename, text)` | store a new provider document and return its locator |
+| `move_spec(info, dest_phase)` | close the spec in the provider and return its new locator |
 
 The eight verbs are shared code layered on those five.
 
@@ -44,40 +43,30 @@ picks the spec, `derive_info` derives everything, and both are pure and shared.
 A corollary worth stating: **a backend that starts deriving anything is broken**, even if its answer
 happens to be right today.
 
-## The shared layer never derives a path from the declared root
+## The shared layer never derives a repository path from provider configuration
 
 The corollary above has an inverse, and it is the one that was missing: **the shared layer never
-derives a path from the declared root.** The declared root — `--root`, `SPECS_ROOT`, the default —
-is a configuration entry, not an address. Under an external backend it points at nothing, because
-the documents are in a tracker. Under `files` with the specs worktree in use it points at the wrong
-directory, because the backend writes to the resolved one. The component that knows where a
-document is, is the backend that stored it.
+derives a path from provider configuration.** The configured provider and placement are connection
+parameters, not repository addresses. The component that knows where a document is, is the
+provider implementation that stored it.
 
 Three defects had that single cause, and each looked like its own bug until they were put side by
 side:
 
 | The shared code asked | It answered | Because |
 | --- | --- | --- |
-| is the archive destination taken? (`promote`) | always "no" under `github`; the wrong directory under a `files` worktree | it joined the declared root and called `os.path.exists` |
-| does a workspace exist? (`doctor`) | `sp-no-workspace` on every migrated repository | it read the declared root, since opening the backend would create the worktree |
-| where do the specs live? (ten `--json` payloads) | a folder that does not exist | it emitted the declared root as `root` |
+| is the provider placement valid? (`promote`) | a tracker-side refusal or a provider locator | shared code tried to answer a provider question with a repository path |
+| is the provider configured? (`doctor`) | a provider health finding | shared code inspected a store it does not own |
+| where do the specs live? (`--json` payloads) | a provider locator or `null` | shared code emitted a repository path that may not exist |
 
 The three fixes are the same fix, applied where each answer belongs:
 
-- **A question only a filesystem can answer goes to the backend that has one.** The occupied
-  destination is `FilesBackend.move_spec`'s, which builds its destination from its own resolved
-  root and raises `BackendRefusal`; the external backends are not asked a question that has no
-  meaning for them.
-- **A diagnostic resolves without creating.** `resolve_files_root(root, cfg, create=False)` returns
-  the directory the backend *would* use and checks nothing out, which is what lets `doctor` and
-  `migrate --dry-run` measure the truth while staying read-only. Opening the backend to find out is
-  what makes the worktree exist, so it is not available to a command that must change nothing.
-- **A payload states which world it is in.** One helper produces both fields for every emit site:
-  `backend` always, and `root` as the resolved directory under `files` and `null` under an external
-  backend. `null` and not the declared path, which is the lie itself; `null` and not the empty
-  string, which only pushes a vacuity test onto every consumer. The key is not renamed — its
-  consumers read it as a locator to show, never to compose a path from, so correcting the value is
-  additive where renaming would break every installed target.
+- **Provider questions stay inside the provider.** Placement, existence, and lifecycle transitions
+  are answered by the selected implementation and become `BackendRefusal` values at the CLI edge.
+- **A diagnostic stays read-only.** `doctor` checks provider configuration and transport health;
+  it never creates a provider object or invents a repository store to make the check pass.
+- **A payload states which world it is in.** One helper emits the provider name and a locator when
+  one exists, otherwise `null`; consumers display it and never compose a repository path from it.
 
 **One helper and not ten corrections**, for the same reason the interface is five primitives and not
 eight verbs: a rule enforced at each site is a rule the next site is added without. Ten emit sites
@@ -126,28 +115,26 @@ reader too — the person running the verb by hand is exactly the one who mistyp
 **Only the human's own argument is announced.** Code already walking a listing resolves slugs it
 just read itself, and a receipt for those would be a receipt for nothing.
 
-## The selected backend is the source of truth
+## The selected provider is the source of truth
 
-There is no canonical local store shadowing an external one. When a repository declares `github`,
+There is no canonical repository store shadowing an external one. When a repository uses `github`,
 its specs live in GitHub, with no authoritative local copy — losing access to the tool is losing the
 specs, which is the accepted cost of choosing it. `cq specs export` dumps the canonical markdown on
 demand; nothing reads it back and nothing keeps it in sync, which is exactly what keeps it from
 being a second store.
 
 A backend named in the configuration but not implemented by the running copy of `cq specs`
-**refuses with exit 2** and neither reads nor writes. It never falls back to `files`: silently
-writing to the local filesystem for a repository that asked for GitHub loses work instead of
+**refuses with exit 2** and neither reads nor writes. An unknown or legacy provider value never
+falls back to another transport: silently writing to a repository store loses work instead of
 reporting it.
 
-**No backend lets a spec share a branch with the code.** That is the property the whole design
-exists for — the `files` backend puts its documents on a dedicated branch, an external backend puts
-them outside git entirely — and it is why the task→commit anchor could move from the commit subject
-to the sha.
+**Provider-owned specs do not share a repository branch with the code.** The tracker holds the
+document outside git, and the task-to-commit anchor remains the sha recorded in that document.
 
 ## Hybrid serialisation lives inside each external implementation
 
-An external backend is free to use its host's native constructs where a mapping exists, and to fall
-back to serialised markdown where none does. The one obligation is that it **reassembles the
+An external provider implementation is free to use its host's native constructs where a mapping
+exists, and to fall back to serialised markdown where none does. The one obligation is that it **reassembles the
 canonical document on read**.
 
 That obligation is not a restriction on native storage; it is what makes native storage safe. The
@@ -156,12 +143,9 @@ CLI prints, because the CLI never sees the storage.
 
 ### A native mapping earns its cost only if something reads it back
 
-The permission above is not an invitation. Both external backends took it up for `## Tasks` — one
-sub-issue per task on `github`, one child work item on `azure-boards` — because `## Tasks` is the
-one section with a native counterpart carrying its own state and identity. That is true, and it was
-not the question. The question is whether anything ever **read** the native state, and nothing did:
-`parse_tasks` takes a task's checked/blocked from its raw block text on both ends, never from the
-issue. A construct written on every save and never consulted is a **projection**, and a projection
+The permission above is not an invitation. The canonical `## Tasks` section stays in the issue body
+or work-item description; provider-native state is used only when it is read back as the same
+fact. A construct written on every save and never consulted is a **projection**, and a projection
 belongs wherever it is free — never wherever it costs a call per item per write.
 
 **The issue title was the other one, and it was fixed rather than retired.** It too was rewritten
@@ -184,8 +168,8 @@ mid-migration:
 - **`read_spec` paid one GET of sub-issues per spec read.** A one-part spec now costs nothing
   beyond the listing, which already carries every body.
 
-So the mapping is retired. On both external backends the **whole canonical document is the issue
-body / the work item description**, and there are no sub-issues and no child work items.
+On both external providers the **whole canonical document is the issue body / the work item
+description**, and there are no sub-issues and no child work items.
 
 What is given up, stated plainly, is **per-task addressability** — an assignee, labels, a comment
 thread of its own, a PR that closes a task issue. Nothing in quenching used any of it;
@@ -370,12 +354,12 @@ never a record — and each passes the same test §A native value is the same fa
 to `title:`: a native mapping is valid only when the native value is the SAME FACT as the
 canonical one, and it earns its keep only once something reads it back.
 
-| Field | `files` | `azure-boards` | `github` |
-| --- | --- | --- | --- |
-| `tags` | frontmatter | `System.Tags` | issue labels |
-| `assignee` | frontmatter | `System.AssignedTo` | issue assignees (first only) |
-| `start` | frontmatter | `Microsoft.VSTS.Scheduling.StartDate` | frontmatter |
-| `target` | frontmatter | `Microsoft.VSTS.Scheduling.TargetDate` | frontmatter |
+| Field | `azure-boards` | `github` |
+| --- | --- | --- |
+| `tags` | `System.Tags` | issue labels |
+| `assignee` | `System.AssignedTo` | issue assignees (first only) |
+| `start` | `Microsoft.VSTS.Scheduling.StartDate` | frontmatter |
+| `target` | `Microsoft.VSTS.Scheduling.TargetDate` | frontmatter |
 
 **`tags` and `assignee` pass on both external backends.** A label and a spec's tag are the same
 fact — a name attached to the item — and so is an assignee: a login, an identity, one name a
@@ -534,31 +518,30 @@ each other's.
 
 ## The fake is how "identical" stays true
 
-A second backend holding specs in a dict — no disk, no network, no fixture — is not a convenience.
-It is the other side of an equality the test suite asserts: a canonical case list runs against `files`
-and against `memory`, and every field must match except the locator (`path`) and the document text
-echoed back.
+A memory-backed fake used only by tests — no disk, no network, no fixture — is not a convenience.
+It is the other side of an equality the test suite asserts: a canonical case list runs against the
+GitHub and Azure transports' strict offline fixtures and the fake, and every field must match
+except the provider locator and the document text echoed back.
 
 Two backends sharing nothing but the interface is the only arrangement in which a command that
-reaches around the interface to a filesystem path shows up immediately, with no repository to stage.
+reaches around the interface to a repository path shows up immediately, with no provider fixture to stage.
 
-The check earns its place on history rather than on argument: the first time it ran it caught the
-fake deriving a spec's date from frontmatter while `files` reads it from the filename, where `new`
-stamps it once and never again. The same document, two dates. Left alone, an external backend would
-have inherited the asymmetry.
+The check earns its place on history rather than on argument: it catches the fake or a provider
+fixture deriving a spec's date differently from the canonical document. The same document must
+have the same date and stage everywhere.
 
 The fake is deliberately **not selectable from configuration**. A store that forgets on exit must
 never be somewhere real work can land.
 
 ## What this standard does not yet cover
 
-The interface and the equality are proved for `files` and `memory`, and the reassembly obligation is
-proved offline for the hybrid serialisation both external backends share.
+The interface and the equality are proved for the two supported providers and the memory fake, and
+the reassembly obligation is proved offline for the hybrid serialisation they share.
 
 `azure-boards` has been exercised end to end once (`provar-e-posicionar-o-backend-azure-boards`,
 task 6.3), against a real Azure DevOps project (org `unicredbr`, team "Diretoria Risco") and a
 throwaway test spec: `new --subject`, every `section --write`, `record`, `task --check`, `status`,
-`show` and `promote --outcome done`, each matching `files` for the same state, the board's own
+`show` and `promote --outcome done`, each matching GitHub's canonical state, the board's own
 column tracked against the declared de-para through every transition — `captured` → `Backlog`/
 `New` through `archived` → `Concluído`/`Closed`. The test spec, like `github`'s own first run, had
 no `### N.` groups — but `azure-boards` never splits a document into continuation parts at all

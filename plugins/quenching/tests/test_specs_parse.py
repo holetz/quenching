@@ -18,9 +18,13 @@ import os
 import re
 import tempfile
 import unittest
+from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.common.text import slugify
+from quenching.specs.backends.memory import MemoryBackend
+from quenching.specs.commands import read as read_module
+from quenching.specs.commands import validate as validate_module
 from quenching.specs.commands.cli import DISPATCH, build_parser, main
 from quenching.specs.commands.output import Emitter
 from quenching.specs.config import infer_base_branch, load_config, resolve_subject
@@ -454,19 +458,20 @@ class PhaseCutsListAndValidate(unittest.TestCase):
     (no `phase` attribute at all) keep behaving exactly as it always did."""
 
     def _write(self, root, phase_dir, slug):
-        os.makedirs(os.path.join(root, phase_dir), exist_ok=True)
         doc = (capture_form().replace("<SLUG>", slug).replace("<TITLE>", slug.title())
                .replace("<DATE>", "2026-01-01").replace("<VERIFICATION>", "per-task"))
-        with open(os.path.join(root, phase_dir, f"{slug}.md"), "w") as f:
-            f.write(doc)
+        self.backend.create_spec(phase_dir, f"{slug}.md", doc)
 
     def _workspace(self, root):
+        self.backend = MemoryBackend()
         self._write(root, "plans", "alpha")
         self._write(root, "archive", "beta")
 
     def _dispatch(self, verb, root, args):
         buf = io.StringIO()
-        with contextlib.redirect_stdout(buf):
+        module = read_module if verb == "list" else validate_module
+        with mock.patch.object(module, "open_backend", lambda _root: (self.backend, {})), \
+                contextlib.redirect_stdout(buf):
             DISPATCH[verb](args, root, Emitter())
         return json.loads(buf.getvalue())
 
@@ -527,7 +532,6 @@ class ListProjectsOverview(unittest.TestCase):
     state: heading absent, present-and-empty, an explicit none, and real prose."""
 
     def _write(self, root, slug, overview_block):
-        os.makedirs(os.path.join(root, "plans"), exist_ok=True)
         doc = (capture_form().replace("<SLUG>", slug).replace("<TITLE>", slug.title())
                .replace("<DATE>", "2026-01-01").replace("<VERIFICATION>", "per-task"))
         if overview_block is not None:
@@ -535,17 +539,19 @@ class ListProjectsOverview(unittest.TestCase):
             # the template's own explanatory prose above it — anchor on the real heading LINE.
             doc = re.sub(r"^## Problem$", overview_block + "\n## Problem", doc,
                         count=1, flags=re.MULTILINE)
-        with open(os.path.join(root, "plans", f"{slug}.md"), "w") as f:
-            f.write(doc)
+        self.backend.create_spec("plans", f"{slug}.md", doc)
 
     def test_the_three_nulls_and_the_real_case(self):
         with tempfile.TemporaryDirectory() as root:
+            self.backend = MemoryBackend()
             self._write(root, "absent", None)
             self._write(root, "empty", "## Overview\n\n")
             self._write(root, "explicit", "## Overview\n\n- none — nada a conectar ainda\n\n")
             self._write(root, "real", "## Overview\n\nConecta as outras seções.\n\n")
             buf = io.StringIO()
-            with contextlib.redirect_stdout(buf):
+            with mock.patch.object(read_module, "open_backend",
+                                   lambda _root: (self.backend, {})), \
+                    contextlib.redirect_stdout(buf):
                 DISPATCH["list"](argparse.Namespace(json=True, phase=None), root, Emitter())
             rows = {r["slug"]: r["overview"] for r in json.loads(buf.getvalue())["specs"]}
             self.assertIsNone(rows["absent"])

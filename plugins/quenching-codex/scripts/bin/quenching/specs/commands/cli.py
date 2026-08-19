@@ -1,8 +1,8 @@
 """The specs pillar's argument declarations, its subcommand map, and its entry point.
 
 `build_parser` declares every argument, `DISPATCH` maps a subcommand name to the function that
-answers it, and `main` is the pillar's whole entry: the UTF-8 reconfiguration, the writer lock,
-the invocation's `Emitter`, and the single place a `BackendRefusal` becomes an exit code.
+answers it, and `main` is the pillar's whole entry: the UTF-8 reconfiguration, the repository
+resolution, the invocation's `Emitter`, and the single place a `BackendRefusal` becomes an exit code.
 `cq specs …` mounts on these three.
 
 Every dispatched verb takes `(args, root, out)`. The third is the invocation's output layer,
@@ -14,6 +14,7 @@ survives is task 6.3's to decide, and re-adding it is one subparser and one `DIS
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 
 from quenching.common.version import VERSION
@@ -32,16 +33,15 @@ from quenching.specs.commands.read import cmd_export, cmd_list, cmd_status
 from quenching.specs.commands.release import cmd_release
 from quenching.specs.commands.task import cmd_discover, cmd_task
 from quenching.specs.commands.validate import cmd_validate
-from quenching.specs.config import find_specs_root
+from quenching.specs.config import find_repo_root
 from quenching.specs.parse import PHASES
 from quenching.specs.schema import DEFAULT_VERIFICATION, OUTCOMES, VERIFICATION_POLICIES
-from quenching.specs.worktree import writer_lock
 
 
 def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]:
     p = argparse.ArgumentParser(prog="cq specs",
                                 description="deterministic trail for the specs front")
-    p.add_argument("--root", help="the `/.specs/` workspace directory (default: nearest `/.specs/` upward)")
+    p.add_argument("--root", help="the repository directory (default: current repository)")
     p.add_argument("--version", action="store_true", help="print the version and exit")
     sub = p.add_subparsers(dest="cmd")
 
@@ -287,19 +287,11 @@ def main(argv: list[str]) -> int:
         return 1
     if not hasattr(args, "json"):
         args.json = False
-    root = find_specs_root(args.root)
+    root = find_repo_root(os.path.abspath(args.root or os.getcwd()))
     # One command, one resolution — held by the emitter's lifetime. It is built here, handed to
     # the verb, and dropped when the call returns, so a process that dispatches more than once
     # cannot let one command's receipt ride out on the next one's payload.
     out = Emitter()
-    # The lock is taken HERE and not inside the backend, because the unit it protects is the
-    # whole command: every writing subcommand reads a document, edits it and writes it back,
-    # and a lock that only spanned the write would let two of them read the same text and each
-    # store its own edit over the other's. `finally` and not `atexit`: the lock must be gone by
-    # the time the process reports its exit code, so whatever runs next sees a free worktree.
-    lock, err = writer_lock(args, root)
-    if err:
-        return out.emit_err(args.json, err)
     try:
         return DISPATCH[args.cmd](args, root, out)
     except BackendRefusal as e:
@@ -308,6 +300,3 @@ def main(argv: list[str]) -> int:
         # a legible refusal and never a traceback — so the failure is raised where it
         # happens, carrying the message already built, and converted exactly once here.
         return out.emit_err(args.json, e.err)
-    finally:
-        if lock is not None:
-            lock.release()

@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Worktree setup contract
-description: The `worktreeSetup` hook — what it is for, where it is declared now that the plugin's config moved to `.claude/quenching.json`, what its absence means, who runs the declared command and with which cwd, why the consent is the isolation offer rather than a prompt of its own, and the record of why the specs front took a config file at all
+description: The `worktreeSetup` hook prepares a code-isolation worktree from `.claude/quenching.json`; its absence is normal, the execute offer displays and authorizes the command, and provider-owned specs never use this hook as persistent storage
 resource: plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/git/branch.md, plugins/quenching/assets/references/git/isolation.md
 tags: [workflows, specs, worktree, configuration, consent]
 timestamp: 2026-08-11
 audience: both
 authority: current
-source: prefer-worktree-isolation plan (task 4.2), relocated by configurable-spec-backend plan (task 1.5)
+source: prefer-worktree-isolation plan (task 4.2), revised by remover-backend-local-do-plugin (task 4.6)
 maintainer: quenching
 ---
 
@@ -66,9 +66,9 @@ rather than executed and blamed on the shell.
 Only the inline offer runs it, and only on creation. Re-running setup over a worktree that already
 exists is a second entry point for the same hook and is deliberately not offered.
 
-**This hook is not the specs backend's worktree.** The `files` backend keeps its own persistent
-worktree for the dedicated specs branch, created on demand and never set up: it holds spec files,
-not a build. `worktreeSetup` runs for the *isolation* worktree a human works in, and nowhere else.
+**This hook prepares only the code-isolation worktree.** Provider-owned specs live in GitHub or
+Azure Boards, so no persistent specs worktree exists and this command is never used to host,
+archive, or migrate a spec document.
 
 ## The consent is the isolation offer, not a prompt of its own
 
@@ -85,32 +85,13 @@ screen on which judging it is possible — a prompt fired later, after the decis
 something already committed to. The invariant that carries it: **the command is never run without
 having been displayed first.**
 
-## Why a config file, in a front that had none
+## Why this setting stays in the shared configuration
 
-This section is the record of an earlier reversal, kept because the argument still decides things.
-The specs front deliberately had no configuration: `cq specs` loads its schema and templates from
-`assets/specs/` when adjacent and from embedded constants otherwise, never from the target. Taking
-a config file at all reversed that.
+The setting belongs in `.claude/quenching.json` because it is a target-repository operation, not a
+provider storage operation. The shared file already carries Azure placement, hooks, profiles, and
+proposal catalogues; keeping `worktreeSetup` there gives every command one read path and one shape
+checker without making the code worktree part of the provider contract.
 
-The alternatives were real. `/.specs/worktree-setup.sh`, whose mere existence would be the
-declaration, is deterministic by a single `stat` and has no format to get wrong — but it can hold
-exactly one parameter forever. A `/.knowledge/standards/` doc with the path in frontmatter would follow
-the read-if-present contract already used for a target's git conventions — but it forces `cq specs`
-to parse markdown frontmatter to find an executable, and mixes the home of *contracts* with an
-operational pointer.
-
-An extensible declarative file wins the moment there is a second parameter, and the schema was held
-to **one key** until there was one. That moment arrived: `backend` and `specsBranch` are the second
-and third, and they are why the shape chosen here was the right bet.
-
-### What has since been revised, and what has not
-
-The **file** moved — `/.specs/config.json` became `.claude/quenching.json`, for reasons that did not
-exist when this section was first written and that are recorded in
-[plugin-configuration.md](plugin-configuration.md) §Why it left the specs workspace. The original
-argument placed it inside the specs workspace precisely to keep it out of the repo root; what
-changed is that a repository may now have no specs workspace at all.
-
-The **conclusion** did not move. One extensible declarative file, a schema of named keys, and
-findings that keep "extensible" from meaning "silently ignores whatever you typed" — that is the
-part this section argued for, and it is the part still in force. Only its address changed.
+The conclusion is deliberately narrow: one declarative command, displayed before execution, run
+once after a human chooses code isolation. It does not select a provider, name a specs root, or
+create a persistent store.

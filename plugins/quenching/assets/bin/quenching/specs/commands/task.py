@@ -138,7 +138,7 @@ def cmd_task(args, root: str, out: Emitter) -> int:
                            if o is not None), reverse=True):
             del lines[off]
     # THE FAILURE-REPORTING CONTRACT: this call is the one that can fail out from under a
-    # tick that already looks applied to `lines`. `FilesBackend` either writes the file or
+    # tick that already looks applied to `lines`. The backend either persists the document or
     # raises. `GitHubBackend` pushes the same edited task block into the task's own
     # `GitHubBackend` pushes the same edited document into the issue body (`write_spec`) and
     # raises `BackendRefusal` — never swallowed

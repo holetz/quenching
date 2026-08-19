@@ -57,8 +57,12 @@ class GithubDoctorFindings(unittest.TestCase):
             # in a real repository on this backend.
             root = os.path.join(tmp, ".specs")
             buf = io.StringIO()
+            cfg = {"backend": "github", "unknownBackend": None, "unknownKeys": [],
+                   "unknownFanoutMinComplexity": None, "legacyPath": None,
+                   "unparseable": None}
             with mock.patch.object(doctor_mod, "open_github_backend",
                                    lambda _root: (backend, {})), \
+                    mock.patch.object(doctor_mod, "load_config", return_value=cfg), \
                     contextlib.redirect_stdout(buf):
                 code = cmd_doctor(argparse.Namespace(json=True), root, Emitter())
         return json.loads(buf.getvalue())["findings"], code
