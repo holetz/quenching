@@ -87,6 +87,12 @@ there is no second store to bridge to: nothing here writes a delta and nothing l
   input could not support. The re-evaluation is the bank's **last question** (step 5): the evidence
   that moved it is named, the new level recommended, and the human's answer applies it. A pass
   that changed no size asks nothing — the level on disk is still the latest word on it.
+- **Capture confirms no classification at all — every bank reviews it in silence.**
+  `quenching-specs-create` writes subject, tags and `complexity` as presumptions the human may
+  never have looked at: its own closing screen offers the correction, but nothing forces it. So
+  every bank here also reviews `tags` and the `summary:` line — silently, narrated in step 5's
+  consolidated plan and applied in step 6's single edit. No new screen, anywhere: the review rides
+  the bank that was already going to write.
 
 ## The batching contract
 
@@ -97,7 +103,7 @@ is the multiplier — not the size of any one turn. Three points of the workflow
 | Where | The one call |
 | --- | --- |
 | steps 1+2 | `cq specs status --spec <slug> --json`, which also carries the `path` step 1 announces. Only a slug that must be *chosen* splits this: `cq specs list --json` runs first, because the question depends on its output |
-| step 3b | the bank's own section and the spec sections it reads — `cq components read` and `cq specs section` together, never one call per source |
+| step 3b | the bank's own section and the spec sections it reads — `cq components read` and `cq specs section` together, never one call per source. For **shape** and **adversarial** the sweep's own profile and the `## Design` it checks ride these same two calls, so step 3c opens nothing |
 | step 6 | the entire application — the section write, every `cq specs discover` line, every `cq specs record`, `cq specs verification`, `cq specs summary`, and the closing `cq specs validate` (plus `cq specs parallel` where `## Tasks` moved) |
 
 A call splits only where the next command's **input** depends on the previous one's output. Splitting
@@ -168,13 +174,13 @@ commands together:
 
 ```bash
 cq components read ../../references/specs-develop/questions.md \
-  --sections "§Bank: <name>"
+  --sections "§Bank: <name>"          # + ",§Gathering the evidence" for shape and adversarial
 cq specs section <slug> "<Heading1>,<Heading2>,…"     # only the sections this bank reads or writes
 ```
 
 | Bank | Spec sections | `artifacts.md` (loaded at step 5) |
 | --- | --- | --- |
-| shape | `## Problem` | §The explicit-none rule §`## Overview` §The nine definition sections |
+| shape | `## Problem` `## Design` — the second only to let step 3c see whether a map is already there | §The explicit-none rule §`## Overview` §The nine definition sections |
 | adversarial | `## Problem` `## Proposal` `## Design` `## Alternatives Considered` `## Risks` | §The nine definition sections §`## Overview` |
 | gate | the headings `cq specs next --spec <slug> --json` reports, plus `## Impact` and `## Tasks` | §The explicit-none rule §The nine definition sections §`## Impact` §`## Tasks` §Execution metadata |
 | discoveries | `## Discoveries` | §`## Discoveries` and `## Outcome` |
@@ -185,9 +191,28 @@ cq specs section <slug> "<Heading1>,<Heading2>,…"     # only the sections this
 `/.knowledge/glossary.md`. Those two banks **may** delegate that reading to a read-only
 sub-agent under
 [questions.md](../../references/specs-develop/questions.md) §Gathering the
-evidence, which returns one compact table and keeps the file reads out of the context every later
-turn pays for. It is an option, not a step: for a two-file spec, keep the reading.
+evidence — already in hand for adversarial, from the call above — which returns one compact table
+and keeps the file reads out of the context every later turn pays for. It is an option, not a step:
+for a two-file spec, keep the reading.
 **Done when:** the bank's sections are in hand and nothing else was opened.
+
+### 3c. Run the dependency sweep — shape and adversarial only
+Only the **shape** and **adversarial** banks reach this step — any other bank skips it whole, and
+never loaded what it needs. **This step opens nothing**: step 3b's two calls already carry both
+the `## Design` it reads and the §Gathering the evidence that governs it, which is why the sweep
+costs no turn of its own.
+
+`### Mapa de dependências` already in that `## Design` → this spec was swept; go straight to step
+4. Absent → dispatch one read-only `Task` sub-agent under the **wider** profile of §Gathering the
+evidence, briefed with whichever of `## Problem` / `## Proposal` is filled, asked for the one table
+that section names: every file the proposal's own area touches or is touched by, and what breaks or
+goes orphaned if it changes.
+
+**The orchestrator holds the result; the sub-agent never writes it.** The table waits for step 6's
+own consolidated write, landing as `### Mapa de dependências` under `## Design`, dated — never a
+separate call, and never before the bank's other answers are ready to land with it.
+**Done when:** the spec already carries a map, or this pass holds the sub-agent's table to write at
+step 6.
 
 ### 4. Run the bank
 Follow the bank's script in
@@ -243,8 +268,14 @@ plan states the criterion):
 | `xhigh` | at least one judgment stage (adversarial review, premortem) joins the plan |
 
 A pass that changed no size asks nothing — the level on disk is still the latest word on it.
-**Done when:** the plan has been narrated in full, and `complexity`, where the pass moved it, has
-been answered.
+
+**Exception: the first pass over a spec still at `captured`.** `quenching-specs-create` computed
+this level without asking, so nobody has confirmed it yet — the first bank that touches such a spec
+treats `complexity` as presumed rather than settled, and folds a confirm-or-adjust into this same
+question even when this pass moved no size of its own. Every later pass returns to the ordinary
+rule above: ask only when the size moved.
+**Done when:** the plan has been narrated in full, and `complexity` — where the pass moved it, or
+where this is the first pass over a `captured` spec — has been answered.
 
 ### 6. Apply, and record what the pass earned
 **Every write of this step is ONE call** — §The batching contract's third row: the section write,
@@ -299,7 +330,11 @@ editing the frontmatter**, which merges nothing and works only while the backend
 | `approved: {date}` | the human said go in the approval bank | `cq specs record <slug> approved --set date=<today>` |
 | `verification` | the gate bank settled the policy | `cq specs verification <slug> <per-task\|per-section\|end-of-plan>` |
 | `summary` | **every bank**, in the same edit that refreshes `## Overview` | `cq specs summary <slug> "<one line>"` |
+| `tags` | the pass changed the spec's scope, or the capture presumed wrong | `cq specs tags <slug> "<whole list>"` |
 | `complexity` (in `priority`) | the plan proposed a re-evaluation, and the human approved it | `cq specs record <slug> priority --set complexity=<level> --set date=<today>` |
+
+`cq specs tags` **replaces** the whole list, never appends — reissue the subject's own fixed tags
+together with whatever this pass adds, or the fixed ones are lost.
 
 `summary:` is the one line every ranked listing prints (`cq specs next --front --table`), and it
 is the only field here that **every** bank owes: a bank that changed what the spec is has
@@ -403,6 +438,13 @@ its own to fall back on — it hands off to the same command.
 - Never ask the human to choose a mode; the derived stage chooses the bank.
 - **A sub-agent may read; it may never ask, write, or decide.** The evidence sweep of step 3b
   returns a table. Every question, every `cq specs` call and every confirmation stays here.
+- **The dependency sweep's map is written by the orchestrator; the sub-agent never touches the
+  spec.** Step 3c's sub-agent returns a table too, same as step 3b's — the map lands only inside
+  step 6's own consolidated write, into `### Mapa de dependências` under `## Design`.
+- **The sweep does not reopen `context: fork`.** Dispatching its `Task` sub-agent is a step inside
+  a command that still asks every one of its own banks' questions — the prohibition a fork cannot
+  ask a question stays exactly where it was; step 3c changes nothing about what this command's own
+  frontmatter may declare.
 - **Never open a cited reference as a file.** `§X` is an address, loaded through
   `cq components read --sections`; and never hoist into the preamble what only one branch reads.
 - Never derive the stage from what this pass intends to write — only from disk.

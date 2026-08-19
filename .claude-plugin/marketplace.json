@@ -32,6 +32,24 @@
         "skill-authoring",
         "automation"
       ]
+    },
+    {
+      "name": "quenching-codex",
+      "source": "./plugins/quenching-codex",
+      "description": "Generated Codex sibling of the quenching Claude plugin. The generated manifest, skills, and copied assets are kept in deterministic lockstep with the Claude source.",
+      "version": "6.3.0",
+      "author": {
+        "name": "Israel Holetz",
+        "email": "holetz@gmail.com"
+      },
+      "license": "MIT",
+      "category": "developer-tools",
+      "keywords": [
+        "codex",
+        "knowledge-management",
+        "spec-driven",
+        "automation"
+      ]
     }
   ]
 }

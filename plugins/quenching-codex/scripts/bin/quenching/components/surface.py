@@ -130,18 +130,12 @@ def discover_commands(commands_dir: str) -> list[dict]:
         text = read_text(path) or ""
         body = body_after_frontmatter(text)
         hooks, hooks_parsed = parse_frontmatter_hooks(text)
-        out.append({
-            "command": "/" + name.replace(os.sep, "-"),
-            "path": path,
-            "relpath": name + ".md",
-            "frontmatter": parse_frontmatter(text),
-            "anomalies": frontmatter_anomalies(text),
-            "hooks": hooks,
-            "hooksParsed": hooks_parsed,
-            "body": body,
-            "bodyLines": len(body.splitlines()),
-        })
-    return sorted(out, key=lambda c: c["command"])
+        out.append({"command": "/" + name.replace(os.sep, "-"), "path": path,
+                    "relpath": name + ".md", "frontmatter": parse_frontmatter(text),
+                    "anomalies": frontmatter_anomalies(text), "hooks": hooks,
+                    "hooksParsed": hooks_parsed, "body": body,
+                    "bodyLines": len(body.splitlines())})
+    return sorted(out, key=lambda command: command["command"])
 
 def discover_references(references_dir: str) -> list[dict]:
     """Every `<references_dir>/**/*.md` — the shared procedure a command body cites by
