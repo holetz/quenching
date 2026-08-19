@@ -103,7 +103,7 @@ def cmd_promote(args, root: str, out: Emitter) -> int:
     # asked by shared code that does not know whether one is involved. Under `github` or
     # `azure-boards` the path never exists and the check always passed; under `files` with the
     # specs worktree in use it measured a directory the backend does not write to. "Destination
-    # taken" is now `FilesBackend.move_spec`'s to answer, and it raises `BackendRefusal` —
+    # taken" belongs to the backend to answer, and it raises `BackendRefusal` —
     # carried to exit 2 by `main`'s single conversion, like every other backend refusal, since
     # no command body ever branched on the old `sp-dest-exists` exit 1.
     #
