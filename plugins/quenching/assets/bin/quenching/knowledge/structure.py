@@ -18,7 +18,7 @@ STRUCTURAL INTEGRITY (whole-tree only — CLI + Stop; all WARN, OKF-tolerant)
 - **`generated-listing-drift`** a row inside that zone whose description no longer equals the
   `description:` of the doc it links.
 These stay WARN by design (OKF says consumers MUST tolerate broken links and MAY
-synthesize a missing index); the `quenching-knowledge-align`/`quenching-knowledge-add` skills treat them as must-fix
+synthesize a missing index); the `quenching:knowledge:align`/`quenching:knowledge:add` skills treat them as must-fix
 in their own verify gate.
 """
 from __future__ import annotations
