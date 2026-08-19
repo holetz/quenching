@@ -20,6 +20,9 @@ CLAUDE_MD = ROOT / "CLAUDE.md"
 COMMANDS_DIR = ROOT / "plugins" / "quenching" / "commands"
 BASELINE_BYTES = 8_548
 MAX_BYTES = BASELINE_BYTES // 2
+PROXY_NOTE = (
+    "This size check measures CLAUDE.md only; it does not measure Claude's system prompt."
+)
 
 
 def _utf8_bytes(value: str) -> int:
@@ -120,9 +123,10 @@ def check(data: dict[str, object]) -> list[str]:
         "Language: pt-BR — the contract is /.knowledge/standards/agents/communication.md.",
         "plugins/quenching/README.md",
         ".knowledge/index.md",
-        "plugins/quenching/assets/bin/cq",
+        "assets/bin/cq",
         "context: fork",
         "Never downgrade classification",
+        PROXY_NOTE,
     ):
         if marker not in text:
             errors.append(f"missing required harness marker: {marker}")
