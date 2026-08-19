@@ -133,7 +133,7 @@ absent (it was in the plan) — `registry reindex` refuses a missing doc (`sk-no
 doc with no markers (`sk-no-zone`) rather than placing a table at a guessed anchor in curated
 prose. Then regenerate the zone:
 ```bash
-cq components registry reindex --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components registry reindex --json
 ```
 Update `documentation/reference/`'s `index.md` per the procedure in
 [knowledge-add/homes.md](../../references/knowledge-add/homes.md). If the
@@ -143,9 +143,9 @@ decides. **Done when:** `registry reindex` exits 0 and the index is honest.
 ### 9. Self-check
 Ask the tool, do not read for it:
 ```bash
-cq components lint <command-file> --json   # this command's conformance
-cq components doctor --json                # the surface invariant it just changed
-cq components registry reindex --json      # `changed: false` — nothing wrote inside the markers after step 8
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components lint <command-file> --json   # this command's conformance
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components doctor --json                # the surface invariant it just changed
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components registry reindex --json      # `changed: false` — nothing wrote inside the markers after step 8
 ```
 `lint` decides the description caps, trigger position, the `Not for:` boundary, body length, the
 per-step criteria, unscoped `Bash`, and invocation coherence; `doctor` decides that every command

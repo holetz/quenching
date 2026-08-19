@@ -89,8 +89,8 @@ Resolve `cq specs` per
 §Resolving the tool, invoked via `python3` or `py`. Resolve the `/.specs/` root at the repo root,
 then:
 ```bash
-cq specs doctor --json
-cq specs validate --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs doctor --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs validate --json
 ```
 Branch exactly as
 [conformance](../../references/specs-align/conformance.md) §The probe
@@ -180,7 +180,7 @@ bundle log it used to append to is retired.
 Then §The report mold — loaded here, in the step that emits it:
 
 ```bash
-cq components read ../../references/specs-develop/spec-driven.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/spec-driven.md \
   --sections "§The report mold" --rules-only
 ```
 

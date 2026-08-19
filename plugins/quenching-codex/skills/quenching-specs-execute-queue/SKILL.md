@@ -28,7 +28,7 @@ is granted — the repo's own files are read inside the executor sub-agents, nev
 **Every `§X` in this body is an address, and it is loaded as one — never by opening the file:**
 
 ```bash
-cq components read <the cited file> --sections "§A" --sections "§B"
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read <the cited file> --sections "§A" --sections "§B"
 ```
 
 One call, N sections, no frontmatter; a unique prefix resolves, and `--rules-only` narrows to the
@@ -54,8 +54,8 @@ never on prose.
 Read the front and the workspace in one call:
 
 ```bash
-cq specs next --front --json    # the ranked candidates, each with stage, priority, branch liveness
-cq specs config --json          # backend, worktreeSetup, fanoutMinComplexity
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs next --front --json    # the ranked candidates, each with stage, priority, branch liveness
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs config --json          # backend, worktreeSetup, fanoutMinComplexity
 ```
 
 Slugs given → resolve each against that payload, in the order the human typed them; one that does
@@ -65,7 +65,7 @@ top-down.
 Then filter every candidate through the entry contract:
 
 ```bash
-cq components read ../../references/specs-fanout/fanout.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-fanout/fanout.md \
   --sections "§The entry contract" --rules-only
 ```
 
@@ -118,9 +118,9 @@ commits to — the sub-agent that builds it cannot ask. The plan's OK stamps it,
 Load the precondition and the naming rules:
 
 ```bash
-cq components read ../../references/specs-execute/execution.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-execute/execution.md \
   --sections "§The precondition"
-cq components read ../../references/git/isolation.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/isolation.md \
   --sections "§Branch and worktree names"
 ```
 
@@ -141,10 +141,10 @@ writes the record for it.
 Load the shape and the block classification once, before the first spec:
 
 ```bash
-cq components read ../../references/specs-fanout/fanout.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-fanout/fanout.md \
   --sections "§The queue's shape" --sections "§Classifying a block" \
   --sections "§The branch carries the slugs"
-cq components read ../../references/specs-execute/execution.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-execute/execution.md \
   --sections "§Delegating an executor"
 ```
 
@@ -210,7 +210,7 @@ only handoff to it (§The branch carries the slugs).
 ### 7. Report
 
 ```bash
-cq components read ../../references/specs-develop/spec-driven.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/spec-driven.md \
   --sections "§The report mold" --rules-only
 ```
 

@@ -25,7 +25,7 @@ regimes — a run never has to read it.
 **Load now, and nothing else** — the rule every run applies to decide who is in:
 
 ```bash
-cq components read ../../references/specs-fanout/fanout.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-fanout/fanout.md \
   --sections "§The entry contract" --rules-only
 ```
 
@@ -71,8 +71,8 @@ Take the slugs from `$ARGUMENTS`, or take the whole front. Two calls carry the s
 fan-out floor §The entry contract measures every candidate against:
 
 ```bash
-cq specs list --json      # every spec's derived stage AND its records, priority.complexity included
-cq specs config --json    # fanoutMinComplexity — the floor §2's split reads
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs list --json      # every spec's derived stage AND its records, priority.complexity included
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs config --json    # fanoutMinComplexity — the floor §2's split reads
 ```
 
 Both fields admission needs are on every row, so no per-spec read runs here. A slug matching two
@@ -109,7 +109,7 @@ get, and N reads ahead of an authorization that may be declined are N reads paid
 Present the recursion form on the same screen — load it now:
 
 ```bash
-cq components read ../../references/specs-fanout/fanout.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-fanout/fanout.md \
   --sections "§The recursive return" --rules-only
 ```
 
@@ -149,8 +149,8 @@ it wrote before returning, and returns five things and no diff:
 The returns are reports; disk is the fact.
 
 ```bash
-cq specs list --json      # the stage each spec in the batch actually reached
-cq specs validate --json  # the sp-* codes over the whole front, in one call
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs list --json      # the stage each spec in the batch actually reached
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs validate --json  # the sp-* codes over the whole front, in one call
 ```
 
 A spec a sub-agent called filled that did not reach `ready`, or that validate reports against, is
@@ -162,7 +162,7 @@ in one spec reaches no other spec, because the files were disjoint, so this neve
 Load the classification now, and apply it to every `block` a sub-agent returned:
 
 ```bash
-cq components read ../../references/specs-fanout/fanout.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-fanout/fanout.md \
   --sections "§Classifying a block" --rules-only
 ```
 
@@ -183,7 +183,7 @@ human.
 
 ```bash
 git status --porcelain
-cq specs config --json    # backend
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs config --json    # backend
 ```
 
 Under `github` and `azure-boards` the batch changed no file at all — the specs are issues, and the
@@ -195,7 +195,7 @@ Then the closing offer: one **AskUserQuestion** over the specs that really reach
 which carry `approved` today. Stamp only what the human named:
 
 ```bash
-cq specs record <slug> approved --set date=<today>
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record <slug> approved --set date=<today>
 ```
 
 Write-once — a spec already carrying it reports the date it holds, which is the answer, not an

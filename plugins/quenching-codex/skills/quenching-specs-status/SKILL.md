@@ -81,9 +81,9 @@ that `quenching-specs-align` would migrate it.
 
 ### 2. Collect (read-only)
 ```bash
-cq specs doctor --json
-cq specs validate --by-code
-cq specs next --front --table --columns "spec,summary,stage,tasks,records,age,state"
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs doctor --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs validate --by-code
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs next --front --table --columns "spec,summary,stage,tasks,records,age,state"
 ```
 **Two of the three are already the report.** `--by-code` is the same sweep `validate --json` runs,
 one line per `(code, severity)` with the count and the specs — quote it, never re-tally it.
@@ -119,7 +119,7 @@ sweep's; this command contributes none of its own. Without an OKF bundle, note o
 ### 4. Report
 
 ```bash
-cq components read ../../references/specs-develop/spec-driven.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/spec-driven.md \
   --sections "§The report mold" --rules-only
 ```
 

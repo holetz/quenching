@@ -15,7 +15,7 @@ A command body is otherwise only ever revised from taste. The session that ran i
 evidence of what it cost, what it repeated, where it misfired and what the human had to fix —
 and that evidence is discarded when the session ends. This command reads it back.
 
-**Counting is the extractor's job, never yours.** `../../scripts/cq components session`
+**Counting is the extractor's job, never yours.** `cq components session`
 reads the transcript JSONL and returns a bounded digest; you read the digest and judge it. It
 resolves the transcript itself (explicit path, bare session id, or the newest session for this
 cwd), so this body never globs `~/.codex/projects/**`. Resolve `cq` per
@@ -34,7 +34,7 @@ any remainder names the command to analyse. Pass **only** the transcript token b
 carry the rest to step 2; nothing given → pass nothing and let the tool resolve this session.
 
 ```bash
-python3 ../../scripts/cq components session list --json <transcript-or-nothing>
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components session list --json <transcript-or-nothing>
 ```
 Exit 2 is a refusal carrying its reason — an absent transcript, an empty one, or a non-empty
 one that yielded no command. Show the reason and stop; a session that proved nothing is never
@@ -50,7 +50,7 @@ to the session opener.
 
 ### 3. Get its evidence
 ```bash
-python3 ../../scripts/cq components session digest --command "<chosen>" --json <transcript-or-nothing>
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components session digest --command "<chosen>" --json <transcript-or-nothing>
 ```
 An unknown `--command` refuses with exit 2 and lists what the session did hold — reach step 2's
 question rather than repeating the call.

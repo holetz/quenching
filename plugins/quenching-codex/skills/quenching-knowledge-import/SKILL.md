@@ -99,7 +99,7 @@ being **enriched** already carries the `source_uri:` that found it; MERGE never 
 ### 5. Self-check + validate
 Self-check every touched file against homes.md §Self-check /
 [knowledge-align/conformance.md](../../references/knowledge-align/conformance.md),
-then run `python3 "../../scripts/cq" knowledge validate /.knowledge` over the
+then run `cq knowledge validate /.knowledge` over the
 bundle: **zero errors**, and the structural WARNs (`dir-no-index` / `index-broken-link` /
 `index-orphan`) cleared. Report residue — units deferred, sources left unfetched, MERGE
 targets skipped.

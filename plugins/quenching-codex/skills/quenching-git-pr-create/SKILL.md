@@ -20,7 +20,7 @@ all, silently, which is the ordinary case rather than a finding.
 ### 1. Confirm the route exists, and resolve the base
 ```bash
 gh repo view --json name 2>&1 || echo "NO-ROUTE"
-python3 ../../scripts/cq git base --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git base --json
 ```
 `NO-ROUTE` (or `gh` unauthenticated) → say plainly there is no PR route here and stop; this is the
 ordinary case on a host other than GitHub, never a finding. **Done when:** the route is confirmed
@@ -58,7 +58,7 @@ verbatim.
 
 ### 5. Stamp, with a slug
 ```bash
-cq specs record "<slug>" pr --set number=<n> --set url=<url> --set date=<today>
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record "<slug>" pr --set number=<n> --set url=<url> --set date=<today>
 ```
 `pr:` is **write-many** — a later PR on the same spec (closed and reopened, or force-pushed to a
 fresh number) is a new fact, not a correction of this one, which is why it carries its own `date`.

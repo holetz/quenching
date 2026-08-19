@@ -104,8 +104,8 @@ invocation carries no declaration and `create` keeps its own gate.
 
 ### 2. Read the state in one call
 ```bash
-cq specs status --spec <slug> --json    # derived stage, records, tasks, gate, verification
-cq specs config --json                  # backend
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs status --spec <slug> --json    # derived stage, records, tasks, gate, verification
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs config --json                  # backend
 ```
 The derived stage says which halves this run still has:
 

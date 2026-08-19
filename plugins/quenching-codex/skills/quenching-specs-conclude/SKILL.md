@@ -131,7 +131,7 @@ built**: say so, record it with `cq specs discover`, and fall back to `cq specs 
 ask, exactly as before this spec. Establish the outcome — **ask if it was not stated**, via
 **AskUserQuestion**: *done* (it shipped) or *abandoned* (it will not be built).
 ```bash
-cq specs status --spec "<slug>" --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs status --spec "<slug>" --json
 ```
 Read task progress, the `## Outcome` state, and the records — `branch`, `reviewed`, `merge`, `pr`,
 `outcome` — from that payload. Then, for the `## Discoveries` lines themselves, the one body this
@@ -184,8 +184,8 @@ no bundle.
 ### 4. Write `## Outcome` and archive
 `## Outcome` is the archive gate — the spec cannot move without it. Draft it, confirm it, write it:
 ```bash
-cq specs section "<slug>" Outcome --write     # body on stdin
-cq specs promote "<slug>" --to archive --outcome done|abandoned [--force]
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs section "<slug>" Outcome --write     # body on stdin
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs promote "<slug>" --to archive --outcome done|abandoned [--force]
 ```
 For `done`: what shipped, what was left out, what the next reader needs — **reviewed, distilled,
 ready for merge**. Neither the strategy nor a PR is named here: both are `quenching-git-merge`'s
@@ -307,7 +307,7 @@ nothing could be handed off — a red gate, or (abandoned) the branch's own fate
 ### 7. Report
 
 ```bash
-cq components read ../../references/specs-develop/spec-driven.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/spec-driven.md \
   --sections "§The report mold" --rules-only
 ```
 

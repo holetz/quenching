@@ -28,9 +28,9 @@ The payload (skeleton, molds, validator) lives at `../../assets/`; the contract 
 - [knowledge-align/conformance.md](../../references/knowledge-align/conformance.md) — the exact checks the validator applies.
 - [knowledge-align/cycle.md](../../references/knowledge-align/cycle.md) — the stage pipeline, the parallel-prep flow, and the finding → owning-command routing table.
 
-The executable checker is `../../scripts/cq`
-(`python3 "../../scripts/cq" knowledge validate /.knowledge` → exit 0 = conforms). Invoke it by its **literal quoted
-path** on every call, never through a shell variable holding the interpreter plus the path —
+The executable checker is `cq`
+(`cq knowledge validate /.knowledge` → exit 0 = conforms). Define the per-call wrapper from
+the tool-resolution reference, then invoke `cq` in that same Bash call —
 [align/tool-resolution.md](../../references/align/tool-resolution.md)
 §Write the resolved path literally on every invocation.
 
@@ -89,7 +89,7 @@ Read it as this command's doctrine. What follows is only what is **specific to `
 Resolve the bundle at its fixed root `/.knowledge/`, then read all three signals and nothing
 else:
 ```bash
-cq knowledge validate /.knowledge --json          # structure: exit 0 = conformant
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" knowledge validate /.knowledge --json          # structure: exit 0 = conformant
 ls ~/.codex/projects/<cwd>/memory/    # out-of-band store 1: any undrained memory?
 ```
 plus one `Read` of each harness file that exists (`AGENTS.md`, `AGENTS.md`) — a fat one inlines

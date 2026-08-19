@@ -19,10 +19,10 @@ restated.
 
 ### 1. Load the rules and resolve branch, base and checkout
 ```bash
-cq components read ../../references/git/merge.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/merge.md \
   --sections "§Merge strategies" --sections "§The squash caveat" \
   --sections "§The worktree is removed after a successful merge"
-python3 ../../scripts/cq git base --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git base --json
 git worktree list --porcelain
 ```
 A slug in `$ARGUMENTS` → `cq specs status --spec "<slug>" --json`, its `branch.work` is the branch
@@ -55,7 +55,7 @@ merge command exits 0, or the run has stopped on its failure.
 
 ### 4. Stamp, with a slug
 ```bash
-cq specs record "<slug>" merge --set strategy=<strategy> --set subject=<the merge commit's subject, or "none — <why>" under fast-forward/rebase>
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record "<slug>" merge --set strategy=<strategy> --set subject=<the merge commit's subject, or "none — <why>" under fast-forward/rebase>
 ```
 Write-once — a record already present is read, never overwritten. No slug → nothing to stamp.
 **Done when:** the record is stamped (with a slug) or explicitly skipped (without one).

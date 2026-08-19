@@ -28,13 +28,13 @@ arbitrary command this file cannot scope in advance — beside `git worktree`/`g
 
 ### 1. Load the rules and the state in one read
 ```bash
-cq components read ../../references/git/isolation.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/isolation.md \
   --sections "§Isolation happens on the way into a build" --sections "§Branch and worktree names" \
   --sections "§Recording the isolation"
 git status --porcelain
 git branch --show-current
-python3 ../../scripts/cq git base --json
-cq specs config --json        # `worktreeSetup`, or null — exit 0 either way
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git base --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs config --json        # `worktreeSetup`, or null — exit 0 either way
 ```
 `git status --porcelain` non-empty → refuse, name the offending paths, and stop; isolating a dirty
 tree carries whatever was already sitting there into the first commit on the new ref, silently.
@@ -68,8 +68,8 @@ reported verbatim and nothing is stamped. On **Worktree** with `worktreeSetup` d
 with cwd inside the new worktree; a failing setup does not undo the worktree — report both facts
 separately. Then, only with a slug from step 2:
 ```bash
-cq specs record "<slug>" branch --set base=<base> --set work=<branch>
-python3 ../../scripts/cq git slugs <branch> --add "<slug>" --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record "<slug>" branch --set base=<base> --set work=<branch>
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git slugs <branch> --add "<slug>" --json
 ```
 **In place** stamps `work` equal to `base` instead of skipping the record — §Recording the isolation
 draws that distinction; nothing is marked on the branch description under **In place**, since this

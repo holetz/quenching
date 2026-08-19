@@ -17,7 +17,7 @@ already name, and nothing in that list is pruned without the human choosing it.
 
 ### 1. Ask the tool for the current report
 ```bash
-python3 ../../scripts/cq git stale --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git stale --json
 ```
 Both lists empty → say so and stop; there is nothing to prune. **Done when:** the stale-branches and
 orphan-worktrees lists are in hand.

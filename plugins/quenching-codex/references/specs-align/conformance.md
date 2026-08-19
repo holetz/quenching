@@ -31,8 +31,8 @@ is work, and the same program closes the run
 **Two commands, before any inventory:**
 
 ```bash
-cq specs doctor --json      # workspace shape;  exit 0 = conformant
-cq specs validate --json    # every spec file;  exit 0 = conformant
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs doctor --json      # workspace shape;  exit 0 = conformant
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs validate --json    # every spec file;  exit 0 = conformant
 ```
 
 Both exit **0** when nothing error-severity was found; warnings are reported and never set the exit
@@ -77,7 +77,7 @@ live in the tracker, and the only thing that stays constant is what `cq specs` a
 before it is acted on** — one call, paid only when such a finding appeared:
 
 ```bash
-cq specs config --json      # the conformant path never reaches this
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs config --json      # the conformant path never reaches this
 ```
 
 Under an external backend, `sp-no-workspace` and `sp-missing-phase` are **not** offers to scaffold.
@@ -145,8 +145,8 @@ apply *that*, never an invented one, because an invented fix can silently corrup
 One command folds every older layout forward, one-way, driven by the tool rather than by prose:
 
 ```bash
-cq specs migrate --dry-run --json     # what would move, where, and where each date comes from
-cq specs migrate --json               # exit 2 when there is nothing to migrate
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs migrate --dry-run --json     # what would move, where, and where each date comes from
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs migrate --json               # exit 2 when there is nothing to migrate
 ```
 
 It covers two shapes, and a workspace holding both is folded in one run:
