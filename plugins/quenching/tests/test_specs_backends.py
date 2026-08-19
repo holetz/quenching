@@ -96,10 +96,20 @@ def _external_updated_doc(text: str) -> str:
 
 
 def _external_observable(info: dict | None) -> dict:
-    """Canonical read result, excluding only the backend-specific locator."""
+    """Canonical read result, excluding locators and parser-only positions."""
     if info is None:
         return {}
-    return {key: value for key, value in info.items() if key != "path"}
+    result = {key: value for key, value in info.items()
+              if key not in ("path", "text", "sections", "tasks")}
+    result["sections"] = {
+        heading: {key: section[key] for key in ("filled", "body")}
+        for heading, section in info["sections"].items()
+    }
+    positional = {"lineno", "blockEndLineno", "subjectLineno", "commitLineno",
+                  "metaInsertAt", "metaIndent"}
+    result["tasks"] = [{key: value for key, value in task.items() if key not in positional}
+                       for task in info["tasks"]]
+    return result
 
 
 def _external_sequence(backend: SpecBackend) -> dict:
@@ -387,6 +397,67 @@ class AzureExternalRoundTrip(unittest.TestCase):
         self.assertEqual(patches[2]["operations"], [{
             "op": "add", "path": "/fields/System.State", "value": "Closed",
         }])
+
+
+class ExternalBackendDiscrimination(unittest.TestCase):
+    """The common observations agree while the two remote machines stay independent."""
+
+    def _run_github(self):
+        transport = GithubRemoteFixture()
+        backend = GitHubBackend("owner/repo", os.getcwd(),
+                                types={"incidente": "Bug"}, open_issues=0)
+        with mock.patch.object(gh_mod, "_gh_run", side_effect=transport):
+            result = _external_sequence(backend)
+        return result, transport
+
+    def _run_azure(self):
+        transport = AzureRemoteFixture()
+        backend = AzureBoardsBackend(
+            "org", "proj", {"plans": "Active", "archive": "Closed"}, os.getcwd(),
+            discovery_tag="quenching-spec",
+            types={"incidente": {"description": "fixture", "azure": "Bug"}},
+        )
+        with mock.patch.object(az_mod, "_az_run", side_effect=transport), \
+                contextlib.redirect_stderr(io.StringIO()):
+            result = _external_sequence(backend)
+        return result, transport
+
+    def test_the_two_real_classes_agree_on_every_canonical_observation(self):
+        github_result, _ = self._run_github()
+        azure_result, _ = self._run_azure()
+        self.assertEqual(set(github_result), set(azure_result))
+        for step in github_result:
+            with self.subTest(step=step):
+                self.assertEqual(
+                    json.dumps(github_result[step], sort_keys=True, default=str),
+                    json.dumps(azure_result[step], sort_keys=True, default=str),
+                )
+
+    def test_each_transport_has_its_own_state_and_a_request_for_each_wire_operation(self):
+        github_result, github = self._run_github()
+        azure_result, azure = self._run_azure()
+        del github_result, azure_result
+
+        github_api = [call for call in github.calls if call["kind"] == "api"]
+        self.assertEqual(len(github_api), 7)
+        self.assertEqual(sum(call["method"] == "POST" for call in github_api), 1)
+        self.assertEqual(sum(call["method"] == "PATCH" for call in github_api), 2)
+        self.assertEqual(len(github.type_edits), 1)
+
+        self.assertEqual([call["kind"] for call in azure.calls], [
+            "query", "create", "patch", "query", "batch", "patch", "batch", "patch",
+            "batch", "query", "batch",
+        ])
+        self.assertEqual(sum(call["kind"] == "query" for call in azure.calls), 3)
+        self.assertEqual(sum(call["kind"] == "batch" for call in azure.calls), 4)
+        self.assertEqual(sum(call["kind"] == "patch" for call in azure.calls), 3)
+        self.assertEqual(len(azure.items), 1)
+        self.assertEqual(len(github.issues), 1)
+        self.assertIsNot(github.issues, azure.items)
+        self.assertEqual(github.issues[101]["state"], "closed")
+        self.assertEqual(azure.items[201]["fields"]["System.State"], "Closed")
+        self.assertIn("Updated by the fixture.", github.issues[101]["body"])
+        self.assertIn("Updated by the fixture.", azure.items[201]["fields"]["System.Description"])
 
 
 # --------------------------------------------------------------------------- #
