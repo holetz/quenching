@@ -282,6 +282,8 @@ fi
 # The highest-risk path: a wrong name produces a conductor that runs and does nothing. It runs
 # against a throwaway repo — /align is invasive — with the plugin loaded from $PLUGIN.
 # --------------------------------------------------------------------------- #
+# These assertions grade Skill names, not observed paths; the static --plugin-dir guard is the
+# only path guard for this check, so anchored does not apply here.
 if want 2; then
 echo "2. a conductor invokes its stage by registry name"
 newbox "$WORK/sandbox2"
@@ -315,6 +317,8 @@ fi
 # OPT-IN, AND NOT THE FIRST CHOICE: five sessions, non-deterministic, and duplicating what
 # `/quenching:components:command:eval` step 7 measures properly. See the COST note at the top.
 # --------------------------------------------------------------------------- #
+# These assertions also grade Skill names rather than observed paths; the static --plugin-dir
+# guard remains the only path guard for this check, so anchored does not apply here.
 if want 3; then
 echo "3. a spoken trigger routes with no / typed"
 
