@@ -13,7 +13,7 @@ from the submodule each happens to sit in today, so the layer boundary is this m
 the cut inside it stays free to move."""
 from __future__ import annotations
 
-from quenching.specs.parse.derive import board_state_of, derive_info, load_spec
+from quenching.specs.parse.derive import board_state_of, derive_info
 from quenching.specs.parse.fields import (FIELD_KEYS, carry_forward_fields,
                                           strip_frontmatter_keys)
 from quenching.specs.parse.records import (declared_tags, derive_labels, reconcile_label_set,
@@ -31,7 +31,6 @@ __all__ = [
     "declared_tags",
     "derive_info",
     "derive_labels",
-    "load_spec",
     "reconcile_label_set",
     "resolve_one",
     "spec_files",
