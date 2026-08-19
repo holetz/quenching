@@ -47,10 +47,12 @@ set -uo pipefail
 
 ONLY="1,2"
 REPO=""
+SELF_CHECK=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --only)   ONLY="${2:-}"; shift 2 ;;
     --only=*) ONLY="${1#*=}"; shift ;;
+    --selfcheck) SELF_CHECK=1; shift ;;
     # the whole header comment, however long it grows — a fixed range silently truncates it
     -h|--help) sed -n '2,/^set -uo pipefail/p' "${BASH_SOURCE[0]}" | sed '$d'; exit 0 ;;
     *)        REPO="$1"; shift ;;
@@ -70,6 +72,40 @@ want () { case ",$ONLY," in *",$1,"*) return 0 ;; *) return 1 ;; esac; }
 emit  () { printf '  %-6s %s\n' "$1" "$2"; }
 check () { if [ "$1" = "yes" ]; then emit "PASS" "$2"; PASS=$((PASS+1)); else emit "FAIL" "$2"; FAIL=$((FAIL+1)); fi }
 inconc () { emit "SKIP" "$1 (inconclusive: $2)"; INCONC=$((INCONC+1)); }
+
+# Static guard for every session invocation in this harness. Commented examples in the
+# header are deliberately excluded so the guard measures executable source, not prose.
+selfcheck () {
+  local src="${BASH_SOURCE[0]}"
+  local active invocations forbidden pattern guarded_pattern count guarded_count
+  pattern="claude -""p"
+  guarded_pattern="$pattern --plugin-dir"
+  active="$(sed '/^[[:space:]]*#/d' "$src")"
+  invocations="$(grep -nF "$pattern" <<<"$active" || true)"
+  count="$(grep -cF "$pattern" <<<"$active")"
+  guarded_count="$(grep -cF "$guarded_pattern" <<<"$active")"
+
+  if [ "$count" -ne "$guarded_count" ]; then
+    printf 'FAIL selfcheck: every non-commented %s must use --plugin-dir\n' "$pattern"
+    printf '%s\n' "$invocations"
+    return 1
+  fi
+
+  forbidden="$(grep -nF 'enabledPlugins' <<<"$active" || true)"
+  if [ -n "$forbidden" ]; then
+    printf 'FAIL selfcheck: enabledPlugins appears outside a comment\n'
+    printf '%s\n' "$forbidden"
+    return 1
+  fi
+
+  printf 'PASS selfcheck: %s %s invocation(s) use --plugin-dir\n' "$count" "$pattern"
+  printf 'PASS selfcheck: no enabledPlugins outside comments\n'
+}
+
+if [ "$SELF_CHECK" -eq 1 ]; then
+  selfcheck
+  exit $?
+fi
 
 # tool_use inputs for a given tool name, one JSON object per line.
 #
