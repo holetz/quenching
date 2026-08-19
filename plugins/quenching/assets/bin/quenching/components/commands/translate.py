@@ -8,7 +8,7 @@ import os
 import re
 from pathlib import Path
 
-from quenching.common.output import OK, FINDINGS, emit, refuse
+from quenching.common.output import finding, refuse, report_findings
 
 
 REPOSITORY = Path(__file__).resolve().parents[7]
@@ -264,14 +264,16 @@ def cmd_translate(args, _root: str) -> int:
     except ValueError as exc:
         return refuse({"code": "ct-translation-refused", "message": str(exc)}, args.json)
     changed = differences(tree)
-    payload = {"ok": not changed, "changed": changed, "count": len(changed), "source_sha256": source_digest()}
+    payload = {"changed": changed, "count": len(changed), "source_sha256": source_digest()}
     if args.write:
         write_tree(tree)
-        payload["ok"] = True
         payload["changed"] = []
         payload["count"] = 0
-    emit(args.json, payload, f"components translate — {len(changed)} changed file(s)")
-    return OK if args.write or not changed else FINDINGS
+    findings = [finding("ct-translation-drift", "error",
+                        "generated translation differs from the Claude surface", path=path)
+                for path in payload["changed"]]
+    return report_findings(args.json, f"components translate — {payload['count']} changed file(s)",
+                           payload, findings, "path")
 
 
 def main(argv: list[str] | None = None) -> int:
