@@ -67,6 +67,9 @@ def read_adaptation() -> dict:
 def source_files() -> list[Path]:
     if not plugin_translation():
         files = list(sorted((claude_surface() / "commands").rglob("*.md")))
+        references = claude_surface() / "references"
+        if references.is_dir():
+            files.extend(sorted(path for path in references.rglob("*") if path.is_file()))
         harness = claude_surface().parent / "CLAUDE.md"
         if harness.is_file():
             files.append(harness)
@@ -181,6 +184,12 @@ def generated_tree() -> dict[str, bytes]:
         for command in sorted(commands.rglob("*.md")):
             relative = command.relative_to(commands).with_suffix("")
             output[str(Path("skills") / relative / "SKILL.md")] = command_to_skill(command, adaptation).encode()
+        references = claude_surface() / "references"
+        if references.is_dir():
+            for reference in sorted(path for path in references.rglob("*") if path.is_file()):
+                relative = reference.relative_to(references)
+                output[str(Path("references") / relative)] = transform_platform(
+                    reference.read_text(encoding="utf-8"), adaptation).encode()
         harness = claude_surface().parent / "CLAUDE.md"
         if harness.is_file():
             output["AGENTS.md"] = transform_platform(harness.read_text(encoding="utf-8"), adaptation).encode()
@@ -228,6 +237,11 @@ def generated_tree() -> dict[str, bytes]:
 def differences(tree: dict[str, bytes]) -> list[str]:
     destination = target() if plugin_translation() else codex_surface()
     actual = {str(path.relative_to(destination)) for path in destination.rglob("*") if path.is_file() and path.name != ".generated-files.json" and "__pycache__" not in path.parts and path.suffix != ".pyc"} if destination.exists() else set()
+    if not plugin_translation():
+        # A repository's Codex marketplace and other configuration are not generated from
+        # `.claude/`. Only the translated harness, skills, and their local references are owned.
+        actual = {rel for rel in actual if rel in {"AGENTS.md", ".generated-from.json"}
+                  or rel.startswith(("skills/", "references/"))}
     return [rel for rel in sorted(set(tree) | actual) if rel not in tree or not (destination / rel).exists() or (destination / rel).read_bytes() != tree[rel]]
 
 
