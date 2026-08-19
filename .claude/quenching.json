@@ -18,8 +18,8 @@
       "tags": ["front:knowledge"]
     },
     "specs": {
-      "name": "Front /.specs/",
-      "description": "Trabalho no front de specs — os comandos /quenching:specs:*, o `cq specs`, o ciclo de vida de uma spec (captured até archive) e os três backends (files, github, azure-boards). Escolha quando o entregável muda como uma spec nasce, é construída ou é fechada.",
+      "name": "Front de specs",
+      "description": "Trabalho no front de specs — os comandos /quenching:specs:*, o `cq specs`, o ciclo de vida de uma spec (captured até archive) e os backends externos GitHub Issues e Azure Boards. Escolha quando o entregável muda como uma spec nasce, é construída ou é fechada.",
       "tags": ["front:specs"]
     },
     "components": {

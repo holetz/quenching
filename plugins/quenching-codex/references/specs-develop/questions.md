@@ -352,7 +352,7 @@ the spec now commits to — the proposal in one line, the task count, the `verif
 declared `knowledge/standards/` paths, the biggest accepted risk — and ask for the go-ahead.
 
 On yes, stamp it with `cq specs record "<slug>" approved --set date=<today>` — never by editing the
-frontmatter, which works only while the backend is `files`. On no, ask what would have to change
+provider document directly. On no, ask what would have to change
 and route it back to the bank that owns it.
 
 **The gate is a floor, not a verdict.** `ready` means ten sections have content; it does not mean

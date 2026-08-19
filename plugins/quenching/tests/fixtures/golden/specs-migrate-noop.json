@@ -1,7 +1,0 @@
-{
-  "ok": false,
-  "code": "sp-nothing-to-migrate",
-  "backend": "files",
-  "root": "<WS>/.specs",
-  "message": "no v1 plan folders, no v1 backlog tasks, no specs in backlog/ or ready/ and no dated markers — this workspace is already current"
-}

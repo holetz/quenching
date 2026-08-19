@@ -5,9 +5,7 @@ Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
 from quenching.common.frontmatter import parse_frontmatter
-from quenching.common.io import read_text
 from quenching.specs.parse.sections import parse_sections, section_state
-from quenching.specs.parse.spec import resolve_one, spec_files
 from quenching.specs.parse.tasks import parse_tasks
 from quenching.specs.parse.text import body_after_frontmatter
 from quenching.specs.schema import (DEFAULT_VERIFICATION, VERIFICATION_POLICIES,
@@ -91,17 +89,3 @@ def board_state_of(info: dict) -> str:
     if info["frontmatter"].get("reviewed"):
         return "reviewed"
     return info["stage"]
-
-
-def load_spec(root: str, slug: str) -> tuple[dict | None, dict]:
-    """Resolve a slug against the files workspace and derive its document.
-
-    Returns (info, err). `err` carries a ready-to-emit refusal when the slug is unknown or
-    ambiguous, so every command handles both the same way."""
-    specs = spec_files(root)
-    spec, err = resolve_one(specs, slug, lambda: {
-        s["slug"]: str(parse_frontmatter(read_text(s["path"]) or "").get("title", ""))
-        for s in specs})
-    if err:
-        return None, err
-    return derive_info(spec, read_text(spec["path"]) or ""), {}

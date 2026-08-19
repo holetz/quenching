@@ -1,7 +1,0 @@
-{
-  "ok": false,
-  "code": "sp-root-too-high",
-  "root": "<WS>",
-  "message": "'<WS>' has no phase folder of its own, but '<WS>/.specs' does — this --root/SPECS_ROOT points at the workspace's container, not the workspace itself",
-  "remedy": "point --root at the .specs/ directory itself"
-}

@@ -1,7 +1,7 @@
 """`cq git base` — the base-branch chain, and the second fact every PR/merge caller needs
 before deciding whether `pr:`/`merge:` are read on demand or still a required stamp.
 
-Reuses `infer_base_branch` from `quenching.specs.config` rather than a second copy of the
+Reuses `infer_base_branch` from the specs configuration module rather than a second copy of the
 chain: `origin/HEAD -> init.defaultBranch -> main` does not change with which pillar asks,
 only the git facts fed into it do.
 
@@ -19,7 +19,7 @@ import subprocess
 
 from quenching.common.git import _git
 from quenching.common.output import emit
-from quenching.specs.config import infer_base_branch, load_config
+from quenching . specs . config import infer_base_branch, load_config
 
 
 def _origin_head_branch(cwd: str) -> str | None:
@@ -32,9 +32,11 @@ def _init_default_branch(cwd: str) -> str | None:
 
 
 def _is_host_default(cwd: str, backend: str, base: str) -> bool:
-    """Whether `base` is the host's own default branch. `files` has no host and is always
-    `False`; a host CLI that is missing, unauthenticated, or answers with no remote to name
-    reads the same way `_git` reads git's own absence — as "unknown", not as an error."""
+    """Whether `base` is the host's own default branch.
+
+    A host CLI that is missing, unauthenticated, or answers with no remote to name reads the
+    same way `_git` reads git's own absence — as "unknown", not as an error.
+    """
     if backend == "github":
         argv = ["gh", "repo", "view", "--json", "defaultBranchRef",
                 "-q", ".defaultBranchRef.name"]

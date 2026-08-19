@@ -225,8 +225,9 @@ class _FoldWorkspace(_Workspace):
     re-reading of its rule written inside the test."""
 
     def read_spec(self):
-        with open(self.file, encoding="utf-8") as f:
-            return f.read()
+        info, error = self.backend.read_spec("alpha")
+        self.assertFalse(error, error)
+        return info["text"]
 
     def validate_codes(self):
         """The codes `cq specs validate` actually emits for this spec — the finding whose
