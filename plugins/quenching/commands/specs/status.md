@@ -1,3 +1,7 @@
+---
+description: Read the provider-owned specs front without writing. Use for specs status, front overview, or provider configuration; never for fixing, migrating, or building a spec.
+---
+
 # quenching-specs-status — read the provider-owned front
 
 **Input**: `$ARGUMENTS` — optionally one spec slug.
