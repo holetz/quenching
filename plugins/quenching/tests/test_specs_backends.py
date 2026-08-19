@@ -62,6 +62,72 @@ def _case_doc(slug: str = "alpha") -> str:
             .replace("<DATE>", "2026-01-01").replace("<VERIFICATION>", "per-task"))
 
 
+def _external_case_doc(slug: str = "alpha") -> str:
+    """One small, discriminant document shared by the two external-backend fixtures.
+
+    The document carries every value whose storage is split between the canonical body and
+    native tracker fields: title, declared tag, assignee, work-item type, one section and one
+    task.  The sequence below owns the order; each transport fixture owns its wire shape and
+    remote state.
+    """
+    doc = _case_doc(slug)
+    close = doc.index("\n---\n")
+    doc = (doc[:close]
+           + '\ntags: ["fixture"]\nassignee: fixture@example.test\n'
+           + 'workItemType: incidente'
+           + doc[close:])
+    doc, _ = upsert_section(doc, "Problem", "## Problem\n\nA discriminant fixture.\n")
+    doc, _ = upsert_section(doc, "Tasks", "## Tasks\n\n- [ ] 1.1 fixture task\n")
+    return doc
+
+
+def _external_updated_doc(text: str) -> str:
+    """Make one write that changes both canonical content and native-backed fields."""
+    text, _ = upsert_section(text, "Problem", "## Problem\n\nUpdated by the fixture.\n")
+    for key, value in (("tags", '["fixture", "updated"]'),
+                       ("assignee", "updated@example.test"),
+                       ("start", "2026-01-01"), ("target", "2026-02-01")):
+        text = set_frontmatter_key(text, key, value)
+    return text
+
+
+def _external_observable(info: dict | None) -> dict:
+    """Canonical read result, excluding only the backend-specific locator."""
+    if info is None:
+        return {}
+    return {key: value for key, value in info.items() if key != "path"}
+
+
+def _external_sequence(backend: SpecBackend) -> dict:
+    """Exercise the five primitives in one shared order against a real backend class.
+
+    The return value is deliberately transport-blind: the later GitHub and Azure tests compare
+    these observations while their fixtures separately assert every request they consumed.
+    """
+    result = {"empty": _listing(backend)}
+    backend.create_spec("plans", "alpha.md", _external_case_doc())
+    result["after_create"] = _listing(backend)
+
+    info, error = backend.read_spec("alpha")
+    if error or info is None:
+        raise AssertionError(f"fixture could not read created spec: {error}")
+    result["read"] = _external_observable(info)
+
+    backend.write_spec(info, _external_updated_doc(info["text"]))
+    updated, error = backend.read_spec("alpha")
+    if error or updated is None:
+        raise AssertionError(f"fixture could not read written spec: {error}")
+    result["after_write"] = _external_observable(updated)
+
+    backend.move_spec(updated, "archive")
+    moved, error = backend.read_spec("alpha")
+    if error or moved is None:
+        raise AssertionError(f"fixture could not read moved spec: {error}")
+    result["after_move"] = _external_observable(moved)
+    result["archive_listing"] = _listing(backend)
+    return result
+
+
 # --------------------------------------------------------------------------- #
 # gh_refusal — the classifier, asserted against gh's real output
 # --------------------------------------------------------------------------- #
