@@ -1,14 +1,10 @@
-"""The `github` transport, the hybrid serialisation both external backends share, the specs
-worktree lock, and the meta-suites that keep `files`/`memory`/`github`/`azure-boards` honest
-against each other.
+"""Provider-backed specs tests: GitHub Issues and Azure Boards share the canonical
+transport contract, while unknown and legacy local providers refuse without creating a store.
 
-Migrated out of the pre-refactor specs script's selftest, which held forty-three
-`_failures() -> list[str]`
-functions aggregated by hand with no framework underneath them. This file carries the eleven
-bound to GitHub, the hybrid wire format, the worktree lock, and cross-backend equivalence — the
-fixtures each suite built for itself (the canonical case table, a spec document, a marker) travel
-with it unchanged, so a failure here still names which case broke, the way the aggregated list
-used to."""
+The transport fixtures are strict and offline. They record every native request so parity means
+both the canonical observations and the provider-specific wire shape remain covered.
+"""
+
 import argparse
 import contextlib
 import io
@@ -24,11 +20,9 @@ from unittest import mock
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.common.frontmatter import parse_frontmatter
 from quenching.specs.backends import azure as az_mod
-from quenching.specs.backends import backend_root
 from quenching.specs.backends import github as gh_mod
 from quenching.specs.backends.azure import AzureBoardsBackend
 from quenching.specs.backends.base import BackendRefusal, SpecBackend
-from quenching.specs.backends.files import FilesBackend
 from quenching.specs.backends.github import (GH_MISSING, GH_NOT_AUTHENTICATED, GitHubBackend,
                                              empty_listing_refusal, gh_refusal,
                                              listing_is_suspect)
@@ -37,13 +31,12 @@ from quenching.specs.backends.hybrid import (GH_BODY_MAX, GH_PART_MAX, HYBRID_TI
                                              hybrid_split, hybrid_title_join, hybrid_title_split,
                                              hybrid_unwrap, hybrid_unwrap_part, hybrid_wrap,
                                              hybrid_wrap_part)
-from quenching.specs.backends.memory import MemoryBackend
 from quenching.specs.commands.doctor import cmd_doctor
 from quenching.specs.commands.next import _candidate
 from quenching.specs.commands.output import Emitter
 from quenching.specs.commands.validate import merge_record_finding, validate_spec
-from quenching.specs.config import (BACKENDS, DEFAULT_SPECS_BRANCH, UNPROVED_BACKENDS,
-                                    _UNPROVED_ANNOUNCED, announce_unproved, is_root_too_high)
+from quenching.specs import backends as backends_mod
+from quenching.specs import config as config_mod
 from quenching.specs.parse import FIELD_KEYS, PHASES, derive_info, derive_labels
 from quenching.specs.parse.edit import upsert_section
 from quenching.specs.parse.fields import (legacy_marker_fold, set_frontmatter_key,
@@ -51,8 +44,6 @@ from quenching.specs.parse.fields import (legacy_marker_fold, set_frontmatter_ke
 from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.tasks import parse_tasks, task_progress
 from quenching.specs.schema import capture_form, load_schema
-from quenching.specs.worktree import (SPECS_WORKTREE_DIR, SpecsLock, _holder_is_gone,
-                                      command_writes, resolve_files_root, specs_worktree_path)
 
 
 def _case_doc(slug: str = "alpha") -> str:
@@ -93,6 +84,12 @@ def _external_updated_doc(text: str) -> str:
                        ("start", "2026-01-01"), ("target", "2026-02-01")):
         text = set_frontmatter_key(text, key, value)
     return text
+
+
+def _listing(backend: SpecBackend) -> list[dict]:
+    """A provider-neutral listing, excluding the native locator."""
+    return [{key: value for key, value in row.items() if key != "path"}
+            for row in backend.list_specs()]
 
 
 def _external_observable(info: dict | None) -> dict:
@@ -990,595 +987,58 @@ class HybridSerialization(unittest.TestCase):
         self.assertIsNone(legacy_marker_fold("alpha.md", undated))
 
 
-# --------------------------------------------------------------------------- #
-# backend_equivalence — files and memory over the SAME canonical case list
-# --------------------------------------------------------------------------- #
-def _listing(b: SpecBackend) -> list[dict]:
-    """A listing minus `path` — the one field the locator is allowed to differ on."""
-    return [{k: v for k, v in s.items() if k != "path"} for s in b.list_specs()]
 
 
-def _observable(info: dict | None) -> dict:
-    """One spec's info minus the two fields a backend is SUPPOSED to disagree on.
-
-    `path` is the locator — a filesystem path here, a URL there — and `text` is echoed back
-    verbatim from what was written, so neither can distinguish a correct backend from a
-    broken one. Everything else must match exactly, including the derived stage."""
-    if info is None:
-        return {}
-    return {k: v for k, v in info.items() if k not in ("path", "text")}
-
-
-def _case_create(b: SpecBackend) -> list[dict]:
-    b.create_spec("plans", "alpha.md", _case_doc())
-    return _listing(b)
-
-
-def _case_date(b: SpecBackend) -> str:
-    """The capture date, read back out of whatever the store did with the document.
-
-    It used to ride in the basename, so `_listing` alone proved it survived. Now it is a
-    frontmatter field, and the only thing that proves a backend did not drop, rewrite or
-    recompute it is asking for it after a round trip."""
-    info, _ = b.read_spec("alpha")
-    return (info or {}).get("date", "")
-
-
-def _case_validate(b: SpecBackend) -> list[dict]:
-    """Every finding for the one spec in the store — the READER, not just the store.
-
-    The cases above prove a backend can hand back the document it was given. This proves the
-    shared code ASKS it for one: a `validate_spec` that reaches around the interface to
-    `read_text(s["path"])` gets nothing from a `memory://` locator and reports a well-formed
-    document as missing every required key, while `files` reports the real findings."""
-    return validate_spec(b, b.list_specs()[0])
-
-
-def _case_front(b: SpecBackend) -> dict:
-    """One ranked candidate — the same trap on the other disk reader.
-
-    `_candidate` off the path ranks a `memory://` spec as an empty one with no tasks and no
-    priority, which is exactly what `next --front` was handed against GitHub. `heads` and
-    `current` are pinned empty so the case asserts the READ and never the repository it
-    happens to run in.
-
-    IT MUST RUN ON AN AUTHORED DOCUMENT, which is why it is ordered last rather than beside
-    the other read case in `BACKEND_CASES`. Measured on the fresh capture form this case
-    PASSED with the reader fully broken: every field it compares collapses to the same value
-    from an empty document. A fixture that cannot tell the two apart is a case that asserts
-    nothing, and the only reason this one is known to discriminate is that reverting the
-    reader was tried against it."""
-    c = _candidate(b, b.list_specs("plans")[0], load_schema(), set(), None, "")
-    return {k: v for k, v in c.items() if k != "path"}
-
-
-def _case_type(b: SpecBackend) -> str | None:
-    """`workItemType:`, inserted into a fresh capture form exactly the way `cmd_new --type`
-    inserts it — never `set_frontmatter_key`, which would misrepresent a key FIXED at
-    creation as one of the four mutable STATE fields `_case_field` already covers.
-
-    A second spec (`beta`), never `alpha`: the key is resolved once at `new` and never
-    rewritten, so there is no round trip to prove beyond create-then-read."""
-    doc = _case_doc("beta")
-    close = doc.index("\n---\n")
-    doc = doc[:close] + "\nworkItemType: incidente" + doc[close:]
-    b.create_spec("plans", "beta.md", doc)
-    info, _ = b.read_spec("beta")
-    return (info or {}).get("frontmatter", {}).get("workItemType")
-
-
-def _case_write(b: SpecBackend) -> dict:
-    info, _ = b.read_spec("alpha")
-    block, _ = upsert_section(info, "Problem", "## Problem\n\nUm problema.\n")
-    b.write_spec(info, block)
-    return _observable(b.read_spec("alpha")[0])
-
-
-def _case_task(b: SpecBackend) -> dict:
-    info, _ = b.read_spec("alpha")
-    block, _ = upsert_section(info, "Tasks", "## Tasks\n\n- [x] 1.1 feito\n")
-    b.write_spec(info, block)
-    info, _ = b.read_spec("alpha")
-    return {"progress": task_progress(info["tasks"]), "stage": info["stage"]}
-
-
-def _case_record(b: SpecBackend) -> dict:
-    info, _ = b.read_spec("alpha")
-    b.write_spec(info, set_frontmatter_record(
-        info["text"], "priority", {"level": "1", "criticality": "high"}))
-    info, _ = b.read_spec("alpha")
-    return spec_records(info["frontmatter"])
-
-
-def _case_field(b: SpecBackend) -> dict:
-    """The four STATE keys, round-tripped through `write_spec` — the SAME mechanism
-    `_case_write` already proves for a section body, applied to `set_frontmatter_key`
-    instead. Never a record: `_case_record` is what proves those, separately."""
-    info, _ = b.read_spec("alpha")
-    text = info["text"]
-    for key, value in (("tags", '["a", "b"]'), ("assignee", "someone"),
-                       ("start", "2026-01-01"), ("target", "2026-02-01")):
-        text = set_frontmatter_key(text, key, value)
-    b.write_spec(info, text)
-    info, _ = b.read_spec("alpha")
-    return {k: info["frontmatter"].get(k) for k in FIELD_KEYS}
-
-
-def _case_move(b: SpecBackend) -> dict:
-    info, _ = b.read_spec("alpha")
-    b.move_spec(info, "archive")
-    return _observable(b.read_spec("alpha")[0])
-
-
-def _case_labels(b: SpecBackend) -> list[str]:
-    """`derive_labels` off the same document through both stores — proves the calculation
-    reads only `info`, never anything backend-specific, same as every case above it."""
-    info, _ = b.read_spec("alpha")
-    return derive_labels(info)
-
-
-BACKEND_CASES = (
-    ("list an empty store", lambda b: _listing(b)),
-    ("create, then list", lambda b: _case_create(b)),
-    ("read what was created", lambda b: _observable(b.read_spec("alpha")[0])),
-    ("read an unknown slug", lambda b: b.read_spec("nope")[1]),
-    ("validate what was created", lambda b: _case_validate(b)),
-    ("the capture date survives the store", lambda b: _case_date(b)),
-    ("write a section, then re-read", lambda b: _case_write(b)),
-    ("tick a task", lambda b: _case_task(b)),
-    ("stamp a record, then re-read", lambda b: _case_record(b)),
-    ("set tags/assignee/start/target, then re-read", lambda b: _case_field(b)),
-    ("derive labels off the stamped record", lambda b: _case_labels(b)),
-    # AFTER the five cases that author the document, never on the fresh capture form. See
-    # `_case_front`: on a capture form the case passes with the reader broken.
-    ("rank the front", lambda b: _case_front(b)),
-    ("create with workItemType, then re-read", lambda b: _case_type(b)),
-    ("move to archive", lambda b: _case_move(b)),
-    ("list after the move", lambda b: _listing(b)),
-)
-
-
-class BackendEquivalence(unittest.TestCase):
-    """Run the canonical case list against `files` and against `memory`, and name every case
-    where they disagree.
-
-    THIS IS THE PROOF OF THE CENTRAL CLAIM. "Every backend behaves identically" is the
-    sentence the whole configurable-backend design rests on, and a sentence nobody checks is
-    a wish. Two backends sharing nothing but the interface — one on real files in a temp
-    directory, one in a dict — must produce byte-identical results for every case but the
-    locator.
-
-    THE CASES RUN IN ORDER AND SHARE STATE, on purpose: each backend accumulates the same
-    document through the same sequence of writes, so a case failing here can cascade into the
-    ones after it exactly as it would in a real backend that started disagreeing partway
-    through a build.
-
-    Self-contained: `tempfile` is stdlib and the documents come from the embedded template,
-    so this runs on an installed copy with no assets beside it."""
-
-    def test_every_canonical_case_agrees_between_files_and_memory(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = os.path.join(tmp, ".specs")
-            os.makedirs(os.path.join(root, "plans"))
-            os.makedirs(os.path.join(root, "archive"))
-            files: SpecBackend = FilesBackend(root)
-            memory: SpecBackend = MemoryBackend()
-            for label, case in BACKEND_CASES:
-                with self.subTest(case=label):
-                    got_f, got_m = case(files), case(memory)
-                    self.assertEqual(
-                        json.dumps(got_f, sort_keys=True, default=str),
-                        json.dumps(got_m, sort_keys=True, default=str))
-
-
-# --------------------------------------------------------------------------- #
-# backend_completeness — every declared backend implements all five primitives
-# --------------------------------------------------------------------------- #
-SPEC_PRIMITIVES = ("list_specs", "read_spec", "write_spec", "create_spec", "move_spec")
-
-
-class BackendCompleteness(unittest.TestCase):
-    """Every declared backend implements all five primitives — none left inherited.
-
-    THIS IS WHAT `azure-boards` HAS INSTEAD OF END-TO-END PROOF. `## Out of Scope` accepts
-    shipping it without a real Azure DevOps project to exercise, and `BackendEquivalence`
-    cannot cover it: that check runs the canonical cases against two backends, and running
-    them here would mean a network. What CAN be checked without a network is the failure a
-    half-written backend actually takes — a primitive left inheriting the base class's
-    `NotImplementedError`, which reaches a human as a traceback rather than as a refusal,
-    breaking the one promise every external backend makes.
-
-    Self-contained: reads the classes, calls nothing."""
-
-    def test_no_backend_inherits_a_primitive_from_the_abstract_base(self):
-        for cls in (FilesBackend, MemoryBackend, GitHubBackend, AzureBoardsBackend):
-            for primitive in SPEC_PRIMITIVES:
-                with self.subTest(backend=cls.__name__, primitive=primitive):
-                    self.assertIsNot(getattr(cls, primitive, None),
-                                     getattr(SpecBackend, primitive),
-                                     f"{cls.__name__} inherits `{primitive}` — it would raise "
-                                     f"NotImplementedError as a traceback")
-
-    def test_every_backend_names_itself(self):
-        for cls in (FilesBackend, MemoryBackend, GitHubBackend, AzureBoardsBackend):
-            with self.subTest(backend=cls.__name__):
-                self.assertNotEqual(getattr(cls, "name", "abstract"), "abstract",
-                                    f"{cls.__name__} never named itself — `name` is what a "
-                                    f"refusal and every report call it")
-
-
-# --------------------------------------------------------------------------- #
-# the unproved-backend warning
-# --------------------------------------------------------------------------- #
-class UnprovedBackend(unittest.TestCase):
-    """The unproved-backend warning says its piece once, on stderr, and only for a backend
-    that is actually declared unproved.
-
-    Three ways this decision could ship broken, and all three are silent. A name misspelled
-    in `UNPROVED_BACKENDS` matches no backend, so the warning never fires and the caveat is
-    dead code that reads as coverage. A warning that repeats is the per-operation noise the
-    decision rejected, arriving anyway. A warning on stdout breaks the `--json` parse of
-    every caller, which is a worse failure than the one it was warning about.
-
-    Self-contained: no network, no `az`, and the process-level flag is restored so the check
-    cannot change what a later command prints."""
-
+class ProviderSelection(unittest.TestCase):
     def setUp(self):
-        self._held = set(_UNPROVED_ANNOUNCED)
-        _UNPROVED_ANNOUNCED.clear()
-        self.addCleanup(self._restore)
+        backends_mod._BACKEND_CACHE.clear()
+        self.addCleanup(backends_mod._BACKEND_CACHE.clear)
 
-    def _restore(self):
-        _UNPROVED_ANNOUNCED.clear()
-        _UNPROVED_ANNOUNCED.update(self._held)
-
-    def test_every_declared_unproved_backend_is_a_real_backend(self):
-        for name in UNPROVED_BACKENDS:
-            with self.subTest(backend=name):
-                self.assertIn(name, BACKENDS,
-                              "a name declared unproved and not a backend can never warn")
-
-    def test_the_warning_fires_only_for_an_unproved_backend_once_and_on_stderr(self):
-        for name, want in [(b, b in UNPROVED_BACKENDS) for b in BACKENDS]:
-            with self.subTest(backend=name):
-                err, out = io.StringIO(), io.StringIO()
-                with contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
-                    announce_unproved(name)
-                    announce_unproved(name)
-                said = err.getvalue().strip()
-                self.assertEqual(bool(said), want)
-                self.assertLessEqual(said.count("warning:"), 1,
-                                     "warned twice in one process — the decision is one line "
-                                     "per process, not one per operation")
-                self.assertEqual(out.getvalue(), "",
-                                 "wrote to stdout, which is the `--json` payload")
-
-
-# --------------------------------------------------------------------------- #
-# resolve_files_root — the shapes that must answer without reaching for git
-# --------------------------------------------------------------------------- #
-class FilesRoot(unittest.TestCase):
-    """The shapes `resolve_files_root` must answer without reaching for git.
-
-    Every one of them is a case where creating a worktree would be WRONG, and the cost of
-    getting it wrong is not a bad answer but a branch and a checkout appearing in someone's
-    repository. Self-contained — a temp directory and pure path arithmetic, so this runs on an
-    installed copy with no repository staged."""
-
-    CFG = {"specsBranch": DEFAULT_SPECS_BRANCH}
-
-    def test_a_populated_workspace_resolves_to_itself(self):
-        # A `/.specs/` holding phase folders in the code tree is the PRE-MIGRATION store and
-        # stays authoritative until a human moves it.
-        with tempfile.TemporaryDirectory() as tmp:
-            populated = os.path.join(tmp, ".specs")
-            os.makedirs(os.path.join(populated, "plans"))
-            got, err = resolve_files_root(populated, self.CFG)
-        self.assertEqual(got, populated)
-        self.assertEqual(err, {})
-
-    def test_a_workspace_already_inside_the_worktree_dir_resolves_to_itself(self):
-        # Nothing nests a worktree in a worktree; the specs branch is already the tree
-        # underfoot.
-        with tempfile.TemporaryDirectory() as tmp:
-            nested = os.path.join(tmp, SPECS_WORKTREE_DIR, "specs", ".specs")
-            os.makedirs(nested)
-            got, err = resolve_files_root(nested, self.CFG)
-        self.assertEqual(got, nested)
-        self.assertEqual(err, {})
-
-    def test_a_namespaced_branch_does_not_deepen_the_worktree_path(self):
-        want = os.path.join("/repo", SPECS_WORKTREE_DIR, "quenching-specs")
-        self.assertEqual(specs_worktree_path("/repo", "quenching/specs"), want)
-
-
-class DoctorMeasuresTheResolvedRoot(unittest.TestCase):
-    """`doctor` reports on the directory the backend would use, and creates nothing doing it.
-
-    THE FALSE FINDINGS THIS ENDS. On a migrated `files` repository the specs live in the specs
-    worktree and the declared root in the code tree is gone — and `doctor`, which reads the
-    declared root because opening the backend would CREATE the worktree, answered
-    `sp-no-workspace` plus a `sp-missing-phase` per phase. Every one of them described a
-    workspace nobody has.
-
-    Two assertions, and the second is the one that makes the first worth having: the findings
-    are gone, and the specs worktree still does not exist afterwards. A `doctor` that got the
-    right answer by checking the backend out would have traded a false finding for a side
-    effect."""
-
-    CFG = {"backend": "files", "specsBranch": DEFAULT_SPECS_BRANCH}
-
-    def _repo_with_specs_in_the_worktree(self, top: str) -> str:
-        """A repository whose declared `.specs/` is absent and whose specs sit in the worktree
-        path — the shape a migrated repo has, staged by hand so no `git worktree add` runs."""
-        subprocess.run(["git", "init", "-q", "-b", "main", top], check=True,
-                       capture_output=True, text=True)
-        worktree = specs_worktree_path(top, DEFAULT_SPECS_BRANCH)
-        for ph in PHASES:
-            os.makedirs(os.path.join(worktree, ".specs", ph))
-        return worktree
-
-    def test_the_declared_root_being_absent_is_no_longer_a_finding(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            top = os.path.join(tmp, "repo")
-            worktree = self._repo_with_specs_in_the_worktree(top)
-            declared = os.path.join(top, ".specs")
-
-            measured = backend_root(declared, self.CFG)
-            self.assertEqual(measured, os.path.join(worktree, ".specs"))
-
-            buf = io.StringIO()
-            args = argparse.Namespace(json=True)
-            with contextlib.redirect_stdout(buf):
-                cmd_doctor(args, declared, Emitter())
-            codes = {f["code"] for f in json.loads(buf.getvalue())["findings"]}
-
-            self.assertNotIn("sp-no-workspace", codes)
-            self.assertNotIn("sp-missing-phase", codes)
-
-    def test_measuring_creates_no_worktree(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            top = os.path.join(tmp, "repo")
-            subprocess.run(["git", "init", "-q", "-b", "main", top], check=True,
-                           capture_output=True, text=True)
-            declared = os.path.join(top, ".specs")
-
-            buf = io.StringIO()
-            with contextlib.redirect_stdout(buf):
-                cmd_doctor(argparse.Namespace(json=True), declared, Emitter())
-
-            self.assertFalse(os.path.exists(specs_worktree_path(top, DEFAULT_SPECS_BRANCH)),
-                             "the diagnostic checked the specs branch out")
-
-
-class RootTooHigh(unittest.TestCase):
-    """`is_root_too_high` — the structural test behind `sp-root-too-high`. Pure path
-    arithmetic, so it runs on an installed copy with no repository staged."""
-
-    def test_a_container_with_a_phased_specs_child_is_too_high(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            os.makedirs(os.path.join(tmp, ".specs", "plans"))
-            self.assertTrue(is_root_too_high(tmp))
-
-    def test_a_root_that_is_already_the_workspace_is_not_too_high(self):
-        # Even with a foreign `.specs/` nested deeper somewhere inside it — `root` already
-        # qualifying as the workspace short-circuits before that nested directory is looked at.
-        with tempfile.TemporaryDirectory() as tmp:
-            os.makedirs(os.path.join(tmp, "plans"))
-            os.makedirs(os.path.join(tmp, "somewhere", ".specs", "plans"))
-            self.assertFalse(is_root_too_high(tmp))
-
-    def test_a_fresh_empty_directory_is_not_too_high(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            self.assertFalse(is_root_too_high(tmp))
-
-    def test_an_unrelated_path_with_no_specs_at_all_is_not_too_high(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            os.makedirs(os.path.join(tmp, "src"))
-            self.assertFalse(is_root_too_high(tmp))
-
-
-# --------------------------------------------------------------------------- #
-# the specs worktree lock
-# --------------------------------------------------------------------------- #
-class Lock(unittest.TestCase):
-    """The lock's invariants, checked rather than asserted in prose.
-
-    The direction that is asserted here is the DANGEROUS one: a lock that is taken while
-    someone holds it, or a holder judged gone on evidence that does not prove it, silently
-    loses a human's edit. Both are decidable with no repository and no second process.
-
-    The opposite direction — a genuinely dead holder being reclaimed — needs a pid that is
-    provably dead, and the only cheap way to get one is a process that just exited, whose pid
-    the operating system may reuse. A selftest that fails once a month teaches people to
-    ignore it, so that direction is exercised in a disposable repository and NOT here."""
-
-    def test_a_free_lock_is_acquired_and_leaves_a_lock_file(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            path = os.path.join(tmp, "specs.lock")
-            lock = SpecsLock(path, label="task alpha")
-            self.assertEqual(lock.acquire(wait=0.0), {})
-            self.assertTrue(os.path.isfile(path),
-                            "acquiring left no lock file, so nothing marks the worktree as held")
-            lock.release()
-
-    def test_a_held_lock_refuses_a_second_acquisition_and_names_the_real_holder(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            path = os.path.join(tmp, "specs.lock")
-            first = SpecsLock(path, label="task alpha")
-            self.assertEqual(first.acquire(wait=0.0), {})
-            second = SpecsLock(path, label="promote alpha")
-            err = second.acquire(wait=0.0)
-            self.assertEqual(err.get("code"), "sp-specs-locked",
-                             "two writers in one worktree is the whole failure this prevents")
-            self.assertEqual(err.get("exit"), 2)
-            self.assertEqual(str(err.get("holder", {}).get("pid")), str(os.getpid()))
-            first.release()
-
-    def test_releasing_frees_the_lock_file_for_the_next_writer(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            path = os.path.join(tmp, "specs.lock")
-            first = SpecsLock(path, label="task alpha")
-            first.acquire(wait=0.0)
-            first.release()
-            self.assertFalse(os.path.exists(path),
-                             "releasing left the lock file behind, which wedges the next writer")
-            second = SpecsLock(path, label="promote alpha")
-            self.assertEqual(second.acquire(wait=0.0), {})
-            second.release()
-
-    def test_this_very_process_is_never_judged_gone(self):
-        live = {"pid": os.getpid(), "host": socket.gethostname()}
-        self.assertFalse(_holder_is_gone(live), "the liveness proof is inverted")
-
-    def test_a_holder_on_another_host_is_never_reclaimed(self):
-        # A pid does not travel — another host is unknowable, never reclaimed.
-        self.assertFalse(_holder_is_gone({"pid": 1, "host": "a-host-that-is-not-this-one"}))
-
-    def test_a_holder_with_no_usable_pid_is_never_reclaimed(self):
-        # Absence of evidence is not proof of death.
-        self.assertFalse(_holder_is_gone({"host": socket.gethostname()}))
-        self.assertFalse(_holder_is_gone({"pid": 0, "host": socket.gethostname()}))
-
-    def test_command_writes_classifies_every_flag_gated_subcommand_by_the_invocation(self):
-        # The four FLAG-GATED subcommands are asserted as pairs — the same subcommand reads
-        # or writes depending on the invocation, which is the whole reason `command_writes`
-        # takes `args` rather than a name.
+    def test_repository_hosts_select_the_external_provider(self):
         cases = (
-            ("section", argparse.Namespace(cmd="section", write=True, spec="x"),
-             argparse.Namespace(cmd="section", write=False, spec="x")),
-            ("record", argparse.Namespace(cmd="record", set=["complexity=high"], spec="x"),
-             argparse.Namespace(cmd="record", set=None, spec="x")),
-            ("verification", argparse.Namespace(cmd="verification", policy="per-task", spec="x"),
-             argparse.Namespace(cmd="verification", policy=None, spec="x")),
-            ("promote", argparse.Namespace(cmd="promote", dry_run=False, spec="x"),
-             argparse.Namespace(cmd="promote", dry_run=True, spec="x")),
+            ("git@github.com:owner/repo.git", "github", "github.com"),
+            ("https://dev.azure.com/org/project/_git/repo", "azure-boards", "dev.azure.com"),
+            ("https://forge.example.test/org/repo.git", None, "forge.example.test"),
         )
-        for label, writes, reads in cases:
-            with self.subTest(cmd=label):
-                self.assertTrue(command_writes(writes),
-                                f"`{label}` classified as a reader while writing — it would "
-                                f"take no lock and overwrite whoever holds one")
-                self.assertFalse(command_writes(reads),
-                                 f"`{label}` classified as a writer while only reading — the "
-                                 f"lock follows the invocation, not the subcommand")
-
-    def test_command_writes_is_true_for_every_unconditional_writer(self):
-        for cmd in ("new", "task", "discover"):
-            with self.subTest(cmd=cmd):
-                self.assertTrue(command_writes(argparse.Namespace(cmd=cmd, spec="x")),
-                                f"`{cmd}` takes no writer lock, but it modifies a spec")
-
-    def test_command_writes_is_false_for_every_reader(self):
-        for cmd in ("list", "status", "show", "next", "parallel", "validate", "config",
-                   "doctor", "selftest"):
-            with self.subTest(cmd=cmd):
-                self.assertFalse(command_writes(argparse.Namespace(cmd=cmd)),
-                                 f"`{cmd}` takes the writer lock, but it only reads")
-
-
-# --------------------------------------------------------------------------- #
-# the `pr:` rules on a `merge:` record
-# --------------------------------------------------------------------------- #
-class MergePr(unittest.TestCase):
-    """The two `pr:` rules `merge_record_finding` must get right: a local conclusion with no
-    `pr:` stays valid (most conclusions have no remote), and `pr:` under a strategy `gh pr
-    merge` cannot perform is flagged rather than silently accepted."""
-
-    def test_a_local_conclusion_with_no_pr_is_not_flagged(self):
-        local = {"strategy": "merge-commit", "subject": "plan/a: merge (merge-commit)"}
-        self.assertIsNone(merge_record_finding({"merge": local}, "plans/a.md", "a"))
-
-    def test_pr_set_under_a_strategy_with_no_gh_pr_merge_equivalent_is_flagged(self):
-        ff_with_pr = {"strategy": "fast-forward", "subject": "none — fast-forward",
-                     "pr": "https://github.com/o/r/pull/1"}
-        finding = merge_record_finding({"merge": ff_with_pr}, "plans/a.md", "a")
-        self.assertIsNotNone(finding)
-        self.assertEqual(finding.get("code"), "sp-bad-merge")
-
-
-# --------------------------------------------------------------------------- #
-# front_fields — the emitted value, end to end, through the real binary
-# --------------------------------------------------------------------------- #
-CQ = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                  "assets", "bin", "cq")
-
-# Every workspace-wide `--json` verb that carries the front's own fields, and whether it can
-# answer without opening a backend. `config` and `doctor` never open one, which is what lets the
-# external arm run offline; the rest do, so they are asked only of the `files` workspace.
-FRONT_VERBS = ((("config",), True), (("doctor",), True), (("list",), False),
-               (("next", "--front"), False), (("validate",), False), (("migrate",), False))
-
-
-class FrontFieldsEndToEnd(unittest.TestCase):
-    """The pair from `## Validation`: the field that answered a path under `github` answers
-    `null`, and the backend's name travels beside it.
-
-    THROUGH THE REAL BINARY, because that is where the claim lives. `front_fields` returning
-    the right dict proves nothing about ten call sites that might still build the key by hand,
-    and the defect being fixed was never in a helper — it was that every site had its own copy
-    of the wrong answer. So one arm runs `cq` over a `files` workspace and one over a `github`
-    one, and a third assertion reads the sources to make sure no eleventh site can be added
-    with the old shape.
-
-    Self-contained: temp directories, `git init`, no network. The external arm asks only the
-    two verbs that never open a backend, so no `gh` is required to prove the field."""
-
-    def _cq(self, ws: str, *argv: str) -> tuple[int, dict]:
-        proc = subprocess.run([sys.executable, CQ, "--root", ws, "specs", *argv, "--json"],
-                              capture_output=True, text=True)
-        return proc.returncode, json.loads(proc.stdout)
-
-    def _workspace(self, tmp: str, backend: str | None) -> str:
-        top = os.path.join(tmp, "repo")
-        ws = os.path.join(top, ".specs")
-        os.makedirs(os.path.join(ws, "plans"))
-        os.makedirs(os.path.join(ws, "archive"))
-        subprocess.run(["git", "init", "-q", "-b", "main", top], check=True,
-                       capture_output=True, text=True)
-        if backend:
-            os.makedirs(os.path.join(top, ".claude"))
-            with open(os.path.join(top, ".claude", "quenching.json"), "w",
-                      encoding="utf-8") as fh:
-                json.dump({"backend": backend}, fh)
-        return ws
-
-    def test_under_files_every_verb_reports_the_resolved_workspace(self):
         with tempfile.TemporaryDirectory() as tmp:
-            ws = self._workspace(tmp, None)
-            for argv, _offline in FRONT_VERBS:
-                with self.subTest(verb=" ".join(argv)):
-                    _code, payload = self._cq(ws, *argv)
-                    self.assertEqual(payload["backend"], "files")
-                    self.assertEqual(payload["root"], ws)
+            for remote, provider, host in cases:
+                with self.subTest(remote=remote):
+                    def current_git(_cwd, *argv, remote=remote):
+                        if argv == ("rev-parse", "--show-toplevel"):
+                            return tmp
+                        if argv == ("remote", "get-url", "origin"):
+                            return remote
+                        return ""
+                    with mock.patch.object(config_mod, "_git", side_effect=current_git):
+                        self.assertEqual(config_mod.detect_provider(tmp), (provider, host))
 
-    def test_under_github_the_field_is_null_and_the_backend_names_itself(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            ws = self._workspace(tmp, "github")
-            for argv, offline in FRONT_VERBS:
-                if not offline:
-                    continue
-                with self.subTest(verb=" ".join(argv)):
-                    _code, payload = self._cq(ws, *argv)
-                    self.assertEqual(payload["backend"], "github")
-                    self.assertIsNone(payload["root"],
-                                      "the declared root is a folder that does not exist")
+    def test_factory_opens_the_provider_selected_by_the_repository(self):
+        sentinel = object()
+        with mock.patch.object(backends_mod, "load_config",
+                               return_value={"backend": "github"}),                 mock.patch.object(backends_mod, "open_github_backend",
+                                  return_value=(sentinel, {})) as opener:
+            backend, error = backends_mod.open_backend("/repo")
+        self.assertIs(backend, sentinel)
+        self.assertEqual(error, {})
+        opener.assert_called_once_with("/repo")
 
-    def test_no_emit_site_still_builds_the_field_by_hand(self):
-        # Ten sites carried the same wrong answer because each wrote it itself. The helper is
-        # only a fix while it is the ONLY producer — an eleventh site added with the old shape
-        # would reintroduce the defect one payload at a time.
-        commands = os.path.join(os.path.dirname(CQ), "quenching", "specs", "commands")
-        offenders = []
-        for name in sorted(os.listdir(commands)):
-            if not name.endswith(".py"):
-                continue
-            with open(os.path.join(commands, name), encoding="utf-8") as fh:
-                if '"root": root' in fh.read():
-                    offenders.append(name)
-        self.assertEqual(offenders, [],
-                         "an emit site builds the front's `root` by hand instead of through "
-                         "`front_fields`, so it emits the DECLARED root")
+    def test_legacy_files_configuration_refuses_before_any_local_store_is_created(self):
+        with mock.patch.object(backends_mod, "load_config", return_value={
+                "backend": None, "unknownBackend": "files"}):
+            backend, error = backends_mod.open_backend("/repo")
+        self.assertIsNone(backend)
+        self.assertEqual(error["code"], "sp-backend-removed")
+        self.assertEqual(error["exit"], 2)
+        self.assertIn("no local store", error["message"])
+
+    def test_unknown_provider_refuses_without_falling_back_to_a_local_backend(self):
+        with mock.patch.object(backends_mod, "load_config", return_value={
+                "backend": None, "unknownProvider": "forge.example.test"}):
+            backend, error = backends_mod.open_backend("/repo")
+        self.assertIsNone(backend)
+        self.assertEqual(error["code"], "sp-provider-unknown")
+        self.assertEqual(error["exit"], 2)
+        self.assertNotIn("files", error["message"])
 
 
 if __name__ == "__main__":

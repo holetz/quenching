@@ -1,7 +1,0 @@
-{
-  "ok": true,
-  "backend": "files",
-  "root": "<WS>/.specs",
-  "specs": 3,
-  "findings": []
-}

@@ -21,6 +21,9 @@ from contextlib import redirect_stdout
 from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
+from quenching.specs.backends.memory import MemoryBackend
+from quenching.specs.commands import granular as granular_module
+from quenching.specs.commands import validate as validate_module
 from quenching.specs.commands.granular import cmd_section
 from quenching.specs.commands.output import Emitter
 from quenching.specs.parse.edit import split_section_stream
@@ -156,22 +159,32 @@ class _Args:
 
 
 class _Workspace(unittest.TestCase):
-    """A files-backend workspace holding ONE spec — the fixture the read and the write cases
-    share, so `cmd_section` is exercised the same way from either side."""
+    """An in-memory provider fixture holding ONE spec for both read and write cases."""
 
     spec_text = SPEC
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.root = os.path.join(self.tmp.name, ".specs")
-        self.file = os.path.join(self.root, "plans", "alpha.md")
-        os.makedirs(os.path.dirname(self.file))
+        self.root = self.tmp.name
+        self.backend = MemoryBackend()
+        self._open_granular = mock.patch.object(
+            granular_module, "open_backend", lambda _root: (self.backend, {}))
+        self._open_validate = mock.patch.object(
+            validate_module, "open_backend", lambda _root: (self.backend, {}))
+        self._open_granular.start()
+        self._open_validate.start()
+        self.addCleanup(self._open_granular.stop)
+        self.addCleanup(self._open_validate.stop)
         self.write_spec(self.spec_text)
 
     def write_spec(self, text):
-        with open(self.file, "w", encoding="utf-8") as f:
-            f.write(text)
+        if "alpha" in self.backend.docs:
+            info, error = self.backend.read_spec("alpha")
+            self.assertFalse(error, error)
+            self.backend.write_spec(info, text)
+        else:
+            self.backend.create_spec("plans", "alpha.md", text)
 
     def run_section(self, stdin=None, **kw):
         """`cmd_section` as the CLI calls it, returning (exit code, parsed payload).
@@ -207,9 +220,13 @@ class TheWritePath(_Workspace):
         rule, and it is the re-derivation between splices that keeps it from becoming one."""
         self.run_section(heading="Risks,Proposal", write=True,
                          stdin="## Risks\n\nB\n\n## Proposal\n\nA\n")
-        with open(self.file, encoding="utf-8") as f:
-            text = f.read()
+        text = self.read_spec_text()
         self.assertLess(text.index("## Proposal"), text.index("## Risks"))
+
+    def read_spec_text(self):
+        info, error = self.backend.read_spec("alpha")
+        self.assertFalse(error, error)
+        return info["text"]
 
     def test_the_singular_form_is_untouched(self):
         """A raw body under one heading writes what it always wrote, and the payload keeps

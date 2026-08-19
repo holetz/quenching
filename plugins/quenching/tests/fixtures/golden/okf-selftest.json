@@ -1,8 +1,0 @@
-[
-  {
-    "severity": "ERROR",
-    "path": "selftest",
-    "code": "no-bundle",
-    "message": "bundle root is not a directory"
-  }
-]
