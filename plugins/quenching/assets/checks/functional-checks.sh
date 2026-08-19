@@ -126,6 +126,31 @@ for line in open(sys.argv[2], encoding="utf-8", errors="replace"):
 ' "$1" "$2"
 }
 
+# Assert that observed paths came from the checkout under test. The forbidden half is the
+# verdict: a cache or marketplace path is always wrong. The expected-prefix half is diagnostic
+# as well as restrictive, because a canonicalized path needs both values beside the failure.
+anchored () {
+  local observed="$1"
+  local forbidden=""
+  local result=yes
+
+  forbidden="$(grep -nE '/plugins/(cache|marketplaces)/' <<<"$observed" || true)"
+  if [ -n "$forbidden" ]; then
+    printf 'FAIL anchor: observed path came from cache or marketplace\n'
+    printf '%s\n' "$forbidden"
+    result=no
+  fi
+
+  if ! grep -qF "$PLUGIN/" <<<"$observed"; then
+    printf 'FAIL anchor: observed path is outside the expected plugin checkout\n'
+    printf '  observed: %s\n' "$observed"
+    printf '  expected: %s/\n' "$PLUGIN"
+    result=no
+  fi
+
+  [ "$result" = yes ]
+}
+
 # Did the session act at all? Zero tool_use events of ANY name means the capture carries no
 # evidence — the process died, the stream was unreadable, or nothing ran. Every assertion here
 # must be gated on this, because the NEGATIVE halves ("read nothing under a skills/ tree") pass
