@@ -139,8 +139,8 @@ def resolve_one(specs: list[dict], slug: str,
     acted on a spec the human did not name is worse than one that asked.
 
     `titles` is `{slug: title}`, or a callable returning one. It is consulted ONLY after the
-    exact slug misses, so the common path never pays to build it — which is what lets the
-    `files` backend hand over a callable that opens every document."""
+    exact slug misses, so the common path never pays to build it. External backends provide
+    their title index directly, without a local file walk."""
     matches = [s for s in specs if s["slug"] == slug]
     if len(matches) > 1:
         return None, _ambiguous(slug, matches, "slug")
