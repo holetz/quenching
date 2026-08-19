@@ -35,6 +35,15 @@
 #   --only 3       spoken routing — OPT-IN, see below
 #   --only 1,2,3   all three
 #
+# TWO GUARDS, TWO ZERO-COST MODES. The static guard in --selfcheck counts every
+# non-commented `claude -p` in this file and requires --plugin-dir on each one;
+# the anchored guard checks the paths observed in captured tool_use events. The
+# --selfcheck mode runs only the source guard, while --selftest exercises the
+# observed-path guard against a synthetic capture, and neither starts a session.
+# The negative half of the observed-path guard is mandatory: rejecting cache and
+# marketplace paths remains correct even if Claude Code canonicalizes or copies
+# the plugin directory, while the positive $PLUGIN prefix stays diagnostic.
+#
 # CHECK 3 IS OPT-IN, AND `/quenching:components:command:eval` IS THE BETTER INSTRUMENT. Check 3 is five of the seven
 # sessions, the only NON-DETERMINISTIC one (recorded twice: same tree, opposite verdicts on
 # identical runs), and a strictly worse duplicate of `/quenching:components:command:eval` step 7 — which measures the
