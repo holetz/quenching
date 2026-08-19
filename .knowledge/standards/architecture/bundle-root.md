@@ -1,13 +1,13 @@
 ---
 type: standard
 title: The bundle root is the fixed `/.knowledge/` convention
-description: The OKF bundle of a target repo lives at the fixed `/.knowledge/` root and a files-backend specs workspace at the fixed `/.specs/` root — no configuration file names either, because an LLM executor runs command bodies literally and a root it must resolve from configuration is a root it can resolve wrong
-resource: /.knowledge/**, /.specs/**
+description: The OKF bundle of a target repo lives at the fixed `/.knowledge/` root — no configuration file names it, because an LLM executor runs command bodies literally and a root it must resolve from configuration is a root it can resolve wrong
+resource: /.knowledge/**
 tags: [architecture, bundle, okf, convention, config]
 timestamp: 2026-08-13
 audience: both
 authority: current
-source: docs-em-diretorio-customizado spec (task 1.4, 2026-08-06) — proved by the migration itself: the bundle and the workspace moved to the fixed roots and every shipped reader updated in the same branch
+source: docs-em-diretorio-customizado spec (task 1.4, 2026-08-06) — proved by the migration itself: the bundle moved to the fixed root and every shipped reader updated in the same branch; provider-owned specs have no repository root
 maintainer: quenching
 ---
 
@@ -16,14 +16,12 @@ maintainer: quenching
 The one layout fact every quenching-managed repo shares, and the one that stopped being
 configurable.
 
-## Two fixed roots, and no config that names them
+## One fixed root, and no config that names it
 
 - **The OKF bundle** lives at `/.knowledge/` — at the root of the target repository, beside
   `.claude/`.
-- **A files-backend specs workspace** lives at `/.specs/` — the plans and archive folders the
-  `files` backend manages.
 
-Both are **conventions, not settings**. Neither is named by `.claude/quenching.json`, which
+The bundle root is a **convention, not a setting**. It is not named by `.claude/quenching.json`, which
 recognises six keys and none of them is a path
 ([plugin-configuration.md](../workflows/plugin-configuration.md)); nor by the target's
 `.claude/hooks/hooks-config.json`, which carries only the checker's behaviour knobs. The
@@ -45,10 +43,9 @@ target's choice, so no target ever needs to point the plugin at it.
 
 ## What the fixed root makes possible
 
-- **The bundle-aggregate `resource:`.** `resource: /.knowledge/**, /.specs/**` covers the whole
-  bundle and the whole workspace in one glob — a string that only exists because the root is
-  fixed ([bundle-verification.md](../quality/bundle-verification.md) §The `resource` glob-set
-  format).
+- **The bundle-aggregate `resource:`.** `resource: /.knowledge/**` covers the whole bundle in one
+  glob — a string that only exists because the root is fixed
+  ([bundle-verification.md](../quality/bundle-verification.md) §The `resource` glob-set format).
 - **A checker with no root to load.** The checker validates the fixed root by construction; the
   key that used to say where the bundle lives is gone rather than relocated
   ([plugin-configuration.md](../workflows/plugin-configuration.md)).
@@ -59,10 +56,10 @@ target's choice, so no target ever needs to point the plugin at it.
 ## Changing a fixed root — one route only
 
 A fixed root is not immutable — it changed once already: the bundle root was `/.docs/` until
-`renomear-docs-para-knowledge` (2026-08-13) moved it to `/.knowledge/`. **The only way either
-fixed root above changes between plugin releases** is the procedure in
+`renomear-docs-para-knowledge` (2026-08-13) moved it to `/.knowledge/`. **The only way this
+fixed root changes between plugin releases** is the procedure in
 [root-migration.md](root-migration.md) — detected structurally, site by site, never gated on
-`okf_version`. Nothing else moves a root: not a config key (there is none to add), not a
+`okf_version`. Nothing else moves the root: not a config key (there is none to add), not a
 convention drifting in prose, not a target improvising its own path.
 
 ## Nothing else contradicts it
