@@ -1,570 +1,91 @@
-#!/usr/bin/env python3
-"""Historical golden bytes for the `--json` contract of four pre-refactor scripts, replayed
-against `cq` by `test_golden.Replay` to prove the replacement still reproduces them.
+"""Offline capture cases for the provider-derived specs contract.
 
-`main()` is retired — see its own body. `SPECS_PY`/`SKILLS_PY`/`SESSION_PY`/`OKF_PY` name the
-four scripts `plan/modularizar-specs-knowledge-components` (task 10.1) deleted, so there is
-nothing left for `Capture.run` to shell out to; every invocation returned an empty stdout
-(`python3: can't open file ...`, exit 2), which `main()` used to write as the golden and report
-as success regardless. That is not fixable by repointing `SCRIPTS` at `cq`: a golden captured
-from `cq` would compare `cq` against itself, which can never fail — defeating the reason this
-file exists.
-
-The four `capture_*` functions below are still live: `test_golden.Replay` imports and reuses
-them, pointed at `cq` instead of `SCRIPTS`, to compare against the frozen bytes and — one golden
-at a time, never in bulk — to refresh a byte that legitimately changed (`UNROUTED` in
-test_golden.py names the documented cases). Refreshing a golden this way means: run it through
-`Replay`, confirm the diff is exactly the change expected, and hand-edit that one file.
-
-Everything that varies between machines or runs goes through `normalize`, which the regression
-suite re-imports so both sides of a comparison are normalized by the same code.
+Each case uses a throwaway Git repository with a real origin URL. No provider CLI is invoked:
+configuration is read without opening a backend, while refusal cases prove that unknown and
+legacy local providers fail before a local store can appear.
 """
 from __future__ import annotations
 
-import datetime
 import json
-import os
 import pathlib
-import shutil
 import subprocess
 import sys
+import tempfile
 
 HERE = pathlib.Path(__file__).resolve().parent
 PLUGIN_ROOT = HERE.parent
-REPO_ROOT = PLUGIN_ROOT.parent.parent
-GOLDEN_DIR = HERE / "fixtures" / "golden"
+CQ = PLUGIN_ROOT / "assets" / "bin" / "cq"
+FIXTURE_DIR = HERE / "fixtures" / "golden"
 
-SPECS_PY = PLUGIN_ROOT / "assets" / "bin" / "specs.py"
-SKILLS_PY = PLUGIN_ROOT / "assets" / "bin" / "skills.py"
-SESSION_PY = PLUGIN_ROOT / "assets" / "bin" / "session.py"
-OKF_PY = PLUGIN_ROOT / "assets" / "hooks" / "okf-validate.py"
-
-SCRIPTS = {
-    "specs": SPECS_PY,
-    "skills": SKILLS_PY,
-    "session": SESSION_PY,
-    "okf": OKF_PY,
+CASES = {
+    "provider-github-config": {
+        "remote": "git@github.com:owner/repo.git",
+        "command": ["config", "--json"],
+        "fixture": "provider-github-config.json",
+    },
+    "provider-azure-config": {
+        "remote": "https://dev.azure.com/org/project/_git/repo",
+        "command": ["config", "--json"],
+        "fixture": "provider-azure-config.json",
+    },
+    "provider-unknown-refusal": {
+        "remote": "https://forge.example.test/org/repo.git",
+        "command": ["list", "--json"],
+        "fixture": "provider-unknown-refusal.json",
+    },
+    "legacy-files-refusal": {
+        "remote": "git@github.com:owner/repo.git",
+        "config": {"backend": "files"},
+        "command": ["list", "--json"],
+        "fixture": "legacy-files-refusal.json",
+    },
 }
 
-VERSION = (PLUGIN_ROOT / "VERSION").read_text(encoding="utf-8").strip()
-TODAY = datetime.date.today().isoformat()
 
-READ_TARGET = "assets/references/align/convergence.md"
-
-
-# --------------------------------------------------------------------------- #
-# normalization — re-imported by the regression suite
-# --------------------------------------------------------------------------- #
-def normalize(text: str, ws: str | pathlib.Path | None = None) -> str:
-    """Strip everything that is true of THIS run rather than of the contract.
-
-    `ws` is the throwaway workspace root, whose path carries a fresh mkdtemp
-    suffix on every run; the repo root differs per checkout. Both are replaced
-    realpath-first, because macOS resolves `/tmp` to `/private/tmp` and a tool
-    that calls `os.path.realpath` then prints a path the caller never passed.
-    """
-    subs: list[tuple[str, str]] = []
-    for raw, token in ((ws, "<WS>"), (REPO_ROOT, "<REPO>")):
-        if raw is None:
-            continue
-        path = str(raw)
-        subs.append((path, token))
-        subs.append((os.path.realpath(path), token))
-    for src, token in sorted(subs, key=lambda pair: -len(pair[0])):
-        text = text.replace(src, token)
-    text = text.replace(VERSION, "<VERSION>")
-    # Only TODAY, never every date: the fixture's own dates are fixed and part of
-    # the contract under test.
-    return text.replace(TODAY, "<TODAY>")
+def _git(cwd: pathlib.Path, *args: str) -> None:
+    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True)
 
 
-# --------------------------------------------------------------------------- #
-# fixture workspace
-# --------------------------------------------------------------------------- #
-QUENCHING_JSON = """{
-  "backend": "files"
-}
-"""
-
-ALPHA = """---
-slug: alpha-widget
-title: Alpha Widget
-date: 2026-01-05
-verification: per-task
-tags: [fixture, golden]
-assignee: fixture-owner
-start: 2026-01-06
-target: 2026-02-06
-priority: {level: 1, criticality: high, complexity: medium, date: 2026-01-05}
-refined: {mode: deep, date: 2026-01-06}
-approved: {date: 2026-01-07}
-branch: {base: develop, work: plan/alpha-widget}
----
-
-# Alpha Widget
-
-## Overview
-
-The widget front has two halves that drifted apart; this spec pulls them back onto one shape.
-
-## Problem
-
-The loader and the renderer each keep their own copy of the widget list, so a widget added to
-one is invisible to the other.
-
-## Proposal
-
-- One registry owns the widget list.
-- The loader and the renderer both read it.
-
-## Out of Scope
-
-- none — the boundary is the widget list, and nothing else was near it.
-
-## Impact
-
-### Standards this spec will write into /.knowledge/standards/
-
-- `/.knowledge/standards/architecture/widget-registry.md` — one registry owns the list
-
-### Standards at `authority: background` this spec may resolve
-
-- none
-
-### Product code this spec expects to touch
-
-- `src/widgets/loader.py` — reads the registry instead of its own list
-
-## Validation
-
-- `python3 -m unittest discover tests/widgets` passes.
-
-## Design
-
-- The registry is a module-level dict, built once at import — the two readers are in-process.
-
-## Alternatives Considered
-
-- A database table — rejected, the list is static and ships with the code.
-
-## Open Decisions
-
-- none — every question was settled while writing the proposal.
-
-## Risks
-
-- ACCEPTED — a third reader could appear and skip the registry; nothing enforces it yet.
-
-## Handoff
-
-The registry lives in `src/widgets/registry.py`. Both readers import it; neither builds a list.
-
-## Tasks
-
-### 1. Registry
-
-- [x] 1.1 Create the registry module
-      files: src/widgets/registry.py (new)
-      verify: python3 -m unittest tests.widgets.test_registry
-      subject: plan/alpha-widget: 1.1 Create the registry module
-- [ ] 1.2 Point the loader at the registry
-      files: src/widgets/loader.py
-      pattern: src/widgets/registry.py
-      verify: python3 -m unittest tests.widgets.test_loader
-- [ ] 1.3 Write the registry standard
-      files: /.knowledge/standards/architecture/widget-registry.md (new)
-      verify: python3 assets/hooks/okf-validate.py .knowledge
-
-### 2. Readers
-
-- [ ] 2.1 [P] Point the renderer at the registry
-      files: src/widgets/renderer.py
-      verify: python3 -m unittest tests.widgets.test_renderer
-- [ ] 2.2 [P] Point the exporter at the registry
-      files: src/widgets/exporter.py
-      verify: python3 -m unittest tests.widgets.test_exporter
-- [!] 2.3 Drop the loader's private list — blocked: the vendor SDK still imports it
-
-## Discoveries
-
-- the renderer caches the list for a whole request → promoted: widget-cache-invalidation
-- the exporter logs one line per widget → dismissed: noise, but harmless
-"""
-
-BETA = """---
-slug: beta-gizmo
-title: Beta Gizmo
-date: 2026-01-09
-verification: per-section
----
-
-# Beta Gizmo
-
-## Problem
-
-The gizmo endpoint answers with a 200 and an empty body when the upstream store is down, so
-every caller reads an outage as an empty result set.
-"""
-
-OUTCOME = """
-## Outcome
-
-Shipped: the registry is the one list, and both readers import it.
-"""
-
-LEGACY = """---
-slug: legacy-knob
-title: Legacy Knob
-date: 2025-11-02
-verification: end-of-plan
-outcome: done
-merge: {strategy: merge-commit, subject: "plan/legacy-knob: merge", pr: 41}
----
-
-# Legacy Knob
-
-## Problem
-
-The knob had two owners and no default.
-
-## Tasks
-
-### 1. Knob
-
-- [x] 1.1 Give the knob one owner and a default
-
-## Outcome
-
-Shipped: the knob has one owner, and its default is declared beside it.
-"""
-
-
-def build_workspace(dest: pathlib.Path) -> pathlib.Path:
-    """A self-contained `files`-backend workspace. Returns the workspace root.
-
-    The backend is `files` and never the `github` this repo declares: a capture
-    that reaches the network is neither reproducible nor offline-runnable.
-    """
-    (dest / ".claude").mkdir(parents=True)
-    (dest / ".claude" / "quenching.json").write_text(QUENCHING_JSON, encoding="utf-8")
-    plans = dest / ".specs" / "plans"
-    plans.mkdir(parents=True)
-    (plans / "alpha-widget.md").write_text(ALPHA, encoding="utf-8")
-    (plans / "beta-gizmo.md").write_text(BETA, encoding="utf-8")
-    archive = dest / ".specs" / "archive"
-    archive.mkdir(parents=True)
-    (archive / "legacy-knob.md").write_text(LEGACY, encoding="utf-8")
+def build_workspace(dest: pathlib.Path, remote: str, config: dict | None = None) -> pathlib.Path:
+    dest.mkdir(parents=True)
+    _git(dest, "init", "-q", "-b", "main")
+    _git(dest, "remote", "add", "origin", remote)
+    if config is not None:
+        (dest / ".claude").mkdir()
+        (dest / ".claude" / "quenching.json").write_text(
+            json.dumps(config) + "\n", encoding="utf-8")
     return dest
 
 
-def build_legacy_workspace(dest: pathlib.Path) -> pathlib.Path:
-    """The v2 layout `migrate` folds away: specs in `backlog/` and `ready/` instead
-    of `plans/`. Nothing else reaches that code path — against a current workspace
-    `migrate` refuses with `sp-nothing-to-migrate`."""
-    (dest / ".claude").mkdir(parents=True)
-    (dest / ".claude" / "quenching.json").write_text(QUENCHING_JSON, encoding="utf-8")
-    backlog = dest / ".specs" / "backlog"
-    backlog.mkdir(parents=True)
-    (backlog / "beta-gizmo.md").write_text(BETA, encoding="utf-8")
-    ready = dest / ".specs" / "ready"
-    ready.mkdir(parents=True)
-    (ready / "alpha-widget.md").write_text(ALPHA, encoding="utf-8")
-    return dest
+def normalize(text: str, workspace: pathlib.Path) -> str:
+    return text.replace(str(workspace), "<WS>")
 
 
-# --------------------------------------------------------------------------- #
-# capture
-# --------------------------------------------------------------------------- #
-class Capture:
-    def __init__(self, tmp: pathlib.Path) -> None:
-        self.tmp = tmp
-        self.entries: list[dict] = []
-        self.skipped: list[dict] = []
-
-    def workspace(self, tag: str, legacy: bool = False) -> pathlib.Path:
-        """A pristine workspace. Every WRITE case gets its own, so the goldens do
-        not depend on the order the cases run in."""
-        build = build_legacy_workspace if legacy else build_workspace
-        return build(self.tmp / f"ws-{tag}")
-
-    def env(self) -> dict:
-        env = dict(os.environ)
-        # okf-validate.py prefers this over the hook payload's own `cwd`, so leaving
-        # it set points the hook capture at whatever repo the caller is standing in.
-        env.pop("CLAUDE_PROJECT_DIR", None)
-        # The hook's dirty marker is written to the system tempdir, keyed by a digest
-        # of the project path; redirecting keeps that stamp inside the throwaway tree.
-        env["TMPDIR"] = str(self.tmp / "tmpdir")
-        return env
-
-    def run(self, name: str, script: str, argv: list[str], *, cwd: pathlib.Path,
-            ws: pathlib.Path | None = None, stdin: str | None = None,
-            ext: str = "json") -> None:
-        cmd = [sys.executable, str(SCRIPTS[script])] + argv
-        proc = subprocess.run(cmd, cwd=str(cwd), env=self.env(), input=stdin,
-                              capture_output=True, text=True)
-        stdout = normalize(proc.stdout, ws)
-        golden = f"{name}.{ext}"
-        (GOLDEN_DIR / golden).write_text(stdout, encoding="utf-8")
-        self.entries.append({
-            "golden": golden,
-            "script": str(SCRIPTS[script].relative_to(REPO_ROOT)),
-            "argv": [normalize(a, ws) for a in argv],
-            "cwd": normalize(str(cwd), ws),
-            "stdin": normalize(stdin, ws) if stdin is not None else None,
-            "exit": proc.returncode,
-            "stderr": normalize(proc.stderr, ws),
-        })
-
-    def skip(self, name: str, reason: str) -> None:
-        self.skipped.append({"id": name, "reason": reason})
+def capture_case(name: str, root: pathlib.Path) -> dict:
+    case = CASES[name]
+    workspace = build_workspace(root / name, case["remote"], case.get("config"))
+    proc = subprocess.run(
+        [sys.executable, str(CQ), "specs", "--root", str(workspace), *case["command"]],
+        cwd=str(PLUGIN_ROOT), capture_output=True, text=True)
+    return {
+        "stdout": normalize(proc.stdout, workspace),
+        "stderr": normalize(proc.stderr, workspace),
+        "exit": proc.returncode,
+        "fixture": case["fixture"],
+    }
 
 
-# --------------------------------------------------------------------------- #
-# the cases
-# --------------------------------------------------------------------------- #
-def capture_specs(cap: Capture) -> None:
-    ws = cap.workspace("read")
-    root = str(ws / ".specs")
-    plugin = PLUGIN_ROOT
-
-    def read(name: str, argv: list[str], ext: str = "json") -> None:
-        cap.run(f"specs-{name}", "specs", ["--root", root] + argv, cwd=plugin, ws=ws, ext=ext)
-
-    read("version", ["--version"], ext="txt")
-    read("list", ["list", "--json"])
-    read("status-alpha", ["status", "--spec", "alpha-widget", "--json"])
-    read("status-beta", ["status", "--spec", "beta-gizmo", "--json"])
-    read("show-map", ["show", "--spec", "alpha-widget", "--json"])
-    read("show-task", ["show", "--spec", "alpha-widget", "--task", "1.2", "--json"])
-    read("show-full", ["show", "--spec", "alpha-widget", "--full", "--json"])
-    read("show-missing", ["show", "--spec", "no-such-spec", "--json"])
-    read("section-one", ["section", "alpha-widget", "## Problem", "--json"])
-    read("section-many", ["section", "alpha-widget", "## Problem,## Risks", "--json"])
-    read("section-moment", ["section", "alpha-widget", "--moment", "build", "--json"])
-    read("verification-read", ["verification", "alpha-widget", "--json"])
-    read("verification-bad", ["verification", "alpha-widget", "whenever", "--json"])
-    read("tags-read", ["tags", "alpha-widget", "--json"])
-    read("assignee-read", ["assignee", "alpha-widget", "--json"])
-    read("start-read", ["start", "alpha-widget", "--json"])
-    read("target-read", ["target", "alpha-widget", "--json"])
-    read("record-read", ["record", "alpha-widget", "priority", "--json"])
-    read("record-unset", ["record", "beta-gizmo", "approved", "--json"])
-    read("record-unknown", ["record", "alpha-widget", "nonesuch", "--json"])
-    read("next-spec", ["next", "--spec", "alpha-widget", "--json"])
-    read("next-front", ["next", "--front", "--json"])
-    read("parallel", ["parallel", "--spec", "alpha-widget", "--json"])
-    read("validate-all", ["validate", "--json"])
-    read("validate-one", ["validate", "--spec", "beta-gizmo", "--json"])
-    read("config", ["config", "--json"])
-    read("doctor", ["doctor", "--json"])
-    read("selftest", ["selftest", "--json"])
-    read("migrate-noop", ["migrate", "--dry-run", "--json"])
-    read("promote-gate-unmet", ["promote", "alpha-widget", "--dry-run", "--json"])
-
-    def write(name: str, argv: list[str], stdin: str | None = None,
-              legacy: bool = False, outcome_for: str | None = None) -> None:
-        w = cap.workspace(name, legacy=legacy)
-        if outcome_for:
-            spec = w / ".specs" / "plans" / f"{outcome_for}.md"
-            spec.write_text(spec.read_text(encoding="utf-8") + OUTCOME, encoding="utf-8")
-        cap.run(f"specs-{name}", "specs",
-                ["--root", str(w / ".specs")] + argv, cwd=plugin, ws=w, stdin=stdin)
-
-    write("new", ["new", "gamma-lever", "--title", "Gamma Lever",
-                  "--verification", "end-of-plan", "--json"])
-    write("section-write", ["section", "beta-gizmo", "## Risks", "--write", "--json"],
-          stdin="- the upstream store has no health endpoint; mitigated by a timeout.\n")
-    write("task-check", ["task", "--spec", "alpha-widget", "--check", "1.2",
-                         "--subject", "plan/alpha-widget: 1.2 Point the loader at the registry",
-                         "--json"])
-    write("task-uncheck", ["task", "--spec", "alpha-widget", "--uncheck", "1.1", "--json"])
-    write("task-block", ["task", "--spec", "alpha-widget", "--block", "2.1",
-                         "--reason", "the renderer is mid-rewrite on another branch", "--json"])
-    write("record-set", ["record", "alpha-widget", "reviewed", "--set", "date=2026-02-01",
-                         "--json"])
-    write("verification-set", ["verification", "beta-gizmo", "end-of-plan", "--json"])
-    write("tags-set", ["tags", "beta-gizmo", "fixture,golden,second", "--json"])
-    write("assignee-set", ["assignee", "beta-gizmo", "second-owner", "--json"])
-    write("start-set", ["start", "beta-gizmo", "2026-03-01", "--json"])
-    write("target-set", ["target", "beta-gizmo", "2026-04-01", "--json"])
-    write("discover", ["discover", "beta-gizmo",
-                       "the upstream store answers 200 on a cold cache", "--json"])
-    write("promote-abandoned", ["promote", "beta-gizmo", "--outcome", "abandoned", "--json"],
-          outcome_for="beta-gizmo")
-    write("promote-forced", ["promote", "alpha-widget", "--outcome", "done", "--force", "--json"],
-          outcome_for="alpha-widget")
-    write("migrate-dry-run", ["migrate", "--dry-run", "--json"], legacy=True)
-    write("migrate", ["migrate", "--json"], legacy=True)
-
-    # `--root` naming the CONTAINER of a phased `.specs/`, not the workspace itself —
-    # `sp-root-too-high`. One workspace serves the read-only cases below (`list`/`validate`/
-    # `status`/`doctor`, over the SAME fixture the control pair reads correctly); `new` gets its
-    # own so a bug that fails to refuse cannot leave a stray `plans/` behind for the others to
-    # read.
-    too_high = cap.workspace("root-too-high")
-    container = str(too_high)
-    correct = str(too_high / ".specs")
-
-    def over_root(name: str, root: str, argv: list[str]) -> None:
-        cap.run(f"specs-root-too-high-{name}", "specs", ["--root", root] + argv,
-                cwd=plugin, ws=too_high)
-
-    over_root("list", container, ["list", "--json"])
-    over_root("validate", container, ["validate", "--json"])
-    over_root("status", container, ["status", "--spec", "alpha-widget", "--json"])
-    over_root("doctor", container, ["doctor", "--json"])
-    # Control — same fixture, `--root` pointed at `.specs/` itself: unaffected, exactly as
-    # before this predicate existed.
-    over_root("control-list", correct, ["list", "--json"])
-    over_root("control-validate", correct, ["validate", "--json"])
-
-    new_ws = cap.workspace("root-too-high-new")
-    cap.run("specs-root-too-high-new", "specs",
-            ["--root", str(new_ws), "new", "some-spec", "--json"], cwd=plugin, ws=new_ws)
-
-    exp = cap.workspace("export")
-    cap.run("specs-export", "specs",
-            ["--root", str(exp / ".specs"), "export", "--all",
-             "--out", str(exp / "export"), "--json"],
-            cwd=plugin, ws=exp)
-
-    cap.skip("specs-release",
-             "`release` has no read-only or dry-run mode: it rewrites the seven "
-             "version-carrying artifacts and creates a git tag. Running it to capture a "
-             "golden would bump this repo's own version.")
+def capture_all() -> list[dict]:
+    with tempfile.TemporaryDirectory(prefix="quenching-provider-capture-") as raw:
+        root = pathlib.Path(raw)
+        return [capture_case(name, root) for name in CASES]
 
 
-def capture_skills(cap: Capture) -> None:
-    root = str(PLUGIN_ROOT)
-
-    def run(name: str, argv: list[str], ext: str = "json",
-            ws: pathlib.Path | None = None) -> None:
-        # cwd is the plugin root because `read` resolves its path argument against the
-        # process cwd, not against --root.
-        cap.run(f"skills-{name}", "skills", ["--root", root] + argv,
-                cwd=PLUGIN_ROOT, ws=ws, ext=ext)
-
-    run("version", ["--version"], ext="txt")
-    run("lint", ["lint", "--json"])
-    run("lint-one", ["lint", "commands/knowledge/add.md", "--json"])
-    run("doctor", ["doctor", "--json"])
-    run("selftest", ["selftest", "--json"])
-    run("drift", ["drift", "--json"])
-    run("read-index", ["read", READ_TARGET, "--json"])
-    run("read-section", ["read", READ_TARGET, "--sections", "The convergence contract", "--json"])
-    run("read-rules-only", ["read", READ_TARGET, "--sections", "The convergence contract",
-                            "--rules-only", "--json"])
-    run("read-missing", ["read", READ_TARGET, "--sections", "cycle-authorization", "--json"])
-
-    # `registry reindex` REWRITES the doc it is pointed at, so it is aimed at a copy
-    # of the shipped template rather than at the repo's own listing.
-    reg_dir = cap.tmp / "ws-registry"
-    reg_dir.mkdir(parents=True)
-    reg = reg_dir / "automation.md"
-    shutil.copyfile(PLUGIN_ROOT / "assets" / "templates" / "automation" / "registry.md", reg)
-    run("registry-reindex", ["registry", "reindex", "--registry", str(reg), "--json"],
-        ws=reg_dir)
-
-
-def capture_session(cap: Capture) -> None:
-    """`list` and `digest` need a transcript; the only one that ships is the
-    `FIXTURE` constant `selftest` materialized into a tempfile. Task 10.1 removed the
-    script this used to import that constant from; `FIXTURE` migrated verbatim to
-    `test_session.py` under task 6.3 (its docstring says so), so this reads it from
-    there instead — the same records, a different, still-live home."""
-    fixture = __import__("test_session").FIXTURE
-
-    tdir = cap.tmp / "ws-session"
-    tdir.mkdir(parents=True)
-    transcript = tdir / "fixture.jsonl"
-    transcript.write_text("\n".join(json.dumps(r) for r in fixture) + "\n",
-                          encoding="utf-8")
-
-    def run(name: str, argv: list[str], ext: str = "json") -> None:
-        cap.run(f"session-{name}", "session", argv, cwd=REPO_ROOT, ws=tdir, ext=ext)
-
-    run("version", ["--version"], ext="txt")
-    run("selftest", ["selftest", "--json"])
-    run("list", ["list", str(transcript), "--json"])
-    run("digest", ["digest", str(transcript), "--json"])
-    run("digest-one", ["digest", str(transcript), "--command", "demo:conduct", "--json"])
-
-
-def capture_okf(cap: Capture) -> None:
-    """The embedded skeleton is validated through a COPY outside git.
-
-    CLI mode is the one mode that shells out to `git log` per doc to age it, so
-    validating the skeleton in place would emit `stale-doc` warnings that move with
-    this repo's commit history. The copy carries no git, so the scan is the
-    structural verdict alone — which is the contract these goldens exist to freeze.
-
-    The copy keeps the skeleton's own layout, `<project>/.knowledge/`, matching what
-    `standards/architecture/bundle-root.md` fixes for every target repo: a doc's
-    `resource` globs resolve against the bundle's parent, so a copy under any other
-    name would turn every one of them into a `resource-unresolved` warning the
-    shipped skeleton does not have (`renomear-docs-para-knowledge`, task 6.1,
-    2026-08-13 — this copy used to sit at `<project>/docs/` while the skeleton
-    declared `/.docs/`, a mismatch `okf-validate-skeleton`/`-text`/`-findings`
-    carried as UNROUTED entries until this fix).
-    """
-    proj = cap.tmp / "ws-okf"
-    proj.mkdir(parents=True)
-    bundle = proj / ".knowledge"
-    shutil.copytree(PLUGIN_ROOT / "assets" / "knowledge", bundle)
-
-    cap.run("okf-version", "okf", ["--version"], cwd=proj, ws=proj, ext="txt")
-    cap.run("okf-selftest", "okf", ["selftest", "--json"], cwd=proj, ws=proj)
-    cap.run("okf-validate-skeleton", "okf", [str(bundle), "--json"], cwd=proj, ws=proj)
-    cap.run("okf-validate-skeleton-text", "okf", [str(bundle)], cwd=proj, ws=proj, ext="txt")
-
-    bad_body = "# Golden Fixture Bad\n\nA concept doc carrying no frontmatter at all.\n"
-    (bundle / "concepts" / "golden-fixture-bad.md").write_text(bad_body, encoding="utf-8")
-    _stale_the_generated_zone(bundle)
-    cap.run("okf-validate-findings", "okf", [str(bundle), "--json"], cwd=proj, ws=proj)
-
-
-def _stale_the_generated_zone(bundle: pathlib.Path) -> None:
-    """Make `standards/index.md`'s GENERATED zone disagree with disk, in both modes at once.
-
-    The skeleton is conformant by construction, so `okf-validate-findings` would never reach
-    `generated-listing-missing`/`-drift` without this — the golden would freeze a contract the
-    capture never exercised (`validar-a-zona-generated-contra-o-disco`, `## Risks`). Each edit
-    reproduces one measured mode, and neither touches the zone itself, because the zone going
-    unregenerated IS the failure:
-
-    - a doc lands on disk and is cited by its subject index — so `index-orphan` never sees it,
-      exactly as `architecture/bundle-root.md` was never seen;
-    - a doc's own `description:` is edited, leaving the row that quotes it behind.
-
-    Runs AFTER the `okf-validate-skeleton` captures, which freeze the clean bundle.
-    """
-    subject = bundle / "standards" / "agents"
-    (subject / "conduct.md").write_text(
-        "---\ntype: standard\ntitle: Conduct\n"
-        "description: A doc that landed after the zone was last rebuilt\n"
-        "resource: .knowledge/glossary.md\ntimestamp: 2026-08-13\n---\n\n# Conduct\n",
-        encoding="utf-8")
-    index = subject / "index.md"
-    index.write_text(index.read_text(encoding="utf-8")
-                     + "- [conduct.md](conduct.md) — cited here, never listed in the zone (present)\n",
-                     encoding="utf-8")
-    doc = subject / "communication.md"
-    doc.write_text(doc.read_text(encoding="utf-8").replace(
-        "description: The language a repo declares",
-        "description: Edited after the zone was rebuilt — the language a repo declares", 1),
-        encoding="utf-8")
-
-
-# --------------------------------------------------------------------------- #
-# main
-# --------------------------------------------------------------------------- #
 def main() -> int:
-    """Retired. Used to delete every golden and recapture from the four pre-refactor scripts;
-    those scripts no longer exist (see the module docstring), and repointing this at `cq`
-    would make every golden capture `cq`'s own current output — a comparison that can never
-    catch a regression. Refresh one golden at a time instead, through `test_golden.Replay`."""
-    raise RuntimeError(
-        "capture_golden.main() is retired — see its docstring. Refresh one golden at a time "
-        "through test_golden.Replay, never in bulk through this function."
-    )
+    for result in capture_all():
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

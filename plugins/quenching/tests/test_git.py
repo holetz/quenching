@@ -87,8 +87,8 @@ class Base(RepoCase):
              "refs/remotes/origin/develop")
         self.assertEqual(_origin_head_branch(self.repo), "develop")
 
-    def test_is_host_default_is_false_for_the_files_backend(self):
-        self.assertFalse(_is_host_default(self.repo, "files", "main"))
+    def test_is_host_default_is_false_for_an_unknown_backend(self):
+        self.assertFalse(_is_host_default(self.repo, "unknown-provider", "main"))
 
     def test_is_host_default_is_false_when_the_host_cli_cannot_answer(self):
         # no GitHub remote in this throwaway repo — a missing or refusing host CLI reads as

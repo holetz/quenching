@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "code": "sp-provider-unknown",
+  "provider": "forge.example.test",
+  "message": "repository provider 'forge.example.test' is not recognized; supported providers are GitHub and Azure DevOps — no spec was read or written"
+}

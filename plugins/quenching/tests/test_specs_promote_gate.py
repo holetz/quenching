@@ -20,14 +20,10 @@ import argparse
 import contextlib
 import io
 import json
-import os
 import tempfile
 import unittest
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
-from quenching.common.io import write_text
-from quenching.specs.backends.base import BackendRefusal
-from quenching.specs.backends.files import FilesBackend
 from quenching.specs.backends.memory import MemoryBackend
 from quenching.specs.commands import promote as promote_module
 from quenching.specs.commands.output import Emitter
@@ -108,63 +104,18 @@ class ArchiveGateAgreement(unittest.TestCase):
         self.assertFalse(_promote_would_accept(info))
 
 
-class DestinationOccupied(unittest.TestCase):
-    """Archiving onto a destination that is already taken refuses, and moves nothing.
-
-    THE GUARD BELONGS TO THE BACKEND, WHICH IS WHY THIS TEST CALLS ONE. `cmd_promote` used to
-    join the DECLARED root with the destination phase and call `os.path.exists` on it — a
-    check that always passes under `github` or `azure-boards`, where the path never exists,
-    and that measures the wrong directory under `files` itself whenever the specs worktree is
-    in use. `FilesBackend` builds its destination from the resolved root, so it is the one
-    component whose answer is true.
-
-    A real directory and not a fake: the behaviour under test is `os.rename` overwriting an
-    existing file silently, and nothing but a filesystem exhibits it."""
-
-    def test_moving_onto_an_occupied_destination_refuses_and_leaves_both_files(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = os.path.join(tmp, ".specs")
-            for phase in ("plans", "archive"):
-                os.makedirs(os.path.join(root, phase))
-            src = os.path.join(root, "plans", "gate-fixture.md")
-            occupied = os.path.join(root, "archive", "gate-fixture.md")
-            write_text(src, _document("- [x] 1.1 Done\n"))
-            write_text(occupied, "the spec that got there first\n")
-
-            backend = FilesBackend(root)
-            info = backend.list_specs("plans")[0]
-            with self.assertRaises(BackendRefusal) as caught:
-                backend.move_spec(info, "archive")
-
-            self.assertEqual(caught.exception.err["code"], "sp-dest-exists")
-            self.assertEqual(caught.exception.err["exit"], 2)
-            self.assertTrue(os.path.exists(src),
-                            "the source moved despite the refusal")
-            with open(occupied, encoding="utf-8") as fh:
-                self.assertEqual(fh.read(), "the spec that got there first\n",
-                                 "the destination was overwritten")
-
-
 class TheSharedVerbAsksNoFilesystemQuestion(unittest.TestCase):
-    """Under a backend that is not `files`, `promote` no longer refuses on a local path.
+    """An external-style backend makes `promote` independent of any local path.
 
-    THE OTHER HALF OF `DestinationOccupied`, and the one that makes moving the guard worth
-    doing. The old check's wrongness is reproducible offline: a stale `archive/<file>.md` left
-    behind in the DECLARED root refused a promote whose document lives in a tracker and never
-    went near that directory. Here the document lives in `memory`, the stale file exists, and
-    the promote has to go through.
+    The shared verb must ask the backend to move the document and never inspect a local phase
+    tree. The document lives in `memory`, so the proof remains offline and provider-neutral.
 
     `open_backend` is replaced rather than configured: opening the real external backend would
     need a `gh` binary and a repository, and the property under test belongs to the shared
     verb, not to any transport."""
 
-    def test_a_stale_file_in_the_declared_root_no_longer_refuses_an_external_promote(self):
+    def test_an_external_promote_does_not_depend_on_a_local_root(self):
         with tempfile.TemporaryDirectory() as tmp:
-            root = os.path.join(tmp, ".specs")
-            os.makedirs(os.path.join(root, "archive"))
-            write_text(os.path.join(root, "archive", "gate-fixture.md"),
-                       "the stale local copy the declared root still holds\n")
-
             backend = MemoryBackend()
             backend.create_spec("plans", "gate-fixture.md", _document("- [x] 1.1 Done\n"))
             self.addCleanup(setattr, promote_module, "open_backend",
@@ -175,7 +126,7 @@ class TheSharedVerbAsksNoFilesystemQuestion(unittest.TestCase):
             args = argparse.Namespace(json=True, spec="gate-fixture", to=None,
                                       outcome="done", force=False, dry_run=False)
             with contextlib.redirect_stdout(buf):
-                code = promote_module.cmd_promote(args, root, Emitter())
+                code = promote_module.cmd_promote(args, tmp, Emitter())
             payload = json.loads(buf.getvalue())
 
             self.assertEqual(code, 0, payload)
