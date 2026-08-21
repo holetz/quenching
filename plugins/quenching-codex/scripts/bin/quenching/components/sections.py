@@ -2,7 +2,7 @@
 
 Moved verbatim out of the pre-refactor components script.
 
-`cq specs section` reads a SPEC, whose fourteen headings are a validated contract. A reference or
+`cq specs section` reads a SPEC, whose thirteen headings are a validated contract. A reference or
 a standard is free markdown, so the two cannot share an implementation — but they must not
 disagree about what a section IS. Per `/.knowledge/standards/code/canonical-set-parsing.md`, what is
 shared is the RULE, proved by both tools against the same canonical case list.

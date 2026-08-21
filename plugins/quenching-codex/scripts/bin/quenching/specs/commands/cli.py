@@ -115,7 +115,7 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--fold", metavar="STRAY",
                     help="close an sp-stray-heading: demote `## <STRAY>` to `### <STRAY>` so "
                          "it folds into the canonical section that precedes it, text "
-                         "preserved. The ONE path that admits a heading outside the fourteen "
+                         "preserved. The ONE path that admits a heading outside the thirteen "
                          "— every other way of naming one still exits 2 — and it takes no "
                          "heading, --moment, --write or --scope beside it")
 

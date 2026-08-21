@@ -99,13 +99,6 @@ The edit lands per **bank**, not per pass. A pass that crosses two boundaries pr
 and the stage between them is real. That boundary is also the width of the exposure: an abandoned
 pass can leave a spec half-written between two banks, never between two sections of one bank.
 
-Every bank's consolidated edit also refreshes `## Overview` to match whatever the bank just
-changed — it is authored **last** within that one edit, after every other section has settled,
-because it can only be correct once they have. It still sits first in the file; only its authoring
-order within the pass is last. Present the refreshed Overview as its own labelled before → after
-block, separate from the list of other section diffs, inside the same one edit the bank already
-produces rather than as a second write.
-
 <!-- rationale -->
 - Later answers routinely revise earlier ones. Writing answer 2 before hearing answer 6 means
   editing the same paragraph twice, and the intermediate state is never reviewed by anyone.
@@ -169,8 +162,7 @@ A good ASCII diagram — current flow, proposed flow, the state machine — is w
 questions and often replaces one.
 
 **Lands in** `## Proposal` (the shape), `## Out of Scope` (the boundary), `## Design` /
-`## Alternatives Considered` when the shapes table produced a real comparison, and `## Overview` —
-this is the bank that first writes it.
+`## Alternatives Considered` when the shapes table produced a real comparison.
 
 **Stop when** `## Proposal` states what will be true afterwards that is not true now, and the human
 would recognise the spec as describing their idea. Not when the gate is met — that is two banks

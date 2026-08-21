@@ -75,7 +75,7 @@ class TheCollapsedCapture(_Workspace):
     def test_one_call_writes_frontmatter_summary_tags_priority_and_n_sections(self):
         code, obj = self.run_new(
             summary="Uma linha.", tags="alpha,beta", complexity="high",
-            stdin="## Problem\n\nO problema.\n\n## Overview\n\nA visao geral.\n")
+            stdin="## Problem\n\nO problema.\n")
         self.assertEqual(code, 0, obj)
         self.assertEqual(obj["ok"], True)
 
@@ -85,7 +85,7 @@ class TheCollapsedCapture(_Workspace):
         self.assertEqual(fm.get("tags"), ["alpha", "beta"])
         self.assertEqual(fm.get("priority"), {"complexity": "high"})
         self.assertEqual(info["sections"]["Problem"]["body"].strip(), "O problema.")
-        self.assertEqual(info["sections"]["Overview"]["body"].strip(), "A visao geral.")
+        self.assertNotIn("Overview", info["sections"])
 
     def test_the_subject_s_fixed_tags_are_folded_into_an_explicit_tags_list(self):
         # No declared `subjects` in this bare workspace, so nothing to fold in here beyond

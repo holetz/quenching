@@ -113,7 +113,7 @@ def cmd_new(args, root: str, out: Emitter) -> int:
                      {"ok": False, "code": "sp-stray-heading", "source": "stream",
                       "unresolvedBlocks": unresolved, "canonical": canonical_headings(schema),
                       "message": "the stream carries a `## ` heading that is not one of the "
-                                 "fourteen canonical ones, at block(s) "
+                                 "thirteen canonical ones, at block(s) "
                                  f"{', '.join(str(i) for i in unresolved)}"},
                      f"error: non-canonical `## ` heading at stream block(s) "
                      f"{', '.join(str(i) for i in unresolved)}")

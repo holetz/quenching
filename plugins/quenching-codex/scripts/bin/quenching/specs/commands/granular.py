@@ -61,7 +61,7 @@ def _scoped_handoff(info: dict, scope: str) -> str:
 
 
 def _fold_stray(args, backend, info: dict, root: str, out: Emitter) -> int:
-    """`--fold` — the ONE path on this surface that admits a heading outside the fourteen.
+    """`--fold` — the ONE path on this surface that admits a heading outside the thirteen.
 
     `validate` emits `sp-stray-heading` with a remedy ("fold it into a canonical one") that
     nothing could apply: `cmd_section` resolves every requested heading against the canonical
@@ -92,7 +92,7 @@ def _fold_stray(args, backend, info: dict, root: str, out: Emitter) -> int:
     if hit is None:
         canonical = _match_heading(args.fold)
         if canonical:
-            msg = (f"`## {canonical}` is one of the fourteen canonical headings — --fold "
+            msg = (f"`## {canonical}` is one of the thirteen canonical headings — --fold "
                    "closes a stray, and a canonical section is never one")
             code = "sp-fold-not-stray"
         else:
@@ -177,7 +177,7 @@ def cmd_section(args, root: str, out: Emitter) -> int:
         out.emit(args.json,
                  {"ok": False, "code": "sp-stray-heading", "heading": stray[0],
                   "stray": stray, "canonical": canonical_headings(),
-                  "message": f"not one of the fourteen canonical headings: {', '.join(stray)}"},
+                  "message": f"not one of the thirteen canonical headings: {', '.join(stray)}"},
                  f"error: not a canonical heading: {', '.join(stray)}")
         return 2
     scope = getattr(args, "scope", None)
@@ -225,7 +225,7 @@ def cmd_section(args, root: str, out: Emitter) -> int:
                      {"ok": False, "code": "sp-stray-heading", "source": "stream",
                       "unresolvedBlocks": unresolved, "canonical": canonical_headings(),
                       "message": "the stream carries a `## ` heading that is not one of the "
-                                 "fourteen canonical ones, at block(s) "
+                                 "thirteen canonical ones, at block(s) "
                                  f"{', '.join(str(i) for i in unresolved)}"},
                      f"error: non-canonical `## ` heading at stream block(s) "
                      f"{', '.join(str(i) for i in unresolved)}")
@@ -293,7 +293,7 @@ def _task_view(t: dict) -> dict:
 def _show_index(info: dict) -> dict:
     """The MAP of one spec — which sections exist, how big each is, which task ids there are.
 
-    Bounded by the fourteen headings and the task count no matter how long the document is,
+    Bounded by the thirteen headings and the task count no matter how long the document is,
     which is what makes it affordable as the default. It also makes the NEXT call exact: a
     caller that knows the heading spellings and the task ids never has to read the document
     to find out what it may ask for."""
@@ -347,7 +347,7 @@ def cmd_show(args, root: str, out: Emitter) -> int:
 
     THE COST THIS ADDRESSES IS THE AGENT'S CONTEXT, NOT I/O. A backend may well have fetched
     the entire document to answer `--task 3.1`, and that is fine — reading a file twice is
-    free. What is not free is an executor handed fourteen sections in order to edit one: it
+    free. What is not free is an executor handed thirteen sections in order to edit one: it
     carries the other thirteen through every remaining turn of its conversation and pays for
     them again on each. So the DEFAULT IS THE INDEX AND NEVER THE DOCUMENT, and `--full`
     exists precisely so that the whole document has to be typed on purpose.

@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Spec file contract
-description: The one-file spec, its fourteen canonical sections, the phase-scoped explicit-none rule, the parsed Impact sub-heading, the duplicated template and the three-copy record vocabulary, and how to read a v1 plan in /.specs/archive/
+description: The one-file spec, its thirteen canonical sections, the phase-scoped explicit-none rule, the parsed Impact sub-heading, the duplicated template and the three-copy record vocabulary, and how to read a v1 plan in /.specs/archive/
 resource: plugins/quenching/assets/specs/templates/spec.md, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/quenching/specs/schema.py, plugins/quenching/commands/specs/**
 tags: [workflows, specs, sections, gates, validation]
-timestamp: 2026-08-11
+timestamp: 2026-08-19
 audience: both
 authority: current
-source: specs-front-v2 plan (sections 1-2); lifecycle claims superseded by the specs-flow-consolidation plan; the `## Overview` section added by the add-eli5-section-to-specs spec; the `moment` axis, the `§`addressed `## Impact` bullet and the schema entry in the three-file lockstep by the narrow-the-execute-preamble spec; `date` moved out of the basename, `verification` became optional and the slug's language was named by evaluate-spec-creation-flow (task 5.5); both duplicated constants shown to be selftest-only once nothing installs the tool (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec); §What `## Tasks` does NOT carry added by the obrigacoes-de-merge-nao-nascem-como-task spec (task 1.1), which moved the merge-obligation boundary from the consuming side alone to the side that authors the list
+source: specs-front-v2 plan (sections 1-2); lifecycle claims superseded by the specs-flow-consolidation plan; the `## Overview` section was retired from the active contract after the flow review; the `moment` axis, the `§`addressed `## Impact` bullet and the schema entry in the three-file lockstep by the narrow-the-execute-preamble spec; `date` moved out of the basename, `verification` became optional and the slug's language was named by evaluate-spec-creation-flow (task 5.5); both duplicated constants shown to be selftest-only once nothing installs the tool (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec); §What `## Tasks` does NOT carry added by the obrigacoes-de-merge-nao-nascem-como-task spec (task 1.1), which moved the merge-obligation boundary from the consuming side alone to the side that authors the list
 maintainer: quenching
 ---
 
@@ -87,24 +87,23 @@ comes out `cria-o`.
 mirror inside the file is worth its keep, and `validate` compares it to the basename. A merely
 derived fact earns no such mirror.
 
-## Fourteen canonical sections
+## Thirteen canonical sections
 
 | # | Heading | Moment |
 | --- | --- | --- |
-| 1 | `## Overview` | `decision` |
-| 2 | `## Problem` | `decision` |
-| 3 | `## Proposal` | `build` |
-| 4 | `## Out of Scope` | `build` |
-| 5 | `## Impact` | `build` |
-| 6 | `## Validation` | `close` |
-| 7 | `## Design` | `build` |
-| 8 | `## Alternatives Considered` | `decision` |
-| 9 | `## Open Decisions` | `decision` |
-| 10 | `## Risks` | `decision` |
-| 11 | `## Handoff` | `build` |
-| 12 | `## Tasks` | `build` |
-| 13 | `## Discoveries` | — (no moment; see below) |
-| 14 | `## Outcome` | `close` |
+| 1 | `## Problem` | `decision` |
+| 2 | `## Proposal` | `build` |
+| 3 | `## Out of Scope` | `build` |
+| 4 | `## Impact` | `build` |
+| 5 | `## Validation` | `close` |
+| 6 | `## Design` | `build` |
+| 7 | `## Alternatives Considered` | `decision` |
+| 8 | `## Open Decisions` | `decision` |
+| 9 | `## Risks` | `decision` |
+| 10 | `## Handoff` | `build` |
+| 11 | `## Tasks` | `build` |
+| 12 | `## Discoveries` | — (no moment; see below) |
+| 13 | `## Outcome` | `close` |
 
 **Headings are a parsed contract** — canonical English, exactly as written. A heading outside the
 set is a stray and `validate` flags it. Which language a spec's body is written in belongs to
@@ -124,9 +123,8 @@ Two are load-bearing for machinery, not only for thinking:
 - **`## Impact`** is the one machine-parsed declaration (below). Removing the heading disables a
   check without a line of code changing.
 
-`## Overview` is warn-only, like `## Handoff` — never one of the ten sections the `ready` gate
-requires. It sits first, ahead of `## Problem`, but is authored **last**: `/quenching:specs:develop` writes
-it once every other section has settled, because connecting them is only possible after they exist.
+`## Handoff` is warn-only — never one of the ten sections the `ready` gate requires. It is refreshed
+after each committed task so the executor's context stays current.
 
 ## The explicit-none rule is PHASE-SCOPED
 
@@ -137,7 +135,7 @@ once **its own gate** is reached. Two of the four gates move a file; two are com
 | --- | --- | --- |
 | `new` (capture) | entry to `plans/` | `## Problem` |
 | the `ready` stage | derived, refuses nothing | the nine definition sections (`## Problem` … `## Risks`) **and `## Tasks`** |
-| the `ready` stage (warning only) | derived | `## Overview` non-empty, `## Handoff` non-empty |
+| the `ready` stage (warning only) | derived | `## Handoff` non-empty |
 | `promote → archive/` | entry to `archive/` | `## Outcome` |
 
 Three rules decide whether a section counts as filled:
@@ -149,7 +147,7 @@ Three rules decide whether a section counts as filled:
 3. **An absent heading before its gate is legal** — a *not-yet*, not an omission.
 
 **Why scoped and not absolute.** Applied absolutely the rule would kill the derived stage: since an
-explicit none counts as filled, a freshly captured spec carrying fourteen `- none` sections would
+explicit none counts as filled, a freshly captured spec carrying thirteen `- none` sections would
 derive as `designed` and pass every gate without anyone having thought anything. Scoping is the
 version where both rules survive, and it is why capture stamps `## Problem` alone.
 
@@ -280,7 +278,7 @@ The `audience` → `moment` rename is exactly this shape: `sections[].moment` in
 `schema.json`, plus the per-section `MOMENT:` comment token in the template — three files, one
 edit, or the constant reports a vocabulary the JSON and the template have already left behind.
 
-The template holds all fourteen headings with their guidance; `new` stamps only the **capture
+The template holds all thirteen headings with their guidance; `new` stamps only the **capture
 form** (everything up to the second `## ` heading), and `section --write` pulls one heading's
 guidance when creating it. One source, two slices.
 

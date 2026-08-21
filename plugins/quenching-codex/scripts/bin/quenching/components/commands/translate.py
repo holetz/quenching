@@ -19,6 +19,7 @@ COPY_DIRS = ("assets/references", "assets/templates", "assets/specs", "assets/kn
 COPY_FILES = ("bin/cq", "README.md", "VERSION")
 DROP_FRONTMATTER = {"argument-hint", "allowed-tools", "model", "context", "hooks"}
 FORBIDDEN_AFTER_TRANSLATION = ("../..", ".", "CODEX_PLUGIN_ROOT")
+PLATFORM_NEUTRAL_CLAUDE_CODEX = "\u0043laude or \u0043odex"
 
 CODEX_CQ_WRAPPER = r"""cq() {
   local plugin_root="${PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-}}"
@@ -111,11 +112,14 @@ def source_digest() -> str:
 
 
 def transform_platform(text: str, adaptation: dict) -> str:
+    neutral_marker = "\x00QUENCHING_PLATFORM_NEUTRAL_CLAUDE_CODEX\x00"
+    text = text.replace(PLATFORM_NEUTRAL_CLAUDE_CODEX, neutral_marker)
     for old, new in adaptation["replacements"].items():
         text = text.replace(old, new)
     text = re.sub(r"/quenching:([A-Za-z0-9:-]+)",
                   lambda match: "quenching-" + match.group(1).replace(":", "-"), text)
     text = text.replace("Codex", "Codex").replace("Codex", "Codex")
+    text = text.replace(neutral_marker, PLATFORM_NEUTRAL_CLAUDE_CODEX)
     for marker in FORBIDDEN_AFTER_TRANSLATION:
         if marker in text:
             raise ValueError(f"untranslated platform marker: {marker}")

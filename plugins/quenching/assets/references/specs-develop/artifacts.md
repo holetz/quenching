@@ -1,7 +1,7 @@
 # Authoring a spec's sections
 
 The per-section authoring doctrine every `/quenching:specs:*` command applies when it writes into a spec. The
-**layout, the fourteen sections, the gates, the derived stages and the `cq specs` surface** live
+**layout, the thirteen sections, the gates, the derived stages and the `cq specs` surface** live
 once in
 [spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) and are
 cited, never restated here.
@@ -26,14 +26,14 @@ pad it with restated text from another section.
 3. **An absent heading before its own gate is legal** — a *not-yet*, not an omission.
 
 **Never invent the explicit none.** `- none — <reason>` is an *answer*; writing one the human never
-gave is worse than leaving the heading absent, because it looks decided. And never write fourteen
+gave is worse than leaving the heading absent, because it looks decided. And never write thirteen
 of them at creation: a spec that did would derive as `designed` and clear the whole ready gate
 without anyone having thought anything.
 
 `cq specs new <slug>` stamps the frontmatter and `## Problem` alone, from
 `assets/specs/templates/spec.md`. Every other heading is created on first write by
 `cq specs section <slug> "<Heading>" --write`, in canonical position. Do not invent new top-level
-headings — one outside the canonical fourteen is a stray and `validate` flags it — and never paste
+headings — one outside the canonical thirteen is a stray and `validate` flags it — and never paste
 this doctrine into the spec.
 
 <!-- rationale -->
@@ -41,46 +41,6 @@ An omission and a null are different facts. "We drew the boundary and nothing fe
 "nobody ever drew the boundary" read identically when the section is missing, and only one of them
 is safe to build on. An explicit null is strictly more information than an absent heading, and it
 costs one line.
-
-## `## Overview` — the ELI5: what is wrong, and how it will be fixed
-
-Position 1, ahead of `## Problem`. Warn-only, like `## Handoff` — never part of the `ready` gate
-(spec-driven.md §The fourteen sections).
-
-**Register.** Explain it to somebody who has never opened this repository: what is broken or
-missing today, why that costs something, and what will be different afterwards. Plain language, one
-to three short paragraphs, no jargon the spec itself introduces — a reader who has not yet read
-`## Design` should not need a term `## Design` coins. Concrete beats abstract: a number the spec
-measured is worth a paragraph of adjectives.
-
-**The negative test, and it is the whole rule: an `## Overview` that has to name a section of the
-spec in order to explain itself is wrong.** *"`## Design` decides how it behaves; `## Out of Scope`
-is the part that stops the idea coming back"* is a table of contents. A reader who wanted the order
-to read the sections in can see the headings; what they cannot get anywhere else is the problem and
-the fix in words they already know. Where the reading order genuinely earns saying, it is one line
-at the end — never the body.
-
-<!-- rationale -->
-This register **replaced** an earlier one that asked for connective tissue — *"link the sections to
-each other"*, explicitly *"not a summary"* and *"connective, not compressive"* — and the specs
-obeyed it. MEASURED on this repository on 2026-08-16, across the 45 specs then in `plans/`: 28
-carried real `## Overview` prose, median 2,028 characters, and **25 of those 28 (89%) narrated the
-sections**, 237 mentions of `## <Section>` across the set. The rule was working exactly as written,
-and what it produced was a second table of contents for a file whose headings are already a table
-of contents. The section that a reader opens first was the one section that never told them what
-the spec was about.
-<!-- rules -->
-
-**Not the one-line summary either.** That is `summary:`, a frontmatter field
-(spec-driven.md §Frontmatter): one line, what every ranked listing prints, written at capture and
-refreshed by every bank. `## Overview` is the paragraph a reader gets when they open the spec;
-`summary:` is the line they get when they do not. Both are compressive, at different lengths, and
-neither indexes the file.
-
-**Written last.** The shape bank is where it is first written; every later bank's consolidated edit
-refreshes it — always authored last within that edit, alongside `summary:`, because both can only
-be correct once the sections they compress have settled. It still sits first in the file: only the
-authoring order within a pass is last, never its position.
 
 ## The nine definition sections
 

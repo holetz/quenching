@@ -8,7 +8,7 @@ projection), `edit` and `fields` (the writers).
 
 THIS `__init__.py` CARRIES CONTENT — it is not an empty file of habit, which is the rule
 `backends/__init__.py` set when it took the factory. The content is the package's public
-surface: `backends/*.py` import fourteen of these names from `quenching.specs.parse`, not
+surface: `backends/*.py` import the public names from `quenching.specs.parse`, not
 from the submodule each happens to sit in today, so the layer boundary is this module and
 the cut inside it stays free to move."""
 from __future__ import annotations
