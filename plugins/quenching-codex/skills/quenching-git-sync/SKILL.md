@@ -27,13 +27,16 @@ an unrelated edit into a conflict with no way to tell which commit caused it. **
 tree is confirmed clean, the base is resolved, and every local branch's tip is recorded for the
 comparison in step 4.
 
-### 2. Update the base from its remote, where one exists
+### 2. Configure pruning and update the base from its remote, where one exists
 ```bash
+git config fetch.prune true
 git fetch origin <base> 2>&1 || echo "NO-REMOTE"
 ```
-`NO-REMOTE` (or no `origin`) → rebase onto the local `<base>` as it stands, silently; most work in
-a single-checkout repo has no remote to fetch, and that is the ordinary case, never a finding.
-**Done when:** the base is as fresh as this checkout can make it.
+`fetch.prune=true` is persisted in this repository, so this and future fetches remove remote-tracking
+refs that Azure has already deleted (for example, `origin/validacao-pec`). `NO-REMOTE` (or no
+`origin`) → rebase onto the local `<base>` as it stands, silently; most work in a single-checkout
+repo has no remote to fetch, and that is the ordinary case, never a finding. **Done when:** pruning
+is configured and the base is as fresh as this checkout can make it.
 
 ### 3. Rebase, carrying stacked refs along
 ```bash
@@ -50,12 +53,15 @@ completes clean, or it is stopped on a conflict with the resolution path stated.
 git for-each-ref --format='%(refname:short) %(objectname)' refs/heads
 ```
 Diff against step 1's snapshot — every ref whose object changed besides the branch being synced is
-one `--update-refs` carried along; name each. **Done when:** the moved-refs list (possibly empty)
-is stated alongside the rebase's own outcome.
+one `--update-refs` carried along; name each. State that `fetch.prune=true` was configured in step
+2. **Done when:** the moved-refs list (possibly empty) and the pruning configuration are stated
+alongside the rebase's own outcome.
 
 ## Invariants
 
 - Never rebase over a dirty tree.
+- Always configure `fetch.prune=true` before fetching the base, so deleted remote branches do not
+  remain as stale remote-tracking refs.
 - Never resolve a conflict or `--skip` a commit on the human's behalf — report and hand back the
   two git commands that end the rebase.
 - Never rebase onto a base this checkout has not just tried to freshen from its remote.
