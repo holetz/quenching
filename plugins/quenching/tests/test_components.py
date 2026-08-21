@@ -7,7 +7,7 @@ once, in `test_sections.py` — nothing about it is duplicated here.
 
 What IS this pillar's own, and covered below: the components reader also resolves `#` and
 `###` over free markdown (a reference or a standard has headings at every level, unlike a
-spec's fourteen `##`s), and it owns two ladders the specs reader has no equivalent of —
+spec's thirteen `##`s), and it owns two ladders the specs reader has no equivalent of —
 `--sections` (comma-vs-address) and `--rules-only` (the binding sentence vs. its rationale).
 Each fixture below is local to the assertion it drives, on purpose: growing the shared
 `SECTION_FIXTURE` with a comma-bearing heading to serve the `--sections` ladder would change

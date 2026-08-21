@@ -15,7 +15,6 @@ import inspect
 import io
 import json
 import os
-import re
 import tempfile
 import unittest
 from unittest import mock
@@ -33,7 +32,7 @@ from quenching.specs.parse.edit import write_handoff_block
 from quenching.specs.parse.handoff import current_handoff_section, parse_handoff
 from quenching.specs.parse.spec import resolve_one
 from quenching.specs.parse.tasks import _files_bad_annotation, parse_tasks
-from quenching.specs.parse.text import body_after_frontmatter, real_prose_or_none
+from quenching.specs.parse.text import body_after_frontmatter
 from quenching.specs.schema import capture_form
 
 
@@ -322,7 +321,7 @@ class ParseHandoff(unittest.TestCase):
 
     def test_a_spec_with_no_handoff_heading_at_all_reads_as_empty(self):
         # The ordinary state before a spec's first build.
-        got = parse_handoff("## Overview\n\nsomething else\n")
+        got = parse_handoff("## Problem\n\nsomething else\n")
         self.assertEqual(got["global"], "")
         self.assertEqual(got["blocks"], [])
 
@@ -506,58 +505,27 @@ class PhaseCutsListAndValidate(unittest.TestCase):
             self.assertIn("beta", [f.get("spec") for f in validated["findings"]])
 
 
-class RealProseOrNone(unittest.TestCase):
-    """The four states `overview` (`cq specs list --json`) projects from `## Overview`'s own
-    body — three of them null, because `has_real_content` alone counts an explicit none as
-    filled (by design, for the gate) and cannot tell it apart from real prose on its own."""
+class ListDropsLegacyOverview(unittest.TestCase):
+    """Old documents remain readable, but the retired section is not part of the listing API."""
 
-    def test_an_absent_body_is_null(self):
-        self.assertIsNone(real_prose_or_none(""))
-
-    def test_a_body_with_nothing_but_the_guidance_comment_is_null(self):
-        self.assertIsNone(real_prose_or_none("\n<!-- MOMENT: decision. Written last. -->\n"))
-
-    def test_an_explicit_none_is_null(self):
-        self.assertIsNone(real_prose_or_none("- none — nada a conectar ainda"))
-
-    def test_real_prose_is_returned_trimmed(self):
-        body = "\nConecta o Problem à Proposal para quem não segura o spec inteiro na cabeça.\n"
-        self.assertEqual(real_prose_or_none(body),
-                         "Conecta o Problem à Proposal para quem não segura o spec inteiro na cabeça.")
-
-
-class ListProjectsOverview(unittest.TestCase):
-    """`cq specs list --json` carries `overview` per row, from the same `read_spec()` document
-    `cmd_list` already holds for the other seven fields — never a second read. One spec per
-    state: heading absent, present-and-empty, an explicit none, and real prose."""
-
-    def _write(self, root, slug, overview_block):
-        doc = (capture_form().replace("<SLUG>", slug).replace("<TITLE>", slug.title())
-               .replace("<DATE>", "2026-01-01").replace("<VERIFICATION>", "per-task"))
-        if overview_block is not None:
-            # `.replace` on the bare heading text would also match `` `## Problem` `` inside
-            # the template's own explanatory prose above it — anchor on the real heading LINE.
-            doc = re.sub(r"^## Problem$", overview_block + "\n## Problem", doc,
-                        count=1, flags=re.MULTILINE)
-        self.backend.create_spec("plans", f"{slug}.md", doc)
-
-    def test_the_three_nulls_and_the_real_case(self):
+    def test_a_legacy_overview_is_ignored_by_the_json_projection(self):
         with tempfile.TemporaryDirectory() as root:
-            self.backend = MemoryBackend()
-            self._write(root, "absent", None)
-            self._write(root, "empty", "## Overview\n\n")
-            self._write(root, "explicit", "## Overview\n\n- none — nada a conectar ainda\n\n")
-            self._write(root, "real", "## Overview\n\nConecta as outras seções.\n\n")
+            backend = MemoryBackend()
+            backend.create_spec(
+                "plans", "legacy.md",
+                "---\nslug: legacy\ntitle: Legacy\ndate: 2026-01-01\n---\n\n"
+                "# Legacy\n\n## Overview\n\nTexto antigo.\n\n"
+                "## Problem\n\nO problema.\n")
             buf = io.StringIO()
             with mock.patch.object(read_module, "open_backend",
-                                   lambda _root: (self.backend, {})), \
+                                   lambda _root: (backend, {})), \
                     contextlib.redirect_stdout(buf):
                 DISPATCH["list"](argparse.Namespace(json=True, phase=None), root, Emitter())
-            rows = {r["slug"]: r["overview"] for r in json.loads(buf.getvalue())["specs"]}
-            self.assertIsNone(rows["absent"])
-            self.assertIsNone(rows["empty"])
-            self.assertIsNone(rows["explicit"])
-            self.assertEqual(rows["real"], "Conecta as outras seções.")
+            row = json.loads(buf.getvalue())["specs"][0]
+            self.assertNotIn("overview", row)
+            self.assertEqual(row["summary"], None)
+            findings = validate_module.validate_spec(backend, backend.list_specs()[0])
+            self.assertNotIn("sp-stray-heading", [f["code"] for f in findings])
 
 
 class ParserContract(unittest.TestCase):

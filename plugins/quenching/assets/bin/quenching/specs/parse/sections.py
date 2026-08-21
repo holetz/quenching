@@ -75,7 +75,9 @@ def section_state(sections: dict, heading: str) -> str:
 
 def stray_headings(sections: dict, schema: dict | None = None) -> list[str]:
     canon = set(canonical_headings(schema))
-    return [h for h in sections if h not in canon]
+    # Old provider documents may still carry `Overview`. Keep them readable while
+    # removing the heading from the active contract and every derived projection.
+    return [h for h in sections if h not in canon and h != "Overview"]
 
 
 def parse_impact_standards(text: str, schema: dict | None = None) -> list[str]:

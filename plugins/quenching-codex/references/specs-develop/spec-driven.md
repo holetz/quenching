@@ -9,7 +9,7 @@ durable knowledge crosses from a spec into `knowledge/` and how) lives with the 
 ([specs-conclude/distill.md](../../references/specs-conclude/distill.md)).
 
 **A spec is provider-owned.** GitHub issues and Azure Boards work items are the source of truth;
-the provider document carries the same fourteen sections, frontmatter records, and derived stages
+the provider document carries the same thirteen sections, frontmatter records, and derived stages
 throughout its lifecycle. Only *where and how* it is serialized differs, which is why every
 command drives `cq specs` rather than a repository path.
 
@@ -133,17 +133,16 @@ projected onto a native surface and reassembled from it on read, and `summary` h
 counterpart on any backend — it stays in the document everywhere, exactly as `title:` and `date:`
 do. It is not a record either: there is no `{field: value}` shape and no `writtenBy`/`writeOnce`
 rule, which is the same argument `verification` already makes for the one scalar that came before
-it. `title:` names the
-change; `## Overview` explains it to a newcomer; `summary:` is what a listing prints when it has
+it. `title:` names the change; `summary:` is what a listing prints when it has
 one row per spec and no room to explain anything. It exists because every consumer that needed
 that line used to build it by reading the spec — measured on a 45-spec front, three commands had
 three different hand-written renderings of the same ranked table, and each one paid to read what
 none of them stored. Written with the capture itself (`cq specs new --summary`, from `## Problem`), refreshed by every
-`quenching-specs-develop` bank in the same edit that refreshes `## Overview`, and never inferred:
+`quenching-specs-develop` bank in the same edit, and never inferred:
 a listing with no `summary:` falls back to `title:` and **says how many rows did**, so the gap is
 visible rather than silently papered over.
 
-## The fourteen sections
+## The thirteen sections
 
 <!-- rules -->
 
@@ -153,25 +152,24 @@ the body prose is written in is owned by the bundle's `knowledge/standards/agent
 
 | # | Heading | Phase | Moment |
 | --- | --- | --- | --- |
-| 1 | `## Overview` | orientation | decision |
-| 2 | `## Problem` | definition | decision |
-| 3 | `## Proposal` | definition | build |
-| 4 | `## Out of Scope` | definition | build |
-| 5 | `## Impact` | definition | build + **parsed** |
-| 6 | `## Validation` | definition | close (plus the agent's `verify:` fallback) |
-| 7 | `## Design` | definition | build |
-| 8 | `## Alternatives Considered` | definition | decision |
-| 9 | `## Open Decisions` | definition | decision |
-| 10 | `## Risks` | definition | decision |
-| 11 | `## Handoff` | execution | build |
-| 12 | `## Tasks` | execution | build |
-| 13 | `## Discoveries` | execution | — (no moment) |
-| 14 | `## Outcome` | archive | close |
+| 1 | `## Problem` | definition | decision |
+| 2 | `## Proposal` | definition | build |
+| 3 | `## Out of Scope` | definition | build |
+| 4 | `## Impact` | definition | build + **parsed** |
+| 5 | `## Validation` | definition | close (plus the agent's `verify:` fallback) |
+| 6 | `## Design` | definition | build |
+| 7 | `## Alternatives Considered` | definition | decision |
+| 8 | `## Open Decisions` | definition | decision |
+| 9 | `## Risks` | definition | decision |
+| 10 | `## Handoff` | execution | build |
+| 11 | `## Tasks` | execution | build |
+| 12 | `## Discoveries` | execution | — (no moment) |
+| 13 | `## Outcome` | archive | close |
 
 **Every section declares its moment, and that is load-bearing.** `## Proposal` / `## Out of Scope`
 / `## Design` / `## Impact` / `## Handoff` / `## Tasks` are the `build` set — exactly what
 `quenching-specs-execute` step 4 sends an executor (`cq specs section <slug> --moment build`).
-`## Overview` / `## Problem` / `## Alternatives Considered` / `## Open Decisions` / `## Risks` are
+`## Problem` / `## Alternatives Considered` / `## Open Decisions` / `## Risks` are
 `decision` — the human's, weighing whether to build at all. `## Validation` / `## Outcome` are
 `close` — `quenching-specs-conclude`'s. `## Discoveries` carries no moment: captured
 indiscriminately while building, it is resolved later by `quenching-specs-develop`'s triage sweep, on its own
@@ -179,10 +177,6 @@ schedule.
 
 - **`## Validation`** is the fallback for a task with no `verify:` line.
 - **`## Impact`** is machine-parsed (see below). Removing the heading silently disables a check.
-- **`## Overview`** is warn-only, like `## Handoff` — never required for the `ready` gate — and it
-  is the section `quenching-specs-develop` writes LAST, once every other section has settled, even though it
-  reads first in the file.
-
 <!-- rationale -->
 
 The moments replace an earlier human/agent binary that named *who* read a section without
@@ -201,7 +195,7 @@ omission; it is a *not-yet*.
 | --- | --- |
 | `new` (creation) | `## Problem` |
 | `ready` (**derived**) | the nine definition sections (`## Problem` … `## Risks`) **and `## Tasks`** |
-| `ready` (warning only) | `## Overview` non-empty, `## Handoff` non-empty |
+| `ready` (warning only) | `## Handoff` non-empty |
 | `promote → archive/` | `## Outcome` |
 
 **`ready` is a derived stage, not a folder, and it refuses nothing.** Filling those ten sections is
@@ -219,7 +213,7 @@ Three rules decide whether a section counts as filled:
 2. **A present-but-empty heading is malformed and refuses.** It is neither an answer nor a
    not-yet.
 3. **An absent heading before its gate is legal.** `cq specs new` stamps `## Problem` and nothing
-   else — a captured spec is four lines of body, not a fourteen-heading skeleton.
+   else — a captured spec is four lines of body, not a thirteen-heading skeleton.
 
 The sets live in `assets/specs/schema.json` and are read by **both** `promote` and `validate` — one
 source, two consumers (the ten gate sections: §Derived stages).
@@ -227,7 +221,7 @@ source, two consumers (the ten gate sections: §Derived stages).
 <!-- rationale -->
 
 **Why the rule is scoped rather than absolute.** Applied absolutely it would kill the derived
-stage: since `- none — <reason>` counts as filled, a freshly created spec carrying fourteen
+stage: since `- none — <reason>` counts as filled, a freshly created spec carrying thirteen
 `- none` sections would derive as `designed` and clear the whole ready gate without anyone having
 thought anything. Stage-scoping is the version where both rules survive.
 
@@ -338,7 +332,7 @@ it.
   section that already closed, and never the whole `## Handoff`,
 - the touched subjects' `knowledge/standards/` contracts.
 
-It does **not** receive the `decision`-moment sections (`## Overview` / `## Problem` /
+It does **not** receive the `decision`-moment sections (`## Problem` /
 `## Alternatives Considered` / `## Open Decisions` / `## Risks`), nor the rest of the `build` set
 verbatim. The orchestrator itself reads the `build` set at step 4
 (`cq specs section <slug> --moment build --scope current`) — the other five sections whole, and
@@ -707,7 +701,7 @@ label**, which follows the tag.
 
 - **Translated:** band titles, column labels, reasons, state text, `Next step`.
 - **Canonical whatever the tag:** the slug · `stage` values · record names · `sp-*` codes · the
-  fourteen `##` headings · command names.
+  thirteen `##` headings · command names.
 
 The same header row in a repo declaring `pt-BR`:
 

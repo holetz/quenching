@@ -7,18 +7,18 @@ description: "Capture or create a spec. Triggers on \"convert to a spec\", \"add
 
 # quenching-specs-create — capture one spec, one screen, one turn
 
-**Input**: `$ARGUMENTS` — a short description of the problem, **or** a path to a Codex plan
-file. With neither, glob `~/.agents/plans/*.md`; if that is empty too, ask what to capture.
+**Input**: `$ARGUMENTS` — a short description of the problem, a path to a Claude or Codex plan
+file, or a plan already developed in this session (including a `<proposed_plan>` block). With no
+argument and no identifiable plan in the conversation, ask what to capture.
 
 Creates ONE spec. That locator is a spec's whole active life, so what is created here is what gets
 built: this command creates it, `quenching-specs-develop` fills its sections, `quenching-specs-execute` builds it, and
-`quenching-specs-conclude` closes it out under the same identity. Nothing here to retire, hand off, or
-reconcile — and no ledger.
+`quenching-specs-conclude` closes it out under the same identity.
 
-The layout, the fourteen canonical sections, the gates, the front's on-write check and the
+The layout, the thirteen canonical sections, the gates, the front's on-write check and the
 `cq specs` surface live in
 [specs-develop/spec-driven.md](../../references/specs-develop/spec-driven.md)
-§The `specs/` layout §The fourteen sections §The gates and the stage-scoped explicit-none rule
+§The thirteen sections §The gates and the stage-scoped explicit-none rule
 §The `cq specs` tool surface §The report mold, which owns the shape step 6's report prints in.
 
 **One screen, at the end, with the work already done.** Every field this command presumes —
@@ -34,8 +34,8 @@ what you were given, and nothing more.**
 
 | Input                   | What gets written                        |
 | ----------------------- | ----------------------------------------- |
-| a sentence              | `## Problem`, `## Overview`, `summary:`  |
-| a Codex plan file | every section the plan actually supports |
+| a sentence              | `## Problem`, `summary:`  |
+| a Claude or Codex plan, from a file or this session | every section the plan actually supports |
 
 The same richness decides the `complexity` this command computes and writes (step 4): a
 sentence is the smallest problem a capture can hold, and a plan file is the largest — the
@@ -44,15 +44,15 @@ levels in between are the develop pass's to re-evaluate when it closes.
 
 ## Doctrine
 
-- **A sentence becomes `## Problem`, `## Overview` and `summary:` in ONE call, and stops.**
+- **A sentence becomes `## Problem` and `summary:` in ONE call, and stops.**
   `cq specs new` stamps the frontmatter (`slug`, `title`, `date`, `verification`) and, through the
-  flags and stdin step 5 always supplies, those two headings and the one-line précis together —
-  never as three follow-up calls. Every other canonical heading is left ABSENT, which the
+  flags and stdin step 5 always supplies, the heading and the one-line précis together —
+  never as two follow-up calls. Every other canonical heading is left ABSENT, which the
   stage-scoped explicit-none rule
   ([spec-driven.md](../../references/specs-develop/spec-driven.md) §The gates)
-  makes legal. Writing fourteen `- none` headings here would make a fresh capture derive as
+  makes legal. Writing thirteen `- none` headings here would make a fresh capture derive as
   `designed` and clear the whole ready gate without anyone having thought anything.
-- **Never invent what the input lacks.** On the plan-file path, `- none — the plan recorded no alternatives` is honest; a fabricated risk is not. Where the source said nothing, either leave
+- **Never invent what the input lacks.** On the plan-source path, `- none — the plan recorded no alternatives` is honest; a fabricated risk is not. Where the source said nothing, either leave
 the heading absent or write an explicit none that *says* the source was silent.
 - **Kebab slug in the repo's declared language.** `slugify` folds accents (`criação` → `criacao`)
 and `SLUG_RE` refuses (exit 2) on a bad one — derive it in the language
@@ -76,8 +76,12 @@ Resolve `cq specs` per
 
 ### 1. Classify the input
 
-**Prose** → the sentence path. **A path to an existing `.md`**, or an explicit ask to convert a
-plan → the plan-file path. This is the one decision the CLI cannot make for you: `cq specs new`
+**Prose** → the sentence path. **A path to an existing `.md`**, an explicit ask to convert a plan,
+or a plan already developed in this session — including the contents of `<proposed_plan>` — → the
+plan-source path. Use the complete plan available in the conversation as the source; it does not
+need an intermediate file. With no argument and no identifiable plan in the conversation, ask what
+to capture. Never search plan directories automatically for a candidate. This is the one decision
+the CLI cannot make for you: `cq specs new`
 (step 5) resolves the backend, the workspace and the seed on its own, and reports a legacy
 `backlog/`/`ready/` folder as a finding rather than writing into one.
 **Done when:** the path is chosen.
@@ -85,18 +89,19 @@ plan → the plan-file path. This is the one decision the CLI cannot make for yo
 ### 2. Derive the slug
 
 Take a title and a one-sentence problem from the input, and derive a kebab slug in the repo's
-declared language. On the plan-file path, derive it from the plan's title or goal ("Add rate
+declared language. On the plan-source path, derive it from the plan's title or goal ("Add rate
 limiting to the API" → `add-api-rate-limiting`).
 
 **The collision check is `cq specs new`'s exit 2** (`sp-slug-exists`, naming where it is) — never a
 front listing first, which under `github` is a paginated fetch of every issue (2.4s measured).
 **Done when:** a canonical slug is in hand.
 
-### 3. Plan-file path only — read it, and read the bundle
+### 3. Plan-source path only — read it, and read the bundle
 
-Read the whole plan file, then read
+Read the whole plan file, or the complete plan content from the current session, then read
 [specs-create/plan-mapping.md](../../references/specs-create/plan-mapping.md)
-§The mapping and classify the plan's parts against it.
+§The mapping and classify the plan's parts against it. When the plan is inside
+`<proposed_plan>`, use that block as the plan source and ignore the wrapper itself.
 
 **On the sentence path, skip this step entirely** — reading a bundle to write two sentences is
 exactly the cost this command exists to avoid.
@@ -129,7 +134,7 @@ whatever was resolved to step 5's `--tags`; the subject's own fixed tags need no
 `cq specs new` folds them in on its own.
 
 **Compute `complexity`** from the classification (step 1), never by interrogating: the sentence
-path yields `low`, the plan-file path yields `medium` — the input is all the evidence a capture is
+path yields `low`, the plan-source path yields `medium` — the input is all the evidence a capture is
 allowed to hold. The level answers how much a human needs to be part of the gears plan, never the
 size or difficulty of the input
 ([gears.md](../../references/specs-cycle/gears.md) §Deriving the gears
@@ -154,17 +159,11 @@ a value, or explicitly to none) and reasoned, or the step was skipped whole.
 ### 5. Capture in ONE call
 
 Write `## Problem` — the problem or opportunity in the source's own framing, two sentences on the
-sentence path — and a first-pass `## Overview` — an ELI5 of the problem and of how it will be
-solved, in plain language, from what `## Problem` already carries. The template's own guidance
-still holds ("written last, once every other section has settled"): treat this pass as a
-placeholder any later `quenching-specs-develop` bank corrects, never as the final word, but a spec
-is never born without it. **Never a list of what each section says**: a capture has one section on
-the sentence path, so there is nothing to index, and
-[artifacts.md](../../references/specs-develop/artifacts.md) §`## Overview`
-owns the register.
+sentence path. **Never a list of what each section says**: a capture has one section on the
+sentence path, so there is nothing to index.
 
-**Plan-file path:** additionally write every section the plan actually supports, its own
-`## <Heading>` block in the same stream — `## Overview` above is never repeated. Where the plan was
+**Plan-source path:** additionally write every section the plan actually supports, its own
+`## <Heading>` block in the same stream. Where the plan was
 silent on a section you are writing others around, write `- none — <what the source did not
 record>`. Never fabricate.
 
@@ -187,13 +186,9 @@ python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/qu
 
 <two sentences, or what the source supports>
 
-## Overview
-
-<an ELI5, in plain language>
-
 ## <Heading>
 
-<plan-file path only: every other section the plan actually supports>
+<plan-source path only: every other section the plan actually supports>
 EOF
 ```
 
@@ -216,7 +211,8 @@ Any other backend failure (`sp-backend-unavailable`, `sp-worktree-unusable`,
 
 The chained `cq specs validate --spec <slug>` is the whole of what checking this spec means — its
 own finding, if any, is named verbatim in step 6, never silently swallowed by the `&&`.
-**Sentence path: nothing beyond `## Problem` and `## Overview` is in the stream.**
+**Sentence path: nothing beyond `## Problem` is in the stream.** A plan from a
+file or the current session may add only sections its source supports.
 **Done when:** `cq specs new` exited 0, `validate` ran in the same call, and the locator it
 returned is in hand.
 
@@ -232,8 +228,8 @@ presumed and why — the shape differs by path:
 
 | Path | What the body block shows |
 | --- | --- |
-| sentence | `summary:`, and the drafted text **in full** — `## Problem` and `## Overview`, two sentences each, exactly what a human wants to check about "the writing got better." Plus subject, type, tags and `complexity`, each with its one-line reason |
-| plan-file | subject, type, tags and `complexity` (each reasoned), and the **list** of sections filled with the task count. **Never the bodies** — the plan is large and the human just wrote it |
+| sentence | `summary:`, and the drafted `## Problem` text **in full**, exactly what a human wants to check about the capture. Plus subject, type, tags and `complexity`, each with its one-line reason |
+| plan source | subject, type, tags and `complexity` (each reasoned), and the **list** of sections filled with the task count. **Never the bodies** — the plan is large and the human just wrote it |
 
 Then the next-step block — `quenching-specs-develop <slug>` and `quenching-specs-cycle <slug>`
 named as the two forward candidates — and **one** `AskUserQuestion`, immediately after, exactly as
@@ -272,7 +268,7 @@ both — has been fully honoured.
 - Never interrogate — no scope, task, design, or policy questions on either path.
 - Never write a heading the input did not support.
 - Never invent content a source plan lacks.
-- **Never carry a plan's merge obligations into `## Tasks`.** On the plan-file path a native plan's
+- **Never carry a plan's merge obligations into `## Tasks`.** On the plan-source path a native plan's
   "Etapas" routinely end in a version bump, a changelog entry or *update the docs*; none of them
   converts, because what the release *is* is unknowable until the last task lands.
   `quenching-specs-conclude` owns them, along with the `/.knowledge/` the work *reveals* and the cycle's
