@@ -10,7 +10,7 @@ verification: <VERIFICATION>
 <!-- ONE spec is ONE file for its whole lifecycle. Phases enrich it; they never split it.
 
      `cq specs new` stamps the frontmatter and `## Problem` ALONE — a captured spec is four
-     lines of body, not a fourteen-heading skeleton. Every other heading below is created on
+     lines of body, not a thirteen-heading skeleton. Every other heading below is created on
      first write by `cq specs section <slug> "<Heading>" --write`, which inserts it in the
      canonical position with the guidance comment kept here.
 
@@ -20,7 +20,7 @@ verification: <VERIFICATION>
        new (capture)        `## Problem`
        ready (derived)      the nine definition sections (`## Problem` .. `## Risks`)
                             AND `## Tasks`
-       ready (warn only)    `## Overview` non-empty, `## Handoff` non-empty
+       ready (warn only)    `## Handoff` non-empty
        promote -> archive/  `## Outcome`
 
      `ready` is a DERIVED STAGE, not a folder: a spec lives in `plans/` for its whole active
@@ -50,17 +50,6 @@ verification: <VERIFICATION>
      `quenching-specs-develop`'s triage sweep on its own schedule. An orchestrator sends an executor
      exactly the `build` set; that is what lets one file serve every moment without bloating
      agent context. -->
-
-## Overview
-
-<!-- MOMENT: decision. Warned on when empty once the ready gate is met.
-
-     Connective tissue for a reader who is not holding the whole spec in their head: how the
-     other sections relate to one another, not a compressed restatement of each. Plain
-     language, assuming no prior context — avoid the jargon the spec itself introduces.
-
-     Written LAST, after every other section has settled, because it can only be correct once
-     they have — even though it lives here, first, because that is where a reader starts. -->
 
 ## Problem
 

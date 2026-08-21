@@ -84,20 +84,19 @@ DEFAULT_SCHEMA: dict = {
         },
     },
     "sections": [
-        {"heading": "Overview", "order": 1, "group": "orientation", "moment": "decision"},
-        {"heading": "Problem", "order": 2, "group": "definition", "moment": "decision"},
-        {"heading": "Proposal", "order": 3, "group": "definition", "moment": "build"},
-        {"heading": "Out of Scope", "order": 4, "group": "definition", "moment": "build"},
-        {"heading": "Impact", "order": 5, "group": "definition", "moment": "build", "parsed": True},
-        {"heading": "Validation", "order": 6, "group": "definition", "moment": "close"},
-        {"heading": "Design", "order": 7, "group": "definition", "moment": "build"},
-        {"heading": "Alternatives Considered", "order": 8, "group": "definition", "moment": "decision"},
-        {"heading": "Open Decisions", "order": 9, "group": "definition", "moment": "decision"},
-        {"heading": "Risks", "order": 10, "group": "definition", "moment": "decision"},
-        {"heading": "Handoff", "order": 11, "group": "execution", "moment": "build"},
-        {"heading": "Tasks", "order": 12, "group": "execution", "moment": "build"},
-        {"heading": "Discoveries", "order": 13, "group": "execution"},
-        {"heading": "Outcome", "order": 14, "group": "archive", "moment": "close"},
+        {"heading": "Problem", "order": 1, "group": "definition", "moment": "decision"},
+        {"heading": "Proposal", "order": 2, "group": "definition", "moment": "build"},
+        {"heading": "Out of Scope", "order": 3, "group": "definition", "moment": "build"},
+        {"heading": "Impact", "order": 4, "group": "definition", "moment": "build", "parsed": True},
+        {"heading": "Validation", "order": 5, "group": "definition", "moment": "close"},
+        {"heading": "Design", "order": 6, "group": "definition", "moment": "build"},
+        {"heading": "Alternatives Considered", "order": 7, "group": "definition", "moment": "decision"},
+        {"heading": "Open Decisions", "order": 8, "group": "definition", "moment": "decision"},
+        {"heading": "Risks", "order": 9, "group": "definition", "moment": "decision"},
+        {"heading": "Handoff", "order": 10, "group": "execution", "moment": "build"},
+        {"heading": "Tasks", "order": 11, "group": "execution", "moment": "build"},
+        {"heading": "Discoveries", "order": 12, "group": "execution"},
+        {"heading": "Outcome", "order": 13, "group": "archive", "moment": "close"},
     ],
     "impact": {
         "parsedSubheading": "Standards this spec will write into /.knowledge/standards/",
@@ -131,7 +130,7 @@ DEFAULT_SCHEMA: dict = {
              "when": {"filled": ["Problem", "Proposal", "Out of Scope", "Impact",
                                  "Validation", "Design", "Alternatives Considered",
                                  "Open Decisions", "Risks", "Tasks"]},
-             "warnWhenEmpty": ["Overview", "Handoff"]},
+             "warnWhenEmpty": ["Handoff"]},
             {"id": "approved", "phase": "plans", "when": {"frontmatter": "approved"}},
             {"id": "executing", "phase": "plans",
              "when": {"anyOf": [{"taskState": ["x", "!"]}, {"filled": ["Handoff"]}]},
@@ -173,7 +172,7 @@ verification: <VERIFICATION>
 <!-- ONE spec is ONE file for its whole lifecycle. Phases enrich it; they never split it.
 
      `cq specs new` stamps the frontmatter and `## Problem` ALONE — a captured spec is four
-     lines of body, not a fourteen-heading skeleton. Every other heading below is created on
+     lines of body, not a thirteen-heading skeleton. Every other heading below is created on
      first write by `cq specs section <slug> "<Heading>" --write`, which inserts it in the
      canonical position with the guidance comment kept here.
 
@@ -183,7 +182,7 @@ verification: <VERIFICATION>
        new (capture)        `## Problem`
        ready (derived)      the nine definition sections (`## Problem` .. `## Risks`)
                             AND `## Tasks`
-       ready (warn only)    `## Overview` non-empty, `## Handoff` non-empty
+       ready (warn only)    `## Handoff` non-empty
        promote -> archive/  `## Outcome`
 
      `ready` is a DERIVED STAGE, not a folder: a spec lives in `plans/` for its whole active
@@ -213,17 +212,6 @@ verification: <VERIFICATION>
      `/quenching:specs:develop`'s triage sweep on its own schedule. An orchestrator sends an executor
      exactly the `build` set; that is what lets one file serve every moment without bloating
      agent context. -->
-
-## Overview
-
-<!-- MOMENT: decision. Warned on when empty once the ready gate is met.
-
-     Connective tissue for a reader who is not holding the whole spec in their head: how the
-     other sections relate to one another, not a compressed restatement of each. Plain
-     language, assuming no prior context — avoid the jargon the spec itself introduces.
-
-     Written LAST, after every other section has settled, because it can only be correct once
-     they have — even though it lives here, first, because that is where a reader starts. -->
 
 ## Problem
 
@@ -429,7 +417,7 @@ def load_schema() -> dict:
 
 
 def load_template() -> str:
-    """The FULL fourteen-section authoring reference — frontmatter, the contract preamble,
+    """The FULL thirteen-section authoring reference — frontmatter, the contract preamble,
     and every heading with its guidance comment.
 
     Two consumers read it and they need different slices: `new` stamps only the capture
@@ -443,16 +431,12 @@ def capture_form(template_text: str | None = None, schema: dict | None = None) -
     """What `new` stamps: the frontmatter and the contract preamble, then the heading blocks
     the `plans` entry gate names — `## Problem` with its guidance, and nothing else.
 
-    Sliced by GATE MEMBERSHIP, never by position. The obvious implementation — everything up
-    to the SECOND `## ` heading — was right only while `## Problem` happened to be the first
-    heading in the template, and it broke the moment `## Overview` was added ahead of it:
-    capture then stamped an empty `## Overview` and dropped `## Problem`, so every spec `new`
-    created was born failing its own gate. What makes a heading part of capture is the gate,
-    not where it sits in the file, so read the gate.
+    Sliced by GATE MEMBERSHIP, never by position. What makes a heading part of capture is the
+    gate, not where it sits in the file, so read the gate.
 
-    A captured spec is four lines of body, not a fourteen-heading skeleton. That is not
+    A captured spec is four lines of body, not a thirteen-heading skeleton. That is not
     cosmetic: the explicit-none rule makes `- none — <reason>` count as filled, so a spec
-    born with fourteen headings would derive as `designed` and pass every promote gate
+    born with thirteen headings would derive as `designed` and pass every promote gate
     without anyone having thought anything."""
     from quenching.specs.parse.text import HEADING_RE      # deferred: see the module docstring
     text = template_text if template_text is not None else load_template()

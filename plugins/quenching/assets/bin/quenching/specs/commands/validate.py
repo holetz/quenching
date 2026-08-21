@@ -87,7 +87,7 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
 
     for h in stray_headings(sections, schema):
         out.append(_finding("sp-stray-heading", "warn",
-                            f"{where}: `## {h}` is not one of the fourteen canonical headings",
+                            f"{where}: `## {h}` is not one of the thirteen canonical headings",
                             spec=s["slug"], path=where, heading=h,
                             # A REMEDY NAMES AN ACTION THE SURFACE OFFERS. This one read "fold
                             # it into one" for as long as no command could — `cmd_section`
@@ -115,25 +115,16 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
                                 f"{where}: `## {h}` is present but empty — neither an answer "
                                 f"nor a not-yet", spec=s["slug"], path=where, heading=h,
                                 remedy="fill it, or write `- none — <reason>`"))
-    # `Handoff` used to be warned on by the ready/ FOLDER. With one folder the same
-    # question is asked of the derived ready gate: a spec nobody could build yet is not
-    # missing an executor's context, and a spec that is buildable is.
+    # `Handoff` is warned on by the derived ready gate: a spec that is buildable but has
+    # no executor context is incomplete for the next command.
     ready = ready_report({"sections": sections}, schema) if s["phase"] == "plans" else None
     if ready and ready["ok"]:
         for h in ready["warn"]:
-            if h == "Overview":
-                out.append(_finding("sp-overview-missing", "warn",
-                                    f"{where}: `## Overview` is empty in a spec that meets "
-                                    f"the ready gate — a reader gets no orientation",
-                                    spec=s["slug"], path=where, heading=h,
-                                    remedy=f"cq specs section {s['slug']} \"Overview\" --write, "
-                                           "written last once the other sections settle"))
-            else:
-                out.append(_finding("sp-handoff-empty", "warn",
-                                    f"{where}: `## {h}` is empty in a spec that meets the ready "
-                                    f"gate — an executor gets no context", spec=s["slug"],
-                                    path=where, heading=h,
-                                    remedy="rewrite it after each committed task"))
+            out.append(_finding("sp-handoff-empty", "warn",
+                                f"{where}: `## {h}` is empty in a spec that meets the ready "
+                                f"gate — an executor gets no context", spec=s["slug"],
+                                path=where, heading=h,
+                                remedy="rewrite it after each committed task"))
 
     declared = parse_impact_standards(text, schema)
     if declared:

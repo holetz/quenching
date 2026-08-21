@@ -1,26 +1,27 @@
-# Mapping a Codex plan onto a spec's canonical sections
+# Mapping a Claude or Codex plan onto a spec's canonical sections
 
-Read only on the plan-file path of `quenching-specs-create`, inside step 3 — the sentence path never
-carries a plan file to map.
+Read only on the plan-source path of `quenching-specs-create`, inside step 3 — the sentence path
+never carries a plan to map.
 
 ## The mapping
 
-A Codex plan is prose with loose headings, and they may be in any language
+A Claude or Codex plan is prose with loose headings, and they may be in any language
 (`## Context` / `## Contexto`) — **match on meaning, never on the literal string.**
 
 | Native plan part | Canonical section |
 | --- | --- |
-| context, background, the problem, why now | `## Problem` |
-| the goal, what it changes | `## Proposal` |
+| summary, overview, context/contexto, background, the problem, why now | `## Problem` |
+| objective, goal, main changes, what it changes | `## Proposal` |
 | non-goals, "fora de escopo", what it will not do | `## Out of Scope` |
 | declared scope, files and docs it will touch | `## Impact` |
-| acceptance criteria, how to confirm it worked | `## Validation` |
-| decisions, chosen approach, architecture, "Decisões" | `## Design` |
+| acceptance criteria, validation criteria, test plan, how to confirm it worked | `## Validation` |
+| decisions, chosen approach, architecture, approach, "Decisões" | `## Design` |
 | approaches weighed and dropped | `## Alternatives Considered` |
 | open questions, "a decidir", unresolved choices | `## Open Decisions` |
 | risks, trade-offs, "Riscos" | `## Risks` |
 | phases, steps, numbered work, "Etapas" | `## Tasks` (`- [ ]` under `### N. <Section>`) |
-| a verification / testing section | `## Tasks` (trailing verification items) |
+| verification steps or testing tasks | `## Tasks` (trailing verification items) |
+| assumptions and pending points | `## Open Decisions` when a choice remains pending; `## Risks` when the assumption exposes a threat or trade-off |
 | a version bump, a changelog entry, a manifest re-stamp, a release step | **nothing** — the merge owns it, not a task |
 | updating docs the build has not produced yet, or the plan's own close-out steps (archive, merge, open the PR) | **nothing** — `quenching-specs-conclude` owns both |
 
