@@ -112,9 +112,9 @@ def specs_reader(text: str, wanted: list[str] | None) -> tuple[list[dict], list[
 
     It goes through `parse_sections` rather than the `section` verb because the list pins the
     SECTIONING rule — where a section starts and stops — while the verb additionally refuses a
-    heading outside the canonical fourteen. Running the list through that filter would prove the
+        heading outside the canonical thirteen. Running the list through that filter would prove the
     filter and leave the rule untested. `resolve_heading_name` is the same function the verb runs
-    in production, handed the fixture's headings instead of the canonical fourteen.
+    in production, handed the fixture's headings instead of the canonical thirteen.
     """
     rows = [{"heading": h, "level": 2, "body": v["body"]}
             for h, v in parse_sections(text).items()]
@@ -248,7 +248,7 @@ class _FoldWorkspace(_Workspace):
 
 class TheFoldOfAStrayHeading(_FoldWorkspace):
     """`cq specs section <slug> --fold "<Stray>"` — the ONE path that admits a heading outside
-    the fourteen, and the only way an `sp-stray-heading` already on disk can be closed."""
+    the thirteen, and the only way an `sp-stray-heading` already on disk can be closed."""
 
     spec_text = STRAY_FIXTURE
 

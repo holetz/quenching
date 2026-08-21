@@ -179,8 +179,8 @@ cq specs section <slug> "<Heading1>,<Heading2>,…"     # only the sections this
 
 | Bank | Spec sections | `artifacts.md` (loaded at step 5) |
 | --- | --- | --- |
-| shape | `## Problem` `## Design` — the second only to let step 3c see whether a map is already there | §The explicit-none rule §`## Overview` §The nine definition sections |
-| adversarial | `## Problem` `## Proposal` `## Design` `## Alternatives Considered` `## Risks` | §The nine definition sections §`## Overview` |
+| shape | `## Problem` `## Design` — the second only to let step 3c see whether a map is already there | §The explicit-none rule §The nine definition sections |
+| adversarial | `## Problem` `## Proposal` `## Design` `## Alternatives Considered` `## Risks` | §The nine definition sections |
 | gate | the headings `cq specs next --spec <slug> --json` reports, plus `## Impact` and `## Tasks` | §The explicit-none rule §The nine definition sections §`## Impact` §`## Tasks` §Execution metadata |
 | discoveries | `## Discoveries` | §`## Discoveries` and `## Outcome` |
 | approval | `## Proposal` `## Impact` `## Risks` | none — this bank writes nothing into the body |
@@ -306,7 +306,7 @@ BODY
 Quote the delimiter (`<<'BODY'`) so nothing in the prose is expanded by the shell.
 
 The `## <Heading>` lines in the stream are the delimiter, and the set they carry must equal the set
-declared on the command line — a mismatch, a repeat, or a heading outside the canonical fourteen
+declared on the command line — a mismatch, a repeat, or a heading outside the canonical thirteen
 refuses (exit 2) **without writing any of them**, so a rejected edit leaves the spec exactly as it
 was. One heading with a raw body and no `## ` line is the singular form and is unchanged.
 
@@ -328,7 +328,7 @@ editing the frontmatter**, which merges nothing and works only while the backend
 | `refined: {mode, date}` | the adversarial or gate bank ran | `cq specs record <slug> refined --set mode=<per questions.md §Recording the pass> --set date=<today>` |
 | `approved: {date}` | the human said go in the approval bank | `cq specs record <slug> approved --set date=<today>` |
 | `verification` | the gate bank settled the policy | `cq specs verification <slug> <per-task\|per-section\|end-of-plan>` |
-| `summary` | **every bank**, in the same edit that refreshes `## Overview` | `cq specs summary <slug> "<one line>"` |
+| `summary` | **every bank**, in the same edit as the section changes | `cq specs summary <slug> "<one line>"` |
 | `tags` | the pass changed the spec's scope, or the capture presumed wrong | `cq specs tags <slug> "<whole list>"` |
 | `complexity` (in `priority`) | the plan proposed a re-evaluation, and the human approved it | `cq specs record <slug> priority --set complexity=<level> --set date=<today>` |
 
@@ -337,8 +337,8 @@ together with whatever this pass adds, or the fixed ones are lost.
 
 `summary:` is the one line every ranked listing prints (`cq specs next --front --table`), and it
 is the only field here that **every** bank owes: a bank that changed what the spec is has
-invalidated it, exactly as it invalidated `## Overview`. Refresh it last, with the Overview, for
-the same reason — it can only be right once the sections it compresses have settled. Say what the
+invalidated it. Refresh it in the same application as the section changes, once the sections it
+compresses have settled. Say what the
 spec IS and why it matters, in one line, never what it will do to the codebase; the ranked table
 falls back to `title:` where none is written and reports how many rows did, so an unwritten
 `summary:` is visible rather than silent.

@@ -16,7 +16,6 @@ from quenching.specs.parse.sections import (gate_report, ready_report, section_s
                                             stray_headings)
 from quenching.specs.parse.spec import LEGACY_PHASES, PHASE_DIRS
 from quenching.specs.parse.tasks import task_progress
-from quenching.specs.parse.text import real_prose_or_none
 from quenching.specs.schema import canonical_headings, load_schema
 
 
@@ -49,7 +48,6 @@ def cmd_list(args, root: str, out: Emitter) -> int:
             "legacy": s["legacy"], "file": s["file"], "date": info["date"],
             "title": info["frontmatter"].get("title", titleize(s["slug"])),
             "summary": info["frontmatter"].get("summary") or None,
-            "overview": real_prose_or_none(info["sections"].get("Overview", {}).get("body", "")),
             "stage": info["stage"],
             "outcome": info["frontmatter"].get("outcome") or None,
             # The seven records, on every row. Without them a caller that wants the front's
@@ -118,9 +116,7 @@ def cmd_status(args, root: str, out: Emitter) -> int:
     records = spec_records(info["frontmatter"])
     obj = {
         "ok": True, "slug": info["slug"], "title": info["frontmatter"].get("title", ""),
-        # the one line that answers "what is this spec" without opening it. `## Overview`
-        # cannot: it is warn-only, absent on most captures, and long enough that reading it
-        # is the cost a listing exists to avoid.
+        # The one line that answers "what is this spec" without opening it.
         "summary": info["frontmatter"].get("summary") or None,
         "phase": info["phase"], "folder": info["folder"], "legacy": info["legacy"],
         "stage": info["stage"], "file": info["file"],

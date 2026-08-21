@@ -84,20 +84,19 @@
   },
 
   "sections": [
-    { "heading": "Overview",                "order": 1,  "group": "orientation", "moment": "decision" },
-    { "heading": "Problem",                 "order": 2,  "group": "definition", "moment": "decision" },
-    { "heading": "Proposal",                "order": 3,  "group": "definition", "moment": "build" },
-    { "heading": "Out of Scope",            "order": 4,  "group": "definition", "moment": "build" },
-    { "heading": "Impact",                  "order": 5,  "group": "definition", "moment": "build", "parsed": true },
-    { "heading": "Validation",              "order": 6,  "group": "definition", "moment": "close" },
-    { "heading": "Design",                  "order": 7,  "group": "definition", "moment": "build" },
-    { "heading": "Alternatives Considered", "order": 8,  "group": "definition", "moment": "decision" },
-    { "heading": "Open Decisions",          "order": 9,  "group": "definition", "moment": "decision" },
-    { "heading": "Risks",                   "order": 10, "group": "definition", "moment": "decision" },
-    { "heading": "Handoff",                 "order": 11, "group": "execution",  "moment": "build" },
-    { "heading": "Tasks",                   "order": 12, "group": "execution",  "moment": "build" },
-    { "heading": "Discoveries",             "order": 13, "group": "execution" },
-    { "heading": "Outcome",                 "order": 14, "group": "archive",    "moment": "close" }
+    { "heading": "Problem",                 "order": 1,  "group": "definition", "moment": "decision" },
+    { "heading": "Proposal",                "order": 2,  "group": "definition", "moment": "build" },
+    { "heading": "Out of Scope",            "order": 3,  "group": "definition", "moment": "build" },
+    { "heading": "Impact",                  "order": 4,  "group": "definition", "moment": "build", "parsed": true },
+    { "heading": "Validation",              "order": 5,  "group": "definition", "moment": "close" },
+    { "heading": "Design",                  "order": 6,  "group": "definition", "moment": "build" },
+    { "heading": "Alternatives Considered", "order": 7,  "group": "definition", "moment": "decision" },
+    { "heading": "Open Decisions",          "order": 8,  "group": "definition", "moment": "decision" },
+    { "heading": "Risks",                   "order": 9,  "group": "definition", "moment": "decision" },
+    { "heading": "Handoff",                 "order": 10, "group": "execution",  "moment": "build" },
+    { "heading": "Tasks",                   "order": 11, "group": "execution",  "moment": "build" },
+    { "heading": "Discoveries",             "order": 12, "group": "execution" },
+    { "heading": "Outcome",                 "order": 13, "group": "archive",    "moment": "close" }
   ],
 
   "impact": {
@@ -149,7 +148,7 @@
       { "id": "proposed",  "phase": "plans", "when": { "filled": ["Proposal"] } },
       { "id": "designed",  "phase": "plans", "when": { "filled": ["Design"] } },
       { "id": "refined",   "phase": "plans", "when": { "frontmatter": "refined" } },
-      { "id": "ready",     "phase": "plans", "when": { "filled": ["Problem", "Proposal", "Out of Scope", "Impact", "Validation", "Design", "Alternatives Considered", "Open Decisions", "Risks", "Tasks"] }, "warnWhenEmpty": ["Overview", "Handoff"], "gate": true },
+      { "id": "ready",     "phase": "plans", "when": { "filled": ["Problem", "Proposal", "Out of Scope", "Impact", "Validation", "Design", "Alternatives Considered", "Open Decisions", "Risks", "Tasks"] }, "warnWhenEmpty": ["Handoff"], "gate": true },
       { "id": "approved",  "phase": "plans", "when": { "frontmatter": "approved" } },
       { "id": "executing", "phase": "plans", "when": { "anyOf": [{ "taskState": ["x", "!"] }, { "filled": ["Handoff"] }] }, "label": "spec:built" }
     ],
