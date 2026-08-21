@@ -1,6 +1,6 @@
 ---
 name: quenching-git-pr-create
-description: "Push the current branch and open a pull request through `gh`, against the resolved base, with a `Closes #<n>` body when an issue is named — and report plainly whether that keyword will actually close the issue or only cross-reference it. Use when the user asks to \"open a PR\", \"create a pull request\", \"push and open a PR\", or \"submit this for review\". Given a spec slug on the `github` backend it derives title, body and issue from the spec and stamps its write-many `pr:` record. Not for: merging an already-open PR → quenching-git-merge; resolving PR review comments → quenching-git-pr-review."
+description: "Push the current branch and open a pull request through the repository's provider — GitHub or Azure DevOps — against the resolved base, linking the named issue/work item natively. Use when the user asks to \"open a PR\", \"create a pull request\", \"push and open a PR\", or \"submit this for review\". Given a spec slug it derives title, body and the provider locator from the spec and stamps its write-many `pr:` record. Not for: merging an already-open PR → quenching-git-merge; resolving PR review comments → quenching-git-pr-review."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/git/pr/create.md -->
@@ -8,57 +8,73 @@ description: "Push the current branch and open a pull request through `gh`, agai
 
 # quenching-git-pr-create — push and open the pull request
 
-**Input**: `$ARGUMENTS` — a spec slug on the `github` backend (derives title, body, and the issue to
-close), or free text to use as the PR title. Omitted → ask.
+**Input**: `$ARGUMENTS` — a spec slug (derives title, body and the provider's issue/work-item
+link), or free text to use as the PR title. Omitted → ask.
 
 Opens the PR and **stops there** — merging is `quenching-git-merge`'s, on its own confirmation.
-Offered only where `gh` resolves the repository; a repo with no GitHub remote has no route here at
-all, silently, which is the ordinary case rather than a finding.
+The route follows `cq specs config --json`: `github` uses `gh`, `azure-boards` uses `az repos`; an
+unknown or unauthenticated provider has no route here and stops plainly, rather than being treated
+as a GitHub repository.
 
 ## Workflow
 
 ### 1. Confirm the route exists, and resolve the base
 ```bash
+# Read `backend` from this result before choosing a host CLI.
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs config --json
+git remote get-url origin
 gh repo view --json name 2>&1 || echo "NO-ROUTE"
+az repos pr list --status all --top 1 --detect true --output json 2>&1 || echo "NO-ROUTE"
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git base --json
 ```
-`NO-ROUTE` (or `gh` unauthenticated) → say plainly there is no PR route here and stop; this is the
-ordinary case on a host other than GitHub, never a finding. **Done when:** the route is confirmed
-and the base branch (and whether it is the host's own default) is resolved.
+Run only the probe for the configured provider, after confirming the origin host matches it:
+`github` → `gh repo view`; `azure-boards` → `az repos pr list --status all --top 1 --detect
+true`. A missing/mismatched origin, `NO-ROUTE`, or an unauthenticated host CLI → say plainly there
+is no PR route here and stop; this is the ordinary case on a provider that is not available, never
+a finding.
+`cq git base --json` supplies the base and `isDefault`. **Done when:** the provider route and base
+branch are resolved.
 
-### 2. Resolve title, body and the issue to close
-A spec slug in `$ARGUMENTS` → `cq specs status --spec "<slug>" --json`; on the `github` backend its
-`path` is the issue URL — the trailing number is `<n>`. Free text → that text is the title; ask for
-a body and whether an issue number should be closed. **Done when:** the title, the body (with
-`Closes #<n>` appended when an issue is named), and the issue number (or its absence) are fixed.
+### 2. Resolve title, body and the provider link
+A spec slug in `$ARGUMENTS` → `cq specs status --spec "<slug>" --json`; its `path` is the provider
+locator. On `github`, the trailing number is an issue `<n>` and the body gets `Closes #<n>`. On
+`azure-boards`, the trailing number is a work item `<n>` and the link is passed as
+`--work-items <n>` to Azure; do not invent a `Closes #<n>` sentence. Free text → that text is the
+title; ask for a body and, when applicable, whether an issue/work item should be linked. **Done
+when:** the title, body, provider-native link (or its absence), and base are fixed.
 
 ### 3. State the link's real effect before pushing
-**Measured**: `Closes #<n>` only populates `closingIssuesReferences` — the link a caller can read
-back — when the PR's base **is** the repository's own default branch; on any other base (a branch
-in flight during a transition, whose record names a base the default no longer is) the keyword
-still cross-references the issue in its timeline but does not close it on merge. Say which case
-this run is, from step 1's `isDefault`, **before** asking to push — the human's confirmation covers
-a PR whose real behavior they already know. **Done when:** the link's real effect has been stated,
-whichever case it is.
+For `github`, **measured**: `Closes #<n>` populates `closingIssuesReferences` only when the PR's
+base **is** the repository's own default branch; otherwise it cross-references the issue but does
+not close it on merge. State that case from `isDefault`. For `azure-boards`, state that the native
+`--work-items <n>` association will be attached to the PR; `--transition-work-items true`, when
+chosen, asks Azure to transition linked work items when the PR is completed. **Done when:** the
+provider-native link's real effect is stated before publication.
 
 ### 4. Push and open, on one confirmation
 Show the remote, the branch name it pushes under, and the title/body, and ask with
 **AskUserQuestion** — this publishes to a remote host, which nothing before this step has done:
+For Azure, show the work item id and whether `--transition-work-items true` is included in the
+command the human is confirming.
 ```bash
 git push -u origin <branch>
+# github
 gh pr create --base <base> --title "<title>" --body "<body>"
+# azure-boards
+az repos pr create --detect true --source-branch <branch> --target-branch <base> \
+  --title "<title>" --description "<body>" [--work-items <n>] \
+  [--transition-work-items true] --output json
 ```
-**`--base` is never omitted** — `gh pr create` without it targets the repository's own GitHub
-default branch, which under the PR-on-primary flow is where work lands, but a spec in flight
-during the transition (its `branch.base` record names `develop`) must still land on that recorded
-base, and an omitted `--base` would silently target the wrong branch.
+The host-specific command is selected from the configured provider. The target branch is explicit
+on both routes: `--base` for GitHub and `--target-branch` for Azure; neither may be omitted. Read
+the created PR's number/id and URL from the JSON/CLI result. **Done when:** the PR exists, or the
+push/create failed and its error is reported verbatim.
 [plan-git-record.md](/.knowledge/standards/workflows/plan-git-record.md) §Three frontmatter
-records. **Done when:** the PR exists, or the push/create failed and its error is reported
-verbatim.
+records.
 
 ### 5. Stamp, with a slug
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record "<slug>" pr --set number=<n> --set url=<url> --set date=<today>
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record "<slug>" pr --set number=<provider-pr-id> --set url=<provider-url> --set date=<today>
 ```
 `pr:` is **write-many** — a later PR on the same spec (closed and reopened, or force-pushed to a
 fresh number) is a new fact, not a correction of this one, which is why it carries its own `date`.
@@ -66,13 +82,14 @@ No slug → nothing to stamp; report the PR number and URL only. **Done when:** 
 (with a slug) or the report carries the PR's own facts (without one).
 
 ### 6. Report
-State the PR number, its URL, the base it targets, and whether `Closes #<n>` will actually close
-the issue (step 3). **Done when:** all four are named.
+State the provider, PR number/id, URL, base it targets, and the effect of the native issue/work-item
+link (step 3). **Done when:** all four facts are named.
 
 ## Invariants
 
-- Never omit `--base` on `gh pr create`.
+- Never route an Azure repository through `gh`, or a GitHub repository through `az`.
+- Never omit `--base` on `gh pr create` or `--target-branch` on `az repos pr create`.
 - Never push or open a PR without the human's confirmation on the exact remote, branch and title
   shown.
-- Never claim `Closes #<n>` closes the issue when the base is not the host's own default — say so
-  plainly instead.
+- Never claim a provider-native issue/work-item link closes or transitions anything beyond the
+  host CLI's documented effect; report the provider and the selected base plainly instead.
