@@ -1,13 +1,13 @@
 ---
 description: Close ONE spec out — review the whole branch, write the /.knowledge/ the work revealed, archive, distil, prove the pre-merge gate green — and stop, handing off to /quenching:git:pr:create or /quenching:git:merge. Triggers on "conclude this spec", "close it out", "wrap up the plan", "review the branch", "archive this spec", "abandon this spec", "it will not be built". Everything lands on the work branch; nothing is ever committed to the base by this command. Settles pre-merge release obligations. Resumable: the reviewed and outcome records plus git say which stages already ran. Archiving as done refuses while boxes are open unless forced; abandoned is always allowed and distils at most a background note. Never infers the outcome or treats staleness as abandonment. Not for: building a spec's tasks → /quenching:specs:execute; sharpening or interrogating one → /quenching:specs:develop; creating one → /quenching:specs:create; taking a branch or worktree → /quenching:git:branch; the merge or the PR route → /quenching:git:merge, /quenching:git:pr:create; ranking the whole front → /quenching:specs:triage.
-argument-hint: [slug] [--outcome done|abandoned]
+argument-hint: [id] [--outcome done|abandoned]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Skill
 model: opus
 ---
 
 # /quenching:specs:conclude — review, archive, distil — and hand off
 
-**Input**: `$ARGUMENTS` — the spec slug, and optionally its outcome.
+**Input**: `$ARGUMENTS` — the spec id, and optionally its outcome.
 
 Closes ONE spec out, short of the merge itself. Four things happen, in this order, and each is a
 separate decision: the whole branch is **reviewed**, the `/.knowledge/` the work *revealed* is
@@ -118,23 +118,23 @@ that read happens from the base checkout (Doctrine), never wherever this run sta
 ## Workflow
 
 ### 1. Resolve the spec, the outcome, and what already happened
-A slug in the input → use it. **No slug given → try auto-discovery first**, off the current
+An ID in the input → use it. **No ID given → try auto-discovery first**, off the current
 branch's own marking:
 [auto-discover.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/auto-discover.md)
-§Reading the marking §Filtering to valid slugs §Resolving what remains, cited rather than
-restated. One valid slug resolves it silently, naming the marking as the source; more than one asks
+§Reading the marking §Filtering to valid IDs §Resolving what remains, cited rather than
+restated. One valid id resolves it silently, naming the marking as the source; more than one asks
 which, via **AskUserQuestion**. No valid marking → §The fallback there measures the diff and always
-asks whether to materialize a minimal spec — accepted, its new slug is used from here on exactly
+asks whether to materialize a minimal spec — accepted, its new id is used from here on exactly
 like a marked one. **Declined, headless completion — closing with no spec file at all — is not yet
 built**: say so, record it with `cq specs discover`, and fall back to `cq specs list --json` and
 ask, exactly as before this spec. Establish the outcome — **ask if it was not stated**, via
 **AskUserQuestion**: *done* (it shipped) or *abandoned* (it will not be built).
 ```bash
-cq specs status --spec "<slug>" --json
+cq specs status --spec "<id>" --json
 ```
 Read task progress, the `## Outcome` state, and the records — `branch`, `reviewed`, `merge`, `pr`,
 `outcome` — from that payload. Then, for the `## Discoveries` lines themselves, the one body this
-step needs: `cq specs section "<slug>" Discoveries --json`. Then read git: the
+step needs: `cq specs section "<id>" Discoveries --json`. Then read git: the
 current branch, whether the work branch exists, and whether it is already merged. Announce the
 outcome and, per §Resuming, which stages this run will actually perform.
 
@@ -153,7 +153,7 @@ extracting once the third caller appeared, a `## Impact` path nothing ever wrote
 diff contradicts.
 
 Present the findings. Fixes go in as ordinary commits on the branch, before the merge. Then stamp
-the record — `cq specs record "<slug>" reviewed --set date=<today>`, never by editing the
+the record — `cq specs record "<id>" reviewed --set date=<today>`, never by editing the
 frontmatter.
 
 **The test is `branch.work != branch.base`, never the record's presence** — in-place work stamps
@@ -183,8 +183,8 @@ no bundle.
 ### 4. Write `## Outcome` and archive
 `## Outcome` is the archive gate — the spec cannot move without it. Draft it, confirm it, write it:
 ```bash
-cq specs section "<slug>" Outcome --write     # body on stdin
-cq specs promote "<slug>" --to archive --outcome done|abandoned [--force]
+cq specs section "<id>" Outcome --write     # body on stdin
+cq specs promote "<id>" --to archive --outcome done|abandoned [--force]
 ```
 For `done`: what shipped, what was left out, what the next reader needs — **reviewed, distilled,
 ready for merge**. Neither the strategy nor a PR is named here: both are `/quenching:git:merge`'s
@@ -263,7 +263,7 @@ the branch was cut, the merge produces a tree *neither* side ever validated, and
 nothing about it:
 
 ```bash
-git rev-list --count plan/<slug>..<base>      # commits on the base the branch does not have
+git rev-list --count plan/<id>-<handle>..<base>      # commits on the base the branch does not have
 ```
 
 Non-zero → **say so and stop before the gate**, naming the count. Bringing the branch up to date is
@@ -324,7 +324,7 @@ body blocks:
    this moment.
 
 Close on §The next-step block, its recommended line naming step 6's handoff — `/quenching:git:pr:create`
-or `/quenching:git:merge`, whichever was recommended, or `/quenching:specs:develop <slug>` when
+or `/quenching:git:merge`, whichever was recommended, or `/quenching:specs:develop <id>` when
 block 3 has rows and that needs settling first.
 **Done when:** path, outcome, records, both `/.knowledge/` passes and the next-step block are all
 reported.

@@ -44,29 +44,28 @@ reproduces: *a human said go*. Everything else it implied — that the spec is c
 build — is computable from the sections themselves, and now is (§Derived stages). The human's word
 is `approved:` in frontmatter, so the fact survived and the folder did not.
 
-## Identity: the slug and the provider locator
+## Identity: the provider ID and the locator
 
 <!-- rules -->
 
-**Every spec has a stable `<slug>` identity.** The capture date is `date:` in the frontmatter,
-written **once, at creation**; provider transitions never rename the slug.
+**Every spec has a stable `<id>` identity owned by its provider.** On GitHub it is the issue number;
+on Azure it is the work-item ID. The capture date is `date:` in the document, written **once, at
+creation**; provider transitions never change the ID or the date.
 
-**Identity is the slug, not the locator.** Every cross-reference names the bare slug; `cq specs`
-resolves it to the one provider document with that identity — and then, if nothing
-matched exactly, by title and by one close match above a threshold, announcing that it approximated.
-**Two matches is a refusal (exit 2) at every rung**, never a guess. This is what makes repeated
-folder moves survivable.
+**Identity is the provider ID, not the locator.** Every command and cross-reference names the
+native ID; `cq specs` resolves that exact ID through the configured provider. The provider URL and
+any exported path locate the document but are not identity, and a title is descriptive data rather
+than a key. A missing ID is a refusal (exit 2), never a title or fuzzy-match fallback.
 
 <!-- rationale -->
 
-**Why the date is not part of the slug.** A leading date makes a plain listing chronological,
+**Why the date is not part of the ID.** A leading date makes a plain listing chronological,
 which is useful only when every spec is a repository file. It stops being payable when the front
-is provider-owned and the locator is not a filename:
-moment the front could live somewhere without filenames: an external backend had to mint a
-synthetic basename purely to carry a date, and the one native value that could have replaced it —
-an issue's `created_at` — is when the ISSUE was made, which a migration sets to the migration's own
+is provider-owned and the locator is not a filename: an external backend would have to mint a
+synthetic basename purely to carry a date, and the one native value that could replace it — an
+issue's `created_at` — is when the ISSUE was made, which a migration sets to the migration's own
 day. Measured on this repository: deriving it that way would have rewritten 68 of 70 capture dates
-to a single afternoon. So the date is declared in the document, where every backend reads it
+to a single afternoon. So the date remains declared in the document, where every backend reads it
 through the one shared derivation, and `next --front` sorts on it rather than on a listing's order.
 
 ## Frontmatter

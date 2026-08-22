@@ -22,7 +22,7 @@ import _paths  # noqa: F401  — must precede the `quenching` import; see its do
 from quenching.git.base import (_init_default_branch, _is_host_default, _origin_head_branch,
                                 resolve_base)
 from quenching.git.conventions import STANDARDS_DIR, _declared_docs
-from quenching.git.slugs import _read_slugs, cmd_slugs
+from quenching.git.slugs import _read_specs, cmd_specs
 from quenching.git.stale import _gone_branches, _merged_branches, _orphan_worktrees
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -100,38 +100,44 @@ class Base(RepoCase):
         self.assertEqual((payload["base"], payload["isDefault"]), ("main", False))
 
 
-class Slugs(RepoCase):
+class Specs(RepoCase):
     def setUp(self):
         super().setUp()
         _run(self.repo, "branch", "feature-a")
 
     def test_no_marking_reads_as_empty(self):
-        lines, slugs, idx = _read_slugs(self.repo, "feature-a")
-        self.assertEqual((lines, slugs, idx), ([], [], None))
+        lines, specs, idx = _read_specs(self.repo, "feature-a")
+        self.assertEqual((lines, specs, idx), ([], [], None))
 
     def test_add_is_a_read_merge_write_that_preserves_other_lines(self):
         _run(self.repo, "config", "branch.feature-a.description",
-             "a human wrote this by hand\nquenching-slugs: alpha-widget")
+             "a human wrote this by hand\nquenching-specs: 17")
         os.chdir(self.repo)
-        cmd_slugs(SimpleNamespace(branch="feature-a", add="beta-widget", json=True))
-        _lines, slugs, _idx = _read_slugs(".", "feature-a")
-        self.assertEqual(slugs, ["alpha-widget", "beta-widget"])
+        cmd_specs(SimpleNamespace(branch="feature-a", add="23", remove=None, json=True))
+        _lines, specs, _idx = _read_specs(".", "feature-a")
+        self.assertEqual(specs, ["17", "23"])
         desc = subprocess.run(["git", "config", "branch.feature-a.description"],
                               capture_output=True, text=True).stdout
         self.assertIn("a human wrote this by hand", desc)
-        self.assertEqual(desc.count("quenching-slugs:"), 1)
+        self.assertEqual(desc.count("quenching-specs:"), 1)
 
     def test_adding_the_same_slug_twice_does_not_duplicate_it(self):
         os.chdir(self.repo)
-        cmd_slugs(SimpleNamespace(branch="feature-a", add="alpha-widget", json=True))
-        cmd_slugs(SimpleNamespace(branch="feature-a", add="alpha-widget", json=True))
-        _lines, slugs, _idx = _read_slugs(".", "feature-a")
-        self.assertEqual(slugs, ["alpha-widget"])
+        cmd_specs(SimpleNamespace(branch="feature-a", add="17", remove=None, json=True))
+        cmd_specs(SimpleNamespace(branch="feature-a", add="17", remove=None, json=True))
+        _lines, specs, _idx = _read_specs(".", "feature-a")
+        self.assertEqual(specs, ["17"])
 
-    def test_cq_git_slugs_json_round_trips_through_the_add_flag(self):
-        _cq_json(self.repo, "slugs", "feature-a", "--add", "gamma-widget")
-        payload = _cq_json(self.repo, "slugs", "feature-a")
-        self.assertEqual(payload["slugs"], ["gamma-widget"])
+    def test_remove_drops_one_id_and_keeps_the_other(self):
+        _run(self.repo, "config", "branch.feature-a.description", "quenching-specs: 17,23")
+        _cq_json(self.repo, "specs", "feature-a", "--remove", "17")
+        payload = _cq_json(self.repo, "specs", "feature-a")
+        self.assertEqual(payload["specs"], ["23"])
+
+    def test_cq_git_specs_json_round_trips_through_the_add_flag(self):
+        _cq_json(self.repo, "specs", "feature-a", "--add", "41")
+        payload = _cq_json(self.repo, "specs", "feature-a")
+        self.assertEqual(payload["specs"], ["41"])
 
 
 class Stale(RepoCase):

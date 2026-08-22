@@ -1,6 +1,6 @@
 """`next` — THE single next action, and the ranking behind `--front`.
 
-The ranking lives here and nowhere else: four lexicographic factors, plus a live `plan/<slug>`
+The ranking lives here and nowhere else: four lexicographic factors, plus a live `plan/<id>-<handle>`
 ref that outranks all four in both directions.
 
 `--spec` has three live consumers — `/quenching:specs:execute`, the gate bank of
@@ -16,10 +16,11 @@ import json
 
 from quenching.common.dates import today
 from quenching.common.git import _git
+from quenching.common.text import slugify
 from quenching.specs.backends import open_backend
 from quenching.specs.backends.base import SpecBackend
 from quenching.specs.commands.output import Emitter, display_locator, front_fields, read_one
-from quenching.specs.parse import derive_info, titleize
+from quenching.specs.parse import derive_info
 from quenching.specs.parse.derive import derive_stage
 from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.sections import ready_report
@@ -96,10 +97,10 @@ def _git_refs(root: str) -> tuple[set[str], str | None]:
     return heads, (current if current and current != "HEAD" else None)
 
 
-def _work_ref(fm: dict, slug: str) -> str | None:
+def _work_ref(fm: dict, spec_id: str | int, title: str) -> str | None:
     """The branch this spec's work would live on, or `None` when it never left the base.
 
-    The `branch:` record when one was stamped, else the default `plan/<slug>` — because a
+    The `branch:` record when one was stamped, else the default `plan/<id>-<handle>` — because a
     human may have cut the branch by hand, with no record at all. The record alone is NEVER
     the signal: what counts is whether the ref is alive.
 
@@ -108,13 +109,15 @@ def _work_ref(fm: dict, slug: str) -> str | None:
     declined isolation (`git.md` §Where a branch comes from), and the base branch is always
     alive. Read as a work ref it would make every spec built in place rank as permanently in
     flight — `live` and `current` both true forever — on a ref it never took."""
+    handle = slugify(title) or "spec"
+    default = f"plan/{spec_id}-{handle}"
     rec = fm.get("branch")
     if not isinstance(rec, dict):
-        return f"plan/{slug}"
+        return default
     work = str(rec.get("work", "")).strip()
     if work and work == str(rec.get("base", "")).strip():
         return None
-    return work or f"plan/{slug}"
+    return work or default
 
 
 def _candidate(backend: SpecBackend, s: dict, schema: dict, heads: set[str],
@@ -123,11 +126,10 @@ def _candidate(backend: SpecBackend, s: dict, schema: dict, heads: set[str],
     # every candidate derived from an EMPTY document — the whole front ranked as `captured`
     # with no title, no tasks and nothing executing, and `--front` handed out its
     # single next action from exactly that.
-    info, rerr = backend.read_spec(s["slug"])
+    info, rerr = backend.read_spec(s["id"])
     unreadable = (rerr or {}).get("code")
     if info is None:
-        # Ambiguous slug — the slug came from the listing, so it cannot be unknown, and
-        # `validate` names it `sp-duplicate-slug`. The candidate SURVIVES, derived from an
+        # An unreadable native ID still survives, derived from an
         # empty document exactly as `list` keeps its row: dropping it would hide a spec from
         # the ranking, and `unreadable` says why it ranks as an empty one.
         info = derive_info(s, "")
@@ -138,7 +140,8 @@ def _candidate(backend: SpecBackend, s: dict, schema: dict, heads: set[str],
     prank, pwhy = _priority_rank(fm.get("priority"))
     progress = (checked / total) if total else 0.0
     executing = stage == "executing"
-    work = _work_ref(fm, s["slug"])
+    title = str(fm.get("title") or s.get("title") or "").strip()
+    work = _work_ref(fm, s["id"], title)
     live = work is not None and work in heads
     # A record whose ref is gone stops counting: the branch was merged or deleted, so the
     # spec is no more "in flight" than one that never had a branch at all. A spec built in
@@ -150,8 +153,9 @@ def _candidate(backend: SpecBackend, s: dict, schema: dict, heads: set[str],
     branch = {"work": work, "live": live, "current": on_it}
     age = _days_since(info["date"])
     return {
-        "slug": s["slug"], "folder": s["folder"], "file": s["file"], "date": info["date"],
-        "title": fm.get("title", titleize(s["slug"])), "stage": stage,
+        "id": s["id"], "folder": s.get("folder", s.get("phase", "")),
+        "file": s.get("file", ""), "date": info["date"],
+        "title": title, "stage": stage,
         "summary": fm.get("summary") or None,
         "tasks": tasks,
         "progress": round(progress, 3),
@@ -167,7 +171,7 @@ def _candidate(backend: SpecBackend, s: dict, schema: dict, heads: set[str],
         "branch": branch,
         "path": display_locator(s["path"], root),
         "_key": (branch_rank, 0 if executing else 1, -progress, prank,
-                 info["date"], s["slug"]),
+                 info["date"], str(s["id"])),
         "_why": pwhy,
         "_executing": executing,
     }
@@ -220,7 +224,7 @@ def _table_row(c: dict, recommended: bool) -> dict:
     if len(summary) > SUMMARY_WIDTH:
         summary = summary[:SUMMARY_WIDTH - 1].rstrip() + "…"
     return {
-        "spec": ("→ " if recommended else "") + c["slug"],
+        "spec": ("→ " if recommended else "") + str(c["id"]),
         "summary": summary,
         "stage": c["stage"],
         "tasks": tasks,
@@ -258,7 +262,7 @@ def _order_key(order: str):
     """`rank` is the four-factor ordering this module owns; `priority` is the human's ranking
     alone, which is what a triage table proposes against. Nothing else ranks a front."""
     if order == "priority":
-        return lambda c: (_priority_rank(c["priority"])[0], c["date"], c["slug"])
+        return lambda c: (_priority_rank(c["priority"])[0], c["date"], str(c["id"]))
     return lambda c: c["_key"]
 
 
@@ -275,7 +279,7 @@ def _next_front(args, root: str, out: Emitter) -> int:
     whole non-executing set ties there and falls through to priority — which is exactly the
     intent, without a special case.
 
-    A LIVE `plan/<slug>` ref outranks all four, in both directions: the branch you are
+    A LIVE `plan/<id>-<handle>` ref outranks all four, in both directions: the branch you are
     standing on goes to the top, and one alive but not checked out is demoted below the
     untouched specs — offering it would send a second run at work already under way
     somewhere else. The signal is the ref, never the `branch:` record: a human may cut a
@@ -321,7 +325,7 @@ def _next_front(args, root: str, out: Emitter) -> int:
     needs_triage = bool(ranked) and not prioritized and not in_flight and len(ranked) > 1
 
     obj = {"ok": True, **front_fields(root), "count": len(ranked),
-           "top": ranked[0]["slug"] if ranked else None,
+           "top": ranked[0]["id"] if ranked else None,
            "needsTriage": needs_triage,
            "candidates": ranked}
     if args.json:
@@ -336,7 +340,7 @@ def _next_front(args, root: str, out: Emitter) -> int:
         _print_table(ranked, columns)
     else:
         for i, c in enumerate(ranked, 1):
-            print(f"  {i}. {c['slug']:<32} {c['reason']}")
+            print(f"  {i}. {str(c['id']):<32} {c['reason']}")
     if needs_triage:
         print("\n  nothing is in flight and nothing carries a priority record — this order "
               "is age alone.\n  `cq specs`-driven triage would give it something to stand on.")
@@ -361,9 +365,9 @@ def cmd_next(args, root: str, out: Emitter) -> int:
         return _next_front(args, root, out)
     if not args.spec:
         out.emit(args.json, {"ok": False, "code": "sp-no-target",
-                             "message": "pass --spec <slug> for one spec's next action, "
+                             "message": "pass --spec <id> for one spec's next action, "
                                         "or --front for the ranked candidate list"},
-                 "error: pass --spec <slug>, or --front")
+                 "error: pass --spec <id>, or --front")
         return 1
     backend, err = open_backend(root)
     if err:
@@ -371,7 +375,7 @@ def cmd_next(args, root: str, out: Emitter) -> int:
     info, err = read_one(backend, args.spec, out)
     if err:
         return out.emit_err(args.json, err)
-    base = {"slug": info["slug"], "phase": info["phase"], "folder": info["folder"],
+    base = {"id": info["id"], "phase": info["phase"], "folder": info["folder"],
             "stage": info["stage"], "verification": info["verification"],
             "approved": info["frontmatter"].get("approved") or None,
             "blocked": [{"id": t["id"], "text": t["text"], "reason": t["reason"]}
@@ -417,12 +421,12 @@ def cmd_next(args, root: str, out: Emitter) -> int:
             return 0
         obj = {"ok": True, "action": "promote", "to": "archive", **base,
                "message": f"all tasks complete — write ## Outcome, then "
-                          f"`cq specs promote {info['slug']} --to archive`"}
+                          f"`cq specs promote {info['id']} --to archive`"}
         out.emit(args.json, obj, obj["message"])
         return 0
 
     obj = {"ok": True, "action": "done", **base,
-           "message": f"'{info['slug']}' is archived ("
+           "message": f"'{info['id']}' is archived ("
                       f"{info['frontmatter'].get('outcome', 'done')})"}
     out.emit(args.json, obj, obj["message"])
     return 0

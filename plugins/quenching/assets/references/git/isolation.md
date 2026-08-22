@@ -203,34 +203,17 @@ the same slot `git branch --edit-description` opens an editor on. After every ta
 the current description and rewrite — never duplicate — the one line it owns:
 
 ```
-quenching-slugs: <slug1>,<slug2>
+quenching-specs: <id1>,<id2>
 ```
 
 Any other text already in the description — a line a human wrote by hand — is preserved untouched
-above and below it. A second spec built on the same branch appends its slug to the same line rather
-than writing a second one, and the line is rewritten on every task commit, which is what keeps it
+above and below it. A second spec built on the same branch appends its native ID to the same line
+rather than writing a second one, and the line is rewritten on every task commit, which is what keeps it
 current with HEAD without a separate cleanup pass. The read-merge-write, run by
 `/quenching:specs:execute` after every task's commit:
 
 ```bash
-python3 -c "
-import subprocess, re, sys
-name, slug = sys.argv[1], sys.argv[2]
-r = subprocess.run(['git', 'config', 'branch.%s.description' % name], capture_output=True, text=True)
-lines = r.stdout.splitlines() if r.returncode == 0 else []
-slugs, idx = set(), None
-for i, line in enumerate(lines):
-    m = re.match(r'quenching-slugs: (.*)', line)
-    if m:
-        slugs, idx = {s.strip() for s in m.group(1).split(',') if s.strip()}, i
-slugs.add(slug)
-newline = 'quenching-slugs: ' + ','.join(sorted(slugs))
-if idx is not None:
-    lines[idx] = newline
-else:
-    lines.append(newline)
-subprocess.run(['git', 'config', 'branch.%s.description' % name, chr(10).join(lines)], check=True)
-" "<work>" "<slug>"
+cq git specs <work> --add <id> --json
 ```
 
 **Never marked under `In place`.** The mark exists only when this command controls the branch it is

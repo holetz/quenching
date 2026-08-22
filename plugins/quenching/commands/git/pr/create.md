@@ -3,16 +3,16 @@ description: >-
   Push the current branch and open a pull request through the repository's provider — GitHub or
   Azure DevOps — against the resolved base, linking the named issue/work item natively. Use when
   the user asks to "open a PR", "create a pull request", "push and open a PR", or "submit this
-  for review". Given a spec slug it derives title, body and the provider locator from the spec and
+  for review". Given a spec id it derives title, body and the provider locator from the spec and
   stamps its write-many `pr:` record. Not for: merging an already-open PR → /quenching:git:merge;
   resolving PR review comments → /quenching:git:pr:review.
-argument-hint: [slug-or-title]
+argument-hint: [id-or-title]
 allowed-tools: Bash(git push:*), Bash(git remote get-url:*), Bash(gh repo view:*), Bash(gh pr create:*), Bash(az repos pr:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
 # /quenching:git:pr:create — push and open the pull request
 
-**Input**: `$ARGUMENTS` — a spec slug (derives title, body and the provider's issue/work-item
+**Input**: `$ARGUMENTS` — a spec id (derives title, body and the provider's issue/work-item
 link), or free text to use as the PR title. Omitted → ask.
 
 Opens the PR and **stops there** — merging is `/quenching:git:merge`'s, on its own confirmation.
@@ -40,7 +40,7 @@ a finding.
 branch are resolved.
 
 ### 2. Resolve title, body and the provider link
-A spec slug in `$ARGUMENTS` → `cq specs status --spec "<slug>" --json`; its `path` is the provider
+A spec id in `$ARGUMENTS` → `cq specs status --spec "<id>" --json`; its `path` is the provider
 locator. On `github`, the trailing number is an issue `<n>` and the body gets `Closes #<n>`. On
 `azure-boards`, the trailing number is a work item `<n>` and the link is passed as
 `--work-items <n>` to Azure; do not invent a `Closes #<n>` sentence. Free text → that text is the
@@ -78,14 +78,14 @@ push/create failed and its error is reported verbatim.
 [plan-git-record.md](/.knowledge/standards/workflows/plan-git-record.md) §Three frontmatter
 records.
 
-### 5. Stamp, with a slug
+### 5. Stamp, with an ID
 ```bash
-cq specs record "<slug>" pr --set number=<provider-pr-id> --set url=<provider-url> --set date=<today>
+cq specs record "<id>" pr --set number=<provider-pr-id> --set url=<provider-url> --set date=<today>
 ```
 `pr:` is **write-many** — a later PR on the same spec (closed and reopened, or force-pushed to a
 fresh number) is a new fact, not a correction of this one, which is why it carries its own `date`.
-No slug → nothing to stamp; report the PR number and URL only. **Done when:** the record is stamped
-(with a slug) or the report carries the PR's own facts (without one).
+No ID → nothing to stamp; report the PR number and URL only. **Done when:** the record is stamped
+(with an ID) or the report carries the PR's own facts (without one).
 
 ### 6. Report
 State the provider, PR number/id, URL, base it targets, and the effect of the native issue/work-item
