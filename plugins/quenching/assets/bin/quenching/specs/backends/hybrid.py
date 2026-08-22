@@ -36,11 +36,11 @@ from quenching.specs.parse import titleize
 # GitHub task list anyway: it renders as a checkbox with a progress count, and ticking it in the
 # web UI edits the document, which closing a sub-issue never did.
 #
-# THE MARKER ON THE BODY CARRIES THE FILENAME, which is now the bare `<slug>.md`. It used to
-# carry `YYYY-MM-DD-<slug>.md`, and that prefix was the ONLY reason this marker held a date: the
-# files backend read a spec's capture date out of its basename, so a store with no filenames had
-# to keep a synthetic one to stay equal to it. The date is a frontmatter field now, read by the
-# one shared derivation in every backend, and the marker is back to doing its one job.
+# THE MARKER ON THE BODY CARRIES NO IDENTITY. It used to carry `YYYY-MM-DD-<slug>.md`, and that
+# prefix was the ONLY reason this marker held a date: the files backend read a spec's capture
+# date out of its basename, so a store with no filenames had to keep a synthetic one to stay
+# equal to it. The date is a frontmatter field now, read by the one shared derivation in every
+# backend, and the marker is back to doing its one job.
 #
 # That job is what makes a spec issue distinguishable from an ordinary one, and it is why the
 # marker did not simply disappear with the date: a repo's issue tracker belongs to its humans,
@@ -48,8 +48,9 @@ from quenching.specs.parse import titleize
 # write over them. An HTML comment is the one place in a markdown body that survives a round
 # trip through GitHub's issue editor while staying invisible to a human reading the issue, and
 # the same reasoning applies one level down to a continuation comment's own marker, below.
-HYBRID_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec:\s*(\S+)(?:\s+parts=(\d+))?"
-                              r"\s*-->[ \t]*\r?\n")
+HYBRID_MARKER_RE = re.compile(
+    r"\A<!--\s*quenching-spec(?:\s*:\s*\S+)?(?:\s+parts=(\d+))?"
+    r"\s*-->[ \t]*\r?\n")
 
 # `azure-boards`'s own marker shape — measured (task 6.1) that `System.Description` strips any
 # HTML comment on write, in every position tried, which the comment form above cannot survive.
@@ -69,16 +70,18 @@ HYBRID_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec:\s*(\S+)(?:\s+parts=(\d+
 # The `;?` below is not decoration: Azure normalises `display:none` to `display:none;`, so a
 # marker written by this tool and a marker read back from the API differ by one character.
 HYBRID_DIV_MARKER_RE = re.compile(
-    r'\A<div style="display:\s*none;?"\s*>\s*quenching-spec:\s*(\S+)(?:\s+parts=(\d+))?'
+    r'\A<div style="display:\s*none;?"\s*>\s*quenching-spec(?:\s*:\s*\S+)?'
+    r'(?:\s+parts=(\d+))?'
     r"\s*</div>[ \t]*\r?\n")
 
 
 def hybrid_wrap(filename: str, text: str, parts: int = 1, fmt: str = "comment") -> str:
-    """The marker line a spec issue is recognised by, and the document under it.
+    """The payload-free marker line a spec issue is recognised by, and the document under it.
 
     `parts=` is written ONLY when there is more than one. The single-part form — every document
     but the two largest this repository holds — is therefore byte-identical to the marker as it
-    was before continuations existed, and one regex reads both.
+    was before continuations existed, and one regex reads both. `filename` remains in the
+    call shape while old backends are migrated, but it is deliberately not serialised.
 
     `fmt='div'` is `azure-boards`'s own variant — measured (task 6.1) that `System.Description`
     STRIPS any HTML comment on write, in any position, which makes the default form invisible
@@ -96,13 +99,13 @@ def hybrid_wrap(filename: str, text: str, parts: int = 1, fmt: str = "comment") 
         # in `hybrid_split_failures` has carried this exact shape since task 6.1 of the
         # previous plan. The reader stays tolerant (`;?`, `\s*`) for documents written before
         # this.
-        return (f'<div style="display:none;">quenching-spec: {filename}{count} </div>\n'
+        return (f'<div style="display:none;">quenching-spec{count} </div>\n'
                 f'{text}')
-    return f"<!-- quenching-spec: {filename}{count} -->\n{text}"
+    return f"<!-- quenching-spec{count} -->\n{text}"
 
 
 def hybrid_unwrap(body: str) -> tuple[str, str, int]:
-    """`(filename, chunk, parts)` for a spec issue, or `("", "", 0)` for anything else.
+    """`("", chunk, parts)` for a spec issue, or `("", "", 0)` for anything else.
 
     Line endings are normalised on the way in. GitHub stores and returns issue bodies with
     CRLF, so a document written as LF comes back different from what was stored — every section
@@ -113,14 +116,16 @@ def hybrid_unwrap(body: str) -> tuple[str, str, int]:
     never pays a call to discover there is nothing more to fetch.
 
     BOTH marker shapes are tried, comment first — the reader does not know which backend wrote
-    what it was handed, and never needs to: exactly one of the two ever matches a given body."""
+    what it was handed, and never needs to: exactly one of the two ever matches a given body.
+    A legacy filename is accepted for migration and discarded; identity belongs to the
+    provider-native ID, never to this marker."""
     body = (body or "").replace("\r\n", "\n")
     m = HYBRID_MARKER_RE.match(body)
     if m:
-        return m.group(1), body[m.end():], int(m.group(2) or 1)
+        return "", body[m.end():], int(m.group(1) or 1)
     m = HYBRID_DIV_MARKER_RE.match(body)
     if m:
-        return m.group(1), body[m.end():], int(m.group(2) or 1)
+        return "", body[m.end():], int(m.group(1) or 1)
     return "", "", 0
 
 

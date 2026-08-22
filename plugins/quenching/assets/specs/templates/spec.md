@@ -1,5 +1,4 @@
 ---
-slug: <SLUG>
 title: <TITLE>
 date: <DATE>
 verification: <VERIFICATION>
