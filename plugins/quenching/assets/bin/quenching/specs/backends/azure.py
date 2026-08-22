@@ -376,6 +376,8 @@ AZ_BATCH_FIELDS = ("System.Id", "System.Title", "System.State", "System.Descript
                    # remove.
                    "System.AreaPath", "System.IterationPath")
 
+AZ_LEAN_BATCH_FIELDS = ("System.Id", "System.Title", "System.State", "System.Tags")
+
 
 def azure_patch_body(current: dict, desired: dict, *, markdown: bool = False,
                      parent: tuple[int, str] | None = None) -> list[dict]:
@@ -672,14 +674,14 @@ class AzureBoardsBackend(SpecBackend):
             self._field(item, "System.Title"), self._native_fields(item),
             self._raw_tags(item))
 
-    def _show_many(self, ids: list[int]) -> list[dict]:
-        """Every work item's fields, `AZ_BATCH_SIZE` ids per call via
+    def _show_many(self, ids: list[int], lean: bool = False) -> list[dict]:
+        """Every work item's requested fields, `AZ_BATCH_SIZE` ids per call via
         `az devops invoke --resource workitemsbatch` — 1 + ⌈N/200⌉ calls for a listing rather
         than 1 + N. `az boards work-item show` takes a single id and has no batch form; the
-        REST resource does, and — measured on this org — it is the one place that returns
-        `System.Description`, which the WIQL query itself never does (`azure_query_wiql` asks
-        for `System.Id` alone). The cost is still declared, not hidden: it is why the listing
-        stays cached for the whole process."""
+        REST resource does. The complete path asks for `System.Description`; `lean=True` asks
+        only for the native index fields, so the WIQL query and the batch both avoid document
+        bodies. The cost is still declared, not hidden: it is why the full listing stays cached
+        for the whole process."""
         import tempfile
         items: list[dict] = []
         for start in range(0, len(ids), AZ_BATCH_SIZE):
@@ -687,10 +689,11 @@ class AzureBoardsBackend(SpecBackend):
             fd, path = tempfile.mkstemp(suffix=".json")
             try:
                 with os.fdopen(fd, "w", encoding="utf-8") as fh:
-                    fields = list(AZ_BATCH_FIELDS)
-                    known = self._board_field_for_read()
-                    if known:
-                        fields.append(known)
+                    fields = list(AZ_LEAN_BATCH_FIELDS if lean else AZ_BATCH_FIELDS)
+                    if not lean:
+                        known = self._board_field_for_read()
+                        if known:
+                            fields.append(known)
                     json.dump({"ids": chunk, "fields": fields}, fh)
                 result = self._az_raw(
                     f"reading {len(chunk)} work item(s) in batch", "devops", "invoke",
@@ -813,7 +816,31 @@ class AzureBoardsBackend(SpecBackend):
         return out
 
     # -- the five primitives -------------------------------------------------- #
-    def list_specs(self, phase: str | None = None) -> list[dict]:
+    def list_specs(self, phase: str | None = None, lean: bool = False) -> list[dict]:
+        if lean:
+            found = self._az("querying the project's work items (lean index)", "query",
+                             "--project", self.project, "--wiql",
+                             azure_query_wiql(self.project, self.area_path, self.discovery_tag),
+                             expect="array") or []
+            ids = [int(r.get("id") or (r.get("fields") or {}).get("System.Id") or 0)
+                   for r in found]
+            rows = []
+            for item in self._show_many([i for i in ids if i], lean=True):
+                item_id = int(item.get("id") or 0)
+                if not item_id:
+                    continue
+                state = self._field(item, "System.State")
+                item_phase = self._phase_of(item)
+                rows.append({
+                    "id": item_id, "title": self._field(item, "System.Title"),
+                    "state": state, "records": [tag for tag in self._raw_tags(item)
+                                                   if tag.startswith("spec:")],
+                    "phase": item_phase, "folder": item_phase, "legacy": False,
+                    "path": f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}",
+                })
+            return sorted([row for row in rows
+                           if phase is None or row["phase"] == phase],
+                          key=lambda r: (PHASES.index(r["phase"]), r["id"]))
         rows = [dict(d) for d, _, _, _, _, _ in self._load()
                 if phase is None or d["phase"] == phase]
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["id"]))

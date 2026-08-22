@@ -463,6 +463,48 @@ class GitHubBackend(SpecBackend):
         return [str(lbl.get("name")) for lbl in (issue.get("labels") or [])
                 if isinstance(lbl, dict) and lbl.get("name")]
 
+    def _lean_rows(self) -> list[dict]:
+        """The provider's cheap spec index: title, state and the visible `spec:` labels.
+
+        `gh issue list` searches the body marker server-side, so the document body never
+        crosses the wire. It is intentionally separate from `_load`: a caller asking for the
+        complete front still needs the canonical document and its native fields."""
+        action = "listing specs through GitHub's lean index"
+        code, out, err = _gh_run(
+            self.cwd, "issue", "list", "--repo", self.repo, "--state", "all", "--search",
+            '"quenching-spec" in:body', "--json", "number,title,state,labels", "--limit", "1000")
+        if code != 0:
+            raise BackendRefusal(gh_refusal(action, code, out, err))
+        try:
+            issues = json.loads(out or "null")
+        except json.JSONDecodeError as e:
+            raise BackendRefusal({
+                "code": "sp-gh-bad-response", "exit": 2, "action": action,
+                "message": f"`gh` exited 0 while {action} but its output is not JSON: {e}",
+            }) from e
+        if not isinstance(issues, list):
+            raise BackendRefusal({
+                "code": "sp-gh-bad-response", "exit": 2, "action": action,
+                "message": f"`gh` returned {type(issues).__name__}, not a list, for {action}",
+            })
+        rows: list[dict] = []
+        for issue in issues:
+            if not isinstance(issue, dict):
+                continue
+            number = int(issue.get("number") or 0)
+            if not number:
+                continue
+            state = str(issue.get("state") or "open").strip().lower()
+            phase = "archive" if state == "closed" else "plans"
+            rows.append({
+                "id": number, "title": str(issue.get("title") or ""), "state": state,
+                "records": [label for label in self._issue_labels(issue)
+                            if label.startswith("spec:")],
+                "phase": phase, "folder": phase, "legacy": False,
+                "path": f"https://github.com/{self.repo}/issues/{number}",
+            })
+        return rows
+
     def _native_fields(self, issue: dict) -> dict:
         """`tags`/`assignee`, reassembled from `labels`/`assignees` — the READ half of
         `## Design` §Armazenado não é projetado. GitHub allows several assignees; the
@@ -487,7 +529,11 @@ class GitHubBackend(SpecBackend):
         return out
 
     # -- the five primitives -------------------------------------------------- #
-    def list_specs(self, phase: str | None = None) -> list[dict]:
+    def list_specs(self, phase: str | None = None, lean: bool = False) -> list[dict]:
+        if lean:
+            rows = [row for row in self._lean_rows()
+                    if phase is None or row["phase"] == phase]
+            return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["id"]))
         rows = [dict(d) for d, _, _, _, _, _, _ in self._load()
                 if phase is None or d["phase"] == phase]
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["id"]))

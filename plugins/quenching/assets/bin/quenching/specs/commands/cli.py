@@ -78,6 +78,8 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp = add_json(sub.add_parser("list", help="every spec, by folder and derived stage"))
     sp.add_argument("--phase", choices=list(PHASES),
                     help="cut the listing to one phase (default: every phase)")
+    sp.add_argument("--lean", action="store_true",
+                    help="use the provider's native index; omit document-derived fields")
 
     sp = add_json(sub.add_parser("status", help="one spec's sections, stage, tasks, gates"))
     sp.add_argument("--spec", required=True)
