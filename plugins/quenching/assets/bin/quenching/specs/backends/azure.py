@@ -14,8 +14,7 @@ from quenching.specs.config import (AZ_DEFAULT_DISCOVERY_TAG, CONFIG_FILE, annou
                                     find_repo_root, load_config, resolve_work_item_type)
 from quenching.specs.parse import (FIELD_KEYS, PHASES, SPEC_FILE_RE, board_state_of,
                                    carry_forward_fields, declared_tags, derive_info,
-                                   derive_labels, resolve_one, strip_frontmatter_keys,
-                                   tags_outside_catalog)
+                                   derive_labels, strip_frontmatter_keys, tags_outside_catalog)
 
 
 # OURS, never one of az's: the binary is not on PATH, so no process ever started. Same
@@ -89,7 +88,10 @@ def azure_cache_read(org: str, project: str) -> dict:
     try:
         with open(azure_cache_path(org, project), encoding="utf-8") as fh:
             data = json.load(fh)
-        return data if isinstance(data, dict) else {}
+        if not isinstance(data, dict):
+            return {}
+        data.pop("slugs", None)
+        return data
     except (OSError, json.JSONDecodeError):
         return {}
 
@@ -99,6 +101,7 @@ def azure_cache_write(org: str, project: str, **entries) -> None:
     cache only ever saves a call, so failing to save one is not worth a refusal."""
     path = azure_cache_path(org, project)
     data = azure_cache_read(org, project)
+    data.pop("slugs", None)
     data.update(entries)
     try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -550,8 +553,6 @@ class AzureBoardsBackend(SpecBackend):
         # it belongs to — a stale entry would diff a write against the item as it was
         # two writes ago and elide an op that was still needed.
         self._raw: dict[int, dict] = {}
-        # slug -> its row, for the narrowed read. Same lifetime as `_rows`, same reset.
-        self._one: dict[str, tuple | None] = {}
 
     # -- transport ---------------------------------------------------------- #
     def _az_raw(self, action: str, *argv: str, expect: str = "object"):
@@ -646,8 +647,6 @@ class AzureBoardsBackend(SpecBackend):
         rows = [row for row in (self._row_of(item)
                                 for item in self._show_many([i for i in ids if i])) if row]
         self._rows = rows
-        azure_cache_write(self.org, self.project,
-                          slugs={d["slug"]: item_id for d, item_id, *_ in rows})
         return rows
 
     def _row_of(self, item: dict) -> tuple[dict, int, str, str, dict, list[str]] | None:
@@ -656,9 +655,8 @@ class AzureBoardsBackend(SpecBackend):
         The marker is what tells a spec apart from the project's real backlog, which this
         backend must never list and must never write over — so an ordinary work item a human
         created answers None here rather than being carried any further."""
-        filename, doc, _ = hybrid_unwrap(self._field(item, "System.Description"))
-        m = SPEC_FILE_RE.match(filename)
-        if not m:
+        _, doc, parts = hybrid_unwrap(self._field(item, "System.Description"))
+        if not parts:
             return None
         item_id = int(item.get("id") or 0)
         # KEYED BY ID, never a seventh slot on the row. The tuple is already six wide and its
@@ -668,41 +666,11 @@ class AzureBoardsBackend(SpecBackend):
         self._raw[item_id] = azure_comparable_fields(item.get("fields") or {})
         phase = self._phase_of(item)
         return ({
-            # The SAME key set `spec_files` returns and nothing more.
-            "phase": phase, "folder": phase, "legacy": False, "file": filename,
+            "id": item_id, "phase": phase, "folder": phase, "legacy": False,
             "path": f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}",
-            "slug": m.group(1),
         }, item_id, azure_restore_trailing_newline(doc),
             self._field(item, "System.Title"), self._native_fields(item),
             self._raw_tags(item))
-
-    def _row_for(self, slug: str) -> tuple[dict, int, str, str, dict, list[str]] | None:
-        """One spec's row from a remembered id — the WIQL and the whole-front batch skipped —
-        or None, which means "ask the listing", never "it is not there".
-
-        THE CACHE ONLY EVER NARROWS THE READ. The item is still fetched and still unwrapped,
-        and the marker that comes back is compared against the slug that was asked for: a
-        remembered id pointing at a recreated, retitled or deleted work item answers None and
-        falls through to `_load`. Nothing is written on the strength of the cache alone,
-        which is the whole reason it is allowed to cross processes at all.
-
-        A slug the cache never saw is also None — no fuzzy resolution happens here, so a typo
-        keeps reaching `read_spec`'s `resolve_one` exactly as before."""
-        if self._rows is not None:
-            return next((r for r in self._rows if r[0]["slug"] == slug), None)
-        if slug in self._one:
-            return self._one[slug]
-        item_id = (azure_cache_read(self.org, self.project).get("slugs") or {}).get(slug)
-        if not item_id:
-            return None
-        items = self._show_many([int(item_id)])
-        row = self._row_of(items[0]) if items else None
-        row = row if row and row[0]["slug"] == slug else None
-        # MEMOISED FOR THE PROCESS, like `_rows` beside it: one command reads the spec and
-        # then writes it, and without this the narrowed read happens twice — measured live,
-        # two `workitemsbatch` calls for one `section --write`.
-        self._one[slug] = row
-        return row
 
     def _show_many(self, ids: list[int]) -> list[dict]:
         """Every work item's fields, `AZ_BATCH_SIZE` ids per call via
@@ -778,27 +746,9 @@ class AzureBoardsBackend(SpecBackend):
     def _invalidate(self) -> None:
         self._rows = None
         self._raw = {}
-        self._one = {}
 
-    def _item_id(self, slug: str) -> int:
-        return self._item_tags(slug)[0]
-
-    def _item_tags(self, slug: str) -> tuple[int, list[str]]:
-        """`(work item id, its current System.Tags)` — both from the listing already in
-        hand, so knowing which tags a write must reconcile against costs no call of its
-        own. The tags come back RAW, discovery tag and `spec:` rendering included: this is
-        the write path's view, and the only one that wants them unfiltered."""
-        row = self._row_for(slug)
-        for descriptor, item_id, _, _title, _native, tags in ([row] if row
-                                                              else self._load()):
-            if descriptor["slug"] == slug:
-                return item_id, tags
-        raise BackendRefusal({
-            "code": "sp-az-item-gone", "exit": 2, "slug": slug,
-            "message": f"spec '{slug}' was in the listing and is not there any more — the "
-                       f"work item was deleted or moved while this command ran; nothing "
-                       f"was written",
-        })
+    def _item_id(self, spec_id: str | int) -> int:
+        return int(spec_id)
 
     def marker_without_discovery_tag(self) -> list[dict]:
         """Items carrying the spec marker in their description but NOT the discovery tag —
@@ -814,13 +764,12 @@ class AzureBoardsBackend(SpecBackend):
         ids = [int(r.get("id") or 0) for r in found if r.get("id")]
         out: list[dict] = []
         for item in self._show_many(ids):
-            filename, _, _ = hybrid_unwrap(self._field(item, "System.Description"))
-            m = SPEC_FILE_RE.match(filename)
-            if not m:
+            _, _, parts = hybrid_unwrap(self._field(item, "System.Description"))
+            if not parts:
                 continue
             tags = self._raw_tags(item)
             if self.discovery_tag and self.discovery_tag not in tags:
-                out.append({"id": int(item.get("id") or 0), "slug": m.group(1)})
+                out.append({"id": int(item.get("id") or 0)})
         return out
 
     def board_findings(self) -> list[dict]:
@@ -834,10 +783,10 @@ class AzureBoardsBackend(SpecBackend):
         one `workitemsbatch` would need asked for by name."""
         out: list[dict] = []
         for row in self.list_specs():
-            info, rerr = self.read_spec(row["slug"])
+            info, rerr = self.read_spec(row["id"])
             if rerr or info is None:
                 continue
-            item_id = self._item_id(row["slug"])
+            item_id = self._item_id(row["id"])
             item = self._az(f"reading work item {item_id} for doctor", "work-item", "show",
                             "--id", str(item_id))
             state = board_state_of(info)
@@ -847,45 +796,40 @@ class AzureBoardsBackend(SpecBackend):
                                                    info["frontmatter"].get("workItemType"))
                 actual = self._field(item, self._resolve_board_field(type_name))
                 if actual and actual != expected:
-                    out.append({"kind": "column", "id": item_id, "slug": row["slug"],
+                    out.append({"kind": "column", "id": item_id,
                                "actual": actual, "expected": expected})
             # `declared_tags`, never the raw set: the discovery tag and the `spec:`
             # rendering are the TOOL's, so a catalogue that never lists them is complete,
             # not lacking — flagging them would make this finding fire on every spec.
             tags = declared_tags(self._raw_tags(item), self.discovery_tag)
             for tag in tags_outside_catalog(tags, self.tag_catalog):
-                out.append({"kind": "tag", "id": item_id, "slug": row["slug"], "tag": tag})
+                out.append({"kind": "tag", "id": item_id, "tag": tag})
             # Past `captured` (Backlog) is where the team's own rule ("a partir do
             # Entendimento Técnico, as datas são obrigatórias") starts applying —
             # `## Out of Scope` keeps this a finding, never a refusal.
             if state != "captured" and not (info["frontmatter"].get("start")
                                             and info["frontmatter"].get("target")):
-                out.append({"kind": "dates", "id": item_id, "slug": row["slug"]})
+                out.append({"kind": "dates", "id": item_id})
         return out
 
     # -- the five primitives -------------------------------------------------- #
     def list_specs(self, phase: str | None = None) -> list[dict]:
         rows = [dict(d) for d, _, _, _, _, _ in self._load()
                 if phase is None or d["phase"] == phase]
-        return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
+        return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["id"]))
 
-    def read_spec(self, slug: str) -> tuple[dict | None, dict]:
-        # The remembered id first: an exact slug answers with ONE work item fetched and no
-        # WIQL at all, and anything else — a typo, a slug the cache never saw, an id that no
-        # longer holds this spec — falls through to the listing, where `resolve_one` still
-        # does the fuzzy matching it always did.
-        hit = self._row_for(slug)
-        if hit:
-            spec, full_text, native_title, native_fields = dict(hit[0]), hit[2], hit[3], hit[4]
-        else:
-            rows = self._load()
-            spec, err = resolve_one(self.list_specs(), slug,
-                                    {d["slug"]: t for d, _, _, t, _, _ in rows})
-            if err:
-                return None, err
-            _, full_text, native_title, native_fields = next(
-                (i, d, t, f) for descriptor, i, d, t, f, _tags in rows
-                if descriptor["slug"] == spec["slug"])
+    def read_spec(self, spec_id: str | int) -> tuple[dict | None, dict]:
+        try:
+            item_id = int(spec_id)
+        except (TypeError, ValueError):
+            return None, {"code": "sp-unknown-id", "exit": 1, "id": spec_id,
+                          "message": f"no spec with id '{spec_id}'"}
+        items = self._show_many([item_id])
+        row = self._row_of(items[0]) if items else None
+        if not row:
+            return None, {"code": "sp-unknown-id", "exit": 1, "id": spec_id,
+                          "message": f"no spec with id '{spec_id}'"}
+        spec, full_text, native_title, native_fields = (dict(row[0]), row[2], row[3], row[4])
         info = derive_info(spec, hybrid_title_join(full_text, native_title))
         # REASSEMBLED, not re-parsed: the stored document never carries these four keys
         # (`write_spec` strips them — §Armazenado não é projetado), so the native fields ARE
@@ -895,7 +839,7 @@ class AzureBoardsBackend(SpecBackend):
 
     def write_spec(self, info: dict, text: str) -> None:
         announce_unproved(self.name)
-        item_id = self._item_id(info["slug"])
+        item_id = self._item_id(info["id"])
         # FRESH, off the text THIS write is putting in place — every caller (`cmd_record`,
         # `cmd_field`, `cmd_promote`...) hands `write_spec` the OLD `info` beside the NEW
         # `text`, so trusting `info["frontmatter"]` here would read the state a write is
@@ -909,14 +853,15 @@ class AzureBoardsBackend(SpecBackend):
         # rather than skipped, so this backend goes through the SAME serialisation as the
         # proved one instead of a shorter path of its own that nothing checks.
         stripped = strip_frontmatter_keys(text, FIELD_KEYS)
-        stored, title = hybrid_project(info["slug"], stripped)
+        stored, title = hybrid_project(info["frontmatter"].get("slug", ""), stripped)
         chunks = hybrid_split(stored, None)
         # Placement is REAFFIRMED here, not just declared at creation — a human moving the
         # work item to another area between writes sees the next one bring it back, the same
         # way `move_spec` already owns the state. Only declared fields reach `desired`, so
         # an unset `iteration_path` is simply not one of them.
         desired = {"System.Title": title,
-                   "System.Description": hybrid_wrap(info["file"], chunks[0][0], fmt="div")}
+                   "System.Description": hybrid_wrap(info.get("file", ""), chunks[0][0],
+                                                      fmt="div")}
         if self.area_path:
             desired["System.AreaPath"] = self.area_path
         if self.iteration_path:
@@ -1164,7 +1109,7 @@ class AzureBoardsBackend(SpecBackend):
 
     def move_spec(self, info: dict, dest_phase: str) -> str:
         announce_unproved(self.name)
-        item_id = self._item_id(info["slug"])
+        item_id = self._item_id(info["id"])
         # The column is what actually moves a card between phases in the human's own vocabulary
         # (Kanban.Column), and applying it is what the board itself resolves `System.State`
         # from — never the reverse. `states[dest_phase]` is the fallback for a repo whose

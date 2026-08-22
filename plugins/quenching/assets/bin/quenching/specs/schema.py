@@ -46,11 +46,11 @@ DEFAULT_SCHEMA: dict = {
     "version": "3.0.0",
     "filename": {
         "pattern": r"^([a-z0-9]+(?:-[a-z0-9]+)*)\.md$",
-        "groups": ["slug"],
+        "groups": [],
         "example": "session-tokens.md",
     },
     "frontmatter": {
-        "required": ["slug", "title", "date"],
+        "required": ["title", "date"],
         "optional": ["verification", "priority", "refined", "approved", "branch", "pr", "reviewed",
                      "merge", "outcome", "workItemType", "tags", "assignee", "start", "target",
                      "summary"],
@@ -161,7 +161,6 @@ def _behavioral(node):
 # byte-for-byte copy of assets/specs/templates/spec.md — `test_specs_assets.py`'s
 # `test_the_embedded_template_is_byte_for_byte_spec_md` proves it, and EDIT BOTH OR NEITHER.
 TEMPLATE_SPEC = """---
-slug: <SLUG>
 title: <TITLE>
 date: <DATE>
 verification: <VERIFICATION>

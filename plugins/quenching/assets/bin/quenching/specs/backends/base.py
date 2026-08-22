@@ -33,16 +33,16 @@ class SpecBackend:
         """Every spec descriptor, oldest first within each phase."""
         raise NotImplementedError
 
-    def read_spec(self, slug: str) -> tuple[dict | None, dict]:
+    def read_spec(self, spec_id: str | int) -> tuple[dict | None, dict]:
         """`(info, err)` — the canonical document plus everything derived from it, or a
-        ready-to-emit refusal. Never raises for an unknown or ambiguous slug."""
+        ready-to-emit refusal. Never raises for an unknown ID."""
         raise NotImplementedError
 
     def write_spec(self, info: dict, text: str) -> None:
         """Replace one spec's whole document with `text`."""
         raise NotImplementedError
 
-    def create_spec(self, phase: str, filename: str, text: str) -> str:
+    def create_spec(self, phase: str, text: str) -> str:
         """Store a new spec and return the locator a report can show a human."""
         raise NotImplementedError
 

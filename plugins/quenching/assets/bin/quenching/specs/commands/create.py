@@ -1,4 +1,4 @@
-"""`new` — capture a spec into `plans/` in ONE call: frontmatter, `summary`, `tags`,
+"""`new` — capture a spec into the configured backend in ONE call: frontmatter, `summary`, `tags`,
 `priority.complexity` and N sections, all spliced into the body IN MEMORY before the single
 `backend.create_spec`."""
 from __future__ import annotations
@@ -7,16 +7,14 @@ import json
 import sys
 
 from quenching.common.dates import today
-from quenching.common.text import slugify
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.fields import record_field_value_error
 from quenching.specs.commands.output import Emitter, display_locator
 from quenching.specs.config import (azure_workitemtype_retirement, load_config,
                                     resolve_subject, resolve_type_key)
-from quenching.specs.parse import derive_info, titleize
+from quenching.specs.parse import derive_info
 from quenching.specs.parse.edit import split_section_stream, upsert_section
 from quenching.specs.parse.fields import set_frontmatter_key, set_frontmatter_record
-from quenching.specs.parse.spec import SLUG_RE
 from quenching.specs.schema import (DEFAULT_VERIFICATION, canonical_headings, capture_form,
                                     load_schema, section_guidance)
 
@@ -26,13 +24,11 @@ def _tags_repr(tags: list[str]) -> str:
 
 
 def cmd_new(args, root: str, out: Emitter) -> int:
-    """Scaffold `plans/<slug>.md`, carrying whatever the capture supplies — `## Problem`
+    """Capture a titled spec, carrying whatever the capture supplies — `## Problem`
     alone by default, or every flag and section a caller hands in.
 
-    THE DATE IS STAMPED HERE AND NEVER AGAIN, now into the frontmatter's `date:` rather than
-    into the basename. `promote` moves the file without renaming it, so the basename — the
-    bare slug — is the spec's identity for its whole lifecycle, and the date is a fact the
-    document carries instead of a fact its name encodes.
+    THE DATE IS STAMPED HERE AND NEVER AGAIN, into the frontmatter's `date:`. The positional
+    argument is the title; the provider assigns the spec's identity when it stores the body.
 
     EVERY REFUSAL IS SETTLED BEFORE THE ONE `create_spec`, exactly as `cmd_section`'s stream
     write already does: `--complexity` is validated and the stdin stream is decomposed and
@@ -43,26 +39,9 @@ def cmd_new(args, root: str, out: Emitter) -> int:
     heading set on the command line — the stream IS the declaration, so a stream that never
     opens on a canonical heading has no single implied heading to fall back on and refuses
     instead."""
-    slug = slugify(args.name)
-    if not SLUG_RE.match(slug):
-        out.emit(args.json, {"ok": False, "code": "sp-bad-slug", "slug": args.name,
-                             "message": f"'{args.name}' does not reduce to a kebab-case slug"},
-                 f"error: '{args.name}' does not reduce to a kebab-case slug")
-        return 2
     backend, err = open_backend(root)
     if err:
         return out.emit_err(args.json, err)
-    # Asked of the backend, not of the filesystem: a slug already taken in GitHub must
-    # refuse here exactly as one already taken on disk does.
-    matches = [s for s in backend.list_specs() if s["slug"] == slug]
-    if matches:
-        m = matches[0]
-        out.emit(args.json,
-                 {"ok": False, "code": "sp-slug-exists", "slug": slug,
-                  "existing": f"{m['folder']}/{m['file']}",
-                  "message": f"slug '{slug}' already exists at {m['folder']}/{m['file']}"},
-                 f"refused: slug '{slug}' already exists at {m['folder']}/{m['file']}")
-        return 2
     cfg = load_config(root)
     subject, serr = resolve_subject(cfg, args.subject)
     if serr:
@@ -128,10 +107,9 @@ def cmd_new(args, root: str, out: Emitter) -> int:
             return 2
 
     policy = args.verification or DEFAULT_VERIFICATION
-    title = args.title or titleize(slug)
-    name = f"{slug}.md"
+    title = args.title or args.name
     body = (capture_form(schema=schema)
-            .replace("<SLUG>", slug)
+            .replace("slug: <SLUG>\n", "")
             .replace("<TITLE>", title)
             .replace("<DATE>", today())
             .replace("<VERIFICATION>", policy))
@@ -173,12 +151,12 @@ def cmd_new(args, root: str, out: Emitter) -> int:
     # `defaultSubject` `open_azure_backend` applied when the backend was opened.
     if subject and subject.get("parent") and hasattr(backend, "parent_id"):
         backend.parent_id = subject["parent"]
-    path = backend.create_spec("plans", name, body)
+    path = backend.create_spec("plans", body)
     out.emit(args.json,
-             {"ok": True, "slug": slug, "title": title, "verification": policy,
+             {"ok": True, "title": title, "verification": policy,
               "workItemType": type_key,
-              "phase": "plans", "folder": "plans", "file": name, "stage": "captured",
+              "phase": "plans", "stage": "captured",
               "path": display_locator(path, root)},
-             f"created plans/{name}  (slug: {slug} · verification: {policy})\n"
-             f"next: write ## Problem, then `cq specs section {slug} Proposal --write`")
+             f"created '{title}'  (verification: {policy})\n"
+             "next: write ## Problem, then continue with the provider-native spec ID")
     return 0

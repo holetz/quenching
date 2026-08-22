@@ -4,10 +4,8 @@ one resolution every backend shares.
 Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
-import difflib
 import os
 import re
-import unicodedata
 
 
 PHASES = ("plans", "archive")
@@ -95,101 +93,10 @@ def spec_files(root: str, phase: str | None = None) -> list[dict]:
     return out
 
 
-# How close a slug or title has to be before it resolves at all. Tuned to accept a TYPO —
-# `evaluate-spec-creation-flo` scores 0.98 against its slug — while refusing a merely adjacent
-# spec: `0.62` matched `decide-plan-quick-skill` against `decide-sp-unrefined-severity` on this
-# repository's own listing, which is not a near miss, it is a different spec.
-#
-# A COPIED FRAGMENT DOES NOT RESOLVE, and that is a property of the metric rather than of this
-# number. `SequenceMatcher.ratio()` is 2·M/(len(a)+len(b)), so a fragment's score is capped at
-# 2·len(fragment)/(len(fragment)+len(title)) no matter how perfectly it appears inside the
-# title: `fluxo de criação de specs` scores 0.5618 against the 62-character title it was copied
-# out of, and nothing shorter than ~60% of a title can clear 0.75 at all. Lowering the number
-# would not buy the fragment rung — it would only start matching adjacent specs, which is the
-# failure this threshold exists to prevent. Resolving a fragment needs a containment metric on
-# the title rung, which is a different design and is left to its own spec.
-FUZZY_MATCH_THRESHOLD = 0.75
-
-
-def _norm(text: str) -> str:
-    """Case, accents and runs of whitespace folded away — the form both sides of a title
-    comparison are reduced to, so `Criação` and `criacao ` are the same string."""
-    folded = unicodedata.normalize("NFD", " ".join((text or "").split()).lower())
-    return "".join(c for c in folded if not unicodedata.combining(c))
-
-
-def resolve_one(specs: list[dict], slug: str,
-                titles: dict | None = None) -> tuple[dict | None, dict]:
-    """Pick one spec descriptor out of a listing, by slug and then by title.
-
-    Pure over the listing, so every backend resolves the same way and gets the same refusals
-    — an ambiguous slug is exit 2 whether the duplicates are two files or two issues. THE
-    TOLERANCE LIVES HERE AND NOWHERE ELSE, for that same reason.
-
-    Four rungs, tried in order and stopping at the first that answers:
-
-      1. the exact slug          the only path that costs anything today
-      2. the exact title         normalised for case, accents and whitespace
-      3. the closest slug OR title above the threshold, if exactly ONE clears it
-      4. nothing                 `sp-unknown-slug`, exit 1
-
-    TWO MATCHES IS STILL A REFUSAL at every rung — never a guess, and the refusal names the
-    candidates so the human picks. A rung-3 answer is announced: the descriptor comes back
-    carrying `resolvedBy: "approximate"` and what it matched, because a command that silently
-    acted on a spec the human did not name is worse than one that asked.
-
-    `titles` is `{slug: title}`, or a callable returning one. It is consulted ONLY after the
-    exact slug misses, so the common path never pays to build it. External backends provide
-    their title index directly, without a local file walk."""
-    matches = [s for s in specs if s["slug"] == slug]
-    if len(matches) > 1:
-        return None, _ambiguous(slug, matches, "slug")
-    if matches:
-        return matches[0], {}
-
-    index = (titles() if callable(titles) else titles) or {}
-    want = _norm(slug)
-
-    exact = [s for s in specs if _norm(index.get(s["slug"], "")) == want]
-    if len(exact) > 1:
-        return None, _ambiguous(slug, exact, "title")
-    if exact:
-        return dict(exact[0], resolvedBy="title",
-                    resolvedFrom=index.get(exact[0]["slug"], "")), {}
-
-    scored = []
-    for s in specs:
-        ratio = max(
-            difflib.SequenceMatcher(None, want, _norm(s["slug"])).ratio(),
-            difflib.SequenceMatcher(None, want, _norm(index.get(s["slug"], ""))).ratio()
-            if index.get(s["slug"]) else 0.0)
-        if ratio >= FUZZY_MATCH_THRESHOLD:
-            scored.append((ratio, s))
-    if len(scored) > 1:
-        best = max(r for r, _ in scored)
-        tied = [s for r, s in scored if r == best]
-        # A single clear winner among several that merely cleared the bar still resolves;
-        # what refuses is a genuine tie, where picking either one would be a coin flip.
-        if len(tied) > 1:
-            return None, _ambiguous(slug, tied, "approximate")
-        return dict(tied[0], resolvedBy="approximate",
-                    resolvedFrom=index.get(tied[0]["slug"], "") or tied[0]["slug"]), {}
-    if scored:
-        s = scored[0][1]
-        return dict(s, resolvedBy="approximate",
-                    resolvedFrom=index.get(s["slug"], "") or s["slug"]), {}
-
-    return None, {"code": "sp-unknown-slug", "exit": 1, "slug": slug,
-                  "message": f"no spec with slug '{slug}'"}
-
-
-def _ambiguous(slug: str, matches: list[dict], rung: str) -> dict:
-    """The one refusal every rung of `resolve_one` shares — exit 2, with the candidates
-    named. `rung` says WHICH comparison tied, because "two specs share a slug" and "your
-    fragment is close to two titles" are fixed by different things."""
-    where = [f"{m['phase']}/{m['file']}" for m in matches]
-    return {
-        "code": "sp-ambiguous-slug", "exit": 2, "slug": slug, "matchedOn": rung,
-        "matches": where,
-        "message": f"'{slug}' matches {len(matches)} specs by {rung} — {', '.join(where)}",
-    }
+def resolve_one(specs: list[dict], spec_id: str | int) -> tuple[dict | None, dict]:
+    """Pick one spec descriptor out of a listing by its provider-native ID."""
+    spec = next((s for s in specs if str(s["id"]) == str(spec_id)), None)
+    if spec is not None:
+        return spec, {}
+    return None, {"code": "sp-unknown-id", "exit": 1, "id": spec_id,
+                  "message": f"no spec with id '{spec_id}'"}

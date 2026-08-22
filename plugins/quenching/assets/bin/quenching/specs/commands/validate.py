@@ -8,8 +8,8 @@ from quenching.common.frontmatter import frontmatter_anomalies
 from quenching.common.output import exit_for
 from quenching.specs.backends import open_backend
 from quenching.specs.backends.base import SpecBackend
-from quenching.specs.commands.output import Emitter, front_fields
-from quenching.specs.parse import LEGACY_DATED_FILE_RE, PHASES, SPEC_FILE_RE
+from quenching.specs.commands.output import Emitter, front_fields, read_one
+from quenching.specs.parse import PHASES
 from quenching.specs.parse.sections import (gate_report, parse_impact_standards, ready_report,
                                             section_state, stray_headings)
 from quenching.specs.parse.tasks import _files_bad_annotation
@@ -22,8 +22,9 @@ def _finding(code: str, severity: str, message: str, **extra) -> dict:
     return {"code": code, "severity": severity, "message": message, **extra}
 
 
-def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
-    """Every finding for ONE spec file, in the v2 `sp-*` vocabulary.
+def validate_spec(backend: SpecBackend, s: dict,
+                  emitter: Emitter | None = None) -> list[dict]:
+    """Every finding for ONE provider spec, in the v2 `sp-*` vocabulary.
 
     The phase-scoped rule is asserted against the schema's per-phase sets — the SAME sets
     `promote` gates on, so the two can never drift into disagreeing about what a phase
@@ -34,14 +35,12 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
     GitHub the locator is an issue URL, so `read_text` returned nothing and EVERY spec was
     reported missing every required key: 210 fabricated findings on this repository, from
     documents that were entirely well-formed."""
-    where = f"{s['folder']}/{s['file']}"
-    info, rerr = backend.read_spec(s["slug"])
+    where = s.get("path") or f"{s['folder']}/{s['id']}"
+    spec_id = str(s["id"])
+    info, rerr = read_one(backend, s["id"], emitter or Emitter())
     if rerr or info is None:
-        # The only refusal reachable here is an ambiguous slug — it came from the listing, so
-        # it cannot be unknown — and `cmd_validate` already names it `sp-duplicate-slug`.
-        # Deriving from an empty document instead, as `list` does to keep its row, would
-        # report a well-formed spec as missing everything: the same fabrication this function
-        # exists to stop, just narrowed to the duplicates.
+        # A listing row can disappear between list and read. Deriving from an empty document
+        # would fabricate findings from a document that was never read.
         return []
     text, fm = info["text"], info["frontmatter"]
     sections, tasks = info["sections"], info["tasks"]
@@ -52,7 +51,7 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
     # missing `title`, naming the absence rather than the misread that caused it.
     for a in frontmatter_anomalies(text):
         out.append(_finding("sp-frontmatter-unparsed", "warn",
-                            f"{where}: `{a['key']}`: {a['detail']}", spec=s["slug"], path=where,
+                            f"{where}: `{a['key']}`: {a['detail']}", spec=spec_id, path=where,
                             kind=a["kind"], key=a["key"],
                             remedy="quote the value, or write the comment on its own line — "
                                    "see /.knowledge/standards/code/frontmatter-parser.md"))
@@ -61,18 +60,13 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
     for key in schema.get("frontmatter", {}).get("required", []):
         if not str(fm.get(key, "")).strip():
             out.append(_finding("sp-missing-frontmatter", "error",
-                                f"{where}: frontmatter has no `{key}`", spec=s["slug"],
+                                f"{where}: frontmatter has no `{key}`", spec=spec_id,
                                 path=where, remedy=f"add `{key}:` to the frontmatter"))
-    if fm.get("slug") and fm["slug"] != s["slug"]:
-        out.append(_finding("sp-slug-mismatch", "error",
-                            f"{where}: frontmatter slug `{fm['slug']}` disagrees with the "
-                            f"basename `{s['slug']}`", spec=s["slug"], path=where,
-                            remedy="make the frontmatter slug match the basename"))
     pol = str(fm.get("verification", "")).strip().lower()
     if pol and pol not in VERIFICATION_POLICIES:
         out.append(_finding("sp-bad-verification", "error",
                             f"{where}: verification `{pol}` is not one of "
-                            f"{', '.join(VERIFICATION_POLICIES)}", spec=s["slug"], path=where,
+                            f"{', '.join(VERIFICATION_POLICIES)}", spec=spec_id, path=where,
                             remedy=f"set verification to one of {', '.join(VERIFICATION_POLICIES)}"))
     priority = fm.get("priority")
     if isinstance(priority, dict):
@@ -82,20 +76,20 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
         if comp and levels and comp not in levels:
             out.append(_finding("sp-bad-complexity", "warn",
                                 f"{where}: priority.complexity `{comp}` is not one of "
-                                f"{', '.join(levels)}", spec=s["slug"], path=where,
+                                f"{', '.join(levels)}", spec=spec_id, path=where,
                                 remedy=f"set priority.complexity to one of {', '.join(levels)}"))
 
     for h in stray_headings(sections, schema):
         out.append(_finding("sp-stray-heading", "warn",
                             f"{where}: `## {h}` is not one of the thirteen canonical headings",
-                            spec=s["slug"], path=where, heading=h,
+                            spec=spec_id, path=where, heading=h,
                             # A REMEDY NAMES AN ACTION THE SURFACE OFFERS. This one read "fold
                             # it into one" for as long as no command could — `cmd_section`
                             # refused a non-canonical heading before it ever looked at
                             # `--write`, so the only way to close the finding was to edit the
                             # document outside the tool. `--fold` is that action now.
                             remedy=(f"close it with `cq specs section --fold` — `cq specs "
-                                    f"section {s['slug']} --fold \"{h}\"` demotes it into the "
+                                    f"section {spec_id} --fold \"{h}\"` demotes it into the "
                                     "canonical section above, text preserved")))
 
     # The phase-scoped rule governs whether a heading must be PRESENT — so `missing` is
@@ -104,8 +98,8 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
     for h in gates["missing"]:
         out.append(_finding("sp-gate-unmet", "warn",
                             f"{where}: `## {h}` is required in {s['phase']}/ and is absent",
-                            spec=s["slug"], path=where, heading=h,
-                            remedy=f"cq specs section {s['slug']} \"{h}\" --write"))
+                            spec=spec_id, path=where, heading=h,
+                            remedy=f"cq specs section {spec_id} \"{h}\" --write"))
     # Malformed is NOT phase-scoped. Once a heading exists it must say something, in any
     # phase: it is neither an answer nor a not-yet, and leaving it for the promote to catch
     # means a spec looks fine right up until the gate refuses it.
@@ -113,7 +107,7 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
         if section_state(sections, h) == "empty":
             out.append(_finding("sp-empty-section", "error",
                                 f"{where}: `## {h}` is present but empty — neither an answer "
-                                f"nor a not-yet", spec=s["slug"], path=where, heading=h,
+                                f"nor a not-yet", spec=spec_id, path=where, heading=h,
                                 remedy="fill it, or write `- none — <reason>`"))
     # `Handoff` is warned on by the derived ready gate: a spec that is buildable but has
     # no executor context is incomplete for the next command.
@@ -122,7 +116,7 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
         for h in ready["warn"]:
             out.append(_finding("sp-handoff-empty", "warn",
                                 f"{where}: `## {h}` is empty in a spec that meets the ready "
-                                f"gate — an executor gets no context", spec=s["slug"],
+                                f"gate — an executor gets no context", spec=spec_id,
                                 path=where, heading=h,
                                 remedy="rewrite it after each committed task"))
 
@@ -133,7 +127,7 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
             if p not in named:
                 out.append(_finding("sp-impact-uncovered", "warn",
                                     f"{where}: `{p}` is declared under ## Impact but no task "
-                                    f"names it", spec=s["slug"], path=where, standard=p,
+                                    f"names it", spec=spec_id, path=where, standard=p,
                                     remedy="add a task that writes it, or drop the declaration"))
 
     # A `files:` entry carrying a parenthetical that is not the reserved `(new)` is a
@@ -147,7 +141,7 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
                 out.append(_finding("sp-files-annotation", "error",
                                     f"{where}: task {t['id'] or t['index']} declares files "
                                     f"entry {entry!r} with annotation `({note})` — only "
-                                    f"`(new)` is reserved", spec=s["slug"], path=where,
+                                    f"`(new)` is reserved", spec=spec_id, path=where,
                                     task=t["id"] or t["index"], entry=entry,
                                     remedy="remove the comment — `(new)` is the only "
                                            "reserved `files:` annotation"))
@@ -158,20 +152,20 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
     if ready and ready["ok"] and not fm.get("refined"):
         out.append(_finding("sp-unrefined", "warn",
                             f"{where}: ready to build, but nobody has interrogated it",
-                            spec=s["slug"], path=where,
+                            spec=spec_id, path=where,
                             remedy="run a refinement pass, or build as-is (never gated)"))
     if s["phase"] == "archive" and not fm.get("outcome"):
         out.append(_finding("sp-no-outcome", "warn",
                             f"{where}: archived with no `outcome:` — done and abandoned "
-                            f"read alike", spec=s["slug"], path=where,
+                            f"read alike", spec=spec_id, path=where,
                             remedy="stamp `outcome: done` or `outcome: abandoned`"))
-    merge_finding = merge_record_finding(fm, where, s["slug"])
+    merge_finding = merge_record_finding(fm, where, spec_id)
     if merge_finding:
         out.append(merge_finding)
     return out
 
 
-def merge_record_finding(fm: dict, where: str, slug: str) -> dict | None:
+def merge_record_finding(fm: dict, where: str, spec_id: str) -> dict | None:
     """Whether a `merge:` record still says which commit carries the merge.
 
     TWO forms are legal and both are read forever: the current `{strategy, subject}`, and
@@ -186,37 +180,37 @@ def merge_record_finding(fm: dict, where: str, slug: str) -> dict | None:
     if not isinstance(rec, dict):
         return _finding("sp-bad-merge", "warn",
                         f"{where}: `merge:` is not a {{strategy, subject}} record",
-                        spec=slug, path=where, remedy=remedy)
+                        spec=spec_id, path=where, remedy=remedy)
     strategy = str(rec.get("strategy", "")).strip().lower()
     subject = str(rec.get("subject", "")).strip()
     if strategy not in MERGE_STRATEGIES:
         return _finding("sp-bad-merge", "warn",
                         f"{where}: merge strategy `{strategy or '(unset)'}` is not one of "
-                        f"{', '.join(MERGE_STRATEGIES)}", spec=slug, path=where,
+                        f"{', '.join(MERGE_STRATEGIES)}", spec=spec_id, path=where,
                         remedy=remedy)
     if not subject:
         if str(rec.get("commit", "")).strip():
             return None          # the older form, read and left exactly as it was written
         return _finding("sp-bad-merge", "warn",
                         f"{where}: `merge:` names a strategy but nothing to resolve the "
-                        f"merge by", spec=slug, path=where, remedy=remedy)
+                        f"merge by", spec=spec_id, path=where, remedy=remedy)
     anchorless = strategy in MERGE_ANCHORLESS_STRATEGIES
     explicit_none = bool(RECORD_NONE_RE.match(subject))
     if anchorless and not explicit_none:
         return _finding("sp-bad-merge", "warn",
                         f"{where}: `{strategy}` creates no merge commit, so `subject:` has "
-                        f"nothing to point at", spec=slug, path=where,
+                        f"nothing to point at", spec=spec_id, path=where,
                         remedy="write `subject: none — <why>`")
     if not anchorless and explicit_none:
         return _finding("sp-bad-merge", "warn",
                         f"{where}: `{strategy}` creates a merge commit, so `subject:` must "
-                        f"name it rather than be an explicit none", spec=slug, path=where,
+                        f"name it rather than be an explicit none", spec=spec_id, path=where,
                         remedy=remedy)
     if str(rec.get("pr", "")).strip() and strategy in MERGE_NO_PR_STRATEGIES:
         return _finding("sp-bad-merge", "warn",
                         f"{where}: `pr:` is set but `{strategy}` has no `gh pr merge` "
                         f"equivalent — the PR route is never offered under it",
-                        spec=slug, path=where, remedy="drop `pr:`, or record a strategy "
+                        spec=spec_id, path=where, remedy="drop `pr:`, or record a strategy "
                         f"`gh pr merge` supports ({', '.join(s for s in MERGE_STRATEGIES if s not in MERGE_NO_PR_STRATEGIES)})")
     return None
 
@@ -233,7 +227,7 @@ def _emit_by_code(args, root: str, specs: list, findings: list, errors: list) ->
     which is why the count and the shown names can differ."""
     groups: dict[tuple[str, str], list[str]] = {}
     for f in findings:
-        groups.setdefault((f["code"], f["severity"]), []).append(f.get("spec") or "—")
+        groups.setdefault((f["code"], f["severity"]), []).append(str(f.get("spec") or "—"))
     ordered = sorted(groups.items(), key=lambda kv: (kv[0][1] != "error", -len(kv[1]), kv[0][0]))
     rows = [{"code": code, "severity": sev, "count": len(slugs),
              "specs": sorted(set(slugs))} for (code, sev), slugs in ordered]
@@ -261,17 +255,6 @@ def cmd_validate(args, root: str, out: Emitter) -> int:
     specs = backend.list_specs(phase)
     findings: list[dict] = []
 
-    seen: dict[str, list[str]] = {}
-    for s in specs:
-        seen.setdefault(s["slug"], []).append(f"{s['phase']}/{s['file']}")
-    for slug, paths in seen.items():
-        if len(paths) > 1:
-            findings.append(_finding("sp-duplicate-slug", "error",
-                                     f"slug `{slug}` resolves to {len(paths)} files: "
-                                     f"{', '.join(paths)}", spec=slug,
-                                     remedy="rename one — a slug is an identity, and two "
-                                            "matches makes every command refuse"))
-
     for ph in ([phase] if phase else PHASES):
         d = os.path.join(root, ph)
         if not os.path.isdir(d):
@@ -289,25 +272,15 @@ def cmd_validate(args, root: str, out: Emitter) -> int:
                                          f"{ph}/{name}/ is a directory — v2 specs are files",
                                          path=f"{ph}/{name}",
                                          remedy="a v1 plan folder? run `cq specs migrate`"))
-            elif not SPEC_FILE_RE.match(name):
-                dated = LEGACY_DATED_FILE_RE.match(name)
-                findings.append(_finding("sp-bad-filename", "error",
-                                         f"{ph}/{name} is not `<slug>.md`",
-                                         path=f"{ph}/{name}",
-                                         remedy="run `cq specs migrate` — the date belongs in "
-                                                "`date:` now, not in the basename"
-                                         if dated else
-                                         "rename it to the one filename pattern all "
-                                         "three folders share"))
 
-    target = [s for s in specs if s["slug"] == args.spec] if args.spec else specs
+    target = [s for s in specs if str(s["id"]) == str(args.spec)] if args.spec else specs
     if args.spec and not target:
-        out.emit(args.json, {"ok": False, "code": "sp-unknown-slug", "slug": args.spec,
-                             "message": f"no spec with slug '{args.spec}'"},
-                 f"error: no spec with slug '{args.spec}'")
+        out.emit(args.json, {"ok": False, "code": "sp-unknown-id", "id": args.spec,
+                             "message": f"no spec with id '{args.spec}'"},
+                 f"error: no spec with id '{args.spec}'")
         return 1
     for s in target:
-        findings.extend(validate_spec(backend, s))
+        findings.extend(validate_spec(backend, s, out))
 
     errors = [f for f in findings if f["severity"] == "error"]
     if getattr(args, "by_code", False):
