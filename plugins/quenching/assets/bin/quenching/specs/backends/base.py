@@ -29,8 +29,8 @@ class SpecBackend:
 
     name = "abstract"
 
-    def list_specs(self, phase: str | None = None) -> list[dict]:
-        """Every spec descriptor, oldest first within each phase."""
+    def list_specs(self, phase: str | None = None, lean: bool = False) -> list[dict]:
+        """Every spec descriptor, or a lean native index row, oldest first within each phase."""
         raise NotImplementedError
 
     def read_spec(self, spec_id: str | int) -> tuple[dict | None, dict]:

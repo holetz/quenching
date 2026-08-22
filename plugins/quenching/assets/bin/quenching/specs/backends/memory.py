@@ -4,7 +4,7 @@ Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
 from quenching.specs.backends.base import SpecBackend
-from quenching.specs.parse import PHASES, derive_info, resolve_one
+from quenching.specs.parse import PHASES, derive_info, derive_labels, resolve_one
 
 
 class MemoryBackend(SpecBackend):
@@ -33,9 +33,20 @@ class MemoryBackend(SpecBackend):
         return {"id": spec_id, "phase": phase, "folder": phase, "legacy": False,
                 "path": f"memory://{phase}/{spec_id}"}
 
-    def list_specs(self, phase: str | None = None) -> list[dict]:
-        rows = [self._descriptor(spec_id) for spec_id in self.docs
-                if phase is None or self.docs[spec_id][0] == phase]
+    def list_specs(self, phase: str | None = None, lean: bool = False) -> list[dict]:
+        rows = []
+        for spec_id in self.docs:
+            if phase is not None and self.docs[spec_id][0] != phase:
+                continue
+            descriptor = self._descriptor(spec_id)
+            if lean:
+                info = derive_info(descriptor, self.docs[spec_id][1])
+                descriptor.update({
+                    "title": info["frontmatter"].get("title", ""),
+                    "state": "closed" if descriptor["phase"] == "archive" else "open",
+                    "records": derive_labels(info),
+                })
+            rows.append(descriptor)
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["id"]))
 
     def read_spec(self, spec_id: str | int) -> tuple[dict | None, dict]:

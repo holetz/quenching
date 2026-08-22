@@ -24,6 +24,26 @@ def cmd_list(args, root: str, out: Emitter) -> int:
     if err:
         return out.emit_err(args.json, err)
     phase = getattr(args, "phase", None)
+    if getattr(args, "lean", False):
+        rows = [{
+            "id": s["id"], "title": s.get("title", ""), "phase": s["phase"],
+            "state": s.get("state"), "path": display_locator(s["path"], root),
+            "records": s.get("records", []),
+        } for s in backend.list_specs(phase, lean=True)]
+        unavailable = ["date", "stage", "summary", "outcome", "verification",
+                       "ready", "sections", "tasks", "unreadable"]
+        obj = {"ok": True, **front_fields(root), "lean": True, "count": len(rows),
+               "specs": rows, "unavailable": unavailable}
+        if args.json:
+            print(json.dumps(obj, indent=2, ensure_ascii=False))
+            return 0
+        print(f"specs — {backend.name} lean front ({len(rows)})")
+        for row in rows:
+            records = ", ".join(row["records"]) or "—"
+            print(f"  {row['id']}  {row['title']}  [{row['phase']} · {row['state']}]  "
+                  f"records: {records}\n    {row['path']}")
+        print(f"  unavailable: {', '.join(unavailable)}")
+        return 0
     specs = backend.list_specs(phase)
     rows = []
     for s in specs:
