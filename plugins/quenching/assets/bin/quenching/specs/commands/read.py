@@ -30,7 +30,7 @@ def cmd_list(args, root: str, out: Emitter) -> int:
             "state": s.get("state"), "path": display_locator(s["path"], root),
             "records": s.get("records", []),
         } for s in backend.list_specs(phase, lean=True)]
-        unavailable = ["date", "stage", "summary", "outcome", "verification",
+        unavailable = ["date", "stage", "outcome", "verification",
                        "ready", "sections", "tasks", "unreadable"]
         obj = {"ok": True, **front_fields(root), "lean": True, "count": len(rows),
                "specs": rows, "unavailable": unavailable}
@@ -67,7 +67,6 @@ def cmd_list(args, root: str, out: Emitter) -> int:
             "slug": s["slug"], "phase": s["phase"], "folder": s["folder"],
             "legacy": s["legacy"], "file": s["file"], "date": info["date"],
             "title": info["frontmatter"].get("title", titleize(s["slug"])),
-            "summary": info["frontmatter"].get("summary") or None,
             "stage": info["stage"],
             "outcome": info["frontmatter"].get("outcome") or None,
             # The seven records, on every row. Without them a caller that wants the front's
@@ -137,7 +136,6 @@ def cmd_status(args, root: str, out: Emitter) -> int:
     obj = {
         "ok": True, "slug": info["slug"], "title": info["frontmatter"].get("title", ""),
         # The one line that answers "what is this spec" without opening it.
-        "summary": info["frontmatter"].get("summary") or None,
         "phase": info["phase"], "folder": info["folder"], "legacy": info["legacy"],
         "stage": info["stage"], "file": info["file"],
         "date": info["date"], "verification": info["verification"],

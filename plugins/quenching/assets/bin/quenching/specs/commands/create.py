@@ -1,4 +1,4 @@
-"""`new` — capture a spec into the configured backend in ONE call: frontmatter, `summary`, `tags`,
+"""`new` — capture a spec into the configured backend in ONE call: frontmatter, `tags`,
 `priority.complexity` and N sections, all spliced into the body IN MEMORY before the single
 `backend.create_spec`."""
 from __future__ import annotations
@@ -14,7 +14,7 @@ from quenching.specs.config import (azure_workitemtype_retirement, load_config,
                                     resolve_subject, resolve_type_key)
 from quenching.specs.parse import derive_info
 from quenching.specs.parse.edit import split_section_stream, upsert_section
-from quenching.specs.parse.fields import set_frontmatter_key, set_frontmatter_record
+from quenching.specs.parse.fields import set_frontmatter_record
 from quenching.specs.schema import (DEFAULT_VERIFICATION, canonical_headings, capture_form,
                                     load_schema, section_guidance)
 
@@ -132,8 +132,6 @@ def cmd_new(args, root: str, out: Emitter) -> int:
     if type_key:
         close = body.index("\n---\n")
         body = body[:close] + f"\nworkItemType: {type_key}" + body[close:]
-    if args.summary:
-        body = set_frontmatter_key(body, "summary", args.summary.strip())
     if complexity_record:
         body = set_frontmatter_record(body, "priority", complexity_record)
     if blocks:

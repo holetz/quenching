@@ -192,12 +192,11 @@ def _rank_reason(c: dict) -> str:
     return f"{c['stage']}, {c['ageDays']}d old"
 
 
-# `spec-driven.md` §The spec table's ordered column set, plus the `Summary` this spec added.
+# `spec-driven.md` §The spec table's ordered column set.
 # A caller OMITS columns with `--columns`; it never reorders them and never invents one, which
 # is why the order lives here and not in the flag.
-# `summary` IS the mold's `Title` column, re-sourced: the field where one is written, the
-# title where none is. Two columns would print the same string on every spec without a
-# `summary:`, which today is most of them.
+# The `Summary` column is retained as the table's established label, but reads the native title
+# directly now that title is the sole short description a spec carries.
 TABLE_COLUMNS = ["spec", "summary", "stage", "tasks", "priority", "complexity",
                  "records", "age", "state"]
 SUMMARY_WIDTH = 120
@@ -210,21 +209,15 @@ def _cell(value: str | None) -> str:
     return str(value).replace("\n", " ").replace("|", r"\|").strip()
 
 
-def _table_row(c: dict, recommended: bool) -> tuple[dict, bool]:
-    """A candidate as the mold's cells, and whether `Summary` fell back to the title.
-
-    The fallback is reported rather than hidden: a table that silently prints the title as a
-    summary makes an unwritten `summary:` look written, and nobody ever notices the field is
-    not being filled."""
+def _table_row(c: dict, recommended: bool) -> dict:
+    """A candidate as the table's cells, with the Summary column sourced from `title`."""
     t, p = c["tasks"], (c["priority"] or {})
     tasks = f"{t['checked']}/{t['total']}" if t["total"] else ""
     if t["blocked"]:
         tasks += f" · {t['blocked']} blocked"
     level, crit = str(p.get("level", "")).strip(), str(p.get("criticality", "")).strip()
-    summary, fellback = c["summary"], not c["summary"]
-    if fellback:
-        summary = c["title"]
-    elif len(summary) > SUMMARY_WIDTH:
+    summary = c["title"]
+    if len(summary) > SUMMARY_WIDTH:
         summary = summary[:SUMMARY_WIDTH - 1].rstrip() + "…"
     return {
         "spec": ("→ " if recommended else "") + c["slug"],
@@ -236,7 +229,7 @@ def _table_row(c: dict, recommended: bool) -> tuple[dict, bool]:
         "records": ", ".join(k for k, v in (c["records"] or {}).items() if v),
         "age": f"{c['ageDays']}d",
         "state": c["state"],
-    }, fellback
+    }
 
 
 def _print_table(ranked: list[dict], columns: list[str]) -> None:
@@ -244,12 +237,8 @@ def _print_table(ranked: list[dict], columns: list[str]) -> None:
     heads = [col.capitalize() for col in columns]
     print("| " + " | ".join(heads) + " |")
     print("| " + " | ".join("---" for _ in columns) + " |")
-    for cells, _ in rows:
+    for cells in rows:
         print("| " + " | ".join(_cell(cells[col]) for col in columns) + " |")
-    fellback = sum(1 for _, f in rows if f)
-    if fellback and "summary" in columns:
-        print(f"\n  {fellback} of {len(rows)} rows show the title in `Summary` — no `summary:` "
-              f"written yet. `cq specs summary <slug> \"<one line>\"` fills one.")
 
 
 def _resolve_columns(requested: str | None) -> tuple[list[str], list[str]]:

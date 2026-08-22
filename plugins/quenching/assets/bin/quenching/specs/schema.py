@@ -52,8 +52,7 @@ DEFAULT_SCHEMA: dict = {
     "frontmatter": {
         "required": ["title", "date"],
         "optional": ["verification", "priority", "refined", "approved", "branch", "pr", "reviewed",
-                     "merge", "outcome", "workItemType", "tags", "assignee", "start", "target",
-                     "summary"],
+                     "merge", "outcome", "workItemType", "tags", "assignee", "start", "target"],
         "verification": list(VERIFICATION_POLICIES),
         "outcome": list(OUTCOMES),
         "records": {

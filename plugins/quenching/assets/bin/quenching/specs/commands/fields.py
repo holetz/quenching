@@ -90,18 +90,14 @@ def parse_field_date(value: str) -> str | None:
 
 
 def cmd_field(args, root: str, out: Emitter) -> int:
-    """Read or set ONE declared scalar — `tags`/`assignee`/`start`/`target`, or `summary` —
+    """Read or set ONE declared scalar — `tags`/`assignee`/`start`/`target` —
     through the backend. The ONE deterministic verb `## Design` requires for each: an agent
-    (or a human) may choose WHAT to write, a tag from `tagCatalog`, an assignee, a date, a
-    one-line précis, but never HOW. `args.field` is set by the subparser that dispatched here.
+    (or a human) may choose WHAT to write, a tag from `tagCatalog`, an assignee or a date,
+    but never HOW. `args.field` is set by the subparser that dispatched here.
 
     **Not all of them are `FIELD_KEYS`.** That tuple is the four with a faithful native
     counterpart, and it drives `carry_forward_fields` and the azure backend's
     `strip_frontmatter_keys` — the keys STORED natively and therefore stripped from the
-    document. `summary` has no native counterpart on any backend, so it stays in the document
-    everywhere and must NOT join that tuple; it reaches the `else` arm below and is written as
-    a plain string.
-
     None of them is a `record`: these are state, not a judgment with a `writtenBy`/`writeOnce`
     rule of its own — `cmd_verification` argues the same distinction for the one scalar that
     came before them."""
@@ -131,7 +127,7 @@ def cmd_field(args, root: str, out: Emitter) -> int:
                      f"error: '{args.value}' is not a real YYYY-MM-DD date")
             return 2
         rendered = stored = value
-    else:   # assignee, summary
+    else:   # assignee
         rendered = stored = args.value.strip()
 
     backend.write_spec(info, set_frontmatter_key(info["text"], key, rendered))

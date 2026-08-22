@@ -127,20 +127,11 @@ document too, so a human's edit on the tracker is the spec's new value on the ne
 `date:` does everywhere (`knowledge/standards/architecture/spec-backend.md` §Armazenado não é
 projetado has the full test).
 
-**`summary:` is ONE line, and it is the only short thing a spec carries.** It has its own verb
-(`cq specs summary <slug> [value]`) and is **not** one of the four STATE keys above: those are
-projected onto a native surface and reassembled from it on read, and `summary` has no native
-counterpart on any backend — it stays in the document everywhere, exactly as `title:` and `date:`
-do. It is not a record either: there is no `{field: value}` shape and no `writtenBy`/`writeOnce`
-rule, which is the same argument `verification` already makes for the one scalar that came before
-it. `title:` names the change; `summary:` is what a listing prints when it has
-one row per spec and no room to explain anything. It exists because every consumer that needed
-that line used to build it by reading the spec — measured on a 45-spec front, three commands had
-three different hand-written renderings of the same ranked table, and each one paid to read what
-none of them stored. Written with the capture itself (`cq specs new --summary`, from `## Problem`), refreshed by every
-`/quenching:specs:develop` bank in the same edit, and never inferred:
-a listing with no `summary:` falls back to `title:` and **says how many rows did**, so the gap is
-visible rather than silently papered over.
+**`title:` is the one short description a spec carries.** It names the change and is the source
+for the `Summary` column in the ranked table. The title is supplied at capture, stored in the
+provider's native title and retained in the canonical document; it is never inferred from an ID
+or replaced with a generated `titleize` fallback. A descriptive title keeps the capture useful
+without a second summary field or a correction verb dedicated to maintaining one.
 
 ## The thirteen sections
 
@@ -379,14 +370,13 @@ missing one is a **refusal (exit 2) naming it, never a traceback**.
 
 | Command | Use |
 | --- | --- |
-| `cq specs new <slug> [--title T] [--verification P] [--subject KEY] [--type KEY] [--summary LINE] [--tags LIST] [--complexity LEVEL]` | scaffold `plans/<slug>.md` with `## Problem` as its only section by default; the capture date is stamped into `date:` here and never again. `--subject` applies a declared `subjects.<KEY>`'s parent (where the backend has one) and fixed tags — folded into `--tags` where both are given, never overwritten by it. `--summary`/`--complexity` write the scalar/record the same way `summary`/`record priority` do. Stdin, read when it is not a tty, carries N sections in the SAME multi-heading stream `section --write` reads and writes — the stream self-declares by opening on a canonical `## <Heading>`, with no single implied heading to fall back on, so an unopened or malformed stream refuses (`sp-stray-heading`/`sp-write-duplicate-heading`) before `create_spec` ever runs |
+| `cq specs new <slug> [--title T] [--verification P] [--subject KEY] [--type KEY] [--tags LIST] [--complexity LEVEL]` | scaffold `plans/<slug>.md` with `## Problem` as its only section by default; the descriptive title is supplied at capture and the date is stamped into `date:` here and never again. `--subject` applies a declared `subjects.<KEY>`'s parent (where the backend has one) and fixed tags — folded into `--tags` where both are given, never overwritten by it. `--complexity` writes the record through the same path as `record priority`. Stdin, read when it is not a tty, carries N sections in the SAME multi-heading stream `section --write` reads and writes — the stream self-declares by opening on a canonical `## <Heading>`, with no single implied heading to fall back on, so an unopened or malformed stream refuses (`sp-stray-heading`/`sp-write-duplicate-heading`) before `create_spec` ever runs |
 | `cq specs list [--json]` | every spec, by folder and derived stage |
 | `cq specs status --spec <slug> [--json]` | sections present, derived stage, task progress with recorded subjects, the records, and the outstanding gates |
 | `cq specs section <slug> "<heading>[,<heading>…]" [--write]` | deterministic partial read of N sections in ONE call, returned in the order asked; `--write` writes N in one call too, each created in canonical position — the bodies arrive on stdin delimited by the same `## <Heading>` lines the read prints, and the set the stream carries must equal the set declared here or the call refuses without writing any of them. A stream that does not open on a canonical heading is one raw body under the one heading declared, exactly as before |
 | `cq specs show --spec <slug> [--task ID]… [--full]` | what `section` cannot say: the map of which headings and task ids exist (the default), ONE task's line and metadata, the whole document **only** under `--full`. Section bodies are `section`'s |
 | `cq specs record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; fields not named survive, write-once records refuse (exit 2) with the value they hold |
 | `cq specs tags\|assignee\|start\|target <slug> [value]` | read one of the four STATE keys, or set it — never a record; `tags` **replaces** the whole list, it does not append |
-| `cq specs summary <slug> [value]` | read or set the spec's ONE-line précis — the `Summary` column of every ranked listing. A declared scalar with its own verb, neither a record nor a projected STATE key |
 | `cq specs verification <slug> [<policy>]` | read the policy in force — and whether anything declared it — or set it. The post-capture writer: `new --verification` answers at the one moment nobody has an opinion yet |
 | `cq specs config [--json]` | the repo's declared parameters — the backend, the specs branch, `worktreeSetup`, `azureStates`, `azurePlacement`, `azureColumns`, `subjects`, `tagCatalog` |
 | `cq specs promote <slug> --to archive [--outcome done\|abandoned] [--force]` | the one gated transition left; **exit 2** with the missing list, else `git mv` |
@@ -535,7 +525,7 @@ the flag existed.
 | Column | Source | `—` when |
 | --- | --- | --- |
 | `Spec` | `next --front .candidates[].slug`, `list[].slug` | never |
-| `Summary` | `summary:` — the spec's own one line, falling back to `title:` where none is written, with the count of rows that fell back printed under the table | never |
+| `Summary` | `title:` — the spec's native descriptive title | never |
 | `Stage` | `.stage` — one of the nine derived stages | never |
 | `Tasks` | `tasks.checked`/`tasks.total`, then `· N blocked` | `total` is 0 |
 | `Priority` | `records.priority.level` and `.criticality` | the record is unset |
@@ -552,9 +542,8 @@ the flag existed.
 | webhook-retries | A failed webhook is dropped and nobody is told | proposed | — | — | — | 21d | — |
 ```
 
-**`Summary` is the old `Title` column, re-sourced.** Two columns would print the same string on
-every spec whose `summary:` is unwritten, which on adoption is most of them — so there is one
-column, with the fallback declared and counted rather than hidden.
+**`Summary` is the established table label, sourced directly from `title:`.** The title is the
+one short description, so the table has no fallback path and no missing-field warning to count.
 
 Which command carries which:
 
