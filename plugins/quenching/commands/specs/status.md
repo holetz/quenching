@@ -4,7 +4,7 @@ description: Read the provider-owned specs front without writing. Use for specs 
 
 # quenching-specs-status — read the provider-owned front
 
-**Input**: `$ARGUMENTS` — optionally one spec slug.
+**Input**: `$ARGUMENTS` — optionally one spec id.
 
 Reports the specs front without writing. The canonical documents live in the repository provider:
 GitHub Issues or Azure Boards. There is no local `/.specs/` root to scaffold, align or migrate.
@@ -12,7 +12,7 @@ GitHub Issues or Azure Boards. There is no local `/.specs/` root to scaffold, al
 ## Workflow
 
 1. Resolve `cq` through the repository's declared tool-resolution rule.
-2. With a slug, run `cq specs status --spec <slug> --json`; without one, run `cq specs list --json`.
+2. With an ID, run `cq specs status --spec <id> --json`; without one, run `cq specs list --json`.
    The command's payload is the source of the stage, records, task progress and provider locator.
 3. Run `cq specs config --json` when the report needs to explain provider selection. A missing or
    unrecognised provider is a refusal, never a fallback to local files.

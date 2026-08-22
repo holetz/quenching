@@ -16,7 +16,7 @@ rule governs whether the defaults below apply at all.
 The default subject, one per task:
 
 ```
-plan/<slug>: <task-id> <task title>
+plan/<id>-<handle>: <task-id> <task title>
 ```
 
 ```
@@ -29,15 +29,15 @@ characters where the title allows.
 The other subjects this front writes follow the same grammar:
 
 ```
-plan/<slug>: merge (<strategy>)
-plan/<slug>: record <what>
+plan/<id>-<handle>: merge (<strategy>)
+plan/<id>-<handle>: record <what>
 ```
 
 **A section's squashed commit trades the task id for the section number**, otherwise the same
 grammar:
 
 ```
-plan/<slug>: <N> <section title>
+plan/<id>-<handle>: <N> <section title>
 ```
 
 ```
@@ -94,8 +94,8 @@ target's own convention produced — if the repo's standard prefixes a ticket or
 the recorded subject is whatever that convention actually wrote. The record follows; it never
 imposes.
 
-**On the default subject `plan/<slug>: <task-id> <task title>`.** Three properties earn it: `git log
---oneline` reads back as the spec's `## Tasks`; a subject grepped by slug returns exactly that
+**On the default subject `plan/<id>-<handle>: <task-id> <task title>`.** Three properties earn it: `git log
+--oneline` reads back as the spec's `## Tasks`; a subject grepped by ID returns exactly that
 spec's commits; and the task id makes a `git revert` of one task unambiguous.
 
 Under the sha anchor, rebase rewrote every recorded commit and left the archived spec's `commit:`

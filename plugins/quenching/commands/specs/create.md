@@ -171,7 +171,7 @@ chained with `&&` per
 cq specs new "<title>" \
   [--subject <key>] [--type <key>] [--tags "<subject's fixed tags>,<confirmed catalog tags>"] \
   --complexity <level> <<'EOF' \
-&& cq specs validate --spec <slug>
+&& cq specs validate --spec <id>
 ## Problem
 
 <two sentences, or what the source supports>
@@ -198,7 +198,7 @@ its remedy verbatim, and stop; migrating the target's config is not this command
 Any other backend failure (`sp-backend-unavailable`, `sp-worktree-unusable`,
 `sp-worktree-failed`) is reported verbatim, naming `/quenching:specs:align`.
 
-The chained `cq specs validate --spec <slug>` is the whole of what checking this spec means — its
+The chained `cq specs validate --spec <id>` is the whole of what checking this spec means — its
 own finding, if any, is named verbatim in step 6, never silently swallowed by the `&&`.
 **Sentence path: nothing beyond `## Problem` is in the stream.** A plan from a
 file or the current session may add only sections its source supports.
@@ -220,7 +220,7 @@ presumed and why — the shape differs by path:
 | sentence | the descriptive title and drafted `## Problem` text **in full**, exactly what a human wants to check about the capture. Plus subject, type, tags and `complexity`, each with its one-line reason |
 | plan source | subject, type, tags and `complexity` (each reasoned), and the **list** of sections filled with the task count. **Never the bodies** — the plan is large and the human just wrote it |
 
-Then the next-step block — `/quenching:specs:develop <slug>` and `/quenching:specs:cycle <slug>`
+Then the next-step block — `/quenching:specs:develop <id>` and `/quenching:specs:cycle <id>`
 named as the two forward candidates — and **one** `AskUserQuestion`, immediately after, exactly as
 `/quenching:specs:execute` prints the same block and then opens its own `AskUserQuestion` at 100%:
 the block is the suggestion, the question is the offer that follows it, and only
@@ -229,7 +229,7 @@ the block is the suggestion, the question is the offer that follows it, and only
 Three options:
 
 1. **Develop now, no questions (Recommended)** — narrate, then invoke `quenching:specs:develop
-   <slug>` through the **Skill** tool, declaring first: *"Ask the human nothing: a question no
+   <id>` through the **Skill** tool, declaring first: *"Ask the human nothing: a question no
    evidence answers goes to `## Open Decisions` with how it will be decided."* On the plan-file
    path the plan itself is the evidence; on the sentence path, whatever has none becomes an Open
    Decision instead of a question.
@@ -239,9 +239,9 @@ Three options:
 
 **The correction is `Other`**, which the tool always offers and which the question text invites
 explicitly ("…or answer `Other` to correct any presumption before continuing"). A correction is
-applied with the deterministic verb that owns the field — `cq specs tags <slug> "<whole list>"`
-(fixed tags included, or they are lost), `cq specs record <slug> priority --set
-complexity=<level> --set date=<today>`, `cq specs section <slug> "<Heading>" --write` — **and only
+applied with the deterministic verb that owns the field — `cq specs tags <id> "<whole list>"`
+(fixed tags included, or they are lost), `cq specs record <id> priority --set
+complexity=<level> --set date=<today>`, `cq specs section <id> "<Heading>" --write` — **and only
 then** honour whichever of the three options the same
 answer also names. An `Other` answer that names no direction falls to option 3.
 
