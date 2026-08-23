@@ -204,7 +204,7 @@
   ],
   "sha256": {
     ".codex-plugin/plugin.json": "c8b65ed516cfc1d6330ab36a7b49546e47367f4e62f4ca201b152cccf7dacbf4",
-    ".generated-from.json": "a3f3a1caa3a0830f16f5200beaedcb5e06a0ec6ccab35897cde2b0f170f7d2d6",
+    ".generated-from.json": "88bf7c5c2887caf46f0cdc94a878fac1585845eda265c5c11a145a8bb297e578",
     "README.md": "7757614cb029c445453fc78b174b7f5295bb03968c2a4932c4cd535906864b94",
     "VERSION": "e33e70efdb9c35eb184b87ee7abc05ac16a925c9c36e84408999dea33a741fa8",
     "checks/citation-check.sh": "f3477a2425fa77940368b12918d74c3577b4af049a9f916c4c08a2649194eba1",
@@ -288,7 +288,7 @@
     "scripts/bin/quenching/components/commands/lint.py": "268b9e71a80c8849ef3e866d09cb80a94a761f7015db4313581c1b84306c5256",
     "scripts/bin/quenching/components/commands/read.py": "a0dd7e9c409dda70939e3c1d502da0154bfb02c81d92d09e038c75926567964f",
     "scripts/bin/quenching/components/commands/registry.py": "62df857d5ba4f28b563ef63a74f55f5070820434478eeabc7bd96e67d1097363",
-    "scripts/bin/quenching/components/commands/translate.py": "fb678794a39b99b445099e52d75e093e279b1e784fc9237899bd72431abbd34e",
+    "scripts/bin/quenching/components/commands/translate.py": "4badf144bd0c65914f4706781c7d9bfc88e5241e3cdf8515ee6b813a71004794",
     "scripts/bin/quenching/components/hooks.py": "7f0e840b70c5878b2f63d5d461cbe2551b9915dd0a9ab32ef6bab8b8c900a473",
     "scripts/bin/quenching/components/sections.py": "7d10ee29f881daa924a9e05f4a13ecf9581db1159480d55cac69c558bab02a8d",
     "scripts/bin/quenching/components/surface.py": "a3be01857b0f589a9ca026c7cddbf52032b1269854eeb1ca44819d006cce1a9a",

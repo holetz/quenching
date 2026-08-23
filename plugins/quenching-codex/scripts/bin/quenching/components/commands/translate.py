@@ -81,6 +81,20 @@ def read_adaptation() -> dict:
     return json.loads(manifest().read_text(encoding="utf-8"))
 
 
+# BUILD ARTEFACTS ARE NOT SOURCE, and ONE predicate says so for both readers of the tree.
+# The copy below always skipped them; the digest did not, and that asymmetry is the whole bug:
+# the generated output was byte-identical on every machine while the `source_sha256` recorded
+# beside it was not.
+# `assets/bin` is a COPY_DIR, so an unfiltered `rglob("*")` walks the `__pycache__/` CPython
+# writes the first time anything runs `cq` from the checkout. Those files are gitignored, so a
+# machine that has run the tool and a fresh CI clone hash DIFFERENT source sets — and
+# `.generated-from.json` then records a `source_sha256` that CI can never reproduce, failing
+# `translate --check` on a tree whose generated output is byte-identical. Measured here on
+# 2026-08-23: 72 `.pyc` files, one drift finding, and a green local check beside a red CI one.
+def _is_build_artefact(path: Path) -> bool:
+    return "__pycache__" in path.parts or path.suffix in (".pyc", ".pyo")
+
+
 def source_files() -> list[Path]:
     if not plugin_translation():
         files = list(sorted((claude_surface() / "commands").rglob("*.md")))
@@ -96,7 +110,7 @@ def source_files() -> list[Path]:
     files.extend(source() / rel for rel in COPY_FILES)
     for rel in COPY_DIRS:
         files.extend(sorted(path for path in (source() / rel).rglob("*") if path.is_file()))
-    return [path for path in files if path.is_file()]
+    return [path for path in files if path.is_file() and not _is_build_artefact(path)]
 
 
 def source_digest() -> str:
@@ -388,7 +402,7 @@ def generated_tree() -> dict[str, bytes]:
         if rel == "assets/bin":
             destination_root = Path("scripts/bin")
         for path in sorted(source_dir.rglob("*")):
-            if not path.is_file() or "__pycache__" in path.parts or path.suffix == ".pyc":
+            if not path.is_file() or _is_build_artefact(path):
                 continue
             relative = path.relative_to(source_dir)
             if relative.name == "AGENTS.md":
