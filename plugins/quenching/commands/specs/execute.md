@@ -163,11 +163,16 @@ cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-dr
 
 The `cq specs status --json` payload is **already in hand** from step 2 — do not read it again.
 From it: the derived stage, the section states, task progress, the blocked tasks, the recorded
-subjects, and **`verification`** — the spec's declared policy, which decides when the suite runs so
-this command never has to.
+subjects, **`verification`** — the spec's declared policy, which decides when the suite runs so this
+command never has to — and **`records.priority.complexity`**, the gear. The gear changes exactly one
+thing in this loop, item 5i's default, and **nothing about delegation**: whether a task goes to an
+executor sub-agent stays the two conditions of
+[execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §Delegating an
+executor, at every level.
 
 - **`approved` unset** → ask for it inline, in one question showing what the spec commits to, and
-  on a yes stamp it with `cq specs record "<id>" approved --set date=<today>` — never by editing
+  on a yes stamp it `--set by=human` (`cq specs record "<id>" approved --set date=<today> --set
+  by=human`) — never by editing
   the frontmatter. **Never refuse over it** — refusing would rebuild the folder hop this front
   removed. A no ends the run cleanly.
 - **`next` reports `write_section`** → the ready gate is not met. Name the missing or malformed
@@ -357,6 +362,12 @@ i. **On a section boundary, OFFER to stop — and keep going if nobody says othe
    Section 3 of 7 done, at a clean boundary. `/quenching:specs:execute <id>` resumes from here —
    say the word and I stop; otherwise I continue with 4.1.
    ```
+
+   **The gear sets the default, never the offer.** Under `low` the boundary is announced and the
+   loop continues without offering — the half was authorized whole and the review lives in the PR
+   it ends at. Under `medium` it offers and continues if nobody says otherwise, as above. Under
+   `high` and `xhigh` it offers and **waits**: the stops those levels bought are these
+   ([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §The scale).
 
    It **offers and never imposes**, never ends the run itself, and writes no state — the trail that
    makes the boundary resumable is the one step 6 already keeps. Why the trigger is that event, and

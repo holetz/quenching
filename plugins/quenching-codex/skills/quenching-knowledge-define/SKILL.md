@@ -1,6 +1,6 @@
 ---
 name: quenching-knowledge-define
-description: "Add or refine ONE entry in the fixed glossary (glossary.md). Triggers on \"add a term to the glossary\", \"define this term\", \"add this acronym/jargon to the glossary\". Not for: a full concept doc → quenching-knowledge-add; sweeping the whole bundle for missing terms → quenching-knowledge-glossary-backfill."
+description: "Add or refine ONE entry in the fixed glossary (glossary.md). Triggers on \"add a term to the glossary\", \"define this term\", \"add this acronym/jargon to the glossary\"."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/define.md -->

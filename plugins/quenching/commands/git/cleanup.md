@@ -1,11 +1,9 @@
 ---
 description: >-
-  Prune branches already merged or gone and worktrees git still registers with no directory on
-  disk, over `cq git stale`'s report — nothing is deleted without the human picking it from that
-  exact list. Use when the user asks to "clean up old branches", "prune stale branches", "remove
-  finished worktrees", or "tidy up after merging". Not for: reading the stale report without acting
-  on it → `cq git stale --json` directly; merging a branch that is still in flight →
-  /quenching:git:merge.
+  Prune branches already merged or gone and worktrees git still registers with no directory on disk,
+  over `cq git stale`'s report — nothing is deleted without the human picking it from that exact list.
+  Use when the user asks to "clean up old branches", "prune stale branches", "remove finished
+  worktrees", or "tidy up after merging".
 argument-hint: [none]
 allowed-tools: Bash(python3:*), Bash(git branch:*), Bash(git worktree:*), Read, AskUserQuestion
 ---

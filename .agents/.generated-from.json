@@ -1,6 +1,6 @@
 {
-  "source": "/home/unicred/Projetos/claude-quenching-alinhar-plugin-a-agents-md/.claude",
-  "source_sha256": "a626503b7c0f2a240ca66183b7170ff8b10f0e0d0f54862d7049a83770fd52b0",
+  "source": "/home/unicred/orca/workspaces/claude-quenching/ajuste-manual-2/.claude",
+  "source_sha256": "8b7d8eafbd357563b1ca0b1c3169e8a78e23f36c4836742e6c96475239006005",
   "generator": "cq components translate",
-  "command_count": 4
+  "command_count": 5
 }

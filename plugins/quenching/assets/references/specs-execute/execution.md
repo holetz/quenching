@@ -434,6 +434,27 @@ the loop offers to stop there, names the command that resumes, and continues unl
   review, the merge and the archive remain `/quenching:specs:conclude`'s, exactly as they are for a
   run that goes to the end.
 
+## The loop's progress banner
+
+<!-- rules -->
+
+Progress as it happens, not a report — §The report mold governs the run's step 7, this governs the
+loop itself. Its glyphs are the mold's and mean the same. **Only the mold's own header line opens
+with a `##` that carries the slug** — this banner prints plain text, never a heading, so the two can
+never be confused for each other:
+
+```
+Building: <slug>
+
+Task 3/7 — 3.2 <task title>
+  files: src/middleware/auth.ts, src/config/limits.ts
+✓ self-review: clean
+✓ chain: verify && check && commit
+    verify: pnpm test middleware/ — passed
+    checked 3.2 (subject: plan/<slug>: 3.2 <task title>)
+    committed a1b2c3d — subject matches
+```
+
 ## Tooling asides, relocated
 
 ### Why `Bash` is unrestricted

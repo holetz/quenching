@@ -1,6 +1,6 @@
 ---
 name: quenching-git-pr-review
-description: "Fetch a pull request's unresolved review threads, address each on the human's own confirmation, and mark it resolved once the fix is committed, on GitHub or Azure DevOps. Use when the user asks to \"resolve PR comments\", \"address the review feedback\", \"fix what the reviewer flagged\", or \"work through the open review threads\". Not for: opening the PR in the first place → quenching-git-pr-create; merging it once every thread is clear → quenching-git-merge."
+description: "Fetch a pull request's unresolved review threads, address each on the human's own confirmation, and mark it resolved once the fix is committed, on GitHub or Azure DevOps. Use when the user asks to \"resolve PR comments\", \"address the review feedback\", \"fix what the reviewer flagged\", or \"work through the open review threads\"."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/git/pr/review.md -->

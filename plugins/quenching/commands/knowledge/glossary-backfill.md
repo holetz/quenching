@@ -1,5 +1,5 @@
 ---
-description: Sweep the whole bundle to backfill glossary.md with missing terms. Triggers on "scan the docs for glossary terms", "backfill the glossary", "find terms we never added to the glossary". Not for: ONE term on demand → /quenching:knowledge:define.
+description: Sweep the whole bundle to backfill glossary.md with missing terms. Triggers on "scan the docs for glossary terms", "backfill the glossary", "find terms we never added to the glossary".
 argument-hint: [optional-home-scope]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Write, Edit, Task
 ---

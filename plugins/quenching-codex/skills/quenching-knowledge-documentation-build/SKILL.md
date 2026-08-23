@@ -1,6 +1,6 @@
 ---
 name: quenching-knowledge-documentation-build
-description: "Create or update the mkdocs-material site over the /.knowledge/documentation home. Triggers on \"build the docs site\", \"generate the mkdocs site for /.knowledge/documentation\", \"fix the documentation site's nav\". Not for: page-level content inside /.knowledge/ → quenching-knowledge-align."
+description: "Create or update the mkdocs-material site over the /.knowledge/documentation home. Triggers on \"build the docs site\", \"generate the mkdocs site for /.knowledge/documentation\", \"fix the documentation site's nav\"."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/documentation/build.md -->

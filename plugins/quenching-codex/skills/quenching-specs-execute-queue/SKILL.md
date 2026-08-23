@@ -1,6 +1,6 @@
 ---
 name: quenching-specs-execute-queue
-description: "Build N specs in one run — one isolation, one branch, one pull request, serial by construction. Triggers on \"execute these specs\", \"build the queue\", \"run these three specs in one go\", \"take the next N specs to a PR\", \"queue the front\", \"build everything that is ready\". Candidates come from the ranked front filtered by the fan-out entry contract; the authorization plan carries the whole list, the N, the recursion form and the human's stopping criterion before any isolation, and its OK authorizes the run. Each spec runs in a sub-agent of its own context via quenching-specs-execute; one quenching-specs-conclude with no --spec closes it. A local block marks [!] and the queue moves on; a contaminating one stops and asks. Not for: building ONE spec → quenching-specs-execute; taking N specs to ready in parallel → quenching-specs-develop-batch; ONE spec's whole lifecycle → quenching-specs-cycle; reviewing and merging a branch → quenching-specs-conclude; ranking the front → quenching-specs-triage."
+description: "Build N specs in one run — one isolation, one branch, one pull request, serial by construction. Triggers on \"execute these specs\", \"build the queue\", \"run these three specs in one go\", \"take the next N specs to a PR\", \"queue the front\", \"build everything that is ready\". Candidates come from the ranked front filtered by the fan-out entry contract; the authorization plan carries the whole list, the N, the recursion form and the human's stopping criterion before any isolation, and its OK authorizes the run. Each spec runs in a sub-agent of its own context via quenching-specs-execute; one quenching-specs-conclude with no --spec closes it. A local block marks [!] and the queue moves on; a contaminating one stops and asks."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/execute-queue.md -->
@@ -111,7 +111,8 @@ items still gate individually."*
 
 A queued spec whose `approved` record is unset is settled **here**, with one line saying what it
 commits to — the sub-agent that builds it cannot ask. The plan's OK stamps it,
-`cq specs record "<id>" approved --set date=<today>`, never by editing the frontmatter.
+`cq specs record "<id>" approved --set date=<today> --set by=human`, never by editing the
+frontmatter — this run's stamp is always a human's, since the queue asked for it.
 **Done when:** the plan is approved as presented, or the run is declined with nothing written.
 
 ### 3. Isolate once, for the whole queue

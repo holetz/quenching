@@ -11,7 +11,7 @@ description: >-
   → /quenching:specs:execute; taking N specs to ready in parallel →
   /quenching:specs:develop-batch; ONE spec's whole lifecycle → /quenching:specs:cycle; reviewing
   and merging a branch → /quenching:specs:conclude; ranking the front → /quenching:specs:triage.
-argument-hint: [id ...]
+ argument-hint: [id ...]
 allowed-tools: Bash, AskUserQuestion, Task, Skill
 ---
 
@@ -120,7 +120,8 @@ items still gate individually."*
 
 A queued spec whose `approved` record is unset is settled **here**, with one line saying what it
 commits to — the sub-agent that builds it cannot ask. The plan's OK stamps it,
-`cq specs record "<id>" approved --set date=<today>`, never by editing the frontmatter.
+`cq specs record "<id>" approved --set date=<today> --set by=human`, never by editing the
+frontmatter — this run's stamp is always a human's, since the queue asked for it.
 **Done when:** the plan is approved as presented, or the run is declined with nothing written.
 
 ### 3. Isolate once, for the whole queue

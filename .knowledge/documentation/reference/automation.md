@@ -38,6 +38,7 @@ them is overwritten by the next run, not merged.
 <!-- GENERATED:BEGIN -->
 | Command | Serves | Typical trigger |
 | --- | --- | --- |
+| /commands:tighten | commands/ | "enxugar esse comando" |
 | /docs:storyteller | docs/ | "transformar/gerar os md em mkdocs" |
 | /references:tighten | references/ | "enxugar a prosa das references" |
 | /release | generic | "publish a release" |

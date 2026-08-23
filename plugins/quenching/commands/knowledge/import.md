@@ -1,5 +1,5 @@
 ---
-description: Import an external source (files/folders/URLs) into the OKF bundle as many docs. Triggers on "import/ingest a source into the base", "enrich the knowledge base from X", "generate OKF docs from these files/URLs". Not for: draining this project's Claude Code memory → /quenching:knowledge:import-memory; ONE concept doc → /quenching:knowledge:add.
+description: Import an external source (files/folders/URLs) into the OKF bundle as many docs. Triggers on "import/ingest a source into the base", "enrich the knowledge base from X", "generate OKF docs from these files/URLs".
 argument-hint: [source-paths-or-urls]
 allowed-tools: Read, Grep, Glob, WebFetch, Write, Edit, Task
 ---

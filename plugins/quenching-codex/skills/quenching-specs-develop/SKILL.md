@@ -1,6 +1,6 @@
 ---
 name: quenching-specs-develop
-description: "Develop an existing spec. Triggers on \"develop this spec\", \"refine the spec\", \"fill in the missing sections\", \"approve this spec\". Not for: defining N specs at once → quenching-specs-develop-batch; creating a spec or executing one."
+description: "Develop an existing spec. Triggers on \"develop this spec\", \"refine the spec\", \"fill in the missing sections\", \"approve this spec\"."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/develop.md -->
@@ -23,11 +23,9 @@ proposal needs an argument, a spec at the gate needs a yes. The bank is looked u
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read <the cited file> --sections "§Choosing the bank" --sections "§The four shared mechanics"
 ```
 
-One call, N sections, no frontmatter; a unique prefix resolves. The reason is this command's own
-cost: a preamble is re-sent on every turn that follows it, and the three references this command
-cites run to ~58,000 characters read whole — measured on one real run at ~900k token-turns for two
-of them. `--rules-only` narrows further to the `<!-- rules -->` half where a section carries the
-marker, and returns the whole section, saying so, where it does not.
+One call, N sections, no frontmatter; a unique prefix resolves. `--rules-only` narrows further to
+the `<!-- rules -->` half where a section carries the marker, and returns the whole section, saying
+so, where it does not.
 
 **Load now, and nothing else:**
 
@@ -42,8 +40,7 @@ The selected bank's own section, the per-section authoring doctrine in
 [specs-develop/artifacts.md](../../references/specs-develop/artifacts.md),
 and the records' shapes are loaded **inside the step that uses them** — steps 3b, 5 and 6; step 8
 loads spec-driven.md's §The report mold, whose shape that step's report is built from, the same
-way. A reference read in one branch is never hoisted into a preamble every turn pays for regardless
-of which branch runs.
+way.
 
 ## Resolving the tool
 
@@ -53,28 +50,25 @@ per
 §Resolving the tool, §Write the resolved path literally on every invocation; branch on the **exit
 code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 
-**No deltas.** A spec writes its durable rules **directly** into `/.knowledge/standards/` while it is
-built, isolated on a branch. Whichever backend holds the spec is the only one that holds it, so
-there is no second store to bridge to: nothing here writes a delta and nothing later syncs one.
-
 ## Doctrine
 
+- **The gear decides who answers; it never decides which banks run.** No checklist shrinks in a low
+  gear — the same axes, lenses and gate symptoms are worked either way, and what changes is whether
+  the answer comes from evidence or from the human.
 - **The stage picks the bank; the tool reports the stage.** `cq specs status --spec <id> --json`
   returns it. Never infer the stage by reading the headings, and never ask the human which mode
-  they want — the answer is on disk. This is the one rule that is this command's own; everything
-  about *how* a bank runs is owned by
+  they want — the answer is on disk. Everything about *how* a bank runs is owned by
   [questions.md](../../references/specs-develop/questions.md) §The four
-  shared mechanics, and is not optional.
-- **The explicit-none rule is the spec's, not this command's.** A section with nothing in it is
+  shared mechanics.
+- **Apply the explicit-none rule on every write.** A section with nothing in it is
   `- none — <reason>`, a present-but-empty heading is malformed, and an absent heading before its
-  own gate is legal — stated once in
+  own gate is legal —
   [spec-driven.md](../../references/specs-develop/spec-driven.md)
-  §The gates, applied here on every write.
+  §The gates.
 - **Read `/.knowledge/` before writing — in the branch that needs it, and by section.** The relevant
-  `/.knowledge/standards/` and `/.knowledge/glossary.md` are binding on wording, so a spec does not
-  contradict a rule the repo already agreed on or invent a second name for a thing that already has
-  one. Only the **adversarial** and **gate** banks ask questions that reading answers, so it is
-  step 3b's and never the preamble's; shape, discoveries and approval skip it. Read it per
+  `/.knowledge/standards/` and `/.knowledge/glossary.md` are binding on wording. Only the
+  **adversarial** and **gate** banks ask questions that reading answers, so it is step 3b's and
+  never the preamble's; shape, discoveries and approval skip it. Read it per
   [align/evidence-doctrine.md](../../references/align/evidence-doctrine.md)
   — `cq components read <path> --sections "§X"`, not the whole file, when only a rule or two
   governs the question at hand; it resolves `/.knowledge/` the same way it resolves this plugin's own
@@ -96,9 +90,8 @@ there is no second store to bridge to: nothing here writes a delta and nothing l
 
 ## The batching contract
 
-Every turn re-sends the whole conversation, so a pass costs Σ(context per turn) and the turn count
-is the multiplier — not the size of any one turn. Three points of the workflow below are therefore
-**one call each**, and running them as two is the defect this contract names:
+Three points of the workflow below are **one call each**, and running them as two is the defect
+this contract names:
 
 | Where | The one call |
 | --- | --- |
@@ -106,16 +99,12 @@ is the multiplier — not the size of any one turn. Three points of the workflow
 | step 3b | the bank's own section and the spec sections it reads — `cq components read` and `cq specs section` together, never one call per source. For **shape** and **adversarial** the sweep's own profile and the `## Design` it checks ride these same two calls, so step 3c opens nothing |
 | step 6 | the entire application — the section write, every `cq specs discover` line, every `cq specs record`, `cq specs verification`, and the closing `cq specs validate` (plus `cq specs parallel` where `## Tasks` moved) |
 
-A call splits only where the next command's **input** depends on the previous one's output. Splitting
-for tidiness, or to report progress between two commands, buys nothing and is paid by every turn
-after it.
+A call splits only where the next command's **input** depends on the previous one's output.
 
 **No turn exists only to announce what the next tool call will do.** "Now I'll load the bank", "next
-I'll write the sections" — a turn whose entire content is the call that follows it says nothing the
-call's own output will not say, and costs a re-send of the whole conversation to say it. Narration
-that carries content is not this: the bank and its stop condition (step 3), the consolidated plan
-(step 5), the report (step 8) all stay. What is forbidden is the empty announcement, never the
-narration.
+I'll write the sections" — a turn whose entire content is the call that follows it. Narration that
+carries content stays: the bank and its stop condition (step 3), the consolidated plan (step 5),
+the report (step 8).
 
 **A recommendation rides inside the question, never in a turn before it.** Where a choice is
 genuinely the human's, the recommendation and the reasoning behind it go in the **AskUserQuestion**
@@ -151,10 +140,15 @@ python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/qu
 **This is the same call as step 1** — §The batching contract's first row. The id either came in
 the input or was inferred, and the payload answers both steps at once.
 
-That is the whole of this step. **No section body is pulled here**, because nothing has chosen the
-bank yet and a body read before the choice is a body read for a bank that may not want it — at the
-gate that is ten sections against the discoveries bank's one.
-**Done when:** the spec's stage, section states, records, gate and backend URL are in hand.
+**The payload also carries the gear.** `records.priority.complexity` rides the same call, so
+reading it costs nothing. Absent, or no `priority` record at all, reads as `high`
+([gears.md](../../references/specs-cycle/gears.md) §The scale). **Never ask
+which gear to run in**: the level is on disk exactly as the stage is, and a conductor that moved it
+on its own plan declares the moved level in the invocation.
+
+That is the whole of this step. **No section body is pulled here** — nothing has chosen the bank
+yet.
+**Done when:** the spec's stage, section states, records, gate, backend URL and gear are in hand.
 
 ### 3. Select the bank
 Look the **derived stage** up in
@@ -163,9 +157,11 @@ bank — already loaded. If `## Discoveries` holds an unresolved line, the disco
 **first** regardless of stage — resolving what execution already found beats adding to a spec that
 has not absorbed it.
 
-Name the bank, what it will ask, and **its stop condition** before the first question. If the input
-asked for something the stage does not select — "poke holes in this" on a spec with no proposal —
-say which bank the spec's state calls for, offer the requested one anyway, and let the human pick.
+Name the bank, **the gear**, what the pass will do with the bank's questions under that gear, and
+**its stop condition** — all before the first question. The gear is announced here and nowhere
+else. If the input asked for something the stage does not select — "poke holes in this" on a spec
+with no proposal — say which bank the spec's state calls for, offer the requested one anyway, and
+let the human pick.
 **Done when:** exactly one bank is named back to the user with its stop condition.
 
 ### 3b. Load what THIS bank needs — and nothing more
@@ -191,16 +187,14 @@ python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/qu
 `/.knowledge/glossary.md`. Those two banks **may** delegate that reading to a read-only
 sub-agent under
 [questions.md](../../references/specs-develop/questions.md) §Gathering the
-evidence — already in hand for adversarial, from the call above — which returns one compact table
-and keeps the file reads out of the context every later turn pays for. It is an option, not a step:
-for a two-file spec, keep the reading.
+evidence — already in hand for adversarial, from the call above — which returns one compact table.
+It is an option, not a step: for a two-file spec, keep the reading.
 **Done when:** the bank's sections are in hand and nothing else was opened.
 
 ### 3c. Run the dependency sweep — shape and adversarial only
 Only the **shape** and **adversarial** banks reach this step — any other bank skips it whole, and
 never loaded what it needs. **This step opens nothing**: step 3b's two calls already carry both
-the `## Design` it reads and the §Gathering the evidence that governs it, which is why the sweep
-costs no turn of its own.
+the `## Design` it reads and the §Gathering the evidence that governs it.
 
 `### Mapa de dependências` already in that `## Design` → this spec was swept; go straight to step
 4. Absent → dispatch one read-only `Task` sub-agent under the **wider** profile of §Gathering the
@@ -209,8 +203,7 @@ that section names: every file the proposal's own area touches or is touched by,
 goes orphaned if it changes.
 
 **The orchestrator holds the result; the sub-agent never writes it.** The table waits for step 6's
-own consolidated write, landing as `### Mapa de dependências` under `## Design`, dated — never a
-separate call, and never before the bank's other answers are ready to land with it.
+own consolidated write, landing as `### Mapa de dependências` under `## Design`, dated.
 **Done when:** the spec already carries a map, or this pass holds the sub-agent's table to write at
 step 6.
 
@@ -223,11 +216,21 @@ the last answer, and the bank states which shape it takes — every question car
 recommendation**, accumulate and never write mid-flow, the bank's **declared stop condition**, and
 every answer naming the section it lands in.
 
+**The gear decides who answers; the bank is unchanged.** Run it under
+[questions.md](../../references/specs-develop/questions.md) §Who answers,
+in hand from step 3b's same call. Under **`low` and `medium`** the pass answers every item **from
+evidence**, names the assumption inside any answer that rests on one, and parks
+what no evidence answers as a `## Open Decisions` line carrying how it will be decided — it asks
+nothing. Under **`high` and `xhigh`** it drafts those same answers first and then asks the human
+**about the draft**, which is why those questions may travel grouped: a question about a section
+already drafted cannot change what another drafted section says.
+
 Questions must be **specific to this spec**. One that would read identically against any spec is
-noise — do not ask it, and do not pad the count with it.
+noise — do not ask it, and do not pad the count with it. That holds for a drafted answer too: one
+that would read identically against any spec is a default, not evidence, and it is parked.
 
 Nothing is written to the spec during this step. Keep a running list of
-`(question, answer, target section)`.
+`(question or drafted answer, its source, target section)`.
 **Done when:** the bank's stop condition is met, or the user calls it.
 
 ### 5. Consolidate the edit, and narrate it
@@ -236,52 +239,43 @@ bank, in one call:
 
 ```bash
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/artifacts.md \
-  --sections "§The explicit-none rule" --sections "§`## Tasks`"
+  --sections "§The explicit-none rule" --sections "§`## Tasks`" \
+  --sections "§Writing a section through stdin"
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-cycle/gears.md \
+  --sections "§The scale" --rules-only        # only where the pass moved the size
 ```
 
 **The consolidation stays; the confirmation goes.** Show every accumulated answer as a single plan
 — per section, what changes and the answer it came from, drafted under the doctrine just loaded —
 and then write it in step 6. The plan is **narrated, never submitted**: do not ask for a
-confirmation of it and do not wait for one. Invoking this command is the authorization, because a
-command that edits no code and takes no irreversible cycle action has nothing to confirm, and the
-window the human watches the pass through is the spec's own URL in the backend.
+confirmation of it and do not wait for one. Invoking this command is the authorization.
 
 Anything that turned out to belong outside the spec is narrated here too: a durable rule or a term
 as a **routed offer**, not an edit, and an **out-of-scope follow-up as the one `## Discoveries` line
-this edit will park** — a line, not an offer, because parking creates nothing to consent to
-(§Invariants).
+this edit will park** — a line, not an offer (§Invariants).
 
-**A pass that changed the spec's size re-evaluates `complexity`, and that re-evaluation is the
-bank's last question** — a real question, not a gate on the plan, asked alone because its content
-depends on every answer before it. The evidence that moved it — the `## Tasks` a gate bank just
-wrote, a scope the adversarial bank widened — is named, and the level it recommends leads the
-options with the scale in front of the human. The level answers how much a human needs to be part
-of the gears plan, never the size of what just changed
-([gears.md](../../references/specs-cycle/gears.md) §Deriving the gears
-plan states the criterion):
+**A pass that changed the spec's size re-evaluates `complexity` — and the gear decides whether
+that is a question or a proposal.** The evidence that moved it is named either way: the `## Tasks` a
+gate bank just wrote, a scope the adversarial bank widened. The level answers how much a human needs
+to be part of the process, never the size of what just changed (§The scale, just loaded).
 
-| Level | What it changes in the gears plan |
-| --- | --- |
-| `low` | the whole cycle runs in one session on a single authorization and ends opening a PR |
-| `medium` | the larger stages run isolated in sub-agents |
-| `high` | the stage-by-stage stops and confirmations are kept |
-| `xhigh` | at least one judgment stage (adversarial review, premortem) joins the plan |
+- **`high` · `xhigh`** — a real question, asked alone and last because its content depends on every
+  answer before it, with the recommended level leading the options and the scale in front of the
+  human.
+- **`medium`** — narrated here and carried to step 7's closing screen, which is the one turn this
+  gear spends on the human.
+- **`low`** — narrated only. A **rise** is applied in step 6's edit. A **fall** is never applied
+  without a human — it is recommended in the report, and the level on disk stays as it was.
 
-A pass that changed no size asks nothing — the level on disk is still the latest word on it.
-
-**Exception: the first pass over a spec still at `captured`.** `quenching-specs-create` computed
-this level without asking, so nobody has confirmed it yet — the first bank that touches such a spec
-treats `complexity` as presumed rather than settled, and folds a confirm-or-adjust into this same
-question even when this pass moved no size of its own. Every later pass returns to the ordinary
-rule above: ask only when the size moved.
-**Done when:** the plan has been narrated in full, and `complexity` — where the pass moved it, or
-where this is the first pass over a `captured` spec — has been answered.
+A pass that changed no size proposes nothing — the level on disk is still the latest word on it.
+**Done when:** the plan has been narrated in full, and any re-evaluation has been asked (`high`,
+`xhigh`) or narrated (`low`, `medium`).
 
 ### 6. Apply, and record what the pass earned
 **Every write of this step is ONE call** — §The batching contract's third row: the section write,
-the `## Discoveries` lines, the records, `verification`, and the closing `validate`. None of them
-needs another to have printed first. The one legitimate split is the doctrine read below, which
-decides *which* record this bank earned and therefore has to precede the stamping.
+the `## Discoveries` lines, the records, `verification`, and the closing `validate`. The one
+legitimate split is the doctrine read below, which decides *which* record this bank earned and
+therefore has to precede the stamping.
 
 Write the narrated sections with `cq specs section <id> "<Heading>[,<Heading>…]" --write` (bodies
 on stdin) — it creates each heading in canonical position on first write, so creating and revising
@@ -315,19 +309,19 @@ Every follow-up the plan parked is written in this same edit — `cq specs disco
 "<finding>"`, one call per line — and never mid-bank, which
 [questions.md](../../references/specs-develop/questions.md) §The four shared
 mechanics forbids. The call creates `## Discoveries` when the heading is absent, and a filled
-`## Discoveries` moves no derived stage, so the line costs the pass nothing but itself.
+`## Discoveries` moves no derived stage.
 
 Then the frontmatter records this command owns — read
 [questions.md](../../references/specs-develop/questions.md) §Recording the
 pass for which bank earns which, and
 [spec-driven.md](../../references/specs-develop/spec-driven.md) §Frontmatter
-for the write-once semantics, in one call. Each is stamped through `cq specs record` — **never by
-editing the frontmatter**, which merges nothing and works only while the backend is `files`:
+for the write-once semantics, in one call. Each is stamped through `cq specs record`:
 
 | Record | When | Call |
 | --- | --- | --- |
 | `refined: {mode, date}` | the adversarial or gate bank ran | `cq specs record <id> refined --set mode=<per questions.md §Recording the pass> --set date=<today>` |
-| `approved: {date}` | the human said go in the approval bank | `cq specs record <id> approved --set date=<today>` |
+| `approved: {date, by}` | a human said go on the closing screen | `cq specs record <id> approved --set date=<today> --set by=human` |
+| `approved: {date, by}` | the gear is `low` and the ready gate is met — stamped by the pass on the level's own authority | `cq specs record <id> approved --set date=<today> --set by=low-gear` |
 | `verification` | the gate bank settled the policy | `cq specs verification <id> <per-task\|per-section\|end-of-plan>` |
 | `tags` | the pass changed the spec's scope, or the capture presumed wrong | `cq specs tags <id> "<whole list>"` |
 | `complexity` (in `priority`) | the plan proposed a re-evaluation, and the human approved it | `cq specs record <id> priority --set complexity=<level> --set date=<today>` |
@@ -339,15 +333,13 @@ The title is the sole short description every ranked listing prints (`cq specs n
 --table`). Keep it descriptive when the spec's scope changes; the sections carry the rationale and
 detail, so no separate summary field is maintained.
 
-`verification` is a plain frontmatter key rather than a record, which is why it has a verb of its
-own instead of a `--set`. **It is written through that verb and never by editing the frontmatter**
-— a hand edit needs a file, and under an external backend there is none, so this bank's answer had
-nowhere to land at all. Omit the value to read what is in force and whether anything declared it;
-absent means the default, and stamping the default to make it explicit records a decision nobody
-made.
+`verification` is a plain frontmatter key rather than a record, so it has a verb of its own instead
+of a `--set`. Omit the value to read what is in force and whether anything declared it; absent
+means the default, and stamping the default to make it explicit records a decision nobody made.
 
-`approved` is write-once: a spec that already carries it refuses (exit 2) with the date it holds,
-which is the answer, not an obstacle.
+`approved` is write-once: a spec that already carries it refuses (exit 2) with the date it holds.
+**`by:` is never omitted.** A record with no `by:` reads as `human`, so leaving it off a `low-gear`
+stamp silently claims a human this pass never had.
 
 `complexity` is a field of `priority`, and the record merges — `level` and `criticality` survive
 a re-stamp that touches only the size, and `date` is the ranking's own.
@@ -366,9 +358,27 @@ follows it: it selects a different bank → name the bank and what it will ask, 
 offer here asks the human to re-decide what the disk already answered. The same bank selected again
 with nothing left to ask → go to step 8.
 
-Every bank the pass crosses into still asks its own questions, and the `approval` bank still ends
-in a real go/no-go — the crossing being automatic never makes a bank's questions automatic.
-**Done when:** the re-derived stage has sent the pass back to step 3 or ended it at step 8.
+**The same bank selected again with nothing left to ask closes the pass, and how it closes is the
+gear's** — the `approval` bank of
+[questions.md](../../references/specs-develop/questions.md) §Bank: approval
+owns the screen's own content:
+
+- **`low`** — no screen. With the ready gate met and `approved` unset, it was stamped `by: low-gear`
+  in step 6's own edit; go to step 8.
+- **`medium` · `high` · `xhigh`** — ONE closing screen, four options: approve, refine a named
+  section, run the premortem, stop. Choosing to refine or to premortem is a **gear raise**
+  ([gears.md](../../references/specs-cycle/gears.md) §Re-evaluating a gear,
+  the fourth signal) and IS the OK to restamp `complexity`; apply both and re-enter at step 3 under
+  the raised level.
+
+**A raise re-enters the pass; it never restarts it.** What the earlier banks already wrote stays
+written — the raise buys the questions the lower gear did not ask, over the artifact it drafted.
+
+**The screen belongs to whoever holds the human.** Running standalone, present it. Running as a
+sub-agent under a conductor, present nothing: return the screen's content and let the conductor
+present it — a sub-agent never talks to the human, at any gear.
+**Done when:** the re-derived stage has sent the pass back to step 3, a raise has re-entered it,
+or the pass has closed and reached step 8.
 
 ### 8. Report
 
@@ -380,13 +390,12 @@ python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/qu
 Emit §The report mold. The single-spec header line carries the stage **after** the pass; two body blocks:
 
 1. **The pass** — fixed. The spec's URL in the backend, repeated from step 1 off the same `path`
-   field and never re-fetched; the bank(s) that ran; how many questions were asked and answered;
-   the sections edited; the records stamped; the routed offers and whether each was taken; the
-   stage before and after. The URL closes the pass the way it opened it: a pass that wrote without
-   a plan gate ends by pointing at the one place that writing can be read and corrected.
-2. **Parked into `## Discoveries`** — optional, and every line **quoted**. A parked line was never
-   offered, so nothing else in this report names it, and an unreported one is indistinguishable from
-   a finding the pass dropped.
+   field and never re-fetched; **the gear the pass ran in and what it changed about who answered**;
+   the bank(s) that ran; how many questions were asked and answered, and how many answers the pass
+   gave from evidence with an assumption named; **an `approved` stamped `by: low-gear` on its own
+   line**; the sections edited; the records stamped; the routed offers and whether each was taken;
+   the stage before and after.
+2. **Parked into `## Discoveries`** — optional, and every line **quoted**.
 
 Close on §The next-step block — `quenching-git-branch <id>` once `approved` is stamped, naming it
 the natural moment to isolate before `quenching-specs-execute <id>` writes any code;
@@ -424,22 +433,24 @@ its own to fall back on — it hands off to the same command.
 - **Inside a develop pass, `cq specs new` runs only as the discoveries bank's `promoted:`
   resolution.** Nothing else here mints a spec.
 - **Never write a section that was not narrated first.** The consolidated plan is shown in full
-  (step 5) and then applied; what left this command is the wait, never the showing. A section that
-  reaches the spec without appearing in a narrated plan is unreviewable by anyone, gate or no gate.
+  (step 5) and then applied.
 - Never write anything mid-bank — accumulate, then apply once.
 - **Never group two questions whose answers can change each other**, and never ask alone what could
   have travelled with them. Grouping is by dependence, never by convenience, and every question
   carries a recommendation either way.
-- Never ask the human to choose a mode; the derived stage chooses the bank.
+- Never ask the human to choose a mode; the derived stage chooses the bank — **and never ask them
+  to choose a gear**: the level on disk chooses it, or a conductor declares a moved one in the
+  invocation.
+- **Never let a `low` or `medium` pass ask a question.** An item no evidence answers becomes an
+  `## Open Decisions` line with how it will be decided. Inventing the answer and asking anyway are
+  the two failures here, and the second is the one that breaks what the gear promised.
 - **A sub-agent may read; it may never ask, write, or decide.** The evidence sweep of step 3b
   returns a table. Every question, every `cq specs` call and every confirmation stays here.
 - **The dependency sweep's map is written by the orchestrator; the sub-agent never touches the
   spec.** Step 3c's sub-agent returns a table too, same as step 3b's — the map lands only inside
   step 6's own consolidated write, into `### Mapa de dependências` under `## Design`.
-- **The sweep does not reopen `context: fork`.** Dispatching its `Task` sub-agent is a step inside
-  a command that still asks every one of its own banks' questions — the prohibition a fork cannot
-  ask a question stays exactly where it was; step 3c changes nothing about what this command's own
-  frontmatter may declare.
+- **Never hand this command file `context: fork`** — every bank asks the human its own questions,
+  and step 3c's read-only sub-agent is a step inside that, never a delegation of it.
 - **Never open a cited reference as a file.** `§X` is an address, loaded through
   `cq components read --sections`; and never hoist into the preamble what only one branch reads.
 - Never derive the stage from what this pass intends to write — only from disk.
@@ -451,14 +462,12 @@ its own to fall back on — it hands off to the same command.
   unanswered question: it goes in `## Open Decisions` with how it will be decided, which is a
   result, not a failure.
 - Never create a heading you are not filling in the same edit.
-- **Never edit a frontmatter record by hand.** `cq specs record` is the writer — it merges, it
-  enforces write-once, and it is the only form that survives a backend with no file to edit.
-- **Never fabricate a record.** `refined` is stamped only after real questions got real answers;
-  `approved` only after a human actually said go. Neither can be inferred from the sections — that
-  is the entire reason they exist.
-- **Never restamp `complexity` without the human's OK.** The re-evaluation rides the consolidated
-  plan — evidence named, level recommended — and a level a pass did not move is the latest word
-  on it, not a value to re-propose.
+- **Never fabricate a record, and never misattribute one.** `refined` is stamped only after a bank
+  really ran — drafting from evidence counts, a pass that ran no bank does not. `approved` is
+  stamped only with a truthful `by:`: `human` when a person answered the closing screen, `low-gear`
+  when the level authorized the mode and this pass stamped on that authority.
+- **Never restamp `complexity` beyond what the gear authorizes** (step 5): a fall always needs a
+  human, and a level a pass did not move is the latest word on it, not a value to re-propose.
 - Never gate on refinement. A spec may always be built unrefined; `sp-unrefined` is a warning by
   design.
 - Never rename a spec, and never rewrite its `date:` — the capture date is stamped once, at

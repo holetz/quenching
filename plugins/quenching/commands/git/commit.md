@@ -1,10 +1,8 @@
 ---
 description: >-
   Commit what is already staged under this repo's own commit convention when one is declared, the
-  plugin's default subject grammar otherwise, enforcing hygiene no flag may bypass. Use when the
-  user asks to "commit this", "make a commit", "commit these changes", or "wrap this up in a
-  commit". Not for: cutting a branch or worktree first → /quenching:git:branch; opening a PR once
-  committed → /quenching:git:pr:create.
+  plugin's default subject grammar otherwise, enforcing hygiene no flag may bypass. Use when the user
+  asks to "commit this", "make a commit", "commit these changes", or "wrap this up in a commit".
 argument-hint: [subject]
 allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git commit:*), Bash(git log:*), Bash(python3:*), Read
 ---

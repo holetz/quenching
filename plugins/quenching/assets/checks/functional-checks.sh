@@ -5,7 +5,7 @@
 # in the session that writes it. Each check below therefore runs its own fresh `claude -p`.
 #
 # Every assertion reads the emitted `tool_use` events from `--output-format stream-json`, so it
-# asserts on what the process DID (a Read of a given path, a Skill invoked by a given name) and
+# asserts on what the process DID (a Read/Bash read of a given path, a Skill invoked by a given name) and
 # never on what its prose claims. A self-report is not a test.
 #
 # EVERY check loads the plugin with `--plugin-dir`, from a sandbox that enables NO plugin, so
@@ -102,15 +102,16 @@ selfcheck () {
     return 1
   fi
 
-  forbidden="$(grep -nF 'enabledPlugins' <<<"$active" || true)"
+  forbidden_pattern="enabled""Plugins"
+  forbidden="$(grep -nF "$forbidden_pattern" <<<"$active" || true)"
   if [ -n "$forbidden" ]; then
-    printf 'FAIL selfcheck: enabledPlugins appears outside a comment\n'
+    printf 'FAIL selfcheck: %s appears outside a comment\n' "$forbidden_pattern"
     printf '%s\n' "$forbidden"
     return 1
   fi
 
   printf 'PASS selfcheck: %s %s invocation(s) use --plugin-dir\n' "$count" "$pattern"
-  printf 'PASS selfcheck: no enabledPlugins outside comments\n'
+  printf 'PASS selfcheck: no %s outside comments\n' "$forbidden_pattern"
 }
 
 if [ "$SELF_CHECK" -eq 1 ]; then
@@ -135,6 +136,13 @@ for line in open(sys.argv[2], encoding="utf-8", errors="replace"):
         if isinstance(c,dict) and c.get("type")=="tool_use" and c.get("name")==want:
             print(json.dumps(c.get("input",{})))
 ' "$1" "$2"
+}
+
+# Claude may read a cited reference with the dedicated Read tool or with a scoped Bash `cat`.
+# Both are observable reads; the path anchor below is the invariant this check actually needs.
+reference_reads () {
+  tools Read "$1"
+  tools Bash "$1"
 }
 
 # Assert that observed paths came from the checkout under test. The forbidden half is the
@@ -232,7 +240,7 @@ print(n)
 #   - a phrase whose command wants an OKF bundle ("add a standard") spends its turns looking
 #     for one. That cost used to be hidden because probe c ran against REPO, which has a
 #     bundle; sandboxing removed it and pushed the probe into the turn cap.
-#   - a command that reports on a workspace ("/quenching:specs:status") wants one to report on.
+#   - a command that reports on a workspace ("/quenching:knowledge:status") wants one to report on.
 # So every box gets a migration, a minimal bundle and an empty `specs/plans/`: the smallest repo
 # every prompt below can be answered in without exploring to find out its subject is missing.
 # The folder alone is the workspace — `plans/index.md` is a retired artifact, and `cq specs`
@@ -258,8 +266,8 @@ echo
 # The prompt never names a path: the command must report the citations IT was given, so a
 # Read landing under assets/references/ proves the placeholder resolved in production.
 #
-# It also covers re-homed references for free: /quenching:specs:status cites a reference directory that
-# the specs-flow-consolidation fold renamed, so a stale citation fails here rather than silently
+# It also covers re-homed references for free: /quenching:knowledge:status cites a reference directory that
+# the knowledge-flow consolidation owns, so a stale citation fails here rather than silently
 # reading nothing.
 #
 # It runs in a sandbox rather than in REPO so that --plugin-dir is the ONLY source of the
@@ -268,16 +276,16 @@ echo
 if want 1; then
 echo "1. a collapsed command loads and cites its re-homed reference"
 newbox "$WORK/sandbox1"
-( cd "$WORK/sandbox1" && claude -p --plugin-dir "$PLUGIN" "/quenching:specs:status
+( cd "$WORK/sandbox1" && claude -p --plugin-dir "$PLUGIN" "/quenching:knowledge:status
 
 Before the report: list the absolute path of every reference file THIS COMMAND'S OWN BODY tells
 you to consult, exactly as the body spells them. Then Read the first one. Do not guess a path —
 copy it from the body you were given." \
   --max-turns 10 --output-format stream-json --verbose < /dev/null > "$WORK/1.jsonl" 2>&1 )
 if evidence "$WORK/1.jsonl"; then
-  if anchored "$(tools Read "$WORK/1.jsonl")"; then r=yes; else r=no; fi
-  check "$r" "Read a file under assets/references/ (placeholder substituted)"
-  if grep -q '/skills/' <<<"$(tools Read "$WORK/1.jsonl")"; then r=no; else r=yes; fi
+  if anchored "$(reference_reads "$WORK/1.jsonl")"; then r=yes; else r=no; fi
+  check "$r" "read a file under assets/references/ (placeholder substituted)"
+  if grep -q '/skills/' <<<"$(reference_reads "$WORK/1.jsonl")"; then r=no; else r=yes; fi
   check "$r" "read nothing under a skills/ tree"
 else
   inconc "Read a file under assets/references/ (placeholder substituted)" "no tool_use in the capture"
