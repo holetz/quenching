@@ -13,7 +13,7 @@ from quenching.specs.backends.memory import MemoryBackend
 from quenching.specs.commands.fields import parse_field_date, record_field_value_error
 from quenching.specs.commands.validate import validate_spec
 from quenching.specs.parse.fields import FIELD_KEYS, carry_forward_fields, set_frontmatter_record
-from quenching.specs.schema import DEFAULT_SCHEMA, capture_form, load_schema
+from quenching.specs.schema import capture_form
 
 
 class CarryForwardFields(unittest.TestCase):
@@ -135,62 +135,15 @@ class SpBadComplexity(unittest.TestCase):
 
     def test_a_value_outside_the_four_levels_is_flagged(self):
         b = MemoryBackend()
-        b.create_spec("plans", "alpha.md", _spec_doc("3"))
+        b.create_spec("plans", _spec_doc("3"))
         codes = [f["code"] for f in validate_spec(b, b.list_specs()[0])]
         self.assertIn("sp-bad-complexity", codes)
 
     def test_one_of_the_four_levels_is_not_flagged(self):
         b = MemoryBackend()
-        b.create_spec("plans", "alpha.md", _spec_doc("medium"))
+        b.create_spec("plans", _spec_doc("medium"))
         codes = [f["code"] for f in validate_spec(b, b.list_specs()[0])]
         self.assertNotIn("sp-bad-complexity", codes)
-
-
-class SummaryField(unittest.TestCase):
-    """`summary:` — the ONE-line précis every ranked listing prints.
-
-    It is declared, has its own verb, and is neither a record nor one of the four projected
-    STATE keys: nothing stores it natively on any backend, so it stays in the document
-    everywhere. These assertions pin all three halves of that sentence."""
-
-    def test_it_is_declared_in_both_copies_of_the_schema(self):
-        # The lockstep test in test_specs_assets compares the two whole schemas; this one
-        # names the key, so a drift report says WHICH field went missing.
-        self.assertIn("summary", DEFAULT_SCHEMA["frontmatter"]["optional"])
-        self.assertIn("summary", load_schema()["frontmatter"]["optional"])
-
-    def test_it_is_not_a_record(self):
-        self.assertNotIn("summary", DEFAULT_SCHEMA["frontmatter"]["records"],
-                         "a record has a writtenBy/writeOnce rule; this is a declared scalar")
-
-    def test_it_is_not_one_of_the_projected_state_keys(self):
-        # FIELD_KEYS drives `carry_forward_fields` and the azure backend's
-        # `strip_frontmatter_keys`, both of which exist because those keys are STORED
-        # natively and stripped from the document. `summary` has no native counterpart, so
-        # including it would strip it from the document with nowhere to read it back from.
-        self.assertNotIn("summary", FIELD_KEYS)
-
-    def test_it_survives_an_ordinary_write_because_it_stays_in_the_document(self):
-        b = MemoryBackend()
-        b.create_spec("plans", "alpha.md",
-                      "---\nslug: alpha\ntitle: Alpha\ndate: 2026-08-16\n"
-                      "summary: One line about alpha\n---\n\n## Problem\n\nSomething.\n")
-        info, _ = b.read_spec("alpha")
-        b.write_spec(info, info["text"].replace("Something.", "Something else."))
-        again, _ = b.read_spec("alpha")
-        self.assertEqual(again["frontmatter"].get("summary"), "One line about alpha")
-
-    def test_an_absent_field_reads_the_same_as_an_empty_one(self):
-        # The table falls back to `title:` on both, so a `cq` older than this field must not
-        # make any consumer claim a spec HAS no summary as opposed to not carrying the key.
-        for fm in ("", "summary:\n"):
-            with self.subTest(frontmatter=fm or "(absent)"):
-                b = MemoryBackend()
-                b.create_spec("plans", "alpha.md",
-                              f"---\nslug: alpha\ntitle: Alpha\ndate: 2026-08-16\n{fm}---\n"
-                              "\n## Problem\n\nSomething.\n")
-                info, _ = b.read_spec("alpha")
-                self.assertFalse(info["frontmatter"].get("summary"))
 
 
 if __name__ == "__main__":

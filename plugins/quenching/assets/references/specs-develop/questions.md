@@ -13,7 +13,7 @@ the interrogation a spec gets is the one its content earns.
 
 ## Choosing the bank
 
-One lookup on the derived stage, taken from `cq specs status --spec <slug> --json`:
+One lookup on the derived stage, taken from `cq specs status --spec <id> --json`:
 
 | Derived stage | Bank | The question it is really asking |
 | --- | --- | --- |
@@ -253,7 +253,7 @@ into filling headings to make a check pass, and the explicit-none rule is the wh
 
 **Shape.** Grouped (§1) — the headings `next` reports are independent of one another.
 
-**Drive it off the tool, never off a reading of the file.** `cq specs next --spec <slug> --json`
+**Drive it off the tool, never off a reading of the file.** `cq specs next --spec <id> --json`
 returns the first `missing` or `malformed` heading and the full list behind it. Ask about that
 list, four headings to a call.
 
@@ -317,12 +317,12 @@ Three resolutions and nothing else:
 
 | Resolution | When | What it costs |
 | --- | --- | --- |
-| `promoted: <slug>` | it is work someone will do, and the front does not already hold it | one `cq specs list --json` to check, then one `cq specs new` — offer it, and write the slug back |
+| `promoted: <id>` | it is work someone will do, and the front does not already hold it | one `cq specs list --json` to check, then one `cq specs new` — offer it, and write the ID back |
 | `folded: <section>` | it changes THIS spec | the answer lands in that section in the same edit |
 | `dismissed: <reason>` | it is real but not worth acting on, or another spec already covers it | one line, and the reason is the whole value |
 
 **Check the front before minting.** `promoted:` reads the open specs first; where one already
-covers the line, resolve it `dismissed: already covered by {slug}`.
+covers the line, resolve it `dismissed: already covered by {id}`.
 
 A line is never deleted, and never left unresolved with a shrug. `dismissed: acceptable` with no
 reason is the failure mode to hunt for.
@@ -343,7 +343,7 @@ This bank asks a single question, and it is the only bank that adds nothing to t
 the spec now commits to — the proposal in one line, the task count, the `verification` policy, the
 declared `knowledge/standards/` paths, the biggest accepted risk — and ask for the go-ahead.
 
-On yes, stamp it with `cq specs record "<slug>" approved --set date=<today>` — never by editing the
+On yes, stamp it with `cq specs record "<id>" approved --set date=<today>` — never by editing the
 provider document directly. On no, ask what would have to change
 and route it back to the bank that owns it.
 

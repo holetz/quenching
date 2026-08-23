@@ -124,11 +124,11 @@ def cmd_doctor(args, root: str, out: Emitter) -> int:
         if not az_err:
             for row in az.marker_without_discovery_tag():
                 findings.append(_finding("sp-az-marker-untagged", "warn",
-                                         f"work item {row['id']} (spec '{row['slug']}') "
+                                         f"work item {row['id']} "
                                          f"carries the quenching-spec marker but not the "
                                          f"discovery tag '{az.discovery_tag}' — invisible to "
                                          f"every command's tag-scoped listing",
-                                         path=str(row["id"]), slug=row["slug"],
+                                         path=str(row["id"]),
                                          remedy=f"re-apply the '{az.discovery_tag}' tag on "
                                                 f"the board; until then this spec exists "
                                                 f"only there"))
@@ -137,32 +137,32 @@ def cmd_doctor(args, root: str, out: Emitter) -> int:
             for row in az.board_findings():
                 if row["kind"] == "column":
                     findings.append(_finding("sp-az-column-drift", "warn",
-                                             f"work item {row['id']} (spec '{row['slug']}') "
+                                             f"work item {row['id']} "
                                              f"is in column '{row['actual']}', not "
                                              f"'{row['expected']}' — the next write brings "
                                              f"it back",
-                                             path=str(row["id"]), slug=row["slug"],
+                                             path=str(row["id"]),
                                              remedy="the board is the projection; move the "
                                                     "spec through its stage/records instead "
                                                     "of the card, or declare a different "
                                                     "azureColumns mapping"))
                 elif row["kind"] == "tag":
                     findings.append(_finding("sp-az-tag-uncatalogued", "warn",
-                                             f"work item {row['id']} (spec '{row['slug']}') "
+                                             f"work item {row['id']} "
                                              f"carries tag '{row['tag']}', which is not in "
                                              f"the declared `tagCatalog`",
-                                             path=str(row["id"]), slug=row["slug"],
+                                             path=str(row["id"]),
                                              tag=row["tag"],
                                              remedy="add the tag to `tagCatalog` in "
                                                     f"{CONFIG_FILE}, or remove it from the "
                                                     f"work item"))
                 elif row["kind"] == "dates":
                     findings.append(_finding("sp-az-dates-missing", "warn",
-                                             f"work item {row['id']} (spec '{row['slug']}') "
+                                             f"work item {row['id']} "
                                              f"is past the captured stage with no `start`/"
                                              f"`target` — the team's own rule expects both "
                                              f"from Entendimento Técnico on",
-                                             path=str(row["id"]), slug=row["slug"],
+                                             path=str(row["id"]),
                                              remedy="record `start`/`target` on the spec"))
     # The `github` counterpart of the network check above, and the same justification: a
     # listing that comes back empty is invisible to every OTHER command, which all read

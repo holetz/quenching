@@ -8,7 +8,7 @@ description: "Rank the whole plans/ front — ONE ordered list the human confirm
 
 # quenching-specs-triage — rank the front, once, on one confirmation
 
-**Input**: `$ARGUMENTS` — optionally one slug to limit the sweep; omit to rank everything in
+**Input**: `$ARGUMENTS` — optionally one ID to limit the sweep; omit to rank everything in
 `plans/`.
 
 The prioritization sweep. It reads every spec in
@@ -114,7 +114,7 @@ Find `/.specs/plans/` at the target repo root. Missing → stop and offer `quenc
 installs the seed. Then:
 ```bash
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs list --phase plans --json      # every spec in plans/: folder, derived stage, and its records
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs section <slug> Problem         # per spec being ranked, for the reason column
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs section <id> Problem         # per spec being ranked, for the reason column
 ```
 `list --phase plans --json` carries the seven `records` for exactly the front this sweep ranks —
 never the `archive/` history alongside it — so the current `priority` of every spec in scope arrives
@@ -162,15 +162,15 @@ what blew past a 120s timeout in the measured session — `xargs -P 8`, the same
 session already improvised on the read side, generalized here to the write:
 ```bash
 printf '%s\0' \
-  'python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record <slug1> priority --set level=<n1> --set criticality=<word1> --set complexity=<word1> --set date=<today>' \
-  'python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record <slug2> priority --set level=<n2> --set criticality=<word2> --set complexity=<word2> --set date=<today>' \
+  'python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record <id1> priority --set level=<n1> --set criticality=<word1> --set complexity=<word1> --set date=<today>' \
+  'python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record <id2> priority --set level=<n2> --set criticality=<word2> --set complexity=<word2> --set date=<today>' \
   ... \
 | xargs -0 -P 8 -I{} sh -c '{}'
 ```
 One fully-formed `cq specs record` line per approved row — all four `--set` on every line, because
 §The record this command owns floors `complexity` at `medium` rather than omitting it — piped
 NUL-delimited so no argument inside a line is ever split. `sh -c '{}'` runs each line as its own command, up to 8 at
-once. The tool merges: a field not named survives, and `slug`, `title`, `date`, `verification` and the
+once. The tool merges: a field not named survives, and `id`, `title`, `date`, `verification` and the
 other six records are never in reach of this write. Stamp the record's own `date` on every write —
 it is a different key from the spec's capture `date:`. Editing the frontmatter by hand would do the
 same thing only while the backend is `files` — against a backend whose specs are issues there is no
@@ -222,7 +222,7 @@ Emit §The report mold. Two body blocks:
    row's `Recommended action` **runnable as printed**: the command with its real argument
    substituted, never a bare command name the reader has to complete.
 
-Then §The next-step block, whose recommended line is `quenching-specs-cycle <slug>` for the
+Then §The next-step block, whose recommended line is `quenching-specs-cycle <id>` for the
 spec the approved ranking put first — the first thing the `priority` this just wrote decides.
 **Done when:** both blocks and the next-step block are shown.
 
@@ -247,6 +247,6 @@ spec the approved ranking put first — the first thing the `priority` this just
 - Never fan out sub-agents, and never re-implement a check in prose — run `cq specs validate` and
   report what it says.
 - **Never print an observation whose `Recommended action` is not runnable as printed** — a bare
-  command name, or a literal `<slug>` reaching the output, is a defect. The row exists so the next
+  command name, or a literal `<id>` reaching the output, is a defect. The row exists so the next
   step can be copied; one the reader has to complete is the gap §The observations table was given
   its own mold to close.

@@ -26,7 +26,7 @@ other homes.
 
 This home is a plain Markdown tree, consumable by any documentation site generator. The
 plugin ships a batteries-included **mkdocs-material** setup at the repo root (`mkdocs.yml`,
-`requirements.txt`) — first installed by `quenching-knowledge-align`, and created/updated/verified from
+`requirements.txt`) — first installed by `quenching:knowledge:align`, and created/updated/verified from
 then on by **`quenching-knowledge-documentation-build`** (the site layer's owner: config, `.pages` nav, and
 a `mkdocs build --strict` check):
 

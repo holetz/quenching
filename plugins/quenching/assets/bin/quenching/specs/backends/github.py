@@ -15,9 +15,8 @@ from quenching.specs.backends.hybrid import (GH_BODY_MAX, GH_PART_MAX, hybrid_jo
                                              hybrid_unwrap, hybrid_unwrap_part, hybrid_wrap,
                                              hybrid_wrap_part)
 from quenching.specs.config import CONFIG_FILE, find_repo_root, load_config
-from quenching.specs.parse import (LEGACY_DATED_FILE_RE, PHASES, SPEC_FILE_RE,
-                                   carry_forward_fields, declared_tags, derive_info,
-                                   derive_labels, reconcile_label_set, resolve_one,
+from quenching.specs.parse import (PHASES, carry_forward_fields, declared_tags,
+                                   derive_info, derive_labels, reconcile_label_set,
                                    strip_frontmatter_keys)
 
 
@@ -360,8 +359,7 @@ class GitHubBackend(SpecBackend):
         # descriptor, issue number, first chunk, how many parts the marker declares,
         # issue title, and the issue's own labels as of this listing — what the label
         # reconciliation in `_store` diffs against, so it costs no call of its own
-        self._rows: list[tuple[dict, int, str, int, str, list[str]]] | None = None
-        self._legacy: list[tuple[int, str, str, int, str]] = []
+        self._rows: list[tuple[dict, int, str, int, str, dict, list[str]]] | None = None
         # `spec:` labels already confirmed correctly colored THIS process — so a repo
         # this tool has been reconciling against for a while pays no repeat GET+PATCH for
         # a label it fixed on an earlier write in the same command.
@@ -430,8 +428,7 @@ class GitHubBackend(SpecBackend):
         refusal = empty_listing_refusal(action, pages)
         if refusal:
             raise BackendRefusal(refusal)
-        rows: list[tuple[dict, int, str, int, str, list[str]]] = []
-        legacy: list[tuple[int, str, str, int, str]] = []
+        rows: list[tuple[dict, int, str, int, str, dict, list[str]]] = []
         for page in pages:
             for issue in (page or []):
                 if not isinstance(issue, dict) or "pull_request" in issue:
@@ -439,77 +436,74 @@ class GitHubBackend(SpecBackend):
                     # both. A PR can never be a spec, and one that happened to carry the
                     # marker would otherwise be listed and then written over.
                     continue
-                filename, head, parts = hybrid_unwrap(issue.get("body") or "")
-                m = SPEC_FILE_RE.match(filename)
-                if not m:
-                    # A marker in the pre-fold `YYYY-MM-DD-<slug>.md` form is a SPEC, and it
-                    # is kept apart rather than skipped. Skipping is what an ordinary issue
-                    # gets, and treating an un-migrated spec that way makes the whole front
-                    # vanish silently — `migrate` reads this bucket and nothing else does.
-                    if LEGACY_DATED_FILE_RE.match(filename):
-                        legacy.append((int(issue.get("number") or 0), filename,
-                                       head, parts, str(issue.get("title") or "")))
+                head, parts = hybrid_unwrap(issue.get("body") or "")
+                if not parts:
+                    # The marker, not its optional legacy payload, distinguishes specs from
+                    # ordinary issues.
                     continue
                 phase = "archive" if issue.get("state") == "closed" else "plans"
+                number = int(issue.get("number") or 0)
                 rows.append(({
-                    # The SAME key set `spec_files` returns and nothing more — an extra key
-                    # here is a field some command comes to depend on and that the files
-                    # backend does not have. `legacy` is False by construction: the v2
-                    # folder split never existed here.
-                    "phase": phase, "folder": phase, "legacy": False, "file": filename,
+                    "id": number, "phase": phase, "folder": phase, "legacy": False,
                     "path": issue.get("html_url")
-                            or f"https://github.com/{self.repo}/issues/{issue.get('number')}",
-                    "slug": m.group(1),
-                    # For a one-part spec — every spec but the largest — `head` IS the whole
-                    # document and this listing has already paid for it. Only a spilled one
-                    # costs `read_spec` a second call, and only for the slug it was given.
-                }, int(issue.get("number") or 0), head, parts,
-                    str(issue.get("title") or ""), self._native_fields(issue),
+                            or f"https://github.com/{self.repo}/issues/{number}",
+                }, number, head, parts, str(issue.get("title") or ""), self._native_fields(issue),
                     self._issue_labels(issue)))
         self._rows = rows
-        self._legacy = legacy
         if listing_is_suspect(len(rows), self.open_issues):
             announce_listing_suspect(self.repo, self.open_issues)
         return rows
 
-    def legacy_rows(self) -> list[tuple[int, str, str, int, str]]:
-        """`(number, dated filename, head, parts, issue title)` for every spec still stored
-        under the pre-fold basename. `migrate` is the only caller; the read path never sees
-        these, because a half-migrated front that half-works is worse than one that says so."""
-        self._load()
-        return list(self._legacy)
-
     def _invalidate(self) -> None:
         self._rows = None
-        self._legacy = []
-
-    def _issue_number(self, slug: str) -> int:
-        return self._issue_parts(slug)[0]
-
-    def _issue_parts(self, slug: str) -> tuple[int, int, list[str]]:
-        """`(issue number, how many parts are stored, its current labels)` — all three from
-        the listing already in hand, so knowing whether there are stale continuation
-        comments to clean up, or which labels a write must reconcile against, costs no
-        call of their own.
-
-        The labels come back RAW, `spec:` rendering included — this is the one caller that
-        needs them that way, because `reconcile_label_set` diffs against what the issue
-        actually carries. Every other reader goes through `declared_tags`."""
-        for descriptor, number, _, parts, _title, _native, labels in self._load():
-            if descriptor["slug"] == slug:
-                return number, parts, labels
-        raise BackendRefusal({
-            "code": "sp-gh-issue-gone", "exit": 2, "slug": slug,
-            "message": f"spec '{slug}' was in the listing and is not there any more — the "
-                       f"issue was deleted or transferred while this command ran; nothing "
-                       f"was written",
-        })
 
     def _issue_labels(self, issue: dict) -> list[str]:
         """Every label name on `issue`, RAW — the `spec:` rendering included. Only the write
         path wants them this way; readers want `declared_tags` over the result."""
         return [str(lbl.get("name")) for lbl in (issue.get("labels") or [])
                 if isinstance(lbl, dict) and lbl.get("name")]
+
+    def _lean_rows(self) -> list[dict]:
+        """The provider's cheap spec index: title, state and the visible `spec:` labels.
+
+        `gh issue list` searches the body marker server-side, so the document body never
+        crosses the wire. It is intentionally separate from `_load`: a caller asking for the
+        complete front still needs the canonical document and its native fields."""
+        action = "listing specs through GitHub's lean index"
+        code, out, err = _gh_run(
+            self.cwd, "issue", "list", "--repo", self.repo, "--state", "all", "--search",
+            '"quenching-spec" in:body', "--json", "number,title,state,labels", "--limit", "1000")
+        if code != 0:
+            raise BackendRefusal(gh_refusal(action, code, out, err))
+        try:
+            issues = json.loads(out or "null")
+        except json.JSONDecodeError as e:
+            raise BackendRefusal({
+                "code": "sp-gh-bad-response", "exit": 2, "action": action,
+                "message": f"`gh` exited 0 while {action} but its output is not JSON: {e}",
+            }) from e
+        if not isinstance(issues, list):
+            raise BackendRefusal({
+                "code": "sp-gh-bad-response", "exit": 2, "action": action,
+                "message": f"`gh` returned {type(issues).__name__}, not a list, for {action}",
+            })
+        rows: list[dict] = []
+        for issue in issues:
+            if not isinstance(issue, dict):
+                continue
+            number = int(issue.get("number") or 0)
+            if not number:
+                continue
+            state = str(issue.get("state") or "open").strip().lower()
+            phase = "archive" if state == "closed" else "plans"
+            rows.append({
+                "id": number, "title": str(issue.get("title") or ""), "state": state,
+                "records": [label for label in self._issue_labels(issue)
+                            if label.startswith("spec:")],
+                "phase": phase, "folder": phase, "legacy": False,
+                "path": f"https://github.com/{self.repo}/issues/{number}",
+            })
+        return rows
 
     def _native_fields(self, issue: dict) -> dict:
         """`tags`/`assignee`, reassembled from `labels`/`assignees` — the READ half of
@@ -535,36 +529,80 @@ class GitHubBackend(SpecBackend):
         return out
 
     # -- the five primitives -------------------------------------------------- #
-    def list_specs(self, phase: str | None = None) -> list[dict]:
+    def list_specs(self, phase: str | None = None, lean: bool = False) -> list[dict]:
+        if lean:
+            rows = [row for row in self._lean_rows()
+                    if phase is None or row["phase"] == phase]
+            return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["id"]))
         rows = [dict(d) for d, _, _, _, _, _, _ in self._load()
                 if phase is None or d["phase"] == phase]
-        return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
+        return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["id"]))
 
-    def read_spec(self, slug: str) -> tuple[dict | None, dict]:
-        rows = self._load()
-        spec, err = resolve_one(self.list_specs(), slug,
-                                {d["slug"]: t for d, _, _, _, t, _, _ in rows})
-        if err:
-            return None, err
-        # `spec["slug"]`, never the slug that was ASKED for: a title or approximate match
-        # resolved to a different one, and looking the document up by the request would
-        # raise right after the resolution succeeded.
-        number, head, parts, native_title, native_fields = next(
-            (n, d, p, t, f) for descriptor, n, d, p, t, f, _lb in rows
-            if descriptor["slug"] == spec["slug"])
+    def read_spec(self, spec_id: str | int) -> tuple[dict | None, dict]:
+        """One spec, by the number GitHub allocated.
+
+        TWO PATHS TO THE SAME `info`, and which one runs is decided by what the process
+        already paid for, never by the caller:
+
+        - **The cache is cold** — the normal case, and what the native ID is FOR. One
+          `GET /issues/<n>` fetches the single item: measured 0.4 s / 7.7 KB against a
+          repository of 157 specs, where finding the same document by a slug buried in every
+          body cost 3.8 s and 5.25 MB.
+        - **The cache is warm** — `list_specs` already paginated the tracker, so every
+          document is in hand. Going back to the wire for one of them is a request that
+          buys nothing: `cq specs list --json` reads all 157 and, measured before this
+          branch, that turned 4.8 s into 78 s of single-item GETs.
+
+        Neither path derives anything of its own — both hand the same canonical document to
+        `derive_info`, which is what `spec-backend.md` §The interface is the document
+        requires. A row from a listing this process just made and a row fetched now are the
+        same fact; nothing here re-reads the wire to confirm it."""
+        try:
+            number = int(spec_id)
+        except (TypeError, ValueError):
+            return None, {"code": "sp-unknown-id", "exit": 1, "id": spec_id,
+                          "message": f"no spec with id '{spec_id}'"}
+        if self._rows is not None:
+            row = next((r for r in self._rows if r[1] == number), None)
+            if row is None:
+                return None, {"code": "sp-unknown-id", "exit": 1, "id": spec_id,
+                              "message": f"no spec with id '{spec_id}'"}
+            descriptor, _, head, parts, title, native_fields, labels = row
+            return self._assemble(dict(descriptor), number, head, parts, title,
+                                  native_fields, labels), {}
+        issue = self._api(f"reading issue #{number}", f"repos/{self.repo}/issues/{number}")
+        head, parts = hybrid_unwrap((issue or {}).get("body") or "")
+        if not parts:
+            return None, {"code": "sp-unknown-id", "exit": 1, "id": spec_id,
+                          "message": f"no spec with id '{spec_id}'"}
+        phase = "archive" if issue.get("state") == "closed" else "plans"
+        spec = {
+            "id": number, "phase": phase, "folder": phase, "legacy": False,
+            "path": issue.get("html_url")
+                    or f"https://github.com/{self.repo}/issues/{number}",
+        }
+        return self._assemble(spec, number, head, parts, str(issue.get("title") or ""),
+                              self._native_fields(issue), self._issue_labels(issue)), {}
+
+    def _assemble(self, spec: dict, number: int, head: str, parts: int, native_title: str,
+                  native_fields: dict, labels: list[str]) -> dict:
+        """The one derivation both read paths go through, so neither can drift from the
+        other about what a spec's `info` holds."""
         full_text = head if parts <= 1 else self._joined(number, head, parts)
-        # The title comes back from the issue's own, which is where the write put it. A
-        # document that still carries its own `title:` is returned untouched.
         info = derive_info(spec, hybrid_title_join(full_text, native_title))
         info["frontmatter"].update(native_fields)
-        return info, {}
+        info["_github_parts"] = parts
+        info["_github_labels"] = labels
+        return info
 
     # `start`/`target` have no native counterpart on an issue (no scheduling fields) and
     # stay in the document, exactly as `date:` already does — only these two are stored.
     GH_STORED_KEYS = ("tags", "assignee")
 
     def write_spec(self, info: dict, text: str) -> None:
-        number, had_parts, current_labels = self._issue_parts(info["slug"])
+        number = int(info["id"])
+        had_parts = int(info.get("_github_parts", 1))
+        current_labels = info.get("_github_labels", [])
         # `derive_info` — the SAME shared derivation every read goes through — off the text
         # about to be written, never a second, backend-own way of deciding the stage: this
         # class derives nothing of its own, per its own docstring above. It is also FRESH,
@@ -584,8 +622,7 @@ class GitHubBackend(SpecBackend):
         # stored tags are.
         desired = derive_labels(new_info)
         labels = reconcile_label_set(declared_tags(native_fields.get("tags") or []), desired)
-        self._store(number, info["slug"], info["file"], text, had_parts, labels,
-                    native_fields)
+        self._store(number, text, had_parts, labels, native_fields)
         # AFTER `_store`: a label `_store`'s own PATCH just created does not exist yet
         # before that call, and fixing a nonexistent label's color 404s. Gated on an
         # actual SET change — `set(...)`, not `!=` on the lists — so the no-milestone-
@@ -598,21 +635,14 @@ class GitHubBackend(SpecBackend):
             self._ensure_label_colors(desired)
         self._invalidate()
 
-    def _store(self, number: int, slug: str, filename: str, text: str,
-               had_parts: int, labels: list[str] | None = None,
+    def _store(self, number: int, text: str, had_parts: int,
+               labels: list[str] | None = None,
                native_fields: dict | None = None) -> None:
         """The whole write, given an issue number already in hand.
 
-        Split out for `migrate`, which knows every number from its own scan and must not go
-        back to the listing between writes: `_invalidate` after each one would make the next
-        lookup refetch all eight pages, turning a 73-spec fold into 73 full listings. It is
-        the SAME serialisation either way — a migration with a writer of its own would be a
-        second implementation that runs exactly once, on the day it matters most.
         `labels`/`assignees`, when given, ride in this SAME PATCH — one call updates title,
         body, the spec's own stored tags and the tracker's `spec:` rendering together, never
-        a second round trip. `migrate` omits both: a one-time bulk fold is not the moment to
-        reconcile either, and the next ordinary `write_spec` on each folded spec does it for
-        free.
+        a second round trip.
 
         A label GitHub does not already have fails the WHOLE request atomically (measured
         against this repository: `not found`, nothing written), which is the write-refusal
@@ -621,10 +651,10 @@ class GitHubBackend(SpecBackend):
         that — it grooms the `spec:` set this tool renders and owns, never a name the
         document declared."""
         stripped = strip_frontmatter_keys(text, self.GH_STORED_KEYS)
-        stored, title = hybrid_project(slug, stripped)
+        stored, title = hybrid_project(stripped)
         chunks = hybrid_split(stored, GH_PART_MAX)
         payload = {"title": title,
-                   "body": hybrid_wrap(filename, chunks[0][0], len(chunks))}
+                   "body": hybrid_wrap(chunks[0][0], len(chunks))}
         if labels is not None:
             payload["labels"] = labels
         if native_fields is not None and "assignee" in native_fields:
@@ -657,14 +687,13 @@ class GitHubBackend(SpecBackend):
                                 {"color": color, "description": desc})
             self._colors_confirmed.add(name)
 
-    def create_spec(self, phase: str, filename: str, text: str) -> str:
-        m = SPEC_FILE_RE.match(filename)
+    def create_spec(self, phase: str, text: str) -> str:
         fresh = derive_info({"phase": phase}, text)
         stripped = strip_frontmatter_keys(text, self.GH_STORED_KEYS)
-        stored, title = hybrid_project(m.group(1) if m else filename, stripped)
+        stored, title = hybrid_project(stripped)
         chunks = hybrid_split(stored, GH_PART_MAX)
         payload = {"title": title,
-                  "body": hybrid_wrap(filename, chunks[0][0], len(chunks))}
+                  "body": hybrid_wrap(chunks[0][0], len(chunks))}
         # The same union `write_spec` makes, from an empty current set: the spec's declared
         # tags plus whatever the fresh document already renders. A capture form renders
         # nothing (no records, `captured` stage), so this is usually just the tags — but
@@ -706,7 +735,7 @@ class GitHubBackend(SpecBackend):
         return url
 
     def move_spec(self, info: dict, dest_phase: str) -> str:
-        number = self._issue_number(info["slug"])
+        number = int(info["id"])
         issue = self._set_state(number, "closed" if dest_phase == "archive" else "open")
         self._invalidate()
         return (issue or {}).get("html_url") \

@@ -4,7 +4,7 @@ questions git (and, where declared, a host CLI) already has answers for — `## 
 `pilar-git-e-specs-agnosticas-ao-git` spec says why the column stays 1x5 with this row
 undoctored.
 
-`base` is minted first (task 3.1). `slugs`, `stale` and `conventions` (tasks 3.2-3.4) each add
+`base` is minted first (task 3.1). `specs`, `stale` and `conventions` (tasks 3.2-3.4) each add
 one import and one `DISPATCH` row — the same shape `specs.commands.cli` and `knowledge.cli`
 already use for their own pillars, kept flat here because four leaf subcommands need no
 `commands/` package of their own."""
@@ -17,10 +17,10 @@ from quenching.common.output import REFUSAL
 from quenching.common.version import VERSION
 from quenching.git.base import cmd_base
 from quenching.git.conventions import cmd_conventions
-from quenching.git.slugs import cmd_slugs
+from quenching.git.slugs import cmd_specs
 from quenching.git.stale import cmd_stale
 
-DISPATCH = {"base": cmd_base, "slugs": cmd_slugs, "stale": cmd_stale,
+DISPATCH = {"base": cmd_base, "specs": cmd_specs, "stale": cmd_stale,
             "conventions": cmd_conventions}
 
 
@@ -34,11 +34,12 @@ def build_parser() -> argparse.ArgumentParser:
                                       "the host's own default")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
-    sp = sub.add_parser("slugs", help="read, or read-merge-write, a branch's own "
-                                       "`quenching-slugs:` marking")
+    sp = sub.add_parser("specs", help="read, add or remove native spec IDs in a branch's own "
+                                       "`quenching-specs:` marking")
     sp.add_argument("branch")
-    sp.add_argument("--add", metavar="SLUG", help="merge one slug into the marking, "
-                                                   "rewriting the line in place")
+    change = sp.add_mutually_exclusive_group()
+    change.add_argument("--add", metavar="ID", help="merge one native spec ID into the marking")
+    change.add_argument("--remove", metavar="ID", help="remove one native spec ID from the marking")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("stale", help="branches merged or gone, and worktrees git still "

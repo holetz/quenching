@@ -196,12 +196,12 @@ stamp → index → log → glossary → self-check (against
 with this skill's deltas kept inline:
 - `source` defaults to "project memory"; salvage the terse body into a structured doc; the log
   line is `**Creation**: [<title>](/.knowledge/<path>.md) — migrated from project memory`.
-- A **unit of work** row instead follows the `/quenching:specs:create` path: run `cq specs new <slug>` and
-  write the memory's content into `## Problem` and nothing else, then `cq specs validate --spec
-  <slug>` as the self-check per
+- A **unit of work** row instead follows the `/quenching:specs:create` path: run `cq specs new
+  <name>` and write the memory's content into `## Problem` and nothing else, then `cq specs
+  validate --spec <id>` — the ID the create reported — as the self-check per
   [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-  (`cq knowledge validate` never covers `/.specs/`); the bundle-log line is
-  `**Creation**: [<title>](/.specs/plans/<slug>.md) — migrated from project memory`.
+  (`cq knowledge validate` never covers the specs front); the bundle-log line is
+  `**Creation**: [<title>](<the locator the create reported>) — migrated from project memory`.
   **Never stamp an OKF `type:` on it** — a spec is not a concept doc, and never invent a
   `priority`: an unranked spec is `/quenching:specs:triage`'s to place.
 - **Only after the self-check passes:** delete the memory `.md` (`rm` — the one destructive shell
