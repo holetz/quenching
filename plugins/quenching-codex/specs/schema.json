@@ -4,14 +4,14 @@
 
   "filename": {
     "pattern": "^([a-z0-9]+(?:-[a-z0-9]+)*)\\.md$",
-    "groups": ["slug"],
+    "groups": [],
     "example": "session-tokens.md",
-    "note": "The same pattern in EVERY folder, and the basename is the slug alone. The capture date is the frontmatter's date:, stamped once by new and never rewritten — it left the basename because a store with no filenames cannot hold it there, and no external store carries an honest copy of it to project from."
+    "note": "The legacy local filename shape is retained only for stores that still expose paths; the basename is not the spec's identity. The provider-native ID owns identity, and the capture date is the frontmatter's date:, stamped once by new."
   },
 
   "frontmatter": {
-    "required": ["slug", "title", "date"],
-    "optional": ["verification", "priority", "refined", "approved", "branch", "pr", "reviewed", "merge", "outcome", "workItemType", "tags", "assignee", "start", "target", "summary"],
+    "required": ["title", "date"],
+    "optional": ["verification", "priority", "refined", "approved", "branch", "pr", "reviewed", "merge", "outcome", "workItemType", "tags", "assignee", "start", "target"],
     "verification": ["per-task", "per-section", "end-of-plan"],
     "outcome": ["done", "abandoned"],
 

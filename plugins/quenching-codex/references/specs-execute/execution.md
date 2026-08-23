@@ -71,14 +71,14 @@ pay.
 
 Two things the loop still needs, regardless of form:
 
-- **A spec whose `plan/<slug>` ref is alive but checked out somewhere else is already being built
+- **A spec whose `plan/<id>-<handle>` ref is alive but checked out somewhere else is already being built
   there.** Starting a second run against it forks the work; say where it is and stop.
 - **Work done in place carries no `branch` record**, so there is nothing to merge later and the
   report says so.
 
-**Check before offering, every time.** A spec that is **already isolated** — its `plan/<slug>` ref
+**Check before offering, every time.** A spec that is **already isolated** — its `plan/<id>-<handle>` ref
 alive, or the `branch` record already stamped — has nothing left to take, and offering again buys
-nothing but the turns it costs. Checking is `git branch --list "plan/<slug>"` plus the `branch`
+nothing but the turns it costs. Checking is `git branch --list "plan/<id>-<handle>"` plus the `branch`
 record already inside the `status --json` the loop reads anyway, and it decides the question
 without moving anything.
 
@@ -87,7 +87,7 @@ without moving anything.
 <!-- rules -->
 
 Declared per spec in the frontmatter (`verification`), written by `quenching-specs-develop`, read by
-`cq specs status --spec <slug> --json`. **Execute never decides when to test.**
+`cq specs status --spec <id> --json`. **Execute never decides when to test.**
 
 | Policy | Run the `verify:` command |
 | --- | --- |
@@ -128,7 +128,7 @@ Two rules bound the loop:
   When the orchestrator judges that further attempts are repeating rather than converging, it
   writes the task blocked, with the reason:
   ```bash
-  python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --spec "<slug>" --block <id> --reason "<why, one line>"
+  python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --spec "<id>" --block <id> --reason "<why, one line>"
   ```
   That writes a **visible marker into `## Tasks`** — `- [!] <id> <title> — blocked: <reason>` —
   and `cq specs next` then skips it and offers the following task, so one bad task never stalls
@@ -137,7 +137,7 @@ Two rules bound the loop:
 **`--block` requires `--reason`** (the tool refuses without one).
 
 A human resumes a blocked task by fixing the cause and un-blocking it —
-`cq specs task --spec <slug> --uncheck <id>` returns it to `- [ ]` — after changing something,
+`cq specs task --spec <id> --uncheck <id>` returns it to `- [ ]` — after changing something,
 never merely to try the same approach again.
 
 ## The diff self-review — four items, before every commit
@@ -169,7 +169,7 @@ Run it as **one chained call**, gate included:
 
 ```bash
 <the task's verify:> \
-  && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <id> --spec "<slug>" --subject "<subject>" \
+  && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <id> --spec "<id>" --subject "<subject>" \
   && git add <the task's files> <the spec file> \
   && git commit -m "<subject>" \
   && git log -1 --format=%s
@@ -184,13 +184,13 @@ picks up whatever an editor or a tool wrote while the task ran, which is the sam
 §The precondition refuses at the start.
 
 If the commit **fails** — a rejecting hook, nothing staged — undo the tick
-(`cq specs task --spec "<slug>" --uncheck <id>`) so no box claims a commit that does not exist, and
+(`cq specs task --spec "<id>" --uncheck <id>`) so no box claims a commit that does not exist, and
 report the failure.
 
 The **subject line format** is the target repo's to declare. Read
 [git/commit.md](../../references/git/commit.md)
 §Commit messages: a repo with `knowledge/standards/git/**` owns the format outright and this contract defers to it; with nothing
-declared, the plugin's default is `plan/<slug>: <task-id> <task title>`. Never install a git
+declared, the plugin's default is `plan/<id>-<handle>: <task-id> <task title>`. Never install a git
 standard into a target to create the answer.
 
 **Hard rules, no exceptions and no "just this once":**
@@ -223,7 +223,7 @@ level down: it produces no diff of its own, so there is no commit to anchor to a
 record. Its chain ends at the tick:
 
 ```bash
-<the task's verify:> && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <id> --spec "<slug>"
+<the task's verify:> && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <id> --spec "<id>"
 ```
 
 — no `--subject`, no `git add`, no `git commit`. The box still ticks. Where the backend keeps the
@@ -244,7 +244,7 @@ it.
 ```bash
 git merge-base --is-ancestor <section-base-sha> HEAD \
   && git reset --soft <section-base-sha> \
-  && git commit -m "plan/<slug>: <N> <section title>"
+  && git commit -m "plan/<id>-<handle>: <N> <section title>"
 ```
 
 **`<section-base-sha>` is a sha — never a branch name, and never a `HEAD~n` counted by hand.** A ref
@@ -290,7 +290,7 @@ carries it) resolves to the commit that now actually exists rather than the one 
 replaced. The same `task --check` call, re-run per task, upserts the metadata in place:
 
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <id> --spec "<slug>" --subject "plan/<slug>: <N> <section title>"
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <id> --spec "<id>" --subject "plan/<id>-<handle>: <N> <section title>"
 ```
 
 Every task in the section ends up sharing that one subject — the anchor's granularity narrows from
@@ -326,7 +326,7 @@ Everything else the work reveals — a gotcha, a second-order consequence, a rul
 of — costs **one line and no authoring**:
 
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs discover "<slug>" "<what was found, one line>"
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs discover "<id>" "<what was found, one line>"
 ```
 
 It is captured **indiscriminately**. The lines are resolved by `quenching-specs-develop`'s
@@ -388,7 +388,7 @@ trades wall-clock for merge conflicts and loses on both.
 <!-- rules -->
 
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs parallel --spec "<slug>" [--json]
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs parallel --spec "<id>" [--json]
 ```
 
 Reports each `[P]` group and whether it is `eligible`. Exit **0** when every marked group is
@@ -406,7 +406,7 @@ The four events are the command body's. Why four events rather than a threshold 
 **The four events say when a rewrite happens; they do not say how much it touches.** Since
 `## Handoff` gained per-section blocks — a small global block plus one `### N.` block per `## Tasks`
 section — a rewrite at any of the four events targets ONE of the two:
-`cq specs section <slug> Handoff --write --scope global` for the evergreen block, or `--scope
+`cq specs section <id> Handoff --write --scope global` for the evergreen block, or `--scope
 current` for the block of whichever `### N.` still has open work. A section's block closes — stops
 being targeted — the moment its last task commits, but that close adds no fifth event: `--scope
 current` always resolves to whichever section still has an open task, so once `### N.` has none

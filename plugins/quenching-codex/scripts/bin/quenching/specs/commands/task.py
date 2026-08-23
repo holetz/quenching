@@ -84,8 +84,8 @@ def cmd_task(args, root: str, out: Emitter) -> int:
     t = _find_task(info["tasks"], ident)
     if not t:
         out.emit(args.json, {"ok": False, "code": "sp-unknown-task", "task": ident,
-                             "message": f"no task '{ident}' in {info['slug']}"},
-                 f"error: no task '{ident}' in {info['slug']}")
+                             "message": f"no task '{ident}' in {info['id']}"},
+                 f"error: no task '{ident}' in {info['id']}")
         return 1
 
     lines = info["text"].splitlines(keepends=True)
@@ -151,7 +151,7 @@ def cmd_task(args, root: str, out: Emitter) -> int:
     anchor_lines = ((f"\n  subject: {subject}" if subject else "") +
                     (f"\n  commit: {commit}" if commit else ""))
     out.emit(args.json,
-             {"ok": True, "slug": info["slug"], "task": ident, "action": verb,
+             {"ok": True, "id": info["id"], "task": ident, "action": verb,
               "state": mark, "text": body, "subject": subject, "commit": commit,
               "reason": args.reason if args.block else None},
              f"task {ident} {verb}: {body}" + anchor_lines)
@@ -179,6 +179,6 @@ def cmd_discover(args, root: str, out: Emitter) -> int:
     new_text, _ = upsert_section(info, "Discoveries", block)
     backend.write_spec(info, new_text)
     out.emit(args.json,
-             {"ok": True, "slug": info["slug"], "entry": args.text.strip()},
+             {"ok": True, "id": info["id"], "entry": args.text.strip()},
              f"recorded in ## Discoveries: {args.text.strip()}")
     return 0

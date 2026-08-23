@@ -30,11 +30,11 @@ def cmd_promote(args, root: str, out: Emitter) -> int:
     dest = args.to or _next_phase(info["phase"])
     if not dest:
         out.emit(args.json,
-                 {"ok": False, "code": "sp-terminal-phase", "slug": info["slug"],
+                 {"ok": False, "code": "sp-terminal-phase", "id": info["id"],
                   "phase": info["phase"],
-                  "message": f"'{info['slug']}' is already in {info['phase']}/ — "
+                  "message": f"'{info['id']}' is already in {info['phase']}/ — "
                              f"nowhere to promote"},
-                 f"refused: '{info['slug']}' is already in {info['phase']}/")
+                 f"refused: '{info['id']}' is already in {info['phase']}/")
         return 2
     if dest not in PHASES:
         out.emit(args.json, {"ok": False, "code": "sp-unknown-phase", "phase": dest,
@@ -43,19 +43,19 @@ def cmd_promote(args, root: str, out: Emitter) -> int:
         return 2
     if dest == info["phase"]:
         out.emit(args.json,
-                 {"ok": False, "code": "sp-same-phase", "slug": info["slug"], "phase": dest,
-                  "message": f"'{info['slug']}' is already in phase {dest}"},
-                 f"refused: '{info['slug']}' is already in phase {dest}")
+                 {"ok": False, "code": "sp-same-phase", "id": info["id"], "phase": dest,
+                  "message": f"'{info['id']}' is already in phase {dest}"},
+                 f"refused: '{info['id']}' is already in phase {dest}")
         return 2
 
     gates = gate_report(info, dest)
     if not gates["ok"]:
-        obj = {"ok": False, "code": "sp-gate-unmet", "slug": info["slug"],
+        obj = {"ok": False, "code": "sp-gate-unmet", "id": info["id"],
                "from": info["phase"], "to": dest,
                "missing": gates["missing"], "malformed": gates["malformed"],
-               "message": f"cannot promote '{info['slug']}' to {dest}/ — "
+               "message": f"cannot promote '{info['id']}' to {dest}/ — "
                           f"{len(gates['missing'])} missing, {len(gates['malformed'])} empty"}
-        human = [f"refused: cannot promote '{info['slug']}' to {dest}/"]
+        human = [f"refused: cannot promote '{info['id']}' to {dest}/"]
         if gates["missing"]:
             human += [f"  missing:   ## {h}" for h in gates["missing"]]
         if gates["malformed"]:
@@ -77,25 +77,23 @@ def cmd_promote(args, root: str, out: Emitter) -> int:
         open_tasks = [t for t in info["tasks"] if not t["checked"]]
         if outcome == "done" and open_tasks and not args.force:
             out.emit(args.json,
-                     {"ok": False, "code": "sp-open-tasks", "slug": info["slug"],
+                     {"ok": False, "code": "sp-open-tasks", "id": info["id"],
                       "open": len(open_tasks), "total": len(info["tasks"]),
                       "openTasks": [{"id": t["id"], "text": t["text"], "state": t["state"]}
                                     for t in open_tasks],
                       "message": f"{len(open_tasks)} of {len(info['tasks'])} tasks still open — "
                              f"pass --force, or --outcome abandoned"},
                      f"refused: {len(open_tasks)} of {len(info['tasks'])} tasks still open in "
-                     f"'{info['slug']}'\n" +
+                     f"'{info['id']}'\n" +
                      "\n".join(f"  [{t['state']}] {t['text'][:70]}" for t in open_tasks[:8]) +
                      "\n  pass --force to archive anyway, or --outcome abandoned")
             return 2
 
-    rel = f"{dest}/{info['file']}"
     if args.dry_run:
         out.emit(args.json,
-                 {"ok": True, "dryRun": True, "slug": info["slug"], "from": info["folder"],
-                  "to": dest, "outcome": outcome, "dest": rel,
-                  "warn": gates["warn"]},
-                 f"dry-run: would move {info['folder']}/{info['file']} → {rel}" +
+                 {"ok": True, "dryRun": True, "id": info["id"], "from": info["folder"],
+                  "to": dest, "outcome": outcome, "warn": gates["warn"]},
+                 f"dry-run: would promote {info['id']}: {info['folder']} → {dest}" +
                  (f"  (outcome: {outcome})" if outcome else ""))
         return 0
     # NO OCCUPIED-DESTINATION CHECK HERE ANY MORE. This verb used to join the DECLARED root
@@ -114,9 +112,9 @@ def cmd_promote(args, root: str, out: Emitter) -> int:
         backend.write_spec(info, set_frontmatter_key(info["text"], "outcome", outcome))
     backend.move_spec(info, dest)
     out.emit(args.json,
-             {"ok": True, "slug": info["slug"], "from": info["folder"], "to": dest,
-              "outcome": outcome, "dest": rel, "warn": gates["warn"]},
-             f"promoted '{info['slug']}': {info['folder']}/ → {rel}" +
+             {"ok": True, "id": info["id"], "from": info["folder"], "to": dest,
+              "outcome": outcome, "warn": gates["warn"]},
+             f"promoted {info['id']}: {info['folder']} → {dest}" +
              (f"  (outcome: {outcome})" if outcome else "") +
              ("".join(f"\n  warning: ## {h} is empty" for h in gates["warn"])))
     return 0

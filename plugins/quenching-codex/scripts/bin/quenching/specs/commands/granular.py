@@ -116,9 +116,9 @@ def _fold_stray(args, backend, info: dict, root: str, out: Emitter) -> int:
 
     backend.write_spec(info, new_text)
     out.emit(args.json,
-             {"ok": True, "slug": info["slug"], "heading": hit, "action": "folded",
+             {"ok": True, "id": info["id"], "heading": hit, "action": "folded",
               "host": host, "path": display_locator(info["path"], root)},
-             f"folded ## {hit} into ## {host} in {info['phase']}/{info['file']}")
+             f"folded ## {hit} into ## {host} in {info['id']}")
     return 0
 
 
@@ -193,7 +193,7 @@ def cmd_section(args, root: str, out: Emitter) -> int:
         absent = [r["heading"] for r in rows if r["state"] == "absent"]
         if args.json:
             one = rows[0] if len(rows) == 1 else {}
-            print(json.dumps({"ok": not absent, "slug": info["slug"],
+            print(json.dumps({"ok": not absent, "id": info["id"],
                               **one, "sections": rows, "absent": absent, "scope": scope},
                              indent=2, ensure_ascii=False))
         else:
@@ -269,11 +269,11 @@ def cmd_section(args, root: str, out: Emitter) -> int:
     shape = {"heading": results[0]["heading"], "action": results[0]["action"]} \
         if len(results) == 1 else {"sections": results}
     out.emit(args.json,
-             {"ok": True, "slug": info["slug"], **shape,
+             {"ok": True, "id": info["id"], **shape,
               "scope": scope, "path": display_locator(info["path"], root)},
              "\n".join(f"{r['action']} ## {r['heading']}"
                        f"{f' ({scope})' if scope else ''} in "
-                       f"{info['phase']}/{info['file']}" for r in results))
+                       f"{info['id']}" for r in results))
     return 0
 
 
@@ -309,8 +309,8 @@ def _show_index(info: dict) -> dict:
 
 
 def _show_human(obj: dict, info: dict) -> str:
-    head = (f"{obj['slug']} — {obj['title']}\n"
-            f"  {info['folder']}/{info['file']}  [{obj['stage']}]")
+    head = (f"{obj['id']} — {obj['title']}\n"
+            f"  {obj['path']}  [{obj['stage']}]")
     if obj["view"] == "full":
         return info["text"].rstrip("\n")
     marks = {"filled": "✓", "empty": "!", "absent": "·"}
@@ -327,8 +327,8 @@ def _show_human(obj: dict, info: dict) -> str:
             out.append(f"  tasks ({len(obj['tasks'])})")
             for t in obj["tasks"]:
                 out.append(f"    [{t['state']}] {t['text']}")
-        out.append(f"  read sections: cq specs section {obj['slug']} \"<Heading>,<Heading>\"\n"
-                   f"  read one task: cq specs show --spec {obj['slug']} --task <id>"
+        out.append(f"  read sections: cq specs section {obj['id']} \"<Heading>,<Heading>\"\n"
+                   f"  read one task: cq specs show --spec {obj['id']} --task <id>"
                    f"   (--full for the whole document)")
         return "\n".join(out)
     for t in obj["tasks"]:
@@ -358,7 +358,7 @@ def cmd_show(args, root: str, out: Emitter) -> int:
     here is what `section` cannot say: WHICH headings and task ids exist (the index), one
     task's line and metadata, and the whole document under a name nobody types by accident.
 
-    An unknown task id is a finding (exit 1), the same as an unknown slug."""
+    An unknown task id is a finding (exit 1), the same as an unknown ID."""
     backend, err = open_backend(root)
     if err:
         return out.emit_err(args.json, err)
@@ -383,16 +383,16 @@ def cmd_show(args, root: str, out: Emitter) -> int:
         t = _find_task(info["tasks"], ident)
         if not t:
             out.emit(args.json, {"ok": False, "code": "sp-unknown-task", "task": ident,
-                                 "message": f"no task '{ident}' in {info['slug']}"},
-                     f"error: no task '{ident}' in {info['slug']}")
+                                 "message": f"no task '{ident}' in {info['id']}"},
+                     f"error: no task '{ident}' in {info['id']}")
             return 1
         tasks.append(_task_view(t))
 
     view = "full" if args.full else ("slice" if tasks else "index")
-    obj = {"ok": True, "slug": info["slug"],
+    obj = {"ok": True, "id": info["id"],
            "title": info["frontmatter"].get("title", ""),
            "stage": info["stage"], "phase": info["phase"], "folder": info["folder"],
-           "file": info["file"], "view": view}
+           "path": display_locator(info["path"], root), "view": view}
     if view == "full":
         obj["document"] = info["text"]
         obj["lines"] = len(info["text"].splitlines())
