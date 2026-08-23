@@ -117,20 +117,21 @@ class TheSharedVerbAsksNoFilesystemQuestion(unittest.TestCase):
     def test_an_external_promote_does_not_depend_on_a_local_root(self):
         with tempfile.TemporaryDirectory() as tmp:
             backend = MemoryBackend()
-            backend.create_spec("plans", "gate-fixture.md", _document("- [x] 1.1 Done\n"))
+            backend.create_spec("plans", _document("- [x] 1.1 Done\n"))
+            spec_id = max(backend.docs)
             self.addCleanup(setattr, promote_module, "open_backend",
                             promote_module.open_backend)
             promote_module.open_backend = lambda _root: (backend, {})
 
             buf = io.StringIO()
-            args = argparse.Namespace(json=True, spec="gate-fixture", to=None,
+            args = argparse.Namespace(json=True, spec=spec_id, to=None,
                                       outcome="done", force=False, dry_run=False)
             with contextlib.redirect_stdout(buf):
                 code = promote_module.cmd_promote(args, tmp, Emitter())
             payload = json.loads(buf.getvalue())
 
             self.assertEqual(code, 0, payload)
-            self.assertEqual(backend.docs["gate-fixture"][0], "archive")
+            self.assertEqual(backend.docs[spec_id][0], "archive")
 
 
 if __name__ == "__main__":

@@ -170,7 +170,6 @@ class TheSectionRule(unittest.TestCase):
 
 
 STRAY_FIXTURE = '''---
-slug: alpha
 title: um documento que já carrega uma seção stray
 date: 2026-08-17
 ---
@@ -199,7 +198,6 @@ Um risco.
 '''
 
 NO_ANCHOR_FIXTURE = '''---
-slug: alpha
 title: um documento cujo primeiro título já é o stray
 date: 2026-08-17
 ---
@@ -225,7 +223,7 @@ class _FoldWorkspace(_Workspace):
     re-reading of its rule written inside the test."""
 
     def read_spec(self):
-        info, error = self.backend.read_spec("alpha")
+        info, error = self.backend.read_spec(1)
         self.assertFalse(error, error)
         return info["text"]
 
@@ -247,7 +245,7 @@ class _FoldWorkspace(_Workspace):
 
 
 class TheFoldOfAStrayHeading(_FoldWorkspace):
-    """`cq specs section <slug> --fold "<Stray>"` — the ONE path that admits a heading outside
+    """`cq specs section <id> --fold "<Stray>"` — the ONE path that admits a heading outside
     the thirteen, and the only way an `sp-stray-heading` already on disk can be closed."""
 
     spec_text = STRAY_FIXTURE

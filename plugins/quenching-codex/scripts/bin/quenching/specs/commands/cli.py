@@ -61,9 +61,6 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--type",
                     help="a key from `workItemTypes` — recorded as `workItemType:` in the "
                          "new spec's frontmatter; omit to resolve one later, at build time")
-    sp.add_argument("--summary",
-                    help="ONE line — the summary line the ranked table prints; written the "
-                         "same as `cq specs summary`")
     sp.add_argument("--tags",
                     help="a comma-separated list — REPLACES the whole list, same as "
                          "`cq specs tags`; the subject's fixed tags are folded in "
@@ -78,6 +75,8 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp = add_json(sub.add_parser("list", help="every spec, by folder and derived stage"))
     sp.add_argument("--phase", choices=list(PHASES),
                     help="cut the listing to one phase (default: every phase)")
+    sp.add_argument("--lean", action="store_true",
+                    help="use the provider's native index; omit document-derived fields")
 
     sp = add_json(sub.add_parser("status", help="one spec's sections, stage, tasks, gates"))
     sp.add_argument("--spec", required=True)
@@ -134,7 +133,6 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
         ("assignee", "omit to read; a name or identity to set"),
         ("start", "omit to read; YYYY-MM-DD to set"),
         ("target", "omit to read; YYYY-MM-DD to set"),
-        ("summary", "omit to read; ONE line to set — the one-line summary the ranked table prints"),
     ):
         sp = add_json(sub.add_parser(field, help=f"read or set ONE spec's `{field}` — "
                                                  f"stored, never projected"))
@@ -203,7 +201,7 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("text")
 
     sp = add_json(sub.add_parser("validate", help="the canonical set, the gates, the sp-* codes"))
-    sp.add_argument("--spec", help="one slug (default: every spec)")
+    sp.add_argument("--spec", help="one spec ID (default: every spec)")
     sp.add_argument("--phase", choices=list(PHASES),
                     help="cut the sweep to one phase (default: every phase)")
     sp.add_argument("--by-code", action="store_true", dest="by_code",
@@ -226,7 +224,7 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp = add_json(sub.add_parser("export", help="dump the canonical markdown to disk — "
                                                 "write-only, nothing reads it back"))
     grp = sp.add_mutually_exclusive_group(required=True)
-    grp.add_argument("--spec", help="one slug")
+    grp.add_argument("--spec", help="one spec ID")
     grp.add_argument("--all", action="store_true", help="every spec")
     sp.add_argument("--out", default="specs-export",
                     help="destination directory (default: ./specs-export)")
@@ -245,7 +243,6 @@ DISPATCH: dict = {
     "assignee": cmd_field,
     "start": cmd_field,
     "target": cmd_field,
-    "summary": cmd_field,
     "record": cmd_record,
     "promote": cmd_promote,
     "task": cmd_task,

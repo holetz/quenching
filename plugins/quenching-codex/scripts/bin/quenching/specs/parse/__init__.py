@@ -18,14 +18,11 @@ from quenching.specs.parse.fields import (FIELD_KEYS, carry_forward_fields,
                                           strip_frontmatter_keys)
 from quenching.specs.parse.records import (declared_tags, derive_labels, reconcile_label_set,
                                            tags_outside_catalog)
-from quenching.specs.parse.spec import (LEGACY_DATED_FILE_RE, PHASES, SPEC_FILE_RE,
-                                        resolve_one, spec_files, titleize)
+from quenching.specs.parse.spec import PHASES, resolve_one, spec_handle
 
 __all__ = [
     "FIELD_KEYS",
-    "LEGACY_DATED_FILE_RE",
     "PHASES",
-    "SPEC_FILE_RE",
     "board_state_of",
     "carry_forward_fields",
     "declared_tags",
@@ -33,8 +30,7 @@ __all__ = [
     "derive_labels",
     "reconcile_label_set",
     "resolve_one",
-    "spec_files",
+    "spec_handle",
     "strip_frontmatter_keys",
     "tags_outside_catalog",
-    "titleize",
 ]

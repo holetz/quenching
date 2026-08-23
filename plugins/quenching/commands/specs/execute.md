@@ -1,13 +1,13 @@
 ---
-description: Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree; hands off to /quenching:git:branch for isolation; verifies under the spec's own declared policy; ticks each box with the subject of the commit it is about to make, so code and box land in one commit per task, squashed into one commit per section at that section's own boundary. Writes the /.knowledge/standards/ a task explicitly names, and records what else the work reveals as a one-line discovery. Stops at the last commit.
-argument-hint: [slug]
+description: Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree; hands off to /quenching:git:branch for isolation; verifies under the spec's own declared policy; ticks each box with the subject of the commit it is about to make, so code and box land in one commit per task, squashed into one commit per section at that section's own boundary. Writes the /.knowledge/standards/ a task explicitly names, and records what else the work reveals as a one-line discovery. Stops at the last commit. Not for: building N specs in one run → /quenching:specs:execute-queue; writing or sharpening a spec → /quenching:specs:develop; creating one → /quenching:specs:create; the branch review, the merge, the archive and any release obligation like a version bump → /quenching:specs:conclude; the whole cycle in one run → /quenching:specs:cycle.
+argument-hint: [id]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Task, Skill
 model: sonnet
 ---
 
 # /quenching:specs:execute — build one spec, one task at a time
 
-**Input**: `$ARGUMENTS` — optionally a spec slug. Omitted → infer from the conversation, or
+**Input**: `$ARGUMENTS` — optionally a spec id. Omitted → infer from the conversation, or
 auto-select when exactly one spec is under way; vague or ambiguous → you MUST prompt.
 
 Builds the `## Tasks` of ONE spec: writing each task, verifying it under the spec's declared
@@ -43,9 +43,9 @@ never on prose.
 ## Workflow
 
 ### 1. Select the spec
-A slug was given → use it. Otherwise infer from the conversation, auto-select when exactly one spec
+An ID was given → use it. Otherwise infer from the conversation, auto-select when exactly one spec
 is under way, or run `cq specs list --json` and pick with **AskUserQuestion**. Announce
-"Building spec: `<slug>`" and how to override.
+"Building spec: `<id>`" and how to override.
 **Done when:** one spec in `plans/` is resolved.
 
 ### 2. Take the tree, the isolation and the state in one read
@@ -61,11 +61,11 @@ The rest of this step is read in **one call** — the tree, the isolation ref, t
 
 ```bash
 git status --porcelain
-git branch --list "plan/<slug>"
+git branch --list "plan/<id>-<handle>"
 git branch --show-current
 git worktree list
 git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null
-cq specs status --spec "<slug>" --json
+cq specs status --spec "<id>" --json
 cq specs config --json
 # and the hook probe of 2b, in this same call
 ```
@@ -76,7 +76,7 @@ cq specs config --json
 the pre-existing changes and the report says so.
 
 **Then resolve the work ref, and check before offering.** The spec's work branch is the `branch`
-record's `work` when the `status` payload carries one, else `plan/<slug>` — the ref already listed.
+record's `work` when the `status` payload carries one, else `plan/<id>-<handle>` — the ref already listed.
 A record naming something else costs one more `git branch --list "<work>"` to know whether it is
 alive. Two outcomes end the question here:
 
@@ -102,14 +102,14 @@ checkout. Show the inference on the same line as the confirmation, before stampi
 `base: main — inferred; this branch was not cut by this command` — and stamp:
 
 ```bash
-cq specs record "<slug>" branch --set base=<resolved base> --set work=<current branch>
+cq specs record "<id>" branch --set base=<resolved base> --set work=<current branch>
 ```
 
 Never derive `base` from `git merge-base` or `--fork-point` here: both answer a commit, not a
 branch name, and a commit ancestral to three branches identifies none of them.
 
 **On the base with the work ref alive and unclaimed → offer to take it, never to cut a second
-one.** Two forms, worktree first as always: `git worktree add ../<repo>-<slug> <work ref>` beside
+one.** Two forms, worktree first as always: `git worktree add ../<repo>-<id> <work ref>` beside
 this checkout, or `git checkout <work ref>` in it. **Nothing is stamped** — a `branch` record, where
 one exists, is write-once and already true, and a ref cut by hand with no record is the case
 `base` cannot honestly be inferred for from here. Declining leaves the run on the base; say plainly
@@ -117,11 +117,11 @@ that the commits will land there.
 
 **On the base branch, with nothing to check out → hand off to `/quenching:git:branch`.** The offer's
 shape — worktree leading, unconditionally, with its cost stated in the same block as the ask;
-`worktreeSetup` run and reported; the `branch:` record and the branch's own `quenching-slugs:`
+`worktreeSetup` run and reported; the `branch:` record and the branch's own `quenching-specs:`
 marking stamped — belongs to that command now, cited rather than copied a second time:
 
 ```
-Skill("quenching:git:branch", "<slug>")
+Skill("quenching:git:branch", "<id>")
 ```
 
 It runs its own **AskUserQuestion**, still mid-flow and still gated — invoking it here is not
@@ -129,7 +129,7 @@ It runs its own **AskUserQuestion**, still mid-flow and still gated — invoking
 re-read the state it left:
 
 ```bash
-cq specs status --spec "<slug>" --json
+cq specs status --spec "<id>" --json
 ```
 
 `branch.work` now set → the chosen form was taken, or **In place** was chosen and stamped `work`
@@ -171,12 +171,12 @@ executor sub-agent stays the two conditions of
 executor, at every level.
 
 - **`approved` unset** → ask for it inline, in one question showing what the spec commits to, and
-  on a yes stamp it `--set by=human` (`cq specs record "<slug>" approved --set date=<today> --set
+  on a yes stamp it `--set by=human` (`cq specs record "<id>" approved --set date=<today> --set
   by=human`) — never by editing
   the frontmatter. **Never refuse over it** — refusing would rebuild the folder hop this front
   removed. A no ends the run cleanly.
 - **`next` reports `write_section`** → the ready gate is not met. Name the missing or malformed
-  sections and route to `/quenching:specs:develop <slug>`, then stop. The gate refuses nothing itself; the
+  sections and route to `/quenching:specs:develop <id>`, then stop. The gate refuses nothing itself; the
   tool simply has no task to hand out until it is closed.
 - **Every task already `- [x]`** → say so and offer to chain into `/quenching:specs:conclude` (step 7).
 - **`[!]` blocked tasks** → name them and their reasons up front. They were tried and stopped, not
@@ -191,7 +191,7 @@ this spec), `sp-impact-uncovered` (a declared standard no task writes) — and o
 Ask for the `build` moment — the six sections an executor needs — never by naming them:
 
 ```bash
-cq specs section "<slug>" --moment build --scope current --json
+cq specs section "<id>" --moment build --scope current --json
 ```
 
 Branch on the payload, never the exit code. `sections[].state`, already read once in step 2, is
@@ -233,7 +233,7 @@ repairs `## Impact`.
 ### 5. Implement tasks — loop until done or blocked
 Ask the tool for the next task; **never pick one by reading the file**:
 ```bash
-cq specs next --spec "<slug>" --json
+cq specs next --spec "<id>" --json
 ```
 It returns that task's `verify`, `files`, `pattern` and `parallel`, plus the spec's `verification`
 policy, and it **skips `[!]` blocked tasks** (`action: "blocked"` once every remaining task is).
@@ -251,7 +251,7 @@ the first task's own anchor — `commit:` where the backend records a sha, else
 `git log --grep "<its recorded subject>" --fixed-strings --format=%H` — and then that commit's
 parent. Then, for that task:
 
-a. **Show what is being worked on** — the id, its declared `files:` and its `verify:`.
+a. **Show what is being worked on** — the ID, its declared `files:` and its `verify:`.
 
 b. **Write the code**, minimal and scoped to the declared files. A task that declares `files:` and
    writes nothing under `/.knowledge/` **may** go to an executor sub-agent under
@@ -280,7 +280,7 @@ c. **Write only the `/.knowledge/` this task names.** When this task writes `/.k
    stamp §Updating `index.md` §Enriching the glossary §Self-check; stamp `authority` honestly and
    self-check against [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)
    §Concept docs §Resource integrity. Anything else the work reveals costs one line —
-   `cq specs discover "<slug>" "<finding>"` — and no authoring.
+   `cq specs discover "<id>" "<finding>"` — and no authoring.
 
 d. **On the first pass through 5d–5e, load the rules the chain runs under — once, never per
    task.** The verification policy, the validation loop, the self-review, the commit's hard rules,
@@ -305,9 +305,9 @@ e. **Then run verify, tick and commit as ONE chained call.** Decide the subject 
 
    ```bash
    <the task's verify:> \
-     && cq specs task --check <id> --spec "<slug>" --subject "plan/<slug>: <id> <title>" \
+     && cq specs task --check <id> --spec "<id>" --subject "plan/<id>-<handle>: <id> <title>" \
      && git add <the task's declared files> <the spec file> \
-     && git commit -m "plan/<slug>: <id> <title>" \
+     && git commit -m "plan/<id>-<handle>: <id> <title>" \
      && git log -1 --format=%s
    ```
 
@@ -345,8 +345,8 @@ h. **On a section boundary with no `[!]`, squash and repair** — per §The sect
    ```bash
    git merge-base --is-ancestor <section-base-sha> HEAD \
      && git reset --soft <section-base-sha> \
-     && git commit -m "plan/<slug>: <N> <section title>"
-   cq specs task --check <id> --spec "<slug>" --subject "plan/<slug>: <N> <section title>"   # per task
+     && git commit -m "plan/<id>-<handle>: <N> <section title>"
+   cq specs task --check <id> --spec "<id>" --subject "plan/<id>-<handle>: <N> <section title>"   # per task
    ```
 
    `<section-base-sha>` is the sha captured (or derived) when the section opened, above — **never a
@@ -359,7 +359,7 @@ i. **On a section boundary, OFFER to stop — and keep going if nobody says othe
    is already at its final shape (one commit), another section still ahead. Say it and continue:
 
    ```
-   Section 3 of 7 done, at a clean boundary. `/quenching:specs:execute <slug>` resumes from here —
+   Section 3 of 7 done, at a clean boundary. `/quenching:specs:execute <id>` resumes from here —
    say the word and I stop; otherwise I continue with 4.1.
    ```
 
@@ -392,8 +392,8 @@ Rewrite the **relevant block** of `## Handoff` to the state of play a fresh exec
 A rewrite touches ONE of the two — never both, never a closed section's:
 
 ```bash
-cq specs section "<slug>" Handoff --write --scope global   # the evergreen block
-cq specs section "<slug>" Handoff --write --scope current  # the block of the open section
+cq specs section "<id>" Handoff --write --scope global   # the evergreen block
+cq specs section "<id>" Handoff --write --scope current  # the block of the open section
 ```
 
 Everything a resumed run *can* derive — which tasks are done, which commit carried each — is
@@ -433,8 +433,8 @@ Emit §The report mold. The single-spec header line carries overall progress; th
    **quoted** as `/quenching:specs:develop` quotes them: the same artifact is owed the same fidelity
    whichever command wrote it.
 
-Close on §The next-step block, its recommended line carrying **this spec's slug**:
-`/quenching:specs:conclude <slug>` at 100%, `/quenching:specs:execute <slug>` when the run paused
+Close on §The next-step block, its recommended line carrying **this spec's id**:
+`/quenching:specs:conclude <id>` at 100%, `/quenching:specs:execute <id>` when the run paused
 mid-plan.
 
 **At 100%**, after the block, offer once to chain straight into `/quenching:specs:conclude` (the `Skill` tool, which takes
@@ -445,10 +445,22 @@ named the command, so stop. Paused → say why and wait.
 
 ## Output during the loop
 
-Progress as it happens, not a report — the mold governs step 7, this governs the loop. The banner's
-exact shape, and why it prints plain text rather than a heading, are
-[execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The loop's
-progress banner — loaded with the rest of the loop at step 5, never here.
+Progress as it happens, not a report — the mold governs step 7, this governs the loop. Its glyphs
+are §The report mold's, and mean the same. **Only the mold's own header line opens with a `##` that
+carries the ID** — this banner prints plain text, never a heading, so the two can never be
+confused for each other:
+
+```
+Building: <id>
+
+Task 3/7 — 3.2 <task title>
+  files: src/middleware/auth.ts, src/config/limits.ts
+✓ self-review: clean
+✓ chain: verify && check && commit
+    verify: pnpm test middleware/ — passed
+    checked 3.2 (subject: plan/<id>-<handle>: 3.2 <task title>)
+    committed a1b2c3d — subject matches
+```
 
 ## Hard rules — no exceptions, and no "just this once"
 

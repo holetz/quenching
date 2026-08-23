@@ -80,7 +80,7 @@ sentence, and **link out** rather than explaining in full here.
   unblocks it.
 - [**Boundary reminder**](../standards/architecture/plugin-layout.md) — a one-clause line that
   states the *edge* of a rule the citing place already owns, seen from the other side (`/quenching:knowledge:add`
-  saying the slug is canonical English while the body prose follows whatever language the repo
+  saying a heading is canonical English while the body prose follows whatever language the repo
   declared), as opposed to a restatement, which repeats a fact the citing place neither owns nor
   can change. Note the paraphrase: writing the clause verbatim here would make this entry one more
   member of the census it describes — see
@@ -89,13 +89,13 @@ sentence, and **link out** rather than explaining in full here.
   clause, no fact the owner states, and never a narrowing; the third is what caught
   `assets/README.md` scoping the language rule to `audience: human` docs for weeks.
 - [**Branch de integração**](../standards/git/branching.md) — sob o fluxo develop/main, a
-  `develop`: onde toda `plan/<slug>` mergeia ao concluir. Acumula quantas specs quiserem sem que
+  `develop`: onde toda `plan/<id>-<handle>` mergeia ao concluir. Acumula quantas specs quiserem sem que
   nada seja publicado; só se torna público quando a **branch de publicação** recebe seu merge
   deliberado. Ver esse verbete para o outro lado do par.
 - [**Branch de publicação**](../standards/git/branching.md) — sob o fluxo develop/main, a `main`:
   a única branch que recebe o merge deliberado `develop → main`, o único momento em que o lockstep
   de versão se move e uma tag é criada. Nunca acumula specs em integração — isso é a **branch de
-  integração** (`develop`), de onde `plan/<slug>` é cortada e para onde mergeia. O gatilho da
+  integração** (`develop`), de onde `plan/<id>-<handle>` é cortada e para onde mergeia. O gatilho da
   publicação é a demanda do mantenedor, nunca uma cadência, e a rota é sempre um merge local.
 - [**Branch record**](../standards/workflows/plan-git-record.md) — the `branch: {base, work}`
   frontmatter entry stamped by `/quenching:specs:execute` once the work ref is resolved, write-once —
@@ -104,7 +104,7 @@ sentence, and **link out** rather than explaining in full here.
   the branch is checked out; **`base` is not** — after the merge, git cannot say what the branch
   was cut from, which is the whole reason the record exists and why it is captured while still
   true. **The record is never the signal**: anything asking whether a spec is in flight asks git
-  whether the ref is alive — the record's `work`, falling back to `plan/<slug>` — since a human may
+  whether the ref is alive — the record's `work`, falling back to `plan/<id>-<handle>` — since a human may
   cut a branch with no record and a record outlives the branch it names. **`work == base` is the
   one exception**, and only because that ref cannot die: the base is alive in every repository, so
   liveness would answer *yes, in flight* forever, and the record has to be read instead.
@@ -139,6 +139,12 @@ sentence, and **link out** rather than explaining in full here.
   shape that keeps returning a plausible answer once the set grows. Distinct from the
   [Canonical case list](../standards/code/frontmatter-parser.md), which is one specific lockstep
   unit rather than the general shape.
+- [**Cosmetic handle**](../standards/architecture/spec-backend.md) — the kebab-case tail beside a
+  spec's native ID in a git name: `plan/974-citacao-pendurada`. **Only the number resolves
+  anything.** The handle is derived from the title on every use and never parsed back, which is
+  exactly what keeps it from becoming the second answer to "which spec is this" that the slug was.
+  `cq specs export` names its dump files the same way, so a spec's branch and its rescue copy
+  cannot disagree about what to call it.
 - [**Commit record**](../standards/workflows/plan-git-record.md) — the `subject: <line>` field on a
   completed task line, written mechanically by `cq specs task --check --subject`, that links the
   checkbox to the commit implementing it by naming that commit's **subject** and resolving with
@@ -156,7 +162,7 @@ sentence, and **link out** rather than explaining in full here.
   stops only its own spec. The classification is the executor's to declare, because only it knows
   what the decision touches: a local block marks `[!]` and the queue moves on, a contaminating one
   stops the run and asks. A red declared gate stops the queue whichever was declared, and the
-  blocked spec leaves the branch's `quenching-slugs:` mark so the pull request never implies it
+  blocked spec leaves the branch's `quenching-specs:` mark so the pull request never implies it
   carries what it does not.
 - [**Context (components)**](../standards/naming/command-surface.md) — one of the four sibling
   contexts under the `components` front — `command/`, `agent/`, `hook/`, `harness/` — each named
@@ -266,7 +272,7 @@ sentence, and **link out** rather than explaining in full here.
   section is read at, and the axis that replaced an `audience` field nobody read: `decision` (the
   human, weighing whether to build), `build` (the executor, at step 4 of `/quenching:specs:execute`), `close`
   (`/quenching:specs:conclude`, at archive time). One value per section, declared in `schema.json` and in
-  `cq specs`'s `DEFAULT_SCHEMA`, and **resolved rather than enumerated** — `cq specs section <slug>
+  `cq specs`'s `DEFAULT_SCHEMA`, and **resolved rather than enumerated** — `cq specs section <id>
   --moment build` returns the six an executor needs, so a command body names the moment instead of
   repeating a heading list that can drift from the schema. `## Discoveries` carries no moment at
   all: captured indiscriminately while building, it is resolved by `/quenching:specs:develop`'s triage sweep
@@ -276,7 +282,7 @@ sentence, and **link out** rather than explaining in full here.
 - [**Moment**](../standards/workflows/plan-artifacts.md) — the point on a spec's timeline a canonical
   section is read at, one value per section: `decision` (the human, weighing whether to build),
   `build` (the executor), `close` (`/quenching:specs:conclude`). Declared in `schema.json` and `DEFAULT_SCHEMA`
-  and **resolved rather than enumerated** — `cq specs section <slug> --moment build` returns the six
+  and **resolved rather than enumerated** — `cq specs section <id> --moment build` returns the six
   an executor needs, so a body names the moment instead of a heading list that can drift. Replaced
   an `audience` field nobody read; `## Discoveries` carries no moment at all.
 - [**Origin key** (`source_uri`)](../standards/quality/bundle-verification.md) — the frontmatter key
@@ -297,7 +303,7 @@ sentence, and **link out** rather than explaining in full here.
   minting a spec for it. Parking is free by construction: `## Discoveries` appears in no stage rule,
   so filling it moves no derived state. Turning one into a file belongs to `/quenching:specs:conclude`'s
   harvest, which runs once the parent's fate is known — and a line another open spec already covers
-  never becomes a file at all, resolving as `dismissed: already covered by {slug}`.
+  never becomes a file at all, resolving as `dismissed: already covered by {id}`.
 - [**Parse honesty**](../standards/quality/parse-honesty.md) — the obligation that a verifier names
   its own parse failure rather than reporting it as a content gap. The episode that earned it: a
   command `description` truncated at a `#` surfaced as `sk-no-description` — a statement true of the
@@ -315,6 +321,13 @@ sentence, and **link out** rather than explaining in full here.
   neither is graded against this repo — which is what decides reference over standard
   (§A contract a command reads at runtime is a reference, not a standard). Not to be confused with
   the **JSON payload** a `cq` verb emits, the unrelated sense used of tool output.
+- [**Provider ID**](../standards/architecture/spec-backend.md) — the tracker's own identifier for
+  a spec — a GitHub issue number, an Azure Boards work-item ID — and **the spec's whole identity**.
+  The canonical document does not mirror it, and resolution is exact: the ID exists or it is
+  `sp-unknown-id`, with no title match and no approximate rung. That exactness is what retired
+  `sp-ambiguous-slug` by construction, since two specs cannot share one. Measured at the moment it
+  replaced the slug: a direct read costs 0.39 s / 7.7 KB against 3.81 s to find the same document
+  by sweeping the tracker.
 - [**Phantom command**](../standards/architecture/plugin-layout.md) — a non-entry-point file left
   under `commands/`, which registers as a real `/` entry that does nothing; it does not error, so
   the only thing that catches it is `sk-no-description`, and it is why shared procedure lives under
@@ -419,13 +432,6 @@ sentence, and **link out** rather than explaining in full here.
   (braces, character classes, `?`) is classified `unknown` and never reported as a violation. It
   says what the doc *governs* — which is why it replaced the `file:line` anchor doctrine once
   named, and why it is also the input `stale-doc` needs.
-- [**Resolution receipt**](../standards/architecture/spec-backend.md) — the `resolvedBy` /
-  `resolvedFrom` pair a tolerant slug resolution puts on **every** payload of a verb that resolved a
-  spec: which rung answered (`title`, `approximate`, or `null` on the exact path) and what it
-  matched. Recorded where the human's slug is resolved and folded in where the payload is emitted,
-  so a verb added later announces without its author knowing the rule — the enumerated alternative
-  was measured going stale three times in one spec, from six verbs to ten to eleven. A verb that
-  resolves no spec carries neither key.
 - [**Retired (reserved artifact)**](../standards/architecture/retiring-a-reserved-artifact.md) — a
   reserved filename nothing produces or checks any more, but which **keeps** its slot in the
   validator's `RESERVED` set and its skip in the `PreToolUse` hard block. Deliberately not
@@ -468,7 +474,7 @@ sentence, and **link out** rather than explaining in full here.
   ends a run itself, and writes no new state.
 - [**Section reader**](../standards/automation/context-discipline.md) — the verb that resolves the
   `§X` address the prose was already writing: `cq components read <path> --sections "§A"` over free
-  markdown, `cq specs section <slug> "A,B"` over a spec's fourteen canonical headings. Both take a
+  markdown, `cq specs section <id> "A,B"` over a spec's fourteen canonical headings. Both take a
   **list**, because turns are the other factor of the **Context integral** and N sections fetched
   over N turns can lose to reading the whole file. A section runs to the next heading of the same
   level or shallower, a fenced block is never read as a heading, and a name that resolves to

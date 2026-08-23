@@ -17,6 +17,11 @@ its own `index.md`, rather than a run of `symbol-naming-*.md` files. Each standa
   agree but never that the code reading them still means the same, so a membership invariant is owed
   its own assertion, and why a case list must exercise the function that ships rather than a copy of
   its rule written inside the selftest.
+* [conditional-projection-guards.md](conditional-projection-guards.md) — a projection whose shape
+  check refuses falls back to storing the document whole, which is correct and invisible: so the
+  guard must name the shape the contract writes today, must tolerate every form the reader
+  tolerates, and must be asserted against the artifact the product actually produces rather than a
+  fixture the test authored.
 * [file-relative-path-resolution.md](file-relative-path-resolution.md) — every `__file__`-relative
   expression encodes how deep its module sits, so packaging re-evaluates it somewhere else without
   erroring: the two instances measured here failed in opposite directions — one switched an

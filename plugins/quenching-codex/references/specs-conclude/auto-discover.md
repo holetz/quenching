@@ -1,7 +1,7 @@
 # Auto-discover — resolving which spec `conclude` closes without `--spec`
 
-How `quenching-specs-conclude` resolves the slug to close when it is called with none: reading the
-current branch's own `quenching-slugs:` marking — written by `quenching-specs-execute`, per
+How `quenching-specs-conclude` resolves the ID to close when it is called with none: reading the
+current branch's own `quenching-specs:` marking — written by `quenching-specs-execute`, per
 [isolation.md](../../references/git/isolation.md) §Marking the branch with the
 specs it built — filtering it to what still resolves, and falling back to a diff-based offer when
 nothing does. The marking exists because it is the fact the base branch's history cannot reproduce
@@ -15,26 +15,26 @@ once the branch is gone.
 git config branch.<current>.description
 ```
 
-Parse the `quenching-slugs: <slug1>,<slug2>` line, if the description carries one — the format is
+Parse the `quenching-specs: <id1>,<id2>` line, if the description carries one — the format is
 [isolation.md](../../references/git/isolation.md) §Marking the branch with the
 specs it built, not restated here. No branch, no description, or no such line → treated exactly as
 **no marking**, which is §The fallback below.
 
-## Filtering to valid slugs
+## Filtering to valid IDs
 
 <!-- rules -->
 
-Every marked slug is checked with `cq specs status --spec <slug> --json` before it is offered as a
-candidate. One that resolves under `plans/` is valid. One that errors (`sp-unknown-slug`) or now
+Every marked ID is checked with `cq specs status --spec <id> --json` before it is offered as a
+candidate. One that resolves under `plans/` is valid. One that errors (`sp-unknown-id`) or now
 resolves under `archive/` is **invalid** — a branch reused after the spec that marked it was already
-concluded, still carrying its old slug. An invalid slug is dropped silently before resolution: never
+concluded, still carrying its old ID. An invalid ID is dropped silently before resolution: never
 surfaced as a choice, and never assumed to be the answer because it was the only one on the line.
 
 ## Resolving what remains
 
 <!-- rules -->
 
-| Valid slugs remaining | What `conclude` does |
+| Valid IDs remaining | What `conclude` does |
 | --- | --- |
 | exactly one | resolves it, and names the marking as the source in its report |
 | more than one | lists the candidates with **AskUserQuestion** and proceeds with the one picked — the "one spec per call" contract does not change |
@@ -53,7 +53,7 @@ surfaced as a choice, and never assumed to be the answer because it was the only
    `cq specs new`, with a title and `## Problem` drafted from the diff summary. No diff size skips
    the question or answers it by default — "big enough to matter" is a human judgment that changes
    by repository, and the question is already cheap.
-   - **Accepted** → the new spec is minted, and its slug threads into the rest of `conclude` exactly
+   - **Accepted** → the new spec is minted, and its ID threads into the rest of `conclude` exactly
      as a marked one would.
    - **Declined** → `conclude` runs **headless**: the branch review, the emergent `/.knowledge/`, and the
      distillation still happen, but there is no spec file — `## Outcome` has nowhere to land, so the
@@ -61,7 +61,7 @@ surfaced as a choice, and never assumed to be the answer because it was the only
 
 ## Invariants
 
-- Never guess a slug out of an ambiguous or partly stale marking — filter first, then ask if more
+- Never guess an ID out of an ambiguous or partly stale marking — filter first, then ask if more
   than one valid candidate remains.
 - Never skip or auto-decide the minimal-spec offer on diff size — it is asked every time the
   fallback is reached, and the human's answer is what decides, never a threshold.

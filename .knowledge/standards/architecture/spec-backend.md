@@ -1,20 +1,20 @@
 ---
 type: standard
 title: Spec backend interface
-description: Provider-owned GitHub and Azure Boards specs share five document primitives, one derivation and one refusal boundary; external serialisation may use native fields only when it reassembles the canonical document, while locators, resolution receipts, placement, and the memory fake keep every consumer on the same contract
+description: Provider-owned GitHub and Azure Boards specs share five document primitives, one native-ID identity and one refusal boundary; external serialisation may use native fields only when it reassembles the canonical document, while locators, lean listings, placement, and the memory fake keep every consumer on the same contract, a direct read by native ID that reuses an in-process listing rather than paying a request per spec
 resource: plugins/quenching/assets/bin/quenching/specs/backends/**, plugins/quenching/assets/bin/quenching/specs/commands/**, plugins/quenching/assets/references/specs-develop/spec-driven.md
 tags: [architecture, specs, backend, interface, serialization]
-timestamp: 2026-08-17
+timestamp: 2026-08-23
 audience: both
 authority: current
-source: remover-backend-local-do-plugin (task 4.1) — the provider contract was made explicit after retiring the repository store; the document, provider locator, refusal boundary, native-field same-fact test, and memory fake remain the durable interface
+source: abandonar-slug-por-id-nativo (sections 1-2) — the provider ID became the spec identity, exact reads replaced tolerant slug resolution, and the lean listing measurement established the cost boundary beside the existing native-field and memory-fake contract; §A direct read reuses the listing the process already paid for came from the branch review of the same spec, which measured the direct read regressing `list --json` from 4.82 s to 78 s over 157 issues
 maintainer: quenching
 ---
 
 # Spec backend interface
 
 Where a repository's specs live is provider-owned — GitHub issues or Azure Boards work items. This
-standard is the interface that keeps the conceptual model, the fourteen sections, the frontmatter
+standard is the interface that keeps the conceptual model, the thirteen sections, the frontmatter
 records and the derived stages identical while only the provider serialisation changes.
 
 ## The interface is the document, not the verbs
@@ -26,9 +26,9 @@ markdown document:
 | Primitive | Answers |
 | --- | --- |
 | `list_specs(phase=None)` | which specs exist, as descriptors |
-| `read_spec(slug)` | the document for one spec, plus everything derived from it |
+| `read_spec(spec_id)` | the document for one spec, plus everything derived from it |
 | `write_spec(info, text)` | replace one spec's whole document |
-| `create_spec(phase, filename, text)` | store a new provider document and return its locator |
+| `create_spec(phase, text)` | store a new provider document and return its locator |
 | `move_spec(info, dest_phase)` | close the spec in the provider and return its new locator |
 
 The eight verbs are shared code layered on those five.
@@ -72,48 +72,64 @@ The three fixes are the same fix, applied where each answer belongs:
 eight verbs: a rule enforced at each site is a rule the next site is added without. Ten emit sites
 carried the same wrong answer because each wrote its own copy of it.
 
-## A tolerant resolution announces itself, at a choke point rather than verb by verb
+## The provider ID is the spec identity
 
-`resolve_one` is tolerant in four rungs: the exact slug, the exact title, one close match above the
-threshold, then nothing. The last two answer a slug the human did not type, so the descriptor comes
-back carrying **`resolvedBy`** — `"title"` or `"approximate"` — and **`resolvedFrom`**, what it
-matched. Acting on a spec the human did not name is worse than refusing; the receipt is what makes
-the tolerance honest rather than a wrong answer delivered confidently.
+**The native tracker ID is the same fact as the spec's identity, and the store owns it.** On GitHub
+it is the issue number; on Azure Boards it is the work-item ID. `cq specs` accepts that exact ID and
+the selected provider resolves it directly. The canonical document does not mirror the ID, invent a
+filename for it, or resolve a title/fuzzy alias. A missing ID is `sp-unknown-id`, never a guess.
 
-**A receipt only one verb carries is not a receipt.** For a while `status` was the only payload that
-propagated the two keys, while `section`, `task`, `record`, `promote` and the rest resolved through
-the same tolerance and announced nothing — `promote` among them, which archives. Every one of those
-verbs could write to a spec nobody named, and nothing in the JSON a caller branched on said so.
+The provider locator is a different fact: it tells a caller where the document lives, while the ID
+tells it which document it is. A provider transition may change the locator, but it must not make a
+document's identity depend on a path or on text stored inside the document.
 
-The fix is not to write the two keys into each verb's payload. **The receipt is recorded where the
-human's slug is resolved and folded in where the payload is emitted** — one entry point
-(`read_one`) and one exit (`emit`), with the verb in between never mentioning it. A verb added
-tomorrow announces without its author knowing the rule exists.
+This is also why the store, rather than the shared layer, is the owner of identity. The shared layer
+derives stages and document state from the canonical text; it never manufactures an alternate key or
+asks a full listing to discover a document whose native ID was already supplied.
 
-Three properties this shape has and the enumerated one does not:
+The measurement made the boundary concrete on 2026-08-22, against 154 GitHub spec issues:
 
-- **The count cannot go stale.** It was six verbs when the problem was written down, ten when it
-  was designed and eleven when it was built — and each number was produced by somebody reading the
-  file carefully. This is the failure mode
-  [shared-mold-keys.md](shared-mold-keys.md) measured on `resource:`: a rule that depends on the
-  author remembering is a rule the next author forgets.
-- **`resolve_one` stays pure.** The receipt is recorded one layer above it, in the command layer,
-  never inside the resolution — the purity over the listing is what makes "every backend resolves
-  the same way and gets the same refusals" a property instead of a claim, and a side effect there
-  would spend it to buy what the layer above already gives.
-- **The guard is structural.** `tests/test_specs_parse.py`'s
-  `EveryVerbAnnouncesThroughTheEmitter` walks `DISPATCH` — the registry a verb must join to exist —
-  and fails any verb whose own source resolves a spec directly, bypassing `read_one` and the
-  emitter's receipt. It parses rather than matches text, because the failure it reports names the
-  very call it forbids.
+- `cq specs status --spec X` cost **3.81 s** when it downloaded the tracker to find a spec; a direct
+  provider-ID read costs **0.39 s / 7.7 KB**.
+- `cq specs list --json` cost **4.82 s / 5.25 MB**, with 4.2 MB of bodies against 10 KB of titles —
+  **420:1** bytes transported over bytes useful to the listing.
+- `cq specs list --lean --json` returned the same verified set of 154 specs in **1.59 s / 70 KB**.
+  GitHub filters the discovery marker server-side; Azure Boards has the equivalent WIQL filter on
+  its discovery tag. The full listing remains authoritative because the lean index is eventually
+  consistent and document-derived fields are not available in it.
 
-Both keys ride on every payload from a verb that resolved a spec at all, `null` on the exact path,
-so a caller reads `payload["resolvedBy"]` without testing for presence. A verb that resolves no spec
-carries neither: a null answer to a question nobody asked is noise. The receipt goes to the human
-reader too — the person running the verb by hand is exactly the one who mistyped the slug.
+## A direct read reuses the listing the process already paid for
 
-**Only the human's own argument is announced.** Code already walking a listing resolves slugs it
-just read itself, and a receipt for those would be a receipt for nothing.
+**A read by native ID is the cheap path when nothing has been loaded, and a wasted request the
+moment a listing in the same process already carries the document.** Both paths belong in
+`read_spec`, and which one runs is decided by what the process has, never by the caller.
+
+The two costs pull in opposite directions, and one number hides the other:
+
+- **One spec, cold.** A direct `GET /issues/<n>` — or one `workitemsbatch` for the item named — is
+  0.39 s / 7.7 KB, against 3.81 s to find the same document by sweeping the tracker. This is the
+  measurement §The provider ID is the spec identity was built on.
+- **Every spec, warm.** `cq specs list --json` reads all of them, and its own `list_specs` has just
+  paginated the tracker with every body in the response. Going back to the wire for each one turns
+  that listing into N single-item fetches: **measured 78 s against 4.82 s** over 157 GitHub spec
+  issues, a 16× regression bought by the same line that made a single read ten times faster.
+
+A change that only ever measures the first case ships the second. The direct read is not wrong —
+it is the point of a native identity — but "resolve by ID" and "fetch by ID" are different
+statements, and only the first one is a rule.
+
+**Reusing an in-process listing is not the cross-process cache of §Granular reading, and does not
+inherit its re-validation duty.** That cache remembers an answer a previous process obtained and so
+may be stale, which is why a hit there is re-fetched rather than trusted. A row from a listing this
+same process just made is not a remembered answer: it is the response still in hand, and asking the
+provider again could only return the same bytes or newer ones nobody requested. A backend that
+re-read it would be paying a request to confirm what it was told a moment ago.
+
+**Both paths hand the SAME canonical document to the one shared derivation.** Neither assembles an
+`info` of its own — the corollary in §The interface is the document, that a backend which starts
+deriving anything is broken, is exactly what forbids the warm path from becoming a second, cheaper
+reading of the document. Where the two paths need the same assembly, that assembly is one function
+they both call, so they cannot drift about what a spec's `info` holds.
 
 ## The selected provider is the source of truth
 
@@ -292,7 +308,7 @@ the record's presence is visible without opening the issue.
 ## Placement is declared, and reaffirmed on every write
 
 A work item's position in an external tracker — its area, its type, its parent, its iteration,
-its board column — is not one of the fourteen sections, and it is not derived from anything the
+its board column — is not one of the thirteen sections, and it is not derived from anything the
 canonical document carries. **It is declared**, in `.claude/quenching.json`'s `azurePlacement`
 ([plugin-configuration.md](../workflows/plugin-configuration.md)), for the same reason
 `azureStates` already is: the document is identical on every backend, and an external tracker's
@@ -485,14 +501,14 @@ read back correctly via `--expand relations` once `attributes.name` was added, r
 
 ## Granular reading is about context, not I/O
 
-`show` returns an **index** by default — the fourteen headings with their state, and the task ids.
+`show` returns an **index** by default — the thirteen headings with their state, and the task ids.
 One task comes back on request; the whole document only under `--full`, which refuses to combine
 with a selector. Section **bodies** are `section`'s, which already reads N headings in one call and
 resolves a `--moment` to its declared set: two ways to ask for a heading would be two spellings of
 the same measured answer, and they would drift.
 
-The cost this addresses is the **agent's context**, not disk or network. An agent handed all fourteen
-sections in order to edit one pays for the other thirteen on every call. Whether the backend had to
+The cost this addresses is the **agent's context**, not disk or network. An agent handed all thirteen
+sections in order to edit one pays for the other twelve on every call. Whether the backend had to
 fetch the whole document to answer is an implementation detail — a local cache inside `cq specs` is
 free to exist and is **not** a store: it is not authoritative, nothing outside the CLI reads it, and
 the backend remains the source of truth.
@@ -504,8 +520,8 @@ project name and the team's board column field cost 3,8s of an 8,5s write, all o
 of answers the previous process already had. The three conditions above still hold when the answer
 outlives the process; what changes is that a wrong entry now survives the process that wrote it.
 
-So the reader re-validates rather than trusting the hit: a remembered id is used to fetch **one**
-item instead of the whole front, and the identity that comes back — the marker, the slug — is
+So the reader re-validates rather than trusting the hit: a remembered provider ID is used to fetch
+**one** item instead of the whole front, and the identity that comes back is
 compared against what was asked for. A mismatch falls through to the full listing. Nothing is ever
 written on the strength of a cached answer alone, which is what keeps the backend the source of
 truth rather than the cache.

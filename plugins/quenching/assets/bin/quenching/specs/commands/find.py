@@ -47,7 +47,7 @@ def find_match(backend: SpecBackend, *, branch: str | None = None,
     resolved from a sha to the commit's own subject line — this function does neither, so it
     stays pure over whatever a backend hands back."""
     for descriptor in backend.list_specs():
-        info, err = backend.read_spec(descriptor["slug"])
+        info, err = backend.read_spec(descriptor["id"])
         if err or info is None:
             continue
         fm = info["frontmatter"]
@@ -96,9 +96,9 @@ def cmd_find(args, root: str, out: Emitter) -> int:
     if hit:
         info = hit["info"]
         out.emit(args.json,
-                 {"ok": True, "slug": info["slug"], "matchedBy": hit["matchedBy"],
+                 {"ok": True, "id": info["id"], "matchedBy": hit["matchedBy"],
                   "path": display_locator(info["path"], root)},
-                 f"{info['slug']} — matched by {hit['matchedBy']}")
+                 f"{info['id']} — matched by {hit['matchedBy']}")
         return 0
 
     criterion = args.branch or args.commit or args.pr

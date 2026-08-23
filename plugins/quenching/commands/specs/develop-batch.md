@@ -1,18 +1,20 @@
 ---
 description: >-
   Take N specs below the `ready` gate to `ready` on ONE authorization — each spec in a sub-agent of
-  its own, all launched together. Triggers on "define these specs", "develop the whole backlog", "fill
-  in the sections of all of them", "take these specs to ready", "batch the spec definition". Nothing
-  it runs takes a branch or writes code, which is what lets the batch run in real parallel; every
-  sub-agent drafts its own spec and returns what it filled and what it left open, while the
-  authorization, a contaminating block and `approved` all stay with the conductor.
-argument-hint: [slugs-or-description]
+  its own, all launched together. Triggers on "define these specs", "develop the whole backlog",
+  "fill in the sections of all of them", "take these specs to ready", "batch the spec definition".
+  Nothing it runs takes a branch or writes code, which is what lets the batch run in real parallel;
+  every sub-agent drafts its own spec and returns what it filled and what it left open, while the
+  authorization, a contaminating block and `approved` all stay with the conductor. Not for:
+  building N specs → /quenching:specs:execute-queue; ONE spec, with a human answering its questions
+  → /quenching:specs:develop; ranking the front → /quenching:specs:triage.
+ argument-hint: [IDs-or-description]
 allowed-tools: Bash(python3:*), Bash(py:*), Bash(git status:*), AskUserQuestion, Task
 ---
 
 # /quenching:specs:develop-batch — N specs defined at once, on one authorization
 
-**Input**: `$ARGUMENTS` — spec slugs, or a description of which specs to define.
+**Input**: `$ARGUMENTS` — spec IDs, or a description of which specs to define.
 
 Takes N specs sitting **below the `ready` gate** and has each one defined toward `ready` by a
 sub-agent of its own, all launched in one message. `/quenching:specs:develop` is what runs inside
@@ -62,7 +64,7 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 - **Invoke, never reimplement.** Each sub-agent runs `quenching:specs:develop` on its one spec,
   under that command's own banks and its own safe-write invariants. If defining must behave
   differently, change that command.
-- **Parallel because the writes are disjoint, not because it is faster.** One slug per sub-agent,
+- **Parallel because the writes are disjoint, not because it is faster.** One ID per sub-agent,
   and none of them writes `/.knowledge/`, so the write sets are disjoint by construction rather than
   by a check. Step 7 measures that against `git status --porcelain` instead of asserting it.
 - **Sub-agents pinned to the session model — never `haiku`.** A misdrafted section is a section a
@@ -71,7 +73,7 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 ## Workflow
 
 ### 1. Resolve the candidate set
-Take the slugs from `$ARGUMENTS`, or take the whole front. Two calls carry the selection and the
+Take the IDs from `$ARGUMENTS`, or take the whole front. Two calls carry the selection and the
 fan-out floor §The entry contract measures every candidate against:
 
 ```bash
@@ -79,9 +81,9 @@ cq specs list --json      # every spec's derived stage AND its records, priority
 cq specs config --json    # fanoutMinComplexity — the floor §2's split reads
 ```
 
-Both fields admission needs are on every row, so no per-spec read runs here. A slug matching two
+Both fields admission needs are on every row, so no per-spec read runs here. An ID matching two
 specs is exit 2 — report both and stop, never guess which was meant. **One spec resolved is not a
-batch:** name `/quenching:specs:develop <slug>` and stop.
+batch:** name `/quenching:specs:develop <id>` and stop.
 **Done when:** two or more candidates are in hand, each with its stage and its `complexity`, and
 the floor is known.
 
@@ -145,7 +147,7 @@ declined and nothing is written.
 
 ### 4. Launch every admitted spec at once
 **N `Task` calls in ONE message** — N messages would be a serial queue wearing this command's name.
-Each sub-agent is pinned to the session model, gets exactly one slug, invokes
+Each sub-agent is pinned to the session model, gets exactly one ID, invokes
 `quenching:specs:develop` on it under step 3's declaration, runs the four-item self-review on what
 it wrote before returning, and returns five things and no diff:
 
@@ -202,7 +204,7 @@ cq specs config --json    # backend
 
 Under `github` and `azure-boards` the batch changed no file at all — the specs are issues, and the
 porcelain has nothing of theirs in it. Under `files` the specs **are** files, so the batch did write
-the tree: the porcelain must name the batch's own `plans/<slug>.md` and nothing else. Any other path
+the tree: the porcelain must name the batch's own `plans/<id>.md` and nothing else. Any other path
 is a sub-agent that left its lane — report it before anything is approved.
 
 Then the closing stamps, split by gear — the split the step 3 plan already named, spec by spec.
@@ -211,14 +213,14 @@ Then the closing stamps, split by gear — the split the step 3 plan already nam
 mode, the plan said so, and the review window is each spec's URL in the backend.
 
 ```bash
-cq specs record <slug> approved --set date=<today> --set by=low-gear
+cq specs record <id> approved --set date=<today> --set by=low-gear
 ```
 
 **Every other spec that reached `ready`** goes into one **AskUserQuestion** asking which carry
 `approved` today. Stamp only what the human named, and only `by: human`:
 
 ```bash
-cq specs record <slug> approved --set date=<today> --set by=human
+cq specs record <id> approved --set date=<today> --set by=human
 ```
 
 A screen with nothing left to ask is not printed. Write-once — a spec already carrying the record
@@ -227,13 +229,13 @@ reports the date it holds, which is the answer, not an obstacle.
 `by: low-gear`, and every `approved` the human named is stamped `by: human`.
 
 ### 8. Report
-Per spec: the slug, the stage it reached, the records stamped, what it left open (quoted), and its
+Per spec: the ID, the stage it reached, the records stamped, what it left open (quoted), and its
 block if it had one. Then the run's own lines: the candidates that were not admitted with the
 command each needs, every `complexity` rise and how it was authorized, and the recursion form the
 plan chose with what it absorbed or deferred.
 
 Close by naming what each outcome wants next — `/quenching:specs:execute-queue` for the specs that
-reached `approved`, and `/quenching:specs:develop <slug>` for one whose open decisions need a human
+reached `approved`, and `/quenching:specs:develop <id>` for one whose open decisions need a human
 answering them one at a time.
 **Done when:** every batched spec and every non-admitted candidate is named with its next command.
 
@@ -248,7 +250,7 @@ answering them one at a time.
   minimal-gear admission here: this run opens no pull request for a review to live in.
 - Never launch the batch in more than one message — N `Task` calls in one message is what makes the
   specs run at the same time.
-- **One slug per sub-agent, one sub-agent per slug.** Two sub-agents sharing a spec is the only way
+- **One ID per sub-agent, one sub-agent per ID.** Two sub-agents sharing a spec is the only way
   this batch can collide, and the split is what makes the writes provably disjoint.
 - Never let a sub-agent talk to the human, stamp `approved`, promote a `## Discoveries` line, or
   write into `/.knowledge/`.
