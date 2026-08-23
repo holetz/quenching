@@ -371,15 +371,16 @@ class PhaseCutsListAndValidate(unittest.TestCase):
     alone. `getattr(args, "phase", None)` is what lets a caller built before the flag existed
     (no `phase` attribute at all) keep behaving exactly as it always did."""
 
-    def _write(self, root, phase_dir, slug):
-        doc = (capture_form().replace("<SLUG>", slug).replace("<TITLE>", slug.title())
+    def _write(self, root, phase_dir, name):
+        doc = (capture_form().replace("<TITLE>", name.title())
                .replace("<DATE>", "2026-01-01").replace("<VERIFICATION>", "per-task"))
-        self.backend.create_spec(phase_dir, f"{slug}.md", doc)
+        self.backend.create_spec(phase_dir, doc)
+        return max(self.backend.docs)
 
     def _workspace(self, root):
         self.backend = MemoryBackend()
-        self._write(root, "plans", "alpha")
-        self._write(root, "archive", "beta")
+        self.alpha = self._write(root, "plans", "alpha")
+        self.beta = self._write(root, "archive", "beta")
 
     def _dispatch(self, verb, root, args):
         buf = io.StringIO()
@@ -397,7 +398,7 @@ class PhaseCutsListAndValidate(unittest.TestCase):
                                         argparse.Namespace(json=True, phase="plans"))
             self.assertEqual(everyone["count"], 2)
             self.assertEqual(plans_only["count"], 1)
-            self.assertEqual(plans_only["specs"][0]["slug"], "alpha")
+            self.assertEqual(plans_only["specs"][0]["id"], self.alpha)
 
     def test_validate_phase_excludes_findings_from_the_other_phase(self):
         with tempfile.TemporaryDirectory() as root:
@@ -406,9 +407,11 @@ class PhaseCutsListAndValidate(unittest.TestCase):
                 "validate", root, argparse.Namespace(json=True, spec=None, phase=None))
             plans_only = self._dispatch(
                 "validate", root, argparse.Namespace(json=True, spec=None, phase="plans"))
-            self.assertIn("beta", [f.get("spec") for f in everyone["findings"]])
-            self.assertNotIn("beta", [f.get("spec") for f in plans_only["findings"]])
-            self.assertIn("alpha", [f.get("spec") for f in plans_only["findings"]])
+            self.assertIn(str(self.beta), [str(f.get("spec")) for f in everyone["findings"]])
+            self.assertNotIn(str(self.beta),
+                             [str(f.get("spec")) for f in plans_only["findings"]])
+            self.assertIn(str(self.alpha),
+                          [str(f.get("spec")) for f in plans_only["findings"]])
 
     def test_a_caller_built_before_the_flag_existed_is_unaffected(self):
         with tempfile.TemporaryDirectory() as root:
@@ -417,7 +420,7 @@ class PhaseCutsListAndValidate(unittest.TestCase):
             validated = self._dispatch(
                 "validate", root, argparse.Namespace(json=True, spec=None))
             self.assertEqual(listed["count"], 2)
-            self.assertIn("beta", [f.get("spec") for f in validated["findings"]])
+            self.assertIn(str(self.beta), [str(f.get("spec")) for f in validated["findings"]])
 
 
 class ListDropsLegacyOverview(unittest.TestCase):
@@ -426,9 +429,7 @@ class ListDropsLegacyOverview(unittest.TestCase):
     def test_a_legacy_overview_is_ignored_by_the_json_projection(self):
         with tempfile.TemporaryDirectory() as root:
             backend = MemoryBackend()
-            backend.create_spec(
-                "plans", "legacy.md",
-                "---\nslug: legacy\ntitle: Legacy\ndate: 2026-01-01\n---\n\n"
+            backend.create_spec("plans", "---\ntitle: Legacy\ndate: 2026-01-01\n---\n\n"
                 "# Legacy\n\n## Overview\n\nTexto antigo.\n\n"
                 "## Problem\n\nO problema.\n")
             buf = io.StringIO()
@@ -438,7 +439,10 @@ class ListDropsLegacyOverview(unittest.TestCase):
                 DISPATCH["list"](argparse.Namespace(json=True, phase=None), root, Emitter())
             row = json.loads(buf.getvalue())["specs"][0]
             self.assertNotIn("overview", row)
-            self.assertEqual(row["summary"], None)
+            # `summary` went out of the contract with `overview` —
+            # `optional-payload-fields.md` §Retired fields stay retired. It is ABSENT, not
+            # null: a key that is always null is a field the contract still carries.
+            self.assertNotIn("summary", row)
             findings = validate_module.validate_spec(backend, backend.list_specs()[0])
             self.assertNotIn("sp-stray-heading", [f["code"] for f in findings])
 

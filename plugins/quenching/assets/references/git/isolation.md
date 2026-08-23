@@ -30,10 +30,10 @@ so asking again buys nothing and costs the turns it takes. Isolation stays optio
 before building, and is never imposed.
 
 **Isolated means "this checkout is on the work ref", never "the ref exists".** The two come apart in
-one ordinary case — the base checked out, `plan/<slug>` sitting one branch over from an earlier
+one ordinary case — the base checked out, `plan/<id>-<handle>` sitting one branch over from an earlier
 session, nobody holding it — and treating existence as the answer sends the loop to build and commit
 onto the base, which is precisely what the offer is for. The work ref itself is the `branch` record's
-`work` when one is stamped, else `plan/<slug>`; a live ref held by another worktree is a **stop**,
+`work` when one is stamped, else `plan/<id>-<handle>`; a live ref held by another worktree is a **stop**,
 not an offer, because two checkouts building one spec fork it.
 
 `/quenching:specs:create` and `/quenching:specs:develop` take no branch at all — they write into
@@ -51,7 +51,8 @@ archived, and would have to duplicate every refusal `conclude` already owns.
 
 <!-- rationale -->
 
-**On `plan/<slug>` as the default name.** A branch named to it is greppable against `cq specs list`,
+**On `plan/<id>-<handle>` as the default name.** A branch named to it is greppable against
+`cq specs list`,
 and `git branch --list 'plan/*'` is the list of work cut by the default. A human who already checked
 out `fix/isolate-flow` or `123-my-branch` before running `execute` gets that branch recorded, not a
 second one cut beside it.
@@ -82,22 +83,24 @@ delete.
 <!-- rules -->
 
 ```
-plan/<slug>
+plan/<id>-<handle>
 ```
 
-The **suggested default** when the inline offer cuts a new branch or worktree — kebab-case, no
-date prefix, no id. `cq specs next --front` ranks on whether
-`plan/<slug>` is **alive**, so a branch named to the default is what tells that ranking this
-spec is already under way without a stamped `branch` record.
+The **suggested default** when the inline offer cuts a new branch or worktree. The **ID leads and
+is the whole identity** — `plan/974` resolves the spec on its own; the `<handle>`, kebab-case from
+the title, rides along so `git branch` reads as names rather than as numbers and is never parsed
+back. `cq specs next --front` ranks on whether `plan/<id>-<handle>` is **alive**, so a branch named
+to the default is what tells that ranking this spec is already under way without a stamped `branch`
+record.
 
 **The name is a suggestion, never a contract.** When `/quenching:specs:execute` starts on a branch that is not
 the repository's base — whatever it is named — that branch is **adopted** as `work` outright: no
-rename, no refusal, and no requirement that it match `plan/<slug>`.
+rename, no refusal, and no requirement that it match `plan/<id>-<handle>`.
 
 A worktree goes beside the repo, never inside it:
 
 ```bash
-git worktree add ../<repo>-<slug> -b plan/<slug>
+git worktree add ../<repo>-<handle> -b plan/<id>-<handle>
 ```
 
 ### The worktree is the preferred form
@@ -145,7 +148,7 @@ authorisation. A failing setup is reported and **never undoes the worktree**.
 <!-- rules -->
 
 ```bash
-cq specs record <slug> branch --set base=main --set work=plan/<slug>
+cq specs record <id> branch --set base=main --set work=plan/<id>-<handle>
 ```
 
 `base` is whatever was checked out when the branch was cut. It is **not** assumed to be `main`.
@@ -183,7 +186,7 @@ naming the value already held. A later run **reads** it rather than rewriting it
 branch that disagrees with `work` is a finding to report, never a value to correct. Never edit the
 frontmatter to get past that refusal — the refusal is the rule, working.
 
-**The record is not the signal.** A human may cut `plan/<slug>` by hand and stamp nothing, and a
+**The record is not the signal.** A human may cut `plan/<id>-<handle>` by hand and stamp nothing, and a
 record outlives the branch it names. Anything asking "is this spec in flight?" asks git for a live
 ref — the record only supplies the ref's name when it is not the default.
 

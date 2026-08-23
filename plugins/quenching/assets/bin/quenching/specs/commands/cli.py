@@ -201,7 +201,7 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("text")
 
     sp = add_json(sub.add_parser("validate", help="the canonical set, the gates, the sp-* codes"))
-    sp.add_argument("--spec", help="one slug (default: every spec)")
+    sp.add_argument("--spec", help="one spec ID (default: every spec)")
     sp.add_argument("--phase", choices=list(PHASES),
                     help="cut the sweep to one phase (default: every phase)")
     sp.add_argument("--by-code", action="store_true", dest="by_code",
@@ -224,7 +224,7 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp = add_json(sub.add_parser("export", help="dump the canonical markdown to disk — "
                                                 "write-only, nothing reads it back"))
     grp = sp.add_mutually_exclusive_group(required=True)
-    grp.add_argument("--spec", help="one slug")
+    grp.add_argument("--spec", help="one spec ID")
     grp.add_argument("--all", action="store_true", help="every spec")
     sp.add_argument("--out", default="specs-export",
                     help="destination directory (default: ./specs-export)")

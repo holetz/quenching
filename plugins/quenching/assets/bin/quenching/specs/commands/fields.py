@@ -41,16 +41,16 @@ def cmd_verification(args, root: str, out: Emitter) -> int:
 
     if not args.policy:
         out.emit(args.json,
-                 {"ok": True, "slug": info["slug"], "verification": info["verification"],
+                 {"ok": True, "id": info["id"], "verification": info["verification"],
                   "declared": declared or None, "default": DEFAULT_VERIFICATION},
-                 f"{info['slug']} — verification: {info['verification']}"
+                 f"{info['id']} — verification: {info['verification']}"
                  + ("" if declared else "  (the default — nothing declared)"))
         return 0
 
     policy = args.policy.strip().lower()
     if policy not in VERIFICATION_POLICIES:
         out.emit(args.json,
-                 {"ok": False, "code": "sp-bad-verification", "slug": info["slug"],
+                 {"ok": False, "code": "sp-bad-verification", "id": info["id"],
                   "given": args.policy, "policies": list(VERIFICATION_POLICIES),
                   "message": f"'{args.policy}' is not one of "
                          f"{', '.join(VERIFICATION_POLICIES)}"},
@@ -58,9 +58,9 @@ def cmd_verification(args, root: str, out: Emitter) -> int:
         return 2
     backend.write_spec(info, set_frontmatter_key(info["text"], "verification", policy))
     out.emit(args.json,
-             {"ok": True, "slug": info["slug"], "verification": policy,
+             {"ok": True, "id": info["id"], "verification": policy,
               "previous": declared or None},
-             f"{info['slug']} — verification: {policy}"
+             f"{info['id']} — verification: {policy}"
              + (f"  (was {declared})" if declared and declared != policy else ""))
     return 0
 
@@ -111,8 +111,8 @@ def cmd_field(args, root: str, out: Emitter) -> int:
     current = info["frontmatter"].get(key)
 
     if args.value is None:
-        out.emit(args.json, {"ok": True, "slug": info["slug"], key: current},
-                 f"{info['slug']} — {key}: {current if current else '(none)'}")
+        out.emit(args.json, {"ok": True, "id": info["id"], key: current},
+                 f"{info['id']} — {key}: {current if current else '(none)'}")
         return 0
 
     if key == "tags":
@@ -131,8 +131,8 @@ def cmd_field(args, root: str, out: Emitter) -> int:
         rendered = stored = args.value.strip()
 
     backend.write_spec(info, set_frontmatter_key(info["text"], key, rendered))
-    out.emit(args.json, {"ok": True, "slug": info["slug"], key: stored, "previous": current},
-             f"{info['slug']} — {key}: {stored}"
+    out.emit(args.json, {"ok": True, "id": info["id"], key: stored, "previous": current},
+             f"{info['id']} — {key}: {stored}"
              + (f"  (was {current})" if current and current != stored else ""))
     return 0
 
@@ -172,7 +172,7 @@ def cmd_record(args, root: str, out: Emitter) -> int:
 
     if not args.set:
         if args.json:
-            print(json.dumps({"ok": current is not None, "slug": info["slug"],
+            print(json.dumps({"ok": current is not None, "id": info["id"],
                               "record": args.name, "value": current},
                              indent=2, ensure_ascii=False))
         else:
@@ -234,7 +234,7 @@ def cmd_record(args, root: str, out: Emitter) -> int:
     ordered = {k: merged[k] for k in fields if k in merged}
     backend.write_spec(info, set_frontmatter_record(info["text"], args.name, ordered))
     out.emit(args.json,
-             {"ok": True, "slug": info["slug"], "record": args.name, "value": ordered},
-             f"{info['slug']} — {args.name}: "
+             {"ok": True, "id": info["id"], "record": args.name, "value": ordered},
+             f"{info['id']} — {args.name}: "
              f"{{{', '.join(f'{k}: {v}' for k, v in ordered.items())}}}")
     return 0

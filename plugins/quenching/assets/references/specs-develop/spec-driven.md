@@ -114,7 +114,7 @@ There is no attempt counter and no `.specs.json`.
 
 **Four more keys — `tags`, `assignee`, `start`, `target` — are STATE, never records.** Each is a
 first-level frontmatter key with its own deterministic verb (`cq specs tags|assignee|start|target
-<slug> [value]`), not a `{field: value}` record and not owned by one lifecycle command. `tags` is
+<id> [value]`), not a `{field: value}` record and not owned by one lifecycle command. `tags` is
 also written at capture — `cq specs new --tags` folds a resolved `subjects.<KEY>`'s own fixed tags
 in automatically, so the whole list still lands in ONE write rather than the capture's own tags
 followed by a second, separate `cq specs tags` call. Where a
@@ -158,7 +158,7 @@ the body prose is written in is owned by the bundle's `knowledge/standards/agent
 
 **Every section declares its moment, and that is load-bearing.** `## Proposal` / `## Out of Scope`
 / `## Design` / `## Impact` / `## Handoff` / `## Tasks` are the `build` set — exactly what
-`/quenching:specs:execute` step 4 sends an executor (`cq specs section <slug> --moment build`).
+`/quenching:specs:execute` step 4 sends an executor (`cq specs section <id> --moment build`).
 `## Problem` / `## Alternatives Considered` / `## Open Decisions` / `## Risks` are
 `decision` — the human's, weighing whether to build at all. `## Validation` / `## Outcome` are
 `close` — `/quenching:specs:conclude`'s. `## Discoveries` carries no moment: captured
@@ -325,7 +325,7 @@ it.
 It does **not** receive the `decision`-moment sections (`## Problem` /
 `## Alternatives Considered` / `## Open Decisions` / `## Risks`), nor the rest of the `build` set
 verbatim. The orchestrator itself reads the `build` set at step 4
-(`cq specs section <slug> --moment build --scope current`) — the other five sections whole, and
+(`cq specs section <id> --moment build --scope current`) — the other five sections whole, and
 `## Handoff` already cut to the same global-plus-own-section slice the bullet above promises an
 executor, so **neither side depends on an agent remembering to narrow it**; a `## Design` decision
 that bears on the task reaches the executor distilled into the task line or `## Handoff`, never as
@@ -344,7 +344,7 @@ them — the run pauses, a task is written blocked, a discovery is recorded, the
 lands — and on nothing else. Each names an act the executor just performed, never an assessment it
 has to make, which is what lets the rule hold in an unattended run; staleness is this section's
 failure mode, and `validate` warns when a spec past the ready gate has an empty `## Handoff`. What a
-rewrite touches is scoped the same way what an executor reads is: `cq specs section <slug> Handoff
+rewrite touches is scoped the same way what an executor reads is: `cq specs section <id> Handoff
 --write --scope global` for the evergreen block, `--scope current` for the block of the section
 whose tasks are still open. A section's block is never targeted again once its last task commits —
 that IS the close, no separate flag marks it — so a run that has moved on to `### 4.` never pays to
@@ -369,25 +369,25 @@ missing one is a **refusal (exit 2) naming it, never a traceback**.
 
 | Command | Use |
 | --- | --- |
-| `cq specs new <slug> [--title T] [--verification P] [--subject KEY] [--type KEY] [--tags LIST] [--complexity LEVEL]` | scaffold `plans/<slug>.md` with `## Problem` as its only section by default; the descriptive title is supplied at capture and the date is stamped into `date:` here and never again. `--subject` applies a declared `subjects.<KEY>`'s parent (where the backend has one) and fixed tags — folded into `--tags` where both are given, never overwritten by it. `--complexity` writes the record through the same path as `record priority`. Stdin, read when it is not a tty, carries N sections in the SAME multi-heading stream `section --write` reads and writes — the stream self-declares by opening on a canonical `## <Heading>`, with no single implied heading to fall back on, so an unopened or malformed stream refuses (`sp-stray-heading`/`sp-write-duplicate-heading`) before `create_spec` ever runs |
-| `cq specs list [--json]` | every spec, by folder and derived stage |
-| `cq specs status --spec <slug> [--json]` | sections present, derived stage, task progress with recorded subjects, the records, and the outstanding gates |
-| `cq specs section <slug> "<heading>[,<heading>…]" [--write]` | deterministic partial read of N sections in ONE call, returned in the order asked; `--write` writes N in one call too, each created in canonical position — the bodies arrive on stdin delimited by the same `## <Heading>` lines the read prints, and the set the stream carries must equal the set declared here or the call refuses without writing any of them. A stream that does not open on a canonical heading is one raw body under the one heading declared, exactly as before |
-| `cq specs show --spec <slug> [--task ID]… [--full]` | what `section` cannot say: the map of which headings and task ids exist (the default), ONE task's line and metadata, the whole document **only** under `--full`. Section bodies are `section`'s |
-| `cq specs record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; fields not named survive, write-once records refuse (exit 2) with the value they hold |
-| `cq specs tags\|assignee\|start\|target <slug> [value]` | read one of the four STATE keys, or set it — never a record; `tags` **replaces** the whole list, it does not append |
-| `cq specs verification <slug> [<policy>]` | read the policy in force — and whether anything declared it — or set it. The post-capture writer: `new --verification` answers at the one moment nobody has an opinion yet |
+| `cq specs new <name> [--title T] [--verification P] [--subject KEY] [--type KEY] [--tags LIST] [--complexity LEVEL]` | store a new spec in `plans` with `## Problem` as its only section by default, reporting the locator the backend allocated — the ID it hands out is what every later verb takes. The descriptive title is supplied at capture and the date is stamped into `date:` here and never again. `--subject` applies a declared `subjects.<KEY>`'s parent (where the backend has one) and fixed tags — folded into `--tags` where both are given, never overwritten by it. `--complexity` writes the record through the same path as `record priority`. Stdin, read when it is not a tty, carries N sections in the SAME multi-heading stream `section --write` reads and writes — the stream self-declares by opening on a canonical `## <Heading>`, with no single implied heading to fall back on, so an unopened or malformed stream refuses (`sp-stray-heading`/`sp-write-duplicate-heading`) before `create_spec` ever runs |
+| `cq specs list [--json] [--lean]` | every spec, by folder and derived stage. `--lean` is the provider's own cheap index — ID, title, state and the visible `spec:` labels, no document body on the wire — measured 157 specs in 1.6 s / 70 KB against 4.8 s / 5.25 MB for the full listing. It does NOT feed the ranked table (`stage`, `tasks`, `priority` and `date` derive from the document), and says so in its own payload |
+| `cq specs status --spec <id> [--json]` | sections present, derived stage, task progress with recorded subjects, the records, and the outstanding gates |
+| `cq specs section <id> "<heading>[,<heading>…]" [--write]` | deterministic partial read of N sections in ONE call, returned in the order asked; `--write` writes N in one call too, each created in canonical position — the bodies arrive on stdin delimited by the same `## <Heading>` lines the read prints, and the set the stream carries must equal the set declared here or the call refuses without writing any of them. A stream that does not open on a canonical heading is one raw body under the one heading declared, exactly as before |
+| `cq specs show --spec <id> [--task ID]… [--full]` | what `section` cannot say: the map of which headings and task ids exist (the default), ONE task's line and metadata, the whole document **only** under `--full`. Section bodies are `section`'s |
+| `cq specs record <id> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; fields not named survive, write-once records refuse (exit 2) with the value they hold |
+| `cq specs tags\|assignee\|start\|target <id> [value]` | read one of the four STATE keys, or set it — never a record; `tags` **replaces** the whole list, it does not append |
+| `cq specs verification <id> [<policy>]` | read the policy in force — and whether anything declared it — or set it. The post-capture writer: `new --verification` answers at the one moment nobody has an opinion yet |
 | `cq specs config [--json]` | the repo's declared parameters — the backend, the specs branch, `worktreeSetup`, `azureStates`, `azurePlacement`, `azureColumns`, `subjects`, `tagCatalog` |
-| `cq specs promote <slug> --to archive [--outcome done\|abandoned] [--force]` | the one gated transition left; **exit 2** with the missing list, else `git mv` |
-| `cq specs next --spec <slug> [--json]` | THE single next action, carrying the task's `verify`/`files`/`pattern`/`[P]`; skips `[!]` |
+| `cq specs promote <id> --to archive [--outcome done\|abandoned] [--force]` | the one gated transition left; **exit 2** with the missing list, else the backend's own hop — closing the issue or work item, never a `git mv`: a provider-owned front has no phase directory to move a file between |
+| `cq specs next --spec <id> [--json]` | THE single next action, carrying the task's `verify`/`files`/`pattern`/`[P]`; skips `[!]` |
 | `cq specs next --front [--json] [--table] [--columns C,C] [--order rank\|priority]` | the **ranked candidate list** — the only place ordering logic lives. `--table` prints §The spec table itself, so a command quotes a rendering instead of re-aggregating a payload; `--columns` omits columns, never reorders them; `--order priority` swaps the four-factor ranking for the human's `priority.level` alone. `--table` with `--json` refuses (exit 2) — a table IS the human rendering |
-| `cq specs task --spec <slug> --check ID [--subject LINE] [--commit SHA] \| --uncheck ID \| --block ID --reason MSG` | flip, record, or block a checkbox mechanically; `--commit` is **additive** to `--subject`, never its replacement |
-| `cq specs discover <slug> <text>` | append one line to `## Discoveries` |
-| `cq specs parallel --spec <slug> [--json]` | verify each `[P]` group's `files:` sets are disjoint — **exit 1** when any group is ineligible |
-| `cq specs validate [--spec <slug>] [--by-code]` | the canonical heading set, the stage-scoped rule, filename conformance, the `sp-*` vocabulary. `--by-code` renders the same sweep as one line per `(code, severity)` with the count and the specs — grouped, never filtered |
+| `cq specs task --spec <id> --check ID [--subject LINE] [--commit SHA] \| --uncheck ID \| --block ID --reason MSG` | flip, record, or block a checkbox mechanically; `--commit` is **additive** to `--subject`, never its replacement |
+| `cq specs discover <id> <text>` | append one line to `## Discoveries` |
+| `cq specs parallel --spec <id> [--json]` | verify each `[P]` group's `files:` sets are disjoint — **exit 1** when any group is ineligible |
+| `cq specs validate [--spec <id>] [--by-code]` | the canonical heading set, the stage-scoped rule, the `sp-*` vocabulary. `--by-code` renders the same sweep as one line per `(code, severity)` with the count and the specs — grouped, never filtered |
 | `cq specs doctor` | workspace shape — the two folders, strays, older layouts; remedies **declared** for the command to apply |
 | `cq specs migrate` | one-way fold to the current layout (`backlog/` + `ready/` → `plans/`, and v1 three-file folders → one file); **exit 2** when there is nothing to migrate; `specs/archive/**` never touched |
-| `cq specs export --spec <slug> \| --all [--out DIR]` | dump the canonical markdown to disk — **write-only**; nothing reads it back and nothing syncs it, so it is a rescue copy for an external backend and never a second store |
+| `cq specs export --spec <id> \| --all [--out DIR]` | dump the canonical markdown to disk — **write-only**; nothing reads it back and nothing syncs it, so it is a rescue copy for an external backend and never a second store |
 | `cq specs selftest` | prove the embedded schema and template have not drifted from their asset files |
 
 `--outcome` is the only content a promote ever writes.
@@ -494,7 +494,7 @@ One line, then the body. Two forms — front-wide:
 One spec:
 
 ```
-## session-tokens — Budget tokens per session
+## 41 — Budget tokens per session
 executing · 5/9 tasks · https://github.com/o/r/issues/41
 ```
 
@@ -536,9 +536,9 @@ the flag existed.
 ```
 | Spec | Summary | Stage | Tasks | Priority | Complexity | Age | State |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| → session-tokens | Sessions never expire, so a stolen token is good forever | executing | 5/9 | 1 · high | medium | 3d | on this branch |
-| rate-limit-api | Rate limit the public API | ready | 0/12 | 2 · high | low | 9d | — |
-| webhook-retries | A failed webhook is dropped and nobody is told | proposed | — | — | — | 21d | — |
+| → 41 | Sessions never expire, so a stolen token is good forever | executing | 5/9 | 1 · high | medium | 3d | on this branch |
+| 58 | Rate limit the public API | ready | 0/12 | 2 · high | low | 9d | — |
+| 63 | A failed webhook is dropped and nobody is told | proposed | — | — | — | 21d | — |
 ```
 
 **`Summary` is the established table label, sourced directly from `title:`.** The title is the
@@ -582,8 +582,8 @@ One row per finding, for the split by what closes each that a read-only view owe
 ```
 | Spec | Code | What it is | Closed by |
 | --- | --- | --- | --- |
-| rate-limit-api | `sp-empty-section` | `## Risks` present and empty | nobody — a human writes it |
-| session-tokens | `sp-spec-complete` | every box ticked | `/quenching:specs:conclude session-tokens` |
+| 58 | `sp-empty-section` | `## Risks` present and empty | nobody — a human writes it |
+| 41 | `sp-spec-complete` | every box ticked | `/quenching:specs:conclude 41` |
 | — | `sp-stray-file` | `plans/notes.txt` | `/quenching:specs:align` |
 ```
 
@@ -616,7 +616,7 @@ own vocabulary.
 - **`Recommended action` is runnable as printed**, exactly as §The next-step block is: the
   plugin-prefixed slash spelling
   ([align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §7)
-  **with its real argument substituted**. A literal `<slug>` reaching the output is a defect, and so
+  **with its real argument substituted**. A literal `<id>` reaching the output is a defect, and so
   is a bare command name whose argument the reader has to reconstruct from the rest of the row.
 - **An observation no command closes says what a human must decide** — `nobody — <the decision>` —
   rather than naming a command that does not fit it.
@@ -636,12 +636,12 @@ Always last. Nothing is printed after it.
 
 ```
 Next step
-→ /quenching:specs:execute session-tokens   — 5/9 tasks, 3.2 is open
-  /quenching:specs:develop session-tokens   — 2 open discoveries
-  /quenching:specs:triage                   — 4 specs carry no priority
+→ /quenching:specs:execute 41   — 5/9 tasks, 3.2 is open
+  /quenching:specs:develop 41   — 2 open discoveries
+  /quenching:specs:triage        — 4 specs carry no priority
 ```
 
-- **Runnable as printed** — the real slug substituted. A literal `<slug>` reaching the output is a
+- **Runnable as printed** — the real spec ID substituted. A literal `<id>` reaching the output is a
   defect.
 - Exactly one `→` line.
 - **The `— reason` tail appears only when there is more than one line.** A single candidate needs no

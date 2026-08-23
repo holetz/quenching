@@ -10,8 +10,10 @@ from quenching.specs.backends.memory import MemoryBackend
 from quenching.specs.commands.find import _pr_number, find_match
 
 
-def _doc(slug: str, *, branch=None, pr=None, merge=None, task_subject=None) -> str:
-    lines = ["---", f"slug: {slug}", f"title: {slug.title()}", "date: 2026-08-01"]
+def _doc(name: str, *, branch=None, pr=None, merge=None, task_subject=None) -> str:
+    # `name` is the fixture's own label, carried in the TITLE — a spec's identity is the ID
+    # `create_spec` hands back, and the document holds no copy of it.
+    lines = ["---", f"title: {name.title()}", "date: 2026-08-01"]
     if branch:
         lines.append(f"branch: {{base: {branch['base']}, work: {branch['work']}}}")
     if pr:
@@ -28,37 +30,34 @@ def _doc(slug: str, *, branch=None, pr=None, merge=None, task_subject=None) -> s
 class FindMatch(unittest.TestCase):
     def setUp(self):
         self.backend = MemoryBackend()
-        self.backend.create_spec("plans", "alpha.md",
-                                 _doc("alpha", branch={"base": "develop", "work": "plan/alpha"}))
-        self.backend.create_spec(
-            "plans", "beta.md",
-            _doc("beta", pr={"number": "42", "url": "https://github.com/o/r/pull/42"}))
-        self.backend.create_spec(
-            "plans", "gamma.md",
-            _doc("gamma", task_subject="plan/gamma: 2.1 Add the thing"))
-        self.backend.create_spec(
-            "plans", "delta.md",
-            _doc("delta", merge={"pr": "https://github.com/o/r/pull/99"}))
-        self.backend.create_spec(
-            "plans", "epsilon.md",
-            _doc("epsilon", branch={"base": "develop", "work": "develop"}))
+        # `create_spec` returns a locator; the ID it allocated is what a match must hand
+        # back, so each fixture keeps its own rather than a name the document no longer has.
+        self.alpha = self._add(_doc("alpha", branch={"base": "develop", "work": "plan/1-alpha"}))
+        self.beta = self._add(_doc("beta", pr={"number": "42", "url": "https://github.com/o/r/pull/42"}))
+        self.gamma = self._add(_doc("gamma", task_subject="plan/3: 2.1 Add the thing"))
+        self.delta = self._add(_doc("delta", merge={"pr": "https://github.com/o/r/pull/99"}))
+        self._add(_doc("epsilon", branch={"base": "develop", "work": "develop"}))
 
-    def test_branch_resolves_the_owning_slug(self):
-        hit = find_match(self.backend, branch="plan/alpha")
-        self.assertEqual(hit["info"]["slug"], "alpha")
+    def _add(self, doc: str) -> int:
+        self.backend.create_spec("plans", doc)
+        return max(self.backend.docs)
+
+    def test_branch_resolves_the_owning_spec(self):
+        hit = find_match(self.backend, branch="plan/1-alpha")
+        self.assertEqual(hit["info"]["id"], self.alpha)
         self.assertEqual(hit["matchedBy"], "branch")
 
     def test_pr_number_resolves_against_the_pr_record(self):
         hit = find_match(self.backend, pr="42")
-        self.assertEqual(hit["info"]["slug"], "beta")
+        self.assertEqual(hit["info"]["id"], self.beta)
 
     def test_pr_number_resolves_against_merge_pr_too(self):
         hit = find_match(self.backend, pr="99")
-        self.assertEqual(hit["info"]["slug"], "delta")
+        self.assertEqual(hit["info"]["id"], self.delta)
 
     def test_commit_subject_resolves_against_a_tasks_recorded_subject(self):
-        hit = find_match(self.backend, commit_subject="plan/gamma: 2.1 Add the thing")
-        self.assertEqual(hit["info"]["slug"], "gamma")
+        hit = find_match(self.backend, commit_subject="plan/3: 2.1 Add the thing")
+        self.assertEqual(hit["info"]["id"], self.gamma)
 
     def test_an_in_place_record_never_answers_for_its_base(self):
         # `epsilon` records `work == base == develop` — a spec built in place, not the owner

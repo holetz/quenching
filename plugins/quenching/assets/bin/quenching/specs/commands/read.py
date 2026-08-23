@@ -10,7 +10,7 @@ import os
 
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, display_locator, front_fields, read_one
-from quenching.specs.parse import PHASES, derive_info, titleize
+from quenching.specs.parse import PHASES, derive_info, spec_handle
 from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.sections import (gate_report, ready_report, section_state,
                                             stray_headings)
@@ -51,22 +51,22 @@ def cmd_list(args, root: str, out: Emitter) -> int:
         # `read_text(s["path"])` directly, which worked only because the files backend's
         # locator happens to be a filesystem path — against GitHub it is an issue URL, and
         # `list` would have reported every spec as empty rather than failing.
-        info, rerr = backend.read_spec(s["slug"])
+        info, rerr = backend.read_spec(s["id"])
         if rerr or info is None:
-            # The only refusal reachable here is an ambiguous slug — the slug came from the
-            # listing, so it cannot be unknown — and `list` is exactly the command a human
-            # runs to SEE that duplicate. The row survives, derived from an empty document
-            # so every field still comes from the one shared derivation, and `unreadable`
-            # says so rather than letting the spec look empty. `validate` names it
-            # sp-duplicate-slug.
+            # NO REFUSAL IS REACHABLE HERE ANY MORE, and the row is kept anyway. The ID came
+            # from the listing, so it cannot be unknown, and two specs cannot share a native
+            # ID — which is what retired `sp-ambiguous-slug` by construction. What survives
+            # is a transport failure between the listing and this read; the row is derived
+            # from an empty document so every field still comes from the one shared
+            # derivation, and `unreadable` says so rather than letting the spec look empty.
             info, unreadable = derive_info(s, ""), (rerr or {}).get("code")
         else:
             unreadable = None
         checked, blocked, total = task_progress(info["tasks"])
         rows.append({
-            "slug": s["slug"], "phase": s["phase"], "folder": s["folder"],
-            "legacy": s["legacy"], "file": s["file"], "date": info["date"],
-            "title": info["frontmatter"].get("title", titleize(s["slug"])),
+            "id": s["id"], "phase": s["phase"], "folder": s["folder"],
+            "legacy": s["legacy"], "date": info["date"],
+            "title": info["frontmatter"].get("title", ""),
             "stage": info["stage"],
             "outcome": info["frontmatter"].get("outcome") or None,
             # The seven records, on every row. Without them a caller that wants the front's
@@ -99,7 +99,8 @@ def cmd_list(args, root: str, out: Emitter) -> int:
             blk = f" · {r['tasks']['blocked']} blocked" if r["tasks"]["blocked"] else ""
             oc = f" · {r['outcome']}" if r["outcome"] else ""
             un = f" · {r['unreadable']} (nothing derived)" if r["unreadable"] else ""
-            print(f"    {r['date']}  {r['slug']:<28} [{r['stage']}]{prog}{blk}{oc}{un}")
+            print(f"    {r['date']}  {str(r['id']):<8} {r['title'][:44]:<44} "
+                  f"[{r['stage']}]{prog}{blk}{oc}{un}")
     return 0
 
 
@@ -134,10 +135,10 @@ def cmd_status(args, root: str, out: Emitter) -> int:
                 for h in canonical_headings()]
     records = spec_records(info["frontmatter"])
     obj = {
-        "ok": True, "slug": info["slug"], "title": info["frontmatter"].get("title", ""),
+        "ok": True, "id": info["id"], "title": info["frontmatter"].get("title", ""),
         # The one line that answers "what is this spec" without opening it.
         "phase": info["phase"], "folder": info["folder"], "legacy": info["legacy"],
-        "stage": info["stage"], "file": info["file"],
+        "stage": info["stage"],
         "date": info["date"], "verification": info["verification"],
         # every human-judgment record in one place and in schema order, so `conclude` and
         # `continue` read state instead of re-parsing the file
@@ -159,8 +160,8 @@ def cmd_status(args, root: str, out: Emitter) -> int:
         print(json.dumps(out.announced(obj), indent=2, ensure_ascii=False))
         return 0
     print(out.receipt_line(), end="")
-    print(f"{info['slug']} — {obj['title']}")
-    print(f"  {info['folder']}/{info['file']}  [{info['stage']}]  "
+    print(f"{info['id']} — {obj['title']}")
+    print(f"  {obj['path']}  [{info['stage']}]  "
           f"verification: {info['verification']}")
     if total:
         print(f"  tasks: {checked}/{total} complete" +
@@ -213,13 +214,18 @@ def cmd_export(args, root: str, out: Emitter) -> int:
     backend, err = open_backend(root)
     if err:
         return out.emit_err(args.json, err)
-    slugs = [s["slug"] for s in backend.list_specs()] if args.all else [args.spec]
+    ids = [s["id"] for s in backend.list_specs()] if args.all else [args.spec]
     written = []
-    for slug in slugs:
-        info, rerr = backend.read_spec(slug)
+    for spec_id in ids:
+        info, rerr = backend.read_spec(spec_id)
         if rerr:
             return out.emit_err(args.json, rerr)
-        dest = os.path.join(args.out, info["folder"], info["file"])
+        # `<id>-<handle>.md`, the same cosmetic name `next` gives the branch. The ID leads so
+        # the dump sorts and resolves the way the backend does; the handle rides along so a
+        # directory of 157 files reads as titles rather than as numbers. Nothing reads this
+        # name back — the dump is a mitigation, never a second store.
+        name = spec_handle(info["id"], str(info["frontmatter"].get("title") or ""))
+        dest = os.path.join(args.out, info["folder"], f"{name}.md")
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         with open(dest, "w", encoding="utf-8") as f:
             f.write(info["text"])

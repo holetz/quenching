@@ -135,13 +135,13 @@ class SpBadComplexity(unittest.TestCase):
 
     def test_a_value_outside_the_four_levels_is_flagged(self):
         b = MemoryBackend()
-        b.create_spec("plans", "alpha.md", _spec_doc("3"))
+        b.create_spec("plans", _spec_doc("3"))
         codes = [f["code"] for f in validate_spec(b, b.list_specs()[0])]
         self.assertIn("sp-bad-complexity", codes)
 
     def test_one_of_the_four_levels_is_not_flagged(self):
         b = MemoryBackend()
-        b.create_spec("plans", "alpha.md", _spec_doc("medium"))
+        b.create_spec("plans", _spec_doc("medium"))
         codes = [f["code"] for f in validate_spec(b, b.list_specs()[0])]
         self.assertNotIn("sp-bad-complexity", codes)
 

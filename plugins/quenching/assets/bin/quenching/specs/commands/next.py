@@ -16,11 +16,10 @@ import json
 
 from quenching.common.dates import today
 from quenching.common.git import _git
-from quenching.common.text import slugify
 from quenching.specs.backends import open_backend
 from quenching.specs.backends.base import SpecBackend
 from quenching.specs.commands.output import Emitter, display_locator, front_fields, read_one
-from quenching.specs.parse import derive_info
+from quenching.specs.parse import derive_info, spec_handle
 from quenching.specs.parse.derive import derive_stage
 from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.sections import ready_report
@@ -109,8 +108,7 @@ def _work_ref(fm: dict, spec_id: str | int, title: str) -> str | None:
     declined isolation (`git.md` §Where a branch comes from), and the base branch is always
     alive. Read as a work ref it would make every spec built in place rank as permanently in
     flight — `live` and `current` both true forever — on a ref it never took."""
-    handle = slugify(title) or "spec"
-    default = f"plan/{spec_id}-{handle}"
+    default = f"plan/{spec_handle(spec_id, title)}"
     rec = fm.get("branch")
     if not isinstance(rec, dict):
         return default
@@ -154,9 +152,8 @@ def _candidate(backend: SpecBackend, s: dict, schema: dict, heads: set[str],
     age = _days_since(info["date"])
     return {
         "id": s["id"], "folder": s.get("folder", s.get("phase", "")),
-        "file": s.get("file", ""), "date": info["date"],
+        "date": info["date"],
         "title": title, "stage": stage,
-        "summary": fm.get("summary") or None,
         "tasks": tasks,
         "progress": round(progress, 3),
         "readyGateMet": ready["ok"],
@@ -214,7 +211,14 @@ def _cell(value: str | None) -> str:
 
 
 def _table_row(c: dict, recommended: bool) -> dict:
-    """A candidate as the table's cells, with the Summary column sourced from `title`."""
+    """A candidate as the table's cells, with the Summary column sourced from `title`.
+
+    THE COLUMN KEPT ITS NAME AND CHANGED ITS SOURCE. `summary:` was written on 15 of 154
+    specs and the column already fell back to the title on the other 91%; the title is
+    native, comes free in every listing, and is the one string a human already reads the
+    spec by. There is no fallback left to report, which is why this returns the cells alone
+    where it used to return `(cells, fellback)` — `optional-payload-fields.md` §Retired
+    fields stay retired owns the rule that keeps `summary` out of the payload beside it."""
     t, p = c["tasks"], (c["priority"] or {})
     tasks = f"{t['checked']}/{t['total']}" if t["total"] else ""
     if t["blocked"]:

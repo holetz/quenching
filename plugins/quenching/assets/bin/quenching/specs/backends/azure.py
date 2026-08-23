@@ -12,7 +12,7 @@ from quenching.specs.backends.hybrid import (hybrid_project, hybrid_split, hybri
                                              hybrid_unwrap, hybrid_wrap)
 from quenching.specs.config import (AZ_DEFAULT_DISCOVERY_TAG, CONFIG_FILE, announce_unproved,
                                     find_repo_root, load_config, resolve_work_item_type)
-from quenching.specs.parse import (FIELD_KEYS, PHASES, SPEC_FILE_RE, board_state_of,
+from quenching.specs.parse import (FIELD_KEYS, PHASES, board_state_of,
                                    carry_forward_fields, declared_tags, derive_info,
                                    derive_labels, strip_frontmatter_keys, tags_outside_catalog)
 
@@ -657,7 +657,7 @@ class AzureBoardsBackend(SpecBackend):
         The marker is what tells a spec apart from the project's real backlog, which this
         backend must never list and must never write over — so an ordinary work item a human
         created answers None here rather than being carried any further."""
-        _, doc, parts = hybrid_unwrap(self._field(item, "System.Description"))
+        doc, parts = hybrid_unwrap(self._field(item, "System.Description"))
         if not parts:
             return None
         item_id = int(item.get("id") or 0)
@@ -767,7 +767,7 @@ class AzureBoardsBackend(SpecBackend):
         ids = [int(r.get("id") or 0) for r in found if r.get("id")]
         out: list[dict] = []
         for item in self._show_many(ids):
-            _, _, parts = hybrid_unwrap(self._field(item, "System.Description"))
+            _, parts = hybrid_unwrap(self._field(item, "System.Description"))
             if not parts:
                 continue
             tags = self._raw_tags(item)
@@ -846,13 +846,24 @@ class AzureBoardsBackend(SpecBackend):
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["id"]))
 
     def read_spec(self, spec_id: str | int) -> tuple[dict | None, dict]:
+        """One spec, by the work-item ID the board allocated.
+
+        The same two paths `github`'s own `read_spec` documents, for the same reason: a
+        direct `workitemsbatch` for one item when nothing has been loaded — which is what
+        the native ID buys — and the row `_load` already holds when a listing in this same
+        process paid for it. `doctor`'s `board_findings` reads every spec straight after
+        `list_specs`, and would otherwise pay a request per spec for documents it had."""
         try:
             item_id = int(spec_id)
         except (TypeError, ValueError):
             return None, {"code": "sp-unknown-id", "exit": 1, "id": spec_id,
                           "message": f"no spec with id '{spec_id}'"}
-        items = self._show_many([item_id])
-        row = self._row_of(items[0]) if items else None
+        row = None
+        if self._rows is not None:
+            row = next((r for r in self._rows if r[1] == item_id), None)
+        if row is None:
+            items = self._show_many([item_id])
+            row = self._row_of(items[0]) if items else None
         if not row:
             return None, {"code": "sp-unknown-id", "exit": 1, "id": spec_id,
                           "message": f"no spec with id '{spec_id}'"}
@@ -880,15 +891,14 @@ class AzureBoardsBackend(SpecBackend):
         # rather than skipped, so this backend goes through the SAME serialisation as the
         # proved one instead of a shorter path of its own that nothing checks.
         stripped = strip_frontmatter_keys(text, FIELD_KEYS)
-        stored, title = hybrid_project(info["frontmatter"].get("slug", ""), stripped)
+        stored, title = hybrid_project(stripped)
         chunks = hybrid_split(stored, None)
         # Placement is REAFFIRMED here, not just declared at creation — a human moving the
         # work item to another area between writes sees the next one bring it back, the same
         # way `move_spec` already owns the state. Only declared fields reach `desired`, so
         # an unset `iteration_path` is simply not one of them.
         desired = {"System.Title": title,
-                   "System.Description": hybrid_wrap(info.get("file", ""), chunks[0][0],
-                                                      fmt="div")}
+                   "System.Description": hybrid_wrap(chunks[0][0], fmt="div")}
         if self.area_path:
             desired["System.AreaPath"] = self.area_path
         if self.iteration_path:
@@ -992,15 +1002,14 @@ class AzureBoardsBackend(SpecBackend):
                          "value": {"rel": "ArtifactLink", "url": url,
                                    "attributes": {"name": AZURE_ARTIFACT_LINK_NAME[kind]}}}])
 
-    def create_spec(self, phase: str, filename: str, text: str) -> str:
+    def create_spec(self, phase: str, text: str) -> str:
         announce_unproved(self.name)
-        m = SPEC_FILE_RE.match(filename)
         # `derive_info` off a minimal descriptor — `create_spec` never receives one, and
         # `board_state_of` reads only `phase`/`frontmatter`/`stage`, all of which come back
         # from the text just handed to `az`.
         fresh = derive_info({"phase": phase}, text)
         stripped = strip_frontmatter_keys(text, FIELD_KEYS)
-        stored, title = hybrid_project(m.group(1) if m else filename, stripped)
+        stored, title = hybrid_project(stripped)
         # NO `--state`: measured (task 6.3), `az boards work-item create` has no such flag —
         # only `update` does. A new item is born in whatever state its TYPE defaults to
         # ("New", typically) — left alone, because the column op below is what actually
@@ -1044,7 +1053,7 @@ class AzureBoardsBackend(SpecBackend):
         desired, assignee = azure_native_fields(fresh["frontmatter"], self.discovery_tag,
                                                 derive_labels(fresh))
         desired["System.Description"] = hybrid_wrap(
-            filename, hybrid_split(stored, None)[0][0], fmt="div")
+            hybrid_split(stored, None)[0][0], fmt="div")
         if assignee:
             desired["System.AssignedTo"] = assignee
         column = self.column_map.get(board_state_of(fresh), self.board_column)

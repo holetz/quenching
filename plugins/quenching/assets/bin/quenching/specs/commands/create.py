@@ -109,7 +109,6 @@ def cmd_new(args, root: str, out: Emitter) -> int:
     policy = args.verification or DEFAULT_VERIFICATION
     title = args.title or args.name
     body = (capture_form(schema=schema)
-            .replace("slug: <SLUG>\n", "")
             .replace("<TITLE>", title)
             .replace("<DATE>", today())
             .replace("<VERIFICATION>", policy))
