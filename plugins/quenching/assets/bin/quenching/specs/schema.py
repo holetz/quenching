@@ -171,7 +171,7 @@ verification: <VERIFICATION>
 
      `cq specs new` stamps the frontmatter and `## Problem` ALONE — a captured spec is four
      lines of body, not a thirteen-heading skeleton. Every other heading below is created on
-     first write by `cq specs section <slug> "<Heading>" --write`, which inserts it in the
+     first write by `cq specs section <id> "<Heading>" --write`, which inserts it in the
      canonical position with the guidance comment kept here.
 
      THE STAGE-SCOPED EXPLICIT-NONE RULE. A heading is required — and required to carry
@@ -329,7 +329,7 @@ verification: <VERIFICATION>
 <!-- MOMENT: build. Gate: ready (derived).
 
      Checkboxes `- [ ] <id> <text>` grouped under `### N. <Section>` headings.
-     `cq specs task --spec <slug> --check <id>` flips one mechanically — NEVER hand-edit the
+     `cq specs task --spec <id> --check <task-id>` flips one mechanically — NEVER hand-edit the
      `[ ]` / `[x]` character. `--subject <line>` records the commit that implements it.
 
      A checkbox MAY carry indented metadata lines directly beneath it:
@@ -338,7 +338,7 @@ verification: <VERIFICATION>
              files: src/middleware/auth.ts, src/config/limits.ts (new)
              pattern: src/middleware/cors.ts
              verify: pnpm test middleware/
-             subject: plan/<slug>: 3.2 Add rate limiting to the auth middleware
+             subject: plan/<id>: 3.2 Add rate limiting to the auth middleware
 
      files:    the paths this task may touch. Declaring them is what PERMITS the task to be
                handed to an executor sub-agent, and what makes a `[P]` marker checkable.
@@ -380,7 +380,7 @@ verification: <VERIFICATION>
 <!-- MOMENT: none — triage, resolved by `/quenching:specs:develop`'s discoveries bank whenever it runs,
      not tied to one of the three. No gate — appended during execution.
 
-     One line per discovery, appended by `cq specs discover <slug> "<text>"` while building.
+     One line per discovery, appended by `cq specs discover <id> "<text>"` while building.
      Captured INDISCRIMINATELY: whether one is worth acting on is triage's judgment, not the
      executor's.
 

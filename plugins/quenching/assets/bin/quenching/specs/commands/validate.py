@@ -223,14 +223,14 @@ def _emit_by_code(args, root: str, specs: list, findings: list, errors: list) ->
 
     A front large enough to need this is exactly the one whose full payload will not fit: 147
     specs here produce 26 KB of findings that a reader turns into this counting anyway. The
-    grouping never filters — every finding is counted, and the elision is of the SLUG list,
-    which is why the count and the shown names can differ."""
+    grouping never filters — every finding is counted, and the elision is of the ID list,
+    which is why the count and the shown IDs can differ."""
     groups: dict[tuple[str, str], list[str]] = {}
     for f in findings:
         groups.setdefault((f["code"], f["severity"]), []).append(str(f.get("spec") or "—"))
     ordered = sorted(groups.items(), key=lambda kv: (kv[0][1] != "error", -len(kv[1]), kv[0][0]))
-    rows = [{"code": code, "severity": sev, "count": len(slugs),
-             "specs": sorted(set(slugs))} for (code, sev), slugs in ordered]
+    rows = [{"code": code, "severity": sev, "count": len(ids),
+             "specs": sorted(set(ids), key=str)} for (code, sev), ids in ordered]
     if args.json:
         print(json.dumps({"ok": not errors, **front_fields(root), "specs": len(specs),
                           "byCode": rows}, indent=2, ensure_ascii=False))

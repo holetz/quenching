@@ -15,7 +15,7 @@ from quenching.specs.backends.hybrid import (GH_BODY_MAX, GH_PART_MAX, hybrid_jo
                                              hybrid_unwrap, hybrid_unwrap_part, hybrid_wrap,
                                              hybrid_wrap_part)
 from quenching.specs.config import CONFIG_FILE, find_repo_root, load_config
-from quenching.specs.parse import (PHASES, SPEC_FILE_RE, carry_forward_fields, declared_tags,
+from quenching.specs.parse import (PHASES, carry_forward_fields, declared_tags,
                                    derive_info, derive_labels, reconcile_label_set,
                                    strip_frontmatter_keys)
 
@@ -436,7 +436,7 @@ class GitHubBackend(SpecBackend):
                     # both. A PR can never be a spec, and one that happened to carry the
                     # marker would otherwise be listed and then written over.
                     continue
-                filename, head, parts = hybrid_unwrap(issue.get("body") or "")
+                head, parts = hybrid_unwrap(issue.get("body") or "")
                 if not parts:
                     # The marker, not its optional legacy payload, distinguishes specs from
                     # ordinary issues.
@@ -539,13 +539,39 @@ class GitHubBackend(SpecBackend):
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["id"]))
 
     def read_spec(self, spec_id: str | int) -> tuple[dict | None, dict]:
+        """One spec, by the number GitHub allocated.
+
+        TWO PATHS TO THE SAME `info`, and which one runs is decided by what the process
+        already paid for, never by the caller:
+
+        - **The cache is cold** — the normal case, and what the native ID is FOR. One
+          `GET /issues/<n>` fetches the single item: measured 0.4 s / 7.7 KB against a
+          repository of 157 specs, where finding the same document by a slug buried in every
+          body cost 3.8 s and 5.25 MB.
+        - **The cache is warm** — `list_specs` already paginated the tracker, so every
+          document is in hand. Going back to the wire for one of them is a request that
+          buys nothing: `cq specs list --json` reads all 157 and, measured before this
+          branch, that turned 4.8 s into 78 s of single-item GETs.
+
+        Neither path derives anything of its own — both hand the same canonical document to
+        `derive_info`, which is what `spec-backend.md` §The interface is the document
+        requires. A row from a listing this process just made and a row fetched now are the
+        same fact; nothing here re-reads the wire to confirm it."""
         try:
             number = int(spec_id)
         except (TypeError, ValueError):
             return None, {"code": "sp-unknown-id", "exit": 1, "id": spec_id,
                           "message": f"no spec with id '{spec_id}'"}
+        if self._rows is not None:
+            row = next((r for r in self._rows if r[1] == number), None)
+            if row is None:
+                return None, {"code": "sp-unknown-id", "exit": 1, "id": spec_id,
+                              "message": f"no spec with id '{spec_id}'"}
+            descriptor, _, head, parts, title, native_fields, labels = row
+            return self._assemble(dict(descriptor), number, head, parts, title,
+                                  native_fields, labels), {}
         issue = self._api(f"reading issue #{number}", f"repos/{self.repo}/issues/{number}")
-        filename, head, parts = hybrid_unwrap((issue or {}).get("body") or "")
+        head, parts = hybrid_unwrap((issue or {}).get("body") or "")
         if not parts:
             return None, {"code": "sp-unknown-id", "exit": 1, "id": spec_id,
                           "message": f"no spec with id '{spec_id}'"}
@@ -554,16 +580,20 @@ class GitHubBackend(SpecBackend):
             "id": number, "phase": phase, "folder": phase, "legacy": False,
             "path": issue.get("html_url")
                     or f"https://github.com/{self.repo}/issues/{number}",
-            "file": filename,
         }
-        native_title = str(issue.get("title") or "")
-        native_fields = self._native_fields(issue)
+        return self._assemble(spec, number, head, parts, str(issue.get("title") or ""),
+                              self._native_fields(issue), self._issue_labels(issue)), {}
+
+    def _assemble(self, spec: dict, number: int, head: str, parts: int, native_title: str,
+                  native_fields: dict, labels: list[str]) -> dict:
+        """The one derivation both read paths go through, so neither can drift from the
+        other about what a spec's `info` holds."""
         full_text = head if parts <= 1 else self._joined(number, head, parts)
         info = derive_info(spec, hybrid_title_join(full_text, native_title))
         info["frontmatter"].update(native_fields)
         info["_github_parts"] = parts
-        info["_github_labels"] = self._issue_labels(issue)
-        return info, {}
+        info["_github_labels"] = labels
+        return info
 
     # `start`/`target` have no native counterpart on an issue (no scheduling fields) and
     # stay in the document, exactly as `date:` already does — only these two are stored.
@@ -592,8 +622,7 @@ class GitHubBackend(SpecBackend):
         # stored tags are.
         desired = derive_labels(new_info)
         labels = reconcile_label_set(declared_tags(native_fields.get("tags") or []), desired)
-        self._store(number, info.get("frontmatter", {}).get("slug", ""),
-                    info.get("file", ""), text, had_parts, labels, native_fields)
+        self._store(number, text, had_parts, labels, native_fields)
         # AFTER `_store`: a label `_store`'s own PATCH just created does not exist yet
         # before that call, and fixing a nonexistent label's color 404s. Gated on an
         # actual SET change — `set(...)`, not `!=` on the lists — so the no-milestone-
@@ -606,8 +635,8 @@ class GitHubBackend(SpecBackend):
             self._ensure_label_colors(desired)
         self._invalidate()
 
-    def _store(self, number: int, slug: str, filename: str, text: str,
-               had_parts: int, labels: list[str] | None = None,
+    def _store(self, number: int, text: str, had_parts: int,
+               labels: list[str] | None = None,
                native_fields: dict | None = None) -> None:
         """The whole write, given an issue number already in hand.
 
@@ -622,10 +651,10 @@ class GitHubBackend(SpecBackend):
         that — it grooms the `spec:` set this tool renders and owns, never a name the
         document declared."""
         stripped = strip_frontmatter_keys(text, self.GH_STORED_KEYS)
-        stored, title = hybrid_project(slug, stripped)
+        stored, title = hybrid_project(stripped)
         chunks = hybrid_split(stored, GH_PART_MAX)
         payload = {"title": title,
-                   "body": hybrid_wrap(filename, chunks[0][0], len(chunks))}
+                   "body": hybrid_wrap(chunks[0][0], len(chunks))}
         if labels is not None:
             payload["labels"] = labels
         if native_fields is not None and "assignee" in native_fields:
@@ -658,14 +687,13 @@ class GitHubBackend(SpecBackend):
                                 {"color": color, "description": desc})
             self._colors_confirmed.add(name)
 
-    def create_spec(self, phase: str, filename: str, text: str) -> str:
-        m = SPEC_FILE_RE.match(filename)
+    def create_spec(self, phase: str, text: str) -> str:
         fresh = derive_info({"phase": phase}, text)
         stripped = strip_frontmatter_keys(text, self.GH_STORED_KEYS)
-        stored, title = hybrid_project(m.group(1) if m else filename, stripped)
+        stored, title = hybrid_project(stripped)
         chunks = hybrid_split(stored, GH_PART_MAX)
         payload = {"title": title,
-                  "body": hybrid_wrap(filename, chunks[0][0], len(chunks))}
+                  "body": hybrid_wrap(chunks[0][0], len(chunks))}
         # The same union `write_spec` makes, from an empty current set: the spec's declared
         # tags plus whatever the fresh document already renders. A capture form renders
         # nothing (no records, `captured` stage), so this is usually just the tags — but

@@ -30,7 +30,6 @@ class _Args:
         self.verification = None
         self.subject = None
         self.type = None
-        self.summary = None
         self.tags = None
         self.complexity = None
         self.__dict__.update(kw)
@@ -62,26 +61,32 @@ class _Workspace(unittest.TestCase):
             code = cmd_new(_Args(**kw), self.root, Emitter())
         return code, json.loads(buf.getvalue())
 
-    def read_back(self, slug="gamma-lever"):
-        info, err = self.backend.read_spec(slug)
+    def read_back(self, spec_id=None):
+        # `new` reports a locator, never an ID a caller could pass back — the store allocated
+        # it, so the store is asked which one it just made.
+        info, err = self.backend.read_spec(max(self.backend.docs)
+                                           if spec_id is None else spec_id)
         self.assertFalse(err, err)
         return info
 
-    def list_slugs(self):
-        return [s["slug"] for s in self.backend.list_specs()]
+    def list_ids(self):
+        return [s["id"] for s in self.backend.list_specs()]
 
 
 class TheCollapsedCapture(_Workspace):
-    def test_one_call_writes_frontmatter_summary_tags_priority_and_n_sections(self):
+    def test_one_call_writes_frontmatter_tags_priority_and_n_sections(self):
         code, obj = self.run_new(
-            summary="Uma linha.", tags="alpha,beta", complexity="high",
+            tags="alpha,beta", complexity="high",
             stdin="## Problem\n\nO problema.\n")
         self.assertEqual(code, 0, obj)
         self.assertEqual(obj["ok"], True)
 
         info = self.read_back()
         fm = info["frontmatter"]
-        self.assertEqual(fm.get("summary"), "Uma linha.")
+        # `summary:` is retired from the contract — `optional-payload-fields.md` §Retired
+        # fields stay retired. The title carries the short description now.
+        self.assertNotIn("summary", fm)
+        self.assertEqual(fm.get("title"), "gamma-lever")
         self.assertEqual(fm.get("tags"), ["alpha", "beta"])
         self.assertEqual(fm.get("priority"), {"complexity": "high"})
         self.assertEqual(info["sections"]["Problem"]["body"].strip(), "O problema.")
@@ -100,7 +105,7 @@ class TheCollapsedCapture(_Workspace):
         code, obj = self.run_new(stdin="## Nao Canonico\n\nX\n")
         self.assertEqual(code, 2)
         self.assertEqual(obj["code"], "sp-stray-heading")
-        self.assertEqual(self.list_slugs(), [])
+        self.assertEqual(self.list_ids(), [])
 
     def test_an_unresolved_heading_after_a_self_describing_stream_refuses_and_creates_nothing(self):
         code, obj = self.run_new(
@@ -108,28 +113,27 @@ class TheCollapsedCapture(_Workspace):
         self.assertEqual(code, 2)
         self.assertEqual(obj["code"], "sp-stray-heading")
         self.assertEqual(obj["unresolvedBlocks"], [2])
-        self.assertEqual(self.list_slugs(), [])
+        self.assertEqual(self.list_ids(), [])
 
     def test_a_repeated_heading_in_the_stream_refuses_and_creates_nothing(self):
         code, obj = self.run_new(
             stdin="## Problem\n\nA\n\n## Problem\n\nB\n")
         self.assertEqual(code, 2)
         self.assertEqual(obj["code"], "sp-write-duplicate-heading")
-        self.assertEqual(self.list_slugs(), [])
+        self.assertEqual(self.list_ids(), [])
 
     def test_an_invalid_complexity_refuses_before_create_spec(self):
         code, obj = self.run_new(complexity="bogus")
         self.assertEqual(code, 2)
         self.assertEqual(obj["code"], "sp-bad-complexity")
-        self.assertEqual(self.list_slugs(), [])
+        self.assertEqual(self.list_ids(), [])
 
     def test_empty_stdin_is_a_non_regression_over_todays_bare_capture(self):
         code, obj = self.run_new()
         self.assertEqual(code, 0, obj)
         info = self.read_back()
         expected = (capture_form()
-                    .replace("<SLUG>", "gamma-lever")
-                    .replace("<TITLE>", "Gamma Lever")
+                    .replace("<TITLE>", "gamma-lever")
                     .replace("<DATE>", info["date"])
                     .replace("<VERIFICATION>", "per-section"))
         self.assertEqual(info["text"], expected)

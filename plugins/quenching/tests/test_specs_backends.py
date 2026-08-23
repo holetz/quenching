@@ -46,15 +46,15 @@ from quenching.specs.parse.tasks import parse_tasks, task_progress
 from quenching.specs.schema import capture_form, load_schema
 
 
-def _case_doc(slug: str = "alpha") -> str:
+def _case_doc(title: str = "Alpha") -> str:
     # A FIXED date, never `today()`: it is the fact the case asserts travels intact through
     # each store, and one computed at call time would compare equal to itself no matter what
     # either backend did with it.
-    return (capture_form().replace("<SLUG>", slug).replace("<TITLE>", "Alpha")
+    return (capture_form().replace("<TITLE>", title)
             .replace("<DATE>", "2026-01-01").replace("<VERIFICATION>", "per-task"))
 
 
-def _external_case_doc(slug: str = "alpha") -> str:
+def _external_case_doc(title: str = "Alpha") -> str:
     """One small, discriminant document shared by the two external-backend fixtures.
 
     The document carries every value whose storage is split between the canonical body and
@@ -62,7 +62,7 @@ def _external_case_doc(slug: str = "alpha") -> str:
     task.  The sequence below owns the order; each transport fixture owns its wire shape and
     remote state.
     """
-    doc = _case_doc(slug)
+    doc = _case_doc(title)
     close = doc.index("\n---\n")
     doc = (doc[:close]
            + '\ntags: ["fixture"]\nassignee: fixture@example.test\n'
@@ -86,18 +86,38 @@ def _external_updated_doc(text: str) -> str:
     return text
 
 
+# THE ID IS NATIVE, so the two transports cannot agree on its VALUE and must agree on
+# everything else — GitHub's fixture allocates 101, Azure's 201, and demanding they match
+# would be demanding one of them invent an identity it does not own. The equivalence
+# normalises the value to this sentinel and `IdentityIsAllocatedByTheStore` separately
+# asserts what the value has to satisfy: allocated by the store, and the same one at every
+# step of the sequence.
+NATIVE_ID = "<allocated-by-the-store>"
+
+
 def _listing(backend: SpecBackend) -> list[dict]:
-    """A provider-neutral listing, excluding the native locator."""
-    return [{key: value for key, value in row.items() if key != "path"}
+    """A provider-neutral listing, excluding the native locator and the native ID's value."""
+    return [{key: (NATIVE_ID if key == "id" else value)
+             for key, value in row.items() if key != "path"}
             for row in backend.list_specs()]
 
 
 def _external_observable(info: dict | None) -> dict:
-    """Canonical read result, excluding locators and parser-only positions."""
+    """Canonical read result, excluding locators, parser-only positions and transport state.
+
+    A LEADING UNDERSCORE MEANS "what this transport already had in hand", never a derived
+    answer — `github` carries `_github_parts` and `_github_labels` off the read so its next
+    write costs no second round trip. `spec-backend.md` §The interface is the document
+    forbids a backend DERIVING anything, and none of these do; they are also not part of what
+    the two classes must agree on, because one transport having cached what the other cannot
+    is exactly the difference between them. Excluding them by prefix keeps the equivalence
+    over the canonical fields alone, where a real disagreement would show."""
     if info is None:
         return {}
-    result = {key: value for key, value in info.items()
-              if key not in ("path", "text", "sections", "tasks")}
+    result = {key: (NATIVE_ID if key == "id" else value)
+              for key, value in info.items()
+              if key not in ("path", "text", "sections", "tasks")
+              and not key.startswith("_")}
     result["sections"] = {
         heading: {key: section[key] for key in ("filled", "body")}
         for heading, section in info["sections"].items()
@@ -116,22 +136,27 @@ def _external_sequence(backend: SpecBackend) -> dict:
     these observations while their fixtures separately assert every request they consumed.
     """
     result = {"empty": _listing(backend)}
-    backend.create_spec("plans", "alpha.md", _external_case_doc())
+    backend.create_spec("plans", _external_case_doc())
     result["after_create"] = _listing(backend)
 
-    info, error = backend.read_spec("alpha")
+    # THE ID COMES FROM THE LISTING, never from a name the fixture chose. That is the
+    # property under test: a spec is resolved by what the store allocated, and the two
+    # transports must agree on it without either inventing one.
+    spec_id = backend.list_specs()[0]["id"]
+    result["allocatedId"] = spec_id
+    info, error = backend.read_spec(spec_id)
     if error or info is None:
         raise AssertionError(f"fixture could not read created spec: {error}")
     result["read"] = _external_observable(info)
 
     backend.write_spec(info, _external_updated_doc(info["text"]))
-    updated, error = backend.read_spec("alpha")
+    updated, error = backend.read_spec(spec_id)
     if error or updated is None:
         raise AssertionError(f"fixture could not read written spec: {error}")
     result["after_write"] = _external_observable(updated)
 
     backend.move_spec(updated, "archive")
-    moved, error = backend.read_spec("alpha")
+    moved, error = backend.read_spec(spec_id)
     if error or moved is None:
         raise AssertionError(f"fixture could not read moved spec: {error}")
     result["after_move"] = _external_observable(moved)
@@ -179,6 +204,15 @@ class GithubRemoteFixture:
             return self._copy(self.issues[number])
 
         marker = "/issues/"
+        # THE DIRECT READ, which is the whole point of a native ID: `read_spec` asks for one
+        # issue by number instead of paginating the tracker to find it. A fixture that only
+        # answered the listing would let a backend that still swept pass unnoticed.
+        if marker in path and method == "GET":
+            number = int(path.rsplit(marker, 1)[1])
+            if number not in self.issues:
+                raise AssertionError(f"GitHub fixture holds no issue {number}")
+            return self._copy(self.issues[number])
+
         if marker in path and method == "PATCH":
             number = int(path.rsplit(marker, 1)[1])
             issue = self.issues[number]
@@ -228,6 +262,13 @@ class GithubExternalRoundTrip(unittest.TestCase):
         self.assertEqual(result["after_move"]["phase"], "archive")
         self.assertEqual(result["archive_listing"][0]["phase"], "archive")
 
+        # THE WIRE SHAPE IS THE MEASUREMENT, and it shows both halves of the read path.
+        # The FIRST read costs nothing: `_listing` has just paginated, so the document is
+        # already in hand and going back for it would buy a request. The two after it come
+        # after a write invalidated the cache, and each is ONE `GET .../issues/101` — the
+        # direct fetch the native ID buys, where finding a document by a slug buried in
+        # every body cost a full paginated sweep. The `GET .../issues` calls left are
+        # `list_specs` asking the question it is actually for.
         api_calls = [call for call in transport.calls if call["kind"] == "api"]
         self.assertEqual([(call["method"], call["path"].split("?")[0])
                           for call in api_calls], [
@@ -235,15 +276,23 @@ class GithubExternalRoundTrip(unittest.TestCase):
                               ("POST", "repos/owner/repo/issues"),
                               ("GET", "repos/owner/repo/issues"),
                               ("PATCH", "repos/owner/repo/issues/101"),
-                              ("GET", "repos/owner/repo/issues"),
+                              ("GET", "repos/owner/repo/issues/101"),
                               ("PATCH", "repos/owner/repo/issues/101"),
+                              ("GET", "repos/owner/repo/issues/101"),
                               ("GET", "repos/owner/repo/issues"),
                           ])
+        self.assertEqual(sum(1 for call in api_calls
+                             if call["path"].split("?")[0].endswith("/issues/101")
+                             and call["method"] == "GET"), 2,
+                         "a read off a cold cache costs one direct fetch, never a sweep")
         mutations = [call for call in api_calls if call["method"] in ("POST", "PATCH")]
         self.assertTrue(all(call["argv"][-2:] == ["--input", "-"] for call in mutations))
         self.assertTrue(all(call["payload"] for call in mutations))
+        # THE MARKER CARRIES NO PAYLOAD. It says "this issue is a spec" and stops there —
+        # identity is the issue number, and a marker that also named the spec was a second
+        # answer to the same question.
         self.assertTrue(api_calls[1]["payload"]["body"].startswith(
-            "<!-- quenching-spec: alpha.md -->\n"))
+            "<!-- quenching-spec -->\n"))
         self.assertIn("Updated by the fixture.", api_calls[3]["payload"]["body"])
         self.assertEqual(api_calls[1]["payload"]["labels"], ["fixture"])
         self.assertEqual(api_calls[3]["payload"]["labels"], ["fixture", "updated"])
@@ -370,6 +419,11 @@ class AzureExternalRoundTrip(unittest.TestCase):
         self.assertEqual(result["after_move"]["phase"], "archive")
         self.assertEqual(result["archive_listing"][0]["phase"], "archive")
 
+        # `read_spec` off a cold cache is one `batch` for the item named, never a query that
+        # sweeps the area to find a slug — the same direct fetch `github`'s
+        # `GET .../issues/101` makes; off a warm one it is no call at all. The three `query`
+        # calls left are `list_specs`, and this sequence is request-for-request identical to
+        # the one before the native ID landed.
         self.assertEqual([call["kind"] for call in transport.calls], [
             "query", "create", "patch", "query", "batch", "patch", "batch", "patch",
             "batch", "query", "batch",
@@ -382,8 +436,9 @@ class AzureExternalRoundTrip(unittest.TestCase):
         self.assertIn("/multilineFieldsFormat/System.Description", create_paths)
         self.assertEqual(transport.format_writes, ["System.Description"] * 2)
         self.assertTrue(patches[0]["operations"])
+        # The payload-free div marker, in the exact shape Azure stores it.
         self.assertIn(
-            '<div style="display:none;">quenching-spec: alpha.md ',
+            '<div style="display:none;">quenching-spec </div>',
             next(op["value"] for op in patches[0]["operations"]
                  if op["path"] == "/fields/System.Description"),
         )
@@ -424,11 +479,33 @@ class ExternalBackendDiscrimination(unittest.TestCase):
         azure_result, _ = self._run_azure()
         self.assertEqual(set(github_result), set(azure_result))
         for step in github_result:
+            if step == "allocatedId":
+                continue  # native by definition — asserted below, never compared
             with self.subTest(step=step):
                 self.assertEqual(
                     json.dumps(github_result[step], sort_keys=True, default=str),
                     json.dumps(azure_result[step], sort_keys=True, default=str),
                 )
+
+    def test_each_store_allocates_its_own_identity_and_keeps_it_for_the_sequence(self):
+        """The half of identity the equivalence cannot assert: each store hands back an ID
+        of its own, and the whole sequence resolves against that one value.
+
+        This is what `sp-ambiguous-slug` was retired in favour of — two specs cannot share a
+        native ID, so the four-rung tolerant resolution collapses into "it exists or it does
+        not". A backend that went back to deriving identity from the document would have to
+        produce the SAME value here as the other transport, which is what this refuses."""
+        github_result, _ = self._run_github()
+        azure_result, _ = self._run_azure()
+        gh_id, az_id = github_result["allocatedId"], azure_result["allocatedId"]
+        self.assertNotEqual(gh_id, az_id,
+                            "a store that agreed with the other on an ID did not allocate it")
+        for result, allocated in ((github_result, gh_id), (azure_result, az_id)):
+            self.assertTrue(str(allocated).strip(), "an empty ID resolves nothing")
+            # Every listing row in the run is the one spec, normalised — so the sequence
+            # never silently resolved a second, differently identified document.
+            for step in ("after_create", "archive_listing"):
+                self.assertEqual([row["id"] for row in result[step]], [NATIVE_ID])
 
     def test_each_transport_has_its_own_state_and_a_request_for_each_wire_operation(self):
         github_result, github = self._run_github()
@@ -436,9 +513,18 @@ class ExternalBackendDiscrimination(unittest.TestCase):
         del github_result, azure_result
 
         github_api = [call for call in github.calls if call["kind"] == "api"]
-        self.assertEqual(len(github_api), 7)
+        self.assertEqual(len(github_api), 8)
         self.assertEqual(sum(call["method"] == "POST" for call in github_api), 1)
         self.assertEqual(sum(call["method"] == "PATCH" for call in github_api), 2)
+        # A COLD READ IS ONE DIRECT FETCH; A WARM ONE IS NO REQUEST AT ALL. The sequence
+        # reads three times and pays for two, because the first follows a listing that
+        # already carried the document. The sweeps left belong to `list_specs` alone.
+        self.assertEqual(sum(call["method"] == "GET"
+                             and call["path"].split("?")[0].endswith("/issues/101")
+                             for call in github_api), 2)
+        self.assertEqual(sum(call["method"] == "GET"
+                             and call["path"].split("?")[0].endswith("/issues")
+                             for call in github_api), 3)
         self.assertEqual(len(github.type_edits), 1)
 
         self.assertEqual([call["kind"] for call in azure.calls], [
@@ -508,19 +594,36 @@ class GhRefusal(unittest.TestCase):
                 self.assertIn("gh auth login", msg)
 
     def test_comment_marker_round_trip_survives_gh_and_its_crlf(self):
-        for label, body in (("as written", hybrid_wrap("alpha.md", self.DOC)),
+        for label, body in (("as written", hybrid_wrap(self.DOC)),
                             ("as GitHub returns it",
-                             hybrid_wrap("alpha.md", self.DOC).replace("\n", "\r\n"))):
+                             hybrid_wrap(self.DOC).replace("\n", "\r\n"))):
             with self.subTest(case=label):
-                self.assertEqual(hybrid_unwrap(body), ("alpha.md", self.DOC, 1))
+                self.assertEqual(hybrid_unwrap(body), (self.DOC, 1))
+
+    def test_the_marker_this_tool_writes_carries_no_payload(self):
+        # Identity is the issue number. A marker that also named the spec was a second
+        # answer to the same question, and the one that had to be kept in sync by hand.
+        self.assertTrue(hybrid_wrap(self.DOC).startswith("<!-- quenching-spec -->\n"))
+        self.assertTrue(hybrid_wrap(self.DOC, fmt="div").startswith(
+            '<div style="display:none;">quenching-spec </div>\n'))
 
     def test_a_marker_with_no_parts_reads_as_a_single_part_document(self):
         # A marker written WITHOUT `parts=` is the form every spec but a spilled one is stored
         # in, and the form every issue already in a repository carries.
-        self.assertEqual(hybrid_unwrap("<!-- quenching-spec: x.md -->\n" + self.DOC)[2], 1)
+        self.assertEqual(hybrid_unwrap("<!-- quenching-spec -->\n" + self.DOC)[1], 1)
+
+    def test_a_legacy_payload_still_reads_and_is_discarded_unread(self):
+        # The 154 specs captured before the native ID landed carry `: <slug>.md` in their
+        # marker, and none of them is rewritten. The reader accepts the shape and hands back
+        # the document alone — the payload is not a third return value any more, because
+        # nothing may resolve identity from it.
+        for body in ("<!-- quenching-spec: x.md -->\n" + self.DOC,
+                     '<div style="display:none;">quenching-spec: x.md </div>\n' + self.DOC):
+            with self.subTest(body=body[:40]):
+                self.assertEqual(hybrid_unwrap(body), (self.DOC, 1))
 
     def test_an_issue_with_no_marker_is_not_read_as_a_spec(self):
-        self.assertEqual(hybrid_unwrap("An ordinary bug report.\n"), ("", "", 0))
+        self.assertEqual(hybrid_unwrap("An ordinary bug report.\n"), ("", 0))
 
     def test_div_marker_round_trip_survives_az_and_its_own_normalisation(self):
         # `azure-boards`'s own marker (task 6.1): a comment does not survive
@@ -528,12 +631,12 @@ class GhRefusal(unittest.TestCase):
         # the org's own `az` gives it back — the `style` attribute gets a trailing `;` and the
         # marker text a trailing space, measured on the real board.
         for label, body in (
-            ("as written", hybrid_wrap("alpha.md", self.DOC, fmt="div")),
+            ("as written", hybrid_wrap(self.DOC, fmt="div")),
             ("as az returns it",
-             '<div style="display:none;">quenching-spec: alpha.md </div>\n' + self.DOC),
+             '<div style="display:none;">quenching-spec </div>\n' + self.DOC),
         ):
             with self.subTest(case=label):
-                self.assertEqual(hybrid_unwrap(body), ("alpha.md", self.DOC, 1))
+                self.assertEqual(hybrid_unwrap(body), (self.DOC, 1))
 
 
 # --------------------------------------------------------------------------- #
@@ -583,11 +686,11 @@ class GithubCreateType(unittest.TestCase):
         doc = _case_doc()
         close = doc.index("\n---\n")
         typed = doc[:close] + "\nworkItemType: incidente" + doc[close:]
-        self.gh.create_spec("plans", "alpha.md", typed)
+        self.gh.create_spec("plans", typed)
         self.assertEqual(self.applied, [(1, "Bug")])
 
     def test_no_declared_work_item_type_calls_set_type_not_at_all(self):
-        self.gh.create_spec("plans", "beta.md", _case_doc())
+        self.gh.create_spec("plans", _case_doc())
         self.assertEqual(self.applied, [])
 
     def test_a_type_with_no_github_translation_advises_on_stderr_and_calls_nothing(self):
@@ -596,7 +699,7 @@ class GithubCreateType(unittest.TestCase):
         untranslated = doc[:close] + "\nworkItemType: tarefa" + doc[close:]
         stderr = io.StringIO()
         with contextlib.redirect_stderr(stderr):
-            self.gh.create_spec("plans", "gamma.md", untranslated)
+            self.gh.create_spec("plans", untranslated)
         self.assertEqual(self.applied, [])
         self.assertIn("tarefa", stderr.getvalue())
 
@@ -825,11 +928,11 @@ class HybridSerialization(unittest.TestCase):
 
     def _store(self, chunks: list[tuple[str, bool]]) -> str:
         """What comes back after a store-and-reload, with each part CRLF'd on its own."""
-        wrapped = [hybrid_wrap("alpha.md", chunks[0][0], len(chunks))] + [
+        wrapped = [hybrid_wrap(chunks[0][0], len(chunks))] + [
             hybrid_wrap_part(i, len(chunks), c, eol)
             for i, (c, eol) in enumerate(chunks[1:], start=2)]
         stored = [w.replace("\n", "\r\n") for w in wrapped]
-        _, head, parts = hybrid_unwrap(stored[0])
+        head, parts = hybrid_unwrap(stored[0])
         self.assertEqual(parts, len(chunks),
                          "the marker declared a different part count than the document has "
                          "— a reader would stop early or ask for one too many")
@@ -939,7 +1042,7 @@ class HybridSerialization(unittest.TestCase):
         for backend_name, ceiling in (("github", GH_PART_MAX), ("azure-boards", None)):
             for label, source in (("one part", self.CANONICAL), ("over the ceiling", self.BIG)):
                 with self.subTest(backend=backend_name, doc=label):
-                    stored, native = hybrid_project("alpha", source)
+                    stored, native = hybrid_project(source)
                     self.assertEqual(native,
                                      str(parse_frontmatter(source).get("title", "")).strip())
                     self.assertNotIn("title:", stored.split("\n---\n", 1)[0])
