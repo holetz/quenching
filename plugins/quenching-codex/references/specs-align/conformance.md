@@ -24,9 +24,9 @@ The configuration details and defaults live in
 Run the provider checks before reading or changing a spec:
 
 ```bash
-cq specs doctor --json
-cq specs config --json
-cq specs validate --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs doctor --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs config --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs validate --json
 ```
 
 Exit `0` means the provider and fetched front are conformant. Exit `1` reports findings that a
@@ -35,11 +35,10 @@ provider selection, or required configuration is missing or invalid.
 
 ## Lifecycle ownership
 
-`quenching-specs-create`, `quenching-specs-develop`, `quenching-specs-execute`,
-`quenching-specs-status`, `quenching-specs-triage`, and `quenching-specs-conclude` own the provider
-lifecycle. There is no installer or migration step for a repository specs tree. A complete spec is
-closed by `quenching-specs-conclude`, which records the outcome in the provider and distils durable
-knowledge into the OKF bundle.
+`create`, `develop`, `execute`, `status`, `triage`, and `conclude` own the provider lifecycle.
+There is no installer or migration step for a repository specs tree. A complete spec is closed by
+`conclude`, which records the outcome in the provider and distils durable knowledge into the OKF
+bundle.
 
 ## Finding policy
 

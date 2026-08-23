@@ -9,7 +9,6 @@ from __future__ import annotations
 import re
 
 from quenching.common.frontmatter import parse_frontmatter
-from quenching.specs.parse import titleize
 
 
 # HYBRID SERIALISATION — the WHOLE canonical document is one issue body, and a document too
@@ -36,11 +35,11 @@ from quenching.specs.parse import titleize
 # GitHub task list anyway: it renders as a checkbox with a progress count, and ticking it in the
 # web UI edits the document, which closing a sub-issue never did.
 #
-# THE MARKER ON THE BODY CARRIES THE FILENAME, which is now the bare `<slug>.md`. It used to
-# carry `YYYY-MM-DD-<slug>.md`, and that prefix was the ONLY reason this marker held a date: the
-# files backend read a spec's capture date out of its basename, so a store with no filenames had
-# to keep a synthetic one to stay equal to it. The date is a frontmatter field now, read by the
-# one shared derivation in every backend, and the marker is back to doing its one job.
+# THE MARKER ON THE BODY CARRIES NO IDENTITY. It used to carry `YYYY-MM-DD-<slug>.md`, and that
+# prefix was the ONLY reason this marker held a date: the files backend read a spec's capture
+# date out of its basename, so a store with no filenames had to keep a synthetic one to stay
+# equal to it. The date is a frontmatter field now, read by the one shared derivation in every
+# backend, and the marker is back to doing its one job.
 #
 # That job is what makes a spec issue distinguishable from an ordinary one, and it is why the
 # marker did not simply disappear with the date: a repo's issue tracker belongs to its humans,
@@ -48,8 +47,9 @@ from quenching.specs.parse import titleize
 # write over them. An HTML comment is the one place in a markdown body that survives a round
 # trip through GitHub's issue editor while staying invisible to a human reading the issue, and
 # the same reasoning applies one level down to a continuation comment's own marker, below.
-HYBRID_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec:\s*(\S+)(?:\s+parts=(\d+))?"
-                              r"\s*-->[ \t]*\r?\n")
+HYBRID_MARKER_RE = re.compile(
+    r"\A<!--\s*quenching-spec(?:\s*:\s*\S+)?(?:\s+parts=(\d+))?"
+    r"\s*-->[ \t]*\r?\n")
 
 # `azure-boards`'s own marker shape — measured (task 6.1) that `System.Description` strips any
 # HTML comment on write, in every position tried, which the comment form above cannot survive.
@@ -69,16 +69,20 @@ HYBRID_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec:\s*(\S+)(?:\s+parts=(\d+
 # The `;?` below is not decoration: Azure normalises `display:none` to `display:none;`, so a
 # marker written by this tool and a marker read back from the API differ by one character.
 HYBRID_DIV_MARKER_RE = re.compile(
-    r'\A<div style="display:\s*none;?"\s*>\s*quenching-spec:\s*(\S+)(?:\s+parts=(\d+))?'
+    r'\A<div style="display:\s*none;?"\s*>\s*quenching-spec(?:\s*:\s*\S+)?'
+    r'(?:\s+parts=(\d+))?'
     r"\s*</div>[ \t]*\r?\n")
 
 
-def hybrid_wrap(filename: str, text: str, parts: int = 1, fmt: str = "comment") -> str:
-    """The marker line a spec issue is recognised by, and the document under it.
+def hybrid_wrap(text: str, parts: int = 1, fmt: str = "comment") -> str:
+    """The payload-free marker line a spec issue is recognised by, and the document under it.
 
     `parts=` is written ONLY when there is more than one. The single-part form — every document
     but the two largest this repository holds — is therefore byte-identical to the marker as it
-    was before continuations existed, and one regex reads both.
+    was before continuations existed, and one regex reads both. The marker carries NO payload:
+    it says "this issue is a spec" and nothing else, because identity is the provider-native
+    ID and a marker that also named the spec was a second, competing answer to the same
+    question.
 
     `fmt='div'` is `azure-boards`'s own variant — measured (task 6.1) that `System.Description`
     STRIPS any HTML comment on write, in any position, which makes the default form invisible
@@ -96,13 +100,13 @@ def hybrid_wrap(filename: str, text: str, parts: int = 1, fmt: str = "comment") 
         # in `hybrid_split_failures` has carried this exact shape since task 6.1 of the
         # previous plan. The reader stays tolerant (`;?`, `\s*`) for documents written before
         # this.
-        return (f'<div style="display:none;">quenching-spec: {filename}{count} </div>\n'
+        return (f'<div style="display:none;">quenching-spec{count} </div>\n'
                 f'{text}')
-    return f"<!-- quenching-spec: {filename}{count} -->\n{text}"
+    return f"<!-- quenching-spec{count} -->\n{text}"
 
 
-def hybrid_unwrap(body: str) -> tuple[str, str, int]:
-    """`(filename, chunk, parts)` for a spec issue, or `("", "", 0)` for anything else.
+def hybrid_unwrap(body: str) -> tuple[str, int]:
+    """`(chunk, parts)` for a spec issue, or `("", 0)` for anything else.
 
     Line endings are normalised on the way in. GitHub stores and returns issue bodies with
     CRLF, so a document written as LF comes back different from what was stored — every section
@@ -113,15 +117,17 @@ def hybrid_unwrap(body: str) -> tuple[str, str, int]:
     never pays a call to discover there is nothing more to fetch.
 
     BOTH marker shapes are tried, comment first — the reader does not know which backend wrote
-    what it was handed, and never needs to: exactly one of the two ever matches a given body."""
+    what it was handed, and never needs to: exactly one of the two ever matches a given body.
+    A legacy `: <slug>.md` payload still MATCHES and is discarded unread — the two regexes
+    keep it optional so the 154 specs captured before the native ID landed stay readable
+    without being rewritten. Identity belongs to the provider-native ID, never to this
+    marker, so there is no third element left to hand back."""
     body = (body or "").replace("\r\n", "\n")
-    m = HYBRID_MARKER_RE.match(body)
-    if m:
-        return m.group(1), body[m.end():], int(m.group(2) or 1)
-    m = HYBRID_DIV_MARKER_RE.match(body)
-    if m:
-        return m.group(1), body[m.end():], int(m.group(2) or 1)
-    return "", "", 0
+    for pattern in (HYBRID_MARKER_RE, HYBRID_DIV_MARKER_RE):
+        m = pattern.match(body)
+        if m:
+            return body[m.end():], int(m.group(1) or 1)
+    return "", 0
 
 
 HYBRID_PART_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec-part:\s*(\d+)/(\d+)"
@@ -253,7 +259,7 @@ def hybrid_short_title(text: str) -> str:
     return cut.rstrip() + "…"
 
 
-def hybrid_title(slug: str, text: str) -> str:
+def hybrid_title(text: str) -> str:
     """What a human sees in the issue list, for a document stored WHOLE.
 
     This is the fallback half of `hybrid_project`, and the sentence that used to be written
@@ -262,8 +268,19 @@ def hybrid_title(slug: str, text: str) -> str:
     title is the STORAGE: editing it in the web UI renames the spec, exactly as ticking a
     `- [ ]` in the body edits the document. That is the deliberate consequence of making
     something read the mapping back, and it is why `hybrid_title_split` refuses a title the
-    tracker would cut."""
-    return hybrid_short_title(str(parse_frontmatter(text).get("title") or titleize(slug)))
+    tracker would cut.
+
+    THE FALLBACK IS THE DOCUMENT'S OWN `# ` HEADING, never a name derived from an identity.
+    It used to be `titleize(slug)`, which only ever worked because the slug was a second
+    place the title was kept; with the native ID as identity there is no such string, and
+    inventing one from an issue number would put a label on the tracker that the document
+    never said. A spec with neither `title:` nor a heading is malformed — `validate` says so
+    — and this returns empty rather than covering for it."""
+    fm_title = str(parse_frontmatter(text).get("title") or "").strip()
+    if not fm_title:
+        fm_title = next((ln[2:].strip() for ln in text.splitlines()
+                         if ln.startswith("# ")), "")
+    return hybrid_short_title(fm_title)
 
 
 def hybrid_title_split(text: str) -> tuple[str, str] | None:
@@ -292,21 +309,29 @@ def hybrid_title_split(text: str) -> tuple[str, str] | None:
     close = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
     if close is None:
         return None
-    if [ln.split(":", 1)[0].strip() for ln in lines[1:close]][:2] != ["slug", "title"]:
+    # BOTH FRONTMATTER SHAPES, because the reader is tolerant and the writer must not
+    # degrade what the reader accepted. A spec captured today opens on `title:`; the 154
+    # captured before the native ID landed open on the legacy `slug:` and carry `title:`
+    # second. Recognising only the new shape would silently stop projecting every legacy
+    # spec the moment it was next written — the title would fall back into the body and the
+    # native mapping would be lost on a spec nobody asked to migrate.
+    keys = [ln.split(":", 1)[0].strip() for ln in lines[1:close]]
+    at = 2 if keys[:2] == ["slug", "title"] else 1 if keys[:1] == ["title"] else None
+    if at is None:
         return None
     # THE RAW LINE, not the parsed value. A quoted title — `title: "…"` — parses to the same
     # string with the quotes gone, so a rebuild from the value alone silently drops them:
     # measured on this repository, 4 of 73 specs quote their title and each came back two
     # characters short. The projection stores a VALUE and can only reproduce a line it would
     # have written itself, so anything else is stored whole.
-    if lines[2] != f"title: {title}\n":
+    if lines[at] != f"title: {title}\n":
         return None
     if lines[close + 1:close + 4] != ["\n", f"# {title}\n", "\n"]:
         return None
-    return "".join(lines[:2] + lines[3:close + 2] + lines[close + 4:]), title
+    return "".join(lines[:at] + lines[at + 1:close + 2] + lines[close + 4:]), title
 
 
-def hybrid_project(slug: str, text: str) -> tuple[str, str]:
+def hybrid_project(text: str) -> tuple[str, str]:
     """`(what goes in the body, what goes in the title)`, for every external backend.
 
     ONE place, for two reasons. Within a backend, a create that projected and an update that
@@ -315,7 +340,7 @@ def hybrid_project(slug: str, text: str) -> tuple[str, str]:
     is exactly the drift `spec-backend.md` forbids — the canonical document is the contract,
     and two external stores disagreeing about what it holds is that contract broken twice."""
     proj = hybrid_title_split(text)
-    return proj if proj else (text, hybrid_title(slug, text))
+    return proj if proj else (text, hybrid_title(text))
 
 
 def hybrid_title_join(stored: str, title: str) -> str:
@@ -333,5 +358,10 @@ def hybrid_title_join(stored: str, title: str) -> str:
     close = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
     if close is None:
         return stored
-    return "".join(lines[:2] + [f"title: {title}\n"] + lines[2:close + 2]
+    # THE OFFSET `split` CUT FROM, re-derived the same way it was chosen: after `slug:`
+    # for a legacy document that still leads on it, first otherwise. Inserting at a fixed
+    # offset would reorder the frontmatter of every legacy spec on its next write, which is
+    # the round trip this function exists to close.
+    at = 2 if lines[1].split(":", 1)[0].strip() == "slug" else 1
+    return "".join(lines[:at] + [f"title: {title}\n"] + lines[at:close + 2]
                    + [f"# {title}\n", "\n"] + lines[close + 2:])

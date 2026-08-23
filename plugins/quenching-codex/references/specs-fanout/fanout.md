@@ -74,17 +74,17 @@ N before any isolation, and that is what the human decides on. A threshold nobod
 add the appearance of measurement without the measurement; if reviewing a large PR saturates, what
 changes is the number the human types next run, not a rule in a command body.
 
-## The branch carries the slugs
+## The branch carries the IDs
 
 <!-- rules -->
 
-Every spec the queue builds appends its slug to the branch's own `quenching-slugs:` line, by the
+Every spec the queue builds appends its ID to the branch's own `quenching-specs:` line, by the
 read-merge-write in
 [isolation.md](../../references/git/isolation.md) §Marking the branch with the
 specs it built — one line, rewritten and never duplicated. `quenching-specs-conclude` with no
 `--spec` reads that line to resolve the whole set, which is the queue's only handoff to it.
 
-**A blocked spec leaves the mark, not the PR.** It comes off `quenching-slugs:`, stays in `plans/`
+**A blocked spec leaves the mark, not the PR.** It comes off `quenching-specs:`, stays in `plans/`
 with its `[!]`, and the final report names which one was left out and why. The PR delivers what is
 finished and **never implies it carries what it does not** — which is what keeps a mid-queue stop a
 result rather than a loss.
