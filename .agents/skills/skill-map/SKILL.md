@@ -1,6 +1,6 @@
 ---
 name: quenching-skill-map
-description: "Use to turn a skill, agent system, or architecture into a single self-contained interactive HTML \"kit map\" — one .html file, no external dependencies, opens offline in any browser. Triggers: \"criar um mapa visual da skill\", \"gerar um .html do que foi construído\", \"infográfico/fluxo em HTML\", \"mapa interativo da arquitetura\", \"kit map\", \"visualize this skill/system as HTML\". Not for: generating a documentation site → /docs:storyteller."
+description: "Use to turn a skill, agent system, or architecture into a single self-contained interactive HTML \"kit map\" — one .html file, no external dependencies, opens offline in any browser. Triggers: \"criar um mapa visual da skill\", \"gerar um .html do que foi construído\", \"infográfico/fluxo em HTML\", \"mapa interativo da arquitetura\", \"kit map\", \"visualize this skill/system as HTML\"."
 ---
 
 <!-- GENERATED FROM .claude/commands/skill-map.md -->

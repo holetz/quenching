@@ -32,7 +32,7 @@ v3 folded `backlog/` and `ready/` into `plans/` because the split lied twice: `b
 one-line captures and fully designed specs (it was never an inbox, only "not building yet"), and
 `ready/` restated a fact the sections already carry — completeness — which is now derived. The one
 fact the `backlog/ → ready/` `git mv` recorded that no derivation reproduces is *a human said go*,
-and that fact moved into frontmatter as `approved: {date}`.
+and that fact moved into frontmatter as `approved: {date, by}`.
 
 `promote` therefore has one hop, `plans/ → archive/`, and it is the only move a spec ever makes.
 Archiving as `done` refuses while `- [ ]` boxes remain (`--force` overrides); `abandoned` is
@@ -93,8 +93,14 @@ revisited.
 
 The organizing principle, and the admission test for every frontmatter key:
 
-> A field earns its place only when it records a **human judgment no derivation can reproduce**.
-> The filesystem, git, and section presence record everything else.
+> A field earns its place only when it records a **fact no derivation can reproduce**. The
+> filesystem, git, and section presence record everything else.
+
+Most of those facts are a human's judgment. Two are not, and both declare their own provenance
+inside the value rather than by being quiet about it: `priority.complexity` is computed by `create`
+and re-evaluated by `develop`, and `approved` carries `by:` — `human` for a person's word,
+`low-gear` for the level that authorized the mode. The test did not bend: a level's authority is no
+more derivable from the sections than a person's word is.
 
 That is why there is no `phase` (the folder), no `ready` flag (the ten gate sections), and no
 attempt counter (the visible `- [!]` marker).
@@ -139,7 +145,7 @@ record:
 | --- | --- | --- | --- |
 | `priority: {level, criticality, complexity, date}` | `triage` — `complexity` its own `[triage, create, develop]` | no | this spec's rank against every other one — `complexity` is the exception below |
 | `refined: {mode, date}` | `develop` | no | that a real interrogation happened, and in which mode |
-| `approved: {date}` | `develop`, or `execute` inline | yes | that a human said go |
+| `approved: {date, by}` | `develop`, or `execute` inline | yes | that this spec may be built, and on whose authority — a human's word (`by: human`) or the `low` level's (`by: low-gear`) |
 | `branch: {base, work}` | `execute`, or `git:branch` when it hands off there | yes | after a merge, git cannot say what the base was |
 | `pr: {number, url, date}` | `git:pr:create` | no | which pull request carries this spec, before any merge decides its fate — restampable because a PR may be reopened or recreated |
 | `reviewed: {date}` | `conclude` | no | that a human read the whole branch diff |
@@ -166,7 +172,7 @@ names its own list because part of it is computed (§ above), under a record who
 `triage`. The vocabulary lives in
 `assets/specs/schema.json` (`frontmatter.records`), which `cq specs` embeds as its fallback.
 
-## `ready` is derived, and `approved` is a human's word
+## `ready` is derived, and `approved` names whose word it is
 
 Every stage is computed from heading presence and frontmatter — last match wins, and derived state
 regresses automatically when a section empties, which declared state never does:
@@ -181,7 +187,7 @@ file is a **floor** that `execute` reports against, not a verdict.
 
 `approved` sorts after `ready` but does not require it — a human may say go before every section
 is filled. `execute` on an unapproved spec **never refuses**: it asks inline, stamps
-`approved: {date}` on a yes, and proceeds — refusing would rebuild the folder hop v3 removed. The
+`approved: {date, by: human}` on a yes, and proceeds — refusing would rebuild the folder hop v3 removed. The
 distinction matters because an agent can satisfy every section itself (`- none — <reason>` counts
 as filled), so section completeness can never stand in for the human OK.
 

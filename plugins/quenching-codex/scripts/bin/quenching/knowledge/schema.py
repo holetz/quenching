@@ -8,7 +8,7 @@ is gone — it was dead in the original, computed at import and read by nothing.
 THE CONFORMANCE CORE (single source — mirrored in the skills' `references/conformance.md`)
 -----------------------------------------------------------------------------------------
 Reserved filenames: `index.md` (a listing), `log.md` (a retired change history).
-Exempt (skipped): `AGENTS.md`/`AGENTS.md` (harness pointers, never OKF concepts).
+Exempt (skipped): harness pointer files (never OKF concepts).
 `README.md` in the bundle → WARN (OKF-strict converts it to `index.md`).
 - Every **non-reserved** `.md`  → MUST have parseable YAML frontmatter (ERROR if
   absent/broken) with a **non-empty `type`** (ERROR if missing/empty). Recommended
@@ -37,8 +37,10 @@ RESERVED = ("index.md", "log.md")
 # its content, so it is link-checked alongside the reserved listings.
 GLOSSARY_REL = "glossary.md"
 # Navigation/payload files — never OKF concepts, never required to carry a `type`.
-# `AGENTS.md`/`AGENTS.md` are agent-pointers auto-loaded by the harness. Skip both.
-EXEMPT = ("AGENTS.md", "AGENTS.md")
+# Both supported harness names can survive in one repository. Split the first literal so the
+# Codex translation keeps the other harness pointer exempt as well.
+CLAUDE_HARNESS = "CLAUDE" + ".md"
+EXEMPT = (CLAUDE_HARNESS, "AGENTS.md")
 RECOMMENDED = ("title", "description", "resource", "timestamp")
 # Types for which `resource` is deliberately absent, so its WARN would be permanent noise.
 # A `task` is parked work — nothing is built yet to point at (the backlog task mold omits

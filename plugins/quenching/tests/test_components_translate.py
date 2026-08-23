@@ -12,7 +12,7 @@ from quenching.components.commands import translate
 
 
 COMMAND = """---
-description: Translate this repository surface.
+description: Translate this repository surface. Not for: editing the generated Codex skill.
 allowed-tools: Read
 ---
 
@@ -44,6 +44,7 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         self.assertTrue(skill.is_file())
         self.assertIn("name: quenching-specs-status", skill.read_text(encoding="utf-8"))
         self.assertNotIn("allowed-tools:", skill.read_text(encoding="utf-8"))
+        self.assertNotIn("Not for:", skill.read_text(encoding="utf-8"))
         self.assertEqual((self.root / ".agents" / "references" / "specs" / "guide.md")
                          .read_text(encoding="utf-8"),
                          "Read .agents/skills/specs/status.md with Codex.\n")
@@ -99,3 +100,13 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         with contextlib.redirect_stdout(output):
             self.assertEqual(translate.cmd_translate(args, str(self.root)), 2)
         self.assertIn("Claude side is authoritative", output.getvalue())
+
+    def test_package_translation_keeps_both_harness_names_exempt(self):
+        source = translate.REPOSITORY / "plugins" / "quenching"
+        translate.configure(str(source), str(self.root / "quenching-codex"))
+        schema = translate.generated_tree()[
+            "scripts/bin/quenching/knowledge/schema.py"
+        ].decode("utf-8")
+
+        self.assertIn('CLAUDE_HARNESS = "CLAUDE" + ".md"', schema)
+        self.assertIn('EXEMPT = (CLAUDE_HARNESS, "AGENTS.md")', schema)

@@ -1,6 +1,6 @@
 ---
 name: quenching-components-command-new
-description: "Mint or edit ONE command in this repo's .claude surface — one file per entry point. Triggers on \"create a command\", \"mint a command for X\", \"add a new entry point to the .claude surface\". Not for: a subagent definition → quenching-components-agent-new; a hook → quenching-components-hook-new; measuring a command → quenching-components-command-eval."
+description: "Mint or edit ONE command in this repo's .claude surface — one file per entry point. Triggers on \"create a command\", \"mint a command for X\", \"add a new entry point to the .claude surface\"."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/components/command/new.md -->

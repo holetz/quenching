@@ -20,14 +20,15 @@
     "references/skill-cartographer/design-spec.md",
     "references/skill-cartographer/examples/mkdocs-storyteller.html",
     "references/skill-cartographer/examples/mkdocs-storyteller.pt-br.html",
+    "skills/commands/tighten/SKILL.md",
     "skills/docs/storyteller/SKILL.md",
     "skills/references/tighten/SKILL.md",
     "skills/release/SKILL.md",
     "skills/skill-map/SKILL.md"
   ],
   "sha256": {
-    ".generated-from.json": "9ab42ef91c6e7b8b7debba7c3c1c4e3038d98c6651609e639894719f69ec2c55",
-    "AGENTS.md": "7ff0f76755a3ff1266ffe26a670173f011f4a9a3a19bfa4f01e9be99fa19501c",
+    ".generated-from.json": "76a90e6b01a7305f98c0cd0c10d2cfdad9b8287a38fdfc8862c9c9f2bb367b3e",
+    "AGENTS.md": "54ebb56cb0bdddf63a573e1a45925474b821afe98412cfa7ee7d1bb6beaa8bcd",
     "references/mkdocs-storyteller/editorial-loop.md": "9b8328fcf23820fe8ce7fa6118e18847d4c29cc142d524bf39ae94480e648b3a",
     "references/mkdocs-storyteller/engagement-checklist.md": "83cef03ec0a39d0c785f8544e18eb3ee43e5509bfebd37d706fad93f1f69cf5a",
     "references/mkdocs-storyteller/information-architecture.md": "94038b5653e21669d66d16a8811863b97854da46cef3f1e23f57e3a12fb95d8c",
@@ -46,9 +47,10 @@
     "references/skill-cartographer/design-spec.md": "d7236f6f6852a824198641dbcdcb8938bca40d44e0a44bf506f8b8598449d7e2",
     "references/skill-cartographer/examples/mkdocs-storyteller.html": "8080373a1eb078ca23488fb57ef6ddc72c37b957d2caf63c6865937d5f832df1",
     "references/skill-cartographer/examples/mkdocs-storyteller.pt-br.html": "66f7072956e3f8c8a2aeb84dc007268d698453924c99ee8e35dc2d7dca09916a",
-    "skills/docs/storyteller/SKILL.md": "6e83a25a68fd0ef7810ddafc9b48b7090dd00995044f00e7a3815de4a34d88be",
-    "skills/references/tighten/SKILL.md": "5b3551362dd92e73d21213ad46ec5c2e543c6742be5c7dc39ad531d221a0c644",
-    "skills/release/SKILL.md": "26faeb862af5475fba0d04f4434c7158b0a15e88c7c45a1965992a97a79ad9f8",
-    "skills/skill-map/SKILL.md": "fc00964ca26002aec38a5ad83cd5162462e6697631f7dc4f9620b21c69e354f3"
+    "skills/commands/tighten/SKILL.md": "2d73c3f655d32a4cb5c8708d3674f57a12951925890b577aba9430087fb8e880",
+    "skills/docs/storyteller/SKILL.md": "5834ad3f0617128b79a35e22501a74b14058d3a0772f0793300b7d6c0780460f",
+    "skills/references/tighten/SKILL.md": "9a118f12ef03ce35d983caaaf4b10c22ab3b51b7689f00c4f4f0211d0a2bbecc",
+    "skills/release/SKILL.md": "7722c8e9349c0ededf137dc75e72d244063e705abf8254c15619af9bd0c03170",
+    "skills/skill-map/SKILL.md": "743691e4958994266f2ae04b620bcfe5b7e096b3f827f9a2a1aefee50fc4d81d"
   }
 }

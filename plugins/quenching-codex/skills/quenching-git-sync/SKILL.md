@@ -1,6 +1,6 @@
 ---
 name: quenching-git-sync
-description: "Rebase the current (or named) work branch onto the latest base, with `--update-refs` so any other local branch stacked on top moves along instead of being orphaned by the rewrite. Use when the user asks to \"sync this branch with develop/main\", \"rebase onto the base\", \"catch this branch up\", or \"update my branch before I keep working\". Not for: merging a finished branch home → quenching-git-merge."
+description: "Rebase the current (or named) work branch onto the latest base, with `--update-refs` so any other local branch stacked on top moves along instead of being orphaned by the rewrite. Use when the user asks to \"sync this branch with develop/main\", \"rebase onto the base\", \"catch this branch up\", or \"update my branch before I keep working\"."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/git/sync.md -->

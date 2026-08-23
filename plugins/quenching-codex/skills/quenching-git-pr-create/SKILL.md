@@ -1,6 +1,6 @@
 ---
 name: quenching-git-pr-create
-description: "Push the current branch and open a pull request through the repository's provider — GitHub or Azure DevOps — against the resolved base, linking the named issue/work item natively. Use when the user asks to \"open a PR\", \"create a pull request\", \"push and open a PR\", or \"submit this for review\". Given a spec id it derives title, body and the provider locator from the spec and stamps its write-many `pr:` record. Not for: merging an already-open PR → quenching-git-merge; resolving PR review comments → quenching-git-pr-review."
+description: "Push the current branch and open a pull request through the repository's provider — GitHub or Azure DevOps — against the resolved base, linking the named issue/work item natively. Use when the user asks to \"open a PR\", \"create a pull request\", \"push and open a PR\", or \"submit this for review\". Given a spec id it derives title, body and the provider locator from the spec and stamps its write-many `pr:` record."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/git/pr/create.md -->

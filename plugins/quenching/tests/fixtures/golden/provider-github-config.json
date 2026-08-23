@@ -19,7 +19,7 @@
   "subjects": {},
   "tagCatalog": {},
   "workItemTypes": {},
-  "fanoutMinComplexity": "medium",
+  "fanoutMinComplexity": "high",
   "unknownFanoutMinComplexity": null,
   "legacyPath": null
 }

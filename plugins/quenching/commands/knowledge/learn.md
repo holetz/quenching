@@ -1,5 +1,5 @@
 ---
-description: Capture ONE piece of generic knowledge into the bundle's concepts/ home. Triggers on "add this knowledge", "record what we learned", "put this in the knowledge base". Not for: a full contract/decision/procedure/external-asset doc → /quenching:knowledge:add; ONE glossary term → /quenching:knowledge:define.
+description: Capture ONE piece of generic knowledge into the bundle's concepts/ home. Triggers on "add this knowledge", "record what we learned", "put this in the knowledge base".
 argument-hint: [the-knowledge]
 allowed-tools: Read, Grep, Glob, Write, Edit
 ---
