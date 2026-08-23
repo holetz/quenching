@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Spec backend interface
-description: Provider-owned GitHub and Azure Boards specs share five document primitives, one native-ID identity and one refusal boundary; external serialisation may use native fields only when it reassembles the canonical document, while locators, lean listings, placement, and the memory fake keep every consumer on the same contract
+description: Provider-owned GitHub and Azure Boards specs share five document primitives, one native-ID identity and one refusal boundary; external serialisation may use native fields only when it reassembles the canonical document, while locators, lean listings, placement, and the memory fake keep every consumer on the same contract, a direct read by native ID that reuses an in-process listing rather than paying a request per spec
 resource: plugins/quenching/assets/bin/quenching/specs/backends/**, plugins/quenching/assets/bin/quenching/specs/commands/**, plugins/quenching/assets/references/specs-develop/spec-driven.md
 tags: [architecture, specs, backend, interface, serialization]
-timestamp: 2026-08-22
+timestamp: 2026-08-23
 audience: both
 authority: current
-source: abandonar-slug-por-id-nativo (sections 1-2) — the provider ID became the spec identity, exact reads replaced tolerant slug resolution, and the lean listing measurement established the cost boundary beside the existing native-field and memory-fake contract
+source: abandonar-slug-por-id-nativo (sections 1-2) — the provider ID became the spec identity, exact reads replaced tolerant slug resolution, and the lean listing measurement established the cost boundary beside the existing native-field and memory-fake contract; §A direct read reuses the listing the process already paid for came from the branch review of the same spec, which measured the direct read regressing `list --json` from 4.82 s to 78 s over 157 issues
 maintainer: quenching
 ---
 
@@ -97,6 +97,39 @@ The measurement made the boundary concrete on 2026-08-22, against 154 GitHub spe
   GitHub filters the discovery marker server-side; Azure Boards has the equivalent WIQL filter on
   its discovery tag. The full listing remains authoritative because the lean index is eventually
   consistent and document-derived fields are not available in it.
+
+## A direct read reuses the listing the process already paid for
+
+**A read by native ID is the cheap path when nothing has been loaded, and a wasted request the
+moment a listing in the same process already carries the document.** Both paths belong in
+`read_spec`, and which one runs is decided by what the process has, never by the caller.
+
+The two costs pull in opposite directions, and one number hides the other:
+
+- **One spec, cold.** A direct `GET /issues/<n>` — or one `workitemsbatch` for the item named — is
+  0.39 s / 7.7 KB, against 3.81 s to find the same document by sweeping the tracker. This is the
+  measurement §The provider ID is the spec identity was built on.
+- **Every spec, warm.** `cq specs list --json` reads all of them, and its own `list_specs` has just
+  paginated the tracker with every body in the response. Going back to the wire for each one turns
+  that listing into N single-item fetches: **measured 78 s against 4.82 s** over 157 GitHub spec
+  issues, a 16× regression bought by the same line that made a single read ten times faster.
+
+A change that only ever measures the first case ships the second. The direct read is not wrong —
+it is the point of a native identity — but "resolve by ID" and "fetch by ID" are different
+statements, and only the first one is a rule.
+
+**Reusing an in-process listing is not the cross-process cache of §Granular reading, and does not
+inherit its re-validation duty.** That cache remembers an answer a previous process obtained and so
+may be stale, which is why a hit there is re-fetched rather than trusted. A row from a listing this
+same process just made is not a remembered answer: it is the response still in hand, and asking the
+provider again could only return the same bytes or newer ones nobody requested. A backend that
+re-read it would be paying a request to confirm what it was told a moment ago.
+
+**Both paths hand the SAME canonical document to the one shared derivation.** Neither assembles an
+`info` of its own — the corollary in §The interface is the document, that a backend which starts
+deriving anything is broken, is exactly what forbids the warm path from becoming a second, cheaper
+reading of the document. Where the two paths need the same assembly, that assembly is one function
+they both call, so they cannot drift about what a spec's `info` holds.
 
 ## The selected provider is the source of truth
 
