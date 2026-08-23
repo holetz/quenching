@@ -1,21 +1,24 @@
 ---
 description: >-
   Conduct ONE spec's lifecycle — capture, define, build, close — as two halves, each on its own
-  authorization. Triggers on "run this spec end to end", "take this spec to the finish", "cycle this
-  spec". Enters at the derived stage the spec already has; a slug that resolves to nothing is captured
-  through /quenching:specs:create and the run carries on at defining. Defining opens on its own gears
-  plan and delegates to /quenching:specs:develop; building is authorized separately and delegates to
-  /quenching:specs:execute then /quenching:specs:conclude. The gear is re-evaluated at every stage
-  end, and larger revealed size asks afresh. Typed-only: a whole lifecycle is a human's choice, so
-  this description pays no routed budget.
-argument-hint: [slug-or-description]
+  authorization. Triggers on "run this spec end to end", "take this spec to the finish", "cycle
+  this spec". Enters at the derived stage the spec already has; an ID that resolves to nothing is
+  captured through /quenching:specs:create and the run carries on at defining. Defining opens on
+  its own gears plan and delegates to /quenching:specs:develop; building is authorized separately
+  and delegates to /quenching:specs:execute then /quenching:specs:conclude. The gear is
+  re-evaluated at every stage end, and larger revealed size asks afresh. Typed-only: a whole
+  lifecycle is a human's choice, so this description pays no routed budget. Not for: N specs in one
+  build queue → /quenching:specs:execute-queue; N specs defined at once →
+  /quenching:specs:develop-batch; one stage only → /quenching:specs:develop,
+  /quenching:specs:execute, /quenching:specs:conclude.
+ argument-hint: [id-or-description]
 allowed-tools: Bash(python3:*), Bash(py:*), AskUserQuestion, Task, Skill
 disable-model-invocation: true
 ---
 
 # /quenching:specs:cycle — ONE spec, two authorizations
 
-**Input**: `$ARGUMENTS` — a spec slug, or a description of what to conduct.
+**Input**: `$ARGUMENTS` — a spec id, or a description of what to conduct.
 
 The conductor over ONE spec's lifecycle. Where `/quenching:align` conducts the three fronts, this
 command conducts the stages of one spec — `/quenching:specs:create`, `/quenching:specs:develop`,
@@ -67,12 +70,12 @@ belongs to a stage it invokes — which is why no `Read`/`Grep`/`Glob` is grante
 ## Doctrine
 
 - **The derived stage picks the half and the stage inside it; never read the sections to
-  dispatch.** `cq specs status --spec <slug> --json` is the dispatch. A stage the derived stage has
+  dispatch.** `cq specs status --spec <id> --json` is the dispatch. A stage the derived stage has
   passed is skipped, never re-run.
 - **ONE gears plan per half, before that half's first write.** It derives from §Deriving the gears
   plan on the `complexity` the `priority` record carries, and every stage of the half appears in it
   — its gear, and what the gear changes. Nothing is written before the OK.
-- **Capture is not part of either half.** A slug that resolves to nothing is not an error: it
+- **Capture is not part of either half.** An ID that resolves to nothing is not an error: it
   becomes `/quenching:specs:create`, invoked with **no** authorization declaration, so it keeps its
   own gate. The `complexity` it stamps is what the defining half's plan is then derived from —
   which is why the capture cannot sit inside a plan derived from it.
@@ -98,12 +101,12 @@ belongs to a stage it invokes — which is why no `Read`/`Grep`/`Glob` is grante
 ## Workflow (resolve or capture → define on one OK → build on another → report)
 
 ### 1. Resolve the spec — or capture it
-Take the slug from the input, infer it from the conversation, or run `cq specs list --json` and ask
-with **AskUserQuestion** (most recently modified marked "(Recommended)"). Two matches for one slug
+Take the ID from the input, infer it from the conversation, or run `cq specs list --json` and ask
+with **AskUserQuestion** (most recently modified marked "(Recommended)"). Two matches for one ID
 is exit 2 — report both paths and stop, never guess which was meant. An archived spec has nothing
 to conduct: say so and stop.
 
-**A slug that resolves to nothing, and a description that names no spec, take the same path**:
+**An ID that resolves to nothing, and a description that names no spec, take the same path**:
 invoke `quenching:specs:create` through the **Skill** tool with what the input carried, and carry
 on from the spec it just created. No authorization has been granted at this point, so the
 invocation carries no declaration and `create` keeps its own gate.
@@ -111,7 +114,7 @@ invocation carries no declaration and `create` keeps its own gate.
 
 ### 2. Read the state in one call
 ```bash
-cq specs status --spec <slug> --json    # derived stage, records, tasks, gate, verification
+cq specs status --spec <id> --json    # derived stage, records, tasks, gate, verification
 cq specs config --json                  # backend
 ```
 The derived stage says which halves this run still has:
@@ -148,7 +151,7 @@ arriving by the cheaper route.
 
 ### 4. Define — `/quenching:specs:develop`
 Invoke `quenching:specs:develop` through the **Skill** tool, in the gear the plan gave it — naming
-only the slug, plus step 3's gear sentence where the screen moved the level.
+only the ID, plus step 3's gear sentence where the screen moved the level.
 
 **The gear reaches it through disk, and reaches inside it.** `develop` reads
 `records.priority.complexity` from the `cq specs status` payload it already fetches, and the level
@@ -158,7 +161,7 @@ itself; `high` and `xhigh` ask
 defining half's plan must say, in as many words, **whether the human will be asked anything** —
 under `low` the answer is no, and that is the one thing this screen cannot leave implicit.
 
-Then read the state again (`cq specs status --spec <slug> --json`) and re-evaluate the gear per
+Then read the state again (`cq specs status --spec <id> --json`) and re-evaluate the gear per
 §Re-evaluating a gear. **The gear moved up** → return to step 3: a new plan and a fresh
 authorization for this half. A spec that did **not** reach `ready` — open decisions a human has to
 answer, a section the pass could not fill — stops here and is reported with what is missing: the

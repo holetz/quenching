@@ -1,4 +1,4 @@
-"""`cq git slugs <branch>` — the `quenching-slugs:` line a branch's own description carries,
+"""`cq git specs <branch>` — the `quenching-specs:` line a branch's own description carries,
 read plain and rewritten by read-merge-write. Absorbs the `python3 -c` block that used to sit
 copy-pasted inside `assets/references/git/isolation.md` §Marking the branch with the specs it
 built: `/quenching:specs:execute` writes here after every task's commit, `/quenching:specs:conclude`'s
@@ -14,42 +14,48 @@ import re
 from quenching.common.git import _git, _git_run
 from quenching.common.output import emit, refuse
 
-LINE_RE = re.compile(r"quenching-slugs: (.*)")
+LINE_RE = re.compile(r"quenching-specs: (.*)")
 
 
-def _read_slugs(cwd: str, branch: str) -> tuple[list[str], list[str], int | None]:
-    """The description's lines, the sorted slugs the marking line already carries, and that
+def _read_specs(cwd: str, branch: str) -> tuple[list[str], list[str], int | None]:
+    """The description's lines, the sorted native IDs the marking line already carries, and that
     line's index — `None` when the branch has no marking of its own yet."""
     out = _git(cwd, "config", f"branch.{branch}.description")
     lines = out.splitlines() if out else []
-    slugs: list[str] = []
+    specs: list[str] = []
     idx = None
     for i, line in enumerate(lines):
         m = LINE_RE.match(line)
         if m:
-            slugs = sorted({s.strip() for s in m.group(1).split(",") if s.strip()})
+            specs = sorted({s.strip() for s in m.group(1).split(",") if s.strip()})
             idx = i
-    return lines, slugs, idx
+    return lines, specs, idx
 
 
-def cmd_slugs(args) -> int:
+def cmd_specs(args) -> int:
     cwd = "."
-    lines, slugs, idx = _read_slugs(cwd, args.branch)
-    if not args.add:
-        emit(args.json, {"ok": True, "branch": args.branch, "slugs": slugs},
-             ",".join(slugs) if slugs else "(no marking)")
+    lines, specs, idx = _read_specs(cwd, args.branch)
+    if not args.add and not args.remove:
+        emit(args.json, {"ok": True, "branch": args.branch, "specs": specs},
+             ",".join(specs) if specs else "(no marking)")
         return 0
 
-    merged = sorted(set(slugs) | {args.add})
-    newline = "quenching-slugs: " + ",".join(merged)
-    if idx is not None:
-        lines[idx] = newline
+    if args.add:
+        changed = sorted(set(specs) | {args.add})
     else:
-        lines.append(newline)
+        changed = sorted(set(specs) - {args.remove})
+    if changed:
+        newline = "quenching-specs: " + ",".join(changed)
+        if idx is not None:
+            lines[idx] = newline
+        else:
+            lines.append(newline)
+    else:
+        lines = [line for line in lines if not LINE_RE.match(line)]
     code, _out, err = _git_run(cwd, "config", f"branch.{args.branch}.description",
                                "\n".join(lines))
     if code != 0:
-        return refuse({"code": "git-slugs-write-failed", "branch": args.branch,
+        return refuse({"code": "git-specs-write-failed", "branch": args.branch,
                        "message": err.strip() or "git config exited nonzero"}, args.json)
-    emit(args.json, {"ok": True, "branch": args.branch, "slugs": merged}, ",".join(merged))
+    emit(args.json, {"ok": True, "branch": args.branch, "specs": changed}, ",".join(changed))
     return 0

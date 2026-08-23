@@ -79,7 +79,6 @@ class TheStreamSplitter(unittest.TestCase):
 
 
 SPEC = """---
-slug: alpha
 title: Alpha
 date: 2026-08-15
 ---
@@ -95,7 +94,6 @@ O problema.
 # per `### N.`, over a `## Tasks` whose section 1 is closed and whose section 2 is open — so
 # `current_handoff_section` answers 2 and the block a reader must NEVER be handed is section 1's.
 HANDOFF_SPEC = """---
-slug: alpha
 title: Alpha
 date: 2026-08-15
 ---
@@ -154,7 +152,7 @@ class _Args:
         self.write = False
         self.scope = None
         self.heading = None
-        self.spec = "alpha"
+        self.spec = 1
         self.__dict__.update(kw)
 
 
@@ -179,12 +177,15 @@ class _Workspace(unittest.TestCase):
         self.write_spec(self.spec_text)
 
     def write_spec(self, text):
-        if "alpha" in self.backend.docs:
-            info, error = self.backend.read_spec("alpha")
+        # `MemoryBackend` allocates 1 for the first spec, which is what `_Args.spec`
+        # defaults to — the fixture holds exactly one, so the ID is knowable rather than
+        # threaded through every case.
+        if self.backend.docs:
+            info, error = self.backend.read_spec(1)
             self.assertFalse(error, error)
             self.backend.write_spec(info, text)
         else:
-            self.backend.create_spec("plans", "alpha.md", text)
+            self.backend.create_spec("plans", text)
 
     def run_section(self, stdin=None, **kw):
         """`cmd_section` as the CLI calls it, returning (exit code, parsed payload).
@@ -224,7 +225,7 @@ class TheWritePath(_Workspace):
         self.assertLess(text.index("## Proposal"), text.index("## Risks"))
 
     def read_spec_text(self):
-        info, error = self.backend.read_spec("alpha")
+        info, error = self.backend.read_spec(1)
         self.assertFalse(error, error)
         return info["text"]
 

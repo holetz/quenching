@@ -4,8 +4,14 @@ stores instead, and the legacy dated-basename fold.
 Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
+import re
+
 from quenching.common.frontmatter import parse_frontmatter
-from quenching.specs.parse.spec import LEGACY_DATED_FILE_RE
+# The pre-date-in-frontmatter basename, read ONLY by the migration fold below — which
+# exists precisely to recognise a layout this tool no longer writes. It moved here from
+# `parse/spec.py` with the rest of the basename grammar's retirement: this is the one use
+# left, and a pattern with one caller belongs beside it.
+LEGACY_DATED_FILE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$")
 
 
 def set_frontmatter_key(text: str, key: str, value: str,

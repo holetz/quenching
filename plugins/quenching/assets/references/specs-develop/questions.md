@@ -13,7 +13,7 @@ the interrogation a spec gets is the one its content earns.
 
 ## Choosing the bank
 
-One lookup on the derived stage, taken from `cq specs status --spec <slug> --json`:
+One lookup on the derived stage, taken from `cq specs status --spec <id> --json`:
 
 | Derived stage | Bank | The question it is really asking |
 | --- | --- | --- |
@@ -147,7 +147,7 @@ The banks below are the engine of **content**, and they are the same at every ge
 the same lenses, the same seven gate symptoms, the same stop conditions. **A gear never shortens a
 bank.** What it decides is who answers it — the pass, from evidence, or the human.
 
-The gear is `priority.complexity`, read from the same `cq specs status --spec <slug> --json`
+The gear is `priority.complexity`, read from the same `cq specs status --spec <id> --json`
 payload that reports the stage
 ([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §The scale). Absent reads
 as `high`.
@@ -324,7 +324,7 @@ into filling headings to make a check pass, and the explicit-none rule is the wh
 
 **Shape.** Grouped (§1) — the headings `next` reports are independent of one another.
 
-**Drive it off the tool, never off a reading of the file.** `cq specs next --spec <slug> --json`
+**Drive it off the tool, never off a reading of the file.** `cq specs next --spec <id> --json`
 returns the first `missing` or `malformed` heading and the full list behind it. Ask about that
 list, four headings to a call.
 
@@ -394,12 +394,12 @@ Three resolutions and nothing else:
 
 | Resolution | When | What it costs |
 | --- | --- | --- |
-| `promoted: <slug>` | it is work someone will do, and the front does not already hold it | one `cq specs list --json` to check, then one `cq specs new` — offer it, and write the slug back |
+| `promoted: <id>` | it is work someone will do, and the front does not already hold it | one `cq specs list --json` to check, then one `cq specs new` — offer it, and write the ID back |
 | `folded: <section>` | it changes THIS spec | the answer lands in that section in the same edit |
 | `dismissed: <reason>` | it is real but not worth acting on, or another spec already covers it | one line, and the reason is the whole value |
 
 **Check the front before minting.** `promoted:` reads the open specs first; where one already
-covers the line, resolve it `dismissed: already covered by {slug}`.
+covers the line, resolve it `dismissed: already covered by {id}`.
 
 A line is never deleted, and never left unresolved with a shrug. `dismissed: acceptable` with no
 reason is the failure mode to hunt for.
@@ -429,7 +429,7 @@ accepted risk. **Who settles it is §Who answers — the gear decides.**
 **At `medium`, `high` and `xhigh` — a human does, on the closing screen this bank IS.** One
 **AskUserQuestion**, four options, the recommended one first:
 
-1. **Approve (Recommended)** — `cq specs record "<slug>" approved --set date=<today> --set by=human`,
+1. **Approve (Recommended)** — `cq specs record "<id>" approved --set date=<today> --set by=human`,
    never by editing the provider document directly.
 2. **Refine `## <Section>`** — the section named on the screen. This is a **gear raise to `high`**
    ([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §Re-evaluating a gear,
@@ -442,7 +442,7 @@ Options 2 and 3 are what the old "on no, ask what would have to change and route
 meant; naming the destination on the screen is what makes the answer one word instead of two turns.
 
 **At `low` — the pass does, and the record says so.**
-`cq specs record "<slug>" approved --set date=<today> --set by=low-gear`. There is no screen,
+`cq specs record "<id>" approved --set date=<today> --set by=low-gear`. There is no screen,
 because `low` is the level whose whole content is that there is none. The review window is **the
 spec's URL in the backend**, announced before the pass read anything and repeated in its report —
 the same substitution this command already makes for every write it lands without a gate. The stamp

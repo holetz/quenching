@@ -19,33 +19,43 @@ from quenching.specs.commands.next import (TABLE_COLUMNS, _cell, _order_key,
 
 
 class WorkRef(unittest.TestCase):
+    TITLE = "Alpha the titled"
+
     def test_a_stamped_work_ref_is_the_answer(self):
-        fm = {"branch": {"base": "develop", "work": "plan/alpha"}}
-        self.assertEqual(_work_ref(fm, "alpha"), "plan/alpha")
+        fm = {"branch": {"base": "develop", "work": "plan/974-alpha"}}
+        self.assertEqual(_work_ref(fm, 974, self.TITLE), "plan/974-alpha")
 
     def test_no_record_falls_back_to_the_default_name(self):
-        # A human may have cut `plan/<slug>` by hand, with no record at all — the ref being
-        # alive is what counts, so the default name stays the thing to look for.
-        self.assertEqual(_work_ref({}, "alpha"), "plan/alpha")
+        # A human may have cut `plan/<id>-<handle>` by hand, with no record at all — the ref
+        # being alive is what counts, so the default name stays the thing to look for.
+        self.assertEqual(_work_ref({}, 974, self.TITLE), "plan/974-alpha-the-titled")
+
+    def test_the_default_name_leads_on_the_id_and_the_handle_is_cosmetic(self):
+        # `plan/974-<anything>` is resolved by `974`; the handle is there so `git branch`
+        # reads as titles. A spec with no title still gets a nameable branch.
+        self.assertEqual(_work_ref({}, 974, ""), "plan/974-spec")
 
     def test_a_malformed_record_falls_back_the_same_way(self):
-        self.assertEqual(_work_ref({"branch": "develop"}, "alpha"), "plan/alpha")
-        self.assertEqual(_work_ref({"branch": {}}, "alpha"), "plan/alpha")
+        self.assertEqual(_work_ref({"branch": "develop"}, 974, self.TITLE),
+                         "plan/974-alpha-the-titled")
+        self.assertEqual(_work_ref({"branch": {}}, 974, self.TITLE),
+                         "plan/974-alpha-the-titled")
 
     def test_work_equal_to_base_is_no_work_ref_at_all(self):
         fm = {"branch": {"base": "develop", "work": "develop"}}
-        self.assertIsNone(_work_ref(fm, "alpha"),
+        self.assertIsNone(_work_ref(fm, 974, self.TITLE),
                           "a spec built in place must not rank as in flight on its base")
 
     def test_the_in_place_answer_does_not_depend_on_the_base_being_named_main(self):
         for base in ("main", "develop", "trunk", "release/7.x"):
             with self.subTest(base=base):
-                self.assertIsNone(_work_ref({"branch": {"base": base, "work": base}}, "alpha"))
+                self.assertIsNone(
+                    _work_ref({"branch": {"base": base, "work": base}}, 974, self.TITLE))
 
 
 def _candidate(**over):
     """A `_candidate` payload with only the keys the table renderer reads."""
-    c = {"slug": "alpha", "title": "Alpha the titled", "summary": None, "stage": "ready",
+    c = {"id": 974, "title": "Alpha the titled", "stage": "ready",
          "tasks": {"checked": 0, "blocked": 0, "total": 0}, "priority": None,
          "records": {"priority": None, "refined": None}, "ageDays": 3, "state": None}
     c.update(over)
@@ -90,33 +100,38 @@ class State(unittest.TestCase):
 
 
 class TableRow(unittest.TestCase):
-    def test_summary_falls_back_to_the_title_and_says_so(self):
-        cells, fellback = _table_row(_candidate(), False)
+    def test_the_summary_column_is_sourced_from_the_native_title(self):
+        # `summary:` is retired — `optional-payload-fields.md` §Retired fields stay retired.
+        # The column keeps its name and reads the title, so there is no fallback to report
+        # and no second value that could disagree with it.
+        cells = _table_row(_candidate(), False)
         self.assertEqual(cells["summary"], "Alpha the titled")
-        self.assertTrue(fellback, "an unwritten summary must be reported, never silent")
 
-    def test_a_written_summary_wins_and_is_not_reported_as_a_fallback(self):
-        cells, fellback = _table_row(_candidate(summary="One line about alpha"), False)
-        self.assertEqual(cells["summary"], "One line about alpha")
-        self.assertFalse(fellback)
+    def test_a_retired_summary_key_on_the_candidate_is_never_read(self):
+        cells = _table_row(_candidate(summary="One line about alpha"), False)
+        self.assertEqual(cells["summary"], "Alpha the titled",
+                         "a stray `summary` must not outrank the title the column now reads")
 
-    def test_a_long_summary_is_elided_not_truncated_silently(self):
-        cells, _ = _table_row(_candidate(summary="x" * 400), False)
+    def test_a_long_title_is_elided_not_truncated_silently(self):
+        cells = _table_row(_candidate(title="x" * 400), False)
         self.assertTrue(cells["summary"].endswith("…"))
         self.assertLessEqual(len(cells["summary"]), 120)
 
+    def test_the_spec_cell_is_the_native_id(self):
+        self.assertEqual(_table_row(_candidate(), False)["spec"], "974")
+
     def test_the_recommended_row_carries_the_mold_glyph(self):
-        cells, _ = _table_row(_candidate(), True)
+        cells = _table_row(_candidate(), True)
         self.assertTrue(cells["spec"].startswith("→ "))
-        self.assertFalse(_table_row(_candidate(), False)[0]["spec"].startswith("→"))
+        self.assertFalse(_table_row(_candidate(), False)["spec"].startswith("→"))
 
     def test_every_declared_column_is_produced(self):
-        cells, _ = _table_row(_candidate(), False)
+        cells = _table_row(_candidate(), False)
         self.assertEqual(set(cells), set(TABLE_COLUMNS),
                          "a column in the ordered set with no cell would print blank")
 
     def test_tasks_and_priority_render_the_mold_separator(self):
-        cells, _ = _table_row(_candidate(
+        cells = _table_row(_candidate(
             tasks={"checked": 2, "blocked": 1, "total": 5},
             priority={"level": "3", "criticality": "high", "complexity": "low"}), False)
         self.assertEqual(cells["tasks"], "2/5 · 1 blocked")
@@ -159,27 +174,39 @@ class ResolveColumns(unittest.TestCase):
 
 
 class OrderKey(unittest.TestCase):
-    RANKED = [{"_key": (1, 1, 0.0, 3.0, "2026-01-01", "gamma"), "date": "2026-01-01",
-               "slug": "gamma", "priority": {"level": "3"}},
-              {"_key": (0, 0, -0.5, 9.0, "2026-01-02", "alpha"), "date": "2026-01-02",
-               "slug": "alpha", "priority": {"level": "9"}},
-              {"_key": (1, 1, 0.0, 1.0, "2026-01-03", "beta"), "date": "2026-01-03",
-               "slug": "beta", "priority": {"level": "1"}}]
+    # The final tiebreak is `str(c["id"])`, so these IDs are ordered by their STRING form —
+    # which is what the sort actually compares, and the reason the key stringifies at all:
+    # `github` hands back ints and `azure-boards` hands back ints of a different magnitude,
+    # and a mixed front must not raise on `int > str`.
+    RANKED = [{"_key": (1, 1, 0.0, 3.0, "2026-01-01", "31"), "date": "2026-01-01",
+               "id": 31, "priority": {"level": "3"}},
+              {"_key": (0, 0, -0.5, 9.0, "2026-01-02", "11"), "date": "2026-01-02",
+               "id": 11, "priority": {"level": "9"}},
+              {"_key": (1, 1, 0.0, 1.0, "2026-01-03", "21"), "date": "2026-01-03",
+               "id": 21, "priority": {"level": "1"}}]
 
     def test_rank_is_the_four_factor_ordering_this_module_owns(self):
-        got = [c["slug"] for c in sorted(self.RANKED, key=_order_key("rank"))]
-        self.assertEqual(got, ["alpha", "beta", "gamma"],
+        got = [c["id"] for c in sorted(self.RANKED, key=_order_key("rank"))]
+        self.assertEqual(got, [11, 21, 31],
                          "the live branch / executing spec leads under `rank`")
 
     def test_priority_is_the_human_ranking_alone(self):
-        got = [c["slug"] for c in sorted(self.RANKED, key=_order_key("priority"))]
-        self.assertEqual(got, ["beta", "gamma", "alpha"])
+        got = [c["id"] for c in sorted(self.RANKED, key=_order_key("priority"))]
+        self.assertEqual(got, [21, 31, 11])
 
     def test_an_unranked_spec_sorts_last_under_priority_never_first(self):
-        rows = self.RANKED + [{"_key": (1, 1, 0.0, float("inf"), "2026-01-04", "delta"),
-                               "date": "2026-01-04", "slug": "delta", "priority": None}]
-        got = [c["slug"] for c in sorted(rows, key=_order_key("priority"))]
-        self.assertEqual(got[-1], "delta")
+        rows = self.RANKED + [{"_key": (1, 1, 0.0, float("inf"), "2026-01-04", "41"),
+                               "date": "2026-01-04", "id": 41, "priority": None}]
+        got = [c["id"] for c in sorted(rows, key=_order_key("priority"))]
+        self.assertEqual(got[-1], 41)
+
+    def test_a_string_id_and_an_int_id_sort_together_rather_than_raising(self):
+        # A hybrid front is exactly where this bit: `sorted` compares the tiebreak directly,
+        # and `int` against `str` is a TypeError, not a ranking.
+        rows = [{"date": "2026-01-01", "id": 7, "priority": {"level": "1"}},
+                {"date": "2026-01-01", "id": "961489", "priority": {"level": "1"}}]
+        self.assertEqual([c["id"] for c in sorted(rows, key=_order_key("priority"))],
+                         [7, "961489"], "\"7\" sorts before \"961489\" as strings")
 
 
 class TableRefusesJson(unittest.TestCase):

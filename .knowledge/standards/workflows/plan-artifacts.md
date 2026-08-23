@@ -1,17 +1,17 @@
 ---
 type: standard
-title: Spec file contract
-description: The one-file spec, its thirteen canonical sections, the phase-scoped explicit-none rule, the parsed Impact sub-heading, the duplicated template and the three-copy record vocabulary, and how to read a v1 plan in /.specs/archive/
+title: Spec document contract
+description: The one provider-owned spec document, its thirteen canonical sections, the phase-scoped explicit-none rule, the parsed Impact sub-heading, the duplicated template and the three-copy record vocabulary, and how to read a v1 plan in /.specs/archive/
 resource: plugins/quenching/assets/specs/templates/spec.md, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/quenching/specs/schema.py, plugins/quenching/commands/specs/**
 tags: [workflows, specs, sections, gates, validation]
-timestamp: 2026-08-19
+timestamp: 2026-08-22
 audience: both
 authority: current
-source: specs-front-v2 plan (sections 1-2); lifecycle claims superseded by the specs-flow-consolidation plan; the `## Overview` section was retired from the active contract after the flow review; the `moment` axis, the `§`addressed `## Impact` bullet and the schema entry in the three-file lockstep by the narrow-the-execute-preamble spec; `date` moved out of the basename, `verification` became optional and the slug's language was named by evaluate-spec-creation-flow (task 5.5); both duplicated constants shown to be selftest-only once nothing installs the tool (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec); §What `## Tasks` does NOT carry added by the obrigacoes-de-merge-nao-nascem-como-task spec (task 1.1), which moved the merge-obligation boundary from the consuming side alone to the side that authors the list
+source: abandonar-slug-por-id-nativo (sections 1-2); lifecycle claims superseded by the specs-flow-consolidation plan; the `## Overview` section was retired from the active contract after the flow review; the `moment` axis, the `§` addressed `## Impact` bullet and the schema entry in the three-file lockstep by the narrow-the-execute-preamble spec; `date` remains document-owned while the provider ID stays outside it; `verification` became optional; both duplicated constants shown to be selftest-only once nothing installs the tool (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec); §What `## Tasks` does NOT carry added by the obrigacoes-de-merge-nao-nascem-como-task spec (task 1.1), which moved the merge-obligation boundary from the consuming side alone to the side that authors the list
 maintainer: quenching
 ---
 
-# Spec file contract
+# Spec document contract
 
 What a spec must **contain**, which parts a machine checks, and what each gate does and does not
 guarantee. The per-section *authoring* doctrine (what to write under each heading) lives in
@@ -29,25 +29,22 @@ artifacts (`proposal.md`, `design.md`, `tasks.md`) plus a `.specs.json` sidecar,
 `applyRequires`. Plans written under that contract still sit in `/.specs/archive/`; §Reading a v1
 plan below is what a reader of those needs.
 
-## One spec is one file
+## One spec is one provider document
 
-A spec is a single markdown file for its entire lifecycle. Phases enrich it; they never split it.
-It is named `<slug>.md` **in every folder** — the basename IS the identity key — and the capture
-date is stamped once into the frontmatter's `date:` and never rewritten; a promote moves the file
-without renaming it.
+A spec is one canonical provider-owned document for its entire lifecycle. Phases enrich it; they
+never split it. GitHub stores it in an issue body and Azure Boards in a work-item description. The
+provider's native ID is the identity outside the document; the capture date is stamped once into
+the document's `date:` and never rewritten.
 
 Two consequences are load-bearing:
 
-- **Identity is the slug, not the path.** Every cross-reference names the bare slug; the tool
-  resolves it to the one spec whose basename is `<slug>.md`, wherever it sits, and then — only if
-  nothing matched exactly — by title, and by a single close match above a threshold, which it
-  announces. **Two matches is a refusal at every rung**, never a guess.
-- **The one thing this cost was a chronological `ls`.** The date prefix made any folder listing
-  answer *how long has this sat here?* with no tool, precisely because no file listing reads
-  frontmatter. That was worth its keep while a spec was always a file, and it is what the move
-  gives up. What replaces it is `cq specs next --front`, which sorts on the declared `date` and
-  works in a store with no folder at all — and the trade is not optional, because the alternative
-  was a store minting synthetic filenames to keep a property only one backend could ever have.
+- **Identity is the provider ID, not the path or document text.** Every cross-reference names the
+  native ID; the selected provider resolves it exactly. A locator points to the document but is not
+  its identity, and a title is descriptive data rather than a lookup key.
+- **The date remains in the document because the store has no honest copy of it.** `cq specs
+  next --front` sorts on the declared `date`, whether the document is read from a provider or an
+  exported file. A provider's `created_at` records when the issue was made, not when the spec was
+  captured, so deriving the date from it would rewrite historical capture dates during migration.
 
 There is **no `phase:` frontmatter field**, because two declared sources of one fact diverge and a
 folder cannot lie. Which folders exist, and the one hop a spec makes between them, are
@@ -55,37 +52,30 @@ folder cannot lie. Which folders exist, and the one hop a spec makes between the
 
 ## Frontmatter carries only what a human reads
 
-`slug`, `title` and `date` are required; every other key is either **optional by design** or a
+`title` and `date` are required; every other key is either **optional by design** or a
 **record of a human judgment no derivation can reproduce**, and the admission test plus the full
 list live in [plan-lifecycle.md](plan-lifecycle.md) §Frontmatter records human judgments. The one
 exclusion is this file's: there is **no attempt counter**, because machine state a human never
 reads does not belong in a spec.
 
-**`date` is here because nothing else holds it honestly.** It was the filename's `YYYY-MM-DD-`
-prefix, which made a plain `ls` chronological and cost nothing — while every spec was a file. A
-store without filenames has to mint a synthetic one to carry it, and the native value that looks
-like a replacement is not the same fact: an issue's `created_at` is when the ISSUE was made, and a
-migration makes them all in one afternoon. So the basename is now the bare slug and the date is
-declared. That is not duplicated truth; it is the only copy.
+**`date` is here because nothing else holds it honestly.** An issue's `created_at` is when the
+ISSUE was made, and a migration can make many issues in one afternoon; it is not the capture date of
+the spec. So the date stays declared in the document, where every backend reads the same fact. The
+provider ID is deliberately absent: identity is already owned by the store, so mirroring it would
+reopen the duplicate-truth problem rather than solve one.
 
 **`verification` is OPTIONAL, and absent means the default** (`per-section`), applied on read by
 `_policy`. It is never stamped into a document to make it explicit: writing the default would
 record a decision nobody made. It stopped being required because it answers how long *this repo's*
 suite takes — a judgment a one-sentence capture has nobody to make yet — and requiring it forced
 `new` to invent a value at the one moment there is no opinion to record. The post-capture writer is
-`cq specs verification <slug> [<policy>]`; before it existed the policy was decidable exactly once,
+`cq specs verification <id> [<policy>]`; before it existed the policy was decidable exactly once,
 at capture, and under an external backend it could not be changed at all.
 
-**The slug is kebab in the repo's declared language**, not in English. The language is declared
-once, in the harness contract ([communication.md](../agents/communication.md)), and never again in
-a config key of this front's own. `slugify` normalises to NFD and drops the combining marks before
-reducing, so `criação` becomes `criacao` — the slug stays typeable without becoming a language
-nobody wrote. Without that fold, `[^a-z0-9]+` treats an accent as a separator and the identity key
-comes out `cria-o`.
-
-`slug` is the deliberate exception to the no-duplicate-truth rule: it is the identity key, so a
-mirror inside the file is worth its keep, and `validate` compares it to the basename. A merely
-derived fact earns no such mirror.
+**There is no document identity field.** The provider ID is a native store fact, so this document
+does not derive, normalize or mirror it. The exception that once allowed a `slug` mirror under the
+no-duplicate-truth rule disappears with that field; `validate` checks the document contract, while
+the backend checks the provider ID.
 
 ## Thirteen canonical sections
 
@@ -111,7 +101,7 @@ set is a stray and `validate` flags it. Which language a spec's body is written 
 
 **Moment replaces an unread `audience` field.** Each canonical section is born `moment: decision |
 build | close` in `assets/specs/schema.json` — the point on the spec's timeline it is read at, not
-who reads it. `/quenching:specs:execute` step 4 (`cq specs section <slug> --moment build`) sends an
+who reads it. `/quenching:specs:execute` step 4 (`cq specs section <id> --moment build`) sends an
 executor exactly the `build` set; `decision` stays with the human weighing whether to build at all,
 and `close` is `/quenching:specs:conclude`'s. `## Discoveries` carries no `moment` — captured
 indiscriminately while building, it is resolved later by `/quenching:specs:develop`'s triage sweep on its own

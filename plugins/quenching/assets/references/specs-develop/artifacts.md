@@ -61,9 +61,9 @@ gave is worse than leaving the heading absent, because it looks decided. And nev
 of them at creation: a spec that did would derive as `designed` and clear the whole ready gate
 without anyone having thought anything.
 
-`cq specs new <slug>` stamps the frontmatter and `## Problem` alone, from
+`cq specs new <id>` stamps the frontmatter and `## Problem` alone, from
 `assets/specs/templates/spec.md`. Every other heading is created on first write by
-`cq specs section <slug> "<Heading>" --write`, in canonical position. Do not invent new top-level
+`cq specs section <id> "<Heading>" --write`, in canonical position. Do not invent new top-level
 headings — one outside the canonical thirteen is a stray and `validate` flags it — and never paste
 this doctrine into the spec.
 
@@ -152,7 +152,7 @@ closed section's block and never the whole `## Handoff`.
 It is warned on (not gated) once the ready gate is met, and it is rewritten on **four events** —
 the run pauses · a task is written blocked · a discovery is recorded · the run's last commit lands
 — rather than when someone judges it stale. What changed is what a rewrite touches, not when one
-happens: `cq specs section <slug> Handoff --write --scope global` for the evergreen block,
+happens: `cq specs section <id> Handoff --write --scope global` for the evergreen block,
 `--scope current` for the block of whichever section still has open work — never both, and never a
 closed section's.
 
@@ -186,7 +186,7 @@ less often already fixed *when* the resend happened; this fixes *how much* each 
 ## `## Tasks`
 
 The implementation checklist `cq specs` parses: checkboxes `- [ ] <id> <text>` grouped under
-`### N. <Section>` headings. `cq specs task --spec <slug> --check <id>` flips a box mechanically —
+`### N. <Section>` headings. `cq specs task --spec <id> --check <id>` flips a box mechanically —
 never hand-edit the checkbox character.
 
 Shape it so `/quenching:specs:execute` can walk it top to bottom:
