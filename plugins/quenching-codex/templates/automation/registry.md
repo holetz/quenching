@@ -7,7 +7,7 @@ tags: [automation, commands]
 timestamp: <ISO 8601 — e.g. 2026-07-20>
 audience: both
 authority: current
-source: <who established the surface — e.g. quenching-components-align first run>
+source: <who established the surface — e.g. quenching:components:align first run>
 maintainer: <owner>
 ---
 
@@ -49,5 +49,4 @@ them is overwritten by the next run, not merged.
      `quenching-components-command-new` (OKF tail) and `quenching-components-align` (verify step) are the two commands that invoke
      the reindex; each ends its run on a second one reporting `changed: false`.
      STAMP = MERGE, never clobber the curated prose. -->
-
 

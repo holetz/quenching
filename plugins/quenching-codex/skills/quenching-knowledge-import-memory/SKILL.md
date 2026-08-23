@@ -1,6 +1,6 @@
 ---
 name: quenching-knowledge-import-memory
-description: "Drain the project's Codex memory into the OKF bundle, then clear it. Triggers on \"convert the memory into docs\", \"move project memory into the knowledge base\", \"flush the memory into docs\". Not for: importing an external source of files/URLs → quenching-knowledge-import."
+description: "Drain the project's Codex memory into the OKF bundle, then clear it. Triggers on \"convert the memory into docs\", \"move project memory into the knowledge base\", \"flush the memory into docs\"."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/import-memory.md -->

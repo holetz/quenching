@@ -1,6 +1,6 @@
 ---
 name: quenching-references-tighten
-description: "Rewrite ONE file under plugins/quenching/assets/references/ to this repo's prose model — the binding half first, rationale relocated under its marker and never deleted, no-op lines cut — and report the measured delta on the chars the citing bodies actually load. Triggers: \"enxugar a prosa das references\", \"revisar esse reference\", \"marcar rules/rationale\", \"desinflar o custo de leitura das references\", \"tighten the references\", \"review the reference prose\". Not for: a command body or its description → quenching-components-command-new, quenching-components-align; a knowledge/ standard or the OKF bundle → quenching-knowledge-align; generating a documentation site → /docs:storyteller."
+description: "Rewrite ONE file under plugins/quenching/assets/references/ to this repo's prose model — the binding half first, rationale relocated under its marker and never deleted, no-op lines cut — and report the measured delta on the chars the citing bodies actually load. Triggers: \"enxugar a prosa das references\", \"revisar esse reference\", \"marcar rules/rationale\", \"desinflar o custo de leitura das references\", \"tighten the references\", \"review the reference prose\"."
 ---
 
 <!-- GENERATED FROM .claude/commands/references/tighten.md -->
@@ -151,4 +151,4 @@ the skipped ones say why.
 - **Never report a delta that was not measured** by step 6's re-read.
 - **Never write during `--review`**, and never edit a `knowledge/` standard, a command body, or a file
   outside `plugins/quenching/assets/references/` from here — report it with the command that owns
-  it (`quenching-knowledge-add`, `quenching-components-command-new`) instead.
+  it (`quenching-knowledge-add`, `/commands:tighten`) instead.

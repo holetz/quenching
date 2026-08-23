@@ -1,6 +1,6 @@
 ---
 name: quenching-docs-storyteller
-description: "Use to GENERATE documentation, not just prettify Markdown — raw Markdown, a README, specs, notes or a whole docs/ tree becomes a MkDocs Material site humans want to read, engineers can execute, and LLMs can copy, navigate and reconstruct. Triggers: \"transformar/gerar os md em mkdocs\", \"montar/reestruturar a documentação\", \"reconstruir o /docs\", \"documentação mais engajante\", \"organizar a navegação dos docs\", \"criar landing da doc\", \"rodar/subir o mkdocs local\", \"documentação que um LLM consiga reutilizar\", \"make the docs a joy to read\", \"docs studio\", \"score the docs\". Not for: the quenching bundle's own site layer over /.knowledge/documentation → quenching-knowledge-documentation-build."
+description: "Use to GENERATE documentation, not just prettify Markdown — raw Markdown, a README, specs, notes or a whole docs/ tree becomes a MkDocs Material site humans want to read, engineers can execute, and LLMs can copy, navigate and reconstruct. Triggers: \"transformar/gerar os md em mkdocs\", \"montar/reestruturar a documentação\", \"reconstruir o /docs\", \"documentação mais engajante\", \"organizar a navegação dos docs\", \"criar landing da doc\", \"rodar/subir o mkdocs local\", \"documentação que um LLM consiga reutilizar\", \"make the docs a joy to read\", \"docs studio\", \"score the docs\"."
 ---
 
 <!-- GENERATED FROM .claude/commands/docs/storyteller.md -->

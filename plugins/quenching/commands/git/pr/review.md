@@ -1,10 +1,9 @@
 ---
 description: >-
-  Fetch a pull request's unresolved review threads, address each on the human's own confirmation,
-  and mark it resolved once the fix is committed, on GitHub or Azure DevOps. Use when the user asks to "resolve PR comments",
-  "address the review feedback", "fix what the reviewer flagged", or "work through the open review
-  threads". Not for: opening the PR in the first place → /quenching:git:pr:create; merging it once
-  every thread is clear → /quenching:git:merge.
+  Fetch a pull request's unresolved review threads, address each on the human's own confirmation, and
+  mark it resolved once the fix is committed, on GitHub or Azure DevOps. Use when the user asks to
+  "resolve PR comments", "address the review feedback", "fix what the reviewer flagged", or "work
+  through the open review threads".
 argument-hint: [pr-number-or-id]
 allowed-tools: Bash(gh pr view:*), Bash(gh repo view:*), Bash(gh api graphql:*), Bash(az repos pr:*), Bash(az devops invoke:*), Bash(az rest:*), Bash(git branch:*), Bash(git remote get-url:*), Bash(python3:*), Read, Edit, AskUserQuestion
 ---

@@ -15,6 +15,37 @@ in a spec are machine contracts — the `## Tasks` checkboxes and the one parsed
 
 `cq components read <this file>` returns the heading index; `--sections` addresses one.
 
+## Writing a section through stdin
+
+<!-- rules -->
+
+`cq specs section <slug> "<Heading>[,<Heading>…]" --write` (bodies on stdin) creates each heading in
+canonical position on first write, so creating and revising are the same call. An emptied section
+becomes an explicit `- none — <reason>`, never a deleted heading (§The explicit-none rule).
+
+**The bodies go on stdin as one heredoc, in the same call** — a scratch file, a `mkdir` and a `cat`
+are three turns buying what one already does, and a bank that filled six sections over six calls
+paid six round trips for one edit:
+
+```bash
+cq specs section "<slug>" "<Heading>,<Other Heading>" --write <<'BODY'
+## <Heading>
+
+<the drafted section, verbatim>
+
+## <Other Heading>
+
+<the other drafted section, verbatim>
+BODY
+```
+
+Quote the delimiter (`<<'BODY'`) so nothing in the prose is expanded by the shell.
+
+The `## <Heading>` lines in the stream are the delimiter, and the set they carry must equal the set
+declared on the command line — a mismatch, a repeat, or a heading outside the canonical thirteen
+refuses (exit 2) **without writing any of them**, so a rejected edit leaves the spec exactly as it
+was. One heading with a raw body and no `## ` line is the singular form and is unchanged.
+
 ## The explicit-none rule
 
 <!-- rules -->

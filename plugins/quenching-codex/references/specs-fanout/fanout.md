@@ -102,8 +102,16 @@ Where a spec joins derives from the `complexity` field on its `priority` record,
 | at or above the floor | requires `ready`/`approved`; it is built only |
 
 **The floor is `fanoutMinComplexity`**, declared in `.agents/quenching.json` and read through
-`cq specs config --json`; a repository that declares nothing gets `medium` — the fixed cutoff this
-contract used before the floor existed. The four levels order `low < medium < high < xhigh`, the
+`cq specs config --json`; a repository that declares nothing gets `high`.
+
+**Why `high` is the default, and not a number somebody liked.** It is the cut where
+[gears.md](../../references/specs-cycle/gears.md) §The scale stops answering
+its own questions from evidence and starts asking a human: `low` and `medium` interrupt nobody,
+`high` and `xhigh` do. **A fan-out buys the drafting, never the judgment** — and a level that asks
+has no drafting to sell, because its questions would reach a sub-agent with no human to put them
+to. So the floor and the ask/no-ask line are the same line, and a repository that moves the floor is
+saying something about that line rather than about batch size. (Before the gears scale reached
+inside the stages, the floor was `medium` — a fixed cutoff with no reason attached to it.) The four levels order `low < medium < high < xhigh`, the
 same order [gears.md](../../references/specs-cycle/gears.md) §Deriving the
 gears plan already scales by; an unrecognised declared floor reports the same way an unrecognised
 `backend` does (`unknownFanoutMinComplexity`, the effective floor staying at `medium`) rather than

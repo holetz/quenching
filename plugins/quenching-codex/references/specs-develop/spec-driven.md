@@ -40,9 +40,10 @@ observe through `cq specs`.
 <!-- rationale -->
 
 **Why one provider document.** A `backlog/` ↔ `ready/` split bought exactly one fact no derivation
-reproduces: *a human said go*. Everything else it implied — that the spec is complete enough to
-build — is computable from the sections themselves, and now is (§Derived stages). The human's word
-is `approved:` in frontmatter, so the fact survived and the folder did not.
+reproduces: *that this spec may be built*. Everything else it implied — that the spec is complete
+enough to build — is computable from the sections themselves, and now is (§Derived stages). That
+authorization is `approved:` in frontmatter, with `by:` naming whose it is, so the fact survived and
+the folder did not.
 
 ## Identity: the slug and the provider locator
 
@@ -86,7 +87,7 @@ else.**
 | `verification` | **optional** | `create` / `develop` | `per-task` · `per-section` · `end-of-plan` — when `verify:` runs. Absent means the default (`per-section`), applied on read; written after capture with `cq specs verification`, **never** by editing the frontmatter |
 | `priority` | once ranked | `triage` | `{level, criticality, complexity, date}` — a human's ranking against every other spec. `complexity` alone is also written at capture, by `create` — the one field of this record a second command may write (`assets/specs/schema.json`'s `complexity.writtenBy: [triage, create, develop]`) |
 | `refined` | once interrogated | `develop` | `{mode, date}` — that a real interrogation happened, and which bank ran it |
-| `approved` | once approved | `develop`, or `execute` inline | `{date}` — **a human said go**; the one fact the old folder hop carried |
+| `approved` | once approved | `develop`, or `execute` inline | `{date, by}` — **that this spec may be built, and on whose authority**: `by: human` is a person's word, `by: low-gear` the level's; absent reads as `human` |
 | `branch` | once building | `execute` | `{base, work}` — after a merge, git cannot say what the base was |
 | `pr` | once opened | `conclude` | `{number, url, date}` — a PR opened but not yet merged, distinct from `merge.pr`, which is stamped only once the merge already happened. Restamped if the PR is recreated |
 | `reviewed` | once reviewed | `conclude` | `{date}` — that a human read the whole branch diff |
@@ -201,8 +202,10 @@ omission; it is a *not-yet*.
 **`ready` is a derived stage, not a folder, and it refuses nothing.** Filling those ten sections is
 what makes a spec ready; no file moves, so there is nothing to refuse. It is a **floor** that
 `quenching-specs-execute` reports against — and the tool simply has no task to hand out until the ten are
-filled, which is where the old promote's teeth went. The human's OK to build is a separate fact,
-`approved:`, asked for inline rather than encoded in a folder.
+filled, which is where the old promote's teeth went. The OK to build is a separate fact,
+`approved:`, asked for inline rather than encoded in a folder — or, under the `low` gear alone,
+stamped by the pass itself with `by: low-gear`, the human having authorized the mode rather than
+this spec.
 
 `## Tasks` is in that set because nothing may be built with nothing to execute.
 

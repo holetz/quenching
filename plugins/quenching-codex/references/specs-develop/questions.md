@@ -29,6 +29,11 @@ The stage always derives **from disk**, never from what the current pass has acc
 what makes the loop honest: a bank's answers reach the file before the next bank is chosen, so a
 re-derived stage is a fact rather than a projection.
 
+**The gear is orthogonal to this lookup.** `priority.complexity` never changes WHICH bank runs —
+the derived stage is the only input to the table above. It changes who answers the bank once it is
+chosen (§Who answers — the gear decides), and at `xhigh` it forces one lens of the adversarial bank
+that the spec's own state might not have argued for.
+
 **Crossing a bank boundary is automatic and narrated, never offered.** When a bank's edit lands
 and the re-derived stage selects a different one, name the next bank and what it will ask, then
 continue. The stage is a fact derived from disk; offering the crossing asks the human to decide
@@ -69,6 +74,9 @@ answer in one word — in a grouped call, the recommended option is listed **fir
 > burning tokens. Agree, or is this suite slow enough that five is too many?"
 
 Use **AskUserQuestion** when relevant.
+
+The shape a bank takes above is its shape **when it asks at all**. Whether it asks is §Who answers
+— the gear decides, which is upstream of all four mechanics.
 
 <!-- rationale -->
 The rule this replaced was *never batch* — absolute, and stronger than its own reason. That reason
@@ -131,6 +139,56 @@ each answer arrives, record which canonical section it belongs to — that mappi
 consolidated edit, and an answer that maps to nothing is either out of scope (route it, per the
 body's guardrails) or was not worth asking.
 
+## Who answers — the gear decides
+
+<!-- rules -->
+
+The banks below are the engine of **content**, and they are the same at every gear: the same axes,
+the same lenses, the same seven gate symptoms, the same stop conditions. **A gear never shortens a
+bank.** What it decides is who answers it — the pass, from evidence, or the human.
+
+The gear is `priority.complexity`, read from the same `cq specs status --spec <slug> --json`
+payload that reports the stage
+([gears.md](../../references/specs-cycle/gears.md) §The scale). Absent reads
+as `high`.
+
+| Gear | How the bank runs |
+| --- | --- |
+| `low` · `medium` | **the pass answers.** Every item is answered from what the spec, the codebase, the `/.knowledge/standards/` its `## Impact` declares and `/.knowledge/glossary.md` support. An answer resting on something unproved is written with **the assumption named in the text it lands in**. Anything no evidence answers becomes a `## Open Decisions` line carrying **how it will be decided** — never invented, and never asked |
+| `high` · `xhigh` | **the pass drafts, then asks about the draft.** It produces the same evidence-based answers first and puts them in front of the human as the question: *"here is what I would write for `## Out of Scope`; is the boundary right?"* |
+| `xhigh` | `high`, and §Bank: adversarial's **premortem lens runs unconditionally** |
+
+**Drafting first is what makes grouping legal at `high`.** §The four shared mechanics §1 forbids
+two questions whose answers can change each other from travelling together, and that is exactly why
+the shape and adversarial banks are sequential: an open question about the problem rewrites the next
+question about the shape. A question about a **drafted section** does not have that property — the
+draft is already written, so answering "the boundary is wrong" changes what the next edit writes,
+never what the next question asks. Those two banks therefore run **sequential to draft, grouped to
+ask**: up to four drafted sections per **AskUserQuestion**, each carrying its own draft as the
+recommended option. This is the one place a gear touches §1, and it narrows nothing — two genuinely
+dependent questions still travel alone.
+
+**What a no-ask gear may never do.** It may not invent an explicit none. It may not resolve a
+`## Discoveries` line `promoted:`, which mints a spec (§Bank: discoveries). It may not present a
+screen from inside a sub-agent — the sub-agent returns the screen's content and the conductor
+presents it. And it may not treat an unanswerable item as answered: `## Open Decisions` with how it
+will be decided is the result, and a bank that has no evidence and writes a confident sentence
+anyway has failed in the way this gear is most likely to fail.
+
+**What it still does.** `refined` is stamped exactly as at any other gear when the adversarial or
+the gate bank ran: drafting from evidence IS the interrogation, and the record says which bank ran
+it, never who answered. §Recording the pass owns that.
+
+<!-- rationale -->
+
+The mechanism is not new. `quenching-specs-develop-batch` has declared it verbatim to every
+sub-agent since it existed — *"Ask the human nothing: a question no evidence answers goes to
+`## Open Decisions` with how it will be decided"* — and `quenching-specs-create` offers it as the
+recommended way out of a capture. What changes is that it stops being a property of the caller and
+becomes a mode **the spec's own record selects**, so a spec gets the same treatment whether a batch,
+a cycle or a human at a prompt invoked the pass. A mode two callers declare and the command body
+never documents is a behaviour nobody can read off the command.
+
 ## Bank: shape
 
 **Stage.** `captured` — a spec with `## Problem` and nothing else. This is the thinking bank: the
@@ -164,6 +222,11 @@ questions and often replaces one.
 **Lands in** `## Proposal` (the shape), `## Out of Scope` (the boundary), `## Design` /
 `## Alternatives Considered` when the shapes table produced a real comparison.
 
+**Evidence answers** what is actually wrong (read the code), the shapes table with its
+recommendation, and the boundary. **Only a human answers** *why now* — what waiting costs is
+appetite, not a fact about the tree — and *what would make this not worth doing*. Under a no-ask
+gear both go to `## Open Decisions` unless `## Problem` already states them.
+
 **Stop when** `## Proposal` states what will be true afterwards that is not true now, and the human
 would recognise the spec as describing their idea. Not when the gate is met — that is two banks
 away.
@@ -185,7 +248,9 @@ so a spec born past the shape bank is never argued over without a map either. It
 the same `### Mapa de dependências` under `## Design`, written by the orchestrator.
 
 It runs three lenses. Use the one the spec's own state argues for; a spec that deserves two gets
-two, in this order.
+two, in this order. **At `xhigh` the premortem runs regardless of what the spec's state argues** —
+that lens is the judgment stage the level buys, and a level whose stage fires only on a trigger it
+shares with every other level buys nothing.
 
 ### Lens: alternatives — when `## Alternatives Considered` is absent, empty, or records one option
 
@@ -224,7 +289,7 @@ stated reason.
 Lands in `## Out of Scope` (a scope cut taken), `## Open Decisions` (one that needs evidence), or
 the spec's own sections where the remedy rewrites them.
 
-### Lens: premortem — when the spec is risky or irreversible: a migration, a rename with a blast radius, a release
+### Lens: premortem — unconditionally at `xhigh`, and otherwise when the spec is risky or irreversible: a migration, a rename with a blast radius, a release
 
 State the frame out loud: *"It is three months from now. This spec was built and it went badly.
 What happened?"* — then generate the failure stories from the spec's actual content, not from a
@@ -239,6 +304,12 @@ Then convert. Every story becomes exactly one of: a **mitigation task** in `## T
 with a named mitigation** in `## Risks`; an **accepted risk**, recorded with the reason it is
 acceptable; or a **scope cut** into `## Out of Scope`. A story that converts into nothing was not a
 real risk — drop it and say so.
+
+**Evidence answers** every alternative in the table, all seven critique targets and every
+premortem story — each is readable against the tree. **Only a human answers** the accept-versus-cut
+verdict where the remedy trades scope for risk; under a no-ask gear the pass takes its own
+recommended remedy and writes the accepted risk as `ACCEPTED — <why>, taken by the pass under the
+<level> gear`, so the trade is legible rather than silent.
 
 **Stop when** every criticism has been answered, every failure story converted, the alternatives
 table exists and the human has chosen — and the spec's biggest remaining risk is one they
@@ -289,6 +360,12 @@ the three values in [spec-driven.md](spec-driven.md) §Frontmatter, asked once a
 frontmatter, so `execute` never has to guess mid-build) and the parsed `### Standards this spec will
 write into knowledge/standards/` sub-heading under `## Impact`.
 
+**Evidence answers** all seven symptoms and all three execution decisions — `[P]`, `files:`
+and `pattern:` are provable against the tree, and `cq specs parallel` proves the first
+mechanically. **Only a human answers** the `verification` policy; under a no-ask gear the pass
+**declares nothing** and lets the default stand, because stamping the default records a decision
+nobody made.
+
 **Stop when** `cq specs next` stops reporting `write_section` — every gate section answered with
 content or a reasoned `- none`, every task with a judgeable completion, no `## Impact` path
 uncovered. A `[P]` this bank set is **proved** when the edit lands, by `cq specs parallel`, never
@@ -327,6 +404,11 @@ covers the line, resolve it `dismissed: already covered by {slug}`.
 A line is never deleted, and never left unresolved with a shrug. `dismissed: acceptable` with no
 reason is the failure mode to hunt for.
 
+Under a no-ask gear, `folded:` and `dismissed:` are resolutions evidence supports.
+**`promoted:` is not** — it mints a spec, which no pass may do unasked. The line stays unresolved,
+this bank's stop condition is **not met**, and the report says so. A `dismissed:` invented to empty
+the queue is the failure mode to hunt for here.
+
 **Stop when** every line carries a resolution.
 
 <!-- rationale -->
@@ -337,21 +419,42 @@ so the duplicate arrives through the front door and has to be turned away there.
 
 **Stage.** `ready`, or the gate is met and `approved` is unset.
 
-**Goal.** Get the one fact no derivation reproduces: **a human said go.**
+**Goal.** Settle the one fact the sections cannot: **that this spec may be built.**
 
-This bank asks a single question, and it is the only bank that adds nothing to the body. Show what
-the spec now commits to — the proposal in one line, the task count, the `verification` policy, the
-declared `knowledge/standards/` paths, the biggest accepted risk — and ask for the go-ahead.
+This is the only bank that adds nothing to the body — it writes one record and no section. What it
+shows is always the same: what the spec now commits to, in the proposal's one line, the task count,
+the `verification` policy in force, the declared `knowledge/standards/` paths, and the biggest
+accepted risk. **Who settles it is §Who answers — the gear decides.**
 
-On yes, stamp it with `cq specs record "<slug>" approved --set date=<today>` — never by editing the
-provider document directly. On no, ask what would have to change
-and route it back to the bank that owns it.
+**At `medium`, `high` and `xhigh` — a human does, on the closing screen this bank IS.** One
+**AskUserQuestion**, four options, the recommended one first:
+
+1. **Approve (Recommended)** — `cq specs record "<slug>" approved --set date=<today> --set by=human`,
+   never by editing the provider document directly.
+2. **Refine `## <Section>`** — the section named on the screen. This is a **gear raise to `high`**
+   ([gears.md](../../references/specs-cycle/gears.md) §Re-evaluating a gear,
+   the fourth signal), and choosing it IS the OK to restamp `complexity`.
+3. **Run the premortem** — a raise to `xhigh`, same mechanics; the adversarial bank re-enters with
+   the lens forced.
+4. **Stop here** — nothing stamped, and the report says what is open.
+
+Options 2 and 3 are what the old "on no, ask what would have to change and route it back" always
+meant; naming the destination on the screen is what makes the answer one word instead of two turns.
+
+**At `low` — the pass does, and the record says so.**
+`cq specs record "<slug>" approved --set date=<today> --set by=low-gear`. There is no screen,
+because `low` is the level whose whole content is that there is none. The review window is **the
+spec's URL in the backend**, announced before the pass read anything and repeated in its report —
+the same substitution this command already makes for every write it lands without a gate. The stamp
+is not an inference from the sections and never claims to be one: `by:` is what keeps a level's
+authority distinguishable from a human's word, and a reader who wants only human approvals filters
+on it.
 
 **The gate is a floor, not a verdict.** `ready` means ten sections have content; it does not mean
 the spec is good. And approval is not a gate either — `execute` on an unapproved spec asks inline
 and stamps rather than refusing, so declining here costs nothing but a question later.
 
-**Stop when** the human has answered. One question, one answer, done.
+**Stop when** the record carries both a `date` and a `by`.
 
 ## Gathering the evidence — economically, and delegated for three banks
 
@@ -437,6 +540,18 @@ that is the strongest claim the pass supports. The record is `writeOnce: false`
 ([spec-driven.md](spec-driven.md) §Frontmatter): a later pass restamps it, because a second
 interrogation is a new fact, not a correction of the old one.
 
-**Never fabricate it.** `refined` is written only after real questions got real answers. It is the
-one field whose entire value is that it cannot be inferred from the sections, so a stamp on a pass
-where nobody was asked anything makes the field worthless everywhere.
+**Never fabricate it.** `refined` is written only after a bank really ran. It is the one field
+whose entire value is that it cannot be inferred from the sections, so a stamp on a pass where no
+bank ran at all makes the field worthless everywhere.
+
+**A no-ask gear still stamps it.** Under `low` and `medium` the adversarial and gate banks answer
+their own questions from evidence, and **that drafting IS the interrogation** — the record says
+which bank ran it, never who answered. What the record can never survive is a pass that ran no bank
+and stamped anyway.
+
+**`approved` carries a second field, and it is never omitted.** `by: human` for a person's word on
+the closing screen, `by: low-gear` for the stamp a `low` pass makes on the level's authority
+(§Bank: approval). A record written with no `by:` reads as `human` — that is the only thing that
+could have written it before the field existed — so leaving it off a `low-gear` stamp silently
+claims a human the pass never had. The tool cannot require a field on a record; this rule is what
+does.

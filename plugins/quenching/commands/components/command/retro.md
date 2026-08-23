@@ -1,15 +1,13 @@
 ---
 description: >-
-  Mine ONE session for what it evidences about ONE command that ran in it — performance,
-  redundancy, bugs, and the problems the human had to fix by hand. Reach for it when you want
-  to ask "what did this command cost", "retro this session", "what went wrong in this run",
-  "improve the command that started this session", or "what should this command do
-  differently". Counts come from code reading the session transcript, never from a model
-  recalling its own run, and every counted claim is reported with its count and the turn that
-  evidences it. Each finding lands with the `/quenching:components:command:new` invocation that would close it, and
-  nothing is applied. Typed-only by design: a retro reads your transcripts, so a human chooses
-  it. Not for: measuring a command against a control arm → /quenching:components:command:eval; minting or editing a
-  command → /quenching:components:command:new; auditing every body on the surface → /quenching:components:align.
+  Mine ONE session for what it evidences about ONE command that ran in it — performance, redundancy,
+  bugs, and the problems the human had to fix by hand. Reach for it when you want to ask "what did
+  this command cost", "retro this session", "what went wrong in this run", "improve the command that
+  started this session", or "what should this command do differently". Counts come from code reading
+  the session transcript, never from a model recalling its own run, and every counted claim is
+  reported with its count and the turn that evidences it. Each finding lands with the
+  `/quenching:components:command:new` invocation that would close it, and nothing is applied.
+  Typed-only by design: a retro reads your transcripts, so a human chooses it.
 argument-hint: "[session id or transcript path — omit for this session; optionally a command name]"
 allowed-tools: Read, AskUserQuestion, Bash(python3:*), Bash(py:*)
 disable-model-invocation: true

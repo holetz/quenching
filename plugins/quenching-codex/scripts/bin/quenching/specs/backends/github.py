@@ -293,7 +293,7 @@ def resolve_github_repo(cwd: str) -> tuple[str, int | None, dict]:
 SPEC_LABEL_META = {
     "spec:ranked":       ("c2e0c6", "priority is recorded — a human ranked this spec"),
     "spec:interrogated": ("bfd4f2", "refined is recorded — a real interrogation happened"),
-    "spec:approved":     ("0e8a16", "a human said go"),
+    "spec:approved":     ("0e8a16", "approved is recorded — the record's `by:` says whose word it was"),
     "spec:built":        ("5319e7", "the derived stage — task or Handoff work is under way"),
     "spec:reviewed":     ("fbca04", "a human read the whole branch diff"),
     "spec:merged":       ("1d76db", "the branch merged into the integration branch"),

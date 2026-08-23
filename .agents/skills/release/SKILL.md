@@ -1,6 +1,6 @@
 ---
 name: quenching-release
-description: "Publish what the primary branch accumulated as a deliberate release — the plugin's four-artifact version lockstep, the git tag, and the push to origin. Use when the user asks to \"publish a release\", \"cut a release\", \"release this\", \"is it time to release\", or \"publish the plugin\". Judges patch/minor/major from what actually accumulated and asks for confirmation before touching anything; when the primary branch carries exactly one PR since the last release, asks once whether this is a release or a habit. When it finishes: the bump and its tag live on the primary branch's tip, on origin. Not for: concluding or merging ONE spec into the primary branch → quenching-specs-conclude."
+description: "Publish what the primary branch accumulated as a deliberate release — the plugin's four-artifact version lockstep, the git tag, and the push to origin. Use when the user asks to \"publish a release\", \"cut a release\", \"release this\", \"is it time to release\", or \"publish the plugin\". Judges patch/minor/major from what actually accumulated and asks for confirmation before touching anything; when the primary branch carries exactly one PR since the last release, asks once whether this is a release or a habit. When it finishes: the bump and its tag live on the primary branch's tip, on origin."
 ---
 
 <!-- GENERATED FROM .claude/commands/release.md -->

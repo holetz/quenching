@@ -1,6 +1,6 @@
 ---
 name: quenching-knowledge-import
-description: "Import an external source (files/folders/URLs) into the OKF bundle as many docs. Triggers on \"import/ingest a source into the base\", \"enrich the knowledge base from X\", \"generate OKF docs from these files/URLs\". Not for: draining this project's Codex memory → quenching-knowledge-import-memory; ONE concept doc → quenching-knowledge-add."
+description: "Import an external source (files/folders/URLs) into the OKF bundle as many docs. Triggers on \"import/ingest a source into the base\", \"enrich the knowledge base from X\", \"generate OKF docs from these files/URLs\"."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/import.md -->

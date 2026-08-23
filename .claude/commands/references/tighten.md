@@ -6,7 +6,8 @@ description: >-
   the citing bodies actually load. Triggers: "enxugar a prosa das references",
   "revisar esse reference", "marcar rules/rationale", "desinflar o custo de
   leitura das references", "tighten the references", "review the reference
-  prose". Not for: a command body or its description → /quenching:components:command:new,
+  prose". Not for: cutting dead weight from a command body → /commands:tighten; minting a
+  command, or its description → /quenching:components:command:new,
   /quenching:components:align; a knowledge/ standard or the OKF bundle →
   /quenching:knowledge:align; generating a documentation site → /docs:storyteller.
 argument-hint: "[reference-path | --all] [--review] [--skip <path>]"
@@ -158,4 +159,4 @@ the skipped ones say why.
 - **Never report a delta that was not measured** by step 6's re-read.
 - **Never write during `--review`**, and never edit a `knowledge/` standard, a command body, or a file
   outside `plugins/quenching/assets/references/` from here — report it with the command that owns
-  it (`/quenching:knowledge:add`, `/quenching:components:command:new`) instead.
+  it (`/quenching:knowledge:add`, `/commands:tighten`) instead.

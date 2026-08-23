@@ -1,6 +1,6 @@
 ---
 name: quenching-specs-cycle
-description: "Conduct ONE spec's lifecycle — capture, define, build, close — as two halves, each on its own authorization. Triggers on \"run this spec end to end\", \"take this spec to the finish\", \"cycle this spec\". Enters at the derived stage the spec already has; a slug that resolves to nothing is captured through quenching-specs-create and the run carries on at defining. Defining opens on its own gears plan and delegates to quenching-specs-develop; building is authorized separately and delegates to quenching-specs-execute then quenching-specs-conclude. The gear is re-evaluated at every stage end, and larger revealed size asks afresh. Typed-only: a whole lifecycle is a human's choice, so this description pays no routed budget. Not for: N specs in one build queue → quenching-specs-execute-queue; N specs defined at once → quenching-specs-develop-batch; one stage only → quenching-specs-develop, quenching-specs-execute, quenching-specs-conclude."
+description: "Conduct ONE spec's lifecycle — capture, define, build, close — as two halves, each on its own authorization. Triggers on \"run this spec end to end\", \"take this spec to the finish\", \"cycle this spec\". Enters at the derived stage the spec already has; a slug that resolves to nothing is captured through quenching-specs-create and the run carries on at defining. Defining opens on its own gears plan and delegates to quenching-specs-develop; building is authorized separately and delegates to quenching-specs-execute then quenching-specs-conclude. The gear is re-evaluated at every stage end, and larger revealed size asks afresh. Typed-only: a whole lifecycle is a human's choice, so this description pays no routed budget."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/cycle.md -->
@@ -126,16 +126,30 @@ Skip to step 5 when the derived stage has already passed it. Otherwise derive th
 screen: the stage, its gear, and what the gear changes. An adjustment re-presents the plan; use
 **AskUserQuestion** when the choice is between two gears for one stage.
 
-This OK authorizes **the defining half and nothing beyond it**. Declare it verbatim per §The
-cycle-authorization contract, naming this command as the grantor:
-*"Running under quenching-specs-cycle authorization granted at run start — skip your
-plan-confirmation pause; present your plan as narration and execute; code-coupled and irreversible
-items still gate individually."*
+This OK authorizes **the defining half and nothing beyond it**.
+
+**No exception sentence is declared to `quenching-specs-develop`.** It has no plan gate to
+dispense, and announcing the waiver of a gate that does not exist leaves a reader believing the
+command has a stop it never had — §The cycle-authorization contract names it as the standing case.
+What is declared instead is the **gear**, and only where this screen moved it off what the
+`priority` record says:
+*"Running under quenching-specs-cycle at the `<level>` gear, approved in this run's defining plan
+— the record on disk still reads `<recorded level>`, which you do not restamp."*
+Unadjusted, nothing is declared: `develop` reads the level off disk, which is the same fact
+arriving by the cheaper route.
 **Done when:** the plan is approved as presented, or the run is declined (nothing written).
 
 ### 4. Define — `quenching-specs-develop`
-Invoke `quenching:specs:develop` through the **Skill** tool under step 3's sentence, in the gear
-the plan gave it.
+Invoke `quenching:specs:develop` through the **Skill** tool, in the gear the plan gave it — naming
+only the slug, plus step 3's gear sentence where the screen moved the level.
+
+**The gear reaches it through disk, and reaches inside it.** `develop` reads
+`records.priority.complexity` from the `cq specs status` payload it already fetches, and the level
+decides who answers its banks: `low` and `medium` interrupt nobody and `low` stamps `approved`
+itself; `high` and `xhigh` ask
+([gears.md](../../references/specs-cycle/gears.md) §The scale). So the
+defining half's plan must say, in as many words, **whether the human will be asked anything** —
+under `low` the answer is no, and that is the one thing this screen cannot leave implicit.
 
 Then read the state again (`cq specs status --spec <slug> --json`) and re-evaluate the gear per
 §Re-evaluating a gear. **The gear moved up** → return to step 3: a new plan and a fresh

@@ -1,5 +1,5 @@
 ---
-description: Mint or edit ONE command in this repo's .claude surface — one file per entry point. Triggers on "create a command", "mint a command for X", "add a new entry point to the .claude surface". Not for: a subagent definition → /quenching:components:agent:new; a hook → /quenching:components:hook:new; measuring a command → /quenching:components:command:eval.
+description: Mint or edit ONE command in this repo's .claude surface — one file per entry point. Triggers on "create a command", "mint a command for X", "add a new entry point to the .claude surface".
 argument-hint: [skill-name-or-description]
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit
 ---
