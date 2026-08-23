@@ -69,11 +69,11 @@ def cmd_parallel(args, root: str, out: Emitter) -> int:
                          "annotations": annotations, "clashes": clashes})
     ok = all(f["eligible"] for f in findings)
     if args.json:
-        print(json.dumps({"ok": ok, "slug": info["slug"], "groups": findings},
+        print(json.dumps({"ok": ok, "id": info["id"], "groups": findings},
                          indent=2, ensure_ascii=False))
     else:
         if not findings:
-            print(f"{info['slug']}: no [P] groups — serial execution")
+            print(f"{info['id']}: no [P] groups — serial execution")
         for f in findings:
             print(f"group {f['group']}: {', '.join(x or '?' for x in f['tasks'])} — "
                   f"{'eligible' if f['eligible'] else 'NOT eligible'}")

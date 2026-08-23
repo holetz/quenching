@@ -31,14 +31,6 @@ def _init_default_branch(cwd: str) -> str | None:
     return _git(cwd, "config", "init.defaultBranch").strip() or None
 
 
-def _origin_repository(cwd: str) -> str | None:
-    """The repository name Azure CLI requires when it cannot infer one from defaults."""
-    remote = _git(cwd, "remote", "get-url", "origin").strip().rstrip("/")
-    if not remote:
-        return None
-    return remote.rsplit("/", 1)[-1].removesuffix(".git") or None
-
-
 def _is_host_default(cwd: str, backend: str, base: str) -> bool:
     """Whether `base` is the host's own default branch.
 
@@ -49,11 +41,7 @@ def _is_host_default(cwd: str, backend: str, base: str) -> bool:
         argv = ["gh", "repo", "view", "--json", "defaultBranchRef",
                 "-q", ".defaultBranchRef.name"]
     elif backend == "azure-boards":
-        repository = _origin_repository(cwd)
-        if not repository:
-            return False
-        argv = ["az", "repos", "show", "--repository", repository, "--detect", "true",
-                "--query", "defaultBranch", "-o", "tsv"]
+        argv = ["az", "repos", "show", "--query", "defaultBranch", "-o", "tsv"]
     else:
         return False
     try:

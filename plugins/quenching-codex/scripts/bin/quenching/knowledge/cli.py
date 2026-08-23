@@ -5,7 +5,7 @@ Moved verbatim out of the pre-refactor OKF validator script.
 CLI  `validate [<bundle-or-docs-dir>] [--json]`
    Validates the whole bundle rooted at the given directory (walks every `.md`),
    prints a human report, and exits **0** when there are no errors, **1** otherwise.
-   This is what `quenching-knowledge-align`/`quenching-knowledge-add` invoke and what the plugin's own
+   This is what `quenching:knowledge:align`/`quenching:knowledge:add` invoke and what the plugin's own
    verification runs over `assets/knowledge/`.
    This checker validates OKF bundles and nothing else. The `specs/` front is owned
    end-to-end by the specs pillar's `validate`, which holds a spec to its own contract

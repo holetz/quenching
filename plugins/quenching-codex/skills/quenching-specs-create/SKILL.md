@@ -34,7 +34,7 @@ what you were given, and nothing more.**
 
 | Input                   | What gets written                        |
 | ----------------------- | ----------------------------------------- |
-| a sentence              | `## Problem`, `summary:`  |
+| a sentence              | a descriptive title, `## Problem` |
 | a Claude or Codex plan, from a file or this session | every section the plan actually supports |
 
 The same richness decides the `complexity` this command computes and writes (step 4): a
@@ -44,21 +44,19 @@ levels in between are the develop pass's to re-evaluate when it closes.
 
 ## Doctrine
 
-- **A sentence becomes `## Problem` and `summary:` in ONE call, and stops.**
-  `cq specs new` stamps the frontmatter (`slug`, `title`, `date`, `verification`) and, through the
-  flags and stdin step 5 always supplies, the heading and the one-line précis together —
-  never as two follow-up calls. Every other canonical heading is left ABSENT, which the
+- **A sentence becomes a descriptive title and `## Problem` in ONE call, and stops.**
+  `cq specs new` stamps the frontmatter (`title`, `date`, `verification`) and, through the
+  positional title and stdin step 5 always supplies, the heading together — never as two
+  follow-up calls. Every other canonical heading is left ABSENT, which the
   stage-scoped explicit-none rule
   ([spec-driven.md](../../references/specs-develop/spec-driven.md) §The gates)
   makes legal. Writing thirteen `- none` headings here would make a fresh capture derive as
   `designed` and clear the whole ready gate without anyone having thought anything.
 - **Never invent what the input lacks.** On the plan-source path, `- none — the plan recorded no alternatives` is honest; a fabricated risk is not. Where the source said nothing, either leave
 the heading absent or write an explicit none that *says* the source was silent.
-- **Kebab slug in the repo's declared language.** `slugify` folds accents (`criação` → `criacao`)
-and `SLUG_RE` refuses (exit 2) on a bad one — derive it in the language
-[communication.md](/.knowledge/standards/agents/communication.md) §Declaring it declares.
-- **MERGE, never clobber.** `cq specs new` refuses (exit 2) on an existing slug. Take that as the
-answer: sharpen the existing spec instead, or pick a different slug.
+- **The title is descriptive and explicit.** Do not accept a generated or `titleize` fallback:
+  the provider assigns the native ID, and a title derived from that ID would not tell a human
+  what the spec changes. If the input does not supply a useful title, ask for one before capture.
 - **Never ask for a metadata field before the spec exists.** Subject, type, tags and `complexity`
   are each computed from the input, written WITH the capture, and shown — never gated on a question
   asked before there is a spec, a locator or a text for the human to judge. The confirmation moves
@@ -86,15 +84,14 @@ the CLI cannot make for you: `cq specs new`
 `backlog/`/`ready/` folder as a finding rather than writing into one.
 **Done when:** the path is chosen.
 
-### 2. Derive the slug
+### 2. Choose the title
 
-Take a title and a one-sentence problem from the input, and derive a kebab slug in the repo's
-declared language. On the plan-source path, derive it from the plan's title or goal ("Add rate
-limiting to the API" → `add-api-rate-limiting`).
+Take a descriptive title and a one-sentence problem from the input. On the plan-source path, use
+the plan's title or goal ("Add rate limiting to the API" → "Add API rate limiting"). The title is
+the human-readable name sent to the provider; the provider-native ID is assigned when it stores
+the spec.
 
-**The collision check is `cq specs new`'s exit 2** (`sp-slug-exists`, naming where it is) — never a
-front listing first, which under `github` is a paginated fetch of every issue (2.4s measured).
-**Done when:** a canonical slug is in hand.
+**Done when:** a descriptive title is in hand.
 
 ### 3. Plan-source path only — read it, and read the bundle
 
@@ -159,18 +156,12 @@ a value, or explicitly to none) and reasoned, or the step was skipped whole.
 ### 5. Capture in ONE call
 
 Write `## Problem` — the problem or opportunity in the source's own framing, two sentences on the
-sentence path. **Never a list of what each section says**: a capture has one section on the
-sentence path, so there is nothing to index.
+sentence path.
 
 **Plan-source path:** additionally write every section the plan actually supports, its own
 `## <Heading>` block in the same stream. Where the plan was
 silent on a section you are writing others around, write `- none — <what the source did not
 record>`. Never fabricate.
-
-**`summary:` goes in the same call** — ONE line, the précis every ranked listing prints
-(`cq specs next --front --table`). Capture is the only moment at which the problem has just been
-read and compressing it costs nothing. Write what the spec IS and why it matters, never what it
-will do to the codebase.
 
 Everything step 4 resolved, everything above, and the closing `validate` — **one Bash block**,
 chained with `&&` per
@@ -178,10 +169,10 @@ chained with `&&` per
 §Resolving the tool:
 
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs new <slug> --title "<title>" \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs new "<title>" \
   [--subject <key>] [--type <key>] [--tags "<subject's fixed tags>,<confirmed catalog tags>"] \
-  --summary "<one line>" --complexity <level> <<'EOF' \
-&& python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs validate --spec <slug>
+  --complexity <level> <<'EOF' \
+&& python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs validate --spec <id>
 ## Problem
 
 <two sentences, or what the source supports>
@@ -196,9 +187,8 @@ Quote the delimiter (`<<'EOF'`) so nothing in the prose is expanded by the shell
 `--type`/`--tags` only where step 4 resolved one; `--tags`, when present, carries the **whole**
 list — the subject's own fixed tags are folded in by the tool, never lost.
 
-**Refusals, all before anything is written:** exit 2 means the slug already exists
-(`sp-slug-exists`) — say so and stop, never invent a variant. `sp-bad-complexity` means step 4's
-computed level is wrong — recompute and retry the same call. `sp-stray-heading` (`source: stream`)
+**Refusals, all before anything is written:** `sp-bad-complexity` means step 4's computed level
+is wrong — recompute and retry the same call. `sp-stray-heading` (`source: stream`)
 or `sp-write-duplicate-heading` means the stdin stream is malformed — fix the stream and retry the
 same call, never split it into smaller ones. `sp-no-subject`/`sp-subject-unknown`/`sp-type-unknown`
 means step 4's own resolution disagrees with the target's declared config RIGHT NOW (a race, or a
@@ -209,14 +199,14 @@ its remedy verbatim, and stop; migrating the target's config is not this command
 Any other backend failure (`sp-backend-unavailable`, `sp-worktree-unusable`,
 `sp-worktree-failed`) is reported verbatim, naming `quenching-specs-align`.
 
-The chained `cq specs validate --spec <slug>` is the whole of what checking this spec means — its
+The chained `cq specs validate --spec <id>` is the whole of what checking this spec means — its
 own finding, if any, is named verbatim in step 6, never silently swallowed by the `&&`.
 **Sentence path: nothing beyond `## Problem` is in the stream.** A plan from a
 file or the current session may add only sections its source supports.
 **Done when:** `cq specs new` exited 0, `validate` ran in the same call, and the locator it
 returned is in hand.
 
-### 6. The one screen — summary, correction and direction
+### 6. The one screen — capture, correction and direction
 
 ```bash
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/spec-driven.md \
@@ -228,10 +218,10 @@ presumed and why — the shape differs by path:
 
 | Path | What the body block shows |
 | --- | --- |
-| sentence | `summary:`, and the drafted `## Problem` text **in full**, exactly what a human wants to check about the capture. Plus subject, type, tags and `complexity`, each with its one-line reason |
+| sentence | the descriptive title and drafted `## Problem` text **in full**, exactly what a human wants to check about the capture. Plus subject, type, tags and `complexity`, each with its one-line reason |
 | plan source | subject, type, tags and `complexity` (each reasoned), and the **list** of sections filled with the task count. **Never the bodies** — the plan is large and the human just wrote it |
 
-Then the next-step block — `quenching-specs-develop <slug>` and `quenching-specs-cycle <slug>`
+Then the next-step block — `quenching-specs-develop <id>` and `quenching-specs-cycle <id>`
 named as the two forward candidates — and **one** `AskUserQuestion`, immediately after, exactly as
 `quenching-specs-execute` prints the same block and then opens its own `AskUserQuestion` at 100%:
 the block is the suggestion, the question is the offer that follows it, and only
@@ -240,7 +230,7 @@ the block is the suggestion, the question is the offer that follows it, and only
 Three options:
 
 1. **Develop now, no questions (Recommended)** — narrate, then invoke `quenching:specs:develop
-   <slug>` through the **Skill** tool, declaring first: *"Ask the human nothing: a question no
+   <id>` through the **Skill** tool, declaring first: *"Ask the human nothing: a question no
    evidence answers goes to `## Open Decisions` with how it will be decided."* On the plan-file
    path the plan itself is the evidence; on the sentence path, whatever has none becomes an Open
    Decision instead of a question.
@@ -250,10 +240,10 @@ Three options:
 
 **The correction is `Other`**, which the tool always offers and which the question text invites
 explicitly ("…or answer `Other` to correct any presumption before continuing"). A correction is
-applied with the deterministic verb that owns the field — `cq specs tags <slug> "<whole list>"`
-(fixed tags included, or they are lost), `cq specs record <slug> priority --set
-complexity=<level> --set date=<today>`, `cq specs summary <slug> "<line>"`, `cq specs section
-<slug> "<Heading>" --write` — **and only then** honour whichever of the three options the same
+applied with the deterministic verb that owns the field — `cq specs tags <id> "<whole list>"`
+(fixed tags included, or they are lost), `cq specs record <id> priority --set
+complexity=<level> --set date=<today>`, `cq specs section <id> "<Heading>" --write` — **and only
+then** honour whichever of the three options the same
 answer also names. An `Other` answer that names no direction falls to option 3.
 
 There is no patch-then-edit sequence to reason about: the capture already made ONE write with
@@ -273,7 +263,7 @@ both — has been fully honoured.
   converts, because what the release *is* is unknowable until the last task lands.
   `quenching-specs-conclude` owns them, along with the `/.knowledge/` the work *reveals* and the cycle's
   own closing actions. A standard the plan declares the spec will write still becomes a checkbox.
-- Never work around `cq specs new`'s exit 2 by inventing a slug variant.
+- Never accept a generated title or a `titleize` fallback when the input lacks a descriptive title.
 - **Never ask for a metadata field before the spec exists.** Subject, type, tags and `complexity`
   are resolved and written in step 5; the human is asked only after, on the closing screen.
 - **Never invoke `quenching-specs-develop` without the human having chosen a direction** on the

@@ -4,10 +4,10 @@ title: Plan git record contract
 description: How a provider-owned spec records the git facts that cannot be derived later — commit shas for task anchors, branch, pull request and merge records, section squashes, branch marks for conclude discovery, base inference, merge routes, and safe branch cleanup
 resource: plugins/quenching/assets/references/git/**, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-conclude/auto-discover.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/git/merge.md, plugins/quenching/commands/git/pr/create.md
 tags: [workflows, specs, git, commits, records]
-timestamp: 2026-08-16
+timestamp: 2026-08-22
 audience: both
 authority: background
-source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption; the pull-request route and `merge.pr` added by that same plan's branch review at conclude, which found the `## Impact` path declared for this file and written only in plan-lifecycle.md; the declared-integration-branch step added ahead of origin/HEAD by the configurable-branch-strategy plan (task 2.3, 2026-08-04), proved in code by `infer_base_branch`'s `selftest` fixture; the section squash and its narrowing of the task→commit anchor to section granularity by the reduzir-commits-por-secao spec (2026-08-11); the `quenching-slugs:` branch mark and the auto-discover fallback added by the conclude-detecta-slug-por-marcacao-de-worktree plan (task 3.1, 2026-08-12); the `pr` record, the in-place `work == base` pair and the liveness exception it forces added by vincular-spec-a-branch-commits-e-pr at its conclude — this file was never named under that spec's `## Impact`, and the branch review is what found it contradicted, after `cq specs next` was measured ranking every in-place spec as permanently in flight on a base branch that cannot die; the place rule (§Every record is written where it needs to survive) and the branch-deletion counterpart to the worktree rule (§A branch is deleted with `-d`, never `-D`) added by the fix-conclude-abandoned-branch-harvest plan (task 4.1, 2026-08-16) — proved, not merely agreed: `conclude-order-check.sh`'s `abandoned` arm (task 3.1 of that same plan) builds the fixture, deletes the branch with `-D`, and asserts the closing survives; `pr:`/`merge:` ownership moved to `/quenching:git:pr:create`/`/quenching:git:merge` and the host-link conditionality (measured in task 1.1) added by pilar-git-e-specs-agnosticas-ao-git (task 6.4)
+source: abandonar-slug-por-id-nativo (section 4); specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption; the pull-request route and `merge.pr` added by that same plan's branch review at conclude, which found the `## Impact` path declared for this file and written only in plan-lifecycle.md; the declared-integration-branch step added ahead of origin/HEAD by the configurable-branch-strategy plan (task 2.3, 2026-08-04), proved in code by `infer_base_branch`'s `selftest` fixture; the section squash and its narrowing of the task→commit anchor to section granularity by the reduzir-commits-por-secao spec (2026-08-11); the native-ID branch mark and the auto-discover fallback added by abandonar-slug-por-id-nativo (section 4); the `pr` record, the in-place `work == base` pair and the liveness exception it forces added by vincular-spec-a-branch-commits-e-pr at its conclude — this file was never named under that spec's `## Impact`, and the branch review is what found it contradicted, after `cq specs next` was measured ranking every in-place spec as permanently in flight on a base branch that cannot die; the place rule (§Every record is written where it needs to survive) and the branch-deletion counterpart to the worktree rule (§A branch is deleted with `-d`, never `-D`) added by the fix-conclude-abandoned-branch-harvest plan (task 4.1, 2026-08-16) — proved, not merely agreed: `conclude-order-check.sh`'s `abandoned` arm (task 3.1 of that same plan) builds the fixture, deletes the branch with `-D`, and asserts the closing survives; `pr:`/`merge:` ownership moved to `/quenching:git:pr:create`/`/quenching:git:merge` and the host-link conditionality (measured in task 1.1) added by pilar-git-e-specs-agnosticas-ao-git (task 6.4)
 maintainer: quenching
 ---
 
@@ -81,7 +81,7 @@ and only **after** the task verified, self-reviewed, and the commit exists:
 
 ```bash
 git add <the task's files> && git commit -m "<subject>"
-cq specs task --spec <slug> --check <id> --commit "$(git rev-parse HEAD)"
+cq specs task --spec <id> --check <id> --commit "$(git rev-parse HEAD)"
 ```
 
 ### Why the provider write does not create a second code commit
@@ -212,7 +212,7 @@ parsing), so the branch restriction may not apply there at all; task 1.2 remains
 authority to create artifacts in a real corporate org from an autonomous run) and is what would
 prove or break the assumption.
 
-**The record is never the signal.** A human may cut `plan/<slug>` by hand and stamp nothing, and a
+**The record is never the signal.** A human may cut `plan/<id>-<handle>` by hand and stamp nothing, and a
 record outlives the branch it names. Anything asking whether a spec is in flight asks git for a
 live ref — which is what `cq specs next --front` does, and why that ranking demotes a spec
 whose branch is alive but checked out elsewhere.
@@ -235,14 +235,14 @@ not a guard, and it fails silently in the direction of always-true.**
 
 Beside `branch:`, `pr:` and `merge:` above, `/quenching:specs:execute` writes one more signal that is
 **not** a frontmatter record: a recognizable line in the branch's own description —
-`quenching-slugs: <slug1>,<slug2>` — rewritten, never duplicated, after every task's commit, and
+`quenching-specs: <id1>,<id2>` — rewritten, never duplicated, after every task's commit, and
 never written when the spec runs `In place`. The mechanism is
 [git/isolation.md](/plugins/quenching/assets/references/git/isolation.md) §Marking the branch with
 the specs it built, owned by `execute`.
 
 `/quenching:specs:conclude` reads it to resolve which spec(s) built the branch it is closing when
-called with no `--spec`: one valid slug resolves silently, more than one asks, and a slug the
-marking names that no longer resolves under `plans/` is dropped as stale rather than trusted. No
+called with no `--spec`: one valid ID resolves silently, more than one asks, and an ID the marking
+names that no longer resolves under `plans/` is dropped as stale rather than trusted. No
 valid marking at all falls to measuring the branch's own diff and always asking whether to
 materialize a minimal spec before continuing — never a size threshold. The full procedure is
 [auto-discover.md](/plugins/quenching/assets/references/specs-conclude/auto-discover.md), owned by
@@ -251,9 +251,9 @@ materialize a minimal spec before continuing — never a size threshold. The ful
 **Why this is not a fourth frontmatter record.** The three records above answer questions only
 the spec itself can honestly hold — a write-once fact this exact spec is the source of. The
 branch's mark answers a different question — *which* spec(s), if any, built this ref — asked by a
-command that does not yet know the slug, so the answer has to live somewhere reachable **before**
-any spec is resolved. Frontmatter lives inside a spec; a slug is the key that opens one. The mark
-lives on the ref instead, which is the one place a slug-less `conclude` can look first.
+command that does not yet know the ID, so the answer has to live somewhere reachable **before**
+any spec is resolved. Frontmatter lives inside a spec; the provider ID is the key that opens one. The
+mark lives on the ref instead, which is the one place a `conclude` without `--spec` can look first.
 
 **Local to the `.git` that wrote it — the same limitation as any git config.** A branch pulled onto
 another machine, or a fresh clone, carries no description at all, so this mark never crosses one.
@@ -330,7 +330,7 @@ standing:
 
 ```bash
 git worktree list --porcelain                    # which checkout holds <base>
-git -C <that path> merge --no-ff plan/<slug> -m "plan/<slug>: merge (<strategy>)"
+git -C <that path> merge --no-ff plan/<id>-<handle> -m "plan/<id>-<handle>: merge (<strategy>)"
 ```
 
 `git checkout <base>` is **never** how a plan comes home. From inside a worktree it does not merely
@@ -387,11 +387,11 @@ governs verbatim; partial coverage splits (the target's docs for what they cover
 defaults for the rest); an `authority: background` git standard still wins over the defaults. The
 report states which one governed.
 
-With nothing declared, the plugin's defaults apply — branch `plan/<slug>`, one commit per task with
-the subject `plan/<slug>: <id> <title>` while a section is open, squashed to one commit per section
-with the subject `plan/<slug>: <N> <section title>` at that section's own boundary
+With nothing declared, the plugin's defaults apply — branch `plan/<id>-<handle>`, one commit per task with
+the subject `plan/<id>-<handle>: <id> <title>` while a section is open, squashed to one commit per section
+with the subject `plan/<id>-<handle>: <N> <section title>` at that section's own boundary
 ([execution.md](/plugins/quenching/assets/references/specs-execute/execution.md) §The section
-squash), `plan/<slug>: merge (<strategy>)` for a merge, and `plan/<slug>: record …` for the
+squash), `plan/<id>-<handle>: merge (<strategy>)` for a merge, and `plan/<id>-<handle>: record …` for the
 bookkeeping that remains. That bookkeeping is now only what a commit genuinely cannot carry ahead
 of itself — `## Handoff`, which describes the tree *after* the last commit — and no longer includes
 a ticked box or a stamped `merge:` record.

@@ -503,12 +503,12 @@ class AzureCreateType(unittest.TestCase):
         doc = _case_doc("alpha")
         close = doc.index("\n---\n")
         typed = doc[:close] + "\nworkItemType: incidente" + doc[close:]
-        az.create_spec("plans", "alpha.md", typed)
+        az.create_spec("plans", typed)
         self.assertEqual(_type_argv(calls[-1]), "Bug")
 
     def test_no_declared_type_falls_through_to_az_spec_type(self):
         az, calls = self._stubbed()
-        az.create_spec("plans", "beta.md", _case_doc("beta"))
+        az.create_spec("plans", _case_doc("beta"))
         self.assertEqual(_type_argv(calls[-1]), AZ_SPEC_TYPE)
 
 

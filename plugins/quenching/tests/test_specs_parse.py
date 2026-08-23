@@ -24,7 +24,7 @@ from quenching.common.text import slugify
 from quenching.specs.backends.memory import MemoryBackend
 from quenching.specs.commands import read as read_module
 from quenching.specs.commands import validate as validate_module
-from quenching.specs.commands.cli import DISPATCH, build_parser, main
+from quenching.specs.commands.cli import DISPATCH, build_parser
 from quenching.specs.commands.output import Emitter
 from quenching.specs.config import infer_base_branch, load_config, resolve_subject
 from quenching.specs.parse.derive import derive_info
@@ -135,97 +135,38 @@ class ResolveSubject(unittest.TestCase):
 
 
 class ResolveOne(unittest.TestCase):
-    """The four rungs of `resolve_one`, over a fixed listing — pure over the listing, no
-    backend, no store, so "every backend refuses the same way" is a property of this
-    function rather than a claim re-tested per target."""
+    """Native IDs resolve identically over every backend's descriptor listing."""
 
     LISTING = [
         {"phase": "plans", "folder": "plans", "legacy": False,
          "file": "avaliar-o-fluxo-de-criacao-de-specs.md", "path": "x",
-         "slug": "avaliar-o-fluxo-de-criacao-de-specs"},
+         "id": 101},
         {"phase": "plans", "folder": "plans", "legacy": False,
          "file": "fechar-vazamentos-do-backend-files.md", "path": "y",
-         "slug": "fechar-vazamentos-do-backend-files"},
+         "id": 102},
     ]
-    TITLES = {"avaliar-o-fluxo-de-criacao-de-specs":
-              "Avaliar o fluxo de criação de specs, sobretudo no backend github",
-              "fechar-vazamentos-do-backend-files":
-              "Fechar os vazamentos do backend files"}
 
-    def test_the_exact_slug_resolves_and_announces_nothing_because_nothing_was_inferred(self):
-        spec, err = resolve_one(self.LISTING, "avaliar-o-fluxo-de-criacao-de-specs", self.TITLES)
+    def test_the_exact_native_id_resolves_without_a_resolution_receipt(self):
+        spec, err = resolve_one(self.LISTING, "101")
         self.assertEqual(err, {})
-        self.assertEqual(spec["slug"], "avaliar-o-fluxo-de-criacao-de-specs")
-        self.assertIsNone(spec.get("resolvedBy"))
+        self.assertEqual(spec["id"], 101)
 
-    def test_the_exact_title_folded_for_case_and_accents_resolves_by_title(self):
-        # A fragment copied straight out of an issue.
-        spec, err = resolve_one(
-            self.LISTING,
-            "AVALIAR O FLUXO DE CRIACAO DE SPECS, SOBRETUDO NO BACKEND GITHUB",
-            self.TITLES)
-        self.assertEqual(err, {})
-        self.assertEqual(spec["slug"], "avaliar-o-fluxo-de-criacao-de-specs")
-        self.assertEqual(spec.get("resolvedBy"), "title")
-
-    def test_a_slug_with_a_typo_resolves_approximately_and_says_so(self):
-        spec, err = resolve_one(
-            self.LISTING, "avaliar-o-fluxo-de-criacao-de-spec", self.TITLES)
-        self.assertEqual(err, {})
-        self.assertEqual(spec["slug"], "avaliar-o-fluxo-de-criacao-de-specs")
-        self.assertEqual(spec.get("resolvedBy"), "approximate")
-
-    def test_two_specs_sharing_a_slug_refuse_ambiguous_and_name_both(self):
-        dup = self.LISTING + [dict(self.LISTING[0], file="outro.md",
-                                   phase="archive", folder="archive")]
-        spec, err = resolve_one(dup, "avaliar-o-fluxo-de-criacao-de-specs", self.TITLES)
+    def test_an_unknown_native_id_refuses(self):
+        spec, err = resolve_one(self.LISTING, 999)
         self.assertIsNone(spec)
-        self.assertEqual(err.get("code"), "sp-ambiguous-slug")
-        self.assertEqual(err.get("exit"), 2)
-
-    def test_something_genuinely_absent_refuses_rather_than_resolving_to_the_nearest_spec(self):
-        # The rung that must NOT fire — this is what FUZZY_MATCH_THRESHOLD is for.
-        spec, err = resolve_one(self.LISTING, "algo-completamente-diferente", self.TITLES)
-        self.assertIsNone(spec)
-        self.assertEqual(err.get("code"), "sp-unknown-slug")
+        self.assertEqual(err.get("code"), "sp-unknown-id")
         self.assertEqual(err.get("exit"), 1)
 
 
-class EmitterReceipt(unittest.TestCase):
-    """The receipt of an inexact resolution, carried by `Emitter` instead of the module
-    global `_RESOLUTION` the pre-refactor specs script used to reset by hand. `resolved()` is
-    the same call
-    `read_one` makes, so these exercise the real API rather than a private re-implementation."""
-
-    def test_a_command_that_resolved_no_slug_announces_nothing(self):
+class EmitterOutput(unittest.TestCase):
+    def test_announcement_is_the_original_payload(self):
         out = Emitter()
         self.assertEqual(out.announced({"ok": True}), {"ok": True})
         self.assertEqual(out.receipt_line(), "")
 
-    def test_an_exact_resolution_carries_both_keys_as_null_but_says_nothing_to_a_human(self):
-        out = Emitter()
-        out.resolved({"resolvedBy": None, "resolvedFrom": None})
-        payload = out.announced({"ok": True})
-        self.assertIsNone(payload.get("resolvedBy"))
-        self.assertIn("resolvedFrom", payload)
-        self.assertEqual(out.receipt_line(), "")
-
-    def test_an_approximate_resolution_reaches_both_the_payload_and_the_human_receipt(self):
-        out = Emitter()
-        out.resolved({"resolvedBy": "approximate", "resolvedFrom": "o titulo inteiro"})
-        payload = out.announced({"ok": True})
-        self.assertEqual(payload.get("resolvedBy"), "approximate")
-        self.assertEqual(payload.get("resolvedFrom"), "o titulo inteiro")
-        human = out.receipt_line()
-        self.assertIn("approximate", human)
-        self.assertIn("o titulo inteiro", human)
-
 
 def _resolves_directly(src: str) -> bool:
-    """True where a verb's source calls `<backend>.read_spec(args.spec)` itself — the exact
-    bypass that would resolve the human's own slug correctly while announcing nothing.
-    PARSED, never string-matched, so a remedy sentence naming the call it forbids cannot
-    flag itself."""
+    """True where a verb resolves a human's ID without going through `read_one`."""
     return any(
         isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
         and n.func.attr == "read_spec" and n.args
@@ -234,41 +175,15 @@ def _resolves_directly(src: str) -> bool:
         for n in ast.walk(ast.parse(src)))
 
 
-def _dispatches_a_fresh_emitter(src: str) -> bool:
-    """True where `main` builds its own `Emitter()` and hands that SAME object into the
-    `DISPATCH` call — the structural replacement for the old `_RESOLUTION = None` reset: an
-    object built here and dropped when `main` returns cannot let one command's receipt ride
-    out on the next one's payload, with nothing left for an author to remember."""
-    tree = ast.parse(src)
-    emitter_names = {
-        t.id for n in ast.walk(tree) if isinstance(n, ast.Assign)
-        and isinstance(n.value, ast.Call) and isinstance(n.value.func, ast.Name)
-        and n.value.func.id == "Emitter"
-        for t in n.targets if isinstance(t, ast.Name)
-    }
-    return any(
-        isinstance(n, ast.Call) and isinstance(n.func, ast.Subscript)
-        and isinstance(n.func.value, ast.Name) and n.func.value.id == "DISPATCH"
-        and n.args and isinstance(n.args[-1], ast.Name) and n.args[-1].id in emitter_names
-        for n in ast.walk(tree))
-
-
-class EveryVerbAnnouncesThroughTheEmitter(unittest.TestCase):
-    """The meta-property `announcement_failures` existed to hold: the receipt reaches EVERY
-    dispatched verb. Checked against `DISPATCH` — the registry a new verb has to join to
-    exist at all — rather than a list of verb names a future verb could be added without
-    updating."""
+class EveryVerbReadsThroughReadOne(unittest.TestCase):
+    """Every dispatched verb resolves a human's ID through `read_one`."""
 
     def test_no_dispatched_verb_bypasses_read_one_for_the_humans_own_slug(self):
         sources = {name: inspect.getsource(fn) for name, fn in DISPATCH.items()}
         for name, src in sorted(sources.items()):
             with self.subTest(verb=name):
                 self.assertFalse(_resolves_directly(src),
-                                 f"`{name}` calls read_spec(args.spec) directly, bypassing "
-                                 f"read_one and the emitter's receipt")
-
-    def test_main_hands_dispatch_a_freshly_built_emitter(self):
-        self.assertTrue(_dispatches_a_fresh_emitter(inspect.getsource(main)))
+                                 f"`{name}` calls read_spec(args.spec) directly, bypassing read_one")
 
 
 # The canonical case list for the `## Handoff` section-block rule — the pre-refactor specs
@@ -456,15 +371,16 @@ class PhaseCutsListAndValidate(unittest.TestCase):
     alone. `getattr(args, "phase", None)` is what lets a caller built before the flag existed
     (no `phase` attribute at all) keep behaving exactly as it always did."""
 
-    def _write(self, root, phase_dir, slug):
-        doc = (capture_form().replace("<SLUG>", slug).replace("<TITLE>", slug.title())
+    def _write(self, root, phase_dir, name):
+        doc = (capture_form().replace("<TITLE>", name.title())
                .replace("<DATE>", "2026-01-01").replace("<VERIFICATION>", "per-task"))
-        self.backend.create_spec(phase_dir, f"{slug}.md", doc)
+        self.backend.create_spec(phase_dir, doc)
+        return max(self.backend.docs)
 
     def _workspace(self, root):
         self.backend = MemoryBackend()
-        self._write(root, "plans", "alpha")
-        self._write(root, "archive", "beta")
+        self.alpha = self._write(root, "plans", "alpha")
+        self.beta = self._write(root, "archive", "beta")
 
     def _dispatch(self, verb, root, args):
         buf = io.StringIO()
@@ -482,7 +398,7 @@ class PhaseCutsListAndValidate(unittest.TestCase):
                                         argparse.Namespace(json=True, phase="plans"))
             self.assertEqual(everyone["count"], 2)
             self.assertEqual(plans_only["count"], 1)
-            self.assertEqual(plans_only["specs"][0]["slug"], "alpha")
+            self.assertEqual(plans_only["specs"][0]["id"], self.alpha)
 
     def test_validate_phase_excludes_findings_from_the_other_phase(self):
         with tempfile.TemporaryDirectory() as root:
@@ -491,9 +407,11 @@ class PhaseCutsListAndValidate(unittest.TestCase):
                 "validate", root, argparse.Namespace(json=True, spec=None, phase=None))
             plans_only = self._dispatch(
                 "validate", root, argparse.Namespace(json=True, spec=None, phase="plans"))
-            self.assertIn("beta", [f.get("spec") for f in everyone["findings"]])
-            self.assertNotIn("beta", [f.get("spec") for f in plans_only["findings"]])
-            self.assertIn("alpha", [f.get("spec") for f in plans_only["findings"]])
+            self.assertIn(str(self.beta), [str(f.get("spec")) for f in everyone["findings"]])
+            self.assertNotIn(str(self.beta),
+                             [str(f.get("spec")) for f in plans_only["findings"]])
+            self.assertIn(str(self.alpha),
+                          [str(f.get("spec")) for f in plans_only["findings"]])
 
     def test_a_caller_built_before_the_flag_existed_is_unaffected(self):
         with tempfile.TemporaryDirectory() as root:
@@ -502,7 +420,7 @@ class PhaseCutsListAndValidate(unittest.TestCase):
             validated = self._dispatch(
                 "validate", root, argparse.Namespace(json=True, spec=None))
             self.assertEqual(listed["count"], 2)
-            self.assertIn("beta", [f.get("spec") for f in validated["findings"]])
+            self.assertIn(str(self.beta), [str(f.get("spec")) for f in validated["findings"]])
 
 
 class ListDropsLegacyOverview(unittest.TestCase):
@@ -511,9 +429,7 @@ class ListDropsLegacyOverview(unittest.TestCase):
     def test_a_legacy_overview_is_ignored_by_the_json_projection(self):
         with tempfile.TemporaryDirectory() as root:
             backend = MemoryBackend()
-            backend.create_spec(
-                "plans", "legacy.md",
-                "---\nslug: legacy\ntitle: Legacy\ndate: 2026-01-01\n---\n\n"
+            backend.create_spec("plans", "---\ntitle: Legacy\ndate: 2026-01-01\n---\n\n"
                 "# Legacy\n\n## Overview\n\nTexto antigo.\n\n"
                 "## Problem\n\nO problema.\n")
             buf = io.StringIO()
@@ -523,7 +439,10 @@ class ListDropsLegacyOverview(unittest.TestCase):
                 DISPATCH["list"](argparse.Namespace(json=True, phase=None), root, Emitter())
             row = json.loads(buf.getvalue())["specs"][0]
             self.assertNotIn("overview", row)
-            self.assertEqual(row["summary"], None)
+            # `summary` went out of the contract with `overview` —
+            # `optional-payload-fields.md` §Retired fields stay retired. It is ABSENT, not
+            # null: a key that is always null is a field the contract still carries.
+            self.assertNotIn("summary", row)
             findings = validate_module.validate_spec(backend, backend.list_specs()[0])
             self.assertNotIn("sp-stray-heading", [f["code"] for f in findings])
 

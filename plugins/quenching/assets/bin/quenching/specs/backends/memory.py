@@ -3,9 +3,8 @@
 Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
-from quenching.common.frontmatter import parse_frontmatter
 from quenching.specs.backends.base import SpecBackend
-from quenching.specs.parse import PHASES, SPEC_FILE_RE, derive_info, resolve_one
+from quenching.specs.parse import PHASES, derive_info, derive_labels, resolve_one
 
 
 class MemoryBackend(SpecBackend):
@@ -24,47 +23,49 @@ class MemoryBackend(SpecBackend):
     name = "memory"
 
     def __init__(self) -> None:
-        # slug -> (phase, filename, document). The filename is stored rather than rebuilt
-        # from the slug so that this backend can hand back exactly what it was given, the
-        # way a filesystem does. It no longer carries the capture date: that moved into the
-        # document's `date:`, which every backend reads through the one derivation — the
-        # divergence the equality check caught here was a backend RECOMPUTING the date, and
-        # the fix was to stop having a second place able to compute it at all.
-        self.docs: dict[str, tuple[str, str, str]] = {}
+        # Native ID -> (phase, document). The fake allocates integer IDs so it exercises the
+        # same interface as the provider backends without inventing a filename.
+        self.docs: dict[int, tuple[str, str]] = {}
+        self._next_id = 1
 
-    def _descriptor(self, slug: str) -> dict:
-        # The SAME key set `spec_files` returns, and nothing more. An extra key here would
-        # be a field some command could come to depend on and that the files backend would
-        # then not have.
-        phase, filename, _ = self.docs[slug]
-        m = SPEC_FILE_RE.match(filename)
-        return {"phase": phase, "folder": phase, "legacy": False, "file": filename,
-                "path": f"memory://{phase}/{filename}",
-                "slug": m.group(1) if m else slug}
+    def _descriptor(self, spec_id: int) -> dict:
+        phase, _ = self.docs[spec_id]
+        return {"id": spec_id, "phase": phase, "folder": phase, "legacy": False,
+                "path": f"memory://{phase}/{spec_id}"}
 
-    def list_specs(self, phase: str | None = None) -> list[dict]:
-        rows = [self._descriptor(s) for s in self.docs
-                if phase is None or self.docs[s][0] == phase]
-        return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
+    def list_specs(self, phase: str | None = None, lean: bool = False) -> list[dict]:
+        rows = []
+        for spec_id in self.docs:
+            if phase is not None and self.docs[spec_id][0] != phase:
+                continue
+            descriptor = self._descriptor(spec_id)
+            if lean:
+                info = derive_info(descriptor, self.docs[spec_id][1])
+                descriptor.update({
+                    "title": info["frontmatter"].get("title", ""),
+                    "state": "closed" if descriptor["phase"] == "archive" else "open",
+                    "records": derive_labels(info),
+                })
+            rows.append(descriptor)
+        return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["id"]))
 
-    def read_spec(self, slug: str) -> tuple[dict | None, dict]:
-        spec, err = resolve_one(self.list_specs(), slug, lambda: {
-            k: str(parse_frontmatter(d[2]).get("title", "")) for k, d in self.docs.items()})
+    def read_spec(self, spec_id: str | int) -> tuple[dict | None, dict]:
+        spec, err = resolve_one(self.list_specs(), spec_id)
         if err:
             return None, err
-        return derive_info(spec, self.docs[spec["slug"]][2]), {}
+        return derive_info(spec, self.docs[spec["id"]][1]), {}
 
     def write_spec(self, info: dict, text: str) -> None:
-        phase, filename, _ = self.docs[info["slug"]]
-        self.docs[info["slug"]] = (phase, filename, text)
+        phase, _ = self.docs[info["id"]]
+        self.docs[info["id"]] = (phase, text)
 
-    def create_spec(self, phase: str, filename: str, text: str) -> str:
-        m = SPEC_FILE_RE.match(filename)
-        slug = m.group(1) if m else filename
-        self.docs[slug] = (phase, filename, text)
-        return f"memory://{phase}/{filename}"
+    def create_spec(self, phase: str, text: str) -> str:
+        spec_id = self._next_id
+        self._next_id += 1
+        self.docs[spec_id] = (phase, text)
+        return f"memory://{phase}/{spec_id}"
 
     def move_spec(self, info: dict, dest_phase: str) -> str:
-        _, filename, text = self.docs[info["slug"]]
-        self.docs[info["slug"]] = (dest_phase, filename, text)
-        return f"memory://{dest_phase}/{filename}"
+        _, text = self.docs[info["id"]]
+        self.docs[info["id"]] = (dest_phase, text)
+        return f"memory://{dest_phase}/{info['id']}"

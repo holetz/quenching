@@ -37,17 +37,16 @@ This clean check and this staging rule govern every write this outcome makes int
 steps 3, 4 and 5 all reuse both, not just the path.
 
 Reading resumability signals (§Resuming) uses the same located path: `cq specs --root <that
-path>/.specs status --spec "<slug>" --json`, in place of the bare form.
+path>/.specs status --spec <id> --json`, in place of the bare form.
 
 ## What each step commits there
 
 <!-- rules -->
 
 - **Step 3, the emergent `/.knowledge/`** — whatever the branch review surfaced, in its own commit.
-- **Step 4, the archive move** — computed in the branch's own tree, where the spec's data lives, but
-  never committed there: mirror what `cq specs promote` just produced — `archive/<slug>.md` written
-  into the base checkout, `plans/<slug>.md` removed from it if still present there — and commit it
-  in that checkout, not the branch's.
+- **Step 4, the archive move** — the promote itself lands in the PROVIDER, which no checkout owns,
+  so there is nothing to mirror into the base for it. What this step commits into the base checkout
+  is whatever local record the move produced beside it, and nothing else.
 - **Step 5, the distillation's background note** — the same checkout, the same rule.
 
 ## The branch-delete offer, informed rather than defensive
@@ -56,10 +55,11 @@ path>/.specs status --spec "<slug>" --json`, in place of the bare form.
 
 By the time step 6 offers anything, the closing itself already survives — nothing above depends on
 the branch anymore. Say that split before asking: name the commits the branch would take with it
-(`git log <base>..plan/<slug> --oneline`) and that the closing is already safe on `<base>` regardless
+(`git log <base>..<work> --oneline`, the `branch` record's own `work`) and that the closing is
+already safe on `<base>` regardless
 of what happens to the branch next.
 
-**Check `git worktree list --porcelain` before offering anything.** When it lists `plan/<slug>` as
+**Check `git worktree list --porcelain` before offering anything.** When it lists the work ref as
 checked out somewhere — the ordinary case, since this outcome never removes that worktree —
 `git branch -d` would fail with "Cannot delete branch checked out at" before it even reaches the
 question the offer exists to ask. **Declare that instead of offering it**: name the worktree path,

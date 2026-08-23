@@ -8,7 +8,7 @@ description: "Close ONE spec out — review the whole branch, write the /.knowle
 
 # quenching-specs-conclude — review, archive, distil — and hand off
 
-**Input**: `$ARGUMENTS` — the spec slug, and optionally its outcome.
+**Input**: `$ARGUMENTS` — the spec id, and optionally its outcome.
 
 Closes ONE spec out, short of the merge itself. Four things happen, in this order, and each is a
 separate decision: the whole branch is **reviewed**, the `/.knowledge/` the work *revealed* is
@@ -119,23 +119,23 @@ that read happens from the base checkout (Doctrine), never wherever this run sta
 ## Workflow
 
 ### 1. Resolve the spec, the outcome, and what already happened
-A slug in the input → use it. **No slug given → try auto-discovery first**, off the current
+An ID in the input → use it. **No ID given → try auto-discovery first**, off the current
 branch's own marking:
 [auto-discover.md](../../references/specs-conclude/auto-discover.md)
-§Reading the marking §Filtering to valid slugs §Resolving what remains, cited rather than
-restated. One valid slug resolves it silently, naming the marking as the source; more than one asks
+§Reading the marking §Filtering to valid IDs §Resolving what remains, cited rather than
+restated. One valid id resolves it silently, naming the marking as the source; more than one asks
 which, via **AskUserQuestion**. No valid marking → §The fallback there measures the diff and always
-asks whether to materialize a minimal spec — accepted, its new slug is used from here on exactly
+asks whether to materialize a minimal spec — accepted, its new id is used from here on exactly
 like a marked one. **Declined, headless completion — closing with no spec file at all — is not yet
 built**: say so, record it with `cq specs discover`, and fall back to `cq specs list --json` and
 ask, exactly as before this spec. Establish the outcome — **ask if it was not stated**, via
 **AskUserQuestion**: *done* (it shipped) or *abandoned* (it will not be built).
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs status --spec "<slug>" --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs status --spec "<id>" --json
 ```
 Read task progress, the `## Outcome` state, and the records — `branch`, `reviewed`, `merge`, `pr`,
 `outcome` — from that payload. Then, for the `## Discoveries` lines themselves, the one body this
-step needs: `cq specs section "<slug>" Discoveries --json`. Then read git: the
+step needs: `cq specs section "<id>" Discoveries --json`. Then read git: the
 current branch, whether the work branch exists, and whether it is already merged. Announce the
 outcome and, per §Resuming, which stages this run will actually perform.
 
@@ -154,7 +154,7 @@ extracting once the third caller appeared, a `## Impact` path nothing ever wrote
 diff contradicts.
 
 Present the findings. Fixes go in as ordinary commits on the branch, before the merge. Then stamp
-the record — `cq specs record "<slug>" reviewed --set date=<today>`, never by editing the
+the record — `cq specs record "<id>" reviewed --set date=<today>`, never by editing the
 frontmatter.
 
 **The test is `branch.work != branch.base`, never the record's presence** — in-place work stamps
@@ -184,8 +184,8 @@ no bundle.
 ### 4. Write `## Outcome` and archive
 `## Outcome` is the archive gate — the spec cannot move without it. Draft it, confirm it, write it:
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs section "<slug>" Outcome --write     # body on stdin
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs promote "<slug>" --to archive --outcome done|abandoned [--force]
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs section "<id>" Outcome --write     # body on stdin
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs promote "<id>" --to archive --outcome done|abandoned [--force]
 ```
 For `done`: what shipped, what was left out, what the next reader needs — **reviewed, distilled,
 ready for merge**. Neither the strategy nor a PR is named here: both are `quenching-git-merge`'s
@@ -264,7 +264,7 @@ the branch was cut, the merge produces a tree *neither* side ever validated, and
 nothing about it:
 
 ```bash
-git rev-list --count plan/<slug>..<base>      # commits on the base the branch does not have
+git rev-list --count plan/<id>-<handle>..<base>      # commits on the base the branch does not have
 ```
 
 Non-zero → **say so and stop before the gate**, naming the count. Bringing the branch up to date is
@@ -325,7 +325,7 @@ body blocks:
    this moment.
 
 Close on §The next-step block, its recommended line naming step 6's handoff — `quenching-git-pr-create`
-or `quenching-git-merge`, whichever was recommended, or `quenching-specs-develop <slug>` when
+or `quenching-git-merge`, whichever was recommended, or `quenching-specs-develop <id>` when
 block 3 has rows and that needs settling first.
 **Done when:** path, outcome, records, both `/.knowledge/` passes and the next-step block are all
 reported.

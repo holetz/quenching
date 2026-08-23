@@ -8,7 +8,7 @@ description: "Develop an existing spec. Triggers on \"develop this spec\", \"ref
 
 # quenching-specs-develop — ask one spec the questions its stage calls for
 
-**Input**: `$ARGUMENTS` — a spec slug, or a description of what to work on.
+**Input**: `$ARGUMENTS` — a spec id, or a description of what to work on.
 
 Takes a spec from wherever it is toward being worth building: giving a bare `## Problem` a shape,
 arguing with the shape once it exists, closing the ten-section ready gate, resolving what an
@@ -59,7 +59,7 @@ there is no second store to bridge to: nothing here writes a delta and nothing l
 
 ## Doctrine
 
-- **The stage picks the bank; the tool reports the stage.** `cq specs status --spec <slug> --json`
+- **The stage picks the bank; the tool reports the stage.** `cq specs status --spec <id> --json`
   returns it. Never infer the stage by reading the headings, and never ask the human which mode
   they want — the answer is on disk. This is the one rule that is this command's own; everything
   about *how* a bank runs is owned by
@@ -90,7 +90,7 @@ there is no second store to bridge to: nothing here writes a delta and nothing l
 - **Capture confirms no classification at all — every bank reviews it in silence.**
   `quenching-specs-create` writes subject, tags and `complexity` as presumptions the human may
   never have looked at: its own closing screen offers the correction, but nothing forces it. So
-  every bank here also reviews `tags` and the `summary:` line — silently, narrated in step 5's
+  every bank here also reviews `tags` — silently, narrated in step 5's
   consolidated plan and applied in step 6's single edit. No new screen, anywhere: the review rides
   the bank that was already going to write.
 
@@ -102,9 +102,9 @@ is the multiplier — not the size of any one turn. Three points of the workflow
 
 | Where | The one call |
 | --- | --- |
-| steps 1+2 | `cq specs status --spec <slug> --json`, which also carries the `path` step 1 announces. Only a slug that must be *chosen* splits this: `cq specs list --json` runs first, because the question depends on its output |
+| steps 1+2 | `cq specs status --spec <id> --json`, which also carries the `path` step 1 announces. Only an ID that must be *chosen* splits this: `cq specs list --json` runs first, because the question depends on its output |
 | step 3b | the bank's own section and the spec sections it reads — `cq components read` and `cq specs section` together, never one call per source. For **shape** and **adversarial** the sweep's own profile and the `## Design` it checks ride these same two calls, so step 3c opens nothing |
-| step 6 | the entire application — the section write, every `cq specs discover` line, every `cq specs record`, `cq specs verification`, `cq specs summary`, and the closing `cq specs validate` (plus `cq specs parallel` where `## Tasks` moved) |
+| step 6 | the entire application — the section write, every `cq specs discover` line, every `cq specs record`, `cq specs verification`, and the closing `cq specs validate` (plus `cq specs parallel` where `## Tasks` moved) |
 
 A call splits only where the next command's **input** depends on the previous one's output. Splitting
 for tidiness, or to report progress between two commands, buys nothing and is paid by every turn
@@ -131,13 +131,13 @@ is never a licence to put two dependent questions into one call.
 ## Workflow
 
 ### 1. Resolve the spec, and announce where it lives
-Take the slug from the input, infer it from the conversation, or run `cq specs list --json` and ask
+Take the id from the input, infer it from the conversation, or run `cq specs list --json` and ask
 with **AskUserQuestion** (most recently modified marked "(Recommended)"). Announce it and how to
-override. Two matches for one slug is exit 2 — report both paths and stop, never guess which was
+override. Two matches for one id is exit 2 — report both paths and stop, never guess which was
 meant. An archived spec has nothing to develop: say so and stop.
 
 **Announce the spec's URL in the backend along with it.** It is the `path` field of the
-`cq specs status --spec <slug> --json` payload step 2 takes in this same call, so nothing extra is
+`cq specs status --spec <id> --json` payload step 2 takes in this same call, so nothing extra is
 invoked to obtain it — an issue or work-item URL under an external backend, the file's path under
 `files`. The announcement is load-bearing rather than decorative: with the plan narrated instead of
 submitted (step 5), the backend is the window the human watches the pass through and the place a
@@ -146,9 +146,9 @@ correction is given, so it is stated before anything is read and repeated in the
 
 ### 2. Read the spec's STATE — not its body
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs status --spec <slug> --json      # stage, section states, records, tasks, gate, path
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs status --spec <id> --json      # stage, section states, records, tasks, gate, path
 ```
-**This is the same call as step 1** — §The batching contract's first row. The slug either came in
+**This is the same call as step 1** — §The batching contract's first row. The id either came in
 the input or was inferred, and the payload answers both steps at once.
 
 That is the whole of this step. **No section body is pulled here**, because nothing has chosen the
@@ -175,14 +175,14 @@ commands together:
 ```bash
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/questions.md \
   --sections "§Bank: <name>"          # + ",§Gathering the evidence" for shape and adversarial
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs section <slug> "<Heading1>,<Heading2>,…"     # only the sections this bank reads or writes
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs section <id> "<Heading1>,<Heading2>,…"     # only the sections this bank reads or writes
 ```
 
 | Bank | Spec sections | `artifacts.md` (loaded at step 5) |
 | --- | --- | --- |
 | shape | `## Problem` `## Design` — the second only to let step 3c see whether a map is already there | §The explicit-none rule §The nine definition sections |
 | adversarial | `## Problem` `## Proposal` `## Design` `## Alternatives Considered` `## Risks` | §The nine definition sections |
-| gate | the headings `cq specs next --spec <slug> --json` reports, plus `## Impact` and `## Tasks` | §The explicit-none rule §The nine definition sections §`## Impact` §`## Tasks` §Execution metadata |
+| gate | the headings `cq specs next --spec <id> --json` reports, plus `## Impact` and `## Tasks` | §The explicit-none rule §The nine definition sections §`## Impact` §`## Tasks` §Execution metadata |
 | discoveries | `## Discoveries` | §`## Discoveries` and `## Outcome` |
 | approval | `## Proposal` `## Impact` `## Risks` | none — this bank writes nothing into the body |
 
@@ -283,7 +283,7 @@ the `## Discoveries` lines, the records, `verification`, and the closing `valida
 needs another to have printed first. The one legitimate split is the doctrine read below, which
 decides *which* record this bank earned and therefore has to precede the stamping.
 
-Write the narrated sections with `cq specs section <slug> "<Heading>[,<Heading>…]" --write` (bodies
+Write the narrated sections with `cq specs section <id> "<Heading>[,<Heading>…]" --write` (bodies
 on stdin) — it creates each heading in canonical position on first write, so creating and revising
 are the same call. An emptied section becomes an explicit `- none — <reason>`, never a deleted
 heading.
@@ -293,7 +293,7 @@ are three turns buying what one already does, and a bank that filled six section
 paid six round trips for one edit:
 
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs section "<slug>" "<Heading>,<Other Heading>" --write <<'BODY'
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs section "<id>" "<Heading>,<Other Heading>" --write <<'BODY'
 ## <Heading>
 
 <the drafted section, verbatim>
@@ -311,7 +311,7 @@ declared on the command line — a mismatch, a repeat, or a heading outside the 
 refuses (exit 2) **without writing any of them**, so a rejected edit leaves the spec exactly as it
 was. One heading with a raw body and no `## ` line is the singular form and is unchanged.
 
-Every follow-up the plan parked is written in this same edit — `cq specs discover <slug>
+Every follow-up the plan parked is written in this same edit — `cq specs discover <id>
 "<finding>"`, one call per line — and never mid-bank, which
 [questions.md](../../references/specs-develop/questions.md) §The four shared
 mechanics forbids. The call creates `## Discoveries` when the heading is absent, and a filled
@@ -326,23 +326,18 @@ editing the frontmatter**, which merges nothing and works only while the backend
 
 | Record | When | Call |
 | --- | --- | --- |
-| `refined: {mode, date}` | the adversarial or gate bank ran | `cq specs record <slug> refined --set mode=<per questions.md §Recording the pass> --set date=<today>` |
-| `approved: {date}` | the human said go in the approval bank | `cq specs record <slug> approved --set date=<today>` |
-| `verification` | the gate bank settled the policy | `cq specs verification <slug> <per-task\|per-section\|end-of-plan>` |
-| `summary` | **every bank**, in the same edit as the section changes | `cq specs summary <slug> "<one line>"` |
-| `tags` | the pass changed the spec's scope, or the capture presumed wrong | `cq specs tags <slug> "<whole list>"` |
-| `complexity` (in `priority`) | the plan proposed a re-evaluation, and the human approved it | `cq specs record <slug> priority --set complexity=<level> --set date=<today>` |
+| `refined: {mode, date}` | the adversarial or gate bank ran | `cq specs record <id> refined --set mode=<per questions.md §Recording the pass> --set date=<today>` |
+| `approved: {date}` | the human said go in the approval bank | `cq specs record <id> approved --set date=<today>` |
+| `verification` | the gate bank settled the policy | `cq specs verification <id> <per-task\|per-section\|end-of-plan>` |
+| `tags` | the pass changed the spec's scope, or the capture presumed wrong | `cq specs tags <id> "<whole list>"` |
+| `complexity` (in `priority`) | the plan proposed a re-evaluation, and the human approved it | `cq specs record <id> priority --set complexity=<level> --set date=<today>` |
 
 `cq specs tags` **replaces** the whole list, never appends — reissue the subject's own fixed tags
 together with whatever this pass adds, or the fixed ones are lost.
 
-`summary:` is the one line every ranked listing prints (`cq specs next --front --table`), and it
-is the only field here that **every** bank owes: a bank that changed what the spec is has
-invalidated it. Refresh it in the same application as the section changes, once the sections it
-compresses have settled. Say what the
-spec IS and why it matters, in one line, never what it will do to the codebase; the ranked table
-falls back to `title:` where none is written and reports how many rows did, so an unwritten
-`summary:` is visible rather than silent.
+The title is the sole short description every ranked listing prints (`cq specs next --front
+--table`). Keep it descriptive when the spec's scope changes; the sections carry the rationale and
+detail, so no separate summary field is maintained.
 
 `verification` is a plain frontmatter key rather than a record, which is why it has a verb of its
 own instead of a `--set`. **It is written through that verb and never by editing the frontmatter**
@@ -357,15 +352,15 @@ which is the answer, not an obstacle.
 `complexity` is a field of `priority`, and the record merges — `level` and `criticality` survive
 a re-stamp that touches only the size, and `date` is the ranking's own.
 
-Re-run `cq specs validate --spec <slug>` and report what it says. **When this pass touched
-`## Tasks`, run `cq specs parallel --spec <slug>` in the same call** — exit 1 names the `[P]` group
+Re-run `cq specs validate --spec <id>` and report what it says. **When this pass touched
+`## Tasks`, run `cq specs parallel --spec <id>` in the same call** — exit 1 names the `[P]` group
 whose `files:` sets are not disjoint, and definition time is the only moment that is cheap to fix.
 Report what it says either way; a `[P]` nobody proved is a promise execution will refuse.
 **Done when:** the sections are written, the records this bank earned are stamped, and validate —
 plus `parallel`, where `## Tasks` moved — has been re-run.
 
 ### 7. Re-derive, and cross into the next bank
-Run `cq specs status --spec <slug> --json` again. The stage is now a fact about disk, and the pass
+Run `cq specs status --spec <id> --json` again. The stage is now a fact about disk, and the pass
 follows it: it selects a different bank → name the bank and what it will ask, and return to step 3.
 **The crossing is narrated, never offered.** The stage chose it off what step 6 just wrote, so an
 offer here asks the human to re-decide what the disk already answered. The same bank selected again
@@ -393,15 +388,15 @@ Emit §The report mold. The single-spec header line carries the stage **after** 
    offered, so nothing else in this report names it, and an unreported one is indistinguishable from
    a finding the pass dropped.
 
-Close on §The next-step block — `quenching-git-branch <slug>` once `approved` is stamped, naming it
-the natural moment to isolate before `quenching-specs-execute <slug>` writes any code;
-`quenching-specs-develop <slug>` again for the next bank; or `quenching-specs-cycle <slug>` to
+Close on §The next-step block — `quenching-git-branch <id>` once `approved` is stamped, naming it
+the natural moment to isolate before `quenching-specs-execute <id>` writes any code;
+`quenching-specs-develop <id>` again for the next bank; or `quenching-specs-cycle <id>` to
 carry it to the end in one run, which takes its own isolation inline and needs neither named
 separately.
 
 **Isolation is named, never taken.** An interrogation that rewrites half a spec dirties the tree, so
 the human may want it on a branch before the next pass or before `execute` — naming
-`quenching-git-branch <slug>` in the next-step block is that suggestion, stated once at the close
+`quenching-git-branch <id>` in the next-step block is that suggestion, stated once at the close
 and never asked as a question mid-pass; this command's own job is questions, and one about git in
 the middle of an interrogation is friction for everyone. `execute` no longer owns an inline offer of
 its own to fall back on — it hands off to the same command.
@@ -422,7 +417,7 @@ its own to fall back on — it hands off to the same command.
   never docs versus code.
 - **Park an out-of-scope follow-up; never mint a spec for it.** A finding this pass raised that does
   not belong to the spec being developed becomes ONE line of `## Discoveries` on that same spec —
-  `cq specs discover <slug> "<finding>"` — landed inside the step 6 edit the human already
+  `cq specs discover <id> "<finding>"` — landed inside the step 6 edit the human already
   confirmed, never as a loose call mid-bank. Turning a follow-up into its own spec stays
   `quenching-specs-conclude`'s, which harvests it once the parent's fate is known. This route is
   not an offer: nothing is created, so there is nothing to ask for.
