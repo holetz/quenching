@@ -1,6 +1,6 @@
 ---
 name: quenching-knowledge-add
-description: "Insert ONE new concept doc into the OKF bundle — right home, type, and stamp. Triggers on \"insert new information into the base\", \"add a standard/table/announcement\". Not for: capturing ONE fact a human just stated → quenching-knowledge-learn; ONE glossary term → quenching-knowledge-define; importing an external source in bulk → quenching-knowledge-import."
+description: "Insert ONE new concept doc into the OKF bundle — right home, type, and stamp. Triggers on \"insert new information into the base\", \"add a standard/table/announcement\"."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/add.md -->

@@ -95,7 +95,9 @@ def source_files() -> list[Path]:
     files = list(sorted((source() / "commands").rglob("*.md")))
     files.extend(source() / rel for rel in COPY_FILES)
     for rel in COPY_DIRS:
-        files.extend(sorted(path for path in (source() / rel).rglob("*") if path.is_file()))
+        files.extend(sorted(path for path in (source() / rel).rglob("*")
+                            if path.is_file() and "__pycache__" not in path.parts
+                            and path.suffix != ".pyc"))
     return [path for path in files if path.is_file()]
 
 
@@ -302,6 +304,11 @@ def skill_name(command: Path) -> str:
     return "quenching-" + "-".join(command.relative_to(commands).with_suffix("").parts)
 
 
+def skill_description(description: str) -> str:
+    """Keep command routing boundaries out of generated skill metadata."""
+    return re.sub(r"\s+Not for:.*\Z", "", description, flags=re.DOTALL).rstrip()
+
+
 def command_to_skill(command: Path, adaptation: dict) -> str:
     raw = command.read_text(encoding="utf-8")
     if not raw.startswith("---\n"):
@@ -334,7 +341,7 @@ def command_to_skill(command: Path, adaptation: dict) -> str:
     origin = ("plugins/quenching/commands/" + str(command.relative_to(source() / "commands"))
               if plugin_translation() else ".agents/skills/" + str(command.relative_to(claude_surface() / "commands")))
     header = ("---\n" + f"name: {fields['name']}\n" +
-              f"description: {json.dumps(transform_platform(fields['description'], adaptation), ensure_ascii=False)}\n" +
+              f"description: {json.dumps(transform_platform(skill_description(fields['description']), adaptation), ensure_ascii=False)}\n" +
               f"---\n\n<!-- GENERATED FROM {origin} -->\n\n")
     return header + transform_codex_markdown(transform_platform(raw[end + len("\n---\n"):], adaptation))
 

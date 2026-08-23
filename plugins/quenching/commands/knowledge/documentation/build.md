@@ -1,5 +1,5 @@
 ---
-description: Create or update the mkdocs-material site over the /.knowledge/documentation home. Triggers on "build the docs site", "generate the mkdocs site for /.knowledge/documentation", "fix the documentation site's nav". Not for: page-level content inside /.knowledge/ → /quenching:knowledge:align.
+description: Create or update the mkdocs-material site over the /.knowledge/documentation home. Triggers on "build the docs site", "generate the mkdocs site for /.knowledge/documentation", "fix the documentation site's nav".
 argument-hint: [optional-section-or-mkdocs-path]
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit
 ---

@@ -1,11 +1,10 @@
 ---
 description: >-
-  Merge a branch home into its base — one of four strategies, offered and never chosen for the
-  human, run in the checkout that already holds the base and never by `git checkout`ing it. Use
-  when the user asks to "merge this branch", "land this work", "merge it into develop/main", or
-  "bring this branch home". Given a spec slug it stamps the write-once `merge:` record and removes
-  the worktree afterward. Not for: opening a pull request first → /quenching:git:pr:create; pruning
-  branches already merged → /quenching:git:cleanup.
+  Merge a branch home into its base — one of four strategies, offered and never chosen for the human,
+  run in the checkout that already holds the base and never by `git checkout`ing it. Use when the user
+  asks to "merge this branch", "land this work", "merge it into develop/main", or "bring this branch
+  home". Given a spec slug it stamps the write-once `merge:` record and removes the worktree
+  afterward.
 argument-hint: [slug-or-branch]
 allowed-tools: Bash(git worktree:*), Bash(git merge:*), Bash(git rebase:*), Bash(git branch:*), Bash(python3:*), Read, AskUserQuestion
 ---

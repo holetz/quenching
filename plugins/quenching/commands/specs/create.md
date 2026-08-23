@@ -1,5 +1,5 @@
 ---
-description: Capture or create a spec. Triggers on "convert to a spec", "add to the backlog", "create a spec". Not for: filling a spec's remaining sections or building one.
+description: Capture or create a spec. Triggers on "convert to a spec", "add to the backlog", "create a spec".
 argument-hint: [what to capture, a plan path, or a plan from this session]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion, Skill
 model: sonnet
@@ -36,9 +36,9 @@ what you were given, and nothing more.**
 | a sentence              | `## Problem`, `summary:`  |
 | a Claude or Codex plan, from a file or this session | every section the plan actually supports |
 
-The same richness decides the `complexity` this command computes and writes (step 4): a
-sentence is the smallest problem a capture can hold, and a plan file is the largest — the
-levels in between are the develop pass's to re-evaluate when it closes.
+The same richness decides the `complexity` this command computes and writes (step 4), **inversely**:
+a sentence carries the least evidence, so its definition questions still need a human, while a plan
+file already answered most of them. The develop pass re-evaluates the level when it closes.
 
 
 ## Doctrine
@@ -132,22 +132,21 @@ declared catalog is never chosen: `tagCatalog` is the closed set this judgment d
 whatever was resolved to step 5's `--tags`; the subject's own fixed tags need not be repeated —
 `cq specs new` folds them in on its own.
 
-**Compute `complexity`** from the classification (step 1), never by interrogating: the sentence
-path yields `low`, the plan-source path yields `medium` — the input is all the evidence a capture is
-allowed to hold. The level answers how much a human needs to be part of the gears plan, never the
-size or difficulty of the input
-([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §Deriving the gears
-plan states the criterion):
+**Compute `complexity`** from the classification (step 1), never by interrogating: the **sentence
+path yields `high`**, the **plan-source path yields `medium`**, and `low` only where the input
+explicitly asks for an unattended pass. The level answers how much a human needs to be part of the
+process, never the size or difficulty of the input — the four levels and what each buys are
+[gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §The scale, never
+transcribed here.
 
-| Level | What it changes in the gears plan |
-| --- | --- |
-| `low` | the whole cycle runs in one session on a single authorization and ends opening a PR |
-| `medium` | the larger stages run isolated in sub-agents |
-| `high` | the stage-by-stage stops and confirmations are kept |
-| `xhigh` | at least one judgment stage (adversarial review, premortem) joins the plan |
+**A sentence yields `high` because a sentence is the least evidence a capture can hold.** The level
+governs who answers the definition questions, so the poorest input is the one whose questions most
+need a human — and `low` now also has the pass stamp `approved` itself, which makes it a positive
+claim nobody has yet earned the right to make. Guessing upward is free; guessing downward is not
+(`/quenching:specs:triage` states the same asymmetry for a ranked row's floor).
 
-Carry the level to step 5's `--complexity`, and the one-line reason ("a sentence — the smallest
-problem a capture can hold") to step 6. The close of the develop pass re-evaluates it, so a level
+Carry the level to step 5's `--complexity`, and the one-line reason ("a sentence — the least
+evidence a capture can hold, so its questions still need a human") to step 6. The close of the develop pass re-evaluates it, so a level
 that turns out too small stays correctable.
 
 **Every one of these four is a presumption, not a verdict.** Nothing here is confirmed before it is
@@ -235,16 +234,15 @@ named as the two forward candidates — and **one** `AskUserQuestion`, immediate
 the block is the suggestion, the question is the offer that follows it, and only
 `/quenching:specs:create` and `/quenching:specs:execute` carry that second half.
 
-Three options:
+Two options — the third the old screen carried, *with or without questions*, is now the
+`complexity` on the screen itself:
 
-1. **Develop now, no questions (Recommended)** — narrate, then invoke `quenching:specs:develop
-   <slug>` through the **Skill** tool, declaring first: *"Ask the human nothing: a question no
-   evidence answers goes to `## Open Decisions` with how it will be decided."* On the plan-file
-   path the plan itself is the evidence; on the sentence path, whatever has none becomes an Open
-   Decision instead of a question.
-2. **Develop now, with questions** — the same invocation, with no declared sentence: the banks
-   `/quenching:specs:develop` selects ask normally.
-3. **Stop here** — nothing more is invoked; the report above is the whole of this run.
+1. **Develop now (Recommended)** — narrate, then invoke `quenching:specs:develop <slug>` through
+   the **Skill** tool, with **no declared sentence at all**. Whether that pass asks anything is the
+   `complexity` this capture just wrote and showed on this same screen: `high` and `xhigh` ask,
+   `low` and `medium` answer from evidence and park the rest in `## Open Decisions`. The level is on
+   the screen, so correcting it with `Other` is also how the human chooses to be asked or not.
+2. **Stop here** — nothing more is invoked; the report above is the whole of this run.
 
 **The correction is `Other`**, which the tool always offers and which the question text invites
 explicitly ("…or answer `Other` to correct any presumption before continuing"). A correction is
@@ -252,7 +250,7 @@ applied with the deterministic verb that owns the field — `cq specs tags <slug
 (fixed tags included, or they are lost), `cq specs record <slug> priority --set
 complexity=<level> --set date=<today>`, `cq specs summary <slug> "<line>"`, `cq specs section
 <slug> "<Heading>" --write` — **and only then** honour whichever of the three options the same
-answer also names. An `Other` answer that names no direction falls to option 3.
+answer also names. An `Other` answer that names no direction falls to option 2.
 
 There is no patch-then-edit sequence to reason about: the capture already made ONE write with
 everything the input supported (step 5); a correction, when there is one, is one more write; and

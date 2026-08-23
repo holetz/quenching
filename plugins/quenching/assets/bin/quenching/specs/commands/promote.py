@@ -14,8 +14,8 @@ def cmd_promote(args, root: str, out: Emitter) -> int:
     """The one remaining transition: `plans/` -> `archive/`, closing a spec out.
 
     v3 has a single hop. The `backlog/` -> `ready/` promote is gone with the folders — it
-    recorded that a human said go, and that is now `approved:` in frontmatter, which no
-    file move is needed to express. What is left refuses (exit 2) with the missing list
+    recorded that a human said go, and that is now `approved:` in frontmatter — with `by:`
+    naming whose authority it carries — which no file move is needed to express. What is left refuses (exit 2) with the missing list
     rather than warning, because a gate that warns is not a gate.
 
     The file is MOVED, never renamed: the date prefix was stamped at capture and the

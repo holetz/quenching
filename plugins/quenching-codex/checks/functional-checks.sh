@@ -5,7 +5,7 @@
 # in the session that writes it. Each check below therefore runs its own fresh `claude -p`.
 #
 # Every assertion reads the emitted `tool_use` events from `--output-format stream-json`, so it
-# asserts on what the process DID (a Read of a given path, a Skill invoked by a given name) and
+# asserts on what the process DID (a Read/Bash read of a given path, a Skill invoked by a given name) and
 # never on what its prose claims. A self-report is not a test.
 #
 # EVERY check loads the plugin with `--plugin-dir`, from a sandbox that enables NO plugin, so
@@ -35,6 +35,15 @@
 #   --only 3       spoken routing — OPT-IN, see below
 #   --only 1,2,3   all three
 #
+# TWO GUARDS, TWO ZERO-COST MODES. The static guard in --selfcheck counts every
+# non-commented `claude -p` in this file and requires --plugin-dir on each one;
+# the anchored guard checks the paths observed in captured tool_use events. The
+# --selfcheck mode runs only the source guard, while --selftest exercises the
+# observed-path guard against a synthetic capture, and neither starts a session.
+# The negative half of the observed-path guard is mandatory: rejecting cache and
+# marketplace paths remains correct even if Codex canonicalizes or copies
+# the plugin directory, while the positive $PLUGIN prefix stays diagnostic.
+#
 # CHECK 3 IS OPT-IN, AND `quenching-components-command-eval` IS THE BETTER INSTRUMENT. Check 3 is five of the seven
 # sessions, the only NON-DETERMINISTIC one (recorded twice: same tree, opposite verdicts on
 # identical runs), and a strictly worse duplicate of `quenching-components-command-eval` step 7 — which measures the
@@ -47,10 +56,14 @@ set -uo pipefail
 
 ONLY="1,2"
 REPO=""
+SELF_CHECK=0
+SELF_TEST=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --only)   ONLY="${2:-}"; shift 2 ;;
     --only=*) ONLY="${1#*=}"; shift ;;
+    --selfcheck) SELF_CHECK=1; shift ;;
+    --selftest) SELF_TEST=1; shift ;;
     # the whole header comment, however long it grows — a fixed range silently truncates it
     -h|--help) sed -n '2,/^set -uo pipefail/p' "${BASH_SOURCE[0]}" | sed '$d'; exit 0 ;;
     *)        REPO="$1"; shift ;;
@@ -71,6 +84,41 @@ emit  () { printf '  %-6s %s\n' "$1" "$2"; }
 check () { if [ "$1" = "yes" ]; then emit "PASS" "$2"; PASS=$((PASS+1)); else emit "FAIL" "$2"; FAIL=$((FAIL+1)); fi }
 inconc () { emit "SKIP" "$1 (inconclusive: $2)"; INCONC=$((INCONC+1)); }
 
+# Static guard for every session invocation in this harness. Commented examples in the
+# header are deliberately excluded so the guard measures executable source, not prose.
+selfcheck () {
+  local src="${BASH_SOURCE[0]}"
+  local active invocations forbidden pattern guarded_pattern count guarded_count
+  pattern="claude -""p"
+  guarded_pattern="$pattern --plugin-dir"
+  active="$(sed '/^[[:space:]]*#/d' "$src")"
+  invocations="$(grep -nF "$pattern" <<<"$active" || true)"
+  count="$(grep -cF "$pattern" <<<"$active")"
+  guarded_count="$(grep -cF "$guarded_pattern" <<<"$active")"
+
+  if [ "$count" -ne "$guarded_count" ]; then
+    printf 'FAIL selfcheck: every non-commented %s must use --plugin-dir\n' "$pattern"
+    printf '%s\n' "$invocations"
+    return 1
+  fi
+
+  forbidden_pattern="enabled""Plugins"
+  forbidden="$(grep -nF "$forbidden_pattern" <<<"$active" || true)"
+  if [ -n "$forbidden" ]; then
+    printf 'FAIL selfcheck: %s appears outside a comment\n' "$forbidden_pattern"
+    printf '%s\n' "$forbidden"
+    return 1
+  fi
+
+  printf 'PASS selfcheck: %s %s invocation(s) use --plugin-dir\n' "$count" "$pattern"
+  printf 'PASS selfcheck: no %s outside comments\n' "$forbidden_pattern"
+}
+
+if [ "$SELF_CHECK" -eq 1 ]; then
+  selfcheck
+  exit $?
+fi
+
 # tool_use inputs for a given tool name, one JSON object per line.
 #
 # The capture is UTF-8. A bare open() decodes it in the PLATFORM default — cp1252 on Windows —
@@ -89,6 +137,78 @@ for line in open(sys.argv[2], encoding="utf-8", errors="replace"):
             print(json.dumps(c.get("input",{})))
 ' "$1" "$2"
 }
+
+# Codex may read a cited reference with the dedicated Read tool or with a scoped Bash `cat`.
+# Both are observable reads; the path anchor below is the invariant this check actually needs.
+reference_reads () {
+  tools Read "$1"
+  tools Bash "$1"
+}
+
+# Assert that observed paths came from the checkout under test. The forbidden half is the
+# verdict: a cache or marketplace path is always wrong. The expected-prefix half is diagnostic
+# as well as restrictive, because a canonicalized path needs both values beside the failure.
+anchored () {
+  local observed="$1"
+  local forbidden=""
+  local result=yes
+
+  forbidden="$(grep -nE '/plugins/(cache|marketplaces)/' <<<"$observed" || true)"
+  if [ -n "$forbidden" ]; then
+    printf 'FAIL anchor: observed path came from cache or marketplace\n'
+    printf '%s\n' "$forbidden"
+    result=no
+  fi
+
+  if ! grep -qF "$PLUGIN/" <<<"$observed"; then
+    printf 'FAIL anchor: observed path is outside the expected plugin checkout\n'
+    printf '  observed: %s\n' "$observed"
+    printf '  expected: %s/\n' "$PLUGIN"
+    result=no
+  fi
+
+  [ "$result" = yes ]
+}
+
+# Exercise both halves of anchored without starting a session. The first event is a valid
+# checkout path; the second is the stale source this guard must reject.
+selftest () {
+  local fixture="$WORK/selftest.jsonl"
+  local result=0
+  local -a inputs=()
+
+  cat > "$fixture" <<EOF
+{"message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"$PLUGIN/assets/references/selftest.md"}}]}}
+{"message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"/plugins/cache/quenching/3.0.0/assets/references/selftest.md"}}]}}
+EOF
+  mapfile -t inputs < <(tools Read "$fixture")
+
+  if [ "${#inputs[@]}" -ne 2 ]; then
+    printf 'FAIL selftest: expected two captured Read inputs, got %s\n' "${#inputs[@]}"
+    return 1
+  fi
+
+  if anchored "${inputs[0]}" >/dev/null; then
+    printf 'PASS selftest: accepted the checkout path\n'
+  else
+    printf 'FAIL selftest: rejected the checkout path\n'
+    result=1
+  fi
+
+  if anchored "${inputs[1]}" >/dev/null; then
+    printf 'FAIL selftest: accepted the cache path\n'
+    result=1
+  else
+    printf 'PASS selftest: rejected the cache path\n'
+  fi
+
+  return "$result"
+}
+
+if [ "$SELF_TEST" -eq 1 ]; then
+  selftest
+  exit $?
+fi
 
 # Did the session act at all? Zero tool_use events of ANY name means the capture carries no
 # evidence — the process died, the stream was unreadable, or nothing ran. Every assertion here
@@ -120,7 +240,7 @@ print(n)
 #   - a phrase whose command wants an OKF bundle ("add a standard") spends its turns looking
 #     for one. That cost used to be hidden because probe c ran against REPO, which has a
 #     bundle; sandboxing removed it and pushed the probe into the turn cap.
-#   - a command that reports on a workspace ("quenching-specs-status") wants one to report on.
+#   - a command that reports on a workspace ("quenching-knowledge-status") wants one to report on.
 # So every box gets a migration, a minimal bundle and an empty `specs/plans/`: the smallest repo
 # every prompt below can be answered in without exploring to find out its subject is missing.
 # The folder alone is the workspace — `plans/index.md` is a retired artifact, and `cq specs`
@@ -146,8 +266,8 @@ echo
 # The prompt never names a path: the command must report the citations IT was given, so a
 # Read landing under assets/references/ proves the placeholder resolved in production.
 #
-# It also covers re-homed references for free: quenching-specs-status cites a reference directory that
-# the specs-flow-consolidation fold renamed, so a stale citation fails here rather than silently
+# It also covers re-homed references for free: quenching-knowledge-status cites a reference directory that
+# the knowledge-flow consolidation owns, so a stale citation fails here rather than silently
 # reading nothing.
 #
 # It runs in a sandbox rather than in REPO so that --plugin-dir is the ONLY source of the
@@ -156,16 +276,16 @@ echo
 if want 1; then
 echo "1. a collapsed command loads and cites its re-homed reference"
 newbox "$WORK/sandbox1"
-( cd "$WORK/sandbox1" && claude -p --plugin-dir "$PLUGIN" "quenching-specs-status
+( cd "$WORK/sandbox1" && claude -p --plugin-dir "$PLUGIN" "quenching-knowledge-status
 
 Before the report: list the absolute path of every reference file THIS COMMAND'S OWN BODY tells
 you to consult, exactly as the body spells them. Then Read the first one. Do not guess a path —
 copy it from the body you were given." \
   --max-turns 10 --output-format stream-json --verbose < /dev/null > "$WORK/1.jsonl" 2>&1 )
 if evidence "$WORK/1.jsonl"; then
-  if grep -q '/assets/references/' <<<"$(tools Read "$WORK/1.jsonl")"; then r=yes; else r=no; fi
-  check "$r" "Read a file under assets/references/ (placeholder substituted)"
-  if grep -q '/skills/' <<<"$(tools Read "$WORK/1.jsonl")"; then r=no; else r=yes; fi
+  if anchored "$(reference_reads "$WORK/1.jsonl")"; then r=yes; else r=no; fi
+  check "$r" "read a file under assets/references/ (placeholder substituted)"
+  if grep -q '/skills/' <<<"$(reference_reads "$WORK/1.jsonl")"; then r=no; else r=yes; fi
   check "$r" "read nothing under a skills/ tree"
 else
   inconc "Read a file under assets/references/ (placeholder substituted)" "no tool_use in the capture"
@@ -179,6 +299,8 @@ fi
 # The highest-risk path: a wrong name produces a conductor that runs and does nothing. It runs
 # against a throwaway repo — /align is invasive — with the plugin loaded from $PLUGIN.
 # --------------------------------------------------------------------------- #
+# These assertions grade Skill names, not observed paths; the static --plugin-dir guard is the
+# only path guard for this check, so anchored does not apply here.
 if want 2; then
 echo "2. a conductor invokes its stage by registry name"
 newbox "$WORK/sandbox2"
@@ -212,6 +334,8 @@ fi
 # OPT-IN, AND NOT THE FIRST CHOICE: five sessions, non-deterministic, and duplicating what
 # `quenching-components-command-eval` step 7 measures properly. See the COST note at the top.
 # --------------------------------------------------------------------------- #
+# These assertions also grade Skill names rather than observed paths; the static --plugin-dir
+# guard remains the only path guard for this check, so anchored does not apply here.
 if want 3; then
 echo "3. a spoken trigger routes with no / typed"
 

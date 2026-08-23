@@ -1,13 +1,11 @@
 ---
 description: >-
   Take N specs below the `ready` gate to `ready` on ONE authorization — each spec in a sub-agent of
-  its own, all launched together. Triggers on "define these specs", "develop the whole backlog",
-  "fill in the sections of all of them", "take these specs to ready", "batch the spec definition".
-  Nothing it runs takes a branch or writes code, which is what lets the batch run in real parallel;
-  every sub-agent drafts its own spec and returns what it filled and what it left open, while the
-  authorization, a contaminating block and `approved` all stay with the conductor. Not for:
-  building N specs → /quenching:specs:execute-queue; ONE spec, with a human answering its questions
-  → /quenching:specs:develop; ranking the front → /quenching:specs:triage.
+  its own, all launched together. Triggers on "define these specs", "develop the whole backlog", "fill
+  in the sections of all of them", "take these specs to ready", "batch the spec definition". Nothing
+  it runs takes a branch or writes code, which is what lets the batch run in real parallel; every
+  sub-agent drafts its own spec and returns what it filled and what it left open, while the
+  authorization, a contaminating block and `approved` all stay with the conductor.
 argument-hint: [slugs-or-description]
 allowed-tools: Bash(python3:*), Bash(py:*), Bash(git status:*), AskUserQuestion, Task
 ---
@@ -129,9 +127,19 @@ cycle-authorization contract, naming this command as the grantor — with the on
 changes, because a sub-agent has no human to interrupt:
 
 *"Running under /quenching:specs:develop-batch authorization granted at run start — skip your
-plan-confirmation pause; present your plan as narration and execute. Ask the human nothing: a
-question no evidence answers goes to `## Open Decisions` with how it will be decided. Never stamp
-`approved`, never stamp `complexity`, never mint a spec — return them to me instead."*
+plan-confirmation pause; present your plan as narration and execute. Ask the human nothing at any
+gear, and present no closing screen: a question no evidence answers goes to `## Open Decisions`
+with how it will be decided, and a screen your gear would have shown comes back to me as its
+content. Never stamp `approved`, never stamp `complexity`, never mint a spec — return them to me
+instead."*
+
+The "ask nothing" clause is the sub-agent's condition, not the gear's: a `high` spec in a batch is
+still drafted the way `high` drafts, and what it would have asked comes back as `## Open Decisions`
+and as the screen's content. What the **gear** decides here is who owns the `approved` this command
+then stamps in step 7.
+**The plan names each spec's gear**, and therefore whether its `approved` will be stamped on the
+level's authority (`low`) or asked for in step 7. This run's OK is where a human sees that in
+advance, which is what makes the unasked stamp an authorization rather than an omission.
 **Done when:** the plan is approved as presented (or trimmed and re-presented), or the run is
 declined and nothing is written.
 
@@ -197,16 +205,26 @@ porcelain has nothing of theirs in it. Under `files` the specs **are** files, so
 the tree: the porcelain must name the batch's own `plans/<slug>.md` and nothing else. Any other path
 is a sub-agent that left its lane — report it before anything is approved.
 
-Then the closing offer: one **AskUserQuestion** over the specs that really reached `ready`, asking
-which carry `approved` today. Stamp only what the human named:
+Then the closing stamps, split by gear — the split the step 3 plan already named, spec by spec.
+
+**Specs whose own level is `low`** carry `approved` without a question: the level authorized the
+mode, the plan said so, and the review window is each spec's URL in the backend.
 
 ```bash
-cq specs record <slug> approved --set date=<today>
+cq specs record <slug> approved --set date=<today> --set by=low-gear
 ```
 
-Write-once — a spec already carrying it reports the date it holds, which is the answer, not an
-obstacle.
-**Done when:** the porcelain is accounted for and every `approved` the human named is stamped.
+**Every other spec that reached `ready`** goes into one **AskUserQuestion** asking which carry
+`approved` today. Stamp only what the human named, and only `by: human`:
+
+```bash
+cq specs record <slug> approved --set date=<today> --set by=human
+```
+
+A screen with nothing left to ask is not printed. Write-once — a spec already carrying the record
+reports the date it holds, which is the answer, not an obstacle.
+**Done when:** the porcelain is accounted for, every `low` spec that closed its gate is stamped
+`by: low-gear`, and every `approved` the human named is stamped `by: human`.
 
 ### 8. Report
 Per spec: the slug, the stage it reached, the records stamped, what it left open (quoted), and its
@@ -221,8 +239,10 @@ answering them one at a time.
 
 ## Invariants to never violate
 
-- **This command writes exactly one thing: the `approved` record the human named in step 7.** Every
-  section and every other record belongs to the sub-agent that owns that spec.
+- **This command writes exactly one thing: the `approved` record — `by: human` for the specs the
+  human named in step 7, `by: low-gear` for the ones whose own level authorized the mode.** One
+  writer either way; every section and every other record belongs to the sub-agent that owns that
+  spec.
 - **Never hand this command file `context: fork`.** A contaminating block and a `complexity` rise
   both stop the run mid-flow and ask, and a forked context cannot present either. There is no
   minimal-gear admission here: this run opens no pull request for a review to live in.
@@ -234,8 +254,10 @@ answering them one at a time.
   write into `/.knowledge/`.
 - Never stamp `complexity` — this run observes the rise and re-authorizes; the writers are
   `[triage, create, develop]`.
-- Never fabricate `approved`. It is stamped only for a spec a human just named on screen, and only
-  after step 5 showed the stage it actually reached.
+- **Never misattribute `approved`.** `by: human` only for a spec a human just named on screen;
+  `by: low-gear` only for a spec whose own level is `low` and whose gate step 5 measured closed.
+  Both only after step 5 showed the stage each spec actually reached, and neither ever on a
+  sub-agent's word.
 - Never admit a spec the entry contract excludes, and never let a trimmed plan silently re-admit
   one — an adjusted plan is re-presented before it runs.
 - Never report a spec as `ready` on a sub-agent's word. Step 5's `cq specs list --json` is what says

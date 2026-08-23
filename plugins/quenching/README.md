@@ -69,14 +69,14 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](assets/references/align/convergence.md).
 
-## The thirty-three commands
+## The thirty-four commands
 
 **One file per entry point** — Claude Code merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs;
 there is no `skills/` tree and no wrapper. Measured by `cq components doctor --json`, never
 transcribed by hand — a number written into prose goes stale the first time a command is minted
 ([`naming/command-surface.md`](../../.knowledge/standards/naming/command-surface.md) §The surface
-invariant). The thirty-three split by front and pillar: `/quenching:knowledge:*` for the nine
+invariant). The thirty-four split by front and pillar: `/quenching:knowledge:*` for the nine
 that act on the OKF `/.knowledge/` bundle (one nested a level deeper at `/quenching:knowledge:documentation:build`),
 `/quenching:specs:*` for the nine that act on provider-owned issues and work items (three of them
 conduct more than one stage — `/quenching:specs:cycle` over one spec, `/quenching:specs:execute-queue`
@@ -86,8 +86,19 @@ act on the target's `.claude/` automation surface (six of them nested a level de
 repository's own git facts — `branch`, `commit`, `pr:create`, `merge`, `sync`, `cleanup`,
 `pr:review` — none of them nested more than the two `pr:` verbs, none of them carrying an
 `align` (§The three fronts, the fourth pillar, and the one align per front, above), and the
-root `/align` for the one that spans the three fronts. Claude
-auto-routes to a command by its `description`; typing the command is the explicit entry point.
+root `/align` for the one that spans the three fronts, plus the generic `/quenching:handoff` for
+passing the current conversation to a fresh session. Claude auto-routes to a command by its
+`description`; typing the command is the explicit entry point.
+
+### `quenching-handoff` — compact the current conversation
+
+Creates a temporary handoff document for another agent to continue the current work. It records the
+next session's focus, the objective and status, decisions, completed and open work, validation
+evidence, blockers, useful next actions, and relevant skills. Existing PRDs, plans, ADRs, issues,
+commits, diffs, and other artifacts are referenced rather than duplicated.
+
+Triggers: *"gerar um handoff"*, *"compactar a conversa num handoff"*, *"preparar handoff para a
+próxima sessão"*, *"resumir esta sessão para outro agente continuar"*.
 
 ### The `git` pillar — a repository's own git facts, minted alongside the three fronts
 
@@ -391,7 +402,7 @@ names for losing access to an external backend.
 | Command | Role |
 | --- | --- |
 | `/quenching:specs:status` | The front's only **read-only** view: specs by derived stage with task progress, the frontmatter records as the history they narrate, the verifier results, and provider configuration findings. |
-| `/quenching:specs:create` | ONE spec in `plans/`, ONE call, ONE closing screen — effort proportional to input, never an interrogation. A sentence becomes `## Problem` and `summary:`; a Claude Code plan file becomes every section it actually supports, mapped and never invented. Subject, type, tags and `complexity` are resolved and written with the capture, then shown — corrected or not — on the one screen at the end, which also offers to hand straight into `/quenching:specs:develop`, with or without questions. |
+| `/quenching:specs:create` | ONE spec in `plans/`, ONE call, ONE closing screen — effort proportional to input, never an interrogation. A sentence becomes `## Problem` and `summary:`; a Claude Code plan file becomes every section it actually supports, mapped and never invented. Subject, type, tags and `complexity` are resolved and written with the capture, then shown — corrected or not — on the one screen at the end, which also offers to hand straight into `/quenching:specs:develop` — whether that pass asks anything is the `complexity` the same screen shows. |
 | `/quenching:specs:develop` | Questions grouped by dependency — independent ones in one `AskUserQuestion` call, sequential where an answer changes the next — each with an inline recommendation, the bank chosen by the spec's derived stage: generative shaping, adversarial interrogation (recording `refined:`), gate-gap filling, discovery resolution, and the `approved` stamp offer. Never edits code. |
 | `/quenching:specs:execute` | Builds `## Tasks` one verified commit at a time: clean tree required, isolation offered inline when it starts from the base branch, `verify:` run under the spec's declared policy, four-item diff self-review, then the box ticked with the subject of the commit it is about to make (`cq specs task --check --subject`) so code and box land in ONE commit. Writes only the `/.knowledge/standards/` a task explicitly names; everything else is one `cq specs discover` line. Marks an isolated branch's own description with the slug(s) it built there — never under `In place` — so `conclude` can self-discover it later. Stops at the last commit. |
 | `/quenching:specs:conclude` | Closes a spec out, resumable, **merging last**: whole-branch review (`reviewed:`), the emergent `/.knowledge/`, the archive with `outcome: done` (refuses on open boxes unless forced) or `abandoned` (always allowed), ONE distillation pass, the release obligations your standards attach to the merge itself (a version bump, a changelog entry — never a spec task) and the `merge: {strategy, subject, pr}` stamp — all on the work branch — and only then the merge, by the **route** you chose alongside the strategy: local, or a pull request where `gh` resolves the repo (pushed, opened and merged in one consented block, with `pr:` recorded). Called with no `--spec`, reads the branch's own marking first — one valid slug resolves silently, several ask, none falls to a diff-measured offer to materialize a minimal spec — before falling back to a plain list-and-ask. Nothing is committed to the base after it. |

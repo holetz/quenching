@@ -1,6 +1,6 @@
 ---
 name: quenching-knowledge-status
-description: "Read the whole `docs` front and report where the OKF bundle stands — writes nothing. Triggers on \"what's the status of the docs\", \"how healthy is the knowledge base\", \"is the bundle conformant\". Not for: forcing the bundle into canonical shape → quenching-knowledge-align."
+description: "Read the whole `docs` front and report where the OKF bundle stands — writes nothing. Triggers on \"what's the status of the docs\", \"how healthy is the knowledge base\", \"is the bundle conformant\"."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/status.md -->

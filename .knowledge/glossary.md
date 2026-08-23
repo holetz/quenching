@@ -61,10 +61,12 @@ sentence, and **link out** rather than explaining in full here.
   un-understood input means, including mid-cycle ones (`status`, `next`, `triage`) that today refuse
   nothing. Every entry is a suspicion the tool **cannot** resolve, never a proven violation, which
   is why callers surface them at warn.
-- [**Approved record**](../standards/workflows/plan-lifecycle.md) — the `approved: {date}`
-  frontmatter entry recording that a human said go, the one fact the retired `backlog/` → `ready/`
-  `git mv` carried that no derivation reproduces; `execute` asks inline and stamps it rather than
-  refusing an unapproved spec.
+- [**Approved record**](../standards/workflows/plan-lifecycle.md) — the `approved: {date, by}`
+  frontmatter entry recording that a spec may be built, and on whose authority: `by: human` is a
+  person's word (the fact the retired `backlog/` → `ready/` `git mv` carried), `by: low-gear` is the
+  `low` level of the gears scale authorizing the mode and the develop pass stamping on it. Absent
+  `by:` reads as `human`; `execute` asks inline and stamps `by: human` rather than refusing an
+  unapproved spec.
 - [**Batching contract**](../standards/automation/context-discipline.md) — a named block in a
   command body naming which of its consecutive tool calls are ONE call, so the batching rule is
   checkable against the body instead of re-judged every run. Calls split only where the next
@@ -214,10 +216,14 @@ sentence, and **link out** rather than explaining in full here.
   before the floor existed, so an undeclared floor changes nothing.
 - **Gear** — the execution mode of one lifecycle stage in `/quenching:specs:cycle`: in-session, in
   a sub-agent, or skipped, set by the ONE gears plan the command derives from
-  `priority.complexity`. Governs the stages of ONE spec only — conducting N of them is the
-  [spec queue](../standards/workflows/spec-queue.md)'s subject, not a gear's. The contract now
-  lives in the plugin's own `specs-cycle/gears.md` reference — retired with
-  `automation/orchestration-gears.md` (marchas-do-orquestrador-vivem-no-plugin, 2026-08-11)
+  `priority.complexity`. By extension, "the `low` gear" names the whole plan a *level* derives, not
+  a fourth mode. A level also reaches **inside** a stage: it decides whether `/quenching:specs:develop`
+  answers its banks from evidence or asks a human, and under `low` it has that pass stamp `approved`
+  itself. Governs ONE spec — conducting N of them is the
+  [spec queue](../standards/workflows/spec-queue.md)'s subject, though both fan-out entries read the
+  scale to know which spec is stamped unasked. The contract lives in the plugin's own
+  `specs-cycle/gears.md` reference (§The scale) — retired with `automation/orchestration-gears.md`
+  (marchas-do-orquestrador-vivem-no-plugin, 2026-08-11)
 - [**Generated listing**](../standards/architecture/generated-listings.md) — a file, or a marked
   zone inside one, that a command rebuilds from what a directory holds. Always a **second source**
   of a fact the disk already carries, so it earns its keep only where nothing else derives that

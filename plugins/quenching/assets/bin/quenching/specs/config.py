@@ -74,7 +74,7 @@ BACKENDS = ("github", "azure-boards")
 # Mirrors `schema.py`'s declared `priority.complexity` levels. Redeclared rather than imported —
 # `config.py` and `schema.py` do not import each other today, and a four-word tuple does not earn
 # that coupling.
-DEFAULT_FANOUT_MIN_COMPLEXITY = "medium"
+DEFAULT_FANOUT_MIN_COMPLEXITY = "high"
 COMPLEXITY_LEVELS = ("low", "medium", "high", "xhigh")
 # `azurePlacement`'s recognised sub-keys. Only `areaPath` is required, and its absence is a
 # REFUSAL rather than a default — the same argument `azureStates` already carries, applied to

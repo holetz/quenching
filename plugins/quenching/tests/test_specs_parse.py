@@ -79,8 +79,10 @@ class InferBaseBranch(unittest.TestCase):
 class LoadConfigFanoutMinComplexity(unittest.TestCase):
     """`fanoutMinComplexity` — the fan-out floor `redefinir-o-que-complexity-mede-e-configurar-o-limiar-do-fan-out`
     adds beside `backend`/`unknownBackend`, same shape: absent or invalid falls back to the
-    default (`medium`, today's fixed cutoff) rather than to no floor at all, and an invalid
-    declared value is kept, not discarded, so `doctor` can quote it back."""
+    default rather than to no floor at all, and an invalid declared value is kept, not discarded,
+    so `doctor` can quote it back. The default is `high` — the cut where the gears scale stops
+    answering from evidence and starts asking a human, which is exactly what a fan-out can and
+    cannot buy."""
 
     def _load(self, declared: dict) -> dict:
         with tempfile.TemporaryDirectory() as tmp:
@@ -91,7 +93,7 @@ class LoadConfigFanoutMinComplexity(unittest.TestCase):
 
     def test_absent_falls_back_to_the_default_floor(self):
         cfg = self._load({})
-        self.assertEqual(cfg["fanoutMinComplexity"], "medium")
+        self.assertEqual(cfg["fanoutMinComplexity"], "high")
         self.assertIsNone(cfg["unknownFanoutMinComplexity"])
 
     def test_a_declared_level_reflects(self):
@@ -101,7 +103,7 @@ class LoadConfigFanoutMinComplexity(unittest.TestCase):
 
     def test_a_value_outside_the_four_levels_keeps_the_default_and_is_quoted_back(self):
         cfg = self._load({"fanoutMinComplexity": "yolo"})
-        self.assertEqual(cfg["fanoutMinComplexity"], "medium")
+        self.assertEqual(cfg["fanoutMinComplexity"], "high")
         self.assertEqual(cfg["unknownFanoutMinComplexity"], "yolo")
 
 

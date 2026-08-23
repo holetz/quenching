@@ -1,5 +1,5 @@
 ---
-description: Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree; hands off to /quenching:git:branch for isolation; verifies under the spec's own declared policy; ticks each box with the subject of the commit it is about to make, so code and box land in one commit per task, squashed into one commit per section at that section's own boundary. Writes the /.knowledge/standards/ a task explicitly names, and records what else the work reveals as a one-line discovery. Stops at the last commit. Not for: building N specs in one run → /quenching:specs:execute-queue; writing or sharpening a spec → /quenching:specs:develop; creating one → /quenching:specs:create; the branch review, the merge, the archive and any release obligation like a version bump → /quenching:specs:conclude; the whole cycle in one run → /quenching:specs:cycle.
+description: Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree; hands off to /quenching:git:branch for isolation; verifies under the spec's own declared policy; ticks each box with the subject of the commit it is about to make, so code and box land in one commit per task, squashed into one commit per section at that section's own boundary. Writes the /.knowledge/standards/ a task explicitly names, and records what else the work reveals as a one-line discovery. Stops at the last commit.
 argument-hint: [slug]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Task, Skill
 model: sonnet
@@ -163,11 +163,16 @@ cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-dr
 
 The `cq specs status --json` payload is **already in hand** from step 2 — do not read it again.
 From it: the derived stage, the section states, task progress, the blocked tasks, the recorded
-subjects, and **`verification`** — the spec's declared policy, which decides when the suite runs so
-this command never has to.
+subjects, **`verification`** — the spec's declared policy, which decides when the suite runs so this
+command never has to — and **`records.priority.complexity`**, the gear. The gear changes exactly one
+thing in this loop, item 5i's default, and **nothing about delegation**: whether a task goes to an
+executor sub-agent stays the two conditions of
+[execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §Delegating an
+executor, at every level.
 
 - **`approved` unset** → ask for it inline, in one question showing what the spec commits to, and
-  on a yes stamp it with `cq specs record "<slug>" approved --set date=<today>` — never by editing
+  on a yes stamp it `--set by=human` (`cq specs record "<slug>" approved --set date=<today> --set
+  by=human`) — never by editing
   the frontmatter. **Never refuse over it** — refusing would rebuild the folder hop this front
   removed. A no ends the run cleanly.
 - **`next` reports `write_section`** → the ready gate is not met. Name the missing or malformed
@@ -358,6 +363,12 @@ i. **On a section boundary, OFFER to stop — and keep going if nobody says othe
    say the word and I stop; otherwise I continue with 4.1.
    ```
 
+   **The gear sets the default, never the offer.** Under `low` the boundary is announced and the
+   loop continues without offering — the half was authorized whole and the review lives in the PR
+   it ends at. Under `medium` it offers and continues if nobody says otherwise, as above. Under
+   `high` and `xhigh` it offers and **waits**: the stops those levels bought are these
+   ([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §The scale).
+
    It **offers and never imposes**, never ends the run itself, and writes no state — the trail that
    makes the boundary resumable is the one step 6 already keeps. Why the trigger is that event, and
    why a section is the unit, live in [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The section boundary.
@@ -434,22 +445,10 @@ named the command, so stop. Paused → say why and wait.
 
 ## Output during the loop
 
-Progress as it happens, not a report — the mold governs step 7, this governs the loop. Its glyphs
-are §The report mold's, and mean the same. **Only the mold's own header line opens with a `##` that
-carries the slug** — this banner prints plain text, never a heading, so the two can never be
-confused for each other:
-
-```
-Building: <slug>
-
-Task 3/7 — 3.2 <task title>
-  files: src/middleware/auth.ts, src/config/limits.ts
-✓ self-review: clean
-✓ chain: verify && check && commit
-    verify: pnpm test middleware/ — passed
-    checked 3.2 (subject: plan/<slug>: 3.2 <task title>)
-    committed a1b2c3d — subject matches
-```
+Progress as it happens, not a report — the mold governs step 7, this governs the loop. The banner's
+exact shape, and why it prints plain text rather than a heading, are
+[execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The loop's
+progress banner — loaded with the rest of the loop at step 5, never here.
 
 ## Hard rules — no exceptions, and no "just this once"
 

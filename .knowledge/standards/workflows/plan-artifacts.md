@@ -199,7 +199,7 @@ writes — and **refuses while `- [ ]` boxes remain when the outcome is `done`**
 work looks like.
 
 The authorization to build is **not** a promote: it is the `approved` record, per
-[plan-lifecycle.md](plan-lifecycle.md) §`ready` is derived, and `approved` is a human's word.
+[plan-lifecycle.md](plan-lifecycle.md) §`ready` is derived, and `approved` names whose word it is.
 
 ## `## Impact` carries one parsed sub-heading
 

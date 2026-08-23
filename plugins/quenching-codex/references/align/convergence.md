@@ -70,7 +70,11 @@ would announce the waiver of a gate that does not exist — noise in the invocat
 left believing the command has a stop it never had. This is not an exemption from the contract:
 the two protected classes do not occur there, because the command edits no code and takes no
 irreversible cycle action. What still stops it stops it in either mode — the questions its own
-banks ask, and the go/no-go that is the sole origin of an `approved` record.
+banks ask at `high` and `xhigh`, and the go/no-go that is the origin of an `approved` stamped
+`by: human`. Under the `low` gear that go/no-go does not occur at all: the level authorized the
+mode, the pass stamps `by: low-gear`, and the record says which of the two happened
+(`/.knowledge/standards/automation/plan-gates.md` §Quando a autoridade substitui a pessoa states
+the three conditions that make the substitution legitimate).
 
 **Nesting is one level of authorization, not two gates.** When `/align` invokes a front align, the
 front align does **not** ask for its own OK — it inherits the authorization and passes it down
@@ -87,8 +91,8 @@ spec whose tasks are all checked may still be waiting on a deploy.
 The minimal gear differs from the contract in exactly one point, and pays for it outside the
 session. The contract requires a code-coupled item and an irreversible cycle action to stop the
 run, always; under the cycle's minimal gear
-([gears.md](../../references/specs-cycle/gears.md) §Deriving the
-gears plan, the `low` row) neither stops — the building half runs in one session on its own
+([gears.md](../../references/specs-cycle/gears.md) §The scale binds the two
+names — *minimal gear* here is that file's `low`) neither stops — the building half runs in one session on its own
 authorization and ends opening a pull request, so the human review the gates would have hosted
 moves to the PR instead: opened against the repository's primary branch, where the merge waits
 on review and on the checks before it lands. The

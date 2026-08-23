@@ -1,126 +1,46 @@
 # AGENTS.md — claude-quenching
 
-A Codex **plugin marketplace** holding one plugin, `quenching`
-([plugins/quenching/](plugins/quenching/)): a three-front aligner that forces a *target* repo's
-`/.knowledge/` OKF bundle, native `/.specs/` workspace, and `.agents/` command surface into one canonical
-shape. There is no application code, no build step and no test framework — the repo is markdown
-command bodies plus four dependency-free stdlib Python tools.
+Language: pt-BR — the contract is /.knowledge/standards/agents/communication.md.
 
-Language: pt-BR — the contract is [/.knowledge/standards/agents/communication.md](/.knowledge/standards/agents/communication.md).
+This repository publishes the `quenching` Codex plugin marketplace. It has no application
+build: command bodies and references are executable prose, while four Python tools provide the
+local checks. Treat command-body edits like code.
 
-## Operating this repo
+## Operating
 
-**Command bodies are the source code.** `commands/**/*.md` and `assets/references/**/*.md` are
-prose instructions a future Codex session executes literally, so precision in wording matters as
-much as correctness in a normal codebase. Treat an edit there like an edit to a function.
-
-Verify the shipped skeleton after touching anything under `plugins/quenching/`:
+After changing `plugins/quenching/`, run the shipped checks from that directory:
 
 ```bash
 cd plugins/quenching
-# version lockstep — VERSION and cq must agree
 cat VERSION
 python3 scripts/bin/cq --version
-# the shipped skeleton is conformant by construction — read as ZERO ERRORS, never as a warning total
-python3 scripts/bin/cq knowledge validate assets/knowledge                 # 0 error(s); stale-doc warns are advisory
-# the command surface
-python3 scripts/bin/cq --root . components doctor --json                  # 34 commands, no findings
-python3 scripts/bin/cq --root . components lint --json                    # exit 0 (warnings reported, not fatal)
-# the test suite — stdlib-only, no external dependency, asserted by AST
+python3 scripts/bin/cq knowledge validate assets/knowledge
+python3 scripts/bin/cq --root . components doctor --json
+python3 scripts/bin/cq --root . components lint --json
 python3 -m unittest discover -s tests
 ```
 
-**`stale-doc` is never counted as a failure**, here or anywhere. The skeleton's
-`standards/agents/communication.md` declares `resource: /.knowledge/**, /.specs/**` — a legitimate
-bundle-aggregate scope, per
-[bundle-verification.md](/.knowledge/standards/quality/bundle-verification.md) §The `resource` glob-set
-format — so **any** commit under either tree ages it, and a branch that touches `/.knowledge/` cannot help
-raising the count. The resource moved; the rule did not. Read the gate as zero errors.
+The bundle gate is zero errors; `stale-doc` is advisory. Surface-load checks live at
+`plugins/quenching/assets/checks/functional-checks.sh`; exit 2 is inconclusive, not green. The
+spec backend is GitHub, so there is no local `/.specs/` workspace. For the Codex translation, use
+the instructions in `AGENTS.md`.
 
-**Nothing above tests that the surface actually LOADS** — the registry is built at session start,
-so no change under `commands/**` is testable in the session that writes it:
+This size check measures AGENTS.md only; it does not measure Codex's system prompt.
 
-```bash
-./assets/checks/functional-checks.sh          # default: checks 1, 2 — a command body, a citation path
-./assets/checks/functional-checks.sh --only 3 # opt-in: spoken routing. Prefer quenching-components-command-eval — see below
-```
-`exit 0` all measured assertions passed · `1` one failed · `2` nothing could be measured, which is
-**not** a pass.
+## Safety that must stay visible
 
-**It belongs to the components front — `quenching-components-command-new` after minting or editing
-a command here, and `quenching-components-command-eval` when it tunes a description.** It is not a
-repo-wide mandate, and it does not go in a spec's `## Validation` or a task's `verify:`: every check
-is a billed agent session, and measured across the whole archive, **every red run this harness ever
-produced traced to a defect in the harness itself, none to a surface regression**. For spoken
-routing reach for `quenching-components-command-eval`, which measures it graded and with a
-boundary arm; check 3 is a worse copy kept opt-in. Full reasoning →
-[surface-verification.md](/.knowledge/standards/quality/surface-verification.md).
+- Do not add `context: fork` beside a command's mid-flow gate; the minimal building cycle is the
+  only documented exception, and its review lives in the PR.
+- Never downgrade classification or executor sub-agents to `haiku` in
+  `quenching-knowledge-import-memory`.
 
-`cq specs` has no fixture in the repo; exercise it in a throwaway workspace (`cq specs new x` →
-`status`/`next`/`task` → `promote x --outcome abandoned`) when its logic changes.
+## Navigation
 
-### Two rules that must survive any refactor
+Durable knowledge lives in [/.knowledge/index.md](/.knowledge/index.md); resolve unfamiliar terms
+in [/.knowledge/glossary.md](/.knowledge/glossary.md). The product manual, command catalog, cost
+model and install path live in [plugins/quenching/README.md](plugins/quenching/README.md). The
+registered sources are `plugins/quenching/commands/**` and
+`plugins/quenching/assets/references/**`.
 
-- **Never add `context: fork` to these commands — save one narrow admission.** Every
-  sweep command gates on a mid-flow confirmation (one plan → one OK) when run standalone — and
-  even a cycle-authorized run (`assets/references/align/convergence.md` §cycle-authorization)
-  must still surface code-coupled confirmations mid-flow, which a forked context cannot present.
-  The **only** admission is `quenching-specs-cycle` under its minimal gear **entering at
-  building**, where no mid-flow confirmation exists to present: neither protected class stops that
-  run and the human review lives in the PR it opens (§The PR route). A run that also carries the
-  defining half holds the building authorization mid-flow, so the prohibition holds there; so does
-  any gear above the minimal. **The two fan-out entries — `quenching-specs-execute-queue` and
-  `quenching-specs-develop-batch` — are never admitted at any gear**: both stop mid-flow on a
-  contaminating block and on a `complexity` rise, which is exactly what a fork cannot present.
-- **Never downgrade classification or executor sub-agents to `haiku` in `quenching-knowledge-import-memory`.**
-  A misclassification there becomes a wrong memory deletion — see the model-policy table in
-  [README.md](plugins/quenching/README.md#model-policy) for which sub-agent calls elsewhere are safe
-  on cheaper models/effort.
-
-## Where knowledge lives
-
-Knowledge is **NOT** in this file — it lives in the OKF bundle at [/.knowledge/](/.knowledge/index.md).
-
-**Resolving a term.** Hit an unfamiliar repo word or codename? The glossary first →
-[/.knowledge/glossary.md](/.knowledge/glossary.md) (`grep -i '<term>' /.knowledge/glossary.md`).
-
-- [/.knowledge/standards/](/.knowledge/standards/index.md) — how WE build: the proven contracts. Start here for
-  the [command surface's naming](/.knowledge/standards/naming/command-surface.md) (one file per entry
-  point, the path is the identity), the [align surface](/.knowledge/standards/architecture/align-surface.md)
-  (one align per front, probe first), the [plugin layout rule](/.knowledge/standards/architecture/plugin-layout.md)
-  (`commands/**` is the only registered tree, which is why shared procedure lives under `assets/`),
-  and the [release lockstep](/.knowledge/standards/ci-cd/versioning-release.md).
-- [/.knowledge/concepts/](/.knowledge/concepts/index.md) — generic understanding we hold; ships the
-  fixed [glossary.md](/.knowledge/glossary.md), the A–Z term lookup.
-- [/.knowledge/external/](/.knowledge/external/index.md) — facts about what we consume.
-- [/.knowledge/catalog/](/.knowledge/catalog/index.md), [/.knowledge/vision/](/.knowledge/vision/index.md) and
-  [/.knowledge/documentation/](/.knowledge/documentation/index.md) exist but are empty — this repo has no data,
-  and direction and the site layer have not been written.
-- The spec workspace — a quenching-managed front **outside** the `/.knowledge/` bundle, and **not a folder
-  in this repo**: `.agents/quenching.json` declares `backend: github`, so every spec is an issue and
-  there is nothing under `/.specs/` to read. `python3 plugins/quenching/scripts/bin/cq specs list`
-  derives the front from the declared backend on demand, and is the only honest way to see it.
-
-To create / edit / move knowledge (keeping the listing in sync), use the plugin's own
-commands: `quenching-knowledge-add` for one doc, `quenching-knowledge-define` for a glossary term,
-`quenching-knowledge-align` to migrate/normalize, `quenching-components-harness-align` to keep
-this file thin.
-
-## The plugin itself
-
-What the thirty-four commands are, what each front (and the `git` pillar) gets, the cost model and
-the install/upgrade path are the **product's own documentation**, not repo standards — do not
-restate them here:
-
-- [plugins/quenching/README.md](plugins/quenching/README.md) — the command-by-command manual, the
-  three fronts and the `git` pillar, the cost model, install and upgrade.
-- `plugins/quenching/commands/**` — each command's frontmatter `description` carries its trigger
-  phrases and its `Not for: X → other-command` boundary. **Read the target command's frontmatter
-  before assuming which one owns a task.**
-- `plugins/quenching/assets/references/<name>/*.md` — shared procedure, owned once and cited by
-  absolute `../..` path rather than restated. The OKF bundle contract itself is
-  [assets/references/knowledge-align/okf-spec.md](plugins/quenching/assets/references/knowledge-align/okf-spec.md).
-
-<!-- Root harness pointer, auto-loaded by Codex on every turn. Keep it a thin pointer:
-     repo-wide operations + the /.knowledge/ home map. Knowledge is MOVED into /.knowledge/, never copied here.
-     Maintained by the quenching plugin; this file is a harness pointer, not an OKF concept. -->
+<!-- Root harness pointer, auto-loaded by Codex on every turn. Keep detail in its owning
+     knowledge home or product manual; this file carries only session-start navigation and gates. -->
