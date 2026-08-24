@@ -1,5 +1,5 @@
 ---
-description: Develop an existing spec. Triggers on "develop this spec", "refine the spec", "fill in the missing sections", "approve this spec". Not for: defining N specs at once → /quenching:specs:develop-batch; creating a spec or executing one.
+description: Develop an existing spec. Triggers on "develop this spec", "refine the spec", "fill in the missing sections", "approve this spec". Not for: defining N specs at once → /quenching:specs:develop-batch; capturing an unrelated new spec → /quenching:specs:create; executing one → /quenching:specs:execute.
 argument-hint: [id-or-description]
 allowed-tools: Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion, Task
 model: opus
@@ -9,9 +9,7 @@ model: opus
 
 **Input**: `$ARGUMENTS` — a spec id, or a description of what to work on.
 
-Takes a spec from wherever it is toward being worth building: giving a bare `## Problem` a shape,
-arguing with the shape once it exists, closing the ten-section ready gate, resolving what an
-executor discovered, and finally asking the human for the go-ahead.
+Takes a spec toward the stage its derived state requires.
 
 **One loop.** The spec's **derived stage** picks the bank — only `## Problem` needs shape, a
 proposal needs an argument, a spec at the gate needs a yes. The bank is looked up, never asked for.
@@ -89,26 +87,11 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 
 ## The batching contract
 
-Three points of the workflow below are **one call each**, and running them as two is the defect
-this contract names:
-
-| Where | The one call |
+| Where | The bounded read(s) |
 | --- | --- |
 | steps 1+2 | `cq specs status --spec <id> --json`, which also carries the `path` step 1 announces. Only an ID that must be *chosen* splits this: `cq specs list --json` runs first, because the question depends on its output |
 | step 3b | the bank's own section and the spec sections it reads — `cq components read` and `cq specs section` together, never one call per source. For **shape** and **adversarial** the sweep's own profile and the `## Design` it checks ride these same two calls, so step 3c opens nothing |
 | step 6 | the entire application — the section write, every `cq specs discover` line, every `cq specs record`, `cq specs verification`, and the closing `cq specs validate` (plus `cq specs parallel` where `## Tasks` moved) |
-
-A call splits only where the next command's **input** depends on the previous one's output.
-
-**No turn exists only to announce what the next tool call will do.** "Now I'll load the bank", "next
-I'll write the sections" — a turn whose entire content is the call that follows it. Narration that
-carries content stays: the bank and its stop condition (step 3), the consolidated plan (step 5),
-the report (step 8).
-
-**A recommendation rides inside the question, never in a turn before it.** Where a choice is
-genuinely the human's, the recommendation and the reasoning behind it go in the **AskUserQuestion**
-payload — the recommended option first and marked "(Recommended)", the reasoning in its description
-— so the human answers in one word and no turn was spent setting the question up.
 
 **This contract stops at the edge of how questions are grouped.**
 [questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared
@@ -130,7 +113,7 @@ invoked to obtain it — an issue or work-item URL under an external backend, th
 `files`. The announcement is load-bearing rather than decorative: with the plan narrated instead of
 submitted (step 5), the backend is the window the human watches the pass through and the place a
 correction is given, so it is stated before anything is read and repeated in the report (step 8).
-**Done when:** one spec in `plans/` is resolved and its backend URL has been announced.
+**Done when:** one provider-owned spec is resolved and its backend URL has been announced.
 
 ### 2. Read the spec's STATE — not its body
 ```bash
@@ -164,7 +147,7 @@ let the human pick.
 **Done when:** exactly one bank is named back to the user with its stop condition.
 
 ### 3b. Load what THIS bank needs — and nothing more
-Now that the bank is known, and in **one call** — §The batching contract's second row, both
+Now that the bank is known, in **two bounded calls** — §The batching contract's second row, both
 commands together:
 
 ```bash

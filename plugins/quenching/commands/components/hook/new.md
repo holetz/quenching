@@ -1,5 +1,5 @@
 ---
-description: Wire ONE scoped hook — the narrowest scope and the cheapest handler that still catch what it must. Use when the user asks to "create a hook", "add a validation hook", "check this after every edit", "block that command before it runs", or "catch it automatically whenever a migration lands". Walks the scope ladder, states the hook's cost claim, and applies on one OK — warn by default, block only by the human's word.
+description: Wire ONE scoped hook — the narrowest scope and the cheapest handler that still catch what it must. Use when the user asks to "create a hook", "add a validation hook", "check this after every edit", "block that command before it runs", or "catch it automatically whenever a migration lands". Walks the scope ladder, states the hook's cost claim, and applies on one OK — warn by default, block only by the human's word. Not for: changing a command's body → /quenching:components:command:new; documenting a rule without automation → /quenching:knowledge:add.
 argument-hint: [what-the-hook-should-catch]
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit
 ---
@@ -13,26 +13,14 @@ Installs or edits **ONE hook** in the target repo: a wiring (which decides its s
 for a `command` handler, a script under `.claude/hooks/`. The scope ladder, the handler
 ladder, and the policy defaults live in
 [components-command-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md)
-§Hooks — applied here, never restated. The mold is
+§Hooks. The wiring mold is
 `${CLAUDE_PLUGIN_ROOT}/assets/templates/automation/hook.md`.
 
 ## Doctrine
-
-- **A hook charges other people's operations.** It fires on events this mint does not own,
-  so every widening of scope is a tax on every iteration in the repo — the plan prices it.
 - **The rule governs; the plan proposes.** In a target repo the rule is
   `/.knowledge/standards/automation/hooks.md`; absent + OKF bundle present → the plan offers
   creating it from `automation/hooks-standard.md`, born `authority: background`. No bundle →
   write the hook only, suggest `/quenching:knowledge:align` once.
-- **One plan, one OK, nothing before.** The check, the rung, the handler, the cost claim,
-  the action, and every file appear in ONE plan; a declined plan writes nothing.
-- **MERGE, never clobber.** A `settings.json` block is merged into the existing file; a
-  frontmatter `hooks:` block is merged into the owning command's frontmatter. Existing hooks
-  are never rewritten and never deleted by this skill.
-- **Warn by default; block by consent.** `action: block` (a `PreToolUse` deny, a `Stop`
-  block) is chosen by the human in the plan, per rule — and an intrusive rule is born
-  disabled, its body saying when to enable it.
-
 Resolve `cq` per
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
@@ -73,13 +61,13 @@ matches the mold's skeleton and the chosen action.
 Show: the check, the rung **and why not narrower**, the handler **and why not cheaper**, the
 cost claim, the action (warn / block / born-disabled) as the human's explicit choice, and
 every file — the `settings.json` MERGE shown as a diff, or the frontmatter block with its
-owning command, the script, the rule if planned. Wait for the single confirmation. **Done
-when:** the user has answered; declined → report "nothing written" and stop.
+owning command, the script, the rule if planned. Wait for the single confirmation.
+**Done when:** the user has answered; declined → report "nothing written" and stop.
 
 ### 6. Apply
 Merge the wiring, write the script. Never overwrite `settings.json` — read it, add this
-hook's block, preserve everything else including hooks the plugin does not own. **Done
-when:** every planned file is applied and the diff touches only the planned block.
+hook's block, preserve everything else including hooks the plugin does not own.
+**Done when:** every planned file is applied and the diff touches only the planned block.
 
 ### 7. Verify the wiring
 ```bash
