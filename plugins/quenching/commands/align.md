@@ -1,5 +1,5 @@
 ---
-description: Align the whole repository — /.knowledge/ then /.specs/ then .claude/ — on ONE confirmation, looped until nothing changes anywhere. Triggers on "align the repo", "align everything", "align and update everything", "set up quenching here", "converge this repository", "run all the aligns", "fix all three fronts". Probes the three fronts read-only, asks once, then invokes each front's align in dependency order and loops across them, because they feed each other: a spec's distillation is glossary work, and the skill front's registry is a /.knowledge/ listing. Authorization nests one level — each front align inherits the OK and never re-asks, while a code-coupled rename and an irreversible close still gate on their own. Conducts, never reimplements: every write is made by the front align it invokes.
+description: Align the whole repository — /.knowledge/ then /.specs/ then .claude/ — on ONE confirmation, looped until nothing changes anywhere. Triggers on "align the repo", "align everything", "align and update everything", "set up quenching here", "converge this repository", "run all the aligns", "fix all three fronts". Probes the three fronts read-only, asks once, then invokes each front's align in dependency order. Authorization nests one level — each front align inherits the OK and never re-asks, while a code-coupled rename and an irreversible close still gate on their own. Conducts, never reimplements: every write is made by the front align it invokes. Not for: aligning one front → its `/quenching:*:align` command; changing product code → the owning spec.
 argument-hint: [optional-scope]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
 ---
@@ -8,74 +8,24 @@ allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
 
 **Input**: `$ARGUMENTS` (an optional scope; omit to align the whole repository).
 
-The plugin acts on **three** surfaces of a repository, and each has exactly one align that forces
-it into the plugin's canonical shape and then keeps filling it. This command is the **fourth**: the
-one that spans all three.
-
 | # | Front | Align | What converges |
 | --- | --- | --- | --- |
 | 1 | `/.knowledge/` — the OKF bundle | `/quenching:knowledge:align` | homes, frontmatter stamps, every `index.md`, the validator — then project memory, the harness, the glossary |
 | 2 | `/.specs/` — the spec-driven workspace | `/quenching:specs:align` | scaffold, doctor/validate, spec + archive names, the `plans/` inbox and its derived zone — then the close-outs and the ranking |
 | 3 | `.claude/` — the automation surface | `/quenching:components:align` | command paths on the taxonomy axis, collapsed pairs, the rule + registry, the GENERATED zone — then the read-only doctrine audit |
 
-The surface is **one column, not a matrix**: there is no separate "align-and-update" anywhere. An
-align probes first, so a conformant front costs a couple of tool calls and says so
-([sweep-doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §1. Probe before the inventory) — which is what made it safe for each align to carry its own content stages instead
-of needing a second command nobody remembered to run.
-
-This command is the **conductor** over the three. It runs one read-only probe, asks for **one**
-confirmation, invokes the three aligns in dependency order, and **loops**, because the fronts feed
-each other. It never edits a doc, a spec, or a command itself: every write is made by the align it
-invokes, under that align's own doctrine and its own confirmation for code-coupled items.
-
-It **owns** the two contracts every align shares, and they live beside each other in
-`${CLAUDE_PLUGIN_ROOT}/assets/references/align/`:
-
-- [sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) — probe
-  before the inventory, convergence over accommodation, one plan → one OK with code-coupled items
-  gating individually, the two-scan blast-radius procedure, MERGE-never-clobber,
-  never-delete-on-a-guess, align-conformance-report-the-cycle.
-- [convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md) — the
-  cycle-authorization contract, the convergence condition, the anti-spin guards, and why per-item
-  commands are never stages.
+Align probes first.
 
 Resolve `cq` — written bare in the probe below — per
 [tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
-§Resolving the tool, the third file in that folder. Branch on the **exit code**
+§Resolving the tool. Branch on the **exit code**
 (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
-
-They live here because this is the command that spans all three fronts; each align cites them as
-its doctrine and states only its own front's deltas. A change to how a sweep behaves is one edit
-here, not three edits that must stay in agreement.
 
 ## Doctrine
 
-- **Order is a dependency, not a preference.** `/.knowledge/` → `/.specs/` → `.claude/`:
-  - **docs first** — both other fronts write OKF artifacts into the bundle (the skill front's
-    rule `/.knowledge/standards/automation/skills.md` and registry
-    `/.knowledge/documentation/reference/automation.md`; the `/.knowledge/standards/` docs a spec's
-    distillation mints). None can land in a tree that is not there.
-  - **specs before skills** — when migrating a legacy `openspec/` workspace, `/quenching:specs:align`
-    removes the CLI-generated `.claude/skills/openspec-*` + `.claude/commands/opsx/` shadow
-    copies, so `/quenching:components:align` inventories an already-clean surface instead of classifying plugin
-    duplicates onto the taxonomy axis (a native `/.specs/` repo has no such copies, so the order is
-    harmless there and still holds).
+- **Order is a dependency, not a preference.** `/.knowledge/` → `/.specs/` → `.claude/`.
   Never run a later front before an earlier one.
-- **Loop across fronts, because they feed each other.** This is the whole reason this command is
-  not three invocations typed in a row. The concrete edges:
-  - `/quenching:specs:align` **concludes** a spec → its distillation mints docs into `/.knowledge/` → the `/.knowledge/`
-    front's glossary stage must now index those terms.
-  - `/quenching:components:align` **creates** the rule and registry in `/.knowledge/` → the `docs` front's `index.md`
-    must list them.
-  - `/quenching:knowledge:align`'s **harness** stage moves a fact into `/.knowledge/` that a `/.specs/` spec should now
-    cite instead of restating.
-  A single cross-front pass would leave every one of those half-done.
-- **One OK for the whole repo; authorization nests one level.** The gate fires **once**, before
-  pass 1. Each front align **inherits** it and passes it down verbatim to its own stages — it does
-  not ask again
-  ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md) §The cycle-authorization contract).
-  After that OK, the only possible interruptions are the two the contract never covers: a
-  **code-coupled** rename, and an **irreversible close** (concluding a spec).
+- **Loop across fronts.**
 - **Conduct, never reimplement.** The conductor sequences, gates, and reports. If a front's
   behaviour must change, change that front's align — the same ONE-authority-per-concern rule that
   keeps each align from re-deriving its own stages' logic.
@@ -91,8 +41,10 @@ here, not three edits that must stay in agreement.
 ## Workflow (probe → ONE OK → three fronts → re-probe → loop)
 
 ### 1. Probe the three fronts (read-only, cheap)
-Presence and rough scale only — **not** a full inventory, which each align does for itself, and
-each already probes before paying for one:
+If `$ARGUMENTS` names a front or a path inside one, resolve it to that front and probe only that
+front; report the other fronts as skipped by scope. With no argument, probe all three and preserve
+the dependency order below.
+Presence and rough scale only:
 - **`/.knowledge/`** — does the bundle root exist (`/.knowledge/index.md` with `okf_version`)? Run
   `cq knowledge validate /.knowledge --json` and keep
   the finding counts; note whether the project memory dir
@@ -105,8 +57,7 @@ each already probes before paying for one:
   migrating a legacy `openspec/` workspace).
 
 **All three fronts probe clean** → say so and stop, before any plan: *"all three fronts conformant
-— nothing to align."* That is the cheapest complete answer this command can give, and giving it is
-the point of probing here rather than inside three separate runs.
+— nothing to align."*
 **Done when:** each front is marked *present / absent / not applicable* with its counts, and
 nothing has been written.
 

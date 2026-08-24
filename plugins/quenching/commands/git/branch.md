@@ -16,13 +16,10 @@ allowed-tools: Bash, Read, AskUserQuestion
 `quenching-specs:` marking) or a short name for standalone work with no spec behind it. Omitted →
 ask what the isolation is for.
 
-Cuts a worktree or branch **before the first line of code**, the same offer
-`/quenching:specs:execute` makes inline on its own way into a build. The mechanics — the offer's
-shape, the default names, `worktreeSetup`, and the two records a taken isolation leaves behind —
-are owned by
+Cuts a worktree or branch **before the first line of code**. The mechanics — the offer's shape,
+the default names, `worktreeSetup`, and the two records a taken isolation leaves behind — are owned by
 [git/isolation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/isolation.md), cited below rather
-than restated; this command is its standalone entry point for a caller with no build loop of its
-own to hang the offer on.
+than restated; this command is its standalone entry point for a caller with no build loop of its own.
 
 `allowed-tools` grants bare `Bash` because step 4 runs a target-declared `worktreeSetup` — an
 arbitrary command this file cannot scope in advance — beside `git worktree`/`git checkout`,
@@ -35,6 +32,8 @@ arbitrary command this file cannot scope in advance — beside `git worktree`/`g
 cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/isolation.md \
   --sections "§Isolation happens on the way into a build" --sections "§Branch and worktree names" \
   --sections "§Recording the isolation"
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
+  --sections "§The read-if-present rule"
 git status --porcelain
 git branch --show-current
 python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git base --json
@@ -52,7 +51,10 @@ to step 4. `$ARGUMENTS` naming no spec (or empty) → continue with no ID; nothi
 step 4, only the branch or worktree itself. **Done when:** the ID (or its absence) and any
 existing `branch:` record are resolved.
 
-### 3. Offer isolation, worktree leading
+### 3. Offer isolation, worktree leading — only from the base
+If the current branch is already different from the resolved base, report that the checkout is
+already isolated and carry it forward; do not offer a second branch or worktree. If it is the base,
+continue with the offer below.
 State the base branch (from step 1), the branch name that would be cut (`plan/<id>-<handle>` with an ID,
 else a kebab-case name derived from `$ARGUMENTS` or asked for), the worktree path, and —
 `worktreeSetup` non-null — the setup command **verbatim**. Then ask with **AskUserQuestion**:
@@ -61,7 +63,7 @@ else a kebab-case name derived from `$ARGUMENTS` or asked for), the worktree pat
 - **Branch** — `git checkout -b <branch>`, work continues in this checkout.
 - **In place** — declines isolation; nothing is created.
 
-Worktree leads unconditionally, per §Isolation happens on the way into a build already loaded — its
+Worktree leads when the current checkout is the base. Its
 cost (no installed dependencies, no `.env`, no venv) is stated in the same block as the ask, which
 **is** the consent for the setup command shown beside it. **Done when:** the human has chosen one of
 the three, or the run stops on a git error from the chosen form.

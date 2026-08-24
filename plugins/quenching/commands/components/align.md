@@ -1,5 +1,5 @@
 ---
-description: Converge this repo's whole .claude command surface onto one file per entry point, then audit every body and rewrite every description against the writing doctrine. Triggers on "align the skills", "align and update the skills", "migrate my commands", "fix the .claude surface", "collapse the skill wrappers", "audit the command bodies", "review the skill descriptions", "shorten the descriptions", "converge the automation surface". A body is reported with the /quenching:components:command:new that fixes it, never rewritten; a description is rewritten in ONE surface-wide pass on its own confirmation.
+description: Converge this repo's whole .claude command surface onto one file per entry point, then audit every body and rewrite every description against the writing doctrine. Triggers on "align the skills", "align and update the skills", "migrate my commands", "fix the .claude surface", "collapse the skill wrappers", "audit the command bodies", "review the skill descriptions", "shorten the descriptions", "converge the automation surface". A body is reported with the /quenching:components:command:new that fixes it, never rewritten; a description is rewritten in ONE surface-wide pass on its own confirmation. Not for: minting one command → /quenching:components:command:new; changing a body → that command's own confirmation.
 argument-hint: [optional-scope]
 allowed-tools: Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task
 ---
@@ -14,64 +14,31 @@ built as `skills/<name>/SKILL.md` + a mirrored wrapper, which it **collapses to 
 entry point** (§6 below) — then **reads every surviving body against the writing doctrine** (§7)
 and **reviews every description against it in one surface-wide pass** (§8).
 
-Structure and content are one command because both audits only become possible once the migration
-has run: a body still sitting in `skills/<name>/SKILL.md` is not yet at the path that will be
-judged, and a collapsed pair's surviving description is the wrapper's, which §6 decides. The axis,
-naming, placement, and registry format live in
+The axis, naming, placement, and registry format live in
 [components-command-new/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md);
 the writing doctrine judged against is
 [components-command-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md);
 the capability levers the wider inventory reads against are
-[components-command-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md) —
-all owned by the sibling and cited here, never restated. Molds live at
+[components-command-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md).
+Molds live at
 `${CLAUDE_PLUGIN_ROOT}/assets/templates/automation/`.
 
 ## Doctrine
 
-The sweep contract every align shares — probe before the inventory, convergence over
-accommodation, one plan → one OK with
-code-coupled items gating individually, the cycle-authorized narration exception, the two-scan
-blast-radius procedure, MERGE-never-clobber, never-delete-on-a-guess, and
-align-conformance-report-the-cycle — lives once in
-[align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md).
-Read it as this skill's doctrine. What follows is only what is **specific to `.claude/`**:
+Read [align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) as
+this skill's doctrine. What follows is specific to `.claude/`:
 
 - **The legacy `openspec-*` surface is not this sweep's.** `.claude/skills/openspec-*/` and
   `.claude/commands/opsx/` are legacy CLI artifacts a prior `openspec init` left behind — a
   native `/.specs/` repo has none. When present they belong to `/quenching:specs:align`, which
   removes them when migrating a legacy `openspec/` workspace
   ([specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md)
-  §Findings the sweep FIXES). Inventory them only to **note** them; never classify them onto the axis,
+  §Finding policy). Inventory them only to **note** them; never classify them onto the axis,
   rename them, or remove them here.
-- **A body is audited, never rewritten.** The shared MERGE rule says bodies are preserved; on this
-  front that is the whole point — the migration changes only names, placement, and
-  description/frontmatter conformance. §7 then **reads** each body and reports what it finds with
-  the `/quenching:components:command:new` invocation that opens the edit. Rewriting one is **authoring**, and authoring
-  needs the human whose intent the command encodes — the same anti-fabrication boundary every
-  align holds ([sweep-doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
-  §6. Align conformance; report the cycle).
-- **A description is the one text this sweep rewrites, and §8 is where.** The asymmetry is not an
-  exception to the rule above; it is what the rule is for. A body is intent — long, authored, and
-  only its author knows what it meant. A description is **routing**, it is short enough to review
-  whole, and its central question — does anything else on this surface answer to the same
-  request? — is unanswerable one command at a time. This sweep is the only place holding all of
-  them at once, so it is the only place that can waive a boundary honestly. Reviewing them one per
-  `/quenching:components:command:new` run would cost N sessions to reach a verdict none of them can reach.
-  The edit still gates on its own OK, and a **trigger phrase is never deleted here** — that is
-  `/quenching:components:command:eval`'s, on a measured miss.
-- **This front is honestly short, and says so.** `/.knowledge/` and `/.specs/` each have an out-of-band
-  store to drain; this one has none, and the migration is idempotent — so the loop reaches a
-  fixpoint in **1–2 passes**, essentially always. It is not ceremony: a rename in the migration
-  shifts the registry and can dangle a reference, and re-probing catches that in the same run. But
-  a run that converged in one pass with nothing to do reports exactly that, never padded.
 - **The wider `.claude/` is inventoried, never migrated.** `.claude/agents/*.md` and the
   hooks wired in `settings.json` and in command frontmatter are **report-only** surfaces:
   the tool names their findings (`sk-agent-*`, `sk-hook-*`) and each is routed to the mint
-  that owns it (`/quenching:components:agent:new`, `/quenching:components:hook:new`) — no rename, no move, no write, so
-  the confirmed plan's write set stays exactly the command surface's.
-- **The registry ends the run honest.** `cq components registry reindex` regenerates the GENERATED
-  zone from the post-migration surface, and a second run reporting `changed: false` is what
-  proves it matches disk; residue is reported, never silently dropped.
+  that owns it (`/quenching:components:agent:new`, `/quenching:components:hook:new`).
 - **Codex translation drift is reported, never repaired here.** When this checkout carries the
   generated Codex sibling, `cq components translate --check --json` names every divergent file
   with `ct-translation-drift`. The align report includes those findings and routes the repair to
@@ -88,8 +55,7 @@ Resolve `cq components` per
 **Every shell grant is scoped**, per `/.knowledge/standards/automation/skills.md`
 §`allowed-tools` is always scoped: `python3`/`py` for the tool, `git grep` and `grep` for the
 blast-radius sweep (§3), `mkdir`/`mv` for the renames, `rm` for a
-confirmed legacy tool copy. This skill touches no repo toolchain, so it has no claim to an
-unscoped `Bash`.
+confirmed legacy tool copy.
 
 **What the tool decides, and what it does not.** `doctor` and `lint` decide everything mechanical
 — a non-empty description on every command, no two resolving to the same `/` path, kebab-case
@@ -97,21 +63,14 @@ segments, the caps, trigger position, the `Not for:` boundary, body length, step
 unscoped `Bash`. Neither decides the **axis**: naming the one folder a command acts on is a claim
 about what it is *for*, which no parser makes. Classification stays a read.
 
-**Neither does the tool see a legacy pair.** `cq components` reads `commands/**` and nothing else, so
-a leftover `skills/<name>/SKILL.md` is invisible to it — the collapse in §6 is found by `Glob`
-and reported by this sweep, never by a `sk-*` code.
-
 ## Workflow (probe → ONE OK → migrate → audit → re-probe)
 
-### 1. Probe — the two calls that decide whether anything else runs
+### 1. Probe — the checks that decide whether anything else runs
 Before any inventory, ask the tool whether there is work at all:
 ```bash
-cq components doctor --json   # descriptions, duplicate / paths, non-canonical segments — plus
-                          # the report-only wider surface: agents/ and wired hooks (sk-agent-*, sk-hook-*)
-cq components lint --json     # per-command conformance, one sk-* code per gap — including the
-                          # description codes §8 reports before → after (sk-metadata-cap,
-                          # sk-description-portable, sk-trigger-position, sk-no-boundary)
-cq components translate --check --json  # generated Codex sibling, when present; ct-translation-drift
+cq components doctor --json
+cq components lint --json
+cq components translate --check --json
 ```
 plus one `Glob` for the legacy pairs the tool cannot see (below). Branch as
 [sweep-doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §1. Probe before the inventory prescribes:
@@ -124,25 +83,15 @@ plus one `Glob` for the legacy pairs the tool cannot see (below). Branch as
 | translation reports `ct-translation-drift` only | Report every divergent path and route to `cq components translate --write`; continue no migration for it. |
 | anything else exits 1 or 2, or a legacy pair exists | Continue to step 2. |
 
-**`lint` carries §8's before-image.** Descriptions can be structurally perfect — every trigger in
-place, every boundary present — while the surface pays for prose about *how* each command works, and
-`doctor` exits 0 on that surface forever. What `lint` names is the description codes —
-`sk-metadata-cap`, `sk-description-portable`, `sk-trigger-position`, `sk-no-boundary` — the half of
-§8's review a parser can decide, for one call; the prose no parser names, §8 cuts by the read.
-
-An **empty** surface (no commands, no skills) also stops: scaffolding a taxonomy for zero commands
-is ceremony. Note whether an OKF bundle exists (`/.knowledge/index.md` with `okf_version`) and say so once
+An **empty** surface (no commands, no skills) also stops. Note whether an OKF bundle exists
+(`/.knowledge/index.md` with `okf_version`) and say so once
 — without one the rule and registry stay out of scope, while the migration still applies.
 
-The registry zone is deliberately **not** probed: `registry reindex` has no dry run, and it is one
-cheap idempotent call that step 8 makes anyway as this front's verifier. A `changed: true` there on
-an otherwise-clean run means the zone was stale and has just been repaired — which is a fact to
-report, not a reason to pay for an inventory.
 **Done when:** the three payloads and the glob are in hand, and the run has either stopped,
 committed to a full sweep, or entered §8 directly.
 
 ### 2. Inventory the surface (read-only)
-`Glob` for what the tool cannot see, because it reads only `commands/**`:
+`Glob` for legacy pairs:
 `.claude/skills/*/SKILL.md` and directory-scoped `**/.claude/skills/*/SKILL.md`. **Every one of
 those is a pair awaiting collapse** — pair each with the wrapper whose body invokes it (the
 `quenching:<name>` or bare `<name>` reference), and record a skill with no wrapper, or a
@@ -151,7 +100,7 @@ Set aside every legacy `openspec-*` skill and `opsx/` wrapper — they are `/que
 (Doctrine §the legacy `openspec-*` surface); list them as *out of scope, owned by
 `/quenching:specs:align`* and drop them from the working set, including from the tool's findings.
 
-Then add the half the tool cannot: for each remaining item, the **axis classification** per the
+For each remaining item, make the **axis classification** per the
 test ([taxonomy](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md) §The single axis — several unrelated folders
 → unroutable). Read `/.knowledge/standards/automation/skills.md` if present — it governs; note whether
 the rule and the registry (`/.knowledge/documentation/reference/automation.md`) exist.
@@ -165,10 +114,7 @@ never a new plan section or a new confirmation of its own.
 
 **A category whose convention is not readable yields no candidate.** Nothing under
 `.claude/commands/<categoria>/` yet, or the two shapes already mixed, means there is no
-established convention to diverge from — record the item's classification and move on. The
-"ask the human once" branch belongs to the mint (`/quenching:components:command:new`), where a
-single command is in play and the answer becomes the convention; a sweep that asked it would be
-inventing the convention for a whole surface out of one confirmation.
+established convention to diverge from — record the item's classification and move on.
 **Done when:** the inventory table (item · classification · canonical path if it diverges ·
 `sk-*` gap) covers every item in the working set, and no file changed.
 
@@ -209,20 +155,19 @@ For every `skills/<name>/SKILL.md` paired with a wrapper in §2, the surviving f
 **wrapper's path**, so nothing a human types today changes. Frontmatter is a merge with one rule
 per key, not a judgement call:
 
-| Key | Source | Why |
-| --- | --- | --- |
-| `description` | the **wrapper's** | already reviewed for the `/` menu; deleting the skill's is the whole saving |
-| `argument-hint` | the wrapper's | wrappers carry it; skills never did |
-| `allowed-tools` | the **skill's** | the scoped grant the body needs; wrappers declare none |
-| `effort` | the skill's | carried through unchanged |
-| `name` | **dropped** | the command path IS the name now |
-| `when_to_use` | **dropped** | restates the description's first clause |
-| `user-invocable` | **dropped** | it exists to hide a skill behind a wrapper; there is no wrapper left |
+| Key | Source |
+| --- | --- |
+| `description` | the **wrapper's** |
+| `argument-hint` | the wrapper's |
+| `allowed-tools` | the **skill's** |
+| `effort` | the skill's |
+| `name` | **dropped** |
+| `when_to_use` | **dropped** |
+| `user-invocable` | **dropped** |
 
 The body is the **skill's, moved verbatim** — retitle its `# <skill-name> — …` heading to
 `# /<command:path> — …` and fold the wrapper's `$ARGUMENTS` sentence in as the input contract.
-No other edit: judging what a body *says* is §7's, and mixing it into the migration makes the
-diff unreviewable.
+Keep the body otherwise unchanged.
 
 Then **re-home what sat beside the skill.** A `references/` folder cannot follow the body into
 `commands/`, where it would register as a phantom command — move it outside (in a target repo,
@@ -235,19 +180,16 @@ path chosen (a human decision), and a wrapper naming no skill has no body to tak
 every unclean pair is listed with what it needs.
 
 ### 7. Audit every body against the doctrine — read-only, always
-Now that every body sits at the path it will keep, read it. This stage **writes nothing** and needs
-no authorization; it is the one thing the migration is forbidden to do, and folding it in here is
-what makes the fold worth having.
+Read every body at the path it will keep. This stage **writes nothing** and needs no authorization.
 
-Two kinds of evidence, kept apart in the report because they are not the same claim:
+Keep these evidence types separate:
 
 - **What the tool decided.** `lint`'s per-body codes carry the mechanically decidable half —
   `sk-body-length`, `sk-step-criterion`, `sk-trigger-position`, `sk-no-boundary`,
-  `sk-description-portable`, `sk-metadata-cap`. A code names a **threshold crossed**.
+  `sk-description-portable`, `sk-metadata-cap`.
 - **What only a read can judge.** For each remaining body: the no-op test, sediment, sprawl,
   positive prescription, and whether shared procedure is **cited rather than restated**
-  ([doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md)). A read names a
-  **claim about behaviour**, and no parser makes one.
+  ([doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md)).
 
 **Collection may be delegated; judgment may not.** On a surface large enough that reading every
 body would bury the conversation, dispatch read-only `Task` collectors — one per slice — that
@@ -263,17 +205,11 @@ that surface is `/quenching:specs:align`'s here as everywhere. Never rewrite a b
 clean — and nothing was written.
 
 ### 8. Review every description — ONE table, its own OK
-The description is the only text a command has that never stops loading: it is paid on every
-session in the repo whether or not the command ever fires, and it is the only text that decides
-whether a spoken request reaches it at all. Review the whole surface in **one pass**, here.
+Review every description across the whole surface in **one pass**.
 
-Read **frontmatter only** — never a body, whether or not §7 ran. A description is judged against the
-other descriptions, and no body changes that verdict. The read is self-limiting and its size is
-known *before* it starts: §1's `doctor` payload counts the surface, and its `lint` payload names
-the description codes it carries — `sk-metadata-cap`, `sk-description-portable`,
-`sk-trigger-position`, `sk-no-boundary` — the mechanically decided half of this stage. Say the count
-and the code total when opening the stage, so the human authorizes a cost rather than an open-ended
-sweep.
+Read **frontmatter only**. Judge descriptions against the other descriptions, not bodies. §1's
+`doctor` payload counts the surface, and its `lint` payload names the description codes:
+`sk-metadata-cap`, `sk-description-portable`, `sk-trigger-position`, `sk-no-boundary`.
 
 **Which class a description is in decides which verdicts apply.** A typed-only command
 (`disable-model-invocation: true`) has left the routing surface: `lint` reports neither routing code
@@ -285,7 +221,7 @@ read from the frontmatter this stage reads anyway — never guessed.
 
 Judge each description against the three slots and the competitor test in
 [components-command-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md)
-§The three slots — owned there, never restated here. What this stage does with each verdict:
+§The three slots. What this stage does with each verdict:
 
 | Verdict | Action |
 | --- | --- |
@@ -297,10 +233,8 @@ Judge each description against the three slots and the competitor test in
 | a quoted trigger that looks like sediment | **report**, never cut — `/quenching:components:command:eval <command>` decides it on a measured miss |
 | over a cap (`sk-metadata-cap`, `sk-description-portable`) after all of the above | **report** the residue with its code; a cap is not closed by deleting a trigger |
 
-The competitor test runs **against the surface in hand, never from memory**: the `/<namespace>:`
-commands share, from the paths in §1's `lint` payload, and the trigger vocabulary that overlaps,
-from the descriptions this stage just read. It needs nothing §2 collected, which is what lets §1
-enter this stage directly on a surface with nothing to migrate.
+The competitor test runs **against the surface in hand, never from memory**: use the paths in §1's
+`lint` payload and the trigger vocabulary from the descriptions just read.
 
 Present ONE table — command · class · current chars → proposed chars · what changed · the slot that
 earned it — with the description-code count before → after from §1's `lint` payload, the
@@ -340,7 +274,7 @@ In an OKF repo, confirm the registry is indexed, per
 [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md). The migration
 counts go in the report below, not into the bundle.
 Report: passes run; collapsed / renamed / created / flattened / rule+registry created / unroutable /
-flagged; every `sk-*` finding that survived the run, by code; §7's doctrine findings, listed
+flagged; every surviving `sk-*` finding and every `ct-translation-drift` result, by code; §7's doctrine findings, listed
 apart, each with its `/quenching:components:command:new`; and §8's line — descriptions reviewed, edited,
 declined; the description-code count before → after from `lint`; every waived boundary with the
 competitor set checked (and its accepted `sk-no-boundary`); and every trigger handed to
