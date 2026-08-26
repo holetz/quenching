@@ -320,7 +320,7 @@ body blocks:
    result, which means **a check that came back inconclusive is named as such, never counted as
    passed**.
 3. **Unresolved `## Discoveries`** — optional, each line named. They are
-   `/quenching:specs:develop`'s discoveries bank to close, and they are easiest to lose at exactly
+   `/quenching:specs:develop`'s discoveries stage to close, and they are easiest to lose at exactly
    this moment.
 
 Close on §The next-step block, its recommended line naming step 6's handoff — `/quenching:git:pr:create`

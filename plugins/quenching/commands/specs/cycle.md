@@ -155,11 +155,13 @@ only the ID, plus step 3's gear sentence where the screen moved the level.
 
 **The gear reaches it through disk, and reaches inside it.** `develop` reads
 `records.priority.complexity` from the `cq specs status` payload it already fetches, and the level
-decides who answers its banks: `low` and `medium` interrupt nobody and `low` stamps `approved`
-itself; `high` and `xhigh` ask
+decides two things inside it: who answers the composition — `low` interrupts nobody and stamps
+`approved` itself, every level above it asks at every stage — and whether the spec is **argued
+with** without anyone asking, which `high` and `xhigh` do and `medium` only recommends
 ([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §The scale). So the
-defining half's plan must say, in as many words, **whether the human will be asked anything** —
-under `low` the answer is no, and that is the one thing this screen cannot leave implicit.
+defining half's plan must say, in as many words, **whether the human will be asked anything and
+whether a refine will run** — under `low` both answers are no, and that is the one thing this screen
+cannot leave implicit.
 
 Then read the state again (`cq specs status --spec <id> --json`) and re-evaluate the gear per
 §Re-evaluating a gear. **The gear moved up** → return to step 3: a new plan and a fresh

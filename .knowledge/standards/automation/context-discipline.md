@@ -4,7 +4,7 @@ title: Context discipline — open less, run for less time, and emit fewer turns
 description: The two halves of a run's integral `tokens × turns remaining` and the three ways to cut it — open less (the declared files rather than the folder, the cited sections rather than the file, N sections in ONE call, the block rather than the section where a section has blocks, and the rules/rationale marker convention), run for less time (the section boundary as a legitimate stopping point, triggered by an event and never by a threshold), and emit fewer turns per unit of work (the batching contract, and the ban on a turn that exists only to announce the next tool call); plus the two things measured and refused, segmenting the bundle into more files and deleting rationale to compact it
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/specs/**
 tags: [automation, context, reading, cost, commands, references]
-timestamp: 2026-08-17
+timestamp: 2026-08-25
 audience: both
 authority: background
 source: read-by-section-not-by-file spec, then narrow-the-execute-preamble — every figure below is a static count of files on disk plus arithmetic over the integral, measured while building the spec that wrote it; the integral's measurement history, 344-turn run included, retired with context-budget.md (extensible-surface-and-budget-retirement, 2026-08-06); the second converted body (`/quenching:specs:develop`, 2026-08-04) came with a corpus measurement of the cost the rule addresses — 107 whole-file reference reads against 13 sectioned ones across 159 transcripts, 34.6M token-turns, half of it in the three references that one command cited by bare path; scope-the-handoff-rewrite adds the `## Handoff` section-block measurement below, taken on a real 29-task, 7-section run predating that redesign; the fourth half of rule 2 (the address-then-list ladder) comes from the skills-py-sections-comma-split-bug spec, measured on 146 comma-carrying headings and a 14,944-value simulation over this repo's own markdown; the third triage result — the consumerless citation that leaves, with its rule at the file's own grade — added by alinhar-citacoes-de-preambulo-do-execute (task 2.2, 2026-08-06), which triaged the eighteen preamble citations of /quenching:specs:execute; the third axis — emit fewer turns per unit of work — added by revisar-fluxo-do-develop-custo-e-gates (2026-08-16), measured on session c56cff41-e5b1-43f0-85dc-eca1b17e03d0 by summing cache_read_input_tokens + cache_creation_input_tokens + input_tokens over the assistant turns of its .jsonl: 9.73M tokens of context read across 100 turns, 4.44M of it 100 re-reads of a 44.4k base; rule 4 of §Open less — the block rather than the section — added by escopar-a-leitura-por-task (2026-08-17), which put the cut in `cq specs section --scope` on the READ path and is declared rather than measured, leaning on the ~79,556-char figure §Run for less time already owns
@@ -273,6 +273,15 @@ prose set in front of the question.
 **Neither rule reaches how questions are grouped.** Two questions whose answers can change each
 other are asked separately whatever this axis costs. That limit is owned by the command surface's
 own contract and is not negotiable against a turn count.
+
+**The third rule is the same one applied to a workflow's own crossings.** Where a body traverses
+several stages over one artifact, and no stage's *input* depends on the previous stage's write, the
+stages are one pass and one edit — the same dependency test, raised from the tool call to the
+traversal. `/quenching:specs:develop` is where this was first applied: it crossed three stages with
+an edit, a `validate` and a re-derivation between each, for a spec nobody had finished, and the
+re-derivations answered a question the pass already held. **It changes when a question is asked,
+never whether it is** — which is what keeps it on this side of the limit above, and what its report
+proves by carrying the question count.
 
 <!-- rationale -->
 

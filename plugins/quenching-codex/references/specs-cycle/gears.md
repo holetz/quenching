@@ -12,7 +12,11 @@ the deliberate absence of a cap on N all belong to
 [fanout.md](../../references/specs-fanout/fanout.md) §The two regimes
 §The queue's shape §The entry contract §Classifying a block §The recursive return, which
 `quenching-specs-execute-queue` and `quenching-specs-develop-batch` derive their runs from.
-Neither of them **derives** a gears plan. Both, however, read §The scale: the level says who answers inside the stage they invoke, and `quenching-specs-develop-batch` needs it to know which spec its conductor stamps without asking. §The scale is the only section here that is theirs to read.
+Neither of them **derives** a gears plan. Both, however, read §The scale: the level says who
+answers inside the stage they invoke and whether that stage argues with the spec on its own, and
+`quenching-specs-develop-batch` needs it to know which spec may run at all — only `low` interrupts
+nobody, so only `low` has drafting to sell to a batch. §The scale is the only section here that is
+theirs to read.
 
 This contract lives in the plugin, never in a target's bundle: it is procedure a command needs
 while running inside a target, not a fact about that target, so it is cited by
@@ -58,22 +62,29 @@ in-session.
 
 <!-- rules -->
 
-Four levels, and each changes something real in **both** halves — who answers during definition,
+Four levels, and each changes something real in **both** halves — how the definition is reached,
 and how the stages run during building. A level that changes nothing in either half is vocabulary,
 and this table is the whole of what each one buys:
 
-| Level | Defining — who answers | Building — how the stages run |
+| Level | Defining — who answers, and whether the spec is argued with | Building — how the stages run |
 | --- | --- | --- |
-| `low` | the pass answers every question from evidence and interrupts nobody; it stamps `approved` itself, `by: low-gear`, and the review window is the spec's URL in the backend | every stage in one session on that half's one OK, nothing stopping mid-flow, ending by opening a pull request |
-| `medium` | the pass answers every question from evidence and interrupts nobody, then ends on ONE closing screen: approve, refine a named section, run the premortem, or raise the gear | `develop` runs isolated in a sub-agent — the one stage whose returned summary is much smaller than the work; the rest in session, stopping at each section boundary |
-| `high` | the pass **drafts first and then asks about the draft**, which is what collapses the dependency between its questions and lets them travel grouped | every stage in session; the stage-by-stage stops and confirmations are kept, and a section boundary waits for an answer rather than continuing by default |
-| `xhigh` | `high`, plus the adversarial bank's **premortem lens runs unconditionally** — not only when the spec's own risk triggers it | `high`, plus each section boundary's self-review going to a reviewer that did not write the code |
+| `low` | the pass **composes** the whole spec from evidence and interrupts nobody; it **never refines**; it stamps `approved` itself, `by: low-gear`, and the review window is the spec's URL in the backend | every stage in one session on that half's one OK, nothing stopping mid-flow, ending by opening a pull request |
+| `medium` | the pass **asks at every stage of the composition**, and does not refine on its own — the closing screen recommends it where a signal fired, and taking that recommendation raises the level | every stage in session, stopping at each section boundary |
+| `high` | `medium`, and **the refine pass runs automatically** once the composition closes: the spec is argued with rather than only completed | every stage in session; the stage-by-stage stops and confirmations are kept, and a section boundary waits for an answer rather than continuing by default |
+| `xhigh` | `high`, plus the refine pass's **premortem lens runs unconditionally** — not only when the spec's own risk triggers it | `high`, plus each section boundary's self-review going to a reviewer that did not write the code |
 
-**Where the levels split is who answers, not how much work there is.** `low` and `medium` do not
-ask; `high` and `xhigh` do. Everything else in the table follows from that one line, including why
-`medium` isolates `develop` and `high` cannot: isolation means only the summary returns, which is
-incompatible with stopping to ask. Where nobody is interrogated, isolating buys context; where the
-human is in the loop, the stage has to run where they can see it.
+**Where the levels split, twice, and neither split is about how much work there is.** The first is
+**who answers**, and it falls between `low` and everything above it: `low` interrupts nobody, every
+other level asks at every stage of the composition. The second is **whether the spec is argued with
+without anyone asking for it**, and it falls between `medium` and `high`: `medium` composes and
+recommends, `high` and `xhigh` refine on their own authority. `low` is therefore the only level
+that is fast by construction, and that is its whole content — a spec that should be defined without
+a conversation asks for it by name.
+
+**Defining is never isolated in a sub-agent, at any level.** Isolation means only the summary
+returns, which is incompatible with stopping to ask — and every level but `low` asks. `low` could
+be isolated and is not: it is one pass landing one edit, so the returned summary would be as large
+as the work, which is the sub-agent gear's own test failing (§What a gear is).
 
 **A level's gear is the plan that level derives**, and `low`'s has a second name. "The `low` gear"
 and **"the minimal gear"** are the same thing: the whole plan `low` derives — never a fourth value
@@ -91,8 +102,8 @@ against the word's plain reading.
 **Absent reads as `high`, never `low`.** A spec whose `priority` record carries no `complexity` has
 nothing to derive from, and the two errors are not symmetric: `low` is a positive claim — *this can
 run unattended, and the pass may stamp the go itself* — and it is the one that costs when it is
-wrong. Guessing upward is free; guessing downward is not
-([triage.md](../../commands/specs/triage.md) states the same asymmetry for a ranked
+wrong. Guessing upward costs a refine pass nobody asked for; guessing downward costs a spec built
+on nobody's word ([triage.md](../../commands/specs/triage.md) states the same asymmetry for a ranked
 row's floor).
 
 **Every stage reads the level from a payload it already fetches.** `cq specs status --spec <slug>
@@ -121,13 +132,13 @@ individually.
 **The four levels and what each buys are §The scale — never transcribed anywhere else.** This
 section is only how a half's plan is derived from one of them.
 
-**"The larger stages" is exactly one stage, and naming it is the point.** `medium` isolates
-`develop` and nothing else: it is the one stage whose returned summary is much smaller than the
-work, and the only one that *can* be isolated, since at `medium` it asks nothing. `execute`'s
-output is code that lands in the tree either way, and its real delegation is per task under
+**No plan isolates a stage, and naming why is the point.** `develop` asks at every level but
+`low`, and `low`'s own pass returns a summary as large as the work (§The scale). `execute`'s output
+is code that lands in the tree either way, and its real delegation is per task under
 [execution.md](../../references/specs-execute/execution.md) §Delegating an
 executor. `conclude` takes irreversible cycle actions that gate individually, and a sub-agent
-cannot present a gate. A plan claiming to isolate either would describe a run nobody can execute.
+cannot present a gate. A plan claiming to isolate any of them would describe a run nobody can
+execute.
 
 `complexity` is written by `triage`, `create` and `develop` — never silently: every write is
 proposed with the scale in front of the human and lands on a confirmation, under a record whose
@@ -150,13 +161,17 @@ gear is re-evaluated against what the stage just revealed. Three signals move a 
 - **files beyond `## Impact`** — a stage wrote or revealed paths the spec never declared;
 - **a `- [!]` task** — work that started and stopped, which a plan made from the input could not
   have predicted;
-- **a human asked for more** — on the defining half's closing screen, choosing to refine a named
-  section or to run the premortem is the human saying the gear was too low. This one is **declared
-  rather than derived**, and the choice IS the OK to restamp `complexity`: the option's own text
-  names the level it moves to, so the raise and the record land in the same edit.
+- **a human took the closing screen's recommendation** — the defining half's screen judges what
+  the composition produced and recommends the next move; choosing to refine, or to refine with the
+  premortem, is the human agreeing the gear was too low. This one is **declared rather than
+  derived**, and the choice IS the OK to restamp `complexity`: the option's own text names the level
+  it moves to (`high` for a refine, `xhigh` with the premortem), so the raise and the record land in
+  the same edit.
 
 The first three signals fire at any level. The fourth exists only where a closing screen does —
-`medium` and above — and giving it up is part of what `low` gives up.
+`medium` and above — and giving it up is part of what `low` gives up. A `low` spec someone asks to
+refine is that same signal arriving without a screen: the request raises the level and the refine
+pass runs under it, because `low` never refines.
 
 A gear that moved up returns to the plan of the half the run is in: a new gears plan and a fresh
 authorization — that half's OK covers the gear its plan presented, never the one above it. A stage
