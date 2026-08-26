@@ -1,5 +1,5 @@
 ---
-description: Rank the whole plans/ front — ONE ordered list the human confirms, written back as a priority record on each spec. Triggers on "triage the specs", "prioritize the front", "rank the plans", "what matters most", "re-rank these", "order the plans", "which of these first". Reads every spec's frontmatter and derived stage directly, no sub-agents; proposes one table with a one-line reason per row; applies only what was approved, merging and never clobbering a human's ranking. Writes the priority record — level, criticality, complexity, date — and nothing else. Never removes a spec, never infers completion, never treats staleness as abandonment. Not for: closing a spec out or abandoning it → /quenching:specs:conclude; resolving a spec's discoveries → /quenching:specs:develop; building the top-ranked spec → /quenching:specs:cycle; the conformance view of the workspace → /quenching:specs:status.
+description: Rank the provider-owned plans front — ONE ordered list the human confirms, written back as a priority record on each spec. Triggers on "triage the specs", "prioritize the front", "rank the plans", "what matters most", "re-rank these", "order the plans", "which of these first". Reads provider payloads and derived stages directly, no sub-agents; proposes one table with a one-line reason per row; applies only what was approved, merging and never clobbering a human's ranking. Writes only the priority record — level, criticality, complexity, date. Never removes a spec, infers completion, or treats staleness as abandonment. Not for: closing → /quenching:specs:conclude; resolving discoveries → /quenching:specs:develop; building → /quenching:specs:cycle; conformance → /quenching:specs:status.
 argument-hint: [optional-id]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion
 model: opus
@@ -8,10 +8,10 @@ model: opus
 # /quenching:specs:triage — rank the front, once, on one confirmation
 
 **Input**: `$ARGUMENTS` — optionally one ID to limit the sweep; omit to rank everything in
-`plans/`.
+the provider-owned `plans` phase.
 
 The prioritization sweep. It reads every spec in
-`/.specs/plans/`, proposes ONE ordered list, and — on a single
+the provider-owned plans front, proposes ONE ordered list, and — on a single
 confirmation — writes each spec's `priority` record.
 
 **This is the only command that ranks.** `cq specs next --front` consumes what this writes: with no
@@ -24,7 +24,7 @@ A sweep that could also delete is a sweep nobody can safely re-run.
 
 The layout, the derived stages, the front's on-write check and the `cq specs` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-§The `specs/` layout §Derived stages §The `cq specs` tool surface §The report mold, which owns the
+§The provider-owned document §Derived stages §The `cq specs` tool surface §The report mold, which owns the
 shape of both the step 2 table and the step 6 report; how the tool is resolved and its path
 written in
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
@@ -55,17 +55,10 @@ priority:
 | `complexity` | one of `low` · `medium` · `high` · `xhigh`, never a numeric size — see below | proposed on **every** ranked row. `low` needs concrete grounds; without them the floor is `medium` |
 | `date` | when the ranking was made | stamped on every write, because a ranking ages |
 
-**`level` is a position, not a label.** Five specs marked "high" is not a ranking — it is the
-absence of one, written down. The whole value of this sweep is that somebody had to decide what
-comes *after* what, and an ordinal is the only form that cannot dodge it. `criticality` exists
-because a partially-ranked front should still sort, not because it is an easier way to answer.
-
 The record is `writeOnce: false`: a later sweep re-ranks, and each write restamps `date`. Only this
 command writes it.
 
-**`complexity` answers a different question than `level`.** It is never about how big or how
-important the change is — that is what `level` and `criticality` already answer. Propose it
-against the criterion
+**`complexity` answers a different question than `level`.** Propose it against the criterion
 [gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §Deriving the gears plan
 states: how much a human needs to be part of the process, from `low` (the LLM can carry it with
 close to no supervision) to `xhigh` (a judgment stage joins the plan).
@@ -74,43 +67,11 @@ close to no supervision) to `xhigh` (a judgment stage joins the plan).
 `captured` one with a `## Problem` and no `## Proposal` — still leaves this sweep carrying
 `medium`, never blank and never `low`.
 
-Blank loses twice: it reads as *easy* to anyone scanning the column, and it strands the consumer the
-field exists for — `/quenching:specs:cycle` derives its gears plan from `complexity`, so a spec that
-answers nothing gets its gear by accident rather than by judgement.
-
-The floor is asymmetric because the two errors are. `low` is a positive claim — *this can run almost
-unattended* — and the one that costs when wrong: an unsupervised run on work that needed a human
-produces a branch somebody has to unpick. `medium` only keeps the human in the loop one beat longer.
-So `low` is **earned** from something readable — a written `## Proposal`, a precedent already in the
-tree, a decision the spec records as closed — and everything else floors at `medium`. Guessing
-upward is free; guessing downward is not.
-
-## Doctrine
-
-- **Propose, don't invent.** Every proposed position traces to something readable — the spec's own
-  `## Problem`, its derived stage, its task progress, its age, and `/.knowledge/vision/` when the repo has
-  one. Each row carries a one-line reason. A rank with no visible grounds cannot be overruled in one
-  word, which is the only way a human reviews twenty of them.
-- **One plan, one OK.** Every proposal merges into ONE table before anything is written. A single
-  confirmation approves the whole list; partial adjustments → re-present; a rejected plan writes
-  **nothing**.
-- **MERGE, never clobber.** A `priority` a human set is never silently overwritten. A re-rank of an
-  already-ranked spec enters the table only with an explicit reason, and only approved rows apply.
-- **Unranked is a valid state.** A spec this sweep cannot honestly place stays unranked — no forced
-  ordinal. Say which ones, and why.
-- **Never remove, never close, never infer completion.** Triage moves no file and archives nothing.
-  A spec that will not be built is `/quenching:specs:conclude --outcome abandoned`, on the human's word, and
-  staleness is never evidence of it — a spec untouched for a year may be waiting on a vendor.
-- **Nothing but the record is written.** Ranking touches each spec's `priority` frontmatter and no
-  other file — there is no listing to refresh, because `cq specs list` derives one on demand.
-- **No sub-agents.** A front is small by nature and a spec's frontmatter is a few lines; the
-  orchestrator reads and writes everything itself.
-
 ## Workflow
 
 ### 1. Read the front directly
-Find `/.specs/plans/` at the target repo root. Missing → stop and offer `/quenching:specs:create`, which
-installs the seed. Then:
+Resolve the provider-owned plans front through `cq specs`; there is no local `/.specs/plans/` source
+to enumerate. A provider refusal → report it and stop; do not offer a local seed. Then:
 ```bash
 cq specs list --phase plans --json      # every spec in plans/: folder, derived stage, and its records
 cq specs section <id> Problem         # per spec being ranked, for the reason column
@@ -174,7 +135,7 @@ other six records are never in reach of this write. Stamp the record's own `date
 it is a different key from the spec's capture `date:`. Editing the frontmatter by hand would do the
 same thing only while the backend is `files` — against a backend whose specs are issues there is no
 file to edit.
-**Done when:** each approved row is on disk and no unapproved row was touched.
+**Done when:** each approved row is recorded through the provider and no unapproved row was touched.
 
 ### 5. Check
 ```bash
