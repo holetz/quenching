@@ -19,7 +19,7 @@ confirmation — writes each spec's `priority` record.
 ordering and not a judgment. Triage is what turns it into one.
 
 **It ranks and nothing else.** It does not close specs out, resolve `## Discoveries`, or decide
-that anything is finished — those are `/quenching:specs:conclude` and `/quenching:specs:develop`'s discoveries bank.
+that anything is finished — those are `/quenching:specs:conclude` and `/quenching:specs:develop`'s discoveries stage.
 A sweep that could also delete is a sweep nobody can safely re-run.
 
 The layout, the derived stages, the front's on-write check and the `cq specs` surface live in

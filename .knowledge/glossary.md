@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: /.knowledge/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-08-18
+timestamp: 2026-08-25
 audience: both
 authority: current
 source: quenching skeleton
@@ -145,6 +145,12 @@ sentence, and **link out** rather than explaining in full here.
   exactly what keeps it from becoming the second answer to "which spec is this" that the slug was.
   `cq specs export` names its dump files the same way, so a spec's branch and its rescue copy
   cannot disagree about what to call it.
+- [**Compose**](/plugins/quenching/assets/references/specs-develop/questions.md) — the monotonic
+  half of a `/quenching:specs:develop` pass: it takes a spec from wherever its derived stage leaves
+  it to a closed ten-section ready set, filling what is absent and sharpening what is thin, and it
+  never overturns what a human settled. Overturning is **Refine**'s. It replaced the `shape`
+  and `gate` banks, which were one operation split by an edit whose only job was to move a derived
+  stage.
 - [**Commit record**](../standards/workflows/plan-git-record.md) — the `subject: <line>` field on a
   completed task line, written mechanically by `cq specs task --check --subject`, that links the
   checkbox to the commit implementing it by naming that commit's **subject** and resolving with
@@ -218,14 +224,16 @@ sentence, and **link out** rather than explaining in full here.
   `fanoutMinComplexity`, the `.claude/quenching.json` key §The entry contract measures a
   candidate's `priority.complexity` against: below it, a spec joins the defining regime; at or
   above it, the spec must already be `ready`/`approved` to join the building regime. Declared,
-  read through `cq specs config --json`, default `medium` — the fixed cutoff the contract used
-  before the floor existed, so an undeclared floor changes nothing.
+  read through `cq specs config --json`, default `medium` — the same line the gears scale draws
+  between the one level that interrupts nobody and every level that asks, because a fan-out buys the
+  drafting and never the judgment.
 - **Gear** — the execution mode of one lifecycle stage in `/quenching:specs:cycle`: in-session, in
   a sub-agent, or skipped, set by the ONE gears plan the command derives from
   `priority.complexity`. By extension, "the `low` gear" names the whole plan a *level* derives, not
-  a fourth mode. A level also reaches **inside** a stage: it decides whether `/quenching:specs:develop`
-  answers its banks from evidence or asks a human, and under `low` it has that pass stamp `approved`
-  itself. Governs ONE spec — conducting N of them is the
+  a fourth mode. A level also reaches **inside** a stage, twice: it decides whether
+  `/quenching:specs:develop` answers its own questions from evidence (`low`) or asks a human (every
+  level above it), and whether that pass **refines** without being asked to (`high`, `xhigh`) or only
+  recommends it (`medium`). Under `low` it also has the pass stamp `approved` itself. Governs ONE spec — conducting N of them is the
   [spec queue](../standards/workflows/spec-queue.md)'s subject, though both fan-out entries read the
   scale to know which spec is stamped unasked. The contract lives in the plugin's own
   `specs-cycle/gears.md` reference (§The scale) — retired with `automation/orchestration-gears.md`
@@ -407,6 +415,13 @@ sentence, and **link out** rather than explaining in full here.
   plan, with the chosen one and the human's stopping criterion. What bounds the third is the entry
   contract, not a counter: a promoted spec at or above the fan-out floor (`fanoutMinComplexity`,
   default `medium`) needs `ready`/`approved`, and therefore never enters a return on its own.
+- [**Refine**](/plugins/quenching/assets/references/specs-develop/questions.md) — the
+  non-monotonic half of a `/quenching:specs:develop` pass, and the only operation licensed to
+  overturn what the spec already says, the `## Proposal` included. Runs **after** **Compose**, over
+  a whole spec, which is what makes *is this worth building?* answerable
+  rather than rhetorical. `high` and `xhigh` run it on their own authority; `medium` only recommends
+  it at the close; `low` never refines, and asking for one raises the level first. It replaced the
+  `adversarial` bank, which sat before the gate and was unreachable in practice.
 - [**Refinement record**](../standards/workflows/plan-artifacts.md) — the `refined: {mode, date}`
   entry a spec's **frontmatter** gains once it has been interrogated, whose absence raises the
   non-gating `sp-unrefined` warning.
