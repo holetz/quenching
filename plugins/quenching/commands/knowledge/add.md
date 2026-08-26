@@ -1,5 +1,5 @@
 ---
-description: Insert ONE new concept doc into the OKF bundle — right home, type, and stamp. Triggers on "insert new information into the base", "add a standard/table/announcement". Not for: refining one glossary term → /quenching:knowledge:define; bulk backfill → /quenching:knowledge:glossary-backfill; importing a source batch → /quenching:knowledge:import.
+description: Insert ONE new concept doc into the OKF bundle — right home, type, and stamp. Triggers on "insert new information into the base", "add a standard/table/announcement". Not for: refining one glossary term → /quenching:knowledge:define; bulk backfill → /quenching:knowledge:glossary-backfill; importing a source batch → /quenching:knowledge:import; generating documentation pages → /quenching:knowledge:documentation:produce.
 argument-hint: [the-knowledge-to-add]
 allowed-tools: Read, Grep, Glob, Write, Edit
 ---

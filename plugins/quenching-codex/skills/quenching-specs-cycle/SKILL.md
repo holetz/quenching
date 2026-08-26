@@ -10,24 +10,16 @@ description: "Conduct ONE spec's lifecycle — capture, define, build, close —
 
 **Input**: `$ARGUMENTS` — a spec id, or a description of what to conduct.
 
-The conductor over ONE spec's lifecycle. Where `quenching-align` conducts the three fronts, this
-command conducts the stages of one spec — `quenching-specs-create`, `quenching-specs-develop`,
-`quenching-specs-execute` and `quenching-specs-conclude` — entering at the stage the spec already
-has, invoking each stage as the command that owns it, and writing nothing itself.
+The conductor over ONE spec's lifecycle. It enters at the stage the spec already has, invokes each
+stage as the command that owns it, and writes nothing itself.
 
 **Two halves, authorized separately.** **Defining** delegates to `quenching-specs-develop`;
 **building** delegates to `quenching-specs-execute` and then `quenching-specs-conclude`. Each
 half opens with its own gears plan and its own OK, and **no gear collapses the seam** — deciding
 what a spec is and deciding to build it are two decisions, and one OK never buys both.
 
-**N specs is another command's run.** Building N is `quenching-specs-execute-queue`, defining N is
-`quenching-specs-develop-batch`; both derive their runs from the fan-out contract, and neither has
-a gear. This command is the N=1 case and never conducts a second spec.
-
 **Every stage runs in a gear** — in-session, isolated in a sub-agent, or skipped because the
-derived stage has already passed it — and every gear derives from `priority.complexity`. A stage
-whose gear is `sub-agent` runs isolated and returns its summary per §What a gear is, whose test is
-that the returned summary is much smaller than the work that produced it.
+derived stage has already passed it — and every gear derives from `priority.complexity`.
 
 **The contracts, owned once:**
 
@@ -43,10 +35,6 @@ that the returned summary is much smaller than the work that produced it.
   and the records (`priority.complexity`, `approved`, `branch`, `merge`) and the tool surface this
   command reads.
 
-**Every `§X` above is an address, and it is loaded as one** — `cq components read <the cited file>
---sections "§A" --sections "§B"`, one call for N sections, `--rules-only` to narrow to the binding
-half. Never open a cited reference as a file.
-
 ## Resolving the tool
 
 Resolve `cq` per
@@ -54,39 +42,7 @@ Resolve `cq` per
 §Resolving the tool §Write the resolved path literally on every invocation; branch on the **exit
 code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 
-`cq` is the only tool this command needs: every read it makes goes through it, and every write
-belongs to a stage it invokes — which is why no `Read`/`Grep`/`Glob` is granted here.
-
-## Doctrine
-
-- **The derived stage picks the half and the stage inside it; never read the sections to
-  dispatch.** `cq specs status --spec <id> --json` is the dispatch. A stage the derived stage has
-  passed is skipped, never re-run.
-- **ONE gears plan per half, before that half's first write.** It derives from §Deriving the gears
-  plan on the `complexity` the `priority` record carries, and every stage of the half appears in it
-  — its gear, and what the gear changes. Nothing is written before the OK.
-- **Capture is not part of either half.** An ID that resolves to nothing is not an error: it
-  becomes `quenching-specs-create`, invoked with **no** authorization declaration, so it keeps its
-  own gate. The `complexity` it stamps is what the defining half's plan is then derived from —
-  which is why the capture cannot sit inside a plan derived from it.
-- **Conduct, never reimplement.** Every write belongs to the stage that makes it, under that
-  stage's own doctrine and its own safe-write invariants. If a stage's behaviour must change,
-  change the stage — never re-derive its logic here.
-- **A gear is re-evaluated at the end of every stage, and moving up re-authorizes.** The signals
-  and the jump live in §Re-evaluating a gear. A stage whose work reveals larger size than declared
-  returns to its half's plan: a new plan and a fresh OK — the half's OK does not cover the higher
-  gear.
-- **The minimal gear runs a half on that half's one OK, and pays for it outside the session.**
-  Under it neither protected class stops the run — code-coupled items and irreversible closes
-  included — and the building half ends with this command itself opening a pull request, via
-  `quenching-git-pr-create` invoked under the same authorization, against the primary branch,
-  never with a direct merge: the human review lives in the PR (§The PR route).
-  A half that outgrows the minimal gear climbs back into a run with gates before it reaches the PR.
-- **Typed-only: a human chooses this command.** It conducts a whole lifecycle, so no spoken trigger
-  reaches it and the description pays no routed budget.
-- **The trace of a small spec is identical to a big one.** The per-task commit, the `## Outcome`
-  and the archiving are never skipped in any gear — the stages write them, and this command never
-  waives them.
+Every read goes through `cq`; every write belongs to a stage it invokes.
 
 ## Workflow (resolve or capture → define on one OK → build on another → report)
 
@@ -100,9 +56,9 @@ to conduct: say so and stop.
 invoke `quenching:specs:create` through the **Skill** tool with what the input carried, and carry
 on from the spec it just created. No authorization has been granted at this point, so the
 invocation carries no declaration and `create` keeps its own gate.
-**Done when:** one spec in `plans/` is resolved — found, or just captured.
+**Done when:** one provider-owned spec is resolved — found, or just captured.
 
-### 2. Read the state in one call
+### 2. Read the state in two calls
 ```bash
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs status --spec <id> --json    # derived stage, records, tasks, gate, verification
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs config --json                  # backend
@@ -117,7 +73,8 @@ The derived stage says which halves this run still has:
 A spec whose tasks are all `- [x]` and that still sits in `plans/` enters building at
 `quenching-specs-conclude`: `execute` has nothing left, so its gear is `skipped`.
 
-Nothing else is read here — each stage reads what it needs when it runs.
+Nothing else is read here — each stage reads what it needs when it runs. **Done when:** both
+payloads have returned or the provider refusal is reported.
 **Done when:** the stage, the records and the halves this run still has are in hand.
 
 ### 3. Authorize the defining half

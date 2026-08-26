@@ -11,9 +11,8 @@ description: "Merge a branch home into its base — one of four strategies, offe
 **Input**: `$ARGUMENTS` — a spec id (its `branch.work`/`branch.base` records name the branch and
 target) or a bare branch name to merge into the resolved base. Omitted → ask.
 
-The four strategies, the squash caveat and the post-merge worktree removal are owned by
-[git/merge.md](../../references/git/merge.md), cited below rather than
-restated.
+The four strategies, the squash caveat and the post-merge worktree removal are in
+[git/merge.md](../../references/git/merge.md).
 
 ## Workflow
 
@@ -28,7 +27,8 @@ git worktree list --porcelain
 An ID in `$ARGUMENTS` → `cq specs status --spec "<id>" --json`, its `branch.work` is the branch
 to merge and `branch.base` the target (falling back to `cq git base`'s answer where absent). A bare
 branch name → merge it into `cq git base`'s answer. No checkout in the worktree list holds the base
-→ **stop without merging**, naming the base and the fix (check it out, or add a worktree of it).
+→ **stop without merging**, naming the base and the fix (provide a checkout or add a worktree of it
+outside this command). Never check out the base here.
 **Done when:** the branch, the base, and the checkout that holds it are all resolved, or the run has
 stopped for lack of one.
 
@@ -41,16 +41,16 @@ Show the trade in one line each, from §Merge strategies, and ask with **AskUser
 - **fast-forward** — nothing rewritten or added; only possible when the base has not moved.
 
 **Squash chosen → offer, separately, not to delete the branch** — deleting it strands every commit
-subject the archived record resolves against. **Done when:** the strategy is chosen, and, under
-squash, whether the branch survives is decided too.
+subject the archived record resolves against. The offer records the human's preference, but this
+command never deletes the branch. **Done when:** the strategy is chosen, and, under squash, the
+branch-survival preference is recorded.
 
 ### 3. Run it in the base's own checkout
 ```bash
 git -C <the checkout from step 1> <the chosen strategy's command>
 ```
 Never `git checkout <base>` — from inside a worktree it fails outright
-(`fatal: '<base>' is already used by worktree at …`, exit 128), which is exactly the isolation this
-plugin recommends. A failure is reported verbatim; nothing downstream runs. **Done when:** the
+(`fatal: '<base>' is already used by worktree at …`, exit 128). A failure is reported verbatim; nothing downstream runs. **Done when:** the
 merge command exits 0, or the run has stopped on its failure.
 
 ### 4. Stamp, with an ID
@@ -67,9 +67,7 @@ own checkout) and step 3 exited 0:
 git -C <the base's checkout> worktree remove <the worktree path>
 ```
 **Never `--force`.** `git worktree remove` refuses a tree holding modified or untracked files on its
-own — the one case worth fearing, and git already declines it; report the refusal and leave the
-worktree standing. Never runs for a merge that did not happen, and never deletes the branch itself —
-that stays step 2's separate, offered decision. **Done when:** the worktree is removed, refused with
+own; report the refusal and leave the worktree standing. Never deletes the branch itself. **Done when:** the worktree is removed, refused with
 its own error reported, or the step was skipped because there was none to remove.
 
 ### 6. Report
@@ -79,6 +77,7 @@ fate. **Done when:** all four are named.
 ## Invariants
 
 - Never `git checkout <base>` to reach the checkout that merges — always `git -C`.
-- Never merge without a checkout that already holds the base; never manufacture one.
+- Never merge without a checkout that already holds the base; never manufacture one or check it out
+  from this command.
 - Never `--force` a worktree removal, and never remove one before a merge verified at exit 0.
 - Offer the strategy; never choose it for the human.

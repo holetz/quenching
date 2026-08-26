@@ -279,6 +279,11 @@ def codex_readme(text: str) -> str:
 
 
 def transform_asset(relative: Path, text: str, adaptation: dict) -> str:
+    # This module translates platform markers in its *input*. Its own source is
+    # therefore procedure, not payload: translating it would rewrite the markers
+    # and paths it must recognize when it runs again from the generated plugin.
+    if relative.as_posix() == "quenching/components/commands/translate.py":
+        return text
     text = transform_platform(text, adaptation)
     if relative.as_posix() == "align/tool-resolution.md":
         text = codex_tool_resolution(text)

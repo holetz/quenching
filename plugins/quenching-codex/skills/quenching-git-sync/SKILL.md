@@ -1,6 +1,6 @@
 ---
 name: quenching-git-sync
-description: "Rebase the current (or named) work branch onto the latest base, with `--update-refs` so any other local branch stacked on top moves along instead of being orphaned by the rewrite. Use when the user asks to \"sync this branch with develop/main\", \"rebase onto the base\", \"catch this branch up\", or \"update my branch before I keep working\"."
+description: "Rebase the current (or named) work branch onto the latest base, with `--update-refs`. Use when the user asks to \"sync this branch with develop/main\", \"rebase onto the base\", \"catch this branch up\", or \"update my branch before I keep working\"."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/git/sync.md -->
@@ -10,9 +10,8 @@ description: "Rebase the current (or named) work branch onto the latest base, wi
 
 **Input**: `$ARGUMENTS` — the branch to sync. Omitted → the current branch.
 
-Moves every commit unique to the work branch onto the base's current tip, and carries along any
-other local branch pointing at a commit inside that range — `git rebase`'s own `--update-refs`,
-which stops a stacked branch from being silently orphaned by a rewrite it was never told about.
+Moves every commit unique to the work branch onto the base's current tip, carrying along stacked
+local refs with `git rebase --update-refs`.
 
 ## Workflow
 
@@ -22,21 +21,23 @@ git status --porcelain
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git base --json
 git for-each-ref --format='%(refname:short) %(objectname)' refs/heads
 ```
-Non-empty `git status --porcelain` → refuse and name the paths; a rebase on a dirty tree can turn
-an unrelated edit into a conflict with no way to tell which commit caused it. **Done when:** the
+Non-empty `git status --porcelain` → refuse and name the paths. **Done when:** the
 tree is confirmed clean, the base is resolved, and every local branch's tip is recorded for the
 comparison in step 4.
 
 ### 2. Configure pruning and update the base from its remote, where one exists
 ```bash
 git config fetch.prune true
-git fetch origin <base> 2>&1 || echo "NO-REMOTE"
+if git remote get-url origin >/dev/null 2>&1; then
+  git fetch origin <base>
+else
+  echo "NO-REMOTE"
+fi
 ```
 `fetch.prune=true` is persisted in this repository, so this and future fetches remove remote-tracking
-refs that Azure has already deleted (for example, `origin/validacao-pec`). `NO-REMOTE` (or no
-`origin`) → rebase onto the local `<base>` as it stands, silently; most work in a single-checkout
-repo has no remote to fetch, and that is the ordinary case, never a finding. **Done when:** pruning
-is configured and the base is as fresh as this checkout can make it.
+refs. A missing `origin` emits `NO-REMOTE` and uses the local `<base>` as it stands. A fetch error is
+reported and stops the run; it is not treated as no remote. **Done when:** pruning is configured and
+the base is either fetched successfully or the absence of `origin` is reported.
 
 ### 3. Rebase, carrying stacked refs along
 ```bash

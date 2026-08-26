@@ -14,23 +14,12 @@ Takes N specs sitting **below the `ready` gate** and has each one defined toward
 sub-agent of its own, all launched in one message. `quenching-specs-develop` is what runs inside
 each; this command selects the set, holds every confirmation, and accounts for what came back.
 
-**A batch, not a queue — and the name says so on purpose.** `create` and `develop` take no branch,
-and under the `github` and `azure-boards` backends they touch no file at all, so N specs really do
-run at the same time. Serialization is the declared feature of the *building* entry alone
-(`quenching-specs-execute-queue`); the criterion that splits the two regimes, and the collision
-measurement behind it, is
-[specs-fanout/fanout.md](../../references/specs-fanout/fanout.md) §The two
-regimes — a run never has to read it.
-
-**Load now, and nothing else** — the rule every run applies to decide who is in:
+Load the rule that decides admission:
 
 ```bash
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-fanout/fanout.md \
   --sections "§The entry contract" --rules-only
 ```
-
-§The recursive return is loaded by step 3 and §Classifying a block by step 6 — each in the step
-that uses it, never in a preamble every later turn pays for regardless.
 
 ## Resolving the tool
 

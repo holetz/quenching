@@ -14,3 +14,6 @@ venv/
 # and never here either): the plugin ships only the shared hooks-config.json
 hooks-config.local.json
 settings.local.json
+
+# Documentation pipeline plan-of-record (target-repo scratch, outside docs_dir)
+.quenching/

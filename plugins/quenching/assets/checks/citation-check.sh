@@ -58,15 +58,21 @@ while [ $# -gt 0 ]; do
 done
 
 # checks -> assets -> quenching -> plugins -> the repo root.
-REPO="${REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)}"
-SELF="plugins/quenching/assets/checks/citation-check.sh"
+# RESOLVED BEFORE THE `cd`, AND WITHOUT `realpath`. `${BASH_SOURCE[0]}` is relative to the caller's
+# cwd, so reading it after the `cd` names a file that is not there — `bash assets/checks/...` from
+# the plugin directory, the way `CLAUDE.md` runs it, left `SELF` empty and every pathspec below
+# unparseable, which reads as `exit 2`, not as a pass. `realpath --relative-to` is GNU-only besides.
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO="${REPO:-$(cd "$SELF_DIR/../../../.." && pwd)}"
 cd "$REPO" || { echo "citation-check: cannot enter $REPO"; exit 2; }
+SELF="${SELF_DIR#"$REPO"/}/$(basename "${BASH_SOURCE[0]}")"
 
 # Half 1's own scope, beyond frozen golden data, not live citations — see the header's third scope
 # rule for why.
 SCOPE_EXCLUDE=(':!plugins/quenching/tests/fixtures/golden/'
                ':!plugins/quenching/tests/capture_golden.py'
-               ':(exclude,glob)plugins/quenching/assets/evals/**/runs/**')
+               ':(exclude,glob)plugins/quenching/assets/evals/**/runs/**'
+               ':!plugins/quenching-codex/checks/citation-check.sh')
 
 want () { case ",$HALF," in *",$1,"*) return 0 ;; *) return 1 ;; esac; }
 FAIL=0
@@ -85,12 +91,13 @@ echo
 # tail of a real, current, correctly-named file — `tests/test_session.py` — and without the
 # boundary the retired script and that live test file's name are the same substring.
 #
-# THE NAMESPACE PATTERNS NAME VERBS, NOT A BARE PREFIX — because this repository ships its own,
-# unrelated local command group that happens to share the retired front's name: `/docs:storyteller`
-# (`.claude/commands/docs/storyteller.md`) has nothing to do with the plugin's `docs` front and is
-# never renamed by this spec. A bare `/docs:` would call that a survivor forever. The ten `docs`
-# verbs and six `skill` verbs below are the CLOSED, historical set this rename actually retired
-# (`git log --diff-filter=R -- plugins/quenching/commands/` names them exactly); `\b` after each
+# THE NAMESPACE PATTERNS NAME VERBS, NOT A BARE PREFIX. The ten `docs` verbs and six `skill` verbs
+# below are the CLOSED, historical set this rename actually retired
+# (`git log --diff-filter=R -- plugins/quenching/commands/` names them exactly), so each pattern
+# asserts what died rather than reserving the prefix — a bare `/docs:` would also condemn a name
+# nobody retired. That is not hypothetical: this repository's own `.claude/commands/docs/` group
+# lived under exactly that prefix and had nothing to do with the plugin's `docs` front, until the
+# documentation family replaced it. `\b` after each
 # stops `import` from also matching `import-memory` short — it already does, because `-` ends a
 # word — so the list needs no separate entry for it.
 #

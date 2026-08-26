@@ -8,57 +8,20 @@ description: "Measure whether a skill/command teaches anything — with/without 
 
 # quenching-components-command-eval — measure whether a skill teaches anything
 
-The plugin's doctrine says triggers belong in the second sentence, that a step needs a checkable
-criterion, that a body earns its context. Every one of those is a **hypothesis**. This skill is
-how one stops being a hypothesis: run the cases with the skill and without it, and read the
-difference.
-
-The premise is `superpowers`': *if you didn't watch an agent fail without the skill, you don't
-know if the skill teaches the right thing.* A with-only run cannot tell a skill that works from a
-task the model could already do.
-
-The artifact shapes — `evals.json`, `grading.json`, `benchmark.json` — the assertion-quality
-rules, and the description-tuning loop live in
-[components-command-eval/evaluation.md](../../references/components-command-eval/evaluation.md), adopted from Anthropic's `skill-creator` so
-this plugin's evals stay readable by the tool most adopting repos already have. This body owns
-the workflow; that file owns the formats and never gets restated here.
-
-## Doctrine
-
-- **Both arms, always.** A case runs twice: once with the skill available, once with it absent.
-  Reporting only the with-skill arm measures the model, not the skill.
-- **Isolated subagents, never this context.** Each arm is a fresh `Task`. An arm that ran in this
-  conversation has already read the skill — the without-arm would be contaminated by the very
-  text it is supposed to lack.
-- **Evidence or it did not happen.** Every assertion is graded pass/fail with a **quoted excerpt**
-  from that arm's output. A grade with no quote is not a grade; mark it `unknown` and say so.
-- **A zero delta is a finding, not a failure to report around.** If both arms pass equally, the
-  skill taught nothing on those cases — which is information about the skill or about the cases,
-  and the report says which it cannot distinguish.
-- **This never duplicates `lint`.** The caps, trigger position, the boundary, body length, step
-  criteria, tool scoping are `cq components lint`'s and are reported by code. This skill measures
-  **behaviour**; a clean lint is its precondition, not its subject.
-- **Never rewrites the body.** Authoring is `quenching-components-command-new`'s. A finding here is reported
-  with the `quenching-components-command-new <name>` invocation that acts on it — except the description, which step 7
-  may edit under its own confirmation, because a trigger's fate is decided by the hit rates this
-  skill just measured.
-
 ## Resolving the tool
 
 Resolve `cq components` per
 [align/tool-resolution.md](../../references/align/tool-resolution.md)
-§Resolving the tool §Write the resolved path literally on every invocation; branch on the
-**exit code** (0 ok · 1 findings · 2 refusal) and the `--json`.
+§Resolving the tool.
 
 **Input**: optionally a skill name. If omitted, infer from context; if more than one is plausible,
-ask with **AskUserQuestion** — never guess which skill is being measured.
+ask with **AskUserQuestion**.
 
 ## Workflow
 
 ### 1. Select the skill and check its floor
 Resolve the skill folder. Run `cq components lint <skill-folder> --json`: an **error** means the skill
-does not load as intended and any measurement would describe a broken skill — report it and stop.
-A **warn** is noted in the report and does not block.
+does not load as intended — report it and stop. Record a **warn** and continue.
 **Done when:** one skill is named back to the user and `lint` has run.
 
 ### 2. Read the command as its own specification
@@ -69,8 +32,7 @@ distinct branch the workflow can take; a branch with no case is untested surface
 
 ### 3. Derive the cases
 Per [components-command-eval/evaluation.md](../../references/components-command-eval/evaluation.md) §Writing cases: one case per branch, each
-a realistic user prompt plus assertions about the **observable outcome** — a file that exists, a
-zone regenerated, a command reported as run — never about the wording of the reply. Include at
+a realistic user prompt plus assertions about the **observable outcome**. Include at
 least one case the skill should **decline** (its `Not for:` boundary), and the should-trigger /
 should-not-trigger prompts step 7 needs.
 **Done when:** every branch has a case and every case has at least one observable assertion.
@@ -87,7 +49,7 @@ target repo, `../../assets/evals/<path>/` in this plugin
 ([components-command-eval/evaluation.md](../../references/components-command-eval/evaluation.md)
 §Where the artifacts live). Then, per case, dispatch **two** `Task` subagents — one told the
 skill is available, one given the same prompt with no reference to it. Pin both to the session
-model; **never `haiku`** (a cheaper judge changes what the delta measures). Record each arm's
+model; **never `haiku`**. Record each arm's
 output, token count, and duration.
 
 Arms are independent: dispatch them concurrently, and a subagent that dies is recorded as
@@ -111,8 +73,7 @@ behind it, and apply on its own OK — then re-run `cq components lint` so the c
 ### 8. Report
 The skill; cases run; pass rate with and without, and the delta; tokens and duration for each arm;
 every assertion graded `unknown` and why; the trigger hit rates; and the artifacts written. Say
-plainly when the delta is **zero** — that is the outcome this skill exists to surface, and burying
-it makes the whole run decorative.
+plainly when the delta is **zero**.
 **Done when:** the delta is stated in the report as a number.
 
 ## Invariants
@@ -122,5 +83,6 @@ it makes the whole run decorative.
 - Never downgrade an arm's model to `haiku`; the delta is only comparable between equal arms.
 - Never rewrite a skill body here — report it with its `quenching-components-command-new` invocation. The description is
   the single exception, and only under step 7's own confirmation.
-- Never duplicate a `cq components lint` check; report its findings by code and move on.
+- Never duplicate an unchanged `cq components lint` check; after editing a description, rerun it and
+  report the new findings by code.
 - Never hand this command file `context: fork` — steps 4 and 7 gate mid-flow.

@@ -9,7 +9,7 @@ description: >-
   prose". Not for: cutting dead weight from a command body → /commands:tighten; minting a
   command, or its description → /quenching:components:command:new,
   /quenching:components:align; a knowledge/ standard or the OKF bundle →
-  /quenching:knowledge:align; generating a documentation site → /docs:storyteller.
+  /quenching:knowledge:align; generating a documentation site → /quenching:knowledge:documentation:produce.
 argument-hint: "[reference-path | --all] [--review] [--skip <path>]"
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash(python3:*), Bash(grep:*), Bash(git grep:*), Bash(wc:*), Task
 ---

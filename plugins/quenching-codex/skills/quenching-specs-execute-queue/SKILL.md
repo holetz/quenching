@@ -1,6 +1,6 @@
 ---
 name: quenching-specs-execute-queue
-description: "Build N specs in one run — one isolation, one branch, one pull request, serial by construction. Triggers on \"execute these specs\", \"build the queue\", \"run these three specs in one go\", \"take the next N specs to a PR\", \"queue the front\", \"build everything that is ready\". Candidates come from the ranked front filtered by the fan-out entry contract; the authorization plan carries the whole list, the N, the recursion form and the human's stopping criterion before any isolation, and its OK authorizes the run. Each spec runs in a sub-agent of its own context via quenching-specs-execute; one quenching-specs-conclude with no --spec closes it. A local block marks [!] and the queue moves on; a contaminating one stops and asks."
+description: "Build N specs in one run — one isolation, one branch, one pull request, serial by construction. Triggers on \"execute these specs\", \"build the queue\", \"run these three specs in one go\", \"take the next N specs to a PR\", \"queue the front\", \"build everything that is ready\". The plan fixes the list, N, recursion form and stopping criterion before isolation; each spec runs through quenching-specs-execute and one quenching-specs-conclude closes the queue. Local blocks mark [!] and continue; contaminating blocks stop."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/execute-queue.md -->
@@ -19,22 +19,6 @@ construction and makes spec N's gate run over the result of 1..N−1.
 **This command invokes and never reimplements.** Every write belongs to the stage that makes it,
 under that stage's own doctrine.
 
-**Why `Bash` is unrestricted, and why it is the only file-touching tool granted.** Like
-`quenching-specs-execute`, the queue drives the target repo's `git` and re-runs the repo's own
-declared gate after each spec — commands that are the repo's, not the plugin's, and cannot be
-enumerated in advance. Every read the conductor makes goes through `cq`, so no `Read`/`Glob`/`Grep`
-is granted — the repo's own files are read inside the executor sub-agents, never here.
-
-**Every `§X` in this body is an address, and it is loaded as one — never by opening the file:**
-
-```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read <the cited file> --sections "§A" --sections "§B"
-```
-
-One call, N sections, no frontmatter; a unique prefix resolves, and `--rules-only` narrows to the
-`<!-- rules -->` half. A conductor's preamble is re-sent every turn of a run that may hold N specs,
-so what is loaded at turn one is paid for the length of the whole queue.
-
 **The contract, owned once** —
 [fanout.md](../../references/specs-fanout/fanout.md) §The two regimes
 §The queue's shape §The branch carries the IDs §The entry contract §Classifying a block
@@ -51,7 +35,7 @@ never on prose.
 ## Workflow
 
 ### 1. Assemble the candidates
-Read the front and the workspace in one call:
+Read the front and the workspace in two bounded calls:
 
 ```bash
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs next --front --json    # the ranked candidates, each with stage, priority, branch liveness
@@ -133,9 +117,10 @@ its cost stated in the offer as `quenching-specs-execute` states it; on a worktr
 `worktreeSetup` runs once with cwd inside the new tree, and **every stage from here runs with that
 cwd**.
 
-**Nothing is stamped here.** Each `quenching-specs-execute` then starts on a branch that is not
+**The branch record is not stamped here.** Each `quenching-specs-execute` then starts on a branch that is not
 the base, adopts it, and stamps its own `branch:` record — so the queue cuts the ref and never
-writes the record for it.
+writes that record. If a blocked spec must leave the queue, this command may only remove its ID from
+`quenching-specs:` as described below.
 **Done when:** the tree was clean and this checkout is on the queue's single work ref.
 
 ### 4. Run the queue, one spec at a time
@@ -186,7 +171,7 @@ The **only** source is specs promoted out of `## Discoveries` on this pass — r
 with `cq specs list --json` and filter them through §The entry contract exactly as step 1 does.
 The form was chosen in step 2:
 
-- **no recursion** → nothing is absorbed; what this run revealed waits in `plans/`.
+- **no recursion** → nothing is absorbed; what this run revealed waits in the provider-owned `plans` phase.
 - **one generation** → queue the specs promoted on this pass, once. A second generation is never
   offered.
 - **unbounded fixpoint** → repeat until a pass promotes nothing. The entry contract is the bound:
@@ -201,12 +186,13 @@ is named.
 
 ### 6. Close the branch out — one conclude, one pull request
 Invoke `quenching:specs:conclude` through the Skill tool **with no `--spec`**, under step 2's
-authorization sentence, and on the **pull-request route** against the primary branch — the route
-was approved in step 2's plan and is never rediscussed here
+authorization sentence. When it returns its handoff, invoke `quenching:git:pr:create` through the
+Skill tool on the **pull-request route** against the primary branch — the route was approved in
+step 2's plan and is never rediscussed here
 ([convergence.md](../../references/align/convergence.md) §The PR route).
 `conclude` resolves the whole set from the branch's `quenching-specs:` line, which is the queue's
 only handoff to it (§The branch carries the IDs).
-**Done when:** `conclude` has returned and the pull request it opened is named with its link.
+**Done when:** `conclude` has returned, the PR command has returned, and the pull request link is named.
 
 ### 7. Report
 

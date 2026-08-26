@@ -12,8 +12,7 @@ description: "Fetch a pull request's unresolved review threads, address each on 
 branch.
 
 Reads **unresolved review threads** specifically — not every comment, and not ones already marked
-resolved — because that resolution state is exactly what a reviewer uses to track what still needs
-a look, and re-surfacing settled threads trains the human to stop trusting the list.
+resolved.
 
 ## Workflow
 
@@ -40,33 +39,35 @@ and PR number/id are known.
 ### 2. Fetch every unresolved thread
 ```bash
 gh api graphql -f query='
-  query($owner:String!,$repo:String!,$n:Int!){
+  query($owner:String!,$repo:String!,$n:Int!,$after:String){
     repository(owner:$owner,name:$repo){
       pullRequest(number:$n){
-        reviewThreads(first:100){
+        reviewThreads(first:100, after:$after){
+          pageInfo{hasNextPage endCursor}
           nodes{ id isResolved path line
-            comments(first:10){ nodes{ body author{login} } } } } } } }' \
-  -F owner=<owner> -F repo=<repo> -F n=<number>
+            comments(first:10){ pageInfo{hasNextPage endCursor} nodes{ body author{login} } } } } } }' \
+  -F owner=<owner> -F repo=<repo> -F n=<number> -F after=null
 # azure-boards — use the repository/project ids from `az repos pr show`.
 az devops invoke --area git --resource pullRequestThreads \
   --route-parameters project=<project-id> repositoryId=<repository-id> pullRequestId=<pr-id> \
   --api-version 7.1 --output json
 ```
-For GitHub filter to `isResolved: false`. For Azure filter to non-terminal thread `status` values
+For GitHub filter to `isResolved: false`; if `hasNextPage` is true, paginate until it is false, and
+report any truncated comment connection (`comments(first:10)`) rather than calling it complete. For Azure filter to non-terminal thread `status` values
 (normally `active`/`pending`; omit `fixed`, `closed`, `wontFix` and `byDesign`). None → report the
 PR is clear and stop. Preserve each thread's id, file/line context and comment chain. **Done
 when:** the list of unresolved threads is in hand.
+**Done when:** every provider page was fetched or its pagination/truncation is reported.
 
 ### 3. Work each thread, on its own confirmation
 For each unresolved thread, in the order returned: show the file, line, and comment chain, propose
-a fix (or ask what the human wants instead), and apply it only on a yes — a review thread is
-someone's specific ask, and batching every thread into one silent sweep is how a wrong fix for
-thread 3 hides inside a commit that also fixed threads 1 and 2 correctly. **Done when:** every
+a fix (or ask what the human wants instead), and apply it only on a yes. **Done when:** every
 thread has either been fixed and staged, or explicitly skipped with a stated reason.
 
 ### 4. Commit and resolve
-Once at least one thread's fix is staged, commit it — `quenching-git-commit` owns the subject and
-the hygiene rules this command does not restate. Then, per thread actually fixed:
+Once at least one thread's fix is staged, invoke `quenching-git-commit` to commit it (the command
+must be available; otherwise stop before resolving anything). Then, per
+thread actually fixed:
 ```bash
 gh api graphql -f query='mutation($id:ID!){resolveReviewThread(input:{threadId:$id}){thread{isResolved}}}' -F id=<thread id>
 # azure-boards — `repository.url` comes from the PR JSON returned in step 1.
@@ -74,10 +75,10 @@ az rest --method patch \
   --url "<repository.url>/pullRequests/<pr-id>/threads/<thread-id>?api-version=7.1" \
   --body '{"status":"fixed"}' --output json
 ```
-A thread that was skipped stays unresolved — resolving it would tell the reviewer it was handled
-when it was not. Verify GitHub's `isResolved: true` or Azure's `status: fixed` after the update.
+A thread that was skipped stays unresolved. Verify GitHub's `isResolved: true` or Azure's `status: fixed` after the update.
 **Done when:** every fixed thread reads back resolved/fixed, and every skipped one is named in the
 report as still open.
+**Done when:** every fixed thread is verified resolved, and every skipped thread remains named.
 
 ### 5. Report
 State how many threads were unresolved at the start, how many were fixed and resolved, how many

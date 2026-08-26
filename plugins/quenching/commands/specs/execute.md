@@ -341,20 +341,17 @@ h. **On a section boundary with no `[!]`, squash and repair** — per §The sect
 i. **On a section boundary, OFFER to stop — and keep going if nobody says otherwise.** The branch
    is already at its final shape (one commit), another section still ahead. Say it and continue:
 
-   ```
+   ```text
    Section 3 of 7 done, at a clean boundary. `/quenching:specs:execute <id>` resumes from here —
    say the word and I stop; otherwise I continue with 4.1.
    ```
 
-   **The gear sets the default, never the offer.** Under `low` the boundary is announced and the
-   loop continues without offering — the half was authorized whole and the review lives in the PR
-   it ends at. Under `medium` it offers and continues if nobody says otherwise, as above. Under
-   `high` and `xhigh` it offers and **waits**: the stops those levels bought are these
-   ([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §The scale).
-
-   It **offers and never imposes**, never ends the run itself, and writes no state — the trail that
-   makes the boundary resumable is the one step 6 already keeps. Why the trigger is that event, and
-   why a section is the unit, live in [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The section boundary.
+   **The gear sets the default, never the offer**: `low` announces the boundary and continues
+   without offering, `medium` offers and continues if nobody says otherwise, `high` and `xhigh`
+   offer and **wait** ([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md)
+   §The scale). It never ends the run itself and writes no state — step 6's trail is what makes the
+   boundary resumable ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+   §The section boundary).
 
 **Pause if:** a task is unclear; implementation reveals a design problem (→ `/quenching:specs:develop`); a
 task contradicts a `/.knowledge/standards/` contract (surface it and let the human pick — revise the
@@ -391,7 +388,7 @@ failed; [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/exe
 Handoff cadence has the measurement. Each trigger above is a moment this body *just finished doing
 something*, never one where it appraises something.
 
-**The section-boundary offer (step 5h) adds no fifth event and writes no new state.** Accepted, it is a
+**The section-boundary offer (step 5i) adds no fifth event and writes no new state.** Accepted, it is a
 pause and a last commit, which are already two of the four above; declined, nothing happened worth
 recording. The trail this step already maintains — `## Handoff` plus `git log` plus the `subjects`
 `status` returns — **is** what makes a fresh session resume from that boundary, and it is exactly

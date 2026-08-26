@@ -1,5 +1,5 @@
 ---
-description: Create or update the mkdocs-material site over the /.knowledge/documentation home. Triggers on "build the docs site", "generate the mkdocs site for /.knowledge/documentation", "fix the documentation site's nav". Not for: rewriting documentation pages → /quenching:knowledge:add; aligning the whole bundle → /quenching:knowledge:align.
+description: Create or update the mkdocs-material site layer over the /.knowledge/documentation home, including extensions, CSS and strict-build QA. Triggers on "build the docs site", "generate the mkdocs site for /.knowledge/documentation", or "fix the documentation site's nav". Not for: planning pages → /quenching:knowledge:documentation:plan; writing documentation prose → /quenching:knowledge:documentation:write; reviewing page quality → /quenching:knowledge:documentation:review; conducting the complete pipeline → /quenching:knowledge:documentation:produce.
 argument-hint: [optional-section-or-mkdocs-path]
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit
 ---
@@ -13,8 +13,8 @@ Makes the OKF bundle's [`documentation/`](${CLAUDE_PLUGIN_ROOT}/assets/knowledge
 Markdown tree; everything generator-specific lives in a thin **site layer** around it — the
 `mkdocs.yml` + `requirements.txt` at the repo **root** (outside the bundle) and one `.pages`
 nav file per section (inside it). This skill owns that layer end to end: it installs it when
-absent, merges it forward when present, regenerates the nav after pages come and go, and
-verifies the site actually builds. The payload it stamps from is
+absent, merges it forward when present, regenerates the nav after pages come and go, stamps the
+static `assets/stylesheets/quenching.css` asset, and verifies the site actually builds. The payload it stamps from is
 [`${CLAUDE_PLUGIN_ROOT}/assets/mkdocs/`](${CLAUDE_PLUGIN_ROOT}/assets/mkdocs/README.md); the home's own
 boundaries and the `documentation` type live with `/quenching:knowledge:align`
 ([knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md)) and
@@ -53,6 +53,9 @@ bundle; every install, update, and re-verification after that is **this** skill.
 - **Never claim a build that did not run.** If the toolchain is absent, say so plainly, print the
   two commands (`pip install -r requirements.txt`, `mkdocs build --strict`), and report the run
   as *unverified*.
+- **The shell grant is deliberate.** `Bash` is unrestricted because this command runs the target
+  repository's own MkDocs toolchain (`mkdocs`, `python -m mkdocs`, `uv`, and package installation),
+  which cannot be enumerated by the plugin; the body records the reason and keeps builds throwaway.
 - **Plan first, execute on one confirmation.** One read-only inventory → ONE table of findings
   and fixes → one OK → apply → verify. The `docs_dir` item and the opt-in CI workflow each gate
   on their own.
@@ -66,10 +69,13 @@ bundle; every install, update, and re-verification after that is **this** skill.
 | `site-docs-dir-mismatch` | `docs_dir` does not point at the `documentation/` home | **FIX, own confirmation** — never silently re-aim a live site |
 | `site-plugin-absent` | `awesome-pages` (or `search`) missing while `.pages` files exist | **FIX** — add to `plugins:` |
 | `site-feature-absent` | `navigation.indexes` missing while sections use `index.md` as landing page | **FIX** — add to `theme.features` |
+| `site-extension-absent` | a page uses a component syntax whose Markdown extension or Mermaid fence is absent | **FIX** — add the extension in the site layer |
+| `site-extra-css-absent` | pages use `.q-badge`/`.q-hero`/card styling but `extra_css` or the CSS asset is absent | **FIX** — stamp the CSS and connect `extra_css` |
 | `site-requirements-absent` | the two pins are in no requirements file | **FIX** — write or merge |
 | `site-pages-absent` | a folder under `documentation/` with no `.pages` | **FIX** — write one (title from its `index.md` H1) |
 | `site-nav-stale` | a `.pages` `nav:` names a missing entry, or omits a section **and** has no `- ...` | **FIX** — regenerate the list, keep the human `title:` |
 | `site-artifacts-tracked` | `site/` not gitignored (or already tracked) | **FIX** the gitignore; a tracked build is **REPORTED** for the human to remove |
+| `site-scratch-tracked` | `.quenching/` not gitignored — the family's plan-of-record would land in the human's next commit | **FIX** the gitignore; an already-tracked plan is **REPORTED** for the human to remove |
 | `site-section-no-index` | a section folder with no `index.md` (breaks `navigation.indexes` *and* the OKF listing rule) | **REPORT** → `/quenching:knowledge:align` |
 | `site-link-escapes` | a `documentation/` page links `/.knowledge/<other-home>/…` — dead in the built HTML | **REPORT** → `/quenching:knowledge:add` / the page's author |
 | `site-page-unstamped` | a page under `documentation/` with no `type: documentation` | **REPORT** → `/quenching:knowledge:align` |
@@ -91,8 +97,9 @@ Collect, without writing anything:
 - any requirements file pinning the docs toolchain (`requirements.txt`, one under `/.knowledge/`,
   `pyproject.toml`, `uv.lock` …) — the pins may already live somewhere else.
 - every folder under `/.knowledge/documentation/**` with its `.pages`, its `index.md`, and its pages.
-- `.gitignore` (is `site/` ignored?) and `git ls-files site` (is a build already tracked?).
+- `.gitignore` (are `site/` and `.quenching/` ignored?) and `git ls-files site .quenching` (is either already tracked?).
 - `.github/workflows/docs.yml`.
+- `assets/stylesheets/quenching.css` under the documentation home and the `extra_css` connection.
 - the toolchain: `mkdocs --version` (fall back to `python -m mkdocs --version`,
   `uv run mkdocs --version`) — absence is a fact to report, not an error to fix. If `$ARGUMENTS`
   names a section, restrict drift comparison and nav regeneration to that section while still
@@ -122,16 +129,22 @@ confirmation items. If the plan is empty, say so and go straight to step 7's ver
 
 ### 6. Apply
 In order: `mkdocs.yml` (stamp from `${CLAUDE_PLUGIN_ROOT}/assets/mkdocs/mkdocs.yml.tmpl` when
-absent, else merge the missing keys) → requirements → the `.pages` files → `.gitignore` → the CI
-workflow **only if** its own OK was given (copy `ci-github-pages.yml` → `.github/workflows/docs.yml`).
-Nothing under `/.knowledge/documentation/**` other than `.pages` is touched. **Done when:** only
-approved site-layer edits are applied.
+absent, else merge the missing keys) → requirements → the `.pages` files →
+`assets/stylesheets/quenching.css` from the payload → `.gitignore` → the CI workflow **only if**
+its own OK was given (copy `ci-github-pages.yml` → `.github/workflows/docs.yml`). The CSS asset is
+the one static exception inside the docs home; Markdown pages remain untouched. **Done when:**
+only approved site-layer edits are applied and `extra_css` points at the stamped CSS.
 
-### 7. Verify with a real build
+### 7. Verify with a real build and rendered QA
 If the toolchain is present, run
 `mkdocs build --strict --site-dir <throwaway-dir-outside-the-repo>` and read the output: every
 warning is either a site-layer finding you fix now (a nav entry, a plugin, a feature) or a
-page-level one you **report**. If it is absent, report `unverified` and print the two commands. Never run `mkdocs serve`; never commit a built site. **Done when:** the build result is real or explicitly unverified.
+page-level one you **report**. Inspect the rendered HTML for the title, `class="mermaid"`,
+`class="q-badge"`, the connected CSS and the `prefers-reduced-motion` guard. If no browser is
+available, use the static checks in `knowledge-documentation/validation.md` and state that
+pixel-level dark/light/mobile QA was not run. If the toolchain is absent, report `unverified`
+and print the two commands. Never run `mkdocs serve`; never commit a built site. **Done when:**
+the build and rendered QA are real or explicitly unverified/static-only.
 
 ### 8. Report
 Report: findings **fixed** / **reported** (each with its command), whether the build ran
@@ -140,7 +153,8 @@ and its result. **Done when:** every fixed/reported finding, build status, and r
 ## Invariants to never violate
 
 - Never write, rewrite, move, delete, or stamp a `documentation/` page — the site layer **only**
-  (`.pages`, and the root config files). Page-level drift is reported, never repaired here.
+  (`.pages`, the CSS asset, and the root config files). Page-level drift is reported to
+  `/quenching:knowledge:documentation:write`, never repaired here.
 - Never clobber a customized `mkdocs.yml` or requirements file; add only missing required keys,
   always shown as a diff, and never reorder or drop a key you did not add.
 - Never re-aim `docs_dir`, and never publish a home other than `documentation/`, without that

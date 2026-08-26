@@ -20,18 +20,15 @@ as a GitHub repository.
 
 ### 1. Confirm the route exists, and resolve the base
 ```bash
-# Read `backend` from this result before choosing a host CLI.
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs config --json
 git remote get-url origin
-gh repo view --json name 2>&1 || echo "NO-ROUTE"
-az repos pr list --status all --top 1 --detect true --output json 2>&1 || echo "NO-ROUTE"
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git base --json
 ```
-Run only the probe for the configured provider, after confirming the origin host matches it:
+After reading the config, run only the matching provider probe, after confirming the origin host
+matches it:
 `github` → `gh repo view`; `azure-boards` → `az repos pr list --status all --top 1 --detect
 true`. A missing/mismatched origin, `NO-ROUTE`, or an unauthenticated host CLI → say plainly there
-is no PR route here and stop; this is the ordinary case on a provider that is not available, never
-a finding.
+is no PR route here and stop.
 `cq git base --json` supplies the base and `isDefault`. **Done when:** the provider route and base
 branch are resolved.
 
@@ -40,8 +37,8 @@ A spec id in `$ARGUMENTS` → `cq specs status --spec "<id>" --json`; its `path`
 locator. On `github`, the trailing number is an issue `<n>` and the body gets `Closes #<n>`. On
 `azure-boards`, the trailing number is a work item `<n>` and the link is passed as
 `--work-items <n>` to Azure; do not invent a `Closes #<n>` sentence. Free text → that text is the
-title; ask for a body and, when applicable, whether an issue/work item should be linked. **Done
-when:** the title, body, provider-native link (or its absence), and base are fixed.
+title; ask for a body and, when applicable, whether an issue/work item should be linked.
+**Done when:** the title, body, provider-native link (or its absence), and base are fixed.
 
 ### 3. State the link's real effect before pushing
 For `github`, **measured**: `Closes #<n>` populates `closingIssuesReferences` only when the PR's
@@ -55,7 +52,7 @@ publication.
 
 ### 4. Push and open, on one confirmation
 Show the remote, the branch name it pushes under, and the title/body, and ask with
-**AskUserQuestion** — this publishes to a remote host, which nothing before this step has done:
+**AskUserQuestion**:
 For Azure, show the work item id, that `--delete-source-branch true` is included, and whether
 `--transition-work-items true` is included in the command the human is confirming.
 ```bash
@@ -71,6 +68,7 @@ The host-specific command is selected from the configured provider. The target b
 on both routes: `--base` for GitHub and `--target-branch` for Azure; neither may be omitted. Read
 the created PR's number/id and URL from the JSON/CLI result. **Done when:** the PR exists, or the
 push/create failed and its error is reported verbatim.
+**Done when:** the provider-specific publication succeeded or its failure is reported.
 [plan-git-record.md](/.knowledge/standards/workflows/plan-git-record.md) §Three frontmatter
 records.
 
@@ -78,8 +76,7 @@ records.
 ```bash
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record "<id>" pr --set number=<provider-pr-id> --set url=<provider-url> --set date=<today>
 ```
-`pr:` is **write-many** — a later PR on the same spec (closed and reopened, or force-pushed to a
-fresh number) is a new fact, not a correction of this one, which is why it carries its own `date`.
+`pr:` is **write-many** — a later PR on the same spec is a new fact.
 No ID → nothing to stamp; report the PR number and URL only. **Done when:** the record is stamped
 (with an ID) or the report carries the PR's own facts (without one).
 

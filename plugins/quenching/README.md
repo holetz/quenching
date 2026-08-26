@@ -69,16 +69,16 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](assets/references/align/convergence.md).
 
-## The thirty-four commands
+## The thirty-eight commands
 
 **One file per entry point** — Claude Code merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs;
 there is no `skills/` tree and no wrapper. Measured by `cq components doctor --json`, never
 transcribed by hand — a number written into prose goes stale the first time a command is minted
 ([`naming/command-surface.md`](../../.knowledge/standards/naming/command-surface.md) §The surface
-invariant). The thirty-four split by front and pillar: `/quenching:knowledge:*` for the nine
-that act on the OKF `/.knowledge/` bundle (one nested a level deeper at `/quenching:knowledge:documentation:build`),
-`/quenching:specs:*` for the nine that act on provider-owned issues and work items (three of them
+invariant). The thirty-eight split by front and pillar: `/quenching:knowledge:*` for the thirteen
+that act on the OKF `/.knowledge/` bundle (the documentation family is nested one level deeper under
+`knowledge:documentation`), `/quenching:specs:*` for the nine that act on provider-owned issues and work items (three of them
 conduct more than one stage — `/quenching:specs:cycle` over one spec, `/quenching:specs:execute-queue`
 and `/quenching:specs:develop-batch` over N), `/quenching:components:*` for the seven that
 act on the target's `.claude/` automation surface (six of them nested a level deeper, only
@@ -269,26 +269,22 @@ and `cycle.md` so the preview and the sweep cannot disagree.
 Triggers: *"what's the status of the docs"*, *"how healthy is the knowledge base"*, *"show me the
 docs dashboard"*, *"what would /quenching:knowledge:align do"*, *"is the bundle conformant"*.
 
-### `quenching-knowledge-documentation-build` — create/update the documentation **site**
+### `quenching-knowledge-documentation-{produce,plan,write,review,build}` — the documentation **family**
 
-Owns the thin **site layer** that renders the bundle's `documentation/` home as an
-mkdocs-material site (invoked as `/quenching:knowledge:documentation:build`, the one wrapper nested a level
-below its namespace, because it acts on one home rather than the bundle). That layer is the
-`mkdocs.yml` + `requirements.txt` at the repo **root** — outside `/.knowledge/` — plus one
-`awesome-pages` `.pages` nav file per section, inside it. The skill inventories the layer
-read-only, reports every finding under a `site-*` code (config absent, unfilled
-`<placeholder>`, a section with no `.pages`, a stale nav, a `docs_dir` aimed elsewhere,
-an absolute `/.knowledge/<other-home>/…` link that dies in the built HTML), presents **one** plan,
-and applies on one OK — **MERGE, never clobber**: a customized `mkdocs.yml` gets only its
-missing required keys, always shown as a diff, and re-aiming `docs_dir` confirms on its own.
-It closes with a real `mkdocs build --strict` into a throwaway dir, and reports `unverified`
-rather than claiming a build that never ran.
+The family generates the complete site in five passes: `produce` conducts `build → plan → write →
+review → build`, `plan` diagnoses sources and records six contracts, `write` drafts Diátaxis pages
+with storytelling, visual and agent-readable rules, `review` scores ten dimensions read-only, and
+`build` owns the thin site layer. The site layer is `mkdocs.yml` + `requirements.txt` at the repo
+**root** — outside `/.knowledge/` — plus one `awesome-pages` `.pages` nav file per section and
+`assets/stylesheets/quenching.css` inside the documentation home. The family reports `site-*`
+findings, keeps source gaps visible, loops `review → write` at most three times, and runs strict
+build QA with an honest `unverified` fallback when MkDocs is unavailable.
 
-**It never touches a page.** Page-level drift — a section without `index.md`, an unstamped
+**`build` never touches a page.** Page-level drift — a section without `index.md`, an unstamped
 doc, a link that escapes the site root — is *reported* with the command that fixes it
-(`/quenching:knowledge:align`, `/quenching:knowledge:add`), never repaired here. `quenching-knowledge-align` step 7 still stamps the
-**first** install as part of scaffolding; everything after that is this skill. The site is
-rooted at `documentation/`: the other homes stay the team's internal surface, unpublished.
+(`/quenching:knowledge:align`, `/quenching:knowledge:add`, or `/quenching:knowledge:documentation:write`), never repaired by the site-layer pass. `quenching-knowledge-align` step 7 still stamps the
+**first** install as part of scaffolding; everything after that is this family. The site is rooted
+at `documentation/`: the other homes stay the team's internal surface, unpublished.
 
 Triggers: *"create the mkdocs"*, *"set up the docs site"*, *"update mkdocs"*, *"regenerate
 the docs nav"*, *"build the documentation site"*, *"the site is missing the new pages"*.
@@ -507,6 +503,10 @@ graded and with a should-not-trigger arm.
 | `/quenching:knowledge:import` | extraction/executor sub-agents may run `model: haiku` + `effort: low` — import **deletes nothing**, so a misclassification only misfiles a doc (correctable); the orchestrator keeps each `index.md` honest and resolves cross-slice dedup |
 | `/quenching:knowledge:add` / `/quenching:knowledge:learn` | no pin — they inherit the session model (they classify, route, and gate operations). **Neither carries a frontmatter hook block** — the rung-1 blocks these two once carried were removed when the plugin's own wiring covered the same case, and that wiring was later discontinued outright, so no hook fires on their writes (`/.knowledge/standards/automation/hooks.md`). Each body's own **Self-check against the conformance core** step is the conformance check at write time: a step the command runs, not a rung anything enforces |
 | `/quenching:knowledge:documentation:build` | no pin, no sub-agents — the inventory is a handful of globs plus one config parse, and the expensive step is an external `mkdocs build`, not tokens; the config **merge** and the fix-vs-report split are exactly the judgment the plan gate exists to contain. `Bash` stays unrestricted **and is now priced in the body**: it drives a toolchain the plugin does not own, reachable through `pip`, `uv` or a bare `python -m` |
+| `/quenching:knowledge:documentation:produce` | no pin, no sub-agents — the conductor sequences four named stages under one authorization and reports their summaries; it has no `Write`/`Edit` grant |
+| `/quenching:knowledge:documentation:plan` | no pin, no sub-agents — source diagnosis, IA and six contracts require the session's judgment; only the plan-of-record is written |
+| `/quenching:knowledge:documentation:write` | no pin on the author; large batches may fan out `Task` slices pinned to the session model, never `haiku`, because each slice writes human-facing prose |
+| `/quenching:knowledge:documentation:review` | no pin, read-only; large page sets may fan out `Task` slices without write tools, returning condensed rubric verdicts |
 | `/quenching:components:command:new` | no pin, no sub-agents — classification on the axis, doctrine-grade drafting, and the plan gates inherit the session model |
 | `/quenching:components:align` | no pin. Its §7 doctrine audit **may delegate collection** to read-only `Task` collectors — one per slice, reporting *what each body contains* (which levers its frontmatter carries, what it cites, where its steps end) on a surface large enough that reading every body would bury the conversation. Every verdict stays with the orchestrator: "this body has no positive prescription" is a claim about behaviour, and the read that makes it must also weigh the fix |
 | `/quenching:specs:develop` | **`model: opus`** — the whole command *is* judgment: generating the questions a spec never answered, recommending an answer to each, and deciding when the interrogation is done. There is nothing mechanical here to downgrade, and a cheap model that asks generic questions produces exactly the refinement theatre the command exists to replace. Cost is bounded by each stage's declared stop condition and by one edit per pass, not by a model tier. One **read-only** sub-agent is permitted, and only for compose and refine: it sweeps the code and the `/.knowledge/standards/` the spec declares and returns one table (`assets/references/specs-develop/questions.md` §Gathering the evidence). It reads; it never asks, writes, or decides — every question, every `cq specs` call and every confirmation stays with the orchestrator. **This is not `context: fork`**, which cannot ask a question at all, so the never-fork rule is untouched |

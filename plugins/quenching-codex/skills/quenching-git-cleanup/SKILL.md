@@ -1,6 +1,6 @@
 ---
 name: quenching-git-cleanup
-description: "Prune branches already merged or gone and worktrees git still registers with no directory on disk, over `cq git stale`'s report — nothing is deleted without the human picking it from that exact list. Use when the user asks to \"clean up old branches\", \"prune stale branches\", \"remove finished worktrees\", or \"tidy up after merging\"."
+description: "Prune branches already merged or gone and worktrees git still registers with no directory on disk, over `cq git stale`'s report. Use when the user asks to \"clean up old branches\", \"prune stale branches\", \"remove finished worktrees\", or \"tidy up after merging\"."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/git/cleanup.md -->
@@ -9,9 +9,6 @@ description: "Prune branches already merged or gone and worktrees git still regi
 # quenching-git-cleanup — prune what `cq git stale` already found
 
 **Input**: `$ARGUMENTS` — none; this command always starts from a fresh report.
-
-Acts on exactly the list `cq git stale` reports — nothing is ever pruned that report did not
-already name, and nothing in that list is pruned without the human choosing it.
 
 ## Workflow
 
@@ -31,20 +28,16 @@ to "all". **Done when:** the human has chosen a subset (possibly empty) of each 
 ```bash
 git branch -d <branch>
 ```
-Refused (`error: the branch '<branch>' is not fully merged`) → report why, and ask **separately**
-whether to force it with `-D` — a "gone" branch can carry commits its now-deleted upstream never
-saw, and force-deleting those is a distinct, irreversible decision from the prune the human already
-confirmed. **Done when:** every chosen branch is deleted, or its refusal (and the human's answer on
-forcing it) is reported.
+Refused (`error: the branch '<branch>' is not fully merged`) → report why and leave it standing;
+this command never escalates to `-D`. **Done when:** every chosen branch is deleted, or its refusal
+is reported.
 
 ### 4. Remove the chosen worktrees
 ```bash
 git worktree remove <path>
 ```
 **Never `--force`.** A refusal (modified or untracked files inside) is reported with git's own
-message, and that worktree is left standing — the same restraint
-[git/merge.md](../../references/git/merge.md) §The worktree is removed after
-a successful merge already applies to a post-merge removal. **Done when:** every chosen worktree is
+message, and that worktree is left standing. **Done when:** every chosen worktree is
 removed, or its refusal is reported.
 
 ### 5. Report
@@ -55,5 +48,5 @@ never chosen. **Done when:** the three are named.
 
 - Never prune a branch or worktree `cq git stale` did not report.
 - Never pre-select "all" in the prune offer — every item is the human's own pick.
-- Never `git branch -D` or `git worktree remove --force` without a separate, explicit confirmation
+- Never `git branch -D` or `git worktree remove --force`; a refusal is reported and the target is left standing.
   for that specific refusal.
