@@ -1,5 +1,5 @@
 ---
-description: Force /.knowledge/ into the canonical OKF v0.1 bundle AND pull in the content sitting out-of-band — one command, probe first, looped to a fixpoint. Triggers on "align the docs", "align and update docs", "fix the documentation structure", "install the OKF bundle", "set up /.knowledge/", "converge the knowledge base". Probes cq knowledge validate plus two cheap out-of-band signals before reading anything, so a conformant bundle with nothing waiting costs three calls and stops. Otherwise: one inventory, ONE plan, one OK, the structural pass, the content stages that have work (memory, harness), then the whole-bundle glossary sweep OFFERED on a cheap proxy — looping until a pass changes nothing. Conducts its stages by invoking them, never reimplements them.
+description: Force /.knowledge/ into the canonical OKF v0.1 bundle AND pull in the content sitting out-of-band — one command, probe first, looped to a fixpoint. Triggers on "align the docs", "align and update docs", "fix the documentation structure", "install the OKF bundle", "set up /.knowledge/", "converge the knowledge base". Probes cq knowledge validate plus two cheap out-of-band signals before reading anything. Otherwise: one inventory, ONE plan, one OK, the structural pass, the content stages that have work (memory, harness), then the whole-bundle glossary sweep OFFERED on a cheap proxy — looping until a pass changes nothing. Conducts its stages by invoking them, never reimplements them. Not for: adding one knowledge item → /quenching:knowledge:add; reading status only → /quenching:knowledge:status.
 argument-hint: [optional-docs-path]
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Task, Skill, AskUserQuestion
 ---
@@ -12,10 +12,6 @@ The **`docs` front's one entry point**. It installs and enforces a single canoni
 bundle so every repo that adopts this plugin looks the same — **and** it pulls in the durable
 content sitting outside the bundle (project memory, a fat harness) and backfills the glossary,
 looping until a pass changes nothing.
-
-Structure and content are one command because they are one dependency chain: nothing can be filed
-into a tree that is not there, and a glossary swept before the content lands misses terms. Splitting
-them cost an entry point and bought a second thing to remember to run.
 
 The payload (skeleton, molds, validator) lives at `${CLAUDE_PLUGIN_ROOT}/assets/`; the contract at
 `${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/`:
@@ -32,18 +28,10 @@ path** on every call, never through a shell variable holding the interpreter plu
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Write the resolved path literally on every invocation.
 
-**Why `Bash` is unrestricted here.** The checker is invoked through `python3`, but a bundle-root
-detection, a two-scan blast radius (`git grep` / `grep --no-ignore`), and a `.claude/settings.json`
-merge are all shell work this command cannot do through a narrower grant.
-
 ## Doctrine (non-negotiable)
 
-The sweep contract every align shares — probe before the inventory, convergence over
-accommodation, one plan → one OK with code-coupled items gating individually, the cycle-authorized
-narration exception, the two-scan blast-radius procedure, MERGE-never-clobber,
-never-delete-on-a-guess, and align-conformance-report-the-cycle — lives once in
-[align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md).
-Read it as this command's doctrine. What follows is only what is **specific to `/.knowledge/`**:
+Read [align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md).
+What follows is specific to `/.knowledge/`:
 
 - **This is the one front with a real loop.** `/.knowledge/` has two out-of-band stores that feed it and a
   glossary derived from everything in it, so one pass genuinely creates work for the next: a fact
@@ -107,6 +95,9 @@ install case, and step 4 scaffolds it.
 **Done when:** the three signals are in hand and the run has either stopped or committed to a pass.
 
 ### 2. Inventory + map → the alignment plan (read-only)
+When `$ARGUMENTS` names a home or subtree, keep the fixed-root probe whole-bundle but restrict this
+inventory, plan, and structural write set to that scope; report out-of-scope findings without touching
+them. With no argument, use the whole bundle.
 Detect the existing sections, which docs carry frontmatter, and match each section to a canonical
 home via the variant→canonical map
 ([knowledge-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md)) —
@@ -183,9 +174,7 @@ plan was rejected and nothing was written.
   strip stray frontmatter; for `standards/index.md` rebuild only the
   `<!-- BEGIN/END GENERATED -->` zone from disk.
 - **Write** `okf_version: "0.1"` into the root `/.knowledge/index.md` frontmatter.
-- **Never create a `log.md`, and never touch one that is already there.** The artifact is
-  retired: the name stays reserved so a surviving log is recognized rather than flagged, and
-  whether to keep or delete it is the target repo's call, not this sweep's.
+- **Never create a `log.md`, and never touch one that is already there.**
 
 **Done when:** every approved (a)–(f) item is on disk and no unapproved item was touched.
 
@@ -279,11 +268,9 @@ state, and — explicitly — what was **deliberately not closed**, each with th
 it (per-item content needing human input, unroutable harness facts, deferred sub-standards, a
 declined glossary sweep).
 
-**The report is the record.** This step used to also append a closing entry to the bundle's
-now-retired `log.md`, and the sweep leaves no trace of itself in the bundle. What the pass
-did to `/.knowledge/` is legible from `/.knowledge/` and from the repo's own history — a self-describing
-entry added nothing a reader could not already see, and cost a write on every run.
-**Done when:** the report names the residue with its owning command.
+**The report is the record.** The sweep leaves no trace of itself in the bundle.
+**Done when:** the report states the final convergence outcome and names any residue with its owning
+command, or explicitly states that no residue remains.
 
 ## Invariants to never violate
 - Never inventory before the probe, and never run a stage to find out whether it had work — the

@@ -2,12 +2,11 @@
 description: >-
   Compacta a conversa atual em um documento de handoff para outro agente continuar o trabalho. Use
   quando o usuário pedir para "gerar um handoff", "compactar a conversa num handoff", "preparar
-  handoff para a próxima sessão" ou "resumir esta sessão para outro agente continuar".
+  handoff para a próxima sessão" ou "resumir esta sessão para outro agente continuar". Not for:
+  executar a implementação → o comando dono do trabalho.
 argument-hint: "What will the next session be used for?"
 allowed-tools: Bash(mktemp:*), Read, Write
 ---
-
-# /quenching:handoff — compact the current conversation into a handoff document
 
 **Input**: `$ARGUMENTS` (o foco da próxima sessão).
 
@@ -31,7 +30,7 @@ the newly created file has been read.
 
 ### 3. Compose the handoff
 
-Summarize the current conversation so a fresh agent can continue the work. Tailor it to the fixed
+Summarize the current conversation. Tailor it to the fixed
 focus and include the objective, current status, decisions, completed work, open work, validation
 evidence, blockers, and useful next actions. Suggest skills for the next session when they apply.
 Reference existing PRDs, plans, ADRs, issues, commits, diffs, or other artifacts by path or URL
