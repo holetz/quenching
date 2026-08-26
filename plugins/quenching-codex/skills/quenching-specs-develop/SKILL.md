@@ -93,10 +93,7 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 
 ## The batching contract
 
-Three points of the workflow below are **one call each**, and running them as two is the defect
-this contract names:
-
-| Where | The one call |
+| Where | The bounded read(s) |
 | --- | --- |
 | steps 1+2 | `cq specs status --spec <id> --json`, which also carries the `path` step 1 announces, the gear, and the `sections`/`ready` map compose drives off. Only an ID that must be *chosen* splits this: `cq specs list --json` runs first, because the question depends on its output |
 | step 3b | every stage's own section and the union of the spec sections the pass reads or writes — `cq components read` and `cq specs section` together, never one call per source or per stage |
@@ -115,7 +112,6 @@ that carries content stays: the pass and its stop conditions (step 3), the conso
 genuinely the human's, the recommendation and the reasoning behind it go in the **AskUserQuestion**
 payload — the recommended option first and marked "(Recommended)", the reasoning in its description
 — so the human answers in one word and no turn was spent setting the question up.
-
 **This contract stops at the edge of how questions are grouped.**
 [questions.md](../../references/specs-develop/questions.md) §The four shared
 mechanics §1 is the only authority there: a question travels with the ones whose answers cannot
@@ -137,7 +133,7 @@ invoked to obtain it — an issue or work-item URL under an external backend, th
 `files`. The announcement is load-bearing rather than decorative: with the plan narrated instead of
 submitted (step 6), the backend is the window the human watches the pass through and the place a
 correction is given, so it is stated before anything is read and repeated in the report (step 8).
-**Done when:** one spec in `plans/` is resolved and its backend URL has been announced.
+**Done when:** one provider-owned spec is resolved and its backend URL has been announced.
 
 ### 2. Read the spec's STATE — not its body
 ```bash

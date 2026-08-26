@@ -4,7 +4,7 @@ title: Automation registry
 description: The repo's local Claude Code automation surface — every command, derived from .claude/commands/
 resource: .claude/commands/
 tags: [automation, commands]
-timestamp: 2026-08-15
+timestamp: 2026-08-26
 audience: both
 authority: current
 source: quenching-components-align first run + alocar-comandos-skills-por-categoria (2026-08-15), which made category/subject the axis's first question
@@ -15,16 +15,16 @@ maintainer: Israel Holetz
 
 This repository's **own** automation surface is small by design: it is the marketplace that
 hosts the `quenching` plugin, so nearly every command a session here reaches for is
-*contributed* rather than local. The two local commands are development instruments for
+*contributed* rather than local. The four local commands are development instruments for
 building this repo's documentation and diagrams, classified on the single axis the rule
-defines. Neither carries an evident category, so both are read on the axis's second question
-alone — a **domain-bound** command is pathed after the one folder it serves
-(`/docs:storyteller` acts on `/.knowledge/`), a **generic** one is a flat `verb-object` at the top
+defines. Commands without an evident category are read on the axis's second question alone — a
+**domain-bound** command is pathed after the one folder it serves
+(`/commands:tighten` acts on `commands/`), a **generic** one is a flat `verb-object` at the top
 level (`/skill-map` maps whatever it is pointed at, so no single folder claims it). A command
 that did belong to a subject would path under it instead (`/git:commit`). The rule
 itself is [/.knowledge/standards/automation/skills.md](/.knowledge/standards/automation/skills.md).
 
-The `quenching` plugin installed from this marketplace contributes the twenty-five
+The `quenching` plugin installed from this marketplace contributes the thirty-eight
 `/quenching:knowledge:*`, `/quenching:specs:*`, `/quenching:components:*` and `/align` commands. Those are the **product's** surface,
 documented in [plugins/quenching/README.md](/plugins/quenching/README.md), and they stay out
 of the table below — the zone lists only what this repository itself ships in
@@ -39,7 +39,6 @@ them is overwritten by the next run, not merged.
 | Command | Serves | Typical trigger |
 | --- | --- | --- |
 | /commands:tighten | commands/ | "enxugar esse comando" |
-| /docs:storyteller | docs/ | "transformar/gerar os md em mkdocs" |
 | /references:tighten | references/ | "enxugar a prosa das references" |
 | /release | generic | "publish a release" |
 | /skill-map | generic | "kit map" |

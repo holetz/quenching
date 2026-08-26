@@ -1,4 +1,4 @@
-"""Deterministically translate the packaged Codex surface into its Codex sibling."""
+"""Deterministically translate the packaged Claude surface into its Codex sibling."""
 from __future__ import annotations
 
 import argparse
@@ -18,7 +18,7 @@ MANIFEST: Path | None = None
 COPY_DIRS = ("assets/references", "assets/templates", "assets/specs", "assets/knowledge", "assets/checks", "assets/bin")
 COPY_FILES = ("bin/cq", "README.md", "VERSION")
 DROP_FRONTMATTER = {"argument-hint", "allowed-tools", "model", "context", "hooks"}
-FORBIDDEN_AFTER_TRANSLATION = ("../..", ".", "CODEX_PLUGIN_ROOT")
+FORBIDDEN_AFTER_TRANSLATION = ("${CLAUDE_PLUGIN_ROOT}", "${CLAUDE_PROJECT_DIR}", "CLAUDE_PLUGIN_ROOT")
 PLATFORM_NEUTRAL_CLAUDE_CODEX = "\u0043laude or \u0043odex"
 
 CODEX_CQ_WRAPPER = r"""cq() {
@@ -68,7 +68,7 @@ def plugin_translation() -> bool:
 
 
 def claude_surface() -> Path:
-    """Resolve a repository root or its `.claude` directory to the Codex surface."""
+    """Resolve a repository root or its `.claude` directory to the Claude surface."""
     return source() if source().name == ".claude" else source() / ".claude"
 
 
@@ -101,7 +101,7 @@ def source_files() -> list[Path]:
         references = claude_surface() / "references"
         if references.is_dir():
             files.extend(sorted(path for path in references.rglob("*") if path.is_file()))
-        harness = claude_surface().parent / "AGENTS.md"
+        harness = claude_surface().parent / "CLAUDE.md"
         if harness.is_file():
             files.append(harness)
         files.append(manifest())
@@ -132,7 +132,7 @@ def transform_platform(text: str, adaptation: dict) -> str:
         text = text.replace(old, new)
     text = re.sub(r"/quenching:([A-Za-z0-9:-]+)",
                   lambda match: "quenching-" + match.group(1).replace(":", "-"), text)
-    text = text.replace("Codex", "Codex").replace("Codex", "Codex")
+    text = text.replace("Claude Code", "Codex").replace("Claude", "Codex")
     text = text.replace(neutral_marker, PLATFORM_NEUTRAL_CLAUDE_CODEX)
     for marker in FORBIDDEN_AFTER_TRANSLATION:
         if marker in text:
@@ -214,7 +214,7 @@ def transform_codex_markdown(text: str) -> str:
 
 
 def codex_tool_resolution(text: str) -> str:
-    """Replace the Codex/host-PATH contract with Codex's per-call resolver."""
+    """Replace the Claude/host-PATH contract with Codex's per-call resolver."""
     start = text.index("## Resolving the tool")
     resolution = f"""## Resolving the tool
 
@@ -279,6 +279,11 @@ def codex_readme(text: str) -> str:
 
 
 def transform_asset(relative: Path, text: str, adaptation: dict) -> str:
+    # This module translates platform markers in its *input*. Its own source is
+    # therefore procedure, not payload: translating it would rewrite the markers
+    # and paths it must recognize when it runs again from the generated plugin.
+    if relative.as_posix() == "quenching/components/commands/translate.py":
+        return text
     text = transform_platform(text, adaptation)
     if relative.as_posix() == "align/tool-resolution.md":
         text = codex_tool_resolution(text)
@@ -351,7 +356,7 @@ def command_to_skill(command: Path, adaptation: dict) -> str:
     if not fields["description"]:
         raise ValueError(f"command has no description: {command}")
     origin = ("plugins/quenching/commands/" + str(command.relative_to(source() / "commands"))
-              if plugin_translation() else ".agents/skills/" + str(command.relative_to(claude_surface() / "commands")))
+              if plugin_translation() else ".claude/commands/" + str(command.relative_to(claude_surface() / "commands")))
     header = ("---\n" + f"name: {fields['name']}\n" +
               f"description: {json.dumps(transform_platform(skill_description(fields['description']), adaptation), ensure_ascii=False)}\n" +
               f"---\n\n<!-- GENERATED FROM {origin} -->\n\n")
@@ -373,7 +378,7 @@ def generated_tree() -> dict[str, bytes]:
                 if reference.suffix == ".md":
                     translated = transform_codex_markdown(translated)
                 output[str(Path("references") / relative)] = translated.encode()
-        harness = claude_surface().parent / "AGENTS.md"
+        harness = claude_surface().parent / "CLAUDE.md"
         if harness.is_file():
             output["AGENTS.md"] = transform_platform(harness.read_text(encoding="utf-8"), adaptation).encode()
         output[".generated-from.json"] = json.dumps({
@@ -385,11 +390,11 @@ def generated_tree() -> dict[str, bytes]:
     version = (source() / "VERSION").read_text(encoding="utf-8").strip()
     output[".codex-plugin/plugin.json"] = json.dumps({
         "name": "quenching-codex", "version": version,
-        "description": "Codex translation of the quenching Codex plugin, generated from the Codex source plugin.",
+        "description": "Codex translation of the quenching Claude plugin, generated from the Claude source plugin.",
         "author": {"name": "Israel Holetz", "email": "holetz@gmail.com"}, "license": "MIT",
         "keywords": ["codex", "knowledge-management", "documentation", "spec-driven", "automation"], "skills": "./skills/",
         "interface": {"displayName": "Quenching Codex", "shortDescription": "Deterministic knowledge and spec alignment workflows for Codex",
-                      "longDescription": "Generated Codex sibling of the Codex quenching plugin. Codex is the source of truth.",
+                      "longDescription": "Generated Codex sibling of the Claude quenching plugin. Claude is the source of truth.",
                       "developerName": "Israel Holetz", "category": "Developer Tools", "capabilities": ["Interactive", "Write"],
                       "defaultPrompt": ["Align this repository with quenching.", "Run the quenching knowledge workflow.", "Check the Codex plugin for drift."],
                       "brandColor": "#0F766E", "screenshots": []}}, indent=2, ensure_ascii=False).encode() + b"\n"
@@ -410,7 +415,7 @@ def generated_tree() -> dict[str, bytes]:
             if not path.is_file() or _is_build_artefact(path):
                 continue
             relative = path.relative_to(source_dir)
-            if relative.name == "AGENTS.md":
+            if relative.name == "CLAUDE.md":
                 relative = relative.with_name("AGENTS.md")
             output[str(destination_root / relative)] = transform_asset(relative, path.read_text(encoding="utf-8"), adaptation).encode()
     output[".generated-from.json"] = json.dumps({"source": "plugins/quenching", "source_sha256": source_digest(),
@@ -423,7 +428,7 @@ def differences(tree: dict[str, bytes]) -> list[str]:
     actual = {str(path.relative_to(destination)) for path in destination.rglob("*") if path.is_file() and path.name != ".generated-files.json" and "__pycache__" not in path.parts and path.suffix != ".pyc"} if destination.exists() else set()
     if not plugin_translation():
         # A repository's Codex marketplace and other configuration are not generated from
-        # `.agents/`. Only the translated harness, skills, and their local references are owned.
+        # `.claude/`. Only the translated harness, skills, and their local references are owned.
         actual = {rel for rel in actual if rel in {"AGENTS.md", ".generated-from.json"}
                   or rel.startswith(("skills/", "references/"))}
     return [rel for rel in sorted(set(tree) | actual) if rel not in tree or not (destination / rel).exists() or (destination / rel).read_bytes() != tree[rel]]
@@ -466,14 +471,14 @@ def _body(text: str) -> str:
 
 
 def _claude_body(text: str) -> str:
-    return (text.replace("${CODEX_PLUGIN_ROOT}", "../..")
-                .replace(".agents/", ".agents/")
-                .replace("AGENTS.md", "AGENTS.md")
-                .replace("Codex", "Codex"))
+    return (text.replace("${CODEX_PLUGIN_ROOT}", "${CLAUDE_PLUGIN_ROOT}")
+                .replace(".agents/", ".claude/")
+                .replace("AGENTS.md", "CLAUDE.md")
+                .replace("Codex", "Claude"))
 
 
 def propagate_bodies_from_codex(tree: dict[str, bytes]) -> None:
-    """Apply only body edits from a changed Codex tree back to its Codex source.
+    """Apply only body edits from a changed Codex tree back to its Claude source.
 
     Frontmatter and path changes are intentionally refused: the forward map drops information,
     so only the source side can author that structure.
@@ -481,22 +486,22 @@ def propagate_bodies_from_codex(tree: dict[str, bytes]) -> None:
     destination = target() if plugin_translation() else codex_surface()
     for rel in differences(tree):
         if not rel.startswith("skills/") or not rel.endswith("/SKILL.md") or rel not in tree:
-            raise ValueError(f"Codex structural change at {rel}; the Codex side is authoritative")
+            raise ValueError(f"Codex structural change at {rel}; the Claude side is authoritative")
         if not (destination / rel).is_file():
-            raise ValueError(f"Codex structural change at {rel}; the Codex side is authoritative")
+            raise ValueError(f"Codex structural change at {rel}; the Claude side is authoritative")
         actual = (destination / rel).read_text(encoding="utf-8")
         expected = tree[rel].decode("utf-8")
         actual_header = actual.split("---\n", 2)[:2]
         expected_header = expected.split("---\n", 2)[:2]
         if actual_header != expected_header:
-            raise ValueError(f"Codex frontmatter change at {rel}; the Codex side is authoritative")
+            raise ValueError(f"Codex frontmatter change at {rel}; the Claude side is authoritative")
         parts = Path(rel).parts[1:-1]
         source_command = ((source() / "commands") if plugin_translation() else claude_surface() / "commands")
         command = source_command.joinpath(*parts).with_suffix(".md")
         raw = command.read_text(encoding="utf-8")
         header_end = raw.find("\n---\n", 4)
         if header_end < 0:
-            raise ValueError(f"Codex command has malformed frontmatter: {command}")
+            raise ValueError(f"Claude command has malformed frontmatter: {command}")
         command.write_text(raw[:header_end + len("\n---\n")] + "\n" + _claude_body(_body(actual)),
                            encoding="utf-8")
 
@@ -528,7 +533,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     mode.add_argument("--check", action="store_true")
     mode.add_argument("--write", action="store_true")
     mode.add_argument("--diff", action="store_true")
-    parser.add_argument("--source", help="Codex surface or plugin source")
+    parser.add_argument("--source", help="Claude surface or plugin source")
     parser.add_argument("--target", help="Codex surface or generated destination")
     parser.add_argument("--json", action="store_true")
 
@@ -553,7 +558,7 @@ def cmd_translate(args, _root: str) -> int:
         payload["changed"] = []
         payload["count"] = 0
     findings = [finding("ct-translation-drift", "error",
-                        "generated translation differs from the Codex surface", path=path)
+                        "generated translation differs from the Claude surface", path=path)
                 for path in payload["changed"]]
     return report_findings(args.json, f"components translate — {payload['count']} changed file(s)",
                            payload, findings, "path")

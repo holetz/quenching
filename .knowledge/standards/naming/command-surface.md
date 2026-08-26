@@ -4,7 +4,7 @@ title: Command surface naming
 description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the fourth namespace (`git`, a pillar rather than a front) and its coexistence with a target's own `git` category; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context
 resource: plugins/quenching/commands/**
 tags: [naming, commands, taxonomy]
-timestamp: 2026-08-16
+timestamp: 2026-08-26
 audience: both
 authority: current
 source: rename-command-surface change (2026-07-21) + the specs-native refactor (2026-07-24) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31); the `.claude/` front renamed `components` and split into four artifact-named contexts by modularizar-specs-knowledge-components (task 9.7, 2026-08-10), inheriting the split's own design from the retired restructure-claude-front-namespace spec — the split is orthogonal to the front's name and survived the rename intact; the declare-the-class rule for a rename's citation residual added by the orquestrar-specs-em-paralelo branch review (2026-08-16), whose `orchestrate` → `cycle` command rename found five citing files its `## Impact` had not named; the fourth namespace (`git`) and its coexistence with a target's own `git` category added by pilar-git-e-specs-agnosticas-ao-git (task 6.2)
@@ -31,20 +31,21 @@ and only one of them is unconditionally correct for this repo's commands:
 | --- | --- | --- |
 | Registry name (no `/`) | `quenching:specs:develop` | the `Skill` tool resolves it — always, for a plugin command |
 | Plugin-prefixed slash | `/quenching:specs:develop` | a human types it wherever `quenching` is installed **as a plugin** |
-| Bare slash | `/docs:storyteller` | **only** where that command file lives in the target repo's own `.claude/commands/` |
+| Bare slash | `/commands:tighten` | **only** where that command file lives in the target repo's own `.claude/commands/` |
 
 So `commands/specs/develop.md` is cited as `quenching:specs:develop` for the tool and
 `/quenching:specs:develop` for the human — and bare **only** by a repo that vendored the file into
-its own `.claude/commands/`. Re-measured in this tree on 2026-08-11: that directory does exist
-here, and holds four commands of this repo's own — `/release`, `/skill-map`, `/docs:storyteller`
+its own `.claude/commands/`. Re-measured in this tree on 2026-08-26: that directory does exist
+here, and holds four commands of this repo's own — `/release`, `/skill-map`, `/commands:tighten`
 and `/references:tighten` — which is why the bare row's example is one of them. Not one plugin
 command is vendored there, so every bare citation of a **plugin** command in this repo's prose
 still names a form that resolves nowhere.
 
 That distinction is the reason `assets/checks/citation-check.sh` spells its dead set as each
-retired front's **verbs** rather than as a bare prefix: `/docs:storyteller` has to survive the very
-sweep that retired the plugin's ten `docs` verbs, and a bare prefix would have called this repo's
-own local command a survivor forever.
+retired front's **verbs** rather than as a bare prefix. A verb list asserts what was retired; a
+prefix reserves a namespace, and would condemn any bare command that later lands under it — which
+is not hypothetical, because until 2026-08-26 the four above included a `/docs:`-prefixed local
+command that had nothing to do with the plugin's retired `docs` front.
 
 This mapping is what every command body copies, which is why it states the condition rather than
 the shorthand. The prose form of the same rule used to live in `commands/docs/align.md`, declaring

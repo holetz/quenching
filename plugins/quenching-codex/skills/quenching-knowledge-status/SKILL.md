@@ -15,25 +15,17 @@ The **read-only** view of the `docs` front. Every other skill here either fixes 
 item a human named. This one only looks — and because it looks at exactly what those sweeps look
 at, it is also their honest preview: the plan you would be authorizing, before you authorize it.
 
-It exists because structural conformance is compatible with a knowledge base that knows nothing.
-`cq knowledge validate` can return exit 0 on a bundle of empty homes and a placeholder glossary, and
-until this skill there was no way to learn what `quenching-knowledge-align` would do except to invoke the
-invasive skill and read the plan from inside it.
-
 The conformance codes and their severities live in
 [knowledge-align/conformance.md](../../references/knowledge-align/conformance.md);
 the finding → owning-command routing in
 [knowledge-align/cycle.md](../../references/knowledge-align/cycle.md);
 the homes and the insert procedure in
 [knowledge-add/homes.md](../../references/knowledge-add/homes.md).
-All three are **cited, never restated** — this skill owns no contract of its own, which is the
-point: a status view that disagreed with the sweep would be worse than none.
+All three are cited; this skill owns no contract of its own.
 
 ## Doctrine
 
-- **Zero writes, no exceptions.** No stamp, no index regeneration, not even a marker file. A
-  status read that changed the thing it read would break its own contract and make the preview
-  a lie.
+- **Zero writes, no exceptions.** No stamp or index regeneration.
 - **Report in the validator's vocabulary.** Every finding carries the code
   [conformance.md](../../references/knowledge-align/conformance.md) defines and the command that
   closes it. Never invent a code, never soften one, and never report a finding the sweep would not
@@ -46,9 +38,7 @@ point: a status view that disagreed with the sweep would be worse than none.
   it: what `quenching-knowledge-align` fixes on one OK, what its later stages then drive, and what neither
   closes because it needs a human. A reader must be able to tell what a sweep would
   actually do to their repo.
-- **Cheap by construction.** One `cq knowledge validate --json` over the bundle, one glob, and reads of
-  the few files the report names. Never fan out sub-agents: the validator already answers in one
-  call what a sub-agent would be sent to re-derive.
+- **Cheap by construction.** One `cq knowledge validate --json`, one glob, and reads of the files the report names.
 - **Never judge, never rank, never infer.** An empty home is not a defect, an unlinked glossary
   entry is a valid permanent state, and `stale-doc` is an advisory age — never a verdict that a
   doc is wrong.
@@ -76,7 +66,9 @@ never on prose.
 - `Glob` `~/.codex/projects/<cwd>/memory/*.md` and read the root `AGENTS.md`/`AGENTS.md` size —
   the two out-of-band stores whose content the cycle would pull in.
 - Note whether a **retired `log.md`** is still present anywhere in the bundle (`Glob`
-  `/.knowledge/**/log.md`) — a figure for §5, never a finding.
+  `/.knowledge/**/log.md`) — a figure for §5, never a finding. If `$ARGUMENTS` names a home or
+  path, restrict the density and named document reads to that scope while keeping the validator's
+  result explicitly whole-bundle. **Done when:** every source is read and nothing has been written.
 
 Nothing here writes. If the checker is unavailable, collect what the frontmatter supports and mark
 every conformance row as unverified rather than reporting a clean bundle.

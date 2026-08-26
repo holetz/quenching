@@ -6,8 +6,6 @@ description: "Compacta a conversa atual em um documento de handoff para outro ag
 <!-- GENERATED FROM plugins/quenching/commands/handoff.md -->
 
 
-# quenching-handoff — compact the current conversation into a handoff document
-
 **Input**: `$ARGUMENTS` (o foco da próxima sessão).
 
 ## Workflow
@@ -30,7 +28,7 @@ the newly created file has been read.
 
 ### 3. Compose the handoff
 
-Summarize the current conversation so a fresh agent can continue the work. Tailor it to the fixed
+Summarize the current conversation. Tailor it to the fixed
 focus and include the objective, current status, decisions, completed work, open work, validation
 evidence, blockers, and useful next actions. Suggest skills for the next session when they apply.
 Reference existing PRDs, plans, ADRs, issues, commits, diffs, or other artifacts by path or URL

@@ -13,14 +13,12 @@ description: "Refactor AGENTS.md/AGENTS.md into thin pointers over the /.knowled
 Refactors a repo's **harness files** (the root `AGENTS.md`, every subfolder `AGENTS.md`, and
 `AGENTS.md`) into thin navigation pointers over the OKF `/.knowledge/` bundle. A harness file is **context
 tax** the agent pays on every turn, so it earns each line: operational rules stay; durable knowledge
-is **moved** into its `/.knowledge/` home and cited, never re-inlined. This matters because the validator
-**skips** harness files by design (okf-spec §strict-7) — knowledge inlined there escapes validation,
-is invisible to anyone browsing `/.knowledge/`, and drifts. Assumes the bundle already exists (run
+is **moved** into its `/.knowledge/` home and cited, never re-inlined. Assumes the bundle already exists (run
 `quenching-knowledge-align` first if not). It also **creates** a thin subfolder `AGENTS.md` where discovery
 finds a folder with a local operational surface but no harness — evidence-gated, never one per
 directory (routing §6). The unit → verdict → home routing and the pointer-honesty gate are
 in [components-harness-align/harness-routing.md](../../references/components-harness-align/harness-routing.md); the home boundaries, `type`
-vocabulary, molds, and index/log procedure are shared with `quenching-knowledge-add`
+  vocabulary, molds, and index procedure are shared with `quenching-knowledge-add`
 ([knowledge-add/homes.md](../../references/knowledge-add/homes.md)) and
 `quenching-knowledge-align` ([knowledge-align/taxonomy.md](../../references/knowledge-align/taxonomy.md),
 [knowledge-align/conformance.md](../../references/knowledge-align/conformance.md),
@@ -31,7 +29,7 @@ molds live at `../../templates/harness/`.
 
 - **Commands and etiquette stay; knowledge moves.** The one test: would the agent need this on
   **EVERY** task under this file's folder (keep) — or only when working on **that subject** (move +
-  pointer)? A harness file is context tax paid on every turn; it earns each line.
+  pointer)?
 - **A folder earns a harness; a harness is never assumed.** Beyond slimming the files that exist,
   the skill **creates** a thin subfolder `AGENTS.md` where a folder has local operational commands
   but none — but only where the folder earns it (routing §6). Never blanket-create one per
@@ -50,15 +48,11 @@ molds live at `../../templates/harness/`.
   whose home/subject intersects the docs that run just created — a fresh doc can flip a MOVE
   into a DEDUPE (the staleness delta-recheck); the rest of the table stands.
 - **Write-then-verify-then-cut.** A unit leaves the harness file **only after** its concept doc is
-  written, indexed, logged, and passes the conformance self-check. A failed insert leaves the unit
-  in place (the same contract as `quenching-knowledge-import-memory`' write-then-verify-then-delete).
+  written, indexed, and passes the conformance self-check. A failed insert leaves the unit
+  in place.
 - **Never silently drop a unit.** Unroutable content **stays** and is reported; a contradiction
   with `/.knowledge/` is a **FLAG** resolved per item; secrets and personal notes are flagged and **NEVER**
   filed into shared `/.knowledge/` (`CLAUDE.local.md` is treated like a `user` memory).
-- **This skill is the validator for harness files.** `cq knowledge validate` skips `AGENTS.md`/`AGENTS.md`
-  by design — pointer honesty (every link resolves, every pointer describes what its target really
-  holds) is verified **HERE**, in step 8.
-
 Resolve `cq` per
 [align/tool-resolution.md](../../references/align/tool-resolution.md)
 §Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
@@ -73,10 +67,7 @@ catch gitignored ones. Confirm `/.knowledge/index.md` carries `okf_version` — 
 Then **discover greenfield candidates** (read-only), swept **repo-wide from the repository
 root** — one pass over the entire tree, e.g. `find . -type f \( -name '*.sh' -o -name Makefile
 -o -name package.json -o -name justfile \)` anchored at the root, never a search pre-scoped to a
-hand-picked list of top-level directories (a known failure mode: reusing the set of folders you
-already read for step 2 — because they already hold a `AGENTS.md` — silently drops any candidate
-outside that set, e.g. a `templates/` or `tools/` folder no existing harness file points to yet;
-the folders most likely to need a *new* pointer are exactly the ones nothing already references).
+hand-picked list of top-level directories. Sweep candidates outside the existing harness set too.
 Folders that have a **local operational surface** but **no** `AGENTS.md` qualify only if they
 carry commands the agent would need on **every** task under them that **don't derive from the
 root** — a `*.sh` / `Makefile` / `justfile` / `package.json`-script, a distinct toolchain, or a
@@ -90,13 +81,14 @@ gated item — never auto-created. See [components-harness-align/harness-routing
 On a large repo, delegate this repo-wide `find`/`grep` sweep to **one read-only `Task`
 sub-agent** (`model: haiku`, `effort: low`) that only **collects** — harness paths, candidate
 folders and the operational evidence found in each (`folder → [Makefile, run.sh, …]`) — while
-every qualify/exclude judgment stays with the orchestrator; the sweep is mechanical, the routing
-is not.
+every qualify/exclude judgment stays with the orchestrator; the sweep is mechanical.
+**Done when:** every existing harness and every evidence-gated candidate is listed.
 
 ### 2. Parse each file into content units
 Segment into units — heading section / fenced command block / bullet run / paragraph — capturing
 each unit's text, its anchor, and its links. **One verdict per unit**; split a mixed unit (a
 build command paired with an architecture note becomes two).
+**Done when:** every harness file is segmented into anchored units.
 
 ### 3. Classify every unit
 Apply the [components-harness-align/harness-routing.md](../../references/components-harness-align/harness-routing.md) table →
@@ -105,14 +97,10 @@ Apply the [components-harness-align/harness-routing.md](../../references/compone
 cites the existing doc (`Grep /.knowledge/` to confirm coverage); a **FLAG** quotes both sides of the
 contradiction.
 
-**The language declaration line is always KEEP.** A root harness line of the form
-`Language: <tag> — the contract is /.knowledge/standards/agents/communication.md` is a value plus a
-citation, not a fact restated from somewhere else: there is nothing to move, and the doc it cites
-is already its one home. To a thinning pass it looks exactly like collapsible residue, and no
-validator notices it going missing — harness files are exempt from the bundle checks — so this rule
-is the only thing standing between it and a silent deletion. **Never** classify it MOVE or DEDUPE,
-never rewrite it into a paraphrase of the rule it cites, and never let a second configuration key
-onto it.
+**The language declaration line is always KEEP.** Preserve
+`Language: <tag> — the contract is /.knowledge/standards/agents/communication.md` verbatim; never
+classify it MOVE or DEDUPE.
+**Done when:** every unit has one routing verdict and any contradiction is quoted.
 
 ### 4. Sweep the blast radius
 Per `quenching-knowledge-align`'s migration doctrine
@@ -122,6 +110,7 @@ anchors. As in step 1, a large sweep goes to one read-only `Task` collector (`mo
 `effort: low`) returning `anchor → [file:line, …]`; the orchestrator judges each hit. Any hit in
 **product code** (a path constant, an import, a docstring) becomes a **separately gated**
 confirmation item.
+**Done when:** every harness reference and code-coupled hit has a disposition.
 
 ### 5. Present ONE refactor plan → gate on one OK
 Show the table (`file → unit → verdict → destination`) plus, per rewritten file, its **target
@@ -129,32 +118,35 @@ shape** (which mold, which KEEP residue). Include evidence-gated subfolder-`AGEN
 both units scoped to a folder and greenfield-discovered folders (step 1 / routing §6), each its own
 item — FLAG items, and code-coupled items awaiting their **own** OK. **Wait for a single
 confirmation** before writing anything.
+**Done when:** one plan is shown and its confirmation is settled.
 
 ### 6. Per MOVE unit: insert, verify, then cut
 For each MOVE row, run the full insert procedure exactly as
 [knowledge-add/homes.md](../../references/knowledge-add/homes.md) specifies it —
-stamp → index → log → glossary → self-check (against
+  stamp → index → glossary → self-check (against
 [knowledge-align/conformance.md](../../references/knowledge-align/conformance.md)) —
 with this skill's deltas kept inline:
 - `source:` = the harness file the unit came from; an unproven rule enters
-  `authority: background`; the log line is
-  `**Creation**: [<title>](/.knowledge/<path>.md) — moved from AGENTS.md`.
+  `authority: background`. The retired `log.md` is never created or updated; the source remains in
+  the new document's frontmatter.
 - **Only after the self-check passes:** cut the unit from the harness file. A failed insert
   leaves the unit in place; a **DEDUPE** unit is cut once the existing doc is confirmed to
-  cover it.
+cover it.
+**Done when:** every approved MOVE is indexed and self-checked before it is cut.
 
-### 7. Rewrite each harness file from its mold
+### 7. Rewrite each harness file
 Root from `../../templates/harness/claude-root.md`, a subfolder from
 `.../harness/claude-subfolder.md`. Structure and links are canonical English; prose may follow the
-repo's language. The root file's language declaration line is carried through **verbatim** — a mold
-is a shape, not a filter, and step 3 already settled that the line is KEEP. UNROUTABLE and
+repo's language. The root file's language declaration line is carried through **verbatim**. UNROUTABLE and
 FLAG-pending units stay under a clearly marked residue section. **No frontmatter, ever.**
+**Done when:** every planned harness rewrite is on disk with residue preserved.
 
 ### 8. Verify and report
 **Resolve EVERY link** in every rewritten harness file (the validator won't). Confirm no moved fact
 is still restated inline; run `cq knowledge validate` over `/.knowledge/` → 0 errors and the structural WARNs
-clean; confirm each moved doc is indexed and logged. Report counts: **moved** (by home) /
+  clean; confirm each moved doc is indexed. Report counts: **moved** (by home) /
 **deduped** / **kept** / **flagged** / **unroutable** / **harness created** (subfolder pointers).
+**Done when:** links, conformance, index ownership, and all disposition counts are reported.
 
 ## Invariants to never violate
 

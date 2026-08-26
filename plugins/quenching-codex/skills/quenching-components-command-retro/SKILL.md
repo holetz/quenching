@@ -1,6 +1,6 @@
 ---
 name: quenching-components-command-retro
-description: "Mine ONE session for what it evidences about ONE command that ran in it — performance, redundancy, bugs, and the problems the human had to fix by hand. Reach for it when you want to ask \"what did this command cost\", \"retro this session\", \"what went wrong in this run\", \"improve the command that started this session\", or \"what should this command do differently\". Counts come from code reading the session transcript, never from a model recalling its own run, and every counted claim is reported with its count and the turn that evidences it. Each finding lands with the `quenching-components-command-new` invocation that would close it, and nothing is applied. Typed-only by design: a retro reads your transcripts, so a human chooses it."
+description: "Mine ONE session for what it evidences about ONE command that ran in it — performance, redundancy, bugs, and the problems the human had to fix by hand. Reach for it when you want to ask \"what did this command cost\", \"retro this session\", \"what went wrong in this run\", \"improve the command that started this session\", or \"what should this command do differently\". Counts come from code reading the session transcript, never from a model recalling its own run, and every counted claim is reported with its count and the turn that evidences it. Each finding lands with the `quenching-components-command-new` invocation that would close it, and nothing is applied. A retro reads your transcripts, so a human chooses it."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/components/command/retro.md -->
@@ -11,20 +11,18 @@ description: "Mine ONE session for what it evidences about ONE command that ran 
 **Input**: `$ARGUMENTS` — optionally a session id or transcript path, and optionally the
 command to analyse. Omitted → this session, and the command that opened it.
 
-A command body is otherwise only ever revised from taste. The session that ran it holds the
-evidence of what it cost, what it repeated, where it misfired and what the human had to fix —
-and that evidence is discarded when the session ends. This command reads it back.
+The session that ran the command holds the evidence of what it cost, what it repeated, where it
+misfired and what the human had to fix. This command reads it back.
 
 **Counting is the extractor's job, never yours.** `cq components session`
 reads the transcript JSONL and returns a bounded digest; you read the digest and judge it. It
 resolves the transcript itself (explicit path, bare session id, or the newest session for this
-cwd), so this body never globs `~/.codex/projects/**`. Resolve `cq` per
+cwd). Resolve `cq` per
 [align/tool-resolution.md](../../references/align/tool-resolution.md)
 §Resolving the tool §Write the resolved path literally on every invocation, and branch on the
 **exit code** — 0 read clean · 1 read with an anomaly against it · 2 refusal — never on prose.
 
-**This command reports. It never edits a command body**, and it never claims a measured delta:
-a retro has one arm and no control, which is what separates it from `quenching-components-command-eval`.
+**This command reports. It never edits a command body**, and it never claims a measured delta.
 
 ## Workflow
 
@@ -101,9 +99,9 @@ wording, name `quenching-knowledge-add` instead.
 
 ### 7. Self-check
 Confirm the report matches what ran: the transcript and command analysed are named, the
-evidence arm is stated (`cq components session` on the transcript, or in-context reflection when the
-transcript was unreachable), every count is marked exact or upper-bound, and no command body
-was edited. State the `cq components session` exit code.
+evidence arm is stated (`cq components session` on the transcript); if the transcript is unreachable,
+the refusal is the complete result and there is no in-context counting fallback. Every count is
+marked exact or upper-bound, and no command body was edited. State the `cq components session` exit code.
 **Done when:** the report names its source, its arm, and its exit code, and the surface is
 unchanged.
 

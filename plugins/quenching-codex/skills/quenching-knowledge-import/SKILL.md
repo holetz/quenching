@@ -14,7 +14,7 @@ A Codex-native analogue of the OKF reference implementation's `enrich` command �
 BigQuery or heavy dependencies. It reads an external source (local files/folders, or URLs)
 and mints **multiple** conformant OKF concept docs from it. It is a **batch fan-out of
 `quenching-knowledge-add`**: [`knowledge-add/homes.md`](../../references/knowledge-add/homes.md)
-is the **single owner** of the per-doc procedure (classify → stamp → index → log → glossary →
+is the **single owner** of the per-doc procedure (classify → stamp → index → glossary →
 self-check); this skill **cites** it and adds only the ingestion-safety deltas below. Source
 scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
 [knowledge-import/sources.md](../../references/knowledge-import/sources.md). Requires an existing OKF bundle — run
@@ -26,8 +26,7 @@ scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
   frontmatter stamp, updating `index.md`, enriching the glossary, self-check — lives in
   homes.md. This skill restates none of it; it adds only these deltas.
 - **Bounded ingestion (discipline, not code).** A web source is bounded **up front**: an
-  explicit **seed list**, a **page cap**, and a **host allowlist** — never an open crawl
-  (echoing the upstream enrich caps). Fetch only what the user named, plus links **within the
+  explicit **seed list**, a **page cap**, and a **host allowlist** — never an open crawl. Fetch only what the user named, plus links **within the
   allowed hosts** up to the cap; report everything you did **not** fetch.
 - **Anti-fabrication.** Mint only what the source actually supports. A rule not proven in the
   **target's own** code enters as `authority: background` (a proposal), never
@@ -38,8 +37,7 @@ scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
 - **MERGE, never clobber.** A unit that maps to an existing doc/term is an **enrich** target —
   fill missing keys, sharpen the body — never overwrite a filled field or a filled body.
 - **Never ingest transient / secret / PII.** Skip credentials, tokens, personal data, and
-  ephemeral chatter — they are not durable knowledge. A secret is **referenced, never copied**
-  (the catalog access-card rule).
+  ephemeral chatter — they are not durable knowledge. A secret is **referenced, never copied**.
 - **Additive only.** Enrich never deletes a source or a bundle doc; it mints and merges.
 
 ## Workflow (force-with-1-confirmation, like `quenching-knowledge-align`)
@@ -48,7 +46,7 @@ scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
 Identify the inputs: local files/folders (`Read`/`Glob`/`Grep`) or URLs (`WebFetch`). For a
 web source, fix the **seed list**, **page cap**, and **host allowlist** *before* fetching
 anything, and fetch nothing outside them ([knowledge-import/sources.md](../../references/knowledge-import/sources.md)).
-Read the source; write nothing yet.
+Read the source; write nothing yet. **Done when:** the bounded input set and web policy are fixed.
 
 ### 2. Extract → classify → dedup
 Break the source into **knowledge units** (one concept each). Classify every unit into
@@ -64,14 +62,15 @@ slice** out to return **compact unit candidates** (home / `type` / path / one-li
 anchor + its `source_uri`), never full bodies; the orchestrator merges and judges. Extraction sub-agents may run
 on a **cheap model/effort** — enrich **deletes nothing**, so a misclassification only misfiles
 a doc (correctable), unlike `quenching-knowledge-import-memory` (see the model policy in
-[README.md §cost-model](../../README.md#cost-model)).
+  [README.md §cost-model](../../README.md#cost-model)). **Done when:** every unit
+  has a new/imported/resemblance verdict with its source anchor.
 
 ### 3. Present ONE ingestion plan → gate on ONE OK
 Show the **complete** plan: every doc to **mint** or **enrich** with its home, `type`, path,
 one-line summary, and source anchor; and, for a web source, the seed/cap/allowlist and what was
 left unfetched.
 
-Every row also carries **why** it is a mint rather than an enrich — the step-2 verdict, with the
+Every row also carries **why** it is a mint or enrich — the step-2 verdict, with the
 evidence under it: **new** (no URI hit and nothing resembling it); **already imported**, showing
 the matching `source_uri:` and the doc it hit; or **resembles an existing doc**, showing the
 title, slug or term that matched and the doc it matched. The last is the only one the human is
@@ -81,9 +80,10 @@ rendering the two identically is how a wrong MERGE hides inside a batch OK.
 A single OK executes the whole batch. A
 minted/edited doc whose change reaches the target's **product code** is its **own**
 confirmation item (mirrors `quenching-knowledge-align`) — never folded into the batch OK.
+**Done when:** the complete mint/enrich table and every separate code-coupled item are presented.
 
 ### 4. Execute on OK — mint each doc via the insert procedure
-For each planned unit, run homes.md end to end: fill the mold (§The frontmatter stamp;
+For each planned unit, run homes.md: fill the mold (§The frontmatter stamp;
 `authority: background` for an unproven standard), write the doc (cross-home links absolute,
 within-home relative), update the folder's `index.md` (§Updating `index.md`), and enrich the
 glossary if it introduced a repo-specific term (§Enriching the glossary). Fan **one `Task`
@@ -95,6 +95,8 @@ homes.md's mold deliberately leaves out — and, when the source is a stable URL
 line naming it **with the date it was read**, exactly as
 [sources.md](../../references/knowledge-import/sources.md) specifies. A doc
 being **enriched** already carries the `source_uri:` that found it; MERGE never rewrites it.
+**Done when:** every approved unit is written, indexed, and glossary-checked or its failure is
+reported.
 
 ### 5. Self-check + validate
 Self-check every touched file against homes.md §Self-check /
@@ -102,7 +104,7 @@ Self-check every touched file against homes.md §Self-check /
 then run `cq knowledge validate /.knowledge` over the
 bundle: **zero errors**, and the structural WARNs (`dir-no-index` / `index-broken-link` /
 `index-orphan`) cleared. Report residue — units deferred, sources left unfetched, MERGE
-targets skipped.
+targets skipped. **Done when:** validation has run and deferred work is named.
 
 ## Invariants to never violate
 - **Never add `context: fork`.** This is a sweep skill: it gates on a mid-flow plan → OK,

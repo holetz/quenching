@@ -1,5 +1,5 @@
 ---
-description: Force /.knowledge/ into the canonical OKF v0.1 bundle AND pull in the content sitting out-of-band — one command, probe first, looped to a fixpoint. Triggers on "align the docs", "align and update docs", "fix the documentation structure", "install the OKF bundle", "set up /.knowledge/", "converge the knowledge base". Probes cq knowledge validate plus two cheap out-of-band signals before reading anything. Otherwise: one inventory, ONE plan, one OK, the structural pass, the content stages that have work (memory, harness), then the whole-bundle glossary sweep OFFERED on a cheap proxy — looping until a pass changes nothing. Conducts its stages by invoking them, never reimplements them. Not for: adding one knowledge item → /quenching:knowledge:add; reading status only → /quenching:knowledge:status.
+description: Force /.knowledge/ into the canonical OKF v0.1 bundle AND pull in the content sitting out-of-band — one command, probe first, looped to a fixpoint. Triggers on "align the docs", "align and update docs", "fix the documentation structure", "install the OKF bundle", "set up /.knowledge/", or "converge the knowledge base". Probes cq knowledge validate plus two cheap out-of-band signals before reading anything, then inventories and applies one confirmed alignment plan. Not for: adding one knowledge item → /quenching:knowledge:add; reading status only → /quenching:knowledge:status; producing documentation pages → /quenching:knowledge:documentation:produce.
 argument-hint: [optional-docs-path]
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Task, Skill, AskUserQuestion
 ---
@@ -201,7 +201,9 @@ one, read it and move on rather than asking again.
 **The mkdocs site.** Only if the bundle has a `documentation/` home. Offer to copy from
 `${CLAUDE_PLUGIN_ROOT}/assets/mkdocs/`: `mkdocs.yml.tmpl` → the repo **root** as `mkdocs.yml`
 **only if absent** (never clobber a customized one — show a diff and let the user merge), filling
-`site_name`/`site_description`; `requirements.txt` → repo root; on request, `ci-github-pages.yml` →
+`site_name`/`site_description`; `requirements.txt` → repo root; `quenching.css` → the
+`documentation/` home's own `assets/stylesheets/quenching.css`, the path `extra_css` names; on
+request, `ci-github-pages.yml` →
 `.github/workflows/docs.yml` (opt-in, platform-specific). The `.pages` nav files ship **with** the
 `documentation/` skeleton (step 4), so nav needs no separate install.
 

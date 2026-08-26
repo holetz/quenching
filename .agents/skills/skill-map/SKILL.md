@@ -84,6 +84,6 @@ worked file is in [examples/](.agents/references/skill-cartographer/examples/).
 - [design-spec.md](.agents/references/skill-cartographer/design-spec.md) — palette, layer/card anatomy, side
   rails, connectors, typography, interactivity, responsive rules.
 - [examples/mkdocs-storyteller.html](.agents/references/skill-cartographer/examples/mkdocs-storyteller.html) — a full
-  map of the mkdocs-storyteller studio (EN); copy it as the working template.
+  map of the legacy documentation studio (EN); copy it as the working template.
 - [examples/mkdocs-storyteller.pt-br.html](.agents/references/skill-cartographer/examples/mkdocs-storyteller.pt-br.html)
   — the same map localized to **pt-BR** (identifiers kept in English).

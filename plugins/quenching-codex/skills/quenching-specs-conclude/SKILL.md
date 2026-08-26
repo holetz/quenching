@@ -1,6 +1,6 @@
 ---
 name: quenching-specs-conclude
-description: "Close ONE spec out — review the whole branch, write the /.knowledge/ the work revealed, archive, distil, prove the pre-merge gate green — and stop, handing off to quenching-git-pr-create or quenching-git-merge. Triggers on \"conclude this spec\", \"close it out\", \"wrap up the plan\", \"review the branch\", \"archive this spec\", \"abandon this spec\", \"it will not be built\". Everything lands on the work branch; nothing is ever committed to the base by this command. Settles pre-merge release obligations. Resumable: the reviewed and outcome records plus git say which stages already ran. Archiving as done refuses while boxes are open unless forced; abandoned is always allowed and distils at most a background note. Never infers the outcome or treats staleness as abandonment."
+description: "Close ONE spec out — review the branch, write emergent knowledge, archive, distil, prove the gate, then hand off to quenching-git-pr-create or quenching-git-merge. Triggers on \"conclude this spec\", \"close it out\", \"wrap up the plan\", \"review the branch\", \"archive this spec\", \"abandon this spec\", \"it will not be built\". Done writes on the work branch; abandoned writes its close-out on the base checkout. Resumable from its records and git. Done refuses open boxes unless forced; abandoned is always allowed and distils only background learning. Never infers outcome or abandonment."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/conclude.md -->
@@ -16,47 +16,22 @@ separate decision: the whole branch is **reviewed**, the `/.knowledge/` the work
 **proven green** — then the run **stops**, naming `quenching-git-pr-create` or
 `quenching-git-merge` as the human's own next command.
 
-**Nothing is ever committed to the base by this run, because this run never touches the base at
-all.** The old contract held that property by running the merge itself, last, so that nothing could
-follow it. The new one holds the same property by a shorter argument: this command's footprint ends
-on the work branch, at the reviewed, distilled, gate-proven commit — everything after that point
-belongs to whichever command the human runs next, on their own word.
-
-**Why `## Outcome` no longer names a merge strategy or a PR.** Both used to be choices made here, so
-the archived spec could state them. Neither is knowable at archive time anymore: the strategy is
-`quenching-git-merge`'s own offer, the PR is `quenching-git-pr-create`'s. `## Outcome` now asserts
-what THIS run delivered — reviewed, distilled, ready for merge — and the merge itself becomes a
-fact of the host (a commit on the base, a merged PR), legible from there whenever a later reader
-needs it.
-
-**Why this is not part of `quenching-specs-execute`.** Every step here is a different scale of judgment from
-building a task: the branch review reads the whole diff rather than one task's, and the
-distillation is the single bridge into `/.knowledge/`. Bolting them onto the end of the build meant
-a run that died after task nine had to redo tasks one through eight to reach them.
-
-**This command is resumable, and that is a property of the data, not of a session.** Frontmatter
-records the human judgments (`reviewed`, `outcome`); git and the filesystem record everything else.
-A second call reads both and skips what already happened — see §Resuming.
+**Done work ends on the work branch; abandoned close-out writes land in the checkout holding the
+base.** The human chooses the next command for done work.
 
 The distillation doctrine — what crosses into `/.knowledge/`, what stays, and how it is graded — lives in
 [specs-conclude/distill.md](../../references/specs-conclude/distill.md)
 §What crosses, what stays. The layout, the gates and the
 `cq specs` surface live in
 [specs-develop/spec-driven.md](../../references/specs-develop/spec-driven.md)
-§The `specs/` layout §The gates and the stage-scoped explicit-none rule §The `cq specs` tool
-surface §The report mold, which owns the shape step 7 prints in.
-Both are cited, never restated.
-
+§The provider-owned document §The gates and the stage-scoped explicit-none rule §The `cq specs` tool
+surface §The report mold, which owns the shape printed by step 7.
 ## Resolving the tool
 
 Resolve `cq specs` per
 [align/tool-resolution.md](../../references/align/tool-resolution.md)
 §Resolving the tool. Branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
-
-**Why `Bash` is unrestricted here.** Like `quenching-specs-execute`, this command drives the target
-repo's `git` — the branch diff, the archive commit, the distillation commit — and re-runs the
-repo's own checks to prove the pre-merge gate. Its read-only siblings are scoped to `python3`/`py`.
 
 ## Doctrine
 
@@ -199,8 +174,8 @@ branch — or, for `abandoned`, computed here but committed into the base checko
 **Done when:** the file is in `archive/` with its `outcome:` stamped and committed, or the run
 stopped at a refusal the human declined to override.
 
-### 5. Distil, and settle the release obligations — all on the work branch
-This is the last writing step, and everything it writes lands on the **work branch** — or, for
+### 5. Distil, and settle the release obligations
+This is the last writing step, and everything it writes lands on the **work branch** for `done` — or, for
 `abandoned`, the base checkout (Doctrine above). Two things happen here, in this order.
 
 **First, the distillation pass** — the single bridge into `/.knowledge/`, per
@@ -287,14 +262,10 @@ selector.
 The gate passed — the branch is reviewed, distilled, archived, and proven. **Name the handoff and
 stop:**
 
-```bash
-gh repo view --json name 2>&1 || echo "NO-ROUTE"
-```
-
-`NO-ROUTE` (or `gh` unauthenticated) → recommend `quenching-git-merge`. Otherwise recommend
-**both**, in this order: `quenching-git-pr-create` first where a PR is the house style, or
-`quenching-git-merge` directly for a local merge — the human picks, and neither is invoked from
-here. Name the branch and the base so the recommendation is copy-pasteable.
+Use the provider configuration already read in step 1 to name the next command: recommend
+`quenching-git-pr-create` when the configured provider supports the PR route, otherwise
+`quenching-git-merge`. The human picks, and neither is invoked from here. Name the branch and the
+base so the recommendation is copy-pasteable.
 
 For `abandoned`, there is nothing to hand off toward — do not remove any worktree; frame and make
 the branch-delete offer per

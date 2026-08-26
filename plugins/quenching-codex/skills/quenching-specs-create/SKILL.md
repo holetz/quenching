@@ -21,10 +21,7 @@ The layout, the thirteen canonical sections, the gates, the front's on-write che
 §The thirteen sections §The gates and the stage-scoped explicit-none rule
 §The `cq specs` tool surface §The report mold, which owns the shape step 6's report prints in.
 
-**One screen, at the end, with the work already done.** Every field this command presumes —
-subject, type, tags, `complexity` — is resolved and WRITTEN before anyone is asked anything; the
-one human touchpoint is the closing screen (step 6), where what was written and what was presumed
-are both on the table, next to the one open question: develop it now, or stop here.
+Resolve the fields before the closing screen.
 
 ## The one rule: effort proportional to input
 
@@ -41,28 +38,6 @@ The same richness decides the `complexity` this command computes and writes (ste
 a sentence carries the least evidence, so its definition questions still need a human, while a plan
 file already answered most of them. The develop pass re-evaluates the level when it closes.
 
-
-## Doctrine
-
-- **A sentence becomes a descriptive title and `## Problem` in ONE call, and stops.**
-  `cq specs new` stamps the frontmatter (`title`, `date`, `verification`) and, through the
-  positional title and stdin step 5 always supplies, the heading together — never as two
-  follow-up calls. Every other canonical heading is left ABSENT, which the
-  stage-scoped explicit-none rule
-  ([spec-driven.md](../../references/specs-develop/spec-driven.md) §The gates)
-  makes legal. Writing thirteen `- none` headings here would make a fresh capture derive as
-  `designed` and clear the whole ready gate without anyone having thought anything.
-- **Never invent what the input lacks.** On the plan-source path, `- none — the plan recorded no alternatives` is honest; a fabricated risk is not. Where the source said nothing, either leave
-the heading absent or write an explicit none that *says* the source was silent.
-- **The title is descriptive and explicit.** Do not accept a generated or `titleize` fallback:
-  the provider assigns the native ID, and a title derived from that ID would not tell a human
-  what the spec changes. If the input does not supply a useful title, ask for one before capture.
-- **Never ask for a metadata field before the spec exists.** Subject, type, tags and `complexity`
-  are each computed from the input, written WITH the capture, and shown — never gated on a question
-  asked before there is a spec, a locator or a text for the human to judge. The confirmation moves
-  to AFTER the write: the closing screen (step 6) is where a wrong presumption gets corrected, or —
-  if nobody looks — `quenching-specs-develop`'s first pass reviews them
-  ([spec-driven.md](../../references/specs-develop/spec-driven.md) §Frontmatter).
 
 ## Resolving the tool
 
@@ -110,10 +85,9 @@ exactly the cost this command exists to avoid.
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs config --json
 ```
 
-Read `subjects`, `workItemTypes` and `tagCatalog`. **All three absent or empty → skip this step
-whole** — most repositories declare none of them, and resolving from nothing is not a lighter
-version of this step, it is the wrong step. Where only one or two are declared, resolve only
-those — this is per-key, never all-or-nothing.
+Read `subjects`, `workItemTypes` and `tagCatalog`. **All three absent or empty → skip only the
+metadata lookups** — most repositories declare none of them; still compute `complexity` below.
+Where only one or two are declared, resolve only those — this is per-key, never all-or-nothing.
 
 **A declared `subjects`:** read each key's `name`/`description`, judge which one the input best
 fits — or fall back to `azurePlacement.defaultSubject` where nothing beats it — and carry the
@@ -153,7 +127,8 @@ develop pass re-evaluates it, so a level that turns out too small stays correcta
 **Every one of these four is a presumption, not a verdict.** Nothing here is confirmed before it is
 written — step 6 is where the human sees it and can correct it in one answer.
 **Done when:** a subject, a type, zero or more tags and a `complexity` level are each resolved (to
-a value, or explicitly to none) and reasoned, or the step was skipped whole.
+a value, or explicitly to none) and reasoned; metadata may be absent, but `complexity` is always
+resolved.
 
 ### 5. Capture in ONE call
 
@@ -268,7 +243,7 @@ both — has been fully honoured.
 - **Never ask for a metadata field before the spec exists.** Subject, type, tags and `complexity`
   are resolved and written in step 5; the human is asked only after, on the closing screen.
 - **Never invoke `quenching-specs-develop` without the human having chosen a direction** on the
-  closing screen — a correction alone, with no direction named, ends the run at option 3.
+  closing screen — a correction alone, with no direction named, ends the run at option 2.
 - **Never print the closing screen without naming what was presumed and why.** A subject, a type, a
   tag or a `complexity` level with no stated reason costs the human a re-read of the config to judge
   it; the reason is what makes disagreeing cost one second instead.

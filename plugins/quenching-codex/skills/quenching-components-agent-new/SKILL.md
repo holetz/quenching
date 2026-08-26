@@ -15,7 +15,7 @@ Creates or edits **ONE FILE** in the target repo's agent surface — `.agents/ag
 a definition whose description routes delegation to it and whose body is its system prompt.
 The delegation economics and the definition contract live in
 [components-command-new/capabilities.md](../../references/components-command-new/capabilities.md)
-§Subagents — owned by `quenching-components-command-new`'s doctrine set and applied here. The mold is
+§Subagents. The mold is
 `../../templates/automation/agent.md`.
 
 ## Doctrine
@@ -32,7 +32,7 @@ The delegation economics and the definition contract live in
 - **MERGE, never clobber.** An edit preserves the body and any hand-written content; only the
   gap being fixed changes. This skill never deletes an agent.
 - **An agent's description is always-on context.** The same two caps as a command's, counted
-  on the parsed value; a definition earns its standing cost the way a command does.
+  on the parsed value.
 
 Resolve `cq` per
 [align/tool-resolution.md](../../references/align/tool-resolution.md)
@@ -52,7 +52,7 @@ Per [capabilities.md](../../references/components-command-new/capabilities.md)
 §Subagents: the work qualifies when its returned summary is much smaller than the work
 itself, when slices run in parallel, or when its tool set must be narrower than the
 conversation's. Work that fails the test is a command or an inline step — say so and route
-to `quenching-components-command-new` instead of minting a wrapper around nothing. **Done when:** the delegation
+to `quenching-components-command-new`. **Done when:** the delegation
 buy is stated in one line, or the request is rerouted.
 
 ### 3. Derive the name, check collisions
@@ -73,7 +73,7 @@ report format — and it never edits. **Done when:** the draft passes
 
 ### 5. Present ONE plan → gate on the OK
 Show: the delegation buy, the name, the profile fields with reasons, every file (the
-definition, the rule if planned, the log), and the tail steps. Wait for the single
+definition, the rule if planned, and the tail steps. Wait for the single
 confirmation. **Done when:** the user has answered; declined → report "nothing written" and
 stop.
 
@@ -82,13 +82,13 @@ Write the definition (and the rule if planned). **Done when:** every planned fil
 with its planned content.
 
 ### 7. OKF tail (bundle present)
-The registry's GENERATED zone lists commands only — offer ONE line in its **curated prose**
-pointing at the agent surface, and a `glossary.md` entry if the agent coined a term;
-the user decides both. **Done when:** each offer is answered.
+The registry's GENERATED zone lists commands only. Offer, as follow-up commands rather than writes
+in this run, one curated registry-prose line for the agent surface and `quenching-knowledge-define`
+for a coined repo-specific term; the user decides both. **Done when:** each offer is answered.
 
 ### 8. Self-check
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components doctor --json   # the definition carries a description — no sk-agent-no-description
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components doctor --json
 ```
 Then read the definition against the contract by eye: tools scoped, voice second-person, a
 verifier states it never edits. Report what was written and the always-on cost the

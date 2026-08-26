@@ -1,0 +1,72 @@
+---
+name: quenching-knowledge-documentation-write
+description: "Write sourced Diátaxis pages from a documentation plan, applying storytelling, useful visuals and agent-readable contracts. Triggers on \"write the documentation pages\", \"draft the docs from the plan\", or \"apply the documentation writing pass\"."
+---
+
+<!-- GENERATED FROM plugins/quenching/commands/knowledge/documentation/write.md -->
+
+
+# quenching-knowledge-documentation-write — draft pages from the accepted plan
+
+**Input**: `$ARGUMENTS` (an optional page slice or plan path; omit to use
+`./.quenching/documentation/plan.md` and write every assigned page).
+
+Reads the accepted plan and writes only the assigned pages under
+`./.knowledge/documentation/`. Apply
+[knowledge-documentation/craft.md](../../references/knowledge-documentation/craft.md),
+[knowledge-documentation/visual.md](../../references/knowledge-documentation/visual.md)
+and
+[knowledge-documentation/agent-readability.md](../../references/knowledge-documentation/agent-readability.md)
+in one pass per page.
+
+## Doctrine
+
+- **Plan is the boundary.** Write only destinations assigned in the accepted plan; keep one reader intent per page.
+- **Craft serves truth.** Use hooks, fast paths, progressive disclosure, tables, cards, tabs or Mermaid only when their function is clear.
+- **Agent-ready is explicit.** Stable headings, relative links, copyable real examples, expected output and `TL;DR for agents` blocks carry the contract in text.
+- **Extensions precede syntax.** Read `mkdocs.yml` and confirm each required extension before adding its syntax; report a missing extension to `build`.
+- **Source ledger travels with prose.** Record every strong claim, confidence and `source gap:` beside the page set.
+- **Fan-out is bounded.** When more than roughly six pages are assigned, use one `Task` per page slice, pin each to the session model (never `haiku`), and merge only their summaries.
+
+## Workflow
+
+### 1. Load the plan and page assignments
+
+Read `.quenching/documentation/plan.md`, confirm the accepted execution order, target pages,
+source origins and open gaps. **Done when:** every page to write has one intent, one destination
+and a source set.
+
+### 2. Check the site extensions
+
+Read `mkdocs.yml` (or record its absence for `build`) and map every planned component to
+`attr_list`, `md_in_html`, `pymdownx.tabbed`, `pymdownx.emoji`, the Mermaid fence or another
+enabled extension. **Done when:** each syntax choice is enabled or is recorded as a site-layer
+finding, before it appears in prose.
+
+### 3. Draft the pages
+
+Write each page with a payoff hook, fast path, structured depth and next step. Use relative links,
+real commands and expected output; put unsupported claims in visible `source gap:` notes. For a
+large batch, delegate page slices with `Task` and merge the returned summaries, never an opaque
+full rewrite. **Done when:** every assigned page exists with its intended frontmatter, headings,
+examples, useful visuals and agent contract.
+
+### 4. Write the source ledger
+
+Add a ledger entry for each page's strong claims, using the five allowed origins and confidence
+levels from `quality.md`. Carry open gaps verbatim into the run report. **Done when:** every strong
+claim has a source row or an explicit `source gap:`.
+
+### 5. Self-check the written set
+
+Check page paths, frontmatter, relative links, stable headings, component syntax and next-step
+links. Compare the result with the plan and report pages intentionally left for a later slice.
+**Done when:** the diff contains only assigned documentation pages and ledger changes, with no
+invented fact and no unplanned destination.
+
+## Invariants to never violate
+
+- Never change `mkdocs.yml`, `.pages` or other site-layer files; route those findings to `build`.
+- Never overwrite an unassigned page or discard human prose; merge only the planned gap.
+- Never use `haiku` for a writing sub-agent.
+- Never hide a critical fact only in an image or diagram.

@@ -15,7 +15,7 @@ OKF `/.knowledge/` bundle, then clears them from memory — so knowledge that wa
 `~/.codex/projects/<cwd>/memory/` becomes conformant docs anyone browsing the repo can find.
 Assumes the bundle already exists (run `quenching-knowledge-align` first if not). The memory-type → home routing
 and the deletion contract are in [knowledge-import-memory/memory-routing.md](../../references/knowledge-import-memory/memory-routing.md);
-the home boundaries, `type` vocabulary, molds, and index/log procedure are shared with
+the home boundaries, `type` vocabulary, and molds are shared with
 `quenching-knowledge-add` ([knowledge-add/homes.md](../../references/knowledge-add/homes.md)) and
 `quenching-knowledge-align` ([knowledge-align/taxonomy.md](../../references/knowledge-align/taxonomy.md),
 [knowledge-align/conformance.md](../../references/knowledge-align/conformance.md)). Molds live at
@@ -31,7 +31,7 @@ the home boundaries, `type` vocabulary, molds, and index/log procedure are share
   ([align/convergence.md](../../references/align/convergence.md)), the plan is
   presented as narration, not a gate — the write-then-verify-then-delete contract is unchanged.
 - **Three destinations only.** This skill writes into exactly two `/.knowledge/` homes — `standards/`
-  and `concepts/` — plus `/.specs/plans/` for a **unit of work** (a quenching-managed folder
+  and `concepts/` — plus the provider-owned `plans` phase for a **unit of work**
   outside the OKF bundle). A memory whose natural fit is a
   `vision`, `documentation`, or `external` doc is **re-routed to the nearest of the three** per the routing
   table ([knowledge-import-memory/memory-routing.md](../../references/knowledge-import-memory/memory-routing.md)); a memory that fits none of
@@ -43,7 +43,7 @@ the home boundaries, `type` vocabulary, molds, and index/log procedure are share
   -type f`, `find .knowledge -type d`): a real repo's `catalog/` and `external/repositories/` can hold
   thousands of files and will drown the session at startup — the exact failure this skill must
   avoid. To learn a home's existing subjects (so a concept path doesn't collide), read that home's
-  top `index.md` (the honest listing) plus at most a `-maxdepth 2` directory listing — never a
+  top `index.md` (the honest listing) plus one bounded `Glob` listing of its immediate subjects — never a
   recursive file dump, never a descent into `catalog/`. Defer reading any concept doc's body to the
   moment you actually MERGE-write into that home (Step 5).
 - **Metadata-first orchestrator; bodies read lazily.** Building the plan does **not** require the
@@ -94,11 +94,6 @@ the home boundaries, `type` vocabulary, molds, and index/log procedure are share
   "no memory". Resolution is by data — an exact match, then the nearest ancestor, then the
   candidate list — never by a guess, and it is **case-insensitive** because the drive letter's
   case is not stable.
-
-**Why `Bash` is scoped here.** `python3`/`py` runs the Step 1 resolver and the two checkers
-(`cq specs`, `cq knowledge validate`); `rm` deletes a memory file once its doc has landed and
-self-checked. Nothing else in this command needs a shell — the reconnaissance is `Read`/`Glob`
-and the edits are `Write`/`Edit`.
 
 Resolve `cq` per
 [align/tool-resolution.md](../../references/align/tool-resolution.md)
@@ -151,6 +146,8 @@ never on a guess:
   deletion, since a parent directory could carry unrelated memory.
 - **`NO MATCH`** — pick the candidate whose de-encoded name is this repo, or ask. Never invent one.
 - **`memories: 0`** or no directory at all — report that and stop.
+**Done when:** the exact memory directory and its scope are resolved, or the run stops without
+deleting anything.
 
 **Do not** derive the path with `pwd`: under Windows Git Bash it reports the MSYS form
 (`/c/Users/…`), which encodes to a name that does not exist, and the run misreports an empty
@@ -165,45 +162,48 @@ switch to the fan-out posture (see the *Scale* doctrine) — slice the dir and l
 (`model: sonnet`, `effort: low`) read the bodies for each slice. Full bodies are salvaged either
 inline (small dir) or by the per-slice sub-agent (large dir) — never all at once in the
 orchestrator.
+**Done when:** every memory has metadata, a body-reading route, and a bounded classification plan.
 
 ### 3. Classify each → destination + `type` + mold
-First **orient, bounded** — three `Read`s and two `Glob`s, no shell, so it behaves identically on
+First **orient, bounded** — only the required `Read`s and `Glob`s, no shell, so it behaves identically on
 every platform. Never enumerate the whole tree (`catalog/` and `external/repositories/` will
 overflow the session):
 
 - `Read` — `/.knowledge/standards/index.md` and `/.knowledge/concepts/index.md` (the honest listings; a missing
-  file just means that home is empty). For what `/.specs/plans/` already holds, `cq specs list --json`
-  derives it from disk — there is no listing file to read.
+  file just means that home is empty). For what the provider-owned `plans` phase already holds,
+  `cq specs list --json` derives it from the backend — there is no listing file to read.
 - `Glob` — `/.knowledge/standards/*/index.md` and `/.knowledge/concepts/*/index.md` for the existing subject
   folders, so a new concept path does not collide. One level only, and never a recursive file dump.
 
 Then apply [knowledge-import-memory/memory-routing.md](../../references/knowledge-import-memory/memory-routing.md): map by content (type is a
 hint) to its destination, `type`, and mold. This skill writes to **only** `standards/` and
-`concepts/` (in `/.knowledge/`) plus `/.specs/plans/` (a spec); a memory whose natural fit is `vision`,
+`concepts/` (in `/.knowledge/`) plus the provider-owned `plans` phase (a spec); a memory whose natural fit is `vision`,
 `documentation`, or `external` is **re-routed to the nearest of the three** per the routing table, and a
 memory that fits none is flagged. Split multi-fact memories. Mark `user` memories and any
 unroutable fact as **KEEP (ask)** — not for deletion.
+**Done when:** every memory has one destination/action or an explicit KEEP reason.
 
 ### 4. Present the migration plan
 Show ONE table: `memory → target home → doc path (type) → action (migrate+delete | keep, ask)`.
 Fan-out partials **merge into ONE table** — never one table per slice. Note any `[[link]]` that
 will dangle. **Wait for a single confirmation** before writing anything.
+**Done when:** the complete table is shown and its confirmation is settled.
 
 ### 5. Per memory: write, verify, then delete
 For each **migrate** row that lands in `/.knowledge/` (`standards/` / `concepts/`), run the full insert
 procedure exactly as
 [knowledge-add/homes.md](../../references/knowledge-add/homes.md) specifies it —
-stamp → index → log → glossary → self-check (against
+stamp → index → glossary → self-check (against
 [knowledge-align/conformance.md](../../references/knowledge-align/conformance.md)) —
 with this skill's deltas kept inline:
-- `source` defaults to "project memory"; salvage the terse body into a structured doc; the log
-  line is `**Creation**: [<title>](/.knowledge/<path>.md) — migrated from project memory`.
+- `source` defaults to "project memory"; salvage the terse body into a structured doc. The retired
+  `log.md` is never created or updated; the source is carried by the doc's frontmatter.
 - A **unit of work** row instead follows the `quenching-specs-create` path: run `cq specs new
   <name>` and write the memory's content into `## Problem` and nothing else, then `cq specs
   validate --spec <id>` — the ID the create reported — as the self-check per
   [specs-develop/spec-driven.md](../../references/specs-develop/spec-driven.md)
-  (`cq knowledge validate` never covers the specs front); the bundle-log line is
-  `**Creation**: [<title>](<the locator the create reported>) — migrated from project memory`.
+  (`cq knowledge validate` never covers the specs front); carry the memory source in the spec's
+  own record rather than creating a bundle log entry.
   **Never stamp an OKF `type:` on it** — a spec is not a concept doc, and never invent a
   `priority`: an unranked spec is `quenching-specs-triage`'s to place.
 - **Only after the self-check passes:** delete the memory `.md` (`rm` — the one destructive shell
@@ -211,24 +211,27 @@ with this skill's deltas kept inline:
   from `MEMORY.md` with `Edit`. Pass the path the Step 1 resolver printed, quoted, so a Windows
   path with spaces survives. A failed write leaves that memory untouched — write-then-verify-then-delete,
   and a per-slice executor sub-agent honors the same contract (never deleting ahead of a landed,
-  self-checked doc).
+self-checked doc).
+**Done when:** every migrated memory is deleted only after its doc self-checks, and every kept or
+failed row is named.
 
 ### 6. Report
 Summarize: docs created (by home), memories deleted, and memories **kept** (with the reason —
 `user`/unroutable/failed insert) so the user can decide on those. Leave `MEMORY.md` in place even
 if it ends empty.
+**Done when:** created docs, deleted memories, and kept memories with reasons are reported.
 
 ## Invariants to never violate
 
 - Never delete a memory before its doc is written **and** passes the self-check.
 - Never delete a `user` memory or an unroutable fact without the user's explicit say-so.
 - Never fabricate a `resource` or `source`; never clobber a filled key on merge.
-- Never add frontmatter to an `index.md`; keep every touched index and log honest.
+- Never add frontmatter to an `index.md`; keep every touched index honest.
 - Never skip the single up-front plan+confirmation — this writes docs and deletes memory. A
   cycle-authorized run (convergence.md §contract) replaces the gate with narration; the plan is still
   presented in full and write-then-verify-then-delete still holds.
-- Never write outside the three destinations (`standards/` + `concepts/` in `/.knowledge/`, or a spec
-  in `/.specs/plans/`) — re-route to the nearest, or flag-and-keep; never fabricate a
+- Never write outside the three destinations (`standards/` + `concepts/` in `/.knowledge/`, or a provider-owned spec)
+  — re-route to the nearest, or flag-and-keep; never fabricate a
   `vision`/`documentation`/`external`/`catalog` doc from a memory.
 - Fan-out never fractures the single up-front plan, never skips a memory, and never lets a
   sub-agent delete ahead of a landed, self-checked doc.

@@ -5,7 +5,7 @@ description: >-
   offline in any browser. Triggers: "criar um mapa visual da skill", "gerar um
   .html do que foi construído", "infográfico/fluxo em HTML", "mapa interativo da
   arquitetura", "kit map", "visualize this skill/system as HTML". Not for:
-  generating a documentation site → /docs:storyteller.
+  generating a documentation site → /quenching:knowledge:documentation:produce.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
@@ -87,6 +87,6 @@ worked file is in [examples/](.claude/references/skill-cartographer/examples/).
 - [design-spec.md](.claude/references/skill-cartographer/design-spec.md) — palette, layer/card anatomy, side
   rails, connectors, typography, interactivity, responsive rules.
 - [examples/mkdocs-storyteller.html](.claude/references/skill-cartographer/examples/mkdocs-storyteller.html) — a full
-  map of the mkdocs-storyteller studio (EN); copy it as the working template.
+  map of the legacy documentation studio (EN); copy it as the working template.
 - [examples/mkdocs-storyteller.pt-br.html](.claude/references/skill-cartographer/examples/mkdocs-storyteller.pt-br.html)
   — the same map localized to **pt-BR** (identifiers kept in English).

@@ -1,6 +1,6 @@
 ---
 name: quenching-specs-execute
-description: "Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on \"execute this spec\", \"build it\", \"implement the tasks\", \"apply the plan\", \"start working on it\", \"continue building\", \"run the next task\", \"work through the tasks\". Requires a clean tree; hands off to quenching-git-branch for isolation; verifies under the spec's own declared policy; ticks each box with the subject of the commit it is about to make, so code and box land in one commit per task, squashed into one commit per section at that section's own boundary. Writes the /.knowledge/standards/ a task explicitly names, and records what else the work reveals as a one-line discovery. Stops at the last commit."
+description: "Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on \"execute this spec\", \"build it\", \"implement the tasks\", \"apply the plan\", \"start working on it\", \"continue building\", \"run the next task\", \"work through the tasks\". Requires a clean tree and Git; isolates through quenching-git-branch, follows the spec's verification policy, commits each task with its tick, and squashes at section boundaries. Writes only named standards and records emergent findings."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/execute.md -->
@@ -14,25 +14,8 @@ auto-select when exactly one spec is under way; vague or ambiguous → you MUST 
 Builds the `## Tasks` of ONE spec: writing each task, verifying it under the spec's declared
 policy, reviewing its diff, and committing it alone with the box already ticked inside that commit.
 
-**A task is not done when the code is written.** It is done when it **ran**, its diff was
-**reviewed**, and it is **committed**.
-
-**Every `§X` in this body is an address, and it is loaded as one — never by opening the file.**
-The example uses `§A` / `§B` as placeholders — they are not addresses.
-
-```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read <the cited file> --sections "§A" --sections "§B"
-```
-
-One call, N sections, no frontmatter; a unique prefix resolves, so `§B` is enough. The reason is
-this command's own cost: a preamble is re-sent every turn that follows it, so what is loaded at
-turn one is paid for the length of the run — a section runs ~400 tokens against 4,600 for the
-file that holds it. `--rules-only` narrows to the `<!-- rules -->` half where a section carries
-the marker, and returns the whole section, saying so, where it does not.
-
 **This command stops at the last commit.** Reviewing the whole branch, writing the `/.knowledge/` the work
-*revealed*, merging, and archiving belong to `quenching-specs-conclude` — [execution.md](../../references/specs-execute/execution.md)
-opens on why that split holds.
+revealed, merging, and archiving belong to `quenching-specs-conclude`.
 
 ## Resolving the tool
 
@@ -47,7 +30,7 @@ never on prose.
 An ID was given → use it. Otherwise infer from the conversation, auto-select when exactly one spec
 is under way, or run `cq specs list --json` and pick with **AskUserQuestion**. Announce
 "Building spec: `<id>`" and how to override.
-**Done when:** one spec in `plans/` is resolved.
+**Done when:** one provider-owned spec is resolved.
 
 ### 2. Take the tree, the isolation and the state in one read
 **The precondition comes first.** Load the rule that binds this step:
@@ -73,8 +56,7 @@ python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/qu
 
 `git status --porcelain` non-empty → **refuse to start**, per
 [execution.md](../../references/specs-execute/execution.md)
-§The precondition. Offer to commit or stash. The human may override; then the first commit carries
-the pre-existing changes and the report says so.
+§The precondition. Offer to commit or stash; do not override this precondition inside execution.
 
 **Then resolve the work ref, and check before offering.** The spec's work branch is the `branch`
 record's `work` when the `status` payload carries one, else `plan/<id>-<handle>` — the ref already listed.
@@ -134,7 +116,8 @@ python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/qu
 ```
 
 `branch.work` now set → the chosen form was taken, or **In place** was chosen and stamped `work`
-equal to `base`; continue the loop from wherever this checkout now stands. No record at all → the
+equal to `base`; continue the loop from the returned worktree checkout when Worktree was chosen,
+never from the base checkout. No record at all → the
 git command it ran failed (a name already taken, a dirty path, a locked worktree) and nothing was
 stamped — report it verbatim and stop; building onto the base with nothing recorded is exactly the
 outcome the offer exists to prevent.
@@ -142,7 +125,7 @@ outcome the offer exists to prevent.
 Recommend isolation before building, and never impose it — that recommendation is `quenching-git-branch`'s
 to make, not restated here.
 
-Not a git repo → no isolation and no commits; say so once and run the loop normally. Never force
+Not a git repo → stop before writing: this command's task/commit contract requires Git. Never force
 isolation, never `git init` on the human's behalf, and never rewrite history.
 
 **2b. Probe the environment before writing any code.** A hook wired in `.agents/settings.json`
@@ -151,7 +134,7 @@ same call as the reads above, per [execution.md](../../references/specs-execute/
 §The hook probe. Anything other than `none` → report it before the first task, name the hook and
 the missing path, and let the human decide; never `--no-verify` past it. Silent when nothing wired.
 
-**Done when:** the tree is clean (or the override is on the record), isolation has been taken,
+**Done when:** the tree is clean, isolation has been taken,
 found already held, or declined, and any unresolved hook has been reported.
 
 ### 3. Settle the approval, off the state step 2 already read
@@ -359,20 +342,17 @@ h. **On a section boundary with no `[!]`, squash and repair** — per §The sect
 i. **On a section boundary, OFFER to stop — and keep going if nobody says otherwise.** The branch
    is already at its final shape (one commit), another section still ahead. Say it and continue:
 
-   ```
+   ```text
    Section 3 of 7 done, at a clean boundary. `quenching-specs-execute <id>` resumes from here —
    say the word and I stop; otherwise I continue with 4.1.
    ```
 
-   **The gear sets the default, never the offer.** Under `low` the boundary is announced and the
-   loop continues without offering — the half was authorized whole and the review lives in the PR
-   it ends at. Under `medium` it offers and continues if nobody says otherwise, as above. Under
-   `high` and `xhigh` it offers and **waits**: the stops those levels bought are these
-   ([gears.md](../../references/specs-cycle/gears.md) §The scale).
-
-   It **offers and never imposes**, never ends the run itself, and writes no state — the trail that
-   makes the boundary resumable is the one step 6 already keeps. Why the trigger is that event, and
-   why a section is the unit, live in [execution.md](../../references/specs-execute/execution.md) §The section boundary.
+   **The gear sets the default, never the offer**: `low` announces the boundary and continues
+   without offering, `medium` offers and continues if nobody says otherwise, `high` and `xhigh`
+   offer and **wait** ([gears.md](../../references/specs-cycle/gears.md)
+   §The scale). It never ends the run itself and writes no state — step 6's trail is what makes the
+   boundary resumable ([execution.md](../../references/specs-execute/execution.md)
+   §The section boundary).
 
 **Pause if:** a task is unclear; implementation reveals a design problem (→ `quenching-specs-develop`); a
 task contradicts a `/.knowledge/standards/` contract (surface it and let the human pick — revise the
@@ -409,7 +389,7 @@ failed; [execution.md](../../references/specs-execute/execution.md) §The
 Handoff cadence has the measurement. Each trigger above is a moment this body *just finished doing
 something*, never one where it appraises something.
 
-**The section-boundary offer (step 5h) adds no fifth event and writes no new state.** Accepted, it is a
+**The section-boundary offer (step 5i) adds no fifth event and writes no new state.** Accepted, it is a
 pause and a last commit, which are already two of the four above; declined, nothing happened worth
 recording. The trail this step already maintains — `## Handoff` plus `git log` plus the `subjects`
 `status` returns — **is** what makes a fresh session resume from that boundary, and it is exactly
@@ -491,8 +471,8 @@ front of you before the loop starts:
   human to decide it then.
 - Tick each box **after** the task verified and self-reviewed, and **before** its commit — with the
   subject that commit will carry, so code and box land together. Undo the tick if the commit fails.
-- Never write a record after the commit it describes. A subject that drifted is reported, not
-  corrected.
+- Never write an ordinary record after the commit it describes. The section-squash repair is the
+  explicit exception: it rewrites task subjects only after the new section commit exists.
 - Never refuse over a missing `approved`; ask inline and stamp it with `cq specs record`, never by
   editing the frontmatter.
 - Stamp `branch:` once the work ref is resolved, taken or declined (`work` then equals `base`) — never over an existing record, through `cq specs record`, never the frontmatter.

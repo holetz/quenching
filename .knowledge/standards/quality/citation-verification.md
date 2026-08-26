@@ -4,7 +4,7 @@ title: Citation verification
 description: How citation-check.sh proves a citation resolves against the base it claims — half 1 that the old name died and half 2 that the new name was born, blind and with no allowlist, and half 3 that the prose the plugin SHIPS promises only what the published skeleton delivers, since a command body and a reference are read inside a target checkout where our standards do not exist — the three scope rules read from the script's own header (the instrument does not measure itself, .specs/ is out of scope, golden/eval fixtures are frozen data), the spelling rule half 3 rests on (a markdown link promises a destination, a bare inline-code path names a doc the target may not have), that it runs manually and is documented rather than gated automatically (Open Decision 2, with a second real use case as the trigger to revisit), and why the "every red is a harness defect" precedent stays scoped to functional-checks.sh alone until citation-check.sh earns its own evidence (Open Decision 3, opportunistic)
 resource: plugins/quenching/assets/checks/citation-check.sh
 tags: [quality, verification, citations, automation]
-timestamp: 2026-08-18
+timestamp: 2026-08-26
 audience: both
 authority: current
 source: revisar-politica-de-assets-checks spec (task 1.1); references-citam-standards-fora-do-esqueleto spec (task 1.2, half 3); citation-check-dedup-esconde-citadores-repetidos spec (task 2.1, a granularidade do relatório de half 2); the second real use case for half 3 and the widened trigger set, by varredura-de-dependencias-antes-do-banco-shape at its branch review (2026-08-18), on four links to a standard that spec had just minted
@@ -167,7 +167,7 @@ happens, and the rule above is revisited only on that evidence.
 ## What this does not cover
 
 - **The citation-form rules themselves** — the registry name vs. `/quenching:<ns>:<cmd>` vs. a bare
-  slash, and why a bare prefix would misname this repo's own local `/docs:storyteller` — are
+  slash, and why a bare prefix reserves a namespace instead of asserting a retirement — are
   [naming/command-surface.md](../naming/command-surface.md)'s, cited by `citation-check.sh`'s own
   header rather than restated here.
 - **Whether a changed command loads.** A citation resolving to a file proves the file exists, not
