@@ -1,36 +1,35 @@
 ---
 type: standard
 title: Varredura de dependências
-description: O contrato da varredura de dependências por sub-agente que roda entre a captura e o banco shape do /quenching:specs:develop — gatilho, perfil de ferramentas, entregável, e a persistência do mapa com a data que ele carrega
+description: O contrato da varredura de dependências por sub-agente que roda na abertura de uma passada do /quenching:specs:develop, antes que ela pergunte qualquer coisa — gatilho, perfil de ferramentas, entregável, e a persistência do mapa com a data que ele carrega
 resource: plugins/quenching/commands/specs/develop.md, plugins/quenching/assets/references/specs-develop/questions.md
 tags: [automation, dependency-sweep, subagent, specs-develop]
-timestamp: 2026-08-17
+timestamp: 2026-08-25
 audience: both
 authority: background
-source: spec varredura-de-dependencias-antes-do-banco-shape — a comparação entre o /plan (2,99 M de tokens em 27 chamadas de Explore, seis achados) e o /quenching:specs:develop (20 arquivos tocados) que motivou inserir a varredura entre a captura e o banco shape
+source: spec varredura-de-dependencias-antes-do-banco-shape — a comparação entre o /plan (2,99 M de tokens em 27 chamadas de Explore, seis achados) e o /quenching:specs:develop (20 arquivos tocados) que motivou inserir a varredura antes que a passada pergunte; reancorada na abertura da passada quando compor e refinar substituíram a escada de bancos (compor-e-refinar, 2026-08-25)
 maintainer: quenching
 ---
 
 # Varredura de dependências
 
-Sem dados de dependências cruzadas na mesa, o banco adversarial de `/quenching:specs:develop`
-formula a pergunta certa e não tem com que respondê-la — foi o sinal que motivou este contrato. A
-varredura existe para colocar esses dados na mesa **antes** que os quatro bancos perguntem, em vez
-de apenas confirmar decisões já tomadas.
+Sem dados de dependências cruzadas na mesa, o refino de `/quenching:specs:develop` formula a
+pergunta certa e não tem com que respondê-la — foi o sinal que motivou este contrato. A varredura
+existe para colocar esses dados na mesa **antes** que a passada pergunte qualquer coisa, em vez de
+apenas confirmar decisões já tomadas.
 
 ## Posição no fluxo
 
-Depois da captura, antes do banco *shape*. É a única posição em que os dados chegam a tempo de
-mudar as perguntas dos quatro bancos.
+Na abertura da passada, antes que a composição pergunte. É a única posição em que os dados chegam a
+tempo de mudar as perguntas — e, com compor e refinar numa passada só, ela é literal pela primeira
+vez: uma varredura, antes de tudo.
 
 ## O gatilho
 
-A varredura dispara em dois pontos:
-
-- quando o banco *shape* é selecionado;
-- quando a spec nasceu já com `## Proposal` preenchida e nunca foi varrida, na primeira entrada do
-  banco *adversarial* — o caminho comum, `/quenching:specs:create` entregando uma spec já em
-  `proposed`, passaria direto pela varredura sem este segundo ponto.
+A varredura dispara uma vez por passada, quando `### Mapa de dependências` ainda não está sob
+`## Design` — o que cobre de uma vez a spec capturada que a composição vai moldar e a spec nascida
+com `## Proposal` preenchida que chega direto ao refino. Antes, eram dois gatilhos declarados
+separadamente porque cada banco entrava por um caminho seu.
 
 **Uma spec é varrida no máximo uma vez**, e nunca por estar acima de um nível de `complexity` — uma
 spec parece pequena exatamente quando ninguém leu as dependências ainda.

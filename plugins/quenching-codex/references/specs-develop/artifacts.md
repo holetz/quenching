@@ -24,7 +24,7 @@ canonical position on first write, so creating and revising are the same call. A
 becomes an explicit `- none — <reason>`, never a deleted heading (§The explicit-none rule).
 
 **The bodies go on stdin as one heredoc, in the same call** — a scratch file, a `mkdir` and a `cat`
-are three turns buying what one already does, and a bank that filled six sections over six calls
+are three turns buying what one already does, and a pass that filled six sections over six calls
 paid six round trips for one edit:
 
 ```bash
@@ -303,7 +303,7 @@ checks run; `verify:` answers *what* runs. Declaring it during definition is wha
 **`## Discoveries`** has no gate — it is appended to during execution, one line per finding, by
 `cq specs discover`. Captured **indiscriminately**: whether a discovery is worth acting on is a
 later judgment, and asking the executor to make it mid-task is how a finding gets dropped for being
-inconvenient. Each line is resolved **in place** by `quenching-specs-develop`'s discoveries bank, so
+inconvenient. Each line is resolved **in place** by `quenching-specs-develop`'s discoveries stage, so
 provenance is never lost:
 
 ```markdown
