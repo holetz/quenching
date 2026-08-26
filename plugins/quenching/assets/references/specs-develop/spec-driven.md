@@ -85,7 +85,7 @@ else.**
 | `date` | always | `create` | `YYYY-MM-DD`, the capture date — stamped once and never rewritten (why it is not the basename's prefix: §Identity) |
 | `verification` | **optional** | `create` / `develop` | `per-task` · `per-section` · `end-of-plan` — when `verify:` runs. Absent means the default (`per-section`), applied on read; written after capture with `cq specs verification`, **never** by editing the frontmatter |
 | `priority` | once ranked | `triage` | `{level, criticality, complexity, date}` — a human's ranking against every other spec. `complexity` alone is also written at capture, by `create` — the one field of this record a second command may write (`assets/specs/schema.json`'s `complexity.writtenBy: [triage, create, develop]`) |
-| `refined` | once interrogated | `develop` | `{mode, date}` — that a real interrogation happened, and which bank ran it |
+| `refined` | once interrogated | `develop` | `{mode, date}` — that a real interrogation happened, and which operation ran it |
 | `approved` | once approved | `develop`, or `execute` inline | `{date, by}` — **that this spec may be built, and on whose authority**: `by: human` is a person's word, `by: low-gear` the level's; absent reads as `human` |
 | `branch` | once building | `execute` | `{base, work}` — after a merge, git cannot say what the base was |
 | `pr` | once opened | `conclude` | `{number, url, date}` — a PR opened but not yet merged, distinct from `merge.pr`, which is stamped only once the merge already happened. Restamped if the PR is recreated |
@@ -339,7 +339,7 @@ a structured result — status, diff summary, `verify:` output, discoveries, han
 
 Discoveries are **captured indiscriminately**; whether one is worth acting on is a later judgment,
 not the executor's. They are born in the origin spec's `## Discoveries` and resolved in place by
-`/quenching:specs:develop`'s discoveries bank — `promoted: <new-slug>`, `folded: <section>`, or
+`/quenching:specs:develop`'s discoveries stage — `promoted: <new-slug>`, `folded: <section>`, or
 `dismissed: <reason>` — so provenance is never lost and the human pays the decision cost in batch.
 
 `## Handoff` refresh is **bound to events, not judgment**: the orchestrator rewrites it on four of

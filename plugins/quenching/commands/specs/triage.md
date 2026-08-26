@@ -10,6 +10,18 @@ model: opus
 **Input**: `$ARGUMENTS` — optionally one ID to limit the sweep; omit to rank everything in
 the provider-owned `plans` phase.
 
+The prioritization sweep. It reads every spec in
+the provider-owned plans front, proposes ONE ordered list, and — on a single
+confirmation — writes each spec's `priority` record.
+
+**This is the only command that ranks.** `cq specs next --front` consumes what this writes: with no
+`priority` anywhere and nothing in flight, its ordering falls back to age alone, which is an
+ordering and not a judgment. Triage is what turns it into one.
+
+**It ranks and nothing else.** It does not close specs out, resolve `## Discoveries`, or decide
+that anything is finished — those are `/quenching:specs:conclude` and `/quenching:specs:develop`'s discoveries stage.
+A sweep that could also delete is a sweep nobody can safely re-run.
+
 The layout, the derived stages, the front's on-write check and the `cq specs` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
 §The provider-owned document §Derived stages §The `cq specs` tool surface §The report mold, which owns the

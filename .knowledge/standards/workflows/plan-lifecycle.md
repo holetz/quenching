@@ -4,7 +4,7 @@ title: Plan lifecycle contract
 description: The single-folder lifecycle — plans/ plus archive/ — the derived ready stage and the approved record, `conclude` archiving before the merge and what `## Outcome` asserts because of it, the rule that frontmatter records human judgments while the filesystem, git and section presence record everything else, `branch`/`pr`/`merge` split across `execute`-or-`git:branch`, `git:pr:create` and `git:merge` now that `conclude` writes neither of the last two, the append-only archive rule for facts that did not exist at the move — no longer all landing in the same run — and the moment a follow-up becomes a spec — definition parks it as a Discoveries line, close-out mints it
 resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/**, plugins/quenching/commands/git/branch.md, plugins/quenching/commands/git/merge.md, plugins/quenching/commands/git/pr/create.md, plugins/quenching/assets/references/specs-develop/questions.md, /.specs/**
 tags: [workflows, specs, lifecycle, stages, frontmatter, records, discoveries]
-timestamp: 2026-08-16
+timestamp: 2026-08-25
 audience: both
 authority: current
 source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review; `date` moved from derived-from-the-basename to declared by evaluate-spec-creation-flow (task 5.6), after an external backend left the derivation with nothing to derive from; `branch`'s owner moved from the retired isolation command to `execute`, and `merge` gained `pr`, by the rework-specs-isolate-flow plan (task 3.4); the follow-up parking rule from the stop-develop-offering-follow-up-specs plan (task 2.1); the records-narration line corrected from "built" to "isolated" by labels-historico-spec-issue (task 7.1), which had read `branch` as narrating the derived `executing` stage it does not write; `complexity`'s own writers (`[triage, create, develop]`) and its exit from the frontmatter admission test by the fluxo-rapido-para-problemas-simplorios plan (task 1.5); the `pr` record, the third append and the isolation narration corrected for the in-place `work == base` pair by vincular-spec-a-branch-commits-e-pr at its conclude — the third append argued against both clauses of the test above, as this section demands, rather than assumed from the two that preceded it; the parking row's edit de-qualified from "confirmed" to "consolidated" by revisar-fluxo-do-develop-custo-e-gates at its branch review (2026-08-16), which removed `/quenching:specs:develop`'s plan gate while leaving the one-edit-per-bank mechanic the row actually depends on; the criterion `complexity` measures — how much a human needs to be part of the process, never size or scope — and the `fanoutMinComplexity` consumer that reads it as a configurable floor, by redefinir-o-que-complexity-mede-e-configurar-o-limiar-do-fan-out (2026-08-16); `pr:`/`merge:` ownership moved off `conclude` onto `git:pr:create`/`git:merge`, the append-only table split by writer and run, the records-narration reordered, and `## Outcome`'s narrowed assertion documented, by pilar-git-e-specs-agnosticas-ao-git (task 6.5)
@@ -198,7 +198,7 @@ moment in the lifecycle, not about which command happens to be running:
 
 | Moment | What happens to an out-of-scope finding |
 | --- | --- |
-| definition — `/quenching:specs:develop`, any bank | one line of `## Discoveries` on the spec being developed, written with `cq specs discover` inside the pass's one consolidated edit |
+| definition — `/quenching:specs:develop`, any stage | one line of `## Discoveries` on the spec being developed, written with `cq specs discover` inside the pass's one consolidated edit |
 | close-out — `/quenching:specs:conclude` on a `done` outcome | the harvest turns it into a fresh spec, if it still deserves one |
 
 The asymmetry is the whole rule. At definition time nobody knows whether the parent will ship, so
@@ -211,15 +211,15 @@ raised 4–6 follow-up candidates each — well over a hundred — and the same 
 surfaced independently in three or four agents that could not see one another. A definition-time
 offer scales with what the pass *imagines*, and the queue it fills is charged again to every
 `cq specs next --front` ranking, `/quenching:specs:status` view and `/quenching:specs:triage` read that has to walk
-past it. Duplicates arriving through that door are turned away at it: the discoveries bank's
+past it. Duplicates arriving through that door are turned away at it: the discoveries stage's
 `promoted:` resolution reads the front first and resolves a line an open spec already covers as
 `dismissed: already covered by {slug}` — still three resolutions, never a fourth token.
 
 Where the rule is written: `commands/specs/develop.md` carries it as an `## Invariants` entry, with
 the guard that `cq specs new` runs inside a develop pass **only** as that `promoted:` resolution;
 its step 5 shows the parked line in the consolidated plan and its step 6 makes the `cq specs
-discover` call part of that same edit, because nothing may be written mid-bank.
-`assets/references/specs-develop/questions.md` carries the dedup step on the bank's resolution
+discover` call part of that same edit, because nothing may be written mid-pass.
+`assets/references/specs-develop/questions.md` carries the dedup step on the stage's resolution
 table.
 
 **The dependency that makes parking free.** `assets/specs/schema.json` derives the stage ladder

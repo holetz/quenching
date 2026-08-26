@@ -330,7 +330,7 @@ python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/qu
 ```
 
 It is captured **indiscriminately**. The lines are resolved by `quenching-specs-develop`'s
-discoveries bank, and the doc an emergent finding deserves is written by
+discoveries stage, and the doc an emergent finding deserves is written by
 `quenching-specs-conclude` at distillation.
 
 A task that writes into `knowledge/` is not delegated — §Delegating an executor.

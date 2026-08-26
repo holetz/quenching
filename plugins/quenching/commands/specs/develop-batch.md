@@ -46,12 +46,12 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
   [specs-execute/execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
   §Delegating an executor's, and it is unchanged by there being N of them.
 - **A question no evidence answers becomes `## Open Decisions`.** That is `/quenching:specs:develop`'s
-  own invariant — never invent an answer — and it is what makes a bank runnable with nobody to ask.
+  own invariant — never invent an answer — and it is what makes a pass runnable with nobody to ask.
   The sub-agent writes what the spec, the `/.knowledge/standards/` its `## Impact` declares and
   `/.knowledge/glossary.md` support, and parks the rest with how it will be decided. **A batch buys
   the drafting, not the judgment.**
 - **Invoke, never reimplement.** Each sub-agent runs `quenching:specs:develop` on its one spec,
-  under that command's own banks and its own safe-write invariants. If defining must behave
+  under that command's own compose stage and its own safe-write invariants. If defining must behave
   differently, change that command.
 - **Parallel because the writes are disjoint, not because it is faster.** One ID per sub-agent,
   and none of them writes `/.knowledge/`, so the write sets are disjoint by construction rather than
@@ -98,8 +98,9 @@ One **AskUserQuestion**, one table: every admitted spec with its derived stage a
 then the N. **No cap and no soft warning** — the whole list and the N are on screen, and that is
 what the human decides on.
 
-**No per-spec read runs before the OK.** The derived stage already says which bank each spec will
-get, and N reads ahead of an authorization that may be declined are N reads paid for nothing.
+**No per-spec read runs before the OK.** The derived stage already says how much each spec has
+left to compose, and N reads ahead of an authorization that may be declined are N reads paid for
+nothing.
 
 Present the recursion form on the same screen — load it now:
 

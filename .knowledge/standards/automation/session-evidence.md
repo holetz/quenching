@@ -4,7 +4,7 @@ title: Session evidence
 description: How a session transcript is read as evidence for the command that drove it — where transcripts live, the two entry forms, the JSONL-first arm ladder with the arm declared in the output, and the rule that a counted claim comes from code, never from a model recalling its own run
 resource: plugins/quenching/assets/bin/quenching/session/**, plugins/quenching/commands/components/command/retro.md
 tags: [automation, transcript, evidence, session, retro]
-timestamp: 2026-08-11
+timestamp: 2026-08-25
 audience: both
 authority: background
 source: improve-command-from-session plan — the go/no-go this standard's gate restates was answered PASS at task 1.3, against a real /quenching:specs:develop session (94120e96) that conducted /specs:isolate as a stage
@@ -49,7 +49,7 @@ Skill-invoked stages in an 86-transcript corpus, attribution reverts to the cond
 stage returns exactly **once**; it never returns 36 times, and jumps to a third command 6 times.
 Reporting every command's counts as exact off this pointer alone over-credits a conducted stage
 with its conductor's own later work — concretely, `/specs:isolate` was once credited with 5
-`AskUserQuestion` calls that were `/quenching:specs:develop`'s own shape-bank questions (recorded in
+`AskUserQuestion` calls that were `/quenching:specs:develop`'s own composition questions (recorded in
 `improve-command-from-session`'s `## Discoveries`, session 94120e96).
 
 There is no end marker in the transcript that would let a tool fix this by construction —

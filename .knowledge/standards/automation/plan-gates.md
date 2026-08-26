@@ -4,7 +4,7 @@ title: Quando o gate de plano de um comando pode cair
 description: As duas classes protegidas — item acoplado a código, ação irreversível de ciclo — são o teste inteiro, e um comando em que nenhuma delas ocorre não tem o que confirmar; o que substitui a janela de aprovação quando o gate sai (a URL do registro, anunciada antes de qualquer leitura e repetida no relatório), a diferença entre a confirmação que cai e a consolidação que fica, o que continua parando o passe de qualquer forma, as três formas intermediárias medidas e rejeitadas, e as três condições sob as quais a autoridade de uma marcha substitui a pessoa no go/no-go
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/align/convergence.md, plugins/quenching/assets/references/specs-develop/questions.md
 tags: [automation, commands, gates, confirmation, cost, turns]
-timestamp: 2026-08-16
+timestamp: 2026-08-25
 audience: both
 authority: background
 source: spec revisar-fluxo-do-develop-custo-e-gates, destilada no seu conclude (2026-08-16); §Quando a autoridade substitui a pessoa acrescentada em 2026-08-22 pela reforma que fez a marcha (`priority.complexity`) governar o interior de `/quenching:specs:develop` — sob a marcha `low` o passe carimba `approved` por conta própria, com `by: low-gear` no registro, e essa é a primeira vez que um go/no-go sai do passe neste repositório; a medição pós-merge segue devendo, agora para as duas mudanças — o critério e as três alternativas rejeitadas vêm do `## Design` e do `## Alternatives Considered` dela, e a aplicação medida é `/quenching:specs:develop`, o primeiro comando a rodar sem gate de plano; a afirmação de custo que a motivou (<= 4M para trabalho equivalente a uma linha de base de 9,73M em 100 turnos) segue **sem medição pós-merge**, e é ela a condição de graduação
@@ -115,6 +115,13 @@ Todas as três preservam alguma parada. Nenhuma sobreviveu ao mesmo teste:
 
 O padrão das três é o mesmo: elas negociam *quantas* paradas, quando a pergunta é se **aquela**
 parada protege alguma coisa. Uma parada que não protege não fica melhor por ser rara.
+
+**Fundir etapas não é a terceira forma.** `/quenching:specs:develop` passou depois a compor e
+refinar numa passada só, com um edit — e isso não reabre a tabela acima. A terceira forma preservava
+*o gate de cada etapa*; aqui não há gate de etapa desde que este critério foi aplicado ao comando
+(2026-08-16), e o que se funde são travessias e leituras, nunca perguntas. O comando mudou **quando**
+uma pergunta é feita, jamais **se** ela é feita — e a regra acima, de que uma pergunta cuja resposta
+muda o que se escreve não sai com o gate, é o que impede a fusão de virar um corte.
 
 ## Por que isto nasce `background`
 

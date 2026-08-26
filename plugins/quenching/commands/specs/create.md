@@ -103,14 +103,28 @@ declared catalog is never chosen: `tagCatalog` is the closed set this judgment d
 whatever was resolved to step 5's `--tags`; the subject's own fixed tags need not be repeated —
 `cq specs new` folds them in on its own.
 
-**Compute `complexity`** from the classification (step 1), never by interrogating: the **sentence
-path yields `high`**, the **plan-source path yields `medium`**, and `low` only where the input
-explicitly asks for an unattended pass. The level answers how much a human needs to be part of the
-process, never the size or difficulty of the input — the four levels and what each buys are
+**Compute `complexity`** from the classification (step 1), never by interrogating: both the
+**sentence path and the plan-source path yield `medium`**, and `low` only where the input explicitly
+asks for an unattended pass. The level answers how much a human needs to be part of the process,
+never the size or difficulty of the input — the four levels and what each buys are
 [gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §The scale, never
 transcribed here.
 
-Carry the level to step 5's `--complexity` and step 6's reason; the develop pass re-evaluates it.
+**A capture presumes `medium` because that is the level whose judgment is deferred.** `medium` puts
+a human on every question of the definition and then **recommends** whether the spec needs arguing
+with — judged against a composed spec rather than guessed from a sentence, which is the one input
+that could never support the guess. Presuming `high` here would run a refine pass over every
+sentence anyone captured, on no evidence that it was needed; presuming `low` would claim the pass
+may stamp its own `approved`, which nobody has yet earned the right to make. Guessing upward costs
+a refine nobody asked for; guessing downward costs a spec built on nobody's word
+(`/quenching:specs:triage` states the same asymmetry for a ranked row's floor).
+
+Carry the level to step 5's `--complexity`, and the one-line reason ("a capture, so a human answers
+the definition and the close recommends whether it needs arguing with") to step 6. The close of the
+develop pass re-evaluates it, so a level that turns out too small stays correctable.
+
+**Every one of these four is a presumption, not a verdict.** Nothing here is confirmed before it is
+written — step 6 is where the human sees it and can correct it in one answer.
 **Done when:** a subject, a type, zero or more tags and a `complexity` level are each resolved (to
 a value, or explicitly to none) and reasoned; metadata may be absent, but `complexity` is always
 resolved.
@@ -209,8 +223,8 @@ no direction falls to option 2.
 
 There is no patch-then-edit sequence to reason about: the capture already made ONE write with
 everything the input supported (step 5); a correction, when there is one, is one more write; and
-each bank `/quenching:specs:develop` runs makes ONE write of its own — its own batching contract
-already requires this.
+and `/quenching:specs:develop` makes ONE write per pass — its own batching contract already
+requires this.
 **Done when:** the screen has been shown and the human's answer — a correction, a direction, or
 both — has been fully honoured.
 
