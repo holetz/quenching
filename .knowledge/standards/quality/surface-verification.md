@@ -2,7 +2,7 @@
 type: standard
 title: Surface verification
 description: How a change to the command surface is proven — a fresh process because the registry is built at session start, assertions on captured tool_use rather than prose, the five preconditions a functional check must satisfy to measure what it claims, why the harness belongs to the components front rather than the spec cycle and how to scope its cost, and how an ordering property is verified by running a real cycle
-resource: plugins/quenching/assets/checks/functional-checks.sh, plugins/quenching/assets/checks/conclude-order-check.sh, plugins/quenching/commands/components/command/new.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/**
+resource: plugins/quenching/assets/checks/functional-checks.sh, plugins/quenching/commands/components/command/new.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/**
 tags: [quality, verification, automation, commands, functional-tests, cost]
 timestamp: 2026-08-27
 audience: both
@@ -123,7 +123,7 @@ measured*, which is neither a pass nor a failure.
 measured hit rates. The harness is **not** a repo-wide post-change mandate, and it is **not** named
 in a spec's `## Validation` or a task's `verify:`.
 
-`assets/checks/conclude-order-check.sh` belongs to the same front, on the same rule: it proves an
+The conclude-order check belonged to the same front, on the same rule: it proved an
 ordering property of the spec cycle — nothing is written to the base branch after the merge — so it
 is rerun when that ordering logic changes (`conclude.md`, `execute.md`, or the `cq specs` backend
 code), never by an individual spec that happens to reach a merge.
@@ -137,7 +137,7 @@ Meanwhile the one real routing defect the repo has recorded — a `/quenching:co
 measured as a miss — was found by `/quenching:components:command:eval`, and check 3 gained a probe for it only afterwards.
 
 **That measurement is scoped to `functional-checks.sh` alone.** It does not extend to
-`citation-check.sh` or `conclude-order-check.sh` by proximity — no equivalent record exists for
+`citation-check.sh` or the conclude-order check by proximity — no equivalent record exists for
 either, and the defect class that earned the rule (a cp1252 read, a hardcoded marketplace ref, a
 turn cap, a probe flaky across identical runs) has no counterpart in a tool with no LLM in its
 loop: both are deterministic and cheap to run (`citation-check.sh` ~0.26s, `conclude-order-check.sh`

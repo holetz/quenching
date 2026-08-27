@@ -29,7 +29,7 @@ addressed, without losing a single thing a future session could not reconstruct.
 | A computed number restated in prose fans out — grep its literal form | [computed-fact-prose-fanout.md](/.knowledge/standards/quality/computed-fact-prose-fanout.md) |
 | Which language the prose is written in | [communication.md](/.knowledge/standards/agents/communication.md) |
 
-Resolve `cq` at `plugins/quenching/scripts/bin/cq`, invoked by that literal quoted
+Resolve `cq` at `plugins/quenching-codex/scripts/bin/cq`, invoked by that literal quoted
 path
 ([align/tool-resolution.md](/plugins/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool).
@@ -57,8 +57,8 @@ split — none of it from memory.
 
 ### 2. Measure the baseline
 ```bash
-python3 "plugins/quenching/scripts/bin/cq" components read <path>
-python3 "plugins/quenching/scripts/bin/cq" components read <path> --sections "<A>" --sections "<B>"
+python3 "plugins/quenching-codex/scripts/bin/cq" components read <path>
+python3 "plugins/quenching-codex/scripts/bin/cq" components read <path> --sections "<A>" --sections "<B>"
 ```
 The index's `chars` **already includes a section's `###` children** — that number IS what the
 reader returns and what the citer pays. Never add a section's prose to its children, and never
@@ -107,8 +107,8 @@ Write the approved moves and nothing else. Two conditions bind every write:
 
 ### 6. Verify against the citation map, then report what was measured
 ```bash
-python3 "plugins/quenching/scripts/bin/cq" components read <path> --sections "<A>" --sections "<B>"
-python3 "plugins/quenching/scripts/bin/cq" components read <path>
+python3 "plugins/quenching-codex/scripts/bin/cq" components read <path> --sections "<A>" --sections "<B>"
+python3 "plugins/quenching-codex/scripts/bin/cq" components read <path>
 grep -rn "<any renamed or reworded form>" plugins/quenching .knowledge .claude
 ```
 Every `§`-address the map collected must still resolve with exit 0 — that is the check that the
@@ -117,7 +117,7 @@ plus the file total, as measured numbers. A pass that moved little says so; an e
 not a result.
 
 If a command body under `plugins/quenching/commands/**` was touched at all, also run
-`python3 "plugins/quenching/scripts/bin/cq" components --root plugins/quenching doctor --json` and
+`python3 "plugins/quenching-codex/scripts/bin/cq" components --root plugins/quenching doctor --json` and
 `lint` before reporting.
 
 **Done when:** every addressed `§` resolves, and the report carries measured before/after numbers.
