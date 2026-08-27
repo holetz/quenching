@@ -46,3 +46,8 @@ when a local preview is explicitly requested.
 editorial de publicação** decides whether another OKF home is published, published through a
 curated mirror below `documentation/`, or absent. Links use that mapped route — never an internal
 `/.knowledge/<home>/…` path. A `não publicar` home has no route or nav entry.
+
+The glossary route is `reference/glossary.md`. When the plan maps it to publication, `build`
+derives `assets/glossary-abbreviations.md` from the canonical root `glossary.md`; the template's
+`abbr` and `pymdownx.snippets.auto_append` load those definitions on every page. The derived file
+is generated site-layer data, never a second hand-maintained glossary.
