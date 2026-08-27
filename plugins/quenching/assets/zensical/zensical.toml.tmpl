@@ -1,4 +1,4 @@
-# zensical.toml — Zensical config for the OKF `documentation/` home.
+# zensical.toml — Zensical config for the editorially mapped OKF site.
 # `/quenching:knowledge:align` stamps this at the repo ROOT (outside /.knowledge/), and
 # `/quenching:knowledge:documentation:build` owns it from there. Fill the <placeholders>.
 [project]
@@ -10,8 +10,9 @@
   site_dir = "site"
 
   # Zensical runs no MkDocs plugin, so the order and the titles live here rather
-  # than in `.pages` files. A NEW PAGE IS A NEW LINE in this list; a page missing
-  # from it is still built, but it is absent from the sidebar.
+  # than in `.pages` files. Add only routes approved by the plan's Mapa editorial
+  # de publicação. A mapped external home is exposed through a curated mirror
+  # below `documentation/`; do not point docs_dir at the hidden bundle root.
   nav = [
     "index.md",
     { "Getting started" = [ "tutorials/index.md" ] },

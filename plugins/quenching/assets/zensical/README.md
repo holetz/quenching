@@ -1,14 +1,14 @@
 # `assets/zensical/` — the site setup payload (Zensical)
 
 Inert here, like the rest of `assets/`. `/quenching:knowledge:align` (Step 7) stamps these into a target
-repo **once**, while scaffolding the bundle, so the `documentation/` home renders as a site;
+repo **once**, while scaffolding the bundle, so the editorially mapped `documentation/` tree renders as a site;
 `/quenching:knowledge:documentation:build` **owns** the layer after that — it installs, merges forward,
 keeps the `nav` in step with the folder tree, and verifies the build. **The OKF
 markdown stays generator-neutral; only this config layer names a generator.**
 
 | File | Stamped to | Notes |
 | --- | --- | --- |
-| `zensical.toml.tmpl` | repo root `zensical.toml` | only if absent; fill `site_name`/`site_description`; `docs_dir = ".knowledge/documentation"` |
+| `zensical.toml.tmpl` | repo root `zensical.toml` | only if absent; fill `site_name`/`site_description`; keep `docs_dir = ".knowledge/documentation"` and add only map-approved routes |
 | `requirements.txt` | repo root | `zensical` |
 | `quenching.css` | the `documentation/` home, at `assets/stylesheets/quenching.css` | static CSS for badges, hero, cards and reduced-motion guard; `extra_css` in `zensical.toml` wires it |
 | `ci-github-pages.yml` | `.github/workflows/docs.yml` | opt-in; GitHub Pages via the Pages artifact — the repo's Pages source must be "GitHub Actions" |
@@ -30,6 +30,7 @@ the toolchain is not installed. `zensical build` has no `--site-dir`: it writes 
 `site_dir` (gitignored), and `.cache/` beside the config ignores itself. Use `zensical serve` only
 when a local preview is explicitly requested.
 
-`index.md` in each section is the section landing page (`navigation.indexes`). Links to other OKF
-homes (`/.knowledge/standards/…`) do not resolve in a site rooted at `/.knowledge/documentation/`
-and fail the build under `--strict` — keep `documentation/` pages self-contained.
+`index.md` in each section is the section landing page (`navigation.indexes`). The plan's **Mapa
+editorial de publicação** decides whether another OKF home is published, published through a
+curated mirror below `documentation/`, or absent. Links use that mapped route — never an internal
+`/.knowledge/<home>/…` path. A `não publicar` home has no route or nav entry.
