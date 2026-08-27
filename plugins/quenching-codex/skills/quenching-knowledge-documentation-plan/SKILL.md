@@ -21,7 +21,7 @@ source provenance is defined by
 ## Doctrine
 
 - **Sources are evidence.** Inventory before interpreting; cite a file, code location, provided official document, user link or marked inference.
-- **Contracts precede prose.** Produce diagnosis, journeys, IA, visual, LLM-readability, execution and the editorial publication map in that order.
+- **Contracts precede prose.** Produce diagnosis, journeys, IA, visual, LLM-readability and execution contracts in that order.
 - **Gaps stay visible.** Every unsupported claim is `source gap: <what's missing>`, never an invention.
 - **The plan is outside `docs_dir`.** `.quenching/` is never a documentation page; if the target
   does not ignore it yet, say so and route the entry to `build` (`site-scratch-tracked`).
@@ -51,6 +51,10 @@ extensions, risk and validation. Then produce the **Mapa editorial de publicaç�
 per home — `publicar`, `publicar derivado` or `não publicar` — with motive, audience and route.
 Treat a missing basis as `source gap:`, never as a default exclusion. **Done when:** all seven
 contract headings exist in order and no placeholder is silently guessed.
+
+When the map publishes the root `glossary.md`, record `reference/glossary.md` as a **derived**
+route and the canonical file as its only source. The plan also records the generated abbreviation
+snippet consumed by the site layer; it never assigns authors a second editable term list.
 
 ### 4. Present the plan and obtain one OK
 
