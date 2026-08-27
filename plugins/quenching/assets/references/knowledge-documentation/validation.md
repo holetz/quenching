@@ -30,6 +30,23 @@ exist`. Never run `zensical serve` from this command and never commit a built si
 `invalid_link_anchors` — so it catches dangling links and dead anchors, and `--strict` turns them
 into an abort. A warning is either fixed in the site layer or reported to the page-owning command.
 
+## Editorial publication map
+
+Read the accepted `### Mapa editorial de publicação` before judging navigation or links. For every
+`publicar` or `publicar derivado` row, prove that its declared route is built under `site/`; for
+every `não publicar` row, prove that no matching nav entry, published route or link exists. A
+curated route under `documentation/` is valid; `docs_dir = ".knowledge"` is not a substitute,
+because the hidden source root does not reliably yield rendered pages.
+
+```bash
+# compare plan rows with generated routes; replace <route> with each mapped route
+test -f "site/<route>/index.html"
+rg -n 'href="[^"]*<unpublished-home>' site
+```
+
+The second command must return no match. A bundle path such as `/.knowledge/standards/...` is never
+evidence of a published route: validate the mapped URL instead.
+
 ## Static rendered checks
 
 When a browser or Playwright is available, inspect the landing and one deep page at desktop and
@@ -43,7 +60,8 @@ grep -oE 'stylesheets/[^" ]+' site/index.html | sort -u
 grep -R -Eo 'prefers-reduced-motion' .knowledge/documentation/assets/stylesheets/*.css
 ```
 
-The static fallback verifies title, Mermaid markup, badges, CSS wiring and the motion guard. It
+The static fallback verifies title, Mermaid markup, badges, CSS wiring, the motion guard and mapped
+routes. It
 does not prove pixel-level dark/light/mobile layout; report that limitation and recommend a
 manual browser pass. Check that cards reflow, contrast is readable, tabs switch, and Mermaid is
 not a raw code block when a browser is available.
@@ -51,8 +69,9 @@ not a raw code block when a browser is available.
 ## Required rendered effects
 
 The build report checks the page title, `class="mermaid"`, `class="q-badge"`, connected
-`extra_css`, and `prefers-reduced-motion`. Custom colors use the theme's own `--md-*` variables or
-both schemes; animations have a reduced-motion off switch.
+`extra_css`, `prefers-reduced-motion`, every mapped route and the absence of unpublished homes.
+Custom colors use the theme's own `--md-*` variables or both schemes; animations have a
+reduced-motion off switch.
 
 <!-- rationale -->
 
