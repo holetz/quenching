@@ -46,6 +46,11 @@ bundle; every install, update, and re-verification after that is **this** skill.
   **missing required keys** (`docs_dir`, `navigation.indexes`, the nav entry), show the edit as a
   diff, and never remove or reorder a key you did not add. Same for `requirements.txt` — merge the
   pin into whatever file already pins the docs toolchain.
+- **Publication metadata has ordered evidence.** Existing non-placeholder config wins. Otherwise,
+  derive `repo_url` from `git remote get-url origin`; derive `edit_uri_template` only for a host
+  whose URL shape is known and testable (Azure DevOps uses `?path=/{path}&version=GB<branch>`).
+  `site_url` comes only from the selected delivery destination. Language and identity come only
+  from a target contract or owned asset. Missing evidence is a finding, never a public placeholder.
 - **A legacy `mkdocs.yml` is read, never converted behind the human's back.** Zensical reads
   `mkdocs.yml` natively and says it always will, so a target that has one still builds and nothing
   is urgent. What silently stopped working there is its whole `plugins:` list, which is why any
@@ -80,6 +85,9 @@ bundle; every install, update, and re-verification after that is **this** skill.
 | --- | --- | --- |
 | `site-config-absent` | no `zensical.toml` (and no `mkdocs.yml`) at the repo root | **FIX** — stamp `zensical.toml.tmpl` |
 | `site-config-placeholder` | `<YOUR PROJECT>` / `<one-line …>` still unfilled | **FIX** — derive from the repo name + `README.md` H1/tagline; ask if neither yields one |
+| `site-url-absent` | a public-delivery target has no non-placeholder `site_url` | **REPORT** — source it from the approved destination; never invent an URL |
+| `site-repo-url-absent` | no `repo_url` and Git remote provides a usable repository URL | **FIX** — add the derived value without replacing a human value |
+| `site-edit-uri-absent` | a mapped host needs an edit URL Zensical cannot derive | **FIX** — add its tested template, preserving a human value |
 | `site-config-legacy` | a root `mkdocs.yml` and no `zensical.toml` | **REPORT** — it still builds, but every MkDocs plugin in it is inert; converting is its **own confirmation** |
 | `site-docs-dir-mismatch` | `docs_dir` does not point at the `documentation/` home | **FIX, own confirmation** — a hidden bundle root is not a supported substitute |
 | `site-publication-map-absent` | the accepted plan has no Mapa editorial de publicação | **REPORT** → `quenching-knowledge-documentation-plan` |
@@ -113,7 +121,9 @@ Collect, without writing anything:
 - the accepted `.quenching/documentation/plan.md` and its **Mapa editorial de publicação**; reject
   a missing map as a planning finding, and use its routes as the only allowed cross-home surface.
 - root `zensical.toml` — parse it: `docs_dir`, `site_name`, `site_description`, `nav`,
-  `theme.features`, `markdown_extensions`, `extra_css`; note every key a human added. A root
+  `site_url`, `repo_url`, `edit_uri_template`, theme language/identity, `theme.features`,
+  `markdown_extensions`, `extra_css`; note every key a human added. Also read `git remote get-url
+  origin` and the selected delivery destination when the plan records one. A root
   `mkdocs.yml`/`mkdocs.yaml` is inventoried the same way and is `site-config-legacy`.
 - any requirements file pinning the docs toolchain (`requirements.txt`, one under `/.knowledge/`,
   `pyproject.toml`, `uv.lock` …) — the pin may already live somewhere else.
@@ -139,7 +149,11 @@ and a disposition.
 ### 4. Derive the values you will write
 `site_name` from the repo (directory name, `package.json` `name`, or the root `README.md` H1) and
 `site_description` from the README's tagline; if neither yields a usable line, **ask** — never
-ship a placeholder as if it were filled. A section's nav title comes from its `index.md`
+ship a placeholder as if it were filled. For publication metadata, apply this precedence: existing
+non-placeholder config → target-owned contract/delivery record → usable Git remote (`repo_url`
+only) → explicit gap. Never overwrite the first case, never derive `site_url` from a Git URL, and
+only write an Azure `edit_uri_template` after proving its branch/path syntax against the fixture.
+A section's nav title comes from its `index.md`
 H1, stripped of backticks and the trailing `— …` gloss (`` # `how-to/` — task recipes`` →
 `How-to guides`, matching the shipped skeleton). **Done when:** every writable value has a source or
 an explicit question.
