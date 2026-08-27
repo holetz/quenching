@@ -6,7 +6,7 @@ description: >-
 allowed-tools: Bash(python3:*), Read
 ---
 
-# quenching-specs-status — read the provider-owned front
+# /quenching:specs:status — read the provider-owned front
 
 The canonical documents live in the repository provider: GitHub Issues or Azure Boards. There is no
 local `/.specs/` root.
@@ -30,5 +30,5 @@ local `/.specs/` root.
 - Never write, scaffold, align, migrate or repair anything.
 - Never treat an absent local `/.specs/` directory as a finding; external backends do not use it.
 - Never call `FilesBackend`, infer `backend: files`, or offer a local fallback.
-- Use `quenching-specs-develop`, `quenching-specs-execute`, or `quenching-specs-conclude` for
+- Use `/quenching:specs:develop`, `/quenching:specs:execute`, or `/quenching:specs:conclude` for
   lifecycle work on one named provider-owned spec.
