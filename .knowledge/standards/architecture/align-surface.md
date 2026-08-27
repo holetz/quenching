@@ -4,10 +4,10 @@ title: Align surface — one align per front, probe first
 description: The 1×5 align column that replaced the 2×4 matrix — one align per front carrying its content stages, the fourth pillar (`git`) declared with no align because it ships no verifier a probe could run, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, the rule that no sweep records itself: an align's account of its own run goes in the report, never into the bundle, and the conductor categories sharing the cycle-authorization contract — `/align` conducts the three fronts, `/quenching:specs:cycle` the four stages of one spec, and the two fan-out entries N specs each; none reimplements what it conducts
 resource: plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/specs/align.md, plugins/quenching/commands/specs/cycle.md, plugins/quenching/commands/specs/execute-queue.md, plugins/quenching/commands/specs/develop-batch.md, plugins/quenching/commands/components/align.md, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/references/align/**, plugins/quenching/assets/references/specs-fanout/**
 tags: [architecture, aligns, commands, probe, convergence]
-timestamp: 2026-08-16
+timestamp: 2026-08-27
 audience: both
 authority: current
-source: specs-flow-consolidation plan (section 4); the cross-front drift probe added by the notice-installed-tool-version-drift spec, 2026-07-28, and retired by modularizar-specs-knowledge-components task 10.3 once the four scripts it compared a legacy copy against stopped existing; the no-sweep-records-itself rule from the retire-docs-log spec's branch review, 2026-07-29; the probe's subject rewritten from stale-copy to legacy-copy (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) once no align installed a tool any more; the two conductor categories and the drop of "cited by `/align` alone" by the fluxo-rapido-para-problemas-simplorios plan (task 2.4); retired with orchestration-gears.md (marchas-do-orquestrador-vivem-no-plugin, 2026-08-11); the third and fourth conductor rows, and the N-is-the-only-difference rule, by orquestrar-specs-em-paralelo (task 4.3), which also carried the orchestrate → cycle rename through; the column widened to 1×5 by pilar-git-e-specs-agnosticas-ao-git (task 6.1), which minted the fourth pillar (`git`) and declared it alignless
+source: specs-flow-consolidation plan (section 4); the cross-front drift probe added by the notice-installed-tool-version-drift spec, 2026-07-28, and retired by modularizar-specs-knowledge-components task 10.3 once the four scripts it compared a legacy copy against stopped existing; the no-sweep-records-itself rule from the retire-docs-log spec's branch review, 2026-07-29; the probe's subject rewritten from stale-copy to legacy-copy (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) once no align installed a tool any more; the two conductor categories and the drop of "cited by `/align` alone" by the fluxo-rapido-para-problemas-simplorios plan (task 2.4); retired with orchestration-gears.md (marchas-do-orquestrador-vivem-no-plugin, 2026-08-11); the third and fourth conductor rows, and the N-is-the-only-difference rule, by orquestrar-specs-em-paralelo (task 4.3), which also carried the orchestrate → cycle rename through; the column widened to 1×5 by pilar-git-e-specs-agnosticas-ao-git (task 6.1), which minted the fourth pillar (`git`) and declared it alignless; varrer-nomes-de-comando-legados (2026-08-27) — the specs front's align was retired with its local backend, so the column reads none for two rows and each carries its own reason
 maintainer: quenching
 ---
 
@@ -24,10 +24,10 @@ architectural rule — why the surface has this shape and not the previous one.
 | Front | Command |
 | --- | --- |
 | `/.knowledge/` | `/quenching:knowledge:align` |
-| `/.specs/` | `/quenching:specs:align` |
+| `/.specs/` | **none** — see §The specs front lost its align with its backend, below |
 | `.claude/` | `/quenching:components:align` |
 | `git` | **none** — see §The fourth pillar has no align, below |
-| all three fronts | `/align` — conducts the three, in dependency order, on one nested OK |
+| both aligned fronts | `/align` — conducts the two, in dependency order, on one nested OK |
 
 There is no `align-and-update` anywhere. The previous surface was a 2×4 matrix — a structural
 align plus a looping content conductor per front — which gave equal billing to conductors that
@@ -37,13 +37,27 @@ construction. Each front's align now runs the content stages its front actually 
 on the probe finding work; per-item stages that need fresh human intent are **reported with the
 command that closes them, never driven**.
 
+### The specs front lost its align with its backend, and the reason is structural too
+
+`/quenching:specs:align` existed while the front had a **local** tree to converge: `/.specs/` with
+its phased folders, its scaffold and its stray-file sweep. `remover-backend-local-do-plugin`
+retired that backend — the canonical documents live in the repository provider, GitHub Issues or
+Azure Boards — and the align went with it, because there is no longer a tree of this repo's own for
+a probe to find drifted. What survives is read (`/quenching:specs:status`, `cq specs doctor`) and
+ranking (`/quenching:specs:triage`, on the human's own confirmation), neither of which is a
+convergence sweep.
+
+**This is a different reason from the `git` pillar's, and the difference matters.** `git` never had
+a tree; the specs front had one and lost it. So the column below reads **none** for both, and the
+two paragraphs are not interchangeable: were a local backend to come back, so would its align.
+
 ### The fourth pillar has no align, and the reason is structural
 
 `git` — the `cq git` axis and its seven `commands/git/**` bodies — is a **pillar**, in the sense
 [glossary.md](/.knowledge/glossary.md) already gives the term: an axis `cq` routes. It is not a
 **front**: a front is a tree this plugin converges toward a canonical shape (`/.knowledge/` toward
-the OKF bundle, `/.specs/` toward the phased workspace, `.claude/` toward one file per entry
-point), and convergence is exactly what §Probe before the inventory needs a verifier for. `git`
+the OKF bundle, `.claude/` toward one file per entry point), and convergence is exactly what
+§Probe before the inventory needs a verifier for. `git`
 has no tree of its own to converge — `cq git base`, `slugs`, `stale` and `conventions` each answer
 a question about the *target* repository's live state (which branch, which marking, which
 branches are stale, which conventions apply), and a live answer is not a drifted artifact a probe
@@ -60,8 +74,8 @@ conducts only through a stage's own gate.
 
 The two real loops survive where the looping is real: `/quenching:knowledge:align` keeps its
 internal fixpoint (memory → harness → glossary feed each other), and `/align` keeps the
-cross-front pass, because the fronts feed each other (a spec's distillation is glossary work; the
-components front's registry is a `/.knowledge/` listing). The conductor contract — one human OK
+cross-front pass, because the two aligned fronts feed each other (the components front's registry
+is a `/.knowledge/` listing). The conductor contract — one human OK
 authorizing the whole run, nesting one
 level, with code-coupled confirmations still surfacing individually — lives in
 `align/convergence.md`, shared by every conductor and restated by none (§The conductor

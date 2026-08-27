@@ -4,10 +4,10 @@ title: Command surface naming
 description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the fourth namespace (`git`, a pillar rather than a front) and its coexistence with a target's own `git` category; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context
 resource: plugins/quenching/commands/**
 tags: [naming, commands, taxonomy]
-timestamp: 2026-08-26
+timestamp: 2026-08-27
 audience: both
 authority: current
-source: rename-command-surface change (2026-07-21) + the specs-native refactor (2026-07-24) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31); the `.claude/` front renamed `components` and split into four artifact-named contexts by modularizar-specs-knowledge-components (task 9.7, 2026-08-10), inheriting the split's own design from the retired restructure-claude-front-namespace spec — the split is orthogonal to the front's name and survived the rename intact; the declare-the-class rule for a rename's citation residual added by the orquestrar-specs-em-paralelo branch review (2026-08-16), whose `orchestrate` → `cycle` command rename found five citing files its `## Impact` had not named; the fourth namespace (`git`) and its coexistence with a target's own `git` category added by pilar-git-e-specs-agnosticas-ao-git (task 6.2)
+source: rename-command-surface change (2026-07-21) + the specs-native refactor (2026-07-24) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31); the `.claude/` front renamed `components` and split into four artifact-named contexts by modularizar-specs-knowledge-components (task 9.7, 2026-08-10), inheriting the split's own design from the retired restructure-claude-front-namespace spec — the split is orthogonal to the front's name and survived the rename intact; the declare-the-class rule for a rename's citation residual added by the orquestrar-specs-em-paralelo branch review (2026-08-16), whose `orchestrate` → `cycle` command rename found five citing files its `## Impact` had not named; the fourth namespace (`git`) and its coexistence with a target's own `git` category added by pilar-git-e-specs-agnosticas-ao-git (task 6.2); varrer-nomes-de-comando-legados (2026-08-27) — the front-level-verb example no longer cites the retired specs align
 maintainer: quenching
 ---
 
@@ -114,8 +114,8 @@ holds **four sibling contexts, each named for the artifact it mints, none a sub-
 
 **The rule: a front-level verb sits at the front's own root; an artifact-level verb sits under its
 context.** `/quenching:components:align` is the front's own sweep — it has no artifact of its own
-to sit under, so it stays at the root, exactly as `/quenching:knowledge:align` and `/quenching:specs:align`
-do for their fronts. `command:new`, `command:eval` and `command:retro` are three verbs that all act
+to sit under, so it stays at the root, exactly as `/quenching:knowledge:align` does for its
+front. `command:new`, `command:eval` and `command:retro` are three verbs that all act
 on the same artifact (a command), so they share the `command/` context rather than each claiming a
 piece of the front root the way the old front's `new`/`eval` verbs used to.
 
