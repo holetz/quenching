@@ -1,7 +1,7 @@
 # Documentation validation — strict build and honest rendered QA
 
-The runbook for validating the generated site. It uses a throwaway build directory and reports
-`unverified` when MkDocs is unavailable; it never claims a visual check that did not happen.
+The runbook for validating the generated site. It builds into the gitignored `site_dir` and reports
+`unverified` when the toolchain is unavailable; it never claims a visual check that did not happen.
 
 ## Contents
 
@@ -15,15 +15,20 @@ returns the heading index; `--sections <name>` addresses one.
 Run from the target repository root:
 
 ```bash
-mkdocs build --strict --site-dir <throwaway-dir>
+zensical build --clean --strict
 ```
 
-Fallbacks are `python -m mkdocs build --strict --site-dir <throwaway-dir>` and
-`uv run mkdocs build --strict --site-dir <throwaway-dir>`. Remove the throwaway directory after
-inspection. Never run `mkdocs serve` from this command and never commit a built `site/`.
+Fallbacks are `python -m zensical build --clean --strict` and `uv run zensical build --clean
+--strict`. There is no per-run output flag: the build writes to the configured `site_dir`, which is
+gitignored, and `.cache/` beside the config ignores itself. Where `site/` is **tracked**,
+overwriting it would be destructive — write a throwaway config **at the repo root** with its
+`site_dir` outside the repo, build it with `-f`, and delete the config after; a config parked
+anywhere else resolves `docs_dir` relative to itself and exits `Error: Docs directory does not
+exist`. Never run `zensical serve` from this command and never commit a built site.
 
-`--strict` must be zero-warning. It catches dangling links, orphan pages, unknown extensions and
-nav mistakes. A warning is either fixed in the site layer or reported to the page-owning command.
+`--strict` must be zero-issue. Link validation is on by default — `invalid_links` and
+`invalid_link_anchors` — so it catches dangling links and dead anchors, and `--strict` turns them
+into an abort. A warning is either fixed in the site layer or reported to the page-owning command.
 
 ## Static rendered checks
 
@@ -31,10 +36,10 @@ When a browser or Playwright is available, inspect the landing and one deep page
 narrow widths in both palettes. Otherwise run the static fallback over the built HTML:
 
 ```bash
-grep -oE '<title>[^<]*</title>' <throwaway-dir>/index.html | head -1
-grep -R -c 'class="mermaid"' <throwaway-dir>
-grep -R -c 'class="q-badge"' <throwaway-dir>
-grep -oE 'stylesheets/[^" ]+' <throwaway-dir>/index.html | sort -u
+grep -oE '<title>[^<]*</title>' site/index.html | head -1
+grep -R -c 'class="mermaid"' site
+grep -R -c 'class="q-badge"' site
+grep -oE 'stylesheets/[^" ]+' site/index.html | sort -u
 grep -R -Eo 'prefers-reduced-motion' .knowledge/documentation/assets/stylesheets/*.css
 ```
 
@@ -46,8 +51,8 @@ not a raw code block when a browser is available.
 ## Required rendered effects
 
 The build report checks the page title, `class="mermaid"`, `class="q-badge"`, connected
-`extra_css`, and `prefers-reduced-motion`. Custom colors use Material variables or both schemes;
-animations have a reduced-motion off switch.
+`extra_css`, and `prefers-reduced-motion`. Custom colors use the theme's own `--md-*` variables or
+both schemes; animations have a reduced-motion off switch.
 
 <!-- rationale -->
 
