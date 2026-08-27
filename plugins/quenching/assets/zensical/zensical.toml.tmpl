@@ -4,7 +4,12 @@
 [project]
   site_name        = "<YOUR PROJECT> — Documentation"
   site_description = "<one-line description of the product docs>"
-  # site_url       = "https://<org>.github.io/<repo>/"   # canonical/social links; required by navigation.instant
+  # Required before public delivery: derive from the selected publication destination; never invent it.
+  # site_url       = "https://<published-host>/<path>/"
+  # Derive from the Git remote when available; do not publish placeholder URLs.
+  # repo_url       = "https://<host>/<owner>/<repo>"
+  # Azure DevOps and other unmapped hosts require an explicit, tested template.
+  # edit_uri_template = "?path=/{path}&version=GB<branch>"
 
   docs_dir = ".knowledge/documentation"
   site_dir = "site"
@@ -24,7 +29,10 @@
   extra_css = [ "assets/stylesheets/quenching.css" ]
 
 [project.theme]
-  # language = "pt-BR"   # the theme is localized; the search UI is English-only for now
+  # Derive from the target's language contract; Zensical includes localized pt-BR UI.
+  # language = "pt-BR"
+  # logo = "assets/<logo>"       # only when supplied or derived from target-owned brand assets
+  # favicon = "assets/<favicon>" # only when supplied or derived from target-owned brand assets
   features = [
     "navigation.indexes",
     "navigation.sections",
@@ -43,6 +51,8 @@
   scheme      = "default"
   toggle.icon = "material/weather-night"
   toggle.name = "Switch to dark mode"
+  # primary = "<brand-color>"    # set only from target-owned identity evidence
+  # accent = "<brand-accent>"
 
 [[project.theme.palette]]
   media       = "(prefers-color-scheme: dark)"
