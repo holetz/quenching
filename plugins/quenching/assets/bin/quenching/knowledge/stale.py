@@ -1,16 +1,24 @@
-"""`stale-doc` — the one check that asks git a question, and the two calls that ask it.
+"""Resource activity — the one measurement that asks git a question, and the two calls that ask it.
 
 Moved verbatim out of the pre-refactor OKF validator script; only `parse_frontmatter`'s call
 shape changed, from the `(fm, has_block, well_formed)` tuple to the bare dict
-`quenching.common.frontmatter` returns.
+`quenching.common.frontmatter` returns. It emitted a `stale-doc` WARN until 2026-08-27; see
+`validate.py`, which records the retirement where the call used to be.
 
-STALENESS (CLI only — advisory, never blocking)
-- **`stale-doc`** the doc's `timestamp` predates the last commit touching the code its
-  `resource` globs name (`git log -1 --format=%cI`, explicit `:(glob)` pathspec magic).
-  It is **advisory and part of no verify gate**: unlike the integrity codes, a
-  stale-looking doc may be perfectly correct, because code moves under a rule that did
-  not change. It runs in CLI mode only — never `PostToolUse`, never `Stop` — since it
-  shells out once per doc, and a tree that is not a git checkout skips it silently.
+**A FIGURE, NOT A VERDICT — and the difference is what this module exists to hold.** The
+measurement is honest: the doc's `timestamp` against the last commit touching each entry of its
+`resource:`. The verdict built on top of it was not. A `resource:` glob is deliberately wide
+(`assets/**`, three named scripts), so what the comparison detects is ACTIVITY IN THE RADIUS OF
+THE GLOB — never drift of the content the doc describes. Code moves under a rule that did not
+change, and the doc is then reported as possibly wrong for being correct about something stable.
+
+Measured on this repo, 2026-08-27: **50 of 95 docs** carried the warning. A signal more than half
+the corpus raises is not read as a signal; it is scrolled past, and it takes the findings printed
+beside it along.
+
+So the number is published **per `resource:` entry**, with the interval, and no code beside it. A
+reader who wants to know which docs sit next to the most movement gets a ranking; nobody is told a
+doc is wrong on evidence that cannot say so.
 
 The two subprocess calls are this pillar's own and NOT `quenching.common.git._git`: `_git`
 falls back to `cwd="."` for a directory that does not exist, where these must answer
@@ -21,6 +29,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+from datetime import date
 
 from quenching.common.frontmatter import parse_frontmatter
 from quenching.knowledge.resource import (_is_bundle_aggregate, _project_root,
@@ -71,36 +80,51 @@ def _git_last_commit_date(entries: list[str], project_root: str) -> str | None:
     return proc.stdout.strip()[:10] or None
 
 
-def check_stale(text: str, bundle_root: str) -> list[tuple[str, str, str]]:
-    """`stale-doc` — the doc's `timestamp` predates the last commit touching the
-    code its `resource` governs.
+def _days_between(earlier: str, later: str) -> int | None:
+    """Whole days from `earlier` to `later`, both `YYYY-MM-DD`, or None if either is unreadable.
 
-    **Advisory, and never must-fix.** Unlike the integrity codes, a stale-looking
-    doc may be perfectly correct: code moves under a rule that did not change.
-    Conflating the two would make the must-fix set unusable, since every mature
-    bundle carries some legitimately stale-looking doc.
+    `date.fromisoformat` rather than a subtraction on strings: the interval is the column a
+    reader sorts by, and a lexicographic difference is not a number of days."""
+    try:
+        return (date.fromisoformat(later) - date.fromisoformat(earlier)).days
+    except (TypeError, ValueError):
+        return None
 
-    Bundle-aggregate entries are excluded on the same mechanism as `resource-self`:
-    a scope containing the whole bundle contains the doc, so it is touched whenever
-    the doc itself is, and would report fresh forever.
+
+def resource_activity(text: str, bundle_root: str) -> dict | None:
+    """One doc's `resource:` activity, entry by entry — or None when there is nothing to ask.
+
+    THE MEASUREMENT IS PER ENTRY, and that is the whole point of the shape. A `resource:` naming
+    three scripts and a tree used to collapse into ONE `git log` over all four pathspecs, so the
+    answer was the newest commit anywhere in the union — a reader could not tell which entry moved,
+    and the widest glob always won. One call per entry costs more subprocesses and buys the only
+    reading that is actionable.
+
+    `scopeMeasured` is False when every entry is a `uri`, an `unknown`, or a bundle aggregate:
+    such a doc has no measurable scope, and the earlier shape returned an empty list for it —
+    indistinguishable, downstream, from a doc whose scope was measured and found quiet. Reporting
+    it as unmeasured is the same rule `parse-honesty.md` applies to a parse failure: name the
+    state, never let silence read as a clean result.
     """
     fm = parse_frontmatter(text)
     if not _nonempty(fm, "resource") or not _nonempty(fm, "timestamp"):
-        return []
+        return None
     stamped = str(fm["timestamp"]).strip()[:10]
     if not ISO_DATE.match(stamped):
-        return []          # a non-ISO timestamp is `missing-timestamp`'s business, not ours
+        return None        # a non-ISO timestamp is `missing-timestamp`'s business, not ours
     project_root = _project_root(bundle_root)
     if not _is_git_checkout(project_root):
-        return []          # no history to compare against — skip silently, never report
+        return None        # no history to compare against — measure nothing, report nothing
     bundle_rel = _rel_to_project(bundle_root, project_root)
-    entries = [e for e, kind in parse_resource(fm["resource"])
+    parsed = parse_resource(fm["resource"])
+    entries = [(e, kind) for e, kind in parsed
                if kind in RESOLVABLE_KINDS and not _is_bundle_aggregate(e, kind, bundle_rel)]
     if not entries:
-        return []
-    last = _git_last_commit_date(entries, project_root)
-    if last and last > stamped:
-        return [("WARN", "stale-doc",
-                 f"`timestamp` {stamped} predates the last commit touching its `resource` "
-                 f"({last}) — the doc may no longer describe what it governs")]
-    return []
+        return {"timestamp": stamped, "scopeMeasured": False, "entries": []}
+
+    rows = []
+    for entry, kind in entries:
+        last = _git_last_commit_date([entry], project_root)
+        rows.append({"entry": entry, "kind": kind, "lastCommit": last,
+                     "days": _days_between(stamped, last) if last else None})
+    return {"timestamp": stamped, "scopeMeasured": True, "entries": rows}

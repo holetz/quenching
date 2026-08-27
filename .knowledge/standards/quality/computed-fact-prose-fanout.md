@@ -4,7 +4,7 @@ title: A computed fact's prose fan-out
 description: Any fact a tool computes and prose restates — a schema's fields, a surface's command count — fans out the moment it changes, and no checker sees it: why the validators are blind by construction, the two independent measurements this rule was set from, the grep on the fact's spelled-out form that finds the sites while the change is still cheap, a doc's own `description` as the nearest instance with its two listing consumers (one hand-maintained, one a GENERATED zone that is stale between sweeps by design), and why it belongs to the task that makes the change rather than to a later sweep
 resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/**, plugins/quenching/assets/checks/citation-check.sh
 tags: [quality, schema, records, documentation, sweeps]
-timestamp: 2026-08-16
+timestamp: 2026-08-27
 audience: both
 authority: current
 source: rework-specs-isolate-flow plan (2026-08-03), from two independent measurements on one branch — `merge:` gained one field, `pr`, and four prose sites still spelled the record as `{strategy, subject}` in four homes; the same branch retired one command, and ten sites across four files still counted twenty-six. Every checker green in both cases; the `description` instance and its two listing consumers added by revisar-fluxo-do-develop-custo-e-gates at its branch review (2026-08-16), measured on that spec's own task 1.1 — `automation/context-discipline.md` went from two ways to three and both copies still read two; narrowed for the retired-command case by the descontinuar-comando-specs-continue spec (2026-08-16), where `citation-check.sh` half 2 went green→red across three files the branch never opened and the declared gate saw nothing
@@ -26,7 +26,7 @@ Each verifier is doing its job correctly, and none of them can see this:
 | the schema's own selftest | that the new key behaves — accepted, refused, defaulted | the key works; that was never in doubt |
 | `cq specs validate` | records **as written** in a document | prose that *describes* the record is not a record |
 | `cq knowledge` | a doc's shape — frontmatter, links, index membership | the sentence is well-formed and links fine; it is merely wrong |
-| `cq knowledge` `stale-doc` | a doc whose `timestamp` predates a commit under its `resource` | fires only where the doc's `resource` happens to name the schema file — the README and the glossary do not |
+| `cq knowledge --activity` | a doc whose `timestamp` predates a commit under its `resource` | a FIGURE, not a finding, since 2026-08-27 — and it speaks only where the doc's `resource` happens to name the schema file, so the README and the glossary raise nothing either way |
 
 So the gate is green in every dimension the repo measures, and the product ships documentation that
 teaches a record shape that no longer exists.

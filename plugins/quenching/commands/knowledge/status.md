@@ -38,7 +38,7 @@ All three are cited; this skill owns no contract of its own.
   actually do to their repo.
 - **Cheap by construction.** One `cq knowledge validate --json`, one glob, and reads of the files the report names.
 - **Never judge, never rank, never infer.** An empty home is not a defect, an unlinked glossary
-  entry is a valid permanent state, and `stale-doc` is an advisory age — never a verdict that a
+  entry is a valid permanent state, and resource activity is a figure — never a verdict that a
   doc is wrong.
 
 ## Workflow (one read, one report)
@@ -56,9 +56,10 @@ never on prose.
 **Done when:** the bundle root and the checker are resolved, or their absence recorded.
 
 ### 2. Collect (read-only)
-- `cq knowledge validate /.knowledge --json` — every conformance finding, with `stale-doc` included, since
-  this is CLI mode (per [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)
-  §Staleness, it never runs in the hook path).
+- `cq knowledge validate /.knowledge --json` — every conformance finding.
+- `cq knowledge validate /.knowledge --activity --json` — the resource-activity figure, per doc and
+  per `resource:` entry (CLI only; per [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)
+  §Resource activity it emits no finding and never runs in the hook path).
 - `Glob` `/.knowledge/**/*.md` for the density counts, and read `/.knowledge/index.md`, each home's `index.md`,
   and `/.knowledge/glossary.md`.
 - `Glob` `~/.claude/projects/<cwd>/memory/*.md` and read the root `CLAUDE.md`/`AGENTS.md` size —
@@ -82,8 +83,8 @@ invented into a fix.
 
 Keep the severity split the contract draws: the **must-fix** WARNs (`dir-no-index`,
 `index-broken-link`, `index-orphan`, `glossary-broken-link`, `resource-unresolved`,
-`resource-self`) are what a verify gate blocks on; **`stale-doc` is advisory and blocks nothing**,
-so it is never reported as though it did.
+`resource-self`) are what a verify gate blocks on; **resource activity is not a finding at all**,
+so it is never reported as though it were one.
 **Done when:** every observation carries a code and a routing.
 
 ### 4. Report
@@ -106,9 +107,10 @@ One report, in this order:
 5. **Closed by neither** — every row the table marks **No**, each with the command that closes it:
    `resource-unresolved` and `resource-self` (→ `/quenching:knowledge:add` to restamp, because only a
    human knows what a doc now governs), `glossary-broken-link` (→ `/quenching:knowledge:define`, since
-   the backfill stage adds missing terms and never prunes a dead one), `stale-doc` (advisory, with
-   its age), coverage-ledger deferrals, and anything a human has not yet stated. Say plainly that
-   `stale-doc` gates nothing, so a reader never mistakes an advisory for a blocker.
+   the backfill stage adds missing terms and never prunes a dead one), coverage-ledger deferrals,
+   and anything a human has not yet stated. Report the widest few resource-activity intervals as a
+   figure in their own line, saying what they measure — commits in the radius of a `resource:`
+   glob, never drift of the doc — so a reader never reads a number as a blocker.
 
 Close with the single most useful next command for this repo's actual state, and nothing else — no
 plan, no offer to fix, no "shall I". A status read ends by handing control back.
@@ -160,8 +162,8 @@ code.
 - Never report a finding with a code the validator does not define, and never state a finding the
   sweep would not raise.
 - Never give a density figure a finding code, and never present an empty home as a defect.
-- Never call `stale-doc` a violation, and never fold it into the must-fix set — it is advisory,
-  and a bundle carrying one is still aligned.
+- Never call a resource-activity interval a violation, and never fold it into the must-fix set —
+  it is a figure, and no interval is a failure.
 - Never report a bundle as conformant on a run where the checker could not be resolved.
 - Never fan out sub-agents, and never hand this command file `context: fork` when it is invoked as a
   sweep's preview — the report has to land in the conversation where the OK will be given.

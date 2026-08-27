@@ -81,7 +81,6 @@ auto-closed. The rightmost column is also what the probe reads: a run whose only
 | `resource-unresolved` — a `resource` entry matching nothing on disk | *(surface → `quenching-knowledge-add` to restamp)* | **No** — only a human knows what the doc now governs; reported with the entry |
 | `resource-self` — the doc sits inside its own declared scope | *(surface → `quenching-knowledge-add` to restamp)* | **No** — narrowing a scope is a judgement, and a bundle aggregate is legitimate; reported |
 | `glossary-broken-link` — a glossary entry points at a deleted doc | *(surface → `quenching-knowledge-define`)* | **No** — the backfill stage ADDS missing terms, it never prunes a dead one; reported |
-| `stale-doc` — `timestamp` predates the last commit touching its `resource` | *(surface → the doc's owner)* | **No** — advisory; code may have moved under a rule that did not change |
 | Coverage-ledger deferral — a candidate sub-standard not yet written | *(surface → `quenching-knowledge-add`)* | **No** — needs human-provided evidence; reported |
 | A generic concept / standard / term a human has NOT yet stated | *(surface → `quenching-knowledge-learn` / `quenching-knowledge-add` / `quenching-knowledge-define`)* | **No** — no fresh human input this pass; reported |
 | `user` memory, secret, or unroutable harness fact | *(kept in place)* | **No** — flagged and kept, never deleted |

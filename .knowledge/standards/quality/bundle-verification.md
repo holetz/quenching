@@ -4,10 +4,10 @@ title: Bundle verification
 description: What the knowledge front machine-checks versus what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check, where an accepted gap is recorded, and the resource glob-set format
 resource: plugins/quenching/assets/bin/quenching/knowledge/**, plugins/quenching/assets/references/knowledge-align/conformance.md, plugins/quenching/commands/knowledge/status.md
 tags: [quality, verification, okf, validator, conformance]
-timestamp: 2026-08-17
+timestamp: 2026-08-27
 audience: both
 authority: current
-source: docs-verification-layer plan (sections 2-4); the grep-reach rule from collapse-remaining-language-clause-restatements (2026-07-31) — a census invariant that returned 14 against a real population of 19; the generated-listing pair from validar-a-zona-generated-contra-o-disco (2026-08-17)
+source: docs-verification-layer plan (sections 2-4); the grep-reach rule from collapse-remaining-language-clause-restatements (2026-07-31) — a census invariant that returned 14 against a real population of 19; the generated-listing pair from validar-a-zona-generated-contra-o-disco (2026-08-17); narrow-stale-doc (2026-08-27) — `stale-doc` retired and its measurement republished as a figure, emptying the advisory category and leaving the rule that a measurement earns a finding code only when what it measures is what the code names
 maintainer: quenching
 ---
 
@@ -124,7 +124,7 @@ makes the remaining hole *known* rather than merely unfilled.
 | Recommended fields | `missing-title` / `-description` / `-resource` / `-timestamp` | WARN | no |
 | Structural integrity | `dir-no-index`, `index-broken-link`, `index-orphan`, `glossary-broken-link`, `generated-listing-missing`, `generated-listing-drift` | WARN | **yes**, in the skills' verify gate |
 | Resource integrity | `resource-unresolved`, `resource-self` | WARN | **yes**, in the skills' verify gate |
-| Staleness | `stale-doc` | WARN | **no** — advisory |
+
 
 **Why so much is WARN-but-blocking.** OKF says a consumer MUST tolerate a broken link and MAY
 synthesize a missing index, so escalating these to ERROR would break the exit-code contract for
@@ -147,18 +147,36 @@ disarms it. Measured 2026-08-13: `architecture/bundle-root.md` was cited by four
 from the listing, and the validator was green throughout, alongside six rows whose descriptions
 their own docs had outgrown. A proxy any neighbour can disarm is not a check of the listing.
 
-**Advisory is a real category, and must stay small.** `stale-doc` reports a doc that *may* still be
-correct — code moves under a rule that did not change. Folding it into the must-fix set would make
-that set unusable, because every mature bundle carries one. A check that cannot distinguish "wrong"
-from "worth a look" belongs here or nowhere.
+**Advisory is a real category, and it is currently empty — which is the finding, not a gap.** Its
+only member was `stale-doc`, retired on 2026-08-27. The category stays named because the
+distinction it draws is real: a check that cannot tell "wrong" from "worth a look" belongs here or
+nowhere, and folding one into the must-fix set makes that set unusable.
 
-**A rising advisory count is not evidence of anything.** `stale-doc` compares a doc's `timestamp`
-against the last commit touching its `resource`, so any branch that edits a governed path *raises*
-the count as it goes: the resource moved, the rule did not. This is structural, not a symptom —
-a branch cannot touch code a standard governs without ageing that standard by this measure.
-Measured 2026-07-30: a branch editing only `plugins/quenching/**` took this bundle from 12
-`stale-doc` warnings to 14 without one doc becoming wrong. Read the gate as **zero errors**, never
-as a warning total, and name the delta in a report rather than letting it read as a regression.
+**What emptied it is worth writing down, because the same shape will be proposed again.**
+`stale-doc` compared a doc's `timestamp` against the last commit touching its `resource:`. The
+comparison is honest; the verdict was not. A `resource:` glob is deliberately wide — that is what
+makes it say *what the doc governs* — so what the comparison detects is **activity in the radius of
+the glob**, never drift of the content. Two measurements, three weeks apart, say the same thing
+from different directions:
+
+- 2026-07-30: a branch editing only `plugins/quenching/**` took this bundle from 12 warnings to 14
+  without one doc becoming wrong. The resource moved; the rule did not. This is structural — a
+  branch cannot touch code a standard governs without ageing that standard by this measure.
+- 2026-08-27: **50 of the 95 docs** carried it. A signal more than half the corpus raises is not
+  read as a signal; it is scrolled past, and it takes the findings printed beside it along. That is
+  the cost an advisory has to earn its way past, and this one stopped paying.
+
+**The measurement stayed; only the verdict went.** `cq knowledge validate --activity` publishes the
+same numbers per doc AND per `resource:` entry — the per-entry split is new, and it is what makes
+the figure actionable where the single collapsed answer never was, since the widest glob always
+won. No line carries a finding code, and the command exits 0 whatever it prints. A reader asking
+which docs sit next to the most movement gets a ranking; nobody is told a doc is wrong on evidence
+that cannot say so.
+
+**The rule this leaves behind.** A measurement earns a finding code only when the thing it measures
+is the thing the code names. Where the two differ — where the proxy is wide and the claim is narrow
+— publish the number and let a human read it. Read the gate as **zero errors**, never as a warning
+total.
 
 ## What stays a skill's prose self-check
 
@@ -193,9 +211,9 @@ repo's own bundle are lists.
 - **A glob, not a `file:line` anchor.** Doctrine once instructed deriving `resource` from
   `file:line`; zero of five real values ever did. A line number says *where the rule is written* and
   rots on any insertion above it; a glob says *what the doc governs*, which is also exactly the
-  input a staleness check needs.
+  input the resource-activity figure needs.
 - **A doc must not point at itself.** A self-scoped doc governs nothing and is eternally fresh,
-  which silently disables `stale-doc` for it.
+  which makes its resource activity unmeasurable.
 - **Except a bundle aggregate.** A scope containing the bundle *root* is legitimate:
   `glossary.md` really does govern the whole bundle, so `resource: /.knowledge/**` is truthful
   and narrowing it to look tidier would be the fabrication. This is the `TYPES_WITHOUT_RESOURCE`
@@ -205,12 +223,13 @@ repo's own bundle are lists.
 
 | Mode | Runs | Notes |
 | --- | --- | --- |
-| CLI | everything, including `stale-doc` | the on-demand sweep; `/quenching:knowledge:status` reads it |
-| `PostToolUse` | one file's per-doc checks | never structural, never `stale-doc` |
-| `Stop` | whole tree, dirty-gated | never `stale-doc` |
+| CLI | every check, plus `--activity` as a separate output | the on-demand sweep; `/quenching:knowledge:status` reads both |
+| `PostToolUse` | one file's per-doc checks | never structural |
+| `Stop` | whole tree, dirty-gated | never the activity figure |
 | `PreToolUse` | the two hard violations, opt-in | `hardBlock: true` only |
 
-`stale-doc` shells out to `git log` once per doc — fine on demand, unacceptable under the `Stop`
-deadline — so it is **CLI-only by default-off**, not by an opt-out a future caller could forget. A
-tree that is not a git checkout skips it **silently**: a check that cannot be computed reports
+The activity figure shells out to `git log` once per `resource:` entry — fine on demand,
+unacceptable under the `Stop` deadline — so it is **CLI-only, behind its own flag**, and no
+validation path can acquire it by forgetting to opt out. A tree that is not a git checkout measures
+**nothing**: a figure that cannot be computed reports
 nothing rather than a finding it cannot stand behind.

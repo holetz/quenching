@@ -33,11 +33,14 @@ sentence, and **link out** rather than explaining in full here.
 ## Terms
 
 - [**Advisory finding**](../standards/quality/bundle-verification.md) — a WARN the commands' verify
-  gate does **not** treat as blocking, reported so a human can look and never so a run stops;
-  `stale-doc` is the only one, against the WARN-but-must-fix set (`dir-no-index`,
-  `index-broken-link`, `index-orphan`, `glossary-broken-link`, `resource-unresolved`,
-  `resource-self`). The category has to stay small — a check that cannot tell "wrong" from "worth a
-  look" belongs here or nowhere, and folding one into must-fix makes that set unusable.
+  gate does **not** treat as blocking, reported so a human can look and never so a run stops. The
+  category is currently **empty**: its only member, `stale-doc`, was retired on 2026-08-27 and its
+  measurement became a figure with no code beside it (§Resource activity). Everything the validator
+  emits is now in the WARN-but-must-fix set (`dir-no-index`, `index-broken-link`, `index-orphan`,
+  `glossary-broken-link`, `resource-unresolved`, `resource-self`). The category stays named because
+  the distinction is real and the next check that cannot tell "wrong" from "worth a look" belongs
+  here or nowhere — and because 50 of 95 docs raising the one member is how it emptied: an advisory
+  nobody reads is worse than no advisory.
 - [**Agent-choice catalogue**](../standards/workflows/agent-choice-catalogues.md) — the shared
   shape `subjects`, `tagCatalog` and `workItemTypes` all follow in `.claude/quenching.json`: an
   abstract key mapping to a `description` an agent reads to PROPOSE a choice, which a human then
@@ -404,8 +407,8 @@ sentence, and **link out** rather than explaining in full here.
 - [**Prose fan-out**](../standards/quality/computed-fact-prose-fanout.md) — the set of prose sites
   a fact a tool computes ages the moment it changes — a schema key, a surface's command count — and
   which every checker in this repo is blind to by construction: the selftest proves the key *works*, `cq specs validate` reads records rather
-  than descriptions of them, and `stale-doc` only fires where a doc's `resource:` happens to name
-  the schema file. Measured twice on one branch: **one field added → four sites stale** across four homes, and **one
+  than descriptions of them, and resource activity only speaks where a doc's `resource:` happens to name
+  the schema file, which is now a figure rather than a check. Measured twice on one branch: **one field added → four sites stale** across four homes, and **one
   command retired → ten sites stale** across four files, with every checker green in both. Found by
   grepping the record's **spelled-out** form (`merge: {strategy`), never its name, and fixed in the
   task that adds the key. Historical mentions are correct as written, which is why this stays a
@@ -455,7 +458,7 @@ sentence, and **link out** rather than explaining in full here.
   wildmatch both let `*` cross a `/` and would silently widen every shallow scope. Anything else
   (braces, character classes, `?`) is classified `unknown` and never reported as a violation. It
   says what the doc *governs* — which is why it replaced the `file:line` anchor doctrine once
-  named, and why it is also the input `stale-doc` needs.
+  named, and why it is also the input the resource-activity figure needs.
 - [**Retired (reserved artifact)**](../standards/architecture/retiring-a-reserved-artifact.md) — a
   reserved filename nothing produces or checks any more, but which **keeps** its slot in the
   validator's `RESERVED` set and its skip in the `PreToolUse` hard block. Deliberately not
