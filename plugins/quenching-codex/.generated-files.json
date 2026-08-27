@@ -215,7 +215,7 @@
   ],
   "sha256": {
     ".codex-plugin/plugin.json": "c8b65ed516cfc1d6330ab36a7b49546e47367f4e62f4ca201b152cccf7dacbf4",
-    ".generated-from.json": "f48e5d23caf69d7d2f687d4ca37e14091d1c2091710be076573b6cdf714e2b39",
+    ".generated-from.json": "25e22e57f3e50a32cb15c0b8258c60a822d759e54d8d61769ea9692726ecaa70",
     "README.md": "7498b542d1f1dcbe28471dd9902fbe8d4871df259ed00f6a6016e25119d02fb3",
     "VERSION": "e33e70efdb9c35eb184b87ee7abc05ac16a925c9c36e84408999dea33a741fa8",
     "checks/citation-check.sh": "dbf4966b6b0370bc91f93a78f339ad2b14611c0801a7f90997bc24d3d9df9a7e",
@@ -378,7 +378,7 @@
     "skills/quenching-git-cleanup/SKILL.md": "6c2c0e74b04f9964b46701a9bdc5ad40374609b3214152a9afe478d8c2f46d67",
     "skills/quenching-git-commit/SKILL.md": "32fdfe42b45aa6adf1d1fb354890371b50d4026a98af85becc9a8f6ec5c18939",
     "skills/quenching-git-merge/SKILL.md": "1d13dd85357ea3213fa91d68dcf03d9b0db2791bbd8b42bad14794292be4b906",
-    "skills/quenching-git-pr-create/SKILL.md": "5fa8f0fe3b731757b45512f2472661f96d74eff8cacc1196df79820255877250",
+    "skills/quenching-git-pr-create/SKILL.md": "ead020e71b64aeee9b9041f1d5bd5f9c47815f1443025b8def86e055a1d9aaa4",
     "skills/quenching-git-pr-review/SKILL.md": "e96497d172b5960680ea8f48c81cd6d78c205ca6303d7d8cf6d00c98dbf255b4",
     "skills/quenching-git-sync/SKILL.md": "59b6bc4f1398e2790f1c50f9bb6c46985a96ccea717448de60f3a057ecc1b221",
     "skills/quenching-handoff/SKILL.md": "9f110060dd0572fe29315d3bbb307cb7600db2d9c2c01e2701f643f41c32d337",
