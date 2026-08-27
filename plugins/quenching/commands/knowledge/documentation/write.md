@@ -1,5 +1,5 @@
 ---
-description: Write sourced Diátaxis pages from a documentation plan, applying storytelling, useful visuals and agent-readable contracts. Triggers on "write the documentation pages", "draft the docs from the plan", or "apply the documentation writing pass". Not for: diagnosing or planning the architecture → /quenching:knowledge:documentation:plan; scoring or critiquing pages → /quenching:knowledge:documentation:review; changing only MkDocs site configuration → /quenching:knowledge:documentation:build; conducting the complete run → /quenching:knowledge:documentation:produce.
+description: Write sourced Diátaxis pages from a documentation plan, applying storytelling, useful visuals and agent-readable contracts. Triggers on "write the documentation pages", "draft the docs from the plan", or "apply the documentation writing pass". Not for: diagnosing or planning the architecture → /quenching:knowledge:documentation:plan; scoring or critiquing pages → /quenching:knowledge:documentation:review; changing only the site configuration → /quenching:knowledge:documentation:build; conducting the complete run → /quenching:knowledge:documentation:produce.
 argument-hint: [optional-page-slice-or-plan-path]
 allowed-tools: Read, Grep, Glob, Write, Edit, Task, Bash(python3:*), Bash(py:*)
 ---
@@ -22,7 +22,7 @@ in one pass per page.
 - **Plan is the boundary.** Write only destinations assigned in the accepted plan; keep one reader intent per page.
 - **Craft serves truth.** Use hooks, fast paths, progressive disclosure, tables, cards, tabs or Mermaid only when their function is clear.
 - **Agent-ready is explicit.** Stable headings, relative links, copyable real examples, expected output and `TL;DR for agents` blocks carry the contract in text.
-- **Extensions precede syntax.** Read `mkdocs.yml` and confirm each required extension before adding its syntax; report a missing extension to `build`.
+- **Extensions precede syntax.** Read `zensical.toml` and confirm each required extension before adding its syntax; report a missing extension to `build`.
 - **Source ledger travels with prose.** Record every strong claim, confidence and `source gap:` beside the page set.
 - **Fan-out is bounded.** When more than roughly six pages are assigned, use one `Task` per page slice, pin each to the session model (never `haiku`), and merge only their summaries.
 
@@ -36,7 +36,7 @@ and a source set.
 
 ### 2. Check the site extensions
 
-Read `mkdocs.yml` (or record its absence for `build`) and map every planned component to
+Read `zensical.toml` (or record its absence for `build`) and map every planned component to
 `attr_list`, `md_in_html`, `pymdownx.tabbed`, `pymdownx.emoji`, the Mermaid fence or another
 enabled extension. **Done when:** each syntax choice is enabled or is recorded as a site-layer
 finding, before it appears in prose.
@@ -64,7 +64,7 @@ invented fact and no unplanned destination.
 
 ## Invariants to never violate
 
-- Never change `mkdocs.yml`, `.pages` or other site-layer files; route those findings to `build`.
+- Never change `zensical.toml` or any other site-layer file; route those findings to `build`.
 - Never overwrite an unassigned page or discard human prose; merge only the planned gap.
 - Never use `haiku` for a writing sub-agent.
 - Never hide a critical fact only in an image or diagram.
