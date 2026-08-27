@@ -111,6 +111,37 @@ def _step_criteria(body: str) -> tuple[int, int]:
     return len(steps), len(covered)
 
 
+FENCE_RE = re.compile(r"^\s*(```|~~~)")
+
+
+def unscoped_marker(tool: str) -> str:
+    """The one literal line a body writes to price an unscoped grant, for `tool`.
+
+    Parameterised by the name rather than written out, so the marker cannot drift from
+    `UNSCOPED_TOOLS`: adding a second unscoped tool gets its marker for free."""
+    return f"**Why `{tool}` is unrestricted here.**"
+
+
+def marker_present(body: str, tool: str) -> bool:
+    """Does the body carry `tool`'s marker as a line of its own, outside a fence?
+
+    A BOOLEAN, and deliberately nothing more. It does not read the reason, judge whether it
+    is good, or count how long it is — the finding stays reported either way, and what the
+    marker buys is a reader who can tell a deliberate grant from an unexamined one.
+
+    The fence state is why this is a walk rather than a `in body` test: a body that QUOTES
+    the marker inside a fenced example — this repo's own moulds do exactly that — would
+    otherwise price itself by showing what pricing looks like."""
+    marker, fenced = unscoped_marker(tool), False
+    for line in body.splitlines():
+        if FENCE_RE.match(line):
+            fenced = not fenced
+            continue
+        if not fenced and line.strip().startswith(marker):
+            return True
+    return False
+
+
 SKILL_TOOL_RE = re.compile(r"[*`_]*Skill[*`_]*\s+tool", re.I)
 SKILL_TOOL_WINDOW = 1           # lines either side of the name, so a wrapped sentence counts
 
@@ -269,10 +300,17 @@ def lint_command(cmd: dict, base: str, named_by: set[str] | None = None) -> list
                            f"`{DONE_WHEN_MARKER}` criterion — a step with no observable end state "
                            "can be claimed done early", steps=steps, covered=covered, **where))
 
+    # BOTH cases are reported, and that is the point: the grant is still the whole shell for
+    # the turn either way. What the marker changes is the REMEDY — the unpriced message asks
+    # for something the reader can do, instead of pointing at a body this check never read.
     for bare in (t for t in _split_tools(str(fm.get("allowed-tools", ""))) if t in UNSCOPED_TOOLS):
-        out.append(finding("sk-unscoped-bash", "warn",
-                           f"`{bare}` is granted unscoped — scope it to the commands the workflow "
-                           "runs, or state the reason in the body", tool=bare, **where))
+        priced = marker_present(body, bare)
+        message = (f"`{bare}` is granted unscoped and the body prices it — the grant is still "
+                   "the whole shell for the turn" if priced else
+                   f"`{bare}` is granted unscoped — scope it to the commands the workflow runs, "
+                   f"or open a line with `{unscoped_marker(bare)}` and state the reason there")
+        out.append(finding("sk-unscoped-bash", "warn", message,
+                           tool=bare, priced=priced, **where))
 
     out.extend(_lint_invocation(fm, where, named_by))
     out.extend(_lint_frontmatter_hooks(cmd, where))

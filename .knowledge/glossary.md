@@ -329,6 +329,15 @@ sentence, and **link out** rather than explaining in full here.
   neither is graded against this repo — which is what decides reference over standard
   (§A contract a command reads at runtime is a reference, not a standard). Not to be confused with
   the **JSON payload** a `cq` verb emits, the unrelated sense used of tool output.
+- [**Priced**](../standards/quality/finding-remedy-applicability.md) — o campo booleano que
+  `sk-unscoped-bash` carrega no JSON: o corpo do comando abre uma linha com o marcador literal
+  `**Why \`Bash\` is unrestricted here.**`, fora de cerca, ou não. Diz **presença**, nunca
+  qualidade — nada lê a razão, julga se ela é boa ou mede o seu tamanho, porque um predicado que
+  fizesse isso estaria inventando um veredito sobre prosa que só casou um padrão. O finding é
+  reportado nos dois casos: o grant continua sendo o shell inteiro do turno, e o que o marcador
+  compra é um leitor capaz de distinguir um grant deliberado de um que ninguém examinou. Existe
+  porque o remédio anterior aconselhava declarar a razão no corpo enquanto a checagem lia só
+  `allowed-tools` — a conclusão que ela não observava (§O segundo sítio).
 - [**Provider ID**](../standards/architecture/spec-backend.md) — the tracker's own identifier for
   a spec — a GitHub issue number, an Azure Boards work-item ID — and **the spec's whole identity**.
   The canonical document does not mirror it, and resolution is exact: the ID exists or it is
