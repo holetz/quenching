@@ -106,7 +106,16 @@ Grant the narrowest set the workflow needs, and scope every tool that takes a sc
 `Bash(python3:*)`, `Bash(git status:*)` — never a bare `Bash`, which grants the whole shell for
 the turn (`sk-unscoped-bash`). The one exception is a command running **this repo's own
 toolchain** (its build, tests, linters), which cannot enumerate those commands in advance; such
-a command may hold an unscoped grant **provided its body states the reason**.
+a command may hold an unscoped grant **provided its body states the reason**, written as a line
+of its own opening with the literal marker — for `Bash`:
+
+```markdown
+**Why `Bash` is unrestricted here.** <the reason>
+```
+
+`lint` looks for that line, outside any fence, and carries the answer as `priced` in the JSON. The
+finding is reported either way: the grant is the whole shell for the turn whether or not it is
+priced, and what the marker buys is a reader who can tell a deliberate grant from an unexamined one.
 
 **Treat the grant as a declaration, and never claim it enforces anything.** What scoping reliably
 buys is the `cq components lint` check above; whether a declared set also *restricts* what a command

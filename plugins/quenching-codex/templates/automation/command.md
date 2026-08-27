@@ -9,7 +9,8 @@ argument-hint: [<the input this command accepts — e.g. subject, target file, o
 allowed-tools: <only the tools the steps actually use, each SCOPED — e.g. Read, Grep, Glob,
   Write, Edit, Bash(python3:*), Bash(git status:*). A bare `Bash` grants the whole shell for
   the turn and is reported as `sk-unscoped-bash`; it is legitimate only for a command running
-  the TARGET repo's own toolchain, whose body says so and says why.>
+  the TARGET repo's own toolchain, whose body says so and says why — on a line of its own
+  opening `**Why `Bash` is unrestricted here.**`, which is what `lint` observes.>
 # effort: <low | medium — omit to inherit the session's. Set it only when the work is
 #   genuinely cheaper or genuinely harder than the default. An inline pin invalidates the
 #   session's prompt cache — price the switch against what it saves.>
