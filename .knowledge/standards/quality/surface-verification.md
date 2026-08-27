@@ -4,10 +4,10 @@ title: Surface verification
 description: How a change to the command surface is proven — a fresh process because the registry is built at session start, assertions on captured tool_use rather than prose, the five preconditions a functional check must satisfy to measure what it claims, why the harness belongs to the components front rather than the spec cycle and how to scope its cost, and how an ordering property is verified by running a real cycle
 resource: plugins/quenching/assets/checks/functional-checks.sh, plugins/quenching/assets/checks/conclude-order-check.sh, plugins/quenching/commands/components/command/new.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/**
 tags: [quality, verification, automation, commands, functional-tests, cost]
-timestamp: 2026-08-19
+timestamp: 2026-08-27
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (tasks 7.1-7.3); fourth precondition and the ordering-check pattern from the move-conclude-merge-last spec (2026-07-28); fifth precondition measured by the verify-allowed-tools-enforcement spec (2026-07-28), inverted into the --plugin-dir rule on 2026-07-29 by the cost review of the harness — which also measured, over the whole /.specs/archive/ record, that every red run this harness produced traced to a defect in itself and none to a surface regression, and narrowed its ownership to the components front on that evidence; the stale-installed-copy half of the check-3 residue account marked impossible once resolution went plugin-first (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec); plugin-dir-for-functional-checks task 3.2 (2026-08-19) — the harness now witnesses the precondition with static and observed-path guards
+source: collapse-skills-into-commands spec (tasks 7.1-7.3); fourth precondition and the ordering-check pattern from the move-conclude-merge-last spec (2026-07-28); fifth precondition measured by the verify-allowed-tools-enforcement spec (2026-07-28), inverted into the --plugin-dir rule on 2026-07-29 by the cost review of the harness — which also measured, over the whole /.specs/archive/ record, that every red run this harness produced traced to a defect in itself and none to a surface regression, and narrowed its ownership to the components front on that evidence; the stale-installed-copy half of the check-3 residue account marked impossible once resolution went plugin-first (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec); plugin-dir-for-functional-checks task 3.2 (2026-08-19) — the harness now witnesses the precondition with static and observed-path guards; the same spec's task 2.4 (2026-08-27) added the guard's third invariant — the raw-grep form it replaced can no longer come back, since the check 4 the task originally aimed at was removed by the modularization and left the intention with no target
 maintainer: quenching
 ---
 
@@ -99,9 +99,13 @@ claimed:
    deleted. `claude -p --plugin-dir <the checkout under test>` in a box whose settings enable no
    plugin loads exactly one copy, and it is the right one.
 
-   The harness now witnesses this precondition in two independent ways: `--selfcheck` counts
-   every non-commented `claude -p` invocation and requires `--plugin-dir`, while the observed-path
-   anchor checks the `tool_use` capture during each applicable check. The anchor's negative half,
+   The harness now witnesses this precondition in two independent ways: `--selfcheck` reads the
+   harness source — every non-commented `claude -p` invocation must carry `--plugin-dir`, no
+   `enabledPlugins` may appear outside a comment, and no observed path may be compared with a raw
+   `grep` instead of the anchor — while the observed-path anchor checks the `tool_use` capture
+   during each applicable check. Each of the three is stated as a pattern over the source rather
+   than as a list of the assertions that exist today, so a check added later is born inside the
+   guard instead of outside it. The anchor's negative half,
    which rejects `/plugins/cache/` and `/plugins/marketplaces/`, is the grading guard because those
    paths identify the stale source even when Claude Code canonicalizes or copies the plugin
    directory. Its positive `$PLUGIN` prefix is the diagnostic companion: when it differs, the
