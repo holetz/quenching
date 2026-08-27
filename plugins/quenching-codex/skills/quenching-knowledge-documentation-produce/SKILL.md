@@ -37,7 +37,7 @@ the user gives one OK or the run stops with no stage invoked.
 ### 2. Establish the site layer
 
 Use the `Skill` tool to invoke `quenching:knowledge:documentation:build` as the first pass. It
-ensures the MkDocs extensions and CSS payload exist before prose is written. **Done when:** build
+ensures the Markdown extensions and CSS payload exist before prose is written. **Done when:** build
 returns its site-layer report, including `unverified` when the toolchain is absent.
 
 ### 3. Create the plan of record

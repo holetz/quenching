@@ -141,7 +141,7 @@ pages. If a contract cannot be filled, write `source gap: <what's missing>` rath
 ```markdown
 ### Execution plan
 - Files to edit:     <path → change>
-- MkDocs extensions needed: <attr_list, md_in_html, tabbed, emoji, mermaid, …>
+- Markdown extensions needed: <attr_list, md_in_html, tabbed, emoji, mermaid, …>
 - Risk per change:   <low | med | high — and why>
 - Validation:        <strict build + visual QA + rubric threshold>
 ```
