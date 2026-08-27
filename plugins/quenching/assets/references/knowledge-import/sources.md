@@ -133,7 +133,7 @@ For a large source, one `Task` sub-agent per **source slice** (a folder, a URL g
 returns **compact unit candidates** — `{home, type, path, one-line, source-anchor}`, never
 full bodies. The orchestrator merges the candidate lists, runs the cross-slice dedup above,
 and builds the single plan. Extraction/executor sub-agents may run on a **cheap model/effort**.
-See the model policy in [README.md §cost-model](${CLAUDE_PLUGIN_ROOT}/README.md#cost-model).
+See the model policy in [README.md §model-policy](${CLAUDE_PLUGIN_ROOT}/README.md#model-policy).
 
 <!-- rationale -->
 

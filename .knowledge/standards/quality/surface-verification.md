@@ -2,12 +2,12 @@
 type: standard
 title: Surface verification
 description: How a change to the command surface is proven — a fresh process because the registry is built at session start, assertions on captured tool_use rather than prose, the five preconditions a functional check must satisfy to measure what it claims, why the harness belongs to the components front rather than the spec cycle and how to scope its cost, and how an ordering property is verified by running a real cycle
-resource: plugins/quenching/assets/checks/functional-checks.sh, plugins/quenching/commands/components/command/new.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/**
+resource: plugins/quenching/tests/test_readme_surface.py, plugins/quenching/assets/checks/functional-checks.sh, plugins/quenching/commands/components/command/new.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/**
 tags: [quality, verification, automation, commands, functional-tests, cost]
 timestamp: 2026-08-27
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (tasks 7.1-7.3); fourth precondition and the ordering-check pattern from the move-conclude-merge-last spec (2026-07-28); fifth precondition measured by the verify-allowed-tools-enforcement spec (2026-07-28), inverted into the --plugin-dir rule on 2026-07-29 by the cost review of the harness — which also measured, over the whole /.specs/archive/ record, that every red run this harness produced traced to a defect in itself and none to a surface regression, and narrowed its ownership to the components front on that evidence; the stale-installed-copy half of the check-3 residue account marked impossible once resolution went plugin-first (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec); plugin-dir-for-functional-checks task 3.2 (2026-08-19) — the harness now witnesses the precondition with static and observed-path guards; the same spec's task 2.4 (2026-08-27) added the guard's third invariant — the raw-grep form it replaced can no longer come back, since the check 4 the task originally aimed at was removed by the modularization and left the intention with no target
+source: collapse-skills-into-commands spec (tasks 7.1-7.3); fourth precondition and the ordering-check pattern from the move-conclude-merge-last spec (2026-07-28); fifth precondition measured by the verify-allowed-tools-enforcement spec (2026-07-28), inverted into the --plugin-dir rule on 2026-07-29 by the cost review of the harness — which also measured, over the whole /.specs/archive/ record, that every red run this harness produced traced to a defect in itself and none to a surface regression, and narrowed its ownership to the components front on that evidence; the stale-installed-copy half of the check-3 residue account marked impossible once resolution went plugin-first (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec); plugin-dir-for-functional-checks task 3.2 (2026-08-19) — the harness now witnesses the precondition with static and observed-path guards; the same spec's task 2.4 (2026-08-27) added the guard's third invariant — the raw-grep form it replaced can no longer come back, since the check 4 the task originally aimed at was removed by the modularization and left the intention with no target; the hand-written-inventory rule from the rewrite-readme-collapsed-surface spec task 1.2 (2026-08-27), measured against the plugin's own README
 maintainer: quenching
 ---
 
@@ -216,6 +216,33 @@ fake. A cycle that claimed success while leaving a commit on the base fails on t
 
 Prefer this shape whenever a rule is phrased as an ordering, a boundary, or a "never after" — those
 are the rules most likely to be quietly violated by a future edit that reads correctly.
+
+## A hand-written inventory of the surface needs a machine holding its lockstep
+
+**A document that lists the commands by hand is a second copy of the registry, and a second copy of
+a surface assembled at session start drifts.** Not eventually — every time the surface moves and
+nobody remembers the copy. So an inventory like that is only justified when two things hold: the
+count is a property of the structure (rows are counted) rather than a sentence somebody typed, and a
+mechanical check holds the two lists in lockstep.
+
+**The check's home is the test suite, not the harness block.** Any repo that keeps such an inventory
+already runs its suite; adding the assertion there costs the harness no new line, and a set
+comparison names *which* entry drifted where a shell `diff` of two substitutions can only report
+that something did. Putting it in a prose verification block instead makes it a step someone follows
+by hand, and putting it only in a spec's `## Validation` makes it a check that runs once, at that
+spec's close, and never again — which is exactly how such an inventory reaches the state that
+justified this rule.
+
+**It is not a finding in `cq components lint`.** The tool is installed into third-party repositories,
+and no adopting repo holds this plugin's own manual — a finding code would charge every adopter for
+a check only the plugin's repo can run. **Reopen when a second consumer appears**: an adopting repo
+maintaining a hand-written inventory of its *own* surface. Until then the suite is the correct home,
+and the decision needs no revisiting.
+
+**Measured, 2026-08-27.** `plugins/quenching/README.md` had drifted to naming three commands that do
+not exist — two written in a short form without the plugin namespace, one an invented example — while
+omitting eighteen that do, under a heading whose count was written from memory. The surface had gone
+from 26 commands to 38 in the interval; no check observed any of it.
 
 ## What this does not cover
 
