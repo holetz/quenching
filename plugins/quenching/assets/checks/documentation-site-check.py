@@ -125,6 +125,18 @@ def selftest() -> int:
         (site / "index.html").write_text('<img src="missing.png"><a href="#gone">x</a>')
         codes = {finding.code for finding in check(site)}
         assert {"site-asset-missing", "site-anchor-missing"} <= codes, codes
+    fixture_root = Path(__file__).with_name("fixtures") / "documentation-site-check"
+    expected = {
+        "healthy": set(),
+        "asset-missing": {"site-asset-missing", "site-sitemap-empty"},
+        "anchor-missing": {"site-anchor-missing", "site-sitemap-empty"},
+        "sitemap-empty": {"site-sitemap-empty"},
+        "page-orphan": {"site-sitemap-empty", "site-page-orphan"},
+        "remote-resource": {"site-remote-resource", "site-sitemap-empty"},
+    }
+    for fixture, expected_codes in expected.items():
+        codes = {finding.code for finding in check(fixture_root / fixture)}
+        assert expected_codes <= codes, (fixture, codes)
     print("documentation-site-check selftest: OK")
     return 0
 
