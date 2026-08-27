@@ -73,8 +73,11 @@ on both routes: `--base` for GitHub and `--target-branch` for Azure; neither may
 the created PR's number/id and URL from the JSON/CLI result. **Done when:** the PR exists, or the
 push/create failed and its error is reported verbatim.
 **Done when:** the provider-specific publication succeeded or its failure is reported.
-[plan-git-record.md](/.knowledge/standards/workflows/plan-git-record.md) §Three frontmatter
-records.
+
+The PR's number and URL are a git fact no derivation reproduces, which is why step 5 stamps them
+rather than leaving them to be read back later — the same admission test the `branch:` and `merge:`
+records pass. A target that carries `standards/workflows/plan-git-record.md` states it there, under
+§Three frontmatter records.
 
 ### 5. Stamp, with an ID
 ```bash
