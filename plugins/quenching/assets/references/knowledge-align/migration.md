@@ -99,16 +99,16 @@ OKF v0.13 moved parked work out of the `.knowledge/` bundle, and it now lands in
 
 The move is two hops, and this sweep performs only the first:
 
-1. **`/quenching:knowledge:align` moves the files.** `/quenching:specs:align` scaffolds the `specs/` workspace if absent;
-   then every task doc under the bundle's `backlog/*.md` moves into the **legacy `backlog/` folder inside `specs/`**,
+1. **`/quenching:knowledge:align` moves the files.** Every task doc under the bundle's
+   `backlog/*.md` moves into the **legacy `backlog/` folder inside `specs/`**,
    applying the `idea`→`task` restamp (§1d) on the way. That folder is a staging area for hop 2,
    not a destination. This is its **own** confirmation, blast-radius swept (§3–4): the move rewrites
    every cross-link into that bundle `backlog/` home.
 2. **`cq specs migrate` converts them.** That legacy folder is exactly the tool's input: each task
    file becomes a **captured-stage spec** in `specs/plans/`, with its `priority` / `tags` /
-   `complexity` preserved as a line in `## Problem`. Name that second hop in the report and let
-   `/quenching:specs:align` run it — **never hand-convert a task into a spec here**, which would be this
-   sweep authoring content.
+   `complexity` preserved as a line in `## Problem`. Name that second hop in the report and leave
+   it to `/quenching:specs:create` — **never hand-convert a task into a spec here**, which would be
+   this sweep authoring content.
 
 After both hops, `/quenching:specs:create` and `/quenching:specs:triage` own that work.
 

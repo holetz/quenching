@@ -35,11 +35,13 @@
 #   --only 3       spoken routing — OPT-IN, see below
 #   --only 1,2,3   all three
 #
-# TWO GUARDS, TWO ZERO-COST MODES. The static guard in --selfcheck counts every
-# non-commented `claude -p` in this file and requires --plugin-dir on each one;
-# the anchored guard checks the paths observed in captured tool_use events. The
-# --selfcheck mode runs only the source guard, while --selftest exercises the
-# observed-path guard against a synthetic capture, and neither starts a session.
+# TWO GUARDS, TWO ZERO-COST MODES. The static guard in --selfcheck reads this file:
+# every non-commented `claude -p` must carry --plugin-dir, no `enabledPlugins` may
+# appear outside a comment, and no observed path may be compared with a raw grep
+# instead of `anchored`; the anchored guard checks the paths observed in captured
+# tool_use events. The --selfcheck mode runs only the source guard, while --selftest
+# exercises the observed-path guard against a synthetic capture, and neither starts
+# a session.
 # The negative half of the observed-path guard is mandatory: rejecting cache and
 # marketplace paths remains correct even if Codex canonicalizes or copies
 # the plugin directory, while the positive $PLUGIN prefix stays diagnostic.
@@ -110,8 +112,22 @@ selfcheck () {
     return 1
   fi
 
+  # The assertion form task 2.3 replaced. A raw grep for the reference path passes as long as
+  # SOME read landed under `assets/references/` — a cache copy included, which is exactly the
+  # false-pass measured on 2026-07-28. `anchored` is the only comparison allowed to decide an
+  # observed path, so the raw form must never come back. Stated as a pattern rather than as a
+  # list of the assertions that exist, for the same reason the count above is not an
+  # enumeration: a new check would otherwise be born outside the guard.
+  raw="$(grep -nE "grep[^\n]*assets/""references/" <<<"$active" || true)"
+  if [ -n "$raw" ]; then
+    printf 'FAIL selfcheck: an observed path is compared with a raw grep, not anchored\n'
+    printf '%s\n' "$raw"
+    return 1
+  fi
+
   printf 'PASS selfcheck: %s %s invocation(s) use --plugin-dir\n' "$count" "$pattern"
   printf 'PASS selfcheck: no %s outside comments\n' "$forbidden_pattern"
+  printf 'PASS selfcheck: no observed path compared outside anchored\n'
 }
 
 if [ "$SELF_CHECK" -eq 1 ]; then
