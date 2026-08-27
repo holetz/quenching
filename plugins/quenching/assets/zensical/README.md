@@ -17,6 +17,18 @@ markdown stays generator-neutral; only this config layer names a generator.**
 sidecar file: the `nav` list in `zensical.toml` carries the order and the section titles, and a new
 page is a new line in it.
 
+## Publication and identity contract
+
+`site_url` is required before a site is delivered publicly: derive it from the approved destination
+or leave it as an explicit configuration gap. `repo_url` comes from the target's Git remote when it
+is a usable public/repository URL. Zensical does not derive Azure DevOps edit links, so an Azure
+target uses a tested `edit_uri_template` such as `?path=/{path}&version=GB<branch>`; replace
+`<branch>` with the target's actual branch.
+
+Set `language`, palette colors, logo and favicon only from a target-owned language or brand
+contract. The template deliberately comments these values rather than making a plausible-looking
+placeholder public metadata.
+
 ## Validate locally
 
 ```bash
