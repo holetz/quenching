@@ -245,8 +245,8 @@ that edits the file is the task that re-captures the golden. Declare it in `file
 
 Measured on `revisar-fluxo-do-develop-custo-e-gates` (task 2.2, 2026-08-16): a section added to
 `assets/references/align/convergence.md` broke
-`plugins/quenching/tests/fixtures/golden/skills-read-index.json`, which freezes that reference's
-per-section character counts. The re-capture was correct and sanctioned by `test_golden.py`'s own
+the golden fixture that froze that reference's per-section character counts (retired since, with
+the local backend — the path is deliberately not spelled out, because it resolves nowhere now). The re-capture was correct and sanctioned by `test_golden.py`'s own
 docstring, but the fixture appeared in no task's `files:` and in no `## Impact` line, so the task
 that owned the change did not own the artifact the change invalidated.
 

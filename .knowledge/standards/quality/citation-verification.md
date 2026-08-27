@@ -4,10 +4,10 @@ title: Citation verification
 description: How citation-check.sh proves a citation resolves against the base it claims — half 1 that the old name died and half 2 that the new name was born, blind and with no allowlist, and half 3 that the prose the plugin SHIPS promises only what the published skeleton delivers, since a command body and a reference are read inside a target checkout where our standards do not exist — the three scope rules read from the script's own header (the instrument does not measure itself, .specs/ is out of scope, golden/eval fixtures are frozen data), the spelling rule half 3 rests on (a markdown link promises a destination, a bare inline-code path names a doc the target may not have), that it runs manually and is documented rather than gated automatically (Open Decision 2, with a second real use case as the trigger to revisit), and why the "every red is a harness defect" precedent stays scoped to functional-checks.sh alone until citation-check.sh earns its own evidence (Open Decision 3, opportunistic)
 resource: plugins/quenching/assets/checks/citation-check.sh
 tags: [quality, verification, citations, automation]
-timestamp: 2026-08-26
+timestamp: 2026-08-27
 audience: both
 authority: current
-source: revisar-politica-de-assets-checks spec (task 1.1); references-citam-standards-fora-do-esqueleto spec (task 1.2, half 3); citation-check-dedup-esconde-citadores-repetidos spec (task 2.1, a granularidade do relatório de half 2); the second real use case for half 3 and the widened trigger set, by varredura-de-dependencias-antes-do-banco-shape at its branch review (2026-08-18), on four links to a standard that spec had just minted
+source: revisar-politica-de-assets-checks spec (task 1.1); references-citam-standards-fora-do-esqueleto spec (task 1.2, half 3); citation-check-dedup-esconde-citadores-repetidos spec (task 2.1, a granularidade do relatório de half 2); the second real use case for half 3 and the widened trigger set, by varredura-de-dependencias-antes-do-banco-shape at its branch review (2026-08-18), on four links to a standard that spec had just minted; varrer-caminhos-citados-que-nao-resolvem (2026-08-27) — half 2 stopped resolving the two shipped trees half 3 owns against this checkout, and the split between the halves is now written down
 maintainer: quenching
 ---
 
@@ -112,6 +112,28 @@ skeleton is consulted.
 Half 3 carries its own arming proof, in the shape halves 1 and 2 each have: extracting **zero**
 links is exit **2**, "nothing could be measured", never a pass — an empty corpus is how a sweep
 reports a repository as clean over nothing.
+
+### The two halves split the same two trees, and the split is the contract
+
+Half 2 and half 3 both read `commands/**` and `assets/references/**`. They are not redundant, and
+the boundary between them is decided by **which repository a path is a claim about**:
+
+| Half | Base it resolves against | What it catches |
+| --- | --- | --- |
+| 2 | this checkout | a path or a command name that exists nowhere |
+| 3 | the published skeleton | a markdown link that resolves here and in no other repository |
+
+**So half 2 must NOT resolve those two trees' own links against this checkout**, and until
+2026-08-27 it did — reporting as broken the prose that describes another repository correctly, in
+the very trees half 3 was written for. The `SHIPPED` list it skips now names all five shipped
+trees plus the translated sibling, and nothing is uncovered by the move: half 3 measures exactly
+those trees against the base that matters.
+
+**The translated sibling is shipped prose too.** `plugins/quenching-codex/**` is the same content
+in another platform's spelling — generated, never hand-edited. Measured before it was added to the
+list: four findings, every one a path correct THERE and unresolvable here. One of them was a
+sentence *saying a path does not exist*, read as a claim that it does — the sharpest reminder
+available that a path in prose is not always a citation.
 
 ## Who runs it, and when
 

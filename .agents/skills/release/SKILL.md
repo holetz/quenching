@@ -17,13 +17,13 @@ primary branch (`main`) through a reviewed pull request, and the release is the 
 that moves the plugin's four version-carrying artifacts
 ([knowledge/standards/ci-cd/versioning-release.md](/.knowledge/standards/ci-cd/versioning-release.md))
 and creates a tag. This command is that deliberate act. The mechanical half — the four-artifact
-bump, the commit, the tag — is `plugins/quenching/scripts/bin/cq specs release <version>`, already
+bump, the commit, the tag — is `plugins/quenching-codex/scripts/bin/cq specs release <version>`, already
 implemented and self-tested; this command judges *whether* and *what*, gets it confirmed, and
 publishes the result.
 
 **Always the LOCAL copy of the tool, never the installed plugin.** Every git command and every
 `cq specs` call below uses the path **relative to this repository's own root**
-(`plugins/quenching/scripts/bin/cq`) — never `../..`. A release packages what
+(`plugins/quenching-codex/scripts/bin/cq`) — never `../..`. A release packages what
 is actually on this checkout's primary branch; resolving through the installed plugin could run the
 tool from a different, possibly older, copy than the one being released — the exact risk this
 repository's own memory already names as the plugin cache lagging the repo source.
@@ -32,8 +32,8 @@ repository's own memory already names as the plugin cache lagging the repo sourc
 
 ### 1. Resolve the primary branch and where its checkout lives
 ```bash
-python3 plugins/quenching/scripts/bin/cq specs config --json
-python3 plugins/quenching/scripts/bin/cq git base --json
+python3 plugins/quenching-codex/scripts/bin/cq specs config --json
+python3 plugins/quenching-codex/scripts/bin/cq git base --json
 git worktree list --porcelain
 ```
 The primary branch is the `base` `cq git base` resolves (`origin/HEAD`, else
@@ -81,7 +81,7 @@ makes the release one atomic fact on the branch that publishes
 The `cd` in the subshell is what picks the repository — `cq specs` resolves it from the cwd, and
 refuses (exit 2, `sp-release-wrong-branch`) any checkout not on the primary branch.
 ```bash
-( cd <primary checkout from step 1> && python3 plugins/quenching/scripts/bin/cq specs release <version> --json )
+( cd <primary checkout from step 1> && python3 plugins/quenching-codex/scripts/bin/cq specs release <version> --json )
 git -C <primary checkout from step 1> push origin <primary-branch> <version>
 ```
 Exit **0** on `cq specs release` → the four artifacts moved, the bump commit landed on the primary

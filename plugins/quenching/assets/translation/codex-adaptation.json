@@ -5,6 +5,7 @@
     "${CLAUDE_PLUGIN_ROOT}/assets/specs/": "../../specs/",
     "${CLAUDE_PLUGIN_ROOT}/assets/knowledge/": "../../knowledge/",
     "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq": "../../scripts/cq",
+    "plugins/quenching/assets/bin/cq": "plugins/quenching-codex/scripts/bin/cq",
     "assets/bin/cq": "scripts/bin/cq",
     "\"assets\", \"bin\", \"cq\"": "\"scripts\", \"bin\", \"cq\"",
     "${CLAUDE_PLUGIN_ROOT}/assets/checks/": "../../checks/",
@@ -21,6 +22,18 @@
     "PLUGIN_MANIFEST = os.path.join(\".claude-plugin\", \"plugin.json\")": "PLUGIN_MANIFEST = os.path.join(\".codex-plugin\", \"plugin.json\")",
     "REFERENCES_DIR = os.path.join(\"assets\", \"references\")": "REFERENCES_DIR = \"references\""
   },
-  "dropped_frontmatter": ["argument-hint", "allowed-tools", "model", "context", "hooks"],
-  "manual_review": ["AskUserQuestion", "Task", "Skill", "context: fork", "hooks"]
+  "dropped_frontmatter": [
+    "argument-hint",
+    "allowed-tools",
+    "model",
+    "context",
+    "hooks"
+  ],
+  "manual_review": [
+    "AskUserQuestion",
+    "Task",
+    "Skill",
+    "context: fork",
+    "hooks"
+  ]
 }

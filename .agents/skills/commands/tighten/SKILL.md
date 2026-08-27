@@ -32,7 +32,7 @@ test **deletes**.
 | A computed number restated in prose fans out — grep its literal form | [computed-fact-prose-fanout.md](/.knowledge/standards/quality/computed-fact-prose-fanout.md) |
 | Which language the prose is written in | [communication.md](/.knowledge/standards/agents/communication.md) |
 
-Resolve `cq` at `plugins/quenching/scripts/bin/cq`, invoked by that literal quoted path
+Resolve `cq` at `plugins/quenching-codex/scripts/bin/cq`, invoked by that literal quoted path
 ([align/tool-resolution.md](/plugins/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool); branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
 
@@ -65,8 +65,8 @@ the directional `Not for:` boundary; and any negation that is a hard invariant.
 ```bash
 wc -c -l <path>
 git status --porcelain <path>
-python3 "plugins/quenching/scripts/bin/cq" --root <surface-root> components lint --json
-python3 "plugins/quenching/scripts/bin/cq" --root <surface-root> components doctor --json
+python3 "plugins/quenching-codex/scripts/bin/cq" --root <surface-root> components lint --json
+python3 "plugins/quenching-codex/scripts/bin/cq" --root <surface-root> components doctor --json
 ```
 Record the file's char and line count **as it stands on disk now**, and the finding count for the
 whole surface. A target already carrying uncommitted work measures from that work: a delta taken
@@ -126,9 +126,9 @@ Write the approved moves and nothing else. Two conditions bind every write:
 
 ### 6. Verify against the baseline, then report what was measured
 ```bash
-python3 "plugins/quenching/scripts/bin/cq" --root <surface-root> components lint --json
-python3 "plugins/quenching/scripts/bin/cq" --root <surface-root> components doctor --json
-python3 "plugins/quenching/scripts/bin/cq" components read <cited file> --sections "<each §>"
+python3 "plugins/quenching-codex/scripts/bin/cq" --root <surface-root> components lint --json
+python3 "plugins/quenching-codex/scripts/bin/cq" --root <surface-root> components doctor --json
+python3 "plugins/quenching-codex/scripts/bin/cq" components read <cited file> --sections "<each §>"
 python3 -m unittest discover -s tests
 bash plugins/quenching/assets/checks/functional-checks.sh
 ```
