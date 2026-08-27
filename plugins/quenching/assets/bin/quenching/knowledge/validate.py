@@ -21,7 +21,6 @@ from quenching.knowledge.checks import (
 from quenching.knowledge.corpus import _build_corpus
 from quenching.knowledge.resource import check_resource
 from quenching.knowledge.schema import EXEMPT, GLOSSARY_REL, LEGACY_ROOT_NAME
-from quenching.knowledge.stale import check_stale
 from quenching.knowledge.structure import validate_generated_listing, validate_structure
 
 
@@ -36,14 +35,8 @@ def validate_file(path: str, bundle_root: str) -> list[tuple[str, str, str, str]
     return _validate_text(path, text, bundle_root)
 
 
-def _validate_text(path: str, text: str, bundle_root: str,
-                   with_stale: bool = False) -> list[tuple[str, str, str, str]]:
-    """Findings for one file whose text is already in hand (no disk read).
-
-    `with_stale` enables `stale-doc`, and **defaults to off**: it shells out to
-    `git log` once per doc, which is fine for an on-demand sweep and unacceptable
-    under the hook path's 4-second Stop deadline. Only `run_cli` turns it on, so a
-    new hook caller cannot acquire it by forgetting to opt out."""
+def _validate_text(path: str, text: str, bundle_root: str) -> list[tuple[str, str, str, str]]:
+    """Findings for one file whose text is already in hand (no disk read)."""
     rel = os.path.relpath(path, bundle_root).replace(os.sep, "/")
     base = os.path.basename(path)
     if base in EXEMPT:
@@ -60,16 +53,21 @@ def _validate_text(path: str, text: str, bundle_root: str,
                 "OKF-strict uses `index.md` as the reserved listing — convert this README.md to index.md")]
     elif base.endswith(".md"):
         raw = check_concept(text) + check_resource(text, path, bundle_root)
-        if with_stale:
-            raw += check_stale(text, bundle_root)
+        # `stale-doc` was emitted here until 2026-08-27. RETIRED, NOT DELETED — the same shape
+        # `log.md` above carries: the code stays named and explained, and nothing emits it.
+        # It compared a doc's `timestamp` against the last commit touching its `resource:`, which
+        # measures ACTIVITY IN THE RADIUS OF THE GLOB and not drift of what the doc describes —
+        # so a doc correct about a stable rule was reported as possibly wrong whenever anything
+        # near it moved. Measured on this repo the day it was retired: 50 of 95 docs. The
+        # measurement survives as a figure with no code beside it (`--activity`,
+        # `quenching.knowledge.stale.resource_activity`); the verdict does not.
     else:
         raw = []
     return [(sev, rel, code, msg) for (sev, code, msg) in raw]
 
 
 def validate_tree(bundle_root: str, deadline: float | None = None,
-                   ignore_globs: tuple[str, ...] = (),
-                   with_stale: bool = False):
+                   ignore_globs: tuple[str, ...] = ()):
     """Validate the whole bundle from ONE read pass. Returns the findings list,
     or **None** when `deadline` (a `time.monotonic()` instant) expired mid-walk —
     hook mode aborts silently; CLI mode passes no deadline."""
@@ -87,7 +85,7 @@ def validate_tree(bundle_root: str, deadline: float | None = None,
         if text is None:
             findings.append(("ERROR", os.path.basename(path), "unreadable", "cannot read file"))
         else:
-            findings.extend(_validate_text(path, text, bundle_root, with_stale))
+            findings.extend(_validate_text(path, text, bundle_root))
     # bundle-level SHOULDs
     if not (root / "index.md").exists():
         findings.append(("WARN", "index.md", "bundle-no-index", "bundle root has no `index.md`"))
