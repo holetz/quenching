@@ -156,7 +156,7 @@ plan was rejected and nothing was written.
 
 ### 4. Execute the structural pass (invasive)
 - **Scaffold** missing homes from `../../knowledge/` (copy the applicable
-  `index.md` listings **and any `.pages` nav sidecars**, e.g. `documentation/**`; adapt boundary
+  `index.md` listings, e.g. `documentation/**`; adapt boundary
   lines to the repo). When scaffolding `concepts/`, also copy
   its **fixed `glossary.md` seed** — the repo's A–Z term lookup — to the bundle root, and list it in
   `concepts/index.md` (it is the only pre-seeded concept doc the skeleton ships).
@@ -200,19 +200,19 @@ bundle, never write the line into a nested harness file — only the root one is
 session start, which is the whole reason this form was chosen — and on a repo that already declares
 one, read it and move on rather than asking again.
 
-**The mkdocs site.** Only if the bundle has a `documentation/` home. Offer to copy from
-`../../assets/mkdocs/`: `mkdocs.yml.tmpl` → the repo **root** as `mkdocs.yml`
+**The documentation site.** Only if the bundle has a `documentation/` home. Offer to copy from
+`../../assets/zensical/`: `zensical.toml.tmpl` → the repo **root** as `zensical.toml`
 **only if absent** (never clobber a customized one — show a diff and let the user merge), filling
 `site_name`/`site_description`; `requirements.txt` → repo root; `quenching.css` → the
 `documentation/` home's own `assets/stylesheets/quenching.css`, the path `extra_css` names; on
 request, `ci-github-pages.yml` →
-`.github/workflows/docs.yml` (opt-in, platform-specific). The `.pages` nav files ship **with** the
-`documentation/` skeleton (step 4), so nav needs no separate install.
+`.github/workflows/docs.yml` (opt-in, platform-specific). The nav ships inside the config, so it
+needs no separate install.
 
 This is the **first install only**. The site layer's owner is `quenching-knowledge-documentation-build`: every
 later update, nav regeneration, config merge, and build verification is **its** job. If the install
-is anything more than stamping two absent files — a customized `mkdocs.yml` to merge, a `docs_dir`
-pointing elsewhere, `.pages` files no longer matching the tree — hand off to that command instead of
+is anything more than stamping two absent files — a customized config to merge, a `docs_dir`
+pointing elsewhere, a nav no longer matching the tree — hand off to that command instead of
 resolving it here.
 **Done when:** the two offers have been made once and answered, or the pass is >1 and this step
 was skipped.

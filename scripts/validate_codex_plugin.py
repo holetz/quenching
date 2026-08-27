@@ -31,8 +31,10 @@ def bash_blocks(text: str):
 def validate_cq_resolution(root: Path) -> None:
     for path in root.rglob("*.md"):
         text = path.read_text(encoding="utf-8")
-        assert "../../scripts/cq" not in text, path
         for block in bash_blocks(text):
+            # Scoped to the executable blocks: prose legitimately names the relative path
+            # when explaining how resolution works, and the file-wide form banned that too.
+            assert "../../scripts/cq" not in block, path
             if CQ_COMMAND.search(block):
                 assert "quenching-codex" in block and "scripts/cq" in block, path
             elif CQ_INVOCATION.search(block):
@@ -45,7 +47,10 @@ def main(path: str = "plugins/quenching-codex") -> int:
     assert manifest["name"] == "quenching-codex"
     assert manifest["version"] == (root / "VERSION").read_text(encoding="utf-8").strip()
     skills = sorted((root / "skills").glob("*/SKILL.md"))
-    assert len(skills) == 34, len(skills)
+    # Derived from what the translator recorded, never a literal: a frozen count goes
+    # stale the next time a command is minted, and nobody notices until this script dies.
+    expected = json.loads((root / ".generated-from.json").read_text(encoding="utf-8"))["command_count"]
+    assert len(skills) == expected, (len(skills), expected)
     for skill in skills:
         text = skill.read_text(encoding="utf-8")
         assert text.startswith("---\n") and "\n---\n" in text, skill

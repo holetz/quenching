@@ -610,6 +610,10 @@ sentence, and **link out** rather than explaining in full here.
   branch review, and one of those in a file `## Impact` **had** named and half-covered — which is
   why naming the file is not enough, and the reviewer's question is *what did this make false?*
   rather than *which files changed?*
+- [**Zensical**](../external/tools/zensical-measured-behaviour.md) — the static site generator the
+  Material for MkDocs team now ships, and the one this plugin's `documentation/` site layer stamps
+  and verifies since spec 1003: it reads a `mkdocs.yml` natively but runs **no MkDocs plugin at
+  all**, so the nav moved from `.pages` sidecars into an explicit `nav` list in `zensical.toml`.
 
 ## How to enrich
 

@@ -1,6 +1,6 @@
-# Documentation visual language — useful Material components and exact syntax
+# Documentation visual language — useful components and exact syntax
 
-The semantic choice and the mechanical MkDocs Material syntax for cards, tabs, Mermaid, badges,
+The semantic choice and the mechanical Zensical syntax for cards, tabs, Mermaid, badges,
 heroes, tables and callouts. Components are information-bearing, not decoration.
 
 ## Contents
@@ -31,45 +31,46 @@ preferred for flows and hero treatments.
 
 ## Extensions — the rich superset
 
-```yaml
-markdown_extensions:
-  - admonition
-  - attr_list
-  - md_in_html
-  - tables
-  - toc:
-      permalink: true
-  - pymdownx.superfences:
-      custom_fences:
-        - name: mermaid
-          class: mermaid
-          format: !!python/name:pymdownx.superfences.fence_code_format
-  - pymdownx.highlight
-  - pymdownx.inlinehilite
-  - pymdownx.details
-  - pymdownx.tabbed:
-      alternate_style: true
-  - pymdownx.emoji:
-      emoji_index: !!python/name:material.extensions.emoji.twemoji
-      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+```toml
+[project.markdown_extensions]
+  admonition                         = {}
+  attr_list                          = {}
+  md_in_html                         = {}
+  tables                             = {}
+  toc.permalink                      = true
+  pymdownx.details                   = {}
+  pymdownx.highlight                 = {}
+  pymdownx.inlinehilite              = {}
+  pymdownx.tabbed.alternate_style    = true
+  pymdownx.emoji.emoji_index         = "zensical.extensions.emoji.twemoji"
+  pymdownx.emoji.emoji_generator     = "zensical.extensions.emoji.to_svg"
+  pymdownx.superfences.custom_fences = [
+    { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
+  ]
 ```
+
+Same Python-Markdown as before, so the extensions carry over; in TOML the `!!python/name:` values
+are plain strings, and the emoji index moves to the theme's own `zensical.extensions.emoji`.
 
 ## Theme features
 
-```yaml
-theme:
-  features:
-    - navigation.indexes
-    - navigation.footer
-    - navigation.tracking
-    - navigation.top
-    - toc.follow
-    - content.code.copy
-    - content.code.annotate
-    - content.tabs.link
-    - search.suggest
-    - search.highlight
+```toml
+[project.theme]
+  features = [
+    "navigation.indexes",
+    "navigation.footer",
+    "navigation.tracking",
+    "navigation.top",
+    "toc.follow",
+    "content.code.copy",
+    "content.code.annotate",
+    "content.tabs.link",
+    "search.highlight",
+  ]
 ```
+
+The search engine is a new implementation: `search.highlight` exists, `search.suggest` has no
+equivalent, and the search interface is English-only for now.
 
 ## Syntax snippets
 
@@ -107,11 +108,11 @@ theme:
 ```markdown
 === "macOS / Linux"
     ```bash
-    python3 -m mkdocs build --strict --site-dir /tmp/mkdocs-check
+    python3 -m zensical build --clean --strict
     ```
 === "Windows (PowerShell)"
     ```powershell
-    python -m mkdocs build --strict --site-dir .mkdocs-check
+    python -m zensical build --clean --strict
     ```
 ```
 
@@ -157,19 +158,22 @@ One-sentence promise.
 The real H1 stays inside the hero. `extra_css` wires the `.q-badge` and hero classes. Keep both
 light and dark palettes with a toggle:
 
-```yaml
-theme:
-  palette:
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      toggle: { icon: material/weather-night, name: Switch to dark mode }
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      toggle: { icon: material/weather-sunny, name: Switch to light mode }
+```toml
+[[project.theme.palette]]
+  media       = "(prefers-color-scheme: light)"
+  scheme      = "default"
+  toggle.icon = "material/weather-night"
+  toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+  media       = "(prefers-color-scheme: dark)"
+  scheme      = "slate"
+  toggle.icon = "material/weather-sunny"
+  toggle.name = "Switch to light mode"
 ```
 
 <!-- rationale -->
 
 The extension must be enabled before the syntax appears in a page. Namespace custom CSS with
-`.q-*`, use Material variables for colors, and turn off animations under
+`.q-*`, use the theme's own `--md-*` variables for colors, and turn off animations under
 `prefers-reduced-motion: reduce`.
