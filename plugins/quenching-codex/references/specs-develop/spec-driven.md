@@ -552,7 +552,6 @@ Which command carries which:
 | `quenching-specs-status` | `Spec` `Summary` `Stage` `Tasks` `Records` `Age` `State` |
 | `quenching-specs-triage`, the proposal | `Spec` `Summary` `Stage` `Tasks`, `Priority` and `Complexity` showing the **current** values, plus `Proposed level` `Proposed criticality` `Proposed complexity` `Reason` — the four proposal columns are the model's judgment and the only ones it composes |
 | `quenching-specs-triage`, the report | `--order priority`, the four proposal columns dropped, `Priority` and `Complexity` now showing the approved values |
-| `quenching-specs-align` | none — it reports findings, not front state |
 
 **`Complexity` is its own column because it answers its own question.** `level` and `criticality`
 rank a spec against the others; `complexity` says how much a human has to be in the loop while it is
@@ -585,7 +584,7 @@ One row per finding, for the split by what closes each that a read-only view owe
 | --- | --- | --- | --- |
 | 58 | `sp-empty-section` | `## Risks` present and empty | nobody — a human writes it |
 | 41 | `sp-spec-complete` | every box ticked | `quenching-specs-conclude 41` |
-| — | `sp-stray-file` | `plans/notes.txt` | `quenching-specs-align` |
+| — | `sp-stray-file` | `plans/notes.txt` | nobody — a human removes it |
 ```
 
 Every code is one
@@ -656,8 +655,8 @@ Next step
   block and *then* opening an `AskUserQuestion` rather than stopping: `quenching-specs-execute` at
   100%, and `quenching-specs-create`, whose closing screen is exactly that offer (§The one screen
   in its own body) — develop it now, with or without questions, or stop here. `quenching-specs-status`
-  and `quenching-specs-align` print the block and stop — no plan, no "shall I". The form is
-  identical across all four; only what follows it differs.
+  prints the block and stops — no plan, no "shall I". The form is identical across the three;
+  only what follows it differs.
 
 <!-- rationale -->
 

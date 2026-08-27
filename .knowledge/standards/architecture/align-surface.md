@@ -2,7 +2,7 @@
 type: standard
 title: Align surface — one align per front, probe first
 description: The 1×5 align column that replaced the 2×4 matrix — one align per front carrying its content stages, the fourth pillar (`git`) declared with no align because it ships no verifier a probe could run, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, the rule that no sweep records itself: an align's account of its own run goes in the report, never into the bundle, and the conductor categories sharing the cycle-authorization contract — `/align` conducts the three fronts, `/quenching:specs:cycle` the four stages of one spec, and the two fan-out entries N specs each; none reimplements what it conducts
-resource: plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/specs/align.md, plugins/quenching/commands/specs/cycle.md, plugins/quenching/commands/specs/execute-queue.md, plugins/quenching/commands/specs/develop-batch.md, plugins/quenching/commands/components/align.md, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/references/align/**, plugins/quenching/assets/references/specs-fanout/**
+resource: plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/specs/cycle.md, plugins/quenching/commands/specs/execute-queue.md, plugins/quenching/commands/specs/develop-batch.md, plugins/quenching/commands/components/align.md, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/references/align/**, plugins/quenching/assets/references/specs-fanout/**
 tags: [architecture, aligns, commands, probe, convergence]
 timestamp: 2026-08-27
 audience: both
@@ -39,13 +39,18 @@ command that closes them, never driven**.
 
 ### The specs front lost its align with its backend, and the reason is structural too
 
-`/quenching:specs:align` existed while the front had a **local** tree to converge: `/.specs/` with
+The specs front's align existed while the front had a **local** tree to converge: `/.specs/` with
 its phased folders, its scaffold and its stray-file sweep. `remover-backend-local-do-plugin`
 retired that backend — the canonical documents live in the repository provider, GitHub Issues or
 Azure Boards — and the align went with it, because there is no longer a tree of this repo's own for
 a probe to find drifted. What survives is read (`/quenching:specs:status`, `cq specs doctor`) and
 ranking (`/quenching:specs:triage`, on the human's own confirmation), neither of which is a
 convergence sweep.
+
+The name is deliberately not spelled out anywhere on this page. A three-segment command name is a
+citation, and `citation-check.sh --half 2` reads a standard like any other file: writing the
+retired name to explain that it is retired would report this page as promising a body that does not
+exist. The check's own header carries the same restraint for the same reason.
 
 **This is a different reason from the `git` pillar's, and the difference matters.** `git` never had
 a tree; the specs front had one and lost it. So the column below reads **none** for both, and the
@@ -152,8 +157,8 @@ nothing the tree and the git log did not already say, and cost a write on every 
 including the no-op runs the probe rule exists to make free. A sweep whose clean case costs three
 tool calls should not spend a fourth narrating that it found nothing.
 
-It also removed the one thing every align wrote **outside its own front**. `/quenching:specs:align` and
-`/quenching:specs:triage` reached into the `/.knowledge/` bundle for a log line and nothing else; with that gone,
+It also removed the one thing every align wrote **outside its own front**. The specs front's align
+and `/quenching:specs:triage` reached into the `/.knowledge/` bundle for a log line and nothing else; with that gone,
 the `specs` front writes into `/.knowledge/` at exactly one point — a concluded spec's distillation,
 which mints real knowledge rather than a record of activity. The cross-front dependency in
 [§The 1×5 column](#the-15-column) is unchanged: `/.knowledge/` still goes first, because that

@@ -2,8 +2,9 @@
 
 <!-- rules -->
 
-The plugin has **three** aligns, one per front: `quenching-knowledge-align` (`knowledge/`), `quenching-specs-align`
-(`specs/`), and `quenching-components-align` (`.agents/`) — plus `/align`, which conducts all three.
+The plugin has **two** aligns: `quenching-knowledge-align` (`knowledge/`) and
+`quenching-components-align` (`.agents/`) — plus `/align`, which conducts both. The specs front is
+provider-owned and has no align.
 Everything about **how** the operation behaves is identical across them and lives here; only a
 front's own deltas (what it inventories, which findings it produces, what its verifier is) stay in
 its command body and its own `references/`.
@@ -185,7 +186,6 @@ it deliberately did not close, each with the command that closes it.
 | Front | Align | Verifier |
 | --- | --- | --- |
 | `knowledge/` | `quenching-knowledge-align` | `cq knowledge validate <knowledge-dir>` — exit 0 **and** no `dir-no-index` / `index-broken-link` / `index-orphan` (they are WARN; read the findings) |
-| `specs/` | `quenching-specs-align` | `cq specs doctor` + `cq specs validate` — the whole condition; the OKF validator is never pointed at `specs/` |
 | `.agents/` | `quenching-components-align` | `cq components lint` + `cq components doctor`, plus `cq components registry reindex` reporting `changed: false` for the zone |
 
 All three verifiers read the same contract — `--json` on every subcommand and exit **0** ok · **1**

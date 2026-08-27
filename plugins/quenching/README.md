@@ -609,7 +609,7 @@ why each half of the lockstep matters, and
   `sk-hook-unparseable`) and serves both rungs from one implementation, and the cost report counts
   `agents/*.md` descriptions as its own breakdown line; the ceiling was re-measured and re-set to
   **11,565** from a run. The profile doctrine was then applied to its own author: five inline
-  `effort:` pins dropped for the prompt-cache trap, `Bash` scoped on `/quenching:specs:align`,
+  `effort:` pins dropped for the prompt-cache trap, `Bash` scoped on the specs-front align,
   `/quenching:components:harness:align` and `/quenching:knowledge:glossary-backfill` and priced in the body of the two that keep it,
   frontmatter `hooks:` blocks on `/quenching:knowledge:add`/`/quenching:knowledge:learn`/`/quenching:knowledge:define`, and a collection-only
   `Task` for `/quenching:components:align`'s doctrine audit — `sk-unscoped-bash` 8 → 5, every survivor stating
@@ -624,7 +624,7 @@ why each half of the lockstep matters, and
   deterministic rails are the new bundled stdlib **`assets/bin/cq specs`**
   (`new`/`list`/`status`/`next`/`task`/`backlog`/`validate`/`archive`/`doctor`, uniform `--json`,
   exit codes `0`/`1`/`2`), the second self-contained tool beside `cq knowledge validate`, installed by
-  `/quenching:specs:align` into a target's `.claude/hooks/`. The **unit of work is a plan**
+  the specs-front align into a target's `.claude/hooks/`. The **unit of work is a plan**
   (`/.specs/<plan-name>/`: `proposal.md`, `design.md`, `tasks.md`, `.specs.json`), not an
   "OpenSpec change" — and because a plan writes its durable rule **straight into
   `/.knowledge/standards/`**, honestly `authority`-graded, there is nothing to sync: isolation-while-building
@@ -636,7 +636,7 @@ why each half of the lockstep matters, and
   All twenty-seven skills now share **one `quenching-<front>-<object>-<verb>` taxonomy** — no
   separate `openspec-*` family, no `metadata.generatedBy` anywhere. New
   **`/specs:from-claude`** turns a `~/.claude/plans/*.md`
-  file into an archivable plan so ad-hoc work gains the archive-time distillation. `/quenching:specs:align`
+  file into an archivable plan so ad-hoc work gains the archive-time distillation. That align
   **migrates a legacy `openspec/` workspace one-way** (flatten, fold main specs into
   `/.knowledge/standards/`, drop `config.yaml`/deltas, clear the CLI shadow copies) — interop with the
   external CLI is lost by design. Still **twenty-seven** skills; the skill↔wrapper bijection holds
@@ -644,7 +644,7 @@ why each half of the lockstep matters, and
 - **0.19.0:** **the `openspec/` front's lifecycle closed, and the sweep contract given one
   owner.** Two new quenching-native skills complete the front. **`/quenching:specs:status`**
   is its only read-only view — changes with progress and state, the backlog by
-  priority, the three verifier results, split into what `/quenching:specs:align` would fix, what
+  priority, the three verifier results, split into what the specs-front align would fix, what
   `/specs:align-and-update` would drive, and what neither closes; it reports in the sweep's own
   `os-*` vocabulary, so it is an honest dry run of the sweep you are about to authorize.
   **`/specs:archive`** is the exit `archive-change` could not give: a
@@ -669,7 +669,7 @@ why each half of the lockstep matters, and
   since the mold omits it on purpose) — the same checker that guards `/.knowledge/`, pointed at a tree
   the bundle root never covers.
   **Performance.** `/specs:align-and-update` hands its assessment inventory down to
-  `/quenching:specs:align` instead of making it re-collect against an untouched disk (a pass paid for
+  the specs-front align instead of making it re-collect against an untouched disk (a pass paid for
   `doctor`/`validate`/`list --json` three times); `status --json` is scoped to full-progress
   changes rather than run per active change; the rename blast-radius sweep is **two** repo scans
   for the whole set instead of two per rename; `/specs:archive` invokes
@@ -701,7 +701,7 @@ why each half of the lockstep matters, and
   the concept so it says what it does. `quenching-converge` → **`quenching-knowledge-align-and-update`**
   (`knowledge:converge` → `knowledge:align-and-update`, both retired since) — clean cut, no compatibility alias. New
   **`specs:align-and-update`** (retired since) drives the cycle actions
-  `/quenching:specs:align` only reports: align → archive each complete change (syncing specs and
+  the specs-front align only reports: align → archive each complete change (syncing specs and
   distilling into `/.knowledge/`) → sync leftover deltas → triage the inbox, looped; **each archive
   confirms on its own**. New **`quenching-components-align-and-update`** (`components:align-and-update`, retired since)
   adds the one thing the align is forbidden to do — a **read-only doctrine audit of every skill
@@ -718,7 +718,7 @@ why each half of the lockstep matters, and
   run still costs exactly one OK. Twenty-one skills → **twenty-four** (fourteen `quenching-*` +
   ten `openspec-*`); the skill↔wrapper bijection holds at 24↔24.
 - **0.17.0:** **one interface across the three fronts.** The plugin acts on three surfaces —
-  `/.knowledge/`, `openspec/`, `.claude/` — but only two had an align sweep. New **`/quenching:specs:align`**
+  `/.knowledge/`, `openspec/`, `.claude/` — but only two had an align sweep. A new **specs-front align**
   (quenching-native) gives the `openspec/` workspace the same
   install-and-force-conformance entry point: scaffold via `openspec init`, doctor/validate,
   canonical change + archive names, the `backlog/` inbox and its derived zone, `config.yaml`'s
