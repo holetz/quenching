@@ -24,7 +24,7 @@ Pages carrying a reusable contract include a compact, high-signal block:
     - **Does:** audits a repo's knowledge surface, installs fixes with confirmation.
     - **Contract:** `repo path → scored report → item-by-item install`.
     - **Invariants:** never removes without OK; three dimensions are proposed-only.
-    - **Run:** `python3 plugins/quenching/scripts/bin/cq knowledge validate .knowledge`
+    - **Run:** `python3 plugins/quenching-codex/scripts/bin/cq knowledge validate .knowledge`
 ```
 
 Put facts, inputs, outputs and invariants in text. A diagram reinforces a fact; it never owns the
