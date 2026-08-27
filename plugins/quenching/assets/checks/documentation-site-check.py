@@ -145,6 +145,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("site", nargs="?", type=Path)
     parser.add_argument("--selftest", action="store_true")
+    parser.add_argument("--remote-policy", choices=("warn", "error"), default="warn")
     args = parser.parse_args()
     if args.selftest:
         return selftest()
@@ -152,8 +153,10 @@ def main() -> int:
         parser.error("site must be an existing directory")
     findings = check(args.site)
     for finding in findings:
-        print(f"{finding.code}: {finding.path}: {finding.detail}")
-    return 1 if findings else 0
+        policy = "warning" if finding.code == "site-remote-resource" and args.remote_policy == "warn" else "error"
+        print(f"{policy}: {finding.code}: {finding.path}: {finding.detail}")
+    blocking = [f for f in findings if f.code != "site-remote-resource" or args.remote_policy == "error"]
+    return 1 if blocking else 0
 
 
 if __name__ == "__main__":

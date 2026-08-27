@@ -57,8 +57,9 @@ python3 <plugin>/assets/checks/documentation-site-check.py site
 ```
 
 `site-asset-missing`, `site-anchor-missing`, `site-sitemap-empty` and `site-page-orphan` fail the
-gate. `site-remote-resource` reports every remote origin for the configured offline policy; it does
-not falsely claim the site works offline. When a browser or Playwright is available, inspect the landing and one deep page at desktop and
+gate. Until vendoring is deliberately adopted, `site-remote-resource` is a **warning** by default;
+run `--remote-policy error` for a target that requires offline operation. Both forms enumerate every
+origin and neither claims the site works offline. When a browser or Playwright is available, inspect the landing and one deep page at desktop and
 narrow widths in both palettes. Otherwise run the static fallback over the built HTML:
 
 ```bash
