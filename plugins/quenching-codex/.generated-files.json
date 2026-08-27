@@ -215,10 +215,10 @@
   ],
   "sha256": {
     ".codex-plugin/plugin.json": "c8b65ed516cfc1d6330ab36a7b49546e47367f4e62f4ca201b152cccf7dacbf4",
-    ".generated-from.json": "a0035d09528172661831c7fa4998aae09b2f4d2db2f3460a69c62ea53fd755cc",
+    ".generated-from.json": "f48e5d23caf69d7d2f687d4ca37e14091d1c2091710be076573b6cdf714e2b39",
     "README.md": "7498b542d1f1dcbe28471dd9902fbe8d4871df259ed00f6a6016e25119d02fb3",
     "VERSION": "e33e70efdb9c35eb184b87ee7abc05ac16a925c9c36e84408999dea33a741fa8",
-    "checks/citation-check.sh": "cbbcb4a37833cb89bafd28e2af61419a9e21d57d1067c58254080d477c92db58",
+    "checks/citation-check.sh": "dbf4966b6b0370bc91f93a78f339ad2b14611c0801a7f90997bc24d3d9df9a7e",
     "checks/functional-checks.sh": "f5bca7f49fc77b0aa3916804a831d4ac1ec8fe531794e3fca2465bb1d072b40b",
     "checks/section-squash-check.sh": "b67c584bbafe43d7aa5a598a97114d8ceef56729fd6b7568c9c7813a3d143f39",
     "knowledge/catalog/index.md": "73cafd24d5631de21ae150e6b9bc874ab0d23ea8ae76b565bb381f8600b420ab",
