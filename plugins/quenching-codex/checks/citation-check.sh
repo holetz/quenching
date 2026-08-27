@@ -18,6 +18,12 @@
 #           1 a half failed — a dead name survives, or a citation resolves to nothing
 #           2 nothing could be measured — no verdict, do not read it as a pass
 #
+# THE ARGUMENT IS THE REPOSITORY ROOT, AND ANYTHING ELSE EXITS 2. Every pathspec here is written
+# from the root, so a subdirectory does not narrow the sweep — it DISARMS the exclusions. Run from
+# `plugins/quenching`, `--half 1 .` reported six dead patterns as survivors over 202 files instead
+# of 466, because the golden fixtures stopped being excluded. Omitting the argument is always safe:
+# the root is derived from this file's own location.
+#
 # BLIND, WITH NO ALLOWLIST. Historical mentions are rewritten to the new name like every other
 # citation: git history holds the past, the docs describe the present, and a check with content
 # exceptions is a check people learn to ignore.
@@ -72,6 +78,24 @@ cd "$REPO" || { echo "citation-check: cannot enter $REPO"; exit 2; }
 # ITSELF and reports its own dead-name patterns as survivors: measured here, `--half 1 .` failed
 # two patterns that `--half 1` passed, in the same tree, in the same second.
 REPO="$PWD"
+# And refuse anything that is not the repository ROOT. Every pathspec below — the scope excludes,
+# `git ls-files`, `SELF` itself — is written from the root, so a subdirectory silently drops all of
+# them: measured from `plugins/quenching`, the golden fixtures stop being excluded and half 1
+# reports SIX dead patterns as survivors over a corpus of 202 files instead of 466. A verdict over
+# a fraction of the repository with the exclusions disarmed is not a weaker measurement, it is a
+# wrong one — so it exits 2, the code this harness reserves for "nothing could be measured".
+TOPLEVEL="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [ -z "$TOPLEVEL" ]; then
+  echo "citation-check: $REPO is not inside a git repository"
+  echo "  nothing could be measured — this is not a pass"
+  exit 2
+fi
+if [ "$TOPLEVEL" != "$REPO" ]; then
+  echo "citation-check: $REPO is not the repository root ($TOPLEVEL is)"
+  echo "  every pathspec here is written from the root, so a subdirectory disarms them"
+  echo "  nothing could be measured — this is not a pass"
+  exit 2
+fi
 SELF="${SELF_DIR#"$REPO"/}/$(basename "${BASH_SOURCE[0]}")"
 
 # Half 1's own scope, beyond frozen golden data, not live citations — see the header's third scope
