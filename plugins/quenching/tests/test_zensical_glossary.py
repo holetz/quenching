@@ -10,13 +10,14 @@ def glossary_to_abbr(markdown: str) -> str:
     """Project canonical glossary bullets into Python-Markdown abbreviations."""
     entries = []
     pattern = re.compile(
-        r"^[-*] (?:\[[^]]+\]\([^)]*\)|\*\*)?(?P<term>[^*\]]+?)(?:\*\*)? — (?P<definition>.+)$"
+        r"^[-*] (?:\[(?P<linked>[^]]+)\]\([^)]*\)|\*\*(?P<bold>[^*]+)\*\*) — (?P<definition>.+)$"
     )
     for line in markdown.splitlines():
         match = pattern.match(line)
         if match:
-            entries.append(f"*[{match.group('term').strip()}]: {match.group('definition').strip()}")
-    return "\n".join(entries) + "\n"
+            term = match.group("linked") or match.group("bold")
+            entries.append(f"*[{term.strip()}]: {match.group('definition').strip()}")
+    return "\n".join(entries) + ("\n" if entries else "")
 
 
 class GlossaryProjectionTests(unittest.TestCase):
@@ -37,4 +38,3 @@ class GlossaryProjectionTests(unittest.TestCase):
 
     def test_ignores_non_term_prose(self) -> None:
         self.assertEqual(glossary_to_abbr("# Glossary\n\nExplanation\n"), "")
-
