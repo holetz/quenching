@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import re
 import unittest
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def glossary_to_abbr(markdown: str) -> str:
@@ -38,3 +42,14 @@ class GlossaryProjectionTests(unittest.TestCase):
 
     def test_ignores_non_term_prose(self) -> None:
         self.assertEqual(glossary_to_abbr("# Glossary\n\nExplanation\n"), "")
+
+    def test_template_enables_global_glossary_tooltips_and_route(self) -> None:
+        template = (ROOT / "assets/zensical/zensical.toml.tmpl").read_text()
+        self.assertIn('abbr                               = {}', template)
+        self.assertIn('pymdownx.snippets.auto_append      = [ "assets/glossary-abbreviations.md" ]', template)
+        self.assertIn('{ "Glossary"        = [ "reference/glossary.md" ] }', template)
+
+    def test_published_page_is_a_projection_not_a_second_source(self) -> None:
+        page = (ROOT / "assets/knowledge/documentation/reference/glossary.md").read_text()
+        self.assertIn('../../glossary.md', page)
+        self.assertIn('never in this projection', page)
