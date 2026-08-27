@@ -321,7 +321,23 @@ CMD_RE            = re.compile(r"/?(quenching(?::[a-z][a-z0-9-]*){2,})")
 
 # Content the plugin ships for a target checkout to hold, plus the fixture data that names files
 # on purpose absent. See the header: these say which repo a tree describes, they exempt no path.
-SHIPPED = (plugin + "/assets/knowledge/", plugin + "/assets/templates/", plugin + "/tests/fixtures/")
+# Every tree the plugin SHIPS for a target checkout to read. The first three were here from the
+# start; `commands/` and `assets/references/` were added on 2026-08-27, and their absence was a
+# defect this half carried since half 3 was written. Half 3 exists precisely BECAUSE those two
+# trees are loaded inside the target, with the target'"'"'s paths — its own header says so — while
+# this half went on resolving their links against THIS checkout and reporting as broken the prose
+# that describes another repository correctly. Nothing is uncovered by the move: half 3 measures
+# exactly those two trees against the published skeleton, which is the right base.
+SHIPPED = (plugin + "/assets/knowledge/", plugin + "/assets/templates/", plugin + "/tests/fixtures/",
+           plugin + "/commands/", plugin + "/assets/references/",
+           # The translated sibling is the same shipped prose in another platform'"'"'s spelling —
+           # generated, never hand-edited, and describing the target repo just as its source does.
+           # Its own tree names differ (`knowledge/`, `references/`, `templates/` sit at the plugin
+           # root), so listing the source prefixes does not reach it. Measured before it was added:
+           # four findings, every one a path that is correct THERE and cannot resolve here — a
+           # target under Codex really does carry `AGENTS.md`, and one of the four was a sentence
+           # SAYING a path does not exist, read as a claim that it does.
+           "plugins/quenching-codex/")
 
 def unmeasurable(p):
     return (not p) or any(c in p for c in "*?<>${}|") or "..." in p \
