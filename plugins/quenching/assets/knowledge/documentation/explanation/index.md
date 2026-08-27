@@ -5,8 +5,9 @@ the documentation site (the Diátaxis **explanation** quadrant). Each page carri
 `type: documentation`.
 
 **Boundary:** a concept page here is part of the **published site** for product users.
-Internal team understanding — mental models, learnings, the glossary — is not a site page and
-belongs in the `concepts/` home.
+Internal team understanding — mental models and learnings — belongs in the `concepts/` home. The
+root glossary remains canonical there, but when the editorial map exposes it the site publishes its
+derived [Glossary](../reference/glossary.md) route for readers.
 
 ## How to organize
 

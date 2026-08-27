@@ -34,7 +34,8 @@ only copy of one.
 
 Examples use real commands, paths and names, and show the expected output. Avoid `foo` and `bar`.
 State preconditions, input/output shapes and the exact condition under which a step runs. Define a
-central term once in the glossary and link to it. A concept map or choose-the-right-file table
+central term once in the glossary and, when the editorial map exposes it, link to the published
+relative glossary route rather than `/.knowledge/glossary.md`. A concept map or choose-the-right-file table
 gives an agent a deterministic route.
 
 ## Links and language
