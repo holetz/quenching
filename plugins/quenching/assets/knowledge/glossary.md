@@ -34,8 +34,9 @@ sentence, and **link out** rather than explaining in full here.
 governs the whole bundle, so a scope that names the whole bundle is the honest one —
 narrowing it to look tidier would be a fabrication. The validator knows: a scope
 containing the bundle root is a **bundle aggregate**, exempt from `resource-self` and
-from `stale-doc` (which would otherwise read fresh forever, since the doc sits inside
-the scope it measures). Every other doc pointing at itself is still a real finding.
+from the resource-activity figure (which would otherwise read fresh forever, since the
+doc sits inside the scope it measures). Every other doc pointing at itself is still a
+real finding.
 
 ## Terms
 

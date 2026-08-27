@@ -124,7 +124,7 @@ A doc that is provably **lying about itself**. These join the structural set the
   character classes, `?`) is classified `unknown` and **never reported** — only `*` and `**` are
   implemented, and flagging syntax nobody writes would make the must-fix set unusable.
 - **WARN `resource-self`** — the doc's own path falls inside the scope its `resource` declares.
-  Such a doc governs nothing and is eternally fresh, which silently disables `stale-doc` for it.
+  Such a doc governs nothing, so its activity is unmeasurable and the figure says so.
   Matching is **segment-wise**: a single `*` does not cross a `/`, so `/.knowledge/*` does not contain
   a deeper path like `/.knowledge/standards/<subject>.md`.
   - **The bundle-aggregate exemption.** An entry whose scope contains the bundle **root** is an
@@ -132,17 +132,20 @@ A doc that is provably **lying about itself**. These join the structural set the
     the whole bundle, so `resource: /.knowledge/**` is truthful and narrowing it would be the
     fabrication. This is `TYPES_WITHOUT_RESOURCE` generalized — one exemption mechanism, not two.
 
-## Staleness (CLI only — advisory, never blocking)
+## Resource activity (CLI only — a figure, never a finding)
 
 <!-- rules -->
 
-- **WARN `stale-doc`** — the doc's `timestamp` predates the last commit touching the code its
-  `resource` globs name (`git log -1 --format=%cI` with explicit **`:(glob)`** pathspec magic, so
-  a single `*` does not cross a `/` here either).
+- **`cq knowledge validate <bundle> --activity`** prints, per doc and **per `resource:` entry**,
+  the stamped `timestamp`, the last commit touching that entry (`git log -1 --format=%cI` with
+  explicit **`:(glob)`** pathspec magic, so a single `*` does not cross a `/` here either) and the
+  interval between them, widest first. `--json` gives the same rows as data.
+- **No finding code appears on any line, and none is emitted anywhere.** There is no interval that
+  is a failure, and the command exits 0 whatever it prints.
+- A doc whose `resource:` resolves to nothing measurable — every entry a `uri`, an `unknown` or a
+  bundle aggregate — is printed as **scope not measured**, never dropped.
 
-**It is advisory and is NOT part of any verify gate** (why → §Verify gate).
-
-It shells out to `git` once per doc. A tree that is not a git checkout **skips it silently**
+It shells out to `git` once per `resource:` entry. A tree that is not a git checkout **measures nothing**
 rather than reporting a finding it cannot compute.
 
 <!-- rationale -->
@@ -173,7 +176,7 @@ resource-integrity WARNs are all cleared — **zero** `dir-no-index`, `index-bro
 `index-orphan`, `glossary-broken-link`, `generated-listing-missing`, `generated-listing-drift`,
 `resource-unresolved`, `resource-self`. (These are WARN,
 so they do not fail exit-0; the skill reads them from `--json` and treats them as blocking.)
-**`stale-doc` is excluded from this gate.**
+**Resource activity is not part of this gate**, and cannot be: it emits no finding to gate on.
 The skill also confirms the method-level completeness the validator can't see:
 applicable homes present, each standards subject's **coverage/deferral ledger** filled (every
 candidate present or listed), and `backlog/index.md`'s task listing rebuilt exclusively from
@@ -190,6 +193,14 @@ The structural set is **WARN** because OKF says a consumer MUST tolerate broken 
 synthesize a missing `index.md`, so these never fail conformance. The resource set is `WARN`
 because OKF does not govern `resource` at all, blocking because the plugin does.
 
-`stale-doc` is excluded because the integrity codes describe a doc that is provably wrong; a
-stale-looking doc may be perfectly correct, because code moves under a rule that did not change.
-Every mature bundle carries some, so treating it as must-fix would make the must-fix set unusable.
+Resource activity emits nothing because the comparison cannot support a verdict. The integrity
+codes describe a doc that is **provably** wrong; a doc whose scope has seen commits may be
+perfectly correct, because code moves under a rule that did not change. This was a `stale-doc`
+WARN until 2026-08-27, when it was retired: a `resource:` glob is deliberately wide, so what the
+comparison detects is activity in the radius of the glob and not drift of the content. Measured
+the day it went: **50 of the 95 docs** in this repo's own bundle carried it, and a signal more
+than half the corpus raises is scrolled past — taking the findings printed beside it along.
+
+The numbers survive as a figure precisely because they are worth having: a reader asking which
+docs sit next to the most movement gets a ranking. What no longer happens is being told a doc is
+wrong on evidence that cannot say so.

@@ -25,17 +25,33 @@ and re-adding it is one branch in `main`.
 from __future__ import annotations
 
 import json
+import os
 import sys
 
 from quenching.common.output import FINDINGS, OK, REFUSAL
 from quenching.common.version import VERSION
 from quenching.knowledge.config import _load_config, _project_dir
-from quenching.knowledge.render import _render_text, _split
-from quenching.knowledge.validate import validate_tree
+from quenching.knowledge.render import _render_activity, _render_text, _split
+from quenching.knowledge.stale import resource_activity
+from quenching.knowledge.validate import _build_corpus, validate_tree
 
 
-USAGE = ("usage: cq knowledge validate [<bundle-dir>] [--json]   "
+USAGE = ("usage: cq knowledge validate [<bundle-dir>] [--json] [--activity]   "
          "(default bundle-dir: .knowledge)")
+
+
+def _activity_rows(bundle_root: str, ignore_globs: tuple[str, ...]) -> list[tuple[str, dict]]:
+    """`(relative path, activity)` for every doc in the bundle that has something to measure."""
+    rows = []
+    corpus = _build_corpus(bundle_root, None, ignore_globs) or {}
+    for path in sorted(corpus):
+        text = corpus[path]
+        if text is None or not path.endswith(".md"):
+            continue
+        activity = resource_activity(text, bundle_root)
+        if activity is not None:
+            rows.append((os.path.relpath(path, bundle_root).replace(os.sep, "/"), activity))
+    return rows
 
 
 def run_cli(argv: list[str]) -> int:
@@ -44,9 +60,19 @@ def run_cli(argv: list[str]) -> int:
     paths = [a for a in argv if not a.startswith("-")]
     target = paths[0] if paths else ".knowledge"
     ignore_globs = tuple(cfg.get("ignoreGlobs") or ())
+    # The figure is its OWN output, never a section of the report. `stale-doc` was retired
+    # because the comparison cannot support a verdict; printing the numbers beside findings
+    # would rebuild the verdict out of adjacency. It also exits 0 whatever it prints — there
+    # is no interval that is a failure.
+    if "--activity" in argv:
+        rows = _activity_rows(target, ignore_globs)
+        if as_json:
+            print(json.dumps([dict(activity, path=rel) for rel, activity in rows], indent=2))
+        else:
+            print(_render_activity(rows, target))
+        return OK
     # no deadline in CLI mode — always a full scan
-    # `with_stale` only here: CLI is the one mode that may shell out to git per doc
-    findings = validate_tree(target, ignore_globs=ignore_globs, with_stale=True)
+    findings = validate_tree(target, ignore_globs=ignore_globs)
     if as_json:
         print(json.dumps([
             {"severity": s, "path": r, "code": c, "message": m} for s, r, c, m in findings

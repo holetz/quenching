@@ -84,5 +84,5 @@ Per-subject ledger the verify gate reads. A subject is "done" only when every ca
 - `data-drift` — **deferred, not applicable.** Same reason; no dataset exists to drift.
 - `model-monitoring` — **deferred, not applicable.** No model is trained or served here.
 - `stability` — **deferred, not applicable** in its data sense. The analogous concern — a doc
-  whose subject moved underneath it — is covered as `stale-doc` in
+  whose subject moved underneath it — is covered as the resource-activity figure in
   [bundle-verification.md](bundle-verification.md).
