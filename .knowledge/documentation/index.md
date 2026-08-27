@@ -25,18 +25,18 @@ other homes.
 ## Rendering this home
 
 This home is a plain Markdown tree, consumable by any documentation site generator. The
-plugin ships a batteries-included **mkdocs-material** setup at the repo root (`mkdocs.yml`,
+plugin ships a batteries-included **Zensical** setup at the repo root (`zensical.toml`,
 `requirements.txt`) — first installed by `quenching:knowledge:align`, and created/updated/verified from
-then on by **`/quenching:knowledge:documentation:build`** (the site layer's owner: config, `.pages` nav, and
-a `mkdocs build --strict` check):
+then on by **`/quenching:knowledge:documentation:build`** (the site layer's owner: config, the `nav`, and
+a `zensical build --strict` check):
 
-- The generator points here — `docs_dir: .knowledge/documentation` in `mkdocs.yml` (kept at the
-  repo root, **outside** the bundle).
-- Each reserved `index.md` doubles as the **section landing page** (mkdocs-material's
+- The generator points here — `docs_dir = ".knowledge/documentation"` in `zensical.toml` (kept at
+  the repo root, **outside** the bundle).
+- Each reserved `index.md` doubles as the **section landing page** (the theme's
   `navigation.indexes` feature) — no separate landing file needed.
-- Navigation follows the folder tree automatically via `mkdocs-awesome-pages-plugin`; the
-  `.pages` file in each section sets its title and order. A new section has no `.pages` until
-  `/quenching:knowledge:documentation:build` writes one.
+- Navigation is the explicit `nav` list in `zensical.toml`: no plugin derives it from the folder
+  tree, so a new page is a new line there, written by
+  `/quenching:knowledge:documentation:build`.
 - **Link caveat:** absolute OKF links (`/.knowledge/standards/…`) point outside a site rooted at
-  `documentation/` and will not resolve in the built HTML — keep these pages self-contained
-  and cross-link to other homes sparingly.
+  `documentation/`, fail the build under `--strict` and will not resolve in the built HTML — keep
+  these pages self-contained and name the other homes in prose rather than linking them.

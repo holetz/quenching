@@ -19,7 +19,7 @@ because a relative path encodes the depth of the *citing* file and `commands/ali
 
 | Reason | Subtrees |
 | --- | --- |
-| **Payload copied whole** by an align into a target repo | `knowledge/` `specs/` `claude/` `mkdocs/` |
+| **Payload copied whole** by an align into a target repo | `knowledge/` `specs/` `claude/` `zensical/` |
 | **Payload applied per insert** — a mold stamps one file at a time, the mold itself never lands | `templates/` |
 | **Tool the plugin executes** during a command | `bin/cq` (the four pre-refactor scripts under `bin/` and `hooks/` are retained, unwired, until they are retired) |
 | **Development artifact of this repository** — never installed anywhere | `references/` `evals/` `checks/` |
@@ -31,7 +31,7 @@ because a relative path encodes the depth of the *citing* file and `commands/ali
 | `knowledge/` | the canonical **OKF bundle skeleton** — 23 reserved `index.md` listings (only the root carries frontmatter, and only `okf_version`), `standards/CLAUDE.md`, the 5 `.pages` nav files inside `documentation/**`, and the fixed `glossary.md` term-lookup seed | the target's `/.knowledge/`, only the homes that apply |
 | `specs/plans/.gitkeep` | keeps the active-spec folder in git while empty — the folder IS the listing, and `cq specs list` derives it from disk | `/.specs/plans/` |
 | `specs/archive/.gitkeep` | keeps the closed-spec folder in git while empty | `/.specs/archive/` |
-| `mkdocs/` | the **site layer** payload — `mkdocs.yml.tmpl`, `requirements.txt`, opt-in `ci-github-pages.yml` (the `.pages` nav files ship inside `/.knowledge/documentation/**`) | the target's repo **root**, outside `/.knowledge/` |
+| `zensical/` | the **site layer** payload — `zensical.toml.tmpl`, `requirements.txt`, opt-in `ci-github-pages.yml` (the nav ships inside the config, not as sidecar files) | the target's repo **root**, outside `/.knowledge/` |
 
 Two files under `hooks/` used to belong to this table and no longer do — **nothing copies or
 merges them into a target any more**, since the plugin's own `hooks/hooks.json` wires the checker
@@ -96,14 +96,14 @@ errors, 0 warnings**.
 
 - **`/quenching:knowledge:align`** scaffolds the applicable homes from `knowledge/` (including the fixed
   `glossary.md` seed), stamps frontmatter with `templates/`, offers to wire `hooks/`
-  (step 6) and stamps `mkdocs/` **once** (step 7).
+  (step 6) and stamps `zensical/` **once** (step 7).
 - **`/quenching:knowledge:add`** picks a mold from `templates/` by home → `type`, updates the bundle's
   `index.md`, and rows any new repo-specific term into `glossary.md`.
 - **`/quenching:knowledge:define`** adds/refines one entry in the fixed `glossary.md` term lookup
   (alphabetical, MERGE never clobber); `/quenching:knowledge:learn` and `/quenching:knowledge:import-memory` run the same
   enrichment as a tail step; `/quenching:knowledge:glossary-backfill` backfills it in bulk from a whole-bundle sweep.
-- **`/quenching:knowledge:documentation:build`** owns `mkdocs/` after that first stamp: every install, config
-  merge, `.pages` regeneration and `mkdocs build --strict` verification is its.
+- **`/quenching:knowledge:documentation:build`** owns `zensical/` after that first stamp: every install, config
+  merge, nav regeneration and `zensical build --strict` verification is its.
 - **`/quenching:components:harness:align`** applies the `templates/harness/` molds to rewrite a repo's `CLAUDE.md` /
   `AGENTS.md` as thin pointers over the bundle, moving inlined knowledge into its home.
 - **`specs/`** is a seed no command copies any more — the specs front is provider-owned, and its align went with the local backend. `/quenching:specs:*` drive the cycle through `cq specs`, which reads `specs/schema.json` and stamps `specs/templates/spec.md`.
