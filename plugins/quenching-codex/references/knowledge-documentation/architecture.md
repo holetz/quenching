@@ -70,7 +70,7 @@ Use `navigation.indexes` and relative links. Every section index carries a routi
 The navigation answers a reader's question instead of mirroring storage. A short diagnosis catches
 orphans and duplicated claims before prose makes them expensive to move.
 
-## The six output contracts
+## The seven output contracts
 
 These are mandatory intermediate outputs. Produce them in order, show them once, and write pages
 only after the plan is accepted. Store them in `.quenching/documentation/plan.md`, never as site
@@ -146,9 +146,27 @@ pages. If a contract cannot be filled, write `source gap: <what's missing>` rath
 - Validation:        <strict build + visual QA + rubric threshold>
 ```
 
+### 7. Mapa editorial de publicação
+
+```markdown
+### Mapa editorial de publicação
+| Home | Decisão | Motivo | Público | Rota publicada |
+| --- | --- | --- | --- | --- |
+| documentation/ | publicar | <motivo> | <leitores> | <rota> |
+| standards/ | publicar derivado | <motivo> | <leitores> | <rota ou índice> |
+| concepts/ | não publicar | <motivo verificável> | — | — |
+```
+
+Inventarie `documentation/`, `standards/`, `concepts/`, `external/`, `catalog/` e `vision/`, além
+do `glossary.md` na raiz. Cada linha decide **publicar**, **publicar derivado** ou **não publicar**;
+nenhuma home recebe rota por implicação do nome. `publicar derivado` mantém a fonte fora do
+`docs_dir` e declara a página, índice ou projeção que será servida. Uma decisão sem evidência fica
+como `source gap:` no plano, nunca como conteúdo da página publicada.
+
 ## Invariants
 
 - One idea and one reader intent per destination page.
 - Claims without a source become `source gap:` entries in the ledger.
 - Contracts are planning artifacts and stay outside `docs_dir`.
+- A home não publicada é uma decisão editorial explícita, com motivo; não é uma limitação silenciosa do gerador.
 - Internal site links are relative and every page has a next step.
