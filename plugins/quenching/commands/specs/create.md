@@ -173,7 +173,8 @@ stale read) — re-run `cq specs config --json` and redo step 4 rather than retr
 `azurePlacement.workItemType` with no `workItemTypes` catalog resolving one — name the finding and
 its remedy verbatim, and stop; migrating the target's config is not this command's call to make.
 Any other backend failure (`sp-backend-unavailable`, `sp-worktree-unusable`,
-`sp-worktree-failed`) is reported verbatim, naming `/quenching:specs:align`.
+`sp-worktree-failed`) is reported verbatim, with the finding's own declared remedy and nothing
+invented beside it.
 
 The chained `cq specs validate --spec <id>` is the whole of what checking this spec means — its
 own finding, if any, is named verbatim in step 6, never silently swallowed by the `&&`.
