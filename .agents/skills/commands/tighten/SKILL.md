@@ -165,7 +165,7 @@ say why, and the harness ran once over the result.
 ## Invariants to never violate
 
 - **Never cut a quoted trigger from a description.** Only a measured miss retires one —
-  `quenching-components-command-eval`'s. A trigger that looks like sediment is REPORTED with that
+  `/quenching:components:command:eval`'s. A trigger that looks like sediment is REPORTED with that
   command named.
 - **Never cut a `Done when:` marker**, and never leave a numbered step without one — `lint` counts
   that literal string (`sk-step-criterion`).
