@@ -12,8 +12,9 @@ not as a line in CLAUDE.md's verification block: that block already runs `unitte
 tests`, so this costs the harness no new line, and a set comparison names the command that drifted
 where a shell `diff` of two substitutions can only say that something did.
 
-The manual's span is `## The <n> commands` through the next `## ` heading, so the count written into
-that heading is free to change without touching this test.
+The manual's span is `## The <n> commands` through `## Install`, so the count written into that
+heading is free to change without touching this test, and a front documented in its own `## `
+section inside that span — as the `specs` flow is — still counts as listed.
 """
 
 import pathlib
@@ -25,7 +26,8 @@ COMMANDS = PLUGIN_ROOT / "commands"
 README = PLUGIN_ROOT / "README.md"
 
 MANUAL_OPENS = re.compile(r"^## The .* commands\s*$", re.MULTILINE)
-INVOCABLE = re.compile(r"`(/quenching:[a-z][a-z:-]*)`")
+MANUAL_CLOSES = re.compile(r"^## Install\s*$", re.MULTILINE)
+INVOCABLE = re.compile(r"`(/[a-z][a-z:-]*)`")
 
 
 def _commands_on_disk() -> set[str]:
@@ -39,7 +41,7 @@ def _manual_span(text: str) -> str:
     if opens is None:
         raise AssertionError("README.md carries no `## The <n> commands` heading")
     rest = text[opens.end():]
-    closes = re.search(r"^## ", rest, re.MULTILINE)
+    closes = MANUAL_CLOSES.search(rest)
     return rest if closes is None else rest[:closes.start()]
 
 
@@ -69,7 +71,9 @@ class ReadmeManualMatchesTheSurface(unittest.TestCase):
         self.assertIn(real, _commands_on_disk() - listed)
         self.assertIn("/quenching:invented:command", listed - _commands_on_disk())
 
-    def test_the_span_stops_at_the_next_heading(self):
-        span = _manual_span("## The 9 commands\n\nkept\n\n## Install\n\ndropped\n")
+    def test_the_span_stops_at_install_and_not_at_an_inner_heading(self):
+        span = _manual_span("## The 9 commands\n\nkept\n\n## The specs flow\n\nalso kept\n"
+                            "\n## Install\n\ndropped\n")
         self.assertIn("kept", span)
+        self.assertIn("also kept", span)
         self.assertNotIn("dropped", span)
