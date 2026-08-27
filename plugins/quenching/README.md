@@ -102,7 +102,7 @@ the explicit entry point.
 | `/quenching:knowledge:documentation:plan` | Builds the sourced architecture — reader journeys and the output contracts each page answers to. |
 | `/quenching:knowledge:documentation:write` | Writes the Diátaxis pages from that plan, sourced and never invented. |
 | `/quenching:knowledge:documentation:review` | Scores pages against the ten-dimension quality gate **without changing a byte**. |
-| `/quenching:knowledge:documentation:build` | Owns the mkdocs-material layer — extensions, CSS, nav, and the strict build. |
+| `/quenching:knowledge:documentation:build` | Owns the Zensical site layer — extensions, CSS, nav, and the strict build. |
 
 ### The `components` front — the target's `.claude/` surface
 
@@ -293,7 +293,7 @@ graded and with a should-not-trigger arm.
 | `/quenching:align` | no pin, no sub-agents — the front probe is a handful of globs and two CLI calls, and every write belongs to the sweep it invokes (which carries its own policy row) |
 | `/quenching:knowledge:import` | extraction/executor sub-agents may run `model: haiku` + `effort: low` — import **deletes nothing**, so a misclassification only misfiles a doc (correctable); the orchestrator keeps each `index.md` honest and resolves cross-slice dedup |
 | `/quenching:knowledge:add` / `/quenching:knowledge:learn` | no pin — they inherit the session model (they classify, route, and gate operations). **Neither carries a frontmatter hook block** — the rung-1 blocks these two once carried were removed when the plugin's own wiring covered the same case, and that wiring was later discontinued outright, so no hook fires on their writes (`/.knowledge/standards/automation/hooks.md`). Each body's own **Self-check against the conformance core** step is the conformance check at write time: a step the command runs, not a rung anything enforces |
-| `/quenching:knowledge:documentation:build` | no pin, no sub-agents — the inventory is a handful of globs plus one config parse, and the expensive step is an external `mkdocs build`, not tokens; the config **merge** and the fix-vs-report split are exactly the judgment the plan gate exists to contain. `Bash` stays unrestricted **and is now priced in the body**: it drives a toolchain the plugin does not own, reachable through `pip`, `uv` or a bare `python -m` |
+| `/quenching:knowledge:documentation:build` | no pin, no sub-agents — the inventory is a handful of globs plus one config parse, and the expensive step is an external `zensical build`, not tokens; the config **merge** and the fix-vs-report split are exactly the judgment the plan gate exists to contain. `Bash` stays unrestricted **and is now priced in the body**: it drives a toolchain the plugin does not own, reachable through `pip`, `uv` or a bare `python -m` |
 | `/quenching:knowledge:documentation:produce` | no pin, no sub-agents — the conductor sequences four named stages under one authorization and reports their summaries; it has no `Write`/`Edit` grant |
 | `/quenching:knowledge:documentation:plan` | no pin, no sub-agents — source diagnosis, IA and six contracts require the session's judgment; only the plan-of-record is written |
 | `/quenching:knowledge:documentation:write` | no pin on the author; large batches may fan out `Task` slices pinned to the session model, never `haiku`, because each slice writes human-facing prose |
