@@ -151,7 +151,7 @@
       { "id": "refined",   "phase": "plans", "when": { "frontmatter": "refined" } },
       { "id": "ready",     "phase": "plans", "when": { "filled": ["Problem", "Proposal", "Out of Scope", "Impact", "Validation", "Design", "Alternatives Considered", "Open Decisions", "Risks", "Tasks"] }, "warnWhenEmpty": ["Handoff"], "gate": true },
       { "id": "approved",  "phase": "plans", "when": { "frontmatter": "approved" } },
-      { "id": "executing", "phase": "plans", "when": { "anyOf": [{ "taskState": ["x", "!"] }, { "filled": ["Handoff"] }] }, "label": "spec:built" }
+      { "id": "executing", "phase": "plans", "when": { "taskState": ["x", "!"] }, "label": "spec:built" }
     ],
     "note": "Stages are DERIVED from heading presence and frontmatter, never declared. Declared state is forgotten on edit; derived state regresses automatically when a section empties. `ready` is the v3 replacement for the ready/ folder — the SAME ten sections that were its entryGate, resolved by computation instead of a git mv. It carries `gate: true`, which marks it as the one stage rule that is also a gate: it is the single source of the ready set, so nothing may restate those ten sections elsewhere in this file. It no longer refuses anything — a gate that moves no file is a floor `execute` reports against. `approved` sorts after it because a human may say go before every section is filled (execute asks inline and stamps rather than refusing), and `executing` sorts last because it dominates all of them. `executing`'s own `label: spec:built` is the one stage-level label — anchored on the derived stage rather than the `branch` record so a spec built in place (no isolation, no `branch` record) still reads as built."
   }

@@ -239,11 +239,20 @@ Resolution is **last match wins**, so a spec always reports the most advanced st
 | `refined` | a `refined` record in frontmatter |
 | `ready` | the ten gate sections filled (`gate: true` — the single source of that set) |
 | `approved` | an `approved` record in frontmatter |
-| `executing` | any `[x]` or `[!]` box, or `## Handoff` filled |
+| `executing` | any `[x]` or `[!]` box |
 
 `approved` sorts after `ready` because a human may say go before every section is filled — `execute`
 asks inline and stamps rather than refusing. `executing` sorts last because it dominates all of
 them.
+
+**`## Handoff` filled is NOT one of these triggers, and used to be.** The premise was that only
+someone already building writes a handoff, and it does not hold: `## Handoff` is where a spec
+declares post-merge field validation, an obligation known at definition time. Filling it at the
+right moment dropped the spec to `executing` before a single box existed — measured on a spec whose
+`## Tasks` was still empty and which had not even reached the `ready` gate, reported as under
+construction and ranked against specs with code in flight. A ticked box is the honest signal
+because `cq specs task` writes it only after a commit; nothing else on this list can be written by
+accident.
 
 `cq specs list` and `cq specs next --front` both group by these stages, deriving them from disk
 on every call.
