@@ -7,7 +7,7 @@ tags: [automation, commands, taxonomy, authoring]
 timestamp: 2026-08-27
 audience: both
 authority: current
-source: the skill-authoring + skill-alignment change that first paired a skill with its wrapper (predates collapse-skills-into-commands) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31) + route-commands-without-always-on-descriptions (2026-08-02), which measured the disable-model-invocation claim this doc had asserted unmeasured and added the routed/typed-only admission criterion + the surface-wide description review added to /quenching:components:align (2026-08-02) + alocar-comandos-skills-por-categoria (2026-08-15), which made category/subject the primary classification test ahead of domain-bound/generic + revisar-fluxo-do-develop-custo-e-gates (2026-08-16), which widened the `context: fork` prohibition from "gates a mid-flow confirmation" to "asks the human anything mid-flow", aligning the written rule with the `sk-fork-gate` check that had always graded the `AskUserQuestion` grant itself; the directional-boundary rule added by the orquestrar-specs-em-paralelo branch review (2026-08-16), which found the two new fan-out entries naming their neighbours while no neighbour named them back — a one-directional surface no lint code can see; varrer-nomes-de-comando-legados (2026-08-27) — the standing example of a deliberate unscoped Bash grant is now /quenching:specs:execute, the command lint actually reports it on
+source: the skill-authoring + skill-alignment change that first paired a skill with its wrapper (predates collapse-skills-into-commands) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31) + route-commands-without-always-on-descriptions (2026-08-02), which measured the disable-model-invocation claim this doc had asserted unmeasured and added the routed/typed-only admission criterion + the surface-wide description review added to /quenching:components:align (2026-08-02) + alocar-comandos-skills-por-categoria (2026-08-15), which made category/subject the primary classification test ahead of domain-bound/generic + revisar-fluxo-do-develop-custo-e-gates (2026-08-16), which widened the `context: fork` prohibition from "gates a mid-flow confirmation" to "asks the human anything mid-flow", aligning the written rule with the `sk-fork-gate` check that had always graded the `AskUserQuestion` grant itself; the directional-boundary rule added by the orquestrar-specs-em-paralelo branch review (2026-08-16), which found the two new fan-out entries naming their neighbours while no neighbour named them back — a one-directional surface no lint code can see; varrer-nomes-de-comando-legados (2026-08-27) — the standing example of a deliberate unscoped Bash grant is now /quenching:specs:execute, the command lint actually reports it on; sk-unscoped-bash-le-o-corpo (2026-08-27) — the stated reason has a literal marker `lint` can observe, carried as `priced` in the JSON
 maintainer: quenching
 ---
 
@@ -231,6 +231,20 @@ advance, because they are the repo's, not the plugin's. Such a command may hold 
 provided its body says so and says why. `/quenching:specs:execute` is the standing example. The
 finding is still reported; what the stated reason buys is a reader who can tell a deliberate grant
 from an unexamined one.
+
+**The reason is written as a line of its own, opening with the literal marker** — for `Bash`:
+
+```markdown
+**Why `Bash` is unrestricted here.** <the reason>
+```
+
+`lint` looks for that line, outside any fence, and carries the answer as `priced` in the JSON. It
+is a **boolean, not a grade**: nothing reads the reason, judges it, or measures it. The form is
+literal because the alternative is a check that claims to have understood prose it only pattern-
+matched — and because a remedy has to be followable from the message alone, which is the defect
+this marker closes. Before it, the finding advised *"state the reason in the body"* while reading
+only `allowed-tools`: a body that already stated the reason got byte-identical output to one nobody
+had looked at.
 
 **The grant is a declaration `cq components lint` checks; whether it also restricts is unmeasured.**
 What scoping reliably buys is that lint: a bare grant is reported, and a reader can see at a glance
