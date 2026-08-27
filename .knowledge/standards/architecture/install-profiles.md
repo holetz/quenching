@@ -2,12 +2,12 @@
 type: standard
 title: Install profiles — the front is the unit of installation
 description: A profile declares which of the three fronts (plus the fourth entry, the `git` pillar) a repository uses, in `.claude/quenching.json` — what it turns on and off is the residency of a front's command descriptions (`disable-model-invocation: true`), never a command or a file; the `/align` conductor runs the installed fronts in dependency order and names an uninstalled one in its report instead of failing on it, and `git` carries no conductor to skip at all, only its own residency toggle
-resource: .claude/quenching.json, plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/specs/align.md, plugins/quenching/commands/components/align.md, plugins/quenching/commands/git/**
+resource: .claude/quenching.json, plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/components/align.md, plugins/quenching/commands/git/**
 tags: [architecture, install, profiles, fronts, configuration]
-timestamp: 2026-08-16
+timestamp: 2026-08-27
 audience: both
 authority: current
-source: extensible-surface-and-budget-retirement plan (task 4.1, 2026-08-06); the fourth entry — the `git` pillar, installed by default, carrying no conductor of its own — added by pilar-git-e-specs-agnosticas-ao-git (task 6.3)
+source: extensible-surface-and-budget-retirement plan (task 4.1, 2026-08-06); the fourth entry — the `git` pillar, installed by default, carrying no conductor of its own — added by pilar-git-e-specs-agnosticas-ao-git (task 6.3); varrer-nomes-de-comando-legados (2026-08-27) — the resource no longer names commands/specs/align.md, retired with the local backend
 maintainer: quenching
 ---
 

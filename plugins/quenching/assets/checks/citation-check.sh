@@ -18,6 +18,12 @@
 #           1 a half failed — a dead name survives, or a citation resolves to nothing
 #           2 nothing could be measured — no verdict, do not read it as a pass
 #
+# THE ARGUMENT IS THE REPOSITORY ROOT, AND ANYTHING ELSE EXITS 2. Every pathspec here is written
+# from the root, so a subdirectory does not narrow the sweep — it DISARMS the exclusions. Run from
+# `plugins/quenching`, `--half 1 .` reported six dead patterns as survivors over 202 files instead
+# of 466, because the golden fixtures stopped being excluded. Omitting the argument is always safe:
+# the root is derived from this file's own location.
+#
 # BLIND, WITH NO ALLOWLIST. Historical mentions are rewritten to the new name like every other
 # citation: git history holds the past, the docs describe the present, and a check with content
 # exceptions is a check people learn to ignore.
@@ -65,6 +71,31 @@ done
 SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="${REPO:-$(cd "$SELF_DIR/../../../.." && pwd)}"
 cd "$REPO" || { echo "citation-check: cannot enter $REPO"; exit 2; }
+# Take the repo root back from the shell, absolute, rather than from the argument. `SELF` below is
+# a RELATIVE pathspec derived by stripping this prefix off an absolute `SELF_DIR`, so a caller who
+# writes the repo as `.` — which is how this repo's own `verify:` lines spell it — strips nothing,
+# leaves `SELF` absolute, and the `:!` pathspec excludes no file. The instrument then sweeps
+# ITSELF and reports its own dead-name patterns as survivors: measured here, `--half 1 .` failed
+# two patterns that `--half 1` passed, in the same tree, in the same second.
+REPO="$PWD"
+# And refuse anything that is not the repository ROOT. Every pathspec below — the scope excludes,
+# `git ls-files`, `SELF` itself — is written from the root, so a subdirectory silently drops all of
+# them: measured from `plugins/quenching`, the golden fixtures stop being excluded and half 1
+# reports SIX dead patterns as survivors over a corpus of 202 files instead of 466. A verdict over
+# a fraction of the repository with the exclusions disarmed is not a weaker measurement, it is a
+# wrong one — so it exits 2, the code this harness reserves for "nothing could be measured".
+TOPLEVEL="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [ -z "$TOPLEVEL" ]; then
+  echo "citation-check: $REPO is not inside a git repository"
+  echo "  nothing could be measured — this is not a pass"
+  exit 2
+fi
+if [ "$TOPLEVEL" != "$REPO" ]; then
+  echo "citation-check: $REPO is not the repository root ($TOPLEVEL is)"
+  echo "  every pathspec here is written from the root, so a subdirectory disarms them"
+  echo "  nothing could be measured — this is not a pass"
+  exit 2
+fi
 SELF="${SELF_DIR#"$REPO"/}/$(basename "${BASH_SOURCE[0]}")"
 
 # Half 1's own scope, beyond frozen golden data, not live citations — see the header's third scope
@@ -155,6 +186,74 @@ if want 1; then
       printf '  ok     %-22s gone\n' "$pat"
     fi
   done
+
+  # The hyphenated spelling of a LIVE command. `quenching-knowledge-add` is not a retired name —
+  # it is the right command with the wrong separator, and it routes nowhere: the registry takes
+  # `quenching:knowledge:add` and the human types `/quenching:knowledge:add`. A reader who follows
+  # one types a command the surface does not register.
+  #
+  # THE NAMES ARE DERIVED FROM DISK, never listed here. A closed verb list was the other candidate
+  # — the shape the `/specs:` pattern above uses — and it loses for the same reason `lint`'s own
+  # surface predicates derive theirs: a command minted tomorrow would be born outside a list, and
+  # nothing would say so. The read is one generic-shape scan per file plus membership in the set.
+  #
+  # A FOURTH SCOPE RULE, AND IT IS THE SAME KIND AS THE THREE ABOVE: what is swept is the prose
+  # that INSTRUCTS an agent to route — command bodies, the references they cite, and the moulds
+  # stamped into an adopting repo. It stops there because outside those trees the same spelling is
+  # not a routing claim. The TRANSLATED surfaces (`plugins/quenching-codex/**`, `.agents/**`) are
+  # the clearest case: Codex has no `:` namespace, so the hyphenated name IS the real skill
+  # directory there, and the translator's own tests govern it. `README.md` is the other: its
+  # `## Upgrade` changelog names directories that really existed between releases 0.11 and 0.18 —
+  # rewriting a dated record falsifies it — and its per-command manual is the whole scope of the
+  # rewrite-readme-for-collapsed-surface spec, which promises exactly this rename there.
+  git ls-files -z -- 'plugins/quenching/commands' 'plugins/quenching/assets/references' \
+                     'plugins/quenching/assets/templates' | python3 -c '
+import os, re, sys
+
+commands_dir = os.path.join("plugins", "quenching", "commands")
+HYPHENATED_RE = re.compile(r"(?<![\w:/-])(quenching-[a-z0-9-]+)(?![\w:])")
+
+live = set()
+for root, _, names in os.walk(commands_dir):
+    for name in names:
+        if name.endswith(".md"):
+            rel = os.path.relpath(os.path.join(root, name), commands_dir)
+            live.add("quenching-" + rel[:-3].replace(os.sep, "-"))
+
+findings, checked = [], 0
+for rel in sys.stdin.buffer.read().split(b"\x00"):
+    rel = rel.decode("utf-8", "replace")
+    if not rel.endswith((".md", ".sh", ".py")):
+        continue
+    checked += 1
+    with open(rel, encoding="utf-8", errors="replace") as handle:
+        for number, line in enumerate(handle, 1):
+            for cited in HYPHENATED_RE.findall(line):
+                if cited in live:
+                    findings.append((rel, number, cited))
+
+for rel, number, cited in findings[:200]:
+    print("         %s:%d: %s" % (rel, number, cited))
+if len(findings) > 200:
+    print("         … and %d more" % (len(findings) - 200))
+
+# A sweep that read no file measured nothing, and would report the empty corpus as clean — the
+# same arming proof the canary gives the patterns above.
+if checked == 0:
+    print("  the sweep read no file — the pathspec excludes everything")
+    print("  nothing could be measured — this is not a pass")
+    sys.exit(2)
+if findings:
+    print("  FAIL   %-22s %d hyphenated live-command name(s) in %d file(s) swept"
+          % ("(hyphenated form)", len(findings), checked))
+    sys.exit(1)
+print("  ok     %-22s none in %d file(s) swept" % ("(hyphenated form)", checked))
+'
+  case $? in
+    0) ;;
+    2) echo; echo "  the hyphenated-form sweep could not be measured"; exit 2 ;;
+    *) FAIL=$((FAIL+1)) ;;
+  esac
   echo
 fi
 

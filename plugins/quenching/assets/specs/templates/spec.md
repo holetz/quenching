@@ -38,9 +38,8 @@ verification: <VERIFICATION>
      Headings are a PARSED contract — canonical English, exactly as written here. Body prose
      follows the repo's language. A heading outside this set is a stray and validate flags it.
      *(`standards/agents/communication.md` owns that language rule for a repo whose bundle has
-     one. This template states it self-contained rather than citing it: `/quenching:specs:align` is native
-     and installs here into repos that never adopted the bundle, where that path resolves to
-     nothing.)*
+     one. This template states it self-contained rather than citing it: the mold is stamped into
+     repos that never adopted the bundle, where that path resolves to nothing.)*
 
      MOMENT. Each section belongs to one of three moments on the spec's timeline: `decision`
      (the human, deciding whether to build), `build` (the executor, in step 4 of

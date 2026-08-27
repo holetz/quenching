@@ -30,8 +30,9 @@ this skill's doctrine. What follows is specific to `.claude/`:
 
 - **The legacy `openspec-*` surface is not this sweep's.** `.claude/skills/openspec-*/` and
   `.claude/commands/opsx/` are legacy CLI artifacts a prior `openspec init` left behind — a
-  native `/.specs/` repo has none. When present they belong to `/quenching:specs:align`, which
-  removes them when migrating a legacy `openspec/` workspace
+  provider-owned specs front has none. When present, **no command of this plugin removes them**:
+  the specs front's align was retired with the local backend, so clearing a legacy `openspec/`
+  workspace is a human's call. Report them and move on
   ([specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md)
   §Finding policy). Inventory them only to **note** them; never classify them onto the axis,
   rename them, or remove them here.
@@ -96,9 +97,9 @@ committed to a full sweep, or entered §8 directly.
 those is a pair awaiting collapse** — pair each with the wrapper whose body invokes it (the
 `quenching:<name>` or bare `<name>` reference), and record a skill with no wrapper, or a
 wrapper naming no skill, as an item needing a human decision rather than a mechanical merge.
-Set aside every legacy `openspec-*` skill and `opsx/` wrapper — they are `/quenching:specs:align`'s
-(Doctrine §the legacy `openspec-*` surface); list them as *out of scope, owned by
-`/quenching:specs:align`* and drop them from the working set, including from the tool's findings.
+Set aside every legacy `openspec-*` skill and `opsx/` wrapper (Doctrine §the legacy `openspec-*`
+surface); list them as *out of scope, owned by no command — a human's call* and drop them from the
+working set, including from the tool's findings.
 
 For each remaining item, make the **axis classification** per the
 test ([taxonomy](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md) §The single axis — several unrelated folders
@@ -200,7 +201,7 @@ is a claim about behaviour and the same read that makes it must also weigh the f
 
 Report each finding as `command · violated rule · one-line evidence · the /quenching:components:command:new invocation
 that opens the edit`, labelled **"reported, not applied"**. Skip every legacy `openspec-*` body —
-that surface is `/quenching:specs:align`'s here as everywhere. Never rewrite a body to close a finding.
+that surface is out of scope here as everywhere. Never rewrite a body to close a finding.
 **Done when:** every surviving body carries a verdict — a finding with its fix invocation, or
 clean — and nothing was written.
 
@@ -289,8 +290,8 @@ are reported.
 - Never modify anything before the plan's OK; a code-coupled rename never rides the batch. A
   cycle-authorized run replaces only the batch gate with narration — never a code-coupled
   item's own OK.
-- Never rename, reclassify, or remove a legacy `openspec-*` skill or an `opsx/` wrapper — that
-  surface is `/quenching:specs:align`'s; note it and move on.
+- Never rename, reclassify, or remove a legacy `openspec-*` skill or an `opsx/` wrapper — no
+  command of this plugin owns that surface; note it and move on.
 - Never alter a body's prose — only its title line, its input contract, its citation paths,
   its placement, and its frontmatter conformance. A collapse MOVES a body; it never edits it, and
   §7 only reads it.
