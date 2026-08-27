@@ -362,19 +362,39 @@ either bare through `bin/cq` on the PATH or at `${CLAUDE_PLUGIN_ROOT}/assets/bin
 the same file inside the plugin — so a version bump reaches every consumer the moment Claude Code
 applies the plugin upgrade; there is nothing installed to compare against and nothing to sync.
 
-Publishing the bump itself is mechanized, not a manual edit. `cq specs release <version>` moves the
-four version-carrying files together and creates the tag in one act: `.claude-plugin/plugin.json`,
-`VERSION`, the marketplace manifest's plugin entry, and the one shared `common/version.py` constant
-every pillar's `--version` reads. This
-repository's own `/release` command (`.claude/commands/release.md` — not shipped by the plugin)
-drives it: run once, deliberately, at the **`develop → main` merge**, never at a spec's own
-conclude, it reads what accumulated on `develop` since the last release, proposes a patch/minor/major
-bump with its reasoning, and gates on one confirmation before merging, bumping, tagging and pushing.
-See [`/.knowledge/standards/ci-cd/versioning-release.md`](../../.knowledge/standards/ci-cd/versioning-release.md) for
-why each half of the lockstep matters, and
-[`/.knowledge/standards/git/branching.md`](../../.knowledge/standards/git/branching.md) for the `develop`/`main` split
-`/release` publishes into.
+What a bump moves, when it moves, and why each half of the lockstep matters is one rule with one
+owner: [`ci-cd/versioning-release.md`](../../.knowledge/standards/ci-cd/versioning-release.md). The
+short version for a consumer: the version is published once, deliberately, as a release — never at a
+spec's own conclude — and `cq --version` is what answers which one you are running.
 
+- **6.3.0:** the ranked front became **native to the tool**. `cq specs next --front --table`
+  renders the ordered listing itself instead of every caller re-deriving it, with `summary:` as its
+  own column — one line saying what a spec is, written at capture and refreshed by every
+  `/quenching:specs:develop` pass, and the only short description a ranked listing prints. Four
+  command bodies dropped their hand-rolled renderers onto it.
+- **6.2.0:** `cq` stopped depending on how it was invoked. The tool resolves per call — bare on the
+  PATH or at `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`, the same file either way — which removed the
+  `PATH` assumption every body used to carry. Commands were also re-allocated by category, so a
+  command's path names the front that owns it.
+- **6.1.0:** **`/.docs/` became `/.knowledge/`.** The bundle, the commands, the standards, the
+  skeleton and every citation moved together; `type` follows the home a doc sits in, and that rule
+  became a standard rather than a convention people remembered.
+- **6.0.1:** the section squash — a build commits one commit **per `## Tasks` section**, not one per
+  task, with the per-task subjects repaired onto the squashed commit afterwards. `/quenching:specs:execute`'s
+  steps f/h/i were tightened to fit the body cap.
+- **6.0.0:** **the tooling modularized.** Three standalone scripts (`skills.py`, `specs.py`,
+  `okf-validate.py`) became one binary, `cq`, over a `quenching` package with a pillar per front —
+  `cq specs`, `cq knowledge`, `cq components`, `cq git`. The `skills` pillar was renamed
+  `components` with it. Every command body drives the pillar, and nothing installs a copy of
+  anything any more.
+- **5.0.0:** the Azure Boards backend stopped costing one `az` call per field. Writes batch into a
+  single PATCH, the board column is resolved and diffed rather than written blind, and
+  `architecture/spec-backend.md` was written to hold the placement and granular-reading rules the
+  work revealed.
+- **4.13.0:** the specs front's preamble citations were aligned to the bodies that actually carry
+  them, and the Azure Boards backend was positioned honestly — shipped, but without an end-to-end
+  run against a real project, which `doctor`'s `sp-backend-unproved` finding names on every
+  selection.
 - **4.2.0:** **nothing is written after the thing it describes, so the merge is last.** The
   task→commit anchor inverted from the commit's **sha** to its **subject** — known *before* the
   commit exists — which let two writes move ahead of the events they record. `/quenching:specs:execute` now

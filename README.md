@@ -76,7 +76,7 @@ lives once in its owning reference file; heavy sweeps fan out to cheaper sub-age
 sonnet at low effort) while every classification and destructive gate stays on the session
 model; and the enforcement hook's `Stop` sweep is dirty-gated — a turn that touches no
 `docs/**` file costs one stat. Full policy:
-[plugin README → Cost model](plugins/quenching/README.md#cost-model).
+[plugin README → Model policy](plugins/quenching/README.md#model-policy).
 
 ## License
 
