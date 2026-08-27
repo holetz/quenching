@@ -50,6 +50,10 @@ per home — `publicar`, `publicar derivado` or `não publicar` — with motive,
 Treat a missing basis as `source gap:`, never as a default exclusion. **Done when:** all seven
 contract headings exist in order and no placeholder is silently guessed.
 
+When the map publishes the root `glossary.md`, record `reference/glossary.md` as a **derived**
+route and the canonical file as its only source. The plan also records the generated abbreviation
+snippet consumed by the site layer; it never assigns authors a second editable term list.
+
 ### 4. Present the plan and obtain one OK
 
 Show the inventory findings, seven contracts, proposed files, page intents, extensions, the
