@@ -68,6 +68,7 @@ def local_target(base: Path, raw: str) -> tuple[Path | None, str]:
 def check(site: Path) -> list[Finding]:
     found: list[Finding] = []
     parsed_pages = pages(site)
+    linked_pages: set[Path] = {Path("index.html")}
     for relative, page in parsed_pages.items():
         base = (site / relative).parent
         for asset in page.assets:
@@ -93,6 +94,8 @@ def check(site: Path) -> list[Finding]:
                 target_page = parsed_pages.get(target_relative)
                 if not target_page or fragment not in target_page.ids:
                     found.append(Finding("site-anchor-missing", relative, link))
+            elif target.suffix == ".html":
+                linked_pages.add(target.relative_to(site))
     sitemap = site / "sitemap.xml"
     if not sitemap.exists():
         found.append(Finding("site-sitemap-empty", sitemap.relative_to(site), "missing sitemap.xml"))
@@ -103,6 +106,11 @@ def check(site: Path) -> list[Finding]:
                 found.append(Finding("site-sitemap-empty", sitemap.relative_to(site), "no URLs"))
         except ElementTree.ParseError as error:
             found.append(Finding("site-sitemap-empty", sitemap.relative_to(site), f"invalid XML: {error}"))
+    for relative in parsed_pages:
+        if relative.name in {"404.html"} or relative.parts[0] == "assets":
+            continue
+        if relative not in linked_pages:
+            found.append(Finding("site-page-orphan", relative, "not linked by a generated page"))
     return found
 
 
