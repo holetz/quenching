@@ -133,7 +133,7 @@ DEFAULT_SCHEMA: dict = {
              "warnWhenEmpty": ["Handoff"]},
             {"id": "approved", "phase": "plans", "when": {"frontmatter": "approved"}},
             {"id": "executing", "phase": "plans",
-             "when": {"anyOf": [{"taskState": ["x", "!"]}, {"filled": ["Handoff"]}]},
+             "when": {"taskState": ["x", "!"]},
              "label": "spec:built"},
         ],
     },
