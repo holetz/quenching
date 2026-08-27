@@ -64,7 +64,7 @@ The delivery checklist is explicit:
 - [ ] **No README dump** — every page is rewritten for a reader who arrived from search.
 - [ ] **No claims without source** — every strong claim has an origin in the ledger.
 - [ ] **No section without intent** — every section answers “why keep reading?”.
-- [ ] `mkdocs build --strict --site-dir <throwaway>` passes with zero warnings.
+- [ ] `zensical build --clean --strict` passes with zero issues.
 - [ ] No orphan pages and all relative internal links resolve.
 - [ ] Every extension used by a page is enabled in the site layer.
 - [ ] Every page ends with a next step and every reusable contract has a TL;DR block.

@@ -8,11 +8,11 @@ carries `type: documentation`.
 human) lives here; structured/typed knowledge for the team+agent to operate lives in the
 other homes.
 
-- vs. [concepts/](/.knowledge/concepts/index.md) — a published-site explanation page →
+- vs. the `concepts/` home — a published-site explanation page →
   `documentation/explanation/`; internal team understanding (mental model, learning, glossary) → `concepts/`.
-- vs. [standards/](/.knowledge/standards/index.md) — a how-to that describes the current
+- vs. the `standards/` home — a how-to that describes the current
   *contract* (the rule) is a `standard`; teaching how to *execute* a task is a how-to here.
-- vs. the root [external/](/.knowledge/external/index.md) — our product's own reference lives in
+- vs. the root `external/` home — our product's own reference lives in
   `reference/` below; facts about an external asset WE CONSUME go to the root `external/` home.
 
 ## Sections (Diátaxis)
@@ -25,19 +25,20 @@ other homes.
 ## Rendering this home
 
 This home is a plain Markdown tree, consumable by any documentation site generator. The
-plugin ships a batteries-included **mkdocs-material** setup at the repo root (`mkdocs.yml`,
+plugin ships a batteries-included **Zensical** setup at the repo root (`zensical.toml`,
 `requirements.txt`) — first installed by `quenching:knowledge:align`, and created/updated/verified from
 then on by the **documentation family** — `plan`, `write`, `review`,
 and `build`, conducted end to end by `produce` (the site layer's owner is `build`, which handles
-config, `.pages` nav, CSS and a `mkdocs build --strict` check):
+config, the `nav`, CSS and a `zensical build --strict` check):
 
-- The generator points here — `docs_dir: .knowledge/documentation` in `mkdocs.yml` (kept at the
-  repo root, **outside** the bundle).
-- Each reserved `index.md` doubles as the **section landing page** (mkdocs-material's
+- The generator points here — `docs_dir = ".knowledge/documentation"` in `zensical.toml` (kept at
+  the repo root, **outside** the bundle).
+- Each reserved `index.md` doubles as the **section landing page** (the theme's
   `navigation.indexes` feature) — no separate landing file needed.
-- Navigation follows the folder tree automatically via `mkdocs-awesome-pages-plugin`; the
-  `.pages` file in each section sets its title and order. A new section has no `.pages` until
-  `quenching-knowledge-documentation-build` writes one.
+- Navigation is the explicit `nav` list in `zensical.toml`: no plugin derives it from the folder
+  tree, so a new page is a new line there, written by
+  `quenching-knowledge-documentation-build`. A page absent from the list is still built and
+  still searchable — it is only missing from the sidebar.
 - **Link caveat:** absolute OKF links (`/.knowledge/standards/…`) point outside a site rooted at
-  `documentation/` and will not resolve in the built HTML — keep these pages self-contained
-  and cross-link to other homes sparingly.
+  `documentation/`, fail the build under `--strict` and will not resolve in the built HTML — keep
+  these pages self-contained and name the other homes in prose rather than linking them.
