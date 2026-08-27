@@ -51,6 +51,9 @@ bundle; every install, update, and re-verification after that is **this** skill.
   whose URL shape is known and testable (Azure DevOps uses `?path=/{path}&version=GB<branch>`).
   `site_url` comes only from the selected delivery destination. Language and identity come only
   from a target contract or owned asset. Missing evidence is a finding, never a public placeholder.
+- **Glossary projection has one source.** When the accepted map exposes the glossary, derive the
+  site-layer abbreviation snippet from root `glossary.md` and verify both `reference/glossary.md`
+  and rendered `<abbr>` output. Never ask an author to edit the derived snippet or a duplicate list.
 - **A legacy `mkdocs.yml` is read, never converted behind the human's back.** Zensical reads
   `mkdocs.yml` natively and says it always will, so a target that has one still builds and nothing
   is urgent. What silently stopped working there is its whole `plugins:` list, which is why any
@@ -93,6 +96,8 @@ bundle; every install, update, and re-verification after that is **this** skill.
 | `site-publication-map-absent` | the accepted plan has no Mapa editorial de publicação | **REPORT** → `quenching-knowledge-documentation-plan` |
 | `site-publication-route-missing` | a `publicar`/`publicar derivado` row has no corresponding route below `documentation/` | **REPORT** → `quenching-knowledge-documentation-write` |
 | `site-publication-leak` | a `não publicar` home appears in nav, a route or an internal link | **FIX** only in config/nav; otherwise **REPORT** → page author |
+| `site-glossary-route-missing` | the map exposes the glossary but `reference/glossary.md` is absent | **REPORT** → `quenching-knowledge-documentation-write` |
+| `site-glossary-projection-stale` | glossary entries cannot be projected to abbreviation definitions | **FIX** the generated site-layer snippet; never rewrite the source glossary |
 | `site-nav-absent` | the config declares no `nav` while the home has sections to order | **FIX** — write the list from the folder tree |
 | `site-nav-stale` | the `nav` names an entry that does not exist, or omits a page the home has | **FIX** — regenerate the list, keep every human title |
 | `site-feature-absent` | `navigation.indexes` missing while sections use `index.md` as landing page | **FIX** — add to `theme.features` |
@@ -120,6 +125,8 @@ but **no `documentation/` home** → stop and offer `quenching-knowledge-align`;
 Collect, without writing anything:
 - the accepted `.quenching/documentation/plan.md` and its **Mapa editorial de publicação**; reject
   a missing map as a planning finding, and use its routes as the only allowed cross-home surface.
+- root `/.knowledge/glossary.md`, its mapped `reference/glossary.md` route and the generated
+  `assets/glossary-abbreviations.md` when the map exposes the glossary.
 - root `zensical.toml` — parse it: `docs_dir`, `site_name`, `site_description`, `nav`,
   `site_url`, `repo_url`, `edit_uri_template`, theme language/identity, `theme.features`,
   `markdown_extensions`, `extra_css`; note every key a human added. Also read `git remote get-url
@@ -167,7 +174,7 @@ straight to step 7's verification. **Done when:** one plan and all separate conf
 ### 6. Apply
 In order: `zensical.toml` (stamp from `../../assets/zensical/zensical.toml.tmpl` when
 absent, else merge the missing keys and only the map-approved nav entries) → requirements →
-`assets/stylesheets/quenching.css` from the payload → any orphan `.pages` → `.gitignore` → the CI
+the generated glossary-abbreviation snippet when mapped → `assets/stylesheets/quenching.css` from the payload → any orphan `.pages` → `.gitignore` → the CI
 workflow **only if** its own OK was given (copy `ci-github-pages.yml` → `.github/workflows/docs.yml`).
 The CSS asset is the one file this skill writes inside the docs home; Markdown pages remain
 untouched. **Done when:** only approved site-layer edits are applied and `extra_css` points at the
@@ -182,7 +189,8 @@ instead (Doctrine), and delete that config afterwards. Inspect the rendered HTML
 no browser is available, use the static checks in `knowledge-documentation/validation.md` and state
 that pixel-level dark/light/mobile QA was not run. If the toolchain is absent, report `unverified`
 and print the two commands. Never run `zensical serve`; never commit a built site. **Done when:**
-the build and rendered QA are real or explicitly unverified/static-only.
+the build and rendered QA are real or explicitly unverified/static-only. Where the glossary is
+mapped, also assert that the route exists and a known term renders as `<abbr>`.
 
 ### 8. Report
 Report: findings **fixed** / **reported** (each with its command), whether the build ran
