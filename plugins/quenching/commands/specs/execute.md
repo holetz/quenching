@@ -16,6 +16,10 @@ policy, reviewing its diff, and committing it alone with the box already ticked 
 **This command stops at the last commit.** Reviewing the whole branch, writing the `/.knowledge/` the work
 revealed, merging, and archiving belong to `/quenching:specs:conclude`.
 
+**Why `Bash` is unrestricted here.** Execution invokes the spec's target-declared verification,
+provider-backed `cq` operations and Git commands; their prefixes and arguments are resolved from
+the live spec and cannot be safely enumerated in metadata.
+
 ## Resolving the tool
 
 Resolve `cq` (`cq components read` is the section reader every `§X` citation in this body resolves through)

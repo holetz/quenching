@@ -9,7 +9,7 @@ markdown stays generator-neutral; only this config layer names a generator.**
 | File | Stamped to | Notes |
 | --- | --- | --- |
 | `zensical.toml.tmpl` | repo root `zensical.toml` | only if absent; fill `site_name`/`site_description`; keep `docs_dir = ".knowledge/documentation"` and add only map-approved routes |
-| `requirements.txt` | repo root | `zensical` |
+| `requirements.txt` | repo root, only when no `pyproject.toml` is used | `zensical` |
 | `quenching.css` | the `documentation/` home, at `assets/stylesheets/quenching.css` | static CSS for badges, hero, cards and reduced-motion guard; `extra_css` in `zensical.toml` wires it |
 | `ci-github-pages.yml` | `.github/workflows/docs.yml` | opt-in; GitHub Pages via the Pages artifact — the repo's Pages source must be "GitHub Actions" |
 | `azure-pipelines-docs.yml` | `azure-pipelines-docs.yml` | opt-in; Azure DevOps publishes the strict `site/` output as `documentation-site` |
@@ -43,9 +43,12 @@ zensical build --clean --strict
 # fallbacks: python -m zensical build --clean --strict · uv run zensical build --clean --strict
 ```
 
-When the target repository uses `pyproject.toml`, declare `zensical` there and run `uv sync`; the
-lockfile is the authoritative resolution. Do not add both an unpinned dependency and a second lock
-source for the same target.
+When the target repository uses uv (`uv.lock` or a `[tool.uv]` table in `pyproject.toml`), the
+documentation command adds `zensical` to the development group with `uv add --dev` when absent,
+refreshes `uv.lock` with `uv lock`, and runs `uv sync`; the lockfile is the authoritative resolution.
+Other project managers keep their own lock/install command. Do not add both an unpinned dependency
+and a second lock source for the same target, and do not create `requirements.txt` beside a managed
+`pyproject.toml`.
 
 The build command is the verification path; the documentation family reports `unverified` when
 the toolchain is not installed. `zensical build` has no `--site-dir`: it writes to the configured
