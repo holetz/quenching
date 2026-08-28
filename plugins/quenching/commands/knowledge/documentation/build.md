@@ -52,8 +52,15 @@ bundle; every install, update, and re-verification after that is **this** skill.
   `site_url` comes only from the selected delivery destination. Language and identity come only
   from a target contract or owned asset. Missing evidence is a finding, never a public placeholder.
 - **Glossary projection has one source.** When the accepted map exposes the glossary, derive the
-  site-layer abbreviation snippet from root `glossary.md` and verify both `reference/glossary.md`
-  and rendered `<abbr>` output. Never ask an author to edit the derived snippet or a duplicate list.
+  route `reference/glossary.md` and the site-layer abbreviation snippet from root `glossary.md`.
+  `cq knowledge project --check` proves the route, reference listing, nav entry, origin and
+  source hash; the rendered checker proves a known `<abbr>`. Never ask an author to edit the
+  derived route or duplicate term list. A non-empty canonical glossary is required by default;
+  only an accepted `não publicar` map row can exclude it.
+- **The whole bundle is the source boundary.** Inventory every `.knowledge` home —
+  `documentation/`, `standards/`, `concepts/`, `external/`, `catalog/`, `vision/` and the root
+  glossary — and compare coverage with every mandatory map row. Coverage is not the number of
+  pages the plan happened to select: an exposed home without its declared route fails the gate.
 - **Catalog projections are indexed, not flattened into nav.** When the map exposes `catalog/` as
   a derived reference, require `reference/catalog/index.md` as the sole nav entry. Verify that its
   layer/schema links reach every detail route, that each detail carries a stable identifier and
@@ -111,7 +118,11 @@ of git.
 | `site-publication-route-missing` | a `publicar`/`publicar derivado` row has no corresponding route below `documentation/` | **REPORT** → `/quenching:knowledge:documentation:write` |
 | `site-publication-leak` | a `não publicar` home appears in nav, a route or an internal link | **FIX** only in config/nav; otherwise **REPORT** → page author |
 | `site-glossary-route-missing` | the map exposes the glossary but `reference/glossary.md` is absent | **REPORT** → `/quenching:knowledge:documentation:write` |
-| `site-glossary-projection-stale` | glossary entries cannot be projected to abbreviation definitions | **FIX** the generated site-layer snippet; never rewrite the source glossary |
+| `site-glossary-projection-stale` | route/snippet origin or source hash differs from the canonical glossary | **FIX** with `cq knowledge project --write`; never rewrite the source glossary |
+| `site-glossary-snippet-missing` | the accepted glossary projection has no generated abbreviation snippet | **REPORT** → `/quenching:knowledge:documentation:write` |
+| `site-glossary-term-unrendered` | a known canonical term is not present as rendered `<abbr>` | **REPORT** → `/quenching:knowledge:documentation:write` |
+| `site-coverage-incomplete` | a mandatory publication-map home has no routed, non-empty page | **REPORT** → `/quenching:knowledge:documentation:write` |
+| `site-skeleton-stub` | a mandatory route's page is byte-identical to the shipped skeleton's section descriptor, or carries only that descriptor's boilerplate | **REPORT** → `/quenching:knowledge:documentation:write`; the route is not coverage |
 | `site-catalog-index-missing` | a mapped catalog has no derived layer/schema index | **REPORT** → `/quenching:knowledge:documentation:write` |
 | `site-catalog-lineage-missing` | a catalog detail omits its stable identifier or source lineage | **REPORT** → `/quenching:knowledge:documentation:write` |
 | `site-nav-absent` | the config declares no `nav` while the home has sections to order | **FIX** — write the list from the folder tree |
@@ -166,6 +177,10 @@ but **no `documentation/` home** → stop and offer `/quenching:knowledge:align`
 Collect, without writing anything:
 - the accepted `.quenching/documentation/plan.md` and its **Mapa editorial de publicação**; reject
   a missing map as a planning finding, and use its routes as the only allowed cross-home surface.
+- every source home and every `.md` source under `/.knowledge/`; count the mandatory
+  `publicar`/`publicar derivado` rows separately from intentional `não publicar` rows. If the
+  root glossary exists and has content, treat it as mandatory unless the accepted map explicitly
+  excludes it.
 - root `/.knowledge/glossary.md`, its mapped `reference/glossary.md` route and the generated
   `assets/glossary-abbreviations.md` when the map exposes the glossary.
 - root `zensical.toml` — parse it: `docs_dir`, `site_name`, `site_description`, `nav`,
@@ -192,10 +207,14 @@ Collect, without writing anything:
 ### 3. Detect drift
 Read the capability register alongside the map. An enabled row must have a tested prerequisite,
 configuration source and expected HTML effect; an unsupported row is a reported disabled decision.
-Walk the `site-*` table above over the inventory. Compare every map row with the real routes: an
-exposed row needs a route below `documentation/`; a `não publicar` row must be absent from nav and
+Walk the `site-*` table above over the inventory. Compare every map row with the real routes: every
+exposed row needs a non-empty route below `documentation/`; a `não publicar` row must be absent from nav and
 published links. For `site-link-escapes`, grep for bundle paths that should instead target a mapped
-route. For `site-nav-stale`, compare the config's `nav` against the allowed tree. Record the **evidence** for every finding —
+route. For `site-coverage-incomplete`, use the mandatory map rows as the denominator, not only
+pages assigned in the plan. For `site-skeleton-stub`, diff each mandatory route against its
+counterpart under `${CLAUDE_PLUGIN_ROOT}/assets/knowledge/documentation/` — an identical page, or
+one whose only content is the home's own descriptor, proves the site was never written, exactly
+the state a green strict build cannot see. For `site-nav-stale`, compare the config's `nav` against the allowed tree. Record the **evidence** for every finding —
 a file:line or the parsed key — never a suspicion. **Done when:** every site finding has evidence
 and a disposition.
 
@@ -238,10 +257,18 @@ stamped CSS.
 
 ### 7. Verify with a real build and rendered QA
 If the toolchain is present, run the selected runner (`uv run zensical`, `python -m zensical`, or
-the executable) with `build --clean --strict`, and then run
-`python3 ${CLAUDE_PLUGIN_ROOT}/assets/checks/documentation-site-check.py <site_dir>`. A non-zero
+the executable) with `build --clean --strict`. **Always, immediately after every build**, run
+`python3 ${CLAUDE_PLUGIN_ROOT}/assets/checks/documentation-site-check.py <site_dir>`; this is
+mandatory even when the strict build is green. A non-zero
 checker result is a structural finding: `site-asset-missing`, `site-anchor-missing`,
 `site-sitemap-empty`, `site-page-orphan` or `site-remote-resource`, each reported with its path.
+When the map makes the glossary mandatory, run the same checker with
+`--require-glossary --glossary-source .knowledge/glossary.md
+--glossary-snippet .knowledge/documentation/assets/glossary-abbreviations.md
+--glossary-route reference/glossary.md`; run `cq knowledge project .knowledge --plan
+.quenching/documentation/plan.md --config zensical.toml --check` beside it. For a local-only build
+whose config has no `site_url`, add `--local`; this accepts a relative or empty local sitemap but
+still checks malformed XML and page/assets integrity. Never infer public delivery from a local run.
 Read the Zensical output: every
 warning is either a site-layer finding you fix now (a nav entry, a feature, an extension) or a
 page-level one you **report**. Where `site/` is tracked, run it against the throwaway root config
@@ -251,7 +278,8 @@ no browser is available, use the static checks in `knowledge-documentation/valid
 that pixel-level dark/light/mobile QA was not run. If the toolchain is absent, report `unverified`
 and print the two commands. Never run `zensical serve`; never commit a built site. **Done when:**
 the build and rendered QA are real or explicitly unverified/static-only. Where the glossary is
-mapped, also assert that the route exists and a known term renders as `<abbr>`.
+mandatory, the projection check and rendered `<abbr>` check must both be green; otherwise the
+pipeline fails rather than counting only the pages the plan selected.
 
 If the human separately confirms a local preview after the strict build, start a loopback-only,
 ephemeral server from `site/`, report its URL and PID, and stop it when the preview window ends:

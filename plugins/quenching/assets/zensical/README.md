@@ -60,7 +60,10 @@ editorial de publicação** decides whether another OKF home is published, publi
 curated mirror below `documentation/`, or absent. Links use that mapped route — never an internal
 `/.knowledge/<home>/…` path. A `não publicar` home has no route or nav entry.
 
-The glossary route is `reference/glossary.md`. When the plan maps it to publication, `build`
-derives `assets/glossary-abbreviations.md` from the canonical root `glossary.md`; the template's
-`abbr` and `pymdownx.snippets.auto_append` load those definitions on every page. The derived file
-is generated site-layer data, never a second hand-maintained glossary.
+The glossary route is `reference/glossary.md`. When the canonical root `glossary.md` has content,
+it is published by default unless the accepted map explicitly says `não publicar`. The write stage
+runs `cq knowledge project --write`, which derives the route and
+`assets/glossary-abbreviations.md`, records the source SHA-256, updates the reference index and
+nav, and rewrites bundle links to mapped published routes. The template's `abbr` and
+`pymdownx.snippets.auto_append` load those definitions on every page. The derived files are
+generated data, never a second hand-maintained glossary.

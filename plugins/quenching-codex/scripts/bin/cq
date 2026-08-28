@@ -61,7 +61,7 @@ PILLARS: dict[str, Pillar] = {
         "the /.specs/ workspace — capture, read, task, promote, validate"),
     "knowledge": Pillar(
         "quenching.knowledge.cli", False,
-        "the /.knowledge/ OKF bundle — validate, and the hook that guards it"),
+        "the /.knowledge/ OKF bundle — validate and project documentation surfaces"),
     "components": Pillar(
         "quenching.components.commands.cli", True,
         "the .agents/ command surface — lint, doctor, registry, read, session"),

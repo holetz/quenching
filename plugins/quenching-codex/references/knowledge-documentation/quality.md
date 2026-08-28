@@ -55,9 +55,11 @@ dimension #11 is at least 2, the average is at least 2.5, and the hard build, na
 and indexes require an average of at least 3.5. A page below threshold after the last round is
 reported with its failing dimensions and reason; it is not silently shipped.
 
-Coverage is `published sections with a non-empty, routed page / mapped sections × 100`. A section
-with only a heading, placeholder, or source gap is not content and fails the gate until the plan
-marks it intentionally excluded. Internal planning markers (`TODO`, `.quenching/`, prompts and
+Coverage is `non-empty routed mandatory surfaces / mandatory publication-map rows × 100`. The
+surface inventory covers the whole `/.knowledge/` bundle, not only pages selected for one write
+slice. A section with only a heading, placeholder, source gap, or the shipped skeleton's own
+section descriptor is not content and fails the gate
+until the plan marks it intentionally excluded. Internal planning markers (`TODO`, `.quenching/`, prompts and
 unresolved source-ledger notes) never cross into a published page; keep them in the source ledger
 under `.quenching/documentation/`.
 

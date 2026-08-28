@@ -33,9 +33,11 @@ into an abort. A warning is either fixed in the site layer or reported to the pa
 
 ## Editorial publication map
 
-Read the accepted `### Mapa editorial de publicação` before judging navigation or links. For every
-`publicar` or `publicar derivado` row, prove that its declared route is built under `site/`; for
-every `não publicar` row, prove that no matching nav entry, published route or link exists. A
+Read the accepted `### Mapa editorial de publicação` before judging navigation or links. Inventory
+all `/.knowledge/` homes and use every `publicar`/`publicar derivado` row as the mandatory
+coverage denominator. For every such row, prove that its declared route is built under `site/` and
+is non-empty; for every `não publicar` row, prove that no matching nav entry, published route or
+link exists. A
 curated route under `documentation/` is valid; `docs_dir = ".knowledge"` is not a substitute,
 because the hidden source root does not reliably yield rendered pages.
 
@@ -50,12 +52,29 @@ evidence of a published route: validate the mapped URL instead.
 
 ## Static rendered checks
 
-Run the structural verifier after the strict build; it is the no-browser gate for missing assets,
+Run the structural verifier **after every strict build, unconditionally**; it is the no-browser gate for missing assets,
 anchors, sitemap URLs, orphan pages and remote resources:
 
 ```bash
 python3 <plugin>/assets/checks/documentation-site-check.py site
 ```
+
+When the canonical glossary exists and the map does not explicitly say `não publicar`, first
+verify the deterministic source projection and then pass the same contract to the rendered check:
+
+```bash
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" knowledge project .knowledge --plan .quenching/documentation/plan.md --config zensical.toml --check
+python3 <plugin>/assets/checks/documentation-site-check.py site \
+  --require-glossary \
+  --glossary-source .knowledge/glossary.md \
+  --glossary-route reference/glossary.md \
+  --glossary-snippet .knowledge/documentation/assets/glossary-abbreviations.md
+```
+
+The projection check compares the route and abbreviation snippet with the canonical file's
+SHA-256, and the rendered check requires a known term to appear inside `<abbr>`. For a local-only
+site with no `site_url`, add `--local`: relative or empty sitemap locations are acceptable there,
+but malformed XML and missing page/assets still fail. A local run never proves public delivery.
 
 Quando houver catálogo derivado, rode também o verificador de projeção para provar que o índice de
 camada/schema alcança cada detalhe e que a linhagem mínima está presente:
@@ -71,8 +90,12 @@ Para cada capacidade habilitada no registro, inspecione o HTML renderizado com a
 
 ```bash
 python3 <plugin>/assets/checks/zensical-capability-check.py \
-  site/reference/capabilities/index.html --enabled autorefs,mkdocstrings,preview,tags,provenance
+  site --enabled autorefs,mkdocstrings,preview,tags,provenance
 ```
+
+The capability checker accepts either one HTML file or the built site directory; directory mode
+scans all rendered pages, so passing `.` or `site/` cannot fail merely because the argument is a
+directory.
 
 O verificador exige uma âncora de heading, assinatura de API, URL loopback, atributo de tags e
 bloco de proveniência conforme a lista habilitada. Capacidades desabilitadas não são incluídas no
