@@ -56,6 +56,16 @@ anchors, sitemap URLs, orphan pages and remote resources:
 python3 <plugin>/assets/checks/documentation-site-check.py site
 ```
 
+Quando houver catálogo derivado, rode também o verificador de projeção para provar que o índice de
+camada/schema alcança cada detalhe e que a linhagem mínima está presente:
+
+```bash
+python3 <plugin>/assets/checks/catalog-publication-check.py .knowledge/documentation
+```
+
+O fixture executável `catalog-publication/healthy` mantém a regressão mínima (`id`, `layer`,
+`schema` e `lineage`) sem transformar cada item em uma entrada de navegação.
+
 `site-asset-missing`, `site-anchor-missing`, `site-sitemap-empty` and `site-page-orphan` fail the
 gate. Until vendoring is deliberately adopted, `site-remote-resource` is a **warning** by default;
 run `--remote-policy error` for a target that requires offline operation. Both forms enumerate every
