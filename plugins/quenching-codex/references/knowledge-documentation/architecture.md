@@ -180,6 +180,14 @@ O índice é o único ponto de entrada no `nav`; páginas de detalhe são alcan�
 podem crescer sem uma entrada individual. A ausência de camada, schema ou fonte é um `source gap:` e
 bloqueia a aceitação da projeção.
 
+## Registro de capacidades
+
+Cada capacidade específica do gerador recebe uma linha no plano de documentação com cinco campos:
+`capability`, pré-requisito, decisão (`enabled` ou `disabled`), evidência de configuração/versão e
+efeito HTML esperado. O registro também anota risco, `source gap:` e o teste que prova o efeito.
+Uma capacidade sem pré-requisito ou fixture permanece desabilitada; a ausência é uma decisão
+auditável, não um sucesso implícito.
+
 ## Invariants
 
 - One idea and one reader intent per destination page.

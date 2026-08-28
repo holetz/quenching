@@ -66,6 +66,17 @@ python3 <plugin>/assets/checks/catalog-publication-check.py .knowledge/documenta
 O fixture executável `catalog-publication/healthy` mantém a regressão mínima (`id`, `layer`,
 `schema` e `lineage`) sem transformar cada item em uma entrada de navegação.
 
+Para cada capacidade habilitada no registro, inspecione o HTML renderizado com a fixture de efeitos:
+
+```bash
+python3 <plugin>/assets/checks/zensical-capability-check.py \
+  site/reference/capabilities/index.html --enabled autorefs,mkdocstrings,preview,tags,provenance
+```
+
+O verificador exige uma âncora de heading, assinatura de API, URL loopback, atributo de tags e
+bloco de proveniência conforme a lista habilitada. Capacidades desabilitadas não são incluídas no
+comando e não podem ser tratadas como sucesso implícito.
+
 ### Baseline de escala do catálogo
 
 A medição local de 27/08/2026 usou 100 detalhes (101 arquivos incluindo o índice): o verificador
