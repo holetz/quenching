@@ -17,3 +17,7 @@ settings.local.json
 
 # Documentation pipeline plan-of-record (target-repo scratch, outside docs_dir)
 .quenching/
+
+# Local Zensical output and cache; the source is .knowledge/documentation/
+site/
+.cache/

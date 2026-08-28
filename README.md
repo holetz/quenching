@@ -21,6 +21,21 @@ The same conversion can be requested manually through the `Sync Codex plugin` wo
 not run automatically on Claude changes; it generates an artifact only when a human dispatches it
 with `apply` enabled.
 
+## Desenvolvimento local
+
+Este checkout já declara o toolchain no `pyproject.toml` e fixa a resolução em `uv.lock`:
+
+```bash
+uv sync --all-groups
+uv run zensical build --clean --strict
+python3 plugins/quenching/assets/checks/documentation-site-check.py site --remote-policy error
+uv run pytest plugins/quenching/tests -q
+```
+
+O `zensical.toml` raiz é somente a configuração do site de desenvolvimento deste repositório;
+artefatos em `site/` e `.cache/` não entram no Git. O payload que o plugin instala em um projeto
+alvo continua em `plugins/quenching/assets/zensical/`.
+
 ## What it does
 
 Twenty-five commands acting on three fronts of a target repository — the `docs/` OKF bundle

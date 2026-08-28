@@ -8,12 +8,12 @@ carries `type: documentation`.
 human) lives here; structured/typed knowledge for the team+agent to operate lives in the
 other homes.
 
-- vs. [concepts/](/.knowledge/concepts/index.md) — a published-site explanation page →
-  `documentation/explanation/`; internal team understanding (mental model, learning, glossary) → `concepts/`.
-- vs. [standards/](/.knowledge/standards/index.md) — a how-to that describes the current
-  *contract* (the rule) is a `standard`; teaching how to *execute* a task is a how-to here.
-- vs. the root [external/](/.knowledge/external/index.md) — our product's own reference lives in
-  `reference/` below; facts about an external asset WE CONSUME go to the root `external/` home.
+- vs. `concepts/` — a published-site explanation page → `documentation/explanation/`; internal team
+  understanding (mental model, learning, glossary) → `concepts/`.
+- vs. `standards/` — a how-to that describes the current *contract* (the rule) is a `standard`;
+  teaching how to *execute* a task is a how-to here.
+- vs. the root `external/` — our product's own reference lives in `reference/` below; facts about
+  an external asset WE CONSUME go to the root `external/` home.
 
 ## Sections (Diátaxis)
 
