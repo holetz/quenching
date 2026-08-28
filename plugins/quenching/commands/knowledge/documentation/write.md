@@ -30,6 +30,10 @@ in one pass per page.
 - **Catalog pages carry lineage beside prose.** For a derived catalog, write the source ledger next
   to the page set and preserve `id`, `layer`, `schema`, source path and transformation on each
   detail page; the index is generated from those records rather than hand-maintained.
+- **Ledger and TODOs stay internal.** Store the page ledger at `.quenching/documentation/ledger.md`,
+  reject `TODO`, `FIXME`, prompt markers and unresolved contract text in published pages, and end
+  each page with a relative next step. If the page is a terminal reference, its next step must leave
+  the page (section index, guide or troubleshooting route), not merely repeat the footer.
 - **Fan-out is bounded.** When more than roughly six pages are assigned, use one `Task` per page slice, pin each to the session model (never `haiku`), and merge only their summaries.
 
 ## Workflow
@@ -60,6 +64,10 @@ examples, useful visuals and agent contract.
 Add a ledger entry for each page's strong claims, using the five allowed origins and confidence
 levels from `quality.md`. Carry open gaps verbatim into the run report. **Done when:** every strong
 claim has a source row or an explicit `source gap:`.
+
+Write the ledger under `.quenching/documentation/ledger.md` and scan the destination pages for
+internal markers before accepting them. Count mapped sections with substantive content and record
+`covered / mapped × 100`; an intentional exclusion is a plan decision, not a blank page.
 
 ### 5. Self-check the written set
 

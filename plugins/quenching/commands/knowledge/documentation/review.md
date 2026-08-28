@@ -25,6 +25,10 @@ and returns a verdict for each page. No `Write`, `Edit`, shell or other mutating
 - **Catalog integrity is a hard review dimension.** Walk the layer/schema index, verify every detail
   route is reachable and check that each item exposes stable identity and source lineage. Missing
   lineage is an integrity failure, not a prose preference.
+- **Coverage is dimension 11.** Score mapped sections with substantive routed content, fail empty
+  sections, and report the percentage separately from source gaps. Treat `TODO`, `FIXME`, prompt
+  text, `.quenching/` paths and unresolved ledger markers in a published page as leakage; the fix
+  belongs to `write`, while an intentional exclusion belongs in the plan.
 - **Fan-out stays read-only.** For a large set, delegate one `Task` per slice and merge summaries; sub-agents receive no write tools.
 
 ## Workflow
@@ -51,6 +55,10 @@ every page has a complete score and a pass / loop / source-gap verdict.
 Walk evaluator, implementer and agent journeys end to end. Confirm every strong claim is traceable
 and every open gap reaches the report. **Done when:** no journey dead-ends silently and the
 ledger verdict is explicit.
+
+Also report `covered / mapped × 100`, list sections with no substantive route, and verify the final
+page link leaves its current page. A page that only links to itself or ends in an internal TODO fails
+dimension 11 even when its prose scores well.
 
 ### 5. Return the bounded verdict
 
