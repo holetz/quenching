@@ -12,6 +12,7 @@ markdown stays generator-neutral; only this config layer names a generator.**
 | `requirements.txt` | repo root | `zensical` |
 | `quenching.css` | the `documentation/` home, at `assets/stylesheets/quenching.css` | static CSS for badges, hero, cards and reduced-motion guard; `extra_css` in `zensical.toml` wires it |
 | `ci-github-pages.yml` | `.github/workflows/docs.yml` | opt-in; GitHub Pages via the Pages artifact — the repo's Pages source must be "GitHub Actions" |
+| `azure-pipelines-docs.yml` | `azure-pipelines-docs.yml` | opt-in; Azure DevOps publishes the strict `site/` output as `documentation-site` |
 
 **The nav lives in the config.** Zensical runs no plugins, so nothing derives the sidebar from a
 sidecar file: the `nav` list in `zensical.toml` carries the order and the section titles, and a new
@@ -28,6 +29,11 @@ target uses a tested `edit_uri_template` such as `?path=/{path}&version=GB<branc
 Set `language`, palette colors, logo and favicon only from a target-owned language or brand
 contract. The template deliberately comments these values rather than making a plausible-looking
 placeholder public metadata.
+
+The Azure template is deliberately opt-in. It installs the pinned toolchain, runs the strict build,
+and publishes `documentation-site` as a pipeline artifact; it does not deploy to a remote host.
+Treat the artifact as an immutable handoff, a local preview as a developer convenience, and a remote
+deployment as a separate platform-owned stage with its own credentials and approval.
 
 ## Validate locally
 
