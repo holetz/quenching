@@ -203,9 +203,10 @@ one, read it and move on rather than asking again.
 **only if absent** (never clobber a customized one — show a diff and let the user merge), filling
 `site_name`/`site_description`; `requirements.txt` → repo root; `quenching.css` → the
 `documentation/` home's own `assets/stylesheets/quenching.css`, the path `extra_css` names; on
-request, `ci-github-pages.yml` →
-`.github/workflows/docs.yml` (opt-in, platform-specific). The nav ships inside the config, so it
-needs no separate install.
+request, `ci-github-pages.yml` → `.github/workflows/docs.yml` (opt-in, platform-specific), or
+`azure-pipelines-docs.yml` → `azure-pipelines-docs.yml` only when the target remote is Azure DevOps.
+The Azure payload publishes a `documentation-site` artifact and never deploys remotely. The nav
+ships inside the config, so it needs no separate install.
 
 This is the **first install only**. The site layer's owner is `/quenching:knowledge:documentation:build`: every
 later update, nav regeneration, config merge, and build verification is **its** job. If the install
