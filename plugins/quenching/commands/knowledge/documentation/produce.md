@@ -22,6 +22,9 @@ and the cycle authorization wording is in
 - **Catalog stages stay ordered.** When a catalog is mapped, plan inventories its source and gaps,
   write emits the derived index/details with lineage, review checks reachability, and the final build
   reports the derived route count.
+- **Coverage is a delivery metric.** Consolidate the ledger from `.quenching/documentation/`, report
+  `covered / mapped × 100`, empty sections, source gaps and leaked internal markers, then name the
+  next stage or route that leaves the current page.
 - **Editorial loop is bounded.** Route `review → write` for at most three rounds; an unresolved page is reported below threshold.
 - **Stages are named registry entries.** Invoke `quenching:knowledge:documentation:build`, `quenching:knowledge:documentation:plan`, `quenching:knowledge:documentation:write` and `quenching:knowledge:documentation:review` with the `Skill` tool.
 
@@ -64,8 +67,9 @@ residual findings.
 ### 6. Close the run with an accountable report
 
 Summarize stages, files written by each owner, per-page scores, ledger gaps, review rounds and the
-next command for every residual. **Done when:** the report is self-contained and no page below the
-threshold is represented as shipped.
+next command for every residual. Include the coverage percentage and every empty/excluded section;
+do not represent a page with internal TODOs or a source gap as shipped. **Done when:** the report is
+self-contained and no page below the threshold is represented as shipped.
 
 ## Invariants to never violate
 
