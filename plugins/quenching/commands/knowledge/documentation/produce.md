@@ -19,6 +19,9 @@ and the cycle authorization wording is in
 - **Conductor, not author.** Every mutation belongs to `plan`, `write` or `build`; this body reports the run.
 - **One authorization.** Present the complete stage plan, name `/quenching:knowledge:documentation:produce` as grantor, and use one OK for the cycle.
 - **Build first and last.** The first pass establishes extensions before pages use them; the last pass runs strict build and rendered QA.
+- **Catalog stages stay ordered.** When a catalog is mapped, plan inventories its source and gaps,
+  write emits the derived index/details with lineage, review checks reachability, and the final build
+  reports the derived route count.
 - **Editorial loop is bounded.** Route `review → write` for at most three rounds; an unresolved page is reported below threshold.
 - **Stages are named registry entries.** Invoke `quenching:knowledge:documentation:build`, `quenching:knowledge:documentation:plan`, `quenching:knowledge:documentation:write` and `quenching:knowledge:documentation:review` with the `Skill` tool.
 
