@@ -23,10 +23,11 @@
     { "Getting started" = [ "tutorials/index.md" ] },
     { "How-to guides"   = [ "how-to/index.md" ] },
     { "Reference"       = [ "reference/index.md" ] },
-    # Derived catalogs expose one stable layer/schema index; detail pages stay link-reachable.
-    { "Catalog"         = [ "reference/catalog/index.md" ] },
+    # The glossary is a default derived surface because the bundle always carries its source.
     { "Glossary"        = [ "reference/glossary.md" ] },
     { "Concepts"        = [ "explanation/index.md" ] },
+    # Derived homes (catalog, standards, external, vision) enter here only when the accepted
+    # publication map gives them a route; `cq knowledge project` keeps derived routes stable.
   ]
 
   extra_css = [ "assets/stylesheets/quenching.css" ]
@@ -87,7 +88,6 @@
   pymdownx.magiclink                 = {}
   pymdownx.mark                      = {}
   pymdownx.smartsymbols              = {}
-  pymdownx.snippets.auto_append      = [ "assets/glossary-abbreviations.md" ]
   pymdownx.tabbed.alternate_style    = true
   pymdownx.tabbed.combine_header_slug = true
   pymdownx.tasklist.custom_checkbox  = true
@@ -97,6 +97,11 @@
   pymdownx.superfences.custom_fences = [
     { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
   ]
+
+[project.markdown_extensions.pymdownx.snippets]
+  base_path = [ ".knowledge/documentation" ]
+  check_paths = true
+  auto_append = [ "assets/glossary-abbreviations.md" ]
 
 [project.validation]
   unresolved_references = true

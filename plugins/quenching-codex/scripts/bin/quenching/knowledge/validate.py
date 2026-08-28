@@ -101,7 +101,13 @@ def validate_tree(bundle_root: str, deadline: float | None = None,
         os.path.relpath(p, bundle_root).replace(os.sep, "/")
         for p in corpus if os.path.basename(p) == "glossary.md"
     })
-    findings.extend(check_legacy_glossary(glossary_rels, GLOSSARY_REL))
+    generated_glossaries = {
+        rel for path, rel in ((p, os.path.relpath(p, bundle_root).replace(os.sep, "/"))
+                              for p in corpus if os.path.basename(p) == "glossary.md")
+        if corpus[path] and "\ngenerated: true\n" in corpus[path]
+        and "\nsource: /.knowledge/glossary.md\n" in corpus[path]
+    }
+    findings.extend(check_legacy_glossary(glossary_rels, GLOSSARY_REL, generated_glossaries))
     # whole-tree structural integrity (missing/broken/orphaned listings)
     findings.extend(validate_structure(bundle_root, corpus))
     # the one listing derived from disk, checked against it
