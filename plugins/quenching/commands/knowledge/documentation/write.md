@@ -23,7 +23,17 @@ in one pass per page.
 - **Craft serves truth.** Use hooks, fast paths, progressive disclosure, tables, cards, tabs or Mermaid only when their function is clear.
 - **Agent-ready is explicit.** Stable headings, relative links, copyable real examples, expected output and `TL;DR for agents` blocks carry the contract in text.
 - **Extensions precede syntax.** Read `zensical.toml` and confirm each required extension before adding its syntax; report a missing extension to `build`.
+- **Glossary links use the published route.** When the accepted map exposes the root glossary, link
+  `reference/glossary.md`; never cite `/.knowledge/glossary.md` as reader-facing prose. Terms stay
+  canonical in the root file, and authors never hand-maintain abbreviation definitions.
 - **Source ledger travels with prose.** Record every strong claim, confidence and `source gap:` beside the page set.
+- **Catalog pages carry lineage beside prose.** For a derived catalog, write the source ledger next
+  to the page set and preserve `id`, `layer`, `schema`, source path and transformation on each
+  detail page; the index is generated from those records rather than hand-maintained.
+- **Ledger and TODOs stay internal.** Store the page ledger at `.quenching/documentation/ledger.md`,
+  reject `TODO`, `FIXME`, prompt markers and unresolved contract text in published pages, and end
+  each page with a relative next step. If the page is a terminal reference, its next step must leave
+  the page (section index, guide or troubleshooting route), not merely repeat the footer.
 - **Fan-out is bounded.** When more than roughly six pages are assigned, use one `Task` per page slice, pin each to the session model (never `haiku`), and merge only their summaries.
 
 ## Workflow
@@ -31,7 +41,7 @@ in one pass per page.
 ### 1. Load the plan and page assignments
 
 Read `.quenching/documentation/plan.md`, confirm the accepted execution order, target pages,
-source origins and open gaps. **Done when:** every page to write has one intent, one destination
+source origins, glossary route and open gaps. **Done when:** every page to write has one intent, one destination
 and a source set.
 
 ### 2. Check the site extensions
@@ -55,9 +65,13 @@ Add a ledger entry for each page's strong claims, using the five allowed origins
 levels from `quality.md`. Carry open gaps verbatim into the run report. **Done when:** every strong
 claim has a source row or an explicit `source gap:`.
 
+Write the ledger under `.quenching/documentation/ledger.md` and scan the destination pages for
+internal markers before accepting them. Count mapped sections with substantive content and record
+`covered / mapped × 100`; an intentional exclusion is a plan decision, not a blank page.
+
 ### 5. Self-check the written set
 
-Check page paths, frontmatter, relative links, stable headings, component syntax and next-step
+Check page paths, frontmatter, relative links (including the published glossary route), stable headings, component syntax and next-step
 links. Compare the result with the plan and report pages intentionally left for a later slice.
 **Done when:** the diff contains only assigned documentation pages and ledger changes, with no
 invented fact and no unplanned destination.

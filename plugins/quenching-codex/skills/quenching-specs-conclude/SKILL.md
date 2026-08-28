@@ -19,6 +19,10 @@ separate decision: the whole branch is **reviewed**, the `/.knowledge/` the work
 **Done work ends on the work branch; abandoned close-out writes land in the checkout holding the
 base.** The human chooses the next command for done work.
 
+**Why `Bash` is unrestricted here.** Closing a spec combines provider reads/writes, Git inspection,
+archive operations and the repository's own verification command; those host-specific commands
+cannot be safely reduced to one static prefix.
+
 The distillation doctrine — what crosses into `/.knowledge/`, what stays, and how it is graded — lives in
 [specs-conclude/distill.md](../../references/specs-conclude/distill.md)
 §What crosses, what stays. The layout, the gates and the

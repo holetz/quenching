@@ -21,7 +21,7 @@ the default names, `worktreeSetup`, and the two records a taken isolation leaves
 [git/isolation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/isolation.md), cited below rather
 than restated; this command is its standalone entry point for a caller with no build loop of its own.
 
-`allowed-tools` grants bare `Bash` because step 4 runs a target-declared `worktreeSetup` — an
+**Why `Bash` is unrestricted here.** `allowed-tools` grants bare `Bash` because step 4 runs a target-declared `worktreeSetup` — an
 arbitrary command this file cannot scope in advance — beside `git worktree`/`git checkout`,
 `cq specs record` and `cq git specs`, which share no one prefix to scope to instead.
 

@@ -1,0 +1,17 @@
+[project]
+name = "quenching-documentation"
+version = "0.1.0"
+description = "Development and validation environment for the quenching documentation plugin"
+requires-python = ">=3.11"
+dependencies = [
+  "zensical>=0.0.57",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0",
+]
+
+[tool.uv]
+# This repository is a plugin marketplace, not an installable Python package.
+package = false

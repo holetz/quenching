@@ -1,0 +1,76 @@
+# Local development site for this plugin repository. The published payload remains the source
+# of truth; this checkout-level config makes `uv run zensical build` reproducible for contributors.
+[project]
+  site_name = "quenching — Documentation"
+  site_description = "Documentation and operating contracts for the quenching plugin"
+  # Local-only destination keeps sitemap generation deterministic without claiming a public host.
+  site_url = "http://127.0.0.1:8000/"
+  repo_url = "https://github.com/holetz/claude-quenching"
+  docs_dir = ".knowledge/documentation"
+  site_dir = "site"
+  nav = [
+    "index.md",
+    { "Getting started" = [ "tutorials/index.md" ] },
+    { "How-to guides" = [ "how-to/index.md" ] },
+    { "Reference" = [ "reference/index.md", "reference/automation.md" ] },
+    { "Concepts" = [ "explanation/index.md" ] },
+  ]
+  extra_css = [ "assets/stylesheets/quenching.css" ]
+
+[project.theme]
+  # Keep the local preview self-contained; contributors can opt into a hosted font explicitly.
+  font = false
+  features = [
+    "navigation.indexes",
+    "navigation.sections",
+    "navigation.footer",
+    "navigation.tracking",
+    "navigation.top",
+    "toc.follow",
+    "content.code.copy",
+    "search.highlight",
+  ]
+
+[[project.theme.palette]]
+  media = "(prefers-color-scheme: light)"
+  scheme = "default"
+  toggle.icon = "material/weather-night"
+  toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+  media = "(prefers-color-scheme: dark)"
+  scheme = "slate"
+  toggle.icon = "material/weather-sunny"
+  toggle.name = "Switch to light mode"
+
+[project.markdown_extensions]
+  abbr = {}
+  admonition = {}
+  attr_list = {}
+  def_list = {}
+  footnotes = {}
+  md_in_html = {}
+  meta = {}
+  tables = {}
+  toc.permalink = true
+  pymdownx.highlight.anchor_linenums = true
+  pymdownx.highlight.line_spans = "__span"
+  pymdownx.highlight.pygments_lang_class = true
+  pymdownx.tabbed.alternate_style = true
+  pymdownx.tabbed.combine_header_slug = true
+  pymdownx.tasklist.custom_checkbox = true
+  pymdownx.emoji.emoji_index = "zensical.extensions.emoji.twemoji"
+  pymdownx.emoji.emoji_generator = "zensical.extensions.emoji.to_svg"
+  pymdownx.superfences.custom_fences = [
+    { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
+  ]
+
+[project.validation]
+  unresolved_references = true
+  unresolved_footnotes = true
+  unused_definitions = true
+  unused_footnotes = true
+  shadowed_definitions = true
+  shadowed_footnotes = true
+  invalid_links = true
+  invalid_link_anchors = true

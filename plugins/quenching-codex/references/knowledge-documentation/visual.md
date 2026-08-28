@@ -33,15 +33,30 @@ preferred for flows and hero treatments.
 
 ```toml
 [project.markdown_extensions]
+  abbr                               = {}
   admonition                         = {}
   attr_list                          = {}
+  def_list                           = {}
+  footnotes                          = {}
   md_in_html                         = {}
   tables                             = {}
   toc.permalink                      = true
+  pymdownx.arithmatex.generic        = true
+  pymdownx.betterem                  = {}
+  pymdownx.caret                     = {}
   pymdownx.details                   = {}
-  pymdownx.highlight                 = {}
+  pymdownx.highlight.anchor_linenums = true
+  pymdownx.highlight.line_spans      = "__span"
+  pymdownx.highlight.pygments_lang_class = true
   pymdownx.inlinehilite              = {}
+  pymdownx.keys                      = {}
+  pymdownx.magiclink                 = {}
+  pymdownx.mark                      = {}
+  pymdownx.smartsymbols              = {}
   pymdownx.tabbed.alternate_style    = true
+  pymdownx.tabbed.combine_header_slug = true
+  pymdownx.tasklist.custom_checkbox  = true
+  pymdownx.tilde                     = {}
   pymdownx.emoji.emoji_index         = "zensical.extensions.emoji.twemoji"
   pymdownx.emoji.emoji_generator     = "zensical.extensions.emoji.to_svg"
   pymdownx.superfences.custom_fences = [
@@ -69,8 +84,9 @@ are plain strings, and the emoji index moves to the theme's own `zensical.extens
   ]
 ```
 
-The search engine is a new implementation: `search.highlight` exists, `search.suggest` has no
-equivalent, and the search interface is English-only for now.
+The search engine is a new implementation: `search.highlight` exists and `search.suggest` has no
+equivalent. The theme ships localized UI, including `pt-BR`; set `language` from the target's
+language contract rather than preserving an obsolete English-only caveat.
 
 ## Syntax snippets
 

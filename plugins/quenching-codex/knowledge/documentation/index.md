@@ -39,6 +39,7 @@ config, the `nav`, CSS and a `zensical build --strict` check):
   tree, so a new page is a new line there, written by
   `quenching-knowledge-documentation-build`. A page absent from the list is still built and
   still searchable — it is only missing from the sidebar.
-- **Link caveat:** absolute OKF links (`/.knowledge/standards/…`) point outside a site rooted at
-  `documentation/`, fail the build under `--strict` and will not resolve in the built HTML — keep
-  these pages self-contained and name the other homes in prose rather than linking them.
+- **Editorial publication map:** `plan` decides, for every home, whether it is published,
+  published through a curated route below `documentation/`, or not published. An exposed home is
+  linked through that route; a `não publicar` home has no site link. Never publish an internal
+  `/.knowledge/<home>/…` path as dead prose or as a broken URL.

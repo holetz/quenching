@@ -60,3 +60,11 @@ newcomer would not know. Three ways in:
 
 Keep entries honest: define the term as **this repo** uses it, not the dictionary sense,
 and let the linked doc carry the depth.
+
+## Published projection
+
+When the documentation plan maps the glossary to the site, its published route is
+`documentation/reference/glossary.md`. The page and the abbreviation snippet used for tooltips are
+derived from this file; never maintain a second editable list of terms there. The site layer turns
+each canonical entry into Python-Markdown `*[term]: definition` syntax, so terms such as `ASRC` and
+`chave conformada` gain tooltips without authors marking occurrences by hand.
