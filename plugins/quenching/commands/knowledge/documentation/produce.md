@@ -82,6 +82,15 @@ next command for every residual. Include the coverage percentage and every empty
 do not represent a page with internal TODOs or a source gap as shipped. **Done when:** the report is
 self-contained and no page below the threshold is represented as shipped.
 
+Persist the same summary as `.quenching/documentation/report.md` with `ref`, UTC `timestamp`,
+incremental scope, files by owner, scorecard paths, review rounds, strict-build/static-QA results,
+coverage, source gaps and the pending versioning policy. Keep this report outside `docs_dir` and
+link it only from the handoff, never from a published page.
+
+End with an explicit handoff to `/quenching:git:commit`, naming the report and the files awaiting
+review. This conductor does not stage or commit; the human-owned git command decides what crosses
+the repository boundary.
+
 ## Invariants to never violate
 
 - Never use `Write` or `Edit` from this conductor; it has no such grant.
