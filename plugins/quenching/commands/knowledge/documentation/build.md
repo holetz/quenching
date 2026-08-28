@@ -52,6 +52,10 @@ bundle; every install, update, and re-verification after that is **this** skill.
 - **Glossary projection has one source.** When the accepted map exposes the glossary, derive the
   site-layer abbreviation snippet from root `glossary.md` and verify both `reference/glossary.md`
   and rendered `<abbr>` output. Never ask an author to edit the derived snippet or a duplicate list.
+- **Catalog projections are indexed, not flattened into nav.** When the map exposes `catalog/` as
+  a derived reference, require `reference/catalog/index.md` as the sole nav entry. Verify that its
+  layer/schema links reach every detail route, that each detail carries a stable identifier and
+  lineage source, and that the generated route count is recorded. Never add one nav line per item.
 - **A legacy `mkdocs.yml` is read, never converted behind the human's back.** Zensical reads
   `mkdocs.yml` natively and says it always will, so a target that has one still builds and nothing
   is urgent. What silently stopped working there is its whole `plugins:` list, which is why any
@@ -96,6 +100,8 @@ bundle; every install, update, and re-verification after that is **this** skill.
 | `site-publication-leak` | a `não publicar` home appears in nav, a route or an internal link | **FIX** only in config/nav; otherwise **REPORT** → page author |
 | `site-glossary-route-missing` | the map exposes the glossary but `reference/glossary.md` is absent | **REPORT** → `/quenching:knowledge:documentation:write` |
 | `site-glossary-projection-stale` | glossary entries cannot be projected to abbreviation definitions | **FIX** the generated site-layer snippet; never rewrite the source glossary |
+| `site-catalog-index-missing` | a mapped catalog has no derived layer/schema index | **REPORT** → `/quenching:knowledge:documentation:write` |
+| `site-catalog-lineage-missing` | a catalog detail omits its stable identifier or source lineage | **REPORT** → `/quenching:knowledge:documentation:write` |
 | `site-nav-absent` | the config declares no `nav` while the home has sections to order | **FIX** — write the list from the folder tree |
 | `site-nav-stale` | the `nav` names an entry that does not exist, or omits a page the home has | **FIX** — regenerate the list, keep every human title |
 | `site-feature-absent` | `navigation.indexes` missing while sections use `index.md` as landing page | **FIX** — add to `theme.features` |
@@ -150,6 +156,11 @@ published links. For `site-link-escapes`, grep for bundle paths that should inst
 route. For `site-nav-stale`, compare the config's `nav` against the allowed tree. Record the **evidence** for every finding —
 a file:line or the parsed key — never a suspicion. **Done when:** every site finding has evidence
 and a disposition.
+
+For a mapped catalog, additionally parse `reference/catalog/index.md` and count its detail links.
+Every linked detail must expose `id`, `layer`, `schema` and `lineage`; report the expected versus
+actual route count in the build result. The index alone enters `nav`, so item growth does not require
+configuration churn.
 
 ### 4. Derive the values you will write
 `site_name` from the repo (directory name, `package.json` `name`, or the root `README.md` H1) and
