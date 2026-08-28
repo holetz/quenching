@@ -8,7 +8,8 @@ description: "Conduct the complete documentation pipeline from site setup throug
 
 # quenching-knowledge-documentation-produce — conduct the documentation pipeline
 
-**Input**: `$ARGUMENTS` (optional source scope; omit to run the complete target-repository pipeline).
+**Input**: `$ARGUMENTS` (optional source scope and `--desde <git-ref>`; omit both to run the complete
+target-repository pipeline).
 
 This conductor coordinates the four sibling stages through the `Skill` tool and owns no writes.
 The shared contracts are in
@@ -44,6 +45,10 @@ ordered stages, files each stage may write, round cap, build fallback, delivery 
 source-gap policy. **Done when:**
 the user gives one OK or the run stops with no stage invoked.
 
+When `--desde <ref>` is present, validate the ref with `git rev-parse`, read the prior plan and pass
+the resulting changed-source set to plan, write and review. An invalid ref or missing prior plan
+falls back to the complete run and is recorded in the report; the full run remains the default.
+
 ### 2. Establish the site layer
 
 Use the `Skill` tool to invoke `quenching:knowledge:documentation:build` as the first pass. It
@@ -78,6 +83,15 @@ Summarize stages, files written by each owner, per-page scores, ledger gaps, rev
 next command for every residual. Include the coverage percentage and every empty/excluded section;
 do not represent a page with internal TODOs or a source gap as shipped. **Done when:** the report is
 self-contained and no page below the threshold is represented as shipped.
+
+Persist the same summary as `.quenching/documentation/report.md` with `ref`, UTC `timestamp`,
+incremental scope, files by owner, scorecard paths, review rounds, strict-build/static-QA results,
+coverage, source gaps and the pending versioning policy. Keep this report outside `docs_dir` and
+link it only from the handoff, never from a published page.
+
+End with an explicit handoff to `quenching-git-commit`, naming the report and the files awaiting
+review. This conductor does not stage or commit; the human-owned git command decides what crosses
+the repository boundary.
 
 ## Invariants to never violate
 
