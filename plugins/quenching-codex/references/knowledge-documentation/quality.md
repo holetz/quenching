@@ -1,6 +1,6 @@
 # Documentation quality — rubric, integrity ledger and editorial loop
 
-The hard quality gate for generated pages: ten scored dimensions, five automatic forbiddens,
+The hard quality gate for generated pages: eleven scored dimensions, five automatic forbiddens,
 source provenance, and a bounded review → write loop.
 
 ## Contents
@@ -21,7 +21,7 @@ returns the heading index; `--sections <name>` addresses one.
 | **4** | Reference — other pages should copy it |
 | **5** | Iconic — memorable, nothing to add or cut |
 
-## The ten dimensions
+## The eleven dimensions
 
 | # | Dimension | 0 (fail) | 2 (good) | 4–5 (reference/iconic) |
 | --- | --- | --- | --- | --- |
@@ -35,14 +35,15 @@ returns the heading index; `--sections <name>` addresses one.
 | 8 | **LLM-readability** | facts only in prose/images | stable headings, copyable | TL;DR plus contract lifted whole |
 | 9 | **Integrity / source** | unsourced/invented | claims traceable | source ledger explicit |
 | 10 | **Navigation / next step** | dead end | ends with a pointer | routes every reader onward |
+| 11 | **Coverage / boundary** | empty section or internal TODO leaks | every mapped section has content and no internal TODO | coverage percentage and intentional exclusions are ledgered |
 
 ## Per-page score template
 
 ```markdown
 ### Score — <page>
-| Dim | 1 Hook | 2 Intent | 3 IA | 4 Scan | 5 Density | 6 Examples | 7 Visual | 8 LLM | 9 Source | 10 Next | Avg |
-| --- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
-| Score | 3 | 4 | 3 | 4 | 3 | 2 | 3 | 4 | 3 | 3 | 3.2 |
+| Dim | 1 Hook | 2 Intent | 3 IA | 4 Scan | 5 Density | 6 Examples | 7 Visual | 8 LLM | 9 Source | 10 Next | 11 Coverage | Avg |
+| --- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| Score | 3 | 4 | 3 | 4 | 3 | 2 | 3 | 4 | 3 | 3 | 3 | 3.2 |
 - Below threshold: <none | dim + why>
 - Fix before done: <bullet list>
 ```
@@ -50,9 +51,15 @@ returns the heading index; `--sections <name>` addresses one.
 ## Gate and five forbiddens
 
 A page is done only when no dimension is 0, critical dimensions #4, #9 and #10 are at least 2,
-the average is at least 2.5, and the hard build, nav, ledger and visual checks pass. Landing pages
+dimension #11 is at least 2, the average is at least 2.5, and the hard build, nav, ledger and visual checks pass. Landing pages
 and indexes require an average of at least 3.5. A page below threshold after the last round is
 reported with its failing dimensions and reason; it is not silently shipped.
+
+Coverage is `published sections with a non-empty, routed page / mapped sections × 100`. A section
+with only a heading, placeholder, or source gap is not content and fails the gate until the plan
+marks it intentionally excluded. Internal planning markers (`TODO`, `.quenching/`, prompts and
+unresolved source-ledger notes) never cross into a published page; keep them in the source ledger
+under `.quenching/documentation/`.
 
 The five forbiddens are **fake depth**, **pretty-but-useless**, **README dump**, **claims without
 source**, and **section without intent**. Any one is an auto-fail.
