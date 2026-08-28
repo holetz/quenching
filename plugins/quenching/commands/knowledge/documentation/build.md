@@ -215,6 +215,19 @@ and print the two commands. Never run `zensical serve`; never commit a built sit
 the build and rendered QA are real or explicitly unverified/static-only. Where the glossary is
 mapped, also assert that the route exists and a known term renders as `<abbr>`.
 
+If the human separately confirms a local preview after the strict build, start a loopback-only,
+ephemeral server from `site/`, report its URL and PID, and stop it when the preview window ends:
+
+```bash
+python3 -m http.server 0 --bind 127.0.0.1 --directory site & preview_pid=$!
+echo "Preview: http://127.0.0.1:<allocated-port>/ (PID ${preview_pid})"
+# after inspection:
+kill "${preview_pid}"
+```
+
+Preview is never a substitute for strict build, never binds a public interface, and never survives
+the run without an explicit stop report.
+
 ### 8. Report
 Report: findings **fixed** / **reported** (each with its command), whether the build ran
 and its result. **Done when:** every fixed/reported finding, build status, and result is named.
