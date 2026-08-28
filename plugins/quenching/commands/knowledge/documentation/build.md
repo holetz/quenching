@@ -60,6 +60,9 @@ bundle; every install, update, and re-verification after that is **this** skill.
   offer `azure-pipelines-docs.yml` as a separate confirmation, and preserve any existing pipeline.
   The payload only publishes the strict `site/` directory as `documentation-site`; it is not a
   remote deployment.
+- **Capability register is the allow-list.** Read the accepted plan's capability register before
+  changing `zensical.toml` or requirements. For each `enabled` row, prove its prerequisite and merge
+  only its missing keys/dependency; `disabled` rows produce no configuration or install action.
 - **A legacy `mkdocs.yml` is read, never converted behind the human's back.** Zensical reads
   `mkdocs.yml` natively and says it always will, so a target that has one still builds and nothing
   is urgent. What silently stopped working there is its whole `plugins:` list, which is why any
@@ -120,6 +123,7 @@ bundle; every install, update, and re-verification after that is **this** skill.
 | `site-page-unstamped` | a page under `documentation/` with no `type: documentation` | **REPORT** → `/quenching:knowledge:align` |
 | `site-ci-absent` | no `.github/workflows/docs.yml` | **REPORT**; install only on request (own confirmation — platform-specific) |
 | `site-azure-payload-available` | Azure DevOps remote has no documented opt-in pipeline payload | **OFFER** `azure-pipelines-docs.yml` under its own confirmation; never overwrite an existing pipeline |
+| `site-capability-prerequisite-missing` | an enabled capability lacks its declared prerequisite or fixture | **REPORT** and leave it disabled; do not guess support |
 | `site-build-failed` | `zensical build --strict` exits non-zero | **FIX** only what is site-layer; anything page-level is **REPORTED** |
 
 ## Workflow
@@ -157,6 +161,8 @@ Collect, without writing anything:
   inventory and focus are fixed.
 
 ### 3. Detect drift
+Read the capability register alongside the map. An enabled row must have a tested prerequisite,
+configuration source and expected HTML effect; an unsupported row is a reported disabled decision.
 Walk the `site-*` table above over the inventory. Compare every map row with the real routes: an
 exposed row needs a route below `documentation/`; a `não publicar` row must be absent from nav and
 published links. For `site-link-escapes`, grep for bundle paths that should instead target a mapped
