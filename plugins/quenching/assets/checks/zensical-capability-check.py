@@ -15,8 +15,19 @@ EXPECTED = {
 }
 
 
+def _html_files(path: Path) -> list[Path]:
+    if path.is_file():
+        return [path]
+    if path.is_dir():
+        return sorted(path.rglob("*.html"))
+    return []
+
+
 def check(path: Path, enabled: list[str]) -> list[str]:
-    body = path.read_text(encoding="utf-8")
+    files = _html_files(path)
+    if not files:
+        return [f"capability-site-empty: {path}"]
+    body = "\n".join(file.read_text(encoding="utf-8") for file in files)
     return [f"capability-effect-missing: {name}"
             for name in enabled
             if name in EXPECTED and not any(token in body for token in EXPECTED[name])]
@@ -24,7 +35,7 @@ def check(path: Path, enabled: list[str]) -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("html", type=Path, nargs="?", default=Path(__file__).parent / "fixtures" / "zensical-capabilities" / "healthy" / "index.html")
+    parser.add_argument("html", type=Path, nargs="?", default=Path(__file__).parent / "fixtures" / "zensical-capabilities" / "healthy")
     parser.add_argument("--enabled", default=",")
     args = parser.parse_args()
     enabled = [name for name in args.enabled.split(",") if name]

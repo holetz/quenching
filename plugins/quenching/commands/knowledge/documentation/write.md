@@ -25,7 +25,15 @@ in one pass per page.
 - **Extensions precede syntax.** Read `zensical.toml` and confirm each required extension before adding its syntax; report a missing extension to `build`.
 - **Glossary links use the published route.** When the accepted map exposes the root glossary, link
   `reference/glossary.md`; never cite `/.knowledge/glossary.md` as reader-facing prose. Terms stay
-  canonical in the root file, and authors never hand-maintain abbreviation definitions.
+  canonical in the root file, and authors never hand-maintain abbreviation definitions. Run
+  `cq knowledge project .knowledge --plan .quenching/documentation/plan.md --config zensical.toml
+  --write` to materialize the route, reference index, nav entry and abbreviation snippet from the
+  source hash; rerunning it must be a byte-identical no-op.
+- **Derived homes are complete surfaces.** For every `publicar derivado` row, emit the declared
+  route/index for the corresponding `standards/`, `concepts/`, `external/`, `catalog/` or
+  `vision/` source — not only pages chosen for the current slice. Preserve source origin, hash and
+  transformation, and rewrite every internal `/.knowledge/` link to its mapped published route;
+  an explicitly unpublished home contributes no route or leaked link.
 - **Source ledger travels with prose.** Record every strong claim, confidence and `source gap:` beside the page set.
 - **Catalog pages carry lineage beside prose.** For a derived catalog, write the source ledger next
   to the page set and preserve `id`, `layer`, `schema`, source path and transformation on each
@@ -41,8 +49,8 @@ in one pass per page.
 ### 1. Load the plan and page assignments
 
 Read `.quenching/documentation/plan.md`, confirm the accepted execution order, target pages,
-source origins, glossary route and open gaps. **Done when:** every page to write has one intent, one destination
-and a source set.
+source origins, whole-bundle mandatory surfaces, glossary route and open gaps. **Done when:** every
+page or derived projection to write has one intent, one destination and a source set.
 
 ### 2. Check the site extensions
 
@@ -67,12 +75,15 @@ claim has a source row or an explicit `source gap:`.
 
 Write the ledger under `.quenching/documentation/ledger.md` and scan the destination pages for
 internal markers before accepting them. Count mapped sections with substantive content and record
-`covered / mapped × 100`; an intentional exclusion is a plan decision, not a blank page.
+`covered / mapped × 100`, where `mapped` is every mandatory publication-map row across the whole
+bundle; an intentional exclusion is a plan decision, not a blank page.
 
 ### 5. Self-check the written set
 
 Check page paths, frontmatter, relative links (including the published glossary route), stable headings, component syntax and next-step
-links. Compare the result with the plan and report pages intentionally left for a later slice.
+links. Run `cq knowledge project ... --check` and compare every mandatory map row with a non-empty
+route. Report pages intentionally left for a later slice, but do not call the whole-bundle gate
+green when a mandatory surface is missing.
 **Done when:** the diff contains only assigned documentation pages and ledger changes, with no
 invented fact and no unplanned destination.
 

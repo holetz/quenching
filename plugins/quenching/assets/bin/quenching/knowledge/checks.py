@@ -133,11 +133,14 @@ def check_legacy_doc_quadrant(quadrant_entries: set[str]) -> list[tuple[str, str
     ]
 
 
-def check_legacy_glossary(glossary_rels: list[str], canonical: str) -> list[tuple[str, str, str, str]]:
+def check_legacy_glossary(glossary_rels: list[str], canonical: str,
+                          generated: set[str] | None = None) -> list[tuple[str, str, str, str]]:
     """`okf-legacy-glossary` — a `glossary.md` sitting inside a home instead of at the
-    bundle root, where the OKF contract pins it."""
+    bundle root, where the OKF contract pins it. A generated documentation projection is the
+    one intentional nested copy: it is a published route, not a second canonical glossary."""
+    generated = generated or set()
     return [
         ("ERROR", rel, "okf-legacy-glossary",
          f"`{rel}` — the glossary lives at the bundle root (`{canonical}`), not inside a home")
-        for rel in glossary_rels if rel != canonical
+        for rel in glossary_rels if rel != canonical and rel not in generated
     ]

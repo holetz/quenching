@@ -198,6 +198,19 @@ class LegacyGlossaryDetector(unittest.TestCase):
         codes = {code for sev, rel, code, msg in findings}
         self.assertNotIn("okf-legacy-glossary", codes)
 
+    def test_allows_the_generated_documentation_projection(self):
+        fixture = {
+            "index.md": '---\nokf_version: "0.1"\n---\n\n# Bundle\n',
+            "glossary.md": "# Glossary\n",
+            "documentation/reference/glossary.md": (
+                "---\ntype: documentation\ngenerated: true\n"
+                "source: /.knowledge/glossary.md\n---\n\n# Glossary\n"
+            ),
+        }
+        findings = _validated(fixture)
+        codes = {code for sev, rel, code, msg in findings}
+        self.assertNotIn("okf-legacy-glossary", codes)
+
 
 # --------------------------------------------------------------------------- #
 # `generated-listing-missing` / `generated-listing-drift` — the GENERATED zone of
