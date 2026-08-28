@@ -6,7 +6,7 @@ Task-oriented pages that answer "how do I do X" for someone using the product (t
 
 **Boundary:** a how-to gets a known task done for a user who already knows the basics; a
 guided first lesson is a [tutorial](../tutorials/index.md); the current internal *rule*
-for how WE build is a [standard](/.knowledge/standards/index.md), not a how-to.
+for how WE build is a `standard`, not a how-to.
 
 ## How to organize
 

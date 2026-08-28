@@ -6,7 +6,7 @@ description: >-
   .html do que foi construído", "infográfico/fluxo em HTML", "mapa interativo da
   arquitetura", "kit map", "visualize this skill/system as HTML". Not for:
   generating a documentation site → /quenching:knowledge:documentation:produce.
-allowed-tools: Read, Grep, Glob, Edit, Write, Bash
+allowed-tools: Read, Grep, Glob, Edit, Write, Bash(grep:*)
 ---
 
 # /skill-map

@@ -40,8 +40,13 @@ class Page(HTMLParser):
                 continue
             if key == "href" and tag == "a":
                 self.links.append(value)
-            else:
+            elif key == "src":
                 self.assets.append(value)
+            elif key == "href" and tag == "link":
+                # Validate fetchable link resources, not canonical/prev/next metadata URLs.
+                rel = (values.get("rel") or "").split()
+                if set(rel) & {"stylesheet", "icon", "manifest", "preload"}:
+                    self.assets.append(value)
 
 
 def pages(site: Path) -> dict[Path, Page]:
@@ -53,7 +58,7 @@ def pages(site: Path) -> dict[Path, Page]:
     return result
 
 
-def local_target(base: Path, raw: str) -> tuple[Path | None, str]:
+def local_target(base: Path, raw: str, site_root: Path) -> tuple[Path | None, str]:
     parsed = urlsplit(raw)
     if parsed.scheme in REMOTE_SCHEMES:
         return None, "remote"
@@ -62,7 +67,9 @@ def local_target(base: Path, raw: str) -> tuple[Path | None, str]:
     if parsed.scheme:
         return None, "skip"
     path = Path(parsed.path)
-    return ((base / path if not parsed.path.startswith("/") else path), parsed.fragment)
+    if parsed.path.startswith("/"):
+        return (site_root / parsed.path.lstrip("/"), parsed.fragment)
+    return (base / path, parsed.fragment)
 
 
 def check(site: Path) -> list[Finding]:
@@ -72,13 +79,17 @@ def check(site: Path) -> list[Finding]:
     for relative, page in parsed_pages.items():
         base = (site / relative).parent
         for asset in page.assets:
-            target, kind = local_target(base, asset)
+            target, kind = local_target(base, asset, site)
             if kind == "remote":
                 found.append(Finding("site-remote-resource", relative, asset))
             elif target and not target.exists():
                 found.append(Finding("site-asset-missing", relative, asset))
         for link in page.links:
-            target, kind = local_target(base, link)
+            # Zensical's generated accessibility skip link intentionally points at a virtual
+            # anchor that is consumed by the theme, not by the page body.
+            if link == "#__skip":
+                continue
+            target, kind = local_target(base, link, site)
             if kind == "remote":
                 continue
             if not target:
@@ -119,7 +130,7 @@ def selftest() -> int:
         site = Path(temp)
         (site / "assets").mkdir()
         (site / "assets" / "ok.png").write_bytes(b"ok")
-        (site / "index.html").write_text('<img src="assets/ok.png"><a href="#present">ok</a><p id="present">x</p>')
+        (site / "index.html").write_text('<link rel="canonical" href="https://example.test/"><img src="assets/ok.png"><img src="/assets/ok.png"><a href="#present">ok</a><p id="present">x</p>')
         (site / "sitemap.xml").write_text('<urlset><url><loc>https://example.test/</loc></url></urlset>')
         assert not check(site)
         (site / "index.html").write_text('<img src="missing.png"><a href="#gone">x</a>')

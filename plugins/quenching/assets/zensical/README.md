@@ -43,6 +43,10 @@ zensical build --clean --strict
 # fallbacks: python -m zensical build --clean --strict · uv run zensical build --clean --strict
 ```
 
+When the target repository uses `pyproject.toml`, declare `zensical` there and run `uv sync`; the
+lockfile is the authoritative resolution. Do not add both an unpinned dependency and a second lock
+source for the same target.
+
 The build command is the verification path; the documentation family reports `unverified` when
 the toolchain is not installed. `zensical build` has no `--site-dir`: it writes to the configured
 `site_dir` (gitignored), and `.cache/` beside the config ignores itself. Use `zensical serve` only

@@ -3,7 +3,9 @@ type: documentation
 title: Automation registry
 description: The repo's local Claude Code automation surface — every command, derived from .claude/commands/
 resource: .claude/commands/
-tags: [automation, commands]
+tags:
+  - automation
+  - commands
 timestamp: 2026-08-26
 audience: both
 authority: current
@@ -22,11 +24,11 @@ defines. Commands without an evident category are read on the axis's second ques
 (`/commands:tighten` acts on `commands/`), a **generic** one is a flat `verb-object` at the top
 level (`/skill-map` maps whatever it is pointed at, so no single folder claims it). A command
 that did belong to a subject would path under it instead (`/git:commit`). The rule
-itself is [/.knowledge/standards/automation/skills.md](/.knowledge/standards/automation/skills.md).
+itself is the internal `standards/automation/skills.md` contract.
 
 The `quenching` plugin installed from this marketplace contributes the thirty-eight
 `/quenching:knowledge:*`, `/quenching:specs:*`, `/quenching:components:*` and `/align` commands. Those are the **product's** surface,
-documented in [plugins/quenching/README.md](/plugins/quenching/README.md), and they stay out
+documented in the repository's plugin README, and they stay out
 of the table below — the zone lists only what this repository itself ships in
 `.claude/commands/`.
 

@@ -3,7 +3,9 @@ type: documentation
 title: Glossary
 description: Published A–Z vocabulary derived from the bundle's canonical glossary.
 resource: /.knowledge/glossary.md
-tags: [reference, glossary]
+tags:
+  - reference
+  - glossary
 audience: both
 authority: current
 ---
@@ -15,4 +17,3 @@ This page is the published route for the bundle's vocabulary. Its only editorial
 
 <!-- The build layer derives this include from glossary.md when it installs the site. -->
 --8<-- "../../glossary.md"
-
