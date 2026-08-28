@@ -56,6 +56,23 @@ anchors, sitemap URLs, orphan pages and remote resources:
 python3 <plugin>/assets/checks/documentation-site-check.py site
 ```
 
+Quando houver catálogo derivado, rode também o verificador de projeção para provar que o índice de
+camada/schema alcança cada detalhe e que a linhagem mínima está presente:
+
+```bash
+python3 <plugin>/assets/checks/catalog-publication-check.py .knowledge/documentation
+```
+
+O fixture executável `catalog-publication/healthy` mantém a regressão mínima (`id`, `layer`,
+`schema` e `lineage`) sem transformar cada item em uma entrada de navegação.
+
+### Baseline de escala do catálogo
+
+A medição local de 27/08/2026 usou 100 detalhes (101 arquivos incluindo o índice): o verificador
+completo levou `0,03 s` e a busca de linhagem via `rg` menos de `0,01 s`. Esses números são apenas
+um baseline reprodutível, não um limite de produto; o limite de publicação continua uma decisão
+editorial quando o volume real ultrapassar essa ordem de grandeza.
+
 `site-asset-missing`, `site-anchor-missing`, `site-sitemap-empty` and `site-page-orphan` fail the
 gate. Until vendoring is deliberately adopted, `site-remote-resource` is a **warning** by default;
 run `--remote-policy error` for a target that requires offline operation. Both forms enumerate every

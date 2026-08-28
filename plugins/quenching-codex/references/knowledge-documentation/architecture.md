@@ -163,6 +163,23 @@ nenhuma home recebe rota por implicação do nome. `publicar derivado` mantém a
 `docs_dir` e declara a página, índice ou projeção que será servida. Uma decisão sem evidência fica
 como `source gap:` no plano, nunca como conteúdo da página publicada.
 
+## Contrato de catálogo derivado
+
+Catálogos mantidos em `catalog/` são publicados como referência derivada, nunca como uma cópia
+livre de toda a home. O contrato mínimo é:
+
+| Parte | Contrato |
+| --- | --- |
+| Entrada | um inventário versionado com identificador estável, camada e fonte original |
+| Índice camada/schema | `reference/catalog/index.md` agrupa primeiro por camada e depois por schema |
+| Rota de detalhe | cada item usa `reference/catalog/<slug>.md`, com âncora estável e link de volta |
+| Linhagem | cada item aponta para o arquivo-fonte, data/versão e transformação aplicada |
+| Fronteira editorial | só campos aprovados no mapa são publicados; segredos, dumps e dados sem fonte ficam fora |
+
+O índice é o único ponto de entrada no `nav`; páginas de detalhe são alcançáveis por links internos e
+podem crescer sem uma entrada individual. A ausência de camada, schema ou fonte é um `source gap:` e
+bloqueia a aceitação da projeção.
+
 ## Invariants
 
 - One idea and one reader intent per destination page.
