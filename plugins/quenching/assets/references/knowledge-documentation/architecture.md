@@ -185,5 +185,7 @@ bloqueia a aceitação da projeção.
 - One idea and one reader intent per destination page.
 - Claims without a source become `source gap:` entries in the ledger.
 - Contracts are planning artifacts and stay outside `docs_dir`.
+- Cada seção publicada precisa de conteúdo não vazio e de uma rota alcançável; contratos, TODOs e
+  gaps permanecem no ledger interno, nunca na página servida.
 - A home não publicada é uma decisão editorial explícita, com motivo; não é uma limitação silenciosa do gerador.
 - Internal site links are relative and every page has a next step.
