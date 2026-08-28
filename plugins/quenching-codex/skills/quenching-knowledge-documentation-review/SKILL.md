@@ -24,6 +24,9 @@ and returns a verdict for each page. No `Write`, `Edit`, shell or other mutating
 - **Critical dimensions gate.** #4 Scannability, #9 Integrity/source and #10 Navigation must meet the gate; landings and indexes carry the higher average threshold.
 - **Find the five forbiddens.** Fake depth, pretty-but-useless visuals, README dumps, claims without source and sections without intent are auto-fails.
 - **Source gaps are not craft defects.** Report them distinctly so the next `write` round cannot invent a fix.
+- **Catalog integrity is a hard review dimension.** Walk the layer/schema index, verify every detail
+  route is reachable and check that each item exposes stable identity and source lineage. Missing
+  lineage is an integrity failure, not a prose preference.
 - **Fan-out stays read-only.** For a large set, delegate one `Task` per slice and merge summaries; sub-agents receive no write tools.
 
 ## Workflow
