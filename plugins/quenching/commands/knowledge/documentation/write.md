@@ -27,6 +27,9 @@ in one pass per page.
   `reference/glossary.md`; never cite `/.knowledge/glossary.md` as reader-facing prose. Terms stay
   canonical in the root file, and authors never hand-maintain abbreviation definitions.
 - **Source ledger travels with prose.** Record every strong claim, confidence and `source gap:` beside the page set.
+- **Catalog pages carry lineage beside prose.** For a derived catalog, write the source ledger next
+  to the page set and preserve `id`, `layer`, `schema`, source path and transformation on each
+  detail page; the index is generated from those records rather than hand-maintained.
 - **Fan-out is bounded.** When more than roughly six pages are assigned, use one `Task` per page slice, pin each to the session model (never `haiku`), and merge only their summaries.
 
 ## Workflow
