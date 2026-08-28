@@ -77,6 +77,11 @@ O verificador exige uma âncora de heading, assinatura de API, URL loopback, atr
 bloco de proveniência conforme a lista habilitada. Capacidades desabilitadas não são incluídas no
 comando e não podem ser tratadas como sucesso implícito.
 
+Planos, ledgers, scorecards `review-<n>.md` e `report.md` são artefatos operacionais: devem viver
+em `.quenching/documentation/`, fora de `docs_dir`, e não podem ser alcançados por uma rota
+publicada. A validação registra cada `source gap:` no relatório de QA, mas nunca o promove a uma
+página para “completar” cobertura.
+
 ### Baseline de escala do catálogo
 
 A medição local de 27/08/2026 usou 100 detalhes (101 arquivos incluindo o índice): o verificador
