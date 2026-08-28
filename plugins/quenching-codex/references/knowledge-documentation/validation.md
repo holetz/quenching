@@ -12,14 +12,15 @@ returns the heading index; `--sections <name>` addresses one.
 
 ## Strict build
 
-Run from the target repository root:
+Run from the target repository root using the project's existing dependency manager:
 
 ```bash
-zensical build --clean --strict
+uv run zensical build --clean --strict
 ```
 
-Fallbacks are `python -m zensical build --clean --strict` and `uv run zensical build --clean
---strict`. There is no per-run output flag: the build writes to the configured `site_dir`, which is
+Use `uv run` when `pyproject.toml`/`uv.lock` is present and declares Zensical. Otherwise the
+fallbacks are `python -m zensical build --clean --strict` and
+`zensical build --clean --strict`. There is no per-run output flag: the build writes to the configured `site_dir`, which is
 gitignored, and `.cache/` beside the config ignores itself. Where `site/` is **tracked**,
 overwriting it would be destructive — write a throwaway config **at the repo root** with its
 `site_dir` outside the repo, build it with `-f`, and delete the config after; a config parked

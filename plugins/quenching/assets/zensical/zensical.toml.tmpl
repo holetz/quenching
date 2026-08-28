@@ -108,6 +108,11 @@
   invalid_links = true
   invalid_link_anchors = true
 
+# The base dependency is `zensical>=0.0.57`. If the target uses uv (`uv.lock` or `[tool.uv]`), add
+# it to `pyproject.toml` with `uv add --dev` and keep `uv.lock` authoritative. Other project
+# managers keep their own lock/install command; without a project manifest, the payload's
+# requirements.txt is the single source. Never maintain both sources for the same target.
+#
 # Optional capabilities are not part of the base dependency set. Enable only after the plan's
 # capability register records a tested prerequisite and rendered fixture:
 # [project.plugins.mkdocstrings]

@@ -13,10 +13,10 @@ description: "Create or update the Zensical site layer from a confirmed editoria
 Makes the OKF bundle's [`documentation/`](../../knowledge/documentation/index.md) home
 **render as a site**, and keeps that rendering honest as the home grows. The home is a plain
 Markdown tree; everything generator-specific lives in a thin **site layer** around it — the
-`zensical.toml` + `requirements.txt` at the repo **root**, outside the bundle. This skill owns that
-layer end to end: it installs it when absent, merges it forward when present, keeps the `nav` in
-step with the folder tree, stamps the static `assets/stylesheets/quenching.css` asset, and verifies
-the site actually builds. The payload it stamps from is
+`zensical.toml` plus exactly one dependency source at the repo **root**, outside the bundle. This
+skill owns that layer end to end: it installs it when absent, merges it forward when present,
+resolves the existing Python toolchain, keeps the `nav` in step with the folder tree, stamps the
+static `assets/stylesheets/quenching.css` asset, and verifies the site actually builds. The payload it stamps from is
 [`../../assets/zensical/`](../../assets/zensical/README.md); the home's own
 boundaries and the `documentation` type live with `quenching-knowledge-align`
 ([knowledge-align/taxonomy.md](../../references/knowledge-align/taxonomy.md)) and
@@ -44,8 +44,10 @@ bundle; every install, update, and re-verification after that is **this** skill.
   is derived from the section's `index.md` H1.
 - **MERGE, never clobber.** A `zensical.toml` a human has customized is authoritative: add only the
   **missing required keys** (`docs_dir`, `navigation.indexes`, the nav entry), show the edit as a
-  diff, and never remove or reorder a key you did not add. Same for `requirements.txt` — merge the
-  pin into whatever file already pins the docs toolchain.
+  diff, and never remove or reorder a key you did not add. Preserve the target's dependency
+  manager too: a `pyproject.toml`/`uv.lock` pair is authoritative over `requirements.txt`, and a
+  target with no `pyproject.toml` receives the payload's pinned `requirements.txt`. Never create a
+  second dependency source just because the payload has one.
 - **Publication metadata has ordered evidence.** Existing non-placeholder config wins. Otherwise,
   derive `repo_url` from `git remote get-url origin`; derive `edit_uri_template` only for a host
   whose URL shape is known and testable (Azure DevOps uses `?path=/{path}&version=GB<branch>`).
@@ -83,12 +85,15 @@ bundle; every install, update, and re-verification after that is **this** skill.
   the **config file**, so a config parked elsewhere makes `docs_dir` resolve outside the repo and
   the build exits `Error: Docs directory does not exist`. Never run `zensical serve`.
 - **Never claim a build that did not run.** If the toolchain is absent, say so plainly, print the
-  two commands (`pip install -r requirements.txt`, `zensical build --strict`), and report the run
-  as *unverified*.
-- **The shell grant is deliberate.** `Bash` is unrestricted because this command runs the target
-  repository's own toolchain (`zensical`, `python -m zensical`, `uv`, and package installation),
-  which cannot be enumerated by the plugin; the body records the reason and keeps the built site
-  out of git.
+  selected install/build pair (`uv sync` + `uv run zensical build --clean --strict`, or
+  `pip install -r requirements.txt` + `zensical build --clean --strict`), and report the run as
+  *unverified*. When a `pyproject.toml` exists but `uv` is unavailable, do not install a parallel
+  `requirements.txt` as a workaround.
+
+**Why `Bash` is unrestricted here.** `Bash` is unrestricted because this command runs the target
+repository's own toolchain (`zensical`, `python -m zensical`, `uv`, and package installation),
+which cannot be enumerated by the plugin; the body records the reason and keeps the built site out
+of git.
 - **Plan first, execute on one confirmation.** One read-only inventory → ONE table of findings
   and fixes → one OK → apply → verify. The `docs_dir` item, the legacy-config conversion and the
   opt-in CI workflow each gate on their own.
@@ -116,7 +121,10 @@ bundle; every install, update, and re-verification after that is **this** skill.
 | `site-feature-absent` | `navigation.indexes` missing while sections use `index.md` as landing page | **FIX** — add to `theme.features` |
 | `site-extension-absent` | a page uses a component syntax whose Markdown extension or Mermaid fence is absent | **FIX** — add the extension in the site layer |
 | `site-extra-css-absent` | pages use `.q-badge`/`.q-hero`/card styling but `extra_css` or the CSS asset is absent | **FIX** — stamp the CSS and connect `extra_css` |
-| `site-requirements-absent` | the pin is in no requirements file | **FIX** — write or merge |
+| `site-requirements-absent` | no supported pin exists in `pyproject.toml`/`uv.lock` or `requirements.txt` | **FIX** — write or merge exactly one source |
+| `site-dependency-source-duplicate` | `zensical` is independently pinned in `pyproject.toml` and `requirements.txt` | **REPORT** the conflict; preserve the target's chosen source and remove only with its confirmation |
+| `site-uv-lock-stale` | `uv.lock` does not resolve the current `pyproject.toml` | **FIX** — run `uv lock`, never hand-edit the lock |
+| `site-uv-unavailable` | `pyproject.toml` is the selected source but `uv` cannot run | **REPORT** as *unverified*; never create a parallel requirements file |
 | `site-pages-orphan` | a `.pages` file left inside the home by an older install | **FIX** — remove it; nothing reads it any more |
 | `site-artifacts-tracked` | `site/` not gitignored (or already tracked) | **FIX** the gitignore; a tracked build is **REPORTED** for the human to remove |
 | `site-scratch-tracked` | `.quenching/` not gitignored — the family's plan-of-record would land in the human's next commit | **FIX** the gitignore; an already-tracked plan is **REPORTED** for the human to remove |
@@ -129,6 +137,26 @@ bundle; every install, update, and re-verification after that is **this** skill.
 | `site-build-failed` | `zensical build --strict` exits non-zero | **FIX** only what is site-layer; anything page-level is **REPORTED** |
 
 ## Workflow
+
+### Toolchain resolution — one source, one runner
+
+Resolve the dependency source before proposing any write. Apply this precedence and record the
+selected branch in the plan:
+
+| Evidence at the target root | Dependency action | Build runner |
+| --- | --- | --- |
+| `uv.lock` exists and `pyproject.toml` declares `zensical` | `uv sync --locked` (fail and report if the lock is stale) | `uv run zensical` |
+| `pyproject.toml` has `[tool.uv]`, declares `zensical`, and has no lock | `uv lock` then `uv sync` | `uv run zensical` |
+| uv project (`uv.lock` or `[tool.uv]`) does not declare `zensical` | one approved `uv add --dev "zensical>=0.0.57"`, then `uv lock` + `uv sync` | `uv run zensical` |
+| `pyproject.toml` is owned by another manager and declares `zensical` | preserve its lock/install command; never copy requirements | that manager's run command |
+| `pyproject.toml` has no recognized manager | report the manager gap; do not invent a lock or requirements file | target's documented runner |
+| no `pyproject.toml`, `requirements.txt` declares `zensical` | use the existing requirements install | `zensical` or `python -m zensical` |
+| neither file declares the tool | stamp/merge **one** `requirements.txt` (or ask to adopt uv) | selected runner after install |
+
+Never choose a runner from `PATH` alone when a project-managed runner is available. A failed
+`uv sync --locked` is a stale-lock finding, not permission to install from `requirements.txt`.
+`uv add`/`uv lock` are writes and therefore appear in the single confirmation plan; probing with
+`uv run zensical --version` is read-only and may happen during inventory.
 
 ### 1. Preflight — the bundle and the home
 Confirm `/.knowledge/index.md` carries `okf_version`. **No bundle → stop** and offer
@@ -147,8 +175,9 @@ Collect, without writing anything:
   `markdown_extensions`, `extra_css`; note every key a human added. Also read `git remote get-url
   origin` and the selected delivery destination when the plan records one. A root
   `mkdocs.yml`/`mkdocs.yaml` is inventoried the same way and is `site-config-legacy`.
-- any requirements file pinning the docs toolchain (`requirements.txt`, one under `/.knowledge/`,
-  `pyproject.toml`, `uv.lock` …) — the pin may already live somewhere else.
+- the dependency source and manager pinning the docs toolchain (`pyproject.toml` + `uv.lock`,
+  `requirements.txt`, or another target-owned manifest); record which one wins and whether a
+  duplicate source exists.
 - every folder under `/.knowledge/documentation/**` with its `index.md` and its pages, including
   curated mirrors for mapped homes, plus any leftover `.pages`.
 - `.gitignore` (are `site/` and `.quenching/` ignored?) and `git ls-files site .quenching` (is either already tracked?).
@@ -197,8 +226,10 @@ straight to step 7's verification. **Done when:** one plan and all separate conf
 
 ### 6. Apply
 In order: `zensical.toml` (stamp from `../../assets/zensical/zensical.toml.tmpl` when
-absent, else merge the missing keys and only the map-approved nav entries) → requirements →
-the generated glossary-abbreviation snippet when mapped → `assets/stylesheets/quenching.css` from the payload → any orphan `.pages` → `.gitignore` → the CI
+absent, else merge the missing keys and only the map-approved nav entries) → the selected dependency
+source (`uv add --dev`/`uv lock`/`uv sync` for an identified uv project, otherwise preserve the
+target manager or merge the pinned `requirements.txt`) → the generated glossary-abbreviation snippet when mapped →
+`assets/stylesheets/quenching.css` from the payload → any orphan `.pages` → `.gitignore` → the CI
 workflow **only if** its own OK was given (copy `ci-github-pages.yml` → `.github/workflows/docs.yml`).
 For an Azure remote, the equivalent opt-in copies `azure-pipelines-docs.yml` only when its separate
 confirmation is granted and the target path is absent; report `documentation-site` as an artifact,
@@ -208,7 +239,8 @@ untouched. **Done when:** only approved site-layer edits are applied and `extra_
 stamped CSS.
 
 ### 7. Verify with a real build and rendered QA
-If the toolchain is present, run `zensical build --clean --strict` and then run
+If the toolchain is present, run the selected runner (`uv run zensical`, `python -m zensical`, or
+the executable) with `build --clean --strict`, and then run
 `python3 ../../checks/documentation-site-check.py <site_dir>`. A non-zero
 checker result is a structural finding: `site-asset-missing`, `site-anchor-missing`,
 `site-sitemap-empty`, `site-page-orphan` or `site-remote-resource`, each reported with its path.

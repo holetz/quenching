@@ -13,9 +13,26 @@ steps:
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '3.x'
-  - script: python -m pip install -r requirements.txt
+  - bash: |
+      if [ -f pyproject.toml ] && { [ -f uv.lock ] || grep -q '^\[tool\.uv\]' pyproject.toml; }; then
+        python -m pip install uv
+        if [ -f uv.lock ]; then uv sync --locked; else uv lock && uv sync; fi
+      elif [ -f pyproject.toml ]; then
+        echo "pyproject.toml uses a non-uv manager; configure its documented install command before enabling this pipeline" >&2
+        exit 1
+      else
+        python -m pip install -r requirements.txt
+      fi
     displayName: Install documentation toolchain
-  - script: zensical build --clean --strict
+  - bash: |
+      if [ -f pyproject.toml ] && { [ -f uv.lock ] || grep -q '^\[tool\.uv\]' pyproject.toml; }; then
+        uv run zensical build --clean --strict
+      elif [ -f pyproject.toml ]; then
+        echo "pyproject.toml uses a non-uv manager; configure its documented runner before enabling this pipeline" >&2
+        exit 1
+      else
+        zensical build --clean --strict
+      fi
     displayName: Build documentation (strict)
   - task: PublishPipelineArtifact@1
     inputs:
