@@ -1,29 +1,41 @@
-# zensical.toml — Zensical config for the OKF `documentation/` home.
+# zensical.toml — Zensical config for the editorially mapped OKF site.
 # `/quenching:knowledge:align` stamps this at the repo ROOT (outside /.knowledge/), and
 # `/quenching:knowledge:documentation:build` owns it from there. Fill the <placeholders>.
 [project]
   site_name        = "<YOUR PROJECT> — Documentation"
   site_description = "<one-line description of the product docs>"
-  # site_url       = "https://<org>.github.io/<repo>/"   # canonical/social links; required by navigation.instant
+  # Required before public delivery: derive from the selected publication destination; never invent it.
+  # site_url       = "https://<published-host>/<path>/"
+  # Derive from the Git remote when available; do not publish placeholder URLs.
+  # repo_url       = "https://<host>/<owner>/<repo>"
+  # Azure DevOps and other unmapped hosts require an explicit, tested template.
+  # edit_uri_template = "?path=/{path}&version=GB<branch>"
 
   docs_dir = ".knowledge/documentation"
   site_dir = "site"
 
   # Zensical runs no MkDocs plugin, so the order and the titles live here rather
-  # than in `.pages` files. A NEW PAGE IS A NEW LINE in this list; a page missing
-  # from it is still built, but it is absent from the sidebar.
+  # than in `.pages` files. Add only routes approved by the plan's Mapa editorial
+  # de publicação. A mapped external home is exposed through a curated mirror
+  # below `documentation/`; do not point docs_dir at the hidden bundle root.
   nav = [
     "index.md",
     { "Getting started" = [ "tutorials/index.md" ] },
     { "How-to guides"   = [ "how-to/index.md" ] },
     { "Reference"       = [ "reference/index.md" ] },
+    # Derived catalogs expose one stable layer/schema index; detail pages stay link-reachable.
+    { "Catalog"         = [ "reference/catalog/index.md" ] },
+    { "Glossary"        = [ "reference/glossary.md" ] },
     { "Concepts"        = [ "explanation/index.md" ] },
   ]
 
   extra_css = [ "assets/stylesheets/quenching.css" ]
 
 [project.theme]
-  # language = "pt-BR"   # the theme is localized; the search UI is English-only for now
+  # Derive from the target's language contract; Zensical includes localized pt-BR UI.
+  # language = "pt-BR"
+  # logo = "assets/<logo>"       # only when supplied or derived from target-owned brand assets
+  # favicon = "assets/<favicon>" # only when supplied or derived from target-owned brand assets
   features = [
     "navigation.indexes",
     "navigation.sections",
@@ -42,6 +54,8 @@
   scheme      = "default"
   toggle.icon = "material/weather-night"
   toggle.name = "Switch to dark mode"
+  # primary = "<brand-color>"    # set only from target-owned identity evidence
+  # accent = "<brand-accent>"
 
 [[project.theme.palette]]
   media       = "(prefers-color-scheme: dark)"
@@ -52,17 +66,58 @@
 # Zensical uses the same Python-Markdown as MkDocs, so the extensions carry over;
 # in TOML the `!!python/name:` values are plain strings.
 [project.markdown_extensions]
+  abbr                               = {}
   admonition                         = {}
   attr_list                          = {}
+  def_list                           = {}
+  footnotes                          = {}
   md_in_html                         = {}
+  meta                               = {}
   tables                             = {}
   toc.permalink                      = true
+  pymdownx.arithmatex.generic        = true
+  pymdownx.betterem                  = {}
+  pymdownx.caret                     = {}
   pymdownx.details                   = {}
-  pymdownx.highlight                 = {}
+  pymdownx.highlight.anchor_linenums = true
+  pymdownx.highlight.line_spans      = "__span"
+  pymdownx.highlight.pygments_lang_class = true
   pymdownx.inlinehilite              = {}
+  pymdownx.keys                      = {}
+  pymdownx.magiclink                 = {}
+  pymdownx.mark                      = {}
+  pymdownx.smartsymbols              = {}
+  pymdownx.snippets.auto_append      = [ "assets/glossary-abbreviations.md" ]
   pymdownx.tabbed.alternate_style    = true
+  pymdownx.tabbed.combine_header_slug = true
+  pymdownx.tasklist.custom_checkbox  = true
+  pymdownx.tilde                     = {}
   pymdownx.emoji.emoji_index         = "zensical.extensions.emoji.twemoji"
   pymdownx.emoji.emoji_generator     = "zensical.extensions.emoji.to_svg"
   pymdownx.superfences.custom_fences = [
     { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
   ]
+
+[project.validation]
+  unresolved_references = true
+  unresolved_footnotes = true
+  unused_definitions = true
+  unused_footnotes = true
+  shadowed_definitions = true
+  shadowed_footnotes = true
+  invalid_links = true
+  invalid_link_anchors = true
+
+# The base dependency is `zensical>=0.0.57`. If the target uses uv (`uv.lock` or `[tool.uv]`), add
+# it to `pyproject.toml` with `uv add --dev` and keep `uv.lock` authoritative. Other project
+# managers keep their own lock/install command; without a project manifest, the payload's
+# requirements.txt is the single source. Never maintain both sources for the same target.
+#
+# Optional capabilities are not part of the base dependency set. Enable only after the plan's
+# capability register records a tested prerequisite and rendered fixture:
+# [project.plugins.mkdocstrings]
+# handler = "python"
+# [project.plugins.tags]
+# enabled = true
+# Keep the base requirements limited to `zensical`; add optional packages in a separate, pinned
+# requirements file owned by the capability decision.

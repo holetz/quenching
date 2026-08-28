@@ -21,6 +21,10 @@ Every page follows **hook → fast path → depth on demand → next step**. Put
 blocks or a dedicated page. Comparisons are tables, sequences are numbered lists or Mermaid,
 options are cards, and risks are callouts.
 
+The published page is the reader-facing projection. Keep source ledgers, TODOs, prompts and
+unresolved planning contracts in `.quenching/documentation/`; a page must contain real prose or a
+clearly labeled intentional exclusion, never an internal work marker.
+
 The first line states the payoff or stakes. “Point it at a repo; get a scored gap report; install
 the fixes with your OK.” is a hook. “This document describes the hooks subsystem.” is not.
 

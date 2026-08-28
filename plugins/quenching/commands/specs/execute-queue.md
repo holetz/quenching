@@ -25,6 +25,10 @@ construction and makes spec N's gate run over the result of 1..N−1.
 **This command invokes and never reimplements.** Every write belongs to the stage that makes it,
 under that stage's own doctrine.
 
+**Why `Bash` is unrestricted here.** The queue delegates to isolation, execution, conclusion and
+provider probes whose exact Git and `cq` commands are resolved from the live queue; no fixed Bash
+prefix safely covers that set.
+
 **The contract, owned once** —
 [fanout.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-fanout/fanout.md) §The two regimes
 §The queue's shape §The branch carries the IDs §The entry contract §Classifying a block

@@ -35,6 +35,10 @@ the tool-resolution reference, then invoke `cq` in that same Bash call —
 Read [align/sweep-doctrine.md](../../references/align/sweep-doctrine.md).
 What follows is specific to `/.knowledge/`:
 
+**Why `Bash` is unrestricted here.** This front probes and updates the target's fixed bundle,
+harness, memory store, Git refs and optional site layer; those commands have no safe common prefix
+to enumerate in `allowed-tools`, and each write remains gated by the workflow below.
+
 - **This is the one front with a real loop.** `/.knowledge/` has two out-of-band stores that feed it and a
   glossary derived from everything in it, so one pass genuinely creates work for the next: a fact
   the harness MOVEs in is a term the glossary must then index. The loop ends at a **fixpoint** —
@@ -200,20 +204,32 @@ bundle, never write the line into a nested harness file — only the root one is
 session start, which is the whole reason this form was chosen — and on a repo that already declares
 one, read it and move on rather than asking again.
 
-**The documentation site.** Only if the bundle has a `documentation/` home. Offer to copy from
-`../../assets/zensical/`: `zensical.toml.tmpl` → the repo **root** as `zensical.toml`
-**only if absent** (never clobber a customized one — show a diff and let the user merge), filling
-`site_name`/`site_description`; `requirements.txt` → repo root; `quenching.css` → the
+**The documentation site.** Only if the bundle has a `documentation/` home. First inspect the
+target root's `pyproject.toml`, `uv.lock` and `requirements.txt`, then preserve the dependency
+manager already in use. When the project declares uv (`uv.lock` exists or `pyproject.toml` has a
+`[tool.uv]` table), add `zensical>=0.0.57` to its development group with `uv add --dev` when it is
+absent, refresh `uv.lock` with `uv lock`, and install with `uv sync`; **do not** create a parallel
+`requirements.txt`. A `pyproject.toml` owned by another manager stays with that manager and its
+own run command; the plugin never guesses a Poetry/PDM group or overwrites its lock. When no
+`pyproject.toml` exists, merge/copy the payload's pinned `requirements.txt`. A `uv.lock` is
+authoritative: use `uv sync --locked` for verification and report a stale lock rather than silently
+falling back to a second dependency file. If the selected manager is unavailable, report the
+missing toolchain and leave the project files untouched.
+
+Offer to copy from `../../assets/zensical/`: `zensical.toml.tmpl` → the repo
+**root** as `zensical.toml` **only if absent** (never clobber a customized one — show a diff and
+let the user merge), filling `site_name`/`site_description`; `quenching.css` → the
 `documentation/` home's own `assets/stylesheets/quenching.css`, the path `extra_css` names; on
-request, `ci-github-pages.yml` →
-`.github/workflows/docs.yml` (opt-in, platform-specific). The nav ships inside the config, so it
-needs no separate install.
+request, `ci-github-pages.yml` → `.github/workflows/docs.yml` (opt-in, platform-specific), or
+`azure-pipelines-docs.yml` → `azure-pipelines-docs.yml` only when the target remote is Azure DevOps.
+The Azure payload publishes a `documentation-site` artifact and never deploys remotely. The nav
+ships inside the config, so it needs no separate install.
 
 This is the **first install only**. The site layer's owner is `quenching-knowledge-documentation-build`: every
-later update, nav regeneration, config merge, and build verification is **its** job. If the install
-is anything more than stamping two absent files — a customized config to merge, a `docs_dir`
-pointing elsewhere, a nav no longer matching the tree — hand off to that command instead of
-resolving it here.
+later update, dependency sync, nav regeneration, config merge, and build verification is **its**
+job. If the install is anything more than stamping absent files — a customized config to merge, a
+`docs_dir` pointing elsewhere, a nav no longer matching the tree, or a stale `uv.lock` — hand off
+to that command instead of resolving it here.
 **Done when:** the two offers have been made once and answered, or the pass is >1 and this step
 was skipped.
 
