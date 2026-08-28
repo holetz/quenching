@@ -49,7 +49,17 @@ evidence of a published route: validate the mapped URL instead.
 
 ## Static rendered checks
 
-When a browser or Playwright is available, inspect the landing and one deep page at desktop and
+Run the structural verifier after the strict build; it is the no-browser gate for missing assets,
+anchors, sitemap URLs, orphan pages and remote resources:
+
+```bash
+python3 <plugin>/assets/checks/documentation-site-check.py site
+```
+
+`site-asset-missing`, `site-anchor-missing`, `site-sitemap-empty` and `site-page-orphan` fail the
+gate. Until vendoring is deliberately adopted, `site-remote-resource` is a **warning** by default;
+run `--remote-policy error` for a target that requires offline operation. Both forms enumerate every
+origin and neither claims the site works offline. When a browser or Playwright is available, inspect the landing and one deep page at desktop and
 narrow widths in both palettes. Otherwise run the static fallback over the built HTML:
 
 ```bash

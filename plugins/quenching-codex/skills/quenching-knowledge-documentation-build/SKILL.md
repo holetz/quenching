@@ -181,7 +181,11 @@ untouched. **Done when:** only approved site-layer edits are applied and `extra_
 stamped CSS.
 
 ### 7. Verify with a real build and rendered QA
-If the toolchain is present, run `zensical build --clean --strict` and read the output: every
+If the toolchain is present, run `zensical build --clean --strict` and then run
+`python3 ../../checks/documentation-site-check.py <site_dir>`. A non-zero
+checker result is a structural finding: `site-asset-missing`, `site-anchor-missing`,
+`site-sitemap-empty`, `site-page-orphan` or `site-remote-resource`, each reported with its path.
+Read the Zensical output: every
 warning is either a site-layer finding you fix now (a nav entry, a feature, an extension) or a
 page-level one you **report**. Where `site/` is tracked, run it against the throwaway root config
 instead (Doctrine), and delete that config afterwards. Inspect the rendered HTML for the title,
