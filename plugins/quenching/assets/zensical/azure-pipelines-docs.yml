@@ -1,0 +1,24 @@
+# Opt-in Azure DevOps pipeline. Copy to azure-pipelines-docs.yml in the target repo.
+# It publishes a named build artifact; deployment to Azure Static Web Apps or Pages is separate.
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - checkout: self
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.x'
+  - script: python -m pip install -r requirements.txt
+    displayName: Install documentation toolchain
+  - script: zensical build --clean --strict
+    displayName: Build documentation (strict)
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: site
+      artifact: documentation-site
+      publishLocation: pipeline
