@@ -62,6 +62,12 @@ route carries a stable identifier plus a source-ledger link. Record the fields i
 (secrets, operational dumps and entries without lineage) as explicit gaps or out-of-scope rows. The
 plan must include the expected item count and the source version/date when the catalog is derived.
 
+For generator capabilities, add a **Capability register** after the execution contract. Inventory
+autorefs, API extraction, preview, metadata/facet search and provenance; for each row record its
+prerequisite, enabled/disabled decision, evidence, risk, source gap and rendered test. Only rows
+marked `enabled` are forwarded to `build`; disabled or unsupported capabilities remain documented
+decisions and do not add dependencies.
+
 ### 4. Present the plan and obtain one OK
 
 Show the inventory findings, seven contracts, proposed files, page intents, extensions, the
