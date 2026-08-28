@@ -1,12 +1,13 @@
 ---
 description: Conduct the complete documentation pipeline from site setup through sourced pages, bounded editorial review and strict build QA. Triggers on "produce the documentation", "run the documentation pipeline", or "generate the complete docs site". Not for: planning only → /quenching:knowledge:documentation:plan; writing an assigned page set → /quenching:knowledge:documentation:write; reviewing without writes → /quenching:knowledge:documentation:review; site-layer configuration or a standalone build → /quenching:knowledge:documentation:build.
-argument-hint: [optional-source-scope]
+argument-hint: [optional-source-scope] [--desde <git-ref>]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
 ---
 
 # /quenching:knowledge:documentation:produce — conduct the documentation pipeline
 
-**Input**: `$ARGUMENTS` (optional source scope; omit to run the complete target-repository pipeline).
+**Input**: `$ARGUMENTS` (optional source scope and `--desde <git-ref>`; omit both to run the complete
+target-repository pipeline).
 
 This conductor coordinates the four sibling stages through the `Skill` tool and owns no writes.
 The shared contracts are in
@@ -41,6 +42,10 @@ Read-only probe the bundle, documentation home, source scope and existing site l
 ordered stages, files each stage may write, round cap, build fallback, delivery destination and
 source-gap policy. **Done when:**
 the user gives one OK or the run stops with no stage invoked.
+
+When `--desde <ref>` is present, validate the ref with `git rev-parse`, read the prior plan and pass
+the resulting changed-source set to plan, write and review. An invalid ref or missing prior plan
+falls back to the complete run and is recorded in the report; the full run remains the default.
 
 ### 2. Establish the site layer
 
