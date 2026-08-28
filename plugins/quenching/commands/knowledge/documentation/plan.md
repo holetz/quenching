@@ -54,6 +54,12 @@ When the map publishes the root `glossary.md`, record `reference/glossary.md` as
 route and the canonical file as its only source. The plan also records the generated abbreviation
 snippet consumed by the site layer; it never assigns authors a second editable term list.
 
+For `catalog/`, the inventory must also record the catalog contract before assigning pages:
+`catalog/` is the source, `reference/catalog/index.md` is the layer/schema index, and each detail
+route carries a stable identifier plus a source-ledger link. Record the fields intentionally omitted
+(secrets, operational dumps and entries without lineage) as explicit gaps or out-of-scope rows. The
+plan must include the expected item count and the source version/date when the catalog is derived.
+
 ### 4. Present the plan and obtain one OK
 
 Show the inventory findings, seven contracts, proposed files, page intents, extensions, the
