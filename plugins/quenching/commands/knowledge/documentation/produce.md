@@ -25,6 +25,9 @@ and the cycle authorization wording is in
 - **Coverage is a delivery metric.** Consolidate the ledger from `.quenching/documentation/`, report
   `covered / mapped × 100`, empty sections, source gaps and leaked internal markers, then name the
   next stage or route that leaves the current page.
+- **Delivery destination is explicit.** At cycle start, identify the selected host (GitHub Pages,
+  Azure DevOps artifact, or local-only). Forward any local-preview request to `build` as its own
+  confirmation; an artifact or preview is never reported as an external deployment.
 - **Editorial loop is bounded.** Route `review → write` for at most three rounds; an unresolved page is reported below threshold.
 - **Stages are named registry entries.** Invoke `quenching:knowledge:documentation:build`, `quenching:knowledge:documentation:plan`, `quenching:knowledge:documentation:write` and `quenching:knowledge:documentation:review` with the `Skill` tool.
 
@@ -35,7 +38,8 @@ Running under `/quenching:knowledge:documentation:produce` authorization granted
 ### 1. Probe the target and present one cycle plan
 
 Read-only probe the bundle, documentation home, source scope and existing site layer. Present the
-ordered stages, files each stage may write, round cap, build fallback and source-gap policy. **Done when:**
+ordered stages, files each stage may write, round cap, build fallback, delivery destination and
+source-gap policy. **Done when:**
 the user gives one OK or the run stops with no stage invoked.
 
 ### 2. Establish the site layer
@@ -59,8 +63,10 @@ is explicitly marked below threshold with dimensions and evidence.
 
 ### 5. Validate the finished site
 
-Invoke `quenching:knowledge:documentation:build` again. Read the strict-build result and static
+Invoke `quenching:knowledge:documentation:build` again. Read the strict-build result, static
 rendered checks; distinguish site-layer fixes from page-level reports and state browser-QA limits.
+If preview was authorized, include its loopback URL/PID and confirmed shutdown; keep the external
+deployment status separate from the artifact result.
 **Done when:** the final report names the build result, QA mode, CSS/components checks and all
 residual findings.
 
