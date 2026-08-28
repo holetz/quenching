@@ -71,6 +71,11 @@ ref with Git. Record `ref`, UTC `timestamp`, source path, destination route and 
 each changed item. Without a readable previous plan, use the full run and report the fallback;
 never infer deletions, renames or dependencies from a partial diff.
 
+Safety rules: an invalid ref or missing prior plan falls back to a full inventory; a rename or
+removal requires an explicit source→destination decision; and an unmapped dependency is retained as
+`source gap:` rather than deleted. The plan must show these findings before any page or site-layer
+write is authorized.
+
 ### 4. Present the plan and obtain one OK
 
 Show the inventory findings, seven contracts, proposed files, page intents, extensions, the
