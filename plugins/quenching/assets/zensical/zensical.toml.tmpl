@@ -106,3 +106,12 @@
   shadowed_footnotes = true
   invalid_links = true
   invalid_link_anchors = true
+
+# Optional capabilities are not part of the base dependency set. Enable only after the plan's
+# capability register records a tested prerequisite and rendered fixture:
+# [project.plugins.mkdocstrings]
+# handler = "python"
+# [project.plugins.tags]
+# enabled = true
+# Keep the base requirements limited to `zensical`; add optional packages in a separate, pinned
+# requirements file owned by the capability decision.
