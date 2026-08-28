@@ -66,6 +66,11 @@ prerequisite, enabled/disabled decision, evidence, risk, source gap and rendered
 marked `enabled` are forwarded to `build`; disabled or unsupported capabilities remain documented
 decisions and do not add dependencies.
 
+An incremental run accepts `--desde <ref>` only after reading the previous plan and validating the
+ref with Git. Record `ref`, UTC `timestamp`, source path, destination route and transformation for
+each changed item. Without a readable previous plan, use the full run and report the fallback;
+never infer deletions, renames or dependencies from a partial diff.
+
 ### 4. Present the plan and obtain one OK
 
 Show the inventory findings, seven contracts, proposed files, page intents, extensions, the
