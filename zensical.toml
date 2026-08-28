@@ -10,10 +10,21 @@
   site_dir = "site"
   nav = [
     "index.md",
-    { "Getting started" = [ "tutorials/index.md" ] },
-    { "How-to guides" = [ "how-to/index.md" ] },
-    { "Reference" = [ "reference/index.md", "reference/automation.md" ] },
-    { "Concepts" = [ "explanation/index.md" ] },
+    { "Getting started" = [ "tutorials/index.md", "tutorials/getting-started.md" ] },
+    { "How-to guides" = [
+      "how-to/index.md",
+      "how-to/adopt-quenching.md",
+      "how-to/drive-a-spec.md",
+      "how-to/publish-the-docs-site.md",
+    ] },
+    { "Concepts" = [
+      "explanation/index.md",
+      "explanation/operating-model.md",
+      "explanation/okf-bundle.md",
+      "explanation/spec-lifecycle.md",
+    ] },
+    { "Reference" = [ "reference/index.md", "reference/commands.md", "reference/automation.md" ] },
+    { "Glossary" = [ "reference/glossary.md" ] },
   ]
   extra_css = [ "assets/stylesheets/quenching.css" ]
 
@@ -48,6 +59,7 @@
   admonition = {}
   attr_list = {}
   def_list = {}
+  pymdownx.details = {}
   footnotes = {}
   md_in_html = {}
   meta = {}
@@ -64,6 +76,11 @@
   pymdownx.superfences.custom_fences = [
     { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
   ]
+
+[project.markdown_extensions.pymdownx.snippets]
+  base_path = [ ".knowledge/documentation" ]
+  check_paths = true
+  auto_append = [ "assets/glossary-abbreviations.md" ]
 
 [project.validation]
   unresolved_references = true

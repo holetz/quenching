@@ -34,8 +34,9 @@ source provenance is defined by
 Resolve the repository root and verify `/.knowledge/index.md`, then inventory `documentation/`,
 `standards/`, `concepts/`, `external/`, `catalog/`, `vision/` and root `glossary.md`. Collect source
 paths, heading skeletons, links, existing nav/config and relevant code/specs with read-only tools.
-**Done when:** the source inventory names each home, its paths and audience, or records the missing
-bundle as a handoff to `quenching-knowledge-align`.
+The inventory is the whole bundle even when the requested editorial slice is small. **Done when:**
+the source inventory names each home, its paths and audience, or records the missing bundle as a
+handoff to `quenching-knowledge-align`.
 
 ### 2. Diagnose faults and truth risks
 
@@ -53,8 +54,18 @@ Treat a missing basis as `source gap:`, never as a default exclusion. **Done whe
 contract headings exist in order and no placeholder is silently guessed.
 
 When the map publishes the root `glossary.md`, record `reference/glossary.md` as a **derived**
-route and the canonical file as its only source. The plan also records the generated abbreviation
-snippet consumed by the site layer; it never assigns authors a second editable term list.
+route and the canonical file as its only source. If the canonical file exists and has content,
+this is the default decision; `não publicar` is valid only as an explicit accepted row with a
+reason. The plan also records the generated abbreviation snippet consumed by the site layer, the
+source hash/provenance fields, and the known term used by rendered QA; it never assigns authors a
+second editable term list.
+
+The publication map is a closed coverage contract. Include one row for every source home and the
+root glossary, with a route for `publicar`/`publicar derivado` and an explicit `não publicar`
+decision where a home is intentionally withheld. The denominator for coverage is every mandatory
+row, not only the pages selected for this pass. Every derived route must state its source and
+transformation, and every internal `/.knowledge/` link in the published projection must resolve
+to a mapped published route or be removed from the projection.
 
 For `catalog/`, the inventory must also record the catalog contract before assigning pages:
 `catalog/` is the source, `reference/catalog/index.md` is the layer/schema index, and each detail
@@ -81,8 +92,8 @@ write is authorized.
 ### 4. Present the plan and obtain one OK
 
 Show the inventory findings, seven contracts, proposed files, page intents, extensions, the
-editorial publication map and source gaps as one reviewable plan. Wait for the user's confirmation;
-revise the plan if it is declined.
+editorial publication map, mandatory-surface denominator and source gaps as one reviewable plan.
+Wait for the user's confirmation; revise the plan if it is declined.
 **Done when:** one explicit OK is recorded, or the run stops with no file written.
 
 ### 5. Write the plan of record

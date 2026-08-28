@@ -13,7 +13,11 @@ CLI  `validate [<bundle-or-docs-dir>] [--json]`
    that has no `type:` in it. Pointing this checker at a spec tree would report defects the
    specs front forbids fixing.
 
-`validate` is the only verb `main` routes. The `hook` verb (`quenching.knowledge.hook.run_hook`,
+CLI  `project [<bundle-dir>] [--write|--check|--json]`
+   Checks or materializes the deterministic documentation projection of the canonical glossary.
+   `--write` is the explicit mutation mode; the default is a read-only projection gate.
+
+`validate` and `project` are the verbs `main` routes. The `hook` verb (`quenching.knowledge.hook.run_hook`,
 answering the plugin's self-installed `PostToolUse`/`Stop`/`PreToolUse` wiring) was retired along
 with that wiring — this pillar no longer answers a hook event at all.
 
@@ -32,11 +36,12 @@ from quenching.common.output import FINDINGS, OK, REFUSAL
 from quenching.common.version import VERSION
 from quenching.knowledge.config import _load_config, _project_dir
 from quenching.knowledge.render import _render_activity, _render_text, _split
+from quenching.knowledge.projection import projection_findings, write_projection
 from quenching.knowledge.stale import resource_activity
 from quenching.knowledge.validate import _build_corpus, validate_tree
 
 
-USAGE = ("usage: cq knowledge validate [<bundle-dir>] [--json] [--activity]   "
+USAGE = ("usage: cq knowledge {validate|project} [<bundle-dir>] [options]   "
          "(default bundle-dir: .knowledge)")
 
 
@@ -87,6 +92,65 @@ def run_cli(argv: list[str]) -> int:
     return OK
 
 
+def run_project(argv: list[str]) -> int:
+    """Materialize or verify the glossary projection without importing Zensical."""
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="cq knowledge project")
+    parser.add_argument("bundle", nargs="?", default=".knowledge")
+    parser.add_argument("--plan", help="accepted documentation plan containing the publication map")
+    parser.add_argument("--config", help="root zensical.toml whose nav should expose the route")
+    parser.add_argument("--route", default="reference/glossary.md")
+    parser.add_argument("--snippet", default="assets/glossary-abbreviations.md")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--write", action="store_true", help="write the deterministic projection")
+    mode.add_argument("--check", action="store_true", help="check without writing (the default)")
+    parser.add_argument("--json", action="store_true")
+    args = parser.parse_args(argv)
+
+    from pathlib import Path
+
+    bundle = Path(args.bundle)
+    plan = None
+    if args.plan:
+        try:
+            plan = Path(args.plan).read_text(encoding="utf-8")
+        except OSError as exc:
+            payload = {"ok": False, "code": "projection-plan-unreadable", "message": str(exc)}
+            if args.json:
+                print(json.dumps(payload, indent=2))
+            else:
+                print(f"error: {exc}", file=sys.stderr)
+            return FINDINGS
+    config = Path(args.config) if args.config else None
+    if args.write:
+        written = write_projection(bundle, plan, config, args.route, args.snippet)
+        payload = dict(written)
+        payload["mode"] = "write"
+        if written.get("skipped") and not written.get("excluded"):
+            errors = []
+        else:
+            checked, errors = projection_findings(bundle, plan, config, args.route, args.snippet)
+            payload.update(checked)
+            if written.get("skipped"):
+                payload["skipped"] = written["skipped"]
+            payload["mode"] = "write"
+    else:
+        payload, errors = projection_findings(bundle, plan, config, args.route, args.snippet)
+        payload["mode"] = "check"
+    payload["findings"] = errors
+    payload["ok"] = not errors
+    if args.json:
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+    else:
+        print(f"knowledge projection — {payload.get('mode')} ({len(errors)} error(s))")
+        for error in errors:
+            print(f"  [ERROR] {error['path']}: {error['message']} ({error['code']})")
+        if not errors:
+            print("  OK — glossary projection is current.")
+    return FINDINGS if errors else OK
+
+
 def main(argv: list[str]) -> int:
     """The pillar's whole entry: the declared token chooses the mode.
 
@@ -94,7 +158,7 @@ def main(argv: list[str]) -> int:
     looking at the world: no `argv` **and** a non-tty stdin meant "hook". That test does not survive
     a pillar prefix, and it should not: it misfires under CI, under a subprocess, and under any
     redirection, silently and with no way to override it. `main` routes the DECLARED token —
-    `validate` to `run_cli`, and nothing else now that `hook` is retired — and nothing in this
+    `validate` to `run_cli`, `project` to `run_project`, and nothing else now that `hook` is retired — and nothing in this
     pillar calls `isatty`. Any argv that is not the verb was once read as a bundle path, which the
     spec's `## Out of Scope` rules out by name, so a token that is not a verb is a usage refusal.
 
@@ -113,5 +177,7 @@ def main(argv: list[str]) -> int:
     verb = argv[0] if argv else ""
     if verb == "validate":
         return run_cli(argv[1:])
+    if verb == "project":
+        return run_project(argv[1:])
     print(USAGE, file=sys.stderr)
     return REFUSAL

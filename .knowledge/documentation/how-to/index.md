@@ -1,15 +1,41 @@
-# `how-to/` — task recipes
+# How-to guides
 
-Task-oriented pages that answer "how do I do X" for someone using the product (the Diátaxis
-**how-to** quadrant). This section absorbs the former `guides/` home. Each page carries
-`type: documentation`.
+Task recipes for someone who already knows the basics: each page gets one job done and tells you
+what you should observe at every step. If the plugin is new to you, take the
+[getting-started tutorial](../tutorials/getting-started.md) first.
 
-**Boundary:** a how-to gets a known task done for a user who already knows the basics; a
-guided first lesson is a [tutorial](../tutorials/index.md); the current internal *rule*
-for how WE build is a `standard`, not a how-to.
+## Recipes
 
-## How to organize
+<div class="grid cards" markdown>
 
-The repo decides which recipes exist — the skeleton ships none. Standalone pages live as
-`.md` files here; group a coherent set into a subfolder with its own `index.md`. One concept
-per file, kebab-case English slug.
+-   :material-source-repository: **Adopt quenching in a repository**
+
+    ---
+
+    Take an existing repo — knowledge scattered, automation ad-hoc — through its first full
+    convergence, one OK at a time.
+
+    [:octicons-arrow-right-24: Adopt quenching](adopt-quenching.md)
+
+-   :material-clipboard-check: **Drive a spec from idea to merge**
+
+    ---
+
+    One unit of work, one canonical document on your issue tracker: capture, refine, build task
+    by task, close with the merge last.
+
+    [:octicons-arrow-right-24: Drive a spec](drive-a-spec.md)
+
+-   :material-file-document-multiple: **Publish the documentation site**
+
+    ---
+
+    Turn the `/.knowledge/` bundle into a rendered Diátaxis site — planned, sourced, reviewed
+    and gated by a strict build.
+
+    [:octicons-arrow-right-24: Publish the docs site](publish-the-docs-site.md)
+
+</div>
+
+**Looking for exact command signatures?** The [command catalog](../reference/commands.md) lists
+all thirty-eight, by front.
