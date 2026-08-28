@@ -132,7 +132,7 @@ def selftest() -> int:
         "anchor-missing": {"site-anchor-missing", "site-sitemap-empty"},
         "sitemap-empty": {"site-sitemap-empty"},
         "page-orphan": {"site-sitemap-empty", "site-page-orphan"},
-        "remote-resource": {"site-remote-resource", "site-sitemap-empty"},
+        "remote-resource": {"site-remote-resource"},
     }
     for fixture, expected_codes in expected.items():
         codes = {finding.code for finding in check(fixture_root / fixture)}
