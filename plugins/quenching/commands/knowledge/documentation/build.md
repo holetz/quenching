@@ -56,6 +56,10 @@ bundle; every install, update, and re-verification after that is **this** skill.
   a derived reference, require `reference/catalog/index.md` as the sole nav entry. Verify that its
   layer/schema links reach every detail route, that each detail carries a stable identifier and
   lineage source, and that the generated route count is recorded. Never add one nav line per item.
+- **Delivery payloads are opt-in and host-specific.** Detect an Azure DevOps remote from its URL,
+  offer `azure-pipelines-docs.yml` as a separate confirmation, and preserve any existing pipeline.
+  The payload only publishes the strict `site/` directory as `documentation-site`; it is not a
+  remote deployment.
 - **A legacy `mkdocs.yml` is read, never converted behind the human's back.** Zensical reads
   `mkdocs.yml` natively and says it always will, so a target that has one still builds and nothing
   is urgent. What silently stopped working there is its whole `plugins:` list, which is why any
@@ -115,6 +119,7 @@ bundle; every install, update, and re-verification after that is **this** skill.
 | `site-link-escapes` | a page links an exposed home by an internal bundle path instead of its mapped route | **REPORT** → `/quenching:knowledge:documentation:write` |
 | `site-page-unstamped` | a page under `documentation/` with no `type: documentation` | **REPORT** → `/quenching:knowledge:align` |
 | `site-ci-absent` | no `.github/workflows/docs.yml` | **REPORT**; install only on request (own confirmation — platform-specific) |
+| `site-azure-payload-available` | Azure DevOps remote has no documented opt-in pipeline payload | **OFFER** `azure-pipelines-docs.yml` under its own confirmation; never overwrite an existing pipeline |
 | `site-build-failed` | `zensical build --strict` exits non-zero | **FIX** only what is site-layer; anything page-level is **REPORTED** |
 
 ## Workflow
@@ -142,6 +147,8 @@ Collect, without writing anything:
   curated mirrors for mapped homes, plus any leftover `.pages`.
 - `.gitignore` (are `site/` and `.quenching/` ignored?) and `git ls-files site .quenching` (is either already tracked?).
 - `.github/workflows/docs.yml`.
+- Azure DevOps remotes (`dev.azure.com`, `visualstudio.com`) and any existing `azure-pipelines*.yml`;
+  record whether the payload is absent, already installed, or declined.
 - `assets/stylesheets/quenching.css` under the documentation home and the `extra_css` connection.
 - the toolchain: `zensical --version` (fall back to `python -m zensical --version`,
   `uv run zensical --version`) — absence is a fact to report, not an error to fix. If `$ARGUMENTS`
@@ -185,6 +192,9 @@ In order: `zensical.toml` (stamp from `${CLAUDE_PLUGIN_ROOT}/assets/zensical/zen
 absent, else merge the missing keys and only the map-approved nav entries) → requirements →
 the generated glossary-abbreviation snippet when mapped → `assets/stylesheets/quenching.css` from the payload → any orphan `.pages` → `.gitignore` → the CI
 workflow **only if** its own OK was given (copy `ci-github-pages.yml` → `.github/workflows/docs.yml`).
+For an Azure remote, the equivalent opt-in copies `azure-pipelines-docs.yml` only when its separate
+confirmation is granted and the target path is absent; report `documentation-site` as an artifact,
+not as deployed content.
 The CSS asset is the one file this skill writes inside the docs home; Markdown pages remain
 untouched. **Done when:** only approved site-layer edits are applied and `extra_css` points at the
 stamped CSS.
