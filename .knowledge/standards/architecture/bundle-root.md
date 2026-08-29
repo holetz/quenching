@@ -1,8 +1,8 @@
 ---
 type: standard
 title: The bundle root is the fixed `/.knowledge/` convention
-description: The OKF bundle of a target repo lives at the fixed `/.knowledge/` root — no configuration file names it, because an LLM executor runs command bodies literally and a root it must resolve from configuration is a root it can resolve wrong
-resource: /.knowledge/**
+description: The OKF bundle of a target repo lives at the fixed `/.knowledge/` root and the design source at `/.design/` — neither root is configurable, because an LLM executor runs command bodies literally and a root it must resolve from configuration is a root it can resolve wrong
+resource: /.knowledge/**, /.design/**
 tags: [architecture, bundle, okf, convention, config]
 timestamp: 2026-08-13
 audience: both
@@ -20,6 +20,8 @@ configurable.
 
 - **The OKF bundle** lives at `/.knowledge/` — at the root of the target repository, beside
   `.claude/`.
+- **The design source** lives at `/.design/` — at the same repository root, beside the OKF bundle;
+  `/.design/tokens.json` is the only primitive source the design front writes.
 
 The bundle root is a **convention, not a setting**. It is not named by `.claude/quenching.json`, which
 recognises six keys and none of them is a path
@@ -38,8 +40,8 @@ into every body that references it, greppable, and impossible to mis-resolve. Th
 reason the command surface treats a path as an identity rather than a variable
 ([command-surface.md](../naming/command-surface.md)) — the path is the identity.
 
-Configuration bought nothing here. The bundle is the plugin's own installable front, not a
-target's choice, so no target ever needs to point the plugin at it.
+Configuration bought nothing here. The bundle and design roots are the plugin's own installable
+fronts, not a target's choice, so no target ever needs to point the plugin at either one.
 
 ## What the fixed root makes possible
 

@@ -37,7 +37,7 @@ tool grants instead of to the directory tree.
 ## What the read command therefore owns, and does not
 
 - **It owns no contract.** It reports in the vocabulary of the front's own verifier
-  (`cq knowledge`, `cq specs`, `cq components`) and cites the references defining each code,
+  (`cq knowledge`, `cq specs`, `cq design`, `cq components`) and cites the references defining each code,
   restating none. Two read paths that must agree is exactly the duplication this plugin avoids
   everywhere else.
 - **It splits findings by what closes them** — what the front's align fixes, what a cycle command

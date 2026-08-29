@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: /.knowledge/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-08-25
+timestamp: 2026-08-29
 audience: both
 authority: current
 source: quenching skeleton
@@ -185,9 +185,9 @@ sentence, and **link out** rather than explaining in full here.
   and a proposal that does none of the three is not an optimisation. Because it is quadratic in the
   turn count, shortening the window beats shortening the reads.
 - [**cq**](/plugins/quenching/assets/references/align/tool-resolution.md) — the plugin's one entry
-  point, `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`, replacing the four self-contained scripts each
-  front used to ship separately. Invoked as `cq <pilar> <subcomando>…` — `cq knowledge …`,
-  `cq specs …`, `cq components …` — one command per front. **Two doors, one file:** `bin/cq`, a
+  point, `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`, replacing the self-contained scripts each pillar
+  used to ship separately. Invoked as `cq <pilar> <subcomando>…` — `cq knowledge …`, `cq design …`,
+  `cq specs …`, `cq components …`, and `cq git …`. **Two doors, one file:** `bin/cq`, a
   shim in the directory Claude Code appends to `PATH`, is what lets a body write the name bare; the
   plugin path is what it falls to wherever the PATH does not hold — including work on the quenching
   repository itself, where that entry names the *installed* checkout.
@@ -204,6 +204,8 @@ sentence, and **link out** rather than explaining in full here.
   COMPUTED from which headings are filled and which records frontmatter carries rather than
   declared in a field, so it regresses on its own when a section empties instead of going stale;
   resolution is last-match-wins, which is why `executing` sorts last.
+- [**DTCG**](../standards/architecture/design-front.md) — Design Tokens Community Group format
+  used here as the 2025.10 source schema for `/.design/tokens.json`.
 - [**Empty-response honesty**](../standards/quality/empty-response-honesty.md) — a obrigação de
   separar, num payload vazio vindo de um processo de terceiro, a resposta que **não chegou** da que
   legitimamente **não tem nada**: recusa exit 2 no choke point de leitura onde existe discriminante
@@ -255,6 +257,8 @@ sentence, and **link out** rather than explaining in full here.
   handler (one cheap judgment per firing), then an `agent` handler — which on a per-tool-call event
   is an LLM toll booth on every operation (`sk-hook-llm-frequent`). Climbed only when the rung
   below cannot express the check.
+- [**Impeccable**](../standards/architecture/design-front.md) — optional screen-craft consumer that
+  reads generated `PRODUCT.md`, `DESIGN.md`, and `.impeccable/design.json` artifacts.
 - [**Language declaration**](../standards/agents/communication.md) — the single line on a repo's
   **root** harness file naming one BCP-47 tag (`Language: pt-BR — the contract is …`), which governs
   all prose the agent authors, conversation as much as artifact. It carries a value and a citation
