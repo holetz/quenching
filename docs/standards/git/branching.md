@@ -1,90 +1,92 @@
 ---
 type: standard
-title: Fluxo de branches — PR na primária, release deliberado
-description: Uma branch única de longa duração — a primária (main) — onde todo PR mergeia e a revisão vive, o release como ato deliberado local que bumpe, tageia e publica o que a primária acumulou, o gatilho por demanda e sem cadência, a pergunta que empurra para o agrupamento quando a primária carrega um só PR desde a última tag, e a transição para quem vinha do fluxo de duas branches
+title: Branch flow — PR onto the primary, deliberate release
+description: One long-lived branch — the primary (main) — where every PR merges and review lives, the release as a deliberate local act that bumps, tags and publishes what the primary accumulated, the trigger on demand and with no cadence, the question that pushes toward grouping when the primary carries a single PR since the last tag, and the transition for anyone coming from the two-branch flow
 resource: .claude/commands/release.md, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/cycle.md, plugins/quenching/assets/references/align/convergence.md
 tags: [git, branching, release, workflow, main]
 timestamp: 2026-08-17
 audience: both
 authority: current
-source: reescrito pelo spec eliminar-branch-de-integracao (2026-08-17) — o fluxo de duas branches (develop integra, main publica) deixou de existir: a primária recebe todo PR e o release é o ato deliberado local que a publica; a transição para quem vinha do fluxo antigo acrescentada na mesma reescrita
+source: rewritten by spec eliminar-branch-de-integracao (2026-08-17) — the two-branch flow (develop integrates, main publishes) ceased to exist: the primary receives every PR and the release is the deliberate local act that publishes it; the transition for anyone coming from the old flow added in the same rewrite
 maintainer: quenching
 ---
 
-# Fluxo de branches — PR na primária, release deliberado
+# Branch flow — PR onto the primary, deliberate release
 
-Este repositório publica a partir de **uma** branch de longa duração. Não há branch de integração
-separada: todo trabalho entra por pull request e o release é o único ato que publica.
+This repository publishes from **one** long-lived branch. There is no separate integration branch:
+all work enters through a pull request and the release is the only act that publishes.
 
-## A branch única
+## The single branch
 
-| Branch | Função |
+| Branch | Role |
 | --- | --- |
-| `main` | **Publica.** É a branch default do repositório e onde todo PR mergeia. O release é o único ato que move o lockstep de versão ([versioning-release.md](../ci-cd/versioning-release.md)) e cria a tag. |
+| `main` | **Publishes.** It is the repository's default branch and where every PR merges. The release is the only act that moves the version lockstep ([versioning-release.md](../ci-cd/versioning-release.md)) and creates the tag. |
 
-A branch primária não é configurada — resolve-se pela cadeia `origin/HEAD → init.defaultBranch →
-main` ([plan-git-record.md](../workflows/plan-git-record.md)).
+The primary branch is not configured — it resolves through the chain `origin/HEAD →
+init.defaultBranch → main` ([plan-git-record.md](../workflows/plan-git-record.md)).
 
-## O PR é a rota de entrada
+## The PR is the entry route
 
-Todo trabalho entra em `main` por pull request: o ciclo de specs (`/quenching:specs:cycle`,
-`/quenching:specs:execute`, `/quenching:specs:execute-queue`) abre o PR contra a branch primária e
-a revisão humana vive no PR. Não há merge local de specs — a revisão de cada mudança acontece
-antes de entrar, não depois.
+All work enters `main` through a pull request: the specs cycle (`/quenching:specs:cycle`,
+`/quenching:specs:execute`, `/quenching:specs:execute-queue`) opens the PR against the primary
+branch and human review lives in the PR. There is no local merge of specs — each change is reviewed
+before it enters, not after.
 
-## O gatilho é a demanda, não a cadência
+## The trigger is demand, not cadence
 
-A release é um ato deliberado do mantenedor. Não há cadência, não há contador de merges, não há
-janela de tempo — o gatilho é "decidi publicar", nunca "passou tempo" nem "mergeou".
+The release is a deliberate act of the maintainer. There is no cadence, no merge counter, no time
+window — the trigger is "I decided to publish", never "time has passed" or "something merged".
 
-**A mitigação contra o hábito.** Nada no fluxo obriga a agrupar várias specs numa release: o
-mantenedor é uma pessoa só, então o cenário em que cada spec vira uma release por hábito custa uma
-release por spec sem ganhar nada. Por isso, quando a primária carrega **um só PR** desde a última
-tag, o comando de release pergunta se aquilo é uma release ou é hábito — sem contador, sem
-bloqueio, uma pergunta só, no único momento em que ela cabe.
+**The mitigation against habit.** Nothing in the flow forces several specs to be grouped into one
+release: the maintainer is a single person, so the scenario where every spec becomes a release out
+of habit costs one release per spec and gains nothing. So when the primary carries **a single PR**
+since the last tag, the release command asks whether that is a release or a habit — no counter, no
+block, one question only, at the single moment where it fits.
 
-## Onde o fluxo é declarado
+## Where the flow is declared
 
-| O quê | Onde | Consumidores |
+| What | Where | Consumers |
 | --- | --- | --- |
-| A política em prosa | este documento | `/quenching:specs:execute` e `/quenching:specs:conclude`, como read-if-present |
-| O bump de versão | [versioning-release.md](../ci-cd/versioning-release.md) | o verbo de release |
-| A cadeia de inferência de `base` | [plan-git-record.md](../workflows/plan-git-record.md) | a spec não carimbada |
+| The policy in prose | this document | `/quenching:specs:execute` and `/quenching:specs:conclude`, as read-if-present |
+| The version bump | [versioning-release.md](../ci-cd/versioning-release.md) | the release verb |
+| The `base` inference chain | [plan-git-record.md](../workflows/plan-git-record.md) | the unstamped spec |
 
-A cadeia de inferência de `base` — usada quando uma spec começa numa branch que ninguém carimbou —
-resolve `origin/HEAD → init.defaultBranch → main`, a branch primária, que é onde o trabalho
-pertence.
+The `base` inference chain — used when a spec starts on a branch nobody stamped — resolves
+`origin/HEAD → init.defaultBranch → main`, the primary branch, which is where the work belongs.
 
-## Adotando o fluxo num repositório que tinha develop
+## Adopting the flow in a repository that had develop
 
-Um repositório que vinha do fluxo de duas branches (develop integra, main publica) tem um
-acumulado em `develop` que `main` ainda não recebeu. A transição é **um ato do mantenedor**: um
-último PR `develop → main` publica o acumulado de uma vez, e a partir dele develop vira órfã e o
-fluxo de uma branch rege. O release novo (sem merge `develop → main`) não publica esse acumulado —
-a transição usa a própria rota que o novo fluxo adota, o PR.
+A repository coming from the two-branch flow (develop integrates, main publishes) has work
+accumulated on `develop` that `main` has not received yet. The transition is **an act of the
+maintainer**: one last `develop → main` PR publishes the accumulation in one go, and from it on
+develop becomes orphaned and the single-branch flow governs. The new release (with no
+`develop → main` merge) does not publish that accumulation — the transition uses the very route the
+new flow adopts, the PR.
 
-O `branch.base` de uma spec é carimbado uma vez, no início do trabalho, e nunca re-inferido depois
-— ver [plan-git-record.md](../workflows/plan-git-record.md). Uma spec em flight com `base: develop`
-segue o registro write-once até concluir; só as specs cortadas depois da transição nascem com a
-primária como base.
+A spec's `branch.base` is stamped once, at the start of the work, and never re-inferred afterwards
+— see [plan-git-record.md](../workflows/plan-git-record.md). A spec in flight with `base: develop`
+follows the write-once record through to conclusion; only the specs cut after the transition are
+born with the primary as their base.
 
-## A publicação, em duas metades
+## Publication, in two halves
 
-- **O que a release é** — patch, minor ou major; se vale publicar agora; o que muda para quem
-  instala — é **julgamento humano**, conduzido por um comando dedicado. Esse julgamento não é
-  automatizável: ver [versioning-release.md](../ci-cd/versioning-release.md) sobre por que uma
-  política de versionamento fica fora de escopo.
-- **Como a release é executada** — o lockstep dos artefatos e a tag, mecanicamente — é o verbo
-  `cq specs release`. Sem string surgery, coberto pela suíte de testes.
+- **What the release is** — patch, minor or major; whether it is worth publishing now; what changes
+  for whoever installs it — is **human judgment**, conducted by a dedicated command. That judgment
+  is not automatable: see [versioning-release.md](../ci-cd/versioning-release.md) on why a
+  versioning policy stays out of scope.
+- **How the release is executed** — the artifacts' lockstep and the tag, mechanically — is the
+  `cq specs release` verb. No string surgery, covered by the test suite.
 
-## A publicação é sempre local
+## Publication is always local
 
-O bump, o commit e a tag acontecem na branch primária, sem PR de release. Um ato local permite ao
-mantenedor decidir "publico agora" sem depender de nenhuma revisão externa: a revisão de cada spec
-já aconteceu no PR de entrada, e o release só escolhe quando o acumulado vira versão.
+The bump, the commit and the tag happen on the primary branch, with no release PR. A local act lets
+the maintainer decide "I publish now" without depending on any external review: each spec's review
+already happened in its entry PR, and the release only chooses when the accumulation becomes a
+version.
 
-## O consumidor não muda nada
+## The consumer changes nothing
 
-Um marketplace aceita `ref` — branch, tag ou commit — e, na ausência dele, resolve pela branch
-default do repositório. `main` é essa default e recebe tudo o que o repo publica; quem já instalou
-(com `ref` ou sem) continua recebendo o que `main` carrega, sem tocar em nada.
+A marketplace accepts a `ref` — branch, tag or commit — and, in its absence, resolves through the
+repository's default branch. `main` is that default and receives everything the repo publishes;
+whoever already installed (with `ref` or without) keeps receiving what `main` carries, without
+touching anything.

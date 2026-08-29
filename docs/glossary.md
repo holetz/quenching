@@ -91,15 +91,6 @@ sentence, and **link out** rather than explaining in full here.
   by the **ownership test** and stays legitimate only under the **verifiable guardrail** — one
   clause, no fact the owner states, and never a narrowing; the third is what caught
   `assets/README.md` scoping the language rule to `audience: human` docs for weeks.
-- [**Branch de integração**](standards/git/branching.md) — sob o fluxo develop/main, a
-  `develop`: onde toda `plan/<id>-<handle>` mergeia ao concluir. Acumula quantas specs quiserem sem que
-  nada seja publicado; só se torna público quando a **branch de publicação** recebe seu merge
-  deliberado. Ver esse verbete para o outro lado do par.
-- [**Branch de publicação**](standards/git/branching.md) — sob o fluxo develop/main, a `main`:
-  a única branch que recebe o merge deliberado `develop → main`, o único momento em que o lockstep
-  de versão se move e uma tag é criada. Nunca acumula specs em integração — isso é a **branch de
-  integração** (`develop`), de onde `plan/<id>-<handle>` é cortada e para onde mergeia. O gatilho da
-  publicação é a demanda do mantenedor, nunca uma cadência, e a rota é sempre um merge local.
 - [**Branch record**](standards/workflows/plan-git-record.md) — the `branch: {base, work}`
   frontmatter entry stamped by `/quenching:specs:execute` once the work ref is resolved, write-once —
   for **any** branch that is not the repo's base (the one it cut and the one a human already had
@@ -199,18 +190,35 @@ sentence, and **link out** rather than explaining in full here.
   backend that stored them. Shared code deriving a path from the declared one is the single cause
   behind a destination check that could not see the destination, a diagnostic reporting a workspace
   nobody has, and a `root` payload field naming a folder that does not exist.
+- [**Dependency map**](standards/automation/dependency-sweep.md) — the table the **Dependency
+  sweep** returns, written by the orchestrator into `### Mapa de dependências` under the spec's own
+  `## Design` and **dated**: it names every file the proposal's area touches or is touched by, and
+  what breaks or goes orphaned if it changes. It lives on the spec — not in the session's context —
+  so the banks that follow read it for free instead of re-sweeping, and so the human sees it on the
+  issue. The date exists because a spec whose scope changed afterwards is never re-swept, and
+  without it the map would age in silence.
+- [**Dependency sweep**](standards/automation/dependency-sweep.md) — the read-only sub-agent read
+  `/quenching:specs:develop` runs **before** the bank asks, so the right question has something to
+  be answered with; it fires on selecting the *shape* bank, and on the first entry into the
+  *adversarial* bank for a spec that was born `proposed` and never swept. Each spec is swept **at
+  most once**, and never for having crossed a `complexity` level — a spec looks small exactly as
+  long as nobody has read its dependencies. It runs under the **widest** tool profile of the
+  command's three sub-agents (everything but `Edit`, `Write`, `NotebookEdit` and `Agent`, with
+  `Bash`), because the deliverable is the aggregate a `grep`/`gh`/`cq` produces. It returns the
+  **Dependency map** and touches nothing.
 - [**Derived stage**](standards/workflows/plan-lifecycle.md) — a spec's position in its life
   (`captured` → `proposed` → `designed` → `refined` → `ready` → `approved` → `executing`),
   COMPUTED from which headings are filled and which records frontmatter carries rather than
   declared in a field, so it regresses on its own when a section empties instead of going stale;
   resolution is last-match-wins, which is why `executing` sorts last.
-- [**Empty-response honesty**](standards/quality/empty-response-honesty.md) — a obrigação de
-  separar, num payload vazio vindo de um processo de terceiro, a resposta que **não chegou** da que
-  legitimamente **não tem nada**: recusa exit 2 no choke point de leitura onde existe discriminante
-  estrutural medido (para o `gh`, zero páginas `[]` contra uma página vazia `[[]]`), finding `warn`
-  mais uma linha em `stderr` onde há só suspeita corroborada, e a guarda no chamador e nunca no
-  transporte compartilhado, cuja resposta vazia pode ser a correta (um DELETE 204). É o irmão de
-  **Parse honesty** um nível abaixo: aquele governa o transform com perda, este o payload que chegou.
+- [**Empty-response honesty**](standards/quality/empty-response-honesty.md) — the obligation to
+  separate, in an empty payload coming back from a third-party process, the answer that **never
+  arrived** from the one that legitimately **holds nothing**: an exit 2 refusal at the reading choke
+  point where a measured structural discriminant exists (for `gh`, zero pages `[]` against one empty
+  page `[[]]`), a `warn` finding plus one line on `stderr` where there is only corroborated
+  suspicion, and the guard on the caller and never on the shared transport, whose empty response may
+  be the correct one (a DELETE 204). It is **Parse honesty**'s sibling one level down: that one
+  governs the lossy transform, this one the payload that arrived.
 - [**Entry point**](standards/naming/command-surface.md) — one `commands/<path>.md` file, whose
   path IS its identity (`commands/knowledge/add.md` → `/quenching:knowledge:add`); since Claude
   Code merged commands into skills there is no second file to mirror, so there is nothing an entry
@@ -255,21 +263,20 @@ sentence, and **link out** rather than explaining in full here.
   handler (one cheap judgment per firing), then an `agent` handler — which on a per-tool-call event
   is an LLM toll booth on every operation (`sk-hook-llm-frequent`). Climbed only when the rung
   below cannot express the check.
+- [**Integration branch**](standards/git/branching.md) — under the develop/main flow, `develop`:
+  where every `plan/<id>-<handle>` merges at conclude. It accumulates as many specs as it likes with
+  nothing published; it only becomes public once the **Publication branch** takes its deliberate
+  merge. See that entry for the other half of the pair — and for the note that this repository
+  no longer runs the flow both halves describe.
 - [**Language declaration**](standards/agents/communication.md) — the single line on a repo's
   **root** harness file naming one BCP-47 tag (`Language: pt-BR — the contract is …`), which governs
-  all prose the agent authors, conversation as much as artifact. It carries a value and a citation
+  the **conversation** band alone — answers, questions and reports. Durable artifacts are canonical
+  English whatever the tag says, because they outlive the conversation and travel between repos. It carries a value and a citation
   and nothing else: never a paraphrase of the rule it cites, and never a second configuration key.
   Only the root file counts, because only that one is in context at session start — the property the
   form was chosen for. **Silence is not a default of `en`**; a repo that declares nothing is under no
   constraint, and adoption is opt-in per repo. Nothing machine-checks it, so `/quenching:components:harness:align` classing
   the line **KEEP** is the only thing between it and a silent deletion.
-- [**Mapa de dependências**](standards/automation/dependency-sweep.md) — a tabela que a
-  **Varredura de dependências** devolve, escrita pelo orquestrador em `### Mapa de dependências`
-  sob o `## Design` da própria spec e **datada**: nomeia cada arquivo que a área da proposta toca
-  ou pela qual é tocada, e o que quebra ou fica órfão se ela mudar. Vive na spec — não no contexto
-  da sessão — para que os bancos seguintes o leiam de graça em vez de re-varrer, e para que o
-  humano o veja na issue. A data existe porque uma spec cujo escopo mudou depois nunca é
-  re-varrida, e sem ela o mapa envelheceria em silêncio.
 - [**Merge record**](standards/workflows/plan-git-record.md) — the
   `merge: {strategy, subject, pr}` frontmatter entry stamped by `/quenching:specs:conclude`, write-once,
   **on the work branch before the merge** — which is what makes the merge that command's last
@@ -304,11 +311,11 @@ sentence, and **link out** rather than explaining in full here.
   itself. Distinct from `source:`, which stays prose about who originated a rule. Nothing checks the
   value: truthfulness is decidable only against the source at the instant it was read, and a unit
   collapsed from several seeds carries only one origin — both recorded as **accepted gaps**.
-- [**Pacote**](standards/architecture/plugin-layout.md) — the Python package under
-  `plugins/quenching/assets/bin/quenching/`, o diretório que substituiu os quatro scripts
-  autocontidos que o plugin costumava distribuir. Dividido em `common/`, `specs/`, `knowledge/` e
-  `components/`, sem nenhum arquivo grande demais para ser lido inteiro numa chamada de ferramenta;
-  `cq` é o único ponto de entrada que o expõe.
+- [**Package**](standards/architecture/plugin-layout.md) — the Python package under
+  `plugins/quenching/assets/bin/quenching/`, the directory that replaced the four self-contained
+  scripts the plugin used to ship. Split into `common/`, `specs/`, `knowledge/` and `components/`,
+  with no file too large to be read whole in one tool call; `cq` is the only entry point that
+  exposes it.
 - [**Parked follow-up**](standards/workflows/plan-lifecycle.md) — an out-of-scope finding a
   definition pass records as ONE line of `## Discoveries` on the spec it is developing, instead of
   minting a spec for it. Parking is free by construction: `## Discoveries` appears in no stage rule,
@@ -332,15 +339,15 @@ sentence, and **link out** rather than explaining in full here.
   neither is graded against this repo — which is what decides reference over standard
   (§A contract a command reads at runtime is a reference, not a standard). Not to be confused with
   the **JSON payload** a `cq` verb emits, the unrelated sense used of tool output.
-- [**Priced**](standards/quality/finding-remedy-applicability.md) — o campo booleano que
-  `sk-unscoped-bash` carrega no JSON: o corpo do comando abre uma linha com o marcador literal
-  `**Why \`Bash\` is unrestricted here.**`, fora de cerca, ou não. Diz **presença**, nunca
-  qualidade — nada lê a razão, julga se ela é boa ou mede o seu tamanho, porque um predicado que
-  fizesse isso estaria inventando um veredito sobre prosa que só casou um padrão. O finding é
-  reportado nos dois casos: o grant continua sendo o shell inteiro do turno, e o que o marcador
-  compra é um leitor capaz de distinguir um grant deliberado de um que ninguém examinou. Existe
-  porque o remédio anterior aconselhava declarar a razão no corpo enquanto a checagem lia só
-  `allowed-tools` — a conclusão que ela não observava (§O segundo sítio).
+- [**Priced**](standards/quality/finding-remedy-applicability.md) — the boolean field
+  `sk-unscoped-bash` carries in the JSON: the command body opens a line with the literal marker
+  `**Why \`Bash\` is unrestricted here.**`, outside a fence, or it does not. It states **presence**,
+  never quality — nothing reads the reason, judges whether it is a good one or measures its length,
+  because a predicate that did would be inventing a verdict about prose that only matched a pattern.
+  The finding is reported in both cases: the grant is still the turn's whole shell, and what the
+  marker buys is a reader able to tell a deliberate grant from one nobody examined. It exists
+  because the earlier remedy advised declaring the reason in the body while the check read only
+  `allowed-tools` — the conclusion it did not observe (§The second site).
 - [**Provider ID**](standards/architecture/spec-backend.md) — the tracker's own identifier for
   a spec — a GitHub issue number, an Azure Boards work-item ID — and **the spec's whole identity**.
   The canonical document does not mirror it, and resolution is exact: the ID exists or it is
@@ -348,6 +355,13 @@ sentence, and **link out** rather than explaining in full here.
   `sp-ambiguous-slug` by construction, since two specs cannot share one. Measured at the moment it
   replaced the slug: a direct read costs 0.39 s / 7.7 KB against 3.81 s to find the same document
   by sweeping the tracker.
+- [**Publication branch**](standards/git/branching.md) — under the develop/main flow, `main`:
+  the one branch that takes the deliberate `develop → main` merge, the one moment the version
+  lockstep moves and a tag is created. It never accumulates specs in integration — that is the
+  **integration branch** (`develop`), which `plan/<id>-<handle>` is cut from and merges back into.
+  The trigger to publish is the maintainer's demand, never a cadence, and the route is always a
+  local merge. *Both halves of this pair describe a flow this repository retired: `branching.md`
+  §The single branch now declares `main` alone, and every PR merges into it.*
 - [**Phantom command**](standards/architecture/plugin-layout.md) — a non-entry-point file left
   under `commands/`, which registers as a real `/` entry that does nothing; it does not error, so
   the only thing that catches it is `sk-no-description`, and it is why shared procedure lives under
@@ -361,10 +375,10 @@ sentence, and **link out** rather than explaining in full here.
 - [**`[P]` marker**](standards/workflows/task-execution.md) — the opt-in flag set on a task when
   the tasks are written, declaring it may run concurrently with its group; honoured only when
   `cq specs parallel` proves the group's `files:` sets disjoint, and never inferred while building.
-- [**Pilar**](standards/naming/command-surface.md) — um dos três eixos que `cq` roteia:
-  `specs`, `knowledge` e `components`, passado como primeiro argumento (`cq <pilar>
-  <subcomando>…`). É o vocabulário único do eixo dos fronts, substituindo os nomes `docs` /
-  `specs` / `skill` que competiam antes da fusão em um só pacote.
+- [**Pillar**](standards/naming/command-surface.md) — one of the three axes `cq` routes:
+  `specs`, `knowledge` and `components`, passed as the first argument (`cq <pilar>
+  <subcomando>…`). It is the single vocabulary of the fronts' axis, replacing the names `docs` /
+  `specs` / `skill` that competed before the merge into one package.
 - [**Plugin config**](standards/workflows/plugin-configuration.md) — `.claude/quenching.json`, the
   single file a target repository uses to declare anything to this plugin: `backend`, `specsBranch`,
   `worktreeSetup`, `azureStates`, `azurePlacement`,
@@ -437,10 +451,10 @@ sentence, and **link out** rather than explaining in full here.
 - [**Refinement record**](standards/workflows/plan-artifacts.md) — the `refined: {mode, date}`
   entry a spec's **frontmatter** gains once it has been interrogated, whose absence raises the
   non-gating `sp-unrefined` warning.
-- [**Remedy**](standards/quality/finding-remedy-applicability.md) — o campo `remedy` que todo
-  finding dos verificadores carrega, e o contrato que ele assume: nomear uma ação que a superfície
-  que emitiu o finding realmente oferece. Um remédio que descreve o estado desejado, ou uma ação que
-  a mesma CLI recusa, gasta a confiança de toda a saída — não só a do item que o carrega.
+- [**Remedy**](standards/quality/finding-remedy-applicability.md) — the `remedy` field every
+  verifier finding carries, and the contract it takes on: naming an action the surface that emitted
+  the finding actually offers. A remedy that describes the desired state, or an action the same CLI
+  refuses, spends the trust of the whole output — not just that of the item carrying it.
 - [**Reserved tag prefix**](standards/architecture/spec-backend.md) — `spec:`, the half of a
   tracker's native tag surface (`github` issue labels, `azure-boards` `System.Tags`) that belongs
   to the TOOL rather than to the document, and the rule that lets **storage** and **rendering**
@@ -532,14 +546,14 @@ sentence, and **link out** rather than explaining in full here.
   surviving commit's subject (or sha) in the same step — the **Commit record**'s granularity
   narrows to the section, never loses resolvability. Distinct from the squash-**merge** strategy
   `/quenching:specs:conclude` offers, which is a different mechanism at a different moment.
-- [**Report mold**](standards/architecture/report-mold.md) — a seção única que possui a forma em
-  que **todos** os comandos de uma frente imprimem seu relatório, citada por cada corpo, que declara
-  só o próprio delta. Três bandas fixas (cabeçalho · corpo · próximo passo), blocos declarados fixos
-  ou opcionais, um conjunto ordenado de colunas do qual cada comando toma um subconjunto, e um bloco
-  de próximo passo executável como impresso. É **literal** — carrega o bloco renderizado, não uma
-  descrição dele. Mora dentro de um arquivo que os corpos já carregam, para não custar uma chamada
-  de ferramenta a mais; o custo em caracteres é medido e declarado, nunca estimado. Distinto de
-  **Shared mold**, que governa chaves de frontmatter e não saída.
+- [**Report mold**](standards/architecture/report-mold.md) — the single section that owns the shape
+  **every** command of a front prints its report in, cited by each body, which declares only its own
+  delta. Three fixed bands (header · body · next step), blocks declared fixed or optional, an
+  ordered set of columns each command takes a subset of, and a next-step block executable as
+  printed. It is **literal** — it carries the rendered block, not a description of one. It lives
+  inside a file the bodies already load, so it costs no extra tool call; the cost in characters is
+  measured and declared, never estimated. Distinct from **Shared mold**, which governs frontmatter
+  keys and not output.
 - [**Self-matching guard**](standards/quality/self-matching-guards.md) — a structural checker
   whose own finding text names the construct it forbids, so a substring scan reports the checker as
   the violation. Measured here on the first run of `announcement_failures()`, which flagged
@@ -573,15 +587,6 @@ sentence, and **link out** rather than explaining in full here.
   assumed: the field also makes the command unreachable **by name** through the Skill tool, so
   putting it on a stage another body invokes leaves that stage silently inert (`sk-inert-stage`,
   error). The complement is a **Routed command**.
-- [**Varredura de dependências**](standards/automation/dependency-sweep.md) — a leitura
-  read-only por sub-agente que o `/quenching:specs:develop` roda **antes** de o banco perguntar,
-  para que a pergunta certa tenha com que ser respondida; dispara ao selecionar o banco *shape*, e
-  na primeira entrada do banco *adversarial* para a spec que nasceu já `proposed` e nunca foi
-  varrida. Cada spec é varrida **no máximo uma vez**, e nunca por ter cruzado um nível de
-  `complexity` — uma spec parece pequena exatamente enquanto ninguém leu suas dependências. Roda
-  sob o perfil de ferramentas **mais largo** dos três sub-agentes do comando (tudo menos `Edit`,
-  `Write`, `NotebookEdit` e `Agent`, com `Bash`), porque o entregável é o agregado que um
-  `grep`/`gh`/`cq` produz. Devolve o **Mapa de dependências** e não toca em nada.
 - [**Verification policy**](standards/workflows/task-execution.md) — the per-spec declaration
   (`per-task`, `per-section`, `end-of-plan`) written at creation that decides when a task's
   `verify:` command runs, so execution never guesses and never asks mid-task.

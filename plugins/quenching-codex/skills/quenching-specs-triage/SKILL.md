@@ -177,7 +177,7 @@ Emit §The report mold. Two body blocks:
    **The rendering is the tool's, and this command holds no copy of it.** This block used to carry
    a `python3 -c` heredoc that re-sorted `list --json` and printed the table itself — one of three
    divergent hand-written renderers of one ranking, which is exactly the fan-out
-   `knowledge/standards/architecture/report-mold.md` forbids. Quote the output; never re-sort it,
+   `docs/standards/architecture/report-mold.md` forbids. Quote the output; never re-sort it,
    re-tally it, or reach for the payload behind it.
 2. **Observations** — optional, omitted whole when there are none. §The observations table, each
    row's `Recommended action` **runnable as printed**: the command with its real argument

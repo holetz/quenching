@@ -12,60 +12,82 @@ the checks that hold it honest. The *modeling* that defines data lives in
 
 ## Current docs
 
-* [bundle-verification.md](bundle-verification.md) — what the `knowledge` front machine-checks versus
-  what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check,
-  where an accepted gap is recorded, and the `resource` glob-set format.
-* [citation-verification.md](citation-verification.md) — how `citation-check.sh` proves a rename's
-  two halves both landed — the old name died and the new name was born, blind and with no
-  allowlist — the three scope rules read from the script's own header, that it runs manually and
-  is documented rather than gated automatically, and why the "every red is a harness defect"
-  precedent stays scoped to `functional-checks.sh` alone.
-* [empty-response-honesty.md](empty-response-honesty.md) — uma resposta vazia de um transporte de
-  terceiro são dois estados e só um se prova: a recusa exit 2 no choke point de leitura onde há
-  discriminante estrutural medido, o finding `warn` mais a linha em `stderr` onde há apenas suspeita
-  corroborada, por que a guarda é do chamador e nunca do transporte compartilhado, e por que o
-  diagnóstico completa sempre.
-* [parse-honesty.md](parse-honesty.md) — a verifier names its own parse failure instead of reporting
-  it as a content gap: the sidecar that adds the signal without changing a return type, why the
-  finding is a warn, and why a lossy transform never ships without the diagnostic for it.
-* [finding-remedy-applicability.md](finding-remedy-applicability.md) — um `remedy` declarado nomeia
-  uma ação que a superfície que emitiu o finding realmente oferece: o caso medido em que a mesma CLI
-  recusava as duas ações que aconselhava, por que um remédio inaplicável gasta a confiança de toda a
-  saída e não só a daquele item, e a recusa própria que um caso sem caminho ainda deve dar.
-* [prose-sweeps.md](prose-sweeps.md) — a mechanical find-and-replace over prose corrupts exactly the
-  sentences that talk *about* the form being swept, the checker that guards the sweep reports them
-  clean, and the mitigation is to write a mention as a placeholder rather than an instance.
-* [computed-fact-prose-fanout.md](computed-fact-prose-fanout.md) — any fact a tool computes and
-  prose restates ages every site that spells it out, and no checker sees it: why each validator is
-  blind by construction, the two measurements the rule was set from, the grep on the fact's literal
-  form that finds the sites, a doc's own `description` as the nearest instance with its two listing
-  consumers, and why it belongs to the task that makes the change.
-* [withdrawn-contract-residue.md](withdrawn-contract-residue.md) — the sibling case where nothing
-  computes the fact: a *removed* contract's residue has no canonical spelling to grep, so `## Impact`
-  must name the class of documents asserting it and derive the list mechanically — the five misses
-  measured on one branch, why naming the file is not enough either, and the reviewer's question.
-* [prose-deletion-seams.md](prose-deletion-seams.md) — the complement to both: a deletion damages
-  the text it leaves behind, not only the text it never opened — the hard wrap makes the line a unit
-  the sentence does not respect, an orphaned continuation is promoted under the neighbouring bullet,
-  and a grant's justification outlives the use that earned it.
-* [prose-verify-pins-wording.md](prose-verify-pins-wording.md) — um `verify:` que faz grep de prosa
-  não prova a prosa, prende-a à frase que o check nomeou: as duas leituras honestas de uma falha, a
-  terceira que nunca é permitida, e como escrever a asserção prendendo o mínimo de redação.
-* [selftest-mutation.md](selftest-mutation.md) — a test that has never been observed to fail is
-  untested: the authoring-time mutation pass, one mutation per rule the fixture exists to prove,
-  and the gate the repo's tests/ suite has not yet cleared, rule by rule.
-* [unproven-capability-warning.md](unproven-capability-warning.md) — where a caveat about a
-  capability that ships without end-to-end proof belongs: the two failure shapes that decide it, the
-  standing fact as a verifier finding and the moment-of-risk line once per process on stderr, why a
-  per-operation warning is a permanent context tax and silence is not the alternative, and the one
-  edit that retires both together.
-* [unanswerable-verify-lines.md](unanswerable-verify-lines.md) — um `verify:` cujo veredito é
-  decidido pela própria grafia antes de qualquer coisa ser medida: o padrão com crases que a shell
-  desfigura, o escalar YAML que o `#` trunca, o ponto de entrada morto que sai 0 sem executar nada,
-  e a regra de exercitar a linha nos dois sentidos na hora em que ela é escrita.
-* [surface-verification.md](surface-verification.md) — how a change to the command surface is
-  proven: a fresh process because the registry is built at session start, assertions on captured
-  `tool_use` rather than prose, and the five preconditions a functional check must satisfy.
+* [bundle-verification.md](bundle-verification.md) — What the knowledge front machine-checks
+  versus what it leaves to a skill's prose self-check, when an invariant is owed a deterministic
+  check, where an accepted gap is recorded, and the resource glob-set format
+* [citation-verification.md](citation-verification.md) — How citation-check.sh proves a citation
+  resolves against the base it claims — half 1 that the old name died and half 2 that the new name
+  was born, blind and with no allowlist, and half 3 that the prose the plugin SHIPS promises only
+  what the published skeleton delivers, since a command body and a reference are read inside a
+  target checkout where our standards do not exist — the three scope rules read from the script's
+  own header (the instrument does not measure itself, .specs/ is out of scope, golden/eval
+  fixtures are frozen data), the spelling rule half 3 rests on (a markdown link promises a
+  destination, a bare inline-code path names a doc the target may not have), that it runs manually
+  and is documented rather than gated automatically (Open Decision 2, with a second real use case
+  as the trigger to revisit), and why the "every red is a harness defect" precedent stays scoped
+  to functional-checks.sh alone until citation-check.sh earns its own evidence (Open Decision 3,
+  opportunistic)
+* [empty-response-honesty.md](empty-response-honesty.md) — An empty response from a third-party
+  transport is two states — one that never arrived and one that legitimately has nothing — and
+  only one of them can be proved; the rule to refuse at the choke point where the proof is
+  structural, to warn where there is only corroborated suspicion, and to never let the diagnostic
+  refuse
+* [parse-honesty.md](parse-honesty.md) — A verifier names its own parse failure instead of
+  reporting it as a content gap — the sidecar shape that adds the signal without changing a return
+  type, why the finding is a warn rather than an error, and the rule that a checker never gains a
+  lossy transform without the diagnostic that reports it
+* [finding-remedy-applicability.md](finding-remedy-applicability.md) — A declared remedy names an
+  action the surface that emitted the finding actually offers — the measured case where the same
+  CLI refused both actions it advised, why an inapplicable remedy teaches readers to ignore the
+  whole findings output and not just that one item, and the refusal of its own that a case with no
+  path still owes
+* [prose-sweeps.md](prose-sweeps.md) — A find-and-replace over prose corrupts exactly the
+  sentences that talk ABOUT the form being replaced — how to recognise those sites, why the check
+  written to guard the sweep cannot see them, and the mitigation that survives both
+* [computed-fact-prose-fanout.md](computed-fact-prose-fanout.md) — Any fact a tool computes and
+  prose restates — a schema's fields, a surface's command count — fans out the moment it changes,
+  and no checker sees it: why the validators are blind by construction, the two independent
+  measurements this rule was set from, the grep on the fact's spelled-out form that finds the
+  sites while the change is still cheap, a doc's own `description` as the nearest instance with
+  its two listing consumers (one hand-maintained, one a GENERATED zone that is stale between
+  sweeps by design), and why it belongs to the task that makes the change rather than to a later
+  sweep
+* [withdrawn-contract-residue.md](withdrawn-contract-residue.md) — When a change removes a
+  contract rather than changing a computed value, its prose residue has no canonical spelling to
+  grep for — the sites assert it in their own words — so `## Impact` must name the CLASS of
+  documents that assert it and derive the file list mechanically; the five misses measured on one
+  branch, why naming the file is not enough either, and why the reviewer's question is "what did
+  this make false?" rather than "which files changed?"
+* [prose-deletion-seams.md](prose-deletion-seams.md) — Removing prose damages the text left
+  behind, not only the text never opened — the hard wrap makes the line a unit the sentence does
+  not respect, an orphaned continuation is promoted under the neighbouring bullet rather than left
+  as litter, and a grant's justification outlives the use that earned it; the three seams measured
+  on one branch, why every checker stays green through all three, and the reading that closes them
+* [prose-verify-pins-wording.md](prose-verify-pins-wording.md) — A check written as a grep over
+  prose does not prove the prose — it pins it to the phrase the check named, and the resulting
+  failure is ambiguous between "the text is wrong" and "the check named a phrase nobody agreed
+  to"; how to write the assertion, how to read the failure, the third reading that is never
+  permitted, and the negative face where the check forbids a string the spec itself requires
+  elsewhere
+* [selftest-mutation.md](selftest-mutation.md) — A test that has never been observed to fail is
+  untested — the mutation pass that earns the claim, one mutation per rule the fixture exists to
+  prove, why the pass is run once at authoring rather than wired into CI, and the graduation gate
+  the repo's new tests/ suite has not yet cleared
+* [unproven-capability-warning.md](unproven-capability-warning.md) — Where a caveat about a
+  capability that ships without end-to-end proof belongs — the two failure shapes that decide it,
+  the standing fact as a verifier finding and the moment-of-risk line once per process on stderr,
+  why a per-operation warning is a permanent context tax and silence is not the alternative, and
+  the one edit that retires both together
+* [unanswerable-verify-lines.md](unanswerable-verify-lines.md) — A `verify:` whose verdict does
+  not come from the state of the code — the pattern the shell mangles before it compares, the YAML
+  scalar the parser truncates before it reads, the entry point that exited 0 without running
+  anything — and the rule of exercising the line in both directions at the moment it is written,
+  never at the moment it has to close
+* [surface-verification.md](surface-verification.md) — How a change to the command surface is
+  proven — a fresh process because the registry is built at session start, assertions on captured
+  tool_use rather than prose, the five preconditions a functional check must satisfy to measure
+  what it claims, why the harness belongs to the components front rather than the spec cycle and
+  how to scope its cost, and how an ordering property is verified by running a real cycle
 
 ## Candidate sub-standards
 

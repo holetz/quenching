@@ -49,7 +49,7 @@ def set_frontmatter_key(text: str, key: str, value: str,
 
 def strip_frontmatter_keys(text: str, keys: tuple[str, ...]) -> str:
     """`text` with each of `keys`' own frontmatter line removed — the WRITE half of
-    `## Design` §Armazenado não é projetado for `tags`/`assignee`/`start`/`target`: the
+    `## Design` §Stored is not projected for `tags`/`assignee`/`start`/`target`: the
     native field is the storage, so the document stored alongside it never carries a second,
     unread copy that would go stale the instant a human edited the tracker instead.
 

@@ -1,123 +1,125 @@
 ---
 type: standard
 title: Empty-response honesty
-description: Uma resposta vazia de um transporte de terceiro são dois estados — uma que não chegou e uma que legitimamente não tem nada — e só um deles se prova; a regra de recusar no choke point onde há prova estrutural, avisar onde há apenas suspeita corroborada, e nunca deixar o diagnóstico recusar
+description: An empty response from a third-party transport is two states — one that never arrived and one that legitimately has nothing — and only one of them can be proved; the rule to refuse at the choke point where the proof is structural, to warn where there is only corroborated suspicion, and to never let the diagnostic refuse
 resource: plugins/quenching/assets/bin/quenching/specs/backends/**, plugins/quenching/assets/bin/quenching/specs/commands/doctor.py
 tags: [quality, verification, backends, findings, severity, transport]
 timestamp: 2026-08-17
 audience: both
 authority: current
-source: spec falha-de-leitura-do-backend-vira-front-vazio (tasks 1.1-3.2) — provado pelas guardas em github.py e pelos testes em test_specs_backends.py e test_specs_doctor.py
+source: spec falha-de-leitura-do-backend-vira-front-vazio (tasks 1.1-3.2) — proved by the guards in github.py and by the tests in test_specs_backends.py and test_specs_doctor.py
 maintainer: quenching
 ---
 
 # Empty-response honesty
 
-**Um processo de terceiro que sai 0 e devolve nada não disse "não há nada" — ele não disse nada.**
-As duas frases são indistinguíveis para quem lê o valor de retorno, e é essa indistinção que
-transforma uma falha de transporte num fato: a listagem volta vazia, o comando responde
-`{"ok": true, "count": 0}` com exit 0, e todo consumidor a jusante conclui que o front está vazio.
+**A third-party process that exits 0 and returns nothing did not say "there is nothing" — it said
+nothing.** The two sentences are indistinguishable to whoever reads the return value, and it is that
+indistinction that turns a transport failure into a fact: the listing comes back empty, the command
+answers `{"ok": true, "count": 0}` with exit 0, and every downstream consumer concludes the front is
+empty.
 
-Este contrato é o irmão de [parse-honesty.md](parse-honesty.md), um nível abaixo. Aquele governa um
-**transform com perda** dentro do processo; este governa o **payload que chegou** de fora dele.
-Nenhum dos dois alcança o outro: um parser honesto sobre o que leu ainda pode estar lendo um vazio
-que nunca aconteceu.
+This contract is the sibling of [parse-honesty.md](parse-honesty.md), one level below. That one
+governs a **lossy transform** inside the process; this one governs the **payload that arrived** from
+outside it. Neither reaches the other: a parser that is honest about what it read may still be
+reading an empty that never happened.
 
-## A regra
+## The rule
 
-> Um leitor que aceita um payload vazio de um processo externo MUST separar a forma que **prova**
-> uma falha da forma que apenas a **sugere**, e tratar as duas de modos diferentes: recusa exit 2
-> onde há prova, finding `warn` mais uma linha em `stderr` onde há suspeita, e nunca silêncio para
-> nenhuma das duas.
+> A reader that accepts an empty payload from an external process MUST separate the shape that
+> **proves** a failure from the shape that merely **suggests** one, and treat the two differently:
+> a refusal with exit 2 where there is proof, a `warn` finding plus one line on `stderr` where there
+> is suspicion, and never silence for either.
 
-Três consequências, na ordem em que obrigam.
+Three consequences, in the order they bind.
 
-### 1. A prova é estrutural, e vem de uma medição com versão
+### 1. The proof is structural, and it comes from a versioned measurement
 
-A separação só existe onde o transporte tem uma forma que uma resposta legítima nunca toma. Medido
-em `gh 2.97.0 (2026-07-31)`, `gh api --paginate --slurp` sobre uma listagem de issues:
+The separation exists only where the transport has a shape a legitimate response never takes.
+Measured on `gh 2.97.0 (2026-07-31)`, `gh api --paginate --slurp` over an issue listing:
 
-| O que volta | O que é | O que fazer |
+| What comes back | What it is | What to do |
 | --- | --- | --- |
-| `None` — saiu 0 e não imprimiu nada | uma resposta que **não chegou** | recusa, exit 2 |
-| `[]` — zero páginas | uma resposta que **não aconteceu** | recusa, exit 2 |
-| `[[]]` — uma página, vazia | um front genuinamente vazio | segue |
-| `[[…], […]]` | saudável | segue |
+| `None` — exited 0 and printed nothing | a response that **never arrived** | refuse, exit 2 |
+| `[]` — zero pages | a response that **never happened** | refuse, exit 2 |
+| `[[]]` — one page, empty | a genuinely empty front | proceed |
+| `[[…], […]]` | healthy | proceed |
 
-`[[]]` versus `[]` é o discriminante inteiro, e ele é uma propriedade do `--slurp` do `gh`, não da
-API. Por isso a **versão medida viaja dentro da mensagem da recusa**: um `gh` futuro que mude a
-forma precisa quebrar de modo legível, e não em silêncio.
+`[[]]` versus `[]` is the entire discriminant, and it is a property of `gh`'s `--slurp`, not of the
+API. That is why the **measured version travels inside the refusal's message**: a future `gh` that
+changes the shape has to break legibly, and not in silence.
 
-**Onde não há discriminante estrutural, não há recusa.** `azure.py` já escreveu essa metade para o
-seu próprio transporte: numa consulta WIQL, zero matches e uma macro que não resolveu são
-byte-idênticos — exit 0, stdout vazio, stderr vazio — então recusar por vazio ali recusaria o caso
-ordinário "ainda não há specs" com a mesma frequência com que pegaria a falha. Inventar um
-discriminante que a medição não sustenta é pior que não ter um.
+**Where there is no structural discriminant, there is no refusal.** `azure.py` already wrote that
+half for its own transport: in a WIQL query, zero matches and a macro that did not resolve are
+byte-identical — exit 0, empty stdout, empty stderr — so refusing on empty there would refuse the
+ordinary "there are no specs yet" case as often as it would catch the failure. Inventing a
+discriminant the measurement does not support is worse than having none.
 
-### 2. A guarda é do CHAMADOR, nunca do transporte compartilhado
+### 2. The guard belongs to the CALLER, never to the shared transport
 
-A função que executa o processo é compartilhada por leituras e escritas, e uma resposta vazia é a
-resposta **certa** para algumas delas: um DELETE cuja resposta legítima é 204 No Content imprime
-nada, e `null` ali é correto. Uma guarda por stdout vazio dentro do executor quebraria essa chamada
-silenciosamente — e o executor é exatamente o lugar óbvio onde alguém a colocaria.
+The function that runs the process is shared by reads and writes, and an empty response is the
+**right** response for some of them: a DELETE whose legitimate response is 204 No Content prints
+nothing, and `null` there is correct. A guard on empty stdout inside the executor would break that
+call silently — and the executor is exactly the obvious place someone would put it.
 
-**Só o chamador sabe qual forma pediu.** Ele afirma essa forma no choke point por onde toda leitura
-passa, o que faz todo verbo herdar a guarda de graça — inclusive um verbo escrito amanhã, cujo autor
-não precisa saber que a regra existe. É a mesma forma que
+**Only the caller knows which shape it asked for.** It asserts that shape at the choke point every
+read passes through, which makes every verb inherit the guard for free — including a verb written
+tomorrow, whose author need not know the rule exists. It is the same shape
 [`code/root-override-validation.md`](../code/root-override-validation.md) §One refusal idiom, one
-message, two call sites já fixa: **message e remedy escritos uma vez ao lado do predicado, e
-citados** por cada call site, nunca redigidos de novo.
+message, two call sites already fixes: **message and remedy written once beside the predicate, and
+cited** by each call site, never drafted again.
 
-### 3. A suspeita é dita em voz alta, nas duas colocações, e o diagnóstico completa
+### 3. The suspicion is said out loud, in both placements, and the diagnostic completes
 
-A forma que não se prova ainda merece ser dita, porque ficar em silêncio sobre ela é o defeito
-original reaparecendo um passo adiante. Ela precisa de **corroboração que não custe round trip
-novo** — um número que a mesma chamada já pagou. Sem corroboração disponível, não há aviso: um
-contador ausente nunca é lido como zero.
+The shape that cannot be proved still deserves to be said, because staying silent about it is the
+original defect reappearing one step further on. It needs **corroboration that costs no new round
+trip** — a number the same call already paid for. With no corroboration available, there is no
+warning: an absent counter is never read as zero.
 
-As duas colocações são as de
-[`unproven-capability-warning.md`](unproven-capability-warning.md) §Two placements, e **as duas
-embarcam ou a resposta está incompleta**: um finding `warn` no verificador da front, e uma linha em
-`stderr`, uma vez por processo. `stderr` e nunca `stdout` — todo chamador ramifica pelo payload
-`--json`, e um aviso impresso nele quebra o parse que ele existe para informar.
+The two placements are the ones in
+[`unproven-capability-warning.md`](unproven-capability-warning.md) §Two placements, and **both ship
+or the answer is incomplete**: a `warn` finding in the front's own verifier, and one line on
+`stderr`, once per process. `stderr` and never `stdout` — every caller branches on the `--json`
+payload, and a warning printed into it breaks the parse it exists to inform.
 
-**A glosa "a linha cai nas escritas e nunca nas leituras", daquele mesmo standard, não se aplica
-aqui, e a exceção é declarada em vez de assumida.** Ela se justifica porque "a read of an unproven
-backend loses nothing — it returns wrong data or a refusal, and both are visible immediately". Numa
-leitura vazia o dado errado é precisamente o que **não** é visível: ele se lê como um fato. A regra
-de baixo não muda — a linha cai onde a perda aconteceria; aqui isso é a leitura.
+**The gloss "the line lands on the writes and never on the reads", from that same standard, does not
+apply here, and the exception is declared rather than assumed.** It is justified there because "a
+read of an unproven backend loses nothing — it returns wrong data or a refusal, and both are visible
+immediately". In an empty read the wrong data is precisely what is **not** visible: it reads as a
+fact. The underlying rule does not change — the line lands where the loss would happen; here that is
+the read.
 
-**O verificador nunca recusa.** A mesma evidência que é exit 2 no choke point de leitura vira
-finding no `doctor`, com a mensagem e o remedy da própria recusa citados e não recompostos. Isso vale
-inclusive para as recusas que não têm nada a ver com vazio: um 503 no meio do diagnóstico também
-vira finding, porque um diagnóstico que aborta é justamente o que não se pode ter no momento em que
-alguém foi perguntar o que está errado.
+**The verifier never refuses.** The same evidence that is exit 2 at the read choke point becomes a
+finding in `doctor`, with the refusal's own message and remedy cited rather than recomposed. That
+holds even for refusals that have nothing to do with emptiness: a 503 in the middle of the
+diagnostic also becomes a finding, because a diagnostic that aborts is exactly what you cannot have
+at the moment somebody went to ask what is wrong.
 
-**A severidade da suspeita é `warn`, e a razão é a mesma de
-[parse-honesty.md](parse-honesty.md) §Severity: warn, and why not error**: um repositório que adotou
-o backend sobre um tracker existente e ainda não criou spec nenhum **é** esse estado, exatamente, e é
-legítimo. Errar ali reprovaria repositórios conformes.
+**The suspicion's severity is `warn`, and the reason is the one in
+[parse-honesty.md](parse-honesty.md) §Severity: warn, and why not error**: a repository that adopted
+the backend over an existing tracker and has not created a single spec yet **is** that state,
+exactly, and it is legitimate. Erroring there would fail conformant repositories.
 
-## A redação é o discriminante que o código não tem
+## The wording is the discriminant the code does not have
 
-Restringir o gatilho não separa os dois estados — eles são a mesma observação. O que os separa é o
-aviso **dizer o número e a leitura esperada**, para que quem está no estado legítimo se reconheça
-nele: *"N issues abertas e nenhuma com marcador de spec; se você ainda não criou um spec aqui, isto é
-esperado"*. Um aviso que não diz isso é treinado a ser ignorado, e um aviso ignorado é a mesma coisa
-que silêncio.
+Narrowing the trigger does not separate the two states — they are the same observation. What
+separates them is the warning **stating the number and the expected reading**, so that whoever is in
+the legitimate state recognises themselves in it: *"N open issues and not one of them carries a spec
+marker; if no spec has been created here yet, this is expected"*. A warning that does not say that
+teaches its reader to ignore it, and an ignored warning is the same thing as silence.
 
-## O teste prova o ramo; a premissa é medida
+## The test proves the branch; the premise is measured
 
-Um teste que mocka o transporte devolvendo stdout vazio prova que a guarda existe — e **não** prova
-que uma resposta saudável nunca sai assim. Essa premissa é uma medição, com data e versão, e vive na
-`## Validation` da spec como comando manual, nunca como asserção de suíte.
-[`selftest-mutation.md`](selftest-mutation.md) §The rule fecha o par: quebrar a guarda e ver o teste
-falhar, uma mutação por regra, revertida depois.
+A test that mocks the transport into returning empty stdout proves the guard exists — and does
+**not** prove that a healthy response never comes out that way. That premise is a measurement, with
+a date and a version, and it lives in the spec's `## Validation` as a manual command, never as a
+suite assertion. [`selftest-mutation.md`](selftest-mutation.md) §The rule closes the pair: break the
+guard and watch the test fail, one mutation per rule, reverted afterwards.
 
-## Onde isto se aplica
+## Where this applies
 
-Qualquer leitor deste repositório que aceite um payload de um processo de terceiro cujo exit code
-não distingue "vazio" de "não respondeu" — os backends `github` e `azure-boards` hoje, e qualquer
-transporte que um backend futuro adicione. **Não se aplica** a uma leitura cuja resposta vazia é
-inequívoca: um diretório vazio sob o backend `files` não tem processo nem exit code para
-interpretar, e ali vazio quer dizer vazio.
+Any reader in this repository that accepts a payload from a third-party process whose exit code does
+not distinguish "empty" from "did not answer" — the `github` and `azure-boards` backends today, and
+any transport a future backend adds. It does **not** apply to a read whose empty response is
+unambiguous: an empty directory under the `files` backend has no process and no exit code to
+interpret, and there empty means empty.

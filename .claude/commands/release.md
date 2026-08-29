@@ -18,10 +18,10 @@ allowed-tools: Bash(git:*), Bash(python3:*), Read, AskUserQuestion
 from what accumulated and confirms it with you).
 
 This repository publishes from a single long-lived branch —
-[knowledge/standards/git/branching.md](/docs/standards/git/branching.md): every spec lands on the
+[docs/standards/git/branching.md](/docs/standards/git/branching.md): every spec lands on the
 primary branch (`main`) through a reviewed pull request, and the release is the one deliberate act
 that moves the plugin's four version-carrying artifacts
-([knowledge/standards/ci-cd/versioning-release.md](/docs/standards/ci-cd/versioning-release.md))
+([docs/standards/ci-cd/versioning-release.md](/docs/standards/ci-cd/versioning-release.md))
 and creates a tag. This command is that deliberate act. The mechanical half — the four-artifact
 bump, the commit, the tag — is `plugins/quenching/assets/bin/cq specs release <version>`, already
 implemented and self-tested; this command judges *whether* and *what*, gets it confirmed, and
@@ -60,7 +60,7 @@ The first names the last tag; the second lists every PR merged into the primary 
 whole history; treat the count as "since the beginning". **Zero** → nothing to publish; report that
 and stop. **Exactly one** → ask, once, with **AskUserQuestion**: "the primary branch carries one PR
 since the last release — is this a release, or is it habit?" (the mitigation
-[branching.md](/docs/standards/git/branching.md) §O gatilho é a demanda names: nothing else
+[branching.md](/docs/standards/git/branching.md) §The trigger is demand, not cadence names: nothing else
 pushes back on turning every single spec into its own release). Answering habit stops the run
 cleanly — nothing is written. Two or more → proceed without asking.
 **Done when:** the count is known and, if it was exactly one, answered.

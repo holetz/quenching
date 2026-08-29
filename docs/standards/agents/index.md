@@ -16,7 +16,7 @@ contract for `.claude/agents/` and not part of this subject. Naming lives in
 
 | Doc | Covers |
 | --- | --- |
-| [communication.md](communication.md) | The language this repo declares for the prose its agents author — one BCP-47 tag on the root harness line, governing artifact and conversation alike — and the conduct contract that holds whether or not a language is declared |
+| [communication.md](communication.md) | The two language bands an agent writes in — durable artifacts in canonical English so they stay portable and greppable across repos, conversation in the one BCP-47 tag the root harness line declares — and the conduct contract that holds whether or not a language is declared |
 
 ## Candidate sub-standards
 

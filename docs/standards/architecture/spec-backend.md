@@ -363,7 +363,7 @@ column stale. That is the better failure — but only on one condition, which is
 **the refusal must name the op the tracker rejected.** A body of eight ops that fails without
 saying which is worse to diagnose than the four writes it replaced.
 
-## Armazenado não é projetado
+## Stored is not projected
 
 `tags`, `assignee`, `start` and `target` are the frontmatter's four STATE keys — first-level,
 never a record — and each passes the same test §A native value is the same fact already applies

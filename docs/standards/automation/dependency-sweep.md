@@ -1,73 +1,71 @@
 ---
 type: standard
-title: Varredura de dependências
-description: O contrato da varredura de dependências por sub-agente que roda na abertura de uma passada do /quenching:specs:develop, antes que ela pergunte qualquer coisa — gatilho, perfil de ferramentas, entregável, e a persistência do mapa com a data que ele carrega
+title: Dependency sweep
+description: The contract of the sub-agent dependency sweep that runs at the open of a /quenching:specs:develop pass, before it asks anything — trigger, tool profile, deliverable, and the persistence of the map with the date it carries
 resource: plugins/quenching/commands/specs/develop.md, plugins/quenching/assets/references/specs-develop/questions.md
 tags: [automation, dependency-sweep, subagent, specs-develop]
 timestamp: 2026-08-25
 audience: both
 authority: background
-source: spec varredura-de-dependencias-antes-do-banco-shape — a comparação entre o /plan (2,99 M de tokens em 27 chamadas de Explore, seis achados) e o /quenching:specs:develop (20 arquivos tocados) que motivou inserir a varredura antes que a passada pergunte; reancorada na abertura da passada quando compor e refinar substituíram a escada de bancos (compor-e-refinar, 2026-08-25)
+source: spec varredura-de-dependencias-antes-do-banco-shape — the comparison between /plan (2.99M tokens over 27 Explore calls, six findings) and /quenching:specs:develop (20 files touched) that motivated inserting the sweep before the pass asks; re-anchored at the pass's open when compose and refine replaced the ladder of banks (compor-e-refinar, 2026-08-25)
 maintainer: quenching
 ---
 
-# Varredura de dependências
+# Dependency sweep
 
-Sem dados de dependências cruzadas na mesa, o refino de `/quenching:specs:develop` formula a
-pergunta certa e não tem com que respondê-la — foi o sinal que motivou este contrato. A varredura
-existe para colocar esses dados na mesa **antes** que a passada pergunte qualquer coisa, em vez de
-apenas confirmar decisões já tomadas.
+With no cross-file dependency data on the table, `/quenching:specs:develop`'s refine asks the right
+question and has nothing to answer it with — that was the signal that motivated this contract. The
+sweep exists to put that data on the table **before** the pass asks anything, instead of merely
+confirming decisions already taken.
 
-## Posição no fluxo
+## Position in the flow
 
-Na abertura da passada, antes que a composição pergunte. É a única posição em que os dados chegam a
-tempo de mudar as perguntas — e, com compor e refinar numa passada só, ela é literal pela primeira
-vez: uma varredura, antes de tudo.
+At the pass's open, before compose asks. It is the only position where the data arrives in time to
+change the questions — and, with compose and refine in a single pass, it is literal for the first
+time: one sweep, before everything.
 
-## O gatilho
+## The trigger
 
-A varredura dispara uma vez por passada, quando `### Mapa de dependências` ainda não está sob
-`## Design` — o que cobre de uma vez a spec capturada que a composição vai moldar e a spec nascida
-com `## Proposal` preenchida que chega direto ao refino. Antes, eram dois gatilhos declarados
-separadamente porque cada banco entrava por um caminho seu.
+The sweep fires once per pass, when `### Mapa de dependências` is not yet under `## Design` — which
+covers in one stroke the captured spec compose is about to shape and the spec born with
+`## Proposal` filled that arrives straight at refine. Before, these were two triggers declared
+separately because each bank entered by a path of its own.
 
-**Uma spec é varrida no máximo uma vez**, e nunca por estar acima de um nível de `complexity` — uma
-spec parece pequena exatamente quando ninguém leu as dependências ainda.
+**A spec is swept at most once**, and never for having crossed a `complexity` level — a spec looks
+small exactly while nobody has read its dependencies yet.
 
-## O perfil do sub-agente
+## The sub-agent's profile
 
-Um perfil **novo**, distinto do `Read, Grep, Glob` dos sub-agentes dos bancos adversarial e gate.
-Segue o `Explore` do modo de planejamento nativo do Claude Code:
+A **new** profile, distinct from the `Read, Grep, Glob` of the adversarial and gate banks'
+sub-agents. It follows the `Explore` of Claude Code's native planning mode:
 
-- conjunto read-only completo — tudo menos `Edit`, `Write`, `NotebookEdit` e `Agent`, com `Bash`
-  incluído;
-- modelo herdado da sessão, sem override e sem effort fixado;
-- largura da busca declarada por invocação.
+- the full read-only set — everything but `Edit`, `Write`, `NotebookEdit` and `Agent`, with `Bash`
+  included;
+- the model inherited from the session, with no override and no pinned effort;
+- search breadth declared per invocation.
 
-`Bash` é o que permite devolver o agregado que um `grep`/`gh`/`cq` produz em vez do dump cru — a
-mesma exigência que a doutrina de evidência e [agents.md](agents.md) §The verifier shape já fazem a
-um sub-agente inspecionador.
+`Bash` is what allows returning the aggregate a `grep`/`gh`/`cq` produces instead of the raw dump —
+the same demand the evidence doctrine and [agents.md](agents.md) §The verifier shape already make
+of an inspecting sub-agent.
 
-## O entregável
+## The deliverable
 
-Um mapa de dependências cruzadas, não um trilho de leitura: o sub-agente devolve uma tabela e não
-toca em nada.
+A cross-file dependency map, not a reading trail: the sub-agent returns a table and touches nothing.
 
-## Persistência do mapa
+## Persistence of the map
 
-O mapa entra na própria spec, em `### Mapa de dependências` sob `## Design`, dentro da edição
-consolidada do banco que o pediu — escrito pelo **orquestrador**, nunca pelo sub-agente. Escrito
-ali ele persiste no board, é lido de graça pelos bancos seguintes em vez de ser re-varrido, e fica
-visível para o humano na issue.
+The map goes into the spec itself, in `### Mapa de dependências` under `## Design`, inside the
+consolidated write of the bank that asked for it — written by the **orchestrator**, never by the
+sub-agent. Written there it persists on the board, is read for free by the following banks instead
+of being re-swept, and stays visible to the human on the issue.
 
-O mapa carrega a **data da varredura**, porque uma spec cujo escopo mudou depois nunca é re-varrida
-e o mapa envelheceria em silêncio sem essa data para denunciar a defasagem.
+The map carries the **sweep's date**, because a spec whose scope changed afterwards is never
+re-swept and the map would go stale in silence without that date to expose the lag.
 
-## A porta de graduação
+## The graduation gate
 
-Nascido `authority: background`: a regra acima é um contrato que este repositório declarou, ainda
-não provado por uso repetido e independente. Ela graduaria para `current` quando o resultado da
-varredura — comparado à passada de referência do `/plan` (achados na mesa antes do banco
-adversarial, custo somado da sessão) — for medido em uma execução real de
-`/quenching:specs:develop` contra a tarefa `res4966_v02`, conforme `## Handoff` da spec que a
-originou.
+Born `authority: background`: the rule above is a contract this repository declared, not yet proven
+by repeated and independent use. It would graduate to `current` once the sweep's result — compared
+against `/plan`'s reference pass (findings on the table before the adversarial bank, the session's
+summed cost) — is measured in a real run of `/quenching:specs:develop` against the `res4966_v02`
+task, per the `## Handoff` of the spec that originated it.

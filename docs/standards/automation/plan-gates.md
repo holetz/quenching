@@ -1,134 +1,138 @@
 ---
 type: standard
-title: Quando o gate de plano de um comando pode cair
-description: As duas classes protegidas — item acoplado a código, ação irreversível de ciclo — são o teste inteiro, e um comando em que nenhuma delas ocorre não tem o que confirmar; o que substitui a janela de aprovação quando o gate sai (a URL do registro, anunciada antes de qualquer leitura e repetida no relatório), a diferença entre a confirmação que cai e a consolidação que fica, o que continua parando o passe de qualquer forma, as três formas intermediárias medidas e rejeitadas, e as três condições sob as quais a autoridade de uma marcha substitui a pessoa no go/no-go
+title: When a command's plan gate may drop
+description: The two protected classes — a code-coupled item, an irreversible cycle action — are the whole test, and a command in which neither occurs has nothing to confirm; what replaces the approval window when the gate goes (the record's URL, announced before any read and repeated in the report), the difference between the confirmation that drops and the consolidation that stays, what still stops the pass either way, the three intermediate forms measured and rejected, and the three conditions under which a gear's authority replaces the person at the go/no-go
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/align/convergence.md, plugins/quenching/assets/references/specs-develop/questions.md
 tags: [automation, commands, gates, confirmation, cost, turns]
 timestamp: 2026-08-25
 audience: both
 authority: background
-source: spec revisar-fluxo-do-develop-custo-e-gates, destilada no seu conclude (2026-08-16); §Quando a autoridade substitui a pessoa acrescentada em 2026-08-22 pela reforma que fez a marcha (`priority.complexity`) governar o interior de `/quenching:specs:develop` — sob a marcha `low` o passe carimba `approved` por conta própria, com `by: low-gear` no registro, e essa é a primeira vez que um go/no-go sai do passe neste repositório; a medição pós-merge segue devendo, agora para as duas mudanças — o critério e as três alternativas rejeitadas vêm do `## Design` e do `## Alternatives Considered` dela, e a aplicação medida é `/quenching:specs:develop`, o primeiro comando a rodar sem gate de plano; a afirmação de custo que a motivou (<= 4M para trabalho equivalente a uma linha de base de 9,73M em 100 turnos) segue **sem medição pós-merge**, e é ela a condição de graduação
+source: spec revisar-fluxo-do-develop-custo-e-gates, distilled at its conclude (2026-08-16); §When authority replaces the person added on 2026-08-22 by the reform that made the gear (`priority.complexity`) govern the interior of `/quenching:specs:develop` — under the `low` gear the pass stamps `approved` on its own authority, with `by: low-gear` in the record, and that is the first time a go/no-go has left the pass in this repository; the post-merge measurement is still owed, now for both changes — the criterion and the three rejected alternatives come from its `## Design` and its `## Alternatives Considered`, and the measured application is `/quenching:specs:develop`, the first command to run without a plan gate; the cost claim that motivated it (<= 4M for work equivalent to a 9.73M baseline over 100 turns) is still **unmeasured post-merge**, and that measurement is the graduation condition
 maintainer: quenching
 ---
 
-# Quando o gate de plano de um comando pode cair
+# When a command's plan gate may drop
 
-Um **gate de plano** é a parada em que um comando apresenta o que vai escrever e espera um OK. Ele
-custa um par de turnos por unidade de trabalho, e cada turno re-envia a conversa inteira
-([context-discipline.md](context-discipline.md) §Emit fewer turns per unit of work). Este documento
-é o teste que decide se essa parada está comprando alguma coisa.
+A **plan gate** is the stop where a command presents what it is about to write and waits for an OK.
+It costs a pair of turns per unit of work, and every turn re-sends the whole conversation
+([context-discipline.md](context-discipline.md) §Emit fewer turns per unit of work). This document
+is the test that decides whether that stop is buying anything.
 
-## O critério
+## The criterion
 
 <!-- rules -->
 
-> Um gate de plano protege exatamente duas classes: **um item acoplado a código** e **uma ação
-> irreversível de ciclo**. Um comando em que nenhuma das duas ocorre **não tem o que confirmar**, e
-> o gate dele é custo sem contraparte.
+> A plan gate protects exactly two classes: **a code-coupled item** and **an irreversible cycle
+> action**. A command in which neither occurs **has nothing to confirm**, and its gate is cost with
+> nothing on the other side.
 
-As duas classes são as mesmas que
+The two classes are the same ones
 `plugins/quenching/assets/references/align/convergence.md`
-§The cycle-authorization contract já protege — este critério não inventa uma terceira, e um comando
-não sai do gate por ser barato, curto ou "de baixo risco". Ele sai por não conter nenhuma das duas.
+§The cycle-authorization contract already protects — this criterion invents no third one, and a
+command does not lose its gate for being cheap, short or "low-risk". It loses it for containing
+neither of the two.
 
-**A confirmação cai; a consolidação fica.** São coisas diferentes e só a primeira é o gate. Um
-comando que acumulava e escrevia uma vez continua acumulando e escrevendo uma vez — o que sai é a
-espera, nunca a apresentação. Um plano narrado por inteiro e aplicado é revisável; seis edições
-espalhadas não são, com gate ou sem.
+**The confirmation drops; the consolidation stays.** They are different things and only the first
+is the gate. A command that accumulated and wrote once goes on accumulating and writing once — what
+goes is the wait, never the presentation. A plan narrated whole and then applied is reviewable; six
+scattered edits are not, gate or no gate.
 
-**O que ainda para o passe para depois do gate cair:**
+**What still stops the pass after the gate drops:**
 
-- as perguntas que o próprio trabalho faz — um `AskUserQuestion` cuja resposta muda o que se
-  escreve não é um gate de plano e não sai com ele;
-- qualquer go/no-go que seja a **única origem** de um registro de julgamento humano — a menos que o
-  registro grave **de quem** é a autoridade que o carimbou (§Quando a autoridade substitui a
-  pessoa).
+- the questions the work itself asks — an `AskUserQuestion` whose answer changes what gets written
+  is not a plan gate and does not go with it;
+- any go/no-go that is the **sole origin** of a record of human judgment — unless the record writes
+  down **whose** authority stamped it (§When authority replaces the person).
 
 <!-- rationale -->
 
-O gate existe para dar ao humano a chance de barrar uma escrita que ele não pode desfazer, ou que
-sai do escopo do comando e entra no do repositório. Onde nada disso é possível, a parada não está
-protegendo — está cobrando um par de turnos por banco para reobter uma autorização que a invocação
-já deu.
+The gate exists to give the human the chance to block a write they cannot undo, or one that leaves
+the command's scope and enters the repository's. Where none of that is possible, the stop is not
+protecting — it is charging a pair of turns per bank to re-obtain an authorization the invocation
+already gave.
 
-## A janela de acompanhamento substitui a janela de aprovação
+## The review window replaces the approval window
 
 <!-- rules -->
 
-Removida a parada, o humano deixa de ter um ponto de intervenção **dentro** do passe. O
-substituto é o **registro externo em que o trabalho aparece** — uma issue, um work item, um
-arquivo — e o comando tem duas obrigações por causa disso:
+With the stop removed, the human no longer has a point of intervention **inside** the pass. The
+substitute is the **external record where the work shows up** — an issue, a work item, a file — and
+the command has two obligations because of it:
 
-- **anunciar a URL do registro antes de qualquer leitura**, para que a janela esteja aberta enquanto
-  o passe corre, e não depois;
-- **repeti-la no relatório**, porque um passe que escreveu sem gate termina apontando para o único
-  lugar em que aquela escrita pode ser lida e corrigida.
+- **announce the record's URL before any read**, so the window is open while the pass runs, and not
+  after it;
+- **repeat it in the report**, because a pass that wrote without a gate ends by pointing at the one
+  place where that write can be read and corrected.
 
-A URL sai de um dado que o comando já busca. Um comando que precisaria de **uma chamada a mais** para
-obtê-la não ganhou esta troca: ele gastou em ferramenta o que economizou em turno.
+The URL comes out of data the command already fetches. A command that would need **one more call**
+to obtain it has not won this trade: it spent in tool calls what it saved in turns.
 
 <!-- rationale -->
 
-A ideia de que a revisão desapareceu é o erro que este par de obrigações evita. Ela mudou de
-momento: era síncrona e bloqueante, passa a ser assíncrona e sobre o resultado — e uma revisão
-assíncrona sobre um endereço que ninguém recebeu é que seria uma revisão que não existe.
+The idea that review has disappeared is the error this pair of obligations prevents. Review moved in
+time: it was synchronous and blocking, and becomes asynchronous and about the result — and an
+asynchronous review over an address nobody received is what would be a review that does not exist.
 
-## Quando a autoridade substitui a pessoa
+## When authority replaces the person
 
 <!-- rules -->
 
-Um go/no-go pode sair do passe — e só sob as três condições, juntas:
+A go/no-go may leave the pass — and only under the three conditions, together:
 
-1. **O humano declarou o modo antes.** O nível está no disco (`priority.complexity`), foi escrito
-   por `triage`, `create` ou `develop` com a escala na frente de alguém, e é ele — não o comando —
-   que dispensa a parada. A autorização é do **modo**, nunca daquela spec.
-2. **O registro grava a procedência.** `approved: {date, by}` — `by: human` quando uma pessoa
-   respondeu, `by: low-gear` quando o nível autorizou o modo e o passe carimbou. Um registro que não
-   diz de quem é a palavra não distingue as duas coisas, e é aí que a dispensa deixa de ser
-   delegação e vira falsificação.
-3. **A janela de acompanhamento vale em dobro.** A URL do registro é anunciada antes de qualquer
-   leitura e repetida no relatório, e o relatório **nomeia** o carimbo automático em linha própria.
-   Um carimbo que ninguém pediu e que o relatório não conta é indistinguível de um inventado.
+1. **The human declared the mode beforehand.** The level is on disk (`priority.complexity`), it was
+   written by `triage`, `create` or `develop` with the scale in front of someone, and it is the
+   level — not the command — that waives the stop. The authorization belongs to the **mode**, never
+   to that one spec.
+2. **The record writes down the provenance.** `approved: {date, by}` — `by: human` when a person
+   answered, `by: low-gear` when the level authorized the mode and the pass stamped it. A record
+   that does not say whose word it is cannot tell the two apart, and that is where the waiver stops
+   being delegation and becomes falsification.
+3. **The review window counts double.** The record's URL is announced before any read and repeated
+   in the report, and the report **names** the automatic stamp on a line of its own. A stamp nobody
+   asked for that the report does not mention is indistinguishable from an invented one.
 
-Faltando qualquer uma das três, a parada fica.
-
-<!-- rationale -->
-
-O critério de §O critério não mudou: as duas classes protegidas continuam as mesmas, e `approved`
-nunca foi nenhuma delas — ele era a terceira coisa que parava o passe, e parava por ser a **única
-origem** de um fato. O que a procedência muda é justamente isso: passa a haver duas origens
-declaradas e distinguíveis, e quem lê o registro escolhe em qual confia. Sem o campo, dispensar o
-go/no-go apagaria o fato; com ele, a dispensa é uma segunda entrada no mesmo livro, e a revisão
-continua existindo — assíncrona, sobre o resultado, no endereço que o passe anunciou duas vezes.
-
-## Três formas intermediárias, medidas e rejeitadas
+With any one of the three missing, the stop stays.
 
 <!-- rationale -->
 
-Todas as três preservam alguma parada. Nenhuma sobreviveu ao mesmo teste:
+The criterion in §The criterion has not changed: the two protected classes are still the same, and
+`approved` was never one of them — it was the third thing that stopped the pass, and it stopped it
+by being the **sole origin** of a fact. What provenance changes is exactly that: there are now two
+declared, distinguishable origins, and whoever reads the record chooses which to trust. Without the
+field, waiving the go/no-go would erase the fact; with it, the waiver is a second entry in the same
+ledger, and review goes on existing — asynchronous, about the result, at the address the pass
+announced twice.
 
-| Forma | Por que perdeu |
+## Three intermediate forms, measured and rejected
+
+<!-- rationale -->
+
+All three preserve some stop. None survived the same test:
+
+| Form | Why it lost |
 | --- | --- |
-| **Autorização de passe** — um OK na abertura autoriza o passe inteiro, o plano segue narrado antes de cada escrita | cobra uma parada que não protege nada: se nenhuma das duas classes ocorre no passe, ela também não ocorre na abertura dele |
-| **Confirmação por exceção** — o OK sobrevive só quando o edit sobrescreve ou contradiz conteúdo já presente | acrescenta uma regra de classificação que todo banco passa a aplicar — mais doutrina para resolver um excesso de doutrina, e a classificação é julgamento, não teste |
-| **Cortar só a travessia entre etapas, preservando o gate de cada uma** | corta ~1 parada por passe e não entrega o modelo: a confirmação por etapa é justamente a parada que o problema nomeia |
+| **Pass authorization** — one OK at the opening authorizes the whole pass, the plan stays narrated before each write | charges a stop that protects nothing: if neither of the two classes occurs in the pass, neither occurs at its opening |
+| **Confirmation by exception** — the OK survives only where the edit overwrites or contradicts content already present | adds a classification rule every bank then has to apply — more doctrine to solve an excess of doctrine, and the classification is judgment, not a test |
+| **Cutting only the crossing between stages, keeping each stage's gate** | cuts ~1 stop per pass and does not deliver the model: the per-stage confirmation is precisely the stop the problem names |
 
-O padrão das três é o mesmo: elas negociam *quantas* paradas, quando a pergunta é se **aquela**
-parada protege alguma coisa. Uma parada que não protege não fica melhor por ser rara.
+The pattern across the three is the same: they negotiate *how many* stops, when the question is
+whether **that** stop protects anything. A stop that does not protect does not get better by being
+rare.
 
-**Fundir etapas não é a terceira forma.** `/quenching:specs:develop` passou depois a compor e
-refinar numa passada só, com um edit — e isso não reabre a tabela acima. A terceira forma preservava
-*o gate de cada etapa*; aqui não há gate de etapa desde que este critério foi aplicado ao comando
-(2026-08-16), e o que se funde são travessias e leituras, nunca perguntas. O comando mudou **quando**
-uma pergunta é feita, jamais **se** ela é feita — e a regra acima, de que uma pergunta cuja resposta
-muda o que se escreve não sai com o gate, é o que impede a fusão de virar um corte.
+**Merging stages is not the third form.** `/quenching:specs:develop` later came to compose and
+refine in a single pass, with one edit — and that does not reopen the table above. The third form
+preserved *each stage's gate*; there has been no stage gate here since this criterion was applied to
+the command (2026-08-16), and what gets merged are crossings and reads, never questions. The command
+changed **when** a question is asked, never **whether** it is asked — and the rule above, that a
+question whose answer changes what gets written does not go with the gate, is what keeps the merge
+from becoming a cut.
 
-## Por que isto nasce `background`
+## Why this is born `background`
 
 <!-- rationale -->
 
-O critério está argumentado e foi aplicado com resultado consistente a quatro comandos — um perdeu o
-gate, três o mantiveram por conterem as classes protegidas. O que **não** foi medido é a afirmação de
-custo que motivou tudo: que o passe sem gate custa uma fração do que custava. Enquanto essa medição
-não existir, o que está provado é que o gate não protegia — não que removê-lo comprou o que se
-esperava. A graduação para `current` é essa medição.
+The criterion is argued and has been applied with a consistent result to four commands — one lost
+its gate, three kept theirs for containing the protected classes. What was **not** measured is the
+cost claim that motivated all of it: that the pass without a gate costs a fraction of what it used
+to. Until that measurement exists, what is proved is that the gate was not protecting — not that
+removing it bought what was expected. Graduation to `current` is that measurement.

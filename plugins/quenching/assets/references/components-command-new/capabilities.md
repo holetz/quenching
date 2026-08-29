@@ -2,7 +2,7 @@
 
 Every Claude Code lever a command, agent, or hook may use, each stated three ways: what it
 buys, what it costs, and the default. Thresholds and finding codes live in `cq components` and
-`knowledge/standards/automation/skills.md` — this file names the code, never the number.
+`docs/standards/automation/skills.md` — this file names the code, never the number.
 
 **The premise: a lever is bought, never collected.** A lever whose buy nobody can state is
 bloat wearing a feature's name.
@@ -207,7 +207,7 @@ and it does so where nobody wired it.
 
 ## Invocation-surface controls — what each costs
 
-The invocation/permission decision table lives in `knowledge/standards/automation/skills.md`. The
+The invocation/permission decision table lives in `docs/standards/automation/skills.md`. The
 price of each control:
 
 - **`disable-model-invocation: true`** makes a command human-only — and removes its

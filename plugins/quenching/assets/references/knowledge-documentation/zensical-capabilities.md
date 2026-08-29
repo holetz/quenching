@@ -10,7 +10,7 @@ rendered effect are all recorded in the documentation plan.
 | Python API (`mkdocstrings`) | importable package and supported handler | disabled by default for this generator-neutral bundle | optional pinned dependency and handler config | API signature appears in generated HTML |
 | Internal preview | strict build and explicit human confirmation | opt in per run | loopback `python -m http.server` | URL binds to `127.0.0.1` and process exits |
 | Tags / facet search | metadata source and search index support | prefer headings and native search until measured need | frontmatter plus a documented index | filter/tag route returns the tagged page |
-| Proveniência | source ledger and page-level source fields | required for strong claims and derived catalogs | `source`, `timestamp`, `lineage` fields | provenance block is visible in HTML |
+| Provenance | source ledger and page-level source fields | required for strong claims and derived catalogs | `source`, `timestamp`, `lineage` fields | provenance block is visible in HTML |
 
 `mkdocstrings` and facet search are not silently installed: this repository has no proof that their
 runtime plugins are supported by the current Zensical release. Record `source gap:` and leave them

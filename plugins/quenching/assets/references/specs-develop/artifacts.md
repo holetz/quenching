@@ -6,7 +6,7 @@ once in
 [spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) and are
 cited, never restated here.
 
-There is **no delta and no sync**. A spec proves its durable rules straight into `knowledge/standards/`
+There is **no delta and no sync**. A spec proves its durable rules straight into `docs/standards/`
 while it is built (`/quenching:specs:execute`), and `## Impact` is where it *declares* that scope. Two things
 in a spec are machine contracts — the `## Tasks` checkboxes and the one parsed sub-heading of
 `## Impact` — and everything else is prose for a human reviewer.
@@ -91,7 +91,7 @@ costs one line.
   with no `verify:` line falls back to it. `- none — <reason>` here is a claim that the spec is
   unverifiable by construction — make it deliberately or fill the section in.
 - **`## Design`** — each decision with the alternatives weighed and why this one, plus the binding
-  contracts the design must not contradict (the relevant `knowledge/standards/`, the existing code
+  contracts the design must not contradict (the relevant `docs/standards/`, the existing code
   shape, external limits). State a decision as a **durable rule**, not a diary entry: this is the
   material `/quenching:specs:conclude` later distils.
 - **`## Alternatives Considered`** — whole-shape alternatives rejected at the spec level, each with
@@ -110,13 +110,13 @@ costs one line.
 Three sub-headings, and exactly one is machine-checked:
 
 ```markdown
-### Standards this spec will write into knowledge/standards/
+### Standards this spec will write into docs/standards/
 
-- `knowledge/standards/auth/session-tokens.md` — how a session token is minted and revoked
+- `docs/standards/auth/session-tokens.md` — how a session token is minted and revoked
 
 ### Standards at `authority: background` this spec may resolve
 
-- `knowledge/standards/auth/rotation.md` — proves out, promote to `current` if it holds
+- `docs/standards/auth/rotation.md` — proves out, promote to `current` if it holds
 
 ### Product code this spec expects to touch
 
@@ -124,13 +124,13 @@ Three sub-headings, and exactly one is machine-checked:
 ```
 
 `cq specs validate` parses **only the first sub-heading** (`parse_impact_standards`) and emits
-`sp-impact-uncovered` (warn) for any `knowledge/standards/**.md` path bulleted there that no `## Tasks`
+`sp-impact-uncovered` (warn) for any `docs/standards/**.md` path bulleted there that no `## Tasks`
 item names. Keep the heading text verbatim — it is the anchor.
 
 A spec with no such sub-heading declares nothing and is never flagged — **the check is opt-in by
 writing the heading**. An unfilled `<placeholder>` declares nothing either.
 
-This sub-heading is also the **declared/emergent line**: a `knowledge/standards/` doc named here *and*
+This sub-heading is also the **declared/emergent line**: a `docs/standards/` doc named here *and*
 by a task is written during execution; anything the work merely reveals is one `cq specs discover`
 line and is written at conclude
 ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §Declared
@@ -204,9 +204,9 @@ Shape it so `/quenching:specs:execute` can walk it top to bottom:
   same six scattered across four phase-shaped sections cost it four. A `[P]` group is bounded to
   one `### N.` section too, so scattering forecloses the parallelism as well as the delegation.
   Dependency wins every time the two disagree; this decides only what was already free to move.
-- **The standards-writing items are explicit tasks, not an afterthought.** Every `knowledge/standards/`
+- **The standards-writing items are explicit tasks, not an afterthought.** Every `docs/standards/`
   path declared under `## Impact`'s parsed sub-heading gets its own checkbox — e.g.
-  `- [ ] 4.1 Write knowledge/standards/auth/session-tokens.md (authority: current once proved)`.
+  `- [ ] 4.1 Write docs/standards/auth/session-tokens.md (authority: current once proved)`.
   Building the spec *is* proving the rule, so writing the standard is part of the work, honestly
   `authority`-graded when it lands. This is the pairing `sp-impact-uncovered` checks: **name the
   path in the task text** so the match is findable.
@@ -220,7 +220,7 @@ Shape it so `/quenching:specs:execute` can walk it top to bottom:
   bullet above still requires a checkbox for every standard `## Impact` declares, and the test is
   whether the task would exist if this branch were never merged.
 
-Do not put `knowledge/concepts/` captures or glossary terms in `## Tasks` as durable content — those
+Do not put `docs/concepts/` captures or glossary terms in `## Tasks` as durable content — those
 route through `/quenching:knowledge:learn` / `/quenching:knowledge:define`; a task may *name* the capture
 (`- [ ] 5.2 Capture the retry-budget gotcha via /quenching:knowledge:learn`) but the knowledge itself lives in its
 OKF home, never in the checklist.

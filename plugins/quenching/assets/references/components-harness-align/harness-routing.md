@@ -20,7 +20,7 @@ auto-loads — `CLAUDE.md` repo-wide, a subfolder `CLAUDE.md` only when working 
 OKF-strict point 7 ([knowledge-align/okf-spec.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/okf-spec.md))
 says they are **not** OKF concepts, and the validator (`cq knowledge validate`) **skips them entirely**
 — including link checks (`index-broken-link` runs only on `index.md`). The target shape is the
-shipped exemplar [knowledge/standards/CLAUDE.md](${CLAUDE_PLUGIN_ROOT}/assets/knowledge/standards/CLAUDE.md)
+shipped exemplar [docs/standards/CLAUDE.md](${CLAUDE_PLUGIN_ROOT}/assets/knowledge/standards/CLAUDE.md)
 ("thin pointer, never a copy").
 
 <!-- rationale -->
@@ -107,7 +107,7 @@ The validator won't check harness files, so this skill does:
   `site-packages`/vendored dependency trees, and anything gitignored as a build artifact (verify
   with `git check-ignore`). A folder that only holds data or
   output earns no harness.
-- `/quenching:knowledge:align`'s skeleton already owns `knowledge/standards/CLAUDE.md`.
+- `/quenching:knowledge:align`'s skeleton already owns `docs/standards/CLAUDE.md`.
 
 ## 7. AGENTS.md
 

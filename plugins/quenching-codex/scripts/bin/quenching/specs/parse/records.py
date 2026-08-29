@@ -56,7 +56,7 @@ def derive_labels(info: dict, schema: dict | None = None) -> list[str]:
 # one native surface. `tags` is stored in the very field the `spec:` labels render onto —
 # issue `labels`, `System.Tags` on a work item — so without a reserved half the two mechanisms
 # would each read the other's writes as the spec's own content. See
-# docs/standards/architecture/spec-backend.md §Armazenado não é projetado, §The `spec:` prefix
+# docs/standards/architecture/spec-backend.md §Stored is not projected, §The `spec:` prefix
 # is reserved.
 SPEC_LABEL_PREFIX = "spec:"
 

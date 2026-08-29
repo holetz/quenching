@@ -1,11 +1,11 @@
 # The automation taxonomy — one axis, canonical paths, one file per entry point
 
-In a target repo this rule is stamped to `knowledge/standards/automation/skills.md` from
+In a target repo this rule is stamped to `docs/standards/automation/skills.md` from
 `assets/templates/automation/skills-standard.md`; this file is the plugin-side owner.
 
 **Owned elsewhere — cite, never restate.** The
 invocation/permission decision table, the scoped-`allowed-tools` rule, and the description
-caps all live in `knowledge/standards/automation/skills.md`; the registry zone's row format in
+caps all live in `docs/standards/automation/skills.md`; the registry zone's row format in
 `cq components registry reindex`. Findings arrive as `sk-*` codes and are named by code, never by
 restated threshold.
 

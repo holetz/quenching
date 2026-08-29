@@ -10,9 +10,9 @@ carries `type: standard` + a derived `resource:`; add each to [../index.md](../i
 
 ## Current docs
 
-* [versioning-release.md](versioning-release.md) — the four version strings a release bumps
-  together, and why two independent consumers (Claude Code's upgrade detection, and each align
-  comparing an installed tool's `--version`) make a partial bump fail in two different ways.
+* [versioning-release.md](versioning-release.md) — Every published Claude and Codex version
+  surface must agree at release time, including both marketplace entries and the generated Codex
+  manifest
 
 ## Candidate sub-standards
 

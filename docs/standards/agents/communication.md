@@ -1,10 +1,10 @@
 ---
 type: standard
 title: Agent communication
-description: The language this repo declares for the prose its agents author — one BCP-47 tag on the root harness line, governing artifact and conversation alike — and the conduct contract that holds whether or not a language is declared
+description: The two language bands an agent writes in — durable artifacts in canonical English so they stay portable and greppable across repos, conversation in the one BCP-47 tag the root harness line declares — and the conduct contract that holds whether or not a language is declared
 resource: /docs/**, /.specs/**
 tags: [agents, language, communication, harness]
-timestamp: 2026-07-30
+timestamp: 2026-08-29
 audience: both
 authority: background
 source: spec plan/declare-repo-body-language — binds the loose language clause that six standards and shipped references deferred to without any of them defining it
@@ -22,8 +22,8 @@ One is a variable, the other a constant — see [Why only one is declared](#why-
 
 ### Declaring it
 
-A repo declares its language as **one BCP-47 tag**, on a single line of its **root** harness file
-(`CLAUDE.md` / `AGENTS.md`):
+A repo declares its **conversation** language as **one BCP-47 tag**, on a single line of its
+**root** harness file (`CLAUDE.md` / `AGENTS.md`):
 
 ```
 Language: pt-BR — the contract is /docs/standards/agents/communication.md
@@ -49,19 +49,36 @@ harness file is a mistake to report, never a second place to look.
 `Português`, `portugues` and `Portuguese` to mean the same thing, and no amount of citation fixes
 that.
 
-### What it governs
+### What it governs — one band, not both
 
-**All prose the agent authors** — artifact and conversation alike:
+The prose an agent authors splits into two bands, and **they take different languages**:
 
-| Band | Examples |
-| --- | --- |
-| Artifact | a concept doc's body · a spec's body, `## Handoff` and `## Tasks` included · a commit subject and message · a PR body |
-| Conversation | an answer to the human · a question a command asks · a report a command prints |
+| Band | Examples | Language |
+| --- | --- | --- |
+| **Artifact** | a concept doc's body · a spec's body, `## Handoff` and `## Tasks` included · a commit subject and message · a PR body | **canonical English, always** |
+| **Conversation** | an answer to the human · a question a command asks · a report a command prints | **the declared tag** |
 
-The agent-facing sections stay terse, because they are agent context — terse **in the declared
-language**. The conversation band is the one that costs most per day when it is missed: an agent
-that reads the tag at session start and still answers, asks and reports in English has followed
-none of this.
+The declared tag governs the conversation band only. That band is the one that costs most per day
+when it is missed: an agent that reads the tag at session start and still answers, asks and reports
+in a language the human did not choose has followed none of this.
+
+**Why the artifact band is English and not the tag.** An artifact outlives the conversation that
+produced it and travels further than the team that wrote it. Three properties decide it:
+
+- **It is greppable across repos.** The bundle's whole promise is the same tree in the same place
+  in every adopted repository. A `standards/` doc a reader can find by name in one repo and not in
+  the next because the prose changed language is a bundle that only looks portable.
+- **It is published.** The bundle root is `docs_dir`: every concept doc is a page of the site, read
+  by people who never joined the conversation that produced it.
+- **It sits beside canonical English structure.** Folder names, slugs, frontmatter keys, `type`
+  values and parsed headings are already English by the exclusion below. A body in another language
+  wrapped in English metadata is a document that switches language mid-file.
+
+**What this costs, stated plainly.** A team that works in pt-BR now writes its durable docs in a
+second language, which is real friction and a real quality risk: a rule written imprecisely in
+English is worse than one written precisely in Portuguese. The trade is deliberate — portability
+and publication over authoring comfort — and a repo that does not want it declares nothing and is
+under no constraint at all (see [What silence means](#what-silence-means)).
 
 Two exclusions, and only two:
 
@@ -71,14 +88,16 @@ Two exclusions, and only two:
    [../naming/command-surface.md](../naming/command-surface.md), and this doc only names it as its
    own boundary.
 2. **This plugin's own command surface.** Every body under `plugins/quenching/commands/**` is
-   English whatever a target repo declares. **Their output is not.** A question a command asks and
-   a report it prints are prose aimed at the human, and they follow the tag. The body in English,
-   the output in the language — translating a body is the error this distinction exists to prevent.
+   English whatever a target repo declares — which is now the same rule as the artifact band rather
+   than an exception to it. **Their output is not.** A question a command asks and a report it
+   prints are prose aimed at the human, and they follow the tag. The body in English, the output in
+   the language — translating a body is the error this distinction exists to prevent.
 
 ### What silence means
 
-**A repo that declares nothing is under no constraint.** Silence is not a default of `en` and it is
-not a finding. Adoption is opt-in per repo: nothing becomes retroactively non-conformant, and no
+**A repo that declares nothing is under no constraint** — in either band. Silence is not a default
+of `en` and it is not a finding; a repo that declares no tag is not thereby required to write its
+artifacts in English. Adoption is opt-in per repo: nothing becomes retroactively non-conformant, and no
 repo that already carries the bundle has to change. Declaring a tag does not retranslate the docs
 already written — that is a migration, and a separate piece of work.
 
@@ -125,7 +144,9 @@ half has.
 
 The test is which of the two facts actually varies.
 
-**Language varies between repos.** That is why it needs one place per repo to be said.
+**Conversation language varies between repos**, and only that. That is why it needs one place per
+repo to be said — and why the artifact band, which does not vary, is stated here rather than
+declared anywhere.
 
 **Conduct does not.** "Report what happened", "confirm before the irreversible" and "ask when the
 answer changes the work" are not local preferences; they are the contract. Declaring what does not
