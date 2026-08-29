@@ -4,7 +4,7 @@
     python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" [--root PATH] <pillar> <subcommand> ...
     python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --version
 
-Four pillars, each answering with the same contract its launcher answered with — the
+Five pillars, each answering with the same contract its launcher answered with — the
 subcommands, the `--json` payloads and the exit codes (0 ok · 1 findings · 2 refusal) are
 the ones frozen in `tests/fixtures/golden/`. This file routes; it decides nothing else.
 
@@ -28,8 +28,9 @@ import cannot take the other two down with it.
 The spec asked whether `session` survives as a fourth first-level pillar, and declared how
 to decide it: at this task, if no command body but the retro invokes it, it becomes
 `cq components session` and leaves the root. Measured on the surface as it stands, exactly
-one body cites the tool — `commands/skill/retro.md` — so the criterion fires and the root
-carries three pillars.
+one body cites the tool — `commands/skill/retro.md` — so the criterion fires. `design` is a
+separate pillar because its DTCG source, portable projections, and rendered artifacts form a
+front of their own; it is not session's replacement.
 
 It is mounted as a real subcommand of `components`, in that pillar's own parser, and not
 intercepted here: a route this file knew about and `cq components --help` did not would be a
@@ -62,6 +63,9 @@ PILLARS: dict[str, Pillar] = {
     "knowledge": Pillar(
         "quenching.knowledge.cli", False,
         "the /docs/ OKF bundle — validate and project documentation surfaces"),
+    "design": Pillar(
+        "quenching.design.cli", True,
+        "the /.design/ DTCG source — build, import, verify, and render portable artifacts"),
     "components": Pillar(
         "quenching.components.commands.cli", True,
         "the .claude/ command surface — lint, doctor, registry, read, session"),
@@ -81,7 +85,7 @@ def build_parser() -> argparse.ArgumentParser:
                            for name, pillar in PILLARS.items())
                + "\n\n`cq <pillar> --help` prints that pillar's own subcommands.")
     p.add_argument("--root",
-                   help="forwarded to the pillar as its own --root; only specs "
+                        help="forwarded to the pillar as its own --root; design, specs, "
                         "and components declare one")
     # Bare, so `cq --version` IS the lockstep probe: the whole assertion is
     # `test "$(cq --version)" = "$(cat VERSION)"`, with nothing to strip first. A pillar

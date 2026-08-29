@@ -137,7 +137,7 @@ Current subtrees, by the reason each is here:
 
 | Reason | Subtrees |
 | --- | --- |
-| payload copied whole by an align | `knowledge/` `specs/` `claude/` `zensical/` |
+| payload copied whole by an align | `knowledge/` `specs/` `claude/` `zensical/` `design/` |
 | payload applied per insert (molds) | `templates/` |
 | tool the plugin executes | `bin/cq` (its four retired predecessors, unwired, still sit under `bin/` until removed) |
 | artifact of developing this repository | `references/` `evals/` `checks/` |

@@ -15,7 +15,7 @@ REPOSITORY = Path(__file__).resolve().parents[7]
 SOURCE: Path | None = None
 TARGET: Path | None = None
 MANIFEST: Path | None = None
-COPY_DIRS = ("assets/references", "assets/templates", "assets/specs", "assets/knowledge", "assets/checks", "assets/bin")
+COPY_DIRS = ("assets/references", "assets/templates", "assets/specs", "assets/knowledge", "assets/checks", "assets/design", "assets/bin")
 COPY_FILES = ("bin/cq", "README.md", "VERSION")
 DROP_FRONTMATTER = {"argument-hint", "allowed-tools", "model", "context", "hooks"}
 FORBIDDEN_AFTER_TRANSLATION = ("${CLAUDE_PLUGIN_ROOT}", "${CLAUDE_PROJECT_DIR}", "CLAUDE_PLUGIN_ROOT")
@@ -32,7 +32,7 @@ CODEX_CQ_WRAPPER = r"""cq() {
   python3 "$plugin_root/scripts/cq" "$@"
 }"""
 
-CQ_INVOCATION = re.compile(r"(?<![A-Za-z0-9_./-])cq(?=\s+(?:specs|knowledge|components|git)\b)")
+CQ_INVOCATION = re.compile(r"(?<![A-Za-z0-9_./-])cq(?=\s+(?:specs|knowledge|design|components|git)\b)")
 EXPLICIT_CQ_INVOCATION = re.compile(r"python3\s+(?:\"?\.\./\.\./scripts/cq\"?|\"?scripts/bin/cq\"?)")
 RELATIVE_CQ_PATH = re.compile(r"(?<![A-Za-z0-9_./])(?:python3\s+)?\"?\.\./\.\./scripts/cq\"?")
 CODEX_CQ_COMMAND = 'python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path \'*/quenching-codex*/scripts/cq\' -print -quit 2>/dev/null)"'
@@ -394,11 +394,11 @@ def generated_tree() -> dict[str, bytes]:
     version = (source() / "VERSION").read_text(encoding="utf-8").strip()
     output[".codex-plugin/plugin.json"] = json.dumps({
         "name": "quenching-codex", "version": version,
-        "description": "Codex translation of the quenching Claude plugin, generated from the Claude source plugin.",
+        "description": "Codex translation of the quenching plugin with OKF, provider-owned specs, DTCG design tokens, and deterministic front alignment.",
         "author": {"name": "Israel Holetz", "email": "holetz@gmail.com"}, "license": "MIT",
         "keywords": ["codex", "knowledge-management", "documentation", "spec-driven", "automation"], "skills": "./skills/",
-        "interface": {"displayName": "Quenching Codex", "shortDescription": "Deterministic knowledge and spec alignment workflows for Codex",
-                      "longDescription": "Generated Codex sibling of the Claude quenching plugin. Claude is the source of truth.",
+        "interface": {"displayName": "Quenching Codex", "shortDescription": "Deterministic knowledge, design, and spec workflows for Codex",
+                      "longDescription": "Generated Codex sibling of the Claude quenching plugin. One DTCG design source projects to interoperable artifacts; Claude remains the source of truth.",
                       "developerName": "Israel Holetz", "category": "Developer Tools", "capabilities": ["Interactive", "Write"],
                       "defaultPrompt": ["Align this repository with quenching.", "Run the quenching knowledge workflow.", "Check the Codex plugin for drift."],
                       "brandColor": "#0F766E", "screenshots": []}}, indent=2, ensure_ascii=False).encode() + b"\n"

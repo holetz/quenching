@@ -1,8 +1,8 @@
 ---
 type: standard
 title: Align surface — one align per front, probe first
-description: The 1×5 align column that replaced the 2×4 matrix — one align per front carrying its content stages, the fourth pillar (`git`) declared with no align because it ships no verifier a probe could run, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, the rule that no sweep records itself: an align's account of its own run goes in the report, never into the bundle, and the conductor categories sharing the cycle-authorization contract — `/align` conducts the three fronts, `/quenching:specs:cycle` the four stages of one spec, and the two fan-out entries N specs each; none reimplements what it conducts
-resource: plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/specs/cycle.md, plugins/quenching/commands/specs/execute-queue.md, plugins/quenching/commands/specs/develop-batch.md, plugins/quenching/commands/components/align.md, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/references/align/**, plugins/quenching/assets/references/specs-fanout/**
+description: The aligned-front column — one align per local front carrying its content stages, the fifth pillar (`git`) declared with no align because it ships no verifier a probe could run, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, the rule that no sweep records itself, and conductor categories sharing the cycle-authorization contract — `/align` conducts the three local fronts (`knowledge`, `design`, `components`), `/quenching:specs:cycle` the four stages of one spec, and the two fan-out entries N specs each; none reimplements what it conducts
+resource: plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/design/align.md, plugins/quenching/commands/specs/cycle.md, plugins/quenching/commands/specs/execute-queue.md, plugins/quenching/commands/specs/develop-batch.md, plugins/quenching/commands/components/align.md, plugins/quenching/assets/bin/quenching/design/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/references/align/**, plugins/quenching/assets/references/specs-fanout/**
 tags: [architecture, aligns, commands, probe, convergence]
 timestamp: 2026-08-27
 audience: both
@@ -11,23 +11,24 @@ source: specs-flow-consolidation plan (section 4); the cross-front drift probe a
 maintainer: quenching
 ---
 
-# Align surface — one align per front, probe first
+# Align surface — one align per local front, probe first
 
-The shape of the plugin's alignment surface after the fold: **one align per front**, each
+The shape of the plugin's alignment surface after the fold: **one align per local front**, each
 carrying its front's content stages, opened by a probe that makes the no-op case free. The full
 behavioral contract every align shares lives in
 `plugins/quenching/assets/references/align/sweep-doctrine.md`; this standard records the
 architectural rule — why the surface has this shape and not the previous one.
 
-## The 1×5 column
+## The aligned-front column
 
 | Front | Command |
 | --- | --- |
 | `/docs/` | `/quenching:knowledge:align` |
 | `/.specs/` | **none** — see §The specs front lost its align with its backend, below |
+| `/.design/` | `/quenching:design:align` |
 | `.claude/` | `/quenching:components:align` |
-| `git` | **none** — see §The fourth pillar has no align, below |
-| both aligned fronts | `/align` — conducts the two, in dependency order, on one nested OK |
+| `git` | **none** — see §The fifth pillar has no align, below |
+| all three aligned fronts | `/align` — conducts them in dependency order, on one nested OK |
 
 There is no `align-and-update` anywhere. The previous surface was a 2×4 matrix — a structural
 align plus a looping content conductor per front — which gave equal billing to conductors that
@@ -56,7 +57,7 @@ exist. The check's own header carries the same restraint for the same reason.
 a tree; the specs front had one and lost it. So the column below reads **none** for both, and the
 two paragraphs are not interchangeable: were a local backend to come back, so would its align.
 
-### The fourth pillar has no align, and the reason is structural
+### The fifth pillar has no align, and the reason is structural
 
 `git` — the `cq git` axis and its seven `commands/git/**` bodies — is a **pillar**, in the sense
 [glossary.md](../../glossary.md) already gives the term: an axis `cq` routes. It is not a
@@ -79,7 +80,8 @@ conducts only through a stage's own gate.
 
 The two real loops survive where the looping is real: `/quenching:knowledge:align` keeps its
 internal fixpoint (memory → harness → glossary feed each other), and `/align` keeps the
-cross-front pass, because the two aligned fronts feed each other (the components front's registry
+cross-front pass, because the three aligned fronts feed each other (the design front's standards
+and the components front's registry
 is a `/docs/` listing). The conductor contract — one human OK
 authorizing the whole run, nesting one
 level, with code-coupled confirmations still surfacing individually — lives in
@@ -93,13 +95,13 @@ The conductor contract is shared, never owned by a single command. Conductors ar
 
 | The conductor | What it conducts | The contract |
 | --- | --- | --- |
-| `/align` | the three fronts, in dependency order, on one nested OK | `align/convergence.md` — cited, never restated |
+| `/align` | the three local fronts (`knowledge`, `design`, `components`), in dependency order, on one nested OK | `align/convergence.md` — cited, never restated |
 | `/quenching:specs:cycle` | the four stages of ONE spec — create, develop, execute, conclude — in one run, entering at the derived stage | `align/convergence.md`, plus its own gears plan (`specs-cycle/gears.md`, retired with `orchestration-gears.md` — see below) |
 | `/quenching:specs:execute-queue` | N specs, serially, over one isolation — one branch, one pull request | `align/convergence.md`, plus `specs-fanout/fanout.md` |
 | `/quenching:specs:develop-batch` | N specs to the `ready` gate, in real parallel | `align/convergence.md`, plus `specs-fanout/fanout.md` |
 
 **None of the three spec conductors is an align**: they conduct no front, so none earns a row in
-the 1×5 column. They conduct a lifecycle — one spec's four stages, or N specs through one of them —
+the aligned-front column. They conduct a lifecycle — one spec's four stages, or N specs through one of them —
 invoking each stage as the command that owns it, the same conduct-never-reimplement rule that binds
 `/align`. All four open on one human OK that authorizes the whole run, nest one level, and surface
 code-coupled confirmations individually; the clause that once limited the contract to `/align` is
@@ -120,7 +122,7 @@ by `${CLAUDE_PLUGIN_ROOT}` the same way from every repo. `specs-cycle/gears.md` 
 
 **Nothing is inventoried until the front's own verifier has said there is work.** Each front
 already ships a program that answers "is there work?" with an exit code — `cq knowledge validate`
-(`/docs/`), `cq specs doctor`/`validate` (`/.specs/`), `cq components doctor`/`lint` (`.claude/`) —
+(`/docs/`), `cq design doctor` (`/.design/`), `cq components doctor`/`lint` (`.claude/`) —
 and the align opens by running it, branching on the code:
 
 - **exit 0, nothing found** → report "conformant, nothing to align" and stop. No inventory, no
@@ -161,8 +163,8 @@ It also removed the one thing every align wrote **outside its own front**. The s
 and `/quenching:specs:triage` reached into the `/docs/` bundle for a log line and nothing else; with that gone,
 the `specs` front writes into `/docs/` at exactly one point — a concluded spec's distillation,
 which mints real knowledge rather than a record of activity. The cross-front dependency in
-[§The 1×5 column](#the-15-column) is unchanged: `/docs/` still goes first, because that
-distillation and the components front's rule + registry still need the tree to exist.
+[§The aligned-front column](#the-aligned-front-column) records the dependency: `/docs/` still
+goes first, `/.design/` consumes and adds knowledge, and the components front follows both.
 
 The general form: **a command's own account of itself goes in its report, never into the artifact
 it maintains.** A store that accumulates entries about the tools that touched it is a second

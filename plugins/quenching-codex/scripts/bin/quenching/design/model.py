@@ -1,0 +1,425 @@
+"""The design front's DTCG source model and portable value conversions.
+
+The source is a DTCG 2025.10 document.  Quenching-specific data lives below
+``$extensions.org.quenching``; token values never acquire an invented type just to make an
+adapter convenient.  This matters most for DESIGN.md component properties: the external schema
+accepts arbitrary strings, while DTCG deliberately has no string token type, so those properties
+belong to the extension instead of masquerading as DTCG tokens.
+"""
+from __future__ import annotations
+
+import json
+import math
+import re
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Iterator
+
+
+DTCG_SCHEMA = "https://www.designtokens.org/schemas/2025.10/format.json"
+QUENCHING_EXTENSION = "org.quenching"
+DESIGN_MD_VERSION = "alpha"
+PRODUCT_SCHEMA_VERSION = 1
+SIDECAR_SCHEMA_VERSION = 2
+
+TOKEN_TYPES = {
+    "color", "dimension", "fontFamily", "fontWeight", "duration", "cubicBezier",
+    "number", "strokeStyle", "border", "transition", "shadow", "gradient", "typography",
+}
+DESIGN_COMPONENT_PROPERTIES = {
+    "backgroundColor", "textColor", "typography", "rounded", "padding", "size", "height",
+    "width",
+}
+TOKEN_NAME_RE = re.compile(r"^[^${}.][^{}.]*$")
+REFERENCE_RE = re.compile(r"^\{([^{}]+)\}$")
+JSON_POINTER_RE = re.compile(r"^#/(.+)$")
+DIMENSION_RE = re.compile(r"^(-?(?:\d+(?:\.\d+)?|\.\d+))(px|rem)$")
+
+
+class DesignError(ValueError):
+    """A source or projection cannot be represented without guessing."""
+
+
+@dataclass(frozen=True)
+class Token:
+    path: tuple[str, ...]
+    type: str
+    value: Any
+    description: str
+    extensions: dict[str, Any]
+
+    @property
+    def dotted(self) -> str:
+        return ".".join(self.path)
+
+
+def read_json(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise DesignError(f"missing required source: {path}") from exc
+    except (OSError, json.JSONDecodeError) as exc:
+        raise DesignError(f"cannot read {path}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise DesignError(f"{path} must contain one JSON object")
+    return value
+
+
+def dump_json(value: Any) -> str:
+    return json.dumps(value, indent=2, ensure_ascii=False) + "\n"
+
+
+def quenching_extension(source: dict[str, Any]) -> dict[str, Any]:
+    extensions = source.get("$extensions")
+    if not isinstance(extensions, dict):
+        raise DesignError("tokens.json must declare $extensions.org.quenching")
+    extension = extensions.get(QUENCHING_EXTENSION)
+    if not isinstance(extension, dict):
+        raise DesignError("tokens.json must declare $extensions.org.quenching")
+    return extension
+
+
+def validate_source(source: dict[str, Any]) -> list[dict[str, str]]:
+    """Validate the DTCG subset the adapters consume, returning stable findings."""
+    findings: list[dict[str, str]] = []
+
+    def add(code: str, message: str, path: str = ".design/tokens.json") -> None:
+        findings.append({"severity": "error", "code": code, "message": message, "path": path})
+
+    if source.get("$schema") != DTCG_SCHEMA:
+        add("design-dtcg-schema", f"$schema must be {DTCG_SCHEMA}")
+    try:
+        extension = quenching_extension(source)
+    except DesignError as exc:
+        add("design-extension-missing", str(exc))
+        extension = {}
+    for key in ("name", "generatedAt"):
+        if not isinstance(extension.get(key), str) or not extension[key].strip():
+            add("design-extension-field", f"$extensions.{QUENCHING_EXTENSION}.{key} must be a non-empty string")
+    design_md = extension.get("designMd")
+    if not isinstance(design_md, dict) or design_md.get("version") != DESIGN_MD_VERSION:
+        add("design-external-version", f"designMd.version must be {DESIGN_MD_VERSION!r}")
+    if extension.get("productSchema") != PRODUCT_SCHEMA_VERSION:
+        add("design-product-version", f"productSchema must be {PRODUCT_SCHEMA_VERSION}")
+
+    try:
+        records = list(iter_tokens(source))
+    except DesignError as exc:
+        add("design-dtcg-shape", str(exc))
+        records = []
+    if not records:
+        add("design-token-empty", "tokens.json must declare at least one DTCG token")
+
+    known = {record.dotted for record in records}
+    for record in records:
+        try:
+            validate_token_value(record)
+        except DesignError as exc:
+            add("design-token-value", str(exc), f".design/tokens.json#{record.dotted}")
+        for reference in references_in(record.value):
+            if reference not in known:
+                add("design-token-reference", f"{record.dotted} references missing token {reference}",
+                    f".design/tokens.json#{record.dotted}")
+
+    components = design_md.get("components", {}) if isinstance(design_md, dict) else {}
+    if components and not isinstance(components, dict):
+        add("design-components-shape", "designMd.components must be an object")
+    elif isinstance(components, dict):
+        for name, properties in components.items():
+            if not isinstance(properties, dict):
+                add("design-component-shape", f"component {name!r} must be an object")
+                continue
+            unknown = sorted(set(properties) - DESIGN_COMPONENT_PROPERTIES)
+            if unknown:
+                add("design-component-property",
+                    f"component {name!r} uses unsupported properties: {', '.join(unknown)}")
+            for property_name, property_value in properties.items():
+                for reference in references_in(property_value):
+                    if reference not in known:
+                        add(
+                            "design-component-reference",
+                            f"component {name!r} property {property_name!r} references missing token {reference}",
+                        )
+    return findings
+
+
+def iter_tokens(source: dict[str, Any]) -> Iterator[Token]:
+    """Yield every DTCG token with its inherited type."""
+    def walk(node: dict[str, Any], path: tuple[str, ...], inherited_type: str | None) -> Iterator[Token]:
+        node_type = node.get("$type", inherited_type)
+        # DTCG groups may carry their default token under the reserved `$root`
+        # member.  It is addressed by the group's path (for example
+        # `{colors}`), while ordinary children retain their dotted paths.
+        root_token = node.get("$root")
+        if isinstance(root_token, dict) and ("$value" in root_token or "$ref" in root_token):
+            token_type = root_token.get("$type", node_type)
+            if token_type not in TOKEN_TYPES:
+                raise DesignError(f"{'.'.join(path)} has no supported $type")
+            token_value: Any = root_token.get("$value")
+            if "$ref" in root_token:
+                if "$value" in root_token:
+                    raise DesignError(f"{'.'.join(path)} declares both $value and $ref")
+                token_value = {"$ref": root_token["$ref"]}
+            if path:
+                yield Token(
+                    path=path,
+                    type=token_type,
+                    value=token_value,
+                    description=str(root_token.get("$description") or ""),
+                    extensions=root_token.get("$extensions") if isinstance(root_token.get("$extensions"), dict) else {},
+                )
+        for key, value in node.items():
+            if key.startswith("$"):
+                continue
+            if not TOKEN_NAME_RE.match(key):
+                raise DesignError(f"invalid DTCG token/group name at {'.'.join(path + (key,))}")
+            if not isinstance(value, dict):
+                raise DesignError(f"{'.'.join(path + (key,))} must be a token or group object")
+            child_path = path + (key,)
+            is_token = "$value" in value or "$ref" in value
+            if is_token:
+                if "$value" in value and "$ref" in value:
+                    raise DesignError(f"{'.'.join(child_path)} declares both $value and $ref")
+                token_type = value.get("$type", node_type)
+                if token_type not in TOKEN_TYPES:
+                    raise DesignError(f"{'.'.join(child_path)} has no supported $type")
+                token_value: Any = value.get("$value")
+                if "$ref" in value:
+                    token_value = {"$ref": value["$ref"]}
+                yield Token(
+                    path=child_path,
+                    type=token_type,
+                    value=token_value,
+                    description=str(value.get("$description") or ""),
+                    extensions=value.get("$extensions") if isinstance(value.get("$extensions"), dict) else {},
+                )
+            else:
+                yield from walk(value, child_path, value.get("$type", node_type))
+
+    yield from walk(source, (), source.get("$type"))
+
+
+def validate_token_value(token: Token) -> None:
+    value = token.value
+    if reference_target(value) is not None:
+        return
+    if token.type == "color":
+        if not isinstance(value, dict) or not isinstance(value.get("colorSpace"), str):
+            raise DesignError(f"{token.dotted} must use the DTCG color object")
+        components = value.get("components")
+        if not isinstance(components, list) or len(components) != 3:
+            raise DesignError(f"{token.dotted} color components must contain three values")
+    elif token.type == "dimension":
+        if (not isinstance(value, dict) or not isinstance(value.get("value"), (int, float))
+                or value.get("unit") not in {"px", "rem"}):
+            raise DesignError(f"{token.dotted} must use a DTCG dimension object with px or rem")
+    elif token.type == "typography":
+        required = {"fontFamily", "fontSize", "fontWeight", "letterSpacing", "lineHeight"}
+        if not isinstance(value, dict) or not required.issubset(value):
+            raise DesignError(f"{token.dotted} typography must declare {', '.join(sorted(required))}")
+    elif token.type == "transition":
+        required = {"duration", "delay", "timingFunction"}
+        if not isinstance(value, dict) or not required.issubset(value):
+            raise DesignError(f"{token.dotted} transition must declare duration, delay, timingFunction")
+
+
+def references_in(value: Any) -> Iterator[str]:
+    target = reference_target(value)
+    if target is not None:
+        yield target
+        return
+    if isinstance(value, str):
+        return
+    elif isinstance(value, list):
+        for item in value:
+            yield from references_in(item)
+    elif isinstance(value, dict):
+        for item in value.values():
+            yield from references_in(item)
+
+
+def token_map(source: dict[str, Any]) -> dict[str, Token]:
+    return {token.dotted: token for token in iter_tokens(source)}
+
+
+def resolve_token(token: Token, records: dict[str, Token], trail: tuple[str, ...] = ()) -> Any:
+    target = reference_target(token.value)
+    if target is None:
+        return token.value
+    if target in trail or target == token.dotted:
+        raise DesignError(f"circular token reference: {' -> '.join(trail + (token.dotted, target))}")
+    if target not in records:
+        raise DesignError(f"{token.dotted} references missing token {target}")
+    return resolve_token(records[target], records, trail + (token.dotted,))
+
+
+def reference_target(value: Any) -> str | None:
+    """Return a dotted token path for either DTCG 2025.10 reference form."""
+    if isinstance(value, str):
+        match = REFERENCE_RE.match(value)
+        return match.group(1) if match else None
+    if not isinstance(value, dict) or set(value) != {"$ref"}:
+        return None
+    pointer = value["$ref"]
+    if not isinstance(pointer, str):
+        raise DesignError("a DTCG $ref must be a JSON Pointer string")
+    match = JSON_POINTER_RE.match(pointer)
+    if not match:
+        raise DesignError(f"invalid DTCG JSON Pointer reference: {pointer!r}")
+    parts = [part.replace("~1", "/").replace("~0", "~") for part in match.group(1).split("/")]
+    if parts and parts[-1] in {"$value", "$root"}:
+        parts.pop()
+    if not parts or any(not part or "." in part for part in parts):
+        raise DesignError(f"JSON Pointer does not identify one token: {pointer!r}")
+    return ".".join(parts)
+
+
+def _number(value: float) -> str:
+    if math.isfinite(value) and value == int(value):
+        return str(int(value))
+    return f"{value:.6f}".rstrip("0").rstrip(".")
+
+
+def dimension_to_css(value: Any) -> str:
+    if isinstance(value, str) and REFERENCE_RE.match(value):
+        return value
+    if not isinstance(value, dict) or value.get("unit") not in {"px", "rem"}:
+        raise DesignError(f"cannot project {value!r} as a CSS dimension")
+    amount = value.get("value")
+    if not isinstance(amount, (int, float)):
+        raise DesignError(f"cannot project {value!r} as a CSS dimension")
+    return f"{_number(float(amount))}{value['unit']}"
+
+
+def color_to_css(value: Any) -> str:
+    if isinstance(value, str) and REFERENCE_RE.match(value):
+        return value
+    if not isinstance(value, dict):
+        raise DesignError(f"cannot project {value!r} as a CSS color")
+    space = value.get("colorSpace")
+    components = value.get("components")
+    alpha = value.get("alpha", 1)
+    if not isinstance(components, list) or len(components) != 3:
+        raise DesignError(f"cannot project {value!r} as a CSS color")
+    if value.get("hex") and alpha == 1:
+        return str(value["hex"]).upper()
+    if not all(isinstance(component, (int, float)) for component in components):
+        raise DesignError("property-level color references cannot be represented in DESIGN.md")
+    c = [float(component) for component in components]
+    alpha_suffix = "" if alpha == 1 else f" / {_number(float(alpha))}"
+    if space == "srgb":
+        rgb = [max(0, min(255, round(component * 255))) for component in c]
+        if alpha == 1:
+            return "#" + "".join(f"{component:02X}" for component in rgb)
+        return f"rgb({rgb[0]} {rgb[1]} {rgb[2]}{alpha_suffix})"
+    if space in {"hsl", "hwb"}:
+        return f"{space}({_number(c[0])} {_number(c[1])}% {_number(c[2])}%{alpha_suffix})"
+    if space in {"lab", "lch"}:
+        return f"{space}({_number(c[0])}% {_number(c[1])} {_number(c[2])}{alpha_suffix})"
+    if space in {"oklab", "oklch"}:
+        first = _number(c[0] * 100) + "%"
+        return f"{space}({first} {_number(c[1])} {_number(c[2])}{alpha_suffix})"
+    if space in {"display-p3", "a98-rgb", "prophoto-rgb", "rec2020", "srgb-linear"}:
+        return f"color({space} {' '.join(_number(part) for part in c)}{alpha_suffix})"
+    if space in {"xyz-d50", "xyz-d65"}:
+        return f"color({space} {' '.join(_number(part) for part in c)}{alpha_suffix})"
+    raise DesignError(f"unsupported DTCG color space: {space!r}")
+
+
+def typography_to_design(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise DesignError(f"cannot project {value!r} as typography")
+    result: dict[str, Any] = {}
+    for key in ("fontFamily", "fontSize", "fontWeight", "lineHeight", "letterSpacing"):
+        item = value.get(key)
+        if key == "fontFamily" and isinstance(item, list):
+            result[key] = ", ".join(str(font) for font in item)
+        elif key in {"fontSize", "letterSpacing"} and isinstance(item, dict):
+            result[key] = dimension_to_css(item)
+        else:
+            result[key] = item
+    return result
+
+
+def value_to_css(token: Token, records: dict[str, Token], preserve_reference: bool = False) -> str:
+    target = reference_target(token.value)
+    if preserve_reference and target is not None:
+        return "{" + target + "}"
+    value = resolve_token(token, records)
+    if token.type == "color":
+        return color_to_css(value)
+    if token.type == "dimension":
+        return dimension_to_css(value)
+    if token.type == "duration":
+        if isinstance(value, dict) and isinstance(value.get("value"), (int, float)) and value.get("unit") in {"ms", "s"}:
+            return f"{_number(float(value['value']))}{value['unit']}"
+    if token.type == "cubicBezier" and isinstance(value, list) and len(value) == 4:
+        return f"cubic-bezier({', '.join(_number(float(part)) for part in value)})"
+    if token.type == "number" and isinstance(value, (int, float)):
+        return _number(float(value))
+    if token.type == "fontFamily":
+        return ", ".join(value) if isinstance(value, list) else str(value)
+    if token.type == "fontWeight":
+        return str(value)
+    if token.type == "transition" and isinstance(value, dict):
+        duration = _duration_to_css(value.get("duration"))
+        delay = _duration_to_css(value.get("delay"))
+        curve = value.get("timingFunction")
+        curve_css = (f"cubic-bezier({', '.join(_number(float(part)) for part in curve)})"
+                     if isinstance(curve, list) and len(curve) == 4 else str(curve))
+        return f"{duration} {curve_css} {delay}"
+    if token.type == "shadow":
+        return shadow_to_css(value)
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+
+
+def _duration_to_css(value: Any) -> str:
+    if isinstance(value, dict) and isinstance(value.get("value"), (int, float)):
+        return f"{_number(float(value['value']))}{value.get('unit', 'ms')}"
+    return str(value)
+
+
+def shadow_to_css(value: Any) -> str:
+    shadows = value if isinstance(value, list) else [value]
+    rendered = []
+    for shadow in shadows:
+        if not isinstance(shadow, dict):
+            raise DesignError(f"cannot project {value!r} as a shadow")
+        parts = [dimension_to_css(shadow.get(key)) for key in ("offsetX", "offsetY", "blur", "spread")]
+        color = color_to_css(shadow.get("color"))
+        rendered.append(("inset " if shadow.get("inset") else "") + " ".join(parts + [color]))
+    return ", ".join(rendered)
+
+
+def css_color_to_dtcg(value: str) -> dict[str, Any]:
+    text = value.strip()
+    match = re.fullmatch(r"#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})", text)
+    if match:
+        raw = match.group(1)
+        if len(raw) == 3:
+            raw = "".join(ch * 2 for ch in raw)
+        alpha = int(raw[6:8], 16) / 255 if len(raw) == 8 else 1
+        rgb = [int(raw[index:index + 2], 16) / 255 for index in (0, 2, 4)]
+        result: dict[str, Any] = {"colorSpace": "srgb", "components": rgb}
+        if alpha != 1:
+            result["alpha"] = round(alpha, 6)
+        else:
+            result["hex"] = "#" + raw[:6].upper()
+        return result
+    match = re.fullmatch(r"oklch\(\s*([\d.]+)%\s+([\d.]+)\s+([\d.]+)(?:\s*/\s*([\d.]+))?\s*\)", text, re.I)
+    if match:
+        result = {"colorSpace": "oklch",
+                  "components": [float(match.group(1)) / 100, float(match.group(2)), float(match.group(3))]}
+        if match.group(4) is not None:
+            result["alpha"] = float(match.group(4))
+        return result
+    raise DesignError(f"color {value!r} cannot be imported losslessly into DTCG 2025.10")
+
+
+def css_dimension_to_dtcg(value: str) -> dict[str, Any]:
+    if value.strip() in {"0", "+0", "-0"}:
+        return {"value": 0, "unit": "px"}
+    match = DIMENSION_RE.fullmatch(value.strip())
+    if not match:
+        raise DesignError(f"dimension {value!r} cannot be imported losslessly into DTCG 2025.10")
+    return {"value": float(match.group(1)), "unit": match.group(2)}

@@ -19,7 +19,7 @@ This is the slice used by the provider health checks.
 | `worktreeSetup` | a shell command, run as written | none | `quenching-specs-execute`'s isolation offer, after `git worktree add` |
 | `azureStates` | `{"plans": "<state>", "archive": "<state>"}` | **none, deliberately** — refuses (exit 2, `sp-az-no-states`) rather than guess | the `azure-boards` backend only |
 | `hooks` | `{"<event>": [{"command": "<cmd>", ...}]}` | none — an absent key declares no events | the command that owns the event |
-| `profiles` | `{"installed": ["knowledge", "specs", "components"]}` | none — an absent key leaves all three fronts installed | the align conductor |
+| `profiles` | `{"installed": ["knowledge", "specs", "design", "components"]}` | none — an absent key leaves all four fronts installed | the align conductor |
 | `azurePlacement` | `{areaPath, workItemType, discoveryTag, team, iterationPath, boardColumn, defaultSubject}` — `workItemType` retired, see `workItemTypes` below | per sub-key — `areaPath` **none, deliberately**, the rest default | the `azure-boards` backend only |
 | `azureColumns` | `{"<board state>": "<lane>", …}` — any subset | `{}` — falls back to `azurePlacement.boardColumn` per state | the `azure-boards` backend only |
 | `subjects` | `{"<key>": {name, description, parent, tags}, …}` | `{}` | `quenching-specs-create`'s subject proposal |

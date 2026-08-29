@@ -54,7 +54,7 @@ with the remote is also a refusal, because silently switching the system of reco
 | `worktreeSetup` | a shell command, run as written | none | the execute isolation offer, after `git worktree add` |
 | `azureStates` | `{"plans": "<state>", "archive": "<state>"}` | none — Azure refuses rather than guess | Azure Boards transport |
 | `hooks` | `{"<event>": [{"command": "<cmd>", ...}]}` | none — no events | the command that owns the event |
-| `profiles` | `{"installed": ["knowledge", "specs", "components"]}` | none — all installed | the align conductor |
+| `profiles` | `{"installed": ["knowledge", "specs", "design", "components"]}` | none — all installed | the align conductor |
 | `azurePlacement` | area, type, discovery tag, team, iteration, column and subject settings | per sub-key; `areaPath` has no default | Azure Boards transport |
 | `azureColumns` | `{"<board state>": "<lane>", ...}` | `{}` — falls back to placement | Azure Boards transport |
 | `subjects` | `{"<key>": {name, description, parent, tags}, ...}` | `{}` | spec creation proposal |

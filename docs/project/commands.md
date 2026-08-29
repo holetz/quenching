@@ -1,7 +1,7 @@
 ---
 type: project
 title: Command catalog
-description: All thirty-eight commands by front — one line each — plus the cq rail's exit-code contract.
+description: All forty-one commands by front — one line each — plus the cq rail's exit-code contract.
 resource: plugins/quenching/README.md
 tags:
   - reference
@@ -9,13 +9,13 @@ tags:
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: derived from plugins/quenching/README.md §The thirty-eight commands and §The specs flow (tables preserved, long rows condensed); the machine authority is cq components doctor --json
+source: derived from plugins/quenching/README.md §The forty-one commands and §The specs flow (tables preserved, long rows condensed); the machine authority is cq components doctor --json
 maintainer: Israel Holetz
 ---
 
 # Command catalog
 
-All thirty-eight commands, grouped by the front (or pillar) that owns them. Typing a command is
+All forty-one commands, grouped by the front (or pillar) that owns them. Typing a command is
 the explicit entry point; Claude also auto-routes to one by its `description`. This page is
 derived from the product manual, whose tables a test holds in lockstep with the real surface —
 `cq components doctor --json` is the machine authority on the count.
@@ -26,6 +26,7 @@ Every command drives the bundled stdlib CLI rather than touching providers or fi
 
 ```bash
 cq knowledge …   # the OKF bundle: validate, project, …
+cq design …      # the DTCG source: build, import, render, …
 cq specs …       # the provider-owned specs front
 cq components …  # the .claude/ surface: doctor, lint, registry, translate
 cq git …         # the git pillar's deterministic queries
@@ -77,6 +78,21 @@ commands share is explained in [The spec lifecycle](../explanation/spec-lifecycl
 | `/quenching:specs:execute-queue` | Builds N specs as a **serial queue over a single isolation**: isolate once, execute N times, one conclude closing the lot. |
 | `/quenching:specs:develop-batch` | Takes N specs toward `ready` as a **parallel batch** — safe because defining writes no code; approvals stay with the conductor. |
 
+## The design front
+
+Acts on the `/.design/` DTCG source and its generated interoperability, editorial, and internal
+adapter artifacts.
+
+| Command | Does |
+| --- | --- |
+| `/quenching:design:align` | Installs or converges the brand pack, arbitrates external DESIGN.md proposals, and rebuilds every projection. |
+| `/quenching:design:status` | Reports source validity, generated identity, sidecar/assets, genres, adapters, and optional Impeccable detector state without writing. |
+| `/quenching:design:genre:new` | Mints ONE editorial genre contract with fields, register, and HTML/Typst/PDF destinations. |
+
+`cq design build` is deterministic and byte-checked; `cq design import` is the explicit route for
+folding an Impeccable proposal back into the source. The portable DESIGN.md boundary is lossy by
+design, so rich motion, shadows, breakpoints, and snippets remain in DTCG/sidecar data.
+
 ## The components front
 
 Acts on the target repository's `.claude/` automation surface.
@@ -110,7 +126,7 @@ align. The specs front hands off to it rather than executing git itself.
 
 | Command | Does |
 | --- | --- |
-| `/quenching:align` | The one align spanning the three fronts on ONE confirmation — conducting each front's own align, never reimplementing any. |
+| `/quenching:align` | The one align spanning the three local fronts on ONE confirmation — conducting each front's own align, never reimplementing any. |
 | `/quenching:handoff` | Compacts the current conversation into a handoff document a fresh session can continue from. |
 
 **Next:** this repository's own local automation surface (four development commands) is the
