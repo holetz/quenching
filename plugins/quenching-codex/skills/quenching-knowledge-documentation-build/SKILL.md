@@ -32,7 +32,10 @@ bundle; every install, update, and re-verification after that is **this** skill.
   **generator-neutral** — never add generator-specific syntax, a nav entry inside a page, or
   generator frontmatter to a concept doc.
 - **The confirmed Mapa editorial de publicação is the publication boundary.** Keep
-  `docs_dir = ".knowledge/documentation"`: Zensical does not reliably render a hidden bundle root.
+  `docs_dir = ".knowledge/documentation"`: a dot-prefixed `docs_dir` builds an **empty** site —
+  zero pages, not even a `404.html`, no warning, exit `0` — because Zensical excludes every path
+  carrying a `.`-prefixed component, and a symlink out of the bundle is not followed either.
+  Measured on 0.0.57; `external/tools/zensical-measured-behaviour.md` carries the evidence.
   A home marked `publicar` or `publicar derivado` is exposed by an intentional route or curated
   mirror below `documentation/`; `não publicar` creates no nav entry, route or link. The map,
   not a home's name, decides this. A missing or stale derived route is reported to the planning or
@@ -87,10 +90,12 @@ bundle; every install, update, and re-verification after that is **this** skill.
 - **The build is verification, not a deliverable.** `zensical build --strict` writes to the
   configured `site_dir`, which is gitignored — that is what `site-artifacts-tracked` guarantees.
   Where `site/` is **tracked**, overwriting it would be destructive: verify instead with a
-  throwaway config written **at the repo root** (`-f`), its `site_dir` pointing outside the repo,
-  and delete it after. The root is not optional — a Zensical config resolves its paths relative to
-  the **config file**, so a config parked elsewhere makes `docs_dir` resolve outside the repo and
-  the build exits `Error: Docs directory does not exist`. Never run `zensical serve`.
+  throwaway config written **at the repo root** (`-f`), its `site_dir` a gitignored path **inside**
+  the repo, and delete both after. Neither end is optional: a Zensical config resolves its paths
+  relative to the **config file**, so a config parked elsewhere makes `docs_dir` resolve outside the
+  repo and the build exits `Error: Docs directory does not exist`; and a `site_dir` outside the
+  project root aborts with `Error: site_dir must be within project root`, which `build` has no
+  `--site-dir` to override. Never run `zensical serve`.
 - **Never claim a build that did not run.** If the toolchain is absent, say so plainly, print the
   selected install/build pair (`uv sync` + `uv run zensical build --clean --strict`, or
   `pip install -r requirements.txt` + `zensical build --clean --strict`), and report the run as
@@ -115,7 +120,7 @@ of git.
 | `site-repo-url-absent` | no `repo_url` and Git remote provides a usable repository URL | **FIX** — add the derived value without replacing a human value |
 | `site-edit-uri-absent` | a mapped host needs an edit URL Zensical cannot derive | **FIX** — add its tested template, preserving a human value |
 | `site-config-legacy` | a root `mkdocs.yml` and no `zensical.toml` | **REPORT** — it still builds, but every MkDocs plugin in it is inert; converting is its **own confirmation** |
-| `site-docs-dir-mismatch` | `docs_dir` does not point at the `documentation/` home | **FIX, own confirmation** — a hidden bundle root is not a supported substitute |
+| `site-docs-dir-mismatch` | `docs_dir` does not point at the `documentation/` home | **FIX, own confirmation** — a dot-prefixed root builds zero pages and still exits `0` |
 | `site-publication-map-absent` | the accepted plan has no Mapa editorial de publicação | **REPORT** → `quenching-knowledge-documentation-plan` |
 | `site-publication-route-missing` | a `publicar`/`publicar derivado` row has no corresponding route below `documentation/` | **REPORT** → `quenching-knowledge-documentation-write` |
 | `site-publication-leak` | a `não publicar` home appears in nav, a route or an internal link | **FIX** only in config/nav; otherwise **REPORT** → page author |
@@ -309,7 +314,8 @@ and its result. **Done when:** every fixed/reported finding, build status, and r
   always shown as a diff, and never reorder or drop a key you did not add.
 - Never convert a legacy `mkdocs.yml` without its own confirmation, and never leave two configs at
   the root.
-- Never re-aim `docs_dir` to the bundle root. Never expose a home without an accepted map row, or
+- Never re-aim `docs_dir` to the bundle root — it builds an empty site silently. Never expose a
+  home without an accepted map row, or
   expose a `não publicar` row; creating its Markdown route belongs to the page-owning stage.
 - Never put generator-specific syntax or generator frontmatter into an OKF page — the markdown stays
   generator-neutral.

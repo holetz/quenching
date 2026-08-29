@@ -1,13 +1,13 @@
 ---
 type: external
 title: Zensical measured behaviour
-description: Measured facts about the Zensical static site generator — that it runs no MkDocs plugin at all, that its CLI has three commands and a build with no output flag, that a config resolves every path relative to the config file rather than the working directory, that `.cache/` ignores itself, which Material theme features survived and which one did not, and how publishing changed from a deploy subcommand to a Pages artifact
+description: Measured facts about the Zensical static site generator — that it runs no MkDocs plugin at all, that its CLI has three commands and a build with no output flag, that a config resolves every path relative to the config file rather than the working directory, that a dot-prefixed `docs_dir` silently builds an empty site and symlinks are no escape from it, that `site_dir` may not leave the project root, that `.cache/` ignores itself, which Material theme features survived and which one did not, and how publishing changed from a deploy subcommand to a Pages artifact
 resource: plugins/quenching/assets/zensical/**, plugins/quenching/commands/knowledge/documentation/**, plugins/quenching/assets/references/knowledge-documentation/**
 tags: [zensical, mkdocs, static-site-generator, documentation, tooling]
-timestamp: 2026-08-27
+timestamp: 2026-08-28
 audience: both
 authority: current
-source: 'spec 1003 (2026-08-27) — measured against `zensical 0.0.57` from PyPI, built repeatedly over this plugin''s own `documentation/` payload; the documentation read is the `github.com/zensical/docs` tarball at branch `master` on the same date'
+source: 'spec 1003 (2026-08-27) — measured against `zensical 0.0.57` from PyPI, built repeatedly over this plugin''s own `documentation/` payload; the documentation read is the `github.com/zensical/docs` tarball at branch `master` on the same date; the dot-prefixed `docs_dir` and `site_dir` sections were measured on 2026-08-28 against the same 0.0.57, by building this repository''s own bundle from throwaway root configs'
 maintainer: quenching
 ---
 
@@ -61,13 +61,52 @@ Error: Docs directory does not exist: /somewhere/else/docs
 ```
 
 So a throwaway config that must reach the repo's real `docs_dir` has to be written **at the repo
-root**, with only its `site_dir` pointing elsewhere.
+root** — and its `site_dir` cannot escape from there either (see `site_dir` must stay inside the
+project root below).
 
 ## `.cache/` ignores itself
 
 The build writes a `.cache/` directory beside the config, and **puts a `.gitignore` containing `*`
 inside it**. Nothing needs to be added to the repository's own `.gitignore` for it; only the built
 `site/` does.
+
+## A dot-prefixed `docs_dir` builds an empty site, and says nothing
+
+**Measured, and it is the constraint that decides whether a whole OKF bundle can be the site.**
+`docs_dir = ".knowledge"` — the bundle root, dot-prefixed by fixed convention — produces **zero
+pages**: no `index.html`, and not even the `404.html` every other build emits. The build prints
+`Build finished`, reports no issues, and **exits 0**. Nothing in the output reads as a failure.
+
+The bundle's content is not the cause. The same tree copied to a non-hidden `knowledge-probe/` and
+built from the same config renders **107 HTML files** for its 106 documents (and reports the 75 link
+issues its absolute `](/.knowledge/...)` and `](/plugins/...)` links earn). The narrower
+`docs_dir = ".knowledge/documentation"` this repository ships builds its 16 pages clean.
+
+The rule is that Zensical excludes any file whose path carries a `.`-prefixed component, and the
+`docs_dir` component is part of that path:
+
+| `docs_dir` | Its children | Pages built |
+| --- | --- | --- |
+| `.knowledge/documentation` | all normal | 17 (16 + `404.html`) |
+| `knowledge-probe` (copy of `.knowledge`) | all normal | 107 (106 + `404.html`) |
+| `probe-docs` holding one `.hidden/` subfolder | one dotted | the dotted subfolder alone is skipped |
+| `.probe-docs` | all normal | **0** |
+
+**Symlinks are not an escape hatch.** A non-hidden `probe-docs/` holding
+`standards -> ../.knowledge/standards` builds only the real files beside the link; the symlinked
+tree contributes no page at all.
+
+The consequence for an OKF bundle: while `/.knowledge/` is the fixed bundle root, the whole bundle
+cannot be the site's source. Only a non-hidden subtree of it can, which is why `docs_dir` points at
+a home rather than at the root.
+
+## `site_dir` must stay inside the project root
+
+Also measured, and it contradicts the obvious throwaway-config recipe: a `site_dir` resolving
+anywhere outside the project root aborts before any build with
+`Error: site_dir must be within project root`. Combined with `build` having no `--site-dir`, a
+verification build cannot be redirected out of the tree at all. A throwaway config must keep its
+`site_dir` **inside** the repository — a gitignored path — and delete the output afterwards.
 
 ## Link validation is on by default, and `--strict` turns it into an abort
 
