@@ -65,7 +65,7 @@ Guessing costs the user the very expense this section exists to avoid.
 Every aligned repo ends with the **same shape**. A variant the repo happens to use —
 `docs/arquitetura/`, a change folder named `AddAuth/`, a skill called `helper2` — is a
 **non-convergence smell**: a migration candidate, never a local convention to preserve. The
-plugin's names win, because the whole value of the three fronts is that a human or an agent
+plugin's names win, because the whole value of the aligned fronts is that a human or an agent
 landing in any adopting repo finds the same tree.
 
 The counterweight is **evidence-gating**, not tolerance: a front only scaffolds what the repo

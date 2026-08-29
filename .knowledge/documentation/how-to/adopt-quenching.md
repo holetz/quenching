@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-08-28
 audience: human
 authority: current
-source: plugins/quenching/README.md §The three fronts; command bodies knowledge/align.md, components/align.md, align.md
+source: plugins/quenching/README.md §The four fronts; command bodies knowledge/align.md, design/align.md, components/align.md, align.md
 maintainer: Israel Holetz
 ---
 
@@ -35,17 +35,19 @@ flowchart LR
     D --> E[verify with the front's validator]
 ```
 
-## Decide: one front, or all three
+## Decide: one front, or the aligned set
 
 | You want | Run | It converges |
 | --- | --- | --- |
 | Just the knowledge base | `/quenching:knowledge:align` | `/.knowledge/` into the OKF bundle, pulling in out-of-band content |
 | Just the automation surface | `/quenching:components:align` | `.claude/` onto one file per entry point, bodies audited |
-| The whole repository | `/quenching:align` | all three fronts, dependency order, one nested OK |
+| Just the design source | `/quenching:design:align` | `/.design/` source, projections, and genres |
+| The whole repository | `/quenching:align` | all three local aligned fronts, dependency order, one nested OK |
 
 !!! tip "Recommendation"
     Default to `/quenching:align` on adoption. The fronts feed each other — a spec's
-    distillation is glossary work for the knowledge front; the automation front's registry is a
+    distillation is glossary work for the knowledge front; the design front's standards feed its
+    projections; the automation front's registry is a
     listing the knowledge front indexes — and the conductor loops across them until nothing
     changes anywhere. Authorization nests one level: each front align inherits your OK and never
     re-asks, while a code-coupled rename and an irreversible close still gate on their own.
@@ -55,7 +57,7 @@ flowchart LR
 1. Start from a **clean working tree** — the plan you are about to approve should be the only
    diff you end up reviewing.
 2. Type `/quenching:align`. The probe runs each front's own verifier first
-   (`cq knowledge validate`, `cq specs doctor`, `cq components doctor`/`lint`); a clean front
+   (`cq knowledge validate`, `cq design doctor`, `cq components doctor`/`lint`); a clean front
    is skipped without ceremony.
 3. Read the ONE plan per drifted front. It names every move: which stray docs fold into which
    `/.knowledge/` home, which `.claude/` files collapse onto one entry point, what

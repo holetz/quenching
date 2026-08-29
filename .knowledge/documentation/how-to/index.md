@@ -38,4 +38,4 @@ what you should observe at every step. If the plugin is new to you, take the
 </div>
 
 **Looking for exact command signatures?** The [command catalog](../reference/commands.md) lists
-all thirty-eight, by front.
+all forty-one, by front.
