@@ -39,7 +39,8 @@ coverage denominator. For every such row, prove that its declared route is built
 is non-empty; for every `não publicar` row, prove that no matching nav entry, published route or
 link exists. A
 curated route under `documentation/` is valid; `docs_dir = ".knowledge"` is not a substitute,
-because the hidden source root does not reliably yield rendered pages.
+because a dot-prefixed root yields **zero** rendered pages while still exiting `0` — measured, with
+the evidence in `external/tools/zensical-measured-behaviour.md`.
 
 ```bash
 # compare plan rows with generated routes; replace <route> with each mapped route
