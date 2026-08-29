@@ -1,6 +1,6 @@
 # Resolving a plugin tool, and writing its path
 
-Front-neutral: every `/quenching:knowledge:*`, `/quenching:specs:*` and `/quenching:components:*` command body
+Front-neutral: every `/quenching:knowledge:*`, `/quenching:specs:*`, `/quenching:design:*` and `/quenching:components:*` command body
 shells out to the same single entry point, `cq`, naming its pillar (`specs`, `knowledge` or
 `components`) as the first argument. All three resolve it the same way.
 

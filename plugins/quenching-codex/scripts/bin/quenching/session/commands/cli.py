@@ -13,12 +13,12 @@ action, and neither path is named anywhere below.
 Moved verbatim out of the pre-refactor session script, whose module docstring carried the two sections
 below unchanged. Two adjustments to what they say: `VERSION` is now IMPORTED from
 `quenching.common.version` rather than declared "below" — the same constant at the same
-value, declared once for the four pillars — and `--json` is now proved by `tests/`
+value, declared once for the five pillars — and `--json` is now proved by `tests/`
 rather than by the `selftest` verb that left with the fixtures.
 
 WHY IT IS NOT INSTALLED
 -----------------------
-The three shipped tools read the repo being aligned, so each target needs its own copy
+The target-facing tools read the repo being aligned, so each target needs its own copy
 and each align upgrades that copy by comparing `--version`. This tool's input is
 `~/.codex/projects/**` — the *operator's machine*, not the repo. There is nothing for a
 target repo to hold, so nothing installs it.

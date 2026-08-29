@@ -1,6 +1,6 @@
 # quenching
 
-A **Claude Code plugin** that forces any repository's `docs/` into a single
+A **Claude Code plugin** that forces any repository's `/docs/` into a single
 canonical **[Open Knowledge Format (OKF v0.1)](https://github.com/GoogleCloudPlatform/knowledge-catalog)**
 bundle — and keeps it that way. Every repository that adopts it ends up with the
 **same rich, greppable knowledge tree** in the same places, so anyone moving
@@ -38,18 +38,22 @@ alvo continua em `plugins/quenching/assets/zensical/`.
 
 ## What it does
 
-Twenty-five commands acting on three fronts of a target repository — the `docs/` OKF bundle
-(`knowledge`), the native `specs/` spec-driven workspace (`specs`), and the target's own
-`.claude/` automation surface (`components`) — plus root `/align`, which spans all three on one
-confirmation. Every front has exactly one **align**: probe-first, so a
-conformant front costs a couple of tool calls and stops. The full command-by-command manual, the
-three fronts, and the cost model live in the
+Forty-one commands acting on four fronts of a target repository — the `/docs/` OKF bundle
+(`knowledge`), provider-owned `specs`, the `/.design/` DTCG design source, and the target's own
+`.claude/` automation surface (`components`) — plus root `/align`, which spans the three local
+aligned fronts on one confirmation. Every aligned front has exactly one **align**: probe-first,
+so a conformant front costs a couple of tool calls and stops. The full command-by-command manual,
+the fronts, and the cost model live in the
 [plugin README](plugins/quenching/README.md) — this file stays a thin pointer over it rather
 than a second, driftable copy.
 
 The **`cq knowledge hook`** hook (zero dependencies) keeps future edits
-conformant: it validates touched `docs/**` files against the OKF core on
+conformant: it validates touched `/docs/**` files against the OKF core on
 `Write`/`Edit` and at `Stop`, and can optionally block a non-conformant write.
+
+The design source is DTCG 2025.10 at `/.design/tokens.json`; `cq design build` emits portable
+`PRODUCT.md`/`DESIGN.md`, the Impeccable sidecar, and HTML/Typst adapters. Impeccable is an
+optional consumer, and `cq design import` is the explicit route for folding its proposals back.
 
 ## Install
 
@@ -72,7 +76,7 @@ Then, inside a target repository, use the `/` menu — every command is
 `/quenching:<front>:<verb>` when installed as a plugin (`/quenching:knowledge:align`,
 `/quenching:specs:execute`, `/quenching:components:command:new`, …); the bare `/<front>:<verb>`
 form only resolves in a repo that vendored the file into its own `.claude/commands/`. The full,
-current list — twenty-five commands, one file per entry point — is the
+current list — forty-one commands, one file per entry point — is the
 [plugin README](plugins/quenching/README.md), never duplicated here.
 
 Or add this marketplace and enable the plugin the usual way (see the

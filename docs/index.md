@@ -4,8 +4,8 @@ okf_version: "0.1"
 
 # Every repository, the same shape
 
-**quenching** is a Claude Code plugin. Point it at a repository and its knowledge, its plans and
-its automation each converge onto one canonical, verifiable structure — probed first, planned
+**quenching** is a Claude Code plugin. Point it at a repository and its knowledge, its plans, its
+design source and its automation each converge onto one canonical, verifiable structure — probed first, planned
 once, changed only on your OK.
 
 In metallurgy, *quenching* is the rapid cooling that fixes a metal's structure and makes it hard.
@@ -20,17 +20,17 @@ before anyone touches a file.
   [the getting-started tutorial](tutorials/getting-started.md).
 - **Do a task** — adopt quenching in a repo, drive one spec to merge, publish a docs site:
   [the how-to guides](how-to/index.md).
-- **Understand why** — the three fronts, the OKF bundle, the provider-owned spec lifecycle:
+- **Understand why** — the four fronts, the OKF bundle, the DTCG design source, and the provider-owned spec lifecycle:
   [the explanations](explanation/index.md).
-- **Look it up** — all thirty-eight commands, the local automation registry:
+- **Look it up** — all forty-one commands, the local automation registry:
   [this project's reference](project/index.md), and the [glossary](glossary.md).
 
 ## The problem
 
-A repository that grows with AI agents accumulates three kinds of drift at once. Knowledge
+A repository that grows with AI agents accumulates four kinds of drift at once. Knowledge
 scatters across READMEs, wikis and chat threads, so every session re-derives what the last one
 already learned. Plans live in prose nobody can verify, so "done" is an opinion. And the
-`.claude/` automation surface grows one ad-hoc command at a time, until no two repositories —
+`/.design/` accumulates duplicated or stale visual values, while the `.claude/` automation surface grows one ad-hoc command at a time, until no two repositories —
 and no two commands — look alike.
 
 Each kind of drift makes the next one worse: an agent without durable knowledge writes vaguer
@@ -38,8 +38,8 @@ plans, and vaguer plans produce automation nobody dares to reorganize.
 
 ## The solution
 
-quenching acts on the three surfaces where that drift lives, with **the same interface on each**:
-every front has exactly ONE `align` command that probes first — a clean front costs a couple of
+quenching acts on four surfaces where that drift lives, with **the same interface on each**:
+each local front has exactly ONE `align` command that probes first — a clean front costs a couple of
 tool calls and stops there — then presents one consolidated plan and waits for one OK before
 writing anything.
 
@@ -47,10 +47,11 @@ writing anything.
 | --- | --- | --- |
 | `/docs/` | a canonical **OKF bundle** — standards, concepts, glossary, and this site | `/quenching:knowledge:align` |
 | Specs | a provider-owned plan cycle on **GitHub issues or Azure Boards** | cycle and status commands |
+| `/.design/` | one DTCG source projected to portable Impeccable and editorial media artifacts | `/quenching:design:align` |
 | `.claude/` | one file per entry point, every description audited | `/quenching:components:align` |
 | *(git)* | nothing — a pillar that answers questions, converges no tree | *(none, by design)* |
 
-One more command, `/quenching:align`, conducts all three fronts in dependency order on a single
+One more command, `/quenching:align`, conducts the three local aligned fronts in dependency order on a single
 OK. Read [the operating model](explanation/operating-model.md) and you know the whole plugin.
 
 ## Quick start
@@ -109,9 +110,9 @@ skills' `references/`.
 
 ## TL;DR for agents
 
-- Contract: three fronts (`knowledge`, `specs`, `components`) + a `git` pillar; ONE align
-  per front, probe-first; `/quenching:align` conducts all three on one OK.
-- Rails: `cq` CLI — `cq knowledge`, `cq specs`, `cq components`, `cq git`; uniform `--json`;
+- Contract: four fronts (`knowledge`, `specs`, `design`, `components`) + a `git` pillar; ONE align
+  per local front, probe-first; `/quenching:align` conducts the three aligned fronts on one OK.
+- Rails: `cq` CLI — `cq knowledge`, `cq specs`, `cq design`, `cq components`, `cq git`; uniform `--json`;
   exit codes `0` ok · `1` findings · `2` refusal.
 - Invariants: nothing is written before a human OK; blast radius reaching product code
   confirms on its own; a probe that finds nothing ends the run.

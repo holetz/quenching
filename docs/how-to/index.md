@@ -14,4 +14,4 @@ what you should observe at every step. If the plugin is new to you, take the
   rendered Diátaxis site, planned, sourced, reviewed and gated by a strict build.
 
 **Looking for exact command signatures?** The [command catalog](../project/commands.md) lists all
-thirty-eight, by front.
+forty-one, by front.

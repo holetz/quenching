@@ -1,7 +1,7 @@
 ---
 type: standard
 title: Command surface naming
-description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the fourth namespace (`git`, a pillar rather than a front) and its coexistence with a target's own `git` category; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context
+description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the design namespace for DTCG source and projections; the fifth namespace (`git`, a pillar rather than a front) and its coexistence with a target's own `git` category; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context
 resource: plugins/quenching/commands/**
 tags: [naming, commands, taxonomy]
 timestamp: 2026-08-27
@@ -63,15 +63,16 @@ so nothing checks that they agree.
 The surface is partitioned by the artifact each front's commands touch:
 
 - **`/quenching:knowledge:`** — the OKF `/docs/` bundle.
-- **`/quenching:specs:`** — the native spec-driven workspace.
+- **`/quenching:specs:`** — provider-owned spec documents and their lifecycle.
+- **`/quenching:design:`** — the `/.design/` DTCG source, projections, and editorial genres.
 - **`/quenching:components:`** — the target repo's `.claude/` automation surface.
-- **`/quenching:git:`** — the fourth namespace, and the odd one out: it names a **pillar**, not a
-  front. The other three converge a tree toward a canonical shape; `git` answers questions about
+- **`/quenching:git:`** — the fifth namespace, and the odd one out: it names a **pillar**, not a
+  front. The other four converge a tree toward a canonical shape; `git` answers questions about
   the target repository's own live git state instead, which is why it carries no `align` verb of
-  its own — see [../architecture/align-surface.md](../architecture/align-surface.md) §The fourth
+  its own — see [../architecture/align-surface.md](../architecture/align-surface.md) §The fifth
   pillar has no align.
-- **root `/align`** — deliberately outside the three front namespaces, because it is the one
-  command that spans all three fronts. Under the old rule it was an exception the linter had to be
+- **root `/align`** — deliberately outside the four front namespaces, because it is the one
+  command that spans the three local aligned fronts. Under the old rule it was an exception the linter had to be
   told about; now it is simply a command at the top of the tree.
 
 **A target repo's own `git` category coexists with this namespace, and never collides with it.**
@@ -85,7 +86,7 @@ command and nothing this plugin ships, on every repo that installs it.
 This clause named a second root, `/align-and-update`, until the specs-flow-consolidation spec
 deleted it from all four fronts — see
 [../architecture/align-surface.md](../architecture/align-surface.md), which has said the surface is
-a 1×4 column since. Two `authority: current` standards disagreeing about what exists is worse than
+a one-column align surface. Two `authority: current` standards disagreeing about what exists is worse than
 either being merely out of date, which is why a rename's blast-radius sweep below has to reach the
 standards and not only the code.
 
