@@ -10,35 +10,42 @@ repository. It carries one canonical **Open Knowledge Format (OKF v0.1)** bundle
 of `/.knowledge/` and the tools to install it, force an existing base into conformance,
 insert new knowledge, capture terms into a fixed glossary, drain the project's Codex
 Code memory into it, import external sources into it, keep the repo's `AGENTS.md` a thin pointer over it, and organize
-the repo's own **automation surface** (`.agents/skills/` + `.agents/skills/`) under one
+the repo's own **automation surface** (`.agents/skills/`) under one
 taxonomy — so every repository that adopts the plugin looks the **same**. It also carries the repo's
 **spec-driven plan cycle**: the nine `quenching-specs-*` commands over a provider-owned specs
 front backed by GitHub or Azure Boards, with the OKF bundle as its knowledge substrate, driven end
 to end by the bundled stdlib `cq specs`.
+
+The **design front** adds one DTCG source at `/.design/tokens.json`, deterministic projections
+for Impeccable and editorial media, and a human-arbitrated import path for an Impeccable-authored
+`DESIGN.md`. Impeccable remains optional and owns web craft; quenching owns the source, product
+projection, genres, and non-web adapters.
 
 All of it sits behind **one interface, repeated on every front**: ONE `align` per front —
 probe-first, so a clean front costs a couple of tool calls — that forces the structure into
 shape and carries that front's content stages. Read the next section and you know the whole
 plugin.
 
-## The three fronts, the fourth pillar, and the one align per front
+## The four fronts, the fifth pillar, and the one align per front
 
-The plugin acts on **three** surfaces of a repository, and the interface is the **same on each**.
-Every front has exactly ONE align, and one more spans all three. A fourth axis, `git`, is a
+The plugin acts on **four** surfaces of a repository, and the interface is the **same on each**.
+Three local fronts have an align, the provider-owned specs front has no local tree to converge,
+and one root command spans the three aligned fronts. A fifth axis, `git`, is a
 **pillar** rather than a front — it converges no tree of its own, so it carries no align at all
 (see [`architecture/align-surface.md`](../../.knowledge/standards/architecture/align-surface.md)
-§The fourth pillar has no align):
+§The fifth pillar has no align):
 
 | Front / pillar | Namespace | **align** — probe-first, structure + content |
 | --- | --- | --- |
 | `/.knowledge/` — the OKF bundle | `quenching-knowledge-*` | `quenching-knowledge-align` |
 | provider-owned specs — GitHub issues or Azure work items | `quenching-specs-*` | cycle and status commands |
+| `/.design/` — the DTCG design source | `quenching-design-*` | `quenching-design-align` |
 | `.agents/` — the automation surface | `quenching-components-*` | `quenching-components-align` |
 | *(pillar)* — a repository's own git facts | `quenching-git-*` | **none** |
-| **all three fronts** | *(root)* | **`quenching-align`** |
+| **all three aligned fronts** | *(root)* | **`quenching-align`** |
 
 **The probe comes before the inventory.** Each align opens by running its front's own verifier
-(`cq knowledge validate`, `cq specs doctor`/`validate`, `cq components doctor`/`lint`) and stops when it
+(`cq knowledge validate`, `cq design doctor`, `cq components doctor`/`lint`) and stops when it
 finds nothing — no inventory, no plan, no confirmation. Otherwise: one read-only inventory → ONE
 consolidated plan → one OK → apply → verify, then the front's content stages, each run only when
 the probe found it work:
@@ -47,11 +54,12 @@ the probe found it work:
 | --- | --- |
 | `docs` | drains project memory, thins the harness (moving durable knowledge into homes), and OFFERS the glossary backfill on a cheap proxy — looping to a fixpoint, the one front with a real internal loop |
 | `specs` | none driven — an empty section, a complete spec awaiting its close, an unresolved discovery are each **reported with the command that owns it**; every cycle action needs fresh human intent |
+| `/.design/` | imports or preserves an external `DESIGN.md` only after source arbitration, installs missing brand assets, builds projections, and reports optional Impeccable detector results |
 | `.agents/` | audits every command **body** against the writing doctrine — the one thing the migration itself is forbidden to fix — and reports each violation with the `quenching-components-command-new` that closes it |
 
-The cross-front `quenching-align` conducts the three in dependency order on one nested OK and **loops
+The cross-front `quenching-align` conducts the three aligned fronts in dependency order on one nested OK and **loops
 across fronts**, because they feed each other: a spec's distillation is glossary work the
-`docs` front must then index; the skill front creates the rule and registry that the `docs`
+`docs` front must then index; the design front installs product/design standards; the skill front creates the rule and registry that the `docs`
 listings must carry.
 
 The **cycle conductor** is the second conductor: `quenching-specs-cycle` conducts the lifecycle of
@@ -74,7 +82,7 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](assets/references/align/convergence.md).
 
-## The thirty-eight commands
+## The forty-one commands
 
 **One file per entry point** — Codex merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs; there is
@@ -86,9 +94,9 @@ and `commands/**` disagree
 §A hand-written inventory of the surface needs a machine holding its lockstep).
 
 The split is by front and pillar: `quenching-knowledge-*` acts on the OKF `/.knowledge/` bundle,
-`quenching-specs-*` on provider-owned issues and work items, `quenching-components-*` on the
-target's `.agents/` automation surface, and `quenching-git-*` on a repository's own git facts. Two
-commands sit at the root. Codex auto-routes to a command by its `description`; typing the command is
+`quenching-specs-*` on provider-owned issues and work items, `quenching-design-*` on the DTCG
+source and its projections, `quenching-components-*` on the target's `.agents/` automation surface,
+and `quenching-git-*` on a repository's own git facts. Two commands sit at the root. Codex auto-routes to a command by its `description`; typing the command is
 the explicit entry point.
 
 ### The `knowledge` front — the OKF `/.knowledge/` bundle
@@ -108,6 +116,18 @@ the explicit entry point.
 | `quenching-knowledge-documentation-write` | Writes the Diátaxis pages from that plan, sourced and never invented. |
 | `quenching-knowledge-documentation-review` | Scores pages against the ten-dimension quality gate **without changing a byte**. |
 | `quenching-knowledge-documentation-build` | Owns the Zensical site layer — extensions, CSS, nav, and the strict build. |
+
+### The `design` front — the `/.design/` DTCG source and projections
+
+| Command | Does |
+| --- | --- |
+| `quenching-design-align` | Installs or converges the brand pack, preserves source truth, arbitrates external DESIGN.md proposals, and rebuilds every projection. |
+| `quenching-design-status` | Reports DTCG validity, generated identity, sidecar/assets, genres, adapters, and optional Impeccable detector state without writing. |
+| `quenching-design-genre-new` | Mints ONE editorial genre contract with fields, register, and HTML/Typst/PDF destinations. |
+
+`cq design build` and `cq design import` are the deterministic rails used by these commands. The
+source is DTCG 2025.10; `DESIGN.md` is a deliberately lossy portable projection, while rich
+motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 
 ### The `components` front — the target's `.agents/` surface
 
@@ -136,7 +156,7 @@ the explicit entry point.
 None of the seven carries an `align`: the pillar converges no tree, only answers questions about the
 target's own live git state, so there is nothing a probe could find drifted
 ([`architecture/align-surface.md`](../../.knowledge/standards/architecture/align-surface.md) §The
-fourth pillar has no align). The `specs` front hands off to this pillar rather than executing git
+fifth pillar has no align). The `specs` front hands off to this pillar rather than executing git
 itself — `quenching-specs-execute` invokes `quenching-git-branch` for isolation, and
 `quenching-specs-conclude` reviews, distils, archives and proves the pre-merge gate green, then
 **names** `quenching-git-pr-create` or `quenching-git-merge` as the human's own next command
@@ -146,7 +166,7 @@ instead of running either.
 
 | Command | Does |
 | --- | --- |
-| `quenching-align` | The one align that spans the three fronts, on ONE confirmation — conducting each front's own align in dependency order, never reimplementing any of them. |
+| `quenching-align` | The one align that spans the three aligned fronts, on ONE confirmation — conducting each front's own align in dependency order, never reimplementing any of them. |
 | `quenching-handoff` | Compacts the current conversation into a handoff document a fresh session can continue from — referencing existing plans, issues, commits and diffs rather than duplicating them. |
 
 The `specs` front has nine commands and a flow worth reading as a whole, so it gets its own section
