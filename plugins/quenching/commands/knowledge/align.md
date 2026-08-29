@@ -57,6 +57,11 @@ to enumerate in `allowed-tools`, and each write remains gated by the workflow be
 - **Completeness of what fits, evidence-gated.** A repo without data gets no `catalog/`; a
   standard is generated only with observed `file:line` evidence; the rest is a recorded
   deferral, never a silent skip.
+- **Residuals are classified, not hidden.** Deterministic local defects are `error-corrigible`;
+  absent checkout evidence is `source-gap`; absent installed assets are `plugin-package-gap`;
+  disagreement with the accepted publication map is `plan-drift`; and a disabled publication or
+  capability is `not-applicable`. The final report names the evidence, owner and closing command
+  for every residual class.
 - **Folders over prefix-clusters.** When sibling files share a subject prefix
   (`nomenclatura-classes.md`, `nomenclatura-funcoes.md`, `nomenclatura-modulos.md`, …), that
   prefix **is** the subject and the repetition is the "filename repeats the folder" smell →
@@ -97,6 +102,22 @@ Branch as sweep-doctrine §Probe before the inventory prescribes:
 **No bundle at all** (no `index.md` / `okf_version`) is not a failure — it is the
 install case, and step 4 scaffolds it.
 **Done when:** the three signals are in hand and the run has either stopped or committed to a pass.
+
+Before the inventory, run a **preflight** against the checkout and the plugin payload whenever
+the requested pass can use them. Confirm that the source checkout contains the code, bundles and
+services named by the findings, that the installed plugin contains the translation and design
+payloads it claims to provide, and that every checker has an applicable publication or capability
+row. A missing source is a `source-gap`; a missing installed payload is a `plugin-package-gap`.
+Neither is repaired by inventing a file, asset, route or resource: report the evidence and the
+command or package operation that can close it. A checker whose publication is disabled by the
+accepted map or capability register is `not-applicable`, not a failed run.
+
+The preflight also reads the accepted `.quenching/documentation/plan.md` when a site layer exists.
+Its `### Mapa editorial de publicação` is the authority for homes, routes and derived pages. A
+disagreement between that map and `nav` or `site-source/` is `plan-drift`; regenerate the plan or
+the owned projection through the documentation planning/build command rather than hand-editing a
+large generated artifact. Semantic resource ambiguity remains a human-pending `source-gap` until
+the source or owner supplies evidence.
 
 ### 2. Inventory + map → the alignment plan (read-only)
 When `$ARGUMENTS` names a home or subtree, keep the fixed-root probe whole-bundle but restrict this
@@ -271,17 +292,28 @@ run. Never run the sweep to discover whether it had work.
 the offer was deliberately not made.
 
 ### 8. Verify, then decide: loop or stop
-Re-run `cq knowledge validate /docs --json` and confirm: every non-reserved doc has frontmatter and a
-non-empty `type`; every `index.md` is frontmatter-free (root only `okf_version`); and the
-**structural-integrity WARNs are cleared — zero `dir-no-index`, `index-broken-link`,
-`index-orphan`** (these are WARN, so exit 0 alone does not prove them clean — inspect the
-findings).
+Re-run the applicable convergence checks in this order: `cq knowledge validate /docs --json`,
+`cq knowledge project docs --check`, `cq knowledge nav docs --check`,
+`cq knowledge site-source docs site-source --check`, a strict site build, and the rendered site
+checker immediately after that build. The projection, navigation and bounded-source checks are
+skipped only when their site layer is absent or the accepted map marks that publication
+`not-applicable`; a catalog checker runs only when the map exposes a catalog route. When the
+glossary is mandatory, pass an explicitly evidenced renderable term with `--glossary-term` (for
+example `SCD2`), never the first lexical glossary entry. This sequence is the convergence gate:
+there must be no errors, no stale projections and no applicable checker failure.
+
+Also confirm: every non-reserved doc has frontmatter and a non-empty `type`; every `index.md` is
+frontmatter-free (root only `okf_version`); and the **structural-integrity WARNs are cleared —
+zero `dir-no-index`, `index-broken-link`, `index-orphan`** (these are WARN, so exit 0 alone does
+not prove them clean — inspect the findings).
 
 Then re-run step 1's probe — never the step 2 inventory — and decide by the four outcomes in
 [convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
 §The convergence contract: **progress** → another pass from step 2 under the same OK, narrating its
-plan; **converged** → step 9; **residue** → stop and report; **pass cap reached** → stop and report
-what remains. The guards there (pass cap, no-progress, never-widen-scope) apply unchanged.
+plan; **converged** → step 9 only when the full applicable sequence above is clean; **residue** →
+stop and report each `error-corrigible`, `source-gap`, `plugin-package-gap`, `plan-drift` or
+`not-applicable` finding; **pass cap reached** → stop and report what remains. The guards there
+(pass cap, no-progress, never-widen-scope) apply unchanged.
 
 Re-probing rather than re-inventorying is what keeps a second pass cheap — and it is the same three
 signals, so a stage that emptied itself this pass is simply absent from the next.
@@ -289,9 +321,10 @@ signals, so a stage that emptied itself this pass is simply absent from the next
 
 ### 9. Report
 Summarize the whole run: N passes, what each stage did across all of them, the final validator
-state, and — explicitly — what was **deliberately not closed**, each with the command that closes
-it (per-item content needing human input, unroutable harness facts, deferred sub-standards, a
-declined glossary sweep).
+state, and — explicitly — what was **deliberately not closed**, each with its classification,
+evidence, owner and closing command. Use `source-gap` for absent or ambiguous source evidence,
+`plugin-package-gap` for an incomplete installed payload, `plan-drift` for editorial-map
+disagreement, and `not-applicable` for disabled checks; do not call any of these converged.
 
 **The report is the record.** The sweep leaves no trace of itself in the bundle.
 **Done when:** the report states the final convergence outcome and names any residue with its owning
@@ -316,5 +349,9 @@ command, or explicitly states that no residue remains.
   `/docs/` concurrently.
 - Never author content to close a gap that needs human input — **surface** it with its per-item
   command, never fabricate a standard, a concept, or a term.
+- **Corrija automaticamente todo resíduo determinístico e seguro.** Para cada resíduo restante,
+  classifique-o como erro corrigível, bloqueio do ambiente, lacuna de fonte ou teste não aplicável.
+  Não aceite convergência enquanto o plano editorial, a navegação, a projeção `site-source` e os
+  checkers discordarem sobre as casas publicadas.
 - Never loop past the pass cap, never re-run a no-progress pass, and never treat validator exit 0
   alone as converged.
