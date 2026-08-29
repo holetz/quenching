@@ -140,7 +140,7 @@ Rewriting a body is authoring, and authoring needs the human whose intent the sk
 
 `evals/evals.json` beside the skill, and a timestamped run directory holding `grading.json` and
 `benchmark.json`. The shapes are adopted verbatim from Anthropic's `skill-creator` and owned by
-[`components-command-eval/evaluation.md`](/plugins/quenching/assets/references/components-command-eval/evaluation.md); this
+`plugins/quenching/assets/references/components-command-eval/evaluation.md`; this
 standard states what they must contain, not how they are keyed.
 
 The case set is **committed and reviewed in the same diff as the body it tests** — a case set that

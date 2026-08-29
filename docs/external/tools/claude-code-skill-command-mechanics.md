@@ -15,7 +15,7 @@ maintainer: quenching
 
 Facts about **how Claude Code itself loads a plugin's commands and skills**. External tool
 behavior, not our contract — how we choose to *use* it belongs in
-[standards/automation/](/docs/standards/automation/index.md).
+[standards/automation/](../../standards/automation/index.md).
 
 Everything below was measured on Linux by probing throwaway command and skill files in fresh
 `claude -p` processes. Where a claim is inference rather than observation, it says so.
@@ -190,7 +190,7 @@ session actually loads *before* writing a probe, and let a control arm catch it 
 ## Provenance
 
 Rows 1–6 were measured during the task 0.2 gate spike of the `skill-description-tiering` spec, which
-was [abandoned](/.specs/archive/2026-07-26-skill-description-tiering.md) on the result; row 7 during
+was abandoned (`.specs/archive/2026-07-26-skill-description-tiering.md`) on the result; row 7 during
 task 0.1 of `route-commands-without-always-on-descriptions`. All probe files were reverted.
 Re-measure before relying on any row — see §Re-measurements for when each was last checked. These
 are one version's observed behavior, not a published contract.

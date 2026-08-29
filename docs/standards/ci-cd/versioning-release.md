@@ -41,7 +41,7 @@ version it does not have.
 **Artifact 4 is the *tool identity*, now held once.** Nothing installs a tool standalone any more —
 every command invokes the plugin's own `cq`, bare through the `bin/` shim on `PATH` or at
 `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`, with no third rung
-([align/tool-resolution.md](/plugins/quenching/assets/references/align/tool-resolution.md)
+(`plugins/quenching/assets/references/align/tool-resolution.md`
 §Resolving the tool) — so a bump no longer *delivers* anything. What the one constant still does is
 answer `--version` for every pillar alike. Four scripts each carrying their own copy of this
 constant was never a design choice — it was the shape a self-contained, no-import single file

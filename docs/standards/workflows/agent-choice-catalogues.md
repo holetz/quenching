@@ -61,7 +61,7 @@ asking anyone anything, and writes the result with the spec's very first capture
 — there is no locator, no text and nothing yet for a human to judge before that write exists. What
 this invariant forbids is not the presumption; it is a presumption that never surfaces. The
 confirmation is RELOCATED, never removed — the same figure
-[convergence.md](/plugins/quenching/assets/references/align/convergence.md) §The PR route argues
+`plugins/quenching/assets/references/align/convergence.md` §The PR route argues
 for a review moved out of a gate and into the artifact that carries it: here it moves to the screen
 that closes the capture, which names every candidate and the one-line reason it was chosen, or —
 where nobody looks at that screen — to the first pass `/quenching:specs:develop` runs over a

@@ -24,7 +24,7 @@ whether a command *teaches* anything. This asks the prior question: whether it *
 ## Nothing under `commands/**` is testable in the session that writes it
 
 The command registry is built at **session start**
-([../../reference/tools/claude-code-skill-command-mechanics.md](../../reference/tools/claude-code-skill-command-mechanics.md)
+([../../external/tools/claude-code-skill-command-mechanics.md](../../external/tools/claude-code-skill-command-mechanics.md)
 §4). A file created or edited now is not invocable until a new process. Every mechanical check can
 therefore pass while the entire surface is unreachable:
 

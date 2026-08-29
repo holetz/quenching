@@ -32,7 +32,7 @@ def check(root: Path) -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("root", type=Path, nargs="?", default=Path("docs/documentation"))
+    parser.add_argument("root", type=Path, nargs="?", default=Path("docs"))
     parser.add_argument("--selftest", action="store_true")
     args = parser.parse_args()
     if args.selftest:

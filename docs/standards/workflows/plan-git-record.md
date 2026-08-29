@@ -30,7 +30,7 @@ Two consequences, and they are why the anchor changed:
 - **`/quenching:specs:execute` ticks the box before committing**, so the checkbox travels inside the commit
   that implements it — one task, one commit, while its section is still open; the per-task
   bookkeeping commit is gone, and the section's own commits squash to one at that section's own
-  boundary ([execution.md](/plugins/quenching/assets/references/specs-execute/execution.md) §The
+  boundary (`plugins/quenching/assets/references/specs-execute/execution.md` §The
   section squash — §The task→commit link below is what the anchor does across that squash).
 - **`/quenching:git:merge` stamps `merge:` on the work branch before merging**, so the merge is the
   last action of *that* command and **nothing is ever committed to the base branch after it**. One
@@ -164,7 +164,7 @@ same admission test — a fact no derivation can reproduce:
   before stamping, because the record is write-once and that is the only moment disagreeing with
   it is cheap. **Never `git merge-base` or `--fork-point`** — both answer a commit, not a branch
   name, and a commit ancestral to three branches identifies none of them. The mechanics live in
-  [git/isolation.md](/plugins/quenching/assets/references/git/isolation.md) §Recording the
+  `plugins/quenching/assets/references/git/isolation.md` §Recording the
   isolation, cited rather than restated.
 - **`pr: {number, url, date}`** — stamped by `/quenching:git:pr:create` the moment `gh pr create`
   returns, and **write-many** where the other two are write-once: a PR may be closed and reopened,
@@ -237,7 +237,7 @@ Beside `branch:`, `pr:` and `merge:` above, `/quenching:specs:execute` writes on
 **not** a frontmatter record: a recognizable line in the branch's own description —
 `quenching-specs: <id1>,<id2>` — rewritten, never duplicated, after every task's commit, and
 never written when the spec runs `In place`. The mechanism is
-[git/isolation.md](/plugins/quenching/assets/references/git/isolation.md) §Marking the branch with
+`plugins/quenching/assets/references/git/isolation.md` §Marking the branch with
 the specs it built, owned by `execute`.
 
 `/quenching:specs:conclude` reads it to resolve which spec(s) built the branch it is closing when
@@ -245,7 +245,7 @@ called with no `--spec`: one valid ID resolves silently, more than one asks, and
 names that no longer resolves under `plans/` is dropped as stale rather than trusted. No
 valid marking at all falls to measuring the branch's own diff and always asking whether to
 materialize a minimal spec before continuing — never a size threshold. The full procedure is
-[auto-discover.md](/plugins/quenching/assets/references/specs-conclude/auto-discover.md), owned by
+`plugins/quenching/assets/references/specs-conclude/auto-discover.md`, owned by
 `conclude`.
 
 **Why this is not a fourth frontmatter record.** The three records above answer questions only
@@ -294,7 +294,7 @@ the route rather than choosing it: `/quenching:git:pr:create` where `gh` resolve
 `/quenching:git:merge` either way, in its own next-step block. Neither is invoked from `conclude`
 itself — the one exception is `/quenching:specs:cycle`'s minimal gear, which invokes
 `git:pr:create` under the same run's own authorization because there is no human mid-flow to hand
-the name to ([align/convergence.md](/plugins/quenching/assets/references/align/convergence.md)
+the name to (`plugins/quenching/assets/references/align/convergence.md`
 §The PR route). Every other run reads the name and runs the
 command on its own word.
 
@@ -390,7 +390,7 @@ report states which one governed.
 With nothing declared, the plugin's defaults apply — branch `plan/<id>-<handle>`, one commit per task with
 the subject `plan/<id>-<handle>: <id> <title>` while a section is open, squashed to one commit per section
 with the subject `plan/<id>-<handle>: <N> <section title>` at that section's own boundary
-([execution.md](/plugins/quenching/assets/references/specs-execute/execution.md) §The section
+(`plugins/quenching/assets/references/specs-execute/execution.md` §The section
 squash), `plan/<id>-<handle>: merge (<strategy>)` for a merge, and `plan/<id>-<handle>: record …` for the
 bookkeeping that remains. That bookkeeping is now only what a commit genuinely cannot carry ahead
 of itself — `## Handoff`, which describes the tree *after* the last commit — and no longer includes

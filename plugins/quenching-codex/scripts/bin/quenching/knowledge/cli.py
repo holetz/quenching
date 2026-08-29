@@ -41,7 +41,7 @@ from quenching.knowledge.stale import resource_activity
 from quenching.knowledge.validate import _build_corpus, validate_tree
 
 
-USAGE = ("usage: cq knowledge {validate|project} [<bundle-dir>] [options]   "
+USAGE = ("usage: cq knowledge {validate|project|nav} [<bundle-dir>] [options]   "
          "(default bundle-dir: docs)")
 
 
@@ -151,6 +151,61 @@ def run_project(argv: list[str]) -> int:
     return FINDINGS if errors else OK
 
 
+def run_nav(argv: list[str]) -> int:
+    """Generate the site `nav` from the bundle tree, or prove the one on disk is current.
+
+    `--check` is the gate `site-nav-stale` reads: it is a byte comparison, because the generator
+    is idempotent by construction. Anything it would change is a diff, never a judgement call."""
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="cq knowledge nav")
+    parser.add_argument("bundle", nargs="?", default="docs")
+    parser.add_argument("--config", default="zensical.toml",
+                        help="root zensical.toml whose nav is generated (default: zensical.toml)")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--write", action="store_true", help="write the generated nav")
+    mode.add_argument("--check", action="store_true", help="check without writing (the default)")
+    parser.add_argument("--json", action="store_true")
+    args = parser.parse_args(argv)
+
+    from quenching.knowledge.nav import generate
+
+    if not os.path.isdir(args.bundle):
+        payload = {"ok": False, "code": "nav-no-bundle",
+                   "message": f"{args.bundle} is not a directory"}
+        print(json.dumps(payload, indent=2) if args.json else f"error: {payload['message']}",
+              file=None if args.json else sys.stderr)
+        return FINDINGS
+
+    current, desired = generate(args.bundle, args.config)
+    if not current:
+        payload = {"ok": False, "code": "nav-config-unreadable",
+                   "message": f"{args.config} is missing or unreadable"}
+        print(json.dumps(payload, indent=2) if args.json else f"error: {payload['message']}",
+              file=None if args.json else sys.stderr)
+        return FINDINGS
+
+    stale = current != desired
+    if stale and args.write:
+        with open(args.config, "w", encoding="utf-8") as handle:
+            handle.write(desired)
+    payload = {"ok": not stale or args.write,
+               "mode": "write" if args.write else "check",
+               "config": args.config, "bundle": args.bundle,
+               "changed": bool(stale and args.write),
+               "findings": ([] if not stale or args.write else
+                            [{"path": args.config, "code": "site-nav-stale",
+                              "message": "the nav does not match the bundle tree — "
+                                         "run `cq knowledge nav --write`"}])}
+    if args.json:
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+    elif args.write:
+        print(f"knowledge nav — {'rewrote' if stale else 'already current:'} {args.config}")
+    else:
+        print(f"knowledge nav — {'STALE' if stale else 'current'}: {args.config}")
+    return FINDINGS if payload["findings"] else OK
+
+
 def main(argv: list[str]) -> int:
     """The pillar's whole entry: the declared token chooses the mode.
 
@@ -158,7 +213,8 @@ def main(argv: list[str]) -> int:
     looking at the world: no `argv` **and** a non-tty stdin meant "hook". That test does not survive
     a pillar prefix, and it should not: it misfires under CI, under a subprocess, and under any
     redirection, silently and with no way to override it. `main` routes the DECLARED token —
-    `validate` to `run_cli`, `project` to `run_project`, and nothing else now that `hook` is retired — and nothing in this
+    `validate` to `run_cli`, `project` to `run_project`, `nav` to `run_nav`, and nothing else now
+    that `hook` is retired — and nothing in this
     pillar calls `isatty`. Any argv that is not the verb was once read as a bundle path, which the
     spec's `## Out of Scope` rules out by name, so a token that is not a verb is a usage refusal.
 
@@ -179,5 +235,7 @@ def main(argv: list[str]) -> int:
         return run_cli(argv[1:])
     if verb == "project":
         return run_project(argv[1:])
+    if verb == "nav":
+        return run_nav(argv[1:])
     print(USAGE, file=sys.stderr)
     return REFUSAL

@@ -114,7 +114,7 @@ drawn explicitly:
 | Ground | Owner | This doc |
 | --- | --- | --- |
 | What one command promises, refuses and routes elsewhere | that command's own body and `description` under `plugins/quenching/commands/**` | never restates it |
-| The mechanics of actually asking — how a question is posed, accumulated and applied | [`specs-develop/questions.md` §The four shared mechanics](/plugins/quenching/assets/references/specs-develop/questions.md) | cites it |
+| The mechanics of actually asking — how a question is posed, accumulated and applied | `specs-develop/questions.md` §The four shared mechanics (`plugins/quenching/assets/references/specs-develop/questions.md`) | cites it |
 | How commands, hooks and agent definitions are classified, authored, budgeted and swept | [../automation/](../automation/index.md) | cites it |
 
 What is left — and what this doc owns — is only what holds in **every** task, command or not. That

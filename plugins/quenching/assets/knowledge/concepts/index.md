@@ -14,9 +14,10 @@ but are not a contract, a procedure, or a fact about a specific external asset. 
   external asset WE CONSUME** (a named tool / library / regulation); knowledge is
   **generic** understanding not tied to one consumed asset (a domain concept, a
   learning). If it documents a named dependency, it is reference.
-- vs. [documentation/](/docs/documentation/index.md) — documentation is the published,
-  human-facing product site (how-to, tutorials, product reference/explanation); knowledge is
-  internal team understanding. If it is a page for the docs site, it is documentation.
+- vs. the reader-facing quadrants [tutorials/](../tutorials/index.md),
+  [how-to/](../how-to/index.md), [explanation/](../explanation/index.md) and
+  [project/](../project/index.md) — those are the published, human-facing pages; knowledge is
+  internal team understanding. If it is a page for the docs site, it belongs to a quadrant.
 - vs. [vision/](/docs/vision/index.md) — vision is future **direction**; knowledge is
   present **understanding**.
 

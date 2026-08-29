@@ -192,7 +192,7 @@ ${CLAUDE_PLUGIN_ROOT}/assets/references/<name>/<file>.md
 ```
 
 `${CLAUDE_PLUGIN_ROOT}` substitutes inside a command body — measured, not assumed
-([/docs/external/tools/claude-code-skill-command-mechanics.md](/docs/external/tools/claude-code-skill-command-mechanics.md)
+([../../external/tools/claude-code-skill-command-mechanics.md](../../external/tools/claude-code-skill-command-mechanics.md)
 rows 1–2, re-measured 2026-07-26 on Claude Code 2.1.215).
 
 Relative paths are not merely inconvenient here, they are **wrong**: a relative path encodes the
@@ -218,7 +218,7 @@ when a rule has several readers.
 keeps the slashes — `commands/components/hook/new.md` ↔ `evals/components/hook/new/` — because it
 mirrors exactly one command 1:1 and is renamed in the same mechanical step as that command, so the
 two paths differ by one prefix and a reviewer finds it without searching
-([components-command-eval/evaluation.md](/plugins/quenching/assets/references/components-command-eval/evaluation.md)
+(`plugins/quenching/assets/references/components-command-eval/evaluation.md`
 §Where the artifacts live). A reference folder is shared, has no 1:1 to preserve, and gains a flat
 listing from being flattened. Same input, two encodings, two jobs — do not reconcile them.
 

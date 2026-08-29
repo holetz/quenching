@@ -195,6 +195,40 @@ class LegacyHomeDetector(unittest.TestCase):
         self.assertNotIn("okf-legacy-home", codes)
 
 
+class LegacyDocumentationHomeDetector(unittest.TestCase):
+    """`documentation/` was a wrapper home holding the four Diátaxis quadrants. Once the bundle
+    root itself became the site's source that level stopped earning its keep, and the quadrants
+    became homes. A target still carrying the wrapper has to be told, structurally."""
+
+    BUNDLE = '---\nokf_version: "0.1"\n---\n\n# Bundle\n'
+
+    def test_fires_while_the_wrapper_home_survives(self):
+        fixture = {"index.md": self.BUNDLE,
+                   "documentation/index.md": "# Documentation\n",
+                   "documentation/how-to/index.md": "# How-to\n"}
+        codes = {code for sev, rel, code, msg in _validated(fixture)}
+        self.assertIn("okf-legacy-documentation-home", codes)
+
+    def test_silent_once_dissolved(self):
+        fixture = {"index.md": self.BUNDLE,
+                   "how-to/index.md": "# How-to\n",
+                   "tutorials/index.md": "# Tutorials\n",
+                   "explanation/index.md": "# Explanation\n",
+                   "project/index.md": "# Project\n"}
+        codes = {code for sev, rel, code, msg in _validated(fixture)}
+        self.assertNotIn("okf-legacy-documentation-home", codes)
+
+    def test_a_canonical_concepts_home_is_never_read_as_a_quadrant(self):
+        # `LEGACY_QUADRANTS` maps `concepts` -> `explanation`. Re-aiming the quadrant check at the
+        # bundle root — the obvious move once the quadrants live there — would report the bundle's
+        # own canonical `concepts/` home as pre-rename debt. This is the guard on that.
+        fixture = {"index.md": self.BUNDLE,
+                   "concepts/index.md": "# Concepts\n",
+                   "explanation/index.md": "# Explanation\n"}
+        codes = {code for sev, rel, code, msg in _validated(fixture)}
+        self.assertNotIn("okf-legacy-doc-quadrant", codes)
+
+
 class LegacyDocQuadrantDetector(unittest.TestCase):
     def test_fires_on_both_pre_rename_quadrants(self):
         fixture = {

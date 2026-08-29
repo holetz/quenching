@@ -17,7 +17,7 @@ maintainer: quenching
 
 The canonical tree fixes exactly one `type:` per home — `standards/**` is `standard`,
 `concepts/**` is `concept`, `vision/` is `vision`, and so on
-([taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md) §The `type`
+(`plugins/quenching/assets/references/knowledge-align/taxonomy.md` §The `type`
 vocabulary is the tool's own source of this table). A home's name and a doc's `type:` are two
 spellings of the same fact, not two independent choices — so when a home renames, every doc it
 holds restamps its `type:` **in the same commit**, never left for later.
