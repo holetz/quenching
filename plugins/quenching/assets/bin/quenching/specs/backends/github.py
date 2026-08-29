@@ -507,7 +507,7 @@ class GitHubBackend(SpecBackend):
 
     def _native_fields(self, issue: dict) -> dict:
         """`tags`/`assignee`, reassembled from `labels`/`assignees` — the READ half of
-        `## Design` §Armazenado não é projetado. GitHub allows several assignees; the
+        `## Design` §Stored is not projected. GitHub allows several assignees; the
         canonical field is singular, so only the first is reflected — the same restriction
         the schema already puts on every backend. `start`/`target` have no honest native
         counterpart here (no scheduling fields on an issue) and stay in the document,

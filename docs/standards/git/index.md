@@ -1,18 +1,20 @@
 # `standards/git/`
 
-Como este repositório usa o git — branches de longa duração, o gatilho de publicação, e as
-convenções que `/quenching:specs:execute`/`/quenching:specs:conclude` leem como read-if-present.
+How this repository uses git — long-lived branches, the publication trigger, and the conventions
+`/quenching:specs:execute` / `/quenching:specs:conclude` read as read-if-present.
 
-**Boundary:** o *fluxo* de branches e publicação vive aqui; o lockstep de versão que a publicação
-move vive em [../ci-cd/](../ci-cd/index.md); o registro de tarefa→commit de uma spec individual
-vive em [../workflows/](../workflows/index.md). One standard per file; each carries `type:
+**Boundary:** the branch and publication *flow* lives here; the version lockstep that publication
+moves lives in [../ci-cd/](../ci-cd/index.md); one spec's own task→commit record lives in
+[../workflows/](../workflows/index.md). One standard per file; each carries `type:
 standard` + a derived `resource:`; add each to [../index.md](../index.md).
 
 ## Current docs
 
-* [branching.md](branching.md) — a `main` acumulava integração e publicação; este standard separa
-  as duas funções (`develop` integra, `main` publica), declara o gatilho por demanda e a rota
-  sempre local da publicação.
+* [branching.md](branching.md) — One long-lived branch — the primary (main) — where every PR
+  merges and review lives, the release as a deliberate local act that bumps, tags and publishes
+  what the primary accumulated, the trigger on demand and with no cadence, the question that
+  pushes toward grouping when the primary carries a single PR since the last tag, and the
+  transition for anyone coming from the two-branch flow
 
 ## Candidate sub-standards
 
@@ -27,11 +29,11 @@ Per-subject ledger the verify gate reads. A subject is "done" only when every ca
 **present or listed here** with a one-line why.
 
 - `branching` — **present**: [branching.md](branching.md).
-- `commit-conventions` — **deferred, not applicable.** Sem um `/docs/standards/git/**` de
-  mensagens de commit, `/quenching:specs:execute` já aplica o default do plugin
-  (`plugins/quenching/assets/references/git/commit.md` §Commit
-  messages); escrever um aqui converteria esse default num contrato deste repositório sem que
-  ninguém tenha pedido isso.
-- `tagging` — **deferred, coberto por `versioning-release.md`.** A tag é criada pelo mesmo verbo
-  `cq specs release` que move o lockstep; [../ci-cd/versioning-release.md](../ci-cd/versioning-release.md)
-  já a documenta como parte do lockstep, e um standard próprio duplicaria essa seção.
+- `commit-conventions` — **deferred, not applicable.** With no `/docs/standards/git/**` on commit
+  messages, `/quenching:specs:execute` already applies the plugin's default
+  (`plugins/quenching/assets/references/git/commit.md` §Commit messages); writing one here would
+  turn that default into a contract of this repository without anyone having asked for it.
+- `tagging` — **deferred, covered by `versioning-release.md`.** The tag is created by the same
+  `cq specs release` verb that moves the lockstep;
+  [../ci-cd/versioning-release.md](../ci-cd/versioning-release.md) already documents it as part of
+  the lockstep, and a standard of its own would duplicate that section.

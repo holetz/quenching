@@ -8,7 +8,7 @@ repo's OKF `knowledge/` bundle: this file decides **what crosses**; the insert m
 
 | The spec produced… | Cross? | OKF home / route |
 | --- | --- | --- |
-| a rule a task **explicitly named** under `## Impact` | **no** | `quenching-specs-execute` **already wrote it into `knowledge/standards/`** as part of that task — nothing to do here. There is no separate spec store to sync |
+| a rule a task **explicitly named** under `## Impact` | **no** | `quenching-specs-execute` **already wrote it into `docs/standards/`** as part of that task — nothing to do here. There is no separate spec store to sync |
 | a **decision** (rationale + considered alternatives, usually in `## Design`) not yet captured as a standard | yes | `standards/<subject>/<concept>.md` (`type: standard`; `authority: current` if the spec proved it, else `background`) — there is no separate ADR home |
 | **generic understanding** gained (domain insight, mental model, a learning from implementation) | yes | `concepts/<subject>/<slug>.md` (`type: concept`) |
 | a **repo-specific term** the spec coined or clarified | yes | an entry in `glossary.md` (§Enriching the glossary in homes.md) |
@@ -39,7 +39,7 @@ the checkout holding `<base>` for `abandoned`, because there is no merge to carr
 
 <!-- rationale -->
 The top row is the load-bearing difference from the old delta model: because a task writes the
-binding rule **straight into `knowledge/standards/`** while it is built, concluding is not a *sync* — it
+binding rule **straight into `docs/standards/`** while it is built, concluding is not a *sync* — it
 is catching the **by-products** (a decision left in `## Design`, an understanding, a term, a
 follow-up) that were never committed to a home. Most of what a spec proves is already in `knowledge/` by
 the time it closes; the harvest is usually small.

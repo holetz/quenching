@@ -1,173 +1,174 @@
 ---
 type: standard
-title: O report de uma frente é um mold, possuído uma vez
-description: A forma em que os comandos de uma frente imprimem seu relatório pertence a UMA seção citada por todos — três bandas fixas, um conjunto ordenado de colunas do qual cada comando toma um subconjunto, e toda coluna que nomeie um comando executável como impressa — e um bloco cujas células vêm de um payload é renderizado pela FERRAMENTA, com o corpo citando a saída, porque um formato reescrito em oito corpos envelhece em sete, uma tabela reescrita em três renderizadores diverge nos três, e nenhum checker vê nenhum dos dois
+title: A front's report is a mold, owned once
+description: The shape a front's commands print their report in belongs to ONE section every one of them cites — three fixed bands, an ordered set of columns each command takes a subset of, and every column naming a command executable as printed — and a block whose cells come from a payload is rendered by the TOOL, with the body quoting the output, because a format rewritten in eight bodies goes stale in seven, a table rewritten in three renderers diverges in all three, and no checker sees either
 resource: plugins/quenching/assets/references/specs-develop/spec-driven.md, plugins/quenching/commands/specs/*.md, plugins/quenching/assets/bin/quenching/specs/commands/next.py
 tags: [architecture, commands, report, output, references, specs]
 timestamp: 2026-08-16
 audience: both
 authority: current
-source: branch holetz/specs-report (2026-08-04); a cláusula do renderizador, do spec listagem-ranqueada-nativa-no-cq-specs (2026-08-16), medida sobre uma frente de 147 specs — três renderizadores de uma tabela, 338.875 bytes reduzidos a 8.455 — medido sobre os oito corpos /quenching:specs:* antes e depois; a divergência com commands/knowledge/status.md §4 está registrada abaixo e foi deliberadamente não corrigida
+source: branch holetz/specs-report (2026-08-04); the renderer clause, from the listagem-ranqueada-nativa-no-cq-specs spec (2026-08-16), measured over a front of 147 specs — three renderers of one table, 338,875 bytes cut to 8,455 — measured over the eight /quenching:specs:* bodies before and after; the divergence with commands/knowledge/status.md §4 is recorded below and was deliberately left uncorrected
 maintainer: quenching
 ---
 
-# O report de uma frente é um mold, possuído uma vez
+# A front's report is a mold, owned once
 
-Uma frente tem vários comandos e **um** leitor. O que ele vê no fim de cada execução é o produto
-mais visível da frente inteira, e é a única parte que nenhum validador inspeciona.
+A front has several commands and **one** reader. What that reader sees at the end of every run is
+the most visible product of the whole front, and it is the one part no validator inspects.
 
-## A regra
+## The rule
 
-> A forma em que os comandos de uma frente imprimem seu relatório pertence a **uma** seção que todos
-> citam. Cada corpo declara apenas o seu delta: quais blocos do corpo, fixos ou opcionais; quais
-> colunas; quais candidatos a próximo passo e sob que condição.
+> The shape a front's commands print their report in belongs to **one** section every one of them
+> cites. Each body declares only its own delta: which body blocks, fixed or optional; which columns;
+> which next-step candidates and under what condition.
 
-para a frente `specs` essa seção é
+For the `specs` front that section is
 `plugins/quenching/assets/references/specs-develop/spec-driven.md`
-§The report mold, citada por sete dos oito comandos `/quenching:specs:*`.
+§The report mold, cited by seven of the eight `/quenching:specs:*` commands.
 
-O mold é **literal**: ele carrega o bloco renderizado que o corpo copia e substitui, não uma
-descrição do que o bloco deveria conter. Essa escolha não é estética — os dois únicos comandos que
-já tinham saída consistente antes deste trabalho (o roteador do front, desde retirado, e
-`/quenching:specs:execute`) eram exatamente os dois que carregavam um bloco literal, e os seis que
-descreviam o report em prosa produziram seis formas diferentes.
+The mold is **literal**: it carries the rendered block the body copies and substitutes into, not a
+description of what the block ought to contain. That choice is not aesthetic — the only two commands
+that already had consistent output before this work (the front's router, since retired, and
+`/quenching:specs:execute`) were exactly the two carrying a literal block, and the six that
+described the report in prose produced six different shapes.
 
-### O que o mold fixa
+### What the mold fixes
 
-- **Três bandas, nesta ordem, sempre:** cabeçalho · corpo · próximo passo.
-- **Fixo versus opcional é declarado, não improvisado.** Um bloco fixo sem conteúdo imprime seu
-  título e `—`; um bloco opcional sem conteúdo é omitido inteiro. Um bloco fixo que some quando
-  vazio é indistinguível de uma passagem que o deixou cair; um opcional impresso vazio é ruído em
-  toda execução.
-- **Um conjunto ordenado de colunas**, do qual cada comando toma um subconjunto — nunca reordenando,
-  nunca inventando. Cada coluna declara a **fonte** de onde sai e quando vale `—`.
-- **Um molde com coluna de código só serve saída cujo código um contrato define.** Afrouxar essa
-  coluna para acomodar uma saída que não tem código tira dos demais citadores a garantia que faz o
-  molde valer. Saída sem código pede molde próprio — outra sub-seção da mesma seção — nunca um
-  código inventado nem uma coluna relaxada.
-- **Executável como impresso vale para qualquer coluna que nomeie um comando** — o argumento real
-  substituído; um `<slug>` literal na saída é defeito, e um nome de comando sem o argumento que ele
-  exige também. A regra nasceu no bloco de próximo passo e vale igual em toda coluna que aponte o
-  leitor para um comando: uma ação que o leitor tem de completar não é uma ação, é um lembrete.
-- **Um bloco de próximo passo por último**, sob a regra acima. Exatamente uma linha recomendada, e a
-  cauda de motivo só quando há mais de uma linha.
+- **Three bands, in this order, always:** header · body · next step.
+- **Fixed versus optional is declared, not improvised.** A fixed block with no content prints its
+  title and `—`; an optional block with no content is omitted whole. A fixed block that vanishes
+  when empty is indistinguishable from a pass that dropped it; an optional one printed empty is
+  noise in every run.
+- **An ordered set of columns**, from which each command takes a subset — never reordering, never
+  inventing. Each column declares the **source** it comes from and when it reads `—`.
+- **A mold with a code column serves only output whose code a contract defines.** Loosening that
+  column to accommodate output that has no code strips the other citers of the guarantee that makes
+  the mold worth having. Output with no code asks for a mold of its own — another sub-section of the
+  same section — never an invented code nor a relaxed column.
+- **Executable as printed holds for any column that names a command** — the real argument
+  substituted; a literal `<slug>` in the output is a defect, and so is a command name without the
+  argument it requires. The rule was born in the next-step block and holds identically in every
+  column that points the reader at a command: an action the reader has to complete is not an action,
+  it is a reminder.
+- **A next-step block last**, under the rule above. Exactly one recommended line, and the reason
+  tail only when there is more than one line.
 
-## Por que uma seção, e não prosa em cada corpo
+## Why one section, and not prose in every body
 
-Um formato de saída é um fato que o corpo do comando *reescreve*. É o fan-out que
-[../quality/computed-fact-prose-fanout.md](../quality/computed-fact-prose-fanout.md) descreve:
-muda no primeiro corpo, envelhece nos outros sete, e `cq components doctor`, `cq components lint` e
-`cq knowledge validate` ficam todos verdes — nenhum deles enxerga prosa que descreve
-uma forma.
+An output format is a fact the command body *rewrites*. It is the fan-out that
+[../quality/computed-fact-prose-fanout.md](../quality/computed-fact-prose-fanout.md) describes: it
+changes in the first body, goes stale in the other seven, and `cq components doctor`,
+`cq components lint` and `cq knowledge validate` all stay green — none of them sees prose that
+describes a shape.
 
-**A medição, antes.** Dos oito corpos, dois renderizavam bloco literal e seis descreviam o report em
-prosa. O resultado acumulado:
+**The measurement, before.** Of the eight bodies, two rendered a literal block and six described the
+report in prose. The accumulated result:
 
-| Sintoma | Contagem |
+| Symptom | Count |
 | --- | --- |
-| verbos diferentes para a linha de fechamento | 6 |
-| comandos sem nenhuma sugestão de próximo passo | 1 (`/quenching:specs:conclude`, o que encerra a spec) |
-| encadeamentos que nomeiam o comando sem o slug | 1 (`/quenching:specs:execute` → `conclude`) |
-| redações de "verbatim" sem dono | 7 |
-| vocabulário de glifo compartilhado | nenhum |
-| tabelas usando o `title` que `cq specs` já emitia | nenhuma |
+| different verbs for the closing line | 6 |
+| commands with no next-step suggestion at all | 1 (`/quenching:specs:conclude`, the one that closes the spec) |
+| chainings that name the command without the slug | 1 (`/quenching:specs:execute` → `conclude`) |
+| ownerless wordings of "verbatim" | 7 |
+| shared glyph vocabulary | none |
+| tables using the `title` `cq specs` already emitted | none |
 
-O último é o mais revelador: `list --json` e `next --front` devolvem `title` desde sempre, e nenhuma
-tabela o mostrava. Ninguém decidiu omiti-lo — não havia lugar onde a decisão pudesse ser tomada uma
-vez.
+The last is the most revealing: `list --json` and `next --front` have always returned `title`, and
+no table showed it. Nobody decided to omit it — there was no place where the decision could be
+taken once.
 
-## Um bloco cuja fonte é um payload é renderizado pela FERRAMENTA
+## A block whose source is a payload is rendered by the TOOL
 
-A regra acima possui a **forma**. Esta possui o **renderizador**, e é a mesma medição levada um
-degrau adiante: quando as células de um bloco vêm todas de um payload que uma ferramenta já emite,
-o bloco é impresso pela ferramenta e o corpo **cita a saída**. Um corpo que monta essas células —
-ordenando, contando, elidindo — é um segundo renderizador de um fato que a ferramenta possui, e
-dois renderizadores do mesmo fato divergem pela mesma razão que oito prosas divergiam.
+The rule above owns the **shape**. This one owns the **renderer**, and it is the same measurement
+taken one step further: when a block's cells all come from a payload a tool already emits, the block
+is printed by the tool and the body **quotes the output**. A body that assembles those cells —
+ordering, counting, eliding — is a second renderer of a fact the tool owns, and two renderers of the
+same fact diverge for the same reason eight prose descriptions diverged.
 
-O teste é a fonte das células, não o tamanho do bloco:
+The test is the source of the cells, not the size of the block:
 
-| A fonte de cada célula | Quem renderiza |
+| The source of each cell | Who renders |
 | --- | --- |
-| um payload que a ferramenta já emite (`--table`, `--by-code`) | a **ferramenta**; o corpo cita verbatim |
-| um julgamento que o modelo faz nesta execução (a coluna `Reason` de um triage, uma proposta) | o **corpo**, sob a forma que o mold fixa |
+| a payload the tool already emits (`--table`, `--by-code`) | the **tool**; the body quotes it verbatim |
+| a judgment the model makes in this run (a triage's `Reason` column, a proposal) | the **body**, under the shape the mold fixes |
 
-**A medição.** Em 2026-08-16, sobre uma frente de 147 specs, **uma** tabela ranqueada tinha **três**
-renderizadores escritos à mão e divergentes: um heredoc Python embutido no corpo do
-`/quenching:specs:triage`, uma prosa descrevendo as colunas no corpo do `/quenching:specs:status`, e
-uma terceira variante improvisada numa sessão porque nenhuma das duas servia. Os três liam
-`cq specs list --json` — 312.511 bytes, dos quais 144.057 eram prosa de `## Overview` que nenhum dos
-três imprimia. O passo de coleta do `/quenching:specs:status` pedia 338.875 bytes para produzir uma
-tabela de 45 linhas, sob uma primeira frase que prometia ser *"near-free by construction"*.
+**The measurement.** On 2026-08-16, over a front of 147 specs, **one** ranked table had **three**
+hand-written and divergent renderers: a Python heredoc embedded in `/quenching:specs:triage`'s body,
+prose describing the columns in `/quenching:specs:status`'s body, and a third variant improvised in
+a session because neither of the other two served. All three read `cq specs list --json` — 312,511
+bytes, of which 144,057 were `## Overview` prose none of the three printed. The collection step of
+`/quenching:specs:status` asked for 338,875 bytes to produce a 45-row table, under a first sentence
+that promised to be *"near-free by construction"*.
 
-Movida a renderização para a ferramenta (`cq specs next --front --table`,
-`cq specs validate --by-code`), os mesmos três blocos custam **8.455 bytes** — 97,5% menos — e são
-byte-a-byte o mesmo em todo corpo que os pede, porque passou a existir um lugar só onde são feitos.
+With the rendering moved into the tool (`cq specs next --front --table`,
+`cq specs validate --by-code`), the same three blocks cost **8,455 bytes** — 97.5% less — and are
+byte-for-byte the same in every body that asks for them, because there is now a single place where
+they are made.
 
-**O corolário de custo não é acessório, é o mecanismo.** Um corpo que reagrega um payload precisa
-que o payload inteiro entre no contexto; um corpo que cita uma renderização precisa apenas da
-renderização. É por isso que a regra vale mesmo onde só existe **um** consumidor: o segundo
-renderizador que ela previne é caro antes de ser divergente.
+**The cost corollary is not incidental, it is the mechanism.** A body that re-aggregates a payload
+needs the whole payload in context; a body that quotes a rendering needs only the rendering. That is
+why the rule holds even where there is only **one** consumer: the second renderer it prevents is
+expensive before it is divergent.
 
-## Onde o mold mora, e por quê
+## Where the mold lives, and why
 
-**A seção vai dentro de um arquivo que os corpos já carregam, não em arquivo próprio.**
+**The section goes inside a file the bodies already load, not in a file of its own.**
 
-`cq components read` aceita **um arquivo por chamada**. Um mold em arquivo novo custaria `+1 tool call`
-por execução de cada comando da frente; como seção de um arquivo que todos já citam, custa zero
-chamadas — apenas os seus próprios caracteres.
+`cq components read` accepts **one file per call**. A mold in a new file would cost `+1 tool call`
+per run of every command in the front; as a section of a file all of them already cite, it costs
+zero calls — only its own characters.
 
-Isso estica o charter do arquivo hospedeiro, e o preço é declarado em vez de escondido: o H1 nomeia
-a banda nova. Uma frente cujos comandos **não** compartilhem nenhum arquivo não tem essa opção, e aí
-o arquivo próprio é o certo — a regra é a comparação, não o destino.
+That stretches the host file's charter, and the price is declared instead of hidden: the H1 names
+the new band. A front whose commands share **no** file has no such option, and there the file of
+its own is the right answer — the rule is the comparison, not the destination.
 
-**O custo medido, e ele não é pequeno.** Na frente `specs`: a seção custa **9.171 chars**, e os oito
-corpos somados **cresceram 3.615 chars líquidos** em vez de encolher. O mold não é uma economia de
-contexto; é a troca de oito descrições divergentes e não checáveis por uma definição. Quem aplicar
-esta regra deve medir e dizer o número, nunca estimá-lo
+**The measured cost, and it is not small.** In the `specs` front: the section costs **9,171 chars**,
+and the eight bodies together **grew by 3,615 net chars** instead of shrinking. The mold is not a
+context saving; it is the trade of eight divergent and uncheckable descriptions for one definition.
+Whoever applies this rule must measure and state the number, never estimate it
 ([../automation/context-discipline.md](../automation/context-discipline.md)).
 
-**Uma banda nova chega sozinha a quem já cita o mold.** `cq components read --sections "§The report
-mold"` devolve as sub-seções `###` junto com a seção-pai, então acrescentar uma sub-seção ao mold não
-exige tocar o carregamento de corpo nenhum — muda só o corpo que vai *usá-la*, para declarar o seu
-delta. É o argumento acima levado adiante: o mold como seção de um arquivo compartilhado custa zero
-chamadas hoje e zero chamadas quando cresce.
+**A new band reaches whoever already cites the mold on its own.** `cq components read --sections
+"§The report mold"` returns the `###` sub-sections along with the parent section, so adding a
+sub-section to the mold requires touching no body's loading — it changes only the body that will
+*use* it, to declare its delta. It is the argument above carried further: the mold as a section of a
+shared file costs zero calls today and zero calls when it grows.
 
-Sete dos oito corpos citam o arquivo hospedeiro pelo **caminho nu** e portanto o leem inteiro, o que
-é por si só deriva contra a regra de citar por `§`-endereço. Estreitá-las cortaria bem mais do que o
-mold acrescenta, e é trabalho próprio com medição própria — não foi feito aqui.
+Seven of the eight bodies cite the host file by its **bare path** and therefore read it whole, which
+is by itself drift against the rule of citing by `§`-address. Narrowing them would cut far more than
+the mold adds, and that is work of its own with a measurement of its own — it was not done here.
 
-## O que o mold não possui
+## What the mold does not own
 
-A **língua** dos rótulos. Este plugin escreve seus corpos e references em inglês, mas o relatório
-que um comando imprime segue a tag do repo alvo
-([../agents/communication.md](../agents/communication.md) §What it governs). Por isso cada coluna
-tem um **nome canônico**, que é o seu endereço dentro do mold, e um **rótulo impresso**, que segue a
-tag. Permanecem canônicos em qualquer língua: o slug, os valores de `stage`, os nomes de registro,
-os códigos `sp-*`, as catorze `##` de uma spec e os nomes de comando.
+The **language** of the labels. This plugin writes its bodies and references in English, but the
+report a command prints follows the target repo's tag
+([../agents/communication.md](../agents/communication.md) §What it governs). So every column has a
+**canonical name**, which is its address inside the mold, and a **printed label**, which follows the
+tag. These stay canonical in any language: the slug, the `stage` values, the record names, the
+`sp-*` codes, a spec's fourteen `##` and the command names.
 
-Um mold que fixasse os rótulos em inglês entregaria, em todo repo adotante, exatamente a falha que
-aquele standard nomeia — ler a tag no início da sessão e ainda assim reportar em inglês.
+A mold that fixed the labels in English would deliver, in every adopting repo, exactly the failure
+that standard names — reading the tag at session start and still reporting in English.
 
-## Divergência conhecida, aceita e não corrigida
+## Known divergence, accepted and uncorrected
 
-Até esta branch, `plugins/quenching/commands/knowledge/status.md` §4 era cópia quase literal de
-`plugins/quenching/commands/specs/status.md` §4 — as mesmas cinco seções, os mesmos títulos, a
-mesma frase de fechamento. Era um formato compartilhado *de fato*, escrito duas vezes e possuído por
-nenhum arquivo.
+Until this branch, `plugins/quenching/commands/knowledge/status.md` §4 was a near-literal copy of
+`plugins/quenching/commands/specs/status.md` §4 — the same five sections, the same titles, the same
+closing sentence. It was a shared format *in fact*, written twice and owned by no file.
 
-Este trabalho tocou apenas a frente `specs`, então **as duas deixaram de ser espelhos**. Isso está
-registrado como divergência aceita, não como pendência silenciosa: a frente `docs` adotar o mold é
-trabalho próprio, e até lá `/quenching:knowledge:status` continua sendo dono da sua própria forma. A
-alternativa — generalizar o mold para três vocabulários de finding diferentes no mesmo movimento —
-teria escrito um contrato genérico antes de haver dois casos provados para generalizar a partir de.
+This work touched only the `specs` front, so **the two stopped being mirrors**. That is recorded as
+an accepted divergence, not as a silent pending item: the `docs` front adopting the mold is work of
+its own, and until then `/quenching:knowledge:status` remains the owner of its own shape. The
+alternative — generalizing the mold to three different finding vocabularies in the same move — would
+have written a generic contract before there were two proven cases to generalize from.
 
-## Relação com os standards vizinhos
+## Relation to the neighbouring standards
 
-- [read-only-views.md](read-only-views.md) diz que a view read-only **divide os achados por quem os
-  fecha**. Esta regra dá a essa divisão uma forma: a tabela de achados, com a coluna `Fecha com`.
-- [shared-mold-keys.md](shared-mold-keys.md) governa o que um mold **compartilhado pode conter** —
-  ali, chaves de frontmatter; aqui, blocos de saída. A pergunta é a mesma: todo citador pode
-  legitimamente emitir este bloco?
-- [../quality/computed-fact-prose-fanout.md](../quality/computed-fact-prose-fanout.md) é a razão de
-  a regra existir, e o grep que ela prescreve é o que encontra os restos quando o conjunto de
-  colunas muda: procure a forma escrita por extenso (a lista de colunas), não o nome do conceito.
+- [read-only-views.md](read-only-views.md) says the read-only view **splits findings by what closes
+  them**. This rule gives that split a shape: the findings table, with the `Fecha com` column.
+- [shared-mold-keys.md](shared-mold-keys.md) governs what a **shared mold may contain** — there,
+  frontmatter keys; here, output blocks. The question is the same: may every citer legitimately emit
+  this block?
+- [../quality/computed-fact-prose-fanout.md](../quality/computed-fact-prose-fanout.md) is the reason
+  the rule exists, and the grep it prescribes is what finds the leftovers when the set of columns
+  changes: search for the spelled-out form (the column list), not the concept's name.

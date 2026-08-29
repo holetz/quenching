@@ -1,108 +1,109 @@
 ---
 type: standard
-title: Aplicabilidade do remédio de um finding
-description: Um remédio declarado nomeia uma ação que a superfície que emitiu o finding realmente oferece — o caso medido em que a mesma CLI recusava as duas ações que aconselhava, por que um remédio inaplicável ensina a ignorar o findings inteiro e não só aquele, e a recusa própria que um caso sem caminho ainda deve dar
+title: Applicability of a finding's remedy
+description: A declared remedy names an action the surface that emitted the finding actually offers — the measured case where the same CLI refused both actions it advised, why an inapplicable remedy teaches readers to ignore the whole findings output and not just that one item, and the refusal of its own that a case with no path still owes
 resource: plugins/quenching/assets/bin/quenching/specs/commands/validate.py, plugins/quenching/assets/bin/quenching/specs/commands/doctor.py, plugins/quenching/assets/bin/quenching/components/commands/doctor.py, plugins/quenching/assets/bin/quenching/components/commands/lint.py, plugins/quenching/assets/bin/quenching/components/commands/registry.py, plugins/quenching/assets/bin/quenching/components/hooks.py
 tags: [quality, findings, remedy, cli, surface]
 timestamp: 2026-08-27
 audience: both
 authority: current
-source: spec remover-secao-stray-de-um-documento (task 2.2) — o `sp-stray-heading` cujo remédio declarado aconselhava duas ações que a própria CLI que o emitia recusava com exit 2, medido em 2026-08-17; o segundo sítio da família — o remédio cuja conclusão a própria checagem não observa — acrescentado por sk-unscoped-bash-le-o-corpo (2026-08-27), medido sobre o `sk-unscoped-bash` que aconselhava declarar a razão no corpo lendo apenas `allowed-tools`
+source: spec remover-secao-stray-de-um-documento (task 2.2) — the `sp-stray-heading` whose declared remedy advised two actions the very CLI that emitted it refused with exit 2, measured on 2026-08-17; the family's second site — the remedy whose conclusion the check itself does not observe — added by sk-unscoped-bash-le-o-corpo (2026-08-27), measured over the `sk-unscoped-bash` that advised declaring the reason in the body while reading only `allowed-tools`
 maintainer: quenching
 ---
 
-# Aplicabilidade do remédio de um finding
+# Applicability of a finding's remedy
 
-**Um `remedy` nomeia uma ação que a superfície que emitiu o finding oferece.** Não uma descrição do
-estado desejado, não um conselho editorial: um caminho que quem lê o finding consegue percorrer com
-a mesma ferramenta que o imprimiu.
+**A `remedy` names an action the surface that emitted the finding offers.** Not a description of the
+desired state, not editorial advice: a path whoever reads the finding can walk with the same tool
+that printed it.
 
-O teste é de uma linha: *qual comando fecha isto?* Se a resposta não existe, o remédio não está
-escrito ainda.
+The test is one line: *which command closes this?* If the answer does not exist, the remedy is not
+written yet.
 
-## O caso medido
+## The measured case
 
-`cq specs validate` emitia, por anos, este par:
+`cq specs validate` emitted this pair for years:
 
 ```
 [warn ] plans/x.md: `## O que mudou` is not one of the fourteen canonical headings  (sp-stray-heading)
         remedy: rename it to a canonical heading or fold it into one
 ```
 
-As duas ações aconselhadas eram impossíveis **pela CLI que as aconselhava**. `cmd_section` resolvia
-todo heading pedido contra as catorze canônicas e saía 2 no primeiro que não casava — *antes* de
-olhar para `--write` — então a seção stray não podia nem ser **nomeada**, muito menos renomeada ou
-fundida. Não existia `--delete`, e `upsert_section` só alcançava uma seção que a resolução já
-tivesse aceitado. Fechar o aviso exigia editar o documento por fora da ferramenta; sob um backend
-externo, isso significa editar a issue à mão.
+Both advised actions were impossible **through the CLI that advised them**. `cmd_section` resolved
+every requested heading against the fourteen canonical ones and exited 2 on the first that did not
+match — *before* looking at `--write` — so the stray section could not even be **named**, let alone
+renamed or folded. There was no `--delete`, and `upsert_section` only reached a section the
+resolution had already accepted. Closing the warning required editing the document outside the tool;
+under an external backend, that means editing the issue by hand.
 
-O custo não é o aviso. É que ele foi **permanente por construção**: nove documentos de `archive/`
-carregavam o finding em 2026-08-17, e nenhum deles tinha caminho de saída.
+The cost is not the warning. It is that it was **permanent by construction**: nine documents in
+`archive/` carried the finding on 2026-08-17, and not one of them had a way out.
 
-## Por que a régua é essa, e não "o texto está correto"
+## Why the yardstick is this one, and not "the text is correct"
 
-Um remédio inaplicável não custa só o finding que ele acompanha. **Ele ensina a ignorar a saída
-inteira.** Quem tenta seguir um conselho e descobre que a ferramenta o recusa aprende a ler o bloco
-`remedy:` como decoração — e passa a pular também os quinze que eram aplicáveis. Um verificador vive
-da confiança de que o que ele diz vale a pena fazer; um item que não vale gasta essa confiança para
-todos os outros.
+An inapplicable remedy does not cost only the finding it accompanies. **It teaches readers to ignore
+the whole output.** Whoever tries to follow a piece of advice and finds that the tool refuses it
+learns to read the `remedy:` block as decoration — and starts skipping the fifteen that were
+applicable too. A verifier lives on the trust that what it says is worth doing; one item that is not
+worth it spends that trust on behalf of all the others.
 
-É também por isso que "elevar a severidade" nunca é a resposta primeiro. Enquanto não houvesse
-caminho de conserto, subir `sp-stray-heading` de `warn` para `error` teria transformado um aviso
-insolúvel numa falha insolúvel. **A pergunta sobre severidade só é respondível depois que a ação
-existe.**
+It is also why "raise the severity" is never the first answer. While there was no path to a fix,
+moving `sp-stray-heading` from `warn` to `error` would have turned an unsolvable warning into an
+unsolvable failure. **The severity question is answerable only after the action exists.**
 
-## Como escrever o remédio
+## How to write the remedy
 
-- **Nomeie o verbo, com os argumentos deste caso.** `cq specs section <slug> --fold "<stray>"` é um
-  remédio; "funda numa seção canônica" é um desejo. Onde os valores estão em mãos no ponto de
-  emissão — o slug, o heading, a chave que falta — interpole-os: o leitor copia e cola.
-- **Um remédio que é uma edição manual continua sendo um remédio**, desde que a edição seja
-  descrita como ação (`fill it, or write \`- none — <reason>\``) e não como estado.
-- **A ação pode recusar, e isso não quebra a regra — desde que a recusa se explique.** `--fold`
-  recusa um stray sem nenhuma seção canônica acima dele, com mensagem própria (`sp-fold-no-anchor`),
-  porque escolher um anfitrião ali seria inventar um dono para o texto. O leitor que segue o remédio
-  recebe uma resposta da ferramenta, que é exatamente o que o remédio prometia. O que a regra proíbe
-  é a ação que **não existe**, não a que existe e decide não agir.
-- **Quando a ação não existe ainda, o remédio não é o lugar de fingir que existe.** Ou o finding
-  ganha o comando que o fecha — que é trabalho de spec, não de redação — ou o texto diz honestamente
-  que o conserto é manual e por quê.
+- **Name the verb, with this case's arguments.** `cq specs section <slug> --fold "<stray>"` is a
+  remedy; "fold it into a canonical section" is a wish. Where the values are in hand at the point
+  of emission — the slug, the heading, the missing key — interpolate them: the reader copies and
+  pastes.
+- **A remedy that is a manual edit is still a remedy**, as long as the edit is described as an
+  action (`fill it, or write \`- none — <reason>\``) and not as a state.
+- **The action may refuse, and that does not break the rule — as long as the refusal explains
+  itself.** `--fold` refuses a stray with no canonical section above it, with a message of its own
+  (`sp-fold-no-anchor`), because picking a host there would be inventing an owner for the text. The
+  reader who follows the remedy gets an answer from the tool, which is exactly what the remedy
+  promised. What the rule forbids is the action that **does not exist**, not the one that exists and
+  decides not to act.
+- **When the action does not exist yet, the remedy is not the place to pretend it does.** Either the
+  finding gets the command that closes it — which is spec work, not copywriting — or the text says
+  honestly that the fix is manual, and why.
 
-## O segundo sítio: o remédio que a própria checagem não observa
+## The second site: the remedy the check itself does not observe
 
-O primeiro caso é a ação que **não existe**. O segundo é mais silencioso: a ação existe, quem lê
-consegue percorrê-la — e a checagem que a aconselhou não olha para o resultado.
+The first case is the action that **does not exist**. The second is quieter: the action exists,
+whoever reads it can walk it — and the check that advised it does not look at the result.
 
-`sk-unscoped-bash` aconselhava, por construção, *"scope it to the commands the workflow runs, or
-state the reason in the body"*, lendo apenas `allowed-tools`. A primeira metade fecha o finding: um
-grant com escopo deixa de casar. A segunda **não muda um byte** — um corpo que já declarava a razão
-recebia exatamente a mesma saída de um que ninguém tinha lido. Quem seguiu o conselho não tem como
-saber que o seguiu.
+`sk-unscoped-bash` advised, by construction, *"scope it to the commands the workflow runs, or
+state the reason in the body"*, while reading only `allowed-tools`. The first half closes the
+finding: a scoped grant stops matching. The second **changes not a byte** — a body that already
+declared the reason got exactly the same output as one nobody had read. Whoever followed the advice
+has no way of knowing they followed it.
 
-A régua é a mesma de `## Por que a régua é essa`, aplicada um passo adiante: um remédio cuja
-conclusão a checagem não observa gasta a mesma confiança que um remédio impossível, e gasta de um
-jeito pior, porque quem o segue acredita ter terminado.
+The yardstick is the one from `## Why the yardstick is this one`, applied a step further: a remedy
+whose conclusion the check does not observe spends the same trust as an impossible remedy, and
+spends it in a worse way, because whoever follows it believes they have finished.
 
-**O conserto não é apagar a metade não observável.** A razão declarada continua valendo — o que
-faltava era torná-la observável, e isso pede uma forma que a checagem possa ver sem fingir que leu
-prosa: uma linha literal, e um booleano no finding dizendo se ela está lá. `lint` passou a procurar
-`**Why \`Bash\` is unrestricted here.**` fora de cerca e a carregar `priced` no JSON, e as duas
-mensagens passaram a ser diferentes. O finding continua reportado nos dois casos, porque o grant é
-o shell inteiro do turno de qualquer jeito.
+**The fix is not deleting the unobservable half.** The declared reason still holds — what was
+missing was making it observable, and that asks for a form the check can see without pretending it
+read prose: a literal line, and a boolean on the finding saying whether it is there. `lint` now
+looks for `**Why \`Bash\` is unrestricted here.**` outside a fence and carries `priced` in the JSON,
+and the two messages became different. The finding is still reported in both cases, because the
+grant is the whole shell for the turn either way.
 
-**O que a forma literal compra, e o que ela deliberadamente não compra.** Ela dá ao remédio um fim
-observável; ela não julga a razão. Um predicado que decidisse se a justificativa é *boa* estaria
-inventando um veredito sobre prosa que só casou um padrão — a mesma desonestidade que
-[parse-honesty.md](parse-honesty.md) recusa quando um parser falha e reporta lacuna de conteúdo.
+**What the literal form buys, and what it deliberately does not.** It gives the remedy an observable
+end; it does not judge the reason. A predicate that decided whether the justification is *good*
+would be inventing a verdict about prose that merely matched a pattern — the same dishonesty
+[parse-honesty.md](parse-honesty.md) refuses when a parser fails and reports a content gap.
 
-**A pergunta que este sítio acrescenta ao teste de uma linha:** depois de *qual comando fecha isto?*,
-vem *e a checagem enxerga que foi fechado?* Um remédio cuja resposta à segunda é não ainda não está
-escrito — mesmo que a ação exista e alguém consiga executá-la.
+**The question this site adds to the one-line test:** after *which command closes this?* comes
+*and does the check see that it was closed?* A remedy whose answer to the second is no is not
+written yet — even if the action exists and someone can run it.
 
-## O gatilho de revisão
+## The review trigger
 
-Todo finding novo nasce com essa pergunta respondida. Todo finding existente é reavaliado quando o
-comando que o fecharia muda de forma: uma flag renomeada, um verbo retirado, uma recusa nova
-adicionada antes do caminho que o remédio nomeia. É o mesmo fan-out de
-[computed-fact-prose-fanout.md](computed-fact-prose-fanout.md) — a diferença é que aqui o fato
-restatado é uma **capacidade**, e ela envelhece quando a superfície muda, não quando um valor muda.
+Every new finding is born with that question answered. Every existing finding is re-evaluated when
+the command that would close it changes shape: a renamed flag, a withdrawn verb, a new refusal added
+ahead of the path the remedy names. It is the same fan-out as
+[computed-fact-prose-fanout.md](computed-fact-prose-fanout.md) — the difference is that here the
+restated fact is a **capability**, and it ages when the surface changes, not when a value changes.

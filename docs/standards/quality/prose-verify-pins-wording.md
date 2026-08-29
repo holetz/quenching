@@ -1,92 +1,96 @@
 ---
 type: standard
-title: Um `verify:` que faz grep de prosa fixa a redação que afirma
-description: Um check escrito como grep sobre prosa não prova a prosa — ele a prende à frase que o check nomeou, e a falha resultante é ambígua entre "o texto está errado" e "o check nomeou uma frase que ninguém acordou"; como escrever a asserção, como ler a falha, a terceira leitura que nunca é permitida, e a face negativa em que o check proíbe uma string que o próprio spec exige em outro lugar
+title: A `verify:` that greps prose pins the wording it asserts
+description: A check written as a grep over prose does not prove the prose — it pins it to the phrase the check named, and the resulting failure is ambiguous between "the text is wrong" and "the check named a phrase nobody agreed to"; how to write the assertion, how to read the failure, the third reading that is never permitted, and the negative face where the check forbids a string the spec itself requires elsewhere
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**
 tags: [quality, verification, prose, specs, verify]
 timestamp: 2026-08-27
 audience: both
 authority: current
-source: spec observacoes-do-triage-sem-portador-de-acao (distilada no conclude) — medido na task 3.1, cujo `verify:` exigia "qualquer coluna que nomeie um comando" em minúsculas e falhou porque o bullet efetivamente escrito abria com "Qualquer"; §A face negativa acrescentada pela spec 1003 (2026-08-27), que mediu o inverso três vezes na mesma branch — um `verify:` proibindo a string `mkdocs` em três arquivos onde a própria `## Proposal` exigia que ela aparecesse
+source: spec observacoes-do-triage-sem-portador-de-acao (distilled at conclude) — measured on task 3.1, whose `verify:` required "qualquer coluna que nomeie um comando" in lowercase and failed because the bullet actually written opened with "Qualquer"; §The negative face added by spec 1003 (2026-08-27), which measured the inverse three times on the same branch — a `verify:` forbidding the string `mkdocs` in three files where the `## Proposal` itself required it to appear
 maintainer: quenching
 ---
 
-# Um `verify:` que faz grep de prosa fixa a redação que afirma
+# A `verify:` that greps prose pins the wording it asserts
 
-## A regra
+## The rule
 
-> Um `verify:` que faz grep de prosa **não prova a prosa — prende-a à frase que o check nomeou.**
-> Escreva a asserção sobre uma frase que a redação já decidiu, ou aceite que o check está
-> escolhendo as palavras antes de quem escreve.
+> A `verify:` that greps prose **does not prove the prose — it pins it to the phrase the check
+> named.** Write the assertion over a phrase the wording has already settled, or accept that the
+> check is choosing the words before the writer does.
 
-Um check sobre código afirma um **comportamento**: passa com qualquer implementação que se comporte
-daquele jeito. Um check sobre prosa afirma uma **sequência de caracteres**, e prosa tem infinitas
-sequências que dizem a mesma coisa. Na linha `verify:` os dois se parecem, e não são a mesma coisa.
+A check over code asserts a **behaviour**: it passes with any implementation that behaves that way.
+A check over prose asserts a **sequence of characters**, and prose has infinitely many sequences
+that say the same thing. On the `verify:` line the two look alike, and they are not the same thing.
 
-## Como ler a falha
+## How to read the failure
 
-Uma falha aqui é **ambígua por construção**, e as duas leituras honestas pedem ações opostas:
+A failure here is **ambiguous by construction**, and the two honest readings call for opposite
+actions:
 
-| O que está errado | Como se reconhece | O que fazer |
+| What is wrong | How you recognise it | What to do |
 | --- | --- | --- |
-| o texto | a frase exigida é a que o autor de fato quis dizer, e o texto não a contém | mudar o texto |
-| o check | a frase exigida nunca foi acordada — maiúscula de início de frase, um sinônimo, outra ordem | é defeito de definição: `/quenching:specs:develop` conserta o `verify:` |
+| the text | the required phrase is the one the author actually meant, and the text does not contain it | change the text |
+| the check | the required phrase was never agreed — a sentence-initial capital, a synonym, a different order | it is a definition defect: `/quenching:specs:develop` fixes the `verify:` |
 
-A **terceira leitura nunca é permitida**: reescrever o check para casar com o que o texto por acaso
-diz. É a proibição que `/quenching:specs:execute` já carrega — nunca editar a asserção para ela
-parar de falhar — aplicada ao caso em que a asserção é uma string.
+The **third reading is never permitted**: rewriting the check to match whatever the text happens to
+say. It is the prohibition `/quenching:specs:execute` already carries — never edit the assertion so
+it stops failing — applied to the case where the assertion is a string.
 
-## Como escrever a asserção
+## How to write the assertion
 
-- **Nomeie uma frase que a redação já decidiu**, nunca uma que ela ainda vai escolher. O momento de
-  escrever esse `verify:` é depois de o texto existir; antes disso ele é um palpite sobre palavras.
-- **Prefira o miolo da frase à borda.** Um trecho que pode abrir um bullet vai ser capitalizado por
-  quem escreve, e a maiúscula é exatamente a diferença que derruba um `grep` sem `-i`.
-- **Afirme o termo, não a sentença.** Quanto menor o trecho exigido, menos redação o check prende —
-  e o termo é justamente a parte que não deveria variar.
-- **Prove que o check sabe falhar** antes de escrever o texto que o faz passar: rodá-lo contra a
-  árvore antes da correção e exigir saída não-zero é o que separa um check de um enfeite.
+- **Name a phrase the wording has already settled**, never one it has yet to choose. The moment to
+  write that `verify:` is after the text exists; before that it is a guess about words.
+- **Prefer the middle of the sentence to its edge.** A fragment that can open a bullet will be
+  capitalised by whoever writes it, and that capital is exactly the difference that takes down a
+  `grep` without `-i`.
+- **Assert the term, not the sentence.** The smaller the required fragment, the less wording the
+  check pins — and the term is precisely the part that should not vary.
+- **Prove the check knows how to fail** before writing the text that makes it pass: running it
+  against the tree before the fix and requiring a non-zero exit is what separates a check from an
+  ornament.
 
-## A face negativa: o check que proíbe uma string
+## The negative face: the check that forbids a string
 
-A forma inversa — `! grep -q "<palavra>" <arquivo>` — parece mais segura, porque não escolhe
-palavras: ela só proíbe uma. **Ela prende mais, não menos.** Uma proibição vale sobre o arquivo
-inteiro, então ela alcança todo uso legítimo da palavra que a própria spec exige em outro lugar, e
-o autor descobre isso só quando o check fecha a porta na frente do texto certo.
+The inverse form — `! grep -q "<palavra>" <arquivo>` — looks safer, because it chooses no words: it
+only forbids one. **It pins more, not less.** A prohibition holds over the whole file, so it reaches
+every legitimate use of the word the spec itself requires elsewhere, and the author finds that out
+only when the check shuts the door in front of the right text.
 
-Três medições na mesma branch (spec 1003), todas com a string `mkdocs`:
+Three measurements on the same branch (spec 1003), all with the string `mkdocs`:
 
-| Onde | O uso legítimo que o check proibia |
+| Where | The legitimate use the check forbade |
 | --- | --- |
-| o corpo de um comando | a spec exigia, num bullet da `## Proposal`, que o comando reconhecesse a configuração legada — o que só se escreve nomeando-a |
-| o README do plugin | o changelog de versões registra o que a 0.9.0 de fato entregou; reescrever isso falsificaria o registro |
-| o espelho traduzido | é tradução literal da fonte, então herda tanto o tratamento do legado quanto o changelog |
+| a command's body | the spec required, in a `## Proposal` bullet, that the command recognise the legacy configuration — which can only be written by naming it |
+| the plugin's README | the version changelog records what 0.9.0 actually delivered; rewriting that would falsify the record |
+| the translated mirror | it is a literal translation of the source, so it inherits both the legacy handling and the changelog |
 
-O modo de falha é o mesmo nos três: **o alvo do check é o arquivo, e o alvo da regra era o
-mecanismo.** O que tinha de sumir não era a palavra — era o comando que ninguém pode mais rodar, a
-flag que não existe, o plugin que não roda. Escrito assim, o check volta a afirmar comportamento:
+The failure mode is the same in all three: **the check's target is the file, and the rule's target
+was the mechanism.** What had to disappear was not the word — it was the command nobody can run any
+more, the flag that does not exist, the plugin that does not run. Written this way, the check goes
+back to asserting behaviour:
 
 ```bash
-# proíbe o mecanismo morto, não a palavra
+# forbid the dead mechanism, not the word
 ! grep -qE "mkdocs build|--site-dir|awesome-pages" <arquivo>
-# e, quando o arquivo tem uma metade histórica, varre só a metade viva
+# and, when the file has a historical half, sweep only the living half
 ! awk '/^- \*\*[0-9]+\.[0-9]+\.[0-9]+:/{exit} {print}' README.md | grep -qi mkdocs
 ```
 
-**Duas regras que caem daqui.** Uma proibição sobre um arquivo que contém histórico precisa
-delimitar a parte viva, porque histórico não se corrige — se reescreve, e reescrevê-lo é mentir.
-E uma proibição sobre um artefato **gerado** nunca é o check certo: o que se afirma dele é que ele
-está em dia com a fonte, não o que o tradutor por acaso produziu.
+**Two rules fall out of this.** A prohibition over a file that contains history has to delimit the
+live part, because history is not corrected — it is rewritten, and rewriting it is lying. And a
+prohibition over a **generated** artifact is never the right check: what you assert of it is that it
+is up to date with its source, not what the translator happened to produce.
 
-A terceira leitura continua proibida aqui: nada disso autoriza afrouxar a proibição para o texto
-que por acaso existe passar. O que autoriza a troca é a proibição **contradizer uma exigência
-escrita da própria spec** — e a troca então é declarada, com a razão registrada onde o revisor a
-encontre.
+The third reading stays forbidden here: none of this authorises loosening the prohibition so the
+text that happens to exist can pass. What authorises the swap is the prohibition **contradicting a
+written requirement of the spec itself** — and the swap is then declared, with the reason recorded
+where the reviewer will find it.
 
-## Relação com standards vizinhos
+## Relation to neighbouring standards
 
-- [self-matching-guards.md](self-matching-guards.md) — o caso em que o próprio checker casa com o
-  texto que ele proíbe. Aqui é o inverso: o check **não** casa com um texto que está certo.
-- [prose-sweeps.md](prose-sweeps.md) — uma substituição mecânica corrompe justamente as frases que
-  *falam sobre* a forma substituída. As três dizem o mesmo de ângulos diferentes: prosa não é alvo
-  mecânico estável.
+- [self-matching-guards.md](self-matching-guards.md) — the case where the checker itself matches the
+  text it forbids. Here it is the inverse: the check does **not** match a text that is right.
+- [prose-sweeps.md](prose-sweeps.md) — a mechanical substitution corrupts precisely the sentences
+  that *talk about* the substituted form. All three say the same thing from different angles: prose
+  is not a stable mechanical target.

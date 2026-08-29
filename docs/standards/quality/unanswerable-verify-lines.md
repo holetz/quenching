@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Unanswerable verify lines
-description: Um `verify:` cujo veredito não vem do estado do código — o padrão que a shell desfigura antes de comparar, o escalar YAML que o parser trunca antes de ler, o ponto de entrada que saiu 0 sem executar nada — e a regra de exercitar a linha nos dois sentidos no momento em que ela é escrita, nunca no momento em que ela precisa fechar
+description: A `verify:` whose verdict does not come from the state of the code — the pattern the shell mangles before it compares, the YAML scalar the parser truncates before it reads, the entry point that exited 0 without running anything — and the rule of exercising the line in both directions at the moment it is written, never at the moment it has to close
 resource: plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/*.md, docs/standards/workflows/task-execution.md
 tags: [quality, verification, verify, authoring, shell-quoting, frontmatter]
 timestamp: 2026-08-17
 audience: both
 authority: current
-source: fila /quenching:specs:execute-queue de 2026-08-17 — três instâncias independentes medidas nas specs cq-specs-task-check-stale-subject-sem-commit, falha-de-leitura-do-backend-vira-front-vazio e validar-a-zona-generated-contra-o-disco
+source: /quenching:specs:execute-queue queue of 2026-08-17 — three independent instances measured in the specs cq-specs-task-check-stale-subject-sem-commit, falha-de-leitura-do-backend-vira-front-vazio and validar-a-zona-generated-contra-o-disco
 maintainer: quenching
 ---
 
@@ -15,42 +15,42 @@ maintainer: quenching
 
 <!-- rules -->
 
-**Um `verify:` responde sobre o estado do código, ou não responde.** Uma linha cujo veredito é
-decidido pela sua própria grafia — antes de qualquer coisa ser medida — não é um check frouxo: é um
-check que não está lá. As duas leituras que ela produz são igualmente falsas, e uma delas é verde.
+**A `verify:` answers about the state of the code, or it does not answer.** A line whose verdict is
+decided by its own spelling — before anything at all is measured — is not a loose check: it is a
+check that is not there. The two readings it produces are equally false, and one of them is green.
 
-Três formas, todas medidas numa única fila de nove specs:
+Three forms, all measured in a single queue of nine specs:
 
-| A linha | O que a desfigura | Como ela mente |
+| The line | What mangles it | How it lies |
 | --- | --- | --- |
-| grep cujo padrão contém crases, escrito entre **aspas duplas** | a shell faz substituição de comando antes do grep ver o padrão | o padrão degrada para algo que **nunca casa** — vermelho impossível de fechar |
-| escalar YAML **não-aspado** contendo `#` | o parser trata o resto da linha como comentário | o valor chega truncado, e o finding só aparece depois do commit |
-| ponto de entrada que não existe mais (módulo sem guarda `__main__`, `main()` aposentada) | nada — ele sai 0 | **verde sem executar nada** |
+| a grep whose pattern contains backticks, written inside **double quotes** | the shell does command substitution before grep sees the pattern | the pattern degrades into something that **never matches** — a red impossible to close |
+| an **unquoted** YAML scalar containing `#` | the parser treats the rest of the line as a comment | the value arrives truncated, and the finding only shows up after the commit |
+| an entry point that no longer exists (a module with no `__main__` guard, a retired `main()`) | nothing — it exits 0 | **green without running anything** |
 
-**A regra: exercite a linha nos dois sentidos no momento em que ela é escrita.** Rode-a contra a
-árvore como ela está (deve dar o vermelho que a task existe para fechar) e contra o estado que a
-task vai produzir (deve dar verde). Uma linha que dá o mesmo resultado nos dois sentidos não
-discrimina, e o custo de descobrir isso na hora de fechar a caixa é uma execução inteira.
+**The rule: exercise the line in both directions at the moment it is written.** Run it against the
+tree as it stands (it must give the red the task exists to close) and against the state the task
+will produce (it must give green). A line that gives the same result in both directions does not
+discriminate, and the cost of finding that out when the box has to be ticked is a whole run.
 
-**Quem encontra uma linha assim reporta, e nunca a substitui em silêncio.** Rodar a forma corrigida
-para saber o que ela diria é legítimo e é o que produz a evidência; reescrever a linha `verify:`
-para que ela passe apaga a asserção que alguém pretendeu fazer. As duas coisas vão no relatório —
-o que a linha declarava, e o que a forma correta mediu.
+**Whoever finds such a line reports it, and never replaces it in silence.** Running the corrected
+form to learn what it would say is legitimate and is what produces the evidence; rewriting the
+`verify:` line so that it passes erases the assertion someone meant to make. Both go into the
+report — what the line declared, and what the correct form measured.
 
 <!-- rationale -->
 
-As três instâncias apareceram em specs diferentes, escritas por autores diferentes, na mesma run —
-o que é a evidência de que a causa é a forma de escrever, não o descuido de um autor. Nenhuma foi
-pega pelo `cq specs validate`, e nenhuma poderia ser: o validador lê a linha como texto, e o que
-está errado nela só se manifesta quando a shell ou o parser YAML a interpretam. É por isso que a
-mitigação é de **autoria**, e não mais um checker — o momento em que a informação existe é o
-momento em que a linha é escrita.
+The three instances appeared in different specs, written by different authors, in the same run —
+which is the evidence that the cause is the way of writing, not one author's carelessness. None was
+caught by `cq specs validate`, and none could be: the validator reads the line as text, and what is
+wrong with it only manifests when the shell or the YAML parser interprets it. That is why the
+mitigation is one of **authoring**, and not one more checker — the moment the information exists is
+the moment the line is written.
 
-A terceira forma é a mais cara das três, e a única que não dá trabalho a ninguém: um vermelho
-impossível para o autor no mesmo dia, mas um verde vazio atravessa a run inteira, entra no PR e
-sustenta uma afirmação de cobertura que nunca foi medida. Ela é irmã de
-[selftest-mutation.md](selftest-mutation.md) — um teste que nunca foi observado falhando não está
-testado — aplicada ao `verify:` de uma task em vez de a um caso de fixture.
+The third form is the most expensive of the three, and the only one that gives nobody any trouble:
+an impossible red costs the author the same day, but an empty green crosses the whole run, lands in
+the PR and sustains a coverage claim that was never measured. It is the sibling of
+[selftest-mutation.md](selftest-mutation.md) — a test never observed failing is not tested —
+applied to a task's `verify:` instead of to a fixture case.
 
-O escopo é o `verify:` porque é ali que a linha é executada sem ninguém olhando. A mesma armadilha
-de quoting num comando digitado à mão é vista e corrigida em segundos.
+The scope is `verify:` because that is where the line runs with nobody watching. The same quoting
+trap in a hand-typed command is seen and fixed in seconds.

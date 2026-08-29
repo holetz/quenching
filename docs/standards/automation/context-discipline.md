@@ -125,7 +125,9 @@ stays` got `sk-read-no-section`, which reads to an agent as *the section does no
 fallback is opening the file whole. Measured across `assets/references/`, `/docs/` and
 `assets/docs/`: **146 headings carry a comma**. 145 resolved only by the accident that the fragment
 before the comma happened to be unique, and one — `/docs/standards/git/branching.md`
-"A publicação, em duas metades" — resolved by no form at all.
+"Publication, in two halves" (measured while that heading still read "A publicação, em duas
+metades"; translating it changed the words, not the comma or the finding) — resolved by no form at
+all.
 
 Whole-first was chosen over three alternatives, and the deciding evidence was a simulation rather
 than an argument: every ordered pair of headings in every file, joined by `,` and by `, ` —
@@ -209,7 +211,7 @@ blocks to §Tooling asides, relocated — cited by nothing — returned the sect
 The sub-section rule has the same provenance and the same shape of cost. That relocation's spec
 budgeted `execution.md`'s seven cited sections at 11,610 chars and `git.md`'s five at 4,233; they
 actually cost 16,212 and 8,491, because the estimate counted level-2 prose and the reader returns
-the `###` children too. The gap turned a cut declared at −36% into a measured −30,1% — not a
+the `###` children too. The gap turned a cut declared at −36% into a measured −30.1% — not a
 regression, an under-read baseline, and the correction is to count what the reader returns.
 
 ## Run for less time: the section boundary

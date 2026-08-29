@@ -1,7 +1,7 @@
 ---
 type: standard
 title: Retiring a standard — removal, the stamp, and the review as the net
-description: Como um standard do bundle é aposentado — remoção, nunca deprecação (o verbo é `git rm`; um doc que sobrevive anotado vira ritual que ninguém age sobre); o herdeiro carrega o carimbo `retired with <doc> (<spec>, <data>)` no `source:` e no corpo; a varredura das citações é humana e o `## Impact` deve nomear a classe de docs que citam; a zona GENERATED da listagem é reconstruída no mesmo movimento; e o review de branch é a rede — com a atividade de recurso lida como figure, nunca como falha
+description: How a bundle standard is retired — removal, never deprecation (the verb is `git rm`; a doc that survives annotated becomes a ritual nobody acts on); the inheriting doc carries the `retired with <doc> (<spec>, <data>)` stamp in its `source:` and in its body; the citation sweep is human and `## Impact` must name the class of docs that cite it; the listing's GENERATED zone is rebuilt in the same movement; and the branch review is the net — with resource activity read as a figure, never as a failure
 resource: /docs/**, /.specs/**
 tags: [workflows, docs, bundle, retirement]
 timestamp: 2026-08-27
@@ -13,54 +13,55 @@ maintainer: quenching
 
 # Retiring a standard — removal, the stamp, and the review as the net
 
-Aposentar um standard do bundle é **remoção, não deprecação**. Um doc que sobrevive anotado
-(`deprecated:`, uma nota de rodapé, uma prosa "histórica") vira ritual que ninguém age sobre: o
-leitor continua pagando o texto a cada sessão, sem ter como saber que a regra foi aposentada. O
-verbo de aposentar é `git rm`; o que fica é o que o herdeiro registra (abaixo).
+Retiring a bundle standard is **removal, not deprecation**. A doc that survives annotated
+(`deprecated:`, a footnote, some "historical" prose) becomes a ritual nobody acts on: the reader
+goes on paying for the text every session, with no way to know the rule was retired. The verb for
+retiring is `git rm`; what stays is what the inheriting doc records (below).
 
-O procedimento abaixo foi executado uma vez nesta casa — `context-budget.md`, aposentado em
-2026-08-06 pela spec `extensible-surface-and-budget-retirement` — e o erro que ele lista primeiro
-é o stray que o próprio review daquela spec deixou passar. Não é uma prova de repetibilidade
-(`authority: background`), é o registro do que aconteceu.
+The procedure below has been executed once in this home — `context-budget.md`, retired on
+2026-08-06 by the `extensible-surface-and-budget-retirement` spec — and the error it lists first
+is the stray that that spec's own review let through. It is not a proof of repeatability
+(`authority: background`), it is the record of what happened.
 
-## O procedimento
+## The procedure
 
-1. **A spec que aposenta lista o que vai citar, e o `## Impact` nomeia a CLASSE dos docs que
-   citam** — ver [withdrawn-contract-residue.md](../quality/withdrawn-contract-residue.md). O
-   contrário foi medido: uma citação de um contrato removido não tem grafia canônica para grep,
-   cada site a afirma com as próprias palavras. As citações que a spec conhece são re-apontadas
-   como tarefas; as que ela não conhece são o que o review pega.
-2. **A listagem é reconstruída no mesmo movimento.** O standard instalado entra na subpasta
-   (`index.md` da casa) E na zona `GENERATED` de `standards/index.md` — os dois, no mesmo commit do
-   `git rm`. Um doc cuja row falta na zona GENERATED é um `index-orphan` que **nenhum checker vê**
-   (a figure de atividade só fala onde um `resource:` nomeia o arquivo, e nunca foi um achado —
-   a zona não é validada por ninguém). Foi exatamente o que aconteceu na primeira execução: a subpasta foi atualizada, a
-   zona não, e o review não pegou.
-3. **O herdeiro carrega o carimbo.** A doc que herda o terreno do que saiu registra no `source:` e
-   no corpo: `retired with <doc aposentado> (<spec>, <data>)`. É o único lugar onde a história do
-   que sumiu continua viva — e é o que o leitor futuro consulta para saber o que aconteceu e por
-   quê. Na primeira execução, `context-discipline.md` passou a fechar com "The measurement history
-   behind the integral, 344-turn run included, retired with context-budget.md; this file owns what
-   to *do* about it".
-4. **A varredura dos strays é humana, e o review de branch é a rede.** Nenhum checker separa uma
-   citação que fala SOBRE a doc aposentada (correta como está, história) de uma que a invoca como
-   regra viva — o mesmo julgamento menção/uso que [prose-sweeps.md](../quality/prose-sweeps.md)
-   declara invisível a regex. A atividade de recurso do herdeiro é uma figure, nunca um achado e
-   muito menos uma falha do gate; quem aposenta assume que o review do concluir vai achar um ou
-   dois sites órfãos — na
-   primeira execução foram quatro (glossário ×2, um payload instalado, o corpo de um comando).
+1. **The retiring spec lists what cites the doc, and `## Impact` names the CLASS of the docs that
+   cite it** — see [withdrawn-contract-residue.md](../quality/withdrawn-contract-residue.md). The
+   opposite was measured: a citation of a removed contract has no canonical spelling to grep for,
+   each site asserts it in its own words. The citations the spec knows about are re-pointed as
+   tasks; the ones it does not know about are what the review catches.
+2. **The listing is rebuilt in the same movement.** The installed standard goes into the subfolder
+   (the home's `index.md`) AND into the `GENERATED` zone of `standards/index.md` — both, in the same
+   commit as the `git rm`. A doc whose row is missing from the GENERATED zone is an `index-orphan`
+   that **no checker sees** (the resource-activity figure only speaks where a `resource:` names the
+   file, and it has never been a finding — the zone is validated by nobody). That is exactly what
+   happened on the first execution: the subfolder was updated, the zone was not, and the review did
+   not catch it.
+3. **The inheriting doc carries the stamp.** The doc that inherits the ground of the one that left
+   records, in its `source:` and in its body: `retired with <retired doc> (<spec>, <data>)`. It is
+   the only place where the history of what vanished stays alive — and it is what the future reader
+   consults to find out what happened and why. On the first execution, `context-discipline.md` came
+   to close with "The measurement history behind the integral, 344-turn run included, retired with
+   context-budget.md; this file owns what to *do* about it".
+4. **The stray sweep is human, and the branch review is the net.** No checker separates a citation
+   that talks ABOUT the retired doc (correct as it stands, history) from one that invokes it as a
+   live rule — the same mention/use judgment [prose-sweeps.md](../quality/prose-sweeps.md)
+   declares invisible to a regex. The inheriting doc's resource activity is a figure, never a
+   finding and much less a gate failure; whoever retires assumes the conclude's review will find one
+   or two orphan sites — on the
+   first execution there were four (the glossary ×2, one installed payload, one command body).
 
-## O que a aposentadoria não é
+## What retirement is not
 
-- **Não é bump de versão.** O lockstep dos seis artefatos é ato do release
-  ([versioning-release.md](../ci-cd/versioning-release.md) — o bump acontece na branch primária,
-  no release, nunca no concluir e nunca como tarefa). Aposentar um standard não toca no
+- **It is not a version bump.** The four-artifact lockstep is the release's act
+  ([versioning-release.md](../ci-cd/versioning-release.md) — the bump happens on the primary branch,
+  at the release, never at the conclude and never as a task). Retiring a standard does not touch
   VERSION.
-- **Não é a mesma coisa de retirar um arquivo reservado.** O artefato reservado aposentado
-  **mantém** o slot em `RESERVED` e o skip no hard block
-  ([retiring-a-reserved-artifact.md](../architecture/retiring-a-reserved-artifact.md)) — porque
-  desreservar silenciosamente converte cada arquivo sobrevivente em malformado. Um standard do
-  bundle não tem consumidores que precisem ser desarmados; ele simplesmente deixa de existir.
-- **Não é reescrita de história.** A doc aposentada continua no git; o que o repo ganha é o leitor
-  que não paga mais o texto. Re-escrever o passado (amend, force-push) é proibido por razões
-  independentes — a remoção é um commit ordinário como qualquer outro.
+- **It is not the same as retiring a reserved file.** A retired reserved artifact **keeps** its
+  slot in `RESERVED` and its skip in the hard block
+  ([retiring-a-reserved-artifact.md](../architecture/retiring-a-reserved-artifact.md)) — because
+  silently unreserving turns every surviving file into a malformed one. A bundle standard has no
+  consumers that need disarming; it simply stops existing.
+- **It is not rewriting history.** The retired doc is still in git; what the repo gains is a reader
+  who no longer pays for the text. Rewriting the past (amend, force-push) is forbidden for
+  independent reasons — the removal is an ordinary commit like any other.

@@ -1,81 +1,81 @@
 ---
 type: standard
-title: Carregar é uma chamada dentro do passo; citar é prosa de preâmbulo
-description: Um corpo que precisa de uma seção de reference no passo N carrega essa seção no passo N, com a invocação literal e copiável de cq components read — uma citação de preâmbulo diz onde a regra mora e não faz a sessão abrir o arquivo, e o oposto foi medido acontecendo nos oito corpos /quenching:specs:*
+title: Loading is a call inside the step; citing is preamble prose
+description: A body that needs a reference section at step N loads that section at step N, with the literal, copy-pasteable cq components read invocation — a preamble citation says where the rule lives and does not make the session open the file, and the opposite was measured happening across the eight /quenching:specs:* bodies
 resource: plugins/quenching/commands/**/*.md
 tags: [architecture, references, commands, skills, cq]
 timestamp: 2026-08-10
 audience: both
 authority: current
-source: spec plans/alinhar-specs-ao-report-mold.md, seção Design decisão 2 (provada em 2026-08-05) — antes das tasks 1.1-1.3 desta spec, sete dos oito corpos /quenching:specs:* citavam spec-driven.md §The report mold como prosa de preâmbulo ("owns the shape step N prints in") e nenhum dos oito continha a string --sections "§The report mold"; develop.md chegava a adiar explicitamente para o passo 8, e o passo 8 não trazia chamada nenhuma
+source: spec plans/alinhar-specs-ao-report-mold.md, Design section decision 2 (proved on 2026-08-05) — before this spec's tasks 1.1-1.3, seven of the eight /quenching:specs:* bodies cited spec-driven.md §The report mold as preamble prose ("owns the shape step N prints in") and not one of the eight contained the string --sections "§The report mold"; develop.md went as far as explicitly deferring to step 8, and step 8 carried no call at all
 maintainer: quenching
 ---
 
-# Carregar é uma chamada dentro do passo; citar é prosa de preâmbulo
+# Loading is a call inside the step; citing is preamble prose
 
-Todo corpo `commands/**/*.md` deste plugin cita references por `§`-endereço em vez de restatá-las —
-essa é a economia de contexto que sustenta a arquitetura inteira. Mas uma citação e um carregamento
-são dois atos diferentes, e confundi-los é como um corpo termina obedecendo a metade da própria regra
-que ele mesmo declara.
+Every `commands/**/*.md` body in this plugin cites references by `§`-address instead of restating
+them — that is the context saving the whole architecture rests on. But a citation and a load are two
+different acts, and confusing them is how a body ends up obeying half of the very rule it declares
+itself.
 
-## A regra
+## The rule
 
-> Um corpo que precisa de uma seção de reference no passo N **carrega** essa seção no passo N, com a
-> invocação literal e copiável:
+> A body that needs a reference section at step N **loads** that section at step N, with the
+> literal, copy-pasteable invocation:
 >
 > ```bash
-> cq components read <arquivo> --sections "§X"
+> cq components read <file> --sections "§X"
 > ```
 >
-> Uma citação de preâmbulo — "a regra vive em `arquivo.md` §X" — diz **onde** a regra mora. Ela não
-> faz a sessão abrir o arquivo.
+> A preamble citation — "the rule lives in `file.md` §X" — says **where** the rule lives. It does
+> not make the session open the file.
 
-Uma seção citada apenas em prosa é um endereço, não uma ação. Uma sessão que lê o corpo do comando de
-ponta a ponta vê a frase, sabe que a regra existe em algum lugar, e segue adiante — o mesmo resultado
-de um `import` nunca executado.
+A section cited only in prose is an address, not an action. A session that reads the command body
+end to end sees the sentence, knows the rule exists somewhere, and moves on — the same result as an
+`import` that never ran.
 
-## A prova
+## The proof
 
-Antes das tasks que este standard documenta, sete dos oito corpos `/quenching:specs:*` citavam
-`spec-driven.md` §The report mold assim, no preâmbulo:
+Before the tasks this standard documents, seven of the eight `/quenching:specs:*` bodies cited
+`spec-driven.md` §The report mold like this, in the preamble:
 
 > "whose §The report mold owns the shape step 7 prints in"
 
-e nenhum dos oito continha, em nenhum ponto do próprio corpo, a chamada
-`cq components read ... --sections "§The report mold"`. `develop.md` ia além: adiava explicitamente para
-o passo 8 ("step 8 loads spec-driven.md's §The report mold") — e o passo 8, quando lido, não trazia
-chamada nenhuma, só a mesma frase de prosa.
+and not one of the eight contained, at any point of its own body, the call
+`cq components read ... --sections "§The report mold"`. `develop.md` went further: it explicitly
+deferred to step 8 ("step 8 loads spec-driven.md's §The report mold") — and step 8, when read,
+carried no call at all, only the same sentence of prose.
 
-O sintoma medido foi exatamente o que a citação sozinha permite: um report emitido em forma livre,
-com blocos, verbos de fechamento e vocabulário de glifo que a seção citada já fixava — porque nada no
-passo obrigava a sessão a abri-la antes de escrever.
+The measured symptom was exactly what a citation alone permits: a report emitted in free form, with
+blocks, closing verbs and glyph vocabulary the cited section already fixed — because nothing in the
+step forced the session to open it before writing.
 
-A correção não foi reescrever a prosa do preâmbulo — ela já dizia a verdade sobre onde a regra mora,
-e apagá-la perderia a explicação de por quê. A correção foi inserir, dentro de cada um dos oito
-passos de report, a chamada que os dois corpos que já reportavam de forma consistente
-(o roteador do front, desde retirado, e `/quenching:specs:execute`, antes desta spec) já continham: a
-invocação literal, no ponto exato em que o bloco carregado é usado.
+The fix was not rewriting the preamble prose — it already told the truth about where the rule lives,
+and deleting it would lose the explanation of why. The fix was to insert, inside each of the eight
+report steps, the call the two bodies that already reported consistently
+(the front's router, since retired, and `/quenching:specs:execute`, before this spec) already
+contained: the literal invocation, at the exact point where the loaded block is used.
 
-## Onde a citação de preâmbulo continua certa
+## Where a preamble citation is still right
 
-Uma reference citada no preâmbulo e **nunca carregada em nenhum passo** não é um defeito — é o caso
-comum. A maior parte do que um corpo cita é contexto de fundo que orienta como a sessão pensa sobre o
-comando, e restatá-lo dentro de um passo específico não teria destino: nada no passo consome aquele
-bloco como instrução a seguir literalmente.
+A reference cited in the preamble and **never loaded in any step** is not a defect — it is the
+common case. Most of what a body cites is background context that steers how the session thinks
+about the command, and restating it inside a specific step would have nowhere to land: nothing in
+the step consumes that block as an instruction to follow literally.
 
-O carregamento dentro do passo é exigido quando, e só quando, o passo produz algo cuja **forma** vem
-inteira de uma seção nomeada — um report, um bloco de frontmatter, um formato de commit. Nesses
-casos a seção é o molde que o passo copia, e copiar um molde não visto nesta execução é copiar de
-memória.
+Loading inside the step is required when, and only when, the step produces something whose **shape**
+comes entirely from a named section — a report, a frontmatter block, a commit format. In those cases
+the section is the mold the step copies, and copying a mold not seen in this run is copying from
+memory.
 
-## Relação com standards vizinhos
+## Relation to the neighbouring standards
 
-- [report-mold.md](report-mold.md) é o caso que revelou esta regra: um mold citado por oito corpos,
-  onde carregar dentro do passo — em vez de confiar na citação de preâmbulo — é o que faz a forma
-  realmente convergir.
-- [../automation/skills.md](../automation/skills.md) governa o outro lado da mesma
-  balança: por que uma reference vive fora do preâmbulo em primeiro lugar, e o teto que um `§`-
-  endereço evita estourar.
-- [plugin-layout.md](plugin-layout.md) estabelece que `commands/**` é a única árvore registrada e
-  `assets/` guarda o que é citado por caminho absoluto — esta regra é sobre o **quando** dentro do
-  corpo, não sobre onde a reference mora.
+- [report-mold.md](report-mold.md) is the case that revealed this rule: a mold cited by eight
+  bodies, where loading inside the step — instead of trusting the preamble citation — is what makes
+  the shape actually converge.
+- [../automation/skills.md](../automation/skills.md) governs the other side of the same
+  scale: why a reference lives outside the preamble in the first place, and the ceiling a `§`-
+  address avoids blowing.
+- [plugin-layout.md](plugin-layout.md) establishes that `commands/**` is the only registered tree
+  and `assets/` holds what is cited by absolute path — this rule is about the **when** inside the
+  body, not about where the reference lives.
