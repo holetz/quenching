@@ -55,7 +55,7 @@ surfaced as a choice, and never assumed to be the answer because it was the only
    by repository, and the question is already cheap.
    - **Accepted** → the new spec is minted, and its ID threads into the rest of `conclude` exactly
      as a marked one would.
-   - **Declined** → `conclude` runs **headless**: the branch review, the emergent `/.knowledge/`, and the
+   - **Declined** → `conclude` runs **headless**: the branch review, the emergent `/docs/`, and the
      distillation still happen, but there is no spec file — `## Outcome` has nowhere to land, so the
      run's report carries that summary instead.
 

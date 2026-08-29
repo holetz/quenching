@@ -22,7 +22,7 @@ Exempt (skipped): harness pointer files (never OKF concepts).
   in an already-aligned bundle is recognized rather than read as a malformed concept
   doc. Retired is not unknown.
 
-The bundle root is the fixed `/.knowledge/` convention — no knob names it, and no config moves it.
+The bundle root is the fixed `/docs/` convention — no knob names it, and no config moves it.
 """
 from __future__ import annotations
 
@@ -69,7 +69,21 @@ ASSET_DIRS = ("img", "imgs", "images", "assets", "static", "media", "node_module
 LINK_RE = re.compile(r"\]\(([^)]+)\)")
 # Pre-rename layout `okf-legacy-*` recognizes as migration debt — never a current OKF
 # name, only ever compared against to find a target that has not run `knowledge:align` yet.
-LEGACY_ROOT_NAME = ".docs"
+# Every root this plugin has declared before the current one, oldest first. `.docs` was the
+# first; `.knowledge` replaced it; `.knowledge` was itself retired once a measured Zensical
+# constraint (a dot-prefixed `docs_dir` renders zero pages) forced the root to lose its dot.
+# Order carries no meaning — each is detected independently, on its own site.
+LEGACY_ROOT_NAMES = (".docs", ".knowledge")
+# Findings that judge a file **as an OKF concept doc**. Suppressed wholesale when the root
+# carries no OKF signature: a directory that never claimed to be a bundle must say so once,
+# not once per file it happens to contain. This is what keeps a target repo's ordinary
+# `docs/` — the commonest folder name there is, and the same name as the OKF root since the
+# dot came off — from reporting one ERROR per document.
+CONCEPT_DOC_CODES = (
+    "no-frontmatter", "broken-frontmatter", "missing-type", "okf-frontmatter-unparsed",
+    "index-has-type", "index-has-frontmatter",
+    "missing-title", "missing-description", "missing-resource", "missing-timestamp",
+)
 LEGACY_HOMES = {"knowledge": "concepts", "reference": "external"}
 LEGACY_QUADRANTS = {"getting-started": "tutorials", "concepts": "explanation"}
 

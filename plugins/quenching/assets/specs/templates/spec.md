@@ -78,21 +78,21 @@ verification: <VERIFICATION>
 <!-- MOMENT: build + PARSED. Gate: ready (derived).
 
      Declared scope for human review. The `### Standards this spec will write into
-     /.knowledge/standards/` sub-heading below is PARSED by `cq specs validate`: every
-     `/.knowledge/standards/**.md` path bulleted under it must be named by a `## Tasks` item, or
+     /docs/standards/` sub-heading below is PARSED by `cq specs validate`: every
+     `/docs/standards/**.md` path bulleted under it must be named by a `## Tasks` item, or
      validate emits `sp-impact-uncovered` (warn). Keep that heading text verbatim — it is the
      anchor.
 
      Example of a parsed bullet:
-       - `/.knowledge/standards/naming/command-surface.md` — the bijection rule for wrappers
+       - `/docs/standards/naming/command-surface.md` — the bijection rule for wrappers
 
      The sibling sub-headings are prose for the reader and are deliberately NOT parsed: they
      name paths the spec never promised to write. A spec with no such sub-heading declares
      nothing and is never flagged — the check is opt-in by writing the heading. -->
 
-### Standards this spec will write into /.knowledge/standards/
+### Standards this spec will write into /docs/standards/
 
-- <path under /.knowledge/standards/> — <the rule it states>
+- <path under /docs/standards/> — <the rule it states>
 
 ### Standards at `authority: background` this spec may resolve
 
@@ -197,7 +197,7 @@ verification: <VERIFICATION>
        - [ ] 3.3 [P] Add the rate-limit config loader
 
      Set HERE, at definition time, and NEVER inferred while building. Honoured only when the
-     marked tasks' `files:` sets are provably disjoint and none writes into `/.knowledge/` —
+     marked tasks' `files:` sets are provably disjoint and none writes into `/docs/` —
      `cq specs parallel` checks the disjunction mechanically rather than judging it in prose.
      Serial execution is the default and needs no marker.
 

@@ -8,7 +8,7 @@ markdown stays generator-neutral; only this config layer names a generator.**
 
 | File | Stamped to | Notes |
 | --- | --- | --- |
-| `zensical.toml.tmpl` | repo root `zensical.toml` | only if absent; fill `site_name`/`site_description`; keep `docs_dir = ".knowledge/documentation"` and add only map-approved routes |
+| `zensical.toml.tmpl` | repo root `zensical.toml` | only if absent; fill `site_name`/`site_description`; keep `docs_dir = "docs/documentation"` and add only map-approved routes |
 | `requirements.txt` | repo root, only when no `pyproject.toml` is used | `zensical` |
 | `quenching.css` | the `documentation/` home, at `assets/stylesheets/quenching.css` | static CSS for badges, hero, cards and reduced-motion guard; `extra_css` in `zensical.toml` wires it |
 | `ci-github-pages.yml` | `.github/workflows/docs.yml` | opt-in; GitHub Pages via the Pages artifact — the repo's Pages source must be "GitHub Actions" |
@@ -58,7 +58,7 @@ when a local preview is explicitly requested.
 `index.md` in each section is the section landing page (`navigation.indexes`). The plan's **Mapa
 editorial de publicação** decides whether another OKF home is published, published through a
 curated mirror below `documentation/`, or absent. Links use that mapped route — never an internal
-`/.knowledge/<home>/…` path. A `não publicar` home has no route or nav entry.
+`/docs/<home>/…` path. A `não publicar` home has no route or nav entry.
 
 The glossary route is `reference/glossary.md`. When the canonical root `glossary.md` has content,
 it is published by default unless the accepted map explicitly says `não publicar`. The write stage

@@ -16,12 +16,12 @@ prohibitions that bind every git command on any repo. `isolation.md`, `commit.md
 Before the first commit of a run, look for the target's own conventions — **once**, and cheaply:
 
 ```bash
-ls .knowledge/standards/git/ 2>/dev/null
+ls docs/standards/git/ 2>/dev/null
 ```
 
 | What is found | What governs |
 | --- | --- |
-| one or more `.knowledge/standards/git/**.md` | **the target's docs**, read and followed verbatim |
+| one or more `docs/standards/git/**.md` | **the target's docs**, read and followed verbatim |
 | nothing | the defaults below |
 | a doc that covers only part (e.g. commit subjects but not merges) | the target's for what it covers, the defaults for the rest |
 

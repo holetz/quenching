@@ -1,7 +1,7 @@
 # `assets/` — everything Claude Code must not surface as an entry point
 
 That sentence is the whole membership rule, and it is the standard's
-([plugin-layout.md](../../../.knowledge/standards/architecture/plugin-layout.md)), not a local one.
+([plugin-layout.md](../../../docs/standards/architecture/plugin-layout.md)), not a local one.
 `commands/**` is the only tree Claude Code registers — every `.md` under it *is* a command, since
 the path is the identity — so anything that is not an entry point lives here: the installable
 payload, the shared procedure the bodies cite, the measured case sets, the harnesses that grade
@@ -28,10 +28,10 @@ because a relative path encodes the depth of the *citing* file and `commands/ali
 
 | Path | What it is | Installs into the target as |
 | --- | --- | --- |
-| `knowledge/` | the canonical **OKF bundle skeleton** — 23 reserved `index.md` listings (only the root carries frontmatter, and only `okf_version`), `standards/CLAUDE.md`, the 5 `.pages` nav files inside `documentation/**`, and the fixed `glossary.md` term-lookup seed | the target's `/.knowledge/`, only the homes that apply |
+| `knowledge/` | the canonical **OKF bundle skeleton** — 23 reserved `index.md` listings (only the root carries frontmatter, and only `okf_version`), `standards/CLAUDE.md`, the 5 `.pages` nav files inside `documentation/**`, and the fixed `glossary.md` term-lookup seed | the target's `/docs/`, only the homes that apply |
 | `specs/plans/.gitkeep` | keeps the active-spec folder in git while empty — the folder IS the listing, and `cq specs list` derives it from disk | `/.specs/plans/` |
 | `specs/archive/.gitkeep` | keeps the closed-spec folder in git while empty | `/.specs/archive/` |
-| `zensical/` | the **site layer** payload — `zensical.toml.tmpl`, `requirements.txt`, opt-in `ci-github-pages.yml` (the nav ships inside the config, not as sidecar files) | the target's repo **root**, outside `/.knowledge/` |
+| `zensical/` | the **site layer** payload — `zensical.toml.tmpl`, `requirements.txt`, opt-in `ci-github-pages.yml` (the nav ships inside the config, not as sidecar files) | the target's repo **root**, outside `/docs/` |
 
 Two files under `hooks/` used to belong to this table and no longer do — **nothing copies or
 merges them into a target any more**, since the plugin's own `hooks/hooks.json` wires the checker
@@ -55,7 +55,7 @@ family applies `automation/`. The mold's *content* reaches the target; the file 
 Inventory and stamp discipline: [templates/README.md](templates/README.md).
 
 A mold is under a citation rule of its own — **it cites nothing it does not also install**, because
-it lands in a repo that has none of this one's `/.knowledge/`. That is why a mold and this plugin's own
+it lands in a repo that has none of this one's `/docs/`. That is why a mold and this plugin's own
 copy of the same standard legitimately differ in wording.
 
 ### Tools the plugin executes
@@ -87,7 +87,7 @@ retired.
 
 ## The signature
 
-The `/.knowledge/` tree is the **portable signature** — every repo the plugin aligns ends with the same
+The `/docs/` tree is the **portable signature** — every repo the plugin aligns ends with the same
 homes, the same reserved `index.md` listings, the same `type` vocabulary. The skeleton is
 **conformant by construction**: `python3 bin/cq knowledge validate assets/knowledge` over it reports **0
 errors, 0 warnings**.

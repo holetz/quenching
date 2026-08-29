@@ -1,6 +1,6 @@
 ---
 name: quenching-align
-description: "Align the whole repository — /.knowledge/ then .agents/ — on ONE confirmation, looped until nothing changes anywhere. Triggers on \"align the repo\", \"align everything\", \"align and update everything\", \"set up quenching here\", \"converge this repository\", \"run all the aligns\", \"fix both fronts\". Probes the two aligned fronts read-only, asks once, then invokes each front's align in dependency order. Authorization nests one level — each front align inherits the OK and never re-asks, while a code-coupled rename and an irreversible close still gate on their own. Conducts, never reimplements: every write is made by the front align it invokes."
+description: "Align the whole repository — /docs/ then .agents/ — on ONE confirmation, looped until nothing changes anywhere. Triggers on \"align the repo\", \"align everything\", \"align and update everything\", \"set up quenching here\", \"converge this repository\", \"run all the aligns\", \"fix both fronts\". Probes the two aligned fronts read-only, asks once, then invokes each front's align in dependency order. Authorization nests one level — each front align inherits the OK and never re-asks, while a code-coupled rename and an irreversible close still gate on their own. Conducts, never reimplements: every write is made by the front align it invokes."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/align.md -->
@@ -12,7 +12,7 @@ description: "Align the whole repository — /.knowledge/ then .agents/ — on O
 
 | # | Front | Align | What converges |
 | --- | --- | --- | --- |
-| 1 | `/.knowledge/` — the OKF bundle | `quenching-knowledge-align` | homes, frontmatter stamps, every `index.md`, the validator — then project memory, the harness, the glossary |
+| 1 | `/docs/` — the OKF bundle | `quenching-knowledge-align` | homes, frontmatter stamps, every `index.md`, the validator — then project memory, the harness, the glossary |
 | 2 | `.agents/` — the automation surface | `quenching-components-align` | command paths on the taxonomy axis, collapsed pairs, the rule + registry, the GENERATED zone — then the read-only doctrine audit |
 
 **The `specs` front has no align, and that is not an omission.** Its canonical documents live in the
@@ -31,13 +31,13 @@ Resolve `cq` — written bare in the probe below — per
 
 ## Doctrine
 
-- **Order is a dependency, not a preference.** `/.knowledge/` → `.agents/`.
+- **Order is a dependency, not a preference.** `/docs/` → `.agents/`.
   Never run a later front before an earlier one.
 - **Loop across fronts.**
 - **Conduct, never reimplement.** The conductor sequences, gates, and reports. If a front's
   behaviour must change, change that front's align — the same ONE-authority-per-concern rule that
   keeps each align from re-deriving its own stages' logic.
-- **Front presence decides the pass; only `/.knowledge/` is installed unasked.** An absent `/.knowledge/` bundle
+- **Front presence decides the pass; only `/docs/` is installed unasked.** An absent `/docs/` bundle
   is *the* thing this plugin installs, so front 1 always runs. An empty `.agents/` surface (no
   commands, no skills) skips front 2 with a
   note rather than scaffolding a taxonomy for nothing.
@@ -52,8 +52,8 @@ If `$ARGUMENTS` names a front or a path inside one, resolve it to that front and
 front; report the other front as skipped by scope. With no argument, probe both and preserve
 the dependency order below.
 Presence and rough scale only:
-- **`/.knowledge/`** — does the bundle root exist (`/.knowledge/index.md` with `okf_version`)? Run
-  `cq knowledge validate /.knowledge --json` and keep
+- **`/docs/`** — does the bundle root exist (`/docs/index.md` with `okf_version`)? Run
+  `cq knowledge validate /docs --json` and keep
   the finding counts; note whether the project memory dir
   (`~/.codex/projects/<cwd>/memory/`) holds files and which harness files exist.
 - **.agents/** — `cq components doctor --json` for the command count and its findings; `Glob`
@@ -75,7 +75,7 @@ inherits this OK and will not ask again; only a rename touching product code and
 close-out still confirm on their own."* Wait for **one** OK.
 **Done when:** the user has answered; declined → nothing written, run ends.
 
-### 3. Front 1 — `quenching-knowledge-align` (the `/.knowledge/` bundle)
+### 3. Front 1 — `quenching-knowledge-align` (the `/docs/` bundle)
 Invoke via the **Skill** tool under its registry name **`quenching:knowledge:align`** — the command path
 prefixed by the plugin. Every front below is named the same way; the three forms and the condition
 on each are [sweep-doctrine.md](../../references/align/sweep-doctrine.md)
@@ -100,7 +100,7 @@ verify the front order held before invoking. Record its counts and its **doctrin
 
 ### 5. Re-probe across fronts → decide (loop or stop)
 Re-run step 1's probe **plus** a check of the cross-front edge: did front 2 create the rule or
-registry (→ `/.knowledge/` listings to regenerate)? Then decide by the four outcomes in
+registry (→ `/docs/` listings to regenerate)? Then decide by the four outcomes in
 [convergence.md](../../references/align/convergence.md)
 §The convergence contract: **progress** → another cross-front pass from step 3 under the same
 authorization, narrating what each front will do this time (fronts whose input is unchanged will

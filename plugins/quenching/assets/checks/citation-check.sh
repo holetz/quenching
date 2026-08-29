@@ -10,7 +10,7 @@
 # Half 3 asks half 2's question of the prose this plugin SHIPS, against the base that prose is
 # actually read from. A command body and a reference are loaded inside a TARGET checkout, whose
 # whole bundle is the skeleton under `assets/knowledge/` — so a markdown link to a
-# `/.knowledge/standards/**` the skeleton does not carry resolves here and nowhere else. Half 2
+# `/docs/standards/**` the skeleton does not carry resolves here and nowhere else. Half 2
 # cannot see it by construction: it resolves against THIS checkout, where every standard exists.
 #
 #   usage:  ./citation-check.sh [--half 1|2|3] [/path/to/repo]
@@ -271,7 +271,7 @@ fi
 #
 # SOME OF THIS REPO DESCRIBES A DIFFERENT REPO, and a path there is not a claim about a file here.
 # The plugin SHIPS content meant to land in a target checkout — the OKF skeleton under
-# `assets/knowledge/`, the moulds under `assets/templates/` — so a `/.knowledge/standards/<subject>/<concept>.md` written there
+# `assets/knowledge/`, the moulds under `assets/templates/` — so a `/docs/standards/<subject>/<concept>.md` written there
 # is a claim about the repo that installs it, not about this checkout. Reading those as citations
 # reports the shipped product as broken. So:
 #
@@ -283,13 +283,13 @@ fi
 #
 # THERE USED TO BE A THIRD RULE HERE, AND IT WAS EXCUSING A REAL DEFECT. It read: *a path rooted at
 # bare `docs/` is not measured at all — that spelling names the target's bundle, and this repo would
-# spell its own `.knowledge/`*. The premise is false. `/.knowledge/standards/architecture/bundle-root.md`
-# fixes the bundle at `/.knowledge/` **in the target repository**, not only here, so `docs/` names no
+# spell its own `docs/`*. The premise is false. `/docs/standards/architecture/bundle-root.md`
+# fixes the bundle at `/docs/` **in the target repository**, not only here, so `docs/` names no
 # repo's bundle at all. What the rule actually did was silence 95 links and prose paths the 2026-08-06
 # root migration left un-migrated inside the shipped trees — a target that scaffolded from them got
 # an `index.md` whose every cross-home link resolved nowhere. `cq knowledge validate` never saw it
 # either: measured on both bundles, it reports 0 errors, because it does not resolve absolute
-# cross-home links. The skeleton and the moulds now spell `/.knowledge/`, and the rule is gone with
+# cross-home links. The skeleton and the moulds now spell `/docs/`, and the rule is gone with
 # the thing it was hiding.
 #
 # None of this is an allowlist: no path is exempted by being on a list, and every exclusion is a
@@ -315,7 +315,7 @@ commands_dir = os.path.join(plugin, "commands")
 PLUGIN_ROOT_RE    = re.compile(r"\$\{CLAUDE_PLUGIN_ROOT\}/([A-Za-z0-9_./-]+)")
 MD_LINK_RE        = re.compile(r"\]\(([^)\s]+)\)")
 REPO_PATH_RE      = re.compile(r"(?<![A-Za-z0-9_./-])(plugins/quenching/[A-Za-z0-9_./-]+)")
-KNOWLEDGE_PATH_RE = re.compile(r"(?<![A-Za-z0-9_./-])/?(\.knowledge/[A-Za-z0-9_./-]+)")
+KNOWLEDGE_PATH_RE = re.compile(r"(?<![A-Za-z0-9_./-])/?(docs/[A-Za-z0-9_./-]+)")
 # Both citation forms. The Skill tool takes the bare `quenching:<ns>:<cmd>`; a human types the slash.
 CMD_RE            = re.compile(r"/?(quenching(?::[a-z][a-z0-9-]*){2,})")
 
@@ -343,7 +343,7 @@ def unmeasurable(p):
     return (not p) or any(c in p for c in "*?<>${}|") or "..." in p \
         or p.startswith(("http:", "https:", "mailto:", "#"))
 
-# A `describes_target(target)` guard used to sit here, keeping any path that contained `/.knowledge/`
+# A `describes_target(target)` guard used to sit here, keeping any path that contained `/docs/`
 # out of the measurement. `in_bundle` below already carries that rule and carries it the right way
 # round — as a statement about the citing FILE, not a substring test on the cited path — so the
 # guard is gone. A substring rule over paths is exactly how a spelling nobody had migrated stayed
@@ -389,12 +389,12 @@ for rel in sys.stdin.buffer.read().split(b"\x00"):
         continue
 
     here = os.path.dirname(rel)
-    # Two bundles live in this repo: the real one at .knowledge/, and the skeleton the plugin SHIPS
-    # at assets/knowledge/, whose `/.knowledge/` links name the bundle of the repo that installs it
+    # Two bundles live in this repo: the real one at docs/, and the skeleton the plugin SHIPS
+    # at assets/knowledge/, whose `/docs/` links name the bundle of the repo that installs it
     # and therefore never resolve from here. `knowledge validate` governs both, and the repo gate
     # already runs it over each. Same test, both trees — which is only possible now that they
     # spell the root the same way.
-    in_bundle = rel.startswith(".knowledge/") or rel.startswith(SHIPPED)
+    in_bundle = rel.startswith("docs/") or rel.startswith(SHIPPED)
     in_plugin = rel.startswith(plugin + "/")
     candidates = []
     candidates += [(m, [os.path.join(plugin, trim(m))]) for m in PLUGIN_ROOT_RE.findall(text)]
@@ -471,7 +471,7 @@ fi
 # --------------------------------------------------------------------------- #
 # Half 3 — the shipped prose promises only what the skeleton delivers.
 #
-# One assertion: every markdown link to a `/.knowledge/**.md` written in prose the plugin SHIPS
+# One assertion: every markdown link to a `/docs/**.md` written in prose the plugin SHIPS
 # resolves against the published skeleton, `plugins/quenching/assets/knowledge/`.
 #
 # WHY THIS IS NOT A CORRECTION OF HALF 2. Half 2 is right that a shipped tree describes another
@@ -491,8 +491,8 @@ fi
 # present") — and measuring the bare form too would turn every honest conditional mention into a
 # finding, leaving a rule that reads "never name a standard the target owns".
 #
-# Both spellings of the same promise are one claim: rooted at the repo (`/.knowledge/...`) and
-# written relative to the citing file (`../../../../.knowledge/...`) normalize to the same tail.
+# Both spellings of the same promise are one claim: rooted at the repo (`/docs/...`) and
+# written relative to the citing file (`../../../../docs/...`) normalize to the same tail.
 #
 # The instrument does not measure itself: this file is under `assets/checks/`, outside the two
 # trees swept, by construction rather than by exception.
@@ -505,7 +505,7 @@ import os, re, sys
 skeleton = "plugins/quenching/assets/knowledge"
 # A markdown link whose target names a file in the bundle, in either spelling. The optional `#frag`
 # is an address inside the page, never part of the claim that the page exists.
-LINK_RE = re.compile(r"\]\(([^)\s#]*\.knowledge/[A-Za-z0-9_./-]+\.md)(?:#[^)\s]*)?\)")
+LINK_RE = re.compile(r"\]\(([^)\s#]*docs/[A-Za-z0-9_./-]+\.md)(?:#[^)\s]*)?\)")
 
 findings, checked = [], 0
 for rel in sys.stdin.buffer.read().split(b"\x00"):
@@ -516,7 +516,7 @@ for rel in sys.stdin.buffer.read().split(b"\x00"):
         for number, line in enumerate(handle, 1):
             for cited in LINK_RE.findall(line):
                 checked += 1
-                tail = cited.split(".knowledge/", 1)[1]
+                tail = cited.split("docs/", 1)[1]
                 if not os.path.exists(os.path.join(skeleton, tail)):
                     findings.append((rel, number, cited))
 

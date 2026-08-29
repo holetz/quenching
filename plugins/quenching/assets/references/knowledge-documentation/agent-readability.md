@@ -24,7 +24,7 @@ Pages carrying a reusable contract include a compact, high-signal block:
     - **Does:** audits a repo's knowledge surface, installs fixes with confirmation.
     - **Contract:** `repo path → scored report → item-by-item install`.
     - **Invariants:** never removes without OK; three dimensions are proposed-only.
-    - **Run:** `python3 plugins/quenching/assets/bin/cq knowledge validate .knowledge`
+    - **Run:** `python3 plugins/quenching/assets/bin/cq knowledge validate docs`
 ```
 
 Put facts, inputs, outputs and invariants in text. A diagram reinforces a fact; it never owns the
@@ -35,7 +35,7 @@ only copy of one.
 Examples use real commands, paths and names, and show the expected output. Avoid `foo` and `bar`.
 State preconditions, input/output shapes and the exact condition under which a step runs. Define a
 central term once in the glossary and, when the editorial map exposes it, link to the published
-relative glossary route rather than `/.knowledge/glossary.md`. A concept map or choose-the-right-file table
+relative glossary route rather than `/docs/glossary.md`. A concept map or choose-the-right-file table
 gives an agent a deterministic route.
 
 ## Links and language

@@ -69,14 +69,14 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
   own gate is legal —
   [spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
   §The gates.
-- **Read `/.knowledge/` before writing — in the branch that needs it, and by section.** The relevant
-  `/.knowledge/standards/` and `/.knowledge/glossary.md` are binding on wording. Only **compose**
+- **Read `/docs/` before writing — in the branch that needs it, and by section.** The relevant
+  `/docs/standards/` and `/docs/glossary.md` are binding on wording. Only **compose**
   and **refine** ask questions that reading answers, so it is step 3b's and never the preamble's.
   Read it per
   [align/evidence-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/evidence-doctrine.md)
   — `cq components read <path> --sections "§X"`, not the whole file, when only a rule or two
-  governs the question at hand; it resolves `/.knowledge/` the same way it resolves this plugin's own
-  references. No OKF bundle in the repo (`/.knowledge/index.md` with `okf_version`) → skip silently.
+  governs the question at hand; it resolves `/docs/` the same way it resolves this plugin's own
+  references. No OKF bundle in the repo (`/docs/index.md` with `okf_version`) → skip silently.
 - **Never edit code.** If the work implies code changes, that is `/quenching:specs:execute`.
 - **`complexity` is re-evaluated at the close, never mid-pass.** The level
   `/quenching:specs:create` computed from the input is stale the moment this pass writes what the
@@ -193,9 +193,9 @@ cq specs section <id> "<every heading this pass reads or writes>"     # the unio
 Ask for the **union**, in one call. A heading that is absent comes back as `(## X is absent)` with
 exit 1 — a result, not a refusal, and it is the same gap map `ready` already reported.
 
-**Compose and refine also read `/.knowledge/`** (Doctrine): the `/.knowledge/standards/` this spec's
+**Compose and refine also read `/docs/`** (Doctrine): the `/docs/standards/` this spec's
 `## Impact` declares — the declared files, never the folders they sit in — and
-`/.knowledge/glossary.md`. Either **may** delegate that reading to a read-only sub-agent under
+`/docs/glossary.md`. Either **may** delegate that reading to a read-only sub-agent under
 §Gathering the evidence, which returns one compact table. It is an option, not a step: for a
 two-file spec, keep the reading.
 **Done when:** every stage's section and the union of spec sections are in hand, in one call, and
@@ -409,11 +409,11 @@ question mid-pass.
 
 - **NEVER edit implementation code.** If the spec implies code changes, stop and name
   `/quenching:specs:execute`.
-- **Never write into `/.knowledge/`.** A durable rule a question surfaces routes to `/quenching:knowledge:add`, an
+- **Never write into `/docs/`.** A durable rule a question surfaces routes to `/quenching:knowledge:add`, an
   understanding to `/quenching:knowledge:learn`, a term to `/quenching:knowledge:define` — **offered, never
   auto-written**. The rules a spec *proves* are written during execution, not during definition.
 - **Never write into `## Tasks` what the merge owns.** A version bump, a changelog entry, a manifest
-  re-stamp; the `/.knowledge/` the work *revealed* rather than declared; the cycle's own closing actions
+  re-stamp; the `/docs/` the work *revealed* rather than declared; the cycle's own closing actions
   (review, archive, distil, merge, open the PR) — all three belong to `/quenching:specs:conclude`,
   which settles them once what the release *is* is knowable. A standard this spec **declares** under
   `## Impact` still gets its own checkbox and still must: the axis is declared versus revealed,

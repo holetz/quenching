@@ -1,5 +1,5 @@
 ---
-description: Refactor CLAUDE.md/AGENTS.md into thin pointers over the /.knowledge/ bundle. Triggers on "refactor CLAUDE.md", "slim down CLAUDE.md", "move CLAUDE.md content into docs", "align CLAUDE.md/AGENTS.md with /.knowledge/". Not for: changing durable knowledge without a harness source → /quenching:knowledge:add; changing command bodies → /quenching:components:command:new.
+description: Refactor CLAUDE.md/AGENTS.md into thin pointers over the /docs/ bundle. Triggers on "refactor CLAUDE.md", "slim down CLAUDE.md", "move CLAUDE.md content into docs", "align CLAUDE.md/AGENTS.md with /docs/". Not for: changing durable knowledge without a harness source → /quenching:knowledge:add; changing command bodies → /quenching:components:command:new.
 argument-hint: [optional-harness-file]
 allowed-tools: Read, Grep, Glob, Bash(find:*), Bash(git grep:*), Bash(git check-ignore:*), Bash(grep:*), Bash(python3:*), Bash(py:*), Write, Edit, Task
 ---
@@ -9,9 +9,9 @@ allowed-tools: Read, Grep, Glob, Bash(find:*), Bash(git grep:*), Bash(git check-
 **Input**: `$ARGUMENTS` (an optional specific harness file; omit to sweep every CLAUDE.md/AGENTS.md).
 
 Refactors a repo's **harness files** (the root `CLAUDE.md`, every subfolder `CLAUDE.md`, and
-`AGENTS.md`) into thin navigation pointers over the OKF `/.knowledge/` bundle. A harness file is **context
+`AGENTS.md`) into thin navigation pointers over the OKF `/docs/` bundle. A harness file is **context
 tax** the agent pays on every turn, so it earns each line: operational rules stay; durable knowledge
-is **moved** into its `/.knowledge/` home and cited, never re-inlined. Assumes the bundle already exists (run
+is **moved** into its `/docs/` home and cited, never re-inlined. Assumes the bundle already exists (run
 `/quenching:knowledge:align` first if not). It also **creates** a thin subfolder `CLAUDE.md` where discovery
 finds a folder with a local operational surface but no harness — evidence-gated, never one per
 directory (routing §6). The unit → verdict → home routing and the pointer-honesty gate are
@@ -49,8 +49,8 @@ molds live at `${CLAUDE_PLUGIN_ROOT}/assets/templates/harness/`.
   written, indexed, and passes the conformance self-check. A failed insert leaves the unit
   in place.
 - **Never silently drop a unit.** Unroutable content **stays** and is reported; a contradiction
-  with `/.knowledge/` is a **FLAG** resolved per item; secrets and personal notes are flagged and **NEVER**
-  filed into shared `/.knowledge/` (`CLAUDE.local.md` is treated like a `user` memory).
+  with `/docs/` is a **FLAG** resolved per item; secrets and personal notes are flagged and **NEVER**
+  filed into shared `/docs/` (`CLAUDE.local.md` is treated like a `user` memory).
 Resolve `cq` per
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
@@ -59,7 +59,7 @@ Resolve `cq` per
 
 ### 1. Inventory the harness surface (read-only)
 `Glob` `**/CLAUDE.md`, `**/AGENTS.md`, and `CLAUDE.local.md`; add a `grep --no-ignore` sweep to
-catch gitignored ones. Confirm `/.knowledge/index.md` carries `okf_version` — if there is no OKF bundle,
+catch gitignored ones. Confirm `/docs/index.md` carries `okf_version` — if there is no OKF bundle,
 **stop** and offer `/quenching:knowledge:align` first. List every harness file found.
 
 Then **discover greenfield candidates** (read-only), swept **repo-wide from the repository
@@ -92,11 +92,11 @@ build command paired with an architecture note becomes two).
 Apply the [components-harness-align/harness-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-harness-align/harness-routing.md) table →
 **KEEP / MOVE / DEDUPE / FLAG / UNROUTABLE**. A **MOVE** derives its home + `type` + mold via
 [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md); a **DEDUPE**
-cites the existing doc (`Grep /.knowledge/` to confirm coverage); a **FLAG** quotes both sides of the
+cites the existing doc (`Grep /docs/` to confirm coverage); a **FLAG** quotes both sides of the
 contradiction.
 
 **The language declaration line is always KEEP.** Preserve
-`Language: <tag> — the contract is /.knowledge/standards/agents/communication.md` verbatim; never
+`Language: <tag> — the contract is /docs/standards/agents/communication.md` verbatim; never
 classify it MOVE or DEDUPE.
 **Done when:** every unit has one routing verdict and any contradiction is quoted.
 
@@ -141,7 +141,7 @@ FLAG-pending units stay under a clearly marked residue section. **No frontmatter
 
 ### 8. Verify and report
 **Resolve EVERY link** in every rewritten harness file (the validator won't). Confirm no moved fact
-is still restated inline; run `cq knowledge validate` over `/.knowledge/` → 0 errors and the structural WARNs
+is still restated inline; run `cq knowledge validate` over `/docs/` → 0 errors and the structural WARNs
   clean; confirm each moved doc is indexed. Report counts: **moved** (by home) /
 **deduped** / **kept** / **flagged** / **unroutable** / **harness created** (subfolder pointers).
 **Done when:** links, conformance, index ownership, and all disposition counts are reported.
@@ -150,7 +150,7 @@ is still restated inline; run `cq knowledge validate` over `/.knowledge/` → 0 
 
 - Never **copy** — a moved unit is **removed** from the harness file (one fact, one place).
 - Never cut a unit before its doc is written **and** passes the conformance self-check.
-- Never silently drop a unit; never file secrets or personal notes into shared `/.knowledge/`.
+- Never silently drop a unit; never file secrets or personal notes into shared `/docs/`.
 - Never leave a lying pointer — **every** link in a rewritten harness file resolves before the run ends.
 - Never give a harness file frontmatter or a `type` (okf-spec §strict-7 — they are exempt).
 - Never drop or paraphrase the root file's language declaration line — it is KEEP by rule (step 3),

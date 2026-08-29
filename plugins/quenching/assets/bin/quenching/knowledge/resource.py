@@ -35,7 +35,7 @@ def parse_resource(value: str) -> list[tuple[str, str]]:
     A comma-separated list of globs and paths is a *plugin convention*, not an OKF
     rule — three of the five real values in this repo's own bundle are lists and
     nothing documented the format, so it is parsed here and stated in
-    `/.knowledge/standards/quality/bundle-verification.md`.
+    `/docs/standards/quality/bundle-verification.md`.
 
     kind is one of:
       `path`    a plain repo-root-relative path.
@@ -65,7 +65,7 @@ def _resource_kind(entry: str) -> str:
 def _project_root(bundle_root: str) -> str:
     """The checkout root a `resource` entry is written relative to — the bundle's
     parent. Observed values are repo-root-relative (`plugins/…/SKILL.md`); the
-    bundle-aggregate `/.knowledge/**` is absolute and never resolves as a path here —
+    bundle-aggregate `/docs/**` is absolute and never resolves as a path here —
     the leading slash turns the join absolute — so the aggregate is exempted by
     name (resource-self, stale-doc) rather than by resolution."""
     return os.path.dirname(os.path.abspath(bundle_root))
@@ -76,7 +76,7 @@ def _resource_resolves(entry: str, kind: str, project_root: str) -> bool:
 
     Stops at the FIRST hit (`iglob`, not `glob`): answering "does this resolve?"
     runs on every concept doc in the hook path, and materializing every match of a
-    `/.knowledge/**` would walk the whole tree once per doc under the Stop deadline.
+    `/docs/**` would walk the whole tree once per doc under the Stop deadline.
     `glob.escape` covers a checkout whose own path contains a glob metacharacter.
     """
     if kind == "glob":
@@ -89,7 +89,7 @@ def _glob_contains(pattern: str, rel_path: str) -> bool:
     """Segment-wise match of a `*`/`**` glob against a forward-slash relative path.
 
     `fnmatch` is deliberately NOT used for this: its `*` also matches `/`, so
-    `/.knowledge/*` would claim to contain any deeper path, `/.knowledge/standards/<subject>/<doc>.md`
+    `/docs/*` would claim to contain any deeper path, `/docs/standards/<subject>/<doc>.md`
     included, and raise a false `resource-self` — and since the skills treat every WARN as must-fix, a false
     positive here costs more than a missed one. `*` matches inside one segment;
     `**` matches any number of segments, including none.
@@ -147,11 +147,11 @@ def check_resource(text: str, path: str, bundle_root: str) -> list[tuple[str, st
     `TYPES_WITHOUT_RESOURCE` generalized — from "types with nothing to point at" to
     "docs whose honest scope is bundle-wide" — so the front keeps ONE exemption
     mechanism rather than two. `glossary.md` really does govern the whole
-    bundle, so `resource: /.knowledge/**` is truthful and inventing a narrower scope to
+    bundle, so `resource: /docs/**` is truthful and inventing a narrower scope to
     silence the check would be the fabrication. The discrimination is mechanical
     and needs no hardcoded path: a scope containing the bundle root contains every
     doc in it, while a narrower scope that still contains the doc
-    (`/.knowledge/standards/**` on a standards doc) stays a real finding.
+    (`/docs/standards/**` on a standards doc) stays a real finding.
     """
     fm = parse_frontmatter(text)
     if not _nonempty(fm, "resource"):

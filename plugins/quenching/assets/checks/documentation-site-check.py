@@ -144,7 +144,7 @@ def _glossary_findings(site: Path, source: Path | None, route: str,
         return []
     findings: list[Finding] = []
     if source is None or not source.is_file() or not source.read_text(encoding="utf-8").strip():
-        path = source or (site.parent / ".knowledge" / "glossary.md")
+        path = source or (site.parent / "docs" / "glossary.md")
         return [Finding("site-glossary-source-missing", path, "required canonical glossary is absent")]
     route_path = next((path for path in _glossary_route_candidates(site, route) if path.is_file()), None)
     if route_path is None:
@@ -256,10 +256,10 @@ def selftest() -> int:
         site.mkdir()
         (site / "reference" / "glossary").mkdir(parents=True)
         (site / "reference" / "glossary" / "index.html").write_text('<abbr title="x">ASRC</abbr>')
-        source = root / ".knowledge" / "glossary.md"
+        source = root / "docs" / "glossary.md"
         source.parent.mkdir()
         source.write_text("- **ASRC** — expected loss stage\n")
-        snippet = root / ".knowledge" / "documentation" / "assets" / "glossary-abbreviations.md"
+        snippet = root / "docs" / "documentation" / "assets" / "glossary-abbreviations.md"
         snippet.parent.mkdir(parents=True)
         snippet.write_text("generated\n")
         (site / "sitemap.xml").write_text('<urlset><url><loc>index.html</loc></url></urlset>')
@@ -282,8 +282,8 @@ def selftest() -> int:
     glossary_root = fixture_root / "glossary"
     assert not check(
         glossary_root / "site",
-        glossary_source=glossary_root / ".knowledge" / "glossary.md",
-        glossary_snippet=glossary_root / ".knowledge" / "documentation" / "assets" / "glossary-abbreviations.md",
+        glossary_source=glossary_root / "docs" / "glossary.md",
+        glossary_snippet=glossary_root / "docs" / "documentation" / "assets" / "glossary-abbreviations.md",
         require_glossary=True,
     )
     print("documentation-site-check selftest: OK")
@@ -309,7 +309,7 @@ def main() -> int:
         parser.error("site must be an existing directory")
     source = args.glossary_source
     if args.require_glossary and source is None:
-        source = args.site.parent / ".knowledge" / "glossary.md"
+        source = args.site.parent / "docs" / "glossary.md"
     findings = check(args.site, local=args.local, glossary_source=source,
                      glossary_route=args.glossary_route, glossary_snippet=args.glossary_snippet,
                      glossary_term=args.glossary_term, require_glossary=args.require_glossary)

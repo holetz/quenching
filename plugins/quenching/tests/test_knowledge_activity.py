@@ -18,8 +18,8 @@ Three rules, and each has a case here that fails without it:
    indistinguishable from one measured and found quiet.
 
 MUTATION PASS (2026-08-27, three mutations, each applied, run, observed, reverted), per
-`.knowledge/standards/quality/selftest-mutation.md`, in both modes — this suite, and the human
-`cq knowledge validate .knowledge` / `--activity` arms over the real bundle:
+`docs/standards/quality/selftest-mutation.md`, in both modes — this suite, and the human
+`cq knowledge validate docs` / `--activity` arms over the real bundle:
 
 | Mutation | Rule | This suite | Human arm |
 | --- | --- | --- | --- |
@@ -88,7 +88,7 @@ class ActivityFixture(unittest.TestCase):
     def setUpClass(cls):
         cls._tmp = tempfile.TemporaryDirectory()
         root = pathlib.Path(cls._tmp.name)
-        cls.bundle = root / ".knowledge"
+        cls.bundle = root / "docs"
         (cls.bundle / "standards").mkdir(parents=True)
         (root / "src").mkdir()
         (root / "src" / "one.py").write_text("x = 1\n")
@@ -170,7 +170,7 @@ class NotAGitCheckout(unittest.TestCase):
         """No git facts is not the same as a quiet scope, and it is not a finding either — the
         one case that returns None rather than a row."""
         with tempfile.TemporaryDirectory() as tmp:
-            bundle = pathlib.Path(tmp) / ".knowledge"
+            bundle = pathlib.Path(tmp) / "docs"
             bundle.mkdir(parents=True)
             text = DOC.format(resource="src/one.py", timestamp="2026-01-01")
             self.assertIsNone(resource_activity(text, str(bundle)))

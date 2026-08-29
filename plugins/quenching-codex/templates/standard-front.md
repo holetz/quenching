@@ -15,7 +15,7 @@ maintainer: <owner>
 derivable and non-fabricated. Favor structural markdown (headings, lists, tables).>
 
 <!-- MOLD (quenching · standards frontmatter — do NOT copy this note into the doc):
-     Every field above is required for a `/.knowledge/standards/**` doc (stricter than the generic
+     Every field above is required for a `/docs/standards/**` doc (stricter than the generic
      concept-front). `resource` is the OKF "underlying asset" = the repo scope the standard
      governs, DERIVED from the doc's file:line anchors, NEVER invented. An empty or
      self-pointing `resource` is conformance theater (a standard that governs nothing is not a

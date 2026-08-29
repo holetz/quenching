@@ -19,10 +19,10 @@ The delegation economics and the definition contract live in
 ## Doctrine
 
 - **The rule governs; the plan proposes.** In a target repo the rule is
-  `/.knowledge/standards/automation/agents.md` — read it before drafting and follow it when present.
+  `/docs/standards/automation/agents.md` — read it before drafting and follow it when present.
   Absent + OKF bundle present → the plan offers creating it from
   `automation/agents-standard.md`, born `authority: background`; never created without the OK.
-- **No bundle, no tail — but the mint proceeds.** `/.knowledge/index.md` without `okf_version` (or
+- **No bundle, no tail — but the mint proceeds.** `/docs/index.md` without `okf_version` (or
   absent) means: write the definition only, skip the OKF tail silently, suggest `/quenching:knowledge:align`
   **once**.
 - **One plan, one OK, nothing before.** The delegation buy, the name, the profile, every
@@ -39,7 +39,7 @@ Resolve `cq` per
 ## Workflow
 
 ### 1. Read the rule
-Read `/.knowledge/standards/automation/agents.md` and confirm the bundle (`/.knowledge/index.md` carries
+Read `/docs/standards/automation/agents.md` and confirm the bundle (`/docs/index.md` carries
 `okf_version`). Rule present → it governs. Rule absent, bundle present → add "create the rule
 from `automation/agents-standard.md`" to the plan. No bundle → note the tail as skipped and
 plan the `/quenching:knowledge:align` suggestion. **Done when:** the governing rule (or its planned

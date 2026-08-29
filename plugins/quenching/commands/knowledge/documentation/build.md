@@ -1,5 +1,5 @@
 ---
-description: Create or update the Zensical site layer from a confirmed editorial publication map, including extensions, CSS and strict-build QA. Triggers on "build the docs site", "generate the site for /.knowledge/documentation", or "fix the documentation site's nav". Not for: planning pages → /quenching:knowledge:documentation:plan; writing documentation prose → /quenching:knowledge:documentation:write; reviewing page quality → /quenching:knowledge:documentation:review; conducting the complete pipeline → /quenching:knowledge:documentation:produce.
+description: Create or update the Zensical site layer from a confirmed editorial publication map, including extensions, CSS and strict-build QA. Triggers on "build the docs site", "generate the site for /docs/documentation", or "fix the documentation site's nav". Not for: planning pages → /quenching:knowledge:documentation:plan; writing documentation prose → /quenching:knowledge:documentation:write; reviewing page quality → /quenching:knowledge:documentation:review; conducting the complete pipeline → /quenching:knowledge:documentation:produce.
 argument-hint: [optional-section-or-config-path]
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit
 ---
@@ -25,15 +25,18 @@ bundle; every install, update, and re-verification after that is **this** skill.
 
 ## Doctrine
 
-- **The site layer is not the bundle.** Config lives at the repo root, *outside* `/.knowledge/`;
+- **The site layer is not the bundle.** Config lives at the repo root, *outside* `/docs/`;
   inside it, this skill owns exactly one file — the CSS asset. The OKF markdown stays
   **generator-neutral** — never add generator-specific syntax, a nav entry inside a page, or
   generator frontmatter to a concept doc.
 - **The confirmed Mapa editorial de publicação is the publication boundary.** Keep
-  `docs_dir = ".knowledge/documentation"`: a dot-prefixed `docs_dir` builds an **empty** site —
-  zero pages, not even a `404.html`, no warning, exit `0` — because Zensical excludes every path
-  carrying a `.`-prefixed component, and a symlink out of the bundle is not followed either.
-  Measured on 0.0.57; `external/tools/zensical-measured-behaviour.md` carries the evidence.
+  `docs_dir = "docs/documentation"`: the accepted map, not the folder tree, decides what is
+  published, and pointing the generator at the bundle root would publish every home whether the
+  map exposed it or not. **Never a dot-prefixed `docs_dir`** — one builds an empty site: zero
+  pages, not even a `404.html`, no warning, exit `0`, because Zensical excludes every path
+  carrying a `.`-prefixed component and follows no symlink out of it. Measured on 0.0.57;
+  `docs/external/tools/zensical-measured-behaviour.md` carries the evidence, and it is why the
+  bundle root itself no longer starts with a dot.
   A home marked `publicar` or `publicar derivado` is exposed by an intentional route or curated
   mirror below `documentation/`; `não publicar` creates no nav entry, route or link. The map,
   not a home's name, decides this. A missing or stale derived route is reported to the planning or
@@ -60,7 +63,7 @@ bundle; every install, update, and re-verification after that is **this** skill.
   source hash; the rendered checker proves a known `<abbr>`. Never ask an author to edit the
   derived route or duplicate term list. A non-empty canonical glossary is required by default;
   only an accepted `não publicar` map row can exclude it.
-- **The whole bundle is the source boundary.** Inventory every `.knowledge` home —
+- **The whole bundle is the source boundary.** Inventory every `docs` home —
   `documentation/`, `standards/`, `concepts/`, `external/`, `catalog/`, `vision/` and the root
   glossary — and compare coverage with every mandatory map row. Coverage is not the number of
   pages the plan happened to select: an exposed home without its declared route fails the gate.
@@ -81,7 +84,7 @@ bundle; every install, update, and re-verification after that is **this** skill.
   `.pages` sidecar in the home no longer shapes anything. Report both facts, offer the conversion
   as its **own** confirmation item, and never stamp a second config beside a live one.
 - **Report page-level drift; never fix it here.** A section with no `index.md`, a page with no
-  frontmatter, an absolute `/.knowledge/<other-home>/…` link that cannot resolve in a site rooted at
+  frontmatter, an absolute `/docs/<other-home>/…` link that cannot resolve in a site rooted at
   `documentation/` — each is **reported** with the command that closes it (`/quenching:knowledge:align`,
   `/quenching:knowledge:add`), never repaired by this skill. Writing and repairing pages belongs to the skills
   that own them; this one would be guessing.
@@ -173,7 +176,7 @@ Never choose a runner from `PATH` alone when a project-managed runner is availab
 `uv run zensical --version` is read-only and may happen during inventory.
 
 ### 1. Preflight — the bundle and the home
-Confirm `/.knowledge/index.md` carries `okf_version`. **No bundle → stop** and offer
+Confirm `/docs/index.md` carries `okf_version`. **No bundle → stop** and offer
 `/quenching:knowledge:align` first; there is nothing to render. Bundle
 but **no `documentation/` home** → stop and offer `/quenching:knowledge:align`; never scaffold a home here.
 **Done when:** the bundle and documentation home are confirmed, or the handoff is reported.
@@ -182,11 +185,11 @@ but **no `documentation/` home** → stop and offer `/quenching:knowledge:align`
 Collect, without writing anything:
 - the accepted `.quenching/documentation/plan.md` and its **Mapa editorial de publicação**; reject
   a missing map as a planning finding, and use its routes as the only allowed cross-home surface.
-- every source home and every `.md` source under `/.knowledge/`; count the mandatory
+- every source home and every `.md` source under `/docs/`; count the mandatory
   `publicar`/`publicar derivado` rows separately from intentional `não publicar` rows. If the
   root glossary exists and has content, treat it as mandatory unless the accepted map explicitly
   excludes it.
-- root `/.knowledge/glossary.md`, its mapped `reference/glossary.md` route and the generated
+- root `/docs/glossary.md`, its mapped `reference/glossary.md` route and the generated
   `assets/glossary-abbreviations.md` when the map exposes the glossary.
 - root `zensical.toml` — parse it: `docs_dir`, `site_name`, `site_description`, `nav`,
   `site_url`, `repo_url`, `edit_uri_template`, theme language/identity, `theme.features`,
@@ -196,7 +199,7 @@ Collect, without writing anything:
 - the dependency source and manager pinning the docs toolchain (`pyproject.toml` + `uv.lock`,
   `requirements.txt`, or another target-owned manifest); record which one wins and whether a
   duplicate source exists.
-- every folder under `/.knowledge/documentation/**` with its `index.md` and its pages, including
+- every folder under `/docs/documentation/**` with its `index.md` and its pages, including
   curated mirrors for mapped homes, plus any leftover `.pages`.
 - `.gitignore` (are `site/` and `.quenching/` ignored?) and `git ls-files site .quenching` (is either already tracked?).
 - `.github/workflows/docs.yml`.
@@ -268,9 +271,9 @@ mandatory even when the strict build is green. A non-zero
 checker result is a structural finding: `site-asset-missing`, `site-anchor-missing`,
 `site-sitemap-empty`, `site-page-orphan` or `site-remote-resource`, each reported with its path.
 When the map makes the glossary mandatory, run the same checker with
-`--require-glossary --glossary-source .knowledge/glossary.md
---glossary-snippet .knowledge/documentation/assets/glossary-abbreviations.md
---glossary-route reference/glossary.md`; run `cq knowledge project .knowledge --plan
+`--require-glossary --glossary-source docs/glossary.md
+--glossary-snippet docs/documentation/assets/glossary-abbreviations.md
+--glossary-route reference/glossary.md`; run `cq knowledge project docs --plan
 .quenching/documentation/plan.md --config zensical.toml --check` beside it. For a local-only build
 whose config has no `site_url`, add `--local`; this accepts a relative or empty local sitemap but
 still checks malformed XML and page/assets integrity. Never infer public delivery from a local run.
@@ -312,8 +315,9 @@ and its result. **Done when:** every fixed/reported finding, build status, and r
   always shown as a diff, and never reorder or drop a key you did not add.
 - Never convert a legacy `mkdocs.yml` without its own confirmation, and never leave two configs at
   the root.
-- Never re-aim `docs_dir` to the bundle root — it builds an empty site silently. Never expose a
-  home without an accepted map row, or
+- Never re-aim `docs_dir` to the bundle root without an accepted map row for every home it would
+  then expose, and never to a dot-prefixed path at all — that builds an empty site silently. Never
+  expose a home without an accepted map row, or
   expose a `não publicar` row; creating its Markdown route belongs to the page-owning stage.
 - Never put generator-specific syntax or generator frontmatter into an OKF page — the markdown stays
   generator-neutral.

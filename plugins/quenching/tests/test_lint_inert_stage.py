@@ -5,7 +5,7 @@ components `selftest` carried.
 Why a synthetic corpus rather than the golden. The golden captures the REAL plugin surface, and
 on that surface no command carrying `disable-model-invocation: true` is reached by name from any
 body, so `sk-inert-stage` — the only finding `named_by_bodies` can produce — never fires. The
-mutation pass recorded in `.knowledge/standards/quality/selftest-mutation.md` §The third pass
+mutation pass recorded in `docs/standards/quality/selftest-mutation.md` §The third pass
 measured the consequence: of the seven mutations the retired selftest killed, five survived the
 suite that replaced it, three of them while demonstrably moving the predicate's return. A rule
 whose only witness is a finding the corpus cannot raise has no witness at all.

@@ -214,7 +214,7 @@ def description_is_resident(fm: dict) -> bool:
     `disable-model-invocation: true` is the only field that makes the answer no.
     Measured, not assumed: Codex drops the description from the listing AND
     refuses the command by name through the Skill tool — row 7 of
-    `/.knowledge/external/tools/claude-code-skill-command-mechanics.md`, Codex 2.1.220.
+    `/docs/external/tools/claude-code-skill-command-mechanics.md`, Codex 2.1.220.
     The description is still read by a human, in the file and in the `/` menu; it is
     residency it loses, never content."""
     return str(fm.get("disable-model-invocation", "")).strip().lower() != "true"

@@ -11,7 +11,7 @@ PARSE HONESTY (per-doc; WARN — this checker naming its own misread)
   continuation read as empty, or a duplicate top-level key that silently last-wins. It
   reports a suspicion it cannot resolve rather than letting the consequence surface as a
   content finding (`missing-type`, a missing recommended field). The YAML subset, the
-  comment rule and the canonical case list are `/.knowledge/standards/code/frontmatter-parser.md`.
+  comment rule and the canonical case list are `/docs/standards/code/frontmatter-parser.md`.
 
   The set it reports SHRANK when the three parsers collapsed into
   `quenching.common.frontmatter`: that parser reads inline lists, block lists, block
@@ -106,13 +106,32 @@ def check_index(text: str, is_root: bool) -> list[tuple[str, str, str]]:
 # on both `knowledge/` and `reference/`) or a site the caller has no single path
 # for (`okf-legacy-glossary` on however many nested `glossary.md` exist).
 # --------------------------------------------------------------------------- #
-def check_legacy_root(legacy_root_present: bool, legacy_root_rel: str) -> list[tuple[str, str, str, str]]:
+def check_legacy_root(legacy_root_rels: list[str]) -> list[tuple[str, str, str, str]]:
     """`okf-legacy-root` — call only once the new root is already known absent (the
-    `no-bundle` branch); fires when the pre-rename sibling is present there."""
-    if not legacy_root_present:
+    `no-bundle` branch); fires once per pre-rename sibling present beside it. There is more
+    than one: the root has been renamed twice, and a target may sit at either former name."""
+    return [("ERROR", rel, "okf-legacy-root",
+             f"`{rel}` is a pre-rename bundle root — migrate it to the OKF root (`docs/`)")
+            for rel in legacy_root_rels]
+
+
+def check_okf_signature(has_root_index: bool, has_okf_version: bool,
+                        root_rel: str) -> list[tuple[str, str, str, str]]:
+    """`not-an-okf-bundle` — the directory exists but never claims to be a bundle. The
+    signature is the root `index.md` carrying `okf_version`; nothing else in the tree can
+    stand in for it, because every other file is exactly what is in question.
+
+    This check earns its place from the root's own name. While the root was dotted, no
+    repository had one by accident and pointing the validator at a non-bundle was operator
+    error. `docs/` is the commonest documentation folder in existence, so the same mistake is
+    now the default case — and without this gate it answers with one ERROR per file."""
+    if has_root_index and has_okf_version:
         return []
-    return [("ERROR", legacy_root_rel, "okf-legacy-root",
-             f"`{legacy_root_rel}` is the pre-rename bundle root — migrate it to the OKF root (`.knowledge/`)")]
+    missing = "has no `index.md`" if not has_root_index else "`index.md` declares no `okf_version`"
+    return [("ERROR", root_rel, "not-an-okf-bundle",
+             f"`{root_rel}/` {missing} — it is a directory, not an OKF bundle; "
+             f"`/quenching:knowledge:align` converts one, and per-file OKF findings are "
+             f"withheld until it does")]
 
 
 def check_legacy_home(root_entries: set[str]) -> list[tuple[str, str, str, str]]:

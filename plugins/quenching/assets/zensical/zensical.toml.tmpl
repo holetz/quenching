@@ -1,5 +1,5 @@
 # zensical.toml — Zensical config for the editorially mapped OKF site.
-# `/quenching:knowledge:align` stamps this at the repo ROOT (outside /.knowledge/), and
+# `/quenching:knowledge:align` stamps this at the repo ROOT (outside /docs/), and
 # `/quenching:knowledge:documentation:build` owns it from there. Fill the <placeholders>.
 [project]
   site_name        = "<YOUR PROJECT> — Documentation"
@@ -11,7 +11,7 @@
   # Azure DevOps and other unmapped hosts require an explicit, tested template.
   # edit_uri_template = "?path=/{path}&version=GB<branch>"
 
-  docs_dir = ".knowledge/documentation"
+  docs_dir = "docs/documentation"
   site_dir = "site"
 
   # Zensical runs no MkDocs plugin, so the order and the titles live here rather
@@ -100,7 +100,7 @@
   ]
 
 [project.markdown_extensions.pymdownx.snippets]
-  base_path = [ ".knowledge/documentation" ]
+  base_path = [ "docs/documentation" ]
   check_paths = true
   auto_append = [ "assets/glossary-abbreviations.md" ]
 

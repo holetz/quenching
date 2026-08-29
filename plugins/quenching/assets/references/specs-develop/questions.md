@@ -175,8 +175,8 @@ as `high`.
 | `xhigh` | the human, as `medium` | yes, and §Refine's **premortem lens runs unconditionally** |
 
 **`low` is the only level that does not ask, and that is its whole content.** It answers every item
-from what the spec, the codebase, the `/.knowledge/standards/` its `## Impact` declares and
-`/.knowledge/glossary.md` support. An answer resting on something unproved is written with **the
+from what the spec, the codebase, the `/docs/standards/` its `## Impact` declares and
+`/docs/glossary.md` support. An answer resting on something unproved is written with **the
 assumption named in the text it lands in**. Anything no evidence answers becomes an
 `## Open Decisions` line carrying **how it will be decided** — never invented, and never asked. It
 composes, it closes, it stamps `approved` `by: low-gear`, and it is done in one pass.
@@ -513,7 +513,7 @@ question later.
 
 <!-- rules -->
 
-Every stage that reads the codebase or `.knowledge/` to answer its own questions — compose's
+Every stage that reads the codebase or `docs/` to answer its own questions — compose's
 "read it, do not theorize" included, not only what follows below — does so under
 [align/evidence-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/evidence-doctrine.md):
 the aggregate a `grep`/`gh`/`cq` call produces, never the raw dump; `cq components read <path>
@@ -572,7 +572,7 @@ that produced it, and the sweep's file reads stay out of the long context that t
 then pays for on **every** turn that follows.
 
 Why the dependency sweep exists at all, and the measurement that would graduate it, are recorded in
-`/.knowledge/standards/automation/dependency-sweep.md` — this plugin's own bundle, not a target's.
+`/docs/standards/automation/dependency-sweep.md` — this plugin's own bundle, not a target's.
 Named bare because the rules above stand without it; every binding half is here.
 
 ## Recording the pass

@@ -12,7 +12,7 @@ description: "Write sourced Diátaxis pages from a documentation plan, applying 
 `./.quenching/documentation/plan.md` and write every assigned page).
 
 Reads the accepted plan and writes only the assigned pages under
-`./.knowledge/documentation/`. Apply
+`./docs/documentation/`. Apply
 [knowledge-documentation/craft.md](../../references/knowledge-documentation/craft.md),
 [knowledge-documentation/visual.md](../../references/knowledge-documentation/visual.md)
 and
@@ -26,15 +26,15 @@ in one pass per page.
 - **Agent-ready is explicit.** Stable headings, relative links, copyable real examples, expected output and `TL;DR for agents` blocks carry the contract in text.
 - **Extensions precede syntax.** Read `zensical.toml` and confirm each required extension before adding its syntax; report a missing extension to `build`.
 - **Glossary links use the published route.** When the accepted map exposes the root glossary, link
-  `reference/glossary.md`; never cite `/.knowledge/glossary.md` as reader-facing prose. Terms stay
+  `reference/glossary.md`; never cite `/docs/glossary.md` as reader-facing prose. Terms stay
   canonical in the root file, and authors never hand-maintain abbreviation definitions. Run
-  `cq knowledge project .knowledge --plan .quenching/documentation/plan.md --config zensical.toml
+  `cq knowledge project docs --plan .quenching/documentation/plan.md --config zensical.toml
   --write` to materialize the route, reference index, nav entry and abbreviation snippet from the
   source hash; rerunning it must be a byte-identical no-op.
 - **Derived homes are complete surfaces.** For every `publicar derivado` row, emit the declared
   route/index for the corresponding `standards/`, `concepts/`, `external/`, `catalog/` or
   `vision/` source — not only pages chosen for the current slice. Preserve source origin, hash and
-  transformation, and rewrite every internal `/.knowledge/` link to its mapped published route;
+  transformation, and rewrite every internal `/docs/` link to its mapped published route;
   an explicitly unpublished home contributes no route or leaked link.
 - **Source ledger travels with prose.** Record every strong claim, confidence and `source gap:` beside the page set.
 - **Catalog pages carry lineage beside prose.** For a derived catalog, write the source ledger next

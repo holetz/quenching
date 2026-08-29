@@ -11,7 +11,7 @@ description: "Drain the project's Codex memory into the OKF bundle, then clear i
 **Input**: `$ARGUMENTS` (an optional subset or scope; omit to drain all project memory).
 
 Promotes the durable facts the user has accumulated in **project memory** into the canonical
-OKF `/.knowledge/` bundle, then clears them from memory — so knowledge that was living in
+OKF `/docs/` bundle, then clears them from memory — so knowledge that was living in
 `~/.codex/projects/<cwd>/memory/` becomes conformant docs anyone browsing the repo can find.
 Assumes the bundle already exists (run `quenching-knowledge-align` first if not). The memory-type → home routing
 and the deletion contract are in [knowledge-import-memory/memory-routing.md](../../references/knowledge-import-memory/memory-routing.md);
@@ -30,7 +30,7 @@ the home boundaries, `type` vocabulary, and molds are shared with
   invoked as a stage of `quenching-knowledge-align`'s cycle (or of `/align`) under the cycle-authorization contract
   ([align/convergence.md](../../references/align/convergence.md)), the plan is
   presented as narration, not a gate — the write-then-verify-then-delete contract is unchanged.
-- **Three destinations only.** This skill writes into exactly two `/.knowledge/` homes — `standards/`
+- **Three destinations only.** This skill writes into exactly two `/docs/` homes — `standards/`
   and `concepts/` — plus the provider-owned `plans` phase for a **unit of work**
   outside the OKF bundle). A memory whose natural fit is a
   `vision`, `documentation`, or `external` doc is **re-routed to the nearest of the three** per the routing
@@ -39,8 +39,8 @@ the home boundaries, `type` vocabulary, and molds are shared with
   `vision/`, `documentation/`, `external/`, or `catalog/` doc from a
   memory.
 - **Bounded reconnaissance — read indexes, not the whole tree.** Because the skill writes to only
-  two `/.knowledge/` homes (plus the backlog), it only ever inspects those. **Never enumerate the whole bundle** (`find .knowledge
-  -type f`, `find .knowledge -type d`): a real repo's `catalog/` and `external/repositories/` can hold
+  two `/docs/` homes (plus the backlog), it only ever inspects those. **Never enumerate the whole bundle** (`find docs
+  -type f`, `find docs -type d`): a real repo's `catalog/` and `external/repositories/` can hold
   thousands of files and will drown the session at startup — the exact failure this skill must
   avoid. To learn a home's existing subjects (so a concept path doesn't collide), read that home's
   top `index.md` (the honest listing) plus one bounded `Glob` listing of its immediate subjects — never a
@@ -169,15 +169,15 @@ First **orient, bounded** — only the required `Read`s and `Glob`s, no shell, s
 every platform. Never enumerate the whole tree (`catalog/` and `external/repositories/` will
 overflow the session):
 
-- `Read` — `/.knowledge/standards/index.md` and `/.knowledge/concepts/index.md` (the honest listings; a missing
+- `Read` — `/docs/standards/index.md` and `/docs/concepts/index.md` (the honest listings; a missing
   file just means that home is empty). For what the provider-owned `plans` phase already holds,
   `cq specs list --json` derives it from the backend — there is no listing file to read.
-- `Glob` — `/.knowledge/standards/*/index.md` and `/.knowledge/concepts/*/index.md` for the existing subject
+- `Glob` — `/docs/standards/*/index.md` and `/docs/concepts/*/index.md` for the existing subject
   folders, so a new concept path does not collide. One level only, and never a recursive file dump.
 
 Then apply [knowledge-import-memory/memory-routing.md](../../references/knowledge-import-memory/memory-routing.md): map by content (type is a
 hint) to its destination, `type`, and mold. This skill writes to **only** `standards/` and
-`concepts/` (in `/.knowledge/`) plus the provider-owned `plans` phase (a spec); a memory whose natural fit is `vision`,
+`concepts/` (in `/docs/`) plus the provider-owned `plans` phase (a spec); a memory whose natural fit is `vision`,
 `documentation`, or `external` is **re-routed to the nearest of the three** per the routing table, and a
 memory that fits none is flagged. Split multi-fact memories. Mark `user` memories and any
 unroutable fact as **KEEP (ask)** — not for deletion.
@@ -190,7 +190,7 @@ will dangle. **Wait for a single confirmation** before writing anything.
 **Done when:** the complete table is shown and its confirmation is settled.
 
 ### 5. Per memory: write, verify, then delete
-For each **migrate** row that lands in `/.knowledge/` (`standards/` / `concepts/`), run the full insert
+For each **migrate** row that lands in `/docs/` (`standards/` / `concepts/`), run the full insert
 procedure exactly as
 [knowledge-add/homes.md](../../references/knowledge-add/homes.md) specifies it —
 stamp → index → glossary → self-check (against
@@ -230,14 +230,14 @@ if it ends empty.
 - Never skip the single up-front plan+confirmation — this writes docs and deletes memory. A
   cycle-authorized run (convergence.md §contract) replaces the gate with narration; the plan is still
   presented in full and write-then-verify-then-delete still holds.
-- Never write outside the three destinations (`standards/` + `concepts/` in `/.knowledge/`, or a provider-owned spec)
+- Never write outside the three destinations (`standards/` + `concepts/` in `/docs/`, or a provider-owned spec)
   — re-route to the nearest, or flag-and-keep; never fabricate a
   `vision`/`documentation`/`external`/`catalog` doc from a memory.
 - Fan-out never fractures the single up-front plan, never skips a memory, and never lets a
   sub-agent delete ahead of a landed, self-checked doc.
 - When a migrated memory names a repo-specific term, feed `glossary.md` before deleting
   the memory — but never clobber a filled glossary entry, and keep it a one-liner + link.
-- Never enumerate the whole bundle (`find .knowledge -type f`) or descend into `catalog/` /
-  `external/repositories/` — inspect only the two `/.knowledge/` homes' `index.md` plus the backlog
+- Never enumerate the whole bundle (`find docs -type f`) or descend into `catalog/` /
+  `external/repositories/` — inspect only the two `/docs/` homes' `index.md` plus the backlog
   index (bounded). Never load every memory body into the orchestrator; recon is metadata-first,
   bodies are read inline (small dir) or by per-slice sub-agents (large dir).

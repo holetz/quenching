@@ -49,7 +49,7 @@ checks, and recommendations each citing the standard it applies. Guard every
 optional-feature check with "if present", so a minimal artifact passes clean.>
 
 <!-- MOLD (quenching · subagent definition) → becomes `.agents/agents/<name>.md` in a target
-     repo, minted by quenching-components-agent-new under `/.knowledge/standards/automation/agents.md` and the
+     repo, minted by quenching-components-agent-new under `/docs/standards/automation/agents.md` and the
      execution-profile doctrine
      (../../references/components-command-new/capabilities.md §Subagents).
 

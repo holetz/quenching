@@ -47,14 +47,14 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
   §Delegating an executor's, and it is unchanged by there being N of them.
 - **A question no evidence answers becomes `## Open Decisions`.** That is `/quenching:specs:develop`'s
   own invariant — never invent an answer — and it is what makes a pass runnable with nobody to ask.
-  The sub-agent writes what the spec, the `/.knowledge/standards/` its `## Impact` declares and
-  `/.knowledge/glossary.md` support, and parks the rest with how it will be decided. **A batch buys
+  The sub-agent writes what the spec, the `/docs/standards/` its `## Impact` declares and
+  `/docs/glossary.md` support, and parks the rest with how it will be decided. **A batch buys
   the drafting, not the judgment.**
 - **Invoke, never reimplement.** Each sub-agent runs `quenching:specs:develop` on its one spec,
   under that command's own compose stage and its own safe-write invariants. If defining must behave
   differently, change that command.
 - **Parallel because the writes are disjoint, not because it is faster.** One ID per sub-agent,
-  and none of them writes `/.knowledge/`, so the write sets are disjoint by construction rather than
+  and none of them writes `/docs/`, so the write sets are disjoint by construction rather than
   by a check. Step 7 measures that against `git status --porcelain` instead of asserting it.
 - **Sub-agents pinned to the session model — never `haiku`.** A misdrafted section is a section a
   human is about to approve, so the model policy is §Delegating an executor's, unchanged.
@@ -243,7 +243,7 @@ answering them one at a time.
 - **One ID per sub-agent, one sub-agent per ID.** Two sub-agents sharing a spec is the only way
   this batch can collide, and the split is what makes the writes provably disjoint.
 - Never let a sub-agent talk to the human, stamp `approved`, promote a `## Discoveries` line, or
-  write into `/.knowledge/`.
+  write into `/docs/`.
 - Never stamp `complexity` — this run observes the rise and re-authorizes; the writers are
   `[triage, create, develop]`.
 - **Never misattribute `approved`.** `by: human` only for a spec a human just named on screen;

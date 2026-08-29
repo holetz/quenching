@@ -1,6 +1,6 @@
 # CLAUDE.md — claude-quenching
 
-Language: pt-BR — the contract is /.knowledge/standards/agents/communication.md.
+Language: pt-BR — the contract is /docs/standards/agents/communication.md.
 
 This repository publishes the `quenching` Claude Code plugin marketplace. It has no application
 build: command bodies and references are executable prose, while four Python tools provide the
@@ -36,8 +36,8 @@ This size check measures CLAUDE.md only; it does not measure Claude's system pro
 
 ## Navigation
 
-Durable knowledge lives in [/.knowledge/index.md](/.knowledge/index.md); resolve unfamiliar terms
-in [/.knowledge/glossary.md](/.knowledge/glossary.md). The product manual, command catalog, cost
+Durable knowledge lives in [/docs/index.md](/docs/index.md); resolve unfamiliar terms
+in [/docs/glossary.md](/docs/glossary.md). The product manual, command catalog, cost
 model and install path live in [plugins/quenching/README.md](plugins/quenching/README.md). The
 registered sources are `plugins/quenching/commands/**` and
 `plugins/quenching/assets/references/**`.

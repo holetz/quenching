@@ -64,7 +64,7 @@ def split_section_stream(text: str, candidates: list[str]) -> list[tuple[str | N
     `resolve_heading_name` against the candidate set the caller passes in, exactly as
     `_match_heading` resolves a name typed on the command line, and an unresolved one comes
     back as `None` for the caller to refuse by name. The candidate set is an argument for the
-    reason `/.knowledge/standards/code/canonical-set-parsing.md` gives: the cases prove the
+    reason `/docs/standards/code/canonical-set-parsing.md` gives: the cases prove the
     function that ships, not a copy of its rule.
 
     **A fenced block is never read as a heading** — the rule `parse_sections` and the

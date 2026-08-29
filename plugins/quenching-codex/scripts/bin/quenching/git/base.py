@@ -7,7 +7,7 @@ only the git facts fed into it do.
 
 MEASURED for GitHub: a PR whose base is not the repository's own default branch never
 populates `closingIssuesReferences`, even with `Closes #<n>` in the body — see
-`/.knowledge/external/tools/github-cli-measured-behaviour.md`. The Azure DevOps call below
+`/docs/external/tools/github-cli-measured-behaviour.md`. The Azure DevOps call below
 follows the same shape on an unmeasured hypothesis (`## Design` §Quando o vínculo é lido de
 volta, e quando não é of the `pilar-git-e-specs-agnosticas-ao-git` spec) until a live run
 proves or breaks it — task 1.2 there is why it stays a hypothesis rather than a second

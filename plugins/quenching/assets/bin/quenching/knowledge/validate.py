@@ -17,10 +17,16 @@ from quenching.knowledge.checks import (
     check_legacy_glossary,
     check_legacy_home,
     check_legacy_root,
+    check_okf_signature,
 )
 from quenching.knowledge.corpus import _build_corpus
 from quenching.knowledge.resource import check_resource
-from quenching.knowledge.schema import EXEMPT, GLOSSARY_REL, LEGACY_ROOT_NAME
+from quenching.knowledge.schema import (
+    CONCEPT_DOC_CODES,
+    EXEMPT,
+    GLOSSARY_REL,
+    LEGACY_ROOT_NAMES,
+)
 from quenching.knowledge.structure import validate_generated_listing, validate_structure
 
 
@@ -66,6 +72,16 @@ def _validate_text(path: str, text: str, bundle_root: str) -> list[tuple[str, st
     return [(sev, rel, code, msg) for (sev, code, msg) in raw]
 
 
+def _frontmatter_block(text: str) -> str:
+    """The raw YAML block between the opening and closing `---`, or `""`. Deliberately not a
+    parse: the signature question is only whether the key is declared, and a bundle whose root
+    listing has broken YAML must not read as a non-bundle."""
+    if not text.startswith("---"):
+        return ""
+    end = text.find("\n---", 3)
+    return text[3:] if end == -1 else text[3:end]
+
+
 def validate_tree(bundle_root: str, deadline: float | None = None,
                    ignore_globs: tuple[str, ...] = ()):
     """Validate the whole bundle from ONE read pass. Returns the findings list,
@@ -74,8 +90,11 @@ def validate_tree(bundle_root: str, deadline: float | None = None,
     findings: list[tuple[str, str, str, str]] = []
     root = pathlib.Path(bundle_root)
     if not root.is_dir():
-        legacy_root = os.path.join(os.path.dirname(bundle_root) or ".", LEGACY_ROOT_NAME)
-        legacy = check_legacy_root(os.path.isdir(legacy_root), legacy_root)
+        parent = os.path.dirname(bundle_root) or "."
+        legacy = check_legacy_root([
+            os.path.join(parent, name) for name in LEGACY_ROOT_NAMES
+            if os.path.isdir(os.path.join(parent, name))
+        ])
         return legacy or [("ERROR", str(bundle_root), "no-bundle", "bundle root is not a directory")]
     corpus = _build_corpus(bundle_root, deadline, ignore_globs)
     if corpus is None:
@@ -89,6 +108,21 @@ def validate_tree(bundle_root: str, deadline: float | None = None,
     # bundle-level SHOULDs
     if not (root / "index.md").exists():
         findings.append(("WARN", "index.md", "bundle-no-index", "bundle root has no `index.md`"))
+    # Does this directory claim to be a bundle at all? Structural and legacy checks below still
+    # run — they are what `/quenching:knowledge:align` reads to migrate a target — but the
+    # per-file concept-doc verdicts are withheld, because they judge files against a contract
+    # this tree never adopted.
+    # `_build_corpus` keys by ABSOLUTE path; joining onto the caller's (possibly relative)
+    # bundle_root would miss and read every bundle as unsigned.
+    root_index = corpus.get(os.path.abspath(os.path.join(bundle_root, "index.md")))
+    signature = check_okf_signature(
+        (root / "index.md").exists(),
+        bool(root_index) and "okf_version" in _frontmatter_block(root_index),
+        os.path.basename(os.path.normpath(bundle_root)) or bundle_root,
+    )
+    if signature:
+        findings = [f for f in findings if f[2] not in CONCEPT_DOC_CODES]
+        findings.extend(signature)
     # pre-rename layout debt — each site independent and idempotent (## Design §A migração
     # detecta por estrutura, sítio a sítio — nunca por versão)
     root_entries = {p.name for p in root.iterdir() if p.is_dir()}
@@ -105,7 +139,7 @@ def validate_tree(bundle_root: str, deadline: float | None = None,
         rel for path, rel in ((p, os.path.relpath(p, bundle_root).replace(os.sep, "/"))
                               for p in corpus if os.path.basename(p) == "glossary.md")
         if corpus[path] and "\ngenerated: true\n" in corpus[path]
-        and "\nsource: /.knowledge/glossary.md\n" in corpus[path]
+        and "\nsource: /docs/glossary.md\n" in corpus[path]
     }
     findings.extend(check_legacy_glossary(glossary_rels, GLOSSARY_REL, generated_glossaries))
     # whole-tree structural integrity (missing/broken/orphaned listings)

@@ -120,9 +120,9 @@ def check(data: dict[str, object]) -> list[str]:
     if claude["bytes"] > MAX_BYTES:
         errors.append(f"CLAUDE.md is {claude['bytes']} bytes; limit is {MAX_BYTES}")
     for marker in (
-        "Language: pt-BR — the contract is /.knowledge/standards/agents/communication.md.",
+        "Language: pt-BR — the contract is /docs/standards/agents/communication.md.",
         "plugins/quenching/README.md",
-        ".knowledge/index.md",
+        "docs/index.md",
         "assets/bin/cq",
         "context: fork",
         "Never downgrade classification",
@@ -131,8 +131,8 @@ def check(data: dict[str, object]) -> list[str]:
         if marker not in text:
             errors.append(f"missing required harness marker: {marker}")
     for path in (
-        ROOT / ".knowledge" / "index.md",
-        ROOT / ".knowledge" / "standards" / "agents" / "communication.md",
+        ROOT / "docs" / "index.md",
+        ROOT / "docs" / "standards" / "agents" / "communication.md",
         ROOT / "plugins" / "quenching" / "README.md",
         ROOT / "plugins" / "quenching" / "assets" / "bin" / "cq",
     ):

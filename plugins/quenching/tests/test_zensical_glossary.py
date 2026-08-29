@@ -49,14 +49,14 @@ class GlossaryProjectionTests(unittest.TestCase):
         template = (ROOT / "assets/zensical/zensical.toml.tmpl").read_text()
         self.assertIn('abbr                               = {}', template)
         self.assertIn('[project.markdown_extensions.pymdownx.snippets]', template)
-        self.assertIn('base_path = [ ".knowledge/documentation" ]', template)
+        self.assertIn('base_path = [ "docs/documentation" ]', template)
         self.assertIn('check_paths = true', template)
         self.assertIn('auto_append = [ "assets/glossary-abbreviations.md" ]', template)
         self.assertIn('{ "Glossary"        = [ "reference/glossary.md" ] }', template)
 
     def test_published_page_is_a_projection_not_a_second_source(self) -> None:
         page = (ROOT / "assets/knowledge/documentation/reference/glossary.md").read_text()
-        self.assertIn('source: /.knowledge/glossary.md', page)
+        self.assertIn('source: /docs/glossary.md', page)
         self.assertIn('source_sha256:', page)
         self.assertIn('never second sources', page)
 

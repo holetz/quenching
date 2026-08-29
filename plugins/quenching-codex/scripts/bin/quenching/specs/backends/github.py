@@ -331,7 +331,7 @@ class GitHubBackend(SpecBackend):
     encoding of a record's fields: `derive_labels` computes the desired set from `info`
     alone, and `reconcile_label_set` folds it against whatever the issue already carries so
     a human's own label (never under the `spec:` prefix) is untouched. See
-    /.knowledge/standards/architecture/spec-backend.md for the category this is, and why it is not
+    /docs/standards/architecture/spec-backend.md for the category this is, and why it is not
     the sub-issue projection that was retired.
 
     The listing is fetched once per process and cached, which is a local cache and NOT a

@@ -47,7 +47,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("conventions", help="read-if-present: whether the target declares "
-                                             "its own .knowledge/standards/git/**, or the "
+                                             "its own docs/standards/git/**, or the "
                                              "plugin's defaults govern")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 

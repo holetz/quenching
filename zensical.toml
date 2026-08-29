@@ -6,7 +6,7 @@
   # Local-only destination keeps sitemap generation deterministic without claiming a public host.
   site_url = "http://127.0.0.1:8000/"
   repo_url = "https://github.com/holetz/claude-quenching"
-  docs_dir = ".knowledge/documentation"
+  docs_dir = "docs/documentation"
   site_dir = "site"
   nav = [
     "index.md",
@@ -78,7 +78,7 @@
   ]
 
 [project.markdown_extensions.pymdownx.snippets]
-  base_path = [ ".knowledge/documentation" ]
+  base_path = [ "docs/documentation" ]
   check_paths = true
   auto_append = [ "assets/glossary-abbreviations.md" ]
 

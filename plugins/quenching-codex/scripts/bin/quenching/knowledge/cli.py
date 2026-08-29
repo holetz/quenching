@@ -42,7 +42,7 @@ from quenching.knowledge.validate import _build_corpus, validate_tree
 
 
 USAGE = ("usage: cq knowledge {validate|project} [<bundle-dir>] [options]   "
-         "(default bundle-dir: .knowledge)")
+         "(default bundle-dir: docs)")
 
 
 def _activity_rows(bundle_root: str, ignore_globs: tuple[str, ...]) -> list[tuple[str, dict]]:
@@ -63,7 +63,7 @@ def run_cli(argv: list[str]) -> int:
     cfg = _load_config(_project_dir())
     as_json = "--json" in argv
     paths = [a for a in argv if not a.startswith("-")]
-    target = paths[0] if paths else ".knowledge"
+    target = paths[0] if paths else "docs"
     ignore_globs = tuple(cfg.get("ignoreGlobs") or ())
     # The figure is its OWN output, never a section of the report. `stale-doc` was retired
     # because the comparison cannot support a verdict; printing the numbers beside findings
@@ -97,7 +97,7 @@ def run_project(argv: list[str]) -> int:
     import argparse
 
     parser = argparse.ArgumentParser(prog="cq knowledge project")
-    parser.add_argument("bundle", nargs="?", default=".knowledge")
+    parser.add_argument("bundle", nargs="?", default="docs")
     parser.add_argument("--plan", help="accepted documentation plan containing the publication map")
     parser.add_argument("--config", help="root zensical.toml whose nav should expose the route")
     parser.add_argument("--route", default="reference/glossary.md")
