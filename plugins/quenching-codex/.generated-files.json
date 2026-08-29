@@ -258,7 +258,7 @@
   ],
   "sha256": {
     ".codex-plugin/plugin.json": "0a696ee33b34996d136d4aa2d32fcc35bd34af35efb475b0cabefbafcaf87f34",
-    ".generated-from.json": "b6965fd5c5c948008dd7c1ea95d842ae33cc7c35f6753ce3668f88fe03c42e1c",
+    ".generated-from.json": "4baeb7f488bfc79814b664aee3ef7f553a82100a7b89e63314fde72d2b8c226e",
     "README.md": "b56c9c78e397596cd0215cf6b3f921ed8c23e17f7eae29f78f1dd3c5ca4b0746",
     "VERSION": "e33e70efdb9c35eb184b87ee7abc05ac16a925c9c36e84408999dea33a741fa8",
     "checks/catalog-publication-check.py": "9f4c9b75b524e31bd9420036a5384801ef707ef5708956abba1d6eb62c398f9e",
@@ -469,7 +469,7 @@
     "skills/quenching-git-sync/SKILL.md": "59b6bc4f1398e2790f1c50f9bb6c46985a96ccea717448de60f3a057ecc1b221",
     "skills/quenching-handoff/SKILL.md": "9f110060dd0572fe29315d3bbb307cb7600db2d9c2c01e2701f643f41c32d337",
     "skills/quenching-knowledge-add/SKILL.md": "0984710600c707cb7c3eff5cde473263154a77c6a5d9c6c76b5a57cca6a8a948",
-    "skills/quenching-knowledge-align/SKILL.md": "b36053fec4105bf850b800a8b3778bdf6ad6915ce49059ecf16da95cc34afeda",
+    "skills/quenching-knowledge-align/SKILL.md": "200b74823f1f819ebb91f5aed206fe6817a9a757800564a48fe23cbd066373c8",
     "skills/quenching-knowledge-define/SKILL.md": "c7047871b30e3c7d91fb276a7e64428950fd969b3524429e304153e78507bd02",
     "skills/quenching-knowledge-documentation-build/SKILL.md": "1a49f99da90cc0569bad0a29a3187461d47f99203c6f9e91c6399333eada7cd2",
     "skills/quenching-knowledge-documentation-plan/SKILL.md": "c389511ceaa8fa75ade656bf4bb8a74b10874b2be11023e978ad810725d05491",
