@@ -75,13 +75,18 @@ When the canonical glossary exists and the map does not explicitly say `não pub
 verify the deterministic source projection and then pass the same contract to the rendered check:
 
 ```bash
-cq knowledge project docs --plan .quenching/documentation/plan.md --config zensical.toml --check
+cq knowledge project docs --check
 python3 <plugin>/assets/checks/documentation-site-check.py site \
   --require-glossary \
   --glossary-source docs/glossary.md \
   --glossary-route glossary.md \
-  --glossary-snippet site-source/assets/glossary-abbreviations.txt
+  --glossary-snippet site-source/assets/glossary-abbreviations.txt \
+  --glossary-term <term explicitly evidenced by the accepted map>
 ```
+
+The glossary check must receive an explicitly evidenced renderable term (for example `SCD2`),
+never an implicit first glossary entry. If the accepted map has no compatible term, report the
+source gap rather than manufacturing a test fixture or a published abbreviation.
 
 The projection check compares the route and abbreviation snippet with the canonical file's
 SHA-256, and the rendered check requires a known term to appear inside `<abbr>`. For a local-only
@@ -130,7 +135,7 @@ grep -oE '<title>[^<]*</title>' site/index.html | head -1
 grep -R -c 'class="mermaid"' site
 grep -R -c 'class="q-badge"' site
 grep -oE 'stylesheets/[^" ]+' site/index.html | sort -u
-grep -R -Eo 'prefers-reduced-motion' docs/documentation/assets/stylesheets/*.css
+grep -R -Eo 'prefers-reduced-motion' site-source/assets/stylesheets/*.css
 ```
 
 The static fallback verifies title, Mermaid markup, badges, CSS wiring, the motion guard and mapped
