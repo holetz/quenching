@@ -1,6 +1,14 @@
-"""The glossary projection is deterministic, source-addressed and gateable."""
+"""The glossary's abbreviation snippet is deterministic, source-addressed and gateable.
+
+The route half of this module's subject is gone: the bundle root became `docs_dir`, so the
+canonical glossary publishes itself and there is no derived page to keep in step. The tests for
+`render_route`, `rewrite_link` and the publication-map decision went with the code they proved —
+removed, not skipped, per `standards/workflows/retiring-a-standard.md`. What remains is the one
+projection that is a real derivation rather than a copy.
+"""
 from __future__ import annotations
 
+import hashlib
 import tempfile
 import unittest
 from pathlib import Path
@@ -10,19 +18,8 @@ from quenching.knowledge.projection import (
     parse_glossary,
     projection_findings,
     render_abbreviations,
-    render_route,
-    rewrite_link,
     write_projection,
 )
-
-
-PLAN = """### Mapa editorial de publicação
-| Home | Decisão | Motivo | Público | Rota publicada |
-| --- | --- | --- | --- | --- |
-| glossary.md | publicar derivado | vocabulary | readers | reference/glossary.md |
-| standards/ | publicar derivado | contracts | readers | reference/standards/ |
-| concepts/ | não publicar | internal | — | — |
-"""
 
 
 class GlossaryProjection(unittest.TestCase):
@@ -33,7 +30,7 @@ Prose — not an entry.
 
 ## Terms
 
-- [**ASRC**](../standards/loss.md) — expected loss stage
+- [**ASRC**](standards/loss.md) — expected loss stage
   with a wrapped definition.
 - **Local term** — a local meaning
 
@@ -44,27 +41,24 @@ Prose — not an entry.
         self.assertEqual([entry.term for entry in entries], ["ASRC", "Local term"])
         self.assertEqual(entries[0].definition, "expected loss stage with a wrapped definition.")
 
-    def test_links_map_from_bundle_paths_to_published_routes(self):
-        routes = {"standards": "reference/standards", "glossary.md": "reference/glossary.md"}
-        self.assertEqual(
-            rewrite_link("../standards/loss.md#stage", "glossary.md",
-                         "reference/glossary.md", routes),
-            "standards/loss.md#stage",
-        )
-        self.assertIsNone(rewrite_link("../concepts/mental-model.md", "glossary.md",
-                                       "reference/glossary.md", routes))
-
-    def test_renderings_carry_the_same_source_hash(self):
+    def test_snippet_is_addressed_to_the_source_it_was_derived_from(self):
         with tempfile.TemporaryDirectory() as tmp:
             source = Path(tmp) / "glossary.md"
             source.write_text("## Terms\n\n- **ASRC** — expected loss stage\n")
-            entries = parse_glossary(source.read_text())
-            route = render_route(source, entries, {"glossary.md": "reference/glossary.md"})
-            snippet = render_abbreviations(source, entries)
-            digest = __import__("hashlib").sha256(source.read_bytes()).hexdigest()
-            self.assertIn(f"source_sha256: {digest}", route)
+            snippet = render_abbreviations(source, parse_glossary(source.read_text()))
+            digest = hashlib.sha256(source.read_bytes()).hexdigest()
             self.assertIn(f"source_sha256: {digest}", snippet)
             self.assertIn("*[ASRC]: expected loss stage", snippet)
+
+    def test_a_definition_keeps_a_link_label_and_drops_its_target(self):
+        # An abbr definition renders inside a tooltip attribute; markdown syntax would show up
+        # there literally.
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "glossary.md"
+            source.write_text("## Terms\n\n- **Probe** — the pass [align](standards/a.md) runs\n")
+            snippet = render_abbreviations(source, parse_glossary(source.read_text()))
+            self.assertIn("*[Probe]: the pass align runs", snippet)
+            self.assertNotIn("standards/a.md", snippet)
 
     def test_title_cased_term_gains_running_prose_variant(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -86,65 +80,51 @@ Prose — not an entry.
             self.assertEqual(snippet.count("*[probe]:"), 1)
             self.assertIn("*[probe]: a distinct lowercase entry", snippet)
 
-    def test_punctuation_term_gets_explicit_route_fallback(self):
+    def test_punctuation_term_is_declared_unabbreviatable_rather_than_emitted_broken(self):
         with tempfile.TemporaryDirectory() as tmp:
             source = Path(tmp) / "glossary.md"
-            source.write_text("## Terms\n\n- [**`[P]` marker**](../standards/task.md) — opt-in marker\n")
-            entries = parse_glossary(source.read_text())
-            route = render_route(source, entries, {"standards": "reference/standards"})
-            snippet = render_abbreviations(source, entries)
-            self.assertIn('<abbr title="opt-in marker">&#91;P&#93; marker</abbr>', route)
+            source.write_text("## Terms\n\n- [**`[P]` marker**](standards/task.md) — opt-in marker\n")
+            snippet = render_abbreviations(source, parse_glossary(source.read_text()))
             self.assertIn("explicit glossary abbr fallback", snippet)
             self.assertNotIn("*[[P] marker]:", snippet)
 
-    def test_write_then_check_is_idempotent_and_updates_index_and_nav(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            source = root / "docs" / "glossary.md"
-            source.parent.mkdir(parents=True)
-            source.write_text("---\ntype: concept\n---\n\n## Terms\n\n- **ASRC** — expected loss stage\n")
-            reference = root / "docs" / "documentation" / "reference"
-            reference.mkdir(parents=True)
-            (reference / "index.md").write_text("# Reference\n")
-            config = root / "zensical.toml"
-            config.write_text("[project]\nnav = [\n  \"index.md\",\n]\n")
-            write_projection(root / "docs", PLAN, config)
-            payload, findings = projection_findings(root / "docs", PLAN, config)
-            self.assertFalse(findings, payload)
-            before = {
-                str(path.relative_to(root)): path.read_bytes()
-                for path in (reference / "glossary.md", reference / "index.md", root / "zensical.toml",
-                              root / "docs" / "documentation" / "assets" / "glossary-abbreviations.md")
-            }
-            write_projection(root / "docs", PLAN, config)
-            after = {name: (root / name).read_bytes() for name in before}
-            self.assertEqual(before, after)
-            self.assertEqual(payload["terms"], 1)
-
-    def test_stale_source_hash_and_projection_are_findings(self):
+    def test_write_then_check_is_idempotent_to_the_byte(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "docs"
+            (root / "assets").mkdir(parents=True)
             source = root / "glossary.md"
-            source.parent.mkdir(parents=True)
+            source.write_text("---\ntype: concept\n---\n\n## Terms\n\n- **ASRC** — expected loss\n")
+            payload = write_projection(root)
+            checked, findings = projection_findings(root)
+            self.assertFalse(findings, checked)
+            self.assertEqual(checked["terms"], 1)
+            snippet = root / "assets" / "glossary-abbreviations.txt"
+            before = snippet.read_bytes()
+            write_projection(root)
+            self.assertEqual(before, snippet.read_bytes())
+            self.assertEqual(payload["snippet"], str(snippet))
+
+    def test_a_snippet_left_behind_by_an_older_glossary_is_a_finding(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "docs"
+            root.mkdir(parents=True)
+            source = root / "glossary.md"
             source.write_text("## Terms\n\n- **ASRC** — expected loss stage\n")
-            write_projection(root, PLAN)
+            write_projection(root)
             source.write_text("## Terms\n\n- **ASRC** — changed definition\n")
-            _, findings = projection_findings(root, PLAN)
-            self.assertEqual({finding["code"] for finding in findings},
-                             {"glossary-source-hash-stale", "glossary-route-stale", "glossary-snippet-stale"})
+            _, findings = projection_findings(root)
+            self.assertEqual({f["code"] for f in findings}, {"glossary-snippet-stale"})
 
-    def test_explicit_unpublish_does_not_materialize_or_leave_exposure(self):
-        plan = PLAN.replace("publicar derivado | vocabulary", "não publicar | vocabulary")
+    def test_an_absent_glossary_is_not_a_finding(self):
+        # A bundle may legitimately carry no vocabulary yet; inventing one is not this module's
+        # business, and reporting its absence would make every young bundle red.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "docs"
-            source = root / "glossary.md"
-            source.parent.mkdir(parents=True)
-            source.write_text("## Terms\n\n- **ASRC** — expected loss stage\n")
-            payload = write_projection(root, plan)
-            self.assertEqual(payload["skipped"], "canonical glossary is explicitly unpublished")
-            self.assertFalse((root / "documentation" / "reference" / "glossary.md").exists())
-            _, findings = projection_findings(root, plan)
+            root.mkdir(parents=True)
+            payload, findings = projection_findings(root)
             self.assertFalse(findings)
+            self.assertEqual(write_projection(root)["skipped"],
+                             "canonical glossary is absent or empty")
 
 
 if __name__ == "__main__":

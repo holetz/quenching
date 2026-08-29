@@ -106,7 +106,7 @@ the explicit entry point.
 | `quenching-knowledge-documentation-produce` | Conducts the whole documentation pipeline: site layer, sourced pages, bounded review, strict-build QA. |
 | `quenching-knowledge-documentation-plan` | Builds the sourced architecture — reader journeys and the output contracts each page answers to. |
 | `quenching-knowledge-documentation-write` | Writes the Diátaxis pages from that plan, sourced and never invented. |
-| `quenching-knowledge-documentation-review` | Scores pages against the ten-dimension quality gate **without changing a byte**. |
+| `quenching-knowledge-documentation-review` | Scores pages against the eleven-dimension quality gate **without changing a byte**. |
 | `quenching-knowledge-documentation-build` | Owns the Zensical site layer — extensions, CSS, nav, and the strict build. |
 
 ### The `components` front — the target's `.agents/` surface

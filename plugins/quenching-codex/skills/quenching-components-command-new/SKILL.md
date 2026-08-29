@@ -124,12 +124,12 @@ Write the command file from `automation/command.md` — frontmatter and body in 
 write the rule if planned. **Done when:** every planned file exists with its planned content.
 
 ### 8. OKF tail (bundle present)
-Create `/docs/documentation/reference/automation.md` from `automation/registry.md` first if it is
+Create `/docs/project/automation.md` from `automation/registry.md` first if it is
 absent (it was in the plan). Then regenerate the zone:
 ```bash
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components registry reindex --json
 ```
-Update `documentation/reference/`'s `index.md` per the procedure in
+Update `project/`'s `index.md` per the procedure in
 [knowledge-add/homes.md](../../references/knowledge-add/homes.md). If the
 command coined a new repo-specific term, **offer** ONE `glossary.md` entry — the user
 decides. **Done when:** `registry reindex` exits 0 and the index is honest.

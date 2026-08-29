@@ -31,7 +31,9 @@ Resolva termos desconhecidos primeiro no [glossário](/docs/glossary.md).
 - [/docs/standards/](/docs/standards/index.md) — contratos e convenções do repositório.
 - [/docs/concepts/](/docs/concepts/index.md) — entendimento genérico mantido pelo projeto.
 - [/docs/external/](/docs/external/index.md) — fatos sobre ferramentas, bibliotecas e fontes externas.
-- [/docs/documentation/](/docs/documentation/index.md) — documentação do produto.
+- [/docs/tutorials/](/docs/tutorials/index.md), [/docs/how-to/](/docs/how-to/index.md),
+  [/docs/explanation/](/docs/explanation/index.md) — a documentação do produto, por quadrante.
+- [/docs/project/](/docs/project/index.md) — o manual deste repositório: comandos, automação, layout.
 - [/docs/catalog/](/docs/catalog/index.md) — dados e domínio do repositório.
 - [/docs/vision/](/docs/vision/index.md) — direção do projeto.
 

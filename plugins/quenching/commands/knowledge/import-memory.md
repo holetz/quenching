@@ -34,7 +34,7 @@ the home boundaries, `type` vocabulary, and molds are shared with
   `vision`, `documentation`, or `external` doc is **re-routed to the nearest of the three** per the routing
   table ([knowledge-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import-memory/memory-routing.md)); a memory that fits none of
   them **stays** in memory and is flagged (like a `user`/unroutable fact). Never create a
-  `vision/`, `documentation/`, `external/`, or `catalog/` doc from a
+  `vision/`, a reader-facing quadrant, `external/`, or `catalog/` doc from a
   memory.
 - **Bounded reconnaissance — read indexes, not the whole tree.** Because the skill writes to only
   two `/docs/` homes (plus the backlog), it only ever inspects those. **Never enumerate the whole bundle** (`find docs

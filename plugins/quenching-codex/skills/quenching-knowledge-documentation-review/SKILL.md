@@ -1,6 +1,6 @@
 ---
 name: quenching-knowledge-documentation-review
-description: "Critique and score documentation pages against the ten-dimension quality gate without changing a byte. Triggers on \"review the documentation\", \"score the docs pages\", or \"critique the documentation quality\"."
+description: "Critique and score documentation pages against the eleven-dimension quality gate without changing a byte. Triggers on \"review the documentation\", \"score the docs pages\", or \"critique the documentation quality\"."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/documentation/review.md -->

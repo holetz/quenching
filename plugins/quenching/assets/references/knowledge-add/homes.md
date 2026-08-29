@@ -20,9 +20,10 @@ Ask **"what IS this, relative to us?"**:
 | --- | --- | --- | --- | --- |
 | a rule for **how WE build** (proven, or agreed-but-unproven) | `standards/<subject>/` | `standard` | `standard-front.md` | `<subject>/<concept>.md` |
 | **direction** for an area (no deadline) | `vision/` | `vision` | `vision/area.md` | `<area>.md` |
-| a **how-to / task recipe** (product usage) | `documentation/how-to/` | `documentation` | `concept-front.md` | `how-to/<slug>.md` |
-| a **tutorial** (learning-oriented) | `documentation/tutorials/` | `documentation` | `concept-front.md` | `tutorials/<slug>.md` |
-| **product reference / explanation** (site page) | `documentation/{reference,explanation}/` | `documentation` | `concept-front.md` | `<section>/<slug>.md` |
+| a **how-to / task recipe** (product usage) | `how-to/` | `how-to` | `concept-front.md` | `how-to/<slug>.md` |
+| a **tutorial** (learning-oriented) | `tutorials/` | `tutorial` | `concept-front.md` | `tutorials/<slug>.md` |
+| **an explanation** (site page, the reader's why) | `explanation/` | `explanation` | `concept-front.md` | `<slug>.md` |
+| **this repository's own manual** (commands, automation, layout) | `project/` | `project` | `concept-front.md` | `<slug>.md` |
 | **generic understanding we hold** (concept / explanation / learning) | `concepts/<subject>/` | `concept` | `concept-front.md` | `<subject>/<slug>.md` |
 | a **fact about an external** tool/lib/regulation | `external/{tools,libraries,regulations}/` | `external` | `concept-front.md` | `<slug>.md` |
 | **our data** — a system / schema / table | `catalog/<system>/…` | `system`/`schema`/`table` | `catalog/{system,schema,table}.md` | see below |
@@ -39,7 +40,7 @@ Ask **"what IS this, relative to us?"**:
   into `standards/` and leaves
   `concepts/`.
 - **documentation vs concepts:** a **published-site page** (narrative, for a human reading
-  the docs) is `documentation/`; **internal team understanding** (mental model, learning,
+  the docs) is a reader-facing quadrant; **internal team understanding** (mental model, learning,
   glossary) is `concepts/`.
 - **standards & agreed rules:** a **proven, current** rule for how we build is a `standard`
   (`authority: current`); an **agreed-but-not-yet-proven** rule is a `standard` with

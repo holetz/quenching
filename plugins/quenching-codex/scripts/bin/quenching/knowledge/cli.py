@@ -36,7 +36,11 @@ from quenching.common.output import FINDINGS, OK, REFUSAL
 from quenching.common.version import VERSION
 from quenching.knowledge.config import _load_config, _project_dir
 from quenching.knowledge.render import _render_activity, _render_text, _split
-from quenching.knowledge.projection import projection_findings, write_projection
+from quenching.knowledge.projection import (
+    DEFAULT_SNIPPET,
+    projection_findings,
+    write_projection,
+)
 from quenching.knowledge.stale import resource_activity
 from quenching.knowledge.validate import _build_corpus, validate_tree
 
@@ -93,15 +97,17 @@ def run_cli(argv: list[str]) -> int:
 
 
 def run_project(argv: list[str]) -> int:
-    """Materialize or verify the glossary projection without importing Zensical."""
+    """Materialize or verify the glossary's abbreviation snippet without importing Zensical.
+
+    `--plan`, `--config` and `--route` are gone with the derived glossary route they served: the
+    bundle root is `docs_dir`, so the canonical glossary publishes itself and no editorial map row
+    decides whether a copy of it exists.
+    """
     import argparse
 
     parser = argparse.ArgumentParser(prog="cq knowledge project")
     parser.add_argument("bundle", nargs="?", default="docs")
-    parser.add_argument("--plan", help="accepted documentation plan containing the publication map")
-    parser.add_argument("--config", help="root zensical.toml whose nav should expose the route")
-    parser.add_argument("--route", default="reference/glossary.md")
-    parser.add_argument("--snippet", default="assets/glossary-abbreviations.md")
+    parser.add_argument("--snippet", default=DEFAULT_SNIPPET)
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--write", action="store_true", help="write the deterministic projection")
     mode.add_argument("--check", action="store_true", help="check without writing (the default)")
@@ -111,32 +117,16 @@ def run_project(argv: list[str]) -> int:
     from pathlib import Path
 
     bundle = Path(args.bundle)
-    plan = None
-    if args.plan:
-        try:
-            plan = Path(args.plan).read_text(encoding="utf-8")
-        except OSError as exc:
-            payload = {"ok": False, "code": "projection-plan-unreadable", "message": str(exc)}
-            if args.json:
-                print(json.dumps(payload, indent=2))
-            else:
-                print(f"error: {exc}", file=sys.stderr)
-            return FINDINGS
-    config = Path(args.config) if args.config else None
     if args.write:
-        written = write_projection(bundle, plan, config, args.route, args.snippet)
+        written = write_projection(bundle, args.snippet)
         payload = dict(written)
-        payload["mode"] = "write"
-        if written.get("skipped") and not written.get("excluded"):
-            errors = []
-        else:
-            checked, errors = projection_findings(bundle, plan, config, args.route, args.snippet)
+        errors: list[dict] = []
+        if not written.get("skipped"):
+            checked, errors = projection_findings(bundle, args.snippet)
             payload.update(checked)
-            if written.get("skipped"):
-                payload["skipped"] = written["skipped"]
-            payload["mode"] = "write"
+        payload["mode"] = "write"
     else:
-        payload, errors = projection_findings(bundle, plan, config, args.route, args.snippet)
+        payload, errors = projection_findings(bundle, args.snippet)
         payload["mode"] = "check"
     payload["findings"] = errors
     payload["ok"] = not errors

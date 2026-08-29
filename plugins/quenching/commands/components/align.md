@@ -104,7 +104,7 @@ working set, including from the tool's findings.
 For each remaining item, make the **axis classification** per the
 test ([taxonomy](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md) §The single axis — several unrelated folders
 → unroutable). Read `/docs/standards/automation/skills.md` if present — it governs; note whether
-the rule and the registry (`/docs/documentation/reference/automation.md`) exist.
+the rule and the registry (`/docs/project/automation.md`) exist.
 
 **Where an item classifies with an evident category, also read the nest-vs-replace convention**
 already established for that category in this repo (taxonomy.md §Reading the nest-vs-replace

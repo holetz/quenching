@@ -81,6 +81,45 @@ Sweep the blast radius like any rename (its **own** confirmation when links reac
 <!-- rationale -->
 Without this rule `align` would read a conformant `guides/` and never migrate it.
 
+### 1c-bis. Dissolved wrapper home — `documentation/` → four homes at the bundle root
+
+<!-- rules -->
+
+`documentation/` held the four Diátaxis quadrants one level below the bundle root. It existed
+because the site generator needed a non-hidden subtree to point at; the bundle root itself became
+`docs_dir`, and a level whose only job was that stopped earning it. A target still carrying the
+wrapper reports **ERROR `okf-legacy-documentation-home`** — structural, one site, idempotent.
+
+Resolve it in this order:
+
+1. `documentation/tutorials/`, `documentation/how-to/` and `documentation/explanation/` move to the
+   bundle root under the same names. Run §1c FIRST if the target still has a `guides/` home: a
+   quadrant has to exist before it can be promoted.
+2. `documentation/reference/` becomes **`project/`** — this repository's own manual. **Never
+   `reference/`**: that is a retired home name `okf-legacy-home` still claims, and reclaiming it
+   would make an already-migrated bundle report as unmigrated
+   (`docs/standards/architecture/retiring-a-reserved-artifact.md`).
+3. **Restamp `type:` in the same commit as the move** — `tutorial`, `how-to`, `explanation`,
+   `project`. `docs/standards/architecture/type-follows-home.md` is the rule and it is not
+   advisory: a home's name and its docs' `type:` are two spellings of one fact, and leaving the old
+   value recreates the naming complaint one level down, in the most greppable field of the bundle.
+4. `documentation/index.md` merges into the bundle's root `index.md`, which then serves the site's
+   front door and the bundle map on one page — the `audience: both` every doc already declares.
+5. A generated `documentation/reference/glossary.md` is **deleted**, not moved. It was a copy that
+   existed only because the canonical glossary sat outside `docs_dir`; the canonical file now
+   publishes itself, and a second copy is exactly the `okf-legacy-glossary` the validator forbids.
+6. `documentation/assets/` moves to the bundle root, and any `.md` in it becomes `.txt`: every
+   `.md` under `docs_dir` is a page, and a generated term list is not one.
+
+Then sweep the blast radius like any rename (§3), and re-aim `docs_dir` at the bundle root in the
+root `zensical.toml`, regenerating the nav with `cq knowledge nav --write`.
+
+<!-- rationale -->
+
+Without this rule `align` would read a conformant `documentation/` — every quadrant correctly
+named, every doc correctly stamped — and never migrate it, because nothing about it is misspelled.
+The home is not wrong; it is retired, which no name check can see.
+
 ### 1d. Renamed backlog item — `idea` → `task`
 
 <!-- rules -->

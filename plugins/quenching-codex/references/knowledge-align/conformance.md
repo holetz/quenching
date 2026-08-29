@@ -75,6 +75,9 @@ one thing that could have denied a write on it, was retired.
   `.knowledge/`) sits where it should be. One finding per former name found, each independent.
 - **ERROR `okf-legacy-home`** — a pre-rename home name (`knowledge/`, `reference/`) sits at the
   bundle root instead of its OKF name (`concepts/`, `external/`).
+- **ERROR `okf-legacy-documentation-home`** — the retired `documentation/` wrapper home still
+  sits at the bundle root instead of being dissolved into `tutorials/`, `how-to/`, `explanation/`
+  and `project/` (migration.md §1c-bis).
 - **ERROR `okf-legacy-doc-quadrant`** — a pre-rename Diátaxis quadrant (`getting-started/`,
   `concepts/`) sits under `documentation/` instead of its OKF name (`tutorials/`, `explanation/`).
 - **ERROR `okf-legacy-glossary`** — `glossary.md` sits inside a home instead of at the bundle root.
