@@ -16,8 +16,8 @@ Before proposing structure, inventory the sources read-only:
 
 ```bash
 rg --files -g '*.md'
-rg -n '^#{1,3} ' docs/documentation
-rg -n '\]\(' docs/documentation | rg -v 'http'
+rg -n '^#{1,3} ' docs
+rg -n '\]\(' docs | rg -v 'http'
 ```
 
 Record, in two to five lines, audience and intent, site state, and faults. Use this fault table:

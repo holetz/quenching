@@ -241,6 +241,12 @@ For `catalog/` and `external/`, record the source count and confirm they are abs
 `site-source/` and `nav`; do not parse or render the raw detail set during a site build. If a
 reader-facing page curates facts from either home, verify its source lineage in the page ledger.
 
+Run `catalog-publication-check.py` only when the accepted publication map contains an approved
+catalog route. When `catalog/` is intentionally outside the bounded site, classify that checker as
+`not-applicable`, keep the raw files out of `site-source/` and `nav`, and do not create a fake
+`reference/catalog/index.md` merely to satisfy it. The capability register is the same allow-list:
+disabled rows do not add configuration, dependencies or checker arguments.
+
 ### 4. Derive the values you will write
 `site_name` from the repo (directory name, `package.json` `name`, or the root `README.md` H1) and
 `site_description` from the README's tagline; if neither yields a usable line, **ask** — never
@@ -285,7 +291,8 @@ checker result is a structural finding: `site-asset-missing`, `site-anchor-missi
 `site-sitemap-empty`, `site-page-orphan` or `site-remote-resource`, each reported with its path.
 When the map makes the glossary mandatory, run the same checker with
 `--require-glossary --glossary-source docs/glossary.md
---glossary-snippet site-source/assets/glossary-abbreviations.txt --glossary-route glossary.md`; run
+--glossary-snippet site-source/assets/glossary-abbreviations.txt --glossary-route glossary.md
+--glossary-term <term explicitly evidenced by the accepted map>`; run
 `cq knowledge project docs --check`, `cq knowledge nav docs --check` and
 `cq knowledge site-source docs site-source --check` beside it. For a local-only build
 whose config has no `site_url`, add `--local`; this accepts a relative or empty local sitemap but
@@ -301,6 +308,12 @@ and print the two commands. Never run `zensical serve`; never commit a built sit
 the build and rendered QA are real or explicitly unverified/static-only. Where the glossary is
 mandatory, the projection check and rendered `<abbr>` check must both be green; otherwise the
 pipeline fails rather than counting only the pages the plan selected.
+
+The `--glossary-term` value is mandatory for this QA mode and must be a known term that the
+published pages render as an abbreviation (for example `SCD2` when the source and map evidence
+it). Never omit it and let the checker select the first lexical glossary entry: that proxy can be
+unrenderable and would produce a false publication defect. If no compatible term is evidenced,
+report the QA as a source gap instead of choosing one by position.
 
 If the human separately confirms a local preview after the strict build, start a loopback-only,
 ephemeral server from `site/`, report its URL and PID, and stop it when the preview window ends:

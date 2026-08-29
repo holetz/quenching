@@ -295,7 +295,7 @@ the offer was deliberately not made.
 Re-run the applicable convergence checks in this order: `cq knowledge validate /docs --json`,
 `cq knowledge project docs --check`, `cq knowledge nav docs --check`,
 `cq knowledge site-source docs site-source --check`, a strict site build, and the rendered site
-checker immediately after that build. The projection, navigation and bounded-source checks are
+checker (`documentation-site-check.py`) immediately after that build. The projection, navigation and bounded-source checks are
 skipped only when their site layer is absent or the accepted map marks that publication
 `not-applicable`; a catalog checker runs only when the map exposes a catalog route. When the
 glossary is mandatory, pass an explicitly evidenced renderable term with `--glossary-term` (for
