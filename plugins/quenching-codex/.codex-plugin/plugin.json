@@ -1,7 +1,7 @@
 {
   "name": "quenching-codex",
   "version": "6.3.0",
-  "description": "Codex translation of the quenching Claude plugin, generated from the Claude source plugin.",
+  "description": "Codex translation of the quenching plugin with OKF, provider-owned specs, DTCG design tokens, and deterministic front alignment.",
   "author": {
     "name": "Israel Holetz",
     "email": "holetz@gmail.com"
@@ -17,8 +17,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Quenching Codex",
-    "shortDescription": "Deterministic knowledge and spec alignment workflows for Codex",
-    "longDescription": "Generated Codex sibling of the Claude quenching plugin. Claude is the source of truth.",
+    "shortDescription": "Deterministic knowledge, design, and spec workflows for Codex",
+    "longDescription": "Generated Codex sibling of the Claude quenching plugin. One DTCG design source projects to interoperable artifacts; Claude remains the source of truth.",
     "developerName": "Israel Holetz",
     "category": "Developer Tools",
     "capabilities": [

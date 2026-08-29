@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-08-28
 audience: human
 authority: current
-source: plugins/quenching/README.md §Install, §The three fronts; command bodies under plugins/quenching/commands/
+source: plugins/quenching/README.md §Install, §The four fronts; command bodies under plugins/quenching/commands/
 maintainer: Israel Holetz
 ---
 
@@ -63,6 +63,7 @@ Both status commands are read-only by construction — their tool grants exclude
 
 ```text
 /quenching:knowledge:status
+/quenching:design:status
 /quenching:specs:status
 ```
 
@@ -77,7 +78,7 @@ silently**.
 /quenching:align
 ```
 
-This conducts the three fronts in dependency order. What happens next depends on what the probe
+This conducts the three local fronts in dependency order. What happens next depends on what the probe
 finds:
 
 - **A clean front stops there.** The probe found nothing, so there is no inventory, no plan and
@@ -108,5 +109,5 @@ probe → plan → OK → apply → verify loop is the plugin's one interface �
 
 **Next:** adopt the full workflow in an existing repository with
 [Adopt quenching in a repository](../how-to/adopt-quenching.md), or read
-[the operating model](../explanation/operating-model.md) to see why the three fronts feed each
+[the operating model](../explanation/operating-model.md) to see why the local fronts feed each
 other.
