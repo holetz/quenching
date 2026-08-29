@@ -4,8 +4,8 @@
 Auto-loads only under this folder — nearest-file navigation, not a second root.>
 
 - **Local operations:** <commands / quirks scoped to this folder — omit this bullet if none>.
-- **Knowledge for this area:** [<home>](/.knowledge/<home>/index.md) — <one line on what that home holds>.
-- **Unfamiliar term?** Resolve it in the glossary: [/.knowledge/glossary.md](/.knowledge/glossary.md)
+- **Knowledge for this area:** [<home>](/docs/<home>/index.md) — <one line on what that home holds>.
+- **Unfamiliar term?** Resolve it in the glossary: [/docs/glossary.md](/docs/glossary.md)
   (`grep -i '<term>'`) — omit this bullet if the repo has no glossary.
 - **To create / edit knowledge:** use the `quenching` skills (`quenching:knowledge:add` to add
   one, `quenching:knowledge:align` to migrate/normalize, `quenching:components:harness:align` to keep pointers thin).
@@ -28,5 +28,5 @@ Auto-loads only under this folder — nearest-file navigation, not a second root
        either a harness unit clearly scoped to this folder, or a greenfield folder with a local
        operational surface (build/run script, distinct toolchain, README of run-commands) and no
        CLAUDE.md. Never one per directory; data/output/asset folders earn nothing.
-       `quenching:knowledge:align`'s skeleton already ships /.knowledge/standards/CLAUDE.md.
+       `quenching:knowledge:align`'s skeleton already ships /docs/standards/CLAUDE.md.
      • Size budget: aim ≤ ~20 lines. Structure/links canonical English; prose MAY follow the repo's language. -->

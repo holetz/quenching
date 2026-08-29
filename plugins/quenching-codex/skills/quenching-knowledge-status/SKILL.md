@@ -46,28 +46,28 @@ All three are cited; this skill owns no contract of its own.
 ## Workflow (one read, one report)
 
 ### 1. Resolve the bundle
-Resolve the bundle at its fixed root `/.knowledge/` at the repo root — the root is never read from
+Resolve the bundle at its fixed root `/docs/` at the repo root — the root is never read from
 config. Resolve `cq knowledge` per
 [align/tool-resolution.md](../../references/align/tool-resolution.md)
 §Resolving the tool. Invoke via `python3`/`py`; branch on the **exit code** and the `--json`,
 never on prose.
 
-**No bundle at all** is a complete, valid answer: report that `/.knowledge/` is absent and that
-`quenching-knowledge-align` would install it, then stop. A `/.knowledge/` that exists without an `okf_version` root
+**No bundle at all** is a complete, valid answer: report that `/docs/` is absent and that
+`quenching-knowledge-align` would install it, then stop. A `/docs/` that exists without an `okf_version` root
 `index.md` is an un-installed tree, not a broken bundle — say which.
 **Done when:** the bundle root and the checker are resolved, or their absence recorded.
 
 ### 2. Collect (read-only)
-- `cq knowledge validate /.knowledge --json` — every conformance finding.
-- `cq knowledge validate /.knowledge --activity --json` — the resource-activity figure, per doc and
+- `cq knowledge validate /docs --json` — every conformance finding.
+- `cq knowledge validate /docs --activity --json` — the resource-activity figure, per doc and
   per `resource:` entry (CLI only; per [conformance.md](../../references/knowledge-align/conformance.md)
   §Resource activity it emits no finding and never runs in the hook path).
-- `Glob` `/.knowledge/**/*.md` for the density counts, and read `/.knowledge/index.md`, each home's `index.md`,
-  and `/.knowledge/glossary.md`.
+- `Glob` `/docs/**/*.md` for the density counts, and read `/docs/index.md`, each home's `index.md`,
+  and `/docs/glossary.md`.
 - `Glob` `~/.codex/projects/<cwd>/memory/*.md` and read the root `AGENTS.md`/`AGENTS.md` size —
   the two out-of-band stores whose content the cycle would pull in.
 - Note whether a **retired `log.md`** is still present anywhere in the bundle (`Glob`
-  `/.knowledge/**/log.md`) — a figure for §5, never a finding. If `$ARGUMENTS` names a home or
+  `/docs/**/log.md`) — a figure for §5, never a finding. If `$ARGUMENTS` names a home or
   path, restrict the density and named document reads to that scope while keeping the validator's
   result explicitly whole-bundle. **Done when:** every source is read and nothing has been written.
 

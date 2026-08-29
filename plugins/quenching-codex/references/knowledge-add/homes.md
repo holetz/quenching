@@ -93,7 +93,7 @@ contract is [sources.md](../../references/knowledge-import/sources.md)
 <!-- rules -->
 
 - Add `* [<title>](<relative-path>.md) — <description>` under the right section. Keep links
-  relative within the home, absolute (`/.knowledge/...`) across homes.
+  relative within the home, absolute (`/docs/...`) across homes.
 - If the doc **creates a new folder**, create that folder's `index.md` too (a frontmatter-free
   listing) and link it from the parent — a folder of concepts without one is a `dir-no-index`
   gap, and an unlisted doc is an `index-orphan`.
@@ -120,7 +120,7 @@ term that belongs in the glossary** and, if so, enrich it:
   jargon a newcomer would not know (a domain entity, an internal codename, a term of
   art). Skip generic English and terms already listed.
 - **How to add it (MERGE, never clobber).** Insert the term in **alphabetical** position,
-  in the linked bullet form, pointing at the concept doc you just wrote (`/.knowledge/<path>.md`,
+  in the linked bullet form, pointing at the concept doc you just wrote (`/docs/<path>.md`,
   absolute across homes). If an entry for the term already exists, sharpen its definition
   or add the link — never overwrite a filled definition or a filled link.
 - **Only the entry.** The depth stays in the concept doc; the glossary points to it. Do not

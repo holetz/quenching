@@ -2,7 +2,7 @@
 type: concept
 title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
-resource: /.knowledge/**
+resource: /docs/**
 tags: [glossary, vocabulary, terminology]
 timestamp: 2026-07-25
 audience: both
@@ -19,7 +19,7 @@ definition>` when a full concept doc exists, or `* **<Term>** — <one-sentence 
 when it doesn't — the glossary is the *index* of vocabulary, not the long-form home.
 
 **Resolving a term.** When a repo-specific word, acronym, or piece of jargon is unclear,
-**search this file first** (Ctrl-F, or `grep -i '<term>' /.knowledge/glossary.md`). A
+**search this file first** (Ctrl-F, or `grep -i '<term>' /docs/glossary.md`). A
 matching entry gives the local meaning and, when linked, points to the doc that explains
 it in full. No entry means the term is not yet defined — capture it (see *How to enrich*).
 
@@ -30,7 +30,7 @@ entry (a term with no concept doc yet) is a normal, permanent, valid state, not 
 Keep the list **alphabetically sorted by Term**, keep each definition to a single
 sentence, and **link out** rather than explaining in full here.
 
-**Its `resource: /.knowledge/**` is deliberate, and must not be "corrected".** A glossary
+**Its `resource: /docs/**` is deliberate, and must not be "corrected".** A glossary
 governs the whole bundle, so a scope that names the whole bundle is the honest one —
 narrowing it to look tidier would be a fabrication. The validator knows: a scope
 containing the bundle root is a **bundle aggregate**, exempt from `resource-self` and
@@ -55,7 +55,7 @@ newcomer would not know. Three ways in:
 - **On demand, one term at a time.** Run `quenching:knowledge:define` to add or refine a single
   entry (inserted in alphabetical position, MERGE — never clobbering a filled definition).
 - **In bulk, across the whole bundle.** Run `quenching:knowledge:glossary-backfill` to sweep every doc
-  already in `/.knowledge/` for repo-specific terms that were never fed into the glossary and
+  already in `/docs/` for repo-specific terms that were never fed into the glossary and
   backfill them in one pass.
 
 Keep entries honest: define the term as **this repo** uses it, not the dictionary sense,

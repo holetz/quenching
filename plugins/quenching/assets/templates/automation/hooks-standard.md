@@ -55,7 +55,7 @@ deterministic 95% may share a matcher with a `prompt` rung for the judgment tail
 - **Every hook states its cost claim** at mint: event × frequency × handler cost × fast-path
   cost on no-match.
 
-<!-- MOLD (quenching · hooks standard) → becomes `/.knowledge/standards/automation/hooks.md` in a
+<!-- MOLD (quenching · hooks standard) → becomes `/docs/standards/automation/hooks.md` in a
      target repo's OKF bundle, offered by /quenching:components:hook:new on first run (never created without
      an OK). Fill the placeholders, keep the body, add repo-specific deltas below it. Born
      `authority: background`. STAMP = MERGE, never clobber. The full doctrine lives in the

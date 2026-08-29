@@ -64,20 +64,29 @@ gate. `cq knowledge validate selftest` holds the line with a fixture bundle carr
 <!-- rules -->
 
 A target that has not run `/quenching:knowledge:align` since a plugin release renamed one of its own
-declared roots (the bundle root moved from `docs/` to `knowledge/` once — see
+declared roots (the bundle root moved twice: `.docs/` → `.knowledge/` → `docs/` — see
 [migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md) §1g). Each
 finding looks at exactly one site and is **idempotent** — migrating that one site clears it, whether
 or not the others have migrated yet. **ERROR**, decided in `renomear-docs-para-knowledge` `##
 Open Decisions`: nothing enforces it as a block — the plugin's self-installed enforcement hook, the
 one thing that could have denied a write on it, was retired.
 
-- **ERROR `okf-legacy-root`** — the new root is absent and the pre-rename root sits where it
-  should be.
+- **ERROR `okf-legacy-root`** — the new root is absent and a pre-rename root (`.docs/`,
+  `.knowledge/`) sits where it should be. One finding per former name found, each independent.
 - **ERROR `okf-legacy-home`** — a pre-rename home name (`knowledge/`, `reference/`) sits at the
   bundle root instead of its OKF name (`concepts/`, `external/`).
 - **ERROR `okf-legacy-doc-quadrant`** — a pre-rename Diátaxis quadrant (`getting-started/`,
   `concepts/`) sits under `documentation/` instead of its OKF name (`tutorials/`, `explanation/`).
 - **ERROR `okf-legacy-glossary`** — `glossary.md` sits inside a home instead of at the bundle root.
+
+**ERROR `not-an-okf-bundle`** is the sibling of these, not one of them: it fires on a directory
+that exists but carries no OKF **signature** (a root `index.md` declaring `okf_version`), and it
+**withholds every per-file OKF verdict** for that tree — `no-frontmatter`, `broken-frontmatter`,
+`missing-type`, the recommended-field WARNs and the `index-*` frontmatter rules. Structural and
+`okf-legacy-*` findings still fire, because those are what `align` reads to migrate the target.
+The gate exists because the root is named `docs/`: a name no repository holds by accident became
+the commonest documentation folder there is, and without it a target's ordinary `docs/` answers a
+validate run with one ERROR per document instead of one about the tree.
 
 ## Structural integrity (whole-tree — CLI + `Stop` only)
 
@@ -125,11 +134,11 @@ A doc that is provably **lying about itself**. These join the structural set the
   implemented, and flagging syntax nobody writes would make the must-fix set unusable.
 - **WARN `resource-self`** — the doc's own path falls inside the scope its `resource` declares.
   Such a doc governs nothing, so its activity is unmeasurable and the figure says so.
-  Matching is **segment-wise**: a single `*` does not cross a `/`, so `/.knowledge/*` does not contain
-  a deeper path like `/.knowledge/standards/<subject>.md`.
+  Matching is **segment-wise**: a single `*` does not cross a `/`, so `/docs/*` does not contain
+  a deeper path like `/docs/standards/<subject>.md`.
   - **The bundle-aggregate exemption.** An entry whose scope contains the bundle **root** is an
     aggregate, not a mistake, and never raises this. The bundle-root `glossary.md` really does govern
-    the whole bundle, so `resource: /.knowledge/**` is truthful and narrowing it would be the
+    the whole bundle, so `resource: /docs/**` is truthful and narrowing it would be the
     fabrication. This is `TYPES_WITHOUT_RESOURCE` generalized — one exemption mechanism, not two.
 
 ## Resource activity (CLI only — a figure, never a finding)
@@ -159,8 +168,8 @@ that the plugin's self-installed enforcement hook — the one caller with a late
 <!-- rules -->
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate <repo>/.knowledge        # human report; exit 0/1
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate <repo>/.knowledge --json # machine-readable findings
+python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate <repo>/docs        # human report; exit 0/1
+python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate <repo>/docs --json # machine-readable findings
 ```
 
 Config block `okfValidate` in `hooks-config.json` (`warnAsError`, plus `ignoreGlobs` alongside it)
@@ -171,7 +180,7 @@ paths from the scan.
 
 <!-- rules -->
 
-A bundle is **aligned** when `cq knowledge validate /.knowledge` exits 0 **and** the structural-integrity and
+A bundle is **aligned** when `cq knowledge validate /docs` exits 0 **and** the structural-integrity and
 resource-integrity WARNs are all cleared — **zero** `dir-no-index`, `index-broken-link`,
 `index-orphan`, `glossary-broken-link`, `generated-listing-missing`, `generated-listing-drift`,
 `resource-unresolved`, `resource-self`. (These are WARN,

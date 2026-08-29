@@ -9,7 +9,7 @@ how a run absorbs the work it revealed.
 This contract lives in the plugin, never in a target's bundle: it is procedure a command needs
 while running inside a target, not a fact about that target, so it is cited by
 `../..` from every repo the same way — never installed, and never resolved from a
-target's own `/.knowledge/`.
+target's own `/docs/`.
 
 ## Contents
 

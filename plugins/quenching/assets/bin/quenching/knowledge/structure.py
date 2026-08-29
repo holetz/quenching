@@ -78,8 +78,8 @@ def _resolve_link(target: str, file_dir: str, root: str):
     flagged — for anything OKF does not govern: external URLs, anchors, mailto/tel,
     non-markdown assets (`.png`/`.pdf`/…), links that escape the bundle root
     (repo files, `../..` climbs), and repo-absolute `/…` links not written in the
-    bundle's own form (`/.knowledge/…` or `/<home>/…`). We only police the bundle's own
-    link graph, so a legitimate reference to a repo file outside `/.knowledge/` is not a
+    bundle's own form (`/docs/…` or `/<home>/…`). We only police the bundle's own
+    link graph, so a legitimate reference to a repo file outside `/docs/` is not a
     false "broken link".
     """
     t = target.split("#", 1)[0].strip()
@@ -100,7 +100,7 @@ def _resolve_link(target: str, file_dir: str, root: str):
     if t.startswith("/"):
         rest = t[1:]
         first, _, tail = rest.partition("/")
-        if first == os.path.basename(root):          # `/.knowledge/…` — this plugin's bundle-absolute form
+        if first == os.path.basename(root):          # `/docs/…` — this plugin's bundle-absolute form
             rest = tail
         elif not os.path.isdir(os.path.join(root, first)):
             return None                              # repo-absolute `/…` (e.g. `/.claude/…`) — not bundle-governed

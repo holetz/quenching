@@ -1,6 +1,6 @@
 ---
 name: quenching-knowledge-align
-description: "Force /.knowledge/ into the canonical OKF v0.1 bundle AND pull in the content sitting out-of-band — one command, probe first, looped to a fixpoint. Triggers on \"align the docs\", \"align and update docs\", \"fix the documentation structure\", \"install the OKF bundle\", \"set up /.knowledge/\", or \"converge the knowledge base\". Probes cq knowledge validate plus two cheap out-of-band signals before reading anything, then inventories and applies one confirmed alignment plan."
+description: "Force /docs/ into the canonical OKF v0.1 bundle AND pull in the content sitting out-of-band — one command, probe first, looped to a fixpoint. Triggers on \"align the docs\", \"align and update docs\", \"fix the documentation structure\", \"install the OKF bundle\", \"set up /docs/\", or \"converge the knowledge base\". Probes cq knowledge validate plus two cheap out-of-band signals before reading anything, then inventories and applies one confirmed alignment plan."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/align.md -->
@@ -8,7 +8,7 @@ description: "Force /.knowledge/ into the canonical OKF v0.1 bundle AND pull in 
 
 # quenching-knowledge-align — force the knowledge base into OKF shape, and keep filling it
 
-**Input**: `$ARGUMENTS` (optionally a `/.knowledge/` path or a scope; omit to align the whole bundle).
+**Input**: `$ARGUMENTS` (optionally a `/docs/` path or a scope; omit to align the whole bundle).
 
 The **`docs` front's one entry point**. It installs and enforces a single canonical OKF v0.1
 bundle so every repo that adopts this plugin looks the same — **and** it pulls in the durable
@@ -25,7 +25,7 @@ The payload (skeleton, molds, validator) lives at `../../assets/`; the contract 
 - [knowledge-align/cycle.md](../../references/knowledge-align/cycle.md) — the stage pipeline, the parallel-prep flow, and the finding → owning-command routing table.
 
 The executable checker is `cq`
-(`cq knowledge validate /.knowledge` → exit 0 = conforms). Define the per-call wrapper from
+(`cq knowledge validate /docs` → exit 0 = conforms). Define the per-call wrapper from
 the tool-resolution reference, then invoke `cq` in that same Bash call —
 [align/tool-resolution.md](../../references/align/tool-resolution.md)
 §Write the resolved path literally on every invocation.
@@ -33,13 +33,13 @@ the tool-resolution reference, then invoke `cq` in that same Bash call —
 ## Doctrine (non-negotiable)
 
 Read [align/sweep-doctrine.md](../../references/align/sweep-doctrine.md).
-What follows is specific to `/.knowledge/`:
+What follows is specific to `/docs/`:
 
 **Why `Bash` is unrestricted here.** This front probes and updates the target's fixed bundle,
 harness, memory store, Git refs and optional site layer; those commands have no safe common prefix
 to enumerate in `allowed-tools`, and each write remains gated by the workflow below.
 
-- **This is the one front with a real loop.** `/.knowledge/` has two out-of-band stores that feed it and a
+- **This is the one front with a real loop.** `/docs/` has two out-of-band stores that feed it and a
   glossary derived from everything in it, so one pass genuinely creates work for the next: a fact
   the harness MOVEs in is a term the glossary must then index. The loop ends at a **fixpoint** —
   a pass that changed nothing with the validator clean — never after a fixed count, bounded by a
@@ -78,10 +78,10 @@ to enumerate in `allowed-tools`, and each write remains gated by the workflow be
 ## Workflow (probe → ONE OK → pass → re-probe → loop)
 
 ### 1. Probe — the three reads that decide whether anything else runs
-Resolve the bundle at its fixed root `/.knowledge/`, then read all three signals and nothing
+Resolve the bundle at its fixed root `/docs/`, then read all three signals and nothing
 else:
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" knowledge validate /.knowledge --json          # structure: exit 0 = conformant
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" knowledge validate /docs --json          # structure: exit 0 = conformant
 ls ~/.codex/projects/<cwd>/memory/    # out-of-band store 1: any undrained memory?
 ```
 plus one `Read` of each harness file that exists (`AGENTS.md`, `AGENTS.md`) — a fat one inlines
@@ -92,7 +92,7 @@ Branch as sweep-doctrine §Probe before the inventory prescribes:
 
 | Probe result | What happens |
 | --- | --- |
-| validator exit 0 with no findings, memory dir empty, harness thin | **STOP.** Report "`/.knowledge/` conformant, N docs, nothing out-of-band, nothing to align" and end. No inventory, no plan, no confirmation. |
+| validator exit 0 with no findings, memory dir empty, harness thin | **STOP.** Report "`/docs/` conformant, N docs, nothing out-of-band, nothing to align" and end. No inventory, no plan, no confirmation. |
 | exit 0 and the only findings are ones this command **surfaces** rather than closes (cycle.md's routing table, rightmost column `No`) | STOP the same way, then list them with the command that closes each. |
 | any signal shows work | Continue to step 2. |
 
@@ -146,7 +146,7 @@ Show the whole plan, including which content stages will run and the pass cap th
 still pauses for its own confirmation, always."*
 
 For each variant rename, sweep references per sweep-doctrine §The blast-radius sweep and **report
-the scope**: how many files, which reach **product code**, which non-`/.knowledge/` referrers (commands,
+the scope**: how many files, which reach **product code**, which non-`/docs/` referrers (commands,
 `AGENTS.md`, prose links) the rename edits. When the rename set is more than a handful, delegate
 the mechanical collection to **one read-only `Task` sub-agent** (`model: haiku`, `effort: low`)
 returning `rename → [file:line, …]` and classify each hit yourself. The batch OK covers exactly the
@@ -165,7 +165,7 @@ plan was rejected and nothing was written.
   its **fixed `glossary.md` seed** — the repo's A–Z term lookup — to the bundle root, and list it in
   `concepts/index.md` (it is the only pre-seeded concept doc the skeleton ships).
 - **Migrate** variants: move the folder, update every cross-ref found in step 3 (relative
-  within a home, absolute `/.knowledge/...` across homes).
+  within a home, absolute `/docs/...` across homes).
 - **Resolve `okf-legacy-*` sites** ([migration.md](../../references/knowledge-align/migration.md)
   §1g): `git mv` the root/home/quadrant/glossary to its canonical name, root first, then repoint
   every code-coupled reference the blast-radius sweep found (a path default, a docstring, a hook's
@@ -179,7 +179,7 @@ plan was rejected and nothing was written.
   its real children (no `dir-no-index`, no `index-broken-link`, no `index-orphan` left behind);
   strip stray frontmatter; for `standards/index.md` rebuild only the
   `<!-- BEGIN/END GENERATED -->` zone from disk.
-- **Write** `okf_version: "0.1"` into the root `/.knowledge/index.md` frontmatter.
+- **Write** `okf_version: "0.1"` into the root `/docs/index.md` frontmatter.
 - **Never create a `log.md`, and never touch one that is already there.**
 
 **Done when:** every approved (a)–(f) item is on disk and no unapproved item was touched.
@@ -191,11 +191,11 @@ Both are one-shot scaffolding, not loop stages; skip this step entirely on later
 (`AGENTS.md` / `AGENTS.md`) carries no declaration yet. Ask for one BCP-47 tag — `pt-BR`, `en`,
 `ja` — and write a single line into that root file:
 
-    Language: <tag> — the contract is /.knowledge/standards/agents/communication.md
+    Language: <tag> — the contract is /docs/standards/agents/communication.md
 
 That line carries **a value and a citation, and nothing else**: never a paraphrase of the rule, and
 never a second configuration key. The rule itself belongs to
-`/.knowledge/standards/agents/communication.md`, which the structural pass (step 4) has already put on
+`/docs/standards/agents/communication.md`, which the structural pass (step 4) has already put on
 disk — so the citation resolves the moment it is written.
 
 **Declining is a complete answer.** A repo that declares nothing is under no constraint, and
@@ -248,7 +248,7 @@ The order and the reason for it are
 [knowledge-align/cycle.md](../../references/knowledge-align/cycle.md) §The stage
 pipeline's, not this body's. When **both** have work this pass, follow its §Parallel prep —
 harness's read-only discovery runs in a background `Task` agent while the drain executes inline.
-**Writes to `/.knowledge/` are one stage at a time, always.**
+**Writes to `/docs/` are one stage at a time, always.**
 
 Record what each stage reports it changed; the loop decision in step 8 reads it.
 **Done when:** each non-empty stage has run and reported, or every stage was empty and skipped.
@@ -266,7 +266,7 @@ run. Never run the sweep to discover whether it had work.
 the offer was deliberately not made.
 
 ### 8. Verify, then decide: loop or stop
-Re-run `cq knowledge validate /.knowledge --json` and confirm: every non-reserved doc has frontmatter and a
+Re-run `cq knowledge validate /docs --json` and confirm: every non-reserved doc has frontmatter and a
 non-empty `type`; every `index.md` is frontmatter-free (root only `okf_version`); and the
 **structural-integrity WARNs are cleared — zero `dir-no-index`, `index-broken-link`,
 `index-orphan`** (these are WARN, so exit 0 alone does not prove them clean — inspect the
@@ -308,7 +308,7 @@ command, or explicitly states that no residue remains.
   listing that links to a nonexistent file (a lying index).
 - Never hand-edit a `<!-- BEGIN/END GENERATED -->` zone — regenerate it from disk.
 - Never reimplement a content stage's logic here — **invoke** it, and never let two stages write
-  `/.knowledge/` concurrently.
+  `/docs/` concurrently.
 - Never author content to close a gap that needs human input — **surface** it with its per-item
   command, never fabricate a standard, a concept, or a term.
 - Never loop past the pass cap, never re-run a no-progress pass, and never treat validator exit 0

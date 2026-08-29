@@ -1,12 +1,12 @@
 # Where an abandoned outcome's writes land
 
-Everything `/quenching:specs:conclude`'s `--outcome abandoned` path writes — the emergent `/.knowledge/` in
+Everything `/quenching:specs:conclude`'s `--outcome abandoned` path writes — the emergent `/docs/` in
 step 3, the archive move and `## Outcome` in step 4, the distillation's background note in step 5 —
 lands in the checkout that already holds `<base>`, never on the work branch. There is no merge to
 carry a branch commit home, so a record left on the branch would depend on a branch nobody adopted
 still existing.
 
-`/.knowledge/standards/workflows/plan-git-record.md` §Every record is written where it needs to
+`/docs/standards/workflows/plan-git-record.md` §Every record is written where it needs to
 survive is the contract, where a target repo keeps one; this file is the mechanics `conclude.md`'s
 steps 3, 4, 5 and 6 cite rather than restate.
 
@@ -43,7 +43,7 @@ path>/.specs status --spec <id> --json`, in place of the bare form.
 
 <!-- rules -->
 
-- **Step 3, the emergent `/.knowledge/`** — whatever the branch review surfaced, in its own commit.
+- **Step 3, the emergent `/docs/`** — whatever the branch review surfaced, in its own commit.
 - **Step 4, the archive move** — the promote itself lands in the PROVIDER, which no checkout owns,
   so there is nothing to mirror into the base for it. What this step commits into the base checkout
   is whatever local record the move produced beside it, and nothing else.
@@ -67,5 +67,5 @@ and say the branch stays until the worktree is removed or the human deletes it f
 the branch is checked out nowhere does the offer below apply.
 
 Then offer, default **keep** —
-`/.knowledge/standards/workflows/plan-git-record.md` §A branch is deleted with `-d`, never `-D`,
+`/docs/standards/workflows/plan-git-record.md` §A branch is deleted with `-d`, never `-D`,
 where a target repo keeps one, governs the offer itself and the refusal.

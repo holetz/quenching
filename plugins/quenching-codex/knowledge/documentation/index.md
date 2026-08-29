@@ -31,7 +31,7 @@ then on by the **documentation family** — `plan`, `write`, `review`,
 and `build`, conducted end to end by `produce` (the site layer's owner is `build`, which handles
 config, the `nav`, CSS and a `zensical build --strict` check):
 
-- The generator points here — `docs_dir = ".knowledge/documentation"` in `zensical.toml` (kept at
+- The generator points here — `docs_dir = "docs/documentation"` in `zensical.toml` (kept at
   the repo root, **outside** the bundle).
 - Each reserved `index.md` doubles as the **section landing page** (the theme's
   `navigation.indexes` feature) — no separate landing file needed.
@@ -42,4 +42,4 @@ config, the `nav`, CSS and a `zensical build --strict` check):
 - **Editorial publication map:** `plan` decides, for every home, whether it is published,
   published through a curated route below `documentation/`, or not published. An exposed home is
   linked through that route; a `não publicar` home has no site link. Never publish an internal
-  `/.knowledge/<home>/…` path as dead prose or as a broken URL.
+  `/docs/<home>/…` path as dead prose or as a broken URL.

@@ -237,7 +237,7 @@ both — has been fully honoured.
 - **Never carry a plan's merge obligations into `## Tasks`.** On the plan-source path a native plan's
   "Etapas" routinely end in a version bump, a changelog entry or *update the docs*; none of them
   converts, because what the release *is* is unknowable until the last task lands.
-  `/quenching:specs:conclude` owns them, along with the `/.knowledge/` the work *reveals* and the cycle's
+  `/quenching:specs:conclude` owns them, along with the `/docs/` the work *reveals* and the cycle's
   own closing actions. A standard the plan declares the spec will write still becomes a checkbox.
 - Never accept a generated title or a `titleize` fallback when the input lacks a descriptive title.
 - **Never ask for a metadata field before the spec exists.** Subject, type, tags and `complexity`

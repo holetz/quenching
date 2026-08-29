@@ -9,7 +9,7 @@ description: "Build a sourced documentation plan for the OKF bundle, with reader
 # quenching-knowledge-documentation-plan — diagnose sources and record the documentation plan
 
 **Input**: `$ARGUMENTS` (optional source paths or a scope; omit to inspect the target repository's
-README, legacy docs, code, specs and `/.knowledge/standards/`).
+README, legacy docs, code, specs and `/docs/standards/`).
 
 This planning pass reads sources across the bundle and writes only the plan-of-record at
 `./.quenching/documentation/plan.md`. The six contracts, the architecture rules
@@ -31,7 +31,7 @@ source provenance is defined by
 
 ### 1. Confirm the target and inventory sources
 
-Resolve the repository root and verify `/.knowledge/index.md`, then inventory `documentation/`,
+Resolve the repository root and verify `/docs/index.md`, then inventory `documentation/`,
 `standards/`, `concepts/`, `external/`, `catalog/`, `vision/` and root `glossary.md`. Collect source
 paths, heading skeletons, links, existing nav/config and relevant code/specs with read-only tools.
 The inventory is the whole bundle even when the requested editorial slice is small. **Done when:**
@@ -64,7 +64,7 @@ The publication map is a closed coverage contract. Include one row for every sou
 root glossary, with a route for `publicar`/`publicar derivado` and an explicit `não publicar`
 decision where a home is intentionally withheld. The denominator for coverage is every mandatory
 row, not only the pages selected for this pass. Every derived route must state its source and
-transformation, and every internal `/.knowledge/` link in the published projection must resolve
+transformation, and every internal `/docs/` link in the published projection must resolve
 to a mapped published route or be removed from the projection.
 
 For `catalog/`, the inventory must also record the catalog contract before assigning pages:
@@ -114,5 +114,5 @@ lists its path, assignments and remaining gaps.
 - Never write a documentation page in this pass.
 - Never fabricate a fact, source, statistic, quote, title or destination.
 - Never infer that a home is internal or public from its name; the editorial map is the only publication boundary.
-- Keep the plan at `.quenching/documentation/plan.md`, never under `/.knowledge/documentation/`.
+- Keep the plan at `.quenching/documentation/plan.md`, never under `/docs/documentation/`.
 - A declined OK leaves the target unchanged.

@@ -147,7 +147,7 @@ def render_abbreviations(source: Path, entries: list[GlossaryEntry]) -> str:
     """Render the complete abbreviation file, including its provenance header."""
     digest = source_sha256(source)
     lines = [
-        "<!-- GENERATED FILE — do not edit; source: /.knowledge/glossary.md -->",
+        "<!-- GENERATED FILE — do not edit; source: /docs/glossary.md -->",
         f"<!-- source_sha256: {digest} -->",
         "",
     ]
@@ -211,8 +211,8 @@ def _bundle_target(raw: str, source_rel: str) -> str | None:
     if parsed.scheme or parsed.netloc:
         return None
     path = parsed.path
-    if path.startswith("/.knowledge/"):
-        path = path[len("/.knowledge/"):]
+    if path.startswith("/docs/"):
+        path = path[len("/docs/"):]
     elif path.startswith("/"):
         path = path.lstrip("/")
     elif source_rel == GLOSSARY_REL and path.startswith("../"):
@@ -288,8 +288,8 @@ def render_route(source: Path, entries: list[GlossaryEntry], routes: dict[str, s
         "type: documentation",
         "title: Glossary",
         "description: Published vocabulary projected from the canonical bundle glossary.",
-        "resource: /.knowledge/glossary.md",
-        "source: /.knowledge/glossary.md",
+        "resource: /docs/glossary.md",
+        "source: /docs/glossary.md",
         f"source_sha256: {digest}",
         "generated: true",
     ]
@@ -303,7 +303,7 @@ def render_route(source: Path, entries: list[GlossaryEntry], routes: dict[str, s
         "This page is generated from the canonical bundle glossary. Edit the source file; the",
         "published route and abbreviation definitions are projections, never second sources.",
         "",
-        f"<!-- GENERATED FROM /.knowledge/glossary.md; source_sha256: {digest} -->",
+        f"<!-- GENERATED FROM /docs/glossary.md; source_sha256: {digest} -->",
     ]
     for entry in sorted(entries, key=lambda item: (item.term.casefold(), item.term)):
         if _abbr_supported(entry.term):
@@ -413,7 +413,7 @@ def projection_findings(bundle: Path, plan: str | None = None, config: Path | No
     else:
         actual = route.read_text(encoding="utf-8")
         fm = parse_frontmatter(actual)
-        if fm.get("source") != "/.knowledge/glossary.md":
+        if fm.get("source") != "/docs/glossary.md":
             add("glossary-source-missing", "route does not record the canonical source", route)
         if str(fm.get("source_sha256", "")).strip() != digest:
             add("glossary-source-hash-stale", "route source hash does not match the canonical glossary", route)

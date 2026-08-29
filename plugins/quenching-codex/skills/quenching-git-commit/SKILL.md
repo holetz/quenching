@@ -53,5 +53,5 @@ State the sha, the subject, and the committed files. **Done when:** all three ar
 - **Never `--no-verify` or `--no-gpg-sign`.** A rejecting hook is a finding to report, not an
   obstacle to route around.
 - **Never amend or rewrite an existing commit, and never force-push.**
-- **Never install `.knowledge/standards/git/**` into the target.** A convention read here is
+- **Never install `docs/standards/git/**` into the target.** A convention read here is
   followed, never written back.

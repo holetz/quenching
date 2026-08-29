@@ -213,7 +213,7 @@ Shape it so `/quenching:specs:execute` can walk it top to bottom:
 - **Verification belongs in the list** — a task whose completion is "tests pass" or "the standard
   is written and self-checks clean" is a task, not an implicit hope.
 - **What the merge owns is never written here.**
-  A version bump, a changelog entry, a manifest re-stamp; the `/.knowledge/` the work *revealed* rather
+  A version bump, a changelog entry, a manifest re-stamp; the `/docs/` the work *revealed* rather
   than declared; and the cycle's own closing actions — all three belong to
   `/quenching:specs:conclude`, which settles them once the branch is written and what the release
   *is* is finally knowable. The axis is **declared versus revealed**, not docs versus code: the

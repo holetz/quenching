@@ -25,7 +25,7 @@ target repo to hold, so nothing installs it.
 
 Two consequences follow, and both are deliberate:
 
-  * It is **outside the six-artifact lockstep** of `/.knowledge/standards/ci-cd/versioning-release.md`.
+  * It is **outside the six-artifact lockstep** of `/docs/standards/ci-cd/versioning-release.md`.
     That lockstep exists because an align must decide whether an installed copy is stale;
     with no installed copy there is no such decision. `VERSION` below tracks the plugin for
     a legible `--version`, and no align compares it against anything.

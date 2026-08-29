@@ -65,7 +65,7 @@ evidence-backed.
 
 ### 4. Write the concept doc
 Write the file with `Write`. Favor structural markdown (headings, lists, tables). Cross-home
-links absolute (`/.knowledge/...`); within-home links relative. **Done when:** the concept file is
+links absolute (`/docs/...`); within-home links relative. **Done when:** the concept file is
 written without overwriting filled content.
 
 ### 5. Update the folder's `index.md`

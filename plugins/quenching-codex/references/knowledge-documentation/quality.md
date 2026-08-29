@@ -56,7 +56,7 @@ and indexes require an average of at least 3.5. A page below threshold after the
 reported with its failing dimensions and reason; it is not silently shipped.
 
 Coverage is `non-empty routed mandatory surfaces / mandatory publication-map rows × 100`. The
-surface inventory covers the whole `/.knowledge/` bundle, not only pages selected for one write
+surface inventory covers the whole `/docs/` bundle, not only pages selected for one write
 slice. A section with only a heading, placeholder, source gap, or the shipped skeleton's own
 section descriptor is not content and fails the gate
 until the plan marks it intentionally excluded. Internal planning markers (`TODO`, `.quenching/`, prompts and

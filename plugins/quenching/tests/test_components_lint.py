@@ -11,7 +11,7 @@ a BOOLEAN on purpose: `marker_present` does not read the reason, judge it, or me
 that graded prose would be inventing a verdict it cannot support.
 
 MUTATION PASS (2026-08-27, four mutations, each applied to `lint.py`, run, observed, reverted),
-per `.knowledge/standards/quality/selftest-mutation.md`. Run in both modes — this suite, and the
+per `docs/standards/quality/selftest-mutation.md`. Run in both modes — this suite, and the
 human `cq --root . components lint` arm over the real surface, where six bodies hold the grant and
 none carries the marker:
 

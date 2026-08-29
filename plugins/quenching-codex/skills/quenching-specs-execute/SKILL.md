@@ -14,7 +14,7 @@ auto-select when exactly one spec is under way; vague or ambiguous → you MUST 
 Builds the `## Tasks` of ONE spec: writing each task, verifying it under the spec's declared
 policy, reviewing its diff, and committing it alone with the box already ticked inside that commit.
 
-**This command stops at the last commit.** Reviewing the whole branch, writing the `/.knowledge/` the work
+**This command stops at the last commit.** Reviewing the whole branch, writing the `/docs/` the work
 revealed, merging, and archiving belong to `quenching-specs-conclude`.
 
 **Why `Bash` is unrestricted here.** Execution invokes the spec's target-declared verification,
@@ -194,17 +194,17 @@ handed over, so its record cannot enter this context at all. The payload says so
 `"scope": "current"`, never by leaving the caller to compare sizes. Drop the flag only to audit
 the whole history of the block.
 The path comes from what `status` resolved; never assume filenames. `## Impact` names the
-`/.knowledge/standards/` paths and the code this spec expects to touch.
+`/docs/standards/` paths and the code this spec expects to touch.
 
-Then, if the repo carries an OKF bundle (`/.knowledge/index.md` with `okf_version`), read the
-`/.knowledge/standards/**.md` files the spec **declares** under `## Impact`, plus the ones the current
-task's own text names — **never the folder** `/.knowledge/standards/<subject>/`, the wrong and the
+Then, if the repo carries an OKF bundle (`/docs/index.md` with `okf_version`), read the
+`/docs/standards/**.md` files the spec **declares** under `## Impact`, plus the ones the current
+task's own text names — **never the folder** `/docs/standards/<subject>/`, the wrong and the
 expensive unit ([execution.md](../../references/specs-execute/execution.md)
 §Tooling asides has the measurement). Those files are **binding contracts** for
 HOW the work is built, complementing the spec's own sections (WHAT to build). A task that
 contradicts one is surfaced (step 5), never silently resolved. No bundle → skip silently.
 
-A declared bullet may carry a `§`address beside its path — `/.knowledge/standards/automation/skills.md
+A declared bullet may carry a `§`address beside its path — `/docs/standards/automation/skills.md
 §Invocation and permission are authored decisions §The admission criterion`. With one, read
 exactly those sections (`cq components read <path> --sections "§A" --sections "§B"`); with none,
 read the file whole, exactly as today. The default never changes: reading less is an assertion the
@@ -242,7 +242,7 @@ parent. Then, for that task:
 a. **Show what is being worked on** — the ID, its declared `files:` and its `verify:`.
 
 b. **Write the code**, minimal and scoped to the declared files. A task that declares `files:` and
-   writes nothing under `/.knowledge/` **may** go to an executor sub-agent under
+   writes nothing under `/docs/` **may** go to an executor sub-agent under
    [execution.md](../../references/specs-execute/execution.md)
    §Delegating an executor — which also explains why this is **not** `context: fork` and leaves
    that rule untouched; when it is, load the rules that bound it before dispatching:
@@ -252,7 +252,7 @@ b. **Write the code**, minimal and scoped to the declared files. A task that dec
      --sections "§Delegating an executor"
    ```
 
-c. **Write only the `/.knowledge/` this task names.** When this task writes `/.knowledge/`, load the rule that
+c. **Write only the `/docs/` this task names.** When this task writes `/docs/`, load the rule that
    draws the line between declared and emergent, and the boundary it crosses:
 
    ```bash
@@ -262,7 +262,7 @@ c. **Write only the `/.knowledge/` this task names.** When this task writes `/.k
      --sections "§Boundary"
    ```
 
-   A `/.knowledge/standards/` path declared under `## Impact` and named by this task is part of its
+   A `/docs/standards/` path declared under `## Impact` and named by this task is part of its
    deliverable — written through the insert procedure in
    [knowledge-add/homes.md](../../references/knowledge-add/homes.md) §The frontmatter
    stamp §Updating `index.md` §Enriching the glossary §Self-check; stamp `authority` honestly and
@@ -359,7 +359,7 @@ i. **On a section boundary, OFFER to stop — and keep going if nobody says othe
    §The section boundary).
 
 **Pause if:** a task is unclear; implementation reveals a design problem (→ `quenching-specs-develop`); a
-task contradicts a `/.knowledge/standards/` contract (surface it and let the human pick — revise the
+task contradicts a `/docs/standards/` contract (surface it and let the human pick — revise the
 standard via `quenching-knowledge-add`, or the spec via `quenching-specs-develop`); attempts stop converging; or the user
 interrupts.
 **Done when:** every task is `- [x]` or `- [!]`, or the run pauses with the reason stated.
@@ -424,7 +424,7 @@ mid-plan.
 
 **At 100%**, after the block, offer once to chain straight into `quenching-specs-conclude` (the `Skill` tool, which takes
 the registry name): the branch review,
-the emergent `/.knowledge/`, the merge, and the archive-time distillation. Declined → the block already
+the emergent `/docs/`, the merge, and the archive-time distillation. Declined → the block already
 named the command, so stop. Paused → say why and wait.
 **Done when:** the summary is shown and the hand-off has been offered or declined.
 
@@ -480,11 +480,11 @@ front of you before the loop starts:
 - Never refuse over a missing `approved`; ask inline and stamp it with `cq specs record`, never by
   editing the frontmatter.
 - Stamp `branch:` once the work ref is resolved, taken or declined (`work` then equals `base`) — never over an existing record, through `cq specs record`, never the frontmatter.
-- Write **only** the `/.knowledge/` a task explicitly names. Emergent findings are one `cq specs discover`
+- Write **only** the `/docs/` a task explicitly names. Emergent findings are one `cq specs discover`
   line — never an unrequested standard, and never a loose code comment.
 - Delegate an executor only under
   [execution.md](../../references/specs-execute/execution.md)
-  §Delegating an executor (declares `files:`, touches no `/.knowledge/`, pinned to the session model —
+  §Delegating an executor (declares `files:`, touches no `/docs/`, pinned to the session model —
   **never `haiku`**), and run two tasks in parallel only when `cq specs parallel` reports the `[P]`
   group eligible.
 - Never review the whole branch, merge, or archive from here — that is `quenching-specs-conclude`, and

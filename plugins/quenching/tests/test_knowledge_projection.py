@@ -100,30 +100,30 @@ Prose — not an entry.
     def test_write_then_check_is_idempotent_and_updates_index_and_nav(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            source = root / ".knowledge" / "glossary.md"
+            source = root / "docs" / "glossary.md"
             source.parent.mkdir(parents=True)
             source.write_text("---\ntype: concept\n---\n\n## Terms\n\n- **ASRC** — expected loss stage\n")
-            reference = root / ".knowledge" / "documentation" / "reference"
+            reference = root / "docs" / "documentation" / "reference"
             reference.mkdir(parents=True)
             (reference / "index.md").write_text("# Reference\n")
             config = root / "zensical.toml"
             config.write_text("[project]\nnav = [\n  \"index.md\",\n]\n")
-            write_projection(root / ".knowledge", PLAN, config)
-            payload, findings = projection_findings(root / ".knowledge", PLAN, config)
+            write_projection(root / "docs", PLAN, config)
+            payload, findings = projection_findings(root / "docs", PLAN, config)
             self.assertFalse(findings, payload)
             before = {
                 str(path.relative_to(root)): path.read_bytes()
                 for path in (reference / "glossary.md", reference / "index.md", root / "zensical.toml",
-                              root / ".knowledge" / "documentation" / "assets" / "glossary-abbreviations.md")
+                              root / "docs" / "documentation" / "assets" / "glossary-abbreviations.md")
             }
-            write_projection(root / ".knowledge", PLAN, config)
+            write_projection(root / "docs", PLAN, config)
             after = {name: (root / name).read_bytes() for name in before}
             self.assertEqual(before, after)
             self.assertEqual(payload["terms"], 1)
 
     def test_stale_source_hash_and_projection_are_findings(self):
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp) / ".knowledge"
+            root = Path(tmp) / "docs"
             source = root / "glossary.md"
             source.parent.mkdir(parents=True)
             source.write_text("## Terms\n\n- **ASRC** — expected loss stage\n")
@@ -136,7 +136,7 @@ Prose — not an entry.
     def test_explicit_unpublish_does_not_materialize_or_leave_exposure(self):
         plan = PLAN.replace("publicar derivado | vocabulary", "não publicar | vocabulary")
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp) / ".knowledge"
+            root = Path(tmp) / "docs"
             source = root / "glossary.md"
             source.parent.mkdir(parents=True)
             source.write_text("## Terms\n\n- **ASRC** — expected loss stage\n")

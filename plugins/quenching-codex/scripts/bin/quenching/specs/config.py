@@ -388,7 +388,7 @@ def load_config(root: str) -> dict:
 
 def infer_base_branch(cfg: dict, origin_head: str | None, init_default: str | None) -> str:
     """An unstamped spec's `base`, stopping at the first that answers — the chain
-    /.knowledge/standards/workflows/plan-git-record.md declares once its own `branch.base`
+    /docs/standards/workflows/plan-git-record.md declares once its own `branch.base`
     record is absent, and the caller's own git facts (`origin_head`, `init_default`)
     already resolved: this function decides only the ORDER, never runs git itself.
 
