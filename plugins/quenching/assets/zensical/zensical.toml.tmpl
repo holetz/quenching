@@ -11,14 +11,14 @@
   # Azure DevOps and other unmapped hosts require an explicit, tested template.
   # edit_uri_template = "?path=/{path}&version=GB<branch>"
 
-  # The bundle root IS the site's source: every home publishes, and the glossary publishes
-  # itself rather than through a copied route. Never a dot-prefixed path here — one builds an
-  # empty site and still exits 0 (measured; see the plugin's zensical measured-behaviour doc).
-  docs_dir = "docs"
+  # Zensical 0.0.57 builds every Markdown file below docs_dir and does not support exclude_docs,
+  # draft_docs or not_in_nav. The bundle is therefore staged into a bounded sibling tree before
+  # each build; catalog/ and external/ never enter that tree. Do not point docs_dir at the bundle.
+  docs_dir = "site-source"
   site_dir = "site"
 
   # Zensical runs no MkDocs plugin, so order and titles live here rather than in `.pages` files.
-  # GENERATED from the bundle tree by `cq knowledge nav --write`, in reading order rather than
+  # GENERATED from the bounded tree by `cq knowledge nav --write`, in reading order rather than
   # alphabetical — but a title YOU write survives regeneration, so rename freely.
   nav = [
     "index.md",
@@ -28,8 +28,6 @@
     { "Project"     = [ "project/index.md" ] },
     { "Standards"   = [ "standards/index.md" ] },
     { "Concepts"    = [ "concepts/index.md" ] },
-    { "External"    = [ "external/index.md" ] },
-    { "Catalog"     = [ "catalog/index.md" ] },
     { "Vision"      = [ "vision/index.md" ] },
     "glossary.md",
   ]
@@ -103,7 +101,7 @@
   ]
 
 [project.markdown_extensions.pymdownx.snippets]
-  base_path = [ "docs" ]
+  base_path = [ "site-source" ]
   check_paths = true
   auto_append = [ "assets/glossary-abbreviations.txt" ]
 

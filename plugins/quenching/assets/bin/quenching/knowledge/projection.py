@@ -4,8 +4,8 @@ The bundle-root glossary is the only editable vocabulary source. It used to be p
 into a published `reference/glossary.md` route AND into the Python-Markdown abbreviation
 definitions — because the glossary sat OUTSIDE `docs_dir` and could only reach the site as a copy.
 
-The bundle root became `docs_dir`, so the glossary publishes itself and the route is gone. With it
-went the whole machine that existed to serve it: `HOMES`, the publication-map parser, and the
+The glossary is staged as `glossary.md` in the bounded Zensical source and the route machine is
+gone. With it went the whole machine that existed to serve it: `HOMES`, the publication-map parser, and the
 bundle-link -> published-route rewriting (`rewrite_link`, `_published_target`, `render_route` and
 their helpers). Links inside the bundle now resolve natively, so there is nothing left to rewrite.
 Removed rather than deprecated, per `standards/workflows/retiring-a-standard.md`.

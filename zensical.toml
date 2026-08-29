@@ -6,7 +6,10 @@
   # Local-only destination keeps sitemap generation deterministic without claiming a public host.
   site_url = "http://127.0.0.1:8000/"
   repo_url = "https://github.com/holetz/claude-quenching"
-  docs_dir = "docs"
+  # Zensical builds every Markdown file below docs_dir; unsupported exclude_docs/not_in_nav
+  # settings cannot protect a high-volume knowledge home. `site-source/` is staged from the
+  # bundle and never contains catalog/ or external/.
+  docs_dir = "site-source"
   site_dir = "site"
   nav = [
     "index.md",
@@ -42,6 +45,7 @@
         "standards/architecture/index.md",
         "standards/architecture/align-surface.md",
         "standards/architecture/bundle-root.md",
+        "standards/architecture/design-front.md",
         "standards/architecture/generated-listings.md",
         "standards/architecture/install-profiles.md",
         "standards/architecture/plugin-layout.md",
@@ -139,25 +143,6 @@
         "concepts/automation/skills-lint-warning-exit-code.md",
       ] },
     ] },
-    { "External" = [
-      "external/index.md",
-      { "Libraries" = [
-        "external/libraries/index.md",
-      ] },
-      { "Regulations" = [
-        "external/regulations/index.md",
-      ] },
-      { "Tools" = [
-        "external/tools/index.md",
-        "external/tools/azure-devops-cli-measured-behaviour.md",
-        "external/tools/claude-code-skill-command-mechanics.md",
-        "external/tools/github-cli-measured-behaviour.md",
-        "external/tools/zensical-measured-behaviour.md",
-      ] },
-    ] },
-    { "Catalog" = [
-      "catalog/index.md",
-    ] },
     { "Vision" = [
       "vision/index.md",
     ] },
@@ -215,7 +200,7 @@
   ]
 
 [project.markdown_extensions.pymdownx.snippets]
-  base_path = [ "docs" ]
+  base_path = [ "site-source" ]
   check_paths = true
   auto_append = [ "assets/glossary-abbreviations.txt" ]
 
