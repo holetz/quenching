@@ -1,7 +1,7 @@
 # Documentation architecture — intent-led structure and output contracts
 
 The information architecture that turns source files into a navigable Diátaxis site, plus the
-six intermediate contracts that make a documentation run reproducible.
+seven intermediate contracts that make a documentation run reproducible.
 
 ## Contents
 

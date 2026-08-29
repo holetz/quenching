@@ -1,7 +1,7 @@
 # `assets/zensical/` — the site setup payload (Zensical)
 
 Inert here, like the rest of `assets/`. `/quenching:knowledge:align` (Step 7) stamps these into a target
-repo **once**, while scaffolding the bundle, so the editorially mapped `documentation/` tree renders as a site;
+repo **once**, while scaffolding the bundle, so the OKF bundle renders as a site;
 `/quenching:knowledge:documentation:build` **owns** the layer after that — it installs, merges forward,
 keeps the `nav` in step with the folder tree, and verifies the build. **The OKF
 markdown stays generator-neutral; only this config layer names a generator.**
@@ -10,7 +10,7 @@ markdown stays generator-neutral; only this config layer names a generator.**
 | --- | --- | --- |
 | `zensical.toml.tmpl` | repo root `zensical.toml` | only if absent; fill `site_name`/`site_description`; keep `docs_dir = "docs/documentation"` and add only map-approved routes |
 | `requirements.txt` | repo root, only when no `pyproject.toml` is used | `zensical` |
-| `quenching.css` | the `documentation/` home, at `assets/stylesheets/quenching.css` | static CSS for badges, hero, cards and reduced-motion guard; `extra_css` in `zensical.toml` wires it |
+| `quenching.css` | the bundle, at `assets/stylesheets/quenching.css` | the reduced-motion guard, and nothing else — the badge/hero/card rules went with the theme constructs the generator-neutral rule removed; `extra_css` in `zensical.toml` wires it |
 | `ci-github-pages.yml` | `.github/workflows/docs.yml` | opt-in; GitHub Pages via the Pages artifact — the repo's Pages source must be "GitHub Actions" |
 | `azure-pipelines-docs.yml` | `azure-pipelines-docs.yml` | opt-in; Azure DevOps publishes the strict `site/` output as `documentation-site` |
 
@@ -57,7 +57,7 @@ when a local preview is explicitly requested.
 
 `index.md` in each section is the section landing page (`navigation.indexes`). The plan's **Mapa
 editorial de publicação** decides whether another OKF home is published, published through a
-curated mirror below `documentation/`, or absent. Links use that mapped route — never an internal
+curated mirror, or absent. Links use that mapped route — never an internal
 `/docs/<home>/…` path. A `não publicar` home has no route or nav entry.
 
 The glossary route is `reference/glossary.md`. When the canonical root `glossary.md` has content,

@@ -40,7 +40,7 @@ excluding `index.md`, `log.md`, and harness files (`CLAUDE.md`/`AGENTS.md`). `ca
 
 ### 3. Slice and fan out
 Group the remaining paths by top-level home (`standards/`, `vision/`,
-`documentation/`, `concepts/`, `external/` minus the excluded slice);
+the reader-facing quadrants, `concepts/`, `external/` minus the excluded slice);
 split further if a home runs large (~15–20 docs per
 agent). Dispatch one `Task` sub-agent per slice — with `model: haiku` and `effort: low`:
 a slice agent does pure extraction and returns compact tuples, and over-collection is

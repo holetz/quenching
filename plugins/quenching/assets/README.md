@@ -13,7 +13,7 @@ procedure moved in, and the wider one is what the inventory below is organized b
 
 Everything here is reached by absolute path — `${CLAUDE_PLUGIN_ROOT}/assets/…` — never relatively,
 because a relative path encodes the depth of the *citing* file and `commands/align.md` and
-`commands/docs/documentation/build.md` would need different strings for the same target.
+`commands/knowledge/documentation/build.md` would need different strings for the same target.
 
 ## Inventory — four reasons a file sits here
 
@@ -28,7 +28,7 @@ because a relative path encodes the depth of the *citing* file and `commands/ali
 
 | Path | What it is | Installs into the target as |
 | --- | --- | --- |
-| `knowledge/` | the canonical **OKF bundle skeleton** — 23 reserved `index.md` listings (only the root carries frontmatter, and only `okf_version`), `standards/CLAUDE.md`, the 5 `.pages` nav files inside `documentation/**`, and the fixed `glossary.md` term-lookup seed | the target's `/docs/`, only the homes that apply |
+| `knowledge/` | the canonical **OKF bundle skeleton** — the reserved `index.md` listings (only the root carries frontmatter, and only `okf_version`), `standards/CLAUDE.md`, and the fixed `glossary.md` term-lookup seed | the target's `/docs/`, only the homes that apply |
 | `specs/plans/.gitkeep` | keeps the active-spec folder in git while empty — the folder IS the listing, and `cq specs list` derives it from disk | `/.specs/plans/` |
 | `specs/archive/.gitkeep` | keeps the closed-spec folder in git while empty | `/.specs/archive/` |
 | `zensical/` | the **site layer** payload — `zensical.toml.tmpl`, `requirements.txt`, opt-in `ci-github-pages.yml` (the nav ships inside the config, not as sidecar files) | the target's repo **root**, outside `/docs/` |

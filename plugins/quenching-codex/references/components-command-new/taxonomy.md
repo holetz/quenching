@@ -114,7 +114,7 @@ automation surface navigable the same way the repo is.
 ## The registry and its GENERATED zone
 
 <!-- rules -->
-The registry at `knowledge/documentation/reference/automation.md` (`type: documentation`,
+The registry at `docs/project/automation.md` (`type: project`,
 stamped from `assets/templates/automation/registry.md`) is the bundle's authoritative
 listing of the local automation surface.
 

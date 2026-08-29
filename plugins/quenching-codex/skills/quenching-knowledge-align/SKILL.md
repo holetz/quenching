@@ -113,9 +113,10 @@ route every probe finding to its owner via
 [knowledge-align/cycle.md](../../references/knowledge-align/cycle.md)'s table. Produce
 the plan — enumerate:
   - **(a)** homes to scaffold (only those that apply);
-  - **(a2)** pre-rename plugin-layout sites to migrate (`okf-legacy-root`/`-home`/`-doc-quadrant`/
-    `-glossary` findings) — the bundle root, a home, a `documentation/` quadrant, or the glossary
-    still sitting under a name a plugin release retired; resolved via
+  - **(a2)** pre-rename plugin-layout sites to migrate (`okf-legacy-root`/`-home`/
+    `-documentation-home`/`-doc-quadrant`/`-glossary` findings) — the bundle root, a home, the
+    retired `documentation/` wrapper, a quadrant under it, or the glossary still sitting under a
+    name a plugin release retired; resolved via
     [knowledge-align/migration.md](../../references/knowledge-align/migration.md)
     §1g, each swept for blast radius like any other rename (f);
   - **(b)** variants to migrate/rename (with per-item destination);
@@ -160,7 +161,7 @@ plan was rejected and nothing was written.
 
 ### 4. Execute the structural pass (invasive)
 - **Scaffold** missing homes from `../../knowledge/` (copy the applicable
-  `index.md` listings, e.g. `documentation/**`; adapt boundary
+  `index.md` listings, e.g. `tutorials/**`; adapt boundary
   lines to the repo). When scaffolding `concepts/`, also copy
   its **fixed `glossary.md` seed** — the repo's A–Z term lookup — to the bundle root, and list it in
   `concepts/index.md` (it is the only pre-seeded concept doc the skeleton ships).
@@ -204,7 +205,8 @@ bundle, never write the line into a nested harness file — only the root one is
 session start, which is the whole reason this form was chosen — and on a repo that already declares
 one, read it and move on rather than asking again.
 
-**The documentation site.** Only if the bundle has a `documentation/` home. First inspect the
+**The documentation site.** The whole bundle is the site's source, so this applies to any bundle
+— there is no separate home to check for. First inspect the
 target root's `pyproject.toml`, `uv.lock` and `requirements.txt`, then preserve the dependency
 manager already in use. When the project declares uv (`uv.lock` exists or `pyproject.toml` has a
 `[tool.uv]` table), add `zensical>=0.0.57` to its development group with `uv add --dev` when it is
@@ -218,8 +220,8 @@ missing toolchain and leave the project files untouched.
 
 Offer to copy from `../../assets/zensical/`: `zensical.toml.tmpl` → the repo
 **root** as `zensical.toml` **only if absent** (never clobber a customized one — show a diff and
-let the user merge), filling `site_name`/`site_description`; `quenching.css` → the
-`documentation/` home's own `assets/stylesheets/quenching.css`, the path `extra_css` names; on
+let the user merge), filling `site_name`/`site_description`; `quenching.css` → the bundle's own
+`assets/stylesheets/quenching.css`, the path `extra_css` names; on
 request, `ci-github-pages.yml` → `.github/workflows/docs.yml` (opt-in, platform-specific), or
 `azure-pipelines-docs.yml` → `azure-pipelines-docs.yml` only when the target remote is Azure DevOps.
 The Azure payload publishes a `documentation-site` artifact and never deploys remotely. The nav
