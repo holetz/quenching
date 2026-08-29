@@ -54,5 +54,5 @@ checks, recommendations citing the standard each applies. Fixes re-enter through
 command that owns authoring, under its own confirmation.
 
 The full pricing doctrine lives once, in
-[capabilities.md](/plugins/quenching/assets/references/components-command-new/capabilities.md)
+`plugins/quenching/assets/references/components-command-new/capabilities.md`
 §Subagents; this standard is the repo-side projection of it.

@@ -27,7 +27,7 @@ custa um par de turnos por unidade de trabalho, e cada turno re-envia a conversa
 > o gate dele é custo sem contraparte.
 
 As duas classes são as mesmas que
-[`align/convergence.md`](/plugins/quenching/assets/references/align/convergence.md)
+`plugins/quenching/assets/references/align/convergence.md`
 §The cycle-authorization contract já protege — este critério não inventa uma terceira, e um comando
 não sai do gate por ser barato, curto ou "de baixo risco". Ele sai por não conter nenhuma das duas.
 

@@ -326,12 +326,12 @@ them — the unit worth reverting, reading and reviewing is the section that shi
 each task that built it.
 
 **Every task still gets its own commit while its section is open.** The chain that verifies, ticks
-and commits it — [execution.md](/plugins/quenching/assets/references/specs-execute/execution.md)
+and commits it — `plugins/quenching/assets/references/specs-execute/execution.md`
 §The commit — is unchanged: retrying, blocking and resuming a task mid-section reads off a real,
 individual commit, exactly as before. Only once the section's last task commits clean, with none of
 the section `[!]`, does it collapse — a local `git reset --soft` to the **sha captured when the
 section opened**, plus one recommit, per
-[execution.md](/plugins/quenching/assets/references/specs-execute/execution.md) §The section squash
+`plugins/quenching/assets/references/specs-execute/execution.md` §The section squash
 — never touching a prior section's commits, never anything already shared. The isolation taken at
 the start still buys everything it always did: what changes is which commit survives, never whether
 the work was proved before it landed.
@@ -424,7 +424,7 @@ That is the same rule the no-git case above already states, one level down: **no
 no anchor is invented**, rather than a placeholder that reads like a record.
 
 The trigger is the task's own `files:`, never the configured backend, because `files:` is already a
-deliberate declaration and not a convenience ([artifacts.md](/plugins/quenching/assets/references/specs-develop/artifacts.md)
+deliberate declaration and not a convenience (`plugins/quenching/assets/references/specs-develop/artifacts.md`
 §Execution metadata) — a task written without it has declared it produces no diff. One rule holds on
 both sides of the backend split: where the backend keeps the spec in the working tree the
 checkbox-only commit is merely deferred, riding along in the next task's commit or in the section's
@@ -440,7 +440,7 @@ symmetric to `sp-bad-merge` is a separate surface, deliberately not built here.
 
 **The section squash narrows the anchor's granularity, never its resolvability.** The moment a
 section's commits collapse into one, every task the section held is re-stamped onto that one
-surviving commit's subject (or sha) — [execution.md](/plugins/quenching/assets/references/specs-execute/execution.md)
+surviving commit's subject (or sha) — `plugins/quenching/assets/references/specs-execute/execution.md`
 §The section squash. `git log --grep`, or the sha lookup, still resolves for every one of those
 tasks; it resolves to the section's commit rather than a commit of that task's own.
 

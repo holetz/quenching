@@ -25,7 +25,7 @@ forgets to *not* make:
 1. **Remove its checker** — the dispatch to `check_<name>` and every finding code it emitted.
 2. **Stop producing it** — no command creates, seeds, or appends to it; no skeleton ships one.
 3. **Change nothing else.** The name stays in `RESERVED`
-   ([the knowledge pillar](/plugins/quenching/assets/bin/quenching/knowledge/)) and stays in
+   (the knowledge pillar (`plugins/quenching/assets/bin/quenching/knowledge/`)) and stays in
    `hard_block_exempt()`. Its per-file branch stays too, returning no findings.
 
 A retired artifact must also stay **out of the concept-doc count** wherever the tooling counts

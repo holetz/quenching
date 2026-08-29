@@ -45,20 +45,26 @@ class GlossaryProjectionTests(unittest.TestCase):
     def test_ignores_non_term_prose(self) -> None:
         self.assertEqual(glossary_to_abbr("# Glossary\n\nExplanation\n"), "")
 
-    def test_template_enables_global_glossary_tooltips_and_route(self) -> None:
+    def test_template_enables_global_glossary_tooltips_from_the_bundle_root(self) -> None:
         template = (ROOT / "assets/zensical/zensical.toml.tmpl").read_text()
         self.assertIn('abbr                               = {}', template)
         self.assertIn('[project.markdown_extensions.pymdownx.snippets]', template)
-        self.assertIn('base_path = [ "docs/documentation" ]', template)
+        self.assertIn('base_path = [ "docs" ]', template)
         self.assertIn('check_paths = true', template)
-        self.assertIn('auto_append = [ "assets/glossary-abbreviations.md" ]', template)
-        self.assertIn('{ "Glossary"        = [ "reference/glossary.md" ] }', template)
+        # `.txt`, not `.md`: the snippet lives under `docs_dir` now, and every `.md` there is a
+        # page. A 14k-word abbreviation list is not a page.
+        self.assertIn('auto_append = [ "assets/glossary-abbreviations.txt" ]', template)
 
-    def test_published_page_is_a_projection_not_a_second_source(self) -> None:
-        page = (ROOT / "assets/knowledge/documentation/reference/glossary.md").read_text()
-        self.assertIn('source: /docs/glossary.md', page)
-        self.assertIn('source_sha256:', page)
-        self.assertIn('never second sources', page)
+    def test_the_canonical_glossary_publishes_itself_with_no_derived_route(self) -> None:
+        # The derived `reference/glossary.md` route existed only because the canonical glossary
+        # sat OUTSIDE `docs_dir` and had to be copied in. The bundle root is the site's source
+        # now, so a second copy would be exactly the `okf-legacy-glossary` the validator forbids.
+        skeleton = ROOT / "assets/knowledge"
+        nested = [p for p in skeleton.rglob("glossary.md") if p.parent != skeleton]
+        self.assertEqual(nested, [], "the skeleton must carry no glossary copy inside a home")
+        self.assertTrue((skeleton / "glossary.md").is_file())
+        template = (ROOT / "assets/zensical/zensical.toml.tmpl").read_text()
+        self.assertNotIn("reference/glossary.md", template)
 
     def test_capability_checker_accepts_a_site_directory(self) -> None:
         checker = ROOT / "assets/checks/zensical-capability-check.py"

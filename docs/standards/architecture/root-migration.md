@@ -27,14 +27,14 @@ yet: `okf-legacy-root` (the new root absent, the pre-rename one present), `okf-l
 pre-rename home name at the bundle root), `okf-legacy-doc-quadrant` (a pre-rename Diátaxis
 quadrant under `documentation/`), `okf-legacy-glossary` (`glossary.md` sitting inside a home
 instead of at the bundle root). The exact severities and messages are
-[conformance.md](/plugins/quenching/assets/references/knowledge-align/conformance.md)
+`plugins/quenching/assets/references/knowledge-align/conformance.md`
 §Pre-rename layout's, cited rather than restated here.
 
 ## Resolution is exactly one route
 
 `/quenching:knowledge:align` is the only command that resolves an `okf-legacy-*` finding — never a
 hand `git mv`, never a target improvising its own path. The procedure —
-[migration.md](/plugins/quenching/assets/references/knowledge-align/migration.md) §1g —
+`plugins/quenching/assets/references/knowledge-align/migration.md` §1g —
 renames the root first, then the homes, quadrants and glossary underneath it, each swept for
 blast radius and each gated on its **own** confirmation the moment it reaches product code (a
 path default, a docstring, a hook's own root constant): a root rename is never a bare `git mv`

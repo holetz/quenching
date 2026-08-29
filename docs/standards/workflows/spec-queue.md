@@ -19,7 +19,7 @@ formas que foram consideradas e rejeitadas.
 
 **A procedure que as duas entradas leem em execução não está aqui.** A forma da fila, a marca de
 branch, o contrato de entrada, a classificação de bloqueio e a volta recursiva são
-[fanout.md](/plugins/quenching/assets/references/specs-fanout/fanout.md) §The two regimes
+`plugins/quenching/assets/references/specs-fanout/fanout.md` §The two regimes
 §The queue's shape §The branch carries the slugs §The entry contract §Classifying a block
 §The recursive return — citadas, nunca restatadas. Procedure que um comando lê rodando dentro de um
 alvo é payload, não fato sobre o alvo

@@ -11,24 +11,27 @@
   # Azure DevOps and other unmapped hosts require an explicit, tested template.
   # edit_uri_template = "?path=/{path}&version=GB<branch>"
 
-  docs_dir = "docs/documentation"
+  # The bundle root IS the site's source: every home publishes, and the glossary publishes
+  # itself rather than through a copied route. Never a dot-prefixed path here — one builds an
+  # empty site and still exits 0 (measured; see the plugin's zensical measured-behaviour doc).
+  docs_dir = "docs"
   site_dir = "site"
 
-  # Zensical runs no MkDocs plugin, so the order and the titles live here rather
-  # than in `.pages` files. Add only routes approved by the plan's Mapa editorial
-  # de publicação. A mapped external home is exposed through a curated mirror
-  # below `documentation/`. Never point docs_dir at the dot-prefixed bundle root: it builds an
-  # empty site and still exits 0.
+  # Zensical runs no MkDocs plugin, so order and titles live here rather than in `.pages` files.
+  # GENERATED from the bundle tree by `cq knowledge nav --write`, in reading order rather than
+  # alphabetical — but a title YOU write survives regeneration, so rename freely.
   nav = [
     "index.md",
-    { "Getting started" = [ "tutorials/index.md" ] },
-    { "How-to guides"   = [ "how-to/index.md" ] },
-    { "Reference"       = [ "reference/index.md" ] },
-    # The glossary is a default derived surface because the bundle always carries its source.
-    { "Glossary"        = [ "reference/glossary.md" ] },
-    { "Concepts"        = [ "explanation/index.md" ] },
-    # Derived homes (catalog, standards, external, vision) enter here only when the accepted
-    # publication map gives them a route; `cq knowledge project` keeps derived routes stable.
+    { "Tutorials"   = [ "tutorials/index.md" ] },
+    { "How-to"      = [ "how-to/index.md" ] },
+    { "Explanation" = [ "explanation/index.md" ] },
+    { "Project"     = [ "project/index.md" ] },
+    { "Standards"   = [ "standards/index.md" ] },
+    { "Concepts"    = [ "concepts/index.md" ] },
+    { "External"    = [ "external/index.md" ] },
+    { "Catalog"     = [ "catalog/index.md" ] },
+    { "Vision"      = [ "vision/index.md" ] },
+    "glossary.md",
   ]
 
   extra_css = [ "assets/stylesheets/quenching.css" ]
@@ -100,12 +103,18 @@
   ]
 
 [project.markdown_extensions.pymdownx.snippets]
-  base_path = [ "docs/documentation" ]
+  base_path = [ "docs" ]
   check_paths = true
-  auto_append = [ "assets/glossary-abbreviations.md" ]
+  auto_append = [ "assets/glossary-abbreviations.txt" ]
 
 [project.validation]
-  unresolved_references = true
+  # `unresolved_references` is OFF, measured: it reads any `[...]` in the source as a
+  # reference-style link, and this bundle's canonical content is full of square brackets that are
+  # not links — YAML flow sequences in frontmatter (`tags: [a, b]`, the form every shipped mould
+  # writes), the specs `[P]` parallel marker, and `- [ ]` task boxes. All 148 warnings it raised
+  # here were of those three kinds and none was a real dangling reference, so under `--strict` it
+  # only makes a green build unreachable. The link checks that matter stay on.
+  unresolved_references = false
   unresolved_footnotes = true
   unused_definitions = true
   unused_footnotes = true

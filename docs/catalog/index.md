@@ -6,10 +6,10 @@ LLM**: what each table means, **how to access** the source system, **which scrip
 it, and **where to look** for more.
 
 **Boundary:** `catalog/` = "the **data** we produce/consume". Distinct from
-[external/](/docs/external/index.md) (external tools/libs/regulations) and
-[standards/](/docs/standards/index.md) (our contracts). The modeling behind the data
-(grain/key/joins) lives in [standards/data-modeling/](/docs/standards/data-modeling/index.md);
-table/column naming in [standards/naming/](/docs/standards/naming/index.md).
+[external/](../external/index.md) (external tools/libs/regulations) and
+[standards/](../standards/index.md) (our contracts). The modeling behind the data
+(grain/key/joins) lives in [standards/data-modeling/](../standards/data-modeling/index.md);
+table/column naming in [standards/naming/](../standards/naming/index.md).
 
 ## Hierarchy: system → catalog → schema → table
 

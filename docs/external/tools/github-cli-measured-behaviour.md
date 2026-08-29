@@ -16,7 +16,7 @@ maintainer: quenching
 Facts about **how `gh` and the GitHub REST issue endpoints actually behave**, measured live rather
 than read from documentation. External tool behaviour, not our contract — how this plugin's
 `github` backend uses `gh` is
-[standards/architecture/spec-backend.md](/docs/standards/architecture/spec-backend.md).
+[standards/architecture/spec-backend.md](../../standards/architecture/spec-backend.md).
 
 ## Issue Type: the REST create silently drops an invalid name, the porcelain commands refuse
 
@@ -58,7 +58,7 @@ no `source` and no `commit_id` attached, and the issue itself has to be closed s
 
 Measured against two merged PRs in `holetz/claude-quenching` — a repository whose default branch is
 `main` but whose PRs are opened against `develop`
-([standards/git/branching.md](/docs/standards/git/branching.md)): PR #926's body reads
+([standards/git/branching.md](../../standards/git/branching.md)): PR #926's body reads
 `Closes #816`, PR #925's reads `Closes #902`, both target `develop`, and both report
 `"closingIssuesReferences": []`. Issue #816's timeline carries a `cross-referenced` event sourced
 from #926 and a `closed` event with `"source": null` — the mention linked, the close did not.
@@ -66,7 +66,7 @@ from #926 and a `closed` event with `"source": null` — the mention linked, the
 **The practical consequence: a plugin that reads `closingIssuesReferences` back to learn whether a
 PR closes a spec's issue gets a structurally empty answer for any repository whose specs merge into
 an integration branch rather than the default branch** — which is exactly the shape
-[standards/git/branching.md](/docs/standards/git/branching.md) prescribes (`develop` integrates,
+[standards/git/branching.md](../../standards/git/branching.md) prescribes (`develop` integrates,
 `main` publishes) and this repository's own history already follows. The keyword still documents
 intent in the PR body and still cross-references the issue; it does not, by itself, give a caller
 anything to read back on that class of repository.
@@ -96,7 +96,7 @@ doubt it.
 
 Together the three shapes are what make the emptiness *decidable* on this transport: `None` and
 `[]` prove a fault, `[[]]` does not. The rule built on them is
-[standards/quality/empty-response-honesty.md](/docs/standards/quality/empty-response-honesty.md);
+[standards/quality/empty-response-honesty.md](../../standards/quality/empty-response-honesty.md);
 the measurement is here because it is a fact about `gh`, and it holds only for the version it was
 taken against.
 

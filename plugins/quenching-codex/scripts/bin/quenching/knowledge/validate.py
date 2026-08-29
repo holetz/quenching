@@ -14,6 +14,7 @@ from quenching.knowledge.checks import (
     check_concept,
     check_index,
     check_legacy_doc_quadrant,
+    check_legacy_documentation_home,
     check_legacy_glossary,
     check_legacy_home,
     check_legacy_root,
@@ -127,6 +128,7 @@ def validate_tree(bundle_root: str, deadline: float | None = None,
     # detecta por estrutura, sítio a sítio — nunca por versão)
     root_entries = {p.name for p in root.iterdir() if p.is_dir()}
     findings.extend(check_legacy_home(root_entries))
+    findings.extend(check_legacy_documentation_home(root_entries))
     doc_dir = root / "documentation"
     if doc_dir.is_dir():
         quadrant_entries = {p.name for p in doc_dir.iterdir() if p.is_dir()}

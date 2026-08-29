@@ -143,8 +143,28 @@ def check_legacy_home(root_entries: set[str]) -> list[tuple[str, str, str, str]]
     ]
 
 
+def check_legacy_documentation_home(root_entries: set[str]) -> list[tuple[str, str, str, str]]:
+    """`okf-legacy-documentation-home` — the retired `documentation/` home still sits at the
+    bundle root. Its four Diátaxis quadrants became homes in their own right (`tutorials/`,
+    `how-to/`, `explanation/`) plus `project/`, once the bundle root itself became the site's
+    source and a wrapper home stopped earning its level.
+
+    Independent and idempotent like its siblings: dissolving this one site clears it, whether or
+    not any other has migrated."""
+    if "documentation" not in root_entries:
+        return []
+    return [("ERROR", "documentation/", "okf-legacy-documentation-home",
+             "`documentation/` is the retired wrapper home — dissolve it into `tutorials/`, "
+             "`how-to/`, `explanation/` and `project/` at the bundle root")]
+
+
 def check_legacy_doc_quadrant(quadrant_entries: set[str]) -> list[tuple[str, str, str, str]]:
-    """`okf-legacy-doc-quadrant` — a pre-rename Diátaxis quadrant under `documentation/`."""
+    """`okf-legacy-doc-quadrant` — a pre-rename Diátaxis quadrant under `documentation/`.
+
+    Deliberately still aimed at `documentation/`, never at the bundle root: `LEGACY_QUADRANTS`
+    maps `concepts` -> `explanation`, and `concepts/` is a canonical home at the root. Re-aiming
+    this check upward would report the bundle's own `concepts/` as migration debt. It fires only
+    under a surviving `documentation/`, which `okf-legacy-documentation-home` already reports."""
     return [
         ("ERROR", f"documentation/{old}/", "okf-legacy-doc-quadrant",
          f"`documentation/{old}/` is the pre-rename Diátaxis name — rename it to `documentation/{new}/`")

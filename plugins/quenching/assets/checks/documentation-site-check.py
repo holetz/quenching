@@ -150,7 +150,7 @@ def _glossary_findings(site: Path, source: Path | None, route: str,
     if route_path is None:
         findings.append(Finding("site-glossary-route-missing", Path(route), "published glossary route is absent"))
     if snippet is None:
-        snippet = source.parent / "documentation" / "assets" / "glossary-abbreviations.md"
+        snippet = source.parent / "assets" / "glossary-abbreviations.txt"
     if snippet is None or not snippet.is_file():
         findings.append(Finding("site-glossary-snippet-missing", snippet or Path("glossary-abbreviations.md"),
                                 "generated abbreviation snippet is absent"))
@@ -259,7 +259,7 @@ def selftest() -> int:
         source = root / "docs" / "glossary.md"
         source.parent.mkdir()
         source.write_text("- **ASRC** — expected loss stage\n")
-        snippet = root / "docs" / "documentation" / "assets" / "glossary-abbreviations.md"
+        snippet = root / "docs" / "assets" / "glossary-abbreviations.txt"
         snippet.parent.mkdir(parents=True)
         snippet.write_text("generated\n")
         (site / "sitemap.xml").write_text('<urlset><url><loc>index.html</loc></url></urlset>')
@@ -283,7 +283,7 @@ def selftest() -> int:
     assert not check(
         glossary_root / "site",
         glossary_source=glossary_root / "docs" / "glossary.md",
-        glossary_snippet=glossary_root / "docs" / "documentation" / "assets" / "glossary-abbreviations.md",
+        glossary_snippet=glossary_root / "docs" / "assets" / "glossary-abbreviations.txt",
         require_glossary=True,
     )
     print("documentation-site-check selftest: OK")
@@ -299,7 +299,7 @@ def main() -> int:
                         help="allow a local build without a meaningful sitemap URL")
     parser.add_argument("--require-glossary", action="store_true")
     parser.add_argument("--glossary-source", type=Path)
-    parser.add_argument("--glossary-route", default="reference/glossary.md")
+    parser.add_argument("--glossary-route", default="glossary.md")
     parser.add_argument("--glossary-snippet", type=Path)
     parser.add_argument("--glossary-term")
     args = parser.parse_args()

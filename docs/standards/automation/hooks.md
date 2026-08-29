@@ -99,6 +99,6 @@ can move underneath it, and it then reports **failures of its own staleness as f
 repo**. `/quenching:knowledge:align` removes that class of debris on sight.
 
 The full pricing doctrine lives once, in
-[capabilities.md](/plugins/quenching/assets/references/components-command-new/capabilities.md) §Hooks;
+`plugins/quenching/assets/references/components-command-new/capabilities.md` §Hooks;
 this standard is the repo-side projection of it. An unparseable `settings*.json` is
 `sk-hook-unparseable` — every hook wired in it is dead.

@@ -59,7 +59,7 @@ two paragraphs are not interchangeable: were a local backend to come back, so wo
 ### The fourth pillar has no align, and the reason is structural
 
 `git` — the `cq git` axis and its seven `commands/git/**` bodies — is a **pillar**, in the sense
-[glossary.md](/docs/glossary.md) already gives the term: an axis `cq` routes. It is not a
+[glossary.md](../../glossary.md) already gives the term: an axis `cq` routes. It is not a
 **front**: a front is a tree this plugin converges toward a canonical shape (`/docs/` toward
 the OKF bundle, `.claude/` toward one file per entry point), and convergence is exactly what
 §Probe before the inventory needs a verifier for. `git`
@@ -68,7 +68,7 @@ a question about the *target* repository's live state (which branch, which marki
 branches are stale, which conventions apply), and a live answer is not a drifted artifact a probe
 could find wrong. This is also why `cq git` ships no `doctor` and no `validate`: inventing one
 would be filling a table for a front that does not exist, the same reasoning
-[naming/command-surface.md](/docs/standards/naming/command-surface.md) applies to the pillar's
+[naming/command-surface.md](../naming/command-surface.md) applies to the pillar's
 own place in the command taxonomy.
 
 **A repo whose git hygiene has drifted is not this column's problem.** A stale `plan/*` branch or

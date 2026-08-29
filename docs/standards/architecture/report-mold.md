@@ -23,7 +23,7 @@ mais visível da frente inteira, e é a única parte que nenhum validador inspec
 > colunas; quais candidatos a próximo passo e sob que condição.
 
 para a frente `specs` essa seção é
-[/plugins/quenching/assets/references/specs-develop/spec-driven.md](/plugins/quenching/assets/references/specs-develop/spec-driven.md)
+`plugins/quenching/assets/references/specs-develop/spec-driven.md`
 §The report mold, citada por sete dos oito comandos `/quenching:specs:*`.
 
 O mold é **literal**: ele carrega o bloco renderizado que o corpo copia e substitui, não uma
