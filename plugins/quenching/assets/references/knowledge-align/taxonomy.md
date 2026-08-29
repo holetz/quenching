@@ -22,7 +22,10 @@ knowledge/                     # OKF bundle root
                                #   agents/ = how we INSTRUCT agents, not agent definitions
   catalog/                     # our data — <system>/{index.md, access.md} · <catalog>/<schema>.md · <schema>/<table>.md
   vision/                      # direction by area — <area>.md (type: vision)
-  documentation/               # product docs (Diátaxis prose) — tutorials/ how-to/ reference/ explanation/ (type: documentation)
+  tutorials/                   # learning-oriented pages (type: tutorial)
+  how-to/                      # task recipes (type: how-to)
+  explanation/                 # why it works this way, for the site's reader (type: explanation)
+  project/                     # the manual for THIS repository (type: project)
   concepts/                    # generic knowledge we hold — subject subfolders (type: concept)
   external/                    # what we consume — tools/ libraries/ regulations/ (type: external; PDFs via sidecar)
 ```
@@ -38,7 +41,10 @@ knowledge/                     # OKF bundle root
 | `catalog/**/<schema>.md` | `schema` | consolidated index |
 | `catalog/**/<schema>/<table>.md` | `table` | detailed page |
 | `vision/` | `vision` | `<area>.md` |
-| `documentation/**` | `documentation` | `tutorials/`·`how-to/`·`reference/`·`explanation/` |
+| `tutorials/` | `tutorial` | learning-oriented pages |
+| `how-to/` | `how-to` | one recipe per file |
+| `explanation/` | `explanation` | the site's reader-facing why |
+| `project/` | `project` | this repo's own manual (commands, automation, layout) |
 | `concepts/` | `concept` | subject subfolders |
 | `external/` | `external` | `tools/`·`libraries/`·`regulations/` |
 | `external/regulations/` (extracts) | `sidecar` | one per binary |
@@ -64,18 +70,21 @@ survived an earlier alignment.
 - **`vision/`** — direction segmented by area (`<area>.md`, `type: vision`), **no deadline**.
   A raw unit of work toward it → a spec in `specs/plans/` (**outside** this OKF bundle —
   see `/quenching:specs:create`); what became reality → `standards/`.
-- **`documentation/`** — prose documentation for human readers, Diátaxis-structured; the
-  home rendered as the product's documentation site (`type: documentation`). Four fixed
-  subfolders: `tutorials/` (tutorial), `how-to/` (task recipes — absorbs the former
-  `guides/`), `reference/` (our product's own reference), `explanation/` (explanation).
-  Boundary: a published-site page → here; internal team understanding → `concepts/`; a
-  current contract → `standards/`. `audience: human`, `authority: current` by default.
+- **The reader-facing quadrants** — `tutorials/` (`type: tutorial`), `how-to/` (`type: how-to`,
+  absorbs the former `guides/`), `explanation/` (`type: explanation`) and `project/`
+  (`type: project`, this repository's own manual — commands, automation, layout). They are homes
+  at the bundle root, not subfolders of a wrapper: the whole bundle is `docs_dir`, so a level
+  whose only job was to give the generator a non-hidden subtree stopped earning it. `reference/`
+  is deliberately NOT among them — it is a retired home name that `okf-legacy-home` still claims.
+  Boundary: a published-site page → the fitting quadrant; internal team understanding →
+  `concepts/`; a current contract → `standards/`. `audience: human`, `authority: current` by
+  default.
 - **`concepts/`** — generic, cross-cutting understanding the team holds (`type: concept`):
   domain concepts, glossaries, mental models, explanations, learnings — the Diátaxis
   **explanation** quadrant raised to a home, subject subfolders welcome. Non-binding and
   usually `authority: background`. Boundary: it is **not** a contract (→ `standards/`), **not**
   a fact about a named external asset we consume (→ `external/`), and **not** a procedure
-  (→ `documentation/how-to/`). If understanding hardens into a rule for how we build, it distills into
+  (→ `how-to/`). If understanding hardens into a rule for how we build, it distills into
   `standards/` and leaves. Ships **one fixed file** — the bundle-root `glossary.md`, the repo's
   A–Z term lookup (a flat, alphabetically sorted bullet list in the same syntax every `index.md`
   uses — the one deliberate exception to "one concept per file", and the one place an
@@ -106,7 +115,7 @@ survived an earlier alignment.
   bundle. **Identifier-derived slugs are verbatim, never translated:**
   a catalog `<schema>`/`<table>` mirrors the real object, `external/repositories/<repo>` the
   real repo — translating them would break the greppable tie to the asset.
-- **Links:** relative **within** a home; absolute from the bundle root (`/.knowledge/...`) when
+- **Links:** relative **within** a home; absolute from the bundle root (`/docs/...`) when
   leaving for another home — so cross-links survive a home move/migration.
 - A directory that holds concept docs carries a reserved, frontmatter-free `index.md` listing
   its real children (the validator's `dir-no-index`/`index-broken-link`/`index-orphan` checks

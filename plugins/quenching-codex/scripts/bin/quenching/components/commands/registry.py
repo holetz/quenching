@@ -18,7 +18,7 @@ from quenching.common.output import finding, report_findings
 from quenching.components.surface import _quoted_phrases, load_surface, plural, rel
 
 # the registry's derived zone — markers, cells, and location, per the automation mold
-REGISTRY_RELPATH = (".knowledge", "documentation", "reference", "automation.md")
+REGISTRY_RELPATH = ("docs", "documentation", "reference", "automation.md")
 ZONE_BEGIN = "<!-- GENERATED:BEGIN -->"
 ZONE_END = "<!-- GENERATED:END -->"
 EMPTY_CELL = "—"

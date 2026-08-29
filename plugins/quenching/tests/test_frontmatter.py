@@ -29,7 +29,7 @@ def kinds(text: str) -> tuple[str, ...]:
     return tuple(sorted(a["kind"] for a in frontmatter_anomalies(text)))
 
 
-# The canonical case list from `/.knowledge/standards/code/frontmatter-parser.md`.
+# The canonical case list from `/docs/standards/code/frontmatter-parser.md`.
 #   (label, frontmatter body, expected `title`, expected anomaly kinds)
 CANONICAL_CASES = [
     ("plain",                 "title: a plain value",              "a plain value",              ()),

@@ -20,9 +20,10 @@ Ask **"what IS this, relative to us?"**:
 | --- | --- | --- | --- | --- |
 | a rule for **how WE build** (proven, or agreed-but-unproven) | `standards/<subject>/` | `standard` | `standard-front.md` | `<subject>/<concept>.md` |
 | **direction** for an area (no deadline) | `vision/` | `vision` | `vision/area.md` | `<area>.md` |
-| a **how-to / task recipe** (product usage) | `documentation/how-to/` | `documentation` | `concept-front.md` | `how-to/<slug>.md` |
-| a **tutorial** (learning-oriented) | `documentation/tutorials/` | `documentation` | `concept-front.md` | `tutorials/<slug>.md` |
-| **product reference / explanation** (site page) | `documentation/{reference,explanation}/` | `documentation` | `concept-front.md` | `<section>/<slug>.md` |
+| a **how-to / task recipe** (product usage) | `how-to/` | `how-to` | `concept-front.md` | `how-to/<slug>.md` |
+| a **tutorial** (learning-oriented) | `tutorials/` | `tutorial` | `concept-front.md` | `tutorials/<slug>.md` |
+| **an explanation** (site page, the reader's why) | `explanation/` | `explanation` | `concept-front.md` | `<slug>.md` |
+| **this repository's own manual** (commands, automation, layout) | `project/` | `project` | `concept-front.md` | `<slug>.md` |
 | **generic understanding we hold** (concept / explanation / learning) | `concepts/<subject>/` | `concept` | `concept-front.md` | `<subject>/<slug>.md` |
 | a **fact about an external** tool/lib/regulation | `external/{tools,libraries,regulations}/` | `external` | `concept-front.md` | `<slug>.md` |
 | **our data** — a system / schema / table | `catalog/<system>/…` | `system`/`schema`/`table` | `catalog/{system,schema,table}.md` | see below |
@@ -39,7 +40,7 @@ Ask **"what IS this, relative to us?"**:
   into `standards/` and leaves
   `concepts/`.
 - **documentation vs concepts:** a **published-site page** (narrative, for a human reading
-  the docs) is `documentation/`; **internal team understanding** (mental model, learning,
+  the docs) is a reader-facing quadrant; **internal team understanding** (mental model, learning,
   glossary) is `concepts/`.
 - **standards & agreed rules:** a **proven, current** rule for how we build is a `standard`
   (`authority: current`); an **agreed-but-not-yet-proven** rule is a `standard` with
@@ -93,7 +94,7 @@ contract is [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-impor
 <!-- rules -->
 
 - Add `* [<title>](<relative-path>.md) — <description>` under the right section. Keep links
-  relative within the home, absolute (`/.knowledge/...`) across homes.
+  relative within the home, absolute (`/docs/...`) across homes.
 - If the doc **creates a new folder**, create that folder's `index.md` too (a frontmatter-free
   listing) and link it from the parent — a folder of concepts without one is a `dir-no-index`
   gap, and an unlisted doc is an `index-orphan`.
@@ -120,7 +121,7 @@ term that belongs in the glossary** and, if so, enrich it:
   jargon a newcomer would not know (a domain entity, an internal codename, a term of
   art). Skip generic English and terms already listed.
 - **How to add it (MERGE, never clobber).** Insert the term in **alphabetical** position,
-  in the linked bullet form, pointing at the concept doc you just wrote (`/.knowledge/<path>.md`,
+  in the linked bullet form, pointing at the concept doc you just wrote (`/docs/<path>.md`,
   absolute across homes). If an entry for the term already exists, sharpen its definition
   or add the link — never overwrite a filled definition or a filled link.
 - **Only the entry.** The depth stays in the concept doc; the glossary points to it. Do not

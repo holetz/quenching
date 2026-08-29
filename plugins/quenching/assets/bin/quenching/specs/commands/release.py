@@ -14,7 +14,7 @@ def cmd_release(args, root: str, out: Emitter) -> int:
     and tag that commit — the MECHANICAL half of a release. Judging what the number should
     be, whether a lone PR on the primary branch is a release or a habit, and the
     publication itself all belong to the command that calls this; see
-    /.knowledge/standards/git/branching.md.
+    /docs/standards/git/branching.md.
 
     Refuses (exit 2) rather than guessing: a version not shaped X.Y.Z, a repository that is
     not this plugin's own checkout, a lockstep already disagreeing with itself, or a

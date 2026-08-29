@@ -79,7 +79,7 @@ python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/qu
 ```
 `list --phase plans --json` carries the seven `records` for exactly the front this sweep ranks —
 never the `archive/` history alongside it — so the current `priority` of every spec in scope arrives
-in that one call — **never open a spec file to read it.** Read `/.knowledge/vision/` when present, to ground the
+in that one call — **never open a spec file to read it.** Read `/docs/vision/` when present, to ground the
 ordering in where the repo is going rather than in what is loudest. No sub-agents.
 
 Note what the table will have to explain: specs already ranked, specs whose ranking predates their
@@ -143,7 +143,7 @@ file to edit.
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs validate --phase plans --json
 ```
 That is the whole check, and it must exit 0. Nothing else was written: the ranking lives in each
-spec's own `priority` record, there is no listing to regenerate, and nothing goes into the `/.knowledge/`
+spec's own `priority` record, there is no listing to regenerate, and nothing goes into the `/docs/`
 bundle — the log this used to append to is retired.
 **Done when:** the validator is clean, or its residue is reported verbatim.
 
@@ -177,7 +177,7 @@ Emit §The report mold. Two body blocks:
    **The rendering is the tool's, and this command holds no copy of it.** This block used to carry
    a `python3 -c` heredoc that re-sorted `list --json` and printed the table itself — one of three
    divergent hand-written renderers of one ranking, which is exactly the fan-out
-   `knowledge/standards/architecture/report-mold.md` forbids. Quote the output; never re-sort it,
+   `docs/standards/architecture/report-mold.md` forbids. Quote the output; never re-sort it,
    re-tally it, or reach for the payload behind it.
 2. **Observations** — optional, omitted whole when there are none. §The observations table, each
    row's `Recommended action` **runnable as printed**: the command with its real argument

@@ -1,6 +1,6 @@
 # `assets/templates/` — the molds
 
-Frontmatter + body molds the commands stamp/apply. They live **outside** the `/.knowledge/` bundle
+Frontmatter + body molds the commands stamp/apply. They live **outside** the `/docs/` bundle
 (so they are not themselves validated), and each produces an OKF-conformant concept doc when
 filled — except the `harness/` and `automation/command|agent|hook` molds, which produce files
 that are not OKF concepts at all. `/quenching:knowledge:add` picks the mold by home → `type` (see

@@ -26,12 +26,15 @@ and the cycle authorization wording is in
   write emits the derived index/details with lineage, review checks reachability, and the final build
   reports the derived route count.
 - **Coverage is a delivery gate over the whole bundle.** Consolidate the ledger from
-  `.quenching/documentation/`, inventory every `/.knowledge/` home, and report
-  `covered / mandatory mapped × 100`. A page selected for this pass cannot hide an uncovered
-  `standards/`, `concepts/`, `external/`, `catalog/`, `vision/` or glossary surface. Empty sections,
+  `.quenching/documentation/`, inventory every `.md` in the bundle, and report
+  `published documents / publishable documents × 100` — **per document, never per home**. A home
+  with one page in it is not a covered home; counting by home is how twelve pages once covered a
+  hundred-and-six-document bundle at a reported 100%. A page selected for this pass cannot hide an
+  uncovered document anywhere in `standards/`, `concepts/`, `external/`, `catalog/`, `vision/`, the
+  reader-facing quadrants or the glossary. Empty sections,
   source gaps and leaked internal markers remain explicit, then name the next stage or route that
   leaves the current page.
-- **Glossary is default-on when it has content.** The canonical `/.knowledge/glossary.md` is a
+- **Glossary is default-on when it has content.** The canonical `/docs/glossary.md` is a
   mandatory derived surface unless the accepted map contains an explicit `não publicar` decision.
   The write stage runs `cq knowledge project --write`; the final build runs its `--check` mode and
   the rendered site checker, including a known `<abbr>` assertion.

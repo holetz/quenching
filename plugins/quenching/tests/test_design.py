@@ -37,7 +37,7 @@ class DesignFront(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.root = pathlib.Path(self.temporary.name)
-        bundle = self.root / ".knowledge"
+        bundle = self.root / "docs"
         bundle.mkdir()
         (bundle / "index.md").write_text('---\nokf_version: "0.1"\n---\n\n# Knowledge\n',
                                            encoding="utf-8")

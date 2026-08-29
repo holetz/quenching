@@ -9,13 +9,13 @@ allowed-tools: Read, Grep, Glob, Bash(python3:*), Write, Edit
 **Input**: `$ARGUMENTS` (the term to add or refine, and optionally its one-sentence definition).
 
 Files ONE term into the canonical OKF bundle's fixed glossary,
-[`/.knowledge/glossary.md`](/.knowledge/glossary.md). For a whole-bundle bulk
+[`/docs/glossary.md`](/docs/glossary.md). For a whole-bundle bulk
 backfill instead of one term, see `/quenching:knowledge:glossary-backfill`.
 
 ## Workflow
 
 ### 1. Locate the glossary
-Find `/.knowledge/glossary.md` — the bundle root is the fixed `/.knowledge/` convention. If the
+Find `/docs/glossary.md` — the bundle root is the fixed `/docs/` convention. If the
 `concepts/` home or the glossary seed is **missing**, stop and offer
 `/quenching:knowledge:align` to install the skeleton, then stop; do not resume in the same run. Read the
 current list so you can place the entry and detect an existing one. **Done when:** the glossary path
@@ -28,8 +28,8 @@ than a one-liner, say so and hand off to `/quenching:knowledge:learn` for the co
 entry here pointing at it. **Done when:** the term is classified as add or refine, or routed away.
 
 ### 3. Derive the link
-Look for the concept doc that defines the term (`Grep`/`Glob` `/.knowledge/**`). If one exists, link it
-(`/.knowledge/<path>.md`). If none exists, leave the entry unlinked — never invent a target; optionally
+Look for the concept doc that defines the term (`Grep`/`Glob` `/docs/**`). If one exists, link it
+(`/docs/<path>.md`). If none exists, leave the entry unlinked — never invent a target; optionally
 note that a `/quenching:knowledge:learn` capture would give the term a home. **Done when:** the link
 is existing, or the entry is explicitly unlinked.
 

@@ -1,0 +1,111 @@
+---
+type: tutorial
+title: Getting started
+description: Install the quenching plugin, verify the bundled CLI, probe a repository read-only, and run the first alignment.
+resource: plugins/quenching/README.md
+tags:
+  - tutorial
+  - install
+timestamp: 2026-08-28
+audience: human
+authority: current
+source: plugins/quenching/README.md §Install, §The four fronts; command bodies under plugins/quenching/commands/
+maintainer: Israel Holetz
+---
+
+# Getting started
+
+*Audience: implementer · ~10 min at 4 steps · Nothing written without your OK*
+
+By the end of this page you will have quenching loaded in a Claude Code session, the bundled
+`cq` CLI answering, and a read-only report of where your repository stands — and you will have
+run your first alignment knowing exactly what it was about to change, because it told you first.
+
+!!! note "Prerequisites"
+    - **Claude Code** installed and working in a terminal.
+    - **Python 3** on the PATH — the `cq` CLI is a self-contained stdlib tool, no `pip install`.
+    - A **git repository** to point the plugin at (any repo; a fresh one works fine).
+
+## 1. Load the plugin
+
+Clone the marketplace repository and start Claude Code with the plugin directory:
+
+```bash
+git clone https://github.com/holetz/claude-quenching
+cd your-repository
+claude --plugin-dir ../claude-quenching/plugins/quenching
+```
+
+Claude Code appends the plugin's `bin/` to the session PATH, which is what lets every command —
+and you — call `cq` bare.
+
+## 2. Verify the tool answers
+
+Inside the session (or any shell with the plugin's `bin/` on the PATH):
+
+```bash
+cq --version
+```
+
+!!! success "You should see"
+    ```text
+    6.3.0
+    ```
+    One line, the plugin's version. `cq` is the deterministic rail every command drives —
+    uniform `--json` output, exit codes `0` ok · `1` findings · `2` refusal.
+
+## 3. Probe before you change anything
+
+Both status commands are read-only by construction — their tool grants exclude `Write` and
+`Edit`, so this step cannot touch a file:
+
+```text
+/quenching:knowledge:status
+/quenching:design:status
+/quenching:specs:status
+```
+
+The first reports where your `/docs/` bundle stands (or that none exists yet); the second
+reports the specs front and its provider configuration. Each finding is named with the command
+that would fix it — that is the plugin's habit everywhere: **report with the owner, never repair
+silently**.
+
+## 4. Run your first alignment
+
+```text
+/quenching:align
+```
+
+This conducts the three local fronts in dependency order. What happens next depends on what the probe
+finds:
+
+- **A clean front stops there.** The probe found nothing, so there is no inventory, no plan and
+  no question — a couple of tool calls, done.
+- **A drifted front presents ONE plan.** You get one consolidated, read-only inventory of what
+  would change, and nothing is written until you give one OK. Declining leaves the repository
+  untouched.
+
+After your OK, the alignment installs or repairs the canonical `/docs/` bundle — the same
+tree in every repository that adopts the plugin — and verifies its own work with the front's
+validator:
+
+```bash
+cq knowledge validate docs
+```
+
+!!! success "You should see"
+    ```text
+    0 error(s), N warning(s)
+    ```
+    Zero errors is the gate; warnings are named, file-level findings you can chase one by one.
+
+## Recap
+
+You installed the plugin (`--plugin-dir`), proved the rail answers (`cq --version`), read two
+read-only status reports, and ran one conducted alignment that asked before writing. That
+probe → plan → OK → apply → verify loop is the plugin's one interface — every front repeats it.
+
+**Next:** adopt the full workflow in an existing repository with
+[Adopt quenching in a repository](../how-to/adopt-quenching.md), or read
+[the operating model](../explanation/operating-model.md) to see why the local fronts feed each
+other.

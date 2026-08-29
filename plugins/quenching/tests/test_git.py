@@ -185,7 +185,7 @@ class Conventions(RepoCase):
         self.assertEqual(_declared_docs(self.repo), [])
 
     def test_a_declared_doc_is_reported_with_its_authority(self):
-        d = os.path.join(self.repo, ".knowledge", "standards", "git")
+        d = os.path.join(self.repo, "docs", "standards", "git")
         os.makedirs(d)
         with open(os.path.join(d, "commit-messages.md"), "w", encoding="utf-8") as f:
             f.write("---\ntype: standard\nauthority: background\n---\n# x\n")
@@ -194,7 +194,7 @@ class Conventions(RepoCase):
                            "authority": "background"}])
 
     def test_index_md_is_excluded_as_the_bundle_own_listing(self):
-        d = os.path.join(self.repo, ".knowledge", "standards", "git")
+        d = os.path.join(self.repo, "docs", "standards", "git")
         os.makedirs(d)
         with open(os.path.join(d, "index.md"), "w", encoding="utf-8") as f:
             f.write("# listing\n")

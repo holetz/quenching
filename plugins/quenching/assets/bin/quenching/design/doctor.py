@@ -100,7 +100,7 @@ def _orphan_assets(root: Path) -> list[dict[str, str]]:
     if not assets.is_dir():
         return []
     searchable: list[str] = []
-    for base in (root / ".design", root / ".knowledge" / "standards" / "design"):
+    for base in (root / ".design", root / "docs" / "standards" / "design"):
         if not base.exists():
             continue
         for path in base.rglob("*"):

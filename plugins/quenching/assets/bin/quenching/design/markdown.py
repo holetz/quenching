@@ -126,7 +126,6 @@ def _strip_comment(value: str) -> str:
             return value[:index].rstrip()
     return value
 
-
 def _parse_scalar(value: str) -> Any:
     value = value.strip()
     if len(value) >= 2 and value[0] == value[-1] == '"':
@@ -147,4 +146,3 @@ def _parse_scalar(value: str) -> Any:
     if re.fullmatch(r"-?(?:\d+\.\d*|\.\d+)", value):
         return float(value)
     return value
-

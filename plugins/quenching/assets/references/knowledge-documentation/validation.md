@@ -34,12 +34,13 @@ into an abort. A warning is either fixed in the site layer or reported to the pa
 ## Editorial publication map
 
 Read the accepted `### Mapa editorial de publicação` before judging navigation or links. Inventory
-all `/.knowledge/` homes and use every `publicar`/`publicar derivado` row as the mandatory
+all `/docs/` homes and use every `publicar`/`publicar derivado` row as the mandatory
 coverage denominator. For every such row, prove that its declared route is built under `site/` and
 is non-empty; for every `não publicar` row, prove that no matching nav entry, published route or
 link exists. A
-curated route under `documentation/` is valid; `docs_dir = ".knowledge"` is not a substitute,
-because the hidden source root does not reliably yield rendered pages.
+curated route under `documentation/` is valid; `docs_dir = "docs"` is not a substitute,
+because a dot-prefixed root yields **zero** rendered pages while still exiting `0` — measured, with
+the evidence in `external/tools/zensical-measured-behaviour.md`.
 
 ```bash
 # compare plan rows with generated routes; replace <route> with each mapped route
@@ -47,7 +48,7 @@ test -f "site/<route>/index.html"
 rg -n 'href="[^"]*<unpublished-home>' site
 ```
 
-The second command must return no match. A bundle path such as `/.knowledge/standards/...` is never
+The second command must return no match. A bundle path such as `/docs/standards/...` is never
 evidence of a published route: validate the mapped URL instead.
 
 ## Static rendered checks
@@ -63,12 +64,12 @@ When the canonical glossary exists and the map does not explicitly say `não pub
 verify the deterministic source projection and then pass the same contract to the rendered check:
 
 ```bash
-cq knowledge project .knowledge --plan .quenching/documentation/plan.md --config zensical.toml --check
+cq knowledge project docs --plan .quenching/documentation/plan.md --config zensical.toml --check
 python3 <plugin>/assets/checks/documentation-site-check.py site \
   --require-glossary \
-  --glossary-source .knowledge/glossary.md \
+  --glossary-source docs/glossary.md \
   --glossary-route reference/glossary.md \
-  --glossary-snippet .knowledge/documentation/assets/glossary-abbreviations.md
+  --glossary-snippet docs/documentation/assets/glossary-abbreviations.md
 ```
 
 The projection check compares the route and abbreviation snippet with the canonical file's
@@ -80,7 +81,7 @@ Quando houver catálogo derivado, rode também o verificador de projeção para 
 camada/schema alcança cada detalhe e que a linhagem mínima está presente:
 
 ```bash
-python3 <plugin>/assets/checks/catalog-publication-check.py .knowledge/documentation
+python3 <plugin>/assets/checks/catalog-publication-check.py docs/documentation
 ```
 
 O fixture executável `catalog-publication/healthy` mantém a regressão mínima (`id`, `layer`,
@@ -124,7 +125,7 @@ grep -oE '<title>[^<]*</title>' site/index.html | head -1
 grep -R -c 'class="mermaid"' site
 grep -R -c 'class="q-badge"' site
 grep -oE 'stylesheets/[^" ]+' site/index.html | sort -u
-grep -R -Eo 'prefers-reduced-motion' .knowledge/documentation/assets/stylesheets/*.css
+grep -R -Eo 'prefers-reduced-motion' docs/documentation/assets/stylesheets/*.css
 ```
 
 The static fallback verifies title, Mermaid markup, badges, CSS wiring, the motion guard and mapped

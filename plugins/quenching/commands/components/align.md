@@ -53,7 +53,7 @@ Resolve `cq components` per
 §Resolving the tool §Write the resolved path literally on every invocation; branch on the
 **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 
-**Every shell grant is scoped**, per `/.knowledge/standards/automation/skills.md`
+**Every shell grant is scoped**, per `/docs/standards/automation/skills.md`
 §`allowed-tools` is always scoped: `python3`/`py` for the tool, `git grep` and `grep` for the
 blast-radius sweep (§3), `mkdir`/`mv` for the renames, `rm` for a
 confirmed legacy tool copy.
@@ -85,7 +85,7 @@ plus one `Glob` for the legacy pairs the tool cannot see (below). Branch as
 | anything else exits 1 or 2, or a legacy pair exists | Continue to step 2. |
 
 An **empty** surface (no commands, no skills) also stops. Note whether an OKF bundle exists
-(`/.knowledge/index.md` with `okf_version`) and say so once
+(`/docs/index.md` with `okf_version`) and say so once
 — without one the rule and registry stay out of scope, while the migration still applies.
 
 **Done when:** the three payloads and the glob are in hand, and the run has either stopped,
@@ -103,8 +103,8 @@ working set, including from the tool's findings.
 
 For each remaining item, make the **axis classification** per the
 test ([taxonomy](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md) §The single axis — several unrelated folders
-→ unroutable). Read `/.knowledge/standards/automation/skills.md` if present — it governs; note whether
-the rule and the registry (`/.knowledge/documentation/reference/automation.md`) exist.
+→ unroutable). Read `/docs/standards/automation/skills.md` if present — it governs; note whether
+the rule and the registry (`/docs/project/automation.md`) exist.
 
 **Where an item classifies with an evident category, also read the nest-vs-replace convention**
 already established for that category in this repo (taxonomy.md §Reading the nest-vs-replace
@@ -217,7 +217,7 @@ Read **frontmatter only**. Judge descriptions against the other descriptions, no
 against it, nothing routes from its prose, and nothing ever loads it — so there is nothing to buy by
 shortening it and no trigger to demand. Its description keeps all three slots at full length for the
 human picking it out of the `/` menu, who has no routing to fall back on
-(`/.knowledge/standards/automation/skills.md` §The admission criterion). The split is
+(`/docs/standards/automation/skills.md` §The admission criterion). The split is
 read from the frontmatter this stage reads anyway — never guessed.
 
 Judge each description against the three slots and the competitor test in

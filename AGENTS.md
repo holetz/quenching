@@ -4,16 +4,16 @@ Este repositório publica o plugin `quenching` e sua tradução para Codex. Os c
 `plugins/quenching/commands/` e as skills em `plugins/quenching-codex/skills/` são a fonte de
 comportamento: trate alterações neles como alterações de código.
 
-Language: pt-BR — the contract is /.knowledge/standards/agents/communication.md.
+Language: pt-BR — the contract is /docs/standards/agents/communication.md.
 
 ## Operating this repo
 
-O conhecimento durável vive em `/.knowledge/`; este arquivo é apenas o harness Codex e deve
+O conhecimento durável vive em `/docs/`; este arquivo é apenas o harness Codex e deve
 continuar sendo um ponteiro curto. Antes de alterar ferramentas do plugin, valide o bundle e a
 superfície correspondente:
 
 ```bash
-python3 plugins/quenching-codex/scripts/bin/cq knowledge validate .knowledge
+python3 plugins/quenching-codex/scripts/bin/cq knowledge validate docs
 python3 plugins/quenching-codex/scripts/bin/cq --root .agents components doctor --json
 ```
 
@@ -26,17 +26,19 @@ workspace local `/.specs/`.
 
 ## Where knowledge lives
 
-Resolva termos desconhecidos primeiro no [glossário](/.knowledge/glossary.md).
+Resolva termos desconhecidos primeiro no [glossário](/docs/glossary.md).
 
-- [/.knowledge/standards/](/.knowledge/standards/index.md) — contratos e convenções do repositório.
-- [/.knowledge/concepts/](/.knowledge/concepts/index.md) — entendimento genérico mantido pelo projeto.
-- [/.knowledge/external/](/.knowledge/external/index.md) — fatos sobre ferramentas, bibliotecas e fontes externas.
-- [/.knowledge/documentation/](/.knowledge/documentation/index.md) — documentação do produto.
-- [/.knowledge/catalog/](/.knowledge/catalog/index.md) — dados e domínio do repositório.
-- [/.knowledge/vision/](/.knowledge/vision/index.md) — direção do projeto.
+- [/docs/standards/](/docs/standards/index.md) — contratos e convenções do repositório.
+- [/docs/concepts/](/docs/concepts/index.md) — entendimento genérico mantido pelo projeto.
+- [/docs/external/](/docs/external/index.md) — fatos sobre ferramentas, bibliotecas e fontes externas.
+- [/docs/tutorials/](/docs/tutorials/index.md), [/docs/how-to/](/docs/how-to/index.md),
+  [/docs/explanation/](/docs/explanation/index.md) — a documentação do produto, por quadrante.
+- [/docs/project/](/docs/project/index.md) — o manual deste repositório: comandos, automação, layout.
+- [/docs/catalog/](/docs/catalog/index.md) — dados e domínio do repositório.
+- [/docs/vision/](/docs/vision/index.md) — direção do projeto.
 
 Para criar, mover ou alinhar conhecimento, use as skills quenching correspondentes; não replique
 conhecimento durável neste harness.
 
 <!-- Root harness pointer, auto-loaded by Codex on every turn. Keep this file thin: operational
-     rules and navigation only; durable knowledge belongs in /.knowledge/. -->
+     rules and navigation only; durable knowledge belongs in /docs/. -->

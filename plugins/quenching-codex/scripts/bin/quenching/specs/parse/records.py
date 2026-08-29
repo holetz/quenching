@@ -33,7 +33,7 @@ def derive_labels(info: dict, schema: dict | None = None) -> list[str]:
     One label per present record (`record_keys(schema)` order, skipping any without a
     `label:`), plus `spec:built` when the already-derived `info["stage"]` matches the
     labelled stage rule. A unidirectional projection: recomputed here on every write, never
-    read back — see /.knowledge/standards/architecture/spec-backend.md §Granular reading is about
+    read back — see /docs/standards/architecture/spec-backend.md §Granular reading is about
     context, not I/O for the sibling rule this one extends.
 
     MEASURED on 2026-08-05, against this repository's own `github` backend, per
@@ -56,7 +56,7 @@ def derive_labels(info: dict, schema: dict | None = None) -> list[str]:
 # one native surface. `tags` is stored in the very field the `spec:` labels render onto —
 # issue `labels`, `System.Tags` on a work item — so without a reserved half the two mechanisms
 # would each read the other's writes as the spec's own content. See
-# docs/standards/architecture/spec-backend.md §Armazenado não é projetado, §The `spec:` prefix
+# docs/standards/architecture/spec-backend.md §Stored is not projected, §The `spec:` prefix
 # is reserved.
 SPEC_LABEL_PREFIX = "spec:"
 

@@ -32,7 +32,7 @@ knowable once the last task lands, and two branches scheduling it collide on the
 `/quenching:specs:conclude` settles them against the base actually being merged into. Dropping them
 is not a loss of information — it is filing them with the command that can act on them.
 
-The axis is **declared versus revealed**, not docs versus code: a `/.knowledge/standards/**.md` path the
+The axis is **declared versus revealed**, not docs versus code: a `/docs/standards/**.md` path the
 plan declares the spec will write still becomes a checkbox, and is still required to.
 
 A plan that carries none of the middle rows produces a spec with `## Problem` and `## Proposal`

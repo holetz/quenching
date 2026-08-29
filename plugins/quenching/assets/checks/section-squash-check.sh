@@ -28,7 +28,7 @@
 #
 # WHAT THIS DOES NOT PROVE: that a live `/quenching:specs:execute` session obeys the prose. Nothing
 # automated can — the body gates on AskUserQuestion, which `claude -p` cannot answer, so an
-# end-to-end session cannot run unattended. `/.knowledge/standards/quality/surface-verification.md`
+# end-to-end session cannot run unattended. `/docs/standards/quality/surface-verification.md`
 # §Nothing under `commands/**` is testable in the session that writes it is the rule, and it is
 # exactly why the guard lives on the command's own line rather than in a checker.
 #

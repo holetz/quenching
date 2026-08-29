@@ -16,12 +16,12 @@ prohibitions that bind every git command on any repo. `isolation.md`, `commit.md
 Before the first commit of a run, look for the target's own conventions — **once**, and cheaply:
 
 ```bash
-ls .knowledge/standards/git/ 2>/dev/null
+ls docs/standards/git/ 2>/dev/null
 ```
 
 | What is found | What governs |
 | --- | --- |
-| one or more `.knowledge/standards/git/**.md` | **the target's docs**, read and followed verbatim |
+| one or more `docs/standards/git/**.md` | **the target's docs**, read and followed verbatim |
 | nothing | the defaults below |
 | a doc that covers only part (e.g. commit subjects but not merges) | the target's for what it covers, the defaults for the rest |
 
@@ -40,7 +40,7 @@ agreed-but-unproven rule someone wrote on purpose; that beats a plugin's opinion
 
 This file owns two prohibitions, and both are about **whose** conventions win:
 
-- **Never install `knowledge/standards/git/**` into a target.** See §The read-if-present rule. A default
+- **Never install `docs/standards/git/**` into a target.** See §The read-if-present rule. A default
   written into the repo stops being a default.
 - **Never apply a convention the target did not declare and this file does not name.** A commit
   style inferred from reading `git log` is a guess, and a guess about house style is worse than the
@@ -55,11 +55,11 @@ ones in this pillar.
 
 <!-- rationale -->
 
-Writing `knowledge/standards/git/**` into a repository that
+Writing `docs/standards/git/**` into a repository that
 never asked for it is `quenching-specs-*` reaching into `quenching-knowledge-align`'s territory, and it converts a default
 this file *offers* into a rule the repo now *declares* — which then wins over this file forever,
 without anyone having agreed to it.
 
-**On reporting which governed.** "Read the repo's `knowledge/standards/git/commit-messages.md`"
+**On reporting which governed.** "Read the repo's `docs/standards/git/commit-messages.md`"
 and "used the plugin default" are different facts about the same commit, and only one of them means
 the human's convention was honoured.

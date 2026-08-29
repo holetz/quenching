@@ -11,7 +11,7 @@ description: "Close ONE spec out — review the branch, write emergent knowledge
 **Input**: `$ARGUMENTS` — the spec id, and optionally its outcome.
 
 Closes ONE spec out, short of the merge itself. Four things happen, in this order, and each is a
-separate decision: the whole branch is **reviewed**, the `/.knowledge/` the work *revealed* is
+separate decision: the whole branch is **reviewed**, the `/docs/` the work *revealed* is
 **written**, the spec is **archived and distilled** into the OKF bundle, and the pre-merge gate is
 **proven green** — then the run **stops**, naming `quenching-git-pr-create` or
 `quenching-git-merge` as the human's own next command.
@@ -23,7 +23,7 @@ base.** The human chooses the next command for done work.
 archive operations and the repository's own verification command; those host-specific commands
 cannot be safely reduced to one static prefix.
 
-The distillation doctrine — what crosses into `/.knowledge/`, what stays, and how it is graded — lives in
+The distillation doctrine — what crosses into `/docs/`, what stays, and how it is graded — lives in
 [specs-conclude/distill.md](../../references/specs-conclude/distill.md)
 §What crosses, what stays. The layout, the gates and the
 `cq specs` surface live in
@@ -48,7 +48,7 @@ never on prose.
   the work was descoped, or proven elsewhere — and says so.
 - **Abandoning is always allowed.** Open tasks are precisely what you expect when closing out work
   that will not be built, so `--outcome abandoned` never refuses and never needs `--force`.
-- **`done` distils; `abandoned` does not.** Concluding as done mints by-products into `/.knowledge/` as
+- **`done` distils; `abandoned` does not.** Concluding as done mints by-products into `/docs/` as
   knowledge the product **adopted**. That is wrong for dropped work — it would enshrine a rule
   nobody kept. An abandoned spec harvests at most what was learned by *not* building it, as
   `authority: background`; a decision it *would* have made never crosses.
@@ -61,7 +61,7 @@ never on prose.
   [specs-conclude/abandoned.md](../../references/specs-conclude/abandoned.md).
   There is no merge to carry a branch commit home, so a record left on the branch would depend on a
   branch nobody adopted still existing.
-- **Declared rules were already written.** The `/.knowledge/standards/` a task explicitly named went in
+- **Declared rules were already written.** The `/docs/standards/` a task explicitly named went in
   during execution, honestly graded. What lands here is what the work *revealed* — and there is no
   delta and no second store to sync either way.
 - **What a standard attaches to the *merge* is settled here, not built as a task.** A version bump,
@@ -82,7 +82,7 @@ is already set is **reported and skipped**, not repeated:
 | Stage | Signal it already ran | On resume |
 | --- | --- | --- |
 | review | `reviewed: {date}` in frontmatter | skip; offer a re-read only if the diff grew since |
-| emergent `/.knowledge/` | it rides with the review — same stage, same commit | skipped with the review |
+| emergent `/docs/` | it rides with the review — same stage, same commit | skipped with the review |
 | archive | the file is in `archive/` with `outcome:` stamped | skip the move; go to distil |
 | distil | no record — it is offered once per conclude | offer it; an empty harvest is a valid answer |
 | release obligations | the branch diff already carries what the standard requires | report it satisfied; re-read the standard only if the diff grew |
@@ -137,14 +137,14 @@ the record — `cq specs record "<id>" reviewed --set date=<today>`, never by ed
 frontmatter.
 
 **The test is `branch.work != branch.base`, never the record's presence** — in-place work stamps
-one too (`/.knowledge/standards/workflows/plan-git-record.md` §Three frontmatter records carry the
+one too (`/docs/standards/workflows/plan-git-record.md` §Three frontmatter records carry the
 underivable git facts). No record, `work` equal to `base`, or no git → say so and skip to step 4;
 there is no branch diff to read.
 **Done when:** the diff was read and `reviewed` is stamped, or the run recorded why there was
 nothing to review.
 
-### 3. Write the `/.knowledge/` the work revealed
-The `/.knowledge/standards/` a task explicitly named is already in — execute wrote it as part of that
+### 3. Write the `/docs/` the work revealed
+The `/docs/standards/` a task explicitly named is already in — execute wrote it as part of that
 task. What lands **here** is what the work revealed and nobody declared: the `## Discoveries` lines
 worth a doc, and whatever the branch review just surfaced.
 
@@ -182,7 +182,7 @@ stopped at a refusal the human declined to override.
 This is the last writing step, and everything it writes lands on the **work branch** for `done` — or, for
 `abandoned`, the base checkout (Doctrine above). Two things happen here, in this order.
 
-**First, the distillation pass** — the single bridge into `/.knowledge/`, per
+**First, the distillation pass** — the single bridge into `/docs/`, per
 [distill.md](../../references/specs-conclude/distill.md)
 §The procedure (one confirmation), **branching on the outcome**:
 
@@ -200,7 +200,7 @@ silently, landing per Doctrine: the work branch for `done`, the base checkout fo
 
 **Then settle the release obligations the repo's standards attach to the merge itself.** With an
 OKF bundle present, derive which standards the branch diff's own paths answer to — an aggregate in
-the shell, never a walk of `/.knowledge/standards/<subject>/` — and read exactly those, per
+the shell, never a walk of `/docs/standards/<subject>/` — and read exactly those, per
 [align/evidence-doctrine.md](../../references/align/evidence-doctrine.md)
 §1 §2. Apply what they require *of the merge* rather than of any one task — a version bumped across
 artifacts a standard says must move together, a changelog entry, a manifest re-stamped. This is the
@@ -254,7 +254,7 @@ being merged.
 
 **An inconclusive result is not a green one.** A check that cannot tell "this failed" from "this
 could not be measured" has returned no verdict — say which it was, and ask, rather than merging on
-it. Where the repo keeps `/.knowledge/standards/quality/surface-verification.md`, its §The five
+it. Where the repo keeps `/docs/standards/quality/surface-verification.md`, its §The five
 preconditions a check must satisfy is where that distinction is defined for the command surface.
 
 **Run the scope the diff justifies.** A harness that spawns fresh agent sessions bills for every
@@ -302,7 +302,7 @@ body blocks:
 Close on §The next-step block, its recommended line naming step 6's handoff — `quenching-git-pr-create`
 or `quenching-git-merge`, whichever was recommended, or `quenching-specs-develop <id>` when
 block 3 has rows and that needs settling first.
-**Done when:** path, outcome, records, both `/.knowledge/` passes and the next-step block are all
+**Done when:** path, outcome, records, both `/docs/` passes and the next-step block are all
 reported.
 
 ## Invariants to never violate
@@ -326,11 +326,11 @@ reported.
   instead. It is stamped with `cq specs record`, which refuses on its own; editing the frontmatter
   to get past that refusal is the thing the refusal exists to stop.
 - Never re-run a stage whose signal is already set without saying so and being asked to.
-- Never re-write a rule a task already wrote into `/.knowledge/standards/` during execution — concluding
+- Never re-write a rule a task already wrote into `/docs/standards/` during execution — concluding
   syncs nothing.
 - Never settle a release obligation for an **abandoned** spec, and never invent one no standard
   states — a bump nobody asked for is a release claim this command had no authority to make.
-- Never bulk-copy a spec into `/.knowledge/`; only what outlives it crosses.
+- Never bulk-copy a spec into `/docs/`; only what outlives it crosses.
 - Never distil an abandoned spec's decisions as adopted knowledge; `background` is the ceiling.
 - Never edit or delete anything already in `archive/`, with exactly one exception, onto the spec
   this run is closing: the distillation's `## Outcome` append. It records a fact that did not exist

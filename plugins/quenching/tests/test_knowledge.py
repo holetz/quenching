@@ -88,7 +88,10 @@ class RetiredLogChecker(unittest.TestCase):
 # this pillar validates.
 # --------------------------------------------------------------------------- #
 RETIRED_LISTING_ROOT_FIXTURE = {
-    "index.md": "# Plans\n\n- [a spec](2026-07-28-a-spec.md)\n",
+    # The root listing carries `okf_version` because this fixture IS a bundle — that is the
+    # premise the test below rests on. Without the signature the tree is just a directory, and
+    # `not-an-okf-bundle` withholds the per-file verdict this test is asserting.
+    "index.md": "---\nokf_version: \"0.1\"\n---\n\n# Plans\n\n- [a spec](2026-07-28-a-spec.md)\n",
     "2026-07-28-a-spec.md": ("---\nslug: a-spec\ntitle: A spec\n"
                              "verification: per-section\n---\n\n# A spec\n"),
 }
@@ -111,6 +114,42 @@ class RetiredListingRootMode(unittest.TestCase):
         self.assertIn("index.md", RESERVED)
 
 
+class OkfSignatureGate(unittest.TestCase):
+    """`not-an-okf-bundle` — the gate that keeps a target repo's ordinary `docs/` from
+    reporting one ERROR per file. It earns its place from the root's own name: while the root
+    was dotted nobody had one by accident; `docs/` is the commonest doc folder there is."""
+
+    PLAIN_DOCS = {
+        "index.md": "# Read me\n",
+        "arquitetura.md": "# Arquitetura\n\ntexto\n",
+        "guias/deploy.md": "# Deploy\n\ntexto\n",
+    }
+
+    def test_a_directory_without_the_signature_is_reported_once_not_per_file(self):
+        findings = _validated(self.PLAIN_DOCS)
+        codes = [code for sev, rel, code, msg in findings]
+        self.assertEqual(codes.count("not-an-okf-bundle"), 1)
+        self.assertNotIn("missing-type", codes)
+        self.assertNotIn("no-frontmatter", codes)
+
+    def test_a_signed_bundle_is_judged_per_file_as_before(self):
+        signed = dict(self.PLAIN_DOCS)
+        signed["index.md"] = "---\nokf_version: \"0.1\"\n---\n\n# Read me\n"
+        codes = {code for sev, rel, code, msg in _validated(signed)}
+        self.assertNotIn("not-an-okf-bundle", codes)
+        # A file with no frontmatter at all is `no-frontmatter`; `missing-type` is the
+        # narrower verdict on frontmatter that parses but declares no `type`.
+        self.assertIn("no-frontmatter", codes)
+
+    def test_broken_root_frontmatter_still_counts_as_a_signature(self):
+        # A bundle whose root listing has malformed YAML is a broken bundle, not a non-bundle;
+        # answering "this is not an OKF bundle" would send the operator down the wrong path.
+        broken = dict(self.PLAIN_DOCS)
+        broken["index.md"] = "---\nokf_version: \"0.1\"\n\n# Read me\n"
+        codes = {code for sev, rel, code, msg in _validated(broken)}
+        self.assertNotIn("not-an-okf-bundle", codes)
+
+
 # --------------------------------------------------------------------------- #
 # `okf-legacy-*` — pre-rename layout debt (renomear-docs-para-knowledge, task 2.2)
 #
@@ -121,7 +160,7 @@ class LegacyRootDetector(unittest.TestCase):
     def test_fires_when_new_root_absent_and_old_root_present(self):
         with tempfile.TemporaryDirectory() as tmp:
             os.makedirs(os.path.join(tmp, ".docs"))
-            findings = validate_tree(os.path.join(tmp, ".knowledge"))
+            findings = validate_tree(os.path.join(tmp, "docs"))
         codes = {code for sev, rel, code, msg in findings}
         self.assertEqual(codes, {"okf-legacy-root"})
 
@@ -129,7 +168,7 @@ class LegacyRootDetector(unittest.TestCase):
         # Regression guard on the branch this task edited: a target with no bundle at
         # all — migrated or not — must still get the original finding, not a silent drop.
         with tempfile.TemporaryDirectory() as tmp:
-            findings = validate_tree(os.path.join(tmp, ".knowledge"))
+            findings = validate_tree(os.path.join(tmp, "docs"))
         codes = {code for sev, rel, code, msg in findings}
         self.assertEqual(codes, {"no-bundle"})
 
@@ -154,6 +193,40 @@ class LegacyHomeDetector(unittest.TestCase):
         findings = _validated(fixture)
         codes = {code for sev, rel, code, msg in findings}
         self.assertNotIn("okf-legacy-home", codes)
+
+
+class LegacyDocumentationHomeDetector(unittest.TestCase):
+    """`documentation/` was a wrapper home holding the four Diátaxis quadrants. Once the bundle
+    root itself became the site's source that level stopped earning its keep, and the quadrants
+    became homes. A target still carrying the wrapper has to be told, structurally."""
+
+    BUNDLE = '---\nokf_version: "0.1"\n---\n\n# Bundle\n'
+
+    def test_fires_while_the_wrapper_home_survives(self):
+        fixture = {"index.md": self.BUNDLE,
+                   "documentation/index.md": "# Documentation\n",
+                   "documentation/how-to/index.md": "# How-to\n"}
+        codes = {code for sev, rel, code, msg in _validated(fixture)}
+        self.assertIn("okf-legacy-documentation-home", codes)
+
+    def test_silent_once_dissolved(self):
+        fixture = {"index.md": self.BUNDLE,
+                   "how-to/index.md": "# How-to\n",
+                   "tutorials/index.md": "# Tutorials\n",
+                   "explanation/index.md": "# Explanation\n",
+                   "project/index.md": "# Project\n"}
+        codes = {code for sev, rel, code, msg in _validated(fixture)}
+        self.assertNotIn("okf-legacy-documentation-home", codes)
+
+    def test_a_canonical_concepts_home_is_never_read_as_a_quadrant(self):
+        # `LEGACY_QUADRANTS` maps `concepts` -> `explanation`. Re-aiming the quadrant check at the
+        # bundle root — the obvious move once the quadrants live there — would report the bundle's
+        # own canonical `concepts/` home as pre-rename debt. This is the guard on that.
+        fixture = {"index.md": self.BUNDLE,
+                   "concepts/index.md": "# Concepts\n",
+                   "explanation/index.md": "# Explanation\n"}
+        codes = {code for sev, rel, code, msg in _validated(fixture)}
+        self.assertNotIn("okf-legacy-doc-quadrant", codes)
 
 
 class LegacyDocQuadrantDetector(unittest.TestCase):
@@ -204,7 +277,7 @@ class LegacyGlossaryDetector(unittest.TestCase):
             "glossary.md": "# Glossary\n",
             "documentation/reference/glossary.md": (
                 "---\ntype: documentation\ngenerated: true\n"
-                "source: /.knowledge/glossary.md\n---\n\n# Glossary\n"
+                "source: /docs/glossary.md\n---\n\n# Glossary\n"
             ),
         }
         findings = _validated(fixture)

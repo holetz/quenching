@@ -55,9 +55,14 @@ dimension #11 is at least 2, the average is at least 2.5, and the hard build, na
 and indexes require an average of at least 3.5. A page below threshold after the last round is
 reported with its failing dimensions and reason; it is not silently shipped.
 
-Coverage is `non-empty routed mandatory surfaces / mandatory publication-map rows × 100`. The
-surface inventory covers the whole `/.knowledge/` bundle, not only pages selected for one write
-slice. A section with only a heading, placeholder, source gap, or the shipped skeleton's own
+Coverage is `non-empty published documents / publishable documents × 100` — the denominator is
+every `.md` in the bundle, **counted one by one**, never the handful of rows in the editorial map.
+That distinction is the whole gate. While the denominator was the map's rows, a bundle of 106
+documents reached 100% coverage with 12 pages and the check reported green: a map has around seven
+rows, so sub-sampling a home was structurally invisible. A document is covered when it has a built,
+non-empty page, or an explicit `não publicar` row naming that document and why.
+
+The inventory covers the whole `/docs/` bundle, not only pages selected for one write slice. A section with only a heading, placeholder, source gap, or the shipped skeleton's own
 section descriptor is not content and fails the gate
 until the plan marks it intentionally excluded. Internal planning markers (`TODO`, `.quenching/`, prompts and
 unresolved source-ledger notes) never cross into a published page; keep them in the source ledger

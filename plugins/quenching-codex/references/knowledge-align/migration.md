@@ -12,17 +12,24 @@ name**.
 
 Each existing section matches a canonical home **by function**:
 
-| Variant (examples) | Canonical |
+The canonical column is written **relative to the bundle root**, never with the root's own name
+in it. That is not a style choice: the root has been renamed twice (§1g), and a table spelling it
+out would have to be rewritten each time. It also keeps the table readable now that the root is
+`docs/` — the same name as the commonest variant in the left column, which is a target's ordinary
+documentation folder. Source and destination genuinely can be the same folder; the migration is
+then in place, and what changes is the shape inside it.
+
+| Variant (examples) | Canonical (inside the bundle root) |
 | --- | --- |
-| `docs/arquitetura/`, `docs/architecture-docs/` | `.knowledge/standards/` (or `standards/architecture/` if only that) |
-| `docs/adr/`, `docs/decisions` (ADRs) | `.knowledge/standards/<subject>/` — restamp `type: decision` → `standard` (§1f) |
-| `docs/backlog/`, `BACKLOG.md`, `docs/tarefas/` | `specs/` (leaves the bundle — §1e) |
-| `VISION.md`, `ROADMAP.md`, `docs/direcao/` | `.knowledge/vision/` |
-| `docs/catalogo_dados/`, `docs/dominio/`, `docs/data/` | `.knowledge/catalog/` |
-| `docs/normativos/`, `docs/regulamentos/` | `.knowledge/external/regulations/` (content) |
-| `docs/guias/`, `docs/howto/`, `docs/how-to/` | `.knowledge/documentation/how-to/` |
-| `docs/tutoriais/`, `docs/tutorials/`, `docs/getting-started/` | `.knowledge/documentation/tutorials/` |
-| `docs/documentacao/`, `docs/user-docs/`, `docs/site/`, `docs/manual/`, `docs/wiki/` | `.knowledge/documentation/` |
+| `docs/arquitetura/`, `docs/architecture-docs/` | `standards/` (or `standards/architecture/` if only that) |
+| `docs/adr/`, `docs/decisions` (ADRs) | `standards/<subject>/` — restamp `type: decision` → `standard` (§1f) |
+| `docs/backlog/`, `BACKLOG.md`, `docs/tarefas/` | `specs/` — **outside** the bundle (§1e) |
+| `VISION.md`, `ROADMAP.md`, `docs/direcao/` | `vision/` |
+| `docs/catalogo_dados/`, `docs/dominio/`, `docs/data/` | `catalog/` |
+| `docs/normativos/`, `docs/regulamentos/` | `external/regulations/` (content) |
+| `docs/guias/`, `docs/howto/`, `docs/how-to/` | `documentation/how-to/` |
+| `docs/tutoriais/`, `docs/tutorials/`, `docs/getting-started/` | `documentation/tutorials/` |
+| `docs/documentacao/`, `docs/user-docs/`, `docs/site/`, `docs/manual/`, `docs/wiki/` | `documentation/` |
 
 ### 1a. Subfolder-level map (inside `standards/`)
 
@@ -32,7 +39,7 @@ Convergence applies one level down — a variant **subfolder** is a smell too:
 `servicos/`→ the fitting subject (usually `platform/`, or split by content). The folder name +
 frontmatter (keys, enums, and the `title:`/`description:` free-text on this agent-facing
 surface) become canonical English. **A migration never translates body prose** — which language it
-is written in is owned by the bundle's `.knowledge/standards/agents/communication.md`.
+is written in is owned by the bundle's `docs/standards/agents/communication.md`.
 
 ### 1b. File-slug translation + prefix-cluster folding
 
@@ -68,11 +75,50 @@ too — not a variant name, but a retired home. Scaffold the `documentation/` sk
 `index.md` + the four section listings + `.pages`), restamp `type: guide` → `type: documentation`,
 and relocate each doc under that retired `guides/**` home **by shape** — per item, like Content relocation below,
 because a legacy `guides/` folder mixes both quadrants: a **task recipe / how-to** ("how do I do
-X") → `.knowledge/documentation/how-to/`; a **learning-oriented tutorial** → `.knowledge/documentation/tutorials/`.
+X") → `docs/documentation/how-to/`; a **learning-oriented tutorial** → `docs/documentation/tutorials/`.
 Sweep the blast radius like any rename (its **own** confirmation when links reach product code).
 
 <!-- rationale -->
 Without this rule `align` would read a conformant `guides/` and never migrate it.
+
+### 1c-bis. Dissolved wrapper home — `documentation/` → four homes at the bundle root
+
+<!-- rules -->
+
+`documentation/` held the four Diátaxis quadrants one level below the bundle root. It existed
+because the site generator needed a non-hidden subtree to point at; the bundle root itself became
+`docs_dir`, and a level whose only job was that stopped earning it. A target still carrying the
+wrapper reports **ERROR `okf-legacy-documentation-home`** — structural, one site, idempotent.
+
+Resolve it in this order:
+
+1. `documentation/tutorials/`, `documentation/how-to/` and `documentation/explanation/` move to the
+   bundle root under the same names. Run §1c FIRST if the target still has a `guides/` home: a
+   quadrant has to exist before it can be promoted.
+2. `documentation/reference/` becomes **`project/`** — this repository's own manual. **Never
+   `reference/`**: that is a retired home name `okf-legacy-home` still claims, and reclaiming it
+   would make an already-migrated bundle report as unmigrated
+   (`docs/standards/architecture/retiring-a-reserved-artifact.md`).
+3. **Restamp `type:` in the same commit as the move** — `tutorial`, `how-to`, `explanation`,
+   `project`. `docs/standards/architecture/type-follows-home.md` is the rule and it is not
+   advisory: a home's name and its docs' `type:` are two spellings of one fact, and leaving the old
+   value recreates the naming complaint one level down, in the most greppable field of the bundle.
+4. `documentation/index.md` merges into the bundle's root `index.md`, which then serves the site's
+   front door and the bundle map on one page — the `audience: both` every doc already declares.
+5. A generated `documentation/reference/glossary.md` is **deleted**, not moved. It was a copy that
+   existed only because the canonical glossary sat outside `docs_dir`; the canonical file now
+   publishes itself, and a second copy is exactly the `okf-legacy-glossary` the validator forbids.
+6. `documentation/assets/` moves to the bundle root, and any `.md` in it becomes `.txt`: every
+   `.md` under `docs_dir` is a page, and a generated term list is not one.
+
+Then sweep the blast radius like any rename (§3), and re-aim `docs_dir` at the bundle root in the
+root `zensical.toml`, regenerating the nav with `cq knowledge nav --write`.
+
+<!-- rationale -->
+
+Without this rule `align` would read a conformant `documentation/` — every quadrant correctly
+named, every doc correctly stamped — and never migrate it, because nothing about it is misspelled.
+The home is not wrong; it is retired, which no name check can see.
 
 ### 1d. Renamed backlog item — `idea` → `task`
 
@@ -93,7 +139,7 @@ listing nobody produces and nobody reads.
 
 ### 1e. Backlog leaves the OKF bundle — the bundle's `backlog/` home → the `specs/` front
 
-OKF v0.13 moved parked work out of the `.knowledge/` bundle, and it now lands in the `specs/` front as
+OKF v0.13 moved parked work out of the `docs/` bundle, and it now lands in the `specs/` front as
 **specs**, not as OKF docs — `cq knowledge validate` no longer scans it, and a spec carries no OKF
 `type:` at all.
 
@@ -130,26 +176,36 @@ not a docs home.
 
 <!-- rules -->
 
-A plugin release may rename a root it itself declares — the bundle root moved from `.docs/` to
-`.knowledge/` once. Nothing here is written against that pair specifically: a future release could
-rename `.specs/` the same way, and this procedure has to hold without being rewritten. Detection is
-**structural, sítio a sítio, never `okf_version`-gated** — a version bump does not imply a rename
-happened, and a rename can land without one.
+A plugin release may rename a root it itself declares. The bundle root has moved **twice**:
+`.docs/` → `.knowledge/`, and then `.knowledge/` → `docs/`. Nothing here is written against either
+pair specifically — a future release could rename `.specs/` the same way, and this procedure has to
+hold without being rewritten. Detection is **structural, sítio a sítio, never `okf_version`-gated**
+— a version bump does not imply a rename happened, and a rename can land without one.
 
-**A root and a home can share a spelling, and mean opposite things.** Every root in §1's table is
-the dotted bundle root (`.knowledge/`, always with the dot — §1 fixed this file's own earlier
-`knowledge/`-without-a-dot spelling for exactly this reason). `okf-legacy-home` below is about the
-*other* `knowledge/`, undotted, that used to sit one level inside that root as a home's own name —
-the one §1c/§1's canonical map, and the rest of this plugin, calls `concepts/` today. Writing the
-bare, undotted spelling anywhere it is meant as the root reads as the finding's target, not the
-root.
+The second move was forced from outside: a dot-prefixed directory cannot be a Zensical `docs_dir`
+at all (it builds zero pages and exits `0`), so a bundle root keeping its dot could never be the
+documentation site's own source. That is a measured external constraint, not a naming preference.
+
+**The root's name no longer distinguishes it from anything.** While the root was dotted, the dot
+did that work — `.knowledge/` was the root, undotted `knowledge/` was a home's old name one level
+inside it, and the two could not be confused. `docs/` has no such marker, and it is the single
+commonest documentation folder name in the wild: the left column of §1's own table is full of it.
+Two consequences follow, and both are load-bearing:
+
+- **A directory is not a bundle.** What identifies an OKF bundle is its **signature** — a root
+  `index.md` carrying `okf_version` — never the folder's name. `cq knowledge validate` reports
+  `not-an-okf-bundle` for a directory without it and withholds every per-file OKF verdict, so a
+  target's ordinary `docs/` answers with one finding instead of one per document.
+- **Migration is often in place.** When a target's variant folder and the canonical root are the
+  same `docs/`, nothing moves at the top level; the sweep restructures inside it. Do not read a
+  matching name as "already migrated" — read the signature.
 
 `cq knowledge validate` emits four independent findings for a target that has not run this sweep
 since the rename, each looking at only its own site:
 
 | Finding | Fires when |
 | --- | --- |
-| `okf-legacy-root` | the new root is absent and the pre-rename root sits where it should be |
+| `okf-legacy-root` | the new root is absent and a pre-rename root (`.docs/`, `.knowledge/`) sits where it should be — one finding per former name present |
 | `okf-legacy-home` | a pre-rename home name (`knowledge/`, `reference/`) sits at the bundle root |
 | `okf-legacy-doc-quadrant` | a pre-rename Diátaxis quadrant sits under `documentation/` |
 | `okf-legacy-glossary` | `glossary.md` sits inside a home instead of at the bundle root |

@@ -20,7 +20,7 @@ ladder, and the policy defaults live in
 
 ## Doctrine
 - **The rule governs; the plan proposes.** In a target repo the rule is
-  `/.knowledge/standards/automation/hooks.md`; absent + OKF bundle present → the plan offers
+  `/docs/standards/automation/hooks.md`; absent + OKF bundle present → the plan offers
   creating it from `automation/hooks-standard.md`, born `authority: background`. No bundle →
   write the hook only, suggest `quenching-knowledge-align` once.
 Resolve `cq` per
@@ -30,7 +30,7 @@ Resolve `cq` per
 ## Workflow
 
 ### 1. Read the rule
-Read `/.knowledge/standards/automation/hooks.md` and confirm the bundle (`/.knowledge/index.md` carries
+Read `/docs/standards/automation/hooks.md` and confirm the bundle (`/docs/index.md` carries
 `okf_version`). Rule present → it governs (a repo delta there beats the plugin default).
 Absent + bundle → plan its creation from the mold. No bundle → note the tail as skipped and
 plan the `quenching-knowledge-align` suggestion. **Done when:** the governing rule (or its planned

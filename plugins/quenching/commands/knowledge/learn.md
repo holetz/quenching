@@ -39,7 +39,7 @@ Copy `${CLAUDE_PLUGIN_ROOT}/assets/templates/concept-front.md` and complete the 
 
 ### 4. Write the concept doc
 Write the file with `Write`. Favor structural markdown (headings, lists, tables). Cross-home
-links absolute (`/.knowledge/...`); within-home links relative. Body prose MAY be the repo's language.
+links absolute (`/docs/...`); within-home links relative. Body prose MAY be the repo's language.
 **Done when:** the concept body is written without overwriting filled content.
 
 ### 5. Update `concepts/index.md`

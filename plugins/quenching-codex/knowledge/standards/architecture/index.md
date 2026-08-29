@@ -1,7 +1,7 @@
 # `standards/architecture/`
 
 System structure (layers, modules, boundaries) and the current/active **architectural
-patterns**. **`patterns` lives here** — there is no `/.knowledge/patterns/`; a design pattern is
+patterns**. **`patterns` lives here** — there is no `/docs/patterns/`; a design pattern is
 a doc in this home.
 
 **Boundary:** the shape of the system (the structural *why*). Code conventions (imports,

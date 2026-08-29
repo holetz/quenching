@@ -11,7 +11,7 @@ from quenching.common.io import read_text, write_text
 
 
 # --------------------------------------------------------------------------- #
-# release — the mechanical half of /.knowledge/standards/ci-cd/versioning-release.md
+# release — the mechanical half of /docs/standards/ci-cd/versioning-release.md
 # --------------------------------------------------------------------------- #
 # Four artifacts, down from the seven the pre-refactor scripts carried: each of the
 # four self-contained tools declared its own `VERSION` constant, and folding them into

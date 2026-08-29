@@ -156,9 +156,9 @@ def transform_codex_cq_references(text: str) -> str:
         "function in the same Bash call — **one door onto one file, and no third rung**.",
     )
     text = text.replace(
-        "The executable checker is `cq`\n(`cq knowledge validate /.knowledge` → exit 0 = conforms). Invoke it by its **literal quoted\n"
+        "The executable checker is `cq`\n(`cq knowledge validate /docs` → exit 0 = conforms). Invoke it by its **literal quoted\n"
         "path** on every call, never through a shell variable holding the interpreter plus the path —",
-        "The executable checker is `cq`\n(`cq knowledge validate /.knowledge` → exit 0 = conforms). Define the per-call wrapper from\n"
+        "The executable checker is `cq`\n(`cq knowledge validate /docs` → exit 0 = conforms). Define the per-call wrapper from\n"
         "the tool-resolution reference, then invoke `cq` in that same Bash call —",
     )
     text = text.replace(

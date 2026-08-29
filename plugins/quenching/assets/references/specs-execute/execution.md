@@ -189,7 +189,7 @@ report the failure.
 
 The **subject line format** is the target repo's to declare. Read
 [git/commit.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md)
-§Commit messages: a repo with `knowledge/standards/git/**` owns the format outright and this contract defers to it; with nothing
+§Commit messages: a repo with `docs/standards/git/**` owns the format outright and this contract defers to it; with nothing
 declared, the plugin's default is `plan/<id>-<handle>: <task-id> <task title>`. Never install a git
 standard into a target to create the answer.
 
@@ -316,8 +316,8 @@ own just-made commits.
 
 <!-- rules -->
 
-A task writes a `knowledge/standards/` doc **only when the task itself names it** — the path bulleted
-under `## Impact`'s parsed `### Standards this spec will write into knowledge/standards/` sub-heading,
+A task writes a `docs/standards/` doc **only when the task itself names it** — the path bulleted
+under `## Impact`'s parsed `### Standards this spec will write into docs/standards/` sub-heading,
 and named by that task. That doc is part of the task's deliverable: it is written before the
 commit, reviewed in the same diff, and stamped `authority` honestly — `current` when the task
 actually proved the rule, `background` when it is agreed but not yet proven.
@@ -349,7 +349,7 @@ policy for that is the same one that protects `/quenching:knowledge:import-memor
 
 **The orchestrator keeps, without exception:** spec selection, the isolation offer, every
 confirmation, every `cq specs task --check` flip, every `cq specs task --block` marker, every
-`knowledge/standards/` write, every `cq specs discover` line, the commit, and the decision to pause. The
+`docs/standards/` write, every `cq specs discover` line, the commit, and the decision to pause. The
 sub-agent writes code inside its declared files and reports back — it never talks to the human and
 never touches the spec's bookkeeping.
 
@@ -632,7 +632,7 @@ full first read of every file it touches. Where N tasks declare the same large f
 cold reads against the orchestrator's one warm one.
 
 The account is **declared arithmetic over files on disk, not a measurement of any run** — the
-distinction `knowledge/standards/automation/session-evidence.md` §The rule a counted claim must obey
+distinction `docs/standards/automation/session-evidence.md` §The rule a counted claim must obey
 imposes, and it is stated as an estimate here because that is what it is. On this repo's
 `configurable-spec-backend`, 18 of 29 tasks are delegation-eligible and 13 of them declare the same
 file: the pre-refactor specs script (as it stood then, before this repo split it into a package), ~37k tokens.
