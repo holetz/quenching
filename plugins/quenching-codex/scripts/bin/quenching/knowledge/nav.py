@@ -1,14 +1,14 @@
-"""Generate the site `nav` from the bundle on disk.
+"""Generate the site `nav` from the bundle's publication allow-list.
 
-The nav is not a projection of anything — it is the bundle's own shape, read once and written
-into `zensical.toml`. It lives here rather than in `projection.py` because that module derives the
-glossary snippet from the glossary, and nothing about ordering pages is that.
+The nav is read from the bundle's allowlisted homes and written into `zensical.toml`. It lives here
+rather than in `projection.py` because that module derives the glossary snippet from the glossary,
+and nothing about ordering pages is that.
 
 Three properties the generator has to hold, and each one is a bug the naive version has:
 
 * **Semantic order, never alphabetical.** Zensical falls back to the folder tree when `nav` is
-  absent, which sorts alphabetically and puts `catalog/` before `tutorials/`. The reading order of
-  a Diátaxis site is not its sort order, so `HOME_ORDER` below is the contract.
+  absent, which sorts alphabetically. The reading order of a Diátaxis site is not its sort order,
+  and raw `catalog/`/`external/` homes are not site inputs, so `HOME_ORDER` below is the contract.
 * **A title a human wrote survives.** The derived title is a default, not an assertion. Whoever
   fixes `Ci Cd` to `CI/CD` must not have to fix it again after the next run — which is why this
   generator reads the existing nav before writing one, and why it can never be "delete and
@@ -22,12 +22,13 @@ import os
 import re
 
 from quenching.knowledge.schema import ASSET_DIRS, EXEMPT
+from quenching.knowledge.site_source import PUBLISHED_HOMES
 
-# The site's reading order: learn, then do, then understand, then look up this project, then the
-# durable knowledge homes, then the lookup table. Anything found on disk but absent here is
-# appended after `vision/`, so a new home is never silently dropped from the sidebar.
+# The site's reading order. The nav is deliberately generated from the same publication allow-list
+# as the staged source tree: Zensical has no supported exclusion setting, so catalogues and external
+# research must be absent from both the menu and `docs_dir`, not merely omitted from this list.
 HOME_ORDER = ("tutorials", "how-to", "explanation", "project",
-              "standards", "concepts", "external", "catalog", "vision")
+              "standards", "concepts", "vision")
 
 _ATTR_SUFFIX = re.compile(r"\s*\{[^}]*\}\s*$")
 _H1 = re.compile(r"^#\s+(.*?)\s*$", re.MULTILINE)
@@ -85,8 +86,8 @@ def _entries(bundle_root: str, rel_dir: str) -> list:
     """One directory's nav entries: its own `index.md` first, then subsections, then pages.
 
     `assets/` and the harness pointers are excluded: the first holds no pages the reader wants a
-    sidebar row for, the second is agent-facing. Both still BUILD — Zensical has no per-file
-    exclusion — they simply carry no nav line.
+    sidebar row for, the second is agent-facing. The staged-source builder decides which non-page
+    assets are copied; these paths simply carry no nav line.
     """
     abs_dir = os.path.join(bundle_root, rel_dir) if rel_dir else bundle_root
     try:
@@ -111,12 +112,14 @@ def _entries(bundle_root: str, rel_dir: str) -> list:
 
 
 def build_nav(bundle_root: str) -> list:
-    """The whole nav, in `HOME_ORDER`, with any unlisted home appended rather than dropped."""
+    """The nav for the bounded site source, in `HOME_ORDER`.
+
+    Unknown homes are intentionally not appended: a new high-volume or internal home must earn a
+    publication decision before it can reach Zensical.
+    """
     nav: list = ["index.md"]
-    present = sorted(n for n in os.listdir(bundle_root)
-                     if os.path.isdir(os.path.join(bundle_root, n))
-                     and not n.startswith(".") and n not in ASSET_DIRS)
-    ordered = [h for h in HOME_ORDER if h in present] + [h for h in present if h not in HOME_ORDER]
+    ordered = [h for h in HOME_ORDER if h in PUBLISHED_HOMES
+               and os.path.isdir(os.path.join(bundle_root, h))]
     for home in ordered:
         entries = _entries(bundle_root, home)
         if entries:

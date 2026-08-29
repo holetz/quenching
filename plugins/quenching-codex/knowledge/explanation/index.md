@@ -6,8 +6,8 @@ the documentation site (the Diátaxis **explanation** quadrant). Each page carri
 
 **Boundary:** a concept page here is part of the **published site** for product users.
 Internal team understanding — mental models and learnings — belongs in the `concepts/` home. The
-root glossary remains canonical there and publishes itself — [glossary.md](../glossary.md) is
-inside `docs_dir`, so readers reach the source rather than a derived copy.
+root glossary remains canonical there and is copied into the bounded `site-source/` input by
+`cq knowledge site-source`; readers reach its published route without a second editable source.
 
 ## How to organize
 

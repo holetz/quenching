@@ -21,3 +21,5 @@ settings.local.json
 # Local Zensical output and cache; the source is docs/documentation/
 site/
 .cache/
+# Generated, bounded Zensical input; the complete OKF bundle remains under docs/.
+site-source/

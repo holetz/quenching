@@ -203,8 +203,10 @@ bundle, never write the line into a nested harness file — only the root one is
 session start, which is the whole reason this form was chosen — and on a repo that already declares
 one, read it and move on rather than asking again.
 
-**The documentation site.** The whole bundle is the site's source, so this applies to any bundle
-— there is no separate home to check for. First inspect the
+**The documentation site.** The whole bundle is the knowledge source, but Zensical receives a
+bounded generated sibling: its 0.0.57 release builds every Markdown below `docs_dir` and does not
+support `exclude_docs`, `draft_docs` or `not_in_nav`. The staged source keeps high-volume data and
+external research out of the build. This applies to any bundle, so first inspect the
 target root's `pyproject.toml`, `uv.lock` and `requirements.txt`, then preserve the dependency
 manager already in use. When the project declares uv (`uv.lock` exists or `pyproject.toml` has a
 `[tool.uv]` table), add `zensical>=0.0.57` to its development group with `uv add --dev` when it is
@@ -223,7 +225,10 @@ let the user merge), filling `site_name`/`site_description`; `quenching.css` →
 request, `ci-github-pages.yml` → `.github/workflows/docs.yml` (opt-in, platform-specific), or
 `azure-pipelines-docs.yml` → `azure-pipelines-docs.yml` only when the target remote is Azure DevOps.
 The Azure payload publishes a `documentation-site` artifact and never deploys remotely. The nav
-ships inside the config, so it needs no separate install.
+ships inside the config, so it needs no separate install. The first install also stages the
+bounded source with `cq knowledge site-source docs site-source --write`; `catalog/` and
+`external/` are deliberately absent from that tree. Later staging and verification belong to
+`quenching:knowledge:documentation:build`.
 
 This is the **first install only**. The site layer's owner is `/quenching:knowledge:documentation:build`: every
 later update, dependency sync, nav regeneration, config merge, and build verification is **its**

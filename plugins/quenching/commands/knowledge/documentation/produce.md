@@ -20,16 +20,18 @@ and the cycle authorization wording is in
 - **Conductor, not author.** Every mutation belongs to `plan`, `write` or `build`; this body reports the run.
 - **One authorization.** Present the complete stage plan, name `/quenching:knowledge:documentation:produce` as grantor, and use one OK for the cycle.
 - **Build first and last.** The first pass establishes extensions before pages use them; the last pass runs strict build and rendered QA.
-- **Catalog stages stay ordered.** When a catalog is mapped, plan inventories its source and gaps,
-  write emits the derived index/details with lineage, review checks reachability, and the final build
-  reports the derived route count.
+- **Catalogues stay outside the Zensical site.** Plan inventories `catalog/` and `external/` by
+  metadata and provenance, but the bounded `site-source/` stage never copies their raw files. If
+  readers need their facts, write curates them into an allowlisted page with lineage; review checks
+  that page, not a raw catalogue route.
 - **Coverage is a delivery gate over the whole bundle.** Consolidate the ledger from
   `.quenching/documentation/`, inventory every `.md` in the bundle, and report
   `published documents / publishable documents × 100` — **per document, never per home**. A home
   with one page in it is not a covered home; counting by home is how twelve pages once covered a
   hundred-and-six-document bundle at a reported 100%. A page selected for this pass cannot hide an
-  uncovered document anywhere in `standards/`, `concepts/`, `external/`, `catalog/`, `vision/`, the
-  reader-facing quadrants or the glossary. Empty sections,
+  uncovered staged document anywhere in the allowlisted `standards/`, `concepts/`, `vision/`, the
+  reader-facing quadrants or the glossary. Raw `external/` and `catalog/` documents are inventoried
+  and explicitly excluded from this Zensical denominator. Empty sections,
   source gaps and leaked internal markers remain explicit, then name the next stage or route that
   leaves the current page.
 - **Glossary is default-on when it has content.** The canonical `/docs/glossary.md` is a
@@ -78,7 +80,8 @@ is explicitly marked below threshold with dimensions and evidence.
 
 ### 5. Validate the finished site
 
-Invoke `quenching:knowledge:documentation:build` again. Read the strict-build result, run the
+Invoke `quenching:knowledge:documentation:build` again. Read the strict-build result, verify the
+`site-source/` manifest, run the
 projection gate and **always** run `documentation-site-check.py` immediately after the build;
 distinguish site-layer fixes from page-level reports and state browser-QA limits.
 If preview was authorized, include its loopback URL/PID and confirmed shutdown; keep the external

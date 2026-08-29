@@ -8,7 +8,7 @@ markdown stays generator-neutral; only this config layer names a generator.**
 
 | File | Stamped to | Notes |
 | --- | --- | --- |
-| `zensical.toml.tmpl` | repo root `zensical.toml` | only if absent; fill `site_name`/`site_description`; keep `docs_dir = "docs/documentation"` and add only map-approved routes |
+| `zensical.toml.tmpl` | repo root `zensical.toml` | only if absent; fill `site_name`/`site_description`; keep `docs_dir = "site-source"` and stage only the publication allow-list |
 | `requirements.txt` | repo root, only when no `pyproject.toml` is used | `zensical` |
 | `quenching.css` | the bundle, at `assets/stylesheets/quenching.css` | the reduced-motion guard, and nothing else — the badge/hero/card rules went with the theme constructs the generator-neutral rule removed; `extra_css` in `zensical.toml` wires it |
 | `ci-github-pages.yml` | `.github/workflows/docs.yml` | opt-in; GitHub Pages via the Pages artifact — the repo's Pages source must be "GitHub Actions" |
@@ -16,7 +16,8 @@ markdown stays generator-neutral; only this config layer names a generator.**
 
 **The nav lives in the config.** Zensical runs no plugins, so nothing derives the sidebar from a
 sidecar file: the `nav` list in `zensical.toml` carries the order and the section titles, and a new
-page is a new line in it.
+page is a new line in it. The generated `site-source/` tree is the publication boundary; omitting a
+page from `nav` does not prevent Zensical from processing it.
 
 ## Publication and identity contract
 
@@ -39,6 +40,8 @@ deployment as a separate platform-owned stage with its own credentials and appro
 
 ```bash
 pip install -r requirements.txt
+cq knowledge project docs --check
+cq knowledge site-source docs site-source --write
 zensical build --clean --strict
 # fallbacks: python -m zensical build --clean --strict · uv run zensical build --clean --strict
 ```
@@ -56,14 +59,15 @@ the toolchain is not installed. `zensical build` has no `--site-dir`: it writes 
 when a local preview is explicitly requested.
 
 `index.md` in each section is the section landing page (`navigation.indexes`). The plan's **Mapa
-editorial de publicação** decides whether another OKF home is published, published through a
-curated mirror, or absent. Links use that mapped route — never an internal
-`/docs/<home>/…` path. A `não publicar` home has no route or nav entry.
+editorial de publicação** decides the allowlisted site surface. Raw `catalog/` and `external/`
+homes remain knowledge sources but are absent from `site-source/`, routes and nav; curate any
+reader-facing use into an allowlisted page with provenance. Links use the mapped route — never an
+internal `/docs/<home>/…` path. A `não publicar` home has no staged file, route or nav entry.
 
-The glossary route is `reference/glossary.md`. When the canonical root `glossary.md` has content,
-it is published by default unless the accepted map explicitly says `não publicar`. The write stage
-runs `cq knowledge project --write`, which derives the route and
-`assets/glossary-abbreviations.md`, records the source SHA-256, updates the reference index and
-nav, and rewrites bundle links to mapped published routes. The template's `abbr` and
+The glossary route is `glossary.md` in the bounded source. When the canonical root `glossary.md`
+has content, it is published by default unless the accepted map explicitly says `não publicar`.
+The write stage runs `cq knowledge project --write`, which derives the abbreviation snippet and
+records the source SHA-256; `cq knowledge site-source --write` stages both without creating a
+second editable glossary. The template's `abbr` and
 `pymdownx.snippets.auto_append` load those definitions on every page. The derived files are
 generated data, never a second hand-maintained glossary.
