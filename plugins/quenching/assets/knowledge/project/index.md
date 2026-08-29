@@ -13,4 +13,4 @@ different paths.
 The repo decides what reference exists — the skeleton ships none. Standalone pages live as
 `.md` files here; group by product area into subfolders with their own `index.md`.
 
-- [Glossary](glossary.md) — generated from the canonical bundle glossary
+- [Glossary](../glossary.md) — the bundle's own A–Z term lookup, one level up
