@@ -59,6 +59,16 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertIn("--glossary-term", build)
         self.assertIn("first lexical glossary entry", build)
 
+    def test_build_checks_all_generated_paths_for_tracking(self):
+        build = (ROOT / "commands" / "knowledge" / "documentation" / "build.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("site/`, `.quenching/`, and `site-source/` ignored", build)
+        self.assertIn("git ls-files site .quenching site-source", build)
+        self.assertIn("site-source-tracked", build)
+        self.assertIn("already-tracked generated source is **REPORTED**", build)
+
     def test_embedded_documentation_references_use_current_paths(self):
         architecture = (
             ROOT / "assets" / "references" / "knowledge-documentation" / "architecture.md"

@@ -93,8 +93,10 @@ bundle; every install, update, and re-verification after that is **this** skill.
   another home — each is **reported** with the command that closes it (`quenching-knowledge-align`,
   `quenching-knowledge-add`), never repaired by this skill. Writing and repairing pages belongs to the skills
   that own them; this one would be guessing.
-- **The build is verification, not a deliverable.** `zensical build --strict` writes to the
-  configured `site_dir`, which is gitignored — that is what `site-artifacts-tracked` guarantees.
+- **The build is verification, not a deliverable.** `zensical build --strict` reads the generated
+  bounded `site-source/` input and writes to the configured `site_dir`, which is gitignored — that
+  is what `site-source-tracked` and `site-artifacts-tracked` guarantee. The `.quenching/` working
+  state is gitignored as well, under `site-scratch-tracked`.
   Where `site/` is **tracked**, overwriting it would be destructive: verify instead with a
   throwaway config written **at the repo root** (`-f`), its `site_dir` a gitignored path **inside**
   the repo, and delete both after. Neither end is optional: a Zensical config resolves its paths
@@ -151,6 +153,7 @@ of git.
 | `site-pages-orphan` | a `.pages` file left inside the home by an older install | **FIX** — remove it; nothing reads it any more |
 | `site-artifacts-tracked` | `site/` not gitignored (or already tracked) | **FIX** the gitignore; a tracked build is **REPORTED** for the human to remove |
 | `site-scratch-tracked` | `.quenching/` not gitignored — the family's plan-of-record would land in the human's next commit | **FIX** the gitignore; an already-tracked plan is **REPORTED** for the human to remove |
+| `site-source-tracked` | generated bounded `site-source/` is not gitignored (or is already tracked) | **FIX** the gitignore; an already-tracked generated source is **REPORTED** for the human to remove |
 | `site-section-no-index` | a section folder with no `index.md` (breaks `navigation.indexes` *and* the OKF listing rule) | **REPORT** → `quenching-knowledge-align` |
 | `site-link-escapes` | a page links an exposed home by an internal bundle path instead of its mapped route | **REPORT** → `quenching-knowledge-documentation-write` |
 | `site-page-unstamped` | a page in a reader-facing quadrant with no `type` matching its home | **REPORT** → `quenching-knowledge-align` |
@@ -206,7 +209,7 @@ Collect, without writing anything:
   `requirements.txt`, or another target-owned manifest); record which one wins and whether a
   duplicate source exists.
 - every folder under `/docs/**` with its `index.md` and its pages, plus any leftover `.pages`.
-- `.gitignore` (are `site/` and `.quenching/` ignored?) and `git ls-files site .quenching` (is either already tracked?).
+- `.gitignore` (are `site/`, `.quenching/`, and `site-source/` ignored?) and `git ls-files site .quenching site-source` (is any generated path already tracked?).
 - `.github/workflows/docs.yml`.
 - Azure DevOps remotes (`dev.azure.com`, `visualstudio.com`) and any existing `azure-pipelines*.yml`;
   record whether the payload is absent, already installed, or declined.
