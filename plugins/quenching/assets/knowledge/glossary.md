@@ -63,8 +63,8 @@ and let the linked doc carry the depth.
 
 ## Published projection
 
-The glossary publishes straight from here — the bundle root is the site's source, so there is no
-derived route to keep in step. Only the abbreviation snippet used for tooltips is
+The glossary remains canonical here and is copied into the bounded `site-source/` input by
+`cq knowledge site-source`; there is no second editable route to keep in step. Only the abbreviation snippet used for tooltips is
 derived from this file; never maintain a second editable list of terms there. The site layer turns
 each canonical entry into Python-Markdown `*[term]: definition` syntax, so terms such as `ASRC` and
 `chave conformada` gain tooltips without authors marking occurrences by hand.

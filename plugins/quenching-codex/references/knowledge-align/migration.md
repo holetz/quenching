@@ -111,8 +111,10 @@ Resolve it in this order:
 6. `documentation/assets/` moves to the bundle root, and any `.md` in it becomes `.txt`: every
    `.md` under `docs_dir` is a page, and a generated term list is not one.
 
-Then sweep the blast radius like any rename (§3), and re-aim `docs_dir` at the bundle root in the
-root `zensical.toml`, regenerating the nav with `cq knowledge nav --write`.
+Then sweep the blast radius like any rename (§3), regenerate the allowlisted nav with
+`cq knowledge nav --write`, and stage `site-source/` with `cq knowledge site-source docs
+site-source --write`. The root `zensical.toml` must point `docs_dir` at `site-source`, never at the
+complete bundle.
 
 <!-- rationale -->
 

@@ -8,9 +8,9 @@ allowed-tools: Read, Grep, Glob, Bash, Write, Edit
 
 **Input**: `$ARGUMENTS` (optionally a bundle home to focus the nav check on, or the path of an existing `zensical.toml`; omit to inventory the whole site layer).
 
-Makes the OKF bundle [`/docs/`](${CLAUDE_PLUGIN_ROOT}/assets/knowledge/index.md) **render as a
-site** — the whole bundle, which is what `docs_dir` points at — and keeps that rendering honest as
-it grows. The home is a plain
+Makes the OKF bundle [`/docs/`](${CLAUDE_PLUGIN_ROOT}/assets/knowledge/index.md) feed a bounded
+**Zensical site** and keeps that rendering honest as it grows. The whole bundle remains the
+knowledge source; `site-source/` is the generated publication input. The home is a plain
 Markdown tree; everything generator-specific lives in a thin **site layer** around it — the
 `zensical.toml` plus exactly one dependency source at the repo **root**, outside the bundle. This
 skill owns that layer end to end: it installs it when absent, merges it forward when present,
@@ -30,22 +30,21 @@ bundle; every install, update, and re-verification after that is **this** skill.
   inside it, this skill owns exactly one file — the CSS asset. The OKF markdown stays
   **generator-neutral** — never add generator-specific syntax, a nav entry inside a page, or
   generator frontmatter to a concept doc.
-- **The confirmed Mapa editorial de publicação is the publication boundary.** Keep
-  `docs_dir = "docs/documentation"`: the accepted map, not the folder tree, decides what is
-  published, and pointing the generator at the bundle root would publish every home whether the
-  map exposed it or not. **Never a dot-prefixed `docs_dir`** — one builds an empty site: zero
-  pages, not even a `404.html`, no warning, exit `0`, because Zensical excludes every path
-  carrying a `.`-prefixed component and follows no symlink out of it. Measured on 0.0.57;
-  `docs/external/tools/zensical-measured-behaviour.md` carries the evidence, and it is why the
-  bundle root itself no longer starts with a dot.
-  A home marked `publicar` or `publicar derivado` is exposed by an intentional route or curated
-  mirror; `não publicar` creates no nav entry or link. The map,
-  not a home's name, decides this. A missing or stale derived route is reported to the planning or
-  writing stage; this site-layer command never invents or rewrites Markdown.
+- **The confirmed Mapa editorial de publicação is the publication boundary.** Zensical 0.0.57
+  builds every Markdown below `docs_dir` and does not support `exclude_docs`, `draft_docs` or
+  `not_in_nav`. Therefore `docs_dir = "site-source"` and the command stages only the shared
+  publication allow-list with `cq knowledge site-source docs site-source --write`; it never points
+  at the complete bundle. Raw `catalog/` and `external/` homes are excluded from that tree even
+  when they remain useful knowledge sources. A home marked `publicar` or `publicar derivado` is
+  exposed only when its content is in the allow-list or is curated into an allowlisted page;
+  `não publicar` creates no nav entry, staged file or published link. The map, not a home's name,
+  decides editorial intent, while the staging boundary enforces the generator's file semantics.
+  A missing or stale derived route is reported to the planning or writing stage; this site-layer
+  command never invents or rewrites Markdown.
 - **The nav is GENERATED, not maintained.** Zensical runs no plugins, so nothing derives the
   sidebar from a sidecar file: without `nav`, it falls back to the folder tree — alphabetical,
-  which is not a Diátaxis reading order. `cq knowledge nav --write` generates the whole list from
-  the bundle in reading order and is idempotent to the byte, so `--check` is a diff rather than an
+  which is not a Diátaxis reading order. `cq knowledge nav --write` generates the allowlisted list
+  from the bundle in reading order and is idempotent to the byte, so `--check` is a diff rather than an
   opinion. A **title a human wrote survives regeneration untouched**; a missing one is derived
   from the section's `index.md` H1.
 - **MERGE, never clobber.** A `zensical.toml` a human has customized is authoritative: add only the
@@ -60,20 +59,21 @@ bundle; every install, update, and re-verification after that is **this** skill.
   `site_url` comes only from the selected delivery destination. Language and identity come only
   from a target contract or owned asset. Missing evidence is a finding, never a public placeholder.
 - **Glossary projection has one source.** When the accepted map exposes the glossary, derive the
-  site-layer abbreviation snippet from root `glossary.md`. The glossary itself needs no derived
-  route — it is inside `docs_dir` and publishes as its own page. `cq knowledge project --check`
-  proves the snippet's origin and source hash; the rendered checker proves a known `<abbr>`. Never
+  site-layer abbreviation snippet from root `glossary.md`, then stage both into `site-source/`.
+  The glossary publishes as `glossary.md` in that bounded tree. `cq knowledge project --check` and
+  `cq knowledge site-source --check` prove the projection and staging; the rendered checker proves
+  a known `<abbr>`. Never
   ask an author to edit the derived snippet or a duplicate term list. A non-empty canonical glossary is required by default;
   only an accepted `não publicar` map row can exclude it.
-- **The whole bundle is the source boundary.** Inventory every `docs` home —
+- **The whole bundle is the knowledge inventory, not the generator input.** Inventory every `docs` home —
   `tutorials/`, `how-to/`, `explanation/`, `project/`, `standards/`, `concepts/`, `external/`,
-  `catalog/`, `vision/` and the root glossary — and compare coverage **document by document**.
-  Coverage is not the number of pages the plan happened to select, and it is not a per-home tick:
-  a home whose documents are mostly unpublished fails the gate even though the home has a page.
-- **Catalog projections are indexed, not flattened into nav.** When the map exposes `catalog/` as
-  a derived reference, require `reference/catalog/index.md` as the sole nav entry. Verify that its
-  layer/schema links reach every detail route, that each detail carries a stable identifier and
-  lineage source, and that the generated route count is recorded. Never add one nav line per item.
+  `catalog/`, `vision/` and the root glossary — and compare coverage **document by document** in the
+  staged tree. Raw `catalog/` and `external/` files are explicitly excluded from this Zensical
+  denominator; they remain inventoried as knowledge. Coverage is not the number of pages the plan
+  happened to select, and it is not a per-home tick.
+- **Catalogues are outside this Zensical site.** Keep raw `catalog/` files out of `site-source/`
+  and `nav`. If their information is needed by readers, curate only the approved facts into an
+  allowlisted reader-facing page with source lineage; do not flatten the catalogue into routes.
 - **Delivery payloads are opt-in and host-specific.** Detect an Azure DevOps remote from its URL,
   offer `azure-pipelines-docs.yml` as a separate confirmation, and preserve any existing pipeline.
   The payload only publishes the strict `site/` directory as `documentation-site`; it is not a
@@ -124,7 +124,9 @@ of git.
 | `site-repo-url-absent` | no `repo_url` and Git remote provides a usable repository URL | **FIX** — add the derived value without replacing a human value |
 | `site-edit-uri-absent` | a mapped host needs an edit URL Zensical cannot derive | **FIX** — add its tested template, preserving a human value |
 | `site-config-legacy` | a root `mkdocs.yml` and no `zensical.toml` | **REPORT** — it still builds, but every MkDocs plugin in it is inert; converting is its **own confirmation** |
-| `site-docs-dir-mismatch` | `docs_dir` does not point at the bundle root | **FIX, own confirmation** — a dot-prefixed root builds zero pages and still exits `0` |
+| `site-docs-dir-mismatch` | `docs_dir` does not point at generated `site-source/` | **FIX, own confirmation** — pointing at the bundle would process excluded homes |
+| `site-source-missing` | generated bounded source tree is absent | **FIX** — run `cq knowledge site-source docs site-source --write` |
+| `site-source-stale` | generated source manifest differs from the allowlisted bundle files | **FIX** — restage with `cq knowledge site-source docs site-source --write` |
 | `site-publication-map-absent` | the accepted plan has no Mapa editorial de publicação | **REPORT** → `/quenching:knowledge:documentation:plan` |
 | `site-publication-route-missing` | a `publicar`/`publicar derivado` row has no corresponding built page | **REPORT** → `/quenching:knowledge:documentation:write` |
 | `site-publication-leak` | a `não publicar` home appears in nav, a route or an internal link | **FIX** only in config/nav; otherwise **REPORT** → page author |
@@ -133,8 +135,8 @@ of git.
 | `site-glossary-term-unrendered` | a known canonical term is not present as rendered `<abbr>` | **REPORT** → `/quenching:knowledge:documentation:write` |
 | `site-coverage-incomplete` | a publishable document has no built, non-empty page and no explicit `não publicar` row of its own | **REPORT** → `/quenching:knowledge:documentation:write` |
 | `site-skeleton-stub` | a mandatory route's page is byte-identical to the shipped skeleton's section descriptor, or carries only that descriptor's boilerplate | **REPORT** → `/quenching:knowledge:documentation:write`; the route is not coverage |
-| `site-catalog-index-missing` | a mapped catalog has no derived layer/schema index | **REPORT** → `/quenching:knowledge:documentation:write` |
-| `site-catalog-lineage-missing` | a catalog detail omits its stable identifier or source lineage | **REPORT** → `/quenching:knowledge:documentation:write` |
+| `site-catalog-index-missing` | a catalog is incorrectly proposed as a Zensical route | **REPORT** → revise the map; keep raw catalog outside `site-source/` |
+| `site-catalog-lineage-missing` | a catalog fact is being curated without stable source lineage | **REPORT** → `/quenching:knowledge:documentation:write`; do not stage raw detail |
 | `site-nav-absent` | the config declares no `nav` while the home has sections to order | **FIX** — write the list from the folder tree |
 | `site-nav-stale` | the `nav` names an entry that does not exist, or omits a page the home has | **FIX** — regenerate the list, keep every human title |
 | `site-feature-absent` | `navigation.indexes` missing while sections use `index.md` as landing page | **FIX** — add to `theme.features` |
@@ -213,24 +215,29 @@ Collect, without writing anything:
   checking root config; if it names a config path, use that file. **Done when:** the site-layer
   inventory and focus are fixed.
 
+- the generated `site-source/` tree and its manifest; compare it with
+  `cq knowledge site-source docs site-source --check` before any build. The source inventory still
+  lists `catalog/` and `external/`, but their raw files must not be copied into or counted as
+  Zensical pages.
+
 ### 3. Detect drift
 Read the capability register alongside the map. An enabled row must have a tested prerequisite,
 configuration source and expected HTML effect; an unsupported row is a reported disabled decision.
 Walk the `site-*` table above over the inventory. Compare every map row with the real routes: every
 exposed row needs a non-empty built page; a `não publicar` row must be absent from nav and
 published links. For `site-link-escapes`, grep for bundle paths that should instead target a mapped
-route. For `site-coverage-incomplete`, the denominator is **every publishable `.md` in the
-bundle**, not the map's rows and not the pages assigned in the plan. For `site-skeleton-stub`, diff each mandatory route against its
+route. For `site-coverage-incomplete`, the denominator is **every publishable `.md` in the staged
+`site-source/` tree**, not raw `catalog/` or `external/` files, the map's rows or the pages assigned
+in the plan. For `site-skeleton-stub`, diff each mandatory route against its
 counterpart under `${CLAUDE_PLUGIN_ROOT}/assets/knowledge/` — an identical page, or
 one whose only content is the home's own descriptor, proves the site was never written, exactly
 the state a green strict build cannot see. For `site-nav-stale`, compare the config's `nav` against the allowed tree. Record the **evidence** for every finding —
 a file:line or the parsed key — never a suspicion. **Done when:** every site finding has evidence
 and a disposition.
 
-For a mapped catalog, additionally parse `reference/catalog/index.md` and count its detail links.
-Every linked detail must expose `id`, `layer`, `schema` and `lineage`; report the expected versus
-actual route count in the build result. The index alone enters `nav`, so item growth does not require
-configuration churn.
+For `catalog/` and `external/`, record the source count and confirm they are absent from
+`site-source/` and `nav`; do not parse or render the raw detail set during a site build. If a
+reader-facing page curates facts from either home, verify its source lineage in the page ledger.
 
 ### 4. Derive the values you will write
 `site_name` from the repo (directory name, `package.json` `name`, or the root `README.md` H1) and
@@ -261,11 +268,14 @@ For an Azure remote, the equivalent opt-in copies `azure-pipelines-docs.yml` onl
 confirmation is granted and the target path is absent; report `documentation-site` as an artifact,
 not as deployed content.
 The CSS asset is the one file this skill writes inside the docs home; Markdown pages remain
-untouched. **Done when:** only approved site-layer edits are applied and `extra_css` points at the
-stamped CSS.
+untouched. Finally run `cq knowledge site-source docs site-source --write` so Zensical receives
+only the bounded publication tree. **Done when:** only approved site-layer edits are applied,
+`docs_dir` is `site-source`, and the staged manifest is current.
 
 ### 7. Verify with a real build and rendered QA
-If the toolchain is present, run the selected runner (`uv run zensical`, `python -m zensical`, or
+Before the build, require `cq knowledge site-source docs site-source --check`; a missing or stale
+manifest is `site-source-missing`/`site-source-stale` and must be fixed by staging. If the toolchain
+is present, run the selected runner (`uv run zensical`, `python -m zensical`, or
 the executable) with `build --clean --strict`. **Always, immediately after every build**, run
 `python3 ${CLAUDE_PLUGIN_ROOT}/assets/checks/documentation-site-check.py <site_dir>`; this is
 mandatory even when the strict build is green. A non-zero
@@ -273,8 +283,9 @@ checker result is a structural finding: `site-asset-missing`, `site-anchor-missi
 `site-sitemap-empty`, `site-page-orphan` or `site-remote-resource`, each reported with its path.
 When the map makes the glossary mandatory, run the same checker with
 `--require-glossary --glossary-source docs/glossary.md
---glossary-snippet docs/assets/glossary-abbreviations.txt --glossary-route glossary.md`; run
-`cq knowledge project docs --check` and `cq knowledge nav docs --check` beside it. For a local-only build
+--glossary-snippet site-source/assets/glossary-abbreviations.txt --glossary-route glossary.md`; run
+`cq knowledge project docs --check`, `cq knowledge nav docs --check` and
+`cq knowledge site-source docs site-source --check` beside it. For a local-only build
 whose config has no `site_url`, add `--local`; this accepts a relative or empty local sitemap but
 still checks malformed XML and page/assets integrity. Never infer public delivery from a local run.
 Read the Zensical output: every
@@ -315,9 +326,9 @@ and its result. **Done when:** every fixed/reported finding, build status, and r
   always shown as a diff, and never reorder or drop a key you did not add.
 - Never convert a legacy `mkdocs.yml` without its own confirmation, and never leave two configs at
   the root.
-- Never re-aim `docs_dir` to the bundle root without an accepted map row for every home it would
-  then expose, and never to a dot-prefixed path at all — that builds an empty site silently. Never
-  expose a home without an accepted map row, or
+- Never point `docs_dir` at the complete bundle or a dot-prefixed path. Zensical has no supported
+  file exclusion setting, so raw `catalog/` and `external/` must be absent from `site-source/`, not
+  merely absent from `nav`. Never expose a home without an accepted map row, or
   expose a `não publicar` row; creating its Markdown route belongs to the page-owning stage.
 - Never put generator-specific syntax or generator frontmatter into an OKF page — the markdown stays
   generator-neutral.

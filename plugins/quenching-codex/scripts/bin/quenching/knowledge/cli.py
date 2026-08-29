@@ -17,7 +17,11 @@ CLI  `project [<bundle-dir>] [--write|--check|--json]`
    Checks or materializes the deterministic documentation projection of the canonical glossary.
    `--write` is the explicit mutation mode; the default is a read-only projection gate.
 
-`validate` and `project` are the verbs `main` routes. The `hook` verb (`quenching.knowledge.hook.run_hook`,
+CLI  `site-source [<bundle-dir>] [<destination>] [--write|--check|--json]`
+   Materializes or verifies the bounded tree that Zensical may read. Raw `catalog/` and
+   `external/` homes are never copied into it.
+
+`validate`, `project`, `nav` and `site-source` are the verbs `main` routes. The `hook` verb (`quenching.knowledge.hook.run_hook`,
 answering the plugin's self-installed `PostToolUse`/`Stop`/`PreToolUse` wiring) was retired along
 with that wiring — this pillar no longer answers a hook event at all.
 
@@ -41,11 +45,12 @@ from quenching.knowledge.projection import (
     projection_findings,
     write_projection,
 )
+from quenching.knowledge.site_source import site_source_findings, stage_site_source
 from quenching.knowledge.stale import resource_activity
 from quenching.knowledge.validate import _build_corpus, validate_tree
 
 
-USAGE = ("usage: cq knowledge {validate|project|nav} [<bundle-dir>] [options]   "
+USAGE = ("usage: cq knowledge {validate|project|nav|site-source} [<bundle-dir>] [options]   "
          "(default bundle-dir: docs)")
 
 
@@ -100,8 +105,8 @@ def run_project(argv: list[str]) -> int:
     """Materialize or verify the glossary's abbreviation snippet without importing Zensical.
 
     `--plan`, `--config` and `--route` are gone with the derived glossary route they served: the
-    bundle root is `docs_dir`, so the canonical glossary publishes itself and no editorial map row
-    decides whether a copy of it exists.
+    canonical glossary is staged as `glossary.md` in `site-source`, and no second editable copy
+    exists.
     """
     import argparse
 
@@ -196,6 +201,44 @@ def run_nav(argv: list[str]) -> int:
     return FINDINGS if payload["findings"] else OK
 
 
+def run_site_source(argv: list[str]) -> int:
+    """Stage or verify the small, explicit source tree used by Zensical."""
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="cq knowledge site-source")
+    parser.add_argument("bundle", nargs="?", default="docs")
+    parser.add_argument("destination", nargs="?", default="site-source")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--write", action="store_true", help="replace the generated source tree")
+    mode.add_argument("--check", action="store_true", help="check without writing (the default)")
+    parser.add_argument("--json", action="store_true")
+    args = parser.parse_args(argv)
+
+    try:
+        if args.write:
+            payload = stage_site_source(args.bundle, args.destination)
+            payload["mode"] = "write"
+            errors: list[dict] = []
+        else:
+            payload, errors = site_source_findings(args.bundle, args.destination)
+            payload["mode"] = "check"
+        payload["findings"] = errors
+        payload["ok"] = not errors
+    except (OSError, ValueError) as exc:
+        payload = {"ok": False, "mode": "write" if args.write else "check",
+                   "findings": [{"code": "site-source-error", "message": str(exc)}]}
+
+    if args.json:
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+    else:
+        state = "OK" if payload["ok"] else "FINDINGS"
+        print(f"knowledge site source — {state} ({payload.get('files', 0)} files)")
+        for finding in payload["findings"]:
+            print(f"  [ERROR] {finding.get('path', args.destination)}: "
+                  f"{finding['message']} ({finding['code']})")
+    return FINDINGS if payload["findings"] else OK
+
+
 def main(argv: list[str]) -> int:
     """The pillar's whole entry: the declared token chooses the mode.
 
@@ -227,5 +270,7 @@ def main(argv: list[str]) -> int:
         return run_project(argv[1:])
     if verb == "nav":
         return run_nav(argv[1:])
+    if verb == "site-source":
+        return run_site_source(argv[1:])
     print(USAGE, file=sys.stderr)
     return REFUSAL

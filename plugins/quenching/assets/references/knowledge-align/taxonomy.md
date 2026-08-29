@@ -73,8 +73,8 @@ survived an earlier alignment.
 - **The reader-facing quadrants** — `tutorials/` (`type: tutorial`), `how-to/` (`type: how-to`,
   absorbs the former `guides/`), `explanation/` (`type: explanation`) and `project/`
   (`type: project`, this repository's own manual — commands, automation, layout). They are homes
-  at the bundle root, not subfolders of a wrapper: the whole bundle is `docs_dir`, so a level
-  whose only job was to give the generator a non-hidden subtree stopped earning it. `reference/`
+  at the bundle root, not subfolders of a wrapper. The Zensical input is the generated bounded
+  `site-source/` sibling; the complete bundle is never its `docs_dir`. `reference/`
   is deliberately NOT among them — it is a retired home name that `okf-legacy-home` still claims.
   Boundary: a published-site page → the fitting quadrant; internal team understanding →
   `concepts/`; a current contract → `standards/`. `audience: human`, `authority: current` by
