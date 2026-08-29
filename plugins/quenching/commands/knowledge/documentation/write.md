@@ -11,8 +11,10 @@ allowed-tools: Read, Grep, Glob, Write, Edit, Task, Bash(python3:*), Bash(py:*)
 
 Reads the accepted plan and writes only the assigned pages in the bundle's **reader-facing
 quadrants** — `${CLAUDE_PROJECT_DIR}/docs/{tutorials,how-to,explanation,project}/` and the root
-`index.md`. `standards/`, `concepts/`, `external/`, `catalog/`, `vision/` and `glossary.md` publish
-too, but they belong to the `knowledge` front and are written under its contract, never here. Apply
+`index.md`. `standards/`, `concepts/`, `external/`, `catalog/`, `vision/` and `glossary.md` belong
+to the knowledge front and are written under its contract, never here. The Zensical site stages
+only the allowlisted homes plus the root glossary; raw `external/` and `catalog/` content is never
+published by this site. Apply
 [knowledge-documentation/craft.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-documentation/craft.md),
 [knowledge-documentation/visual.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-documentation/visual.md)
 and
@@ -25,16 +27,16 @@ in one pass per page.
 - **Craft serves truth.** Use hooks, fast paths, progressive disclosure, tables, cards, tabs or Mermaid only when their function is clear.
 - **Agent-ready is explicit.** Stable headings, relative links, copyable real examples, expected output and `TL;DR for agents` blocks carry the contract in text.
 - **Extensions precede syntax.** Read `zensical.toml` and confirm each required extension before adding its syntax; report a missing extension to `build`.
-- **Glossary links point at the glossary.** It is inside `docs_dir` and publishes as its own
-  page, so link it relatively (`../glossary.md`) — there is no derived route to prefer and no copy
-  to keep in step. Terms stay canonical in the root file, and authors never hand-maintain
-  abbreviation definitions. Run `cq knowledge project docs --write` to materialize the
-  abbreviation snippet from the source hash; rerunning it must be a byte-identical no-op.
-- **Derived homes are complete surfaces.** For every `publicar derivado` row, emit the declared
-  route/index for the corresponding `standards/`, `concepts/`, `external/`, `catalog/` or
-  `vision/` source — not only pages chosen for the current slice. Preserve source origin, hash and
-  transformation, and rewrite every internal `/docs/` link to its mapped published route;
-  an explicitly unpublished home contributes no route or leaked link.
+- **Glossary links point at the glossary.** The canonical file is staged into `site-source/` and
+  publishes as `glossary.md`; link it relatively (`../glossary.md`) from a section page. Terms stay
+  canonical in the root file, and authors never hand-maintain abbreviation definitions. Run
+  `cq knowledge project docs --write`, then `cq knowledge site-source docs site-source --write` to
+  materialize the snippet and bounded input from their source hashes; rerunning either must be a
+  byte-identical no-op.
+- **Derived knowledge is curated, not copied wholesale.** `standards/`, `concepts/` and `vision/`
+  may enter the allowlisted site source according to the accepted map. Raw `external/` and
+  `catalog/` homes never do; if a reader-facing page uses facts from either, preserve source origin,
+  hash and transformation in the ledger and publish only that curated page.
 - **Source ledger travels with prose.** Record every strong claim, confidence and `source gap:` beside the page set.
 - **Catalog pages carry lineage beside prose.** For a derived catalog, write the source ledger next
   to the page set and preserve `id`, `layer`, `schema`, source path and transformation on each

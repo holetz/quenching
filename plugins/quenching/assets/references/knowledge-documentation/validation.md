@@ -12,7 +12,17 @@ returns the heading index; `--sections <name>` addresses one.
 
 ## Strict build
 
-Run from the target repository root using the project's existing dependency manager:
+From the target repository root, first materialize the bounded source tree. Zensical 0.0.57
+processes every Markdown below `docs_dir` and has no supported `exclude_docs`/`not_in_nav` escape
+hatch, so raw `catalog/` and `external/` homes must not be present in the tree it reads:
+
+```bash
+cq knowledge project docs --check
+cq knowledge site-source docs site-source --write
+cq knowledge site-source docs site-source --check
+```
+
+Run the build using the project's existing dependency manager:
 
 ```bash
 uv run zensical build --clean --strict
@@ -25,7 +35,8 @@ gitignored, and `.cache/` beside the config ignores itself. Where `site/` is **t
 overwriting it would be destructive — write a throwaway config **at the repo root** with its
 `site_dir` outside the repo, build it with `-f`, and delete the config after; a config parked
 anywhere else resolves `docs_dir` relative to itself and exits `Error: Docs directory does not
-exist`. Never run `zensical serve` from this command and never commit a built site.
+exist`. The config must use `docs_dir = "site-source"`; never point it at the complete bundle.
+Never run `zensical serve` from this command and never commit a built site.
 
 `--strict` must be zero-issue. Link validation is on by default — `invalid_links` and
 `invalid_link_anchors` — so it catches dangling links and dead anchors, and `--strict` turns them
@@ -34,13 +45,13 @@ into an abort. A warning is either fixed in the site layer or reported to the pa
 ## Editorial publication map
 
 Read the accepted `### Mapa editorial de publicação` before judging navigation or links. Inventory
-all `/docs/` homes and use every `publicar`/`publicar derivado` row as the mandatory
-coverage denominator. For every such row, prove that its declared route is built under `site/` and
+all `/docs/` homes and use every `publicar`/`publicar derivado` row represented in the bounded
+allow-list as the mandatory coverage denominator. Raw `catalog/` and `external/` homes are always
+`não publicar` to this Zensical site and must be absent from `site-source/`. For every other such row, prove that its declared route is built under `site/` and
 is non-empty; for every `não publicar` row, prove that no matching nav entry, published route or
 link exists. A
-curated route under `documentation/` is valid; `docs_dir = "docs"` is not a substitute,
-because a dot-prefixed root yields **zero** rendered pages while still exiting `0` — measured, with
-the evidence in `external/tools/zensical-measured-behaviour.md`.
+curated route under `documentation/` is valid; pointing `docs_dir` at the complete bundle is not a
+substitute, because Zensical would process excluded homes even when they are absent from `nav`.
 
 ```bash
 # compare plan rows with generated routes; replace <route> with each mapped route
@@ -68,8 +79,8 @@ cq knowledge project docs --plan .quenching/documentation/plan.md --config zensi
 python3 <plugin>/assets/checks/documentation-site-check.py site \
   --require-glossary \
   --glossary-source docs/glossary.md \
-  --glossary-route reference/glossary.md \
-  --glossary-snippet docs/documentation/assets/glossary-abbreviations.md
+  --glossary-route glossary.md \
+  --glossary-snippet site-source/assets/glossary-abbreviations.txt
 ```
 
 The projection check compares the route and abbreviation snippet with the canonical file's
@@ -77,15 +88,9 @@ SHA-256, and the rendered check requires a known term to appear inside `<abbr>`.
 site with no `site_url`, add `--local`: relative or empty sitemap locations are acceptable there,
 but malformed XML and missing page/assets still fail. A local run never proves public delivery.
 
-Quando houver catálogo derivado, rode também o verificador de projeção para provar que o índice de
-camada/schema alcança cada detalhe e que a linhagem mínima está presente:
-
-```bash
-python3 <plugin>/assets/checks/catalog-publication-check.py docs/documentation
-```
-
-O fixture executável `catalog-publication/healthy` mantém a regressão mínima (`id`, `layer`,
-`schema` e `lineage`) sem transformar cada item em uma entrada de navegação.
+Catálogos e fontes externas não entram no build do Zensical. Se uma página allowlisted os resume,
+verifique a linhagem dessa página no ledger; não rode um verificador de publicação sobre os dumps
+brutos nem crie rotas de detalhe para eles.
 
 Para cada capacidade habilitada no registro, inspecione o HTML renderizado com a fixture de efeitos:
 

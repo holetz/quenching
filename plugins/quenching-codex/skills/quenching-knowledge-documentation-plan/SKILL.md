@@ -51,13 +51,17 @@ Fill the exact templates in `architecture.md`: three end-to-end journeys, an int
 source→destination map, a visual plan, an agent-readability plan and an execution plan listing
 extensions, risk and validation. Then produce the **Mapa editorial de publicação**: one decision
 per home — `publicar`, `publicar derivado` or `não publicar` — with motive, audience and route.
-Treat a missing basis as `source gap:`, never as a default exclusion. **Done when:** all seven
+Treat a missing basis as `source gap:`, never as a default exclusion; the fixed Zensical boundary
+still keeps raw `catalog/` and `external/` outside `site-source/`. **Done when:** all seven
 contract headings exist in order and no placeholder is silently guessed.
 
-The root `glossary.md` needs no derived route: it lives inside `docs_dir` and publishes itself.
-The plan still records the generated abbreviation snippet the site layer consumes, its source
+The root `glossary.md` is staged into `site-source/` and publishes as `glossary.md` there. The
+plan still records the generated abbreviation snippet the site layer consumes, its source
 hash/provenance, and the known term used by rendered QA; it never assigns authors a second
-editable term list.
+editable term list. Raw `catalog/` and `external/` homes are always `não publicar` to this
+Zensical site; inventory them by metadata and source counts, without loading their full bodies
+merely to plan the site. Facts needed by readers must be curated into an allowlisted reader-facing
+page with lineage.
 
 The publication map is a closed coverage contract **at document granularity**. Every publishable
 `.md` is either published or carries its own explicit `não publicar` row with a reason — a home-level
@@ -66,11 +70,11 @@ document, not the map's row count and not the pages selected for this pass. Ever
 transformation, and every internal `/docs/` link in the published projection must resolve
 to a mapped published route or be removed from the projection.
 
-For `catalog/`, the inventory must also record the catalog contract before assigning pages:
-`catalog/` is the source, `reference/catalog/index.md` is the layer/schema index, and each detail
-route carries a stable identifier plus a source-ledger link. Record the fields intentionally omitted
-(secrets, operational dumps and entries without lineage) as explicit gaps or out-of-scope rows. The
-plan must include the expected item count and the source version/date when the catalog is derived.
+For `catalog/`, the inventory records the source count and provenance, but the raw home receives no
+Zensical route or `nav` entry. If a reader-facing derivation is proposed, record its selected fields,
+stable identifiers and source-ledger link; record secrets, operational dumps and entries without
+lineage as explicit gaps or out-of-scope rows. The plan must state that `catalog/` and `external/`
+are excluded from `site-source/`.
 
 For generator capabilities, add a **Capability register** after the execution contract. Inventory
 autorefs, API extraction, preview, metadata/facet search and provenance; for each row record its
