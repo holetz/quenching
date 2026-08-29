@@ -122,7 +122,7 @@ def _genre_document(slug: str, name: str, register: str, media: list[str],
         suffix = f" {description}" if description else ""
         lines.append(f"- `{field}` — {'required' if required else 'optional'}{suffix}")
     lines.extend(["", "## Composition", "", "Describe the stable composition this genre preserves across media.",
-                  "", "## Guardrails", "", "- Cite `/.knowledge/standards/design/production.md`.",
+                  "", "## Guardrails", "", "- Cite `/docs/standards/design/production.md`.",
                   "- Import generated medium tokens; never repeat a primitive value."])
     return "\n".join(lines).rstrip() + "\n"
 

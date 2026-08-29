@@ -602,7 +602,7 @@ class AzureBoardsBackend(SpecBackend):
 
     def _native_fields(self, item: dict) -> dict:
         """`tags`/`assignee`/`start`/`target`, reassembled from their native counterparts —
-        the READ half of `## Design` §Armazenado não é projetado. `System.AssignedTo` comes
+        the READ half of `## Design` §Stored is not projected. `System.AssignedTo` comes
         back as an identity object (`displayName`/`uniqueName`), never a plain string;
         `System.Tags` is `; `-joined. The two scheduling fields come back as a full datetime
         (`2026-01-01T03:00:00Z`); only the date is stored.
@@ -870,7 +870,7 @@ class AzureBoardsBackend(SpecBackend):
         spec, full_text, native_title, native_fields = (dict(row[0]), row[2], row[3], row[4])
         info = derive_info(spec, hybrid_title_join(full_text, native_title))
         # REASSEMBLED, not re-parsed: the stored document never carries these four keys
-        # (`write_spec` strips them — §Armazenado não é projetado), so the native fields ARE
+        # (`write_spec` strips them — §Stored is not projected), so the native fields ARE
         # the only copy, and they win outright over whatever the raw text happened to say.
         info["frontmatter"].update(native_fields)
         return info, {}

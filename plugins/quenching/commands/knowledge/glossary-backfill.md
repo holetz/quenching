@@ -8,8 +8,8 @@ allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Write, Edit, Task
 
 **Input**: `$ARGUMENTS` (an optional home/slice to scope the sweep; omit to scan the whole bundle).
 
-Sweeps the canonical OKF bundle's **entire** `/.knowledge/` tree for repo-specific terms that were never fed into
-[`/.knowledge/glossary.md`](/.knowledge/glossary.md), and backfills them in one
+Sweeps the canonical OKF bundle's **entire** `/docs/` tree for repo-specific terms that were never fed into
+[`/docs/glossary.md`](/docs/glossary.md), and backfills them in one
 consolidated pass. This is a **retroactive, whole-bundle** sweep, not a capture: it never
 writes a `concepts/` concept doc and never asks the human what a term means — those stay
 `/quenching:knowledge:learn`'s job. The glossary format and the shared **Enriching the glossary**
@@ -24,14 +24,14 @@ procedure live with `/quenching:knowledge:add`
 ## Workflow
 
 ### 1. Locate the glossary and read the baseline
-Find `/.knowledge/glossary.md` — the bundle root is the fixed `/.knowledge/` convention. If the
+Find `/docs/glossary.md` — the bundle root is the fixed `/docs/` convention. If the
 `concepts/` home or the glossary seed is missing, stop and offer
 `/quenching:knowledge:align` to install the skeleton, then stop; do not resume in the same run. Read the current entries once — this
 is the dedupe baseline every slice's candidates get checked against.
 **Done when:** the glossary path and baseline are resolved, or the missing-bundle handoff is reported.
 
 ### 2. List the bundle, bounded
-List every doc path under `/.knowledge/` with `Glob`, paths only — never read bodies here,
+List every doc path under `/docs/` with `Glob`, paths only — never read bodies here,
 excluding `index.md`, `log.md`, and harness files (`CLAUDE.md`/`AGENTS.md`). `catalog/**` and
   `external/repositories/**` are listed but **not** body-scanned by default — note them as
   excluded from the sweep. If `$ARGUMENTS` names a home or slice, restrict the candidate set to
@@ -40,7 +40,7 @@ excluding `index.md`, `log.md`, and harness files (`CLAUDE.md`/`AGENTS.md`). `ca
 
 ### 3. Slice and fan out
 Group the remaining paths by top-level home (`standards/`, `vision/`,
-`documentation/`, `concepts/`, `external/` minus the excluded slice);
+the reader-facing quadrants, `concepts/`, `external/` minus the excluded slice);
 split further if a home runs large (~15–20 docs per
 agent). Dispatch one `Task` sub-agent per slice — with `model: haiku` and `effort: low`:
 a slice agent does pure extraction and returns compact tuples, and over-collection is

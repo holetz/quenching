@@ -1,5 +1,5 @@
 ---
-description: Align the whole repository — /.knowledge/, /.design/, then .claude/ — on ONE confirmation, looped until nothing changes anywhere. Triggers on "align the repo", "align everything", "align and update everything", "set up quenching here", "converge this repository", "run all the aligns", "fix both fronts", or "fix all fronts". Probes the three aligned fronts read-only, asks once, then invokes each applicable front's align in dependency order. Authorization nests one level — each front align inherits the OK and never re-asks, while taste arbitration, a code-coupled rename and an irreversible close keep their own human choice. Conducts, never reimplements. Not for: aligning one front → its `/quenching:*:align` command; changing product code → the owning spec.
+description: Align the whole repository — /docs/, /.design/, then .claude/ — on ONE confirmation, looped until nothing changes anywhere. Triggers on "align the repo", "align everything", "align and update everything", "set up quenching here", "converge this repository", "run all the aligns", "fix both fronts", or "fix all fronts". Probes the three aligned fronts read-only, asks once, then invokes each applicable front's align in dependency order. Authorization nests one level — each front align inherits the OK and never re-asks, while taste arbitration, a code-coupled rename and an irreversible close keep their own human choice. Conducts, never reimplements. Not for: aligning one front → its `/quenching:*:align` command; changing product code → the owning spec.
 argument-hint: [optional-scope]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
 ---
@@ -10,7 +10,7 @@ allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
 
 | # | Front | Align | What converges |
 | --- | --- | --- | --- |
-| 1 | `/.knowledge/` — the OKF bundle | `/quenching:knowledge:align` | homes, frontmatter stamps, every `index.md`, the validator — then project memory, the harness, the glossary |
+| 1 | `/docs/` — the OKF bundle | `/quenching:knowledge:align` | homes, frontmatter stamps, every `index.md`, the validator — then project memory, the harness, the glossary |
 | 2 | `/.design/` — the design source | `/quenching:design:align` | DTCG source, product/design/medium projections, sidecar, adapters, assets and non-web drift |
 | 3 | `.claude/` — the automation surface | `/quenching:components:align` | command paths on the taxonomy axis, collapsed pairs, the rule + registry, the GENERATED zone — then the read-only doctrine audit |
 
@@ -30,17 +30,17 @@ Resolve `cq` — written bare in the probe below — per
 
 ## Doctrine
 
-- **Order is a dependency, not a preference.** `/.knowledge/` → `/.design/` → `.claude/`.
+- **Order is a dependency, not a preference.** `/docs/` → `/.design/` → `.claude/`.
   Never run a later front before an earlier one.
 - **Loop across fronts.**
 - **Conduct, never reimplement.** The conductor sequences, gates, and reports. If a front's
   behaviour must change, change that front's align — the same ONE-authority-per-concern rule that
   keeps each align from re-deriving its own stages' logic.
-- **Front presence decides the pass; only `/.knowledge/` is installed unasked.** An absent
-  `/.knowledge/` bundle is *the* thing this plugin installs, so front 1 always runs. An absent
-  `/.design/` front runs only when the request names design/setup or portable product/design
-  artifacts already signal it; otherwise it is reported as available. An empty `.claude/`
-  surface skips front 3 rather than scaffolding a taxonomy for nothing.
+- **Front presence decides the pass; only `/docs/` is installed unasked.** An absent `/docs/` bundle
+  is *the* thing this plugin installs, so front 1 always runs. An absent `/.design/` front runs
+  only when the request names design/setup or portable product/design artifacts already signal it;
+  otherwise it is reported as available. An empty `.claude/` surface skips front 3 rather than
+  scaffolding a taxonomy for nothing.
 - **Converge or report — never spin.** Cross-front pass cap **3** (each front align keeps its own
   internal cap of 5). An empty pass with residual findings is **residue**: stop, and report it
   front by front with the command that owns each item.
@@ -52,8 +52,8 @@ If `$ARGUMENTS` names a front or a path inside one, resolve it to that front and
 front; report the other fronts as skipped by scope. With no argument, probe all and preserve
 the dependency order below.
 Presence and rough scale only:
-- **`/.knowledge/`** — does the bundle root exist (`/.knowledge/index.md` with `okf_version`)? Run
-  `cq knowledge validate /.knowledge --json` and keep
+- **`/docs/`** — does the bundle root exist (`/docs/index.md` with `okf_version`)? Run
+  `cq knowledge validate /docs --json` and keep
   the finding counts; note whether the project memory dir
   (`~/.claude/projects/<cwd>/memory/`) holds files and which harness files exist.
 - **`/.design/`** — run `cq --root . design status --json` when installed; when absent, run
@@ -78,7 +78,7 @@ inherits this OK and will not ask again; taste arbitration, a rename touching pr
 spec's close-out still require their own human choice."* Wait for **one** OK.
 **Done when:** the user has answered; declined → nothing written, run ends.
 
-### 3. Front 1 — `/quenching:knowledge:align` (the `/.knowledge/` bundle)
+### 3. Front 1 — `/quenching:knowledge:align` (the `/docs/` bundle)
 Invoke via the **Skill** tool under its registry name **`quenching:knowledge:align`** — the command path
 prefixed by the plugin. Every front below is named the same way; the three forms and the condition
 on each are [sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
@@ -110,7 +110,7 @@ verify both earlier fronts held before invoking. Record its counts and its **doc
 
 ### 6. Re-probe across fronts → decide (loop or stop)
 Re-run step 1's probe **plus** both cross-front edges: did front 2 add product/design standards, or
-did front 3 create the automation rule/registry (either → `/.knowledge/` listings to regenerate)?
+did front 3 create the automation rule/registry (either → `/docs/` listings to regenerate)?
 Then decide by the four outcomes in
 [convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
 §The convergence contract: **progress** → another cross-front pass from step 3 under the same

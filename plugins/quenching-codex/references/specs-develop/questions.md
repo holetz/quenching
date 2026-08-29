@@ -175,8 +175,8 @@ as `high`.
 | `xhigh` | the human, as `medium` | yes, and §Refine's **premortem lens runs unconditionally** |
 
 **`low` is the only level that does not ask, and that is its whole content.** It answers every item
-from what the spec, the codebase, the `/.knowledge/standards/` its `## Impact` declares and
-`/.knowledge/glossary.md` support. An answer resting on something unproved is written with **the
+from what the spec, the codebase, the `/docs/standards/` its `## Impact` declares and
+`/docs/glossary.md` support. An answer resting on something unproved is written with **the
 assumption named in the text it lands in**. Anything no evidence answers becomes an
 `## Open Decisions` line carrying **how it will be decided** — never invented, and never asked. It
 composes, it closes, it stamps `approved` `by: low-gear`, and it is done in one pass.
@@ -296,7 +296,7 @@ parallel-eligible task at all. The mechanism was never the missing piece; the qu
 Compose also settles the two declarations nothing else owns: the **`verification` policy** (one of
 the three values in [spec-driven.md](spec-driven.md) §Frontmatter, asked once and written to
 frontmatter, so `execute` never has to guess mid-build) and the parsed `### Standards this spec will
-write into knowledge/standards/` sub-heading under `## Impact`.
+write into docs/standards/` sub-heading under `## Impact`.
 
 **Evidence answers** all seven symptoms and all three execution decisions — `[P]`, `files:`
 and `pattern:` are provable against the tree, and `cq specs parallel` proves the first
@@ -383,7 +383,7 @@ Assume the spec is wrong and find where. Be specific. Aim at:
 - **Scope inflation.** Which part of `## Proposal` does not follow from `## Problem`? What survives
   if it is cut?
 - **Cheaper paths.** What buys 80% of the benefit for 20% of the change?
-- **Contradiction with a binding contract.** Does any task violate a `knowledge/standards/` doc? Name
+- **Contradiction with a binding contract.** Does any task violate a `docs/standards/` doc? Name
   the doc and the line.
 - **Permanent cost.** What does this add forever — surface, config, a rule to remember? Is the
   benefit recurring or one-off?
@@ -476,7 +476,7 @@ built** — and say what should happen to it next.
 
 This stage adds nothing to the body: it writes one record and no section. What it shows is always
 the same: what the spec now commits to, in the proposal's one line, the task count, the
-`verification` policy in force, the declared `knowledge/standards/` paths, and the biggest accepted
+`verification` policy in force, the declared `docs/standards/` paths, and the biggest accepted
 risk.
 
 **The screen recommends, rather than defaulting to approve.** It judges what the pass just produced
@@ -513,11 +513,11 @@ question later.
 
 <!-- rules -->
 
-Every stage that reads the codebase or `.knowledge/` to answer its own questions — compose's
+Every stage that reads the codebase or `docs/` to answer its own questions — compose's
 "read it, do not theorize" included, not only what follows below — does so under
 [align/evidence-doctrine.md](../../references/align/evidence-doctrine.md):
 the aggregate a `grep`/`gh`/`cq` call produces, never the raw dump; `cq components read <path>
---sections "§X"` for `knowledge/standards/` and `knowledge/glossary.md`, the same way this
+--sections "§X"` for `docs/standards/` and `knowledge/glossary.md`, the same way this
 plugin's own references already address a section instead of a whole file.
 
 Two uses delegate that reading to a sub-agent, and they do not share one tool profile.
@@ -534,7 +534,7 @@ because a dependency map is exactly the aggregate a `grep`/`gh`/`cq` call produc
 profile below could not return it.
 
 **Compose and refine** additionally ask questions that only a reading answers: which alternatives
-the codebase actually admits, which `knowledge/standards/` contract a task would violate, which term
+the codebase actually admits, which `docs/standards/` contract a task would violate, which term
 the spec uses in a sense the glossary does not. That reading is **optional and delegable**; the
 interrogation never is.
 
@@ -544,7 +544,7 @@ else — and returns **one compact table** and no trail:
 | Stage | What it is asked for |
 | --- | --- |
 | refine | candidate whole-shape alternatives, each with cost, benefit and what it forecloses |
-| refine | contradictions with a binding contract — the `knowledge/standards/` doc and the line |
+| refine | contradictions with a binding contract — the `docs/standards/` doc and the line |
 | compose | terms the spec uses in a sense `glossary.md` does not |
 | compose | `## Impact` paths no `## Tasks` item names, and tasks naming paths `## Impact` never declared |
 
@@ -572,7 +572,7 @@ that produced it, and the sweep's file reads stay out of the long context that t
 then pays for on **every** turn that follows.
 
 Why the dependency sweep exists at all, and the measurement that would graduate it, are recorded in
-`/.knowledge/standards/automation/dependency-sweep.md` — this plugin's own bundle, not a target's.
+`/docs/standards/automation/dependency-sweep.md` — this plugin's own bundle, not a target's.
 Named bare because the rules above stand without it; every binding half is here.
 
 ## Recording the pass

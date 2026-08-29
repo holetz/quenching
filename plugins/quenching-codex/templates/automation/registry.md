@@ -15,7 +15,7 @@ maintainer: <owner>
 
 <Curated prose — one short paragraph: how this repo's automation surface is organized
 (the single axis — category/subject first, then domain-bound commands pathed after their
-folder and generic commands named verb-object), a link to the rule at [/.knowledge/standards/automation/skills.md](/.knowledge/standards/automation/skills.md),
+folder and generic commands named verb-object), a link to the rule at [/docs/standards/automation/skills.md](/docs/standards/automation/skills.md),
 and, when relevant, a pointer to installed plugins whose commands extend the surface
 (they stay out of the table below).>
 
@@ -28,7 +28,7 @@ them is overwritten by the next run, not merged.
 <!-- GENERATED:END -->
 
 <!-- MOLD (quenching · automation registry) → becomes
-     `/.knowledge/documentation/reference/automation.md` in a target repo's OKF bundle.
+     `/docs/documentation/reference/automation.md` in a target repo's OKF bundle.
 
      The zone above is left EMPTY on purpose. `cq components registry reindex` fills it from the
      surface's own command frontmatter and owns its format — the row shape, the columns, the

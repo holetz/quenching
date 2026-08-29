@@ -31,17 +31,17 @@ def align_plan(root: Path, product: dict[str, Any] | None = None, *,
         relative = source.relative_to(pack)
         target = root / relative
         (preserved if target.exists() else missing).append(relative.as_posix())
-    product_target = root / ".knowledge" / "vision" / "product.md"
+    product_target = root / "docs" / "vision" / "product.md"
     has_product = _has_product_source(root)
     if product and not product_target.exists() and not has_product:
-        missing.append(".knowledge/vision/product.md")
+        missing.append("docs/vision/product.md")
     design_text = _read_text(root / "DESIGN.md")
     product_text = _read_text(root / "PRODUCT.md")
     external_design = bool(design_text) and not _matches_generated(root, "DESIGN.md", design_text)
     external_product = bool(product_text) and not _matches_generated(root, "PRODUCT.md", product_text)
     blockers = []
-    if not (root / ".knowledge" / "index.md").is_file():
-        blockers.append("an installed /.knowledge/ bundle is required before the design front")
+    if not (root / "docs" / "index.md").is_file():
+        blockers.append("an installed /docs/ bundle is required before the design front")
     if not has_product and not product:
         blockers.append("confirmed product facts are required to project PRODUCT.md")
     if external_design and design_winner not in {"import", "build"}:
@@ -91,11 +91,11 @@ def align_write(root: Path, product: dict[str, Any] | None = None, *,
             content = content.decode("utf-8").replace("__GENERATED_AT__", timestamp).encode("utf-8")
         target.write_bytes(content)
         written.append(relative.as_posix())
-    product_target = root / ".knowledge" / "vision" / "product.md"
+    product_target = root / "docs" / "vision" / "product.md"
     if product and not product_target.exists() and not _has_product_source(root):
         product_target.parent.mkdir(parents=True, exist_ok=True)
         product_target.write_text(_product_document(product), encoding="utf-8", newline="\n")
-        written.append(".knowledge/vision/product.md")
+        written.append("docs/vision/product.md")
     imported: list[str] = []
     if before["externalDesign"] and design_winner == "import":
         # Preserve the external proposal until the DTCG source exists, then fold its portable
@@ -129,7 +129,7 @@ def read_product(path: Path | None) -> dict[str, Any] | None:
 
 
 def _has_product_source(root: Path) -> bool:
-    bundle = root / ".knowledge"
+    bundle = root / "docs"
     for home in (bundle / "vision", bundle / "standards" / "platform"):
         if not home.is_dir():
             continue

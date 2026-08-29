@@ -52,7 +52,7 @@ exist, exists; every step's criterion held. Report what was written.>
 <!-- MOLD (quenching · automation command) → becomes
      `.agents/skills/<folder-path>/<verb>.md` in a target repo, invocable as
      `/<folder>:<subfolder>:<verb>` — native `:` separator, one per path segment — and minted
-     by `quenching-components-command-new` under the taxonomy rule (`/.knowledge/standards/automation/skills.md`) and the
+     by `quenching-components-command-new` under the taxonomy rule (`/docs/standards/automation/skills.md`) and the
      writing doctrine (predictability as the root virtue).
 
      ONE FILE PER ENTRY POINT. Codex merged custom commands into skills, so this file
@@ -73,7 +73,7 @@ exist, exists; every step's criterion held. Report what was written.>
      rule and names each gap by a stable `sk-*` code; `cq components doctor --json` decides the
      surface-wide invariant (every command has a non-empty description, no two resolve to the
      same `/` path, every segment kebab-case). Thresholds live in
-     `/.knowledge/standards/automation/skills.md` — this mold never restates a number.
+     `/docs/standards/automation/skills.md` — this mold never restates a number.
 
      What lint checks (fix an `error`, report a `warn` by its code):
        • the two caps — the description against `sk-metadata-cap` (error) and against

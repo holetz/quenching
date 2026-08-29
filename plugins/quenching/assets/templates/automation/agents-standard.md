@@ -53,7 +53,7 @@ artifacts pass clean, and a fixed report — status, critical findings, warnings
 checks, recommendations citing the standard each applies. Fixes re-enter through the
 command that owns authoring, under its own confirmation.
 
-<!-- MOLD (quenching · agents standard) → becomes `/.knowledge/standards/automation/agents.md` in a
+<!-- MOLD (quenching · agents standard) → becomes `/docs/standards/automation/agents.md` in a
      target repo's OKF bundle, offered by /quenching:components:agent:new on first run (never created
      without an OK). Fill the frontmatter placeholders and keep the body; add repo-specific
      deltas below the standard text rather than rewriting it. Born `authority: background`.

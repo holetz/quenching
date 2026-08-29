@@ -88,5 +88,5 @@ result (if run), and what was stamped. **Done when:** the summary names every fa
 - Never isolate over a dirty tree — refuse and name the paths.
 - Recommend Worktree; never impose it, and never choose it by sniffing the target repo.
 - Stamp `branch:` only once per id — a record already present is read, never overwritten.
-- Never install `.knowledge/standards/git/**` into the target; a repo's own conventions are read,
+- Never install `docs/standards/git/**` into the target; a repo's own conventions are read,
   never written, by this command.

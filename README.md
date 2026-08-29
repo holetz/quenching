@@ -1,6 +1,6 @@
 # quenching
 
-A **Claude Code plugin** that forces any repository's `/.knowledge/` into a single
+A **Claude Code plugin** that forces any repository's `/docs/` into a single
 canonical **[Open Knowledge Format (OKF v0.1)](https://github.com/GoogleCloudPlatform/knowledge-catalog)**
 bundle — and keeps it that way. Every repository that adopts it ends up with the
 **same rich, greppable knowledge tree** in the same places, so anyone moving
@@ -38,7 +38,7 @@ alvo continua em `plugins/quenching/assets/zensical/`.
 
 ## What it does
 
-Forty-one commands acting on four fronts of a target repository — the `/.knowledge/` OKF bundle
+Forty-one commands acting on four fronts of a target repository — the `/docs/` OKF bundle
 (`knowledge`), provider-owned `specs`, the `/.design/` DTCG design source, and the target's own
 `.claude/` automation surface (`components`) — plus root `/align`, which spans the three local
 aligned fronts on one confirmation. Every aligned front has exactly one **align**: probe-first,
@@ -48,7 +48,7 @@ the fronts, and the cost model live in the
 than a second, driftable copy.
 
 The **`cq knowledge hook`** hook (zero dependencies) keeps future edits
-conformant: it validates touched `/.knowledge/**` files against the OKF core on
+conformant: it validates touched `/docs/**` files against the OKF core on
 `Write`/`Edit` and at `Stop`, and can optionally block a non-conformant write.
 
 The design source is DTCG 2025.10 at `/.design/tokens.json`; `cq design build` emits portable
@@ -58,7 +58,7 @@ optional consumer, and `cq design import` is the explicit route for folding its 
 ## Install
 
 This repository publishes under a **`develop` → `main`** flow
-([`.knowledge/standards/git/branching.md`](.knowledge/standards/git/branching.md)): `develop` is where specs
+([`docs/standards/git/branching.md`](docs/standards/git/branching.md)): `develop` is where specs
 accumulate, and `main` — the GitHub repository's default branch — only ever receives a
 deliberate, tagged release. Installing normally therefore always gets you a release someone
 chose to publish, never an arbitrary in-progress merge.

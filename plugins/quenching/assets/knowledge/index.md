@@ -2,24 +2,27 @@
 okf_version: "0.1"
 ---
 
-# `/.knowledge/` — OKF knowledge bundle
+# `/docs/` — OKF knowledge bundle
 
-The canonical knowledge tree of this repository, an **Open Knowledge Format (OKF v0.1)**
-bundle. Each **home** has a fixed name and a single purpose; anyone moving between
-repositories that adopt this method finds the **same tree in the same place**. This
-`index.md` is the bundle's front door (a reserved listing — the only one that carries
-frontmatter, and only `okf_version`). Folder names and frontmatter keys are canonical
-English kebab-case; all prose the agent authors follows the repo's declared language —
-[standards/agents/communication.md](/.knowledge/standards/agents/communication.md) owns that rule.
+The canonical knowledge tree of this repository, an **Open Knowledge Format (OKF v0.1)** bundle,
+and the source of its documentation site. Each **home** has a fixed name and a single purpose;
+anyone moving between repositories that adopt this method finds the **same tree in the same
+place**. This `index.md` is the bundle's front door and the site's home page — a reserved listing,
+the only one that carries frontmatter, and only `okf_version`. Folder names and frontmatter keys
+are canonical English kebab-case; all prose the agent authors follows the repo's declared
+language — [standards/agents/communication.md](standards/agents/communication.md) owns that rule.
 
 ## Homes
 
-* [standards/](/.knowledge/standards/index.md) — how **WE** do it (current contracts/conventions), by subject; agreed-but-unproven rules sit here as `authority: background`
-* [vision/](/.knowledge/vision/index.md) — direction segmented by area, no deadline
-* [documentation/](/.knowledge/documentation/index.md) — product docs site (Diátaxis: tutorials, how-to, reference, explanation)
-* [concepts/](/.knowledge/concepts/index.md) — generic knowledge we hold (domain concepts, explanations, learnings); ships the fixed [glossary.md](/.knowledge/glossary.md) term lookup
-* [external/](/.knowledge/external/index.md) — facts about what **WE CONSUME** (external, background)
-* [catalog/](/.knowledge/catalog/index.md) — our **data** / domain (`system/catalog/schema/table`)
+* [standards/](standards/index.md) — how **WE** do it (current contracts/conventions), by subject; agreed-but-unproven rules sit here as `authority: background`
+* [vision/](vision/index.md) — direction segmented by area, no deadline
+* [tutorials/](tutorials/index.md) — learning-oriented pages ("get it running")
+* [how-to/](how-to/index.md) — task-oriented recipes for a reader with a goal
+* [explanation/](explanation/index.md) — how and why, for the site's reader
+* [project/](project/index.md) — the manual for *this* repository: its commands, its automation, its layout
+* [concepts/](concepts/index.md) — generic knowledge we hold (domain concepts, explanations, learnings); ships the fixed [glossary.md](glossary.md) term lookup
+* [external/](external/index.md) — facts about what **WE CONSUME** (external, background)
+* [catalog/](catalog/index.md) — our **data** / domain (`system/catalog/schema/table`)
 
 ## Boundaries (memorable summary)
 
@@ -27,12 +30,32 @@ English kebab-case; all prose the agent authors follows the repo's declared lang
 - `concepts/` = "generic **understanding** we hold" (concepts/explanations; non-binding).
 - `external/` = "facts about what **WE CONSUME** (external, background)".
 - `catalog/` = "our **data** / domain".
+- `tutorials/` `how-to/` `explanation/` `project/` = the **reader-facing** quadrants. A page you
+  would publish for a human belongs to one of them; internal team understanding goes to
+  `concepts/`, a current contract to `standards/`.
 - The **task inbox** lives at `specs/backlog/`, **outside** this bundle (quenching-managed).
 - `patterns` **is not a silo** — it dissolves into `standards/architecture/`.
 
 **Resolving a term.** Unfamiliar repo word, acronym, or codename? Look it up in the glossary
-first — [glossary.md](/.knowledge/glossary.md), the A–Z lookup (one entry per
-term, linked to its full doc when one exists): `grep -i '<term>' /.knowledge/glossary.md`.
+first — [glossary.md](glossary.md), the A–Z lookup (one entry per term, linked to its full doc
+when one exists): `grep -i '<term>' docs/glossary.md`.
+
+## This bundle IS the site
+
+The whole tree renders. The plugin ships a batteries-included **Zensical** setup at the repo root
+(`zensical.toml`) — first installed by `quenching:knowledge:align`, then owned by the
+**documentation family**: `plan`, `write`, `review` and `build`, conducted end to end by
+`produce`.
+
+- The generator points at the bundle root — `docs_dir = "docs"` in `zensical.toml`, kept at the
+  repo root, **outside** the bundle. Never a dot-prefixed path: one builds an empty site silently.
+- Each reserved `index.md` doubles as its section's landing page (the theme's
+  `navigation.indexes` feature) — no separate landing file needed.
+- Navigation is the explicit `nav` list in `zensical.toml`, generated from the tree by
+  `cq knowledge nav`; a title a human wrote there survives regeneration.
+- The markdown stays **generator-neutral**: no theme components, no raw HTML with theme classes,
+  no attribute lists. The bundle has to read as well on a Git host and in a `grep` as it does on
+  the site.
 
 The full contract (homes, types, migration doctrine, conformance) lives in the `quenching`
 skills' `references/`.

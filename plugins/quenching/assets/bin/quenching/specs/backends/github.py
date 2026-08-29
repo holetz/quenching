@@ -331,7 +331,7 @@ class GitHubBackend(SpecBackend):
     encoding of a record's fields: `derive_labels` computes the desired set from `info`
     alone, and `reconcile_label_set` folds it against whatever the issue already carries so
     a human's own label (never under the `spec:` prefix) is untouched. See
-    /.knowledge/standards/architecture/spec-backend.md for the category this is, and why it is not
+    /docs/standards/architecture/spec-backend.md for the category this is, and why it is not
     the sub-issue projection that was retired.
 
     The listing is fetched once per process and cached, which is a local cache and NOT a
@@ -507,7 +507,7 @@ class GitHubBackend(SpecBackend):
 
     def _native_fields(self, issue: dict) -> dict:
         """`tags`/`assignee`, reassembled from `labels`/`assignees` — the READ half of
-        `## Design` §Armazenado não é projetado. GitHub allows several assignees; the
+        `## Design` §Stored is not projected. GitHub allows several assignees; the
         canonical field is singular, so only the first is reflected — the same restriction
         the schema already puts on every backend. `start`/`target` have no honest native
         counterpart here (no scheduling fields on an issue) and stay in the document,

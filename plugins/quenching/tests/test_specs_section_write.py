@@ -7,7 +7,7 @@ round-trip and no second grammar was invented.
 
 Every case below runs against the function that ships. `split_section_stream` takes its candidate
 set as an argument for precisely that reason, the way `resolve_heading_name` already does:
-`/.knowledge/standards/code/canonical-set-parsing.md` §A case must exercise the production function,
+`/docs/standards/code/canonical-set-parsing.md` §A case must exercise the production function,
 not a copy of its rule is what this file is answering to. The write path's own cases go through
 `cmd_section` itself over a real files-backend workspace, never through a second reading of its
 refusal ladder written here.

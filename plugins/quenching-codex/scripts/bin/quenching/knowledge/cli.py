@@ -36,13 +36,17 @@ from quenching.common.output import FINDINGS, OK, REFUSAL
 from quenching.common.version import VERSION
 from quenching.knowledge.config import _load_config, _project_dir
 from quenching.knowledge.render import _render_activity, _render_text, _split
-from quenching.knowledge.projection import projection_findings, write_projection
+from quenching.knowledge.projection import (
+    DEFAULT_SNIPPET,
+    projection_findings,
+    write_projection,
+)
 from quenching.knowledge.stale import resource_activity
 from quenching.knowledge.validate import _build_corpus, validate_tree
 
 
-USAGE = ("usage: cq knowledge {validate|project} [<bundle-dir>] [options]   "
-         "(default bundle-dir: .knowledge)")
+USAGE = ("usage: cq knowledge {validate|project|nav} [<bundle-dir>] [options]   "
+         "(default bundle-dir: docs)")
 
 
 def _activity_rows(bundle_root: str, ignore_globs: tuple[str, ...]) -> list[tuple[str, dict]]:
@@ -63,7 +67,7 @@ def run_cli(argv: list[str]) -> int:
     cfg = _load_config(_project_dir())
     as_json = "--json" in argv
     paths = [a for a in argv if not a.startswith("-")]
-    target = paths[0] if paths else ".knowledge"
+    target = paths[0] if paths else "docs"
     ignore_globs = tuple(cfg.get("ignoreGlobs") or ())
     # The figure is its OWN output, never a section of the report. `stale-doc` was retired
     # because the comparison cannot support a verdict; printing the numbers beside findings
@@ -93,15 +97,17 @@ def run_cli(argv: list[str]) -> int:
 
 
 def run_project(argv: list[str]) -> int:
-    """Materialize or verify the glossary projection without importing Zensical."""
+    """Materialize or verify the glossary's abbreviation snippet without importing Zensical.
+
+    `--plan`, `--config` and `--route` are gone with the derived glossary route they served: the
+    bundle root is `docs_dir`, so the canonical glossary publishes itself and no editorial map row
+    decides whether a copy of it exists.
+    """
     import argparse
 
     parser = argparse.ArgumentParser(prog="cq knowledge project")
-    parser.add_argument("bundle", nargs="?", default=".knowledge")
-    parser.add_argument("--plan", help="accepted documentation plan containing the publication map")
-    parser.add_argument("--config", help="root zensical.toml whose nav should expose the route")
-    parser.add_argument("--route", default="reference/glossary.md")
-    parser.add_argument("--snippet", default="assets/glossary-abbreviations.md")
+    parser.add_argument("bundle", nargs="?", default="docs")
+    parser.add_argument("--snippet", default=DEFAULT_SNIPPET)
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--write", action="store_true", help="write the deterministic projection")
     mode.add_argument("--check", action="store_true", help="check without writing (the default)")
@@ -111,32 +117,16 @@ def run_project(argv: list[str]) -> int:
     from pathlib import Path
 
     bundle = Path(args.bundle)
-    plan = None
-    if args.plan:
-        try:
-            plan = Path(args.plan).read_text(encoding="utf-8")
-        except OSError as exc:
-            payload = {"ok": False, "code": "projection-plan-unreadable", "message": str(exc)}
-            if args.json:
-                print(json.dumps(payload, indent=2))
-            else:
-                print(f"error: {exc}", file=sys.stderr)
-            return FINDINGS
-    config = Path(args.config) if args.config else None
     if args.write:
-        written = write_projection(bundle, plan, config, args.route, args.snippet)
+        written = write_projection(bundle, args.snippet)
         payload = dict(written)
-        payload["mode"] = "write"
-        if written.get("skipped") and not written.get("excluded"):
-            errors = []
-        else:
-            checked, errors = projection_findings(bundle, plan, config, args.route, args.snippet)
+        errors: list[dict] = []
+        if not written.get("skipped"):
+            checked, errors = projection_findings(bundle, args.snippet)
             payload.update(checked)
-            if written.get("skipped"):
-                payload["skipped"] = written["skipped"]
-            payload["mode"] = "write"
+        payload["mode"] = "write"
     else:
-        payload, errors = projection_findings(bundle, plan, config, args.route, args.snippet)
+        payload, errors = projection_findings(bundle, args.snippet)
         payload["mode"] = "check"
     payload["findings"] = errors
     payload["ok"] = not errors
@@ -151,6 +141,61 @@ def run_project(argv: list[str]) -> int:
     return FINDINGS if errors else OK
 
 
+def run_nav(argv: list[str]) -> int:
+    """Generate the site `nav` from the bundle tree, or prove the one on disk is current.
+
+    `--check` is the gate `site-nav-stale` reads: it is a byte comparison, because the generator
+    is idempotent by construction. Anything it would change is a diff, never a judgement call."""
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="cq knowledge nav")
+    parser.add_argument("bundle", nargs="?", default="docs")
+    parser.add_argument("--config", default="zensical.toml",
+                        help="root zensical.toml whose nav is generated (default: zensical.toml)")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--write", action="store_true", help="write the generated nav")
+    mode.add_argument("--check", action="store_true", help="check without writing (the default)")
+    parser.add_argument("--json", action="store_true")
+    args = parser.parse_args(argv)
+
+    from quenching.knowledge.nav import generate
+
+    if not os.path.isdir(args.bundle):
+        payload = {"ok": False, "code": "nav-no-bundle",
+                   "message": f"{args.bundle} is not a directory"}
+        print(json.dumps(payload, indent=2) if args.json else f"error: {payload['message']}",
+              file=None if args.json else sys.stderr)
+        return FINDINGS
+
+    current, desired = generate(args.bundle, args.config)
+    if not current:
+        payload = {"ok": False, "code": "nav-config-unreadable",
+                   "message": f"{args.config} is missing or unreadable"}
+        print(json.dumps(payload, indent=2) if args.json else f"error: {payload['message']}",
+              file=None if args.json else sys.stderr)
+        return FINDINGS
+
+    stale = current != desired
+    if stale and args.write:
+        with open(args.config, "w", encoding="utf-8") as handle:
+            handle.write(desired)
+    payload = {"ok": not stale or args.write,
+               "mode": "write" if args.write else "check",
+               "config": args.config, "bundle": args.bundle,
+               "changed": bool(stale and args.write),
+               "findings": ([] if not stale or args.write else
+                            [{"path": args.config, "code": "site-nav-stale",
+                              "message": "the nav does not match the bundle tree — "
+                                         "run `cq knowledge nav --write`"}])}
+    if args.json:
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+    elif args.write:
+        print(f"knowledge nav — {'rewrote' if stale else 'already current:'} {args.config}")
+    else:
+        print(f"knowledge nav — {'STALE' if stale else 'current'}: {args.config}")
+    return FINDINGS if payload["findings"] else OK
+
+
 def main(argv: list[str]) -> int:
     """The pillar's whole entry: the declared token chooses the mode.
 
@@ -158,7 +203,8 @@ def main(argv: list[str]) -> int:
     looking at the world: no `argv` **and** a non-tty stdin meant "hook". That test does not survive
     a pillar prefix, and it should not: it misfires under CI, under a subprocess, and under any
     redirection, silently and with no way to override it. `main` routes the DECLARED token —
-    `validate` to `run_cli`, `project` to `run_project`, and nothing else now that `hook` is retired — and nothing in this
+    `validate` to `run_cli`, `project` to `run_project`, `nav` to `run_nav`, and nothing else now
+    that `hook` is retired — and nothing in this
     pillar calls `isatty`. Any argv that is not the verb was once read as a bundle path, which the
     spec's `## Out of Scope` rules out by name, so a token that is not a verb is a usage refusal.
 
@@ -179,5 +225,7 @@ def main(argv: list[str]) -> int:
         return run_cli(argv[1:])
     if verb == "project":
         return run_project(argv[1:])
+    if verb == "nav":
+        return run_nav(argv[1:])
     print(USAGE, file=sys.stderr)
     return REFUSAL

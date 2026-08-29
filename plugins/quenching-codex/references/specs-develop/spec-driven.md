@@ -15,7 +15,7 @@ command drives `cq specs` rather than a repository path.
 
 What every provider owes that model — the five primitives, the obligation to reassemble the whole
 canonical document on read, and refusal on unsupported selection — is owned by
-`/.knowledge/standards/architecture/spec-backend.md` and never restated here.
+`/docs/standards/architecture/spec-backend.md` and never restated here.
 
 ## Contents
 
@@ -124,8 +124,8 @@ backend has a faithful native counterpart — issue labels/assignees on `github`
 `azure-boards` — that counterpart IS the storage: reassembled on every read, never kept in the
 document too, so a human's edit on the tracker is the spec's new value on the next read.
 `start`/`target` have no such counterpart on `github` and stay in the document there, exactly as
-`date:` does everywhere (`knowledge/standards/architecture/spec-backend.md` §Armazenado não é
-projetado has the full test).
+`date:` does everywhere (`docs/standards/architecture/spec-backend.md` §Stored is not
+projected has the full test).
 
 **`title:` is the one short description a spec carries.** It names the change and is the source
 for the `Summary` column in the ranked table. The title is supplied at capture, stored in the
@@ -139,7 +139,7 @@ without a second summary field or a correction verb dedicated to maintaining one
 
 The canonical set, in canonical order. **Headings are a parsed contract** — canonical English, like
 frontmatter keys. A heading outside this set is a **stray** and `validate` flags it. Which language
-the body prose is written in is owned by the bundle's `knowledge/standards/agents/communication.md`.
+the body prose is written in is owned by the bundle's `docs/standards/agents/communication.md`.
 
 | # | Heading | Phase | Moment |
 | --- | --- | --- | --- |
@@ -264,12 +264,12 @@ on every call.
 `## Impact` is declared scope for human review, with exactly one machine-checked part:
 
 ```markdown
-### Standards this spec will write into knowledge/standards/
+### Standards this spec will write into docs/standards/
 
-- `knowledge/standards/auth/session-tokens.md` — how a session token is minted and revoked
+- `docs/standards/auth/session-tokens.md` — how a session token is minted and revoked
 ```
 
-`parse_impact_standards()` reads the `knowledge/standards/**.md` paths bulleted under **that heading and
+`parse_impact_standards()` reads the `docs/standards/**.md` paths bulleted under **that heading and
 only that heading**, and `validate` emits `sp-impact-uncovered` (warn) for any path no `## Tasks`
 item names.
 
@@ -279,9 +279,9 @@ write), and an unfilled `<placeholder>` declares nothing. A spec with no such su
 nothing and is never flagged — **the check is opt-in by writing the heading**.
 
 A bullet may carry a `§`address beside its path —
-`knowledge/standards/automation/skills.md §The verifier` — naming exactly which sections of that
+`docs/standards/automation/skills.md §The verifier` — naming exactly which sections of that
 standard the task must honor. `parse_impact_standards()` already tolerates it: the regex matches
-only the `knowledge/standards/**.md` path and ignores the rest of the line, addressed or not. Without an
+only the `docs/standards/**.md` path and ignores the rest of the line, addressed or not. Without an
 address, `quenching-specs-execute` step 4 reads the file whole — the address is an
 assertion the spec's own author makes, never an economy the executor infers on its own.
 
@@ -332,7 +332,7 @@ it.
 - its task line (with `files:` / `verify:` / `pattern:`),
 - `## Handoff`'s global block plus the `### N.` block of its own section — never a
   section that already closed, and never the whole `## Handoff`,
-- the touched subjects' `knowledge/standards/` contracts.
+- the touched subjects' `docs/standards/` contracts.
 
 It does **not** receive the `decision`-moment sections (`## Problem` /
 `## Alternatives Considered` / `## Open Decisions` / `## Risks`), nor the rest of the `build` set
@@ -434,9 +434,9 @@ this section.
 - `specs/plans/` — **the in-flight unit of work**: a spec's problem, design, and task checklist
   while it is being defined and built. Owned by the `quenching-specs-*` commands; leaves for `archive/` when
   it is concluded.
-- `knowledge/standards/` — **how WE build** (binding contracts: naming, architecture, code);
-  `knowledge/concepts/` — generic understanding. A spec writes its durable rule **directly** into
-  `knowledge/standards/` (`authority`-graded) **when a task explicitly names it**, and `quenching-specs-conclude`
+- `docs/standards/` — **how WE build** (binding contracts: naming, architecture, code);
+  `docs/concepts/` — generic understanding. A spec writes its durable rule **directly** into
+  `docs/standards/` (`authority`-graded) **when a task explicitly names it**, and `quenching-specs-conclude`
   routes what the work merely *revealed*
   ([distill.md](../../references/specs-conclude/distill.md)) — never by bulk
   copy.
@@ -460,7 +460,7 @@ Measured across the eight bodies before this section existed: two rendered a lit
 described their report in prose, producing six different closing verbs, no shared glyph, an `Age`
 column with no declared source, and `title` unused by every table although `cq specs` had been
 emitting it all along. A shape restated in eight bodies is the fan-out
-`/.knowledge/standards/quality/computed-fact-prose-fanout.md` describes — it ages in seven the
+`/docs/standards/quality/computed-fact-prose-fanout.md` describes — it ages in seven the
 moment it changes in one, with every checker green.
 
 ### The three bands
@@ -528,7 +528,7 @@ One ordered column set. **A command omits any column, never reorders, and never 
 `--columns` is the mechanism for the omission rule above — the order is the tool's, so a subset
 cannot come back reordered. A command that composes these cells itself is a second renderer of one
 ranking, which is the fan-out
-`knowledge/standards/architecture/report-mold.md` forbids and which this table had three of before
+`docs/standards/architecture/report-mold.md` forbids and which this table had three of before
 the flag existed.
 
 | Column | Source | `—` when |
@@ -586,7 +586,7 @@ prose-only code is never presented as tool output.
 <!-- rules -->
 
 One row per finding, for the split by what closes each that a read-only view owes
-(`/.knowledge/standards/architecture/read-only-views.md`):
+(`/docs/standards/architecture/read-only-views.md`):
 
 ```
 | Spec | Code | What it is | Closed by |
@@ -694,7 +694,7 @@ where acting on a false green is unrecoverable, but not the only one that runs c
 <!-- rules -->
 
 This file is English; **the report a command prints is not**. It follows the target repo's declared
-tag ([/.knowledge/standards/agents/communication.md](/.knowledge/standards/agents/communication.md) §What it
+tag ([/docs/standards/agents/communication.md](/docs/standards/agents/communication.md) §What it
 governs). So each column has a **canonical name**, which is its address above, and a **printed
 label**, which follows the tag.
 

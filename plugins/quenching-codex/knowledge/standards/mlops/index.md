@@ -4,7 +4,7 @@ Model lifecycle — training/serving lifecycle, lineage, experiment tracking, mo
 serving, and the interface to regulatory requirements.
 
 **Boundary:** *our* implementation of the model lifecycle; the external regulation itself
-(the PDF) lives in [reference/regulations/](/.knowledge/external/regulations/index.md) — this
+(the PDF) lives in [reference/regulations/](/docs/external/regulations/index.md) — this
 home holds *how we implement it*. One standard per file (files, not sub-folders); each
 carries `type: standard` + a derived `resource:`; add each to [../index.md](../index.md).
 

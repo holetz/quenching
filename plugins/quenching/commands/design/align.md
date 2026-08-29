@@ -26,10 +26,10 @@ Run:
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root . design status --json
 python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root . design align --check --json
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" knowledge validate .knowledge --json
+python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" knowledge validate docs --json
 ```
 
-Inventory `/.knowledge/` headings that can project the product record, `/.design/tokens.json`, the
+Inventory `/docs/` headings that can project the product record, `/.design/tokens.json`, the
 three root projections, `.impeccable/design.json`, genres, medium primitives and brand assets.
 Classify an existing root `DESIGN.md` as **generated** only when its frontmatter carries the literal
 generated notice emitted by `cq design build`; otherwise it is an Impeccable proposal awaiting the human's
@@ -66,8 +66,8 @@ Wait for one OK unless the inherited authorization applies.
 
 ### 4. Establish the source and knowledge homes
 
-Create or merge the confirmed product facts under the applicable `/.knowledge/vision/` and
-`/.knowledge/standards/` homes. Install only missing brand-pack files from
+Create or merge the confirmed product facts under the applicable `/docs/vision/` and
+`/docs/standards/` homes. Install only missing brand-pack files from
 `${CLAUDE_PLUGIN_ROOT}/assets/design/brand-pack/`; preserve every existing file. If the accepted
 source is an external `DESIGN.md`, preserve it until the pack's `tokens.json` exists, then run:
 

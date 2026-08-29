@@ -7,10 +7,10 @@ allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(rg:*), Write
 # /quenching:knowledge:documentation:plan — diagnose sources and record the documentation plan
 
 **Input**: `$ARGUMENTS` (optional source paths or a scope; omit to inspect the target repository's
-README, legacy docs, code, specs and `/.knowledge/standards/`).
+README, legacy docs, code, specs and `/docs/standards/`).
 
 This planning pass reads sources across the bundle and writes only the plan-of-record at
-`${CLAUDE_PROJECT_DIR}/.quenching/documentation/plan.md`. The six contracts, the architecture rules
+`${CLAUDE_PROJECT_DIR}/.quenching/documentation/plan.md`. The seven contracts, the architecture rules
 and reader journeys live in
 [knowledge-documentation/architecture.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-documentation/architecture.md);
 source provenance is defined by
@@ -29,8 +29,9 @@ source provenance is defined by
 
 ### 1. Confirm the target and inventory sources
 
-Resolve the repository root and verify `/.knowledge/index.md`, then inventory `documentation/`,
-`standards/`, `concepts/`, `external/`, `catalog/`, `vision/` and root `glossary.md`. Collect source
+Resolve the repository root and verify `/docs/index.md`, then inventory `tutorials/`, `how-to/`,
+`explanation/`, `project/`, `standards/`, `concepts/`, `external/`, `catalog/`, `vision/` and root
+`glossary.md` — **listing every `.md`**, because the coverage denominator is documents, not homes. Collect source
 paths, heading skeletons, links, existing nav/config and relevant code/specs with read-only tools.
 The inventory is the whole bundle even when the requested editorial slice is small. **Done when:**
 the source inventory names each home, its paths and audience, or records the missing bundle as a
@@ -51,18 +52,16 @@ per home — `publicar`, `publicar derivado` or `não publicar` — with motive,
 Treat a missing basis as `source gap:`, never as a default exclusion. **Done when:** all seven
 contract headings exist in order and no placeholder is silently guessed.
 
-When the map publishes the root `glossary.md`, record `reference/glossary.md` as a **derived**
-route and the canonical file as its only source. If the canonical file exists and has content,
-this is the default decision; `não publicar` is valid only as an explicit accepted row with a
-reason. The plan also records the generated abbreviation snippet consumed by the site layer, the
-source hash/provenance fields, and the known term used by rendered QA; it never assigns authors a
-second editable term list.
+The root `glossary.md` needs no derived route: it lives inside `docs_dir` and publishes itself.
+The plan still records the generated abbreviation snippet the site layer consumes, its source
+hash/provenance, and the known term used by rendered QA; it never assigns authors a second
+editable term list.
 
-The publication map is a closed coverage contract. Include one row for every source home and the
-root glossary, with a route for `publicar`/`publicar derivado` and an explicit `não publicar`
-decision where a home is intentionally withheld. The denominator for coverage is every mandatory
-row, not only the pages selected for this pass. Every derived route must state its source and
-transformation, and every internal `/.knowledge/` link in the published projection must resolve
+The publication map is a closed coverage contract **at document granularity**. Every publishable
+`.md` is either published or carries its own explicit `não publicar` row with a reason — a home-level
+row cannot stand in for the documents inside it. The denominator for coverage is every publishable
+document, not the map's row count and not the pages selected for this pass. Every derived route must state its source and
+transformation, and every internal `/docs/` link in the published projection must resolve
 to a mapped published route or be removed from the projection.
 
 For `catalog/`, the inventory must also record the catalog contract before assigning pages:
@@ -112,5 +111,5 @@ lists its path, assignments and remaining gaps.
 - Never write a documentation page in this pass.
 - Never fabricate a fact, source, statistic, quote, title or destination.
 - Never infer that a home is internal or public from its name; the editorial map is the only publication boundary.
-- Keep the plan at `.quenching/documentation/plan.md`, never under `/.knowledge/documentation/`.
+- Keep the plan at `.quenching/documentation/plan.md`, never under `/docs/documentation/`.
 - A declined OK leaves the target unchanged.
