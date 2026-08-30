@@ -92,3 +92,17 @@ The other half of that discipline is that a shipped-unproven capability is state
 standard that governs it, not only in the tool. See
 [spec-backend.md](../architecture/spec-backend.md) §What this standard does not yet cover — a
 contract to meet is not a report of one met.
+
+## Named instance: the proof front's static boundary
+
+The proof front deliberately does not run a target's test suite. `cq proof doctor` and
+`cq proof status` can establish the shape of the gate — layers, fixtures, measured surfaces,
+coverage floors, CI declarations and operations-entry-point links — but they cannot establish
+that the suite passes or that its last run is current. Their payloads therefore carry
+`suiteRun: false`, and the status command states that boundary in its report. A conformant static
+surface is not a green test result.
+
+This instance needs no per-operation stderr warning: the read-only commands take no risky write
+and the limitation is a standing field in every report. A target that wants proof of the runtime
+result runs its own gate and then hands the resulting artifact to `cq proof ratchet`; the ratchet
+reads that evidence without claiming to have produced it.
