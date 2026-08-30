@@ -93,6 +93,66 @@ class AlignCleanPath(unittest.TestCase):
             self.assertNotIn("inventory", " ".join(call for _, call in transcript))
 
 
+class AlignThreeBands(unittest.TestCase):
+    def test_fixture_has_one_finding_per_band_and_body_routes_each_disposition(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            (root / ".claude").mkdir()
+            scripts = root / "scripts"
+            scripts.mkdir()
+            (root / ".claude" / "quenching.json").write_text(
+                json.dumps({"opsRoot": "scripts", "router": "pyproject.toml"}),
+                encoding="utf-8")
+            (root / "pyproject.toml").write_text(
+                "[project.scripts]\nrun = 'run:main'\n", encoding="utf-8")
+            (scripts / "run.py").write_text(
+                "from pathlib import Path\n\n"
+                "def verify():\n    return None\n\n"
+                "ROOT = Path(__file__).resolve()\n\n"
+                "def main():\n    # verify()\n    return 0\n\n"
+                "if __name__ == '__main__':\n    raise SystemExit(main())\n",
+                encoding="utf-8")
+            registry = scripts / "registry.md"
+            registry.write_text("`run.py` — active\n", encoding="utf-8")
+
+            payload, err, exit_code = doctor(str(root))
+            self.assertEqual(err, {})
+            self.assertIsNotNone(payload)
+            self.assertEqual(exit_code, 1)
+            self.assertEqual(
+                {finding["code"] for finding in payload["findings"]},
+                {"op-registry-stale", "op-adhoc-root", "op-disabled-check"},
+            )
+            self.assertEqual(len(payload["findings"]), 3)
+
+            body = ALIGN_BODY.read_text(encoding="utf-8")
+            classification = body.split("### 3. Classify the findings", 1)[1].split(
+                "### 4. Present one plan and gate once", 1)[0]
+            self.assertEqual(
+                [classification.index(band) for band in ("Mechanical", "Structural", "Judgement")],
+                sorted(classification.index(band) for band in ("Mechanical", "Structural", "Judgement")),
+            )
+            self.assertIn("Build one plan grouped by the three bands", classification)
+
+            gate = body.split("### 4. Present one plan and gate once", 1)[1].split(
+                "### 5. Apply only the first two bands", 1)[0]
+            self.assertEqual(gate.count("Ask once for authorization"), 1)
+            self.assertIn("each judgement finding and its closing command",
+                          " ".join(gate.split()))
+
+            apply = body.split("### 5. Apply only the first two bands", 1)[1].split(
+                "### 6. Report the cycle", 1)[0]
+            self.assertIn("mechanical closures and the bounded structural repairs", apply)
+            self.assertIn(
+                "Never arm a write-capable entry point, archive an entry point, re-enable a disabled check",
+                " ".join(apply.split()),
+            )
+            self.assertIn(
+                "every judgement finding with its evidence and exact command that closes it",
+                " ".join(body.split()),
+            )
+
+
 class RegistryStale(unittest.TestCase):
     def test_absent_registry_is_silent_until_a_generator_can_create_one(self):
         expected = json.loads(GOLDEN.read_text(encoding="utf-8"))
