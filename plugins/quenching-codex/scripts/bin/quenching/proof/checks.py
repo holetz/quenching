@@ -9,6 +9,7 @@ from __future__ import annotations
 from quenching.ops.config import load_ops_config
 from quenching.ops.inventory import build_inventory as build_ops_inventory
 from quenching.proof.model import Finding, ProofInventory
+from quenching.proof.readme import readme_path, render_readme_document
 
 
 def _error(code: str, message: str, *, path: str | None = None,
@@ -131,6 +132,21 @@ def check_untested_entrypoint(inventory: ProofInventory) -> list[Finding]:
     return findings
 
 
+def check_readme_stale(inventory: ProofInventory) -> list[Finding]:
+    """Check the generated README only when the target declares layers to describe."""
+    if not inventory.layers:
+        return []
+    path = readme_path(inventory)
+    try:
+        current = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        current = ""
+    if current == render_readme_document(current, inventory):
+        return []
+    return [_error("pf-readme-stale", "generated proof README is absent or stale",
+                   path=str(path.relative_to(inventory.repo_root)).replace("\\", "/"))]
+
+
 def conditional_status(inventory: ProofInventory) -> dict[str, str]:
     """State why the cross-front entry-point check did not run when ops is absent."""
     _, err = load_ops_config(inventory.repo_root)
@@ -142,6 +158,6 @@ def conditional_status(inventory: ProofInventory) -> dict[str, str]:
 def run_checks(inventory: ProofInventory) -> list[Finding]:
     checks = (check_unlayered, check_unmarked, check_loose_fixture, check_fat_conftest,
               check_unmeasured_surface, check_no_floor, check_stop_first, check_empty_layer,
-              check_no_ci, check_order_unproven, check_untested_entrypoint)
+              check_no_ci, check_order_unproven, check_untested_entrypoint, check_readme_stale)
     findings = [finding for check in checks for finding in check(inventory)]
     return sorted(findings, key=lambda item: (item.code, item.path or "", item.message))
