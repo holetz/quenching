@@ -1,0 +1,35 @@
+{
+  "root": "<OPS_ROOT>",
+  "router": {
+    "path": "../pyproject.toml",
+    "kind": "python-console-script",
+    "exists": true,
+    "entries": [
+      "run"
+    ]
+  },
+  "entryPoints": [
+    {
+      "path": "pkg/deploy.sh",
+      "module": null,
+      "invocation": "/pkg/deploy",
+      "purpose": "",
+      "flags": [],
+      "writesOutsideRepo": false,
+      "lifecycle": null,
+      "language": "non-python"
+    },
+    {
+      "path": "pkg/run.py",
+      "module": "pkg.run",
+      "invocation": "/pkg/run",
+      "purpose": "Run a job.",
+      "flags": [
+        "--json"
+      ],
+      "writesOutsideRepo": false,
+      "lifecycle": null,
+      "language": "python"
+    }
+  ]
+}
