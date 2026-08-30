@@ -164,6 +164,9 @@ sentence, and **link out** rather than explaining in full here.
   stops the run and asks. A red declared gate stops the queue whichever was declared, and the
   blocked spec leaves the branch's `quenching-specs:` mark so the pull request never implies it
   carries what it does not.
+- [**Coverage ratchet**](standards/architecture/proof-front.md) — a per-source-root floor that a
+  verification gate may raise after a successful run but may never lower, preserving progress
+  without forcing tests toward a fixed percentage target.
 - [**Context (components)**](standards/naming/command-surface.md) — one of the four sibling
   contexts under the `components` front — `command/`, `agent/`, `hook/`, `harness/` — each named
   for the artifact it mints, none a sub-type of another. A front-level verb sits at the front's own
@@ -206,6 +209,9 @@ sentence, and **link out** rather than explaining in full here.
   command's three sub-agents (everything but `Edit`, `Write`, `NotebookEdit` and `Agent`, with
   `Bash`), because the deliverable is the aggregate a `grep`/`gh`/`cq` produces. It returns the
   **Dependency map** and touches nothing.
+- [**Derived marker**](standards/architecture/proof-front.md) — a test-runner marker projected
+  from the test's layer directory by collection, never a hand-applied second declaration of the
+  layer.
 - [**Derived stage**](standards/workflows/plan-lifecycle.md) — a spec's position in its life
   (`captured` → `proposed` → `designed` → `refined` → `ready` → `approved` → `executing`),
   COMPUTED from which headings are filled and which records frontmatter carries rather than
@@ -242,6 +248,9 @@ sentence, and **link out** rather than explaining in full here.
   read through `cq specs config --json`, default `medium` — the same line the gears scale draws
   between the one level that interrupts nobody and every level that asks, because a fan-out buys the
   drafting and never the judgment.
+- [**Fixture library**](standards/architecture/proof-front.md) — the shared home for fixtures
+  needed by more than one test module, keeping reusable setup from becoming duplicated module
+  definitions.
 - **Gear** — the execution mode of one lifecycle stage in `/quenching:specs:cycle`: in-session, in
   a sub-agent, or skipped, set by the ONE gears plan the command derives from
   `priority.complexity`. By extension, "the `low` gear" names the whole plan a *level* derives, not
@@ -262,6 +271,8 @@ sentence, and **link out** rather than explaining in full here.
   listing IS the source and a checker is mandatory. The `/docs/` bundle's `index.md` files are the
   bounding counterexample: nothing else enumerates the bundle, so they keep their checks; the
   retired `/.specs/plans/index.md` duplicated `cq specs list` and went with its four `sp-*` codes.
+- [**Golden input**](standards/architecture/proof-front.md) — a fixed, named input used by a data
+  test to compare a transformation's value and schema against an expected result.
 - [**Handler ladder**](standards/automation/hooks.md) — the ordering a hook's handler is chosen
   from, cheapest first: a deterministic `command` script (zero tokens on no-match), then a `prompt`
   handler (one cheap judgment per firing), then an `agent` handler — which on a per-tool-call event
@@ -283,6 +294,8 @@ sentence, and **link out** rather than explaining in full here.
   form was chosen for. **Silence is not a default of `en`**; a repo that declares nothing is under no
   constraint, and adoption is opt-in per repo. Nothing machine-checks it, so `/quenching:components:harness:align` classing
   the line **KEEP** is the only thing between it and a silent deletion.
+- [**Layer**](standards/architecture/proof-front.md) — a declared, disjoint slice of a test suite
+  whose reach and wall-clock budget describe what kind of verification it provides.
 - [**Merge record**](standards/workflows/plan-git-record.md) — the
   `merge: {strategy, subject, pr}` frontmatter entry stamped by `/quenching:specs:conclude`, write-once,
   **on the work branch before the merge** — which is what makes the merge that command's last
@@ -292,6 +305,9 @@ sentence, and **link out** rather than explaining in full here.
   strategy** carries an explicit none here. `pr` exists only on the **pull-request route** and
   names the pull request the merge went through — absent on every local conclusion, and refused
   under `fast-forward`, which `gh pr merge` cannot perform (`sp-merge-pr-no-route`).
+- [**Measured surface**](standards/architecture/proof-front.md) — the declared set of source roots
+  a verification gate actually measures, with an unmeasured shipped root reported as drift rather
+  than hidden behind an honest percentage.
 - [**Moment**](standards/workflows/plan-artifacts.md) — the point on a spec's timeline a canonical
   section is read at, and the axis that replaced an `audience` field nobody read: `decision` (the
   human, weighing whether to build), `build` (the executor, at step 4 of `/quenching:specs:execute`), `close`
@@ -323,6 +339,9 @@ sentence, and **link out** rather than explaining in full here.
 - [**Ops front**](standards/architecture/ops-front.md) — the plugin front that defines the
   canonical operations surface a target repository can converge toward, including its router,
   entry-point contract, and lifecycle.
+- [**Order independence**](standards/architecture/proof-front.md) — evidence that a suite remains
+  correct when sampled collection orders change, exposing state or fixture leakage that a stable
+  run can hide.
 - [**Package**](standards/architecture/plugin-layout.md) — the Python package under
   `plugins/quenching/assets/bin/quenching/`, the directory that replaced the four self-contained
   scripts the plugin used to ship. Split into `common/`, `specs/`, `knowledge/` and `components/`,
@@ -363,6 +382,9 @@ sentence, and **link out** rather than explaining in full here.
   marker buys is a reader able to tell a deliberate grant from one nobody examined. It exists
   because the earlier remedy advised declaring the reason in the body while the check read only
   `allowed-tools` — the conclusion it did not observe (§The second site).
+- [**Proof front**](standards/architecture/proof-front.md) — the target repository's verification
+  surface: declared test layers, fixture library, measured source roots, ratchets, and the CI gate
+  that runs them.
 - [**Provider ID**](standards/architecture/spec-backend.md) — the tracker's own identifier for
   a spec — a GitHub issue number, an Azure Boards work-item ID — and **the spec's whole identity**.
   The canonical document does not mirror it, and resolution is exact: the ID exists or it is
