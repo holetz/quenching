@@ -12,8 +12,9 @@ from unittest import mock
 
 import _paths  # noqa: F401 — must precede the `quenching` import
 from quenching.proof.ci import discover_ci
-from quenching.proof.checks import run_checks
+from quenching.proof.checks import conditional_status, run_checks
 from quenching.proof.inventory import build_inventory
+from quenching.proof.model import ProofInventory
 from quenching.proof.ratchet import evaluate
 
 HERE = Path(__file__).resolve().parent
@@ -154,6 +155,17 @@ class ProofFixtureTrees(unittest.TestCase):
         self.assertIn("pf-untested-entrypoint", self._codes(ops=True))
         self.assertNotIn("pf-untested-entrypoint", self._codes(
             ops=True, extra_tests={"unit/test_run.py": "import run\ndef test_run(): pass\n"}))
+
+    def test_silent_untested_entrypoint_reports_not_applicable_without_ops(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            inventory = ProofInventory(str(root), str(root / "tests"))
+            codes = {item.code for item in run_checks(inventory)}
+            self.assertNotIn("pf-untested-entrypoint", codes)
+            self.assertEqual(
+                {"pf-untested-entrypoint": "not-applicable — ops is not configured"},
+                conditional_status(inventory),
+            )
 
     def test_minimal_correction_retires_each_finding_code(self):
         cases = {
