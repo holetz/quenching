@@ -1,10 +1,13 @@
 """Focused proofs for the ops verifier's registry boundary."""
 from __future__ import annotations
 
+import importlib
 import json
 import pathlib
+import subprocess
 import tempfile
 import unittest
+from unittest import mock
 
 import _paths  # noqa: F401 — must precede the `quenching` import
 from quenching.ops.checks import (
@@ -20,7 +23,7 @@ from quenching.ops.checks import (
     run_checks,
 )
 from quenching.ops.cli import _status_payload
-from quenching.ops.doctor import inspect_ops
+from quenching.ops.doctor import doctor, inspect_ops
 from quenching.ops.model import EntryPoint, Inventory, Router
 
 
@@ -200,6 +203,28 @@ class FindingFixtures(unittest.TestCase):
             router=Router("pyproject.toml", "python-console-script", True),
         )
         self.assertEqual(check_no_router(good_router), [])
+
+    def test_doctor_never_imports_or_executes_target_code(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            (root / ".claude").mkdir()
+            scripts = root / "scripts"
+            scripts.mkdir()
+            (root / ".claude" / "quenching.json").write_text(
+                json.dumps({"opsRoot": "scripts", "router": "pyproject.toml"}),
+                encoding="utf-8")
+            (root / "pyproject.toml").write_text(
+                "[project.scripts]\nrun = 'run:main'\n", encoding="utf-8")
+            (scripts / "run.py").write_text(
+                "import importlib\nimport subprocess\n"
+                "def main():\n    subprocess.run(['dangerous'])\n    return 0\n",
+                encoding="utf-8")
+            with mock.patch.object(importlib, "import_module", side_effect=AssertionError("imported")), \
+                    mock.patch.object(subprocess, "run", side_effect=AssertionError("executed")):
+                payload, err, code = doctor(str(scripts))
+            self.assertEqual(err, {})
+            self.assertIsNotNone(payload)
+            self.assertEqual(code, 1)
 
 
 if __name__ == "__main__":
