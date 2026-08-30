@@ -18,7 +18,7 @@ from quenching.design.model import DesignError, font_asset_paths, read_json
 
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-FIELD_RE = re.compile(r"^- `([A-Za-z][A-Za-z0-9_-]*)` — (required|optional)\s*(.*)$")
+FIELD_RE = re.compile(r"^- `([A-Za-z][A-Za-z0-9_-]*)` — (required|optional)(?: (list|scalar))?\s*(.*)$")
 
 
 def new_genre(root: Path, slug: str, name: str, register: str, media: list[str],
@@ -72,7 +72,16 @@ def render_genre(root: Path, slug: str, medium: str, data_path: Path,
         raise DesignError(f"genre {slug} does not declare medium {medium}")
     fields = _fields_from_body(body)
     data = _read_data(data_path)
-    missing = sorted(name for name, required, _ in fields if required and not str(data.get(name) or "").strip())
+    missing = []
+    for name, required, _, is_list in fields:
+        value = data.get(name)
+        if is_list:
+            if value is not None and not isinstance(value, list):
+                raise DesignError(f"render data field {name} must be a JSON array")
+            if required and not value:
+                missing.append(name)
+        elif required and not str(value or "").strip():
+            missing.append(name)
     if missing:
         raise DesignError("render data is missing required fields: " + ", ".join(missing))
     template_medium = "typst" if medium == "pdf" else medium
@@ -104,24 +113,33 @@ def _media(values: list[str]) -> list[str]:
     return media
 
 
-def _parse_field(value: str) -> tuple[str, bool, str]:
-    parts = value.split(":", 2)
+def _parse_field(value: str) -> tuple[str, bool, str, bool]:
+    parts = value.split(":", 3)
     if len(parts) < 2 or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", parts[0]):
         raise DesignError(f"invalid field {value!r}; use name:required|optional[:description]")
     requirement = parts[1].lower()
     if requirement not in {"required", "optional"}:
         raise DesignError(f"invalid field {value!r}; requirement must be required or optional")
-    return parts[0], requirement == "required", parts[2].strip() if len(parts) == 3 else ""
+    cardinality = "scalar"
+    description = ""
+    if len(parts) >= 3:
+        if parts[2].lower() in {"scalar", "list"}:
+            cardinality = parts[2].lower()
+            description = parts[3].strip() if len(parts) == 4 else ""
+        else:
+            description = ":".join(parts[2:]).strip()
+    return parts[0], requirement == "required", description, cardinality == "list"
 
 
 def _genre_document(slug: str, name: str, register: str, media: list[str],
-                    fields: list[tuple[str, bool, str]]) -> str:
+                    fields: list[tuple[str, bool, str, bool]]) -> str:
     lines = ["---", f"name: {json.dumps(name, ensure_ascii=False)}", f"slug: {json.dumps(slug)}",
              f"register: {json.dumps(register, ensure_ascii=False)}",
              f"media: {json.dumps(', '.join(media))}", "---", "", f"# {name}", "", "## Fields", ""]
-    for field, required, description in fields:
+    for field, required, description, is_list in fields:
         suffix = f" {description}" if description else ""
-        lines.append(f"- `{field}` — {'required' if required else 'optional'}{suffix}")
+        cardinality = " list" if is_list else ""
+        lines.append(f"- `{field}` — {'required' if required else 'optional'}{cardinality}{suffix}")
     lines.extend(["", "## Composition", "", "Describe the stable composition this genre preserves across media.",
                   "", "## Guardrails", "", "- Cite `/docs/standards/design/production.md`.",
                   "- Import generated medium tokens; never repeat a primitive value."])
@@ -129,12 +147,12 @@ def _genre_document(slug: str, name: str, register: str, media: list[str],
 
 
 def _genre_template(name: str, medium: str,
-                    fields: list[tuple[str, bool, str]]) -> str:
+                    fields: list[tuple[str, bool, str, bool]]) -> str:
     """Mint a template whose placeholders are exactly the genre's declared fields."""
     if medium == "html":
-        title_field = "title" if any(field == "title" for field, _, _ in fields) else fields[0][0]
+        title_field = "title" if any(field == "title" for field, _, _, _ in fields) else fields[0][0]
         blocks = []
-        for field, _, description in fields:
+        for field, _, description, _ in fields:
             label = html.escape(description or field.replace("-", " ").replace("_", " ").title())
             if field == title_field:
                 blocks.append(f"    <h1>{{{{field.{field}}}}}</h1>")
@@ -164,7 +182,7 @@ def _genre_template(name: str, medium: str,
         "#show heading.where(level: 1): it => text(size: token-typography-display-font-size, weight: token-typography-display-font-weight, it.body)",
         "", "#frame[",
     ]
-    for index, (field, _, description) in enumerate(fields):
+    for index, (field, _, description, _) in enumerate(fields):
         label = description or field.replace("-", " ").replace("_", " ").title()
         if index == 0 or field == "title":
             lines.append(f"  = {{{{field.{field}}}}}")
@@ -176,13 +194,13 @@ def _genre_template(name: str, medium: str,
     return "\n".join(lines)
 
 
-def _fields_from_body(body: str) -> list[tuple[str, bool, str]]:
+def _fields_from_body(body: str) -> list[tuple[str, bool, str, bool]]:
     section = split_h2(body).get("Fields", "")
     fields = []
     for line in section.splitlines():
         match = FIELD_RE.match(line)
         if match:
-            fields.append((match.group(1), match.group(2) == "required", match.group(3).strip()))
+            fields.append((match.group(1), match.group(2) == "required", match.group(4).strip(), match.group(3) == "list"))
     if not fields:
         raise DesignError("genre contract declares no parseable fields")
     return fields
