@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "mode": "check",
+  "coverage": "<REPO_ROOT>/coverage.json",
+  "ratchetPath": "<REPO_ROOT>/.coverage-floor.json",
+  "achieved": {
+    "src": 80.0
+  },
+  "floors": {
+    "src": 80.0
+  },
+  "findings": []
+}

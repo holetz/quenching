@@ -73,5 +73,11 @@
   "exclusions": [],
   "sourceSurfaces": [
     "src"
-  ]
+  ],
+  "scanned": 1,
+  "suiteRun": false,
+  "errors": 0,
+  "warnings": 0,
+  "findings": [],
+  "ok": true
 }

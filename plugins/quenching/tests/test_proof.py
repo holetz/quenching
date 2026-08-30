@@ -9,6 +9,18 @@ from pathlib import Path
 import _paths  # noqa: F401 — must precede the `quenching` import
 from quenching.proof.ratchet import evaluate
 
+HERE = Path(__file__).resolve().parent
+GOLDEN = HERE / "fixtures" / "golden"
+
+
+class FrozenProofPayloads(unittest.TestCase):
+    def test_all_read_payloads_are_frozen_as_json_objects(self):
+        for name in ("proof-inventory.json", "proof-doctor.json", "proof-ratchet-check.json",
+                     "proof-status.json"):
+            with self.subTest(name=name):
+                payload = json.loads((GOLDEN / name).read_text(encoding="utf-8"))
+                self.assertIsInstance(payload, dict)
+
 
 class TheCoverageRatchet(unittest.TestCase):
     def test_raise_is_monotonic_over_a_random_sequence(self):
