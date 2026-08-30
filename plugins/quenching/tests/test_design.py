@@ -233,6 +233,30 @@ components:
         self.assertIn("--design-colors-primary", html)
         self.assertNotIn("{{", html)
 
+    def test_read_genre_renders_markdown_semantically_in_html_and_typst(self):
+        new_genre(
+            self.root, "markdown-note", "Markdown note", "read", ["html", "typst"],
+            ["title:required:Title", "body:required:Reviewed body"],
+        )
+        data = self.root / "markdown-note.json"
+        data.write_text(json.dumps({
+            "title": "A note",
+            "body": "# Findings\n\n**Strong** and *emphasis* with [evidence](https://example.test).\n\n- one\n- two\n\n| Key | Value |\n| --- | --- |\n| A | B |",
+        }), encoding="utf-8")
+        html_output = render_genre(self.root, "markdown-note", "html", data)
+        html = (self.root / html_output["output"]).read_text(encoding="utf-8")
+        self.assertIn("<h1>Findings</h1>", html)
+        self.assertIn("<strong>Strong</strong>", html)
+        self.assertIn("<ul><li>one</li><li>two</li></ul>", html)
+        self.assertIn("<table>", html)
+        self.assertNotIn("**Strong**", html)
+        typst_output = render_genre(self.root, "markdown-note", "typst", data)
+        typst = (self.root / typst_output["output"]).read_text(encoding="utf-8")
+        self.assertIn("= Findings", typst)
+        self.assertIn("#strong[Strong]", typst)
+        self.assertIn("- one", typst)
+        self.assertIn("#table(columns: 2", typst)
+
     def test_genre_template_matches_non_report_field_contract(self):
         new_genre(
             self.root, "brief", "Brief", "read", ["html"],
