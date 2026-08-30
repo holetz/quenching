@@ -21,18 +21,16 @@ from quenching.design.model import (
     color_to_css,
     dimension_to_css,
     dump_json,
-    iter_tokens,
     quenching_extension,
     read_json,
     reference_target,
-    resolve_value,
     resolve_token,
+    resolve_value,
     token_map,
     typography_to_design,
     validate_source,
     value_to_css,
 )
-
 
 PRODUCT_SECTIONS = (
     "Platform", "Stack", "Users", "Product Purpose", "Positioning", "Operating Context",
@@ -125,10 +123,10 @@ def write_build(result: BuildResult) -> list[str]:
         try:
             with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
                 handle.write(content)
-            os.replace(temporary, path)
+            Path(temporary).replace(path)
         finally:
-            if os.path.exists(temporary):
-                os.unlink(temporary)
+            if Path(temporary).exists():
+                Path(temporary).unlink()
         written.append(relative)
     return written
 
@@ -332,6 +330,13 @@ def _render_typst(records: dict[str, Token], root: Path) -> str:
                 item = value.get(prop)
                 if prop in {"fontSize", "letterSpacing"}:
                     item = _dimension_to_typst(item)
+                elif prop == "fontFamily" and isinstance(item, list):
+                    generic_families = {"serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui"}
+                    families = [str(font) for font in item if str(font).lower() not in generic_families]
+                    if len(families) == 1:
+                        item = json.dumps(families[0], ensure_ascii=False)
+                    else:
+                        item = "(" + ", ".join(json.dumps(font, ensure_ascii=False) for font in families) + ")"
                 else:
                     item = json.dumps(item, ensure_ascii=False)
                 lines.append(f"#let token-{name}-{_slug(prop)} = {item}")
@@ -360,7 +365,7 @@ def _render_typst(records: dict[str, Token], root: Path) -> str:
 def _render_python(records: dict[str, Token], root: Path) -> str:
     values = {token.dotted: resolve_token(token, records) for token in records.values()}
     return (f'"""{_generated_notice(root, "tokens")}"""\n\n'
-            + "TOKENS = " + pprint.pformat(values, sort_dicts=True, width=100) + "\n")
+             "TOKENS = " + pprint.pformat(values, sort_dicts=True, width=100) + "\n")
 
 
 def _render_brand_api(records: dict[str, Token], root: Path) -> str:
@@ -499,11 +504,11 @@ def _materialize_css_variables(css: str, records: dict[str, Token], path: Path) 
 def _narrative(sections: dict[str, str]) -> dict[str, Any]:
     overview = sections.get("Overview", "")
     north_star = ""
-    match = re.search(r"\*\*Creative North Star:?\*\*\s*[\"“]?([^\n\"”]+)", overview, re.I)
+    match = re.search(r"\*\*Creative North Star:?\*\*\s*[\"“]?([^\n\"”]+)", overview, re.IGNORECASE)
     if match:
         north_star = match.group(1).strip()
     elif overview:
-        north_star = overview.splitlines()[0].strip(" #*-\"")
+        north_star = overview.splitlines()[0].strip(' #*-"')
     characteristics = [re.sub(r"^\*\*(.+?)\*\*:?\s*", r"\1: ", line[2:]).strip()
                        for line in overview.splitlines() if line.startswith("- ")]
     rules: list[dict[str, str]] = []
@@ -513,9 +518,9 @@ def _narrative(sections: dict[str, str]) -> dict[str, Any]:
                           "section": _slug(section.split(" & ")[0])})
     guardrails = sections.get("Do's and Don'ts", "")
     dos = [line[2:].strip() for line in guardrails.splitlines()
-           if line.startswith("- ") and re.match(r"\*\*Do\b", line[2:], re.I)]
+           if line.startswith("- ") and re.match(r"\*\*Do\b", line[2:], re.IGNORECASE)]
     donts = [line[2:].strip() for line in guardrails.splitlines()
-             if line.startswith("- ") and re.match(r"\*\*Don['’]t\b", line[2:], re.I)]
+             if line.startswith("- ") and re.match(r"\*\*Don['’]t\b", line[2:], re.IGNORECASE)]
     return {
         "northStar": north_star,
         "overview": overview,

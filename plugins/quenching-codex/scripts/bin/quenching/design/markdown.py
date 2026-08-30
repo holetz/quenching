@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import json
 import re
-from pathlib import Path
-from typing import Any
 from dataclasses import dataclass
 from html import escape as html_escape
+from pathlib import Path
+from typing import Any
 from urllib.parse import urlparse
 
 
@@ -153,8 +153,16 @@ def parse_markdown(markdown: str) -> list[MarkdownBlock]:
                 match = re.match(r"^\s*([-+*]|\d+[.])\s+(.+)$", lines[index])
                 if not match or match.group(1)[0].isdigit() != ordered:
                     break
-                items.append(match.group(2))
                 index += 1
+                item_lines = [match.group(2)]
+                while index < len(lines) and lines[index].strip():
+                    if re.match(r"^\s*([-+*]|\d+[.])\s+", lines[index]):
+                        break
+                    if not re.match(r"^\s+", lines[index]):
+                        break
+                    item_lines.append(lines[index].strip())
+                    index += 1
+                items.append("\n".join(item_lines))
             blocks.append(MarkdownBlock("list", (ordered, items)))
             continue
         paragraph = [lines[index].strip()]
@@ -187,8 +195,7 @@ def _is_table_delimiter(line: str) -> bool:
 
 def _table_row(line: str) -> list[str]:
     value = line.strip()
-    if value.startswith("|"):
-        value = value[1:]
+    value = value.removeprefix("|")
     if value.endswith("|") and not value.endswith("\\|"):
         value = value[:-1]
     return [cell.strip().replace("\\|", "|") for cell in value.split("|")]
@@ -223,7 +230,7 @@ def _render_block(block: MarkdownBlock, medium: str) -> str:
 
 
 def _inline(value: str, medium: str) -> str:
-    pattern = re.compile(r"(`+)(.+?)\1|\[([^\]]+)\]\(([^)]+)\)|(\*\*|__)(.+?)\5|(\*|_)(.+?)\7")
+    pattern = re.compile(r"(`+)(.+?)\1|\[([^\]]+)\]\(([^)]+)\)|(\*\*|__)(.+?)\5|(\*|_)(.+?)\7", re.DOTALL)
     result: list[str] = []
     cursor = 0
     for match in pattern.finditer(value):
@@ -248,7 +255,7 @@ def _inline(value: str, medium: str) -> str:
 def _plain(value: str, medium: str) -> str:
     if medium == "html":
         return html_escape(value).replace("\n", "<br>\n")
-    return re.sub(r"([\\#\[\]])", r"\\\1", value).replace("\n", "\n")
+    return re.sub(r"([\\#$\[\]])", r"\\\1", value).replace("\n", "\n")
 
 
 def _code(value: str, medium: str) -> str:
@@ -300,6 +307,7 @@ def _strip_comment(value: str) -> str:
         elif char == "#" and index > 0 and value[index - 1].isspace():
             return value[:index].rstrip()
     return value
+
 
 def _parse_scalar(value: str) -> Any:
     value = value.strip()
