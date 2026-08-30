@@ -193,7 +193,7 @@ def detect_provider(root: str) -> tuple[str | None, str | None]:
     return None, host
 
 
-def load_config(root: str) -> dict:
+def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     """`.claude/quenching.json` — the plugin's declared parameters, read as data and never
     as a refusal.
 
@@ -219,7 +219,7 @@ def load_config(root: str) -> dict:
     repo = find_repo_root(root)
     path = os.path.join(repo, CONFIG_FILE)
     legacy = os.path.join(root, LEGACY_CONFIG_FILE)
-    provider, provider_host = detect_provider(root)
+    provider, provider_host = detect_provider(root) if detect_provider_info else (None, None)
     out = {"path": path, "present": os.path.isfile(path), "unparseable": None,
            "unknownKeys": [], "backend": provider, "provider": provider,
            "unknownProvider": provider_host if provider is None else None,

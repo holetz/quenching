@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 
-from quenching.specs.config import CONFIG_FILE, find_repo_root, load_config
+from quenching.specs.config import CONFIG_FILE, load_config
 
 
 OPS_CONFIG_KEYS = ("opsRoot", "router")
@@ -20,6 +20,23 @@ def _repo_path(repo_root: str, declared: str) -> str:
     return os.path.abspath(os.path.join(repo_root, declared))
 
 
+def _find_repo_root(root: str) -> str:
+    """Find the config home by ancestry, without asking git to execute anything."""
+    current = os.path.abspath(root)
+    while True:
+        if os.path.isfile(os.path.join(current, CONFIG_FILE)):
+            return current
+        parent = os.path.dirname(current)
+        if parent == current:
+            return os.path.abspath(root)
+        current = parent
+
+
+def _loader_root(repo_root: str) -> str:
+    """Give the shared loader a non-directory root so its provider lookup stays dormant."""
+    return os.path.join(repo_root, ".quenching-ops-loader-root")
+
+
 def load_ops_config(root: str) -> tuple[dict | None, dict]:
     """Return the resolved operations configuration, or the one refusal it can carry.
 
@@ -28,7 +45,8 @@ def load_ops_config(root: str) -> tuple[dict | None, dict]:
     router are target-repository decisions, and selecting `scripts/` or a guessed build entry
     point would make the verifier inspect the wrong surface while appearing healthy.
     """
-    cfg = load_config(root)
+    repo_root = _find_repo_root(root)
+    cfg = load_config(_loader_root(repo_root), detect_provider_info=False)
     missing = [key for key in OPS_CONFIG_KEYS if not cfg.get(key)]
     if missing:
         missing_text = ", ".join(f"`{key}`" for key in missing)
@@ -42,7 +60,6 @@ def load_ops_config(root: str) -> tuple[dict | None, dict]:
                        "operations tree or canonical router",
         }
 
-    repo_root = find_repo_root(root)
     ops_root = _repo_path(repo_root, cfg["opsRoot"])
     router = _repo_path(repo_root, cfg["router"])
     return {
