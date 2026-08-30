@@ -1,6 +1,6 @@
 ---
 name: quenching-knowledge-learn
-description: "Capture ONE piece of generic knowledge into the bundle's concepts/ home. Triggers on \"add this knowledge\", \"record what we learned\", \"put this in the knowledge base\"."
+description: "Capture ONE piece of generic knowledge into the bundle's concepts/ home. Triggers on \"add this knowledge\", \"record what we learned\", \"put this in the knowledge base\". Not for: a repo contract or procedure → quenching-knowledge-add; one glossary term → quenching-knowledge-define."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/learn.md -->

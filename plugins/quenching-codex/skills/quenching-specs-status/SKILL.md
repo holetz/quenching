@@ -1,6 +1,6 @@
 ---
 name: quenching-specs-status
-description: "Read the provider-owned specs front without writing. Use when the user asks for \"specs status\", \"the status of the specs front\", or \"provider configuration\"."
+description: "Read the provider-owned specs front without writing. Use when the user asks for \"specs status\", \"the status of the specs front\", or \"provider configuration\". Not for: developing or executing a spec → quenching-specs-develop, quenching-specs-execute; ranking the front → quenching-specs-triage."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/status.md -->

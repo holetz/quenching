@@ -14,6 +14,8 @@ class SiteSourceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "docs"
             destination = Path(tmp) / "site-source"
+            docs_root = "/docs/"
+            glossary_route = docs_root + "glossary"
             (root / "tutorials").mkdir(parents=True)
             (root / "catalog").mkdir()
             (root / "external").mkdir()
@@ -22,7 +24,11 @@ class SiteSourceTests(unittest.TestCase):
             (root / "glossary.md").write_text("# Terms\n")
             (root / "tutorials" / "index.md").write_text("# Tutorials\n")
             (root / "tutorials" / "guide.md").write_text(
-                "# Guide\n\n[private catalogue](../catalog/item.md) and [external note](../external/note.md).\n"
+                "# Guide\n\n[private catalogue](../catalog/item.md), [private harness](../CLAUDE.md), "
+                "[plugin note](/plugins/quenching/assets/references/note.md), "
+                "[external note](https://example.test/note), [protocol-relative](//example.test/note), "
+                f"[root]({docs_root}), [glossary]({glossary_route}), and [home](index.md).\n\n"
+                "```md\n[code](/plugins/quenching/assets/references/note.md)\n```\n"
             )
             (root / "tutorials" / "CLAUDE.md").write_text("private harness\n")
             (root / "catalog" / "huge-table.md").write_text("catalogue data\n")
@@ -37,9 +43,18 @@ class SiteSourceTests(unittest.TestCase):
             self.assertFalse((destination / "external").exists())
             self.assertFalse((destination / "tutorials" / "CLAUDE.md").exists())
             rendered_guide = (destination / "tutorials" / "guide.md").read_text()
+            rendered_prose = rendered_guide.split("```", 1)[0]
             self.assertNotIn("](../catalog", rendered_guide)
+            self.assertNotIn("](../CLAUDE", rendered_guide)
+            self.assertNotIn("](/plugins", rendered_prose)
             self.assertNotIn("](../external", rendered_guide)
             self.assertIn("private catalogue", rendered_guide)
+            self.assertIn("https://example.test/note", rendered_guide)
+            self.assertIn("//example.test/note", rendered_guide)
+            self.assertIn(f"]({docs_root})", rendered_guide)
+            self.assertIn(f"]({glossary_route})", rendered_guide)
+            self.assertIn("[code](/plugins/quenching/assets/references/note.md)", rendered_guide)
+            self.assertIn("[home](index.md)", rendered_guide)
             checked, findings = site_source_findings(root, destination)
             self.assertFalse(findings, checked)
 

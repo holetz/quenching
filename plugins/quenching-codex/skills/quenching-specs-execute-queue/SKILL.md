@@ -1,6 +1,6 @@
 ---
 name: quenching-specs-execute-queue
-description: "Build N specs in one run — one isolation, one branch, one pull request, serial by construction. Triggers on \"execute these specs\", \"build the queue\", \"run these three specs in one go\", \"take the next N specs to a PR\", \"queue the front\", \"build everything that is ready\". The plan fixes the list, N, recursion form and stopping criterion before isolation; each spec runs through quenching-specs-execute and one quenching-specs-conclude closes the queue. Local blocks mark [!] and continue; contaminating blocks stop."
+description: "Build N specs in one run — one isolation, one branch, one pull request, serial by construction. Triggers on \"execute these specs\", \"build the queue\", \"run these three specs in one go\", \"take the next N specs to a PR\", \"queue the front\", \"build everything that is ready\". The plan fixes the list, N, recursion form and stopping criterion before isolation; each spec runs through quenching-specs-execute and one quenching-specs-conclude closes the queue. Local blocks mark [!] and continue; contaminating blocks stop. Not for: ONE spec → quenching-specs-execute; N specs to ready → quenching-specs-develop-batch; one lifecycle → quenching-specs-cycle; review/merge → quenching-specs-conclude; ranking → quenching-specs-triage. argument-hint: [id ...]"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/execute-queue.md -->

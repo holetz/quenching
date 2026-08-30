@@ -1,6 +1,6 @@
 ---
 name: quenching-references-tighten
-description: "Rewrite ONE file under plugins/quenching/assets/references/ to this repo's prose model — the binding half first, rationale relocated under its marker and never deleted, no-op lines cut — and report the measured delta on the chars the citing bodies actually load. Triggers: \"enxugar a prosa das references\", \"revisar esse reference\", \"marcar rules/rationale\", \"desinflar o custo de leitura das references\", \"tighten the references\", \"review the reference prose\"."
+description: "Rewrite ONE file under plugins/quenching/assets/references/ to this repo's prose model — the binding half first, rationale relocated under its marker and never deleted, no-op lines cut — and report the measured delta on the chars the citing bodies actually load. Triggers: \"enxugar a prosa das references\", \"revisar esse reference\", \"marcar rules/rationale\", \"desinflar o custo de leitura das references\", \"tighten the references\", \"review the reference prose\". Not for: cutting dead weight from a command body → /commands:tighten; minting a command, or its description → quenching-components-command-new, quenching-components-align; a knowledge/ standard or the OKF bundle → quenching-knowledge-align; generating a documentation site → quenching-knowledge-documentation-produce."
 ---
 
 <!-- GENERATED FROM .claude/commands/references/tighten.md -->
@@ -21,13 +21,13 @@ addressed, without losing a single thing a future session could not reconstruct.
 
 | Rule | Owner |
 | --- | --- |
-| `<!-- rules -->` / `<!-- rationale -->`, marker reach, cold destination, section+children cost | [context-discipline.md](/.knowledge/standards/automation/context-discipline.md) §The rules/rationale marker convention |
-| Rationale is relocated, never deleted; the bundle is never segmented into more files | [context-discipline.md](/.knowledge/standards/automation/context-discipline.md) §Two things measured and refused |
-| Read the narrowest thing; a citation is a resolvable `§`-address; N sections in ONE call | [context-discipline.md](/.knowledge/standards/automation/context-discipline.md) §Open less: read the narrowest thing that answers the question |
+| `<!-- rules -->` / `<!-- rationale -->`, marker reach, cold destination, section+children cost | [context-discipline.md](/docs/standards/automation/context-discipline.md) §The rules/rationale marker convention |
+| Rationale is relocated, never deleted; the bundle is never segmented into more files | [context-discipline.md](/docs/standards/automation/context-discipline.md) §Two things measured and refused |
+| Read the narrowest thing; a citation is a resolvable `§`-address; N sections in ONE call | [context-discipline.md](/docs/standards/automation/context-discipline.md) §Open less: read the narrowest thing that answers the question |
 | The no-op test, positive prescription, sediment / duplication / sprawl | [components-command-new/doctrine.md](/plugins/quenching/assets/references/components-command-new/doctrine.md) §The no-op test, §Positive prescription, §Named failure modes |
-| The mention/use trap, and writing a mention as a placeholder | [prose-sweeps.md](/.knowledge/standards/quality/prose-sweeps.md) §Write the mention as a placeholder, not as an instance |
-| A computed number restated in prose fans out — grep its literal form | [computed-fact-prose-fanout.md](/.knowledge/standards/quality/computed-fact-prose-fanout.md) |
-| Which language the prose is written in | [communication.md](/.knowledge/standards/agents/communication.md) |
+| The mention/use trap, and writing a mention as a placeholder | [prose-sweeps.md](/docs/standards/quality/prose-sweeps.md) §Write the mention as a placeholder, not as an instance |
+| A computed number restated in prose fans out — grep its literal form | [computed-fact-prose-fanout.md](/docs/standards/quality/computed-fact-prose-fanout.md) |
+| Which language the prose is written in | [communication.md](/docs/standards/agents/communication.md) |
 
 Resolve `cq` at `plugins/quenching-codex/scripts/bin/cq`, invoked by that literal quoted
 path
@@ -43,7 +43,7 @@ Targets are files under `plugins/quenching/assets/references/`; `--all` globs th
 ```bash
 grep -rn -B2 -A3 "<dir>/<basename>.md" \
   plugins/quenching/commands plugins/quenching/assets/references plugins/quenching/assets/bin \
-  .knowledge .claude
+  docs .claude
 ```
 
 Record per target: **who cites it**, **which `§`-addresses each citer names**, and whether the
@@ -109,7 +109,7 @@ Write the approved moves and nothing else. Two conditions bind every write:
 ```bash
 python3 "plugins/quenching-codex/scripts/bin/cq" components read <path> --sections "<A>" --sections "<B>"
 python3 "plugins/quenching-codex/scripts/bin/cq" components read <path>
-grep -rn "<any renamed or reworded form>" plugins/quenching .knowledge .claude
+grep -rn "<any renamed or reworded form>" plugins/quenching docs .claude
 ```
 Every `§`-address the map collected must still resolve with exit 0 — that is the check that the
 API survived the rewrite. Then re-measure and report **before → after per addressed section**,
@@ -126,7 +126,7 @@ If a command body under `plugins/quenching/commands/**` was touched at all, also
 
 Build the citation map (step 1) **once, in this session** — it is one grep and the whole batch
 shares it. Then delegate **one sub-agent per file**: that is the unit
-[context-discipline.md](/.knowledge/standards/automation/context-discipline.md) §What a delegated
+[context-discipline.md](/docs/standards/automation/context-discipline.md) §What a delegated
 executor costs blesses, because a sub-agent runs cold and pays a full first read of everything it
 opens. Hand each agent its own file path, its citation set, and its baseline numbers, so it
 re-derives none of them.

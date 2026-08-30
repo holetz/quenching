@@ -37,22 +37,44 @@ MANIFEST_NAME = ".quenching-site-source.json"
 _MARKDOWN_LINK = re.compile(r"(?P<image>!?)[\[](?P<label>[^\]\n]*)\]\((?P<target>[^)\n]+)\)")
 
 
-def _excluded_link_target(target: str) -> bool:
-    """Tell whether a relative Markdown link resolves into an excluded OKF home."""
+def _link_target(target: str, source_file: Path, source_root: Path,
+                 selected: set[str]) -> str | None:
+    """Return a staged relative target, or ``None`` for external/fragment links."""
     destination = target.strip().split(None, 1)[0].strip("<>")
-    if not destination or "://" in destination or destination.startswith(("#", "mailto:")):
-        return False
+    if not destination or "://" in destination or destination.startswith(("#", "mailto:", "//")):
+        return None
     destination = destination.split("#", 1)[0].split("?", 1)[0]
-    parts = list(PurePosixPath(posixpath.normpath(destination)).parts)
-    if parts and parts[0] == "/":
-        parts.pop(0)
-    while parts and parts[0] in (".", "..", "docs"):
-        parts.pop(0)
-    return bool(parts and parts[0] in EXCLUDED_HOMES)
+    if not destination:
+        return None
+    if destination.startswith("/"):
+        parts = list(PurePosixPath(posixpath.normpath(destination)).parts)
+        if parts and parts[0] == "/":
+            parts.pop(0)
+        if parts[:1] == ["docs"]:
+            parts = parts[1:]
+        else:
+            return ""
+        relative = PurePosixPath(*parts).as_posix()
+    else:
+        candidate = Path(os.path.normpath(str(source_file.parent / destination)))
+        try:
+            relative = candidate.relative_to(source_root).as_posix()
+        except ValueError:
+            return ""
+    if relative == ".":
+        relative = "index.md"
+    if relative in selected:
+        return relative
+    if f"{relative}.md" in selected:
+        return f"{relative}.md"
+    if f"{relative}/index.md" in selected:
+        return f"{relative}/index.md"
+    return ""
 
 
-def _sanitize_markdown(text: str) -> str:
-    """Remove only links to unpublished homes from the generated site copy."""
+def _sanitize_markdown(text: str, source_file: Path, source_root: Path,
+                       selected: set[str]) -> str:
+    """Remove links whose local destinations are absent from the published tree."""
     output = []
     fenced: str | None = None
     changed = False
@@ -69,7 +91,8 @@ def _sanitize_markdown(text: str) -> str:
         if fenced is None:
             def replace(match: re.Match[str]) -> str:
                 nonlocal changed
-                if not _excluded_link_target(match.group("target")):
+                destination = _link_target(match.group("target"), source_file, source_root, selected)
+                if destination is None or destination:
                     return match.group(0)
                 changed = True
                 return match.group("label")
@@ -79,13 +102,14 @@ def _sanitize_markdown(text: str) -> str:
     return "".join(output) if changed else text
 
 
-def _copy_file(source: Path, destination: Path) -> None:
+def _copy_file(source: Path, destination: Path, source_root: Path,
+               selected: set[str]) -> None:
     """Copy one regular file without duplicating bytes when hard links are available."""
     destination.parent.mkdir(parents=True, exist_ok=True)
     if source.suffix.lower() == ".md":
         try:
             text = source.read_text(encoding="utf-8")
-            sanitized = _sanitize_markdown(text)
+            sanitized = _sanitize_markdown(text, source, source_root, selected)
         except (OSError, UnicodeDecodeError):
             sanitized = None
         if sanitized is not None and sanitized != text:
@@ -99,7 +123,8 @@ def _copy_file(source: Path, destination: Path) -> None:
         shutil.copy2(source, destination)
 
 
-def _copy_tree(source: Path, destination: Path) -> None:
+def _copy_tree(source: Path, destination: Path, source_root: Path,
+               selected: set[str]) -> None:
     """Copy a selected subtree while pruning private/dot sidecars and symlinks."""
     for dirpath, dirnames, filenames in os.walk(source, followlinks=False):
         current = Path(dirpath)
@@ -115,7 +140,7 @@ def _copy_tree(source: Path, destination: Path) -> None:
             source_file = current / name
             if name in EXEMPT or name.startswith((".", "_")) or source_file.is_symlink():
                 continue
-            _copy_file(source_file, target_dir / name)
+            _copy_file(source_file, target_dir / name, source_root, selected)
 
 
 def _selected_files(source: Path) -> list[Path]:
@@ -216,17 +241,18 @@ def stage_site_source(source: str | Path, destination: str | Path) -> dict:
     destination_path.parent.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix=f".{destination_path.name}-", dir=destination_path.parent))
     try:
+        selected = {path.relative_to(source_path).as_posix() for path in _selected_files(source_path)}
         for relative in ROOT_FILES:
             path = source_path / relative
             if path.is_file() and not path.is_symlink():
-                _copy_file(path, temporary / relative)
+                _copy_file(path, temporary / relative, source_path, selected)
         assets = source_path / ROOT_ASSETS
         if assets.is_dir() and not assets.is_symlink():
-            _copy_tree(assets, temporary / ROOT_ASSETS)
+            _copy_tree(assets, temporary / ROOT_ASSETS, source_path, selected)
         for home in PUBLISHED_HOMES:
             path = source_path / home
             if path.is_dir() and not path.is_symlink():
-                _copy_tree(path, temporary / home)
+                _copy_tree(path, temporary / home, source_path, selected)
 
         source_manifest = _manifest(source_path)
         staged_manifest, _ = _destination_manifest(temporary)

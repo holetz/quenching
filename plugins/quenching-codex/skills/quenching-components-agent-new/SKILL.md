@@ -1,6 +1,6 @@
 ---
 name: quenching-components-agent-new
-description: "Mint or edit ONE subagent definition in this repo's .agents/agents/ — a delegation that returns a summary, not a trail. Use when the user asks to \"create an agent\", \"add a subagent\", \"make a verifier agent\", \"delegate this to an agent\", or \"set up something that audits our migrations and reports back\". Applies the delegation test, scopes tools to the narrowest set, prices the definition's always-on cost, and lands the OKF tail on one OK."
+description: "Mint or edit ONE subagent definition in this repo's .agents/agents/ — a delegation that returns a summary, not a trail. Use when the user asks to \"create an agent\", \"add a subagent\", \"make a verifier agent\", \"delegate this to an agent\", or \"set up something that audits our migrations and reports back\". Applies the delegation test, scopes tools to the narrowest set, prices the definition's always-on cost, and lands the OKF tail on one OK. Not for: creating a command → quenching-components-command-new; creating a hook → quenching-components-hook-new."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/components/agent/new.md -->

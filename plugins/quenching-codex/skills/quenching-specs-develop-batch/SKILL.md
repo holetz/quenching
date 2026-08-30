@@ -1,6 +1,6 @@
 ---
 name: quenching-specs-develop-batch
-description: "Take N specs below the `ready` gate to `ready` on ONE authorization — each spec in a sub-agent of its own, all launched together. Triggers on \"define these specs\", \"develop the whole backlog\", \"fill in the sections of all of them\", \"take these specs to ready\", \"batch the spec definition\". Nothing it runs takes a branch or writes code, which is what lets the batch run in real parallel; every sub-agent drafts its own spec and returns what it filled and what it left open, while the authorization, a contaminating block and `approved` all stay with the conductor."
+description: "Take N specs below the `ready` gate to `ready` on ONE authorization — each spec in a sub-agent of its own, all launched together. Triggers on \"define these specs\", \"develop the whole backlog\", \"fill in the sections of all of them\", \"take these specs to ready\", \"batch the spec definition\". Nothing it runs takes a branch or writes code, which is what lets the batch run in real parallel; every sub-agent drafts its own spec and returns what it filled and what it left open, while the authorization, a contaminating block and `approved` all stay with the conductor. Not for: building N specs → quenching-specs-execute-queue; ONE spec, with a human answering its questions → quenching-specs-develop; ranking the front → quenching-specs-triage. argument-hint: [IDs-or-description]"
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/develop-batch.md -->
