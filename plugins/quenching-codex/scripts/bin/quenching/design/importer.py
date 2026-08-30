@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import copy
 import datetime as dt
-import json
 import os
 import tempfile
 from pathlib import Path
@@ -111,7 +110,7 @@ def import_design(root: Path, write: bool = True) -> dict[str, Any]:
             changed.append("components")
 
     if changed:
-        extension["generatedAt"] = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+        extension["generatedAt"] = dt.datetime.now(dt.UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     findings = validate_source(candidate)
     if findings:
         raise DesignError("import would make tokens.json invalid: "
@@ -186,7 +185,7 @@ def _atomic_write(path: Path, content: str) -> None:
     try:
         with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
             handle.write(content)
-        os.replace(temporary, path)
+        Path(temporary).replace(path)
     finally:
-        if os.path.exists(temporary):
-            os.unlink(temporary)
+        if Path(temporary).exists():
+            Path(temporary).unlink()

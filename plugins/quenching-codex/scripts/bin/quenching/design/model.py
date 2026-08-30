@@ -11,10 +11,10 @@ from __future__ import annotations
 import json
 import math
 import re
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterator
-
+from typing import Any
 
 DTCG_SCHEMA = "https://www.designtokens.org/schemas/2025.10/format.json"
 QUENCHING_EXTENSION = "org.quenching"
@@ -338,7 +338,7 @@ def contrast_policy(source: dict[str, Any]) -> dict[str, Any]:
     text_size = raw.get("textSize", "normal")
     if (level, text_size) not in CONTRAST_LEVELS:
         raise DesignError("contrast level must be AA or AAA and textSize must be normal or large")
-    threshold = raw.get("threshold", CONTRAST_LEVELS[(level, text_size)])
+    threshold = raw.get("threshold", CONTRAST_LEVELS[level, text_size])
     if not isinstance(threshold, (int, float)) or threshold < 1:
         raise DesignError("contrast threshold must be a number greater than or equal to 1")
     return {"level": level, "textSize": text_size, "threshold": float(threshold)}
@@ -618,7 +618,7 @@ def css_color_to_dtcg(value: str) -> dict[str, Any]:
         else:
             result["hex"] = "#" + raw[:6].upper()
         return result
-    match = re.fullmatch(r"oklch\(\s*([\d.]+)%\s+([\d.]+)\s+([\d.]+)(?:\s*/\s*([\d.]+))?\s*\)", text, re.I)
+    match = re.fullmatch(r"oklch\(\s*([\d.]+)%\s+([\d.]+)\s+([\d.]+)(?:\s*/\s*([\d.]+))?\s*\)", text, re.IGNORECASE)
     if match:
         result = {"colorSpace": "oklch",
                   "components": [float(match.group(1)) / 100, float(match.group(2)), float(match.group(3))]}
