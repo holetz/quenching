@@ -12,6 +12,7 @@ from quenching.common.version import VERSION
 from quenching.proof.doctor import doctor as run_doctor, inspect_proof
 from quenching.proof.inventory import build_inventory
 from quenching.proof.config import load_proof_config
+from quenching.proof.readme import readme_digest, readme_path, render_readme_document, write_readme
 from quenching.proof.ratchet import evaluate
 
 
@@ -30,6 +31,11 @@ def build_parser() -> argparse.ArgumentParser:
     ):
         child = sub.add_parser(name, help=help_text)
         child.add_argument("--json", action="store_true", help="print machine-readable output")
+    readme = sub.add_parser("readme", help="write or check the generated proof README")
+    mode = readme.add_mutually_exclusive_group()
+    mode.add_argument("--write", action="store_true", help="update the generated block")
+    mode.add_argument("--check", action="store_true", help="check without writing (the default)")
+    readme.add_argument("--json", action="store_true", help="print machine-readable output")
     ratchet = sub.add_parser("ratchet", help="check or raise coverage floors from an existing artifact")
     mode = ratchet.add_mutually_exclusive_group()
     mode.add_argument("--check", action="store_true", help="check without writing (the default)")
@@ -133,6 +139,27 @@ def main(argv: list[str]) -> int:
         assert payload is not None
         emit(as_json, payload, _human_doctor(payload))
         return code
+    if args.cmd == "readme":
+        inventory, err = build_inventory(root)
+        if err:
+            return refuse(err, as_json)
+        assert inventory is not None
+        path = readme_path(inventory)
+        try:
+            current = path.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            current = ""
+        expected = render_readme_document(current, inventory)
+        changed = current != expected
+        if args.write:
+            changed = write_readme(inventory)
+            payload = {"ok": True, "mode": "write", "path": str(path), "changed": changed,
+                       "digest": readme_digest(inventory)}
+            emit(as_json, payload, f"proof readme — {'written' if changed else 'unchanged'}")
+            return 0
+        payload = {"ok": not changed, "mode": "check", "path": str(path), "changed": changed}
+        emit(as_json, payload, "" if as_json else f"proof readme — {'stale' if changed else 'fresh'}")
+        return 1 if changed else 0
     if args.cmd == "ratchet":
         config, err = load_proof_config(root)
         if err:
