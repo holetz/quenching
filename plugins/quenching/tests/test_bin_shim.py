@@ -32,8 +32,8 @@ class ThePathShim(unittest.TestCase):
         self.assertTrue(os.access(SHIM, os.X_OK), f"the shim carries no execute bit: {SHIM}")
 
     def test_it_exposes_six_pillars(self):
-        run = subprocess.run([str(REAL), "--help"], capture_output=True, text=True)
-        self.assertEqual(run.returncode, 2, run.stderr)
+        run = subprocess.run([sys.executable, str(REAL), "--help"], capture_output=True, text=True)
+        self.assertEqual(run.returncode, 0, run.stderr)
         choices = next(line.strip() for line in run.stdout.splitlines()
                        if line.strip().startswith("{") and line.strip().endswith("}"))
         pillars = set(choices[1:-1].split(","))
