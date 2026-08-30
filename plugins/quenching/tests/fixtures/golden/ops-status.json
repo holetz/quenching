@@ -1,0 +1,23 @@
+{
+  "root": "<OPS_ROOT>",
+  "scanned": 2,
+  "packages": {
+    "pkg": 2
+  },
+  "router": {
+    "path": "../pyproject.toml",
+    "kind": "python-console-script",
+    "exists": true,
+    "health": "ok"
+  },
+  "lifecycle": {
+    "undeclared": 2
+  },
+  "findings": {
+    "op-orphan": 2,
+    "op-undocumented": 2
+  },
+  "errors": 4,
+  "warnings": 0,
+  "ok": false
+}
