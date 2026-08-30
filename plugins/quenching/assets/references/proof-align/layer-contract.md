@@ -32,7 +32,9 @@ test carries a layer marker that does not match its directory.
 ### 3. Fixture ownership and reach
 
 A fixture used by one module stays local to that module. A fixture shared by more than one module
-belongs in `tests/fixtures/` and declares one of the following reaches:
+belongs in `tests/fixtures/` and declares one of the following reaches. `tests/fixtures/` is the
+fixture library; a `tests/fixtures/conftest.py` is part of that library and is exempt from the
+root-bootstrap rule below.
 
 | Reach | Boundary |
 | --- | --- |
@@ -42,10 +44,10 @@ belongs in `tests/fixtures/` and declares one of the following reaches:
 | `workspace` | A shared external workspace, service, catalog or environment boundary. |
 | `custom:<reason>` | An explicit escape reported without default grading. |
 
-`pf-loose-fixture` is raised when a fixture is shared without a declared reach, when a fixture
-with one-module ownership is promoted to the shared library without evidence, or when a fixture's
-reach is broader than the layer contract records. `custom:<reason>` is reported, not graded as a
-new reach by this contract.
+`pf-loose-fixture` is raised when the same fixture name is defined in two or more test modules
+instead of being defined once in the shared library. The inventory records the library's declared
+reach for the later gate; this check does not infer reach from pytest's `scope` field. `custom:<reason>`
+is reported, not graded as a new reach by this contract.
 
 ### 4. Thin bootstrap and declared layers
 
@@ -53,8 +55,9 @@ new reach by this contract.
 fixtures. Layer-specific setup, data builders and integration clients live with the layer or in
 the shared fixture library with an explicit reach.
 
-`pf-fat-conftest` is raised when the root conftest owns layer-specific tests or setup, duplicates
-the fixture library, or carries environment work that a layer can own directly.
+`pf-fat-conftest` is raised when the root `tests/conftest.py` owns layer-specific fixtures or setup,
+duplicates the fixture library, or carries environment work that a layer can own directly.
+`tests/fixtures/conftest.py` is not the root conftest and is therefore the allowed library home.
 
 `pf-empty-layer` is decided by one question: **did the target declare this layer as required
 evidence?** If yes, an empty directory is an error because the declaration promises a proof kind
@@ -69,8 +72,8 @@ The layer contract owns these codes and no other reference defines them:
 | --- | --- | --- |
 | `pf-unlayered` | A collected test cannot be assigned to one declared layer. | `error` |
 | `pf-unmarked` | The derived layer marker is absent or disagrees with the test path. | `error` |
-| `pf-loose-fixture` | Shared fixture ownership or reach is undeclared or too broad. | `error` |
-| `pf-fat-conftest` | Root conftest contains layer-specific or duplicative setup. | `error` |
+| `pf-loose-fixture` | A fixture name is defined in multiple test modules instead of once in the library. | `error` |
+| `pf-fat-conftest` | Root conftest contains layer-specific or duplicative setup; the fixture-library conftest is exempt. | `error` |
 | `pf-empty-layer` | A layer declared as required evidence has no collected tests. | `error` |
 
 An optional layer is not made green by suppressing `pf-empty-layer`; it is omitted from the
