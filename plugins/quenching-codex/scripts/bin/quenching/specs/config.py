@@ -69,7 +69,7 @@ LEGACY_CONFIG_FILE = "config.json"
 CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates",
                "hooks", "profiles",
                "azurePlacement", "azureColumns", "subjects", "tagCatalog",
-               "workItemTypes", "fanoutMinComplexity")
+               "workItemTypes", "fanoutMinComplexity", "opsRoot", "router")
 BACKENDS = ("github", "azure-boards")
 # Mirrors `schema.py`'s declared `priority.complexity` levels. Redeclared rather than imported —
 # `config.py` and `schema.py` do not import each other today, and a four-word tuple does not earn
@@ -193,7 +193,7 @@ def detect_provider(root: str) -> tuple[str | None, str | None]:
     return None, host
 
 
-def load_config(root: str) -> dict:
+def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     """`.agents/quenching.json` — the plugin's declared parameters, read as data and never
     as a refusal.
 
@@ -219,7 +219,7 @@ def load_config(root: str) -> dict:
     repo = find_repo_root(root)
     path = os.path.join(repo, CONFIG_FILE)
     legacy = os.path.join(root, LEGACY_CONFIG_FILE)
-    provider, provider_host = detect_provider(root)
+    provider, provider_host = detect_provider(root) if detect_provider_info else (None, None)
     out = {"path": path, "present": os.path.isfile(path), "unparseable": None,
            "unknownKeys": [], "backend": provider, "provider": provider,
            "unknownProvider": provider_host if provider is None else None,
@@ -253,6 +253,15 @@ def load_config(root: str) -> dict:
     val = obj.get("worktreeSetup")
     if isinstance(val, str) and val.strip():
         out["worktreeSetup"] = val.strip()
+
+    # The operations front has no safe default: `scripts/` is the conventional shape, but
+    # the same path may be an imported helper tree or a target's own domain package.  Keep
+    # both declarations as data here; `quenching.ops.config` is the boundary that refuses a
+    # run when either is absent and resolves them relative to the repository root.
+    for key in ("opsRoot", "router"):
+        value = obj.get(key)
+        if isinstance(value, str) and value.strip():
+            out[key] = value.strip()
 
     fanout_floor = obj.get("fanoutMinComplexity")
     if isinstance(fanout_floor, str) and fanout_floor.strip():

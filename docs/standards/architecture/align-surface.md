@@ -27,7 +27,7 @@ architectural rule — why the surface has this shape and not the previous one.
 | `/.specs/` | **none** — see §The specs front lost its align with its backend, below |
 | `/.design/` | `/quenching:design:align` |
 | `.claude/` | `/quenching:components:align` |
-| `ops` | **declared** — command body pending its implementation spec |
+| `ops` | `/quenching:ops:align` |
 | `git` | **none** — see §The sixth pillar has no align, below |
 | all four aligned fronts | `/align` — conducts them in dependency order, on one nested OK |
 
@@ -123,7 +123,7 @@ by `${CLAUDE_PLUGIN_ROOT}` the same way from every repo. `specs-cycle/gears.md` 
 
 **Nothing is inventoried until the front's own verifier has said there is work.** Each front
 already ships a program that answers "is there work?" with an exit code — `cq knowledge validate`
-(`/docs/`), `cq design doctor` (`/.design/`), `cq components doctor`/`lint` (`.claude/`) —
+(`/docs/`), `cq design doctor` (`/.design/`), `cq components doctor`/`lint` (`.claude/`), `cq ops doctor` (`ops`) —
 and the align opens by running it, branching on the code:
 
 - **exit 0, nothing found** → report "conformant, nothing to align" and stop. No inventory, no

@@ -41,13 +41,13 @@ and one root command spans the four aligned fronts. A sixth axis, `git`, is a
 | provider-owned specs — GitHub issues or Azure work items | `quenching-specs-*` | cycle and status commands |
 | `/.design/` — the DTCG design source | `quenching-design-*` | `quenching-design-align` |
 | `.agents/` — the automation surface | `quenching-components-*` | `quenching-components-align` |
-| `scripts/` — the operations surface *(declared)* | `quenching-ops-*` | **declared — tooling not yet built** |
+| target-declared operations root | `quenching-ops-*` | `quenching-ops-align` |
 | *(pillar)* — a repository's own git facts | `quenching-git-*` | **none** |
 | **all four aligned fronts** | *(root)* | **`quenching-align`** |
 
 **The probe comes before the inventory.** Each implemented align opens by running its front's own verifier
-(`cq knowledge validate`, `cq design doctor`, `cq components doctor`/`lint`); `ops` is declared but
-has no verifier yet. A clean probe stops with nothing to inventory, plan, or confirm. Otherwise: one read-only inventory → ONE
+(`cq knowledge validate`, `cq design doctor`, `cq components doctor`/`lint`, `cq ops doctor`); `ops` now
+has the same probe-first contract. A clean probe stops with nothing to inventory, plan, or confirm. Otherwise: one read-only inventory → ONE
 consolidated plan → one OK → apply → verify, then the front's content stages, each run only when
 the probe found it work:
 
@@ -57,7 +57,7 @@ the probe found it work:
 | `specs` | none driven — an empty section, a complete spec awaiting its close, an unresolved discovery are each **reported with the command that owns it**; every cycle action needs fresh human intent |
 | `/.design/` | imports or preserves an external `DESIGN.md` only after source arbitration, installs missing brand assets, builds projections, and reports optional Impeccable detector results |
 | `.agents/` | audits every command **body** against the writing doctrine — the one thing the migration itself is forbidden to fix — and reports each violation with the `quenching-components-command-new` that closes it |
-| `ops` | contract declared; its verifier, align, status, and minting bodies are pending their implementation specs |
+| `ops` | probes the declared root and router, applies mechanical and structural drift under one plan, and reports judgement findings; status is the read-only view |
 
 The cross-front `quenching-align` conducts the four aligned fronts in dependency order on one nested OK and **loops
 across fronts**, because they feed each other: a spec's distillation is glossary work the
@@ -84,7 +84,7 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](assets/references/align/convergence.md).
 
-## The forty-one commands
+## The forty-three commands
 
 **One file per entry point** — Codex merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs; there is
@@ -142,6 +142,13 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 | `quenching-components-agent-new` | Mints or edits ONE subagent definition, scoping its tools to the narrowest set and pricing its always-on cost. |
 | `quenching-components-hook-new` | Wires ONE scoped hook — the narrowest scope and cheapest handler that still catch what they must. Warns by default; blocks only on the human's word. |
 | `quenching-components-harness-align` | Refactors `AGENTS.md`/`AGENTS.md` into thin pointers over the bundle, so doctrine lives once. |
+
+### The ops front — the target's declared operations surface
+
+| Command | Does |
+| --- | --- |
+| `quenching-ops-align` | Probes the declared operations root and router, applies mechanical and structural drift under one plan, and reports judgement findings without driving them. |
+| `quenching-ops-status` | Reports the root, router, packages, lifecycle, findings by band, and registry freshness without writing. |
 
 ### The `git` pillar — a repository's own git facts
 
