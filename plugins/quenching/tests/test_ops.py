@@ -401,6 +401,22 @@ class MintedEntryPoints(unittest.TestCase):
         )
         self.assertEqual(payload["entryPoints"][0]["writesOutsideRepo"], True)
 
+    def test_mint_boundary_refuses_without_a_declared_router(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            (root / ".claude").mkdir()
+            (root / "scripts").mkdir()
+            (root / ".claude" / "quenching.json").write_text(
+                json.dumps({"opsRoot": "scripts"}), encoding="utf-8"
+            )
+
+            payload, err, exit_code = doctor(str(root))
+            self.assertIsNone(payload)
+            self.assertEqual(exit_code, 2)
+            self.assertEqual(err["code"], "op-config-missing")
+            self.assertEqual(err["missing"], ["router"])
+            self.assertIn("`router`", err["message"])
+
 
 class GoldenPayloads(unittest.TestCase):
     def test_doctor_and_status_match_the_frozen_inventory_shape(self):
