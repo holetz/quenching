@@ -84,7 +84,7 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](assets/references/align/convergence.md).
 
-## The forty-three commands
+## The forty-four commands
 
 **One file per entry point** — Codex merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs; there is
@@ -149,6 +149,7 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 | --- | --- |
 | `quenching-ops-align` | Probes the declared operations root and router, applies mechanical and structural drift under one plan, and reports judgement findings without driving them. |
 | `quenching-ops-status` | Reports the root, router, packages, lifecycle, findings by band, and registry freshness without writing. |
+| `quenching-ops-entrypoint-new` | Mints ONE Python entry point from the contract, registers it in the declared router, and regenerates the operations registry. |
 
 ### The `git` pillar — a repository's own git facts
 

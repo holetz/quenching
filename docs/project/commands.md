@@ -1,7 +1,7 @@
 ---
 type: project
 title: Command catalog
-description: All forty-three commands by front — one line each — plus the cq rail's exit-code contract.
+description: All forty-four commands by front — one line each — plus the cq rail's exit-code contract.
 resource: plugins/quenching/README.md
 tags:
   - reference
@@ -9,13 +9,13 @@ tags:
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: derived from plugins/quenching/README.md §The forty-three commands and §The specs flow (tables preserved, long rows condensed); the machine authority is cq components doctor --json
+source: derived from plugins/quenching/README.md §The forty-four commands and §The specs flow (tables preserved, long rows condensed); the machine authority is cq components doctor --json
 maintainer: Israel Holetz
 ---
 
 # Command catalog
 
-All forty-three commands, grouped by the front (or pillar) that owns them. Typing a command is
+All forty-four commands, grouped by the front (or pillar) that owns them. Typing a command is
 the explicit entry point; Claude also auto-routes to one by its `description`. This page is
 derived from the product manual, whose tables a test holds in lockstep with the real surface —
 `cq components doctor --json` is the machine authority on the count.
@@ -115,6 +115,7 @@ Acts on the target repository's declared operations root and canonical router.
 | --- | --- |
 | `/quenching:ops:align` | Probes the operations surface, applies mechanical and structural drift under one plan, and reports judgement findings without driving them. |
 | `/quenching:ops:status` | Reports root, router, packages, lifecycle, findings by band, and registry freshness without writing. |
+| `/quenching:ops:entrypoint:new` | Mints ONE Python entry point from the contract, registers it in the declared router, and regenerates the operations registry. |
 
 ## The git pillar
 

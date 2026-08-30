@@ -7,16 +7,18 @@ The disabled-gate check is deliberately kept for task 3.2, where its tokenizer h
 from __future__ import annotations
 
 import ast
-import hashlib
 import io
-import json
 import os
 import re
 import tokenize
 from pathlib import Path
 from typing import Callable
 
+from quenching.ops import registry
 from quenching.ops.model import EntryPoint, Finding, Inventory
+
+# Kept as a compatibility export for callers that used the pre-generator helper.
+inventory_digest = registry.inventory_digest
 
 
 _ARCHIVE_PART = "_archive"
@@ -31,11 +33,6 @@ _WRITE_METHODS = frozenset({
 _ARMING_FLAGS = frozenset({
     "--apply", "--armed", "--confirm", "--execute", "--force", "--write", "--yes",
 })
-_REGISTRY_HASH_RE = re.compile(
-    r"quenching-ops-registry-sha256\s+([0-9a-f]{64})(?![0-9a-f])"
-)
-
-
 def _finding(code: str, message: str, path: str | None = None,
              entry_point: str | None = None) -> Finding:
     return Finding(code, "error", message, path=path, entry_point=entry_point)
@@ -61,7 +58,10 @@ def _tree(inventory: Inventory, entry: EntryPoint) -> ast.AST | None:
 
 
 def _registry_path(inventory: Inventory) -> Path:
-    return Path(inventory.root) / "registry.md"
+    from quenching.ops.config import load_ops_config
+
+    config, _ = load_ops_config(inventory.root)
+    return Path(config["registry"]) if config else Path(inventory.root) / "registry.md"
 
 
 def _registry_text(inventory: Inventory) -> str | None:
@@ -86,20 +86,6 @@ def _registry_rows(inventory: Inventory, text: str) -> set[str]:
     return rows
 
 
-def _canonical_inventory(inventory: Inventory) -> bytes:
-    payload = {
-        "router": inventory.router.as_dict(),
-        "entryPoints": [entry.as_dict() for entry in inventory.entry_points],
-    }
-    return json.dumps(payload, ensure_ascii=False, sort_keys=True,
-                      separators=(",", ":")).encode("utf-8")
-
-
-def inventory_digest(inventory: Inventory) -> str:
-    """The digest written in the generated registry's hash marker."""
-    return hashlib.sha256(_canonical_inventory(inventory)).hexdigest()
-
-
 def check_undocumented(inventory: Inventory) -> list[Finding]:
     """Active entries must be named in the generated registry."""
     text = _registry_text(inventory)
@@ -118,36 +104,18 @@ def check_undocumented(inventory: Inventory) -> list[Finding]:
 
 
 def check_registry_stale(inventory: Inventory) -> list[Finding]:
-    """An existing registry must carry the current inventory hash and only real rows."""
+    """An existing registry must match the generator's current output exactly."""
     text = _registry_text(inventory)
     if text is None:
         return []
-    registry_rel = "registry.md"
-    findings: list[Finding] = []
-    marker = _REGISTRY_HASH_RE.search(text)
-    expected = inventory_digest(inventory)
-    if marker is None:
-        findings.append(_finding(
-            "op-registry-stale",
-            "registry.md has no quenching-ops-registry-sha256 marker",
-            path=registry_rel,
-        ))
-    elif marker.group(1) != expected:
-        findings.append(_finding(
-            "op-registry-stale",
-            f"registry.md hash {marker.group(1)} does not match inventory {expected}",
-            path=registry_rel,
-        ))
-
-    known = {entry.path for entry in inventory.entry_points}
-    for row in _registry_rows(inventory, text):
-        if row not in known:
-            findings.append(_finding(
-                "op-registry-stale",
-                f"registry.md names missing entry point `{row}`",
-                path=registry_rel,
-            ))
-    return findings
+    expected = registry.render_registry_document(text, inventory)
+    if expected == text:
+        return []
+    return [_finding(
+        "op-registry-stale",
+        "the registry differs from the generator's current output",
+        path=os.path.relpath(_registry_path(inventory), inventory.root).replace(os.sep, "/"),
+    )]
 
 
 def _contains_root_derivation(node: ast.AST) -> bool:

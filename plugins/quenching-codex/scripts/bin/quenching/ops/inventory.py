@@ -105,9 +105,9 @@ def _lifecycle(relative: str, registry: dict[str, str]) -> str | None:
     return None
 
 
-def _registry_lifecycle(root: str) -> dict[str, str]:
+def _registry_lifecycle(root: str, registry_path: str | None = None) -> dict[str, str]:
     """Read lifecycle declarations without imposing a registry format on a missing registry."""
-    path = os.path.join(root, "registry.md")
+    path = registry_path or os.path.join(root, "registry.md")
     try:
         text = Path(path).read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError):
@@ -212,7 +212,7 @@ def build_inventory(root: str) -> tuple[Inventory | None, dict]:
             "message": f"configured opsRoot `{cfg['declaredOpsRoot']}` does not exist",
         }
 
-    registry = _registry_lifecycle(ops_root)
+    registry = _registry_lifecycle(ops_root, cfg["registry"])
     entries: list[EntryPoint] = []
     for relative in _candidates(ops_root):
         absolute = os.path.join(ops_root, relative)
