@@ -66,18 +66,23 @@ record. Without an operations front, the code is not applicable.
 
 The gate contract owns these codes and no other reference defines them:
 
-| Code | Meaning | Severity |
-| --- | --- | --- |
-| `pf-unmeasured-surface` | A claimed product surface is outside the declared measurement without a reason. | `error` |
-| `pf-no-floor` | A measured source root has no coverage floor or ratchet record. | `error` |
-| `pf-stop-first` | The authoritative gate stops after the first failure. | `error` |
-| `pf-order-unproven` | Test order independence has not been exercised with observable evidence. | `error` |
-| `pf-no-ci` | CI does not invoke the same proof contract. | `error` |
-| `pf-untested-entrypoint` | An active operations entry point lacks test or not-applicable evidence. | `error` |
+| Code | Meaning | Severity | Band |
+| --- | --- | --- | --- |
+| `pf-unmeasured-surface` | A claimed product surface is outside the declared measurement without a reason. | `error` | judgement |
+| `pf-no-floor` | A measured source root has no coverage floor or ratchet record. | `error` | structural |
+| `pf-stop-first` | The authoritative gate stops after the first failure. | `error` | structural |
+| `pf-order-unproven` | Test order independence has not been exercised with observable evidence. | `error` | structural* |
+| `pf-no-ci` | CI does not invoke the same proof contract. | `error` | judgement |
+| `pf-untested-entrypoint` | An active operations entry point lacks test or not-applicable evidence. | `error` | judgement |
 
 `pf-untested-entrypoint` is not a universal demand for tests around every script in every
 repository. Its applicability is established by the operations-front declaration, and the
 not-applicable record must remain visible to the proof README and gate report.
+
+The `pf-order-unproven` band is conditional: `bands.md` makes it structural only when an existing
+gate can take a bounded, non-blocking order experiment; otherwise it is judgement and the align
+reports the target-owned CI change that would close it. The same file resolves the no-layers-
+declared rule.
 
 <!-- rationale -->
 
