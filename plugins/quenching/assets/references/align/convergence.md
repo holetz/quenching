@@ -133,7 +133,7 @@ plus `cq ops registry --check` for `ops/`; and `cq proof doctor` plus its genera
 for `proof/`.
 
 - **Converged (stop, success):** a pass is **empty** *and* the front is **clean**. This is the
-  fixpoint. Report and write the log entry.
+  fixpoint. Report it; the sweep writes no log entry about its own run.
 - **Progress (loop):** the pass changed something. Re-assess and run another pass.
 - **Residue (stop, report):** the pass was **empty** but the front is **not clean**, or only
   non-auto-closable findings remain (per-item gaps, unroutable facts, deferred sub-standards, a
