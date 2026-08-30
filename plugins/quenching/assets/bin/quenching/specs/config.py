@@ -168,6 +168,14 @@ def find_repo_root(specs_root: str) -> str:
     `load_config`'s own selftest fixture — would silently answer with whatever repo this
     process happens to be running from instead of "no git facts here", handing back a real
     `.claude/quenching.json` the fixture exists specifically to avoid."""
+    local = os.path.abspath(specs_root)
+    while True:
+        if os.path.isfile(os.path.join(local, CONFIG_FILE)):
+            return local
+        parent = os.path.dirname(local)
+        if parent == local:
+            break
+        local = parent
     top = _git(specs_root, "rev-parse", "--show-toplevel").strip() if os.path.isdir(specs_root) else ""
     if top:
         return top

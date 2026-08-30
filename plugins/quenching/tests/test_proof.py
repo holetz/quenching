@@ -1,10 +1,14 @@
 """Executable properties for the proof front, starting with the ratchet invariant."""
 
 import json
+import importlib
+import os
 import random
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import _paths  # noqa: F401 — must precede the `quenching` import
 from quenching.proof.ci import discover_ci
@@ -197,6 +201,44 @@ class ProofFixtureTrees(unittest.TestCase):
             self.assertEqual({"github-actions", "gitlab-ci", "azure-pipelines", "pre-commit"},
                              {row.provider for row in rows})
             self.assertTrue(all(row.runs_gate for row in rows))
+
+    def test_all_four_commands_refuse_to_execute_the_target_suite(self):
+        from quenching.proof.cli import main
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / ".claude").mkdir()
+            (root / "tests" / "unit").mkdir(parents=True)
+            (root / "src").mkdir()
+            (root / "src" / "app.py").write_text("VALUE = 1\n", encoding="utf-8")
+            (root / "tests" / "unit" / "test_math.py").write_text(
+                "import src.app\ndef test_add(): pass\n", encoding="utf-8")
+            (root / ".claude" / "quenching.json").write_text(json.dumps({
+                "proofRoot": "tests",
+                "layers": {"unit": {"reach": "nothing", "required": True}},
+                "measuredRoots": ["src"],
+            }), encoding="utf-8")
+            (root / "pyproject.toml").write_text(
+                "[tool.pytest.ini_options]\n"
+                "addopts = '--strict-markers'\nmarkers = ['unit']\n"
+                "\n[tool.coverage.run]\nsource = ['src']\n"
+                "\n[tool.coverage.report]\nfail_under = 80\n", encoding="utf-8")
+            (root / ".github" / "workflows").mkdir(parents=True)
+            (root / ".github" / "workflows" / "proof.yml").write_text(
+                "run: cq proof doctor --json pytest --random-order\n", encoding="utf-8")
+            (root / ".coverage-floor.json").write_text(
+                json.dumps({"version": 1, "floors": {"src": 80}}), encoding="utf-8")
+            (root / "coverage.json").write_text(json.dumps({
+                "files": {"src/app.py": {"covered_lines": 8, "num_statements": 10}},
+                "totals": {"percent_covered": 80},
+            }), encoding="utf-8")
+            forbidden = mock.Mock(side_effect=AssertionError("proof command executed the target"))
+            with mock.patch.object(subprocess, "run", forbidden), \
+                    mock.patch.object(os, "system", forbidden), \
+                    mock.patch.object(importlib, "import_module", forbidden):
+                for command in ("inventory", "doctor", "ratchet", "status"):
+                    with self.subTest(command=command):
+                        self.assertEqual(0, main(["--root", str(root), command, "--json"]))
 
 
 if __name__ == "__main__":
