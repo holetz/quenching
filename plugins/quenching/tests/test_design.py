@@ -260,6 +260,50 @@ components:
             rendered = render_genre(self.root, "pdf-note", "pdf", data)
         self.assertTrue((self.root / rendered["output"]).is_file())
 
+    def test_pdf_render_passes_declared_font_directories_to_typst(self):
+        path = self.root / ".design" / "tokens.json"
+        source = read_json(path)
+        font = self.root / ".design" / "assets" / "fonts" / "brand.woff2"
+        font.parent.mkdir(parents=True)
+        font.write_bytes(b"font")
+        source["fonts"] = {"brand": {
+            "$type": "fontFamily", "$value": "Brand Sans",
+            "$extensions": {"org.quenching": {"font": {
+                "source": "licensed", "license": "OFL-1.1", "files": ["fonts/brand.woff2"]
+            }}}
+        }}
+        source["typography"]["display"]["$value"]["fontFamily"] = "{fonts.brand}"
+        path.write_text(json.dumps(source), encoding="utf-8")
+        new_genre(self.root, "pdf-font", "PDF font", "read", ["pdf"],
+                  ["title:required:Title", "body:required:Body"])
+        data = self.root / "pdf-font.json"
+        data.write_text(json.dumps({"title": "A note", "body": "Text."}), encoding="utf-8")
+        compiler = self.root / "fake-typst"
+        compiler.write_text("#!/bin/sh\nprintf '%%PDF-1.4\\n' > \"$3\"\n", encoding="utf-8")
+        compiler.chmod(compiler.stat().st_mode | stat.S_IXUSR)
+        with mock.patch("quenching.design.genre.shutil.which", return_value=str(compiler)):
+            render_genre(self.root, "pdf-font", "pdf", data)
+        # The fake compiler keeps the target at argv[3]; successful output proves
+        # the additional font flags did not change the required Typst invocation.
+        self.assertTrue((self.root / ".design" / "build" / "pdf-font.pdf").is_file())
+
+    def test_doctor_reports_missing_declared_font_assets(self):
+        path = self.root / ".design" / "tokens.json"
+        source = read_json(path)
+        source["fonts"] = {"brand": {
+            "$type": "fontFamily", "$value": "Brand Sans",
+            "$extensions": {"org.quenching": {"font": {
+                "source": "licensed", "license": "OFL-1.1", "files": ["fonts/missing.woff2"]
+            }}}
+        }}
+        source["typography"]["display"]["$value"]["fontFamily"] = "{fonts.brand}"
+        path.write_text(json.dumps(source), encoding="utf-8")
+        write_build(compute_build(self.root))
+        _, findings = inspect_design(self.root)
+        missing = [item for item in findings if item["code"] == "design-font-unresolved"]
+        self.assertEqual(1, len(missing))
+        self.assertIn("Brand Sans", missing[0]["message"])
+
     def test_doctor_reports_orphan_assets_and_non_web_literal_drift(self):
         asset = self.root / ".design" / "assets" / "unused.svg"
         asset.write_text("<svg/>", encoding="utf-8")
