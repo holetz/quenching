@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# functional-checks.sh — the three checks nothing in-process can make.
+# functional-checks.sh — the four checks nothing in-process can make.
 #
 # The command registry is built at SESSION START, so no change under commands/** is testable
 # in the session that writes it. Each check below therefore runs its own fresh `claude -p`.
@@ -31,9 +31,9 @@
 #
 # COST — each check is a full agent session, so scope the run to what the change can break:
 #
-#   (no flag)      checks 1, 2 — a command BODY, a citation path
+#   (no flag)      checks 1, 2, 4 — command bodies, citation paths, and both declared fronts
 #   --only 3       spoken routing — OPT-IN, see below
-#   --only 1,2,3   all three
+#   --only 1,2,3,4 all four
 #
 # TWO GUARDS, TWO ZERO-COST MODES. The static guard in --selfcheck reads this file:
 # every non-commented `claude -p` must carry --plugin-dir, no `enabledPlugins` may
@@ -56,7 +56,7 @@
 # Established by the `collapse-skills-into-commands` spec, task 7.1.
 set -uo pipefail
 
-ONLY="1,2"
+ONLY="1,2,4"
 REPO=""
 SELF_CHECK=0
 SELF_TEST=0
@@ -311,6 +311,40 @@ else
   inconc "Read a file under assets/references/ (placeholder substituted)" "no tool_use in the capture"
   inconc "read nothing under a skills/ tree" "no tool_use in the capture"
 fi
+fi
+
+# --------------------------------------------------------------------------- #
+# 4. both newly declared front bodies load and cite their own references
+#
+# This is one parameterized check with two sessions. Keeping the cases together makes the
+# invariant explicit: adding a front must add both its direct command surface and its
+# reference surface to the functional gate. The probe asks each command to expose the paths
+# its own body cites before it reports; the anchored assertion rejects a cache copy.
+# --------------------------------------------------------------------------- #
+if want 4; then
+echo "4. the ops and proof front bodies load and cite their references"
+front_probe () {
+  local id="$1" command="$2"
+  local box="$WORK/front-$id"
+  newbox "$box"
+  ( cd "$box" && claude -p --plugin-dir "$PLUGIN" "$command
+
+Before the report: list the absolute path of every reference file THIS COMMAND'S OWN BODY tells
+you to consult, exactly as the body spells them. Then Read the first one. Do not guess a path —
+copy it from the body you were given." \
+    --max-turns 10 --output-format stream-json --verbose < /dev/null > "$WORK/front-$id.jsonl" 2>&1 )
+  if evidence "$WORK/front-$id.jsonl"; then
+    if anchored "$(reference_reads "$WORK/front-$id.jsonl")"; then r=yes; else r=no; fi
+    check "$r" "$command loaded from this checkout"
+    if grep -q '/skills/' <<<"$(reference_reads "$WORK/front-$id.jsonl")"; then r=no; else r=yes; fi
+    check "$r" "$command read nothing under a skills/ tree"
+  else
+    inconc "$command loaded from this checkout" "no tool_use in the capture"
+    inconc "$command read nothing under a skills/ tree" "no tool_use in the capture"
+  fi
+}
+front_probe ops /quenching:ops:status
+front_probe proof /quenching:proof:status
 fi
 
 # --------------------------------------------------------------------------- #
