@@ -377,7 +377,7 @@ components:
 
     def test_genre_field_contract_declares_list_cardinality_and_validates_arrays(self):
         new_genre(
-            self.root, "catalog", "Catalog", "read", ["html"],
+            self.root, "catalog", "Catalog", "read", ["html", "typst"],
             ["title:required:Title", "items:required:list:Item"],
         )
         contract = (self.root / ".design" / "genres" / "catalog.md").read_text(encoding="utf-8")
@@ -389,6 +389,61 @@ components:
         data.write_text(json.dumps({"title": "Catalog", "items": "one"}), encoding="utf-8")
         with self.assertRaisesRegex(DesignError, "must be a JSON array"):
             render_genre(self.root, "catalog", "html", data)
+        data.write_text(json.dumps({"title": "Catalog", "items": ["One", "Two"]}), encoding="utf-8")
+        html_result = render_genre(self.root, "catalog", "html", data)
+        html = (self.root / html_result["output"]).read_text(encoding="utf-8")
+        self.assertIn("<li>One</li>", html)
+        self.assertIn("<li>Two</li>", html)
+        typst_result = render_genre(self.root, "catalog", "typst", data)
+        typst = (self.root / typst_result["output"]).read_text(encoding="utf-8")
+        self.assertIn("- One", typst)
+        self.assertIn("- Two", typst)
+
+    def test_genre_repeat_blocks_render_scalar_and_object_items(self):
+        new_genre(
+            self.root, "catalog-items", "Catalog items", "read", ["html", "typst"],
+            ["title:required:Title", "items:required:list:Item"],
+        )
+        html_template = self.root / ".design" / "media" / "html" / "catalog-items.html"
+        html_template.write_text(
+            "{{#field.items}}<section>{{item.label}} {{item.body}}</section>{{/field.items}}\n",
+            encoding="utf-8",
+        )
+        typst_template = self.root / ".design" / "media" / "typst" / "catalog-items.typ"
+        typst_template.write_text(
+            "{{#field.items}}- {{item.label}} {{item.body}}\n{{/field.items}}\n",
+            encoding="utf-8",
+        )
+        data = self.root / "catalog-items.json"
+        data.write_text(json.dumps({
+            "title": "Catalog", "items": [
+                {"label": "One", "body": "**strong**"},
+                {"label": "Two", "body": "plain"},
+            ],
+        }), encoding="utf-8")
+        html_result = render_genre(self.root, "catalog-items", "html", data)
+        html = (self.root / html_result["output"]).read_text(encoding="utf-8")
+        self.assertIn("<section>One <p><strong>strong</strong></p></section>", html)
+        self.assertIn("<section>Two <p>plain</p></section>", html)
+        typst_result = render_genre(self.root, "catalog-items", "typst", data)
+        typst = (self.root / typst_result["output"]).read_text(encoding="utf-8")
+        self.assertIn("- One #strong[strong]", typst)
+        self.assertIn("- Two plain", typst)
+
+    def test_genre_repeat_blocks_refuse_unknown_and_unclosed_markers(self):
+        new_genre(
+            self.root, "repeat-errors", "Repeat errors", "read", ["html"],
+            ["title:required:Title", "items:optional:list:Item"],
+        )
+        data = self.root / "repeat-errors.json"
+        data.write_text(json.dumps({"title": "Catalog"}), encoding="utf-8")
+        template = self.root / ".design" / "media" / "html" / "repeat-errors.html"
+        template.write_text("{{#field.title}}<p>{{item}}</p>{{/field.title}}\n", encoding="utf-8")
+        with self.assertRaisesRegex(DesignError, "unknown or scalar"):
+            render_genre(self.root, "repeat-errors", "html", data)
+        template.write_text("{{#field.items}}<p>{{item}}</p>\n", encoding="utf-8")
+        with self.assertRaisesRegex(DesignError, "unclosed"):
+            render_genre(self.root, "repeat-errors", "html", data)
 
     def test_doctor_measures_color_pairs_with_declared_wcag_policy(self):
         path = self.root / ".design" / "tokens.json"

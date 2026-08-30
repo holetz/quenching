@@ -19,6 +19,11 @@ from quenching.design.model import DesignError, font_asset_paths, read_json
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 FIELD_RE = re.compile(r"^- `([A-Za-z][A-Za-z0-9_-]*)` — (required|optional)(?: (list|scalar))?\s*(.*)$")
+REPEAT_BLOCK_RE = re.compile(
+    r"\{\{\s*#field\.([A-Za-z][A-Za-z0-9_-]*)\s*\}\}(.*?)"
+    r"\{\{\s*/field\.\1\s*\}\}", re.DOTALL,
+)
+REPEAT_MARKER_RE = re.compile(r"\{\{\s*[#/]\s*field\.[A-Za-z][A-Za-z0-9_-]*\s*\}\}")
 
 
 def new_genre(root: Path, slug: str, name: str, register: str, media: list[str],
@@ -96,7 +101,11 @@ def render_genre(root: Path, slug: str, medium: str, data_path: Path,
         root / ".design" / "build" / f"{slug}.{suffix}")
     target = target.resolve()
     target.parent.mkdir(parents=True, exist_ok=True)
-    rendered = _substitute(template, data, medium, target, root, frontmatter.get("register", "read"))
+    list_fields = {name for name, _, _, is_list in fields if is_list}
+    rendered = _substitute(
+        template, data, medium, target, root, frontmatter.get("register", "read"),
+        list_fields=list_fields,
+    )
     if medium == "pdf":
         _compile_pdf(rendered, target, root)
     else:
@@ -150,12 +159,21 @@ def _genre_template(name: str, medium: str,
                     fields: list[tuple[str, bool, str, bool]]) -> str:
     """Mint a template whose placeholders are exactly the genre's declared fields."""
     if medium == "html":
-        title_field = "title" if any(field == "title" for field, _, _, _ in fields) else fields[0][0]
+        title_field = next(
+            (field for field, _, _, is_list in fields if field == "title" and not is_list),
+            next((field for field, _, _, is_list in fields if not is_list), fields[0][0]),
+        )
         blocks = []
-        for field, _, description, _ in fields:
+        for field, _, description, is_list in fields:
             label = html.escape(description or field.replace("-", " ").replace("_", " ").title())
             if field == title_field:
                 blocks.append(f"    <h1>{{{{field.{field}}}}}</h1>")
+            elif is_list:
+                blocks.append(
+                    f"    <section class=\"field field-{html.escape(field)}\">"
+                    f"<h2>{label}</h2><ul>{{{{#field.{field}}}}}"
+                    f"<li>{{{{item}}}}</li>{{{{/field.{field}}}}}</ul></section>"
+                )
             elif field == "body":
                 blocks.append(f"    <article aria-label={json.dumps(label)}>{{{{field.{field}}}}}</article>")
             else:
@@ -182,9 +200,16 @@ def _genre_template(name: str, medium: str,
         "#show heading.where(level: 1): it => text(size: token-typography-display-font-size, weight: token-typography-display-font-weight, it.body)",
         "", "#frame[",
     ]
-    for index, (field, _, description, _) in enumerate(fields):
+    for index, (field, _, description, is_list) in enumerate(fields):
         label = description or field.replace("-", " ").replace("_", " ").title()
-        if index == 0 or field == "title":
+        if is_list:
+            lines.extend([
+                f"  == {label}",
+                f"  {{{{#field.{field}}}}}",
+                "  - {{item}}",
+                f"  {{{{/field.{field}}}}}",
+            ])
+        elif index == 0 or field == "title":
             lines.append(f"  = {{{{field.{field}}}}}")
         elif field == "body":
             lines.append(f"  {{{{field.{field}}}}}")
@@ -217,7 +242,14 @@ def _read_data(path: Path) -> dict[str, Any]:
 
 
 def _substitute(template: str, data: dict[str, Any], medium: str, target: Path, root: Path,
-                register: str = "read") -> str:
+                register: str = "read", list_fields: set[str] | None = None,
+                item: Any = None, item_context: bool = False,
+                item_field: str | None = None) -> str:
+    list_fields = list_fields or set()
+    template = _expand_repeat_blocks(
+        template, data, medium, target, root, register, list_fields,
+    )
+
     def replace(match: re.Match[str]) -> str:
         key = match.group(1).strip()
         if key == "tokens.css":
@@ -228,15 +260,70 @@ def _substitute(template: str, data: dict[str, Any], medium: str, target: Path, 
             return os.path.relpath(root / ".design" / "media" / "typst" / "primitives.typ", target.parent).replace(os.sep, "/")
         if key.startswith("asset."):
             return _asset_reference(key[6:], medium, target, root)
+        if key == "item" or key.startswith("item."):
+            if not item_context:
+                raise DesignError("template uses item placeholder outside a repeat block")
+            item_key = key[5:] if key.startswith("item.") else None
+            if item_key is None:
+                value = item
+                name = item_field or "item"
+            elif isinstance(item, dict):
+                value = item.get(item_key, "")
+                name = item_key
+            else:
+                value = ""
+                name = item_key
+            return _render_field(name, _value_text(value), medium, register)
         if key.startswith("field."):
             name = key[6:]
-            value = str(data.get(name, ""))
+            if name in list_fields:
+                raise DesignError(f"list field {name} must be used in a repeat block")
+            value = _value_text(data.get(name, ""))
             return _render_field(name, value, medium, register)
         raise DesignError(f"template uses unknown placeholder {key!r}")
     rendered = re.sub(r"\{\{\s*([^{}]+?)\s*\}\}", replace, template)
     if "{{" in rendered or "}}" in rendered:
         raise DesignError("template retains an unresolved placeholder")
     return rendered.rstrip() + "\n"
+
+
+def _expand_repeat_blocks(template: str, data: dict[str, Any], medium: str, target: Path,
+                          root: Path, register: str, list_fields: set[str]) -> str:
+    if not REPEAT_MARKER_RE.search(template):
+        return template
+
+    def replace(match: re.Match[str]) -> str:
+        name = match.group(1)
+        if name not in list_fields:
+            raise DesignError(f"repeat block names unknown or scalar field {name}")
+        body = match.group(2)
+        if REPEAT_MARKER_RE.search(body):
+            raise DesignError("nested repeat blocks are not supported")
+        values = data.get(name)
+        if values is None:
+            values = []
+        if not isinstance(values, list):
+            raise DesignError(f"render data field {name} must be a JSON array")
+        return "".join(
+            _substitute(
+                body, data, medium, target, root, register, list_fields,
+                value, True, name,
+            )
+            for value in values
+        )
+
+    expanded = REPEAT_BLOCK_RE.sub(replace, template)
+    if REPEAT_MARKER_RE.search(expanded):
+        raise DesignError("repeat block is unclosed or has mismatched markers")
+    return expanded
+
+
+def _value_text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, ensure_ascii=False, sort_keys=True)
+    return str(value)
 
 
 def _render_field(name: str, value: str, medium: str, register: str) -> str:
