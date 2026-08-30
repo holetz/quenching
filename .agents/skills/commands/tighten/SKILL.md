@@ -1,6 +1,6 @@
 ---
 name: quenching-commands-tighten
-description: "Cut dead weight from ONE command body under plugins/quenching/commands/ or .agents/skills/ — justification for a directive already given, sediment from a mechanism the surface no longer has, a limit no run could reach, a rule another line or an invariant already carries. Triggers: \"enxugar esse comando\", \"revisar essa skill em busca de redundância\", \"cortar o conteúdo morto do corpo\", \"remover as justificativas desnecessárias\", \"tighten this command body\", \"cut the dead weight from this skill\". Leaves every trigger and every `Done when:` untouched, reports the incoherences the cut exposes instead of fixing them silently, and measures the delta against the working tree it opened."
+description: "Cut dead weight from ONE command body under plugins/quenching/commands/ or .agents/skills/ — justification for a directive already given, sediment from a mechanism the surface no longer has, a limit no run could reach, a rule another line or an invariant already carries. Triggers: \"enxugar esse comando\", \"revisar essa skill em busca de redundância\", \"cortar o conteúdo morto do corpo\", \"remover as justificativas desnecessárias\", \"tighten this command body\", \"cut the dead weight from this skill\". Leaves every trigger and every `Done when:` untouched, reports the incoherences the cut exposes instead of fixing them silently, and measures the delta against the working tree it opened. Not for: a file under assets/references/, where rationale is relocated and never deleted → /references:tighten; minting a command or fixing a body's STRUCTURE → quenching-components-command-new; the whole surface's descriptions in one sweep → quenching-components-align; a /docs/ standard → quenching-knowledge-align."
 ---
 
 <!-- GENERATED FROM .claude/commands/commands/tighten.md -->
@@ -28,9 +28,9 @@ test **deletes**.
 | The no-op test; positive prescription; sediment / duplication / sprawl / negation | [doctrine.md](/plugins/quenching/assets/references/components-command-new/doctrine.md) §The no-op test, §Positive prescription, §Named failure modes |
 | What a description may carry, and the trigger that is never cut for length | [doctrine.md](/plugins/quenching/assets/references/components-command-new/doctrine.md) §The three slots, and the boundary that must be earned |
 | A `Done when:` per numbered step is what `lint` counts | [doctrine.md](/plugins/quenching/assets/references/components-command-new/doctrine.md) §Steps carry checkable completion criteria |
-| The caps, the `sk-*` codes, and what no parser decides | [skills.md](/.knowledge/standards/automation/skills.md) §The verifier |
-| A computed number restated in prose fans out — grep its literal form | [computed-fact-prose-fanout.md](/.knowledge/standards/quality/computed-fact-prose-fanout.md) |
-| Which language the prose is written in | [communication.md](/.knowledge/standards/agents/communication.md) |
+| The caps, the `sk-*` codes, and what no parser decides | [skills.md](/docs/standards/automation/skills.md) §The verifier |
+| A computed number restated in prose fans out — grep its literal form | [computed-fact-prose-fanout.md](/docs/standards/quality/computed-fact-prose-fanout.md) |
+| Which language the prose is written in | [communication.md](/docs/standards/agents/communication.md) |
 
 Resolve `cq` at `plugins/quenching-codex/scripts/bin/cq`, invoked by that literal quoted path
 ([align/tool-resolution.md](/plugins/quenching/assets/references/align/tool-resolution.md)
@@ -150,7 +150,7 @@ before/after numbers.
 Take the baseline for the whole surface **once, in this session** — one `lint`, one `doctor`, one
 `wc` sweep — and hand each file's numbers to the agent that works it, so none re-derives them.
 Then delegate **one sub-agent per file**, the unit
-[context-discipline.md](/.knowledge/standards/automation/context-discipline.md) §What a delegated
+[context-discipline.md](/docs/standards/automation/context-discipline.md) §What a delegated
 executor costs blesses.
 
 - **First fan-out is plan-only.** Every agent returns steps 2–3 as a plan; nothing writes.
@@ -165,7 +165,7 @@ say why, and the harness ran once over the result.
 ## Invariants to never violate
 
 - **Never cut a quoted trigger from a description.** Only a measured miss retires one —
-  `/quenching:components:command:eval`'s. A trigger that looks like sediment is REPORTED with that
+  `quenching-components-command-eval`'s. A trigger that looks like sediment is REPORTED with that
   command named.
 - **Never cut a `Done when:` marker**, and never leave a numbered step without one — `lint` counts
   that literal string (`sk-step-criterion`).
@@ -184,5 +184,5 @@ say why, and the harness ran once over the result.
   overwritten by the next translation, so the cut belongs to the `<path>` it names. Tighten that,
   then regenerate.
 - **Never write during `--review`.**
-- Never edit a `/.knowledge/` standard, a reference, or a file outside a command body from here —
+- Never edit a `/docs/` standard, a reference, or a file outside a command body from here —
   report it with the command that owns it (`quenching-knowledge-add`, `/references:tighten`).

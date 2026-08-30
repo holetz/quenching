@@ -24,7 +24,7 @@ the file itself does not.
 | `automation/command.md` | `.claude/commands/<folder-path>/<verb>.md` — the whole entry point (**outside** the OKF bundle) | *(not an OKF concept)* |
 | `automation/agent.md` | `.claude/agents/<name>.md` — a subagent definition (**outside** the bundle) | *(not an OKF concept)* |
 | `automation/hook.md` | a hook **wiring** — prose mold carrying the three shapes, narrowest first; the chosen one lands in `.claude/settings.json`, command frontmatter, or `.claude/hooks/` | *(not an OKF concept)* |
-| `automation/registry.md` | `documentation/reference/automation.md` (the derived command registry) | `documentation` |
+| `automation/registry.md` | `project/automation.md` (the derived command registry) | `documentation` |
 | `automation/skills-standard.md` | `standards/automation/skills.md` (the command taxonomy rule, born `authority: background`) | `standard` |
 | `automation/agents-standard.md` | `standards/automation/agents.md` (subagent authoring, born `authority: background`) | `standard` |
 | `automation/hooks-standard.md` | `standards/automation/hooks.md` (the hook scope ladder and policy defaults, born `authority: background`) | `standard` |

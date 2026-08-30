@@ -1,6 +1,6 @@
 ---
 name: quenching-design-align
-description: "Converge the /.design/ front from one DTCG source through PRODUCT.md, DESIGN.md, MEDIUM.md and every medium adapter. Triggers on \"align the design\", \"set up the design front\", \"install the brand pack\", \"rebuild the design projections\", or \"fix design drift\". Probes first, folds an Impeccable-authored DESIGN.md into the source when chosen, asks once, then loops build and doctor to byte identity."
+description: "Converge the /.design/ front from one DTCG source through PRODUCT.md, DESIGN.md, MEDIUM.md and every medium adapter. Triggers on \"align the design\", \"set up the design front\", \"install the brand pack\", \"rebuild the design projections\", or \"fix design drift\". Probes first, folds an Impeccable-authored DESIGN.md into the source when chosen, asks once, then loops build and doctor to byte identity. Not for: reading design health only → quenching-design-status; creating one editorial genre → quenching-design-genre-new; visual screen craft → Impeccable."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/design/align.md -->

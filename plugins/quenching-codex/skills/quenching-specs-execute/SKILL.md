@@ -1,6 +1,6 @@
 ---
 name: quenching-specs-execute
-description: "Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on \"execute this spec\", \"build it\", \"implement the tasks\", \"apply the plan\", \"start working on it\", \"continue building\", \"run the next task\", \"work through the tasks\". Requires a clean tree and Git; isolates through quenching-git-branch, follows the spec's verification policy, commits each task with its tick, and squashes at section boundaries. Writes only named standards and records emergent findings."
+description: "Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on \"execute this spec\", \"build it\", \"implement the tasks\", \"apply the plan\", \"start working on it\", \"continue building\", \"run the next task\", \"work through the tasks\". Requires a clean tree and Git; isolates through quenching-git-branch, follows the spec's verification policy, commits each task with its tick, and squashes at section boundaries. Writes only named standards and records emergent findings. Not for: N specs → quenching-specs-execute-queue; writing or sharpening → quenching-specs-develop; creating → quenching-specs-create; review/archive/release → quenching-specs-conclude; the whole cycle → quenching-specs-cycle."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/execute.md -->

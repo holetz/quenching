@@ -28,7 +28,7 @@ them is overwritten by the next run, not merged.
 <!-- GENERATED:END -->
 
 <!-- MOLD (quenching · automation registry) → becomes
-     `/docs/documentation/reference/automation.md` in a target repo's OKF bundle.
+     `/docs/project/automation.md` in a target repo's OKF bundle.
 
      The zone above is left EMPTY on purpose. `cq components registry reindex` fills it from the
      surface's own command frontmatter and owns its format — the row shape, the columns, the
@@ -49,4 +49,3 @@ them is overwritten by the next run, not merged.
      `quenching-components-command-new` (OKF tail) and `quenching-components-align` (verify step) are the two commands that invoke
      the reindex; each ends its run on a second one reporting `changed: false`.
      STAMP = MERGE, never clobber the curated prose. -->
-

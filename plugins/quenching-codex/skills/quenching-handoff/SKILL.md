@@ -1,6 +1,6 @@
 ---
 name: quenching-handoff
-description: "Compacta a conversa atual em um documento de handoff para outro agente continuar o trabalho. Use quando o usuário pedir para \"gerar um handoff\", \"compactar a conversa num handoff\", \"preparar handoff para a próxima sessão\" ou \"resumir esta sessão para outro agente continuar\"."
+description: "Compacta a conversa atual em um documento de handoff para outro agente continuar o trabalho. Use quando o usuário pedir para \"gerar um handoff\", \"compactar a conversa num handoff\", \"preparar handoff para a próxima sessão\" ou \"resumir esta sessão para outro agente continuar\". Not for: executar a implementação → o comando dono do trabalho."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/handoff.md -->

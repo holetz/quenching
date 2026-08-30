@@ -77,8 +77,9 @@ class KnowledgeAlignmentContract(unittest.TestCase):
             ROOT / "assets" / "references" / "knowledge-documentation" / "validation.md"
         ).read_text(encoding="utf-8")
 
-        self.assertNotIn("docs/documentation", architecture)
-        self.assertNotIn("docs/documentation", validation)
+        legacy_home = "docs/" + "documentation"
+        self.assertNotIn(legacy_home, architecture)
+        self.assertNotIn(legacy_home, validation)
         self.assertNotIn("--plan .quenching/documentation/plan.md --config", validation)
         self.assertIn("site-source/assets/glossary-abbreviations.txt", validation)
         self.assertIn("--glossary-term", validation)

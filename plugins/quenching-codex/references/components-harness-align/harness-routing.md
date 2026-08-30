@@ -57,7 +57,7 @@ units.
 | coding / naming conventions | **MOVE** | `standards/code/` · `standards/naming/` (`standard`) |
 | "we chose X because Y" — agreed / proven | **MOVE** | `standards/` (`standard`; agreed-but-unproven ⇒ `authority: background`, proven ⇒ `current`) — no separate decision home |
 | roadmap / TODO / next-steps item (raw, unscoped) | **MOVE** | a spec in `specs/plans/` (via `quenching-specs-create`, outside the OKF bundle — unranked until `quenching-specs-triage` says otherwise), or `vision/` (`vision`) for settled direction with no deadline |
-| step-by-step procedure / onboarding | **MOVE** | `documentation/how-to/` (`documentation`) |
+| step-by-step procedure / onboarding | **MOVE** | `how-to/` (`documentation`) |
 | facts about an external tool / lib / service | **MOVE** | `external/{tools,libraries,regulations}/` (`external`) |
 | domain concept / glossary term | **MOVE** | `concepts/<subject>/` (`concept`) |
 | schema / table descriptions | **MOVE** | `catalog/…` (`schema` / `table`) |

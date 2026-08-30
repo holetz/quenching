@@ -1,6 +1,6 @@
 ---
 name: quenching-specs-develop
-description: "Develop an existing spec — compose it to ready, argue with it, approve it. Triggers on \"develop this spec\", \"refine the spec\", \"fill in the missing sections\", \"approve this spec\", \"poke holes in this\"."
+description: "Develop an existing spec — compose it to ready, argue with it, approve it. Triggers on \"develop this spec\", \"refine the spec\", \"fill in the missing sections\", \"approve this spec\", \"poke holes in this\". Not for: defining N specs at once → quenching-specs-develop-batch; capturing an unrelated new spec → quenching-specs-create; executing one → quenching-specs-execute."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/develop.md -->

@@ -61,15 +61,16 @@ class ReadmeManualMatchesTheSurface(unittest.TestCase):
         thing the other test is asserting.
         """
         real = sorted(_commands_on_disk())[0]
+        fake = "/quenching:" + "invented:command"
         synthetic = (f"## The 2 commands\n\n"
                      f"| command | what it does |\n"
-                     f"| `/quenching:invented:command` | a command nobody ships |\n\n"
+                     f"| `{fake}` | a command nobody ships |\n\n"
                      f"## Install\n\n`{real}` — outside the manual's span, so it does not count.\n")
 
         listed = set(INVOCABLE.findall(_manual_span(synthetic)))
-        self.assertEqual(listed, {"/quenching:invented:command"})
+        self.assertEqual(listed, {fake})
         self.assertIn(real, _commands_on_disk() - listed)
-        self.assertIn("/quenching:invented:command", listed - _commands_on_disk())
+        self.assertIn(fake, listed - _commands_on_disk())
 
     def test_the_span_stops_at_install_and_not_at_an_inner_heading(self):
         span = _manual_span("## The 9 commands\n\nkept\n\n## The specs flow\n\nalso kept\n"

@@ -42,9 +42,10 @@ class RepositorySurfaceTranslation(unittest.TestCase):
 
         skill = self.root / ".agents" / "skills" / "specs" / "status" / "SKILL.md"
         self.assertTrue(skill.is_file())
-        self.assertIn("name: quenching-specs-status", skill.read_text(encoding="utf-8"))
-        self.assertNotIn("allowed-tools:", skill.read_text(encoding="utf-8"))
-        self.assertNotIn("Not for:", skill.read_text(encoding="utf-8"))
+        skill_text = skill.read_text(encoding="utf-8")
+        self.assertIn("name: quenching-specs-status", skill_text)
+        self.assertNotIn("allowed-tools:", skill_text)
+        self.assertIn("Not for:", skill_text)
         self.assertEqual((self.root / ".agents" / "references" / "specs" / "guide.md")
                          .read_text(encoding="utf-8"),
                          "Read .agents/skills/specs/status.md with Codex.\n")
@@ -110,3 +111,13 @@ class RepositorySurfaceTranslation(unittest.TestCase):
 
         self.assertIn('CLAUDE_HARNESS = "CLAUDE" + ".md"', schema)
         self.assertIn('EXEMPT = (CLAUDE_HARNESS, "AGENTS.md")', schema)
+
+    def test_package_translation_adjusts_codex_check_root(self):
+        source = translate.REPOSITORY / "plugins" / "quenching"
+        translate.configure(str(source), str(self.root / "quenching-codex"))
+        citation = translate.generated_tree()["checks/citation-check.sh"].decode("utf-8")
+        functional = translate.generated_tree()["checks/functional-checks.sh"].decode("utf-8")
+        self.assertIn('SELF_DIR/../../../"', citation)
+        self.assertNotIn('SELF_DIR/../../../.."', citation)
+        self.assertIn('dirname "${BASH_SOURCE[0]}")/../../../"', functional)
+        self.assertNotIn('dirname "${BASH_SOURCE[0]}")/../../../.."', functional)
