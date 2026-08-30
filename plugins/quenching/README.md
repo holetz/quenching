@@ -37,13 +37,13 @@ and one root command spans the five aligned fronts. A seventh axis, `git`, is a
 | `/.design/` — the DTCG design source | `/quenching:design:*` | `/quenching:design:align` |
 | `.claude/` — the automation surface | `/quenching:components:*` | `/quenching:components:align` |
 | target-declared operations root | `/quenching:ops:*` | `/quenching:ops:align` |
-| target-declared verification root *(declared)* | `/quenching:proof:*` | **declared — tooling not yet built** |
+| target-declared verification root | `/quenching:proof:*` | `/quenching:proof:align` |
 | *(pillar)* — a repository's own git facts | `/quenching:git:*` | **none** |
 | **all five aligned fronts** | *(root)* | **`/quenching:align`** |
 
 **The probe comes before the inventory.** Each implemented align opens by running its front's own verifier
-(`cq knowledge validate`, `cq design doctor`, `cq components doctor`/`lint`, `cq ops doctor`); `proof` is
-declared but has no verifier yet. A clean probe stops with nothing to inventory, plan, or confirm. Otherwise: one read-only inventory → ONE
+(`cq knowledge validate`, `cq design doctor`, `cq components doctor`/`lint`, `cq ops doctor`, `cq proof doctor`); a clean
+probe stops with nothing to inventory, plan, or confirm. Otherwise: one read-only inventory → ONE
 consolidated plan → one OK → apply → verify, then the front's content stages, each run only when
 the probe found it work:
 
@@ -54,7 +54,7 @@ the probe found it work:
 | `/.design/` | imports or preserves an external `DESIGN.md` only after source arbitration, installs missing brand assets, builds projections, and reports optional Impeccable detector results |
 | `.claude/` | audits every command **body** against the writing doctrine — the one thing the migration itself is forbidden to fix — and reports each violation with the `/quenching:components:command:new` that closes it |
 | `ops` | probes the declared root and router, applies mechanical and structural drift under one plan, and reports judgement findings; status is the read-only view |
-| `proof` | contract declared; its verifier, align, status, layer-minting command, and gate are pending their implementation specs |
+| `proof` | probes the declared verification surface, applies bounded gate repairs, reports judgement findings, and keeps status read-only |
 
 The cross-front `/quenching:align` conducts the five aligned fronts in dependency order on one nested OK and **loops
 across fronts**, because they feed each other: a spec's distillation is glossary work the
@@ -81,7 +81,7 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](assets/references/align/convergence.md).
 
-## The forty-four commands
+## The forty-six commands
 
 **One file per entry point** — Claude Code merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs; there is
@@ -147,6 +147,13 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 | `/quenching:ops:align` | Probes the declared operations root and router, applies mechanical and structural drift under one plan, and reports judgement findings without driving them. |
 | `/quenching:ops:status` | Reports the root, router, packages, lifecycle, findings by band, and registry freshness without writing. |
 | `/quenching:ops:entrypoint:new` | Mints ONE Python entry point from the contract, registers it in the declared router, and regenerates the operations registry. |
+
+### The proof front — the target's declared verification surface
+
+| Command | Does |
+| --- | --- |
+| `/quenching:proof:align` | Probes the proof gate, applies mechanical and bounded structural repairs under one plan, defers a floor when the measured surface changes, and reports judgement findings without driving them. |
+| `/quenching:proof:status` | Reports layers, fixtures, measured roots, floors, CI evidence, findings by band, and the explicit fact that the suite was not run — without writing. |
 
 ### The `git` pillar — a repository's own git facts
 
