@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from quenching.design.build import build_drift, compute_build, write_build
-from quenching.design.markdown import parse_document_frontmatter, split_h2
+from quenching.design.markdown import parse_document_frontmatter, render_markdown, split_h2
 from quenching.design.model import DesignError, font_asset_paths, read_json
 
 
@@ -86,7 +86,7 @@ def render_genre(root: Path, slug: str, medium: str, data_path: Path,
         root / ".design" / "build" / f"{slug}.{suffix}")
     target = target.resolve()
     target.parent.mkdir(parents=True, exist_ok=True)
-    rendered = _substitute(template, data, medium, target, root)
+    rendered = _substitute(template, data, medium, target, root, frontmatter.get("register", "read"))
     if medium == "pdf":
         _compile_pdf(rendered, target, root)
     else:
@@ -197,7 +197,8 @@ def _read_data(path: Path) -> dict[str, Any]:
     return value
 
 
-def _substitute(template: str, data: dict[str, Any], medium: str, target: Path, root: Path) -> str:
+def _substitute(template: str, data: dict[str, Any], medium: str, target: Path, root: Path,
+                register: str = "read") -> str:
     def replace(match: re.Match[str]) -> str:
         key = match.group(1).strip()
         if key == "tokens.css":
@@ -209,9 +210,7 @@ def _substitute(template: str, data: dict[str, Any], medium: str, target: Path, 
         if key.startswith("field."):
             name = key[6:]
             value = str(data.get(name, ""))
-            if medium == "html":
-                return _markdown_html(value) if name == "body" else html.escape(value)
-            return _typst_escape(value)
+            return _render_field(name, value, medium, register)
         raise DesignError(f"template uses unknown placeholder {key!r}")
     rendered = re.sub(r"\{\{\s*([^{}]+?)\s*\}\}", replace, template)
     if "{{" in rendered or "}}" in rendered:
@@ -219,13 +218,11 @@ def _substitute(template: str, data: dict[str, Any], medium: str, target: Path, 
     return rendered.rstrip() + "\n"
 
 
-def _markdown_html(value: str) -> str:
-    blocks = []
-    for paragraph in re.split(r"\n\s*\n", value.strip()):
-        escaped = html.escape(paragraph.strip()).replace("\n", "<br>\n")
-        if escaped:
-            blocks.append(f"<p>{escaped}</p>")
-    return "\n".join(blocks)
+def _render_field(name: str, value: str, medium: str, register: str) -> str:
+    """Apply Markdown only to the body of a read-register genre."""
+    if name == "body" and register == "read":
+        return render_markdown(value, medium)
+    return html.escape(value) if medium == "html" else _typst_escape(value)
 
 
 def _typst_escape(value: str) -> str:
