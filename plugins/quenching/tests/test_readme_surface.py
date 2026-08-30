@@ -56,6 +56,15 @@ class ReadmeManualMatchesTheSurface(unittest.TestCase):
         self.assertEqual(on_disk - listed, set(), "commands on disk the README manual never lists")
         self.assertEqual(listed - on_disk, set(), "commands the README manual names that do not exist")
 
+        self.assertEqual(
+            {command for command in listed if command.startswith("/quenching:ops:")},
+            {"/quenching:ops:align", "/quenching:ops:status", "/quenching:ops:entrypoint:new"},
+        )
+        self.assertEqual(
+            {command for command in listed if command.startswith("/quenching:proof:")},
+            {"/quenching:proof:align", "/quenching:proof:status", "/quenching:proof:layer:new"},
+        )
+
     def test_the_check_can_fail(self):
         """A green that could not go red is not evidence — so prove this one discriminates.
 
