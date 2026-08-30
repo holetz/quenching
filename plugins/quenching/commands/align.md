@@ -42,7 +42,9 @@ Resolve `cq` — written bare in the probe below — per
   is *the* thing this plugin installs, so front 1 always runs. An absent `/.design/` front runs
   only when the request names design/setup or portable product/design artifacts already signal it;
   otherwise it is reported as available. An empty `.claude/` surface skips front 3 rather than
-  scaffolding a taxonomy for nothing.
+  scaffolding a taxonomy for nothing. `ops` and `proof` are conditional too: their declared roots
+  or the conventional-root probes in step 1 decide applicability, while an absent front is only
+  reported as available.
 - **Converge or report — never spin.** Cross-front pass cap **3** (each front align keeps its own
   internal cap of 5). An empty pass with residual findings is **residue**: stop, and report it
   front by front with the command that owns each item.
@@ -64,6 +66,15 @@ Presence and rough scale only:
 - **.claude/** — `cq components doctor --json` for the command count and its findings; `Glob`
   `.claude/skills/*/SKILL.md` and directory-scoped `**/.claude/skills/*/SKILL.md` for legacy pairs,
   noting how many are legacy CLI-generated `openspec-*` shadow copies.
+- **`ops`** — read `.claude/quenching.json` for `opsRoot`; when it is absent, inspect only the fixed
+  conventional roots `scripts/`, `tools/`, `bin/` and `script/` for an executable entry point. A
+  declared root or a conventional root with an executable entry point makes the front applicable;
+  neither means *not applicable*, with a one-line invitation to declare it. Do not turn that
+  invitation into a plan item.
+- **`proof`** — read `.claude/quenching.json` for `proofRoot`; when it is absent, inspect only
+  `tests/` and `test/` for a test module. A declared root or a conventional root with a test module
+  makes the front applicable; neither means *not applicable*, with the same one-line invitation.
+  An applicable but undeclared front is adoption work, not drift, until its own align is invoked.
 
 **All applicable fronts probe clean** → say so and stop, before any plan: *"all applicable fronts conformant
 — nothing to align."*
