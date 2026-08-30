@@ -67,9 +67,9 @@ The surface is partitioned by the artifact each front's commands touch:
 - **`/quenching:design:`** — the `/.design/` DTCG source, projections, and editorial genres.
 - **`/quenching:components:`** — the target repo's `.claude/` automation surface.
 - **`/quenching:ops:`** — the target repository's canonical operations surface. It is the fifth
-  front namespace; its contract is declared, while its command bodies are future implementation.
+  local aligned-front namespace; its contract and command bodies are now published.
 - **`/quenching:proof:`** — the target repository's verification surface: its layers, fixtures,
-  gates, and CI. It is the sixth front namespace. The front is named `proof`, not `tests`, because
+  gates, and CI. It is the sixth plugin namespace and the fifth local aligned-front namespace. The front is named `proof`, not `tests`, because
   `tests` would name an artifact inside the surface rather than what the surface produces; the
   same front-versus-artifact distinction is why `components` replaced `skill`.
 - **`/quenching:git:`** — the seventh namespace, and the odd one out: it names a **pillar**, not a
@@ -81,6 +81,10 @@ The surface is partitioned by the artifact each front's commands touch:
 - **root `/align`** — deliberately outside the front namespaces, because it is the one command
   that spans the five local aligned fronts. Under the old rule it was an exception the linter had to be
   told about; now it is simply a command at the top of the tree.
+
+The namespace list has seven entries in total: six front or provider-flow namespaces and the
+alignless `git` pillar. Exactly five of those namespaces are local aligned fronts and are conducted
+by `/align`; `specs` remains provider-owned and `git` remains a pillar without an align.
 
 **A target repo's own `git` category coexists with this namespace, and never collides with it.**
 A target may mint its own `/git:commit` or `/git:cleanup` under its own `.claude/commands/git/` —
