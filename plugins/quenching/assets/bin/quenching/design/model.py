@@ -26,6 +26,7 @@ TOKEN_TYPES = {
     "color", "dimension", "fontFamily", "fontWeight", "duration", "cubicBezier",
     "number", "strokeStyle", "border", "transition", "shadow", "gradient", "typography",
 }
+FONT_SOURCES = {"local", "webfont", "licensed"}
 DESIGN_COMPONENT_PROPERTIES = {
     "backgroundColor", "textColor", "typography", "rounded", "padding", "size", "height",
     "width",
@@ -120,6 +121,11 @@ def validate_source(source: dict[str, Any]) -> list[dict[str, str]]:
             if reference not in known:
                 add("design-token-reference", f"{record.dotted} references missing token {reference}",
                     f".design/tokens.json#{record.dotted}")
+        if record.type == "fontFamily":
+            try:
+                validate_font_metadata(record)
+            except DesignError as exc:
+                add("design-font-metadata", str(exc), f".design/tokens.json#{record.dotted}")
 
     components = design_md.get("components", {}) if isinstance(design_md, dict) else {}
     if components and not isinstance(components, dict):
@@ -217,6 +223,13 @@ def validate_token_value(token: Token) -> None:
         required = {"fontFamily", "fontSize", "fontWeight", "letterSpacing", "lineHeight"}
         if not isinstance(value, dict) or not required.issubset(value):
             raise DesignError(f"{token.dotted} typography must declare {', '.join(sorted(required))}")
+        family = value.get("fontFamily")
+        if (not isinstance(family, (str, list))
+                or (isinstance(family, str) and not family.strip())
+                or (isinstance(family, list) and not family)):
+            raise DesignError(f"{token.dotted}.fontFamily must be a non-empty string or list")
+        if isinstance(family, list) and not all(isinstance(item, str) and item.strip() for item in family):
+            raise DesignError(f"{token.dotted}.fontFamily list must contain non-empty strings")
     elif token.type == "transition":
         required = {"duration", "delay", "timingFunction"}
         if not isinstance(value, dict) or not required.issubset(value):
@@ -238,6 +251,63 @@ def references_in(value: Any) -> Iterator[str]:
             yield from references_in(item)
 
 
+def validate_font_metadata(token: Token) -> None:
+    """Validate optional metadata that makes a font asset addressable."""
+    extension = token.extensions.get(QUENCHING_EXTENSION, {})
+    metadata = extension.get("font") if isinstance(extension, dict) else None
+    if metadata is None:
+        return
+    if not isinstance(metadata, dict):
+        raise DesignError(f"{token.dotted} font metadata must be an object")
+    source = metadata.get("source")
+    if source not in FONT_SOURCES:
+        raise DesignError(f"{token.dotted} font source must be one of {', '.join(sorted(FONT_SOURCES))}")
+    license_name = metadata.get("license")
+    if not isinstance(license_name, str) or not license_name.strip():
+        raise DesignError(f"{token.dotted} font metadata must declare a non-empty license")
+    for key in ("files", "directories"):
+        values = metadata.get(key, [])
+        if not isinstance(values, list) or not all(isinstance(item, str) and item.strip() for item in values):
+            raise DesignError(f"{token.dotted} font metadata {key} must be a list of paths")
+        for item in values:
+            relative = Path(item)
+            if relative.is_absolute() or ".." in relative.parts:
+                raise DesignError(f"{token.dotted} font metadata path must stay inside .design/assets: {item}")
+    if source == "webfont":
+        url = metadata.get("url")
+        if not isinstance(url, str) or not re.match(r"^https?://", url):
+            raise DesignError(f"{token.dotted} webfont metadata must declare an http(s) url")
+
+
+def font_metadata(token: Token) -> dict[str, Any] | None:
+    extension = token.extensions.get(QUENCHING_EXTENSION, {})
+    metadata = extension.get("font") if isinstance(extension, dict) else None
+    return metadata if isinstance(metadata, dict) else None
+
+
+def font_asset_paths(source: dict[str, Any], assets_root: Path) -> dict[str, list[Path]]:
+    """Resolve declared font files and directories without leaving the asset root."""
+    assets_root = assets_root.resolve()
+    result: dict[str, list[Path]] = {}
+    for token in token_map(source).values():
+        if token.type != "fontFamily":
+            continue
+        metadata = font_metadata(token)
+        if not metadata:
+            continue
+        paths: list[Path] = []
+        for key in ("files", "directories"):
+            for item in metadata.get(key, []):
+                path = (assets_root / item).resolve()
+                try:
+                    path.relative_to(assets_root)
+                except ValueError as exc:
+                    raise DesignError(f"font path escapes .design/assets: {item}") from exc
+                paths.append(path)
+        result[token.dotted] = sorted(set(paths))
+    return result
+
+
 def token_map(source: dict[str, Any]) -> dict[str, Token]:
     return {token.dotted: token for token in iter_tokens(source)}
 
@@ -251,6 +321,22 @@ def resolve_token(token: Token, records: dict[str, Token], trail: tuple[str, ...
     if target not in records:
         raise DesignError(f"{token.dotted} references missing token {target}")
     return resolve_token(records[target], records, trail + (token.dotted,))
+
+
+def resolve_value(value: Any, records: dict[str, Token], trail: tuple[str, ...] = ()) -> Any:
+    """Resolve token references nested inside composite DTCG values."""
+    target = reference_target(value)
+    if target is not None:
+        if target in trail or target not in records:
+            if target not in records:
+                raise DesignError(f"references missing token {target}")
+            raise DesignError(f"circular token reference: {' -> '.join(trail + (target,))}")
+        return resolve_value(records[target].value, records, trail + (target,))
+    if isinstance(value, dict):
+        return {key: resolve_value(item, records, trail) for key, item in value.items()}
+    if isinstance(value, list):
+        return [resolve_value(item, records, trail) for item in value]
+    return value
 
 
 def reference_target(value: Any) -> str | None:

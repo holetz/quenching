@@ -25,6 +25,7 @@ from quenching.design.model import (
     quenching_extension,
     read_json,
     reference_target,
+    resolve_value,
     resolve_token,
     token_map,
     typography_to_design,
@@ -283,7 +284,7 @@ def _design_group(group: str, records: dict[str, Token]) -> dict[str, Any]:
         if not token.path or token.path[0] != group:
             continue
         name = _token_name(token)
-        value = resolve_token(token, records)
+        value = resolve_value(token.value, records, (token.dotted,))
         if group == "colors":
             projected[name] = color_to_css(value)
         elif group == "typography":
@@ -303,7 +304,7 @@ def _render_css(records: dict[str, Token], root: Path) -> str:
     for token in records.values():
         name = "-".join(_slug(part) for part in token.path)
         if token.type == "typography":
-            value = resolve_token(token, records)
+            value = resolve_value(token.value, records, (token.dotted,))
             for prop, item in typography_to_design(value).items():
                 lines.append(f"  --design-{name}-{_slug(prop)}: {item};")
             continue
@@ -324,7 +325,7 @@ def _render_typst(records: dict[str, Token], root: Path) -> str:
     for token in records.values():
         name = "-".join(_slug(part) for part in token.path)
         if token.type == "typography":
-            value = resolve_token(token, records)
+            value = resolve_value(token.value, records, (token.dotted,))
             if not isinstance(value, dict):
                 raise DesignError(f"{token.dotted} cannot be projected as Typst typography")
             for prop in ("fontFamily", "fontSize", "fontWeight", "lineHeight", "letterSpacing"):
@@ -477,7 +478,7 @@ def _materialize_css_variables(css: str, records: dict[str, Token], path: Path) 
     for token in records.values():
         base = "--design-" + "-".join(_slug(part) for part in token.path)
         if token.type == "typography":
-            for prop, value in typography_to_design(resolve_token(token, records)).items():
+            for prop, value in typography_to_design(resolve_value(token.value, records, (token.dotted,))).items():
                 by_variable[f"{base}-{_slug(prop)}"] = str(value)
             continue
         try:
