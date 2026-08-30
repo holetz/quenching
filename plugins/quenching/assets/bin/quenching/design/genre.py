@@ -13,7 +13,7 @@ from typing import Any
 
 from quenching.design.build import build_drift, compute_build, write_build
 from quenching.design.markdown import parse_document_frontmatter, split_h2
-from quenching.design.model import DesignError
+from quenching.design.model import DesignError, font_asset_paths, read_json
 
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -240,7 +240,23 @@ def _compile_pdf(source: str, target: Path, root: Path) -> None:
     try:
         with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
             handle.write(source)
-        run = subprocess.run([compiler, "compile", temporary, str(target), "--root", str(root)],
+        font_paths: set[Path] = set()
+        try:
+            declared = font_asset_paths(read_json(root / ".design" / "tokens.json"),
+                                        root / ".design" / "assets")
+            for paths in declared.values():
+                for path in paths:
+                    if not path.exists():
+                        raise DesignError(f"declared font asset is missing: {path.relative_to(root)}")
+                    font_paths.add(path if path.is_dir() else path.parent)
+        except ValueError as exc:
+            if isinstance(exc, DesignError):
+                raise
+            raise DesignError(str(exc)) from exc
+        command = [compiler, "compile", temporary, str(target), "--root", str(root)]
+        for path in sorted(font_paths):
+            command.extend(["--font-path", str(path)])
+        run = subprocess.run(command,
                              capture_output=True, text=True)
         if run.returncode:
             raise DesignError(f"typst compile failed: {(run.stderr or run.stdout).strip()}")

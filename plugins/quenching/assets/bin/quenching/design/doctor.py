@@ -10,9 +10,12 @@ from quenching.design.build import GENERATED_PATHS, build_drift, compute_build
 from quenching.design.model import (
     DesignError,
     color_to_css,
+    font_asset_paths,
+    font_metadata,
     quenching_extension,
     read_json,
     resolve_token,
+    resolve_value,
     token_map,
     validate_source,
 )
@@ -77,6 +80,7 @@ def inspect_design(root: Path) -> tuple[dict[str, Any], list[dict[str, str]]]:
         payload["sidecarComponentCount"] = len(sidecar.get("components", [])) if isinstance(sidecar.get("components"), list) else 0
     findings.extend(_orphan_assets(root))
     findings.extend(_non_web_literals(root, source))
+    findings.extend(_font_findings(root, source))
     return payload, sorted(findings, key=lambda item: (item["severity"] != "error", item["path"], item["code"]))
 
 
@@ -122,6 +126,62 @@ def _orphan_assets(root: Path) -> list[dict[str, str]]:
                 "severity": "warning", "code": "design-asset-orphan", "path": relative,
                 "message": "asset is not referenced by tokens, design standards, genres, or media primitives",
             })
+    return findings
+
+
+def _font_findings(root: Path, source: dict[str, Any]) -> list[dict[str, str]]:
+    """Check declared font assets without making unannotated legacy fonts invalid."""
+    records = token_map(source)
+    declarations: dict[str, tuple[Any, dict[str, Any]]] = {}
+    try:
+        paths_by_token = font_asset_paths(source, root / ".design" / "assets")
+    except DesignError as exc:
+        return [{"severity": "error", "code": "design-font-metadata",
+                 "path": ".design/tokens.json", "message": str(exc)}]
+    for token in records.values():
+        if token.type != "fontFamily":
+            continue
+        metadata = font_metadata(token)
+        if metadata:
+            declarations[token.dotted] = (token, metadata)
+    if not declarations:
+        return []
+    by_family: dict[str, tuple[Any, dict[str, Any]]] = {}
+    for token, metadata in declarations.values():
+        try:
+            value = resolve_value(token.value, records, (token.dotted,))
+        except DesignError:
+            continue
+        names = value if isinstance(value, list) else [value]
+        for name in names:
+            if isinstance(name, str):
+                by_family[name.casefold()] = (token, metadata)
+    findings: list[dict[str, str]] = []
+    for token in records.values():
+        if token.type != "typography":
+            continue
+        try:
+            value = resolve_value(token.value, records, (token.dotted,))
+        except DesignError:
+            continue
+        family = value.get("fontFamily") if isinstance(value, dict) else None
+        names = family if isinstance(family, list) else [family]
+        for name in names:
+            declaration = by_family.get(name.casefold()) if isinstance(name, str) else None
+            if not declaration:
+                continue
+            font_token, metadata = declaration
+            if metadata.get("source") == "webfont":
+                continue
+            paths = font_asset_paths(source, root / ".design" / "assets").get(font_token.dotted, [])
+            missing = [path for path in paths if not path.exists()]
+            if missing or not paths:
+                detail = ", ".join(str(path.relative_to(root)) for path in missing) or "no files or directories"
+                findings.append({
+                    "severity": "error", "code": "design-font-unresolved",
+                    "path": f".design/tokens.json#{token.dotted}",
+                    "message": f"font family {name!r} has no resolvable declared asset: {detail}",
+                })
     return findings
 
 
