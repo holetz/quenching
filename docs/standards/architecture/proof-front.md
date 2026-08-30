@@ -109,6 +109,19 @@ Unless `.claude/quenching.json` declares `ratchetPath`, the floor lives at
 An explicit path is resolved from the repository root and is the only override; the verifier never
 searches for a convenient floor file.
 
+## Resolved implementation decisions
+
+The verifier discovers candidate product surfaces from the repository's top-level source
+directories, excluding the proof root, hidden/tooling directories and the explicit
+`proofExclusions` list. It does not substitute the package metadata for that inventory: a package
+declaration describes what a build imports, while the proof front must also expose shipped source
+trees that coverage could silently omit. `measuredRoots` is the target's explicit declaration of
+which of those candidates the gate measures, and coverage configuration is checked against it.
+
+The implementation supports pytest only. A target whose proof root has no pytest configuration or
+whose declared runner is another framework receives an exit-2 refusal naming that constraint; it
+does not receive a partial report over rules written for pytest.
+
 ## Gate rules
 
 The verification gate carries five rules:
