@@ -66,6 +66,8 @@ def build_parser() -> argparse.ArgumentParser:
                      help="html, typst, or pdf; repeat for more than one")
     new.add_argument("--field", action="append", required=True,
                      help="name:required|optional[:description]; repeat for each field")
+    new.add_argument("--engine", default="builtin",
+                     help="builtin or the external command that receives the render request on stdin")
     new.add_argument("--check", action="store_true")
     new.add_argument("--json", action="store_true")
 
@@ -156,7 +158,7 @@ def main(argv: list[str]) -> int:
             if args.genre_cmd != "new":
                 parser.error("cq design genre requires `new`")
             payload = new_genre(root, args.slug, args.name, args.register, args.media, args.field,
-                                write=not args.check)
+                                write=not args.check, engine=args.engine)
             return _payload(as_json, payload, f"design genre — {args.slug}")
         if args.cmd == "render":
             payload = render_genre(root, args.genre, args.medium, args.data, args.output)
