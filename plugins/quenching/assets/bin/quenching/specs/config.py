@@ -69,7 +69,7 @@ LEGACY_CONFIG_FILE = "config.json"
 CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates",
                "hooks", "profiles",
                "azurePlacement", "azureColumns", "subjects", "tagCatalog",
-               "workItemTypes", "fanoutMinComplexity")
+               "workItemTypes", "fanoutMinComplexity", "opsRoot", "router")
 BACKENDS = ("github", "azure-boards")
 # Mirrors `schema.py`'s declared `priority.complexity` levels. Redeclared rather than imported —
 # `config.py` and `schema.py` do not import each other today, and a four-word tuple does not earn
@@ -253,6 +253,15 @@ def load_config(root: str) -> dict:
     val = obj.get("worktreeSetup")
     if isinstance(val, str) and val.strip():
         out["worktreeSetup"] = val.strip()
+
+    # The operations front has no safe default: `scripts/` is the conventional shape, but
+    # the same path may be an imported helper tree or a target's own domain package.  Keep
+    # both declarations as data here; `quenching.ops.config` is the boundary that refuses a
+    # run when either is absent and resolves them relative to the repository root.
+    for key in ("opsRoot", "router"):
+        value = obj.get(key)
+        if isinstance(value, str) and value.strip():
+            out[key] = value.strip()
 
     fanout_floor = obj.get("fanoutMinComplexity")
     if isinstance(fanout_floor, str) and fanout_floor.strip():
