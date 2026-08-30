@@ -73,6 +73,20 @@ next `quenching:proof:align` run after the human closes the surface.
 A floor is a promise about a measurement. Changing what is measured in the same run makes that
 promise about something else, so the two findings cannot be silently closed under one OK.
 
+## Resolved decisions
+
+`pf-order-unproven` is structural only when an existing proof-gate invocation can gain a bounded,
+non-blocking order experiment. If the only honest repair would install or materially change a
+blocking CI gate, the finding is judgement for that run: the align reports the risk and names the
+target owner's CI change. This keeps the disposition tied to the evidence available in the target,
+not to a promise that every CI edit is harmless.
+
+A target that declares no layers at all is not offered inferred layers or placeholder directories.
+The align reports its unlayered modules and any layer findings as judgement residue, names
+`quenching:proof:layer:new` as the command that can establish a layer deliberately, and lets the
+rest of the report reduce to the gate findings. This follows the sweep's evidence-gating rule:
+absence of a declaration is not evidence for a taxonomy.
+
 ## The complete mapping
 
 The eleven codes have one and only one disposition:
@@ -80,8 +94,8 @@ The eleven codes have one and only one disposition:
 | Band | Codes |
 | --- | --- |
 | Mechanical | none — no proof artifact has a deterministic repair in this contract |
-| Structural | `pf-unmarked`, `pf-stop-first`, `pf-loose-fixture`, `pf-fat-conftest`, `pf-no-floor`, `pf-order-unproven` |
-| Judgement | `pf-unlayered`, `pf-empty-layer`, `pf-unmeasured-surface`, `pf-no-ci`, `pf-untested-entrypoint` |
+| Structural | `pf-unmarked`, `pf-stop-first`, `pf-loose-fixture`, `pf-fat-conftest`, `pf-no-floor`, `pf-order-unproven` when its non-blocking condition is met |
+| Judgement | `pf-unlayered`, `pf-empty-layer`, `pf-unmeasured-surface`, `pf-no-ci`, `pf-untested-entrypoint`, and `pf-order-unproven` when its structural condition is not met |
 
 <!-- rationale -->
 

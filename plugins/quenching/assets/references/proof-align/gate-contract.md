@@ -79,9 +79,10 @@ The gate contract owns these codes and no other reference defines them:
 repository. Its applicability is established by the operations-front declaration, and the
 not-applicable record must remain visible to the proof README and gate report.
 
-`structural*` means the align may add an observable order experiment only when it is a bounded,
-non-blocking edit to an existing gate. The disposition is resolved in `bands.md` alongside the
-no-layers-declared rule.
+The `pf-order-unproven` band is conditional: `bands.md` makes it structural only when an existing
+gate can take a bounded, non-blocking order experiment; otherwise it is judgement and the align
+reports the target-owned CI change that would close it. The same file resolves the no-layers-
+declared rule.
 
 <!-- rationale -->
 
