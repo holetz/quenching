@@ -145,6 +145,12 @@ The gate contract defines `pf-unmeasured-surface`, `pf-no-floor`, `pf-stop-first
 owns `pf-empty-layer` because its severity depends on whether the target declared the layer as
 required evidence.
 
+The resolution is declaration-sensitive rather than time-sensitive: `pf-empty-layer` is an error
+only for a layer whose declaration is complete and explicitly carries `required: true`. A newly
+minted layer defaults to `required: false`, so its intentional empty state is reported in the
+README and mint report but does not masquerade as a failed proof gate. The owner may promote it to
+required after its tests are in place; the next doctor run then enforces the promise.
+
 ## Finding ownership
 
 The proof vocabulary is stable across target repositories. Each code has one owning reference so

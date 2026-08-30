@@ -66,8 +66,8 @@ structural plan plus the separate migration decision are ready.
 
 Present one plan for the five coupled structural edits:
 
-1. add the named layer to `.claude/quenching.json`'s `layers` map with reach, budget and required
-   state;
+1. add the named layer to `.claude/quenching.json`'s `layers` map with reach, budget and
+   `required: false` until the owner has filled and deliberately promoted the layer;
 2. create `tests/<layer>/`;
 3. register the derived marker and its one-line description in the target's pytest configuration;
 4. add the recognizable path-to-marker block to `tests/conftest.py`, installing the collection
