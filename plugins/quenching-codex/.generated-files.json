@@ -297,7 +297,7 @@
   ],
   "sha256": {
     ".codex-plugin/plugin.json": "0a696ee33b34996d136d4aa2d32fcc35bd34af35efb475b0cabefbafcaf87f34",
-    ".generated-from.json": "3889245e47bf1d0358af5872906b6e40a94e7456f5abe35911057139f1687522",
+    ".generated-from.json": "56917751e383b9e2eaa0a8cbbc8519d22780f904ea31354d9c15454922a74ef7",
     "README.md": "846b45dd387adde31854794ef120955db3b029e6517cf75c339065030cc6b320",
     "VERSION": "e33e70efdb9c35eb184b87ee7abc05ac16a925c9c36e84408999dea33a741fa8",
     "checks/catalog-publication-check.py": "9f4c9b75b524e31bd9420036a5384801ef707ef5708956abba1d6eb62c398f9e",
@@ -367,7 +367,7 @@
     "knowledge/standards/workflows/index.md": "86ef1a14157a7890a1f1d56cc5e8fed49482a0438f23223d39bbd8a292e6a565",
     "knowledge/tutorials/index.md": "0cfe774dfed6fa6a677f1bf0e7500196bf5486078cb7a419dd3465868a6f7543",
     "knowledge/vision/index.md": "11f4246959d7f55198640837b994615fc942db0530ee0e070036baa48199c421",
-    "references/align/convergence.md": "253fc184f9dfa53efd7b6ce4e0dee8f72dc446abd0b90486de1cde2ca77a1075",
+    "references/align/convergence.md": "acde8806eba1a104bc3b704598ac8c633d23db30d39fee474dc16ae756deb1c1",
     "references/align/evidence-doctrine.md": "86c343e314a00a4561458bd3d9b63d924728978f867a261733611102539ce728",
     "references/align/sweep-doctrine.md": "773a0e562b298e543958cc2f37d52c5883d03157a713ca4114305656c168f6a7",
     "references/align/tool-resolution.md": "d9a02e20e07bec8f7c1b7231180548735b0a8c3decf191f9141f01ced5b39247",
