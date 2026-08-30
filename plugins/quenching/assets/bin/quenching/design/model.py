@@ -112,6 +112,10 @@ def validate_source(source: dict[str, Any]) -> list[dict[str, str]]:
         contrast_policy(source)
     except DesignError as exc:
         add("design-contrast-policy", str(exc))
+    try:
+        non_web_literal_globs(source)
+    except DesignError as exc:
+        add("design-nonweb-scope", str(exc))
 
     try:
         records = list(iter_tokens(source))
@@ -375,6 +379,25 @@ def contrast_ratio(foreground: Any, background: Any) -> float:
     second = relative_luminance(background)
     lighter, darker = max(first, second), min(first, second)
     return (lighter + 0.05) / (darker + 0.05)
+
+
+def non_web_literal_globs(source: dict[str, Any]) -> list[str]:
+    extension = quenching_extension(source)
+    doctor = extension.get("doctor", {})
+    values = doctor.get("nonWebLiteralGlobs", []) if isinstance(doctor, dict) else []
+    if values is None:
+        values = []
+    if not isinstance(values, list):
+        raise DesignError("$extensions.org.quenching.doctor.nonWebLiteralGlobs must be a list")
+    result: list[str] = []
+    for value in values:
+        if not isinstance(value, str) or not value.strip():
+            raise DesignError("nonWebLiteralGlobs must contain non-empty strings")
+        relative = Path(value)
+        if relative.is_absolute() or ".." in relative.parts:
+            raise DesignError(f"non-web literal glob must stay inside the repository: {value}")
+        result.append(value.replace("\\", "/"))
+    return sorted(set(result))
 
 
 def token_map(source: dict[str, Any]) -> dict[str, Token]:
