@@ -41,16 +41,16 @@ expression and sits by indentation inside AST-identified entry-point control flo
 
 The verifier and align use these stable codes:
 
-| Code | Meaning |
-| --- | --- |
-| `op-undocumented` | An active entry point exists but is not named by the generated registry. |
-| `op-registry-stale` | The generated registry does not match the entry points reachable from the router. |
-| `op-adhoc-root` | An entry point resolves the repository root outside the shared bootstrap module. |
-| `op-untyped-exit` | An entry point returns an untyped or otherwise non-contractual exit status. |
-| `op-unarmed-write` | An operation writes outside the repository without preview-first behaviour and an explicit arming flag. |
-| `op-disabled-check` | A verification call is commented out inside an entry point's control flow. |
-| `op-orphan` | An entry point is present in the operations tree but is not reachable from the canonical router. |
-| `op-no-router` | The repository has no single declared router for its normalized operations surface. |
+| Code | Meaning | Band |
+| --- | --- | --- |
+| `op-undocumented` | An active entry point exists but is not named by the generated registry. | Mechanical |
+| `op-registry-stale` | The generated registry does not match the entry points reachable from the router. | Mechanical |
+| `op-adhoc-root` | An entry point resolves the repository root outside the shared bootstrap module. | Structural |
+| `op-untyped-exit` | An entry point returns an untyped or otherwise non-contractual exit status. | Structural |
+| `op-unarmed-write` | An operation writes outside the repository without preview-first behaviour and an explicit arming flag. | Judgement |
+| `op-disabled-check` | A verification call is commented out inside an entry point's control flow. | Judgement |
+| `op-orphan` | An entry point is present in the operations tree but is not reachable from the canonical router. | Judgement |
+| `op-no-router` | The repository has no single declared router for its normalized operations surface. | Structural |
 
 <!-- rationale -->
 
