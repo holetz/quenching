@@ -151,6 +151,35 @@ class ProofFixtureTrees(unittest.TestCase):
         self.assertNotIn("pf-untested-entrypoint", self._codes(
             ops=True, extra_tests={"unit/test_run.py": "import run\ndef test_run(): pass\n"}))
 
+    def test_minimal_correction_retires_each_finding_code(self):
+        cases = {
+            "pf-unlayered": (
+                {"layers": {}, "extra_tests": {"test_root.py": "def test_root(): pass\n"}}, {}),
+            "pf-unmarked": ({"markers": ()}, {}),
+            "pf-loose-fixture": ({"extra_tests": {
+                "unit/test_a.py": "import pytest\n@pytest.fixture\ndef value(): return 1\n",
+                "unit/test_b.py": "import pytest\n@pytest.fixture\ndef value(): return 2\n",
+            }}, {}),
+            "pf-fat-conftest": ({"conftest": "import pytest\n@pytest.fixture\ndef value(): return 1\n"}, {}),
+            "pf-unmeasured-surface": ({"extra_surfaces": ("bundle",)}, {}),
+            "pf-no-floor": ({"coverage_floor": None}, {}),
+            "pf-stop-first": ({"addopts": "--strict-markers --maxfail=1"}, {}),
+            "pf-empty-layer": ({"layers": {
+                "unit": {"reach": "nothing", "budget": 2, "required": True},
+                "data": {"reach": "tree", "budget": 5, "required": True},
+            }}, {}),
+            "pf-no-ci": ({"ci": False}, {}),
+            "pf-order-unproven": ({"randomized": False}, {}),
+            "pf-untested-entrypoint": (
+                {"ops": True},
+                {"ops": True, "extra_tests": {
+                    "unit/test_run.py": "import run\ndef test_run(): pass\n"}}),
+        }
+        for code, (bad, good) in cases.items():
+            with self.subTest(code=code):
+                self.assertIn(code, self._codes(**bad))
+                self.assertNotIn(code, self._codes(**good))
+
     def test_each_supported_ci_provider_can_invoke_the_gate(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
