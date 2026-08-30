@@ -142,6 +142,65 @@ class FindingFixtures(unittest.TestCase):
         inventory = self._inventory(source, registry=registry)
         self.assertEqual(run_checks(inventory), [])
 
+    def test_each_finding_fixture_stops_after_its_minimal_mutation(self):
+        cases = (
+            (check_undocumented,
+             "def main():\n    return 0\n",
+             lambda inv: self._inventory(
+                 "def main():\n    return 0\n", registry="`run.py` — active\n")),
+            (check_adhoc_root,
+             "from pathlib import Path\nROOT = Path(__file__).resolve()\n",
+             lambda inv: self._inventory("ROOT = 'configured'\n")),
+            (check_untyped_exit,
+             "def main():\n    return 0\n\nif __name__ == '__main__':\n    main()\n",
+             lambda inv: self._inventory(
+                 "def main():\n    return 0\n\n"
+                 "if __name__ == '__main__':\n    raise SystemExit(main())\n")),
+            (check_unarmed_write,
+             "import requests\nrequests.write('payload')\n",
+             lambda inv: self._inventory(
+                 "import requests\nfrom argparse import ArgumentParser\n"
+                 "parser = ArgumentParser()\nparser.add_argument('--write')\n"
+                 "requests.write('payload')\n")),
+            (check_disabled_check,
+             "def main():\n    # verify()\n    return 0\n",
+             lambda inv: self._inventory(
+                 "def verify():\n    return None\n\n"
+                 "def main():\n    verify()\n    return 0\n")),
+            (check_orphan,
+             "def main():\n    return 0\n", lambda inv: self._inventory(
+                 "def main():\n    return 0\n", lifecycle="active")),
+        )
+        for check, source, corrected in cases:
+            with self.subTest(check=check.__name__):
+                broken = self._inventory(source, lifecycle=None if check is check_orphan else "active")
+                self.assertEqual(len(check(broken)), 1)
+                fixed = corrected(broken)
+                self.assertEqual(check(fixed), [])
+
+        stale = self._inventory(
+            "def main():\n    return 0\n",
+            registry="<!-- quenching-ops-registry-sha256 " + "0" * 64 + " -->\n`run.py`\n",
+        )
+        self.assertEqual([finding.code for finding in check_registry_stale(stale)],
+                         ["op-registry-stale"])
+        good_registry = ("<!-- quenching-ops-registry-sha256 "
+                         f"{inventory_digest(stale)} -->\n`run.py`\n")
+        corrected = self._inventory("def main():\n    return 0\n", registry=good_registry)
+        self.assertEqual(check_registry_stale(corrected), [])
+
+        no_router = self._inventory(
+            "def main():\n    return 0\n",
+            router=Router("pyproject.toml", "python-console-script", False),
+        )
+        self.assertEqual([finding.code for finding in check_no_router(no_router)],
+                         ["op-no-router"])
+        good_router = self._inventory(
+            "def main():\n    return 0\n",
+            router=Router("pyproject.toml", "python-console-script", True),
+        )
+        self.assertEqual(check_no_router(good_router), [])
+
 
 if __name__ == "__main__":
     unittest.main()
