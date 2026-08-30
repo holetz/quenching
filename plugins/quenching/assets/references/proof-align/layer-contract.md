@@ -64,6 +64,25 @@ evidence?** If yes, an empty directory is an error because the declaration promi
 the suite does not exercise. If no, the absent or empty optional layer is not a finding; the target
 records its non-applicability rather than creating a placeholder.
 
+## Minting one declared layer
+
+`quenching:proof:layer:new` applies the five coupled edits as one unit for the layer a human names:
+
+| Edit | Contract it closes |
+| --- | --- |
+| Create `tests/<layer>/` | Gives the layer's tests one stable classification path. |
+| Register `<layer>` in `[tool.pytest.ini_options].markers` | Makes the derived marker accepted by strict pytest collection. |
+| Add the named path-to-marker block to `tests/conftest.py` | Makes collection derive the marker from the directory rather than a second hand label. |
+| Create `tests/fixtures/<layer>.py` when the declared reach needs shared setup | Gives reused fixtures one library home with the declared reach as its ceiling. |
+| Regenerate `tests/README.md` | Publishes the layer's meaning, reach, budget, marker, test count, and fixture module from the inventory. |
+
+The layer's reach and budget are declarations in `.claude/quenching.json` under `layers`; the
+fixture module does not become a second configuration store. A newly minted layer may be empty
+until the owner separately accepts a proposed test migration, but its five structural edits are
+not split across partially declared states. The collection-hook and fixture templates under
+`${CLAUDE_PLUGIN_ROOT}/assets/templates/proof/` are the canonical shapes for those two generated
+files.
+
 ## Finding codes
 
 The layer contract owns these codes and no other reference defines them:
