@@ -14,9 +14,9 @@ import _paths  # noqa: F401 — must precede the `quenching` import
 from quenching.proof.ci import discover_ci
 from quenching.proof.checks import conditional_status, run_checks
 from quenching.proof.inventory import build_inventory
-from quenching.proof.model import ProofInventory
+from quenching.proof.model import Fixture, Layer, ProofInventory, TestModule
 from quenching.proof.ratchet import evaluate
-from quenching.proof.readme import write_readme
+from quenching.proof.readme import render_readme_document, write_readme
 
 HERE = Path(__file__).resolve().parent
 GOLDEN = HERE / "fixtures" / "golden"
@@ -62,6 +62,35 @@ class TheCoverageRatchet(unittest.TestCase):
                     self.assertEqual(1, code)
                     self.assertFalse(payload["ok"])
                 previous = current
+
+
+class GeneratedProofReadme(unittest.TestCase):
+    def _inventory(self, root: Path) -> ProofInventory:
+        return ProofInventory(
+            str(root), str(root / "tests"),
+            layers=(Layer("unit", "unit", "nothing", 2, True),),
+            test_modules=(TestModule("unit/test_math.py", "unit", "unit", test_count=1),),
+            fixtures=(Fixture("value", "fixtures/conftest.py", True),),
+        )
+
+    def test_write_is_idempotent_and_preserves_authored_prose(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            proof_root = root / "tests"
+            proof_root.mkdir()
+            path = proof_root / "README.md"
+            authored = ("# Test policy\n\nHand-written context.\n\n"
+                        "### A heading shaped like generated prose\n\nKeep this.\n")
+            path.write_text(authored, encoding="utf-8")
+            inventory = self._inventory(root)
+
+            self.assertTrue(write_readme(inventory))
+            first = path.read_text(encoding="utf-8")
+            self.assertFalse(write_readme(inventory))
+            self.assertEqual(first, path.read_text(encoding="utf-8"))
+            self.assertTrue(first.startswith(authored + "\n"))
+            self.assertIn("\n<!-- quenching-proof-readme-end -->\n", first)
+            self.assertEqual(first, render_readme_document(first, inventory))
 
 
 class ProofFixtureTrees(unittest.TestCase):
