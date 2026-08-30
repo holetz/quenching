@@ -56,3 +56,15 @@ three read-only subcommands share the declared operations root and the same JSON
 | `cq ops inventory [--json]` | Build the normalized entry-point inventory. |
 | `cq ops doctor [--json]` | Run the eight static checks and return the typed result. |
 | `cq ops status [--json]` | Summarize packages, router health, lifecycle, and findings. |
+
+## The proof CLI
+
+The plugin's `proof` axis reads the repository's declared test surface without executing the
+target suite. Its four subcommands share the proof root and expose JSON payloads for automation:
+
+| Subcommand | Purpose |
+| --- | --- |
+| `cq proof inventory [--json]` | Walk test modules, layers, fixtures, gates, CI definitions, and measured source roots. |
+| `cq proof doctor [--json]` | Run static proof checks and report typed findings. |
+| `cq proof status [--json]` | Summarize layers, fixture health, coverage floors, CI, and findings. |
+| `cq proof ratchet check [--json]` / `raise [--json]` | Check or advance coverage floors from an existing coverage artifact. |
