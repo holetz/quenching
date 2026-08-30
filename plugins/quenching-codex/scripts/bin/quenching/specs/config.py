@@ -70,6 +70,8 @@ CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates",
                "hooks", "profiles",
                "azurePlacement", "azureColumns", "subjects", "tagCatalog",
                "workItemTypes", "fanoutMinComplexity", "opsRoot", "router")
+PROOF_CONFIG_KEYS = ("proofRoot", "layers", "measuredRoots", "proofExclusions", "ratchetPath")
+CONFIG_KEYS = CONFIG_KEYS + PROOF_CONFIG_KEYS
 BACKENDS = ("github", "azure-boards")
 # Mirrors `schema.py`'s declared `priority.complexity` levels. Redeclared rather than imported —
 # `config.py` and `schema.py` do not import each other today, and a four-word tuple does not earn
@@ -166,8 +168,26 @@ def find_repo_root(specs_root: str) -> str:
     `load_config`'s own selftest fixture — would silently answer with whatever repo this
     process happens to be running from instead of "no git facts here", handing back a real
     `.agents/quenching.json` the fixture exists specifically to avoid."""
+    local = os.path.abspath(specs_root)
+    while True:
+        if os.path.isfile(os.path.join(local, CONFIG_FILE)):
+            return local
+        parent = os.path.dirname(local)
+        if parent == local:
+            break
+        local = parent
     top = _git(specs_root, "rev-parse", "--show-toplevel").strip() if os.path.isdir(specs_root) else ""
-    return top or os.path.dirname(os.path.abspath(specs_root))
+    if top:
+        return top
+    current = os.path.abspath(specs_root)
+    while True:
+        if os.path.isfile(os.path.join(current, CONFIG_FILE)):
+            return current
+        parent = os.path.dirname(current)
+        if parent == current:
+            break
+        current = parent
+    return os.path.dirname(os.path.abspath(specs_root))
 
 
 def _remote_host(remote: str) -> str:
@@ -229,6 +249,8 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
            "azurePlacement": {}, "azureColumns": {}, "subjects": {}, "tagCatalog": {},
            "workItemTypes": {},
            "fanoutMinComplexity": DEFAULT_FANOUT_MIN_COMPLEXITY, "unknownFanoutMinComplexity": None,
+           "proofRoot": "tests", "layers": {}, "measuredRoots": [],
+           "proofExclusions": [], "ratchetPath": None,
            "legacyPath": legacy if os.path.isfile(legacy) else None}
     if not out["present"]:
         return out
@@ -262,6 +284,24 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
         value = obj.get(key)
         if isinstance(value, str) and value.strip():
             out[key] = value.strip()
+
+    proof_root = obj.get("proofRoot")
+    if isinstance(proof_root, str) and proof_root.strip():
+        out["proofRoot"] = proof_root.strip()
+
+    layers = obj.get("layers")
+    if isinstance(layers, dict):
+        out["layers"] = layers
+
+    for key in ("measuredRoots", "proofExclusions"):
+        values = obj.get(key)
+        if isinstance(values, list):
+            out[key] = [value.strip() for value in values
+                        if isinstance(value, str) and value.strip()]
+
+    ratchet_path = obj.get("ratchetPath")
+    if isinstance(ratchet_path, str) and ratchet_path.strip():
+        out["ratchetPath"] = ratchet_path.strip()
 
     fanout_floor = obj.get("fanoutMinComplexity")
     if isinstance(fanout_floor, str) and fanout_floor.strip():

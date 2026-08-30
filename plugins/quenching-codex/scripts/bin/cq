@@ -4,7 +4,7 @@
     python3 "../../scripts/cq" [--root PATH] <pillar> <subcommand> ...
     python3 "../../scripts/cq" --version
 
-Six pillars, each answering with the same contract its launcher answered with — the
+Seven pillars, each answering with the same contract its launcher answered with — the
 subcommands, the `--json` payloads and the exit codes (0 ok · 1 findings · 2 refusal) are
 the ones frozen in `tests/fixtures/golden/`. This file routes; it decides nothing else.
 
@@ -73,6 +73,9 @@ PILLARS: dict[str, Pillar] = {
     "ops": Pillar(
         "quenching.ops.cli", True,
         "the operations surface — inventory, doctor, status"),
+    "proof": Pillar(
+        "quenching.proof.cli", True,
+        "the verification surface — inventory, doctor, ratchet, status"),
     "git": Pillar(
         "quenching.git", False,
         "a repository's git facts — the base branch, and whether it is the host's own default"),
@@ -90,7 +93,7 @@ def build_parser() -> argparse.ArgumentParser:
                + "\n\n`cq <pillar> --help` prints that pillar's own subcommands.")
     p.add_argument("--root",
                     help="forwarded to the pillar as its own --root; design, specs, "
-                    "components, and ops declare one")
+                    "components, ops, and proof declare one")
     # Bare, so `cq --version` IS the lockstep probe: the whole assertion is
     # `test "$(cq --version)" = "$(cat VERSION)"`, with nothing to strip first. A pillar
     # named before it keeps its own prefixed line — this option only answers for the plugin.
