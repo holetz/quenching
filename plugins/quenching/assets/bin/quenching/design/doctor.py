@@ -124,13 +124,18 @@ def _orphan_assets(root: Path) -> list[dict[str, str]]:
             except (OSError, UnicodeDecodeError):
                 continue
     haystack = "\n".join(searchable)
+    placeholders = {
+        match.group(1).replace("\\", "/")
+        for match in re.finditer(r"\{\{\s*asset\.([^{}\s]+)\s*\}\}", haystack)
+    }
     findings = []
     for asset in sorted(path for path in assets.rglob("*") if path.is_file()):
         if asset.name == ".gitkeep" or asset.name.lower().startswith(("readme", "license", "ofl")):
             continue
         relative = asset.relative_to(root).as_posix()
         design_relative = asset.relative_to(root / ".design").as_posix()
-        if relative not in haystack and design_relative not in haystack and asset.name not in haystack:
+        if (relative not in haystack and design_relative not in haystack and asset.name not in haystack
+                and design_relative not in placeholders):
             findings.append({
                 "severity": "warning", "code": "design-asset-orphan", "path": relative,
                 "message": "asset is not referenced by tokens, design standards, genres, or media primitives",
