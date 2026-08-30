@@ -21,6 +21,8 @@ from quenching.design.model import (
     read_json,
     resolve_token,
     resolve_value,
+    asset_manifest_entries,
+    relative_luminance,
     token_map,
     validate_source,
 )
@@ -95,6 +97,9 @@ def inspect_design(root: Path) -> tuple[dict[str, Any], list[dict[str, str]]]:
     findings.extend(_non_web_literals(root, source))
     findings.extend(_font_findings(root, source))
     findings.extend(_contrast_findings(source))
+    asset_payload, asset_findings = _asset_findings(root, source)
+    payload["assetManifest"] = asset_payload
+    findings.extend(asset_findings)
     return payload, sorted(findings, key=lambda item: (item["severity"] != "error", item["path"], item["code"]))
 
 
@@ -135,7 +140,8 @@ def _orphan_assets(root: Path) -> list[dict[str, str]]:
     }
     findings = []
     for asset in sorted(path for path in assets.rglob("*") if path.is_file()):
-        if asset.name == ".gitkeep" or asset.name.lower().startswith(("readme", "license", "ofl")):
+        if (asset.name in {".gitkeep", "manifest.json"}
+                or asset.name.lower().startswith(("readme", "license", "ofl"))):
             continue
         relative = asset.relative_to(root).as_posix()
         design_relative = asset.relative_to(root / ".design").as_posix()
@@ -146,6 +152,58 @@ def _orphan_assets(root: Path) -> list[dict[str, str]]:
                 "message": "asset is not referenced by tokens, design standards, genres, or media primitives",
             })
     return findings
+
+
+def _asset_findings(root: Path, source: dict[str, Any]) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    manifest_path = root / ".design" / "assets" / "manifest.json"
+    if not manifest_path.is_file():
+        return [], []
+    try:
+        entries = asset_manifest_entries(read_json(manifest_path))
+    except DesignError as exc:
+        return [], [{"severity": "error", "code": "design-asset-manifest",
+                     "path": manifest_path.relative_to(root).as_posix(), "message": str(exc)}]
+    findings: list[dict[str, str]] = []
+    asset_root = manifest_path.parent.resolve()
+    for entry in entries:
+        path = (asset_root / entry["path"]).resolve()
+        try:
+            path.relative_to(asset_root)
+        except ValueError:
+            findings.append({"severity": "error", "code": "design-asset-manifest",
+                             "path": manifest_path.relative_to(root).as_posix(),
+                             "message": f"asset manifest path escapes .design/assets: {entry['path']}"})
+            continue
+        if not path.is_file():
+            findings.append({"severity": "error", "code": "design-asset-manifest",
+                             "path": manifest_path.relative_to(root).as_posix(),
+                             "message": f"asset manifest file is missing: {entry['path']}"})
+    records = token_map(source)
+    dark_surfaces: list[str] = []
+    for token in records.values():
+        if token.type != "color" or token.path[-1] not in {"surface", "surface-dark"}:
+            continue
+        try:
+            if relative_luminance(resolve_token(token, records)) < 0.5:
+                dark_surfaces.append(token.dotted)
+        except DesignError:
+            continue
+    for surface in dark_surfaces:
+        for entry in entries:
+            if entry["ink"] != "dark" or entry["role"] not in {"lockup", "mark", "wordmark", "icon"}:
+                continue
+            matching = [candidate for candidate in entries
+                        if candidate["role"] == entry["role"]
+                        and candidate["orientation"] == entry["orientation"]
+                        and candidate["ink"] in {"light", "any"}]
+            if not matching:
+                findings.append({
+                    "severity": "error", "code": "design-asset-variant-missing",
+                    "path": ".design/assets/manifest.json",
+                    "message": (f"surface {surface} needs a light {entry['role']} "
+                                f"variant for {entry['orientation']} orientation"),
+                })
+    return entries, findings
 
 
 def _font_findings(root: Path, source: dict[str, Any]) -> list[dict[str, str]]:
@@ -192,7 +250,7 @@ def _font_findings(root: Path, source: dict[str, Any]) -> list[dict[str, str]]:
             font_token, metadata = declaration
             if metadata.get("source") == "webfont":
                 continue
-            paths = font_asset_paths(source, root / ".design" / "assets").get(font_token.dotted, [])
+            paths = paths_by_token.get(font_token.dotted, [])
             missing = [path for path in paths if not path.exists()]
             if missing or not paths:
                 detail = ", ".join(str(path.relative_to(root)) for path in missing) or "no files or directories"
