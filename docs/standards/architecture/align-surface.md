@@ -2,7 +2,7 @@
 type: standard
 title: Align surface — one align per front, probe first
 description: The aligned-front column — one align per local front carrying its content stages, the seventh pillar (`git`) declared with no align because it ships no verifier a probe could run, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, the rule that no sweep records itself, and conductor categories sharing the cycle-authorization contract — `/align` conducts the five local fronts (`knowledge`, `design`, `components`, `ops`, `proof`), `/quenching:specs:cycle` the four stages of one spec, and the two fan-out entries N specs each; none reimplements what it conducts
-resource: plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/design/align.md, plugins/quenching/commands/specs/cycle.md, plugins/quenching/commands/specs/execute-queue.md, plugins/quenching/commands/specs/develop-batch.md, plugins/quenching/commands/components/align.md, plugins/quenching/assets/bin/quenching/design/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/references/align/**, plugins/quenching/assets/references/specs-fanout/**
+resource: plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/design/align.md, plugins/quenching/commands/specs/cycle.md, plugins/quenching/commands/specs/execute-queue.md, plugins/quenching/commands/specs/develop-batch.md, plugins/quenching/commands/components/align.md, plugins/quenching/commands/proof/align.md, plugins/quenching/assets/bin/quenching/design/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/references/align/**, plugins/quenching/assets/references/proof-align/**, plugins/quenching/assets/references/specs-fanout/**
 tags: [architecture, aligns, commands, probe, convergence]
 timestamp: 2026-08-27
 audience: both
@@ -28,7 +28,7 @@ architectural rule — why the surface has this shape and not the previous one.
 | `/.design/` | `/quenching:design:align` |
 | `.claude/` | `/quenching:components:align` |
 | `ops` | `/quenching:ops:align` |
-| `proof` | **declared — tooling not yet built** |
+| `proof` | `/quenching:proof:align` |
 | `git` | **none** — see §The seventh pillar has no align, below |
 | all five aligned fronts | `/align` — conducts them in dependency order, on one nested OK |
 
@@ -89,6 +89,15 @@ authorizing the whole run, nesting one
 level, with code-coupled confirmations still surfacing individually — lives in
 `align/convergence.md`, shared by every conductor and restated by none (§The conductor
 categories).
+
+### The proof front has its own align
+
+The proof front now has a local tree to converge: the target's declared test root, gate, measured
+surfaces, fixtures, layers, and CI evidence. `/quenching:proof:align` probes `cq proof doctor`
+before reading that tree, applies only bounded structural repairs, and reports layer taxonomy,
+measurement scope, CI installation, and operations-entry-point coverage to the target owner. Its
+floor-deferral rule keeps a new coverage promise from being written while the measured surface is
+still changing; `/quenching:proof:status` remains the read-only view.
 
 ## The conductor categories
 
