@@ -6,6 +6,7 @@ suite itself remains outside this pillar's execution boundary.
 """
 from __future__ import annotations
 
+from quenching.ops.inventory import build_inventory as build_ops_inventory
 from quenching.proof.model import Finding, ProofInventory
 
 
@@ -107,9 +108,31 @@ def check_order_unproven(inventory: ProofInventory) -> list[Finding]:
                    path=inventory.ci[0].path if inventory.ci else None)]
 
 
+def check_untested_entrypoint(inventory: ProofInventory) -> list[Finding]:
+    """Compare test imports with the ops inventory, or stay silent when ops is not configured."""
+    operations, err = build_ops_inventory(inventory.repo_root)
+    if err:
+        if err.get("code") == "op-config-missing":
+            return []
+        return [_error("pf-untested-entrypoint",
+                       f"ops inventory could not be read: {err.get('message', 'unknown error')}")]
+    assert operations is not None
+    imported = {name for module in inventory.test_modules for name in module.imports}
+    findings: list[Finding] = []
+    for entry in operations.entry_points:
+        if not entry.module:
+            continue
+        if any(name == entry.module or name.startswith(entry.module + ".") for name in imported):
+            continue
+        findings.append(_error("pf-untested-entrypoint",
+                               f"operations entry point `{entry.module}` is not imported by a test",
+                               path=entry.path))
+    return findings
+
+
 def run_checks(inventory: ProofInventory) -> list[Finding]:
     checks = (check_unlayered, check_unmarked, check_loose_fixture, check_fat_conftest,
               check_unmeasured_surface, check_no_floor, check_stop_first, check_empty_layer,
-              check_no_ci, check_order_unproven)
+              check_no_ci, check_order_unproven, check_untested_entrypoint)
     findings = [finding for check in checks for finding in check(inventory)]
     return sorted(findings, key=lambda item: (item.code, item.path or "", item.message))
