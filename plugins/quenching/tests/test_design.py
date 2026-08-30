@@ -16,7 +16,13 @@ from quenching.design.build import build_drift, compute_build, write_build
 from quenching.design.doctor import inspect_design
 from quenching.design.genre import new_genre, render_genre
 from quenching.design.importer import import_design
-from quenching.design.model import DTCG_SCHEMA, DesignError, read_json, validate_source
+from quenching.design.model import (
+    DTCG_SCHEMA,
+    DesignError,
+    font_asset_paths,
+    read_json,
+    validate_source,
+)
 
 
 PRODUCT = {
@@ -187,6 +193,29 @@ components:
         self.assertIn("colors", sidecar["extensions"]["colorMeta"])
         source["$extensions"]["org.quenching"]["designMd"]["components"]["button-primary"]["height"] = "{spacing.missing}"
         self.assertIn("design-component-reference", {item["code"] for item in validate_source(source)})
+
+    def test_font_family_tokens_support_metadata_and_nested_typography_references(self):
+        path = self.root / ".design" / "tokens.json"
+        source = read_json(path)
+        source["fonts"] = {
+            "body": {
+                "$type": "fontFamily",
+                "$value": ["Brand Sans", "sans-serif"],
+                "$extensions": {"org.quenching": {"font": {
+                    "source": "licensed",
+                    "license": "OFL-1.1",
+                    "files": ["fonts/brand-sans.woff2"],
+                }}},
+            }
+        }
+        source["typography"]["body"]["$value"]["fontFamily"] = "{fonts.body}"
+        self.assertEqual([], validate_source(source))
+        paths = font_asset_paths(source, self.root / ".design" / "assets")
+        self.assertEqual([self.root / ".design" / "assets" / "fonts" / "brand-sans.woff2"], paths["fonts.body"])
+        path.write_text(json.dumps(source), encoding="utf-8")
+        write_build(compute_build(self.root))
+        css = (self.root / ".design" / "build" / "tokens.css").read_text(encoding="utf-8")
+        self.assertIn("--design-typography-body-font-family: Brand Sans, sans-serif;", css)
 
     def test_genre_renders_html_from_fields_and_generated_tokens(self):
         created = new_genre(
