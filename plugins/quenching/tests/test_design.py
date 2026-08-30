@@ -340,6 +340,29 @@ components:
         self.assertEqual(1, len(missing))
         self.assertIn("Brand Sans", missing[0]["message"])
 
+    def test_doctor_measures_color_pairs_with_declared_wcag_policy(self):
+        path = self.root / ".design" / "tokens.json"
+        source = read_json(path)
+        source["colors"]["primary"]["$value"] = {
+            "colorSpace": "srgb", "components": [0.5, 0.5, 0.5], "hex": "#808080"
+        }
+        path.write_text(json.dumps(source), encoding="utf-8")
+        write_build(compute_build(self.root))
+        payload, findings = inspect_design(self.root)
+        failures = [item for item in findings if item["code"] == "design-contrast-failure"]
+        self.assertEqual(1, len(failures))
+        self.assertEqual("3.98", failures[0]["ratio"])
+        self.assertEqual("4.50", failures[0]["threshold"])
+        self.assertEqual("normal", payload["contrastPolicy"]["textSize"])
+        source["$extensions"]["org.quenching"]["accessibility"] = {
+            "contrast": {"level": "AA", "textSize": "large"}
+        }
+        path.write_text(json.dumps(source), encoding="utf-8")
+        write_build(compute_build(self.root))
+        payload, findings = inspect_design(self.root)
+        self.assertNotIn("design-contrast-failure", {item["code"] for item in findings})
+        self.assertEqual(3.0, payload["contrastPolicy"]["threshold"])
+
     def test_doctor_reports_orphan_assets_and_non_web_literal_drift(self):
         asset = self.root / ".design" / "assets" / "unused.svg"
         asset.write_text("<svg/>", encoding="utf-8")

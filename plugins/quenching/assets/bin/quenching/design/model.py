@@ -27,6 +27,12 @@ TOKEN_TYPES = {
     "number", "strokeStyle", "border", "transition", "shadow", "gradient", "typography",
 }
 FONT_SOURCES = {"local", "webfont", "licensed"}
+CONTRAST_LEVELS = {
+    ("AA", "normal"): 4.5,
+    ("AA", "large"): 3.0,
+    ("AAA", "normal"): 7.0,
+    ("AAA", "large"): 4.5,
+}
 DESIGN_COMPONENT_PROPERTIES = {
     "backgroundColor", "textColor", "typography", "rounded", "padding", "size", "height",
     "width",
@@ -102,6 +108,10 @@ def validate_source(source: dict[str, Any]) -> list[dict[str, str]]:
         add("design-external-version", f"designMd.version must be {DESIGN_MD_VERSION!r}")
     if extension.get("productSchema") != PRODUCT_SCHEMA_VERSION:
         add("design-product-version", f"productSchema must be {PRODUCT_SCHEMA_VERSION}")
+    try:
+        contrast_policy(source)
+    except DesignError as exc:
+        add("design-contrast-policy", str(exc))
 
     try:
         records = list(iter_tokens(source))
@@ -306,6 +316,65 @@ def font_asset_paths(source: dict[str, Any], assets_root: Path) -> dict[str, lis
                 paths.append(path)
         result[token.dotted] = sorted(set(paths))
     return result
+
+
+def contrast_policy(source: dict[str, Any]) -> dict[str, Any]:
+    """Return the declared WCAG policy, applying only the documented defaults."""
+    extension = quenching_extension(source)
+    accessibility = extension.get("accessibility", {})
+    raw = accessibility.get("contrast", {}) if isinstance(accessibility, dict) else {}
+    if raw is None:
+        raw = {}
+    if not isinstance(raw, dict):
+        raise DesignError("$extensions.org.quenching.accessibility.contrast must be an object")
+    level = raw.get("level", "AA")
+    text_size = raw.get("textSize", "normal")
+    if (level, text_size) not in CONTRAST_LEVELS:
+        raise DesignError("contrast level must be AA or AAA and textSize must be normal or large")
+    threshold = raw.get("threshold", CONTRAST_LEVELS[(level, text_size)])
+    if not isinstance(threshold, (int, float)) or threshold < 1:
+        raise DesignError("contrast threshold must be a number greater than or equal to 1")
+    return {"level": level, "textSize": text_size, "threshold": float(threshold)}
+
+
+def contrast_pairs(source: dict[str, Any]) -> list[tuple[Token, Token]]:
+    """Enumerate same-group X/on-X color pairs in stable token order."""
+    records = token_map(source)
+    pairs: list[tuple[Token, Token]] = []
+    for token in records.values():
+        if token.type != "color" or not token.path or not token.path[-1].startswith("on-"):
+            continue
+        base_path = token.path[:-1] + (token.path[-1][3:],)
+        background = records.get(".".join(base_path))
+        if background and background.type == "color":
+            pairs.append((token, background))
+    return pairs
+
+
+def color_to_srgb(value: Any) -> tuple[float, float, float]:
+    """Return opaque sRGB channels; wide-gamut conversion is intentionally explicit."""
+    if not isinstance(value, dict) or value.get("colorSpace") != "srgb":
+        raise DesignError("contrast measurement supports only sRGB colors")
+    components = value.get("components")
+    if not isinstance(components, list) or len(components) != 3:
+        raise DesignError("contrast color needs three sRGB components")
+    if not all(isinstance(component, (int, float)) for component in components):
+        raise DesignError("contrast color components must be numeric")
+    return tuple(max(0.0, min(1.0, float(component))) for component in components)
+
+
+def relative_luminance(value: Any) -> float:
+    channels = color_to_srgb(value)
+    linear = [channel / 12.92 if channel <= 0.04045 else ((channel + 0.055) / 1.055) ** 2.4
+              for channel in channels]
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+
+def contrast_ratio(foreground: Any, background: Any) -> float:
+    first = relative_luminance(foreground)
+    second = relative_luminance(background)
+    lighter, darker = max(first, second), min(first, second)
+    return (lighter + 0.05) / (darker + 0.05)
 
 
 def token_map(source: dict[str, Any]) -> dict[str, Token]:
