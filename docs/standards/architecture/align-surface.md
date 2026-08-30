@@ -2,7 +2,7 @@
 type: standard
 title: Align surface — one align per front, probe first
 description: The aligned-front column — one align per local front carrying its content stages, the seventh pillar (`git`) declared with no align because it ships no verifier a probe could run, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, the rule that no sweep records itself, and conductor categories sharing the cycle-authorization contract — `/align` conducts the five local fronts (`knowledge`, `design`, `components`, `ops`, `proof`), `/quenching:specs:cycle` the four stages of one spec, and the two fan-out entries N specs each; none reimplements what it conducts
-resource: plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/design/align.md, plugins/quenching/commands/specs/cycle.md, plugins/quenching/commands/specs/execute-queue.md, plugins/quenching/commands/specs/develop-batch.md, plugins/quenching/commands/components/align.md, plugins/quenching/commands/proof/align.md, plugins/quenching/assets/bin/quenching/design/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/references/align/**, plugins/quenching/assets/references/proof-align/**, plugins/quenching/assets/references/specs-fanout/**
+resource: plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/design/align.md, plugins/quenching/commands/specs/cycle.md, plugins/quenching/commands/specs/execute-queue.md, plugins/quenching/commands/specs/develop-batch.md, plugins/quenching/commands/components/align.md, plugins/quenching/commands/ops/align.md, plugins/quenching/commands/proof/align.md, plugins/quenching/assets/bin/quenching/design/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/references/align/**, plugins/quenching/assets/references/proof-align/**, plugins/quenching/assets/references/specs-fanout/**
 tags: [architecture, aligns, commands, probe, convergence]
 timestamp: 2026-08-27
 audience: both
@@ -31,6 +31,10 @@ architectural rule — why the surface has this shape and not the previous one.
 | `proof` | `/quenching:proof:align` |
 | `git` | **none** — see §The seventh pillar has no align, below |
 | all five aligned fronts | `/align` — conducts them in dependency order, on one nested OK |
+
+The column has seven pillars in total: five aligned local fronts (`knowledge`, `design`,
+`components`, `ops`, `proof`) and two intentionally alignless pillars (`specs` and `git`), each
+with its own structural reason below.
 
 There is no `align-and-update` anywhere. The previous surface was a 2×4 matrix — a structural
 align plus a looping content conductor per front — which gave equal billing to conductors that
@@ -83,7 +87,7 @@ conducts only through a stage's own gate.
 The two real loops survive where the looping is real: `/quenching:knowledge:align` keeps its
 internal fixpoint (memory → harness → glossary feed each other), and `/align` keeps the
 cross-front pass, because the five aligned fronts feed each other (the design front's standards,
-the components front's registry and the proof front's gate
+the components front's registry, the ops front's inventory and registry, and the proof front's gate
 is a `/docs/` listing). The conductor contract — one human OK
 authorizing the whole run, nesting one
 level, with code-coupled confirmations still surfacing individually — lives in
