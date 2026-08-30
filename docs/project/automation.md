@@ -45,3 +45,14 @@ them is overwritten by the next run, not merged.
 | /release | generic | "publish a release" |
 | /skill-map | generic | "kit map" |
 <!-- GENERATED:END -->
+
+## The ops CLI
+
+The plugin's `ops` axis is an executable automation surface rather than a Claude command. Its
+three read-only subcommands share the declared operations root and the same JSON envelope:
+
+| Subcommand | Purpose |
+| --- | --- |
+| `cq ops inventory [--json]` | Build the normalized entry-point inventory. |
+| `cq ops doctor [--json]` | Run the eight static checks and return the typed result. |
+| `cq ops status [--json]` | Summarize packages, router health, lifecycle, and findings. |
