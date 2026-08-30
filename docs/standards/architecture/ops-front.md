@@ -121,6 +121,14 @@ repository that wants a check off declares that state explicitly; it does not hi
 `#`. The disabled call has no owner, date, or searchable declaration, so the verifier reports it as
 `op-disabled-check`.
 
+`op-disabled-check` is the only heuristic in this vocabulary and therefore ships at severity
+`warn`; the other seven codes are structural checks and ship at `error`. The implementation knows
+the measured inventory has 61 tracked modules (28 with a `__main__` block), but its target
+false-positive rate is not available while the target's configuration blocks task 4.4. The `warn`
+default is consequently provisional and makes no claim about a rate that was not measured. When
+that measurement is available, any code firing on more than half the inventory must be re-derived
+before it is retained as a contract check.
+
 ## Why a front and not a pillar
 
 The distinction is owned by [`align-surface.md`](align-surface.md), §The aligned-front column and
@@ -160,13 +168,13 @@ repository already conforms to it.
 The verifier and the align use these eight codes. Their names are stable so a target can fix a
 finding without translating a private vocabulary invented by one implementation:
 
-| Code | Meaning |
-| --- | --- |
-| `op-undocumented` | An active entry point exists but is not named by the generated registry. |
-| `op-registry-stale` | The generated registry does not match the entry points reachable from the router. |
-| `op-adhoc-root` | An entry point resolves the repository root through an undeclared path calculation instead of the shared bootstrap module. |
-| `op-untyped-exit` | An entry point returns an untyped or otherwise non-contractual exit status. |
-| `op-unarmed-write` | An operation writes outside the repository without preview-first behaviour and an explicit arming flag. |
-| `op-disabled-check` | A verification call is commented out inside an entry point's control flow. |
-| `op-orphan` | An entry point is present in the operations tree but is not reachable from the canonical router. |
-| `op-no-router` | The repository has no single declared router for its normalized operations surface. |
+| Code | Meaning | Severity |
+| --- | --- | --- |
+| `op-undocumented` | An active entry point exists but is not named by the generated registry. | `error` |
+| `op-registry-stale` | The generated registry does not match the entry points reachable from the router. | `error` |
+| `op-adhoc-root` | An entry point resolves the repository root through an undeclared path calculation instead of the shared bootstrap module. | `error` |
+| `op-untyped-exit` | An entry point returns an untyped or otherwise non-contractual exit status. | `error` |
+| `op-unarmed-write` | An operation writes outside the repository without preview-first behaviour and an explicit arming flag. | `error` |
+| `op-disabled-check` | A verification call is commented out inside an entry point's control flow. | `warn` |
+| `op-orphan` | An entry point is present in the operations tree but is not reachable from the canonical router. | `error` |
+| `op-no-router` | The repository has no single declared router for its normalized operations surface. | `error` |
