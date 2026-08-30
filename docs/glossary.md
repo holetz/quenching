@@ -211,6 +211,9 @@ sentence, and **link out** rather than explaining in full here.
   COMPUTED from which headings are filled and which records frontmatter carries rather than
   declared in a field, so it regresses on its own when a section empties instead of going stale;
   resolution is last-match-wins, which is why `executing` sorts last.
+- [**Disabled gate**](standards/architecture/ops-front.md) — a verification call commented out
+  inside an entry point, treated as a finding rather than an off configuration because the
+  disabled state has no explicit record.
 - [**DTCG**](standards/architecture/design-front.md) — Design Tokens Community Group format used
   here as the 2025.10 source schema for `/.design/tokens.json`.
 - [**Empty-response honesty**](standards/quality/empty-response-honesty.md) — the obligation to
@@ -221,10 +224,9 @@ sentence, and **link out** rather than explaining in full here.
   suspicion, and the guard on the caller and never on the shared transport, whose empty response may
   be the correct one (a DELETE 204). It is **Parse honesty**'s sibling one level down: that one
   governs the lossy transform, this one the payload that arrived.
-- [**Entry point**](standards/naming/command-surface.md) — one `commands/<path>.md` file, whose
-  path IS its identity (`commands/knowledge/add.md` → `/quenching:knowledge:add`); since Claude
-  Code merged commands into skills there is no second file to mirror, so there is nothing an entry
-  point can drift from.
+- [**Entry point**](standards/architecture/ops-front.md) — an operation exposed by the ops router
+  and named in its generated registry, whose implementation may live in a domain package rather
+  than in the router itself.
 - **Esqueleto publicado** *(published skeleton)* — the OKF bundle the plugin SHIPS, at
   `plugins/quenching/assets/knowledge/`: index files plus a single leaf standard
   (`standards/agents/communication.md`). It is scaffolding a target fills in, never this
@@ -307,6 +309,9 @@ sentence, and **link out** rather than explaining in full here.
   and **resolved rather than enumerated** — `cq specs section <id> --moment build` returns the six
   an executor needs, so a body names the moment instead of a heading list that can drift. Replaced
   an `audience` field nobody read; `## Discoveries` carries no moment at all.
+- [**Normalized script pattern**](standards/architecture/ops-front.md) — a stable vocabulary for
+  routine project operations, derived from GitHub's pattern so contributors can use predictable
+  names without learning each repository's internal layout.
 - [**Origin key** (`source_uri`)](standards/quality/bundle-verification.md) — the frontmatter key
   holding the **exact** URI or path of the source unit an imported doc was minted from, written by
   `/quenching:knowledge:import` and by no other command; a doc with no external origin simply does not have it.
@@ -315,6 +320,9 @@ sentence, and **link out** rather than explaining in full here.
   itself. Distinct from `source:`, which stays prose about who originated a rule. Nothing checks the
   value: truthfulness is decidable only against the source at the instant it was read, and a unit
   collapsed from several seeds carries only one origin — both recorded as **accepted gaps**.
+- [**Ops front**](standards/architecture/ops-front.md) — the plugin front that defines the
+  canonical operations surface a target repository can converge toward, including its router,
+  entry-point contract, and lifecycle.
 - [**Package**](standards/architecture/plugin-layout.md) — the Python package under
   `plugins/quenching/assets/bin/quenching/`, the directory that replaced the four self-contained
   scripts the plugin used to ship. Split into `common/`, `specs/`, `knowledge/` and `components/`,
@@ -343,6 +351,9 @@ sentence, and **link out** rather than explaining in full here.
   neither is graded against this repo — which is what decides reference over standard
   (§A contract a command reads at runtime is a reference, not a standard). Not to be confused with
   the **JSON payload** a `cq` verb emits, the unrelated sense used of tool output.
+- [**Preview-first**](standards/architecture/ops-front.md) — the rule that an entry point which
+  writes outside the repository must show the intended operation before an explicit flag arms the
+  write.
 - [**Priced**](standards/quality/finding-remedy-applicability.md) — the boolean field
   `sk-unscoped-bash` carries in the JSON: the command body opens a line with the literal marker
   `**Why \`Bash\` is unrestricted here.**`, outside a fence, or it does not. It states **presence**,
@@ -495,6 +506,9 @@ sentence, and **link out** rather than explaining in full here.
   `cq components lint` derives the name-reachable set from the command bodies, so classify against the
   instrument. The complement is a **Typed-only command**, and the criterion is a floor rather than a
   quota — on a small surface it may admit nobody.
+- [**Router**](standards/architecture/ops-front.md) — the single canonical declaration that maps
+  normalized operation names to their implementations, while convenience wrappers delegate rather
+  than duplicate domain logic.
 - [**Rules/rationale markers**](standards/automation/context-discipline.md) — the pair of HTML
   comments, `<!-- rules -->` and `<!-- rationale -->`, that split a normative section's binding half
   from the measurement and history behind it, so `cq components read --rules-only` can return the first
