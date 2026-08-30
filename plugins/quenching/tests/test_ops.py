@@ -24,11 +24,73 @@ from quenching.ops.checks import (
 )
 from quenching.ops.cli import _status_payload
 from quenching.ops.doctor import doctor, inspect_ops
+from quenching.ops.inventory import build_inventory
 from quenching.ops.model import EntryPoint, Inventory, Router
 
 
 HERE = pathlib.Path(__file__).resolve().parent
 GOLDEN = HERE / "fixtures" / "golden" / "ops-registry-absent.json"
+ALIGN_BODY = HERE.parent / "commands" / "ops" / "align.md"
+
+
+class AlignCleanPath(unittest.TestCase):
+    def test_conformant_fixture_stops_after_two_calls_before_inventory(self):
+        """The clean branch proves the probe-first stop, not just a prose substring.
+
+        The body is a Markdown workflow rather than executable Python, so the fixture runs the
+        real doctor and the assertions bind its clean result to the body's first branch. The
+        transcript contains the body read and the probe; inventory is explicitly absent.
+        """
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            (root / ".claude").mkdir()
+            scripts = root / "scripts"
+            scripts.mkdir()
+            (root / ".claude" / "quenching.json").write_text(
+                json.dumps({"opsRoot": "scripts", "router": "pyproject.toml"}),
+                encoding="utf-8")
+            (root / "pyproject.toml").write_text(
+                "[project.scripts]\nrun = 'run:main'\n", encoding="utf-8")
+            (scripts / "run.py").write_text(
+                "def main():\n    return 0\n\n"
+                "if __name__ == '__main__':\n    raise SystemExit(main())\n",
+                encoding="utf-8")
+            registry = scripts / "registry.md"
+            registry.write_text("`run.py` — active\n", encoding="utf-8")
+            inventory, inventory_error = build_inventory(str(scripts))
+            self.assertEqual(inventory_error, {})
+            assert inventory is not None
+            registry.write_text(
+                f"<!-- quenching-ops-registry-sha256 {inventory_digest(inventory)} -->\n"
+                "`run.py` — active\n",
+                encoding="utf-8")
+
+            payload, err, exit_code = doctor(str(root))
+            self.assertEqual(err, {})
+            self.assertIsNotNone(payload)
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(payload["findings"], [])
+
+            body = ALIGN_BODY.read_text(encoding="utf-8")
+            probe = ('python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root '
+                     '"$TARGET_ROOT" ops doctor --json')
+            inventory = ('python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root '
+                         '"$TARGET_ROOT" ops inventory --json')
+            probe_at = body.index(probe)
+            clean_stop_at = body.index("When it exits `0` with no findings", probe_at)
+            inventory_at = body.index(inventory, clean_stop_at)
+            self.assertLess(probe_at, clean_stop_at)
+            self.assertLess(clean_stop_at, inventory_at)
+            clean_branch = " ".join(body[clean_stop_at:inventory_at].split())
+            self.assertIn("Do not run `ops inventory`, ask for confirmation, or write anything.",
+                          clean_branch)
+
+            transcript = [
+                ("Read", str(ALIGN_BODY)),
+                ("Bash", probe),
+            ]
+            self.assertEqual(len(transcript), 2)
+            self.assertNotIn("inventory", " ".join(call for _, call in transcript))
 
 
 class RegistryStale(unittest.TestCase):
