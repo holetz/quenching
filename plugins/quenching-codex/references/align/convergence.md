@@ -26,7 +26,7 @@ An align asks for ONE human confirmation, at run start, that authorizes the enti
 the pass cap or convergence. Every command
 an align invokes as a stage carries **one** exception sentence pointing here and never restates
 it: the `knowledge/` stages (`quenching-knowledge-import-memory`, `quenching-components-harness-align`, `quenching-knowledge-glossary-backfill`), the
-`specs/` stages (`quenching-specs-conclude`, `quenching-specs-triage`), the three front aligns when `/align`
+`specs/` stages (`quenching-specs-conclude`, `quenching-specs-triage`), the five front aligns when `/align`
 invokes them, and — under `quenching-specs-cycle`'s minimal gear only —
 `quenching-git-pr-create`, the one stage this contract's grantor is a conductor rather than an
 align.
@@ -128,7 +128,9 @@ Let a pass be **empty** when every applicable stage reports "nothing to do." Let
 reporting zero `dir-no-index` / `index-broken-link` / `index-orphan` for `knowledge/` (these are
 WARN — exit 0 alone does not prove them clear, read the findings); `cq specs doctor` +
 `cq specs validate` clean, and nothing else, for `specs/`; `cq components lint` + `cq components doctor` exiting 0
-**and** `cq components registry reindex` reporting `changed: false` for `.agents/`.
+**and** `cq components registry reindex` reporting `changed: false` for `.agents/`; `cq ops doctor`
+plus `cq ops registry --check` for `ops/`; and `cq proof doctor` plus its generated README check
+for `proof/`.
 
 - **Converged (stop, success):** a pass is **empty** *and* the front is **clean**. This is the
   fixpoint. Report and write the log entry.
