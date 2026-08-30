@@ -27,6 +27,9 @@ TOKEN_TYPES = {
     "number", "strokeStyle", "border", "transition", "shadow", "gradient", "typography",
 }
 FONT_SOURCES = {"local", "webfont", "licensed"}
+ASSET_ROLES = {"lockup", "mark", "wordmark", "icon", "illustration"}
+ASSET_INKS = {"dark", "light", "any"}
+ASSET_ORIENTATIONS = {"horizontal", "vertical", "square", "any"}
 CONTRAST_LEVELS = {
     ("AA", "normal"): 4.5,
     ("AA", "large"): 3.0,
@@ -398,6 +401,37 @@ def non_web_literal_globs(source: dict[str, Any]) -> list[str]:
             raise DesignError(f"non-web literal glob must stay inside the repository: {value}")
         result.append(value.replace("\\", "/"))
     return sorted(set(result))
+
+
+def asset_manifest_entries(manifest: dict[str, Any]) -> list[dict[str, str]]:
+    """Validate and normalize the optional semantic asset manifest."""
+    assets = manifest.get("assets")
+    if not isinstance(assets, list):
+        raise DesignError(".design/assets/manifest.json must declare an assets list")
+    entries: list[dict[str, str]] = []
+    seen: set[tuple[str, str, str, str]] = set()
+    for entry in assets:
+        if not isinstance(entry, dict):
+            raise DesignError("asset manifest entries must be objects")
+        values = {key: entry.get(key) for key in ("path", "role", "ink", "orientation")}
+        if not all(isinstance(value, str) and value.strip() for value in values.values()):
+            raise DesignError("asset manifest entries need path, role, ink, and orientation")
+        path = Path(values["path"])
+        if path.is_absolute() or ".." in path.parts or "" in path.parts:
+            raise DesignError(f"asset manifest path must stay inside .design/assets: {values['path']}")
+        if values["role"] not in ASSET_ROLES:
+            raise DesignError(f"asset role must be one of {', '.join(sorted(ASSET_ROLES))}")
+        if values["ink"] not in ASSET_INKS:
+            raise DesignError(f"asset ink must be one of {', '.join(sorted(ASSET_INKS))}")
+        if values["orientation"] not in ASSET_ORIENTATIONS:
+            raise DesignError(f"asset orientation must be one of {', '.join(sorted(ASSET_ORIENTATIONS))}")
+        normalized = (path.as_posix(), values["role"], values["ink"], values["orientation"])
+        if normalized in seen:
+            raise DesignError(f"asset manifest duplicates {values['path']}")
+        seen.add(normalized)
+        entries.append({"path": normalized[0], "role": normalized[1],
+                        "ink": normalized[2], "orientation": normalized[3]})
+    return entries
 
 
 def token_map(source: dict[str, Any]) -> dict[str, Token]:

@@ -428,6 +428,27 @@ components:
         source["$extensions"]["org.quenching"]["doctor"] = {"nonWebLiteralGlobs": ["../outside/*.typ"]}
         self.assertIn("design-nonweb-scope", {item["code"] for item in validate_source(source)})
 
+    def test_doctor_reports_missing_light_asset_variant_on_dark_surface(self):
+        source_path = self.root / ".design" / "tokens.json"
+        source = read_json(source_path)
+        source["colors"]["surface"]["$value"] = {
+            "colorSpace": "srgb", "components": [0.05, 0.05, 0.05], "hex": "#0D0D0D"
+        }
+        source_path.write_text(json.dumps(source), encoding="utf-8")
+        write_build(compute_build(self.root))
+        payload, findings = inspect_design(self.root)
+        self.assertEqual("lockup", payload["assetManifest"][0]["role"])
+        self.assertIn("design-asset-variant-missing", {item["code"] for item in findings})
+        light = self.root / ".design" / "assets" / "lockup-light.svg"
+        light.write_text("<svg/>", encoding="utf-8")
+        manifest_path = self.root / ".design" / "assets" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["assets"].append({"path": "lockup-light.svg", "role": "lockup",
+                                    "ink": "light", "orientation": "horizontal"})
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        _, findings = inspect_design(self.root)
+        self.assertNotIn("design-asset-variant-missing", {item["code"] for item in findings})
+
     def test_doctor_reports_orphan_assets_and_non_web_literal_drift(self):
         asset = self.root / ".design" / "assets" / "unused.svg"
         asset.write_text("<svg/>", encoding="utf-8")
