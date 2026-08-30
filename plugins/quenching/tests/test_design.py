@@ -257,6 +257,18 @@ components:
         self.assertIn("- one", typst)
         self.assertIn("#table(columns: 2", typst)
 
+    def test_non_read_genre_keeps_body_as_escaped_scalar_text(self):
+        new_genre(
+            self.root, "data-note", "Data note", "write", ["html"],
+            ["title:required:Title", "body:required:Body"],
+        )
+        data = self.root / "data-note.json"
+        data.write_text(json.dumps({"title": "A note", "body": "**literal** <tag>"}), encoding="utf-8")
+        rendered = render_genre(self.root, "data-note", "html", data)
+        html = (self.root / rendered["output"]).read_text(encoding="utf-8")
+        self.assertIn("**literal** &lt;tag&gt;", html)
+        self.assertNotIn("<strong>literal</strong>", html)
+
     def test_genre_template_matches_non_report_field_contract(self):
         new_genre(
             self.root, "brief", "Brief", "read", ["html"],
