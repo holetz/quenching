@@ -119,7 +119,9 @@ The verification gate carries five rules:
    presents as part of its interface have an explicit test or an explicit not-applicable record.
 
 The gate contract defines `pf-unmeasured-surface`, `pf-no-floor`, `pf-stop-first`,
-`pf-order-unproven`, `pf-no-ci`, `pf-empty-layer` and the conditional `pf-untested-entrypoint`.
+`pf-order-unproven`, `pf-no-ci` and the conditional `pf-untested-entrypoint`. The layer contract
+owns `pf-empty-layer` because its severity depends on whether the target declared the layer as
+required evidence.
 
 ## Finding ownership
 
@@ -129,7 +131,7 @@ the standard remains a map rather than a second checker specification:
 | Codes | Owner |
 | --- | --- |
 | `pf-unlayered`, `pf-unmarked`, `pf-loose-fixture`, `pf-fat-conftest` | layer contract |
-| `pf-unmeasured-surface`, `pf-no-floor`, `pf-stop-first`, `pf-order-unproven`, `pf-no-ci`, `pf-empty-layer`, `pf-untested-entrypoint` | gate contract |
+| `pf-unmeasured-surface`, `pf-no-floor`, `pf-stop-first`, `pf-order-unproven`, `pf-no-ci`, `pf-untested-entrypoint` | gate contract |
 
 The gate treats `pf-untested-entrypoint` as conditional on the target declaring an operations
 front. A repository without that front records the condition as not applicable; it does not create
