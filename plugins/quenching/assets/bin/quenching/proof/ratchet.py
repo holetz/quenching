@@ -1,15 +1,16 @@
 """Read a coverage result and maintain the proof front's monotonic floor.
 
 This module consumes evidence produced by a target-owned gate. It never invokes pytest or any
-other target command. JSON coverage is preferred; a binary `.coverage` database is converted by
-coverage's library API when that optional dependency is present, which keeps conversion inside
-the read boundary and out of the target's process.
+other target command. JSON coverage is preferred; a binary `.coverage` database is read directly
+through its SQLite schema, keeping the conversion inside the standard library and out of the
+target's process.
 """
 from __future__ import annotations
 
+import ast
 import json
 import os
-import tempfile
+import sqlite3
 from pathlib import Path
 from typing import Any
 
@@ -38,12 +39,88 @@ def _read_json(path: Path) -> dict[str, Any]:
     return value
 
 
-def _convert_binary(path: Path) -> dict[str, Any]:
-    """Convert `.coverage` through coverage's API without launching a target process."""
+def _statement_lines(path: Path) -> set[int]:
+    """Return executable statement lines using only Python's standard AST parser."""
     try:
-        from coverage import Coverage
-    except ImportError as exc:
-        raise ValueError("binary .coverage requires the coverage package") from exc
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    except (OSError, UnicodeDecodeError, SyntaxError):
+        return set()
+    return {node.lineno for node in ast.walk(tree) if isinstance(node, ast.stmt)}
+
+
+def _decode_line_bits(value: bytes) -> set[int]:
+    """Decode coverage.py's compact zero-based line bitmap."""
+    return {
+        byte * 8 + bit
+        for byte, octet in enumerate(value)
+        for bit in range(8)
+        if octet & (1 << bit)
+    }
+
+
+def _convert_binary(path: Path, config: dict) -> dict[str, Any]:
+    """Convert a `.coverage` SQLite database without launching a target process."""
+    uri = f"file:{path.resolve().as_posix()}?mode=ro"
+    try:
+        connection = sqlite3.connect(uri, uri=True)
+    except sqlite3.Error as exc:
+        raise ValueError(f"binary .coverage cannot be opened: {exc}") from exc
+    try:
+        tables = {row[0] for row in connection.execute(
+            "select name from sqlite_master where type = 'table'")}
+        files = {
+            int(file_id): str(file_path)
+            for file_id, file_path in connection.execute("select id, path from file")
+        }
+        executed: dict[int, set[int]] = {file_id: set() for file_id in files}
+        if "line" in tables:
+            rows = connection.execute("select file_id, line from line")
+            for file_id, line in rows:
+                executed.setdefault(int(file_id), set()).add(int(line))
+        elif "line_bits" in tables:
+            rows = connection.execute("select file_id, numbits from line_bits")
+            for file_id, bits in rows:
+                executed.setdefault(int(file_id), set()).update(_decode_line_bits(bits))
+        else:
+            raise ValueError("binary .coverage lacks a line or line_bits table")
+    except sqlite3.Error as exc:
+        raise ValueError(f"binary .coverage has an unsupported schema: {exc}") from exc
+    finally:
+        connection.close()
+
+    repo_root = Path(config["repoRoot"]).resolve()
+    payload_files: dict[str, dict[str, Any]] = {}
+    total_covered = 0
+    total_statements = 0
+    for file_id, file_path in files.items():
+        source = Path(file_path)
+        if not source.is_absolute():
+            source = repo_root / source
+        try:
+            name = source.resolve().relative_to(repo_root).as_posix()
+        except ValueError:
+            name = str(file_path).replace(os.sep, "/")
+        statements = _statement_lines(source)
+        covered = len(executed.get(file_id, set()) & statements)
+        total_covered += covered
+        total_statements += len(statements)
+        payload_files[name] = {
+            "summary": {
+                "covered_lines": covered,
+                "num_statements": len(statements),
+                "percent_covered": (covered * 100 / len(statements)
+                                     if statements else 100.0),
+            }
+        }
+    return {
+        "files": payload_files,
+        "totals": {
+            "covered_lines": total_covered,
+            "num_statements": total_statements,
+            "percent_covered": (total_covered * 100 / total_statements
+                                 if total_statements else 100.0),
+        },
+    }
     with tempfile.TemporaryDirectory(prefix="quenching-proof-") as directory:
         output = Path(directory) / "coverage.json"
         coverage = Coverage(data_file=str(path))
@@ -64,7 +141,8 @@ def read_coverage(config: dict, artifact: str | None = None) -> tuple[dict | Non
             "searched": [str(candidate) for candidate in candidates],
         }
     try:
-        payload = (_convert_binary(path) if path.name == ".coverage" else _read_json(path))
+        payload = (_convert_binary(path, config) if path.name == ".coverage"
+                   else _read_json(path))
     except (OSError, UnicodeDecodeError, ValueError, json.JSONDecodeError) as exc:
         return None, {
             "code": "pf-coverage-invalid",
