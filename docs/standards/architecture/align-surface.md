@@ -28,7 +28,7 @@ architectural rule — why the surface has this shape and not the previous one.
 | `/.design/` | `/quenching:design:align` |
 | `.claude/` | `/quenching:components:align` |
 | `ops` | `/quenching:ops:align` |
-| `proof` | `/quenching:proof:align` |
+| `proof` | **declared — tooling not yet built** |
 | `git` | **none** — see §The seventh pillar has no align, below |
 | all five aligned fronts | `/align` — conducts them in dependency order, on one nested OK |
 
