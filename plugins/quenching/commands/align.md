@@ -78,7 +78,11 @@ Presence and rough scale only:
 
 **All applicable fronts probe clean** → say so and stop, before any plan: *"all applicable fronts conformant
 — nothing to align."*
-**Done when:** each front is marked *present / absent / not applicable* with its counts, and
+Use **not applicable** only when the applicability probe found no declared root or conventional
+signal. Use **skipped** only for an explicit scope exclusion or an earlier dependency failure; a
+present front with no findings is **conformant**. Do not turn either no-op state into a plan item.
+
+**Done when:** each front is marked *present / not applicable / skipped* with its counts, and
 nothing has been written.
 
 ### 2. Present the RUN plan → gate on ONE OK (once, before pass 1)
@@ -108,11 +112,13 @@ through 5 write into or depend on the bundle.
 **Done when:** the align has finished and its outcome is recorded.
 
 ### 4. Front 2 — `/quenching:design:align` (the `/.design/` source)
-Skip when the front is absent and neither scope nor existing portable artifacts signal adoption.
+Report the front as **not applicable** when it is absent and neither scope nor existing portable
+artifacts signal adoption. Report it as **skipped** when the request scope excludes design.
 Otherwise invoke **`quenching:design:align`** with the inherited declaration. Product truth and
 design standards land in the bundle front 1 established; taste arbitration remains a human choice,
 not a second authorization. A hard failure to establish valid DTCG stops front 3.
-**Done when:** the design align has converged or been skipped with a stated reason.
+**Done when:** the design align has finished or been reported not applicable/skipped with a stated
+reason.
 
 ### 5. Front 3 — `/quenching:components:align` (the `.claude/` surface)
 Skip if the surface is empty (nothing to migrate). Otherwise invoke **`quenching:components:align`**
@@ -122,21 +128,26 @@ verify both earlier fronts held before invoking. Record its counts and its **doc
 **Done when:** the align has finished or been skipped with a stated reason.
 
 ### 6. Front 4 — `/quenching:ops:align` (the `ops` surface)
-Skip when the applicability probe says the operations front is absent. Otherwise invoke
+Report the front as **not applicable** when the applicability probe finds no operations signal;
+report it as **skipped** when the request scope excludes ops or an earlier hard failure stops it.
+Otherwise invoke
 `quenching:ops:align` after the components front, under the inherited declaration. Its findings
 and registry output feed the proof front's conditional entry-point check.
-**Done when:** the align has finished or been skipped with a stated reason.
+**Done when:** the align has finished or been reported not applicable/skipped with a stated reason.
 
 ### 7. Front 5 — `/quenching:proof:align` (the `proof` surface)
-Skip when the applicability probe says the proof front is absent. Otherwise invoke
+Report the front as **not applicable** when the applicability probe finds no proof signal; report it
+as **skipped** when the request scope excludes proof or an earlier hard failure stops it. Otherwise
+invoke
 `quenching:proof:align` after the ops front, under the inherited declaration. It consumes the ops
 inventory when that front is configured and reports its own layer and gate residue.
-**Done when:** the align has finished or been skipped with a stated reason.
+**Done when:** the align has finished or been reported not applicable/skipped with a stated reason.
 
 ### 8. Re-probe across fronts → decide (loop or stop)
 Re-run step 1's probe **plus** the cross-front edges: did front 2 add product/design standards, did
-front 3 create the automation rule/registry, or did front 4/5 add listings or proof resources
-(either → `/docs/` listings to regenerate)?
+front 3 create the automation rule/registry, did front 4 add an operations registry for `/docs/`,
+did front 4's inventory change what front 5 must check, or did front 5 add proof resources for
+`/docs/` listings (either → regenerate the affected front on the next pass)?
 Then decide by the four outcomes in
 [convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
 §The convergence contract: **progress** → another cross-front pass from step 3 under the same
