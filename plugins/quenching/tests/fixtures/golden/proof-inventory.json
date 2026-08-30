@@ -54,7 +54,9 @@
       "src"
     ],
     "coverageFloor": 80.0,
-    "invocations": []
+    "invocations": [],
+    "ratchetPath": "<REPO_ROOT>/.coverage-floor.json",
+    "ratchetExists": true
   },
   "ci": [
     {
@@ -68,5 +70,8 @@
   "measuredRoots": [
     "src"
   ],
-  "exclusions": []
+  "exclusions": [],
+  "sourceSurfaces": [
+    "src"
+  ]
 }
