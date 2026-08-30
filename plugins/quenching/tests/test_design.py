@@ -398,6 +398,36 @@ components:
         self.assertNotIn("design-contrast-failure", {item["code"] for item in findings})
         self.assertEqual(3.0, payload["contrastPolicy"]["threshold"])
 
+    def test_doctor_scans_configured_non_web_literal_globs(self):
+        path = self.root / ".design" / "tokens.json"
+        source = read_json(path)
+        source["$extensions"]["org.quenching"]["doctor"] = {
+            "nonWebLiteralGlobs": ["src/**/*.typ"]
+        }
+        path.write_text(json.dumps(source), encoding="utf-8")
+        manual = self.root / "src" / "generated.typ"
+        manual.parent.mkdir()
+        manual.write_text('#let color = "#0F766E"\n', encoding="utf-8")
+        write_build(compute_build(self.root))
+        payload, findings = inspect_design(self.root)
+        self.assertEqual(["src/**/*.typ"], payload["nonWebLiteralScope"])
+        self.assertTrue(any(item["code"] == "design-nonweb-literal" and item["path"] == "src/generated.typ"
+                            for item in findings))
+
+    def test_doctor_unions_production_scope_and_rejects_unsafe_source_globs(self):
+        production = self.root / "docs" / "standards" / "design" / "production.md"
+        production.parent.mkdir(parents=True, exist_ok=True)
+        production.write_text("# Production\n\n## Non-web literal scope\n\n- `reports/**/*.typ`\n", encoding="utf-8")
+        report = self.root / "reports" / "manual.typ"
+        report.parent.mkdir()
+        report.write_text('#let color = "#0F766E"\n', encoding="utf-8")
+        payload, findings = inspect_design(self.root)
+        self.assertIn("reports/**/*.typ", payload["nonWebLiteralScope"])
+        self.assertTrue(any(item["path"] == "reports/manual.typ" for item in findings))
+        source = read_json(self.root / ".design" / "tokens.json")
+        source["$extensions"]["org.quenching"]["doctor"] = {"nonWebLiteralGlobs": ["../outside/*.typ"]}
+        self.assertIn("design-nonweb-scope", {item["code"] for item in validate_source(source)})
+
     def test_doctor_reports_orphan_assets_and_non_web_literal_drift(self):
         asset = self.root / ".design" / "assets" / "unused.svg"
         asset.write_text("<svg/>", encoding="utf-8")
