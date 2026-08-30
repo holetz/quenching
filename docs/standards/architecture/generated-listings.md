@@ -25,6 +25,15 @@ Freshness is the whole question because staleness is a generated listing's only 
 it is silent. The file stays well-formed, its links keep resolving, every validator keeps passing —
 it just stops being true. A reader trusts it precisely because it looks maintained.
 
+## Enumerated generated zones
+
+Every generated zone names its owner, delimiters, and freshness marker here. The owner is the only
+writer of the bytes between its delimiters; authored prose outside them remains untouched.
+
+| Zone | Owner | Delimiters | Freshness marker |
+| --- | --- | --- | --- |
+| Operations registry | `cq ops registry --write` / `--check` | `<!-- quenching-ops-registry-start -->` / `<!-- quenching-ops-registry-end -->` | `<!-- quenching-ops-registry-sha256 <64 lowercase hexadecimal digits> -->` |
+
 ## The decision criterion, applied before writing any code
 
 Ask one question:
