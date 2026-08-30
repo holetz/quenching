@@ -53,6 +53,12 @@ The first three answers authorize the layer contract plan. The fourth only autho
 counted proposal. If the target has no declared layers, this command is still allowed to mint the
 one named layer; it does not propose a taxonomy for any other test.
 
+For the proposal, compare each existing test module's current proof-root path with the named
+layer's declared location and report only a counted, path-level candidate list. Do not infer
+purpose from test bodies or imports. When this is the repository's first layer, suppress the list
+entirely and say that every test would be a candidate without a prior taxonomy; asking the owner
+to move all of them would be guesswork rather than evidence.
+
 **Done when:** the four answers are explicit, the candidate paths and count are visible, and the
 structural plan plus the separate migration decision are ready.
 
