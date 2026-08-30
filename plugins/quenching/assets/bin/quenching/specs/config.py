@@ -70,6 +70,8 @@ CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates",
                "hooks", "profiles",
                "azurePlacement", "azureColumns", "subjects", "tagCatalog",
                "workItemTypes", "fanoutMinComplexity", "opsRoot", "router")
+PROOF_CONFIG_KEYS = ("proofRoot", "layers", "measuredRoots", "proofExclusions", "ratchetPath")
+CONFIG_KEYS = CONFIG_KEYS + PROOF_CONFIG_KEYS
 BACKENDS = ("github", "azure-boards")
 # Mirrors `schema.py`'s declared `priority.complexity` levels. Redeclared rather than imported —
 # `config.py` and `schema.py` do not import each other today, and a four-word tuple does not earn
@@ -229,6 +231,8 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
            "azurePlacement": {}, "azureColumns": {}, "subjects": {}, "tagCatalog": {},
            "workItemTypes": {},
            "fanoutMinComplexity": DEFAULT_FANOUT_MIN_COMPLEXITY, "unknownFanoutMinComplexity": None,
+           "proofRoot": "tests", "layers": {}, "measuredRoots": [],
+           "proofExclusions": [], "ratchetPath": None,
            "legacyPath": legacy if os.path.isfile(legacy) else None}
     if not out["present"]:
         return out
@@ -262,6 +266,24 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
         value = obj.get(key)
         if isinstance(value, str) and value.strip():
             out[key] = value.strip()
+
+    proof_root = obj.get("proofRoot")
+    if isinstance(proof_root, str) and proof_root.strip():
+        out["proofRoot"] = proof_root.strip()
+
+    layers = obj.get("layers")
+    if isinstance(layers, dict):
+        out["layers"] = layers
+
+    for key in ("measuredRoots", "proofExclusions"):
+        values = obj.get(key)
+        if isinstance(values, list):
+            out[key] = [value.strip() for value in values
+                        if isinstance(value, str) and value.strip()]
+
+    ratchet_path = obj.get("ratchetPath")
+    if isinstance(ratchet_path, str) and ratchet_path.strip():
+        out["ratchetPath"] = ratchet_path.strip()
 
     fanout_floor = obj.get("fanoutMinComplexity")
     if isinstance(fanout_floor, str) and fanout_floor.strip():
