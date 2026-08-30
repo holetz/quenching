@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from quenching.design.build import GENERATED_PATHS, build_drift, compute_build
+from quenching.design.markdown import split_h2
 from quenching.design.model import (
     DesignError,
     color_to_css,
@@ -15,6 +16,7 @@ from quenching.design.model import (
     contrast_ratio,
     font_asset_paths,
     font_metadata,
+    non_web_literal_globs,
     quenching_extension,
     read_json,
     resolve_token,
@@ -67,6 +69,9 @@ def inspect_design(root: Path) -> tuple[dict[str, Any], list[dict[str, str]]]:
         # still return a stable payload when the source is malformed.
         payload.update({"schema": source.get("$schema"), "tokenCount": 0})
     findings.extend(validate_source(source))
+    scope, scope_findings = _non_web_literal_scope(root, source)
+    payload["nonWebLiteralScope"] = scope
+    findings.extend(scope_findings)
     if not findings:
         try:
             result = compute_build(root)
@@ -267,6 +272,40 @@ def _web_detector(root: Path) -> dict[str, Any]:
     }
 
 
+def _non_web_literal_scope(root: Path, source: dict[str, Any]) -> tuple[list[str], list[dict[str, str]]]:
+    findings: list[dict[str, str]] = []
+    try:
+        source_globs = non_web_literal_globs(source)
+    except DesignError:
+        source_globs = []
+    production = root / "docs" / "standards" / "design" / "production.md"
+    production_globs: list[str] = []
+    try:
+        sections = split_h2(production.read_text(encoding="utf-8"))
+    except OSError:
+        sections = {}
+    section = sections.get("Non-web literal scope", "")
+    if section:
+        for line in section.splitlines():
+            if not line.strip().startswith("-"):
+                continue
+            value = line.strip()[1:].strip().strip("`").strip()
+            if not value:
+                findings.append({"severity": "error", "code": "design-nonweb-scope",
+                                 "path": production.relative_to(root).as_posix(),
+                                 "message": "Non-web literal scope entries must be non-empty paths"})
+                continue
+            relative = Path(value)
+            if relative.is_absolute() or ".." in relative.parts:
+                findings.append({"severity": "error", "code": "design-nonweb-scope",
+                                 "path": production.relative_to(root).as_posix(),
+                                 "message": f"non-web literal glob must stay inside the repository: {value}"})
+                continue
+            production_globs.append(value.replace("\\", "/"))
+    effective = sorted(set(source_globs + production_globs)) or [".design/media/**"]
+    return effective, findings
+
+
 def _non_web_literals(root: Path, source: dict[str, Any]) -> list[dict[str, str]]:
     """Detect manual color literals in non-web sources; Impeccable owns web drift."""
     literals: dict[str, str] = {}
@@ -281,11 +320,29 @@ def _non_web_literals(root: Path, source: dict[str, Any]) -> list[dict[str, str]
     except DesignError:
         return []
     findings: list[dict[str, str]] = []
-    media = root / ".design" / "media"
-    if not media.is_dir():
-        return findings
-    for path in sorted(media.rglob("*")):
-        if not path.is_file() or path.suffix.lower() in {".css", ".html", ".htm", ".json"}:
+    scope, _ = _non_web_literal_scope(root, source)
+    candidates: set[Path] = set()
+    for pattern in scope:
+        try:
+            if pattern.endswith("/**"):
+                base = root / pattern[:-3].rstrip("/")
+                paths = base.rglob("*") if base.is_dir() else []
+            else:
+                paths = root.glob(pattern)
+        except (OSError, ValueError):
+            continue
+        for path in paths:
+            try:
+                resolved = path.resolve()
+                resolved.relative_to(root.resolve())
+            except ValueError:
+                continue
+            if path.is_file():
+                candidates.add(path)
+    for path in sorted(candidates):
+        relative_path = path.relative_to(root).as_posix()
+        if (path.suffix.lower() in {".css", ".html", ".htm", ".json"}
+                or relative_path.startswith(".design/build/")):
             continue
         try:
             text = path.read_text(encoding="utf-8").lower()
