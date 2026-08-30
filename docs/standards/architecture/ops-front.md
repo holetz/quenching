@@ -85,7 +85,7 @@ repository that wants a check off declares that state explicitly; it does not hi
 ## Why a front and not a pillar
 
 The distinction is owned by [`align-surface.md`](align-surface.md), §The aligned-front column and
-§The fifth pillar has no align: a front is a tree this plugin can converge toward and probe, while
+§The sixth pillar has no align: a front is a tree this plugin can converge toward and probe, while
 the `git` pillar answers live questions about a target repository. The operations surface qualifies
 as a front because its tree, router, registry, lifecycle, and entry-point contract give a verifier a
 decidable target. It therefore earns its own alignment stages; it is not merely another `cq` axis
