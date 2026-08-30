@@ -1,7 +1,7 @@
 ---
 type: standard
 title: Command surface naming
-description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the design namespace for DTCG source and projections; the sixth namespace (`git`, a pillar rather than a front) and its coexistence with a target's own `git` category; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context
+description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the design namespace for DTCG source and projections; the proof namespace for the verification surface rather than its test artifact; the seventh namespace (`git`, a pillar rather than a front) and its coexistence with a target's own `git` category; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context
 resource: plugins/quenching/commands/**
 tags: [naming, commands, taxonomy]
 timestamp: 2026-08-27
@@ -68,14 +68,18 @@ The surface is partitioned by the artifact each front's commands touch:
 - **`/quenching:components:`** — the target repo's `.claude/` automation surface.
 - **`/quenching:ops:`** — the target repository's canonical operations surface. It is the fifth
   front namespace; its contract is declared, while its command bodies are future implementation.
-- **`/quenching:git:`** — the sixth namespace, and the odd one out: it names a **pillar**, not a
-  front. The other five namespaces name fronts or the provider-owned specs flow; only the four
+- **`/quenching:proof:`** — the target repository's verification surface: its layers, fixtures,
+  gates, and CI. It is the sixth front namespace. The front is named `proof`, not `tests`, because
+  `tests` would name an artifact inside the surface rather than what the surface produces; the
+  same front-versus-artifact distinction is why `components` replaced `skill`.
+- **`/quenching:git:`** — the seventh namespace, and the odd one out: it names a **pillar**, not a
+  front. The other six namespaces name fronts or the provider-owned specs flow; only the five
   local fronts converge a tree toward a canonical shape. `git` answers questions about the target
   repository's own live git state instead, which is why it carries no `align` verb of its own —
-  see [../architecture/align-surface.md](../architecture/align-surface.md) §The sixth pillar has
+  see [../architecture/align-surface.md](../architecture/align-surface.md) §The seventh pillar has
   no align.
 - **root `/align`** — deliberately outside the front namespaces, because it is the one command
-  that spans the four local aligned fronts. Under the old rule it was an exception the linter had to be
+  that spans the five local aligned fronts. Under the old rule it was an exception the linter had to be
   told about; now it is simply a command at the top of the tree.
 
 **A target repo's own `git` category coexists with this namespace, and never collides with it.**
@@ -87,7 +91,7 @@ repo declared for itself. §Three citation forms is what keeps the two apart: th
 command and nothing this plugin ships, on every repo that installs it.
 
 This clause named a second root, `/align-and-update`, until the specs-flow-consolidation spec
-deleted it from all five front namespaces — see
+deleted it from all six front namespaces — see
 [../architecture/align-surface.md](../architecture/align-surface.md), which has said the surface is
 a one-column align surface. Two `authority: current` standards disagreeing about what exists is worse than
 either being merely out of date, which is why a rename's blast-radius sweep below has to reach the
