@@ -289,6 +289,20 @@ def transform_asset(relative: Path, text: str, adaptation: dict) -> str:
     if relative.as_posix() == "quenching/components/commands/translate.py":
         return text
     text = transform_platform(text, adaptation)
+    if relative.as_posix() in {"citation-check.sh", "functional-checks.sh"}:
+        # The packaged Claude checks live four levels below the repository root;
+        # their Codex siblings live three levels below it.
+        text = text.replace(
+            "checks -> assets -> quenching -> plugins -> the repo root",
+            "checks -> quenching-codex -> plugins -> the repo root",
+        )
+    if relative.as_posix() == "citation-check.sh":
+        text = text.replace('SELF_DIR/../../../..', 'SELF_DIR/../../../')
+    if relative.as_posix() == "functional-checks.sh":
+        text = text.replace(
+            'dirname "${BASH_SOURCE[0]}")/../../../..',
+            'dirname "${BASH_SOURCE[0]}")/../../../',
+        )
     if relative.as_posix() == "align/tool-resolution.md":
         text = codex_tool_resolution(text)
     if relative.suffix == ".md":
@@ -326,8 +340,8 @@ def skill_name(command: Path) -> str:
 
 
 def skill_description(description: str) -> str:
-    """Keep command routing boundaries out of generated skill metadata."""
-    return re.sub(r"\s+Not for:.*\Z", "", description, flags=re.DOTALL).rstrip()
+    """Keep the source description, including its routing boundary, intact."""
+    return description.strip()
 
 
 def command_to_skill(command: Path, adaptation: dict) -> str:

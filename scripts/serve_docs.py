@@ -21,6 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
 CHECKER = ROOT / "plugins" / "quenching" / "assets" / "checks" / "documentation-site-check.py"
+CQ = ROOT / "plugins" / "quenching" / "assets" / "bin" / "cq"
 HOST = "127.0.0.1"
 
 
@@ -66,6 +67,21 @@ def build_site() -> int:
         return 1
     if not CHECKER.is_file():
         print(f"error: missing documentation site checker: {CHECKER}", file=sys.stderr)
+        return 1
+    if not CQ.is_file():
+        print(f"error: missing knowledge CLI: {CQ}", file=sys.stderr)
+        return 1
+
+    stage_command = [
+        sys.executable,
+        str(CQ),
+        "knowledge",
+        "site-source",
+        "docs",
+        "site-source",
+        "--write",
+    ]
+    if _run(stage_command) != 0:
         return 1
 
     sync_command, build_command = _build_commands()

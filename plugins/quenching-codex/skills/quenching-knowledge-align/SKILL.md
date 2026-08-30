@@ -1,6 +1,6 @@
 ---
 name: quenching-knowledge-align
-description: "Force /docs/ into the canonical OKF v0.1 bundle AND pull in the content sitting out-of-band — one command, probe first, looped to a fixpoint. Triggers on \"align the docs\", \"align and update docs\", \"fix the documentation structure\", \"install the OKF bundle\", \"set up /docs/\", or \"converge the knowledge base\". Probes cq knowledge validate plus two cheap out-of-band signals before reading anything, then inventories and applies one confirmed alignment plan."
+description: "Force /docs/ into the canonical OKF v0.1 bundle AND pull in the content sitting out-of-band — one command, probe first, looped to a fixpoint. Triggers on \"align the docs\", \"align and update docs\", \"fix the documentation structure\", \"install the OKF bundle\", \"set up /docs/\", or \"converge the knowledge base\". Probes cq knowledge validate plus two cheap out-of-band signals before reading anything, then inventories and applies one confirmed alignment plan. Not for: adding one knowledge item → quenching-knowledge-add; reading status only → quenching-knowledge-status; producing documentation pages → quenching-knowledge-documentation-produce."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/align.md -->

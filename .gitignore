@@ -18,8 +18,14 @@ settings.local.json
 # Documentation pipeline plan-of-record (target-repo scratch, outside docs_dir)
 .quenching/
 
-# Local Zensical output and cache; the source is docs/documentation/
+# Local Zensical output and cache; the source is staged from docs/.
 site/
 .cache/
 # Generated, bounded Zensical input; the complete OKF bundle remains under docs/.
 site-source/
+
+# The documentation-site checker keeps a committed static fixture named `site/`.
+!plugins/quenching/assets/checks/fixtures/documentation-site-check/glossary/site/
+!plugins/quenching/assets/checks/fixtures/documentation-site-check/glossary/site/**
+!plugins/quenching-codex/checks/fixtures/documentation-site-check/glossary/site/
+!plugins/quenching-codex/checks/fixtures/documentation-site-check/glossary/site/**

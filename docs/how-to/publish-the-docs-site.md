@@ -72,8 +72,8 @@ A populated root `glossary.md` publishes by default; only an explicit `não publ
 overrides that. The projection is generated — never hand-maintained — and provable:
 
 ```bash
-cq knowledge project docs --config zensical.toml --write   # materialize route + snippet
-cq knowledge project docs --config zensical.toml --check   # prove hash, route, nav, origin
+cq knowledge project docs --write   # materialize the abbreviation snippet
+cq knowledge project docs --check   # prove the projection hash and origin
 ```
 
 Re-running `--write` on an unchanged source is a byte-identical no-op. On every page of the
@@ -83,11 +83,12 @@ built site, glossary terms render as `<abbr>` tooltips via the generated abbrevi
 ## Build and prove it
 
 ```bash
+python3 <plugin>/assets/bin/cq knowledge site-source docs site-source --write
 uv run zensical build --clean --strict
-python3 <plugin>/assets/checks/documentation-site-check.py site \
+python3 <plugin>/assets/checks/documentation-site-check.py site --local \
   --require-glossary --glossary-source docs/glossary.md \
-  --glossary-snippet docs/documentation/assets/glossary-abbreviations.md \
-  --glossary-route reference/glossary.md
+  --glossary-snippet site-source/assets/glossary-abbreviations.txt \
+  --glossary-route glossary.md
 ```
 
 (`<plugin>` is the quenching plugin root; inside a session the command bodies resolve it as

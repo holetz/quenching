@@ -1,6 +1,6 @@
 ---
 name: quenching-components-command-eval
-description: "Measure whether a skill/command teaches anything — with/without runs, graded on evidence. Triggers on \"measure whether this command teaches anything\", \"run the with/without eval on this skill\", \"tune this command's description on the hit rates\"."
+description: "Measure whether a skill/command teaches anything — with/without runs, graded on evidence. Triggers on \"measure whether this command teaches anything\", \"run the with/without eval on this skill\", \"tune this command's description on the hit rates\". Not for: editing a command without evidence → quenching-components-command-new; aligning the whole surface → quenching-components-align."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/components/command/eval.md -->

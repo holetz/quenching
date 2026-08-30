@@ -1,6 +1,6 @@
 ---
 name: quenching-release
-description: "Publish what the primary branch accumulated as a deliberate release — the plugin's four-artifact version lockstep, the git tag, and the push to origin. Use when the user asks to \"publish a release\", \"cut a release\", \"release this\", \"is it time to release\", or \"publish the plugin\". Judges patch/minor/major from what actually accumulated and asks for confirmation before touching anything; when the primary branch carries exactly one PR since the last release, asks once whether this is a release or a habit. When it finishes: the bump and its tag live on the primary branch's tip, on origin."
+description: "Publish what the primary branch accumulated as a deliberate release — the plugin's four-artifact version lockstep, the git tag, and the push to origin. Use when the user asks to \"publish a release\", \"cut a release\", \"release this\", \"is it time to release\", or \"publish the plugin\". Judges patch/minor/major from what actually accumulated and asks for confirmation before touching anything; when the primary branch carries exactly one PR since the last release, asks once whether this is a release or a habit. When it finishes: the bump and its tag live on the primary branch's tip, on origin. Not for: concluding or merging ONE spec into the primary branch → quenching-specs-conclude."
 ---
 
 <!-- GENERATED FROM .claude/commands/release.md -->
@@ -12,10 +12,10 @@ description: "Publish what the primary branch accumulated as a deliberate releas
 from what accumulated and confirms it with you).
 
 This repository publishes from a single long-lived branch —
-[knowledge/standards/git/branching.md](/.knowledge/standards/git/branching.md): every spec lands on the
+[docs/standards/git/branching.md](/docs/standards/git/branching.md): every spec lands on the
 primary branch (`main`) through a reviewed pull request, and the release is the one deliberate act
 that moves the plugin's four version-carrying artifacts
-([knowledge/standards/ci-cd/versioning-release.md](/.knowledge/standards/ci-cd/versioning-release.md))
+([docs/standards/ci-cd/versioning-release.md](/docs/standards/ci-cd/versioning-release.md))
 and creates a tag. This command is that deliberate act. The mechanical half — the four-artifact
 bump, the commit, the tag — is `plugins/quenching-codex/scripts/bin/cq specs release <version>`, already
 implemented and self-tested; this command judges *whether* and *what*, gets it confirmed, and
@@ -40,7 +40,7 @@ The primary branch is the `base` `cq git base` resolves (`origin/HEAD`, else
 `init.defaultBranch`, else `main`). Find which checkout holds it — the bump runs there.
 **No checkout holds the primary branch** → stop without bumping, name the branch and that nothing
 has it checked out, and name the fix — check it out, or add a worktree of it. Never manufacture a
-temporary checkout ([plan-git-record.md](/.knowledge/standards/workflows/plan-git-record.md)).
+temporary checkout ([plan-git-record.md](/docs/standards/workflows/plan-git-record.md)).
 **Done when:** the primary branch is known and a checkout exists, or the run has stopped and said
 why.
 
@@ -54,7 +54,7 @@ The first names the last tag; the second lists every PR merged into the primary 
 whole history; treat the count as "since the beginning". **Zero** → nothing to publish; report that
 and stop. **Exactly one** → ask, once, with **AskUserQuestion**: "the primary branch carries one PR
 since the last release — is this a release, or is it habit?" (the mitigation
-[branching.md](/.knowledge/standards/git/branching.md) §O gatilho é a demanda names: nothing else
+[branching.md](/docs/standards/git/branching.md) §The trigger is demand, not cadence names: nothing else
 pushes back on turning every single spec into its own release). Answering habit stops the run
 cleanly — nothing is written. Two or more → proceed without asking.
 **Done when:** the count is known and, if it was exactly one, answered.
@@ -65,7 +65,7 @@ Read `plugins/quenching/VERSION` for the current version. Show the merge commit 
 changed (a new command or a new capability → minor; a fix or a doc/prose-only change → patch; a
 breaking change to an installed consumer's contract → major) — **never invent a versioning
 policy**: this is human judgment the command conducts, per
-[versioning-release.md](/.knowledge/standards/ci-cd/versioning-release.md)'s own boundary. If
+[versioning-release.md](/docs/standards/ci-cd/versioning-release.md)'s own boundary. If
 `$ARGUMENTS` already named an exact version, skip the proposal and confirm that one instead.
 
 Present ONE plan and wait for it: the proposed version, "bump the four version artifacts and tag
@@ -77,7 +77,7 @@ or declined — a decline stops the run with nothing written.
 ### 4. Bump on the primary branch, and push
 The bump comes FIRST, on the primary branch's checkout — the tag points at the bump, which is what
 makes the release one atomic fact on the branch that publishes
-([versioning-release.md](/.knowledge/standards/ci-cd/versioning-release.md) §When the bump happens).
+([versioning-release.md](/docs/standards/ci-cd/versioning-release.md) §When the bump happens).
 The `cd` in the subshell is what picks the repository — `cq specs` resolves it from the cwd, and
 refuses (exit 2, `sp-release-wrong-branch`) any checkout not on the primary branch.
 ```bash

@@ -1,6 +1,6 @@
 {
-  "source": "/home/unicred/Projetos/claude-quenching/.claude",
-  "source_sha256": "0d88466c08b158afb82cf9b7a799e632634e40e3c84126f4d21c880657eaaf98",
+  "source": "/home/unicred/orca/workspaces/claude-quenching/fix-errors/.claude",
+  "source_sha256": "936818487b3ff33ba6af6748b156694b83b43334e5531d85efdb0fe312e29fb2",
   "generator": "cq components translate",
   "command_count": 4
 }

@@ -1,6 +1,6 @@
 ---
 name: quenching-components-harness-align
-description: "Refactor AGENTS.md/AGENTS.md into thin pointers over the /docs/ bundle. Triggers on \"refactor AGENTS.md\", \"slim down AGENTS.md\", \"move AGENTS.md content into docs\", \"align AGENTS.md/AGENTS.md with /docs/\"."
+description: "Refactor AGENTS.md/AGENTS.md into thin pointers over the /docs/ bundle. Triggers on \"refactor AGENTS.md\", \"slim down AGENTS.md\", \"move AGENTS.md content into docs\", \"align AGENTS.md/AGENTS.md with /docs/\". Not for: changing durable knowledge without a harness source → quenching-knowledge-add; changing command bodies → quenching-components-command-new."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/components/harness/align.md -->
