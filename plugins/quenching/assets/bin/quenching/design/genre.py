@@ -8,6 +8,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from urllib.parse import quote
 from pathlib import Path
 from typing import Any
 
@@ -207,6 +208,8 @@ def _substitute(template: str, data: dict[str, Any], medium: str, target: Path, 
             return os.path.relpath(root / ".design" / "build" / "tokens.typ", target.parent).replace(os.sep, "/")
         if key == "primitives.typ":
             return os.path.relpath(root / ".design" / "media" / "typst" / "primitives.typ", target.parent).replace(os.sep, "/")
+        if key.startswith("asset."):
+            return _asset_reference(key[6:], medium, target, root)
         if key.startswith("field."):
             name = key[6:]
             value = str(data.get(name, ""))
@@ -223,6 +226,24 @@ def _render_field(name: str, value: str, medium: str, register: str) -> str:
     if name == "body" and register == "read":
         return render_markdown(value, medium)
     return html.escape(value) if medium == "html" else _typst_escape(value)
+
+
+def _asset_reference(relative: str, medium: str, target: Path, root: Path) -> str:
+    if not relative or "\\" in relative:
+        raise DesignError("asset placeholder must use a non-empty POSIX relative path")
+    requested = Path(relative)
+    if requested.is_absolute() or any(part in {"", ".", ".."} for part in requested.parts):
+        raise DesignError(f"asset placeholder escapes .design/assets: {relative}")
+    asset_root = (root / ".design" / "assets").resolve()
+    asset = (asset_root / requested).resolve()
+    try:
+        asset.relative_to(asset_root)
+    except ValueError as exc:
+        raise DesignError(f"asset placeholder escapes .design/assets: {relative}") from exc
+    if not asset.is_file():
+        raise DesignError(f"asset placeholder does not name a file: {relative}")
+    reference = os.path.relpath(asset, target.parent).replace(os.sep, "/")
+    return quote(reference, safe="/:@-._~") if medium == "html" else reference
 
 
 def _typst_escape(value: str) -> str:

@@ -271,6 +271,39 @@ components:
         self.assertIn("**literal** &lt;tag&gt;", html)
         self.assertNotIn("<strong>literal</strong>", html)
 
+    def test_genre_resolves_asset_placeholders_for_each_output_medium(self):
+        new_genre(
+            self.root, "asset-note", "Asset note", "read", ["html", "typst"],
+            ["title:required:Title", "body:required:Body"],
+        )
+        html_template = self.root / ".design" / "media" / "html" / "asset-note.html"
+        html_template.write_text('<img src="{{asset.lockup.svg}}">\n', encoding="utf-8")
+        typst_template = self.root / ".design" / "media" / "typst" / "asset-note.typ"
+        typst_template.write_text('#image("{{asset.lockup.svg}}")\n', encoding="utf-8")
+        data = self.root / "asset-note.json"
+        data.write_text(json.dumps({"title": "A note", "body": "Text."}), encoding="utf-8")
+        html_result = render_genre(self.root, "asset-note", "html", data)
+        html = (self.root / html_result["output"]).read_text(encoding="utf-8")
+        self.assertIn('src="../assets/lockup.svg"', html)
+        typst_result = render_genre(self.root, "asset-note", "typst", data)
+        typst = (self.root / typst_result["output"]).read_text(encoding="utf-8")
+        self.assertIn('#image("../assets/lockup.svg")', typst)
+
+    def test_asset_placeholder_rejects_traversal_and_missing_files(self):
+        new_genre(
+            self.root, "unsafe-asset", "Unsafe asset", "read", ["html"],
+            ["title:required:Title", "body:required:Body"],
+        )
+        template = self.root / ".design" / "media" / "html" / "unsafe-asset.html"
+        data = self.root / "unsafe-asset.json"
+        data.write_text(json.dumps({"title": "A note", "body": "Text."}), encoding="utf-8")
+        template.write_text('{{asset.../lockup.svg}}\n', encoding="utf-8")
+        with self.assertRaisesRegex(DesignError, "escapes"):
+            render_genre(self.root, "unsafe-asset", "html", data)
+        template.write_text('{{asset.missing.svg}}\n', encoding="utf-8")
+        with self.assertRaisesRegex(DesignError, "does not name a file"):
+            render_genre(self.root, "unsafe-asset", "html", data)
+
     def test_genre_template_matches_non_report_field_contract(self):
         new_genre(
             self.root, "brief", "Brief", "read", ["html"],
