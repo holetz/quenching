@@ -20,6 +20,14 @@ REACHES = ("nothing", "tree", "session", "workspace")
 
 def _repo_root(root: str) -> str:
     """Resolve the config's repository root without running a target command."""
+    current = os.path.abspath(root)
+    while True:
+        if os.path.isfile(os.path.join(current, CONFIG_FILE)):
+            return current
+        parent = os.path.dirname(current)
+        if parent == current:
+            break
+        current = parent
     cfg = load_config(root, detect_provider_info=False)
     path = cfg.get("path")
     if isinstance(path, str):
