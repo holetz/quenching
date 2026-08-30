@@ -90,6 +90,8 @@ class GateConfig:
     coverage_sources: tuple[str, ...] = ()
     coverage_floor: float | None = None
     invocations: tuple[str, ...] = ()
+    ratchet_path: str | None = None
+    ratchet_exists: bool = False
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "addopts", _sorted_strings(self.addopts))
@@ -101,7 +103,8 @@ class GateConfig:
         return {"path": self.path, "addopts": list(self.addopts),
                 "markers": list(self.markers), "strictMarkers": self.strict_markers,
                 "coverageSources": list(self.coverage_sources),
-                "coverageFloor": self.coverage_floor, "invocations": list(self.invocations)}
+                "coverageFloor": self.coverage_floor, "invocations": list(self.invocations),
+                "ratchetPath": self.ratchet_path, "ratchetExists": self.ratchet_exists}
 
 
 @dataclass(frozen=True)
@@ -129,6 +132,7 @@ class ProofInventory:
     ci: tuple[CIInvocation, ...] = ()
     measured_roots: tuple[str, ...] = ()
     exclusions: tuple[str, ...] = ()
+    source_surfaces: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "layers", tuple(sorted(self.layers, key=lambda item: item.name)))
@@ -141,6 +145,7 @@ class ProofInventory:
         object.__setattr__(self, "ci", tuple(sorted(self.ci, key=lambda item: item.path)))
         object.__setattr__(self, "measured_roots", _sorted_strings(self.measured_roots))
         object.__setattr__(self, "exclusions", _sorted_strings(self.exclusions))
+        object.__setattr__(self, "source_surfaces", _sorted_strings(self.source_surfaces))
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -154,6 +159,7 @@ class ProofInventory:
             "ci": [item.as_dict() for item in self.ci],
             "measuredRoots": list(self.measured_roots),
             "exclusions": list(self.exclusions),
+            "sourceSurfaces": list(self.source_surfaces),
         }
 
 
