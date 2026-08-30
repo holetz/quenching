@@ -2,7 +2,7 @@
 type: standard
 title: Proof front
 description: The target repository's canonical verification surface — layered tests, explicit fixture reach, measured source roots, a coverage ratchet, order evidence and a CI gate
-resource: docs/standards/architecture/align-surface.md, docs/standards/quality/selftest-mutation.md, docs/standards/quality/surface-verification.md, plugins/quenching/assets/references/proof-front/target-structure.md, plugins/quenching/assets/references/proof-front/layer-contract.md, plugins/quenching/assets/references/proof-front/gate-contract.md
+resource: docs/standards/architecture/align-surface.md, docs/standards/quality/selftest-mutation.md, docs/standards/quality/surface-verification.md, plugins/quenching/assets/references/proof-align/target-structure.md, plugins/quenching/assets/references/proof-align/layer-contract.md, plugins/quenching/assets/references/proof-align/gate-contract.md
 tags: [architecture, proof, tests, coverage, verification]
 timestamp: 2026-08-30
 audience: both
@@ -44,11 +44,11 @@ tree.
 
 The target-structure, layer and gate details are self-contained in the proof-front references:
 
-- [target structure](../../../plugins/quenching/assets/references/proof-front/target-structure.md)
+- [target structure](../../../plugins/quenching/assets/references/proof-align/target-structure.md)
   owns the tree, root and bootstrap shape;
-- [layer contract](../../../plugins/quenching/assets/references/proof-front/layer-contract.md)
+- [layer contract](../../../plugins/quenching/assets/references/proof-align/layer-contract.md)
   owns layer meaning, derived markers and fixture reach;
-- [gate contract](../../../plugins/quenching/assets/references/proof-front/gate-contract.md)
+- [gate contract](../../../plugins/quenching/assets/references/proof-align/gate-contract.md)
   owns measured surfaces, floors, order evidence, CI and entry-point proof.
 
 ## Layers and derived markers
@@ -71,6 +71,11 @@ The layer contract distinguishes four concerns:
 The layer contract defines `pf-unlayered`, `pf-unmarked`, `pf-loose-fixture` and
 `pf-fat-conftest`. This standard names the codes and their owner; it does not duplicate their
 finding logic.
+
+The `data` layer is therefore **recommended when declared, never mandatory by the plugin**. The
+repository's own source and product boundaries decide whether data transformations are a distinct
+kind of evidence. A target that declares that boundary may not silently omit the layer; a target
+that does not declare it does not create an empty directory for symmetry.
 
 ## Fixture reach
 
