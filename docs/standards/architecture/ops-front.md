@@ -42,6 +42,23 @@ The root may be declared elsewhere when the repository has a reason to do so, bu
 must be unambiguous. The generated registry names every reachable entry point, and `_archive/`
 keeps retired entry points visible without presenting them as part of the active interface.
 
+## Configuration home
+
+The operations root and canonical router are declared together in the target repository's
+`.claude/quenching.json`:
+
+```json
+{
+  "opsRoot": "scripts",
+  "router": "pyproject.toml"
+}
+```
+
+`opsRoot` and `router` are paths relative to the repository root. Both declarations are required;
+the ops tooling reads them through the shared configuration loader and refuses with
+`op-config-missing` when either one is absent. It never guesses `scripts/` or chooses among
+multiple router files.
+
 ## One router
 
 An adopting repository declares **exactly one canonical router** for the normalized interface:
