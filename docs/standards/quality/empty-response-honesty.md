@@ -95,6 +95,16 @@ holds even for refusals that have nothing to do with emptiness: a 503 in the mid
 diagnostic also becomes a finding, because a diagnostic that aborts is exactly what you cannot have
 at the moment somebody went to ask what is wrong.
 
+## Not applicable is not skipped
+
+The same honesty applies when a conducted workflow reports a front with no work. **Not applicable**
+means its applicability probe found neither a declared root nor the conventional signal that would
+invite adoption; report that state with the one-line invitation to declare the front. **Skipped**
+means the front was in scope but the request explicitly excluded it, or an earlier dependency
+failure prevented reaching it; report the reason. A present front that probes clean is neither: it
+is **conformant**. Never use *skipped* to hide an absent front, and never turn *not applicable* into
+a plan item.
+
 **The suspicion's severity is `warn`, and the reason is the one in
 [parse-honesty.md](parse-honesty.md) §Severity: warn, and why not error**: a repository that adopted
 the backend over an existing tracker and has not created a single spec yet **is** that state,
