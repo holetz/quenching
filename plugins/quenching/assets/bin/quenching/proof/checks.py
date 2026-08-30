@@ -92,8 +92,24 @@ def check_empty_layer(inventory: ProofInventory) -> list[Finding]:
             for item in inventory.layers if item.required and item.name not in present]
 
 
+def check_no_ci(inventory: ProofInventory) -> list[Finding]:
+    if any(item.runs_gate for item in inventory.ci):
+        return []
+    return [_error("pf-no-ci", "no CI definition invokes the proof gate",
+                   path=inventory.ci[0].path if inventory.ci else None)]
+
+
+def check_order_unproven(inventory: ProofInventory) -> list[Finding]:
+    if any(item.randomizes_order for item in inventory.ci if item.runs_gate):
+        return []
+    return [_error("pf-order-unproven",
+                   "no proof-gate invocation declares randomized test order",
+                   path=inventory.ci[0].path if inventory.ci else None)]
+
+
 def run_checks(inventory: ProofInventory) -> list[Finding]:
     checks = (check_unlayered, check_unmarked, check_loose_fixture, check_fat_conftest,
-              check_unmeasured_surface, check_no_floor, check_stop_first, check_empty_layer)
+              check_unmeasured_surface, check_no_floor, check_stop_first, check_empty_layer,
+              check_no_ci, check_order_unproven)
     findings = [finding for check in checks for finding in check(inventory)]
     return sorted(findings, key=lambda item: (item.code, item.path or "", item.message))
