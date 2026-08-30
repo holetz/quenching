@@ -5,6 +5,7 @@ import importlib
 import json
 import pathlib
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -31,6 +32,7 @@ from quenching.ops.model import EntryPoint, Inventory, Router
 HERE = pathlib.Path(__file__).resolve().parent
 GOLDEN = HERE / "fixtures" / "golden" / "ops-registry-absent.json"
 ALIGN_BODY = HERE.parent / "commands" / "ops" / "align.md"
+STATUS_BODY = HERE.parent / "commands" / "ops" / "status.md"
 
 
 class AlignCleanPath(unittest.TestCase):
@@ -151,6 +153,78 @@ class AlignThreeBands(unittest.TestCase):
                 "every judgement finding with its evidence and exact command that closes it",
                 " ".join(body.split()),
             )
+
+
+class StatusReadOnly(unittest.TestCase):
+    def test_status_reports_all_bands_without_dirtying_a_git_target(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            (root / ".claude").mkdir()
+            scripts = root / "scripts"
+            scripts.mkdir()
+            (root / ".claude" / "quenching.json").write_text(
+                json.dumps({"opsRoot": "scripts", "router": "pyproject.toml"}),
+                encoding="utf-8")
+            (root / "pyproject.toml").write_text(
+                "[project.scripts]\nrun = 'run:main'\n", encoding="utf-8")
+            (scripts / "run.py").write_text(
+                "from pathlib import Path\n\n"
+                "def verify():\n    return None\n\n"
+                "ROOT = Path(__file__).resolve()\n\n"
+                "def main():\n    # verify()\n    return 0\n\n"
+                "if __name__ == '__main__':\n    raise SystemExit(main())\n",
+                encoding="utf-8")
+            (scripts / "registry.md").write_text(
+                "<!-- quenching-ops-registry-sha256 " + "0" * 64 + " -->\n"
+                "`run.py` — active\n",
+                encoding="utf-8")
+
+            subprocess.run(["git", "init", "-q", str(root)], check=True,
+                           capture_output=True, text=True)
+            subprocess.run(["git", "-C", str(root), "add", "."], check=True)
+            subprocess.run(
+                ["git", "-C", str(root), "-c", "user.name=ops-fixture",
+                 "-c", "user.email=ops-fixture@example.invalid", "commit", "-qm", "fixture"],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            before = subprocess.run(
+                ["git", "-C", str(root), "status", "--porcelain"],
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout
+
+            result = subprocess.run(
+                [sys.executable, str(HERE.parent / "assets" / "bin" / "cq"),
+                 "--root", str(root), "ops", "status", "--json"],
+                cwd=HERE.parent,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.returncode, 1)
+            status = json.loads(result.stdout)
+            self.assertEqual(set(status["findings"]),
+                             {"op-registry-stale", "op-adhoc-root", "op-disabled-check"})
+            self.assertEqual(sum(status["findings"].values()), 3)
+
+            after = subprocess.run(
+                ["git", "-C", str(root), "status", "--porcelain"],
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout
+            self.assertEqual(before, "")
+            self.assertEqual(after, "")
+
+            body = STATUS_BODY.read_text(encoding="utf-8")
+            self.assertIn('python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" ops status --json',
+                          " ".join(body.split()))
+            self.assertIn("It never repairs a finding, writes a registry, or turns an absent optional artifact into a healthy one.",
+                          " ".join(body.split()))
+            self.assertNotIn("registry --write", body)
 
 
 class RegistryStale(unittest.TestCase):
