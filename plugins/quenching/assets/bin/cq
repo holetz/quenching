@@ -4,14 +4,15 @@
     python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" [--root PATH] <pillar> <subcommand> ...
     python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --version
 
-Five pillars, each answering with the same contract its launcher answered with — the
+Six pillars, each answering with the same contract its launcher answered with — the
 subcommands, the `--json` payloads and the exit codes (0 ok · 1 findings · 2 refusal) are
 the ones frozen in `tests/fixtures/golden/`. This file routes; it decides nothing else.
 
 WHY THE TABLE CARRIES `takes_root`
 ----------------------------------
 `--root` is the one option that reads as global and is not: `specs --root` names the
-`/.specs/` workspace and `components --root` names the surface holding `commands/`, while
+`/.specs/` workspace, `components --root` names the surface holding `commands/`, and
+`ops --root` names the operations surface, while
 `knowledge` takes a bundle directory as a POSITIONAL. Forwarding `--root` there would not
 fail — `run_cli` collects every non-dash token as a path, so the value would be silently
 read as the bundle to validate. So the table says which pillars declare one, and naming
@@ -69,6 +70,9 @@ PILLARS: dict[str, Pillar] = {
     "components": Pillar(
         "quenching.components.commands.cli", True,
         "the .claude/ command surface — lint, doctor, registry, read, session"),
+    "ops": Pillar(
+        "quenching.ops.cli", True,
+        "the operations surface — inventory, doctor, status"),
     "git": Pillar(
         "quenching.git", False,
         "a repository's git facts — the base branch, and whether it is the host's own default"),
@@ -85,8 +89,8 @@ def build_parser() -> argparse.ArgumentParser:
                            for name, pillar in PILLARS.items())
                + "\n\n`cq <pillar> --help` prints that pillar's own subcommands.")
     p.add_argument("--root",
-                        help="forwarded to the pillar as its own --root; design, specs, "
-                        "and components declare one")
+                    help="forwarded to the pillar as its own --root; design, specs, "
+                    "components, and ops declare one")
     # Bare, so `cq --version` IS the lockstep probe: the whole assertion is
     # `test "$(cq --version)" = "$(cat VERSION)"`, with nothing to strip first. A pillar
     # named before it keeps its own prefixed line — this option only answers for the plugin.
