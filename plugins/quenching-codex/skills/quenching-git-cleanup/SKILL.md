@@ -1,6 +1,6 @@
 ---
 name: quenching-git-cleanup
-description: "Prune branches already merged or gone and worktrees git still registers with no directory on disk, over `cq git stale`'s report. Use when the user asks to \"clean up old branches\", \"prune stale branches\", \"remove finished worktrees\", or \"tidy up after merging\"."
+description: "Prune branches already merged or gone and worktrees git still registers with no directory on disk, over `cq git stale`'s report. Use when the user asks to \"clean up old branches\", \"prune stale branches\", \"remove finished worktrees\", or \"tidy up after merging\". Not for: creating isolation → quenching-git-branch; merging or opening a PR → quenching-git-merge, quenching-git-pr-create."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/git/cleanup.md -->

@@ -11,14 +11,14 @@
     "skills/skill-map/SKILL.md"
   ],
   "sha256": {
-    ".generated-from.json": "33e3f22e6c4a4c3fe9a29362aee0a8bd91ebbc3646cfbbd1c796b610a1d8c24d",
-    "AGENTS.md": "54ebb56cb0bdddf63a573e1a45925474b821afe98412cfa7ee7d1bb6beaa8bcd",
+    ".generated-from.json": "3029ca2dc1d9493fb048b9d8862912f4547b567603e03472662311e7975ece8b",
+    "AGENTS.md": "acca73f50e18d4993e2f419a23c98c1d1460a493a5259694517e6f7b745fa2f6",
     "references/skill-cartographer/design-spec.md": "d7236f6f6852a824198641dbcdcb8938bca40d44e0a44bf506f8b8598449d7e2",
     "references/skill-cartographer/examples/mkdocs-storyteller.html": "8080373a1eb078ca23488fb57ef6ddc72c37b957d2caf63c6865937d5f832df1",
     "references/skill-cartographer/examples/mkdocs-storyteller.pt-br.html": "66f7072956e3f8c8a2aeb84dc007268d698453924c99ee8e35dc2d7dca09916a",
-    "skills/commands/tighten/SKILL.md": "2a47492969acf05119a84e5216969720fefd0fe33f1842af3c80716dc5a9fc18",
-    "skills/references/tighten/SKILL.md": "19a5a773f3373190c4e93e187b720849a15640555de8baa2d110383db6eb74fc",
-    "skills/release/SKILL.md": "592edaa49305f39b3de936fe091e7b429f029a4dd257a2c5f328cac3072b5b99",
-    "skills/skill-map/SKILL.md": "1555c81cef0958c4a2419281620ec27ff9cdf733864156966a046dc1dfeeaeac"
+    "skills/commands/tighten/SKILL.md": "1b8962e4a0af9eacb0d984fbb52c3195d2961f677bf3bbca4e8d37ca0e9b3fa5",
+    "skills/references/tighten/SKILL.md": "dd01ba2cca14dc3767c6055fba41de6f87e0db9f7cc0a292804fb6b4fc84f061",
+    "skills/release/SKILL.md": "d60d654a391cdf869fbd7e47d09858fd3937a080417998f444616e7be69142bc",
+    "skills/skill-map/SKILL.md": "8fe5cee5e5d9752db7d8cb6725e4c963bce090881493cfcc13ffba67273d48aa"
   }
 }

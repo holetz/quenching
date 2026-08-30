@@ -46,7 +46,7 @@ one decision), not by page. Heuristics:
 - One **explanation / concept / term** → a `knowledge/` unit (+ a glossary entry if it names a
   repo-specific term).
 - One **fact about a named external tool/lib/regulation** → a `reference/` unit.
-- One **how-to / procedure** → a `documentation/how-to/` unit.
+- One **how-to / procedure** → a `how-to/` unit.
 - **Data objects** (systems/schemas/tables) → `catalog/` units in the catalog path shape.
 
 Keep units atomic — if a section carries two concepts, emit two units. Prefer **fewer,

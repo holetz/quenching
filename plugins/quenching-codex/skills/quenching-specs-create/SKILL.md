@@ -1,6 +1,6 @@
 ---
 name: quenching-specs-create
-description: "Capture or create a spec. Triggers on \"convert to a spec\", \"add to the backlog\", \"create a spec\"."
+description: "Capture or create a spec. Triggers on \"convert to a spec\", \"add to the backlog\", \"create a spec\". Not for: refining an existing spec → quenching-specs-develop; executing it → quenching-specs-execute."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/create.md -->

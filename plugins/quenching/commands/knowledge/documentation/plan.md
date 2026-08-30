@@ -115,5 +115,5 @@ lists its path, assignments and remaining gaps.
 - Never write a documentation page in this pass.
 - Never fabricate a fact, source, statistic, quote, title or destination.
 - Never infer that a home is internal or public from its name; the editorial map is the only publication boundary.
-- Keep the plan at `.quenching/documentation/plan.md`, never under `/docs/documentation/`.
+- Keep the plan at `.quenching/documentation/plan.md`, never under `/docs/`.
 - A declined OK leaves the target unchanged.

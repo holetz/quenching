@@ -103,6 +103,7 @@ SELF="${SELF_DIR#"$REPO"/}/$(basename "${BASH_SOURCE[0]}")"
 SCOPE_EXCLUDE=(':!plugins/quenching/tests/fixtures/golden/'
                ':!plugins/quenching/tests/capture_golden.py'
                ':(exclude,glob)plugins/quenching/assets/evals/**/runs/**'
+               ':!plugins/quenching/assets/checks/citation-check.sh'
                ':!plugins/quenching-codex/checks/citation-check.sh')
 
 want () { case ",$HALF," in *",$1,"*) return 0 ;; *) return 1 ;; esac; }
@@ -322,14 +323,14 @@ CMD_RE            = re.compile(r"/?(quenching(?::[a-z][a-z0-9-]*){2,})")
 # Content the plugin ships for a target checkout to hold, plus the fixture data that names files
 # on purpose absent. See the header: these say which repo a tree describes, they exempt no path.
 # Every tree the plugin SHIPS for a target checkout to read. The first three were here from the
-# start; `commands/` and `assets/references/` were added on 2026-08-27, and their absence was a
-# defect this half carried since half 3 was written. Half 3 exists precisely BECAUSE those two
+# start; `commands/`, `assets/references/` and `assets/bin/` were added on 2026-08-27, and their
+# absence was a defect this half carried since half 3 was written. Half 3 exists precisely BECAUSE those two
 # trees are loaded inside the target, with the target'"'"'s paths — its own header says so — while
 # this half went on resolving their links against THIS checkout and reporting as broken the prose
 # that describes another repository correctly. Nothing is uncovered by the move: half 3 measures
 # exactly those two trees against the published skeleton, which is the right base.
 SHIPPED = (plugin + "/assets/knowledge/", plugin + "/assets/templates/", plugin + "/tests/fixtures/",
-           plugin + "/commands/", plugin + "/assets/references/",
+           plugin + "/commands/", plugin + "/assets/references/", plugin + "/assets/bin/",
            # The translated sibling is the same shipped prose in another platform'"'"'s spelling —
            # generated, never hand-edited, and describing the target repo just as its source does.
            # Its own tree names differ (`knowledge/`, `references/`, `templates/` sit at the plugin

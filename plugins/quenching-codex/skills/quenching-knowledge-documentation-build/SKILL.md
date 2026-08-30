@@ -1,6 +1,6 @@
 ---
 name: quenching-knowledge-documentation-build
-description: "Create or update the Zensical site layer from a confirmed editorial publication map, including extensions, CSS and strict-build QA. Triggers on \"build the docs site\", \"generate the site for /docs/documentation\", or \"fix the documentation site's nav\"."
+description: "Create or update the Zensical site layer from a confirmed editorial publication map, including extensions, CSS and strict-build QA. Triggers on \"build the docs site\", \"generate the site for /docs\", or \"fix the documentation site's nav\". Not for: planning pages → quenching-knowledge-documentation-plan; writing documentation prose → quenching-knowledge-documentation-write; reviewing page quality → quenching-knowledge-documentation-review; conducting the complete pipeline → quenching-knowledge-documentation-produce."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/documentation/build.md -->

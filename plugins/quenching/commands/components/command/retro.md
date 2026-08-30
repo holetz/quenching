@@ -7,7 +7,9 @@ description: >-
   the session transcript, never from a model recalling its own run, and every counted claim is
   reported with its count and the turn that evidences it. Each finding lands with the
   `/quenching:components:command:new` invocation that would close it, and nothing is applied.
-  A retro reads your transcripts, so a human chooses it.
+  A retro reads your transcripts, so a human chooses it. Not for: changing the audited body;
+  minting a command → `/quenching:components:command:new`; aligning the whole surface →
+  `/quenching:components:align`.
 argument-hint: "[session id or transcript path — omit for this session; optionally a command name]"
 allowed-tools: Read, AskUserQuestion, Bash(python3:*), Bash(py:*)
 disable-model-invocation: true

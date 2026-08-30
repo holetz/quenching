@@ -393,8 +393,8 @@ Resolution is **plugin-first, with no user-level install**: every skill resolves
 - **6.0.1:** the section squash — a build commits one commit **per `## Tasks` section**, not one per
   task, with the per-task subjects repaired onto the squashed commit afterwards. `quenching-specs-execute`'s
   steps f/h/i were tightened to fit the body cap.
-- **6.0.0:** **the tooling modularized.** Three standalone scripts (`skills.py`, `specs.py`,
-  `okf-validate.py`) became one binary, `cq`, over a `quenching` package with a pillar per front —
+- **6.0.0:** **the tooling modularized.** Three standalone tools from the pre-modularization
+  layout became one binary, `cq`, over a `quenching` package with a pillar per front —
   `cq specs`, `cq knowledge`, `cq components`, `cq git`. The `skills` pillar was renamed
   `components` with it. Every command body drives the pillar, and nothing installs a copy of
   anything any more.
@@ -580,7 +580,7 @@ Resolution is **plugin-first, with no user-level install**: every skill resolves
   `quenching-components-align` (migrate the existing `.agents/skills/` + `.agents/skills/`
   surface to the taxonomy in one plan → one OK). Two OKF artifacts now maintained in
   target repos: the rule `/docs/standards/automation/skills.md` (born
-  `authority: background`) and the registry `/docs/documentation/reference/automation.md`
+  `authority: background`) and the registry `/docs/project/automation.md`
   with a GENERATED zone only the pair writes. New `assets/templates/automation/` molds
   (skill, command wrapper, registry, standard). Fourteen quenching skills → **twenty** in
   all.

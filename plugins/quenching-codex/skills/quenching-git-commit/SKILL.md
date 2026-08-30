@@ -1,6 +1,6 @@
 ---
 name: quenching-git-commit
-description: "Commit what is already staged under this repo's own commit convention when one is declared, the plugin's default subject grammar otherwise, enforcing hygiene no flag may bypass. Use when the user asks to \"commit this\", \"make a commit\", \"commit these changes\", or \"wrap this up in a commit\"."
+description: "Commit what is already staged under this repo's own commit convention when one is declared, the plugin's default subject grammar otherwise, enforcing hygiene no flag may bypass. Use when the user asks to \"commit this\", \"make a commit\", \"commit these changes\", or \"wrap this up in a commit\". Not for: staging files → the human or the owning build command; merging or pushing → quenching-git-merge, quenching-git-pr-create."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/git/commit.md -->

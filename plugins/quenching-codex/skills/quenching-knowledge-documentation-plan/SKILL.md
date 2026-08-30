@@ -1,6 +1,6 @@
 ---
 name: quenching-knowledge-documentation-plan
-description: "Build a sourced documentation plan for the OKF bundle, with reader journeys and seven output contracts. Triggers on \"plan the documentation\", \"diagnose the docs structure\", or \"design the documentation architecture\"."
+description: "Build a sourced documentation plan for the OKF bundle, with reader journeys and seven output contracts. Triggers on \"plan the documentation\", \"diagnose the docs structure\", or \"design the documentation architecture\". Not for: writing pages → quenching-knowledge-documentation-write; scoring pages → quenching-knowledge-documentation-review; configuring or building the site → quenching-knowledge-documentation-build; conducting the complete run → quenching-knowledge-documentation-produce."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/documentation/plan.md -->
@@ -117,5 +117,5 @@ lists its path, assignments and remaining gaps.
 - Never write a documentation page in this pass.
 - Never fabricate a fact, source, statistic, quote, title or destination.
 - Never infer that a home is internal or public from its name; the editorial map is the only publication boundary.
-- Keep the plan at `.quenching/documentation/plan.md`, never under `/docs/documentation/`.
+- Keep the plan at `.quenching/documentation/plan.md`, never under `/docs/`.
 - A declined OK leaves the target unchanged.

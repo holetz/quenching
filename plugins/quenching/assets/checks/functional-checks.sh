@@ -75,6 +75,10 @@ done
 # checks -> assets -> quenching -> plugins -> the repo root, which is where `docs/` and the
 # project's own .claude/settings.json live.
 REPO="${REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)}"
+REPO="$(cd "$REPO" 2>/dev/null && pwd)" || {
+  printf 'functional-checks: plugin repository is not a directory: %s\n' "$REPO" >&2
+  exit 2
+}
 PLUGIN="$REPO/plugins/quenching"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
