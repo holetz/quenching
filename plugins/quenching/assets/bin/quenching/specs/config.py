@@ -169,7 +169,17 @@ def find_repo_root(specs_root: str) -> str:
     process happens to be running from instead of "no git facts here", handing back a real
     `.claude/quenching.json` the fixture exists specifically to avoid."""
     top = _git(specs_root, "rev-parse", "--show-toplevel").strip() if os.path.isdir(specs_root) else ""
-    return top or os.path.dirname(os.path.abspath(specs_root))
+    if top:
+        return top
+    current = os.path.abspath(specs_root)
+    while True:
+        if os.path.isfile(os.path.join(current, CONFIG_FILE)):
+            return current
+        parent = os.path.dirname(current)
+        if parent == current:
+            break
+        current = parent
+    return os.path.dirname(os.path.abspath(specs_root))
 
 
 def _remote_host(remote: str) -> str:
