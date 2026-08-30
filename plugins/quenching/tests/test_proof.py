@@ -7,6 +7,9 @@ import unittest
 from pathlib import Path
 
 import _paths  # noqa: F401 — must precede the `quenching` import
+from quenching.proof.ci import discover_ci
+from quenching.proof.checks import run_checks
+from quenching.proof.inventory import build_inventory
 from quenching.proof.ratchet import evaluate
 
 HERE = Path(__file__).resolve().parent
@@ -53,6 +56,118 @@ class TheCoverageRatchet(unittest.TestCase):
                     self.assertEqual(1, code)
                     self.assertFalse(payload["ok"])
                 previous = current
+
+
+class ProofFixtureTrees(unittest.TestCase):
+    def _target(self, *, layers=None, measured=None, addopts="--strict-markers",
+                markers=("unit",), coverage_floor=80, ci=True,
+                randomized=True, extra_surfaces=(), extra_tests=None, conftest=None, ops=False):
+        raw_layers = layers if layers is not None else {
+            "unit": {"reach": "nothing", "budget": 2, "required": True}}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / ".claude").mkdir()
+            config = {"proofRoot": "tests", "layers": raw_layers,
+                      "measuredRoots": list(measured or ("src",))}
+            if ops:
+                config.update({"opsRoot": "scripts", "router": "pyproject.toml"})
+            (root / ".claude" / "quenching.json").write_text(
+                json.dumps(config), encoding="utf-8")
+            (root / "tests" / "unit").mkdir(parents=True)
+            (root / "src").mkdir()
+            (root / "src" / "app.py").write_text("VALUE = 1\n", encoding="utf-8")
+            (root / "tests" / "unit" / "test_math.py").write_text(
+                "import src.app\n\ndef test_add(): pass\n", encoding="utf-8")
+            if extra_tests:
+                for relative, source in extra_tests.items():
+                    path = root / "tests" / relative
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text(source, encoding="utf-8")
+            if conftest is not None:
+                (root / "tests" / "conftest.py").write_text(conftest, encoding="utf-8")
+            for surface in extra_surfaces:
+                path = root / surface / "module.py"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("VALUE = 1\n", encoding="utf-8")
+            if ops:
+                (root / "scripts").mkdir()
+                (root / "scripts" / "run.py").write_text("def main(): pass\n", encoding="utf-8")
+            pyproject = (
+                "[tool.pytest.ini_options]\n"
+                f"addopts = {addopts!r}\n"
+                f"markers = {list(markers)!r}\n"
+                "\n[tool.coverage.run]\nsource = ['src']\n"
+            )
+            if coverage_floor is not None:
+                pyproject += f"\n[tool.coverage.report]\nfail_under = {coverage_floor}\n"
+            (root / "pyproject.toml").write_text(pyproject, encoding="utf-8")
+            if ci:
+                workflow = root / ".github" / "workflows"
+                workflow.mkdir(parents=True)
+                order = " --random-order" if randomized else ""
+                (workflow / "proof.yml").write_text(
+                    f"steps:\n  - run: cq proof doctor --json\n  - run: pytest{order}\n",
+                    encoding="utf-8")
+            inventory, err = build_inventory(str(root))
+            self.assertEqual({}, err)
+            assert inventory is not None
+            return {item.code for item in run_checks(inventory)}
+
+    def _codes(self, **kwargs):
+        return self._target(**kwargs)
+
+    def test_clean_tree_has_no_findings(self):
+        self.assertEqual(set(), self._codes())
+
+    def test_each_shape_code_has_a_fixture_tree(self):
+        cases = {
+            "pf-unlayered": {"layers": {}, "extra_tests": {"test_root.py": "def test_root(): pass\n"}},
+            "pf-unmarked": {"markers": ()},
+            "pf-loose-fixture": {"extra_tests": {
+                "unit/test_a.py": "import pytest\n@pytest.fixture\ndef value(): return 1\n",
+                "unit/test_b.py": "import pytest\n@pytest.fixture\ndef value(): return 2\n",
+            }},
+            "pf-fat-conftest": {"conftest": "import pytest\n@pytest.fixture\ndef value(): return 1\n"},
+            "pf-unmeasured-surface": {"extra_surfaces": ("bundle",)},
+            "pf-no-floor": {"coverage_floor": None},
+            "pf-stop-first": {"addopts": "--strict-markers --maxfail=1"},
+            "pf-empty-layer": {"layers": {
+                "unit": {"reach": "nothing", "budget": 2, "required": True},
+                "data": {"reach": "tree", "budget": 5, "required": True},
+            }},
+        }
+        for code, kwargs in cases.items():
+            with self.subTest(code=code):
+                self.assertIn(code, self._codes(**kwargs))
+
+    def test_ci_and_order_codes_have_distinct_fixture_trees(self):
+        self.assertIn("pf-no-ci", self._codes(ci=False))
+        self.assertIn("pf-order-unproven", self._codes(
+            ci=True, randomized=False, extra_tests={"unit/test_ci.py": "def test_ci(): pass\n"}))
+
+    def test_untested_entrypoint_is_conditional_and_uses_ops_inventory(self):
+        self.assertNotIn("pf-untested-entrypoint", self._codes())
+        self.assertIn("pf-untested-entrypoint", self._codes(ops=True))
+        self.assertNotIn("pf-untested-entrypoint", self._codes(
+            ops=True, extra_tests={"unit/test_run.py": "import run\ndef test_run(): pass\n"}))
+
+    def test_each_supported_ci_provider_can_invoke_the_gate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            files = {
+                ".github/workflows/proof.yml": "run: cq proof doctor --json\n",
+                ".gitlab-ci.yml": "script: cq proof doctor --json\n",
+                "azure-pipelines.yml": "- script: cq proof doctor --json\n",
+                ".pre-commit-config.yaml": "entry: cq proof doctor --json\n",
+            }
+            for relative, source in files.items():
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(source, encoding="utf-8")
+            rows = discover_ci(str(root))
+            self.assertEqual({"github-actions", "gitlab-ci", "azure-pipelines", "pre-commit"},
+                             {row.provider for row in rows})
+            self.assertTrue(all(row.runs_gate for row in rows))
 
 
 if __name__ == "__main__":
