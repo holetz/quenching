@@ -8,9 +8,11 @@ from __future__ import annotations
 
 import ast
 import hashlib
+import io
 import json
 import os
 import re
+import tokenize
 from pathlib import Path
 from typing import Callable
 
@@ -353,6 +355,54 @@ def check_no_router(inventory: Inventory) -> list[Finding]:
     )]
 
 
+def _function_spans(tree: ast.AST) -> list[tuple[int, int, int]]:
+    spans: list[tuple[int, int, int]] = []
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            spans.append((node.lineno, getattr(node, "end_lineno", node.lineno), node.col_offset))
+    return spans
+
+
+def _comment_is_call(comment: str) -> bool:
+    source = comment.partition("#")[2].strip()
+    if not source:
+        return False
+    try:
+        expression = ast.parse(source, mode="eval")
+    except SyntaxError:
+        return False
+    return isinstance(expression.body, ast.Call)
+
+
+def check_disabled_check(inventory: Inventory) -> list[Finding]:
+    """Find call-shaped comments inside AST-identified entry-point control flow."""
+    findings: list[Finding] = []
+    for entry in inventory.entry_points:
+        if entry.language != "python":
+            continue
+        source = _source(inventory, entry)
+        tree = _tree(inventory, entry)
+        if source is None or tree is None:
+            continue
+        spans = _function_spans(tree)
+        try:
+            tokens = tokenize.generate_tokens(io.StringIO(source).readline)
+            for token in tokens:
+                if token.type != tokenize.COMMENT or not _comment_is_call(token.string):
+                    continue
+                line, column = token.start
+                if any(start <= line <= end and column > indent
+                       for start, end, indent in spans):
+                    findings.append(_finding(
+                        "op-disabled-check",
+                        f"entry point `{entry.path}` comments out a verification call",
+                        path=entry.path, entry_point=entry.path,
+                    ))
+        except (IndentationError, tokenize.TokenError):
+            continue
+    return findings
+
+
 CHECKS: tuple[Callable[[Inventory], list[Finding]], ...] = (
     check_undocumented,
     check_registry_stale,
@@ -370,3 +420,8 @@ def run_ast_checks(inventory: Inventory) -> list[Finding]:
     for check in CHECKS:
         findings.extend(check(inventory))
     return findings
+
+
+def run_checks(inventory: Inventory) -> list[Finding]:
+    """Run all eight checks, adding the tokenizer-backed disabled-gate check last."""
+    return run_ast_checks(inventory) + check_disabled_check(inventory)
