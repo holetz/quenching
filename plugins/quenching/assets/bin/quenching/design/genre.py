@@ -5,6 +5,7 @@ import html
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -27,7 +28,7 @@ REPEAT_MARKER_RE = re.compile(r"\{\{\s*[#/]\s*field\.[A-Za-z][A-Za-z0-9_-]*\s*\}
 
 
 def new_genre(root: Path, slug: str, name: str, register: str, media: list[str],
-              fields: list[str], write: bool = True) -> dict[str, Any]:
+              fields: list[str], write: bool = True, engine: str = "builtin") -> dict[str, Any]:
     root = root.resolve()
     if not SLUG_RE.fullmatch(slug):
         raise DesignError("genre slug must be kebab-case")
@@ -35,7 +36,10 @@ def new_genre(root: Path, slug: str, name: str, register: str, media: list[str],
     parsed_fields = [_parse_field(field) for field in fields]
     if not parsed_fields:
         raise DesignError("a genre needs at least one declared field")
-    targets = {f".design/genres/{slug}.md": _genre_document(slug, name, register, normalized_media, parsed_fields)}
+    engine = _validate_engine(engine)
+    targets = {f".design/genres/{slug}.md": _genre_document(
+        slug, name, register, normalized_media, parsed_fields, engine,
+    )}
     for medium in normalized_media:
         template_medium = "typst" if medium == "pdf" else medium
         if template_medium not in {"html", "typst"}:
@@ -102,14 +106,18 @@ def render_genre(root: Path, slug: str, medium: str, data_path: Path,
     target = target.resolve()
     target.parent.mkdir(parents=True, exist_ok=True)
     list_fields = {name for name, _, _, is_list in fields if is_list}
-    rendered = _substitute(
-        template, data, medium, target, root, frontmatter.get("register", "read"),
-        list_fields=list_fields,
-    )
-    if medium == "pdf":
-        _compile_pdf(rendered, target, root)
+    engine = _validate_engine(frontmatter.get("engine", "builtin"))
+    if engine == "builtin":
+        rendered = _substitute(
+            template, data, medium, target, root, frontmatter.get("register", "read"),
+            list_fields=list_fields,
+        )
+        if medium == "pdf":
+            _compile_pdf(rendered, target, root)
+        else:
+            target.write_text(rendered, encoding="utf-8", newline="\n")
     else:
-        target.write_text(rendered, encoding="utf-8", newline="\n")
+        _render_external(engine, data, template, medium, root, target)
     return {"ok": True, "genre": slug, "medium": medium,
             "output": _relative(target, root), "fields": sorted(data)}
 
@@ -120,6 +128,13 @@ def _media(values: list[str]) -> list[str]:
     if unknown:
         raise DesignError("unsupported genre media: " + ", ".join(unknown))
     return media
+
+
+def _validate_engine(value: str) -> str:
+    engine = str(value or "").strip()
+    if not engine:
+        raise DesignError("genre engine must be `builtin` or a non-empty command")
+    return engine
 
 
 def _parse_field(value: str) -> tuple[str, bool, str, bool]:
@@ -141,10 +156,11 @@ def _parse_field(value: str) -> tuple[str, bool, str, bool]:
 
 
 def _genre_document(slug: str, name: str, register: str, media: list[str],
-                    fields: list[tuple[str, bool, str, bool]]) -> str:
+                    fields: list[tuple[str, bool, str, bool]], engine: str) -> str:
     lines = ["---", f"name: {json.dumps(name, ensure_ascii=False)}", f"slug: {json.dumps(slug)}",
              f"register: {json.dumps(register, ensure_ascii=False)}",
-             f"media: {json.dumps(', '.join(media))}", "---", "", f"# {name}", "", "## Fields", ""]
+             f"media: {json.dumps(', '.join(media))}", f"engine: {json.dumps(engine, ensure_ascii=False)}",
+             "---", "", f"# {name}", "", "## Fields", ""]
     for field, required, description, is_list in fields:
         suffix = f" {description}" if description else ""
         cardinality = " list" if is_list else ""
@@ -324,6 +340,38 @@ def _value_text(value: Any) -> str:
     if isinstance(value, (dict, list)):
         return json.dumps(value, ensure_ascii=False, sort_keys=True)
     return str(value)
+
+
+def _render_external(engine: str, data: dict[str, Any], template: str, medium: str,
+                     root: Path, target: Path) -> None:
+    try:
+        command = shlex.split(engine)
+    except ValueError as exc:
+        raise DesignError(f"external engine command is not valid: {exc}") from exc
+    if not command:
+        raise DesignError("external engine command is empty")
+    request = {
+        "data": data,
+        "template": template,
+        "medium": medium,
+        "root": str(root),
+        "output": str(target),
+    }
+    try:
+        run = subprocess.run(
+            command,
+            input=json.dumps(request, ensure_ascii=False).encode("utf-8"),
+            capture_output=True,
+        )
+    except OSError as exc:
+        raise DesignError(f"external engine could not start: {exc}") from exc
+    if run.returncode:
+        detail = run.stderr.decode("utf-8", errors="replace").strip()
+        suffix = f": {detail}" if detail else ""
+        raise DesignError(f"external engine exited with status {run.returncode}{suffix}")
+    if not run.stdout:
+        raise DesignError("external engine produced empty output")
+    target.write_bytes(run.stdout)
 
 
 def _render_field(name: str, value: str, medium: str, register: str) -> str:

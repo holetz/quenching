@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import json
 import pathlib
+import shlex
 import shutil
 import stat
+import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -444,6 +446,56 @@ components:
         template.write_text("{{#field.items}}<p>{{item}}</p>\n", encoding="utf-8")
         with self.assertRaisesRegex(DesignError, "unclosed"):
             render_genre(self.root, "repeat-errors", "html", data)
+
+    def test_genre_external_engine_receives_json_and_writes_stdout_artifact(self):
+        engine = self.root / "external-engine.py"
+        engine.write_text(
+            "import json, sys\n"
+            "request = json.load(sys.stdin)\n"
+            "if request['medium'] != 'html' or request['data']['title'] != 'External':\n"
+            "    sys.exit(4)\n"
+            "sys.stdout.buffer.write(b'external artifact')\n",
+            encoding="utf-8",
+        )
+        command = f"{shlex.quote(sys.executable)} {shlex.quote(str(engine))}"
+        new_genre(
+            self.root, "external-note", "External note", "read", ["html"],
+            ["title:required:Title"], engine=command,
+        )
+        data = self.root / "external-note.json"
+        data.write_text(json.dumps({"title": "External"}), encoding="utf-8")
+        rendered = render_genre(self.root, "external-note", "html", data)
+        self.assertEqual(
+            b"external artifact",
+            (self.root / rendered["output"]).read_bytes(),
+        )
+
+    def test_genre_external_engine_refuses_failure_and_empty_output(self):
+        failure = self.root / "failure-engine.py"
+        failure.write_text(
+            "import sys\n"
+            "sys.stderr.write('engine failed')\n"
+            "sys.exit(7)\n",
+            encoding="utf-8",
+        )
+        empty = self.root / "empty-engine.py"
+        empty.write_text("import sys\nsys.exit(0)\n", encoding="utf-8")
+        data = self.root / "external-error.json"
+        data.write_text(json.dumps({"title": "External"}), encoding="utf-8")
+        new_genre(
+            self.root, "external-failure", "External failure", "read", ["html"],
+            ["title:required:Title"],
+            engine=f"{shlex.quote(sys.executable)} {shlex.quote(str(failure))}",
+        )
+        with self.assertRaisesRegex(DesignError, "status 7: engine failed"):
+            render_genre(self.root, "external-failure", "html", data)
+        new_genre(
+            self.root, "external-empty", "External empty", "read", ["html"],
+            ["title:required:Title"],
+            engine=f"{shlex.quote(sys.executable)} {shlex.quote(str(empty))}",
+        )
+        with self.assertRaisesRegex(DesignError, "empty output"):
+            render_genre(self.root, "external-empty", "html", data)
 
     def test_doctor_measures_color_pairs_with_declared_wcag_policy(self):
         path = self.root / ".design" / "tokens.json"
