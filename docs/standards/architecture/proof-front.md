@@ -2,7 +2,7 @@
 type: standard
 title: Proof front
 description: The target repository's canonical verification surface — layered tests, explicit fixture reach, measured source roots, a coverage ratchet, order evidence and a CI gate
-resource: docs/standards/architecture/align-surface.md, docs/standards/quality/selftest-mutation.md, docs/standards/quality/surface-verification.md, plugins/quenching/assets/references/proof-align/target-structure.md, plugins/quenching/assets/references/proof-align/layer-contract.md, plugins/quenching/assets/references/proof-align/gate-contract.md
+resource: docs/standards/architecture/align-surface.md, docs/standards/quality/selftest-mutation.md, docs/standards/quality/surface-verification.md, plugins/quenching/assets/bin/quenching/proof/**, plugins/quenching/assets/references/proof-align/target-structure.md, plugins/quenching/assets/references/proof-align/layer-contract.md, plugins/quenching/assets/references/proof-align/gate-contract.md
 tags: [architecture, proof, tests, coverage, verification]
 timestamp: 2026-08-30
 audience: both
@@ -77,6 +77,10 @@ repository's own source and product boundaries decide whether data transformatio
 kind of evidence. A target that declares that boundary may not silently omit the layer; a target
 that does not declare it does not create an empty directory for symmetry.
 
+The generated `tests/README.md` is checked separately from the layer contract. When at least one
+layer is declared, `cq proof doctor` emits `pf-readme-stale` if the README block is absent or no
+longer matches the inventory; a target with no declared layers has no layer listing to keep fresh.
+
 ## Fixture reach
 
 Every shared fixture declares the furthest state it may touch. The closed enumeration is:
@@ -150,6 +154,7 @@ the standard remains a map rather than a second checker specification:
 | --- | --- |
 | `pf-unlayered`, `pf-unmarked`, `pf-loose-fixture`, `pf-fat-conftest` | layer contract |
 | `pf-unmeasured-surface`, `pf-no-floor`, `pf-stop-first`, `pf-order-unproven`, `pf-no-ci`, `pf-untested-entrypoint` | gate contract |
+| `pf-readme-stale` | proof README generator |
 
 The gate treats `pf-untested-entrypoint` as conditional on the target declaring an operations
 front. A repository without that front records the condition as not applicable; it does not create

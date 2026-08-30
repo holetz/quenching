@@ -16,6 +16,7 @@ from quenching.proof.checks import conditional_status, run_checks
 from quenching.proof.inventory import build_inventory
 from quenching.proof.model import ProofInventory
 from quenching.proof.ratchet import evaluate
+from quenching.proof.readme import write_readme
 
 HERE = Path(__file__).resolve().parent
 GOLDEN = HERE / "fixtures" / "golden"
@@ -116,6 +117,7 @@ class ProofFixtureTrees(unittest.TestCase):
             inventory, err = build_inventory(str(root))
             self.assertEqual({}, err)
             assert inventory is not None
+            write_readme(inventory)
             return {item.code for item in run_checks(inventory)}
 
     def _codes(self, **kwargs):
@@ -244,6 +246,10 @@ class ProofFixtureTrees(unittest.TestCase):
                 "files": {"src/app.py": {"covered_lines": 8, "num_statements": 10}},
                 "totals": {"percent_covered": 80},
             }), encoding="utf-8")
+            inventory, err = build_inventory(str(root))
+            self.assertEqual({}, err)
+            assert inventory is not None
+            write_readme(inventory)
             forbidden = mock.Mock(side_effect=AssertionError("proof command executed the target"))
             with mock.patch.object(subprocess, "run", forbidden), \
                     mock.patch.object(os, "system", forbidden), \
