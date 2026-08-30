@@ -135,6 +135,25 @@ The gate treats `pf-untested-entrypoint` as conditional on the target declaring 
 front. A repository without that front records the condition as not applicable; it does not create
 a synthetic operations test to make the proof count look complete.
 
+## Why the name is `proof` and not `tests`
+
+`tests` names an implementation location; `proof` names the evidence the location is responsible
+for producing. The distinction follows the one-axis naming test in
+[command-surface.md](../naming/command-surface.md): this front owns a kind of repository evidence,
+not every file that happens to end in `_test` or `test_`. A target may keep compatibility paths or
+additional test tools, but the proof front gives the evidence a stable contract and a name that can
+be used by aligners, CI and documentation without pretending that a directory alone proves
+anything.
+
+## Why layers are declared rather than files imposed
+
+The front declares layer meanings and gate evidence; it does not impose a file list on a target
+whose product boundaries are different. This is the same scope boundary that
+[align-surface.md](align-surface.md) applies to every local front: the align converges artifacts
+that have an applicable contract and reports source gaps, but it does not invent a capability to
+make a count look complete. A layer is consequently required only when the repository claims that
+kind of evidence, while a declared layer must have a readable meaning and a non-empty proof plan.
+
 ## Boundary with the rest of the plugin
 
 The proof front owns the target repository's test evidence. The aligned-front column and the
