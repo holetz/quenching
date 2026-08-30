@@ -59,6 +59,28 @@ the ops tooling reads them through the shared configuration loader and refuses w
 `op-config-missing` when either one is absent. It never guesses `scripts/` or chooses among
 multiple router files.
 
+## The generated registry
+
+`registry.md` is the generated record of the operations inventory. The generator owns exactly the
+block between these delimiters and preserves all text outside it:
+
+```markdown
+<!-- quenching-ops-registry-start -->
+<!-- quenching-ops-registry-sha256 <64 lowercase hexadecimal digits> -->
+...
+<!-- quenching-ops-registry-end -->
+```
+
+The hash is SHA-256 over the UTF-8 bytes of the canonical JSON object containing `router` and
+`entryPoints` from the inventory payload, serialized with sorted keys, compact separators, and no
+trailing newline. Every path in that object is relative to the declared operations root, so the
+digest is stable across checkouts. `op-registry-stale` compares this digest and the rows against a
+fresh inventory; an absent registry is handled by `op-undocumented`, not by `op-registry-stale`.
+
+Non-Python entry points remain registry rows with their path, invocation, and lifecycle. Their
+`module` is `null`, their AST-derived fields are empty or false, and the verifier marks the AST
+checks not applicable to them. The inventory does not execute or parse their contents.
+
 ## One router
 
 An adopting repository declares **exactly one canonical router** for the normalized interface:
