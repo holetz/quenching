@@ -40,9 +40,10 @@ def _cell(value: str) -> str:
 def _entry_row(entry: EntryPoint) -> str:
     lifecycle = entry.lifecycle or "—"
     writes = "yes" if entry.writes_outside_repo else "no"
+    flags = ", ".join(f"`{_cell(flag)}`" for flag in entry.flags) or "—"
     return (
         f"| `{_cell(entry.path)}` | {_cell(entry.purpose) or '—'} | "
-        f"`{_cell(entry.invocation)}` | {lifecycle} | {writes} |"
+        f"`{_cell(entry.invocation)}` | {lifecycle} | {writes} | {flags} |"
     )
 
 
@@ -51,8 +52,8 @@ def render_registry_block(inventory: Inventory) -> str:
     lines = [
         REGISTRY_START,
         f"<!-- {REGISTRY_HASH} {inventory_digest(inventory)} -->",
-        "| Entry point | Purpose | Invocation | Lifecycle | Writes outside repository |",
-        "| --- | --- | --- | --- | --- |",
+        "| Entry point | Purpose | Invocation | Lifecycle | Writes outside repository | Flags |",
+        "| --- | --- | --- | --- | --- | --- |",
     ]
     lines.extend(_entry_row(entry) for entry in inventory.entry_points)
     lines.append(REGISTRY_END)
