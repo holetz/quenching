@@ -10,6 +10,9 @@ from quenching.design.build import GENERATED_PATHS, build_drift, compute_build
 from quenching.design.model import (
     DesignError,
     color_to_css,
+    contrast_pairs,
+    contrast_policy,
+    contrast_ratio,
     font_asset_paths,
     font_metadata,
     quenching_extension,
@@ -54,6 +57,11 @@ def inspect_design(root: Path) -> tuple[dict[str, Any], list[dict[str, str]]]:
             "designMdVersion": extension.get("designMd", {}).get("version"),
             "productSchema": extension.get("productSchema"),
         })
+        try:
+            payload["contrastPolicy"] = contrast_policy(source)
+            payload["contrastPairs"] = _contrast_summary(source)
+        except DesignError:
+            pass
     except DesignError:
         # `validate_source` below owns the actionable shape finding; status should
         # still return a stable payload when the source is malformed.
@@ -81,6 +89,7 @@ def inspect_design(root: Path) -> tuple[dict[str, Any], list[dict[str, str]]]:
     findings.extend(_orphan_assets(root))
     findings.extend(_non_web_literals(root, source))
     findings.extend(_font_findings(root, source))
+    findings.extend(_contrast_findings(source))
     return payload, sorted(findings, key=lambda item: (item["severity"] != "error", item["path"], item["code"]))
 
 
@@ -183,6 +192,54 @@ def _font_findings(root: Path, source: dict[str, Any]) -> list[dict[str, str]]:
                     "message": f"font family {name!r} has no resolvable declared asset: {detail}",
                 })
     return findings
+
+
+def _contrast_findings(source: dict[str, Any]) -> list[dict[str, str]]:
+    try:
+        policy = contrast_policy(source)
+    except DesignError as exc:
+        return [{"severity": "error", "code": "design-contrast-policy",
+                 "path": ".design/tokens.json", "message": str(exc)}]
+    records = token_map(source)
+    findings: list[dict[str, str]] = []
+    for foreground, background in contrast_pairs(source):
+        try:
+            ratio = contrast_ratio(resolve_token(foreground, records), resolve_token(background, records))
+        except DesignError as exc:
+            findings.append({
+                "severity": "warning", "code": "design-contrast-unmeasurable",
+                "path": f".design/tokens.json#{foreground.dotted}",
+                "message": f"contrast pair {foreground.dotted}/{background.dotted} is not measurable: {exc}",
+                "pair": f"{foreground.dotted}/{background.dotted}",
+            })
+            continue
+        if ratio < policy["threshold"]:
+            findings.append({
+                "severity": "error", "code": "design-contrast-failure",
+                "path": f".design/tokens.json#{foreground.dotted}",
+                "message": (f"contrast pair {foreground.dotted}/{background.dotted} is "
+                            f"{ratio:.2f}:1, below {policy['threshold']:.2f}:1"),
+                "pair": f"{foreground.dotted}/{background.dotted}",
+                "ratio": f"{ratio:.2f}",
+                "threshold": f"{policy['threshold']:.2f}",
+                "level": policy["level"],
+                "textSize": policy["textSize"],
+            })
+    return findings
+
+
+def _contrast_summary(source: dict[str, Any]) -> list[dict[str, str]]:
+    records = token_map(source)
+    summary: list[dict[str, str]] = []
+    for foreground, background in contrast_pairs(source):
+        pair = f"{foreground.dotted}/{background.dotted}"
+        try:
+            ratio = contrast_ratio(resolve_token(foreground, records), resolve_token(background, records))
+        except DesignError as exc:
+            summary.append({"pair": pair, "status": "unmeasurable", "reason": str(exc)})
+        else:
+            summary.append({"pair": pair, "status": "measured", "ratio": f"{ratio:.2f}"})
+    return summary
 
 
 def _web_detector(root: Path) -> dict[str, Any]:

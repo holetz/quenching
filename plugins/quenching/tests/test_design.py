@@ -110,6 +110,8 @@ class DesignFront(unittest.TestCase):
         self.assertEqual(2, payload["sidecarSchemaVersion"])
         self.assertEqual(8, payload["sidecarComponentCount"])
         self.assertEqual("skipped", payload["webDetector"]["state"])
+        self.assertEqual(3, len(payload["contrastPairs"]))
+        self.assertTrue(all(item["status"] == "measured" for item in payload["contrastPairs"]))
         design = self.root / "DESIGN.md"
         design.write_text(design.read_text(encoding="utf-8") + "\nmanual drift\n", encoding="utf-8")
         _, findings = inspect_design(self.root)
