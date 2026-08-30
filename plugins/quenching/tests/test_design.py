@@ -469,6 +469,9 @@ components:
             b"external artifact",
             (self.root / rendered["output"]).read_bytes(),
         )
+        medium = (self.root / "MEDIUM.md").read_text(encoding="utf-8")
+        self.assertIn(f"| External note | read | html |", medium)
+        self.assertIn(command, medium)
 
     def test_genre_external_engine_refuses_failure_and_empty_output(self):
         failure = self.root / "failure-engine.py"
