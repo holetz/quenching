@@ -309,6 +309,99 @@ class RegistryStale(unittest.TestCase):
             self.assertEqual(check_registry_stale(inventory), expected["findings"])
 
 
+class MintedEntryPoints(unittest.TestCase):
+    def _doctor_minted_source(self, source: str) -> dict:
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            scripts = root / "scripts"
+            scripts.mkdir()
+            (root / ".claude").mkdir()
+            (root / ".claude" / "quenching.json").write_text(
+                json.dumps({"opsRoot": "scripts", "router": "pyproject.toml"}),
+                encoding="utf-8",
+            )
+            (root / "pyproject.toml").write_text(
+                "[project.scripts]\nrun = 'run:main'\n", encoding="utf-8"
+            )
+            (scripts / "run.py").write_text(source, encoding="utf-8")
+            # The lifecycle is authored before the generator owns the rest of the document.
+            (scripts / "README.md").write_text("`run.py` — active\n", encoding="utf-8")
+
+            inventory, inventory_err = build_inventory(str(root))
+            self.assertEqual(inventory_err, {})
+            assert inventory is not None
+            self.assertTrue(write_registry(scripts / "README.md", inventory))
+
+            payload, err, exit_code = doctor(str(root))
+            self.assertEqual(err, {})
+            self.assertEqual(exit_code, 0)
+            assert payload is not None
+            self.assertEqual(payload["findings"], [])
+            return payload
+
+    def test_mold_without_external_write_is_conformant(self):
+        payload = self._doctor_minted_source(
+            "from __future__ import annotations\n"
+            "import argparse\n"
+            "import json\n"
+            "import sys\n"
+            "from pathlib import Path\n"
+            "from bootstrap import add_common_arguments, repository_root\n\n"
+            "def build_parser() -> argparse.ArgumentParser:\n"
+            "    parser = argparse.ArgumentParser(description='Run the operation',\n"
+            "                                 epilog='Example: run --json')\n"
+            "    add_common_arguments(parser)\n"
+            "    parser.add_argument('--json', action='store_true')\n"
+            "    return parser\n\n"
+            "def run(args: argparse.Namespace, root: Path) -> tuple[dict, list[str], int]:\n"
+            "    return {'root': str(root)}, [], 0\n\n"
+            "def main() -> int:\n"
+            "    args = build_parser().parse_args()\n"
+            "    data, diagnostics, exit_code = run(args, repository_root())\n"
+            "    if args.json:\n"
+            "        print(json.dumps(data))\n"
+            "    else:\n"
+            "        print(data)\n"
+            "    for message in diagnostics:\n"
+            "        print(message, file=sys.stderr)\n"
+            "    return int(exit_code)\n\n"
+            "if __name__ == '__main__':\n"
+            "    raise SystemExit(main())\n"
+        )
+        self.assertEqual(payload["entryPoints"][0]["writesOutsideRepo"], False)
+
+    def test_mold_with_external_write_is_conformant_when_armed(self):
+        payload = self._doctor_minted_source(
+            "from __future__ import annotations\n"
+            "import argparse\n"
+            "from pathlib import Path\n"
+            "from bootstrap import add_common_arguments, repository_root\n"
+            "from external_client import client\n\n"
+            "def build_parser() -> argparse.ArgumentParser:\n"
+            "    parser = argparse.ArgumentParser(description='Publish the operation',\n"
+            "                                 epilog='Example: run --json')\n"
+            "    add_common_arguments(parser)\n"
+            "    parser.add_argument('--json', action='store_true')\n"
+            "    parser.add_argument('--apply', action='store_true')\n"
+            "    return parser\n\n"
+            "def run(args: argparse.Namespace, root: Path) -> tuple[dict, list[str], int]:\n"
+            "    if not args.apply:\n"
+            "        return {'preview': True}, ['pass --apply to publish'], 0\n"
+            "    client.write({'root': str(root)})\n"
+            "    return {'preview': False}, [], 0\n\n"
+            "def main() -> int:\n"
+            "    args = build_parser().parse_args()\n"
+            "    data, diagnostics, exit_code = run(args, repository_root())\n"
+            "    print(data)\n"
+            "    for message in diagnostics:\n"
+            "        print(message, file=__import__('sys').stderr)\n"
+            "    return int(exit_code)\n\n"
+            "if __name__ == '__main__':\n"
+            "    raise SystemExit(main())\n"
+        )
+        self.assertEqual(payload["entryPoints"][0]["writesOutsideRepo"], True)
+
+
 class GoldenPayloads(unittest.TestCase):
     def test_doctor_and_status_match_the_frozen_inventory_shape(self):
         doctor_expected = json.loads(
