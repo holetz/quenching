@@ -20,6 +20,10 @@ from quenching.proof.readme import render_readme_document, write_readme
 
 HERE = Path(__file__).resolve().parent
 GOLDEN = HERE / "fixtures" / "golden"
+PLUGIN_ROOT = HERE.parent
+LAYER_COMMAND = PLUGIN_ROOT / "commands" / "proof" / "layer" / "new.md"
+HOOK_TEMPLATE = PLUGIN_ROOT / "assets" / "templates" / "proof" / "collection-hook.py.tmpl"
+FIXTURE_TEMPLATE = PLUGIN_ROOT / "assets" / "templates" / "proof" / "layer-fixtures.py.tmpl"
 
 
 class FrozenProofPayloads(unittest.TestCase):
@@ -91,6 +95,49 @@ class GeneratedProofReadme(unittest.TestCase):
             self.assertTrue(first.startswith(authored + "\n"))
             self.assertIn("\n<!-- quenching-proof-readme-end -->\n", first)
             self.assertEqual(first, render_readme_document(first, inventory))
+
+
+class ProofLayerBodyContracts(unittest.TestCase):
+    def test_mint_templates_cover_targets_with_and_without_a_collection_hook(self):
+        hook = HOOK_TEMPLATE.read_text(encoding="utf-8")
+        self.assertIn("QUENCHING PROOF COLLECTION HOOK: BEGIN", hook)
+        self.assertIn("pytest_collection_modifyitems", hook)
+        self.assertIn("LAYER_MARKERS", hook)
+        self.assertIn("<layer-directory>", hook)
+        self.assertIn("QUENCHING PROOF COLLECTION HOOK: END", hook)
+        fixture = FIXTURE_TEMPLATE.read_text(encoding="utf-8")
+        self.assertIn("QUENCHING PROOF FIXTURE LIBRARY: BEGIN", fixture)
+        self.assertIn("<reach>", fixture)
+
+        authored_hook = "# target-owned collection rule\n"
+        minted_block = (hook.replace("<layer-directory>", "unit")
+                        .replace("<marker-name>", "unit"))
+        installed = authored_hook + "\n" + minted_block
+        self.assertEqual(authored_hook, installed[:len(authored_hook)])
+        self.assertIn("QUENCHING PROOF COLLECTION HOOK: BEGIN", installed)
+
+        fresh_install = minted_block
+        self.assertEqual(minted_block, fresh_install)
+        self.assertNotIn(authored_hook, fresh_install)
+
+    def test_layer_body_names_separate_migration_and_interruption_boundaries(self):
+        body = LAYER_COMMAND.read_text(encoding="utf-8")
+        self.assertIn("proposed existing-test moves", body)
+        self.assertIn("separately confirmed", body)
+        self.assertIn("first layer", body)
+        self.assertIn("five coupled structural edits", body)
+        self.assertIn("failed intermediate edit", body)
+        self.assertIn("target suite is never run", body)
+
+    def test_declined_migration_and_interrupted_mint_leave_explicit_boundaries(self):
+        body = LAYER_COMMAND.read_text(encoding="utf-8")
+        self.assertIn("A declined migration leaves every", body)
+        self.assertIn("test path unchanged", body)
+        self.assertIn("Do not move tests until the separate migration confirmation is affirmative", body)
+        self.assertIn("all five declarations complete", body)
+        self.assertIn("doctor names", body)
+        self.assertIn("precisely", body)
+        self.assertIn("Existing hook rules and authored README prose survive", body)
 
 
 class ProofFixtureTrees(unittest.TestCase):
@@ -245,7 +292,7 @@ class ProofFixtureTrees(unittest.TestCase):
                              {row.provider for row in rows})
             self.assertTrue(all(row.runs_gate for row in rows))
 
-    def test_all_four_commands_refuse_to_execute_the_target_suite(self):
+    def test_all_five_commands_refuse_to_execute_the_target_suite(self):
         from quenching.proof.cli import main
 
         with tempfile.TemporaryDirectory() as directory:
@@ -283,7 +330,7 @@ class ProofFixtureTrees(unittest.TestCase):
             with mock.patch.object(subprocess, "run", forbidden), \
                     mock.patch.object(os, "system", forbidden), \
                     mock.patch.object(importlib, "import_module", forbidden):
-                for command in ("inventory", "doctor", "ratchet", "status"):
+                for command in ("inventory", "doctor", "ratchet", "status", "readme"):
                     with self.subTest(command=command):
                         self.assertEqual(0, main(["--root", str(root), command, "--json"]))
 
