@@ -170,7 +170,7 @@ def _markers(value: Any) -> tuple[str, ...]:
     return tuple(sorted(set(item.split(":", 1)[0].strip() for item in values if item.strip())))
 
 
-def _gate(repo_root: str) -> GateConfig:
+def _gate(repo_root: str, ratchet_path: str) -> GateConfig:
     root = Path(repo_root)
     path: str | None = None
     raw: dict[str, Any] = {}
@@ -199,7 +199,30 @@ def _gate(repo_root: str) -> GateConfig:
         coverage_floor=(float(raw["coverage_floor"])
                         if isinstance(raw.get("coverage_floor"), (int, float))
                         and not isinstance(raw.get("coverage_floor"), bool) else None),
+        ratchet_path=ratchet_path,
+        ratchet_exists=Path(ratchet_path).is_file(),
     )
+
+
+def _source_surfaces(repo_root: str, proof_root: str) -> tuple[str, ...]:
+    """Find top-level directories that contain source-like files, excluding the proof root."""
+    suffixes = {".c", ".cpp", ".go", ".java", ".js", ".py", ".rs", ".scala", ".sh",
+                ".sql", ".ts", ".tsx"}
+    result: list[str] = []
+    root = Path(repo_root)
+    proof_name = Path(proof_root).name
+    for child in sorted(root.iterdir()):
+        if not child.is_dir() or child.name.startswith(".") or child.name == proof_name:
+            continue
+        found = False
+        for directory, dirnames, filenames in os.walk(child):
+            dirnames[:] = sorted(name for name in dirnames if name not in _SKIP_DIRS)
+            if any(Path(name).suffix.lower() in suffixes for name in filenames):
+                found = True
+                break
+        if found:
+            result.append(child.name)
+    return tuple(result)
 
 
 def build_inventory(root: str) -> tuple[ProofInventory | None, dict]:
@@ -243,12 +266,12 @@ def build_inventory(root: str) -> tuple[ProofInventory | None, dict]:
                 tests.append(TestModule(relative, layer, _marker_for(layer), imports,
                                         _test_count(tree)))
 
-    gate = _gate(repo_root)
+    gate = _gate(repo_root, config["ratchetPath"])
     measured = tuple(item["relative"] for item in config["measuredRoots"])
     exclusions = tuple(item["relative"] for item in config["proofExclusions"])
     return ProofInventory(repo_root, proof_root, layers, tuple(tests), tuple(fixtures),
                           tuple(conftests), gate, discover_ci(repo_root, proof_root),
-                          measured, exclusions), {}
+                          measured, exclusions, _source_surfaces(repo_root, proof_root)), {}
 
 
 def inventory(root: str) -> tuple[ProofInventory | None, dict]:
