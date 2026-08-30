@@ -69,6 +69,10 @@ the checks that hold it honest. The *modeling* that defines data lives in
   to"; how to write the assertion, how to read the failure, the third reading that is never
   permitted, and the negative face where the check forbids a string the spec itself requires
   elsewhere
+* [self-matching-guards.md](self-matching-guards.md) — A checker whose finding text quotes the
+  pattern it prohibits will match itself — the self-accusation this repo measured on its first run,
+  why the fix is parsing the construct rather than excluding the checker, and the narrow case where
+  a substring scan is still honest
 * [selftest-mutation.md](selftest-mutation.md) — A test that has never been observed to fail is
   untested — the mutation pass that earns the claim, one mutation per rule the fixture exists to
   prove, why the pass is run once at authoring rather than wired into CI, and the graduation gate
@@ -88,6 +92,8 @@ the checks that hold it honest. The *modeling* that defines data lives in
   tool_use rather than prose, the five preconditions a functional check must satisfy to measure
   what it claims, why the harness belongs to the components front rather than the spec cycle and
   how to scope its cost, and how an ordering property is verified by running a real cycle
+* [translation-drift.md](translation-drift.md) — Translation divergence is a named, repairable
+  finding with exit 1; refusal remains exit 2 and neither result is a silent success
 
 ## Candidate sub-standards
 
