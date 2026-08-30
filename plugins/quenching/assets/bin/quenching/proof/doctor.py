@@ -1,7 +1,7 @@
 """Assemble the proof inventory and static findings."""
 from __future__ import annotations
 
-from quenching.proof.checks import run_checks
+from quenching.proof.checks import conditional_status, run_checks
 from quenching.proof.inventory import build_inventory
 
 
@@ -17,6 +17,7 @@ def inspect_proof(root: str) -> tuple[dict | None, dict]:
     payload.update({
         "scanned": len(inventory.test_modules),
         "suiteRun": False,
+        "conditional": conditional_status(inventory),
         "errors": errors,
         "warnings": len(findings) - errors,
         "findings": findings,

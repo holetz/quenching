@@ -6,6 +6,7 @@ suite itself remains outside this pillar's execution boundary.
 """
 from __future__ import annotations
 
+from quenching.ops.config import load_ops_config
 from quenching.ops.inventory import build_inventory as build_ops_inventory
 from quenching.proof.model import Finding, ProofInventory
 
@@ -128,6 +129,14 @@ def check_untested_entrypoint(inventory: ProofInventory) -> list[Finding]:
                                f"operations entry point `{entry.module}` is not imported by a test",
                                path=entry.path))
     return findings
+
+
+def conditional_status(inventory: ProofInventory) -> dict[str, str]:
+    """State why the cross-front entry-point check did not run when ops is absent."""
+    _, err = load_ops_config(inventory.repo_root)
+    if err.get("code") == "op-config-missing":
+        return {"pf-untested-entrypoint": "not-applicable — ops is not configured"}
+    return {}
 
 
 def run_checks(inventory: ProofInventory) -> list[Finding]:
