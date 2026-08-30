@@ -375,6 +375,21 @@ components:
         self.assertEqual(1, len(missing))
         self.assertIn("Brand Sans", missing[0]["message"])
 
+    def test_genre_field_contract_declares_list_cardinality_and_validates_arrays(self):
+        new_genre(
+            self.root, "catalog", "Catalog", "read", ["html"],
+            ["title:required:Title", "items:required:list:Item"],
+        )
+        contract = (self.root / ".design" / "genres" / "catalog.md").read_text(encoding="utf-8")
+        self.assertIn("- `items` — required list Item", contract)
+        data = self.root / "catalog.json"
+        data.write_text(json.dumps({"title": "Catalog", "items": []}), encoding="utf-8")
+        with self.assertRaisesRegex(DesignError, "items"):
+            render_genre(self.root, "catalog", "html", data)
+        data.write_text(json.dumps({"title": "Catalog", "items": "one"}), encoding="utf-8")
+        with self.assertRaisesRegex(DesignError, "must be a JSON array"):
+            render_genre(self.root, "catalog", "html", data)
+
     def test_doctor_measures_color_pairs_with_declared_wcag_policy(self):
         path = self.root / ".design" / "tokens.json"
         source = read_json(path)
