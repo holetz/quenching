@@ -102,6 +102,12 @@ python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" proof readme
 The operation must either leave all five declarations complete or leave a state the doctor names
 precisely; do not silently continue after a failed intermediate edit.
 
+The fixture-library decision is reach-sensitive: `nothing` does not create an empty fixture module;
+the generated README records `none`. `tree`, `session`, and `workspace` create the layer's fixture
+module from the reach-scoped template because those boundaries need a declared shared home. An
+existing fixture library is preserved and never replaced merely because the new layer has no
+fixture of its own.
+
 **Done when:** the named layer, marker, hook, fixture home and README are in place, and no
 unconfirmed test move or target-suite execution occurred.
 
