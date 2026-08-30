@@ -34,6 +34,7 @@
     "Task",
     "Skill",
     "context: fork",
-    "hooks"
+    "hooks",
+    "ops:entrypoint:new — preserve its four-question human gate when translating the body"
   ]
 }

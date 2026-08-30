@@ -5,11 +5,14 @@ import argparse
 import os
 import sys
 from collections import Counter
+from pathlib import Path
 
 from quenching.common.output import emit, refuse
 from quenching.common.version import VERSION
+from quenching.ops.config import load_ops_config
 from quenching.ops.doctor import doctor as run_doctor, inspect_ops
 from quenching.ops.inventory import build_inventory
+from quenching.ops.registry import inventory_digest, render_registry_document, write_registry
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -27,6 +30,11 @@ def build_parser() -> argparse.ArgumentParser:
     ):
         child = sub.add_parser(name, help=help_text)
         child.add_argument("--json", action="store_true", help="print machine-readable output")
+    registry = sub.add_parser("registry", help="write or check the generated operations registry")
+    mode = registry.add_mutually_exclusive_group()
+    mode.add_argument("--write", action="store_true", help="update the generated registry")
+    mode.add_argument("--check", action="store_true", help="check without writing (the default)")
+    registry.add_argument("--json", action="store_true", help="print machine-readable output")
     return parser
 
 
@@ -96,8 +104,37 @@ def main(argv: list[str]) -> int:
     as_json = bool(getattr(args, "json", False))
     if not args.cmd:
         return refuse({"code": "op-no-command", "message": "choose `inventory`, `doctor`, "
-                       "or `status`"}, as_json)
+                       "`status`, or `registry`"}, as_json)
     root = _root(args.root)
+    if args.cmd == "registry":
+        config, config_err = load_ops_config(root)
+        if config_err:
+            return refuse(config_err, as_json)
+        assert config is not None
+        inventory, inventory_err = build_inventory(root)
+        if inventory_err:
+            return refuse(inventory_err, as_json)
+        assert inventory is not None
+        path = Path(config["registry"])
+        try:
+            current = path.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            current = ""
+        expected = render_registry_document(current, inventory)
+        changed = current != expected
+        if args.write:
+            changed = write_registry(path, inventory)
+            payload = {"ok": True, "mode": "write", "path": str(path), "changed": changed,
+                       "digest": inventory_digest(inventory)}
+            emit(as_json, payload, f"ops registry — {'written' if changed else 'unchanged'}")
+            return 0
+        payload = {"root": root, "path": str(path), "changed": changed,
+                   "digest": inventory_digest(inventory)}
+        if as_json:
+            emit(as_json, {"ok": not changed, **payload}, "")
+        else:
+            emit(False, payload, f"ops registry — {'stale' if changed else 'fresh'}")
+        return 1 if changed else 0
     if args.cmd == "inventory":
         payload, err = build_inventory(root)
         if err:

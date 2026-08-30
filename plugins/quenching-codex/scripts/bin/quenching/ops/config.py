@@ -1,18 +1,32 @@
-"""The operations front's declared root and canonical router.
+"""The operations front's declared root, registry, and canonical router.
 
-`opsRoot` and `router` live beside the specs settings in `.agents/quenching.json`, but their
-meaning belongs to this front.  The shared loader reads them as data; this module is the one
-boundary that turns the two declarations into repository-relative paths and refuses to guess
-when either declaration is absent.
+`opsRoot`, `router`, and the optional `registry` path live beside the specs settings in
+`.agents/quenching.json`, but their meaning belongs to this front. The shared loader reads the
+required declarations as data; this module is the one boundary that turns the paths into
+repository-relative paths and refuses to guess when either required declaration is absent.
 """
 from __future__ import annotations
 
+import json
 import os
+from pathlib import Path
 
 from quenching.specs.config import CONFIG_FILE, load_config
 
 
 OPS_CONFIG_KEYS = ("opsRoot", "router")
+REGISTRY_CONFIG_KEY = "registry"
+
+
+def _declared_registry(repo_root: str) -> str | None:
+    """Read the optional registry override without changing shared config semantics."""
+    try:
+        value = json.loads(Path(repo_root, CONFIG_FILE).read_text(encoding="utf-8")).get(
+            REGISTRY_CONFIG_KEY
+        )
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, AttributeError):
+        return None
+    return value.strip() if isinstance(value, str) and value.strip() else None
 
 
 def _repo_path(repo_root: str, declared: str) -> str:
@@ -62,13 +76,18 @@ def load_ops_config(root: str) -> tuple[dict | None, dict]:
 
     ops_root = _repo_path(repo_root, cfg["opsRoot"])
     router = _repo_path(repo_root, cfg["router"])
+    declared_registry = _declared_registry(repo_root)
+    registry = (_repo_path(repo_root, declared_registry) if declared_registry
+                else os.path.join(ops_root, "README.md"))
     return {
         "config": cfg["path"],
         "repoRoot": repo_root,
         "opsRoot": ops_root,
         "router": router,
+        "registry": registry,
         "declaredOpsRoot": cfg["opsRoot"],
         "declaredRouter": cfg["router"],
+        "declaredRegistry": declared_registry,
     }, {}
 
 
