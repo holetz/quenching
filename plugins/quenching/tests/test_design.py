@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import json
 import pathlib
+import shlex
 import shutil
 import stat
+import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -16,7 +18,13 @@ from quenching.design.build import build_drift, compute_build, write_build
 from quenching.design.doctor import inspect_design
 from quenching.design.genre import new_genre, render_genre
 from quenching.design.importer import import_design
-from quenching.design.model import DTCG_SCHEMA, DesignError, read_json, validate_source
+from quenching.design.model import (
+    DTCG_SCHEMA,
+    DesignError,
+    font_asset_paths,
+    read_json,
+    validate_source,
+)
 
 
 PRODUCT = {
@@ -104,6 +112,8 @@ class DesignFront(unittest.TestCase):
         self.assertEqual(2, payload["sidecarSchemaVersion"])
         self.assertEqual(8, payload["sidecarComponentCount"])
         self.assertEqual("skipped", payload["webDetector"]["state"])
+        self.assertEqual(3, len(payload["contrastPairs"]))
+        self.assertTrue(all(item["status"] == "measured" for item in payload["contrastPairs"]))
         design = self.root / "DESIGN.md"
         design.write_text(design.read_text(encoding="utf-8") + "\nmanual drift\n", encoding="utf-8")
         _, findings = inspect_design(self.root)
@@ -188,6 +198,29 @@ components:
         source["$extensions"]["org.quenching"]["designMd"]["components"]["button-primary"]["height"] = "{spacing.missing}"
         self.assertIn("design-component-reference", {item["code"] for item in validate_source(source)})
 
+    def test_font_family_tokens_support_metadata_and_nested_typography_references(self):
+        path = self.root / ".design" / "tokens.json"
+        source = read_json(path)
+        source["fonts"] = {
+            "body": {
+                "$type": "fontFamily",
+                "$value": ["Brand Sans", "sans-serif"],
+                "$extensions": {"org.quenching": {"font": {
+                    "source": "licensed",
+                    "license": "OFL-1.1",
+                    "files": ["fonts/brand-sans.woff2"],
+                }}},
+            }
+        }
+        source["typography"]["body"]["$value"]["fontFamily"] = "{fonts.body}"
+        self.assertEqual([], validate_source(source))
+        paths = font_asset_paths(source, self.root / ".design" / "assets")
+        self.assertEqual([self.root / ".design" / "assets" / "fonts" / "brand-sans.woff2"], paths["fonts.body"])
+        path.write_text(json.dumps(source), encoding="utf-8")
+        write_build(compute_build(self.root))
+        css = (self.root / ".design" / "build" / "tokens.css").read_text(encoding="utf-8")
+        self.assertIn("--design-typography-body-font-family: Brand Sans, sans-serif;", css)
+
     def test_genre_renders_html_from_fields_and_generated_tokens(self):
         created = new_genre(
             self.root, "bulletin", "Bulletin", "read", ["html", "typst"],
@@ -203,6 +236,75 @@ components:
         self.assertIn("Risk review", html)
         self.assertIn("--design-colors-primary", html)
         self.assertNotIn("{{", html)
+
+    def test_read_genre_renders_markdown_semantically_in_html_and_typst(self):
+        new_genre(
+            self.root, "markdown-note", "Markdown note", "read", ["html", "typst"],
+            ["title:required:Title", "body:required:Reviewed body"],
+        )
+        data = self.root / "markdown-note.json"
+        data.write_text(json.dumps({
+            "title": "A note",
+            "body": "# Findings\n\n**Strong** and *emphasis* with [evidence](https://example.test).\n\n- one\n- two\n\n| Key | Value |\n| --- | --- |\n| A | B |",
+        }), encoding="utf-8")
+        html_output = render_genre(self.root, "markdown-note", "html", data)
+        html = (self.root / html_output["output"]).read_text(encoding="utf-8")
+        self.assertIn("<h1>Findings</h1>", html)
+        self.assertIn("<strong>Strong</strong>", html)
+        self.assertIn("<ul><li>one</li><li>two</li></ul>", html)
+        self.assertIn("<table>", html)
+        self.assertNotIn("**Strong**", html)
+        typst_output = render_genre(self.root, "markdown-note", "typst", data)
+        typst = (self.root / typst_output["output"]).read_text(encoding="utf-8")
+        self.assertIn("= Findings", typst)
+        self.assertIn("#strong[Strong]", typst)
+        self.assertIn("- one", typst)
+        self.assertIn("#table(columns: 2", typst)
+
+    def test_non_read_genre_keeps_body_as_escaped_scalar_text(self):
+        new_genre(
+            self.root, "data-note", "Data note", "write", ["html"],
+            ["title:required:Title", "body:required:Body"],
+        )
+        data = self.root / "data-note.json"
+        data.write_text(json.dumps({"title": "A note", "body": "**literal** <tag>"}), encoding="utf-8")
+        rendered = render_genre(self.root, "data-note", "html", data)
+        html = (self.root / rendered["output"]).read_text(encoding="utf-8")
+        self.assertIn("**literal** &lt;tag&gt;", html)
+        self.assertNotIn("<strong>literal</strong>", html)
+
+    def test_genre_resolves_asset_placeholders_for_each_output_medium(self):
+        new_genre(
+            self.root, "asset-note", "Asset note", "read", ["html", "typst"],
+            ["title:required:Title", "body:required:Body"],
+        )
+        html_template = self.root / ".design" / "media" / "html" / "asset-note.html"
+        html_template.write_text('<img src="{{asset.lockup.svg}}">\n', encoding="utf-8")
+        typst_template = self.root / ".design" / "media" / "typst" / "asset-note.typ"
+        typst_template.write_text('#image("{{asset.lockup.svg}}")\n', encoding="utf-8")
+        data = self.root / "asset-note.json"
+        data.write_text(json.dumps({"title": "A note", "body": "Text."}), encoding="utf-8")
+        html_result = render_genre(self.root, "asset-note", "html", data)
+        html = (self.root / html_result["output"]).read_text(encoding="utf-8")
+        self.assertIn('src="../assets/lockup.svg"', html)
+        typst_result = render_genre(self.root, "asset-note", "typst", data)
+        typst = (self.root / typst_result["output"]).read_text(encoding="utf-8")
+        self.assertIn('#image("../assets/lockup.svg")', typst)
+
+    def test_asset_placeholder_rejects_traversal_and_missing_files(self):
+        new_genre(
+            self.root, "unsafe-asset", "Unsafe asset", "read", ["html"],
+            ["title:required:Title", "body:required:Body"],
+        )
+        template = self.root / ".design" / "media" / "html" / "unsafe-asset.html"
+        data = self.root / "unsafe-asset.json"
+        data.write_text(json.dumps({"title": "A note", "body": "Text."}), encoding="utf-8")
+        template.write_text('{{asset.../lockup.svg}}\n', encoding="utf-8")
+        with self.assertRaisesRegex(DesignError, "escapes"):
+            render_genre(self.root, "unsafe-asset", "html", data)
+        template.write_text('{{asset.missing.svg}}\n', encoding="utf-8")
+        with self.assertRaisesRegex(DesignError, "does not name a file"):
+            render_genre(self.root, "unsafe-asset", "html", data)
 
     def test_genre_template_matches_non_report_field_contract(self):
         new_genre(
@@ -230,6 +332,247 @@ components:
         with mock.patch("quenching.design.genre.shutil.which", return_value=str(compiler)):
             rendered = render_genre(self.root, "pdf-note", "pdf", data)
         self.assertTrue((self.root / rendered["output"]).is_file())
+
+    def test_pdf_render_passes_declared_font_directories_to_typst(self):
+        path = self.root / ".design" / "tokens.json"
+        source = read_json(path)
+        font = self.root / ".design" / "assets" / "fonts" / "brand.woff2"
+        font.parent.mkdir(parents=True)
+        font.write_bytes(b"font")
+        source["fonts"] = {"brand": {
+            "$type": "fontFamily", "$value": "Brand Sans",
+            "$extensions": {"org.quenching": {"font": {
+                "source": "licensed", "license": "OFL-1.1", "files": ["fonts/brand.woff2"]
+            }}}
+        }}
+        source["typography"]["display"]["$value"]["fontFamily"] = "{fonts.brand}"
+        path.write_text(json.dumps(source), encoding="utf-8")
+        new_genre(self.root, "pdf-font", "PDF font", "read", ["pdf"],
+                  ["title:required:Title", "body:required:Body"])
+        data = self.root / "pdf-font.json"
+        data.write_text(json.dumps({"title": "A note", "body": "Text."}), encoding="utf-8")
+        compiler = self.root / "fake-typst"
+        compiler.write_text("#!/bin/sh\nprintf '%%PDF-1.4\\n' > \"$3\"\n", encoding="utf-8")
+        compiler.chmod(compiler.stat().st_mode | stat.S_IXUSR)
+        with mock.patch("quenching.design.genre.shutil.which", return_value=str(compiler)):
+            render_genre(self.root, "pdf-font", "pdf", data)
+        # The fake compiler keeps the target at argv[3]; successful output proves
+        # the additional font flags did not change the required Typst invocation.
+        self.assertTrue((self.root / ".design" / "build" / "pdf-font.pdf").is_file())
+
+    def test_doctor_reports_missing_declared_font_assets(self):
+        path = self.root / ".design" / "tokens.json"
+        source = read_json(path)
+        source["fonts"] = {"brand": {
+            "$type": "fontFamily", "$value": "Brand Sans",
+            "$extensions": {"org.quenching": {"font": {
+                "source": "licensed", "license": "OFL-1.1", "files": ["fonts/missing.woff2"]
+            }}}
+        }}
+        source["typography"]["display"]["$value"]["fontFamily"] = "{fonts.brand}"
+        path.write_text(json.dumps(source), encoding="utf-8")
+        write_build(compute_build(self.root))
+        _, findings = inspect_design(self.root)
+        missing = [item for item in findings if item["code"] == "design-font-unresolved"]
+        self.assertEqual(1, len(missing))
+        self.assertIn("Brand Sans", missing[0]["message"])
+
+    def test_genre_field_contract_declares_list_cardinality_and_validates_arrays(self):
+        new_genre(
+            self.root, "catalog", "Catalog", "read", ["html", "typst"],
+            ["title:required:Title", "items:required:list:Item"],
+        )
+        contract = (self.root / ".design" / "genres" / "catalog.md").read_text(encoding="utf-8")
+        self.assertIn("- `items` — required list Item", contract)
+        data = self.root / "catalog.json"
+        data.write_text(json.dumps({"title": "Catalog", "items": []}), encoding="utf-8")
+        with self.assertRaisesRegex(DesignError, "items"):
+            render_genre(self.root, "catalog", "html", data)
+        data.write_text(json.dumps({"title": "Catalog", "items": "one"}), encoding="utf-8")
+        with self.assertRaisesRegex(DesignError, "must be a JSON array"):
+            render_genre(self.root, "catalog", "html", data)
+        data.write_text(json.dumps({"title": "Catalog", "items": ["One", "Two"]}), encoding="utf-8")
+        html_result = render_genre(self.root, "catalog", "html", data)
+        html = (self.root / html_result["output"]).read_text(encoding="utf-8")
+        self.assertIn("<li>One</li>", html)
+        self.assertIn("<li>Two</li>", html)
+        typst_result = render_genre(self.root, "catalog", "typst", data)
+        typst = (self.root / typst_result["output"]).read_text(encoding="utf-8")
+        self.assertIn("- One", typst)
+        self.assertIn("- Two", typst)
+
+    def test_genre_repeat_blocks_render_scalar_and_object_items(self):
+        new_genre(
+            self.root, "catalog-items", "Catalog items", "read", ["html", "typst"],
+            ["title:required:Title", "items:required:list:Item"],
+        )
+        html_template = self.root / ".design" / "media" / "html" / "catalog-items.html"
+        html_template.write_text(
+            "{{#field.items}}<section>{{item.label}} {{item.body}}</section>{{/field.items}}\n",
+            encoding="utf-8",
+        )
+        typst_template = self.root / ".design" / "media" / "typst" / "catalog-items.typ"
+        typst_template.write_text(
+            "{{#field.items}}- {{item.label}} {{item.body}}\n{{/field.items}}\n",
+            encoding="utf-8",
+        )
+        data = self.root / "catalog-items.json"
+        data.write_text(json.dumps({
+            "title": "Catalog", "items": [
+                {"label": "One", "body": "**strong**"},
+                {"label": "Two", "body": "plain"},
+            ],
+        }), encoding="utf-8")
+        html_result = render_genre(self.root, "catalog-items", "html", data)
+        html = (self.root / html_result["output"]).read_text(encoding="utf-8")
+        self.assertIn("<section>One <p><strong>strong</strong></p></section>", html)
+        self.assertIn("<section>Two <p>plain</p></section>", html)
+        typst_result = render_genre(self.root, "catalog-items", "typst", data)
+        typst = (self.root / typst_result["output"]).read_text(encoding="utf-8")
+        self.assertIn("- One #strong[strong]", typst)
+        self.assertIn("- Two plain", typst)
+
+    def test_genre_repeat_blocks_refuse_unknown_and_unclosed_markers(self):
+        new_genre(
+            self.root, "repeat-errors", "Repeat errors", "read", ["html"],
+            ["title:required:Title", "items:optional:list:Item"],
+        )
+        data = self.root / "repeat-errors.json"
+        data.write_text(json.dumps({"title": "Catalog"}), encoding="utf-8")
+        template = self.root / ".design" / "media" / "html" / "repeat-errors.html"
+        template.write_text("{{#field.title}}<p>{{item}}</p>{{/field.title}}\n", encoding="utf-8")
+        with self.assertRaisesRegex(DesignError, "unknown or scalar"):
+            render_genre(self.root, "repeat-errors", "html", data)
+        template.write_text("{{#field.items}}<p>{{item}}</p>\n", encoding="utf-8")
+        with self.assertRaisesRegex(DesignError, "unclosed"):
+            render_genre(self.root, "repeat-errors", "html", data)
+
+    def test_genre_external_engine_receives_json_and_writes_stdout_artifact(self):
+        engine = self.root / "external-engine.py"
+        engine.write_text(
+            "import json, sys\n"
+            "request = json.load(sys.stdin)\n"
+            "if request['medium'] != 'html' or request['data']['title'] != 'External':\n"
+            "    sys.exit(4)\n"
+            "sys.stdout.buffer.write(b'external artifact')\n",
+            encoding="utf-8",
+        )
+        command = f"{shlex.quote(sys.executable)} {shlex.quote(str(engine))}"
+        new_genre(
+            self.root, "external-note", "External note", "read", ["html"],
+            ["title:required:Title"], engine=command,
+        )
+        data = self.root / "external-note.json"
+        data.write_text(json.dumps({"title": "External"}), encoding="utf-8")
+        rendered = render_genre(self.root, "external-note", "html", data)
+        self.assertEqual(
+            b"external artifact",
+            (self.root / rendered["output"]).read_bytes(),
+        )
+        medium = (self.root / "MEDIUM.md").read_text(encoding="utf-8")
+        self.assertIn(f"| External note | read | html |", medium)
+        self.assertIn(command, medium)
+
+    def test_genre_external_engine_refuses_failure_and_empty_output(self):
+        failure = self.root / "failure-engine.py"
+        failure.write_text(
+            "import sys\n"
+            "sys.stderr.write('engine failed')\n"
+            "sys.exit(7)\n",
+            encoding="utf-8",
+        )
+        empty = self.root / "empty-engine.py"
+        empty.write_text("import sys\nsys.exit(0)\n", encoding="utf-8")
+        data = self.root / "external-error.json"
+        data.write_text(json.dumps({"title": "External"}), encoding="utf-8")
+        new_genre(
+            self.root, "external-failure", "External failure", "read", ["html"],
+            ["title:required:Title"],
+            engine=f"{shlex.quote(sys.executable)} {shlex.quote(str(failure))}",
+        )
+        with self.assertRaisesRegex(DesignError, "status 7: engine failed"):
+            render_genre(self.root, "external-failure", "html", data)
+        new_genre(
+            self.root, "external-empty", "External empty", "read", ["html"],
+            ["title:required:Title"],
+            engine=f"{shlex.quote(sys.executable)} {shlex.quote(str(empty))}",
+        )
+        with self.assertRaisesRegex(DesignError, "empty output"):
+            render_genre(self.root, "external-empty", "html", data)
+
+    def test_doctor_measures_color_pairs_with_declared_wcag_policy(self):
+        path = self.root / ".design" / "tokens.json"
+        source = read_json(path)
+        source["colors"]["primary"]["$value"] = {
+            "colorSpace": "srgb", "components": [0.5, 0.5, 0.5], "hex": "#808080"
+        }
+        path.write_text(json.dumps(source), encoding="utf-8")
+        write_build(compute_build(self.root))
+        payload, findings = inspect_design(self.root)
+        failures = [item for item in findings if item["code"] == "design-contrast-failure"]
+        self.assertEqual(1, len(failures))
+        self.assertEqual("3.98", failures[0]["ratio"])
+        self.assertEqual("4.50", failures[0]["threshold"])
+        self.assertEqual("normal", payload["contrastPolicy"]["textSize"])
+        source["$extensions"]["org.quenching"]["accessibility"] = {
+            "contrast": {"level": "AA", "textSize": "large"}
+        }
+        path.write_text(json.dumps(source), encoding="utf-8")
+        write_build(compute_build(self.root))
+        payload, findings = inspect_design(self.root)
+        self.assertNotIn("design-contrast-failure", {item["code"] for item in findings})
+        self.assertEqual(3.0, payload["contrastPolicy"]["threshold"])
+
+    def test_doctor_scans_configured_non_web_literal_globs(self):
+        path = self.root / ".design" / "tokens.json"
+        source = read_json(path)
+        source["$extensions"]["org.quenching"]["doctor"] = {
+            "nonWebLiteralGlobs": ["src/**/*.typ"]
+        }
+        path.write_text(json.dumps(source), encoding="utf-8")
+        manual = self.root / "src" / "generated.typ"
+        manual.parent.mkdir()
+        manual.write_text('#let color = "#0F766E"\n', encoding="utf-8")
+        write_build(compute_build(self.root))
+        payload, findings = inspect_design(self.root)
+        self.assertEqual(["src/**/*.typ"], payload["nonWebLiteralScope"])
+        self.assertTrue(any(item["code"] == "design-nonweb-literal" and item["path"] == "src/generated.typ"
+                            for item in findings))
+
+    def test_doctor_unions_production_scope_and_rejects_unsafe_source_globs(self):
+        production = self.root / "docs" / "standards" / "design" / "production.md"
+        production.parent.mkdir(parents=True, exist_ok=True)
+        production.write_text("# Production\n\n## Non-web literal scope\n\n- `reports/**/*.typ`\n", encoding="utf-8")
+        report = self.root / "reports" / "manual.typ"
+        report.parent.mkdir()
+        report.write_text('#let color = "#0F766E"\n', encoding="utf-8")
+        payload, findings = inspect_design(self.root)
+        self.assertIn("reports/**/*.typ", payload["nonWebLiteralScope"])
+        self.assertTrue(any(item["path"] == "reports/manual.typ" for item in findings))
+        source = read_json(self.root / ".design" / "tokens.json")
+        source["$extensions"]["org.quenching"]["doctor"] = {"nonWebLiteralGlobs": ["../outside/*.typ"]}
+        self.assertIn("design-nonweb-scope", {item["code"] for item in validate_source(source)})
+
+    def test_doctor_reports_missing_light_asset_variant_on_dark_surface(self):
+        source_path = self.root / ".design" / "tokens.json"
+        source = read_json(source_path)
+        source["colors"]["surface"]["$value"] = {
+            "colorSpace": "srgb", "components": [0.05, 0.05, 0.05], "hex": "#0D0D0D"
+        }
+        source_path.write_text(json.dumps(source), encoding="utf-8")
+        write_build(compute_build(self.root))
+        payload, findings = inspect_design(self.root)
+        self.assertEqual("lockup", payload["assetManifest"][0]["role"])
+        self.assertIn("design-asset-variant-missing", {item["code"] for item in findings})
+        light = self.root / ".design" / "assets" / "lockup-light.svg"
+        light.write_text("<svg/>", encoding="utf-8")
+        manifest_path = self.root / ".design" / "assets" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["assets"].append({"path": "lockup-light.svg", "role": "lockup",
+                                    "ink": "light", "orientation": "horizontal"})
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        _, findings = inspect_design(self.root)
+        self.assertNotIn("design-asset-variant-missing", {item["code"] for item in findings})
 
     def test_doctor_reports_orphan_assets_and_non_web_literal_drift(self):
         asset = self.root / ".design" / "assets" / "unused.svg"

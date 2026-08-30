@@ -5,23 +5,30 @@ import html
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import tempfile
+from urllib.parse import quote
 from pathlib import Path
 from typing import Any
 
 from quenching.design.build import build_drift, compute_build, write_build
-from quenching.design.markdown import parse_document_frontmatter, split_h2
-from quenching.design.model import DesignError
+from quenching.design.markdown import parse_document_frontmatter, render_markdown, split_h2
+from quenching.design.model import DesignError, font_asset_paths, read_json
 
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-FIELD_RE = re.compile(r"^- `([A-Za-z][A-Za-z0-9_-]*)` — (required|optional)\s*(.*)$")
+FIELD_RE = re.compile(r"^- `([A-Za-z][A-Za-z0-9_-]*)` — (required|optional)(?: (list|scalar))?\s*(.*)$")
+REPEAT_BLOCK_RE = re.compile(
+    r"\{\{\s*#field\.([A-Za-z][A-Za-z0-9_-]*)\s*\}\}(.*?)"
+    r"\{\{\s*/field\.\1\s*\}\}", re.DOTALL,
+)
+REPEAT_MARKER_RE = re.compile(r"\{\{\s*[#/]\s*field\.[A-Za-z][A-Za-z0-9_-]*\s*\}\}")
 
 
 def new_genre(root: Path, slug: str, name: str, register: str, media: list[str],
-              fields: list[str], write: bool = True) -> dict[str, Any]:
+              fields: list[str], write: bool = True, engine: str = "builtin") -> dict[str, Any]:
     root = root.resolve()
     if not SLUG_RE.fullmatch(slug):
         raise DesignError("genre slug must be kebab-case")
@@ -29,7 +36,10 @@ def new_genre(root: Path, slug: str, name: str, register: str, media: list[str],
     parsed_fields = [_parse_field(field) for field in fields]
     if not parsed_fields:
         raise DesignError("a genre needs at least one declared field")
-    targets = {f".design/genres/{slug}.md": _genre_document(slug, name, register, normalized_media, parsed_fields)}
+    engine = _validate_engine(engine)
+    targets = {f".design/genres/{slug}.md": _genre_document(
+        slug, name, register, normalized_media, parsed_fields, engine,
+    )}
     for medium in normalized_media:
         template_medium = "typst" if medium == "pdf" else medium
         if template_medium not in {"html", "typst"}:
@@ -71,7 +81,16 @@ def render_genre(root: Path, slug: str, medium: str, data_path: Path,
         raise DesignError(f"genre {slug} does not declare medium {medium}")
     fields = _fields_from_body(body)
     data = _read_data(data_path)
-    missing = sorted(name for name, required, _ in fields if required and not str(data.get(name) or "").strip())
+    missing = []
+    for name, required, _, is_list in fields:
+        value = data.get(name)
+        if is_list:
+            if value is not None and not isinstance(value, list):
+                raise DesignError(f"render data field {name} must be a JSON array")
+            if required and not value:
+                missing.append(name)
+        elif required and not str(value or "").strip():
+            missing.append(name)
     if missing:
         raise DesignError("render data is missing required fields: " + ", ".join(missing))
     template_medium = "typst" if medium == "pdf" else medium
@@ -86,11 +105,19 @@ def render_genre(root: Path, slug: str, medium: str, data_path: Path,
         root / ".design" / "build" / f"{slug}.{suffix}")
     target = target.resolve()
     target.parent.mkdir(parents=True, exist_ok=True)
-    rendered = _substitute(template, data, medium, target, root)
-    if medium == "pdf":
-        _compile_pdf(rendered, target, root)
+    list_fields = {name for name, _, _, is_list in fields if is_list}
+    engine = _validate_engine(frontmatter.get("engine", "builtin"))
+    if engine == "builtin":
+        rendered = _substitute(
+            template, data, medium, target, root, frontmatter.get("register", "read"),
+            list_fields=list_fields,
+        )
+        if medium == "pdf":
+            _compile_pdf(rendered, target, root)
+        else:
+            target.write_text(rendered, encoding="utf-8", newline="\n")
     else:
-        target.write_text(rendered, encoding="utf-8", newline="\n")
+        _render_external(engine, data, template, medium, root, target)
     return {"ok": True, "genre": slug, "medium": medium,
             "output": _relative(target, root), "fields": sorted(data)}
 
@@ -103,24 +130,41 @@ def _media(values: list[str]) -> list[str]:
     return media
 
 
-def _parse_field(value: str) -> tuple[str, bool, str]:
-    parts = value.split(":", 2)
+def _validate_engine(value: str) -> str:
+    engine = str(value or "").strip()
+    if not engine:
+        raise DesignError("genre engine must be `builtin` or a non-empty command")
+    return engine
+
+
+def _parse_field(value: str) -> tuple[str, bool, str, bool]:
+    parts = value.split(":", 3)
     if len(parts) < 2 or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", parts[0]):
         raise DesignError(f"invalid field {value!r}; use name:required|optional[:description]")
     requirement = parts[1].lower()
     if requirement not in {"required", "optional"}:
         raise DesignError(f"invalid field {value!r}; requirement must be required or optional")
-    return parts[0], requirement == "required", parts[2].strip() if len(parts) == 3 else ""
+    cardinality = "scalar"
+    description = ""
+    if len(parts) >= 3:
+        if parts[2].lower() in {"scalar", "list"}:
+            cardinality = parts[2].lower()
+            description = parts[3].strip() if len(parts) == 4 else ""
+        else:
+            description = ":".join(parts[2:]).strip()
+    return parts[0], requirement == "required", description, cardinality == "list"
 
 
 def _genre_document(slug: str, name: str, register: str, media: list[str],
-                    fields: list[tuple[str, bool, str]]) -> str:
+                    fields: list[tuple[str, bool, str, bool]], engine: str) -> str:
     lines = ["---", f"name: {json.dumps(name, ensure_ascii=False)}", f"slug: {json.dumps(slug)}",
              f"register: {json.dumps(register, ensure_ascii=False)}",
-             f"media: {json.dumps(', '.join(media))}", "---", "", f"# {name}", "", "## Fields", ""]
-    for field, required, description in fields:
+             f"media: {json.dumps(', '.join(media))}", f"engine: {json.dumps(engine, ensure_ascii=False)}",
+             "---", "", f"# {name}", "", "## Fields", ""]
+    for field, required, description, is_list in fields:
         suffix = f" {description}" if description else ""
-        lines.append(f"- `{field}` — {'required' if required else 'optional'}{suffix}")
+        cardinality = " list" if is_list else ""
+        lines.append(f"- `{field}` — {'required' if required else 'optional'}{cardinality}{suffix}")
     lines.extend(["", "## Composition", "", "Describe the stable composition this genre preserves across media.",
                   "", "## Guardrails", "", "- Cite `/docs/standards/design/production.md`.",
                   "- Import generated medium tokens; never repeat a primitive value."])
@@ -128,15 +172,24 @@ def _genre_document(slug: str, name: str, register: str, media: list[str],
 
 
 def _genre_template(name: str, medium: str,
-                    fields: list[tuple[str, bool, str]]) -> str:
+                    fields: list[tuple[str, bool, str, bool]]) -> str:
     """Mint a template whose placeholders are exactly the genre's declared fields."""
     if medium == "html":
-        title_field = "title" if any(field == "title" for field, _, _ in fields) else fields[0][0]
+        title_field = next(
+            (field for field, _, _, is_list in fields if field == "title" and not is_list),
+            next((field for field, _, _, is_list in fields if not is_list), fields[0][0]),
+        )
         blocks = []
-        for field, _, description in fields:
+        for field, _, description, is_list in fields:
             label = html.escape(description or field.replace("-", " ").replace("_", " ").title())
             if field == title_field:
                 blocks.append(f"    <h1>{{{{field.{field}}}}}</h1>")
+            elif is_list:
+                blocks.append(
+                    f"    <section class=\"field field-{html.escape(field)}\">"
+                    f"<h2>{label}</h2><ul>{{{{#field.{field}}}}}"
+                    f"<li>{{{{item}}}}</li>{{{{/field.{field}}}}}</ul></section>"
+                )
             elif field == "body":
                 blocks.append(f"    <article aria-label={json.dumps(label)}>{{{{field.{field}}}}}</article>")
             else:
@@ -163,9 +216,16 @@ def _genre_template(name: str, medium: str,
         "#show heading.where(level: 1): it => text(size: token-typography-display-font-size, weight: token-typography-display-font-weight, it.body)",
         "", "#frame[",
     ]
-    for index, (field, _, description) in enumerate(fields):
+    for index, (field, _, description, is_list) in enumerate(fields):
         label = description or field.replace("-", " ").replace("_", " ").title()
-        if index == 0 or field == "title":
+        if is_list:
+            lines.extend([
+                f"  == {label}",
+                f"  {{{{#field.{field}}}}}",
+                "  - {{item}}",
+                f"  {{{{/field.{field}}}}}",
+            ])
+        elif index == 0 or field == "title":
             lines.append(f"  = {{{{field.{field}}}}}")
         elif field == "body":
             lines.append(f"  {{{{field.{field}}}}}")
@@ -175,13 +235,13 @@ def _genre_template(name: str, medium: str,
     return "\n".join(lines)
 
 
-def _fields_from_body(body: str) -> list[tuple[str, bool, str]]:
+def _fields_from_body(body: str) -> list[tuple[str, bool, str, bool]]:
     section = split_h2(body).get("Fields", "")
     fields = []
     for line in section.splitlines():
         match = FIELD_RE.match(line)
         if match:
-            fields.append((match.group(1), match.group(2) == "required", match.group(3).strip()))
+            fields.append((match.group(1), match.group(2) == "required", match.group(4).strip(), match.group(3) == "list"))
     if not fields:
         raise DesignError("genre contract declares no parseable fields")
     return fields
@@ -197,7 +257,15 @@ def _read_data(path: Path) -> dict[str, Any]:
     return value
 
 
-def _substitute(template: str, data: dict[str, Any], medium: str, target: Path, root: Path) -> str:
+def _substitute(template: str, data: dict[str, Any], medium: str, target: Path, root: Path,
+                register: str = "read", list_fields: set[str] | None = None,
+                item: Any = None, item_context: bool = False,
+                item_field: str | None = None) -> str:
+    list_fields = list_fields or set()
+    template = _expand_repeat_blocks(
+        template, data, medium, target, root, register, list_fields,
+    )
+
     def replace(match: re.Match[str]) -> str:
         key = match.group(1).strip()
         if key == "tokens.css":
@@ -206,12 +274,28 @@ def _substitute(template: str, data: dict[str, Any], medium: str, target: Path, 
             return os.path.relpath(root / ".design" / "build" / "tokens.typ", target.parent).replace(os.sep, "/")
         if key == "primitives.typ":
             return os.path.relpath(root / ".design" / "media" / "typst" / "primitives.typ", target.parent).replace(os.sep, "/")
+        if key.startswith("asset."):
+            return _asset_reference(key[6:], medium, target, root)
+        if key == "item" or key.startswith("item."):
+            if not item_context:
+                raise DesignError("template uses item placeholder outside a repeat block")
+            item_key = key[5:] if key.startswith("item.") else None
+            if item_key is None:
+                value = item
+                name = item_field or "item"
+            elif isinstance(item, dict):
+                value = item.get(item_key, "")
+                name = item_key
+            else:
+                value = ""
+                name = item_key
+            return _render_field(name, _value_text(value), medium, register)
         if key.startswith("field."):
             name = key[6:]
-            value = str(data.get(name, ""))
-            if medium == "html":
-                return _markdown_html(value) if name == "body" else html.escape(value)
-            return _typst_escape(value)
+            if name in list_fields:
+                raise DesignError(f"list field {name} must be used in a repeat block")
+            value = _value_text(data.get(name, ""))
+            return _render_field(name, value, medium, register)
         raise DesignError(f"template uses unknown placeholder {key!r}")
     rendered = re.sub(r"\{\{\s*([^{}]+?)\s*\}\}", replace, template)
     if "{{" in rendered or "}}" in rendered:
@@ -219,13 +303,100 @@ def _substitute(template: str, data: dict[str, Any], medium: str, target: Path, 
     return rendered.rstrip() + "\n"
 
 
-def _markdown_html(value: str) -> str:
-    blocks = []
-    for paragraph in re.split(r"\n\s*\n", value.strip()):
-        escaped = html.escape(paragraph.strip()).replace("\n", "<br>\n")
-        if escaped:
-            blocks.append(f"<p>{escaped}</p>")
-    return "\n".join(blocks)
+def _expand_repeat_blocks(template: str, data: dict[str, Any], medium: str, target: Path,
+                          root: Path, register: str, list_fields: set[str]) -> str:
+    if not REPEAT_MARKER_RE.search(template):
+        return template
+
+    def replace(match: re.Match[str]) -> str:
+        name = match.group(1)
+        if name not in list_fields:
+            raise DesignError(f"repeat block names unknown or scalar field {name}")
+        body = match.group(2)
+        if REPEAT_MARKER_RE.search(body):
+            raise DesignError("nested repeat blocks are not supported")
+        values = data.get(name)
+        if values is None:
+            values = []
+        if not isinstance(values, list):
+            raise DesignError(f"render data field {name} must be a JSON array")
+        return "".join(
+            _substitute(
+                body, data, medium, target, root, register, list_fields,
+                value, True, name,
+            )
+            for value in values
+        )
+
+    expanded = REPEAT_BLOCK_RE.sub(replace, template)
+    if REPEAT_MARKER_RE.search(expanded):
+        raise DesignError("repeat block is unclosed or has mismatched markers")
+    return expanded
+
+
+def _value_text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, ensure_ascii=False, sort_keys=True)
+    return str(value)
+
+
+def _render_external(engine: str, data: dict[str, Any], template: str, medium: str,
+                     root: Path, target: Path) -> None:
+    try:
+        command = shlex.split(engine)
+    except ValueError as exc:
+        raise DesignError(f"external engine command is not valid: {exc}") from exc
+    if not command:
+        raise DesignError("external engine command is empty")
+    request = {
+        "data": data,
+        "template": template,
+        "medium": medium,
+        "root": str(root),
+        "output": str(target),
+    }
+    try:
+        run = subprocess.run(
+            command,
+            input=json.dumps(request, ensure_ascii=False).encode("utf-8"),
+            capture_output=True,
+        )
+    except OSError as exc:
+        raise DesignError(f"external engine could not start: {exc}") from exc
+    if run.returncode:
+        detail = run.stderr.decode("utf-8", errors="replace").strip()
+        suffix = f": {detail}" if detail else ""
+        raise DesignError(f"external engine exited with status {run.returncode}{suffix}")
+    if not run.stdout:
+        raise DesignError("external engine produced empty output")
+    target.write_bytes(run.stdout)
+
+
+def _render_field(name: str, value: str, medium: str, register: str) -> str:
+    """Apply Markdown only to the body of a read-register genre."""
+    if name == "body" and register == "read":
+        return render_markdown(value, medium)
+    return html.escape(value) if medium == "html" else _typst_escape(value)
+
+
+def _asset_reference(relative: str, medium: str, target: Path, root: Path) -> str:
+    if not relative or "\\" in relative:
+        raise DesignError("asset placeholder must use a non-empty POSIX relative path")
+    requested = Path(relative)
+    if requested.is_absolute() or any(part in {"", ".", ".."} for part in requested.parts):
+        raise DesignError(f"asset placeholder escapes .design/assets: {relative}")
+    asset_root = (root / ".design" / "assets").resolve()
+    asset = (asset_root / requested).resolve()
+    try:
+        asset.relative_to(asset_root)
+    except ValueError as exc:
+        raise DesignError(f"asset placeholder escapes .design/assets: {relative}") from exc
+    if not asset.is_file():
+        raise DesignError(f"asset placeholder does not name a file: {relative}")
+    reference = os.path.relpath(asset, target.parent).replace(os.sep, "/")
+    return quote(reference, safe="/:@-._~") if medium == "html" else reference
 
 
 def _typst_escape(value: str) -> str:
@@ -240,7 +411,23 @@ def _compile_pdf(source: str, target: Path, root: Path) -> None:
     try:
         with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
             handle.write(source)
-        run = subprocess.run([compiler, "compile", temporary, str(target), "--root", str(root)],
+        font_paths: set[Path] = set()
+        try:
+            declared = font_asset_paths(read_json(root / ".design" / "tokens.json"),
+                                        root / ".design" / "assets")
+            for paths in declared.values():
+                for path in paths:
+                    if not path.exists():
+                        raise DesignError(f"declared font asset is missing: {path.relative_to(root)}")
+                    font_paths.add(path if path.is_dir() else path.parent)
+        except ValueError as exc:
+            if isinstance(exc, DesignError):
+                raise
+            raise DesignError(str(exc)) from exc
+        command = [compiler, "compile", temporary, str(target), "--root", str(root)]
+        for path in sorted(font_paths):
+            command.extend(["--font-path", str(path)])
+        run = subprocess.run(command,
                              capture_output=True, text=True)
         if run.returncode:
             raise DesignError(f"typst compile failed: {(run.stderr or run.stdout).strip()}")
