@@ -528,15 +528,16 @@ def _narrative(sections: dict[str, str]) -> dict[str, Any]:
 
 def _render_medium(genres: list[Path], root: Path) -> str:
     lines = ["# Media and genres", "", f"<!-- {_generated_notice(root, 'genres')} -->", "",
-             "| Genre | Register | Media | Contract |", "| --- | --- | --- | --- |"]
+             "| Genre | Register | Media | Contract | Engine |", "| --- | --- | --- | --- | --- |"]
     for path in genres:
         try:
             frontmatter, _ = parse_document_frontmatter(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             continue
+        engine = frontmatter.get("engine", "builtin").replace("|", "\\|").replace("\n", " ")
         lines.append(
             f"| {frontmatter.get('name', path.stem)} | {frontmatter.get('register', '-')} | "
-            f"{frontmatter.get('media', '-')} | `/.design/genres/{path.name}` |"
+            f"{frontmatter.get('media', '-')} | `/.design/genres/{path.name}` | {engine} |"
         )
     return "\n".join(lines).rstrip() + "\n"
 
