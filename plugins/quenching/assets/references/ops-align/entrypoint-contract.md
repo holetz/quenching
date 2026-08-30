@@ -29,6 +29,29 @@ For rule 6, the verifier checks only the static proxy: a non-empty `description`
 the parser. The align reports that proxy and names the rule; it never claims to have proven the
 runtime help output.
 
+## The minting mold
+
+`assets/templates/ops/entrypoint.py.tmpl` supplies the deterministic part of the contract. The
+mint replaces its placeholders but keeps this mapping intact:
+
+| Mold element | Contract rule |
+| --- | --- |
+| import from the target's shared bootstrap | 2 — root, `sys.path` and common flags have one owner |
+| `main() -> int` and `raise SystemExit(main())` | 3 — typed success, findings and misuse exits |
+| parser, `emit`, stdout/stderr split and `--json` | 4 — data stays machine-readable and diagnostics stay separate |
+| parser description and usage example | 6 — the help surface explains one invocation |
+| `LIFECYCLE` declaration | 7 — the entry point has one lifecycle state |
+
+The mint asks the author whether the entry point writes outside the repository. A `no` answer
+removes the write guard. A `yes` answer inserts preview-first behaviour and an explicit `--apply`
+flag; there is no unarmed write-capable shape. Rule 5 remains a source-level claim for the doctor
+and a runtime proof for the mint's closing check.
+
+The mint offers `archived` from birth. When selected, it places the file below
+`<opsRoot>/_archive/<domain>/`, keeps its registry row as `archived`, and does not add it to the
+active router. This makes the lifecycle decision explicit at creation time without pretending that
+one-shot work is an active operation.
+
 ## The disabled-gate rule
 
 A verification call commented out inside an entry point's control flow is a finding, not a
