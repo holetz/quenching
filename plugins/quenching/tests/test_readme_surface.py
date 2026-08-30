@@ -28,7 +28,7 @@ README = PLUGIN_ROOT / "README.md"
 MANUAL_OPENS = re.compile(r"^## The .* commands\s*$", re.MULTILINE)
 MANUAL_CLOSES = re.compile(r"^## Install\s*$", re.MULTILINE)
 INVOCABLE = re.compile(r"`(/[a-z][a-z:-]*)`")
-EXPECTED_COMMAND_COUNT = 46
+EXPECTED_COMMAND_COUNT = 47
 
 
 def _commands_on_disk() -> set[str]:
