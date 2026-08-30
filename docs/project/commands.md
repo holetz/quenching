@@ -1,7 +1,7 @@
 ---
 type: project
 title: Command catalog
-description: All forty-one commands by front — one line each — plus the cq rail's exit-code contract.
+description: All forty-three commands by front — one line each — plus the cq rail's exit-code contract.
 resource: plugins/quenching/README.md
 tags:
   - reference
@@ -9,13 +9,13 @@ tags:
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: derived from plugins/quenching/README.md §The forty-one commands and §The specs flow (tables preserved, long rows condensed); the machine authority is cq components doctor --json
+source: derived from plugins/quenching/README.md §The forty-three commands and §The specs flow (tables preserved, long rows condensed); the machine authority is cq components doctor --json
 maintainer: Israel Holetz
 ---
 
 # Command catalog
 
-All forty-one commands, grouped by the front (or pillar) that owns them. Typing a command is
+All forty-three commands, grouped by the front (or pillar) that owns them. Typing a command is
 the explicit entry point; Claude also auto-routes to one by its `description`. This page is
 derived from the product manual, whose tables a test holds in lockstep with the real surface —
 `cq components doctor --json` is the machine authority on the count.
@@ -107,6 +107,15 @@ Acts on the target repository's `.claude/` automation surface.
 | `/quenching:components:hook:new` | Wires ONE scoped hook — narrowest scope, cheapest handler. Warns by default; blocks only on the human's word. |
 | `/quenching:components:harness:align` | Refactors `CLAUDE.md`/`AGENTS.md` into thin pointers over the bundle, so doctrine lives once. |
 
+## The ops front
+
+Acts on the target repository's declared operations root and canonical router.
+
+| Command | Does |
+| --- | --- |
+| `/quenching:ops:align` | Probes the operations surface, applies mechanical and structural drift under one plan, and reports judgement findings without driving them. |
+| `/quenching:ops:status` | Reports root, router, packages, lifecycle, findings by band, and registry freshness without writing. |
+
 ## The git pillar
 
 Answers questions about the repository's own git state; converges no tree, so it carries no
@@ -126,7 +135,7 @@ align. The specs front hands off to it rather than executing git itself.
 
 | Command | Does |
 | --- | --- |
-| `/quenching:align` | The one align spanning the three local fronts on ONE confirmation — conducting each front's own align, never reimplementing any. |
+| `/quenching:align` | The one align spanning the four local fronts on ONE confirmation — conducting each front's own align, never reimplementing any. |
 | `/quenching:handoff` | Compacts the current conversation into a handoff document a fresh session can continue from. |
 
 **Next:** this repository's own local automation surface (four development commands) is the
