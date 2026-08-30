@@ -15,8 +15,8 @@ from pathlib import Path
 from typing import Any
 
 from quenching.proof.config import load_proof_config
+from quenching.proof.ci import discover_ci
 from quenching.proof.model import (
-    CIInvocation,
     Conftest,
     Fixture,
     GateConfig,
@@ -32,14 +32,6 @@ _SKIP_DIRS = frozenset({
 })
 _TEST_RE = re.compile(r"(?:^test_.*\.py$|^.*_test\.py$)")
 _PYTEST_FIXTURE = re.compile(r"(?:^|\.)fixture$")
-_CI_FILES = {
-    ".github/workflows": "github-actions",
-    ".gitlab-ci.yml": "gitlab-ci",
-    "azure-pipelines.yml": "azure-pipelines",
-    "azure-pipelines.yaml": "azure-pipelines",
-    ".pre-commit-config.yaml": "pre-commit",
-    ".pre-commit-config.yml": "pre-commit",
-}
 
 
 def _rel(path: str, root: str) -> str:
@@ -210,30 +202,6 @@ def _gate(repo_root: str) -> GateConfig:
     )
 
 
-def _ci_files(repo_root: str, proof_root: str) -> tuple[CIInvocation, ...]:
-    found: list[CIInvocation] = []
-    root = Path(repo_root)
-    candidates: list[tuple[Path, str]] = []
-    workflows = root / ".github" / "workflows"
-    if workflows.is_dir():
-        candidates.extend((path, "github-actions") for path in sorted(workflows.glob("*.y*ml")))
-    for relative, provider in _CI_FILES.items():
-        path = root / relative
-        if path.is_file():
-            candidates.append((path, provider))
-    for path, provider in sorted(set(candidates)):
-        text = _read(path)
-        commands = [line.strip() for line in text.splitlines()
-                    if any(token in line.lower() for token in ("pytest", "cq proof", "proof doctor"))]
-        command = " | ".join(commands)
-        lowered = text.lower()
-        runs_gate = bool(command)
-        randomizes = any(token in lowered for token in (
-            "pytest-randomly", "--random-order", "--randomly-seed", "random_order", "random-order"))
-        found.append(CIInvocation(_rel(str(path), repo_root), provider, command, runs_gate, randomizes))
-    return tuple(found)
-
-
 def build_inventory(root: str) -> tuple[ProofInventory | None, dict]:
     """Walk one configured proof root and return a single static inventory."""
     config, err = load_proof_config(root)
@@ -279,7 +247,7 @@ def build_inventory(root: str) -> tuple[ProofInventory | None, dict]:
     measured = tuple(item["relative"] for item in config["measuredRoots"])
     exclusions = tuple(item["relative"] for item in config["proofExclusions"])
     return ProofInventory(repo_root, proof_root, layers, tuple(tests), tuple(fixtures),
-                          tuple(conftests), gate, _ci_files(repo_root, proof_root),
+                          tuple(conftests), gate, discover_ci(repo_root, proof_root),
                           measured, exclusions), {}
 
 
