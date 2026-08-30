@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-08-28
 audience: human
 authority: current
-source: plugins/quenching/README.md §Install, §The four fronts; command bodies under plugins/quenching/commands/
+source: plugins/quenching/README.md §Install, §The five local fronts; command bodies under plugins/quenching/commands/
 maintainer: Israel Holetz
 ---
 
@@ -56,19 +56,20 @@ cq --version
 
 ## 3. Probe before you change anything
 
-Both status commands are read-only by construction — their tool grants exclude `Write` and
+The status commands are read-only by construction — their tool grants exclude `Write` and
 `Edit`, so this step cannot touch a file:
 
 ```text
 /quenching:knowledge:status
 /quenching:design:status
 /quenching:specs:status
+/quenching:ops:status
+/quenching:proof:status
 ```
 
-The first reports where your `/docs/` bundle stands (or that none exists yet); the second
-reports the specs front and its provider configuration. Each finding is named with the command
-that would fix it — that is the plugin's habit everywhere: **report with the owner, never repair
-silently**.
+These reports cover the available knowledge, design, provider-owned specs, operations and proof
+surfaces. Each finding is named with the command that would fix it — that is the plugin's habit
+everywhere: **report with the owner, never repair silently**.
 
 ## 4. Run your first alignment
 
@@ -76,7 +77,7 @@ silently**.
 /quenching:align
 ```
 
-This conducts the three local fronts in dependency order. What happens next depends on what the probe
+This conducts the five local fronts in dependency order. What happens next depends on what the probe
 finds:
 
 - **A clean front stops there.** The probe found nothing, so there is no inventory, no plan and
@@ -101,7 +102,7 @@ cq knowledge validate docs
 
 ## Recap
 
-You installed the plugin (`--plugin-dir`), proved the rail answers (`cq --version`), read two
+You installed the plugin (`--plugin-dir`), proved the rail answers (`cq --version`), read the available
 read-only status reports, and ran one conducted alignment that asked before writing. That
 probe → plan → OK → apply → verify loop is the plugin's one interface — every front repeats it.
 
