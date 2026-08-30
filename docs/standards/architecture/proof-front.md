@@ -104,6 +104,11 @@ may rise to the measured value but may never fall. The front does not impose a u
 percentage. A repository with no meaningful measurable source root records that decision and its
 reason rather than publishing an empty green number.
 
+Unless `.claude/quenching.json` declares `ratchetPath`, the floor lives at
+`<proofRoot>/../.coverage-floor.json` — `/.coverage-floor.json` for the default `tests/` root.
+An explicit path is resolved from the repository root and is the only override; the verifier never
+searches for a convenient floor file.
+
 ## Gate rules
 
 The verification gate carries five rules:
