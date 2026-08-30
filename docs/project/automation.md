@@ -60,7 +60,7 @@ three read-only subcommands share the declared operations root and the same JSON
 ## The proof CLI
 
 The plugin's `proof` axis reads the repository's declared test surface without executing the
-target suite. Its four subcommands share the proof root and expose JSON payloads for automation:
+target suite. Its five subcommands share the proof root and expose JSON payloads for automation:
 
 | Subcommand | Purpose |
 | --- | --- |
@@ -68,3 +68,6 @@ target suite. Its four subcommands share the proof root and expose JSON payloads
 | `cq proof doctor [--json]` | Run static proof checks and report typed findings. |
 | `cq proof status [--json]` | Summarize layers, fixture health, coverage floors, CI, and findings. |
 | `cq proof ratchet check [--json]` / `raise [--json]` | Check or advance coverage floors from an existing coverage artifact. |
+
+The command surface complements this CLI with `/quenching:proof:layer:new`, which mints one
+named layer and then uses these read/write rails to regenerate and verify its declaration.

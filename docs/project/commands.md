@@ -1,7 +1,7 @@
 ---
 type: project
 title: Command catalog
-description: All forty-six commands by front — one line each — plus the cq rail's exit-code contract.
+description: All forty-seven commands by front — one line each — plus the cq rail's exit-code contract.
 resource: plugins/quenching/README.md
 tags:
   - reference
@@ -9,13 +9,13 @@ tags:
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: derived from plugins/quenching/README.md §The forty-six commands and §The specs flow (tables preserved, long rows condensed); the machine authority is cq components doctor --json
+source: derived from plugins/quenching/README.md §The forty-seven commands and §The specs flow (tables preserved, long rows condensed); the machine authority is cq components doctor --json
 maintainer: Israel Holetz
 ---
 
 # Command catalog
 
-All forty-six commands, grouped by the front (or pillar) that owns them. Typing a command is
+All forty-seven commands, grouped by the front (or pillar) that owns them. Typing a command is
 the explicit entry point; Claude also auto-routes to one by its `description`. This page is
 derived from the product manual, whose tables a test holds in lockstep with the real surface —
 `cq components doctor --json` is the machine authority on the count.
@@ -126,6 +126,7 @@ Acts on the target repository's declared verification surface.
 | --- | --- |
 | `/quenching:proof:align` | Probes the proof gate, applies bounded repairs under one plan, defers an unsafe floor write, and reports judgement findings without driving them. |
 | `/quenching:proof:status` | Reports layers, fixtures, measured roots, floors, CI evidence, and findings by band without writing; it states that the suite was not run. |
+| `/quenching:proof:layer:new` | Mints one named layer with its marker, reach, budget, fixture home and collection rule, then proposes test moves for a separate confirmation. |
 
 ## The git pillar
 
