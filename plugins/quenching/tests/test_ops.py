@@ -27,7 +27,12 @@ from quenching.ops.cli import _status_payload
 from quenching.ops.doctor import doctor, inspect_ops
 from quenching.ops.inventory import build_inventory
 from quenching.ops.model import EntryPoint, Inventory, Router
-from quenching.ops.registry import render_registry_document
+from quenching.ops.registry import (
+    REGISTRY_END,
+    REGISTRY_START,
+    render_registry_document,
+    write_registry,
+)
 
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -226,6 +231,48 @@ class StatusReadOnly(unittest.TestCase):
 
 
 class RegistryStale(unittest.TestCase):
+    def _inventory(self, root: pathlib.Path) -> Inventory:
+        return Inventory(
+            str(root),
+            Router("pyproject.toml", "python-console-script", True),
+            (EntryPoint("run.py", "run", "/run", "Run the job.", lifecycle="active"),),
+        )
+
+    def _write_source(self, root: pathlib.Path) -> None:
+        (root / "run.py").write_text(
+            '"""Run the job."""\n\n'
+            "def main():\n    return 0\n",
+            encoding="utf-8",
+        )
+
+    def test_registry_write_is_idempotent(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            self._write_source(root)
+            path = root / "registry.md"
+            inventory = self._inventory(root)
+            self.assertTrue(write_registry(path, inventory))
+            first = path.read_text(encoding="utf-8")
+            self.assertFalse(write_registry(path, inventory))
+            self.assertEqual(path.read_text(encoding="utf-8"), first)
+
+    def test_registry_write_preserves_authored_prose_outside_generated_zone(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            self._write_source(root)
+            prefix = "# Hand-written registry notes\n\n| `manual.py` | not generated |\n"
+            suffix = "\n## Notes\nKeep this paragraph.\n"
+            old_zone = f"{REGISTRY_START}\nold rows\n{REGISTRY_END}"
+            path = root / "registry.md"
+            path.write_text(prefix + old_zone + suffix, encoding="utf-8")
+
+            write_registry(path, self._inventory(root))
+            updated = path.read_text(encoding="utf-8")
+            start = updated.index(REGISTRY_START)
+            end = updated.index(REGISTRY_END) + len(REGISTRY_END)
+            self.assertEqual(updated[:start], prefix)
+            self.assertEqual(updated[end:], suffix)
+
     def test_stale_check_delegates_to_registry_generator(self):
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
