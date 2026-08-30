@@ -14,8 +14,11 @@ import tokenize
 from pathlib import Path
 from typing import Callable
 
+from quenching.ops import registry
 from quenching.ops.model import EntryPoint, Finding, Inventory
-from quenching.ops.registry import inventory_digest, render_registry_document
+
+# Kept as a compatibility export for callers that used the pre-generator helper.
+inventory_digest = registry.inventory_digest
 
 
 _ARCHIVE_PART = "_archive"
@@ -105,7 +108,7 @@ def check_registry_stale(inventory: Inventory) -> list[Finding]:
     text = _registry_text(inventory)
     if text is None:
         return []
-    expected = render_registry_document(text, inventory)
+    expected = registry.render_registry_document(text, inventory)
     if expected == text:
         return []
     return [_finding(

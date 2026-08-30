@@ -27,6 +27,7 @@ from quenching.ops.cli import _status_payload
 from quenching.ops.doctor import doctor, inspect_ops
 from quenching.ops.inventory import build_inventory
 from quenching.ops.model import EntryPoint, Inventory, Router
+from quenching.ops.registry import render_registry_document
 
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -57,15 +58,12 @@ class AlignCleanPath(unittest.TestCase):
                 "def main():\n    return 0\n\n"
                 "if __name__ == '__main__':\n    raise SystemExit(main())\n",
                 encoding="utf-8")
-            registry = scripts / "registry.md"
+            registry = scripts / "README.md"
             registry.write_text("`run.py` — active\n", encoding="utf-8")
             inventory, inventory_error = build_inventory(str(scripts))
             self.assertEqual(inventory_error, {})
             assert inventory is not None
-            registry.write_text(
-                f"<!-- quenching-ops-registry-sha256 {inventory_digest(inventory)} -->\n"
-                "`run.py` — active\n",
-                encoding="utf-8")
+            registry.write_text(render_registry_document("", inventory), encoding="utf-8")
 
             payload, err, exit_code = doctor(str(root))
             self.assertEqual(err, {})
@@ -114,7 +112,7 @@ class AlignThreeBands(unittest.TestCase):
                 "def main():\n    # verify()\n    return 0\n\n"
                 "if __name__ == '__main__':\n    raise SystemExit(main())\n",
                 encoding="utf-8")
-            registry = scripts / "registry.md"
+            registry = scripts / "README.md"
             registry.write_text("`run.py` — active\n", encoding="utf-8")
 
             payload, err, exit_code = doctor(str(root))
@@ -174,7 +172,7 @@ class StatusReadOnly(unittest.TestCase):
                 "def main():\n    # verify()\n    return 0\n\n"
                 "if __name__ == '__main__':\n    raise SystemExit(main())\n",
                 encoding="utf-8")
-            (scripts / "registry.md").write_text(
+            (scripts / "README.md").write_text(
                 "<!-- quenching-ops-registry-sha256 " + "0" * 64 + " -->\n"
                 "`run.py` — active\n",
                 encoding="utf-8")
@@ -228,6 +226,24 @@ class StatusReadOnly(unittest.TestCase):
 
 
 class RegistryStale(unittest.TestCase):
+    def test_stale_check_delegates_to_registry_generator(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            source = "def main():\n    return 0\n"
+            (root / "run.py").write_text(source, encoding="utf-8")
+            inventory = Inventory(
+                str(root),
+                Router("pyproject.toml", "python-console-script", True),
+                (EntryPoint("run.py", "run", "/run", "", lifecycle="active"),),
+            )
+            registry = "`run.py` — active\n"
+            (root / "registry.md").write_text(registry, encoding="utf-8")
+            with mock.patch("quenching.ops.registry.render_registry_document",
+                            return_value="different") as generator:
+                findings = check_registry_stale(inventory)
+            generator.assert_called_once_with(registry, inventory)
+            self.assertEqual([finding.code for finding in findings], ["op-registry-stale"])
+
     def test_absent_registry_is_silent_until_a_generator_can_create_one(self):
         expected = json.loads(GOLDEN.read_text(encoding="utf-8"))
         with tempfile.TemporaryDirectory() as raw:
@@ -334,10 +350,7 @@ class FindingFixtures(unittest.TestCase):
             "    raise SystemExit(main())\n"
         )
         inventory = self._inventory(source)
-        registry = ("<!-- quenching-ops-registry-start -->\n"
-                    f"<!-- quenching-ops-registry-sha256 {inventory_digest(inventory)} -->\n"
-                    "`run.py` — active\n"
-                    "<!-- quenching-ops-registry-end -->\n")
+        registry = render_registry_document("", inventory)
         inventory = self._inventory(source, registry=registry)
         self.assertEqual(run_checks(inventory), [])
 
@@ -383,8 +396,7 @@ class FindingFixtures(unittest.TestCase):
         )
         self.assertEqual([finding.code for finding in check_registry_stale(stale)],
                          ["op-registry-stale"])
-        good_registry = ("<!-- quenching-ops-registry-sha256 "
-                         f"{inventory_digest(stale)} -->\n`run.py`\n")
+        good_registry = render_registry_document("", stale)
         corrected = self._inventory("def main():\n    return 0\n", registry=good_registry)
         self.assertEqual(check_registry_stale(corrected), [])
 
