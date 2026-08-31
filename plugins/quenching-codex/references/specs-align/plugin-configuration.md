@@ -17,6 +17,7 @@ This is the slice used by the provider health checks.
 | --- | --- | --- | --- |
 | `backend` | `github` · `azure-boards` | derived from the repository remote | provider selection and legacy-value refusal |
 | `worktreeSetup` | a shell command, run as written | none | `quenching-specs-execute`'s isolation offer, after `git worktree add` |
+| `sharedPaths` | a list of repo-relative paths | none — an absent or empty list declares no shared area | `cq git worktree link`, from the isolation flow |
 | `azureStates` | `{"plans": "<state>", "archive": "<state>"}` | **none, deliberately** — refuses (exit 2, `sp-az-no-states`) rather than guess | the `azure-boards` backend only |
 | `hooks` | `{"<event>": [{"command": "<cmd>", ...}]}` | none — an absent key declares no events | the command that owns the event |
 | `profiles` | `{"installed": ["knowledge", "specs", "design", "components"]}` | none — an absent key leaves all four fronts installed | the align conductor |
