@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import json
 import pathlib
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -12,6 +14,7 @@ from quenching.toolchain.doctor import doctor
 
 HERE = pathlib.Path(__file__).resolve().parent
 GOLDEN = HERE / "fixtures" / "golden" / "toolchain-results.json"
+CQ = HERE.parent / "assets" / "bin" / "cq"
 
 
 class ToolchainResults(unittest.TestCase):
@@ -90,6 +93,34 @@ class ToolchainResults(unittest.TestCase):
         self.assertEqual(0, code)
         self.assertEqual([], payload["findings"])
         self.assertEqual([], json.loads(GOLDEN.read_text(encoding="utf-8"))["judgement"]["codes"])
+
+    def test_second_repository_uses_node_manifest_and_npm_lock(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            (root / "package.json").write_text(json.dumps({
+                "name": "second-target",
+                "version": "1.0.0",
+                "engines": {"node": ">=20"},
+                "devDependencies": {"vitest": "1.0.0"},
+            }), encoding="utf-8")
+            (root / "package-lock.json").write_text(json.dumps({
+                "name": "second-target",
+                "lockfileVersion": 3,
+                "packages": {"": {"name": "second-target"}},
+            }), encoding="utf-8")
+            (root / ".nvmrc").write_text("20\n", encoding="utf-8")
+
+            run = subprocess.run(
+                [sys.executable, str(CQ), "--root", str(root), "toolchain", "doctor", "--json"],
+                capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(0, run.returncode, run.stderr)
+            payload = json.loads(run.stdout)
+            self.assertEqual("applicable", payload["applicability"]["state"])
+            self.assertEqual("package-json", payload["inventory"]["manifests"][0]["kind"])
+            self.assertEqual("package-lock.json", payload["inventory"]["locks"][0]["path"])
+            self.assertEqual(".nvmrc", payload["inventory"]["languagePins"][0]["path"])
+            self.assertEqual([], payload["findings"])
 
 
 class FrozenToolchainResults(unittest.TestCase):
