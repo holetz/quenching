@@ -11,6 +11,7 @@ from quenching.delivery.probe import probe_delivery, workflow_artifacts
 
 _TOP_LEVEL = re.compile(r"^([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
 _CHILD = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
+_MAPPING = re.compile(r"^\s+([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
 _LIST = re.compile(r"^\s*-\s*([^\s#]+)")
 
 
@@ -85,6 +86,8 @@ def _values_after(lines: list[str], key: str) -> tuple[str, ...]:
                 break
             if (match := _LIST.match(child)):
                 values.append(_strip_comment(match.group(1)))
+            elif (match := _MAPPING.match(child)):
+                values.append(match.group(1))
         return tuple(sorted(set(values)))
     return ()
 
@@ -93,7 +96,8 @@ def _job(lines: list[str], name: str) -> Job:
     actions = tuple(sorted(set(match.group(1) for line in lines
                                 if (match := re.search(r"\buses:\s*([^\s#]+)", line)))))
     commands = tuple(_strip_comment(found.group(1)) for line in lines
-                     if (found := re.match(r"^\s*run:\s*(.*?)\s*$", line)) and found.group(1))
+                     if (found := re.match(r"^\s*-?\s*run:\s*(.*?)\s*$", line))
+                     and found.group(1))
     runtimes: list[str] = []
     for line in lines:
         match = re.search(r"\b(python|node|ruby|java|go|rust)[-_]version:\s*([^\s#]+)",
