@@ -6,8 +6,10 @@ imports a target package or launches a package manager, compiler, formatter or t
 from __future__ import annotations
 
 import configparser
+import hashlib
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -89,11 +91,52 @@ def _status(error: str | None) -> dict[str, str]:
     return {"parse": "ok" if error is None else error}
 
 
+def _arbiter_entries(text: str | None) -> list[dict[str, str]]:
+    if not text:
+        return []
+    match = re.search(r"quenching-arbiters-data (\{.*\})", text)
+    if not match:
+        return []
+    try:
+        data = json.loads(match.group(1))
+    except json.JSONDecodeError:
+        return []
+    entries = data.get("entries") if isinstance(data, dict) else None
+    if not isinstance(entries, list):
+        return []
+    return [
+        {"key": item["key"], "arbiter": item["arbiter"]}
+        for item in entries
+        if isinstance(item, dict) and isinstance(item.get("key"), str)
+        and isinstance(item.get("arbiter"), str)
+    ]
+
+
 def _pyproject(path: Path, root: Path) -> tuple[Artifact, list[Artifact]]:
     data, error = _read_toml(path)
+    text = _read_text(path)
     project = data.get("project", {}) if data else {}
     build = data.get("build-system", {}) if data else {}
     tool = data.get("tool", {}) if data else {}
+    groups = data.get("dependency-groups", {}) if data else {}
+    dev_specs = {}
+    if isinstance(groups, dict):
+        for group, values in groups.items():
+            if isinstance(values, list):
+                dev_specs.update({item.split(" ", 1)[0]: item for item in values
+                                  if isinstance(item, str)})
+    semantic_keys = []
+    if isinstance(project, dict) and isinstance(project.get("scripts"), dict):
+        semantic_keys.append("project.scripts")
+    if isinstance(tool, dict):
+        semantic_keys.extend(f"tool.{key}" for key in ("coverage", "pytest")
+                             if isinstance(tool.get(key), dict))
+    arbiter_entries = _arbiter_entries(text)
+    canonical = json.dumps({"artifact": "pyproject.toml", "entries": sorted(
+        arbiter_entries, key=lambda item: item["key"])},
+        sort_keys=True, separators=(",", ":"))
+    digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    digest_match = re.search(r"quenching-arbiters-sha256 ([0-9a-f]{64})", text or "")
     details = {
         **_status(error),
         "ecosystem": "python",
@@ -101,10 +144,18 @@ def _pyproject(path: Path, root: Path) -> tuple[Artifact, list[Artifact]]:
         "version": project.get("version") if isinstance(project, dict) else None,
         "requiresPython": project.get("requires-python") if isinstance(project, dict) else None,
         "dependencies": _names(project.get("dependencies")) if isinstance(project, dict) else [],
+        "devDependencies": sorted(dev_specs),
+        "devDependencySpecs": dev_specs,
         "optionalDependencies": sorted(project.get("optional-dependencies", {}))
         if isinstance(project, dict) and isinstance(project.get("optional-dependencies"), dict) else [],
         "buildBackend": build.get("build-backend") if isinstance(build, dict) else None,
         "toolKeys": sorted(tool) if isinstance(tool, dict) else [],
+        "uvPackage": tool.get("uv", {}).get("package")
+        if isinstance(tool, dict) and isinstance(tool.get("uv"), dict) else None,
+        "semanticKeys": sorted(semantic_keys),
+        "arbiterEntries": arbiter_entries,
+        "arbiterDigest": digest_match.group(1) if digest_match else None,
+        "arbiterDigestExpected": digest,
     }
     tools = []
     if isinstance(tool, dict):
@@ -127,6 +178,8 @@ def _package_json(path: Path, root: Path) -> tuple[Artifact, list[Artifact]]:
         "engines": _string_map(data.get("engines")),
         "dependencies": _names(data.get("dependencies")),
         "devDependencies": _names(data.get("devDependencies")),
+        "devDependencySpecs": data.get("devDependencies", {})
+        if isinstance(data.get("devDependencies"), dict) else {},
         "peerDependencies": _names(data.get("peerDependencies")),
         "scripts": sorted(data.get("scripts", {})) if isinstance(data.get("scripts"), dict) else [],
         "toolKeys": tools,
@@ -159,6 +212,7 @@ def _setup_cfg(path: Path, root: Path) -> tuple[Artifact, list[Artifact]]:
         "requiresPython": options.get("python_requires"),
         "sections": sections,
         "toolKeys": [section for section in sections if section.startswith("options.")],
+        "semanticKeys": [],
     }
     tool_artifacts = [Artifact(_relative(root, path), "setup-tool", {
         **_status(error), "keys": details["toolKeys"]
