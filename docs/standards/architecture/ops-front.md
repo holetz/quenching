@@ -18,6 +18,21 @@ work a predictable outer interface while leaving domain logic in the packages th
 front is both the contract for that surface and the shipped implementation boundary that checks
 it.
 
+## Mold adoption
+
+The ops front adopts the common minimum from
+[`front-mold.md`](front-mold.md). Its applicability signal is the `ops` namespace in the target's
+`.claude/quenching.json`; its read model is `cq ops status`, and its verifier is `cq ops doctor`.
+The align and status bodies cite the executor projection at
+`plugins/quenching/assets/references/front-align/mold.md`, while this front keeps the ops-specific
+disposition map in `plugins/quenching/assets/references/ops-align/bands.md`.
+
+Ops retains its domain deltas: `opsRoot`, `router` and `registry` ownership, inventory and generated
+registry freshness, lifecycle and entry-point reachability, typed exits, output channels and
+preview-first write policy. Its `inventory`, `registry` and entry-point commands are extra route
+verbs; they do not replace the common `doctor`/`status` floor or change the owners of `op-*`
+findings.
+
 ## The canonical tree
 
 An adopting repository declares one operations root. `scripts/` is a conventional example, not an
