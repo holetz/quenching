@@ -121,6 +121,7 @@ def check(data: dict[str, object]) -> list[str]:
         errors.append(f"CLAUDE.md is {claude['bytes']} bytes; limit is {MAX_BYTES}")
     for marker in (
         "Language: pt-BR — the contract is /docs/standards/agents/communication.md.",
+        "Ephemeral writes: .quenching/ — the contract is /docs/standards/agents/ephemeral-writes.md",
         "plugins/quenching/README.md",
         "docs/index.md",
         "assets/bin/cq",
