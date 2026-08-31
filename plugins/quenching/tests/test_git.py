@@ -24,7 +24,7 @@ from quenching.git.base import (_init_default_branch, _is_host_default, _origin_
 from quenching.git.conventions import STANDARDS_DIR, _declared_docs
 from quenching.git.slugs import _read_specs, cmd_specs
 from quenching.git.stale import (_gone_branches, _merged_branches, _merged_remote_branches,
-                                 _orphan_worktrees)
+                                 _orphan_worktrees, _unregistered_worktrees)
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
@@ -194,6 +194,21 @@ class Stale(RepoCase):
         wt = os.path.join(self.tmp, "wt2")
         _run(self.repo, "worktree", "add", "-q", "-b", "wt-branch-2", wt)
         self.assertEqual(_orphan_worktrees(self.repo), [])
+
+    def test_an_unregistered_worktree_is_reported_with_branch_and_size(self):
+        wt = pathlib.Path(self.tmp, "unregistered")
+        _run(self.repo, "worktree", "add", "-q", "-b", "unregistered-branch", str(wt))
+        (wt / "ignored.bin").write_bytes(b"payload\n")
+        pointer = (wt / ".git").read_text(encoding="utf-8").split(":", 1)[1].strip()
+        admin = pathlib.Path(pointer)
+        (admin / "gitdir").unlink()
+
+        rows = _cq_json(self.repo, "stale")["unregisteredWorktrees"]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["path"], str(wt))
+        self.assertEqual(rows[0]["branch"], "unregistered-branch")
+        self.assertGreater(rows[0]["size"], 0)
+        self.assertEqual(_unregistered_worktrees(self.repo), rows)
 
     def test_cq_git_stale_json_excludes_base_and_reports_merged(self):
         _run(self.repo, "branch", "feature-e")
