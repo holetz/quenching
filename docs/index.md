@@ -22,7 +22,7 @@ before anyone touches a file.
   [the how-to guides](how-to/index.md).
 - **Understand why** — the five local fronts, the OKF bundle, the DTCG design source, and the provider-owned spec lifecycle:
   [the explanations](explanation/index.md).
-- **Look it up** — all forty-seven commands, the local automation registry:
+- **Look it up** — the complete command catalog and the local automation registry:
   [this project's reference](project/index.md), and the [glossary](glossary.md).
 
 ## The problem
