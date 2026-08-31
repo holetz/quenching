@@ -49,8 +49,9 @@ line and keeps the ambient default.
 
 The declaration names a destination; it does not create one. In particular, the durable-ignored
 area does not yet survive a worktree: declaring it does not declare `sharedPaths`, materialise a
-link, or provide history and backup. That plumbing and the policy for the path belong to the
-target, or to a separate contract that owns them.
+link, or provide history and backup. A worktree carries only tracked files, so the ignored
+destination remains local unless a separate target-owned mechanism makes it shared. That plumbing
+and the policy for the path belong to the target, or to a separate contract that owns them.
 
 ## The boundary
 
