@@ -6,6 +6,8 @@
   "present": false,
   "unparseable": null,
   "unknownKeys": [],
+  "unknownNamespaces": [],
+  "migrationRefusal": null,
   "provider": "github",
   "unknownProvider": null,
   "unknownBackend": null,

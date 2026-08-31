@@ -6,6 +6,8 @@
   "present": false,
   "unparseable": null,
   "unknownKeys": [],
+  "unknownNamespaces": [],
+  "migrationRefusal": null,
   "provider": "azure-boards",
   "unknownProvider": null,
   "unknownBackend": null,
