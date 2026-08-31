@@ -28,6 +28,26 @@ def git(cwd, *args):
 
 
 class TaskExecutionContractTests(unittest.TestCase):
+    def test_explicit_subject_commits_only_staged_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            git(directory, "init", "-q", "-b", "main")
+            git(directory, "config", "user.email", "execute-check@example.invalid")
+            git(directory, "config", "user.name", "task execution check")
+            Path(directory, "README.md").write_text("seed\n", encoding="utf-8")
+            git(directory, "add", "README.md")
+            git(directory, "commit", "-qm", "seed")
+
+            Path(directory, "staged.txt").write_text("staged\n", encoding="utf-8")
+            Path(directory, "unstaged.txt").write_text("unstaged\n", encoding="utf-8")
+            git(directory, "add", "staged.txt")
+            git(directory, "commit", "-qm", "explicit subject wins")
+
+            self.assertEqual(git(directory, "log", "-1", "--format=%s"),
+                             "explicit subject wins")
+            self.assertEqual(git(directory, "show", "--format=", "--name-only", "HEAD"),
+                             "staged.txt")
+            self.assertEqual(git(directory, "status", "--short"), "?? unstaged.txt")
+
     def test_boundary_keeps_each_task_commit_and_has_no_reset_contract(self):
         command = COMMAND.read_text(encoding="utf-8").lower()
         reference = REFERENCE.read_text(encoding="utf-8").lower()
