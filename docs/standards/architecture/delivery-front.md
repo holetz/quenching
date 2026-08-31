@@ -88,6 +88,24 @@ Reading another front's artifact does not transfer ownership. In particular, a C
 contain a test command without owning the test contract, and a release job can invoke deployment
 without owning the operational entry point.
 
+## Measured boundary evidence
+
+The current repository makes these boundaries concrete without turning its own plugin workflow
+into a target delivery contract:
+
+| Evidence | Boundary it demonstrates |
+| --- | --- |
+| `.github/workflows/sync-codex-plugin.yml` | A workflow tree exposes triggers, jobs and permissions; delivery owns its shape, while permission meaning remains with the security pillar. |
+| `plugins/quenching/assets/bin/quenching/proof/` | The bundled proof front owns test-layer, CI-evidence and gate semantics; delivery may invoke that evidence but does not claim it. |
+| `plugins/quenching/assets/bin/quenching/ops/` | The bundled ops front owns router, entry-point and deploy semantics; delivery may name a reachable `deploy` entry point without absorbing its lifecycle. |
+| `docs/standards/architecture/toolchain-front.md` | Runtime and tool declarations remain toolchain-owned even when a workflow consumes them. |
+| `plugins/quenching/assets/bin/quenching/common/config.py` | The shared loader reads the configuration envelope; each namespace adapter remains the owner of its semantic keys. |
+| `security` pillar | Workflow permissions are read-only security evidence; no local delivery tree or automatic permission repair is invented. |
+
+This evidence is an ownership map, not an assertion that the plugin repository already has a
+target `delivery` namespace or a delivery route. The implementation must keep that distinction
+visible when it probes a target repository.
+
 ## Pipeline shape contract
 
 The delivery verifier and align report the following relationships:
@@ -124,4 +142,3 @@ This standard declares the surface and its admission and ownership rules. It doe
 `cq delivery` route, command bodies, tests or Codex translation. Those consumers may add provider
 adapters and a route-specific vocabulary only when they preserve this bounded tree, the common
 front mold and the ownership table above.
-
