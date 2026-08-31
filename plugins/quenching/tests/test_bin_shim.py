@@ -31,14 +31,15 @@ class ThePathShim(unittest.TestCase):
         self.assertTrue(SHIM.is_file(), f"the shim does not resolve: {SHIM}")
         self.assertTrue(os.access(SHIM, os.X_OK), f"the shim carries no execute bit: {SHIM}")
 
-    def test_it_exposes_seven_pillars(self):
+    def test_it_exposes_eight_pillars(self):
         run = subprocess.run([sys.executable, str(REAL), "--help"], capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stderr)
         choices = next(line.strip() for line in run.stdout.splitlines()
                        if line.strip().startswith("{") and line.strip().endswith("}"))
         pillars = set(choices[1:-1].split(","))
-        self.assertEqual(7, len(pillars))
-        self.assertEqual({"specs", "knowledge", "design", "components", "ops", "proof", "git"}, pillars)
+        self.assertEqual(8, len(pillars))
+        self.assertEqual({"specs", "knowledge", "design", "components", "ops", "proof", "git",
+                          "toolchain"}, pillars)
 
     def test_it_answers_the_version_lockstep(self):
         run = subprocess.run([str(SHIM), "--version"], capture_output=True, text=True)

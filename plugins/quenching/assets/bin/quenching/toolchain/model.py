@@ -18,6 +18,22 @@ class Artifact:
 
 
 @dataclass(frozen=True)
+class Finding:
+    code: str
+    band: str
+    severity: str
+    message: str
+    path: str | None = None
+
+    def as_dict(self) -> dict[str, Any]:
+        result = {"code": self.code, "band": self.band,
+                  "severity": self.severity, "message": self.message}
+        if self.path is not None:
+            result["path"] = self.path
+        return result
+
+
+@dataclass(frozen=True)
 class ToolchainInventory:
     """The one static inventory consumed by later toolchain checks."""
 
