@@ -35,9 +35,9 @@ stopped for lack of one.
 ### 2. Offer the strategy, and the branch's fate under squash
 Show the trade in one line each, from §Merge strategies, and ask with **AskUserQuestion**:
 
-- **merge commit** *(default)* — every per-section commit stays on the base, one extra commit.
-- **squash** — one commit on the base; the per-section commits survive only on the branch itself.
-- **rebase** — linear history, per-section commits preserved through the rewrite.
+- **merge commit** *(default)* — every per-task commit stays on the base, one extra commit.
+- **squash** — one commit on the base; the per-task commits survive only on the branch itself.
+- **rebase** — linear history, per-task commits preserved through the rewrite.
 - **fast-forward** — nothing rewritten or added; only possible when the base has not moved.
 
 **Squash chosen → offer, separately, not to delete the branch** — deleting it strands every commit
