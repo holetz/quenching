@@ -41,6 +41,27 @@ DESCRIPTION_BASELINES = {
 }
 
 
+TRIGGER_PHRASES = {
+    "plugins/quenching/commands/align.md": ("align the repo", "align everything", "align and update everything", "set up quenching here", "converge this repository", "run all the aligns", "fix both fronts", "fix all fronts"),
+    "plugins/quenching/commands/components/align.md": ("align the skills", "align and update the skills", "migrate my commands", "fix the .claude surface", "collapse the skill wrappers", "audit the command bodies", "review the skill descriptions", "shorten the descriptions", "converge the automation surface"),
+    "plugins/quenching/commands/specs/conclude.md": ("conclude this spec", "close it out", "wrap up the plan", "review the branch", "archive this spec", "abandon this spec", "it will not be built"),
+    "plugins/quenching/commands/specs/triage.md": ("triage the specs", "prioritize the front", "rank the plans", "what matters most", "re-rank these", "order the plans", "which of these first"),
+    "plugins/quenching/commands/specs/execute.md": ("execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks"),
+    "plugins/quenching/commands/knowledge/align.md": ("align the docs", "align and update docs", "fix the documentation structure", "install the OKF bundle", "set up /docs/", "converge the knowledge base"),
+    "plugins/quenching/commands/knowledge/documentation/write.md": ("write the documentation pages", "draft the docs from the plan", "apply the documentation writing pass"),
+    "plugins/quenching/commands/components/agent/new.md": ("create an agent", "add a subagent", "make a verifier agent", "delegate this to an agent", "set up something that audits our migrations and reports back"),
+    "plugins/quenching/commands/design/align.md": ("align the design", "set up the design front", "install the brand pack", "rebuild the design projections", "fix design drift"),
+    "plugins/quenching/commands/components/hook/new.md": ("create a hook", "add a validation hook", "check this after every edit", "block that command before it runs", "catch it automatically whenever a migration lands"),
+    "plugins/quenching/commands/knowledge/documentation/produce.md": ("produce the documentation", "run the documentation pipeline", "generate the complete docs site"),
+    "plugins/quenching/commands/knowledge/documentation/build.md": ("build the docs site", "generate the site for /docs", "fix the documentation site's nav"),
+    "plugins/quenching/commands/knowledge/documentation/review.md": ("review the documentation", "score the docs pages", "critique the documentation quality"),
+    "plugins/quenching/commands/proof/layer/new.md": ("create a proof layer", "add a test layer", "define a verification layer", "organize tests into a layer"),
+    "plugins/quenching/commands/knowledge/documentation/plan.md": ("plan the documentation", "diagnose the docs structure", "design the documentation architecture"),
+    "plugins/quenching/commands/design/genre/new.md": ("create a design genre", "add a report genre", "define a deck contract", "mint an editorial format", "make one genre render to HTML and PDF"),
+    "plugins/quenching/commands/proof/align.md": ("align the proof front", "set up the verification surface", "fix proof drift", "converge the test gate"),
+}
+
+
 TYPED_ONLY_COMMANDS = (
     "plugins/quenching/commands/specs/cycle.md",
     "plugins/quenching/commands/components/command/retro.md",
@@ -183,6 +204,10 @@ class RepositorySurfaceTranslation(unittest.TestCase):
                              translate.transform_platform(description, adaptation),
                              relative)
             self.assertIn("Not for:", projected, skill_key)
+            for phrase in TRIGGER_PHRASES[relative]:
+                self.assertIn(f'"{phrase}"', description, relative)
+                translated_phrase = translate.transform_platform(f'"{phrase}"', adaptation)
+                self.assertIn(translated_phrase, projected, skill_key)
 
         self.assertLess(after, sum(DESCRIPTION_BASELINES.values()))
         for relative in TYPED_ONLY_COMMANDS:
