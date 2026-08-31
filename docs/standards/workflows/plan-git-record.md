@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plan git record contract
-description: How a provider-owned spec records the git facts that cannot be derived later — per-task commit subjects, branch, pull request and merge records, branch marks for conclude discovery, base inference, merge routes, and safe branch cleanup
+description: How a provider-owned spec records the git facts that cannot be derived later — per-task commit subjects, branch, pull request and merge records, branch marks for conclude discovery, base inference, merge routes, and safe local and remote branch cleanup
 resource: plugins/quenching/assets/references/git/**, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-conclude/auto-discover.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/git/merge.md, plugins/quenching/commands/git/pr/create.md
 tags: [workflows, specs, git, commits, records]
 timestamp: 2026-08-22
 audience: both
 authority: background
-source: abandonar-slug-por-id-nativo (section 4); specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption; the pull-request route and `merge.pr` added by that same plan's branch review at conclude, which found the `## Impact` path declared for this file and written only in plan-lifecycle.md; the declared-integration-branch step added ahead of origin/HEAD by the configurable-branch-strategy plan (task 2.3, 2026-08-04), proved in code by `infer_base_branch`'s `selftest` fixture; the section squash and its narrowing of the task→commit anchor to section granularity by the reduzir-commits-por-secao spec (2026-08-11); the native-ID branch mark and the auto-discover fallback added by abandonar-slug-por-id-nativo (section 4); the `pr` record, the in-place `work == base` pair and the liveness exception it forces added by vincular-spec-a-branch-commits-e-pr at its conclude — this file was never named under that spec's `## Impact`, and the branch review is what found it contradicted, after `cq specs next` was measured ranking every in-place spec as permanently in flight on a base branch that cannot die; the place rule (§Every record is written where it needs to survive) and the branch-deletion counterpart to the worktree rule (§A branch is deleted with `-d`, never `-D`) added by the fix-conclude-abandoned-branch-harvest plan (task 4.1, 2026-08-16) — proved, not merely agreed: `conclude-order-check.sh`'s `abandoned` arm (task 3.1 of that same plan) builds the fixture, deletes the branch with `-D`, and asserts the closing survives; `pr:`/`merge:` ownership moved to `/quenching:git:pr:create`/`/quenching:git:merge` and the host-link conditionality (measured in task 1.1) added by pilar-git-e-specs-agnosticas-ao-git (task 6.4)
+source: abandonar-slug-por-id-nativo (section 4); specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption; the pull-request route and `merge.pr` added by that same plan's branch review at conclude, which found the `## Impact` path declared for this file and written only in plan-lifecycle.md; the declared-integration-branch step added ahead of origin/HEAD by the configurable-branch-strategy plan (task 2.3, 2026-08-04), proved in code by `infer_base_branch`'s `selftest` fixture; the section squash and its narrowing of the task→commit anchor to section granularity by the reduzir-commits-por-secao spec (2026-08-11); the native-ID branch mark and the auto-discover fallback added by abandonar-slug-por-id-nativo (section 4); the `pr` record, the in-place `work == base` pair and the liveness exception it forces added by vincular-spec-a-branch-commits-e-pr at its conclude — this file was never named under that spec's `## Impact`, and the branch review is what found it contradicted, after `cq specs next` was measured ranking every in-place spec as permanently in flight on a base branch that cannot die; the place rule (§Every record is written where it needs to survive) and the branch-deletion counterpart to the worktree rule (§A branch is deleted with `-d`, never `-D`) added by the fix-conclude-abandoned-branch-harvest plan (task 4.1, 2026-08-16) — proved, not merely agreed: `conclude-order-check.sh`'s `abandoned` arm (task 3.1 of that same plan) builds the fixture, deletes the branch with `-D`, and asserts the closing survives; `pr:`/`merge:` ownership moved to `/quenching:git:pr:create`/`/quenching:git:merge` and the host-link conditionality (measured in task 1.1) added by pilar-git-e-especs-agnosticas-ao-git (task 6.4); estender-o-git-cleanup-para-podar-branches-remotas (task 3.1, 2026-08-30)
 maintainer: quenching
 ---
 
@@ -378,6 +378,21 @@ a spec through create → isolate → execute → conclude(`--outcome abandoned`
 move, the `outcome:` stamp, the distillation's background note — still resolves on the base
 afterwards. The assertion that failed before §Every record is written where it needs to survive
 existed is exactly this one.
+
+## Remote branch cleanup is a reported fact, not an automatic merge record
+
+`cq git stale` may report a fetched `origin/<branch>` whose tip is already reachable from the
+resolved base. That `remoteBranches` list is a local observation, not proof that the server is
+unchanged, and it is separate from `branch:`, `pr:` and `merge:` records. The default cleanup flow
+uses no implicit fetch or remote-prune: a caller that needs newer facts fetches explicitly and
+starts a fresh report.
+
+`/quenching:git:cleanup` presents remote branches together with local branches and orphan worktrees
+in one human selection. A selected remote item is deleted only with the exact `git push origin
+--delete <branch>` action shown before confirmation. `origin/HEAD`, the resolved base, the current
+branch and every remote branch absent from the fresh report remain protected; a refusal leaves the
+server branch standing. This is a destructive cleanup action, not a consequence that any merge or
+PR record derives automatically.
 
 ## The target's git conventions win — read if present, never installed
 
