@@ -1,8 +1,8 @@
 ---
 type: standard
 title: Install profiles — the front is the unit of installation
-description: A profile declares which of the four fronts (plus the fifth entry, the `git` pillar) a repository uses, in `.claude/quenching.json` — what it turns on and off is the residency of a front's command descriptions (`disable-model-invocation: true`), never a command or a file; the `/align` conductor runs the installed local fronts in dependency order and names an uninstalled one in its report instead of failing on it, and `git` carries no conductor to skip at all, only its own residency toggle
-resource: .claude/quenching.json, plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/design/align.md, plugins/quenching/commands/components/align.md, plugins/quenching/commands/git/**
+description: A profile declares which of the five local fronts, provider-owned `specs`, and the `git` pillar a repository uses, in `.claude/quenching.json` — what it turns on and off is the residency of a front's command descriptions (`disable-model-invocation: true`), never a command or a file; the `/align` conductor runs the installed local fronts in dependency order and names an uninstalled one in its report instead of failing on it, and `git` carries no conductor to skip at all, only its own residency toggle
+resource: .claude/quenching.json, plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/**, plugins/quenching/commands/specs/**, plugins/quenching/commands/design/**, plugins/quenching/commands/components/**, plugins/quenching/commands/ops/**, plugins/quenching/commands/proof/**, plugins/quenching/commands/git/**
 tags: [architecture, install, profiles, fronts, configuration]
 timestamp: 2026-08-27
 audience: both
@@ -21,8 +21,8 @@ stop being carried in every session's always-on context.
 
 ## The front is the unit of installation — and one pillar joins the same list
 
-The plugin installs four fronts plus one pillar, and installation is decided per entry, never per
-command:
+The plugin installs five local fronts, one provider-owned front, and one pillar, and installation
+is decided per entry, never per command:
 
 | Entry | Commands | Kind |
 | --- | --- | --- |
@@ -30,29 +30,31 @@ command:
 | `specs` | `/quenching:specs:*` | front |
 | `design` | `/quenching:design:*` | front |
 | `components` | `/quenching:components:*` | front |
+| `ops` | `/quenching:ops:*` | front |
+| `proof` | `/quenching:proof:*` | front |
 | `git` | `/quenching:git:*` | pillar |
 
 These names are the ones the profile uses. The `components` front is the `.claude/` surface of the
-target repository; [align-surface.md](align-surface.md) §The aligned-front column names the same four fronts
-plus the pillar from the align side — where the distinction actually bites, because `git` earns no
-row of its own to conduct.
+target repository; [align-surface.md](align-surface.md) §The aligned-front column names the same five
+local fronts and the two alignless pillars from the align side — where the distinction actually
+bites, because `specs` has no local tree and `git` earns no row of its own to conduct.
 
 A profile is the set of entries declared installed:
 
 ```json
 {
   "backend": "github",
-  "profiles": { "installed": ["knowledge", "specs", "design", "components", "git"] }
+  "profiles": { "installed": ["knowledge", "specs", "design", "components", "ops", "proof", "git"] }
 }
 ```
 
 The block lives in the file that already carries the plugin's other declarations, and holds the
 same place in the recognised set as any other key
 ([plugin-configuration.md](../workflows/plugin-configuration.md) §The recognised keys). Absent, it
-declares nothing and nothing changes: behaviour with no profile is behaviour with all five entries
+declares nothing and nothing changes: behaviour with no profile is behaviour with all seven entries
 installed. That is the ordinary case, and it is why `installed` lists what is **on** rather than
 what is off — the current behaviour is the default, and a profile is an explicit declaration over
-it. **`git` defaults on the same way** — it is not a fourth front a repository opts into, it is
+it. **`git` defaults on the same way** — it is not a local front a repository opts into, it is
 the plugin's own git procedure, resident unless a profile says otherwise.
 
 ## What a profile turns on and off
@@ -84,16 +86,16 @@ and skipped. It is never an error, and it is never a question.
   the align's only account of its own run
   ([align-surface.md](align-surface.md) §No sweep records itself), so the mention lives there,
   never in the bundle.
-- Declaring all four fronts installed — the profile of this repository itself — changes nothing:
+- Declaring all five local fronts installed — the profile of this repository itself — changes nothing:
   the conductor behaves exactly as it did before the profile existed.
 
 Why the conductor must not fail: an uninstalled front is a legitimate configuration, not a defect.
-The assumption a profile exists to retire is that a repository has all four fronts or something
+The assumption a profile exists to retire is that a repository has all five local fronts or something
 is wrong — and a conductor that refused on the retired assumption would make the profile unusable
 for the one case it exists to serve.
 
 **`git` has no conductor to skip, and turning it off skips nothing.** It earns no row in the align
-column at all ([align-surface.md](align-surface.md) §The fifth pillar has no align), so there is
+column at all ([align-surface.md](align-surface.md) §The seventh pillar has no align), so there is
 no align invocation for `/align` to withhold and no "not conducted" line to report — an uninstalled
 `git` is purely a residency fact, read the same way any other command's
 `disable-model-invocation: true` is read, with no conductor-side behavior riding on it.
