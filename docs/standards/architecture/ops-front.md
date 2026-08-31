@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Ops front
-description: The target repository's canonical operations surface — one normalized router, its entry-point contract, lifecycle and finding vocabulary; implementation follows in named specs
+description: The target repository's current operations surface — one normalized router, its entry-point contract, lifecycle and finding vocabulary, verified by the shipped cq ops route
 resource: https://github.com/holetz/claude-quenching/issues/1043
 tags: [architecture, ops, automation, scripts, contract]
 timestamp: 2026-08-30
 audience: both
-authority: background
-source: declare-the-ops-front spec 1043 (2026-08-30), grounded in GitHub's Scripts To Rule Them All pattern and the measured target repository; implementation ownership is recorded below
+authority: current
+source: declare-the-ops-front spec 1043 (2026-08-30), grounded in GitHub's Scripts To Rule Them All pattern and the measured target repository; the shipped cq ops route and checks implement this contract
 maintainer: quenching
 ---
 
@@ -15,7 +15,8 @@ maintainer: quenching
 
 The ops front is the operations surface a target repository converges toward. It gives routine
 work a predictable outer interface while leaving domain logic in the packages that own it. The
-front is a contract for the surface, not an implementation of the target repository's operations.
+front is both the contract for that surface and the shipped implementation boundary that checks
+it.
 
 ## The canonical tree
 
@@ -132,7 +133,7 @@ before it is retained as a contract check.
 ## Why a front and not a pillar
 
 The distinction is owned by [`align-surface.md`](align-surface.md), §The aligned-front column and
-§The sixth pillar has no align: a front is a tree this plugin can converge toward and probe, while
+§The seventh pillar has no align: a front is a tree this plugin can converge toward and probe, while
 the `git` pillar answers live questions about a target repository. The operations surface qualifies
 as a front because its tree, router, registry, lifecycle, and entry-point contract give a verifier a
 decidable target. It therefore earns its own alignment stages; it is not merely another `cq` axis
@@ -148,20 +149,21 @@ mistaking an explanatory comment for a disabled check. The mechanism is publishe
 finding must be reviewable, and it follows the measured target's existing `tokenize` plus AST
 technique rather than relying on an unpublished heuristic.
 
-## Contract first, tooling later
+## The shipped implementation
 
-Spec 1043 publishes this contract and its vocabulary; it does not ship the `cq ops` route, a
-verifier, or command bodies. The implementation is deliberately owned by the following specs:
+The bundled `cq ops` route implements this contract and keeps the operations surface measurable:
 
-| Contract part | Builder |
+| Surface | Implementation |
 | --- | --- |
-| The contract, vocabulary, and reference surface | Spec 1043 — Declare the ops front |
-| The `cq ops` axis, inventory, and verifier/doctor | Spec 1044 — Build the cq ops axis |
-| The ops front's align and status command bodies | Spec 1045 — Mint the ops front's align and status command bodies |
-| Cross-front `/align` integration, surface claims, and adoption path | Spec 1051 — Conduct the ops and proof fronts |
+| Axis and route | `cq ops` exposes `inventory`, `doctor`, `status`, and `registry` under one operations namespace. |
+| Inventory | `cq ops inventory` reads the declared root, router, entry points, lifecycle and write-policy facts. |
+| Verification | `cq ops doctor --json` runs the static checks and emits typed findings with the contract's exit codes. |
+| Registry | `cq ops registry --check` proves freshness; `cq ops registry --write` regenerates only the owned registry block. |
+| Reader view | `cq ops status` reports configuration, packages, lifecycle, findings by band and registry freshness without writing. |
 
-Until those builders land, this standard is an agreed target shape with no claim that the target
-repository already conforms to it.
+The route, inventory model, registry generator and verifier live in the bundled `quenching.ops`
+package. The align and status command bodies consume the same route and keep judgment findings in
+the report; they do not create a second operations implementation.
 
 ## Finding vocabulary
 
