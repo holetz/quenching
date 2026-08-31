@@ -297,7 +297,7 @@
   ],
   "sha256": {
     ".codex-plugin/plugin.json": "0a696ee33b34996d136d4aa2d32fcc35bd34af35efb475b0cabefbafcaf87f34",
-    ".generated-from.json": "18514ca6ef657e7bbe7e051f3cd06f5dc8f72c7648ed31e21ab2fa755f8529d5",
+    ".generated-from.json": "9a58932c9f99c610821bc9488873adfb046dd5cd23e2c602a360fbcd8ec602c1",
     "README.md": "846b45dd387adde31854794ef120955db3b029e6517cf75c339065030cc6b320",
     "VERSION": "e33e70efdb9c35eb184b87ee7abc05ac16a925c9c36e84408999dea33a741fa8",
     "checks/catalog-publication-check.py": "9f4c9b75b524e31bd9420036a5384801ef707ef5708956abba1d6eb62c398f9e",
@@ -359,7 +359,7 @@
     "knowledge/standards/ci-cd/index.md": "0910a74cce57d300db7702045b365dc7aa26d1ebaf1c4c29397daa71afabeed3",
     "knowledge/standards/code/index.md": "86774c3417e52dcc5027467748f675457825a0d708b90b4cddc9a72ca9d22c8c",
     "knowledge/standards/data-modeling/index.md": "dc50213826205c49b253610d903b7f104f949b0d3265452561e50dedaf8cf490",
-    "knowledge/standards/index.md": "6a293ce2b91d21cc7e9950dcadcf14f015c54e06af17466aea041040770b5932",
+    "knowledge/standards/index.md": "9b097bb4b51e2b6b5aa2daa8737c39a48a193c8871ec0d7154ea941d848afbf7",
     "knowledge/standards/mlops/index.md": "edb21a438a60ad4a0fc8f12b293bdce9c7516ea236f19c5cf13d64d1960e73dc",
     "knowledge/standards/naming/index.md": "dc22ccec5c945118c9729e0231ca224ae8fc408abe830ab453176a4d57ee2c6d",
     "knowledge/standards/platform/index.md": "4d258acb1cfba066fb5504a8744021879883ead10341ba1c7ebac120f024800b",
