@@ -12,6 +12,7 @@ from quenching.common.config import (CONFIG_FILE, LEGACY_CONFIG_FILE,
                                      detect_provider as _common_detect_provider,
                                      find_repo_root as _common_find_repo_root,
                                      load_config as load_envelope)
+from quenching.common.git import _git
 from quenching.specs.parse.spec import PHASE_DIRS, PHASES
 
 
@@ -161,8 +162,23 @@ def find_repo_root(specs_root: str) -> str:
 
 
 def detect_provider(root: str) -> tuple[str | None, str | None]:
-    """Compatibility export for callers that still import the old specs boundary."""
-    return _common_detect_provider(root)
+    """Compatibility export for callers that still patch the old specs boundary."""
+    # Keep the injectable `_git` seam while the common loader owns all production reads.
+    repo = find_repo_root(root)
+    remote = _git(repo, "remote", "get-url", "origin").strip()
+    if not remote:
+        return _common_detect_provider(root)
+    host = remote.strip().split("#", 1)[0]
+    if "://" in host:
+        host = host.split("://", 1)[1]
+    host = host.rsplit("@", 1)[-1]
+    host = host.split("/", 1)[0].split(":", 1)[0].lower()
+    if host == "github.com" or host.endswith(".github.com"):
+        return "github", host
+    if (host == "dev.azure.com" or host.endswith(".dev.azure.com")
+            or host == "visualstudio.com" or host.endswith(".visualstudio.com")):
+        return "azure-boards", host
+    return None, host
 
 
 def load_config(root: str, *, detect_provider_info: bool = True) -> dict:

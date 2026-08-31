@@ -19,7 +19,8 @@ import subprocess
 
 from quenching.common.git import _git
 from quenching.common.output import emit
-from quenching . specs . config import infer_base_branch, load_config
+from quenching.common.config import load_config
+from quenching.specs.config import infer_base_branch
 
 
 def _origin_head_branch(cwd: str) -> str | None:
@@ -60,7 +61,7 @@ def resolve_base(cwd: str) -> tuple[str, bool]:
     chain."""
     cfg = load_config(cwd)
     base = infer_base_branch(cfg, _origin_head_branch(cwd), _init_default_branch(cwd))
-    return base, _is_host_default(cwd, cfg["backend"], base)
+    return base, _is_host_default(cwd, cfg.get("provider") or cfg.get("backend"), base)
 
 
 def cmd_base(args) -> int:
