@@ -7,7 +7,7 @@ tags: [architecture, front, mold, design, ops, proof]
 timestamp: 2026-08-31
 audience: both
 authority: current
-source: spec 1066 (task 1.1) — the common front contract and the exact 44-file baseline were measured against the tracked design, ops, proof and conductor surfaces
+source: spec 1066 (tasks 1.1 and 4.3) — the common front contract, its pre-adoption baseline and the final post-adoption footprint were measured against the tracked design, ops, proof and conductor surfaces
 maintainer: quenching
 ---
 
@@ -95,12 +95,16 @@ judgement command in a report is a hand-off, not an invocation by the align or s
 
 ## Measured baseline and footprint
 
-The measurement below was taken on 2026-08-31 from the tracked UTF-8 files in the current tree. A
-front footprint means its architecture declaration, `align` and `status` command bodies, all
-front-specific source references, the two Codex align/status skills, all Codex front references,
-and its test module plus golden fixtures. The three creation commands are deliberate front deltas,
-so they are excluded from the common footprint: `design/genre/new.md`, `ops/entrypoint/new.md`,
-and `proof/layer/new.md`.
+Both measurements below were taken on 2026-08-31 from tracked UTF-8 files. A front footprint means
+its architecture declaration, `align` and `status` command bodies, all front-specific source
+references, the two Codex align/status skills, all Codex front references, and its test module plus
+golden fixtures. The three creation commands are deliberate front deltas, so they are excluded
+from the common footprint: `design/genre/new.md`, `ops/entrypoint/new.md`, and `proof/layer/new.md`.
+
+### Pre-adoption baseline (task 1.1)
+
+This is the preserved measurement from before the front-specific adoption in tasks 2.1–3.3 and
+the generated index registration in task 4.1.
 
 | Front | Declaration | Command bodies | Source refs | Codex skills | Codex refs | Proof files | Total |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -109,13 +113,28 @@ and `proof/layer/new.md`.
 | proof | 1 | 2 | 4 | 2 | 4 | 5 | **18 files / 101,461 bytes** |
 | **three fronts** | **3** | **6** | **8** | **6** | **8** | **11** | **42 files / 253,850 bytes** |
 
-The shared conductor adds `plugins/quenching/commands/align.md` and
-`plugins/quenching/tests/test_align_contract.py`: **2 files / 17,813 bytes**. The exact current
-common baseline is therefore **44 files / 271,663 bytes**. The earlier “roughly 44-file” planning
-figure is thus confirmed for this defined footprint; the three creation commands are measured
-outside it as domain-owned extensions, not silently counted as common mold obligations.
+At that point the shared conductor added `plugins/quenching/commands/align.md` and
+`plugins/quenching/tests/test_align_contract.py`: **2 files / 17,813 bytes**, making the
+pre-adoption common baseline **44 files / 271,663 bytes**.
 
-The byte count is a baseline for the first consumer after extraction. A later front may reuse the
+### Post-adoption final footprint (task 4.3)
+
+This is the final measurement after front-specific adoption and conductor re-derivation. It uses
+the same footprint definition, so the change remains attributable rather than replacing the
+baseline evidence.
+
+| Front | Declaration | Command bodies | Source refs | Codex skills | Codex refs | Proof files | Total |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| design | 1 | 2 | 1 | 2 | 1 | 1 | **8 files / 67,806 bytes** |
+| ops | 1 | 2 | 4 | 2 | 4 | 5 | **18 files / 98,911 bytes** |
+| proof | 1 | 2 | 4 | 2 | 4 | 5 | **18 files / 103,875 bytes** |
+| **three fronts** | **3** | **6** | **9** | **6** | **9** | **11** | **44 files / 270,592 bytes** |
+
+The re-derived shared conductor now adds the same two files at **12,314 bytes**, making the final
+common footprint **46 files / 282,906 bytes**. The three creation commands remain measured outside
+both snapshots as domain-owned extensions, not silently counted as common mold obligations.
+
+The byte counts are dated evidence for this consumer after extraction. A later front may reuse the
 mold without claiming that its domain payload is common; any reduction or increase is reported with
 the same footprint definition and date.
 

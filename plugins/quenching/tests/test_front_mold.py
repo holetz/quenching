@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pathlib
-import re
 import unittest
 
 
@@ -103,32 +102,54 @@ class FrontMoldContract(unittest.TestCase):
             self.assertIn(band, bands)
         self.assertIn("maps every finding exactly once", bands)
 
-    def test_measured_baseline_matches_the_declared_footprint(self):
-        expected = {
+    def test_measured_baseline_and_final_footprint_are_distinct(self):
+        baseline = {
             "design": (6, 55_860),
             "ops": (18, 96_529),
             "proof": (18, 101_461),
         }
+        final = {
+            "design": (8, 67_806),
+            "ops": (18, 98_911),
+            "proof": (18, 103_875),
+        }
+        baseline_section = self.document.split(
+            "### Pre-adoption baseline (task 1.1)", 1
+        )[1].split("### Post-adoption final footprint (task 4.3)", 1)[0]
+        final_section = self.document.split(
+            "### Post-adoption final footprint (task 4.3)", 1
+        )[1].split("## Explicit front deltas", 1)[0]
+
+        for front, (expected_files, expected_bytes) in baseline.items():
+            with self.subTest(snapshot="baseline", front=front):
+                self.assertRegex(
+                    baseline_section,
+                    rf"{front} \| .*\*\*{expected_files} files / {expected_bytes:,} bytes\*\*",
+                )
+
         total_files = total_bytes = 0
-        for front, (expected_files, expected_bytes) in expected.items():
+        for front, (expected_files, expected_bytes) in final.items():
             paths = front_footprint(front)
             measured = (len(paths), sum(path.stat().st_size for path in paths))
-            with self.subTest(front=front):
+            with self.subTest(snapshot="final", front=front):
                 self.assertEqual(measured, (expected_files, expected_bytes))
                 self.assertRegex(
-                    self.document,
+                    final_section,
                     rf"{front} \| .*\*\*{expected_files} files / {expected_bytes:,} bytes\*\*",
                 )
             total_files += measured[0]
             total_bytes += measured[1]
 
-        self.assertEqual((total_files, total_bytes), (42, 253_850))
+        self.assertIn("42 files / 253,850 bytes", baseline_section)
+        self.assertEqual((total_files, total_bytes), (44, 270_592))
+        self.assertIn("44 files / 270,592 bytes", final_section)
         conductor = (
             ROOT / "plugins" / "quenching" / "commands" / "align.md",
             ROOT / "plugins" / "quenching" / "tests" / "test_align_contract.py",
         )
-        self.assertEqual(sum(path.stat().st_size for path in conductor), 17_813)
-        self.assertRegex(self.document, re.escape("44 files / 271,663 bytes"))
+        self.assertEqual(sum(path.stat().st_size for path in conductor), 12_314)
+        self.assertIn("2 files / 17,813 bytes", baseline_section)
+        self.assertIn("46 files / 282,906 bytes", final_section)
 
 
 if __name__ == "__main__":
