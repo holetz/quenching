@@ -21,10 +21,11 @@ allowed-tools: >-
 ```bash
 python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git stale --json
 ```
-The report contains local `staleBranches`, fetched `remoteBranches` from `origin`, and
-`orphanWorktrees`. All three lists empty → say so and stop; there is nothing to prune. Do not fetch
-or run `git remote prune` here: if the caller needs newer remote facts, it must fetch explicitly and
-start a fresh cleanup run. **Done when:** all three lists are in hand.
+The report contains local `staleBranches`, fetched `remoteBranches` from `origin`, registered
+`orphanWorktrees`, and unregistered `unregisteredWorktrees` siblings with their path, branch and
+size. All four lists empty → say so and stop; there is nothing to prune. Do not fetch or run `git
+remote prune` here: if the caller needs newer remote facts, it must fetch explicitly and start a
+fresh cleanup run. **Done when:** all four lists are in hand.
 
 ### 2. Let the human pick what to prune
 Show every local stale branch with its reason(s), every remote branch as `<remote>/<branch>` with
