@@ -19,6 +19,25 @@ behavioral contract every align shares lives in
 `plugins/quenching/assets/references/align/sweep-doctrine.md`; this standard records the
 architectural rule — why the surface has this shape and not the previous one.
 
+## Conductor order and dependency edges
+
+The executable order has one owner: the declaration table in
+[`plugins/quenching/commands/align.md`](../../../plugins/quenching/commands/align.md) under
+`## Execution order`. Its rows are named fronts, not ordinals:
+
+| Edge | Meaning |
+| --- | --- |
+| `knowledge → design` | design consumes product truth and architecture standards from the `/docs/` bundle |
+| `design → components` | components follows the product/design surface before rebuilding automation inventory |
+| `components → ops` | ops follows the target automation surface and its generated registry |
+| `ops → proof` | proof may classify active operations entry points using the ops inventory |
+
+The conductor has a separate named `Applicability` stage before those front stages. Each applicable
+front then runs as `Front: knowledge`, `Front: design`, `Front: components`, `Front: ops` and
+`Front: proof`; absent fronts are `not applicable`, scoped exclusions are `skipped`, and a present
+front with no findings is `conformant`. This standard explains the membership and edges; it does not
+create a second executable order list.
+
 ## The axis contract
 
 <!-- rules -->
