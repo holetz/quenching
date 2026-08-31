@@ -336,66 +336,69 @@ actionable task under the governing target convention. Missing or ambiguous cont
 than guessing from staged content, branch recency or task order. A resolvable omission runs without a confirmation question,
 while the existing-index, hook and no-rewrite rules still apply.
 
-### The anchor is the sha, where no backend co-branches with the code
+### The subject is the task anchor
 
-The anchor written back onto the task line is the commit's **sha** —
+The anchor written back onto the task line is the commit's **subject** —
 [plan-git-record.md](plan-git-record.md) §The task→commit link — recorded by
-`cq specs task --check <id> --commit <sha>` **after** the commit exists:
-
-```bash
-git add <the task's files> <the spec file> && git commit -m "<subject>"
-cq specs task --spec <slug> --check <id> --commit "$(git rev-parse HEAD)"
-```
-
-This is possible today because [the configurable spec backend](../architecture/spec-backend.md) guarantees no
-backend lets a spec share a branch with the code being committed: the `files` backend writes to its
-own dedicated specs branch (§Backend files below), and an external backend writes outside git
-entirely. Neither needs the anchor to land in a file versioned on the code branch, which is the one
-constraint that made a sha impossible before.
-
-### What this reverses, and what it does not yet cover
-
-**Subject-before-commit was the prior standard, for a reason that was real and is recorded here
-rather than erased.** Under a sha anchor, the tick had to follow the commit it recorded, so every
-task cost a second, bookkeeping commit, and "one commit per task" was an aspiration the mechanism
-contradicted. Adopting the commit's **subject** instead — known before the commit exists — let the
-tick land inside the same commit it describes:
+`cq specs task --check <id> --subject <subject>` **before** the commit exists:
 
 ```bash
 cq specs task --spec <slug> --check <id> --subject "<subject>"
 git add <the task's files> <the spec file> && git commit -m "<subject>"
 ```
 
-**That mechanism did not go away, and is not deprecated.** `task --commit` is additive to
-`task --subject`, never a replacement — both are accepted, together or alone, by the same command.
-A repository whose specs still live on the code branch has not stopped needing the reason subject
-was chosen for: this repository's own `plans/`/`archive/` remain on the code branch at the time of
-writing — the migration of an already-populated `/.specs/` to the dedicated branch is explicitly
-deferred, never automatic ([spec-backend.md](../architecture/spec-backend.md) §The selected backend is the source
-of truth) — and every spec here still ticks
-with `--subject`, before the commit, for exactly the reason this section used to give as the whole
-rule. The sha anchor is the target for a backend that does not co-branch; it is not yet a fact
-about every repository running this tool.
+The subject is known before the commit exists, so the tick and the task's code travel in one commit.
+`task --commit` remains additive for legacy records that already carry a sha; it is never a
+replacement for `task --subject`. A `commit-msg` hook that replaces the subject is reported as a
+finding, while hooks that add a prefix or trailer remain resolvable by substring.
 
-Whichever anchor a given commit is carrying, the discipline is the same: if the commit fails,
-**undo the tick** so no box claims a commit that does not exist. If a `commit-msg` hook *replaced*
-the subject, report the drift as a finding and write nothing — repairing the record after the
-commit is the ordering this contract exists to prevent, under either anchor.
+When the separate incremental commit command is called without a subject, it uses the same default
+grammar only after resolving exactly one current spec and one actionable task. An explicit subject
+wins. Missing or ambiguous context refuses, and the command never invents a generic subject from
+the diff or recent history.
 
-**A task with no `files:` declared records no anchor at all.** With the line absent, or written
-`files: []`, the task produces no diff of its own: no commit carries it, so neither a subject nor a
-sha could resolve to one. It ticks with a bare `cq specs task --check <id> --spec <slug>` — no
-`--subject`, no `git add`, no `git commit` attempted — and the anchor is left deliberately empty.
-That is the same rule the no-git case above already states, one level down: **no commit exists, so
-no anchor is invented**, rather than a placeholder that reads like a record.
+### Legacy sha anchors remain readable
+
+A repository or backend that already recorded `commit: <sha>` keeps that historical anchor. It is
+resolved by sha and never backfilled to a subject; the recorded fact describes the history that
+existed when it was written. New execution records use subjects, which survive the branch's later
+history operations without requiring a post-commit provider write.
+
+### Why the subject replaced sha for current execution
+
+The subject-before-commit rule replaced sha anchoring for the current execution path for a reason
+that remains useful to preserve. Under a sha anchor, the tick had to follow the commit it recorded,
+so every task cost a second bookkeeping commit and "one commit per task" was an aspiration the
+mechanism contradicted. Knowing the commit's subject before it exists lets the tick travel inside
+the task's own commit instead:
+
+```bash
+cq specs task --spec <slug> --check <id> --subject "<subject>"
+git add <the task's files> <the spec file> && git commit -m "<subject>"
+```
+
+The `task --commit` option remains additive for legacy records, never a replacement for
+`task --subject`; both are accepted together or alone. This repository's `plans/` and `archive/`
+remain on the code branch, while migration of an already-populated `/.specs/` to a dedicated branch
+is deferred and never automatic ([spec-backend.md](../architecture/spec-backend.md) §The selected
+backend is the source of truth). The sha anchor is therefore still valid for a backend that does
+not co-branch, but it is not the new default for execution records.
+
+If the commit fails, **undo the tick** so no box claims a commit that does not exist. A task with no
+`files:` declared produces no diff of its own and records no subject or sha: tick it with a bare
+`cq specs task --check <id> --spec <slug>`, without `git add` or `git commit`.
 
 The trigger is the task's own `files:`, never the configured backend, because `files:` is already a
 deliberate declaration and not a convenience (`plugins/quenching/assets/references/specs-develop/artifacts.md`
-§Execution metadata) — a task written without it has declared it produces no diff. One rule holds on
-both sides of the backend split: where the backend keeps the spec in the working tree the
-checkbox-only commit is merely deferred, riding along in the next task's commit, and where the backend
-lives outside git there was never a local diff to stage. Conditioning
-on the backend instead would add a second axis of reasoning and change no outcome.
+§Execution metadata). A checkbox-only task has no commit to anchor, whether its backend stores the
+spec in the working tree or outside git.
+
+Measured on this repository's `github` backend (2026-08-17): the archived spec
+`revisar-politica-de-assets-checks` (issue #902) carries a `subject:` on task 5.1 that
+`git log --grep` cannot resolve, because the tick was API-only and the commit it names was never
+made. It is **not** backfilled — an archived spec is never rewritten
+([plan-git-record.md](plan-git-record.md) §The subject is the anchor) — and a task-level checker
+symmetric to `sp-bad-merge` remains a separate surface, deliberately not built here.
 
 Measured on this repository's `github` backend (2026-08-17): the archived spec
 `revisar-politica-de-assets-checks` (issue #902) carries a `subject:` on task 5.1 that
