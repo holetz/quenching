@@ -94,6 +94,27 @@ class DeliveryResults(unittest.TestCase):
         self.assertTrue(all(item["band"] == "Judgement"
                             for item in payload["findings"]))
 
+    def test_second_provider_equivalent_target_uses_gitlab_shape(self):
+        payload, code = self._run({
+            ".gitlab-ci.yml": (
+                "workflow:\n  rules:\n    - if: $CI_COMMIT_BRANCH\n"
+                "stages:\n  - build\n  - release\n"
+                "build:\n  stage: build\n  image: python:3.12\n  script:\n"
+                "    - python -m build\n"
+                "release:\n  stage: release\n  needs: [build]\n"
+                "  image: python:3.12\n  script:\n    - echo complete\n"
+            ),
+        })
+        self.assertEqual(0, code)
+        workflow = payload["inventory"]["workflows"][0]
+        self.assertEqual("gitlab", workflow["provider"])
+        self.assertEqual(["build", "release"], workflow["jobs"])
+        self.assertEqual(["build", "release"], workflow["stages"])
+        self.assertEqual(["python:3.12", "python:3.12"],
+                         [runtime for job in workflow["jobDetails"]
+                          for runtime in job["runtimes"]])
+        self.assertEqual([], payload["findings"])
+
     def test_unmeasured_provider_is_not_reported_as_conformant(self):
         payload, code = self._run({
             ".claude/quenching.json": '{"delivery": {"provider": "jenkins"}}\n',
