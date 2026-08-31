@@ -66,8 +66,8 @@ convergence plan.
 
 ## Deliberate absences
 
-Security has no `align` route because it owns no tree to converge, no `doctor` because there is no
-security-owned canonical surface to verify, and no `bands.md` because there are no front findings
+Security has no align route because it owns no tree to converge, no doctor because there is no
+security-owned canonical surface to verify, and no bands file because there are no front findings
 whose disposition this pillar may classify. It also has no conductor row: the conductor runs
 converging fronts, while security is a read-only observation pillar.
 
