@@ -11,6 +11,8 @@ from quenching.common.git import _git
 from quenching.common.output import emit
 from quenching.git.base import resolve_base
 
+UNREGISTERED_WORKTREES_KEY = "unregisteredWorktrees"
+
 
 def _merged_branches(cwd: str, base: str, protected: set[str]) -> set[str]:
     out = _git(cwd, "for-each-ref", "--format=%(refname:short)", "refs/heads", "--merged", base)
@@ -183,6 +185,6 @@ def cmd_stale(args) -> int:
 
     emit(args.json, {"ok": True, "base": base, "staleBranches": branches,
                      "remoteBranches": remote_branches, "orphanWorktrees": worktrees,
-                     "unregisteredWorktrees": unregistered_worktrees},
+                     UNREGISTERED_WORKTREES_KEY: unregistered_worktrees},
          "\n".join(lines))
     return 0
