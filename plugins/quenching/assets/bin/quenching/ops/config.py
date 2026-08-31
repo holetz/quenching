@@ -7,25 +7,18 @@ repository-relative paths and refuses to guess when either required declaration 
 """
 from __future__ import annotations
 
-import json
 import os
-from pathlib import Path
 
-from quenching.specs.config import CONFIG_FILE, load_config
+from quenching.common.config import CONFIG_FILE, find_repo_root, load_config
 
 
 OPS_CONFIG_KEYS = ("opsRoot", "router")
 REGISTRY_CONFIG_KEY = "registry"
 
 
-def _declared_registry(repo_root: str) -> str | None:
-    """Read the optional registry override without changing shared config semantics."""
-    try:
-        value = json.loads(Path(repo_root, CONFIG_FILE).read_text(encoding="utf-8")).get(
-            REGISTRY_CONFIG_KEY
-        )
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError, AttributeError):
-        return None
+def _declared_registry(ops_config: dict) -> str | None:
+    """Read the optional registry override from the operations namespace."""
+    value = ops_config.get(REGISTRY_CONFIG_KEY)
     return value.strip() if isinstance(value, str) and value.strip() else None
 
 
@@ -35,15 +28,8 @@ def _repo_path(repo_root: str, declared: str) -> str:
 
 
 def _find_repo_root(root: str) -> str:
-    """Find the config home by ancestry, without asking git to execute anything."""
-    current = os.path.abspath(root)
-    while True:
-        if os.path.isfile(os.path.join(current, CONFIG_FILE)):
-            return current
-        parent = os.path.dirname(current)
-        if parent == current:
-            return os.path.abspath(root)
-        current = parent
+    """Compatibility export for callers that imported the old ops-local search."""
+    return find_repo_root(root)
 
 
 def _loader_root(repo_root: str) -> str:
@@ -61,7 +47,14 @@ def load_ops_config(root: str) -> tuple[dict | None, dict]:
     """
     repo_root = _find_repo_root(root)
     cfg = load_config(_loader_root(repo_root), detect_provider_info=False)
-    missing = [key for key in OPS_CONFIG_KEYS if not cfg.get(key)]
+    ops = dict(cfg.get("ops") or {})
+    # Existing target fixtures are still flat until the migration/refusal matrix lands in 2.3.
+    # Prefer the namespace whenever both shapes are present; never merge values from two files.
+    raw = cfg.get("data") or {}
+    for key in (*OPS_CONFIG_KEYS, REGISTRY_CONFIG_KEY):
+        if key not in ops and key in raw:
+            ops[key] = raw[key]
+    missing = [key for key in OPS_CONFIG_KEYS if not ops.get(key)]
     if missing:
         missing_text = ", ".join(f"`{key}`" for key in missing)
         return None, {
@@ -74,9 +67,9 @@ def load_ops_config(root: str) -> tuple[dict | None, dict]:
                        "operations tree or canonical router",
         }
 
-    ops_root = _repo_path(repo_root, cfg["opsRoot"])
-    router = _repo_path(repo_root, cfg["router"])
-    declared_registry = _declared_registry(repo_root)
+    ops_root = _repo_path(repo_root, ops["opsRoot"])
+    router = _repo_path(repo_root, ops["router"])
+    declared_registry = _declared_registry(ops)
     registry = (_repo_path(repo_root, declared_registry) if declared_registry
                 else os.path.join(ops_root, "README.md"))
     return {
@@ -85,8 +78,8 @@ def load_ops_config(root: str) -> tuple[dict | None, dict]:
         "opsRoot": ops_root,
         "router": router,
         "registry": registry,
-        "declaredOpsRoot": cfg["opsRoot"],
-        "declaredRouter": cfg["router"],
+        "declaredOpsRoot": ops["opsRoot"],
+        "declaredRouter": ops["router"],
         "declaredRegistry": declared_registry,
     }, {}
 
