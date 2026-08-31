@@ -37,7 +37,7 @@ cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
 git status --porcelain
 git branch --show-current
 python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git base --json
-cq specs config --json        # `worktreeSetup`, or null — exit 0 either way
+cq specs config --json        # `worktreeSetup`, `sharedPaths`, or their empty values — exit 0 either way
 ```
 `git status --porcelain` non-empty → refuse, name the offending paths, and stop; isolating a dirty
 tree carries whatever was already sitting there into the first commit on the new ref, silently.
@@ -57,7 +57,8 @@ already isolated and carry it forward; do not offer a second branch or worktree.
 continue with the offer below.
 State the base branch (from step 1), the branch name that would be cut (`plan/<id>-<handle>` with an ID,
 else a kebab-case name derived from `$ARGUMENTS` or asked for), the worktree path, and —
-`worktreeSetup` non-null — the setup command **verbatim**. Then ask with **AskUserQuestion**:
+`worktreeSetup` non-null — the setup command **verbatim**; `sharedPaths` non-empty — the declared
+paths **verbatim**. Then ask with **AskUserQuestion**:
 
 - **Worktree** *(default, recommended)* — `git worktree add ../<repo>-<name> -b <branch>`.
 - **Branch** — `git checkout -b <branch>`, work continues in this checkout.
