@@ -15,7 +15,7 @@ from quenching.common.io import read_text
 
 CONFIG_FILE = os.path.join(".claude", "quenching.json")
 LEGACY_CONFIG_FILE = "config.json"
-NAMESPACES = ("shared", "specs", "ops", "proof")
+NAMESPACES = ("shared", "specs", "ops", "proof", "delivery")
 
 # Root-level keys accepted by the pre-envelope format. They are diagnostic-only now: a front
 # adapter must refuse to interpret them because doing so makes a half-migrated repository look
@@ -149,6 +149,7 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
         "specs": {},
         "ops": {},
         "proof": {},
+        "delivery": {},
         "legacyKeys": [],
         "migrationRefusal": None,
         "unknownKeys": [],
