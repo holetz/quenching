@@ -71,9 +71,11 @@ the three, or the run stops on a git error from the chosen form.
 
 ### 4. Take it, run the setup, and stamp
 Run the one command for the chosen form; a failure (name taken, dirty path, locked worktree) is
-reported verbatim and nothing is stamped. On **Worktree** with `worktreeSetup` declared, run it once
-with cwd inside the new worktree; a failing setup does not undo the worktree — report both facts
-separately. Then, only with an ID from step 2:
+reported verbatim and nothing is stamped. On **Worktree**, immediately after `git worktree add`,
+run `cq git worktree link --json` with cwd inside the new worktree. A link failure is reported
+verbatim and does not undo the worktree; stop this flow before running `worktreeSetup`. When the
+link succeeds, run a declared `worktreeSetup` once with cwd inside the new worktree; a failing
+setup does not undo the worktree — report both facts separately. Then, only with an ID from step 2:
 ```bash
 cq specs record "<id>" branch --set base=<base> --set work=<branch>
 python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git specs <branch> --add "<id>" --json
