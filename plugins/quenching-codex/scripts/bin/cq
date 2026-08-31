@@ -76,6 +76,9 @@ PILLARS: dict[str, Pillar] = {
     "proof": Pillar(
         "quenching.proof.cli", True,
         "the verification surface — inventory, doctor, ratchet, status"),
+    "delivery": Pillar(
+        "quenching.delivery.cli", True,
+        "the delivery surface — workflow inventory, doctor, and status"),
     "toolchain": Pillar(
         "quenching.toolchain.cli", True,
         "the toolchain surface — applicability, inventory, doctor, status"),
