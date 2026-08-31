@@ -210,6 +210,18 @@ class Stale(RepoCase):
         self.assertGreater(rows[0]["size"], 0)
         self.assertEqual(_unregistered_worktrees(self.repo), rows)
 
+    def test_plain_sibling_clone_and_other_repository_worktree_are_silent(self):
+        pathlib.Path(self.tmp, "plain").mkdir()
+        clone = pathlib.Path(self.tmp, "clone")
+        subprocess.run(["git", "clone", "-q", self.repo, str(clone)], check=True,
+                       capture_output=True, text=True)
+
+        other = _init_repo(os.path.join(self.tmp, "other-repo"))
+        other_worktree = pathlib.Path(self.tmp, "other-worktree")
+        _run(other, "worktree", "add", "-q", "-b", "other-branch", str(other_worktree))
+
+        self.assertEqual(_cq_json(self.repo, "stale")["unregisteredWorktrees"], [])
+
     def test_cq_git_stale_json_excludes_base_and_reports_merged(self):
         _run(self.repo, "branch", "feature-e")
         payload = _cq_json(self.repo, "stale")
