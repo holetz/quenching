@@ -1,7 +1,7 @@
 ---
 type: project
 title: Command catalog
-description: All forty-seven commands by front — one line each — plus the cq rail's exit-code contract.
+description: The complete command catalog by front — one line each — plus the cq rail's exit-code contract.
 resource: plugins/quenching/README.md
 tags:
   - reference
@@ -9,13 +9,13 @@ tags:
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: derived from plugins/quenching/README.md §The forty-seven commands and §The specs flow (tables preserved, long rows condensed); the machine authority is cq components doctor --json
+source: derived from plugins/quenching/README.md §The 47 commands and §The specs flow (tables preserved, long rows condensed); the machine authority is cq components doctor --json
 maintainer: Israel Holetz
 ---
 
 # Command catalog
 
-All forty-seven commands, grouped by the front (or pillar) that owns them. Typing a command is
+All commands, grouped by the front (or pillar) that owns them. Typing a command is
 the explicit entry point; Claude also auto-routes to one by its `description`. This page is
 derived from the product manual, whose tables a test holds in lockstep with the real surface —
 `cq components doctor --json` is the machine authority on the count.
