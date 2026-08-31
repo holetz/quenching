@@ -23,7 +23,8 @@ from quenching.git.base import (_init_default_branch, _is_host_default, _origin_
                                 resolve_base)
 from quenching.git.conventions import STANDARDS_DIR, _declared_docs
 from quenching.git.slugs import _read_specs, cmd_specs
-from quenching.git.stale import _gone_branches, _merged_branches, _orphan_worktrees
+from quenching.git.stale import (_gone_branches, _merged_branches, _merged_remote_branches,
+                                 _orphan_worktrees)
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
@@ -143,6 +144,25 @@ class Specs(RepoCase):
 
 
 class Stale(RepoCase):
+    def _origin_with_merged_branch(self):
+        origin = os.path.join(self.tmp, "origin.git")
+        os.makedirs(origin, exist_ok=True)
+        _run(origin, "init", "-q", "--bare")
+        _run(self.repo, "remote", "add", "origin", origin)
+        _run(self.repo, "push", "-q", "-u", "origin", "main")
+        _run(self.repo, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main")
+
+        _run(self.repo, "branch", "remote-feature")
+        _run(self.repo, "checkout", "-q", "remote-feature")
+        pathlib.Path(self.repo, "remote-feature.txt").write_text("remote\n", encoding="utf-8")
+        _run(self.repo, "add", "remote-feature.txt")
+        _run(self.repo, "commit", "-q", "-m", "remote feature")
+        _run(self.repo, "push", "-q", "-u", "origin", "remote-feature")
+        _run(self.repo, "checkout", "-q", "main")
+        _run(self.repo, "merge", "-q", "--ff-only", "remote-feature")
+        _run(self.repo, "push", "-q", "origin", "main")
+        return origin
+
     def test_a_trivially_merged_branch_is_reported_merged(self):
         _run(self.repo, "branch", "feature-b")
         merged = _merged_branches(self.repo, "main", {"main"})
@@ -180,6 +200,26 @@ class Stale(RepoCase):
         names = {b["branch"] for b in payload["staleBranches"]}
         self.assertIn("feature-e", names)
         self.assertNotIn("main", names)
+
+    def test_merged_origin_branch_is_reported_with_remote_identity(self):
+        self._origin_with_merged_branch()
+        rows = _merged_remote_branches(self.repo, "main", {"main"})
+        self.assertEqual(rows, [{"remote": "origin", "branch": "remote-feature",
+                                 "reasons": ["merged"]}])
+
+    def test_origin_head_and_protected_current_branch_are_not_remote_candidates(self):
+        self._origin_with_merged_branch()
+        rows = _merged_remote_branches(self.repo, "main", {"main", "remote-feature"})
+        self.assertEqual(rows, [])
+
+    def test_cq_git_stale_adds_remote_list_without_changing_local_lists(self):
+        self._origin_with_merged_branch()
+        payload = _cq_json(self.repo, "stale")
+        self.assertEqual(payload["remoteBranches"],
+                         [{"remote": "origin", "branch": "remote-feature",
+                           "reasons": ["merged"]}])
+        self.assertIn("remote-feature", {b["branch"] for b in payload["staleBranches"]})
+        self.assertEqual(payload["orphanWorktrees"], [])
 
 
 class Conventions(RepoCase):
