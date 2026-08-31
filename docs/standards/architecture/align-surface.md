@@ -19,6 +19,49 @@ behavioral contract every align shares lives in
 `plugins/quenching/assets/references/align/sweep-doctrine.md`; this standard records the
 architectural rule — why the surface has this shape and not the previous one.
 
+## The axis contract
+
+<!-- rules -->
+
+An axis belongs in the plugin's meta-work surface only when its ownership shape is explicit. The
+axis must answer one of two different questions:
+
+- **Front:** does a local tree belong to this axis, can a probe find drift in that tree, and can a
+  static verifier decide whether it conforms? A front converges that tree toward a canonical shape,
+  and earns an align, its front-specific doctor or lint, and a row in the conductor only when those
+  three answers are yes.
+- **Pillar:** does the axis answer or report live questions about the target repository without
+  owning a tree that this plugin converges? A pillar may expose commands and reports, but it does
+  not earn an align, doctor, bands contract, or conductor row merely because it has a name.
+
+The front test is conjunctive: a tree without a drift probe or a decisive verifier is not a front.
+A failed front test routes the question to pillar evaluation; it is not an automatic rejection.
+The classification is about ownership shape, not implementation status.
+
+### The meta-work boundary
+
+Product code and domain-specific trees are outside the plugin's meta-work front set. Their
+convergence belongs to the product or domain owner, even when a plugin command reads or reports
+their state. An axis may be admitted as a front or classified as a pillar only after stating its
+question, its owned tree (or lack of one), its drift signal, and its verifier or live-answer
+evidence.
+
+### The security subject is pillar-shaped
+
+The measured evidence from umbrella 1057 classifies `security` as a pillar-shaped subject. Its
+candidate observations are live answers distributed across other owners — workflow permissions,
+dependency advisory configuration, secret and ignore patterns, and the existing “never ingest a
+secret” hygiene rule — rather than one security-owned local tree with an independent static
+verifier. Those observations do not create a security front, and this classification does not
+mint a security route or command.
+
+### A classification is not a namespace
+
+An admitted front or classified pillar name is not evidence that its front, pillar, command, route,
+or namespace has been built. Only a separate implementation spec that builds and verifies the
+corresponding surface can make that claim. This contract records an admission decision, not a
+promise about unbuilt toolchains, delivery surfaces, or security verbs.
+
 ## The aligned-front column
 
 | Front | Command |
