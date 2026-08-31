@@ -330,6 +330,12 @@ rewrite.
 An optional squash belongs to the merge step and combines the finished branch into its base. It is
 not run when a section closes, and it does not rewrite the task records on the work branch.
 
+When a separate incremental commit command is used, its subject follows the same task anchor. An
+explicit subject wins; when omitted, it may be derived only from exactly one current spec and one
+actionable task under the governing target convention. Missing or ambiguous context refuses rather
+than guessing from staged content, branch recency or task order. A resolvable omission runs without a confirmation question,
+while the existing-index, hook and no-rewrite rules still apply.
+
 ### The anchor is the sha, where no backend co-branches with the code
 
 The anchor written back onto the task line is the commit's **sha** —

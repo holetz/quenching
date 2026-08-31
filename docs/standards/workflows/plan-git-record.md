@@ -85,6 +85,12 @@ The task subject stays attached to the task's own commit throughout the run. It 
 substring match with `git log --grep="<the recorded subject>" --fixed-strings` and is not changed
 when a section closes.
 
+An incremental commit may omit its subject when the caller can resolve exactly one current spec
+and one actionable task. The default subject is then derived from that spec id, task id and task
+title under the governing convention; an explicit subject takes precedence. Missing or ambiguous
+context refuses rather than guessing from the staged diff, branch recency or task order. The
+existing-index, hook and no-rewrite rules remain unchanged.
+
 ### Legacy commit anchors remain readable
 
 Older provider documents may carry `commit: <sha>` anchors. They remain supported and are never
@@ -159,6 +165,12 @@ same admission test — a fact no derivation can reproduce:
   one — which is why it carries its own `date`. `/quenching:specs:conclude` never opens a PR or
   writes this record itself; it stops before either, naming `git:pr:create` as the human's own next
   command.
+
+  When the PR command receives a spec id, its title and description are a deterministic projection
+  of the provider-owned spec: title, non-empty canonical sections, task counts and available branch
+  facts, followed by the provider-native locator. An absent optional section is omitted, never
+  fabricated. The projection is shown before the one confirmation that still gates push and PR
+  creation; free-text PR creation continues to require its own title/body input.
 
   It is distinct from `merge.pr` below, and the distinction is the whole reason it exists. `merge`
   is stamped only once the merge is about to happen; under `/quenching:specs:cycle`'s minimal
