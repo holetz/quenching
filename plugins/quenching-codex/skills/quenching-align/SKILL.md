@@ -68,12 +68,12 @@ Presence and rough scale only:
 - **.agents/** — `cq components doctor --json` for the command count and its findings; `Glob`
   `.agents/skills/*/SKILL.md` and directory-scoped `**/.agents/skills/*/SKILL.md` for legacy pairs,
   noting how many are legacy CLI-generated `openspec-*` shadow copies.
-- **`ops`** — read `.agents/quenching.json` for `opsRoot`; when it is absent, inspect only the fixed
+- **`ops`** — read `.agents/quenching.json` for `ops.opsRoot`; when it is absent, inspect only the fixed
   conventional roots `scripts/`, `tools/`, `bin/` and `script/` for an executable entry point. A
   declared root or a conventional root with an executable entry point makes the front applicable;
   neither means *not applicable*, with a one-line invitation to declare it. Do not turn that
   invitation into a plan item.
-- **`proof`** — read `.agents/quenching.json` for `proofRoot`; when it is absent, inspect only
+- **`proof`** — read `.agents/quenching.json` for `proof.proofRoot`; when it is absent, inspect only
   `tests/` and `test/` for a test module. A declared root or a conventional root with a test module
   makes the front applicable; neither means *not applicable*, with the same one-line invitation.
   An applicable but undeclared front is adoption work, not drift, until its own align is invoked.
