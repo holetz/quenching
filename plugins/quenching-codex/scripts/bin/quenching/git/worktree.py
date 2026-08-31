@@ -12,7 +12,7 @@ import os
 from quenching.common.git import _git, _git_run
 from quenching.common.output import emit, refuse
 
-CONFIG_FILE = os.path.join(".claude", "quenching.json")
+CONFIG_FILE = os.path.join(".agents", "quenching.json")
 
 
 def _repo_root(cwd: str) -> str:
