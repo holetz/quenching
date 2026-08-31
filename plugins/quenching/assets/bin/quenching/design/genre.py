@@ -9,14 +9,13 @@ import shlex
 import shutil
 import subprocess
 import tempfile
-from urllib.parse import quote
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 from quenching.design.build import build_drift, compute_build, write_build
 from quenching.design.markdown import parse_document_frontmatter, render_markdown, split_h2
 from quenching.design.model import DesignError, font_asset_paths, read_json
-
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 FIELD_RE = re.compile(r"^- `([A-Za-z][A-Za-z0-9_-]*)` — (required|optional)(?: (list|scalar))?\s*(.*)$")
@@ -186,7 +185,7 @@ def _genre_template(name: str, medium: str,
                 blocks.append(f"    <h1>{{{{field.{field}}}}}</h1>")
             elif is_list:
                 blocks.append(
-                    f"    <section class=\"field field-{html.escape(field)}\">"
+                    f'    <section class="field field-{html.escape(field)}">'
                     f"<h2>{label}</h2><ul>{{{{#field.{field}}}}}"
                     f"<li>{{{{item}}}}</li>{{{{/field.{field}}}}}</ul></section>"
                 )
@@ -194,7 +193,7 @@ def _genre_template(name: str, medium: str,
                 blocks.append(f"    <article aria-label={json.dumps(label)}>{{{{field.{field}}}}}</article>")
             else:
                 blocks.append(
-                    f"    <section class=\"field field-{html.escape(field)}\">"
+                    f'    <section class="field field-{html.escape(field)}">'
                     f"<h2>{label}</h2><p>{{{{field.{field}}}}}</p></section>"
                 )
         return "\n".join([
@@ -432,8 +431,8 @@ def _compile_pdf(source: str, target: Path, root: Path) -> None:
         if run.returncode:
             raise DesignError(f"typst compile failed: {(run.stderr or run.stdout).strip()}")
     finally:
-        if os.path.exists(temporary):
-            os.unlink(temporary)
+        if Path(temporary).exists():
+            Path(temporary).unlink()
 
 
 def _relative(path: Path, root: Path) -> str:

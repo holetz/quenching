@@ -34,6 +34,13 @@
     "Task",
     "Skill",
     "context: fork",
-    "hooks"
+    "hooks",
+    "align — preserve the five-front dependency order, applicability probes, not-applicable versus skipped vocabulary, and cross-front re-probe",
+    "ops:align — preserve the probe-before-inventory boundary, three-band disposition, and report-only judgement findings",
+    "ops:status — preserve the read-only boundary, finding bands, and explicit configuration/refusal states",
+    "ops:entrypoint:new — preserve its four-question human gate when translating the body",
+    "proof:align — preserve the three-band plan, floor-deferral rule, and report-only judgement band",
+    "proof:status — preserve the read-only boundary and explicit suite-not-run statement",
+    "proof:layer:new — preserve the four-question gate and separate test-migration confirmation"
   ]
 }

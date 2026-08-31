@@ -11,13 +11,13 @@ import tempfile
 import unittest
 from unittest import mock
 
-import _paths  # noqa: F401 — installs assets/bin exactly as the cq entry point does
-
+import _paths  # ruff: ignore[unused-import] — installs assets/bin exactly as the cq entry point does
 from quenching.design.align import align_plan, align_write
 from quenching.design.build import build_drift, compute_build, write_build
 from quenching.design.doctor import inspect_design
 from quenching.design.genre import new_genre, render_genre
 from quenching.design.importer import import_design
+from quenching.design.markdown import render_markdown
 from quenching.design.model import (
     DTCG_SCHEMA,
     DesignError,
@@ -25,7 +25,6 @@ from quenching.design.model import (
     read_json,
     validate_source,
 )
-
 
 PRODUCT = {
     "Platform": "web",
@@ -261,6 +260,29 @@ components:
         self.assertIn("- one", typst)
         self.assertIn("#table(columns: 2", typst)
 
+    def test_read_genre_preserves_multiline_emphasis_and_list_continuations(self):
+        new_genre(
+            self.root, "markdown-lines", "Markdown lines", "read", ["html", "typst"],
+            ["title:required:Title", "body:required:Reviewed body"],
+        )
+        data = self.root / "markdown-lines.json"
+        data.write_text(json.dumps({
+            "title": "A note",
+            "body": "**first\nsecond**\n\n1. **one\n   continued**\n2. two",
+        }), encoding="utf-8")
+        html_output = render_genre(self.root, "markdown-lines", "html", data)
+        html = (self.root / html_output["output"]).read_text(encoding="utf-8")
+        self.assertIn("<strong>first<br>\nsecond</strong>", html)
+        self.assertIn("<ol><li><strong>one<br>\ncontinued</strong></li><li>two</li></ol>", html)
+        typst_output = render_genre(self.root, "markdown-lines", "typst", data)
+        typst = (self.root / typst_output["output"]).read_text(encoding="utf-8")
+        self.assertIn("#strong[first\nsecond]", typst)
+        self.assertIn("+ #strong[one\ncontinued]", typst)
+
+    def test_render_markdown_escapes_typst_currency_literals(self):
+        rendered = render_markdown("O saldo é R$ 13,9 MM.", "typst")
+        self.assertIn(r"R\$ 13,9 MM", rendered)
+
     def test_non_read_genre_keeps_body_as_escaped_scalar_text(self):
         new_genre(
             self.root, "data-note", "Data note", "write", ["html"],
@@ -299,10 +321,10 @@ components:
         template = self.root / ".design" / "media" / "html" / "unsafe-asset.html"
         data = self.root / "unsafe-asset.json"
         data.write_text(json.dumps({"title": "A note", "body": "Text."}), encoding="utf-8")
-        template.write_text('{{asset.../lockup.svg}}\n', encoding="utf-8")
+        template.write_text("{{asset.../lockup.svg}}\n", encoding="utf-8")
         with self.assertRaisesRegex(DesignError, "escapes"):
             render_genre(self.root, "unsafe-asset", "html", data)
-        template.write_text('{{asset.missing.svg}}\n', encoding="utf-8")
+        template.write_text("{{asset.missing.svg}}\n", encoding="utf-8")
         with self.assertRaisesRegex(DesignError, "does not name a file"):
             render_genre(self.root, "unsafe-asset", "html", data)
 
@@ -359,6 +381,18 @@ components:
         # The fake compiler keeps the target at argv[3]; successful output proves
         # the additional font flags did not change the required Typst invocation.
         self.assertTrue((self.root / ".design" / "build" / "pdf-font.pdf").is_file())
+
+    def test_typst_projection_uses_typst_arrays_for_font_fallbacks(self):
+        path = self.root / ".design" / "tokens.json"
+        source = read_json(path)
+        source["fonts"] = {"brand": {
+            "$type": "fontFamily", "$value": ["Brand Sans", "sans-serif"],
+        }}
+        source["typography"]["display"]["$value"]["fontFamily"] = "{fonts.brand}"
+        path.write_text(json.dumps(source), encoding="utf-8")
+        write_build(compute_build(self.root))
+        typst = (self.root / ".design" / "build" / "tokens.typ").read_text(encoding="utf-8")
+        self.assertIn('#let token-typography-display-font-family = "Brand Sans"', typst)
 
     def test_doctor_reports_missing_declared_font_assets(self):
         path = self.root / ".design" / "tokens.json"
@@ -470,7 +504,7 @@ components:
             (self.root / rendered["output"]).read_bytes(),
         )
         medium = (self.root / "MEDIUM.md").read_text(encoding="utf-8")
-        self.assertIn(f"| External note | read | html |", medium)
+        self.assertIn("| External note | read | html |", medium)
         self.assertIn(command, medium)
 
     def test_genre_external_engine_refuses_failure_and_empty_output(self):

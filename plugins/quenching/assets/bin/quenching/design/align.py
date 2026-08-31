@@ -87,7 +87,7 @@ def align_write(root: Path, product: dict[str, Any] | None = None, *,
         # opaque brand file; the token timestamp is the one textual exception.
         content = source.read_bytes()
         if relative.as_posix() == ".design/tokens.json":
-            timestamp = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+            timestamp = dt.datetime.now(dt.UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
             content = content.decode("utf-8").replace("__GENERATED_AT__", timestamp).encode("utf-8")
         target.write_bytes(content)
         written.append(relative.as_posix())

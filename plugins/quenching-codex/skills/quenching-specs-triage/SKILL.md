@@ -1,6 +1,6 @@
 ---
 name: quenching-specs-triage
-description: "Rank the provider-owned plans front — ONE ordered list the human confirms, written back as a priority record on each spec. Triggers on \"triage the specs\", \"prioritize the front\", \"rank the plans\", \"what matters most\", \"re-rank these\", \"order the plans\", \"which of these first\". Reads provider payloads and derived stages directly, no sub-agents; proposes one table with a one-line reason per row; applies only what was approved, merging and never clobbering a human's ranking. Writes only the priority record — level, criticality, complexity, date. Never removes a spec, infers completion, or treats staleness as abandonment. Not for: closing → quenching-specs-conclude; resolving discoveries → quenching-specs-develop; building → quenching-specs-cycle; conformance → quenching-specs-status."
+description: "Rank the provider-owned plans front — ONE ordered list the human confirms and writes as priority records. Triggers on \"triage the specs\", \"prioritize the front\", \"rank the plans\", \"what matters most\", \"re-rank these\", \"order the plans\", \"which of these first\". Reads the provider front and writes only priority fields. Not for: closing → quenching-specs-conclude; resolving discoveries → quenching-specs-develop; building → quenching-specs-cycle; conformance → quenching-specs-status."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/triage.md -->

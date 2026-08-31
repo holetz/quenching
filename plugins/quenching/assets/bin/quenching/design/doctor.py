@@ -10,6 +10,7 @@ from quenching.design.build import GENERATED_PATHS, build_drift, compute_build
 from quenching.design.markdown import split_h2
 from quenching.design.model import (
     DesignError,
+    asset_manifest_entries,
     color_to_css,
     contrast_pairs,
     contrast_policy,
@@ -19,10 +20,9 @@ from quenching.design.model import (
     non_web_literal_globs,
     quenching_extension,
     read_json,
+    relative_luminance,
     resolve_token,
     resolve_value,
-    asset_manifest_entries,
-    relative_luminance,
     token_map,
     validate_source,
 )

@@ -21,5 +21,10 @@
   "workItemTypes": {},
   "fanoutMinComplexity": "medium",
   "unknownFanoutMinComplexity": null,
+  "proofRoot": "tests",
+  "layers": {},
+  "measuredRoots": [],
+  "proofExclusions": [],
+  "ratchetPath": null,
   "legacyPath": null
 }

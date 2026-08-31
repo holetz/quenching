@@ -69,7 +69,9 @@ LEGACY_CONFIG_FILE = "config.json"
 CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates",
                "hooks", "profiles",
                "azurePlacement", "azureColumns", "subjects", "tagCatalog",
-               "workItemTypes", "fanoutMinComplexity")
+               "workItemTypes", "fanoutMinComplexity", "opsRoot", "router")
+PROOF_CONFIG_KEYS = ("proofRoot", "layers", "measuredRoots", "proofExclusions", "ratchetPath")
+CONFIG_KEYS = CONFIG_KEYS + PROOF_CONFIG_KEYS
 BACKENDS = ("github", "azure-boards")
 # Mirrors `schema.py`'s declared `priority.complexity` levels. Redeclared rather than imported —
 # `config.py` and `schema.py` do not import each other today, and a four-word tuple does not earn
@@ -166,8 +168,26 @@ def find_repo_root(specs_root: str) -> str:
     `load_config`'s own selftest fixture — would silently answer with whatever repo this
     process happens to be running from instead of "no git facts here", handing back a real
     `.agents/quenching.json` the fixture exists specifically to avoid."""
+    local = os.path.abspath(specs_root)
+    while True:
+        if os.path.isfile(os.path.join(local, CONFIG_FILE)):
+            return local
+        parent = os.path.dirname(local)
+        if parent == local:
+            break
+        local = parent
     top = _git(specs_root, "rev-parse", "--show-toplevel").strip() if os.path.isdir(specs_root) else ""
-    return top or os.path.dirname(os.path.abspath(specs_root))
+    if top:
+        return top
+    current = os.path.abspath(specs_root)
+    while True:
+        if os.path.isfile(os.path.join(current, CONFIG_FILE)):
+            return current
+        parent = os.path.dirname(current)
+        if parent == current:
+            break
+        current = parent
+    return os.path.dirname(os.path.abspath(specs_root))
 
 
 def _remote_host(remote: str) -> str:
@@ -193,7 +213,7 @@ def detect_provider(root: str) -> tuple[str | None, str | None]:
     return None, host
 
 
-def load_config(root: str) -> dict:
+def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     """`.agents/quenching.json` — the plugin's declared parameters, read as data and never
     as a refusal.
 
@@ -219,7 +239,7 @@ def load_config(root: str) -> dict:
     repo = find_repo_root(root)
     path = os.path.join(repo, CONFIG_FILE)
     legacy = os.path.join(root, LEGACY_CONFIG_FILE)
-    provider, provider_host = detect_provider(root)
+    provider, provider_host = detect_provider(root) if detect_provider_info else (None, None)
     out = {"path": path, "present": os.path.isfile(path), "unparseable": None,
            "unknownKeys": [], "backend": provider, "provider": provider,
            "unknownProvider": provider_host if provider is None else None,
@@ -229,6 +249,8 @@ def load_config(root: str) -> dict:
            "azurePlacement": {}, "azureColumns": {}, "subjects": {}, "tagCatalog": {},
            "workItemTypes": {},
            "fanoutMinComplexity": DEFAULT_FANOUT_MIN_COMPLEXITY, "unknownFanoutMinComplexity": None,
+           "proofRoot": "tests", "layers": {}, "measuredRoots": [],
+           "proofExclusions": [], "ratchetPath": None,
            "legacyPath": legacy if os.path.isfile(legacy) else None}
     if not out["present"]:
         return out
@@ -253,6 +275,33 @@ def load_config(root: str) -> dict:
     val = obj.get("worktreeSetup")
     if isinstance(val, str) and val.strip():
         out["worktreeSetup"] = val.strip()
+
+    # The operations front has no safe default: `scripts/` is the conventional shape, but
+    # the same path may be an imported helper tree or a target's own domain package.  Keep
+    # both declarations as data here; `quenching.ops.config` is the boundary that refuses a
+    # run when either is absent and resolves them relative to the repository root.
+    for key in ("opsRoot", "router"):
+        value = obj.get(key)
+        if isinstance(value, str) and value.strip():
+            out[key] = value.strip()
+
+    proof_root = obj.get("proofRoot")
+    if isinstance(proof_root, str) and proof_root.strip():
+        out["proofRoot"] = proof_root.strip()
+
+    layers = obj.get("layers")
+    if isinstance(layers, dict):
+        out["layers"] = layers
+
+    for key in ("measuredRoots", "proofExclusions"):
+        values = obj.get(key)
+        if isinstance(values, list):
+            out[key] = [value.strip() for value in values
+                        if isinstance(value, str) and value.strip()]
+
+    ratchet_path = obj.get("ratchetPath")
+    if isinstance(ratchet_path, str) and ratchet_path.strip():
+        out["ratchetPath"] = ratchet_path.strip()
 
     fanout_floor = obj.get("fanoutMinComplexity")
     if isinstance(fanout_floor, str) and fanout_floor.strip():

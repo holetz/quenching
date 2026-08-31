@@ -1,0 +1,83 @@
+{
+  "repoRoot": "<REPO_ROOT>",
+  "root": "<PROOF_ROOT>",
+  "layers": [
+    {
+      "name": "unit",
+      "path": "unit",
+      "reach": "nothing",
+      "budget": 2,
+      "required": true
+    }
+  ],
+  "testModules": [
+    {
+      "path": "unit/test_math.py",
+      "layer": "unit",
+      "marker": "unit",
+      "imports": [
+        "src.math"
+      ],
+      "testCount": 1
+    }
+  ],
+  "fixtures": [
+    {
+      "name": "value",
+      "path": "fixtures/conftest.py",
+      "library": true,
+      "reach": null
+    }
+  ],
+  "conftests": [
+    {
+      "path": "fixtures/conftest.py",
+      "library": true,
+      "fixtureNames": [
+        "value"
+      ],
+      "imports": [
+        "pytest"
+      ]
+    }
+  ],
+  "gate": {
+    "path": "pyproject.toml",
+    "addopts": [
+      "--strict-markers"
+    ],
+    "markers": [
+      "unit"
+    ],
+    "strictMarkers": true,
+    "coverageSources": [
+      "src"
+    ],
+    "coverageFloor": 80.0,
+    "invocations": [],
+    "ratchetPath": "<REPO_ROOT>/.coverage-floor.json",
+    "ratchetExists": true
+  },
+  "ci": [
+    {
+      "path": ".github/workflows/test.yml",
+      "provider": "github-actions",
+      "command": "- run: cq proof doctor --json | - run: pytest --random-order",
+      "runsGate": true,
+      "randomizesOrder": true
+    }
+  ],
+  "measuredRoots": [
+    "src"
+  ],
+  "exclusions": [],
+  "sourceSurfaces": [
+    "src"
+  ],
+  "scanned": 1,
+  "suiteRun": false,
+  "errors": 0,
+  "warnings": 0,
+  "findings": [],
+  "ok": true
+}

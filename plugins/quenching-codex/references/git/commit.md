@@ -26,6 +26,11 @@ plan/session-tokens: 3.2 Add rate limiting to the auth middleware
 Wrap the title rather than truncating it, and keep the subject under 72
 characters where the title allows.
 
+When the caller omits a subject during an incremental spec build, resolve the same grammar from
+exactly one current spec and one actionable task. An explicit subject wins. No spec/task context,
+no actionable task, or more than one candidate is a refusal — never derive a generic subject from
+the staged diff, branch recency, or task order.
+
 The other subjects this front writes follow the same grammar:
 
 ```
@@ -33,20 +38,9 @@ plan/<id>-<handle>: merge (<strategy>)
 plan/<id>-<handle>: record <what>
 ```
 
-**A section's squashed commit trades the task id for the section number**, otherwise the same
-grammar:
-
-```
-plan/<id>-<handle>: <N> <section title>
-```
-
-```
-plan/session-tokens: 3 Rate limiting for the auth middleware
-```
-
-Every task the section held ends up recording this same subject —
-[execution.md](../../references/specs-execute/execution.md) §The section squash
-is where and when that happens.
+An optional **merge-time squash** produces one commit on the base instead of carrying the task
+commits into its history. It does not change the task subjects on the work branch; preserve that
+branch when the archived records must continue resolving by subject.
 
 ## The subject is the anchor
 
@@ -71,13 +65,9 @@ git log --grep="<the recorded subject>" --fixed-strings
 it has one consequence everywhere: every record is written *before* the thing it describes, so
 nothing is left to write afterwards.
 
-- `quenching-specs-execute` ticks the box **first**, then commits the code and the ticked box together. The
-  per-task bookkeeping commit is gone — it existed only because a sha cannot be known before the
-  commit that carries it. The commit itself is squashed to one per section at that section's own
-  boundary
-  ([execution.md](../../references/specs-execute/execution.md) §The section
-  squash), which re-stamps every task's `subject:` to the section's, so the anchor still resolves —
-  at the section's granularity, not the task's.
+- `quenching-specs-execute` ticks the box **first**, then commits the code and the ticked box together.
+  The per-task bookkeeping commit is gone — it existed only because a sha cannot be known before the
+  commit that carries it. Each task's own commit remains the task's anchor.
 - `quenching-specs-conclude` stamps `merge: {strategy, subject}` on the work branch, so the **merge is the
   last action of the run** and nothing is ever committed to the base branch after it.
 
@@ -86,6 +76,9 @@ resolves by sha. Neither form is backfilled: a recorded sha describes a commit t
 rewriting an archived spec to "modernise" it would falsify when the record was made.
 
 **Still no trailer and no machine-readable anchor inside the message.**
+
+The commit path never stages files on the caller's behalf. It commits the existing index only,
+keeps hooks enabled, and never amends or rewrites an existing commit.
 
 <!-- rationale -->
 
@@ -102,7 +95,7 @@ Under the sha anchor, rebase rewrote every recorded commit and left the archived
 fields pointing at commits that no longer existed — it was the one strategy that made the record
 strictly worse rather than merely narrower.
 
-**On `fast-forward` and `rebase` recording an explicit none.** Under both, the per-section commits
+**On `fast-forward` and `rebase` recording an explicit none.** Under both, the per-task commits
 land on the base directly and their subjects resolve there, so a merge pointer would add nothing.
 
 Stopping at the open PR is simpler and is wrong for two reasons, both contracts this file already

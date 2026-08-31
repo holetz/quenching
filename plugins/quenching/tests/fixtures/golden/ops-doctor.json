@@ -1,0 +1,69 @@
+{
+  "root": "<OPS_ROOT>",
+  "router": {
+    "path": "../pyproject.toml",
+    "kind": "python-console-script",
+    "exists": true,
+    "entries": [
+      "run"
+    ]
+  },
+  "entryPoints": [
+    {
+      "path": "pkg/deploy.sh",
+      "module": null,
+      "invocation": "/pkg/deploy",
+      "purpose": "",
+      "flags": [],
+      "writesOutsideRepo": false,
+      "lifecycle": null,
+      "language": "non-python"
+    },
+    {
+      "path": "pkg/run.py",
+      "module": "pkg.run",
+      "invocation": "/pkg/run",
+      "purpose": "Run a job.",
+      "flags": [
+        "--json"
+      ],
+      "writesOutsideRepo": false,
+      "lifecycle": null,
+      "language": "python"
+    }
+  ],
+  "scanned": 2,
+  "errors": 4,
+  "warnings": 0,
+  "findings": [
+    {
+      "code": "op-undocumented",
+      "severity": "error",
+      "message": "active entry point `pkg/deploy.sh` is not named by registry.md",
+      "path": "pkg/deploy.sh",
+      "entryPoint": "pkg/deploy.sh"
+    },
+    {
+      "code": "op-undocumented",
+      "severity": "error",
+      "message": "active entry point `pkg/run.py` is not named by registry.md",
+      "path": "pkg/run.py",
+      "entryPoint": "pkg/run.py"
+    },
+    {
+      "code": "op-orphan",
+      "severity": "error",
+      "message": "entry point `pkg/deploy.sh` has no declared lifecycle",
+      "path": "pkg/deploy.sh",
+      "entryPoint": "pkg/deploy.sh"
+    },
+    {
+      "code": "op-orphan",
+      "severity": "error",
+      "message": "entry point `pkg/run.py` has no declared lifecycle",
+      "path": "pkg/run.py",
+      "entryPoint": "pkg/run.py"
+    }
+  ],
+  "ok": false
+}

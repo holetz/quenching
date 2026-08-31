@@ -1,0 +1,27 @@
+{
+  "root": "<PROOF_ROOT>",
+  "layers": {
+    "unit": {
+      "tests": 1,
+      "budget": 2,
+      "required": true
+    }
+  },
+  "fixtureLibrary": {
+    "fixtures": 1,
+    "healthy": true
+  },
+  "measuredRoots": [
+    {
+      "root": "src",
+      "floor": 80.0
+    }
+  ],
+  "ci": {
+    "definitions": 1,
+    "runsGate": true
+  },
+  "findings": {},
+  "suiteRun": false,
+  "ok": true
+}

@@ -33,12 +33,25 @@ is no PR route here and stop.
 branch are resolved.
 
 ### 2. Resolve title, body and the provider link
-A spec id in `$ARGUMENTS` → `cq specs status --spec "<id>" --json`; its `path` is the provider
-locator. On `github`, the trailing number is an issue `<n>` and the body gets `Closes #<n>`. On
-`azure-boards`, the trailing number is a work item `<n>` and the link is passed as
-`--work-items <n>` to Azure; do not invent a `Closes #<n>` sentence. Free text → that text is the
-title; ask for a body and, when applicable, whether an issue/work item should be linked.
-**Done when:** the title, body, provider-native link (or its absence), and base are fixed.
+A spec id in `$ARGUMENTS` → read its provider-owned status once, then read the named sections once:
+```bash
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs status --spec "<id>" --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs section "<id>" \
+  "Problem,Proposal,Impact,Validation,Tasks" --json
+```
+The status payload supplies the spec `title`, `path`, `branch` facts and task counts. The section
+payload supplies the text. Build one immutable payload in this order: the spec title; the non-empty
+`Problem`, `Proposal`, `Impact` and `Validation` sections under headings with those names; a
+`Tasks` summary using the status counts (`checked`/`total`); and the resolved branch facts when
+present. Omit an absent or empty optional section — never replace it with invented prose. This is
+the only title/body builder for the spec-id path.
+
+The status `path` is the provider locator. On `github`, its trailing number is an issue `<n>` and
+append exactly `Closes #<n>` to the generated body. On `azure-boards`, its trailing number is a
+work item `<n>` and pass it as `--work-items <n>` to Azure; do not invent a `Closes #<n>` sentence.
+Free text → that text is the title; ask for a body and, when applicable, whether an issue/work item
+should be linked. **Done when:** the title, body, provider-native link (or its absence), and base
+are fixed.
 
 ### 3. State the link's real effect before pushing
 For `github`, **measured**: `Closes #<n>` populates `closingIssuesReferences` only when the PR's

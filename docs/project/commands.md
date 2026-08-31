@@ -1,7 +1,7 @@
 ---
 type: project
 title: Command catalog
-description: All forty-one commands by front — one line each — plus the cq rail's exit-code contract.
+description: All forty-seven commands by front — one line each — plus the cq rail's exit-code contract.
 resource: plugins/quenching/README.md
 tags:
   - reference
@@ -9,13 +9,13 @@ tags:
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: derived from plugins/quenching/README.md §The forty-one commands and §The specs flow (tables preserved, long rows condensed); the machine authority is cq components doctor --json
+source: derived from plugins/quenching/README.md §The forty-seven commands and §The specs flow (tables preserved, long rows condensed); the machine authority is cq components doctor --json
 maintainer: Israel Holetz
 ---
 
 # Command catalog
 
-All forty-one commands, grouped by the front (or pillar) that owns them. Typing a command is
+All forty-seven commands, grouped by the front (or pillar) that owns them. Typing a command is
 the explicit entry point; Claude also auto-routes to one by its `description`. This page is
 derived from the product manual, whose tables a test holds in lockstep with the real surface —
 `cq components doctor --json` is the machine authority on the count.
@@ -29,6 +29,7 @@ cq knowledge …   # the OKF bundle: validate, project, …
 cq design …      # the DTCG source: build, import, render, …
 cq specs …       # the provider-owned specs front
 cq components …  # the .claude/ surface: doctor, lint, registry, translate
+cq proof …       # the target-declared verification surface: inventory, doctor, status, ratchet
 cq git …         # the git pillar's deterministic queries
 ```
 
@@ -107,6 +108,26 @@ Acts on the target repository's `.claude/` automation surface.
 | `/quenching:components:hook:new` | Wires ONE scoped hook — narrowest scope, cheapest handler. Warns by default; blocks only on the human's word. |
 | `/quenching:components:harness:align` | Refactors `CLAUDE.md`/`AGENTS.md` into thin pointers over the bundle, so doctrine lives once. |
 
+## The ops front
+
+Acts on the target repository's declared operations root and canonical router.
+
+| Command | Does |
+| --- | --- |
+| `/quenching:ops:align` | Probes the operations surface, applies mechanical and structural drift under one plan, and reports judgement findings without driving them. |
+| `/quenching:ops:status` | Reports root, router, packages, lifecycle, findings by band, and registry freshness without writing. |
+| `/quenching:ops:entrypoint:new` | Mints ONE Python entry point from the contract, registers it in the declared router, and regenerates the operations registry. |
+
+## The proof front
+
+Acts on the target repository's declared verification surface.
+
+| Command | Does |
+| --- | --- |
+| `/quenching:proof:align` | Probes the proof gate, applies bounded repairs under one plan, defers an unsafe floor write, and reports judgement findings without driving them. |
+| `/quenching:proof:status` | Reports layers, fixtures, measured roots, floors, CI evidence, and findings by band without writing; it states that the suite was not run. |
+| `/quenching:proof:layer:new` | Mints one named layer with its marker, reach, budget, fixture home and collection rule, then proposes test moves for a separate confirmation. |
+
 ## The git pillar
 
 Answers questions about the repository's own git state; converges no tree, so it carries no
@@ -126,7 +147,7 @@ align. The specs front hands off to it rather than executing git itself.
 
 | Command | Does |
 | --- | --- |
-| `/quenching:align` | The one align spanning the three local fronts on ONE confirmation — conducting each front's own align, never reimplementing any. |
+| `/quenching:align` | The one align spanning the five local fronts on ONE confirmation — conducting each front's own align, never reimplementing any. |
 | `/quenching:handoff` | Compacts the current conversation into a handoff document a fresh session can continue from. |
 
 **Next:** this repository's own local automation surface (four development commands) is the
