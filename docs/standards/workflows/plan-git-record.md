@@ -1,7 +1,7 @@
 ---
 type: standard
 title: Plan git record contract
-description: How a provider-owned spec records the git facts that cannot be derived later — commit shas for task anchors, branch, pull request and merge records, section squashes, branch marks for conclude discovery, base inference, merge routes, and safe branch cleanup
+description: How a provider-owned spec records the git facts that cannot be derived later — per-task commit subjects, branch, pull request and merge records, branch marks for conclude discovery, base inference, merge routes, and safe branch cleanup
 resource: plugins/quenching/assets/references/git/**, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-conclude/auto-discover.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/git/merge.md, plugins/quenching/commands/git/pr/create.md
 tags: [workflows, specs, git, commits, records]
 timestamp: 2026-08-22
@@ -20,18 +20,15 @@ standard is the contract they answer to.
 
 ## Every record is written before the thing it describes
 
-This is the rule the rest of the file follows from. A record pointing at a commit can only be
-written *after* that commit if it names something the commit alone can produce — and a sha is
-exactly that. Naming the **subject** instead inverts the dependency, because the subject is chosen
-by whoever is about to commit.
+This is the rule the rest of the file follows from. A record pointing at a commit can be written
+before that commit when it names something already decided about it. A commit subject is chosen
+before the commit exists, so it lets the task checkbox and the task's code travel in one commit.
 
-Two consequences, and they are why the anchor changed:
+Two consequences follow:
 
 - **`/quenching:specs:execute` ticks the box before committing**, so the checkbox travels inside the commit
-  that implements it — one task, one commit, while its section is still open; the per-task
-  bookkeeping commit is gone, and the section's own commits squash to one at that section's own
-  boundary (`plugins/quenching/assets/references/specs-execute/execution.md` §The
-  section squash — §The task→commit link below is what the anchor does across that squash).
+  that implements it — one task, one commit. A section boundary does not reset, recommit, or rewrite
+  those task commits.
 - **`/quenching:git:merge` stamps `merge:` on the work branch before merging**, so the merge is the
   last action of *that* command and **nothing is ever committed to the base branch after it**. One
   merge carries the code, the emergent docs (written earlier, by `/quenching:specs:conclude`, which
@@ -64,7 +61,7 @@ A spec built **in place** (`branch.work == branch.base`) needs no version of thi
 it is already standing in is both the branch and the base, so there is nowhere else a record could
 go.
 
-## The task→commit link is the commit's own sha for every provider-owned spec
+## The task→commit link is the subject for new records
 
 Each completed task line carries a fact about the commit that implements it, in the metadata
 grammar `files:` and `verify:` already use:
@@ -73,34 +70,29 @@ grammar `files:` and `verify:` already use:
 - [x] 3.2 Validate the token
       files: src/auth.py
       verify: pytest tests/auth
-      commit: 4f2a9c1
+      subject: plan/session-tokens: 3.2 Validate the token
 ```
 
-Written mechanically by `cq specs task --check <id> --commit <sha>` — never by string surgery —
-and only **after** the task verified, self-reviewed, and the commit exists:
+Written mechanically by `cq specs task --check <id> --subject <line>` — never by string surgery —
+and **before** the task commit, after the task has been verified and self-reviewed:
 
 ```bash
+cq specs task --spec <id> --check <id> --subject "<subject>"
 git add <the task's files> && git commit -m "<subject>"
-cq specs task --spec <id> --check <id> --commit "$(git rev-parse HEAD)"
 ```
 
-### Why the provider write does not create a second code commit
+The task subject stays attached to the task's own commit throughout the run. It resolves by
+substring match with `git log --grep="<the recorded subject>" --fixed-strings` and is not changed
+when a section closes.
 
-§Every record is written before the thing it describes is still the rule, and reads for a reason
-that has not changed: a record naming something only the commit can produce, written into a file
-that shares the commit's own branch, forces a second commit on that branch to carry the record —
-turning "one commit per task" into two.
+### Legacy commit anchors remain readable
 
-The provider document is outside the code branch. Writing `commit: <sha>` after the code commit
-does not create a second code commit, because the provider write is not a git operation. The rule
-that forced subject-before-commit was never "sha is illegal" — it was "never a second commit on the
-branch being committed to"; the provider contract removes that collision for every spec.
+Older provider documents may carry `commit: <sha>` anchors. They remain supported and are never
+backfilled: the sha describes the history that existed when that record was made. A provider write
+after a code commit is not a second code commit because the provider document is outside the code
+branch.
 
-### Subject remains legacy compatibility
-
-Older provider documents may carry `subject:` anchors. `cq specs task --check <id> --subject
-<line>` remains supported for those records and is ticked **before** the commit so the box travels
-inside it:
+Older subject records are supported in the same way:
 
 ```markdown
 - [x] 3.2 Validate the token
@@ -111,13 +103,8 @@ inside it:
 
 It resolves by substring match, `git log --grep="<the recorded subject>" --fixed-strings`, and is
 still **not a trailer and not a machine-readable anchor bolted into the message** — the subject the
-target repo's own convention produced, recorded verbatim. `--subject` and `--commit` are accepted
-together or alone by the same `task --check`; neither is a special case of the other.
-
-**Both forms are read, forever, and both remain supported.** A provider document built before the
-sha anchor carries `subject:` from that era; current execution records `commit: <sha>`. Nothing is
-backfilled and neither form is an error: rewriting an archived spec to modernise its anchor would
-falsify when the record was actually made.
+target repo's own convention produced, recorded verbatim. `--subject` and `--commit` remain
+accepted together or alone by the same `task --check`; neither is a replacement for the other.
 
 ### Where each form can fail
 
@@ -125,10 +112,10 @@ A `commit-msg` hook that **replaces** the subject outright breaks a subject-anch
 matching survives every hook that merely *adds*, which is nearly all of them. `/quenching:specs:execute`
 compares `git log -1 --format=%s` against what it recorded and **reports a mismatch as a finding,
 writing nothing** — correcting it after the commit would restore the ordering this contract removed.
-A sha-anchored link has no equivalent failure mode — the sha is read back from git itself, not
-matched against rewritable prose — but a `--commit` write that fails (a network error against an
-external backend, mid-way through recording it) must be **reported, never left implicit**: the
-commit exists either way, and a tick that silently did not land would claim proof of nothing.
+A commit-anchored link has no equivalent subject mismatch, but a `--commit` write that fails (a
+network error against an external backend, mid-way through recording it) must be **reported, never
+left implicit**: the commit exists either way, and a tick that silently did not land would claim
+proof of nothing.
 
 ## Three frontmatter records carry the underivable git facts
 
@@ -303,7 +290,7 @@ command on its own word.
 The four merge strategies differ in one dimension that matters here — what happens to the commits
 the recorded subjects resolve against:
 
-| Strategy | The per-section subjects |
+| Strategy | The per-task subjects |
 | --- | --- |
 | merge commit *(default)* | resolve from the base branch forever |
 | fast-forward | unchanged — nothing rewritten, nothing added |
@@ -388,13 +375,11 @@ defaults for the rest); an `authority: background` git standard still wins over 
 report states which one governed.
 
 With nothing declared, the plugin's defaults apply — branch `plan/<id>-<handle>`, one commit per task with
-the subject `plan/<id>-<handle>: <id> <title>` while a section is open, squashed to one commit per section
-with the subject `plan/<id>-<handle>: <N> <section title>` at that section's own boundary
-(`plugins/quenching/assets/references/specs-execute/execution.md` §The section
-squash), `plan/<id>-<handle>: merge (<strategy>)` for a merge, and `plan/<id>-<handle>: record …` for the
-bookkeeping that remains. That bookkeeping is now only what a commit genuinely cannot carry ahead
-of itself — `## Handoff`, which describes the tree *after* the last commit — and no longer includes
-a ticked box or a stamped `merge:` record.
+the subject `plan/<id>-<handle>: <task-id> <task title>` throughout execution, an optional merge-time
+squash chosen by `/quenching:git:merge`, `plan/<id>-<handle>: merge (<strategy>)` for a merge, and
+`plan/<id>-<handle>: record …` for bookkeeping that remains. That bookkeeping is now only what a
+commit genuinely cannot carry ahead of itself — `## Handoff`, which describes the tree *after* the
+last commit — and no longer includes a ticked box or a stamped `merge:` record.
 
 **Never install `/docs/standards/git/**` into a target.** A default written into the repo stops
 being a default: it converts an offer into a rule the repo now declares, which then wins forever
