@@ -1,4 +1,4 @@
-"""The `git` pillar's four subcommands, exercised against real throwaway git repositories —
+"""The `git` pillar's five subcommands, exercised against real throwaway git repositories —
 the same choice `test_golden.py` makes for the other three pillars, taken further here
 because `base`, `stale` and `conventions` read facts (refs, a branch's own description, live
 worktrees, an on-disk standards folder) no filesystem-only fixture reproduces honestly.
