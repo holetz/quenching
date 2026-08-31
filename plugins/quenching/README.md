@@ -81,13 +81,14 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](assets/references/align/convergence.md).
 
-## The forty-seven commands
+## The 47 commands
 
 **One file per entry point** — Claude Code merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs; there is
 no `skills/` tree and no wrapper. The tables below are the manual, and the count is a property of
-their rows rather than a sentence somebody typed: `cq components doctor --json` is the authority, and
-[`tests/test_readme_surface.py`](tests/test_readme_surface.py) fails the suite whenever these tables
+their rows rather than a second structural inventory: the `47` in this heading is the manual's
+canonical displayed total, while [`tests/test_readme_surface.py`](tests/test_readme_surface.py)
+reads it and fails the suite whenever these tables
 and `commands/**` disagree
 ([`quality/surface-verification.md`](../../docs/standards/quality/surface-verification.md)
 §A hand-written inventory of the surface needs a machine holding its lockstep).
