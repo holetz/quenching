@@ -27,6 +27,7 @@ from quenching.git.stale import _gone_branches, _merged_branches, _orphan_worktr
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
+PR_CREATE = PLUGIN_ROOT / "commands" / "git" / "pr" / "create.md"
 
 
 def _run(cwd: str, *argv: str) -> None:
@@ -203,6 +204,44 @@ class Conventions(RepoCase):
     def test_cq_git_conventions_json_reports_defaults_with_nothing_declared(self):
         payload = _cq_json(self.repo, "conventions")
         self.assertEqual((payload["governs"], payload["declared"]), ("defaults", []))
+
+
+class PullRequestPayload(unittest.TestCase):
+    """The PR command's spec-id payload is a deterministic, fixture-shaped contract.
+
+    The command surface is Markdown rather than executable Python. These fixtures therefore
+    exercise the observable payload recipe and its provider gates without making a network call or
+    pretending that a live PR can be proved offline.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.command = PR_CREATE.read_text(encoding="utf-8")
+        cls.payload_step = cls.command.split("### 2. Resolve title, body and the provider link", 1)[1]
+
+    def test_spec_payload_names_the_canonical_sections_in_order(self):
+        self.assertIn('cq specs section "<id>" \\', self.payload_step)
+        positions = [self.payload_step.index(f"`{heading}`") for heading in
+                     ("Problem", "Proposal", "Impact", "Validation")]
+        self.assertEqual(positions, sorted(positions))
+        self.assertIn("`Tasks` summary", self.payload_step)
+        self.assertIn("branch facts", self.payload_step)
+
+    def test_missing_optional_sections_are_omitted_not_fabricated(self):
+        self.assertIn("Omit an absent or empty optional section", self.payload_step)
+        self.assertIn("never replace it with invented prose", self.payload_step)
+
+    def test_provider_locator_fixture_keeps_github_and_azure_native(self):
+        github = "append exactly `Closes #<n>` to the generated body"
+        azure = "pass it as `--work-items <n>` to Azure"
+        self.assertIn(github, self.payload_step)
+        self.assertIn(azure, self.payload_step)
+        self.assertIn("do not invent a `Closes #<n>` sentence", self.payload_step)
+
+    def test_payload_is_shown_once_before_the_single_external_write_confirmation(self):
+        self.assertEqual(self.command.count("**AskUserQuestion**"), 1)
+        self.assertIn("provider-native link (or its absence)", self.payload_step)
+        self.assertIn("one confirmation", self.command.lower())
 
 
 if __name__ == "__main__":
