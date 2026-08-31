@@ -137,7 +137,9 @@ def check_judgement_policy(inventory: DeliveryInventory) -> list[Finding]:
                     f"job `{job.name}` declares permissions requiring security review",
                     workflow.path,
                 ))
-            if job.release and any("publish" in command.lower() for command in job.commands):
+            if job.release and any(
+                    any(word in command.lower() for word in ("publish", "upload", "push", "release"))
+                    for command in job.commands):
                 findings.append(_finding(
                     "delivery-publish-scope",
                     f"release job `{job.name}` exposes a publish command whose scope is owner-decided",
