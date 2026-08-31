@@ -2,12 +2,12 @@
 type: standard
 title: Ops front
 description: The target repository's current operations surface — one normalized router, its entry-point contract, lifecycle and finding vocabulary, verified by the shipped cq ops route
-resource: https://github.com/holetz/claude-quenching/issues/1043
+resource: .claude/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/ops/**
 tags: [architecture, ops, automation, scripts, contract]
-timestamp: 2026-08-30
+timestamp: 2026-08-31
 audience: both
 authority: current
-source: declare-the-ops-front spec 1043 (2026-08-30), grounded in GitHub's Scripts To Rule Them All pattern and the measured target repository; the shipped cq ops route and checks implement this contract
+source: spec 1065 (task 3.2) — the `ops` namespace and its shared-loader refusal boundary are implemented by the shipped cq ops route
 maintainer: quenching
 ---
 
@@ -20,7 +20,8 @@ it.
 
 ## The canonical tree
 
-An adopting repository declares one operations root, `scripts/` by default. The root holds the
+An adopting repository declares one operations root. `scripts/` is a conventional example, not an
+implicit default. The root holds the
 normalized entry points and a generated registry; domain packages are grouped by domain, never by
 the lifecycle action that happens to call them:
 
@@ -45,20 +46,29 @@ keeps retired entry points visible without presenting them as part of the active
 
 ## Configuration home
 
-The operations root and canonical router are declared together in the target repository's
-`.claude/quenching.json`:
+The operations root, canonical router, and optional generated-registry path are owned by the `ops`
+namespace in the target repository's `.claude/quenching.json`:
 
 ```json
 {
-  "opsRoot": "scripts",
-  "router": "pyproject.toml"
+  "ops": {
+    "opsRoot": "scripts",
+    "router": "pyproject.toml",
+    "registry": "scripts/registry.md"
+  }
 }
 ```
 
 `opsRoot` and `router` are paths relative to the repository root. Both declarations are required;
-the ops tooling reads them through the shared configuration loader and refuses with
-`op-config-missing` when either one is absent. It never guesses `scripts/` or chooses among
-multiple router files.
+the optional `registry` path overrides the default `<opsRoot>/README.md` location. The ops tooling
+reads all three through the shared configuration loader and refuses with `op-config-missing` when
+either required declaration is absent. It never guesses `scripts/` or chooses among multiple
+router files.
+
+Root-level `opsRoot`, `router`, or `registry` keys are legacy flat declarations. A configuration
+that contains any of them, alone or alongside `ops`, is refused with `sp-config-unscoped` and exit
+`2`; the refusal names each key and its destination namespace. The ops front never merges the two
+shapes and never treats a flat declaration as an absent `ops` namespace.
 
 ## The generated registry
 
