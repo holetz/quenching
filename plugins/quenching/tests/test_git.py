@@ -267,6 +267,15 @@ class Worktree(RepoCase):
         self.assertEqual(payload["paths"][0]["state"], "repointed")
         self.assertEqual(self.link.resolve(), self.store.resolve())
 
+    def test_primary_and_worktree_resolve_to_the_same_store(self):
+        primary = _cq_json(self.repo, "worktree", "link")
+        worktree = pathlib.Path(self.tmp, "worktree")
+        _run(self.repo, "worktree", "add", "-q", "-b", "shared-wt", str(worktree))
+        secondary = _cq_json(str(worktree), "worktree", "link")
+        self.assertEqual(primary["paths"][0]["store"], secondary["paths"][0]["store"])
+        self.assertEqual(pathlib.Path(self.repo, self.relative).resolve(),
+                         (worktree / self.relative).resolve())
+
     def test_real_directory_with_content_is_refused_without_deleting_it(self):
         self.link.mkdir()
         keep = self.link / "keep"
