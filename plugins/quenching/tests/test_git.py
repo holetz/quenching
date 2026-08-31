@@ -223,6 +223,62 @@ class Stale(RepoCase):
         self.assertEqual(payload["orphanWorktrees"], [])
 
 
+class Worktree(RepoCase):
+    def setUp(self):
+        super().setUp()
+        self.relative = "shared"
+        config = pathlib.Path(self.repo) / ".claude" / "quenching.json"
+        config.parent.mkdir()
+        config.write_text(json.dumps({"sharedPaths": [self.relative]}) + "\n", encoding="utf-8")
+        pathlib.Path(self.repo, ".gitignore").write_text(f"/{self.relative}\n", encoding="utf-8")
+        _run(self.repo, "add", ".claude/quenching.json", ".gitignore")
+        _run(self.repo, "commit", "-q", "-m", "declare shared path")
+
+    @property
+    def link(self):
+        return pathlib.Path(self.repo, self.relative)
+
+    @property
+    def store(self):
+        common = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=self.repo, check=True, capture_output=True, text=True).stdout.strip()
+        return pathlib.Path(f"{pathlib.Path(common).parent}.{self.relative}")
+
+    def test_absent_path_creates_the_shared_store_link(self):
+        payload = _cq_json(self.repo, "worktree", "link")
+        self.assertEqual(payload["paths"][0]["state"], "created")
+        self.assertTrue(self.link.is_symlink())
+        self.assertEqual(self.link.resolve(), self.store.resolve())
+
+    def test_existing_link_to_the_store_is_unchanged(self):
+        self.store.mkdir()
+        self.link.symlink_to(self.store)
+        payload = _cq_json(self.repo, "worktree", "link")
+        self.assertEqual(payload["paths"][0]["state"], "unchanged")
+        self.assertTrue(self.link.is_symlink())
+        self.assertEqual(self.link.resolve(), self.store.resolve())
+
+    def test_existing_link_to_another_place_is_repointed(self):
+        other = pathlib.Path(self.tmp, "other")
+        other.mkdir()
+        self.link.symlink_to(other)
+        payload = _cq_json(self.repo, "worktree", "link")
+        self.assertEqual(payload["paths"][0]["state"], "repointed")
+        self.assertEqual(self.link.resolve(), self.store.resolve())
+
+    def test_real_directory_with_content_is_refused_without_deleting_it(self):
+        self.link.mkdir()
+        keep = self.link / "keep"
+        keep.write_text("preserve\n", encoding="utf-8")
+        proc = subprocess.run([sys.executable, CQ, "git", "worktree", "link", "--json"],
+                              cwd=self.repo, capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 2)
+        self.assertEqual(json.loads(proc.stdout)["code"], "git-worktree-path-not-empty")
+        self.assertEqual(keep.read_text(encoding="utf-8"), "preserve\n")
+        self.assertFalse(self.store.exists())
+
+
 class Conventions(RepoCase):
     def test_nothing_declared_is_an_empty_list(self):
         self.assertEqual(_declared_docs(self.repo), [])
