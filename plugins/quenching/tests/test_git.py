@@ -287,6 +287,17 @@ class Worktree(RepoCase):
         self.assertEqual(keep.read_text(encoding="utf-8"), "preserve\n")
         self.assertFalse(self.store.exists())
 
+    def test_directory_with_only_dotenv_is_refused_and_preserved(self):
+        self.link.mkdir()
+        dotenv = self.link / ".env"
+        dotenv.write_text("SECRET=keep\n", encoding="utf-8")
+        proc = subprocess.run([sys.executable, CQ, "git", "worktree", "link", "--json"],
+                              cwd=self.repo, capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 2)
+        self.assertEqual(json.loads(proc.stdout)["code"], "git-worktree-path-not-empty")
+        self.assertEqual(dotenv.read_text(encoding="utf-8"), "SECRET=keep\n")
+        self.assertFalse(self.store.exists())
+
 
 class Conventions(RepoCase):
     def test_nothing_declared_is_an_empty_list(self):
