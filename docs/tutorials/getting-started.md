@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-08-28
 audience: human
 authority: current
-source: plugins/quenching/README.md §Install, §The five local fronts; command bodies under plugins/quenching/commands/
+source: plugins/quenching/README.md §Install, §The six fronts, the seventh pillar, and the one align per front; command bodies under plugins/quenching/commands/
 maintainer: Israel Holetz
 ---
 
@@ -108,5 +108,5 @@ probe → plan → OK → apply → verify loop is the plugin's one interface �
 
 **Next:** adopt the full workflow in an existing repository with
 [Adopt quenching in a repository](../how-to/adopt-quenching.md), or read
-[the operating model](../explanation/operating-model.md) to see why the local fronts feed each
+[the operating model](../explanation/operating-model.md#the-operating-model) to see why the local fronts feed each
 other.

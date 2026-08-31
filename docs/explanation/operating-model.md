@@ -9,14 +9,14 @@ tags:
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: plugins/quenching/README.md §The five local fronts, §The forty-seven commands
+source: plugins/quenching/README.md §The six fronts, the seventh pillar, and the one align per front, §The 47 commands
 maintainer: Israel Holetz
 ---
 
 # The operating model
 
 **If you remember one thing, make it this: every local front has exactly ONE align, and every align
-probes before it plans.** The rest of the plugin — all forty-seven commands — hangs off that
+probes before it plans.** The rest of the plugin's command surface hangs off that
 sentence.
 
 A repository has six surfaces where drift accumulates, and quenching gives each one a
