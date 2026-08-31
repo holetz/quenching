@@ -8,6 +8,12 @@ allowed-tools: Read, Grep, Glob, Bash(python3:*)
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
+The common front contract is in
+[front-align/mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/front-align/mold.md), and the ops
+disposition map is in
+[ops-align/bands.md](${CLAUDE_PLUGIN_ROOT}/assets/references/ops-align/bands.md). This read-only
+view preserves the router, registry and entry-point deltas owned by the ops front.
+
 This command is the read-only view of the operations front. It reports the configuration, router,
 entry points by package, lifecycle states, findings by code and disposition band, and registry
 freshness. It never repairs a finding, writes a registry, or turns an absent optional artifact into
