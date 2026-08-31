@@ -65,6 +65,51 @@ def _orphan_worktrees(cwd: str) -> list[dict]:
     return orphans
 
 
+def _unregistered_worktrees(cwd: str) -> list[dict]:
+    common = _git(cwd, "rev-parse", "--path-format=absolute", "--git-common-dir").strip()
+    if not common:
+        return []
+    common = os.path.realpath(common)
+    registered = set()
+    for line in _git(cwd, "worktree", "list", "--porcelain").splitlines():
+        if line.startswith("worktree "):
+            registered.add(os.path.realpath(line[len("worktree "):]))
+
+    siblings = os.path.dirname(os.path.dirname(common))
+    found = []
+    try:
+        entries = sorted(os.scandir(siblings), key=lambda entry: entry.name)
+    except OSError:
+        return []
+    for entry in entries:
+        if not entry.is_dir(follow_symlinks=False):
+            continue
+        path = os.path.realpath(entry.path)
+        if path in registered:
+            continue
+        git_file = os.path.join(entry.path, ".git")
+        if not os.path.isfile(git_file):
+            continue
+        try:
+            with open(git_file, encoding="utf-8") as stream:
+                gitdir = next((line[len("gitdir:"):].strip()
+                               for line in stream if line.startswith("gitdir:")), "")
+        except OSError:
+            continue
+        if not gitdir:
+            continue
+        if not os.path.isabs(gitdir):
+            gitdir = os.path.join(os.path.dirname(git_file), gitdir)
+        gitdir = os.path.realpath(gitdir)
+        try:
+            belongs = os.path.commonpath((gitdir, common)) == common and gitdir != common
+        except ValueError:
+            belongs = False
+        if belongs:
+            found.append({"path": path})
+    return found
+
+
 def cmd_stale(args) -> int:
     cwd = os.getcwd()
     base, _is_default = resolve_base(cwd)
