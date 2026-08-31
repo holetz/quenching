@@ -26,6 +26,11 @@ plan/session-tokens: 3.2 Add rate limiting to the auth middleware
 Wrap the title rather than truncating it, and keep the subject under 72
 characters where the title allows.
 
+When the caller omits a subject during an incremental spec build, resolve the same grammar from
+exactly one current spec and one actionable task. An explicit subject wins. No spec/task context,
+no actionable task, or more than one candidate is a refusal — never derive a generic subject from
+the staged diff, branch recency, or task order.
+
 The other subjects this front writes follow the same grammar:
 
 ```
@@ -71,6 +76,9 @@ resolves by sha. Neither form is backfilled: a recorded sha describes a commit t
 rewriting an archived spec to "modernise" it would falsify when the record was made.
 
 **Still no trailer and no machine-readable anchor inside the message.**
+
+The commit path never stages files on the caller's behalf. It commits the existing index only,
+keeps hooks enabled, and never amends or rewrites an existing commit.
 
 <!-- rationale -->
 
