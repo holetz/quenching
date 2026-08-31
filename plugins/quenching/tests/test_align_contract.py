@@ -1,10 +1,8 @@
 """Contract tests for the knowledge alignment and documentation orchestration surfaces."""
 
 import pathlib
+import re
 import unittest
-
-import _paths  # noqa: F401
-
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
@@ -48,15 +46,30 @@ class KnowledgeAlignmentContract(unittest.TestCase):
 
     def test_ops_precedes_proof_on_every_conducted_path(self):
         align = (ROOT / "commands" / "align.md").read_text(encoding="utf-8")
-        workflow = align.split("## Workflow", 1)[1].split("## Invariants", 1)[0]
-        front_calls = [
-            line.split("quenching:", 1)[1].split(":align", 1)[0]
-            for line in workflow.splitlines()
-            if "quenching:ops:align" in line or "quenching:proof:align" in line
-        ]
+        declaration = align.split("## Execution order", 1)[1].split("## Workflow", 1)[0]
+        rows = [line for line in declaration.splitlines() if line.startswith("| `")]
+        parsed = []
+        for row in rows:
+            cells = [cell.strip() for cell in row.strip("|").split("|")]
+            front = re.match(r"`([^`]+)`", cells[0]).group(1)
+            route = cells[1].strip("`")
+            dependency = cells[2].strip("`")
+            parsed.append((front, route, dependency))
 
-        self.assertEqual(front_calls, ["ops", "ops", "proof", "proof"])
-        self.assertLess(workflow.index("### 6. Front 4"), workflow.index("### 7. Front 5"))
+        self.assertGreater(len(parsed), 1)
+        self.assertEqual(len({front for front, _, _ in parsed}), len(parsed))
+        for index, (front, route, dependency) in enumerate(parsed):
+            with self.subTest(front=front):
+                self.assertEqual(route, f"/quenching:{front}:align")
+                self.assertEqual(dependency, "applicability" if index == 0 else parsed[index - 1][0])
+
+        workflow = align.split("## Workflow", 1)[1].split("## Invariants", 1)[0]
+        stage_positions = [workflow.index(f"### Front: `{front}`") for front, _, _ in parsed]
+        self.assertEqual(stage_positions, sorted(stage_positions))
+        self.assertIn("### Applicability", workflow)
+        # The conductor is Markdown, and the session reader consumes completed transcripts rather
+        # than intercepting Skill calls. This assertion therefore proves declaration/stage order,
+        # not runtime invocation order.
 
     def test_build_gates_catalog_and_glossary_qa(self):
         build = (ROOT / "commands" / "knowledge" / "documentation" / "build.md").read_text(
