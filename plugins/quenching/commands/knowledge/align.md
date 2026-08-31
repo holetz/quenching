@@ -1,5 +1,5 @@
 ---
-description: Force /docs/ into the canonical OKF v0.1 bundle AND pull in the content sitting out-of-band — one command, probe first, looped to a fixpoint. Triggers on "align the docs", "align and update docs", "fix the documentation structure", "install the OKF bundle", "set up /docs/", or "converge the knowledge base". Probes cq knowledge validate plus two cheap out-of-band signals before reading anything, then inventories and applies one confirmed alignment plan. Not for: adding one knowledge item → /quenching:knowledge:add; reading status only → /quenching:knowledge:status; producing documentation pages → /quenching:knowledge:documentation:produce.
+description: Force /docs/ into the canonical OKF v0.1 bundle and pull in out-of-band content, looping until nothing changes. Triggers on "align the docs", "align and update docs", "fix the documentation structure", "install the OKF bundle", "set up /docs/", or "converge the knowledge base". Not for: adding one knowledge item → /quenching:knowledge:add; reading status only → /quenching:knowledge:status; producing documentation pages → /quenching:knowledge:documentation:produce.
 argument-hint: [optional-docs-path]
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Task, Skill, AskUserQuestion
 ---
