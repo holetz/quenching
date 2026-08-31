@@ -6,7 +6,7 @@ resource: pyproject.toml, plugins/quenching/assets/bin/quenching/ops/**, plugins
 tags: [architecture, configuration, ownership, arbitration, ops, proof]
 timestamp: 2026-08-31
 audience: both
-authority: background
+authority: current
 source: declare-the-configuration-arbiter spec 1064 (2026-08-31), grounded in the shipped operations registry and the aligned-front boundary
 maintainer: quenching
 ---
