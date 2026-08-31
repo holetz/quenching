@@ -28,6 +28,7 @@ from quenching.git.stale import _gone_branches, _merged_branches, _orphan_worktr
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
 PR_CREATE = PLUGIN_ROOT / "commands" / "git" / "pr" / "create.md"
+COMMIT_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit.md"
 
 
 def _run(cwd: str, *argv: str) -> None:
@@ -242,6 +243,22 @@ class PullRequestPayload(unittest.TestCase):
         self.assertEqual(self.command.count("**AskUserQuestion**"), 1)
         self.assertIn("provider-native link (or its absence)", self.payload_step)
         self.assertIn("one confirmation", self.command.lower())
+
+
+class CommitSubjectContract(unittest.TestCase):
+    def test_omitted_subject_derives_or_refuses_without_a_question(self):
+        command = COMMIT_COMMAND.read_text(encoding="utf-8").lower()
+        self.assertNotIn("omitted → ask", command)
+        self.assertIn("explicit subject always wins", command)
+        self.assertIn("ambiguous or missing context", command)
+        self.assertIn("refuse", command)
+        self.assertNotIn("askuserquestion", command)
+
+    def test_subject_resolution_keeps_the_staged_index_boundary(self):
+        command = COMMIT_COMMAND.read_text(encoding="utf-8").lower()
+        self.assertIn("commits the existing index only", command)
+        self.assertIn("never `git add -a`", command)
+        self.assertIn("amends history", command)
 
 
 if __name__ == "__main__":
