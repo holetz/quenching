@@ -1,6 +1,6 @@
 ---
 name: quenching-align
-description: "Align the whole repository — /docs/, /.design/, then .agents/, ops and proof — on ONE confirmation, looped until nothing changes anywhere. Triggers on \"align the repo\", \"align everything\", \"align and update everything\", \"set up quenching here\", \"converge this repository\", \"run all the aligns\", \"fix both fronts\", or \"fix all fronts\". Probes the five aligned fronts read-only, asks once, then invokes each applicable front's align in dependency order. Authorization nests one level — each front align inherits the OK and never re-asks, while taste arbitration, a code-coupled rename and an irreversible close keep their own human choice. Conducts, never reimplements. Not for: aligning one front → its `/quenching:*:align` command; changing product code → the owning spec."
+description: "Align the whole repository — /docs/, /.design/, then .agents/, ops and proof — on ONE confirmation, looping until nothing changes. Triggers on \"align the repo\", \"align everything\", \"align and update everything\", \"set up quenching here\", \"converge this repository\", \"run all the aligns\", \"fix both fronts\", or \"fix all fronts\". Not for: aligning one front → its `/quenching:*:align` command; changing product code → the owning spec."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/align.md -->
