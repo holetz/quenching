@@ -1,5 +1,5 @@
 ---
-description: Mint one named proof test layer with its marker, reach, budget, fixture home, collection rule and generated README, while proposing existing test moves for a separate decision. Triggers on "create a proof layer", "add a test layer", "define a verification layer", or "organize tests into a layer". Not for: aligning existing proof drift → /quenching:proof:align; reading proof state → /quenching:proof:status; moving tests without a separate confirmation → the target owner's reviewed migration.
+description: Mint one named proof test layer with its marker, reach, budget, fixture home, collection rule and README. Triggers on "create a proof layer", "add a test layer", "define a verification layer", or "organize tests into a layer". Existing test moves remain a separate decision. Not for: aligning existing proof drift → /quenching:proof:align; reading proof state → /quenching:proof:status; moving tests without a separate confirmation → the target owner's reviewed migration.
 argument-hint: <layer-name> [optional-target-root]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(mkdir:*), Bash(mv:*), AskUserQuestion, Write, Edit
 ---

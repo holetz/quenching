@@ -20,6 +20,44 @@ Use `.claude/quenching.json` and CLAUDE.md.
 """
 
 
+DESCRIPTION_BASELINES = {
+    "plugins/quenching/commands/align.md": 772,
+    "plugins/quenching/commands/components/align.md": 719,
+    "plugins/quenching/commands/specs/conclude.md": 844,
+    "plugins/quenching/commands/specs/triage.md": 795,
+    "plugins/quenching/commands/specs/execute.md": 686,
+    "plugins/quenching/commands/knowledge/align.md": 646,
+    "plugins/quenching/commands/knowledge/documentation/write.md": 563,
+    "plugins/quenching/commands/components/agent/new.md": 556,
+    "plugins/quenching/commands/design/align.md": 555,
+    "plugins/quenching/commands/components/hook/new.md": 555,
+    "plugins/quenching/commands/knowledge/documentation/produce.md": 541,
+    "plugins/quenching/commands/knowledge/documentation/build.md": 522,
+    "plugins/quenching/commands/knowledge/documentation/review.md": 517,
+    "plugins/quenching/commands/proof/layer/new.md": 495,
+    "plugins/quenching/commands/knowledge/documentation/plan.md": 493,
+    "plugins/quenching/commands/design/genre/new.md": 490,
+    "plugins/quenching/commands/proof/align.md": 484,
+}
+
+
+TYPED_ONLY_COMMANDS = (
+    "plugins/quenching/commands/specs/cycle.md",
+    "plugins/quenching/commands/components/command/retro.md",
+)
+
+
+def source_description(path):
+    line = next(line for line in path.read_text(encoding="utf-8").splitlines()
+                if line.startswith("description: "))
+    return line.removeprefix("description: ")
+
+
+def generated_description(text):
+    line = next(line for line in text.splitlines() if line.startswith("description: "))
+    return json.loads(line.removeprefix("description: "))
+
+
 class RepositorySurfaceTranslation(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -121,3 +159,32 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         self.assertNotIn('SELF_DIR/../../../.."', citation)
         self.assertIn('dirname "${BASH_SOURCE[0]}")/../../../"', functional)
         self.assertNotIn('dirname "${BASH_SOURCE[0]}")/../../../.."', functional)
+
+    def test_package_description_review_reduces_routed_surface_and_preserves_slots(self):
+        source = translate.REPOSITORY
+        translate.configure(str(source / "plugins" / "quenching"),
+                            str(self.root / "quenching-codex"))
+        tree = translate.generated_tree()
+        adaptation = translate.read_adaptation()
+        after = 0
+
+        for relative, baseline in DESCRIPTION_BASELINES.items():
+            command = source / relative
+            description = source_description(command)
+            after += len(description)
+            self.assertLess(len(description), baseline, relative)
+            self.assertTrue("Triggers on " in description or "Use when " in description, relative)
+            self.assertIn("Not for:", description, relative)
+
+            command_path = command.relative_to(source / "plugins" / "quenching" / "commands")
+            skill_key = "skills/quenching-" + "-".join(command_path.with_suffix("").parts) + "/SKILL.md"
+            projected = generated_description(tree[skill_key].decode("utf-8"))
+            self.assertEqual(projected,
+                             translate.transform_platform(description, adaptation),
+                             relative)
+            self.assertIn("Not for:", projected, skill_key)
+
+        self.assertLess(after, sum(DESCRIPTION_BASELINES.values()))
+        for relative in TYPED_ONLY_COMMANDS:
+            text = (source / relative).read_text(encoding="utf-8")
+            self.assertIn("disable-model-invocation: true", text, relative)
