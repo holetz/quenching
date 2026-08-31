@@ -11,6 +11,7 @@ import sys
 from quenching.common.config import (CONFIG_FILE, LEGACY_CONFIG_FILE,
                                      detect_provider as _common_detect_provider,
                                      find_repo_root as _common_find_repo_root,
+                                     infer_base_branch,
                                      load_config as load_envelope)
 from quenching.common.git import _git
 from quenching.specs.parse.spec import PHASE_DIRS, PHASES
@@ -208,17 +209,15 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     path = envelope["path"]
     raw = envelope["data"]
     values: dict = {}
-    for namespace in ("shared", "specs", "ops", "proof"):
+    for namespace in ("shared", "specs"):
         values.update(envelope[namespace])
-    # Keep existing specs callers working while the front adapters are migrated. Namespaced
-    # declarations win over a mixed legacy copy; the migration refusal is added once every
-    # consumer has moved to the common loader.
-    for key in envelope["legacyKeys"]:
-        values.setdefault(key, raw[key])
     provider = envelope["provider"]
     provider_host = envelope["providerHost"]
     out = {"path": path, "present": os.path.isfile(path), "unparseable": None,
-           "unknownKeys": envelope["unknownKeys"], "backend": provider, "provider": provider,
+           "unknownKeys": envelope["unknownKeys"],
+           "unknownNamespaces": envelope["unknownNamespaces"],
+           "migrationRefusal": envelope["migrationRefusal"],
+           "backend": provider, "provider": provider,
            "unknownProvider": provider_host if provider is None else None,
            "unknownBackend": None,
            "specsBranch": DEFAULT_SPECS_BRANCH, "worktreeSetup": None,
@@ -405,22 +404,6 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
             types[key.strip()] = entry
         out["workItemTypes"] = types
     return out
-
-
-def infer_base_branch(cfg: dict, origin_head: str | None, init_default: str | None) -> str:
-    """An unstamped spec's `base`, stopping at the first that answers — the chain
-    /docs/standards/workflows/plan-git-record.md declares once its own `branch.base`
-    record is absent, and the caller's own git facts (`origin_head`, `init_default`)
-    already resolved: this function decides only the ORDER, never runs git itself.
-
-    `origin/HEAD` leads: under the PR-on-the-primary flow it resolves to the branch the
-    repository publishes to, which is where an unstamped spec's work belongs. `cfg` is
-    kept for the callers that pass it; no declared key enters the chain any more."""
-    if origin_head:
-        return origin_head
-    if init_default:
-        return init_default
-    return "main"
 
 
 def resolve_subject(cfg: dict, key: str | None) -> tuple[dict | None, dict]:

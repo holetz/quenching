@@ -56,12 +56,9 @@ def load_proof_config(root: str) -> tuple[dict | None, dict]:
     """Return resolved proof declarations, or a refusal only for an unreadable config."""
     repo_root = _repo_root(root)
     cfg = load_config(root, detect_provider_info=False)
+    if cfg.get("migrationRefusal"):
+        return None, cfg["migrationRefusal"]
     proof = dict(cfg.get("proof") or {})
-    # Existing target fixtures are still flat until the migration/refusal matrix lands in 2.3.
-    raw = cfg.get("data") or {}
-    for key in ("proofRoot", "layers", "measuredRoots", "proofExclusions", "ratchetPath"):
-        if key not in proof and key in raw:
-            proof[key] = raw[key]
     proof_root_declared = proof.get("proofRoot") or DEFAULT_PROOF_ROOT
     if not isinstance(proof_root_declared, str) or not proof_root_declared.strip():
         return None, {

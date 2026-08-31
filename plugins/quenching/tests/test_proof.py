@@ -149,10 +149,10 @@ class ProofFixtureTrees(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / ".claude").mkdir()
-            config = {"proofRoot": "tests", "layers": raw_layers,
-                      "measuredRoots": list(measured or ("src",))}
+            config = {"proof": {"proofRoot": "tests", "layers": raw_layers,
+                                 "measuredRoots": list(measured or ("src",))}}
             if ops:
-                config.update({"opsRoot": "scripts", "router": "pyproject.toml"})
+                config["ops"] = {"opsRoot": "scripts", "router": "pyproject.toml"}
             (root / ".claude" / "quenching.json").write_text(
                 json.dumps(config), encoding="utf-8")
             (root / "tests" / "unit").mkdir(parents=True)
@@ -304,9 +304,11 @@ class ProofFixtureTrees(unittest.TestCase):
             (root / "tests" / "unit" / "test_math.py").write_text(
                 "import src.app\ndef test_add(): pass\n", encoding="utf-8")
             (root / ".claude" / "quenching.json").write_text(json.dumps({
-                "proofRoot": "tests",
-                "layers": {"unit": {"reach": "nothing", "required": True}},
-                "measuredRoots": ["src"],
+                "proof": {
+                    "proofRoot": "tests",
+                    "layers": {"unit": {"reach": "nothing", "required": True}},
+                    "measuredRoots": ["src"],
+                },
             }), encoding="utf-8")
             (root / "pyproject.toml").write_text(
                 "[tool.pytest.ini_options]\n"

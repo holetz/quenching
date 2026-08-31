@@ -88,7 +88,7 @@ class LoadConfigFanoutMinComplexity(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             os.makedirs(os.path.join(tmp, ".claude"))
             with open(os.path.join(tmp, ".claude", "quenching.json"), "w") as f:
-                json.dump(declared, f)
+                json.dump({"specs": declared}, f)
             return load_config(os.path.join(tmp, ".specs"))
 
     def test_absent_falls_back_to_the_default_floor(self):

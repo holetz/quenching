@@ -47,13 +47,9 @@ def load_ops_config(root: str) -> tuple[dict | None, dict]:
     """
     repo_root = _find_repo_root(root)
     cfg = load_config(_loader_root(repo_root), detect_provider_info=False)
+    if cfg.get("migrationRefusal"):
+        return None, cfg["migrationRefusal"]
     ops = dict(cfg.get("ops") or {})
-    # Existing target fixtures are still flat until the migration/refusal matrix lands in 2.3.
-    # Prefer the namespace whenever both shapes are present; never merge values from two files.
-    raw = cfg.get("data") or {}
-    for key in (*OPS_CONFIG_KEYS, REGISTRY_CONFIG_KEY):
-        if key not in ops and key in raw:
-            ops[key] = raw[key]
     missing = [key for key in OPS_CONFIG_KEYS if not ops.get(key)]
     if missing:
         missing_text = ", ".join(f"`{key}`" for key in missing)

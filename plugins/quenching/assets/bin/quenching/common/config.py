@@ -17,14 +17,38 @@ CONFIG_FILE = os.path.join(".claude", "quenching.json")
 LEGACY_CONFIG_FILE = "config.json"
 NAMESPACES = ("shared", "specs", "ops", "proof")
 
-# Root-level keys accepted by the pre-envelope format. They remain visible to the front
-# adapters while the extraction is completed; the migration refusal is their concern.
+# Root-level keys accepted by the pre-envelope format. They are diagnostic-only now: a front
+# adapter must refuse to interpret them because doing so makes a half-migrated repository look
+# healthy while one namespace silently wins over another.
 LEGACY_KEYS = frozenset({
     "worktreeSetup", "sharedPaths", "specsBranch", "azureStates", "hooks", "profiles",
     "azurePlacement", "azureColumns", "subjects", "tagCatalog", "workItemTypes",
     "fanoutMinComplexity", "opsRoot", "router", "registry", "proofRoot", "layers",
     "measuredRoots", "proofExclusions", "ratchetPath",
 })
+
+LEGACY_DESTINATIONS = {
+    "worktreeSetup": "shared",
+    "sharedPaths": "shared",
+    "hooks": "shared",
+    "profiles": "shared",
+    "specsBranch": "specs",
+    "azureStates": "specs",
+    "azurePlacement": "specs",
+    "azureColumns": "specs",
+    "subjects": "specs",
+    "tagCatalog": "specs",
+    "workItemTypes": "specs",
+    "fanoutMinComplexity": "specs",
+    "opsRoot": "ops",
+    "router": "ops",
+    "registry": "ops",
+    "proofRoot": "proof",
+    "layers": "proof",
+    "measuredRoots": "proof",
+    "proofExclusions": "proof",
+    "ratchetPath": "proof",
+}
 
 
 def find_repo_root(specs_root: str) -> str:
@@ -37,7 +61,8 @@ def find_repo_root(specs_root: str) -> str:
         if parent == current:
             break
         current = parent
-    top = _git(specs_root, "rev-parse", "--show-toplevel").strip()
+    top = (_git(specs_root, "rev-parse", "--show-toplevel").strip()
+           if os.path.isdir(specs_root) else "")
     if top:
         return top
     return os.path.dirname(os.path.abspath(specs_root))
@@ -66,6 +91,45 @@ def detect_provider(root: str) -> tuple[str | None, str | None]:
     return None, host
 
 
+def infer_base_branch(cfg: dict, origin_head: str | None, init_default: str | None) -> str:
+    """Resolve the unstamped base branch from already-collected git facts.
+
+    The branch chain is shared by the git and specs fronts. Keeping it here lets git consume
+    the common envelope without importing the specs adapter just for this pure decision.
+    ``cfg`` remains in the signature for callers that pass the full configuration envelope;
+    no configuration key participates in the fallback chain.
+    """
+    if origin_head:
+        return origin_head
+    if init_default:
+        return init_default
+    return "main"
+
+
+def _migration_refusal(path: str, obj: dict, legacy_keys: list[str]) -> dict | None:
+    """Describe the exit-2 refusal for a flat or mixed pre-envelope document."""
+    if not legacy_keys:
+        return None
+    destinations = [
+        {"key": key, "namespace": LEGACY_DESTINATIONS[key]}
+        for key in legacy_keys
+    ]
+    shape = "mixed" if any(name in obj for name in NAMESPACES) else "flat"
+    moved = ", ".join(f"`{row['key']}` → `{row['namespace']}`" for row in destinations)
+    return {
+        "code": "sp-config-unscoped",
+        "exit": 2,
+        "config": path,
+        "shape": shape,
+        "keys": legacy_keys,
+        "destinations": destinations,
+        "message": f"{CONFIG_FILE} uses {shape} legacy configuration: {moved}; "
+                   "the front refuses to read unscoped declarations",
+        "remedy": f"move every listed key into its destination namespace in {CONFIG_FILE}; "
+                  "do not mix flat and namespaced declarations",
+    }
+
+
 def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     """Return the parsed envelope and metadata without interpreting any namespace."""
     repo = find_repo_root(root)
@@ -86,7 +150,9 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
         "ops": {},
         "proof": {},
         "legacyKeys": [],
+        "migrationRefusal": None,
         "unknownKeys": [],
+        "unknownNamespaces": [],
         "invalidNamespaces": [],
         "legacyPath": os.path.join(root, LEGACY_CONFIG_FILE)
         if os.path.isfile(os.path.join(root, LEGACY_CONFIG_FILE)) else None,
@@ -115,4 +181,9 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     out["unknownKeys"] = sorted(
         key for key in obj if key not in envelope_keys and key not in LEGACY_KEYS
     )
+    out["unknownNamespaces"] = sorted(
+        key for key, value in obj.items()
+        if isinstance(value, dict) and key not in envelope_keys and key not in LEGACY_KEYS
+    )
+    out["migrationRefusal"] = _migration_refusal(path, obj, out["legacyKeys"])
     return out
