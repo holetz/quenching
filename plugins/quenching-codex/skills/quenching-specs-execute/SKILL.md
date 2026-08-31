@@ -1,6 +1,6 @@
 ---
 name: quenching-specs-execute
-description: "Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on \"execute this spec\", \"build it\", \"implement the tasks\", \"apply the plan\", \"start working on it\", \"continue building\", \"run the next task\", \"work through the tasks\". Requires a clean tree and Git; isolates through quenching-git-branch, follows the spec's verification policy, commits each task with its tick, and squashes at section boundaries. Writes only named standards and records emergent findings. Not for: N specs → quenching-specs-execute-queue; writing or sharpening → quenching-specs-develop; creating → quenching-specs-create; review/archive/release → quenching-specs-conclude; the whole cycle → quenching-specs-cycle."
+description: "Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on \"execute this spec\", \"build it\", \"implement the tasks\", \"apply the plan\", \"start working on it\", \"continue building\", \"run the next task\", \"work through the tasks\". Requires a clean tree and Git; isolates through quenching-git-branch, follows the spec's verification policy, and commits each task with its tick. Writes only named standards and records emergent findings. Not for: N specs → quenching-specs-execute-queue; writing or sharpening → quenching-specs-develop; creating → quenching-specs-create; review/archive/release → quenching-specs-conclude; the whole cycle → quenching-specs-cycle."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/execute.md -->
@@ -226,18 +226,7 @@ python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/qu
 It returns that task's `verify`, `files`, `pattern` and `parallel`, plus the spec's `verification`
 policy, and it **skips `[!]` blocked tasks** (`action: "blocked"` once every remaining task is).
 
-**When the task it hands back OPENS a new `### N.` section, capture that section's base sha first**
-— one call, before anything is committed, because 5h resets to it and a ref resolved later resolves
-to wherever it has moved by then:
-
-```bash
-git rev-parse HEAD^{commit}    # <section-base-sha> for this section
-```
-
-Resumed mid-section with no capture in hand, derive it instead of naming a commit by description:
-the first task's own anchor — `commit:` where the backend records a sha, else
-`git log --grep "<its recorded subject>" --fixed-strings --format=%H` — and then that commit's
-parent. Then, for that task:
+Then, for that task:
 
 a. **Show what is being worked on** — the ID, its declared `files:` and its `verify:`.
 
@@ -271,13 +260,13 @@ c. **Write only the `/docs/` this task names.** When this task writes `/docs/`, 
    `cq specs discover "<id>" "<finding>"` — and no authoring.
 
 d. **On the first pass through 5d–5e, load the rules the chain runs under — once, never per
-   task.** The verification policy, the validation loop, the self-review, the commit's hard rules,
-   the section squash; then the git conventions that name the subject — one call per file:
+   task.** The verification policy, the validation loop, the self-review, and the commit's hard rules;
+   then the git conventions that name the subject — one call per file:
 
    ```bash
    python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-execute/execution.md \
      --sections "§The verification policy" --sections "§The validation loop" \
-     --sections "§The diff self-review" --sections "§The commit" --sections "§The section squash"
+     --sections "§The diff self-review" --sections "§The commit"
    python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/conventions.md --sections "§The read-if-present rule"
    python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/commit.md --sections "§Commit messages" --sections "§The subject is the anchor"
    python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/isolation.md --sections "§Marking the branch with the specs it built"
@@ -328,23 +317,9 @@ g. **Announce the declared hook for this event, and move on.** Once the task has
      prompt: none declared
    ```
 
-h. **On a section boundary with no `[!]`, squash and repair** — per §The section squash, loaded once alongside 5d:
-
-   ```bash
-   git merge-base --is-ancestor <section-base-sha> HEAD \
-     && git reset --soft <section-base-sha> \
-     && git commit -m "plan/<id>-<handle>: <N> <section title>"
-   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <id> --spec "<id>" --subject "plan/<id>-<handle>: <N> <section title>"   # per task
-   ```
-
-   `<section-base-sha>` is the sha captured (or derived) when the section opened, above — **never a
-   branch name and never a hand-counted `HEAD~n`**. The ancestry check is the reset's condition, not
-   a comment on it: a target outside this branch's history exits non-zero, and the `&&` stops there.
-   A `[!]` in the section skips both calls whole; a failed squash — the guard refusing, or the reset
-   or recommit failing — reports as a finding and leaves the per-task commits untouched.
-
-i. **On a section boundary, OFFER to stop — and keep going if nobody says otherwise.** The branch
-   is already at its final shape (one commit), another section still ahead. Say it and continue:
+h. **On a section boundary, keep the task commits and OFFER to stop — and keep going if nobody says otherwise.**
+   The branch is at a clean, independently anchored boundary; another section may still be ahead.
+   Say it and continue:
 
    ```text
    Section 3 of 7 done, at a clean boundary. `quenching-specs-execute <id>` resumes from here —
@@ -393,7 +368,7 @@ failed; [execution.md](../../references/specs-execute/execution.md) §The
 Handoff cadence has the measurement. Each trigger above is a moment this body *just finished doing
 something*, never one where it appraises something.
 
-**The section-boundary offer (step 5i) adds no fifth event and writes no new state.** Accepted, it is a
+**The section-boundary offer (step 5h) adds no fifth event and writes no new state.** Accepted, it is a
 pause and a last commit, which are already two of the four above; declined, nothing happened worth
 recording. The trail this step already maintains — `## Handoff` plus `git log` plus the `subjects`
 `status` returns — **is** what makes a fresh session resume from that boundary, and it is exactly
@@ -475,8 +450,8 @@ front of you before the loop starts:
   human to decide it then.
 - Tick each box **after** the task verified and self-reviewed, and **before** its commit — with the
   subject that commit will carry, so code and box land together. Undo the tick if the commit fails.
-- Never write an ordinary record after the commit it describes. The section-squash repair is the
-  explicit exception: it rewrites task subjects only after the new section commit exists.
+- Never write an ordinary record after the commit it describes. Task records are anchored by the
+  commit that carries the task; no later history rewrite or anchor repair is part of a section close.
 - Never refuse over a missing `approved`; ask inline and stamp it with `cq specs record`, never by
   editing the frontmatter.
 - Stamp `branch:` once the work ref is resolved, taken or declined (`work` then equals `base`) — never over an existing record, through `cq specs record`, never the frontmatter.
