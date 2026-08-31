@@ -29,11 +29,12 @@ fresh cleanup run. **Done when:** all four lists are in hand.
 
 ### 2. Let the human pick what to prune
 Show every local stale branch with its reason(s), every remote branch as `<remote>/<branch>` with
-its reason(s), and every orphan worktree with its path and branch. Ask once with
-**AskUserQuestion** (multi-select) which items to prune — defaulting to none pre-selected, never to
-"all". For a remote selection, show the exact destructive action `git push origin --delete
-<branch>` and the remote branch that action removes. **Done when:** the human has chosen a subset
-(possibly empty) of each list and has seen any remote deletion command.
+its reason(s), and every orphan worktree with its path and branch. Show each `unregisteredWorktrees`
+finding with its path, branch and size as information, but do not include it in the prune choices.
+Ask once with **AskUserQuestion** (multi-select) which items to prune — defaulting to none
+pre-selected, never to "all". For a remote selection, show the exact destructive action `git push
+origin --delete <branch>` and the remote branch that action removes. **Done when:** the human has
+chosen a subset (possibly empty) of each prunable list and has seen any remote deletion command.
 
 ### 3. Delete the chosen branches
 ```bash
@@ -69,6 +70,8 @@ the three outcome classes are named.
 ## Invariants
 
 - Never prune a branch or worktree `cq git stale` did not report.
+- Never offer `unregisteredWorktrees` for pruning: `git worktree remove` does not act on an
+  unregistered directory, and this class carries no action.
 - Never delete a remote branch that `cq git stale` did not report in `remoteBranches`.
 - Never pre-select "all" in the prune offer — every item is the human's own pick.
 - Never fetch or run `git remote prune` implicitly; the report is the fresh fact this run acts on.
