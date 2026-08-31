@@ -5,6 +5,10 @@
 This file is self-contained: a proof align reads it to decide what it may apply and what it must
 report for a human decision.
 
+The common front minimum and route floor live in
+`docs/standards/architecture/front-mold.md`. This file owns only proof finding codes, their
+disposition bands and the layer, fixture, measurement, floor, CI and order-specific closures.
+
 ## Contents
 
 `cq components read <this file>` returns the heading index; `--sections` addresses one.

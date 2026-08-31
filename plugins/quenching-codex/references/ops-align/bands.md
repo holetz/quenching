@@ -5,6 +5,10 @@
 This file is self-contained: an ops align reads it to decide what it may apply and what it must
 report for a human decision.
 
+The common front minimum and route floor live in
+`docs/standards/architecture/front-mold.md`. This file owns only the ops finding codes, their
+disposition bands and the router, registry and entry-point-specific closures.
+
 ## Contents
 
 `cq components read <this file>` returns the heading index; `--sections` addresses one.
