@@ -1,9 +1,9 @@
 """The specs pillar's output layer and its single resolution entry point."""
 from __future__ import annotations
 
+from quenching.common.config import load_config
 from quenching.common.output import emit as _emit
 from quenching.specs.backends.base import SpecBackend
-from quenching.specs.config import load_config
 
 
 def front_fields(root: str) -> dict:
@@ -22,7 +22,7 @@ def front_fields(root: str) -> dict:
     makes every consumer invent its own vacuity test, and the declared path is the lie itself.
     `None` is the one value nobody can mistake for a directory."""
     cfg = load_config(root)
-    return {"backend": cfg["backend"], "root": None}
+    return {"backend": cfg.get("provider") or cfg.get("backend"), "root": None}
 
 
 def display_locator(locator: str, root: str) -> str:

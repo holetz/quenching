@@ -4,8 +4,9 @@ from __future__ import annotations
 import os
 
 from quenching.common.git import _git, _git_run
+from quenching.common.config import load_config
 from quenching.specs.commands.output import Emitter
-from quenching.specs.config import infer_base_branch, load_config
+from quenching.specs.config import infer_base_branch
 from quenching.specs.release import RELEASE_ARTIFACTS, SEMVER_RE, bump_release_artifacts
 
 
