@@ -4,7 +4,7 @@
     python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" [--root PATH] <pillar> <subcommand> ...
     python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --version
 
-Seven pillars, each answering with the same contract its launcher answered with — the
+Eight pillars, each answering with the same contract its launcher answered with — the
 subcommands, the `--json` payloads and the exit codes (0 ok · 1 findings · 2 refusal) are
 the ones frozen in `tests/fixtures/golden/`. This file routes; it decides nothing else.
 
@@ -76,6 +76,9 @@ PILLARS: dict[str, Pillar] = {
     "proof": Pillar(
         "quenching.proof.cli", True,
         "the verification surface — inventory, doctor, ratchet, status"),
+    "toolchain": Pillar(
+        "quenching.toolchain.cli", True,
+        "the toolchain surface — applicability, inventory, doctor, status"),
     "git": Pillar(
         "quenching.git", False,
         "a repository's git facts — the base branch, and whether it is the host's own default"),
