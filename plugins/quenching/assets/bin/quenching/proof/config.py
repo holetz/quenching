@@ -10,7 +10,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from quenching.specs.config import CONFIG_FILE, load_config
+from quenching.common.config import CONFIG_FILE, find_repo_root, load_config
 
 
 DEFAULT_PROOF_ROOT = "tests"
@@ -20,19 +20,7 @@ REACHES = ("nothing", "tree", "session", "workspace")
 
 def _repo_root(root: str) -> str:
     """Resolve the config's repository root without running a target command."""
-    current = os.path.abspath(root)
-    while True:
-        if os.path.isfile(os.path.join(current, CONFIG_FILE)):
-            return current
-        parent = os.path.dirname(current)
-        if parent == current:
-            break
-        current = parent
-    cfg = load_config(root, detect_provider_info=False)
-    path = cfg.get("path")
-    if isinstance(path, str):
-        return os.path.dirname(os.path.dirname(os.path.abspath(path)))
-    return os.path.abspath(root)
+    return find_repo_root(root)
 
 
 def _resolve(repo_root: str, declared: str) -> str:
@@ -68,7 +56,13 @@ def load_proof_config(root: str) -> tuple[dict | None, dict]:
     """Return resolved proof declarations, or a refusal only for an unreadable config."""
     repo_root = _repo_root(root)
     cfg = load_config(root, detect_provider_info=False)
-    proof_root_declared = cfg.get("proofRoot") or DEFAULT_PROOF_ROOT
+    proof = dict(cfg.get("proof") or {})
+    # Existing target fixtures are still flat until the migration/refusal matrix lands in 2.3.
+    raw = cfg.get("data") or {}
+    for key in ("proofRoot", "layers", "measuredRoots", "proofExclusions", "ratchetPath"):
+        if key not in proof and key in raw:
+            proof[key] = raw[key]
+    proof_root_declared = proof.get("proofRoot") or DEFAULT_PROOF_ROOT
     if not isinstance(proof_root_declared, str) or not proof_root_declared.strip():
         return None, {
             "code": "pf-config-invalid",
@@ -78,7 +72,7 @@ def load_proof_config(root: str) -> tuple[dict | None, dict]:
         }
     proof_root = _resolve(repo_root, proof_root_declared.strip())
 
-    ratchet_declared = cfg.get("ratchetPath")
+    ratchet_declared = proof.get("ratchetPath")
     if isinstance(ratchet_declared, str) and ratchet_declared.strip():
         ratchet_path = _resolve(repo_root, ratchet_declared.strip())
         ratchet_relative = _relative(repo_root, ratchet_path)
@@ -86,8 +80,8 @@ def load_proof_config(root: str) -> tuple[dict | None, dict]:
         ratchet_path = os.path.join(os.path.dirname(proof_root), DEFAULT_RATCHET_NAME)
         ratchet_relative = _relative(repo_root, ratchet_path)
 
-    measured_roots = cfg.get("measuredRoots") or []
-    exclusions = cfg.get("proofExclusions") or []
+    measured_roots = proof.get("measuredRoots") or []
+    exclusions = proof.get("proofExclusions") or []
     if not isinstance(measured_roots, list) or not isinstance(exclusions, list):
         return None, {
             "code": "pf-config-invalid",
@@ -111,7 +105,7 @@ def load_proof_config(root: str) -> tuple[dict | None, dict]:
         "repoRoot": repo_root,
         "proofRoot": proof_root,
         "declaredProofRoot": proof_root_declared.strip(),
-        "layers": _layers(cfg.get("layers")),
+        "layers": _layers(proof.get("layers")),
         "measuredRoots": measured,
         "proofExclusions": excluded,
         "ratchetPath": ratchet_path,
