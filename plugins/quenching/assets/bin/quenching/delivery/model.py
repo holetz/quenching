@@ -26,6 +26,62 @@ class Applicability:
 
 
 @dataclass(frozen=True)
+class Job:
+    """Static evidence collected for one workflow job."""
+
+    name: str
+    needs: tuple[str, ...] = ()
+    commands: tuple[str, ...] = ()
+    actions: tuple[str, ...] = ()
+    checkout: bool = False
+    setup: bool = False
+    runtimes: tuple[str, ...] = ()
+    stage: str | None = None
+    release: bool = False
+    environment: str | None = None
+    permissions: tuple[str, ...] = ()
+    active: bool = True
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "needs": list(self.needs),
+            "commands": list(self.commands),
+            "actions": list(self.actions),
+            "checkout": self.checkout,
+            "setup": self.setup,
+            "runtimes": list(self.runtimes),
+            "stage": self.stage,
+            "release": self.release,
+            "environment": self.environment,
+            "permissions": list(self.permissions),
+            "active": self.active,
+        }
+
+
+@dataclass(frozen=True)
+class Finding:
+    """One delivery finding with its C3 disposition band."""
+
+    code: str
+    band: str
+    severity: str
+    message: str
+    path: str | None = None
+
+    def as_dict(self) -> dict[str, Any]:
+        result = {
+            "code": self.code,
+            "band": self.band,
+            "severity": self.severity,
+            "message": self.message,
+        }
+        if self.path is not None:
+            result["path"] = self.path
+        return result
+
+
+@dataclass(frozen=True)
 class Workflow:
     """One provider or provider-equivalent workflow artifact."""
 
@@ -36,6 +92,8 @@ class Workflow:
     triggers: tuple[str, ...] = ()
     jobs: tuple[str, ...] = ()
     stages: tuple[str, ...] = ()
+    job_details: tuple[Job, ...] = ()
+    permissions: tuple[str, ...] = ()
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -46,6 +104,8 @@ class Workflow:
             "triggers": list(self.triggers),
             "jobs": list(self.jobs),
             "stages": list(self.stages),
+            "jobDetails": [job.as_dict() for job in self.job_details],
+            "permissions": list(self.permissions),
         }
 
 
