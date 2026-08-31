@@ -30,7 +30,7 @@ plugin.
 
 The plugin acts on **six** surfaces of a repository, and the interface is the **same on each**.
 Five local fronts have an align, the provider-owned specs front has no local tree to converge,
-and one root command spans the five aligned fronts. A seventh axis, `git`, is a
+and one root command spans the five aligned fronts. An eighth axis, `git`, is a
 **pillar** rather than a front — it converges no tree of its own, so it carries no align at all
 (see [`architecture/align-surface.md`](../../docs/standards/architecture/align-surface.md)
 §The seventh pillar has no align):
@@ -43,11 +43,12 @@ and one root command spans the five aligned fronts. A seventh axis, `git`, is a
 | `.agents/` — the automation surface | `quenching-components-*` | `quenching-components-align` |
 | target-declared operations root | `quenching-ops-*` | `quenching-ops-align` |
 | target-declared verification root | `quenching-proof-*` | `quenching-proof-align` |
+| target-declared toolchain surface | `quenching-toolchain-*` | `quenching-toolchain-align` |
 | *(pillar)* — a repository's own git facts | `quenching-git-*` | **none** |
 | **all five aligned fronts** | *(root)* | **`quenching-align`** |
 
 **The probe comes before the inventory.** Each implemented align opens by running its front's own verifier
-(`cq knowledge validate`, `cq design doctor`, `cq components doctor`/`lint`, `cq ops doctor`, `cq proof doctor`); a clean
+(`cq knowledge validate`, `cq design doctor`, `cq components doctor`/`lint`, `cq ops doctor`, `cq proof doctor`, `cq toolchain doctor`); a clean
 probe stops with nothing to inventory, plan, or confirm. Otherwise: one read-only inventory → ONE
 consolidated plan → one OK → apply → verify, then the front's content stages, each run only when
 the probe found it work:
@@ -60,6 +61,7 @@ the probe found it work:
 | `.agents/` | audits every command **body** against the writing doctrine — the one thing the migration itself is forbidden to fix — and reports each violation with the `quenching-components-command-new` that closes it |
 | `ops` | probes the declared root and router, applies mechanical and structural drift under one plan, and reports judgement findings; status is the read-only view |
 | `proof` | probes the declared verification surface, applies bounded gate repairs, reports judgement findings, and keeps status read-only |
+| `toolchain` | probes manifests, locks, language pins and tool configuration, applies only bounded repairs, and leaves build policy with the target owner; status is the read-only view |
 
 The cross-front `quenching-align` conducts the five aligned fronts in dependency order on one nested OK and **loops
 across fronts**, because they feed each other: a spec's distillation is glossary work the
@@ -86,12 +88,12 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](assets/references/align/convergence.md).
 
-## The 47 commands
+## The 49 commands
 
 **One file per entry point** — Codex merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs; there is
 no `skills/` tree and no wrapper. The tables below are the manual, and the count is a property of
-their rows rather than a second structural inventory: the `47` in this heading is the manual's
+their rows rather than a second structural inventory: the `49` in this heading is the manual's
 canonical displayed total, while [`tests/test_readme_surface.py`](tests/test_readme_surface.py)
 reads it and fails the suite whenever these tables
 and `commands/**` disagree
@@ -101,7 +103,7 @@ and `commands/**` disagree
 The split is by front and pillar: `quenching-knowledge-*` acts on the OKF `/docs/` bundle,
 `quenching-specs-*` on provider-owned issues and work items, `quenching-design-*` on the DTCG
 source and its projections, `quenching-components-*` on the target's `.agents/` automation surface,
-`quenching-ops-*` on the target's operations surface, `quenching-proof-*` on the target's verification surface, and `quenching-git-*` on a repository's own git facts. Two commands sit at the root. Codex auto-routes to a command by its `description`; typing the command is
+`quenching-ops-*` on the target's operations surface, `quenching-proof-*` on the target's verification surface, `quenching-toolchain-*` on the target's toolchain surface, and `quenching-git-*` on a repository's own git facts. Two commands sit at the root. Codex auto-routes to a command by its `description`; typing the command is
 the explicit entry point.
 
 ### The `knowledge` front — the OKF `/docs/` bundle
@@ -161,6 +163,13 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 | `quenching-proof-align` | Probes the proof gate, applies mechanical and bounded structural repairs under one plan, defers a floor when the measured surface changes, and reports judgement findings without driving them. |
 | `quenching-proof-status` | Reports layers, fixtures, measured roots, floors, CI evidence, findings by band, and the explicit fact that the suite was not run — without writing. |
 | `quenching-proof-layer-new` | Mints one named layer with its marker, reach, budget, fixture home and collection rule, then proposes test moves for a separate confirmation. |
+
+### The toolchain front — manifests, locks, pins and tool configuration
+
+| Command | Does |
+| --- | --- |
+| `quenching-toolchain-align` | Probes applicability, inventories the target's toolchain artifacts, applies only mechanical and bounded structural repairs, and reports target-owned build policy. |
+| `quenching-toolchain-status` | Reports applicability, manifests, locks, language pins, tool configuration and `tc-*` findings without writing. |
 
 ### The `git` pillar — a repository's own git facts
 
