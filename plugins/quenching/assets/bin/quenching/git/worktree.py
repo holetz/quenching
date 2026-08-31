@@ -57,9 +57,6 @@ def _link_path(repo: str, relative: str) -> str:
 
 def _materialise(repo: str, relative: str, store: str) -> dict:
     link = _link_path(repo, relative)
-    os.makedirs(store, exist_ok=True)
-    os.makedirs(os.path.dirname(link), exist_ok=True)
-
     if os.path.islink(link):
         if os.path.realpath(link) == os.path.realpath(store):
             return {"path": relative, "store": store, "state": "unchanged"}
@@ -67,12 +64,17 @@ def _materialise(repo: str, relative: str, store: str) -> dict:
         os.symlink(store, link)
         return {"path": relative, "store": store, "state": "repointed"}
 
+    empty_directory = False
     if os.path.lexists(link):
         if os.path.isdir(link) and not os.listdir(link):
-            os.rmdir(link)
+            empty_directory = True
         else:
             raise FileExistsError(link)
 
+    os.makedirs(store, exist_ok=True)
+    os.makedirs(os.path.dirname(link), exist_ok=True)
+    if empty_directory:
+        os.rmdir(link)
     os.symlink(store, link)
     return {"path": relative, "store": store, "state": "created"}
 
