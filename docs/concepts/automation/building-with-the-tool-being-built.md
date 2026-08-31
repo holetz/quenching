@@ -7,15 +7,15 @@ tags: [automation, self-hosting, bootstrapping, specs, execution]
 timestamp: 2026-08-17
 audience: both
 authority: current
-source: /quenching:specs:execute-queue queue of 2026-08-17 — specs remover-secao-stray-de-um-documento (the fold_stray_heading import) and squash-de-secao-deve-resetar-para-um-sha (the squash fixed by the spec that used it)
+source: /quenching:specs:execute-queue queue of 2026-08-17 — specs remover-secao-stray-de-um-documento (the fold_stray_heading import); refined by remover-agrupamento-de-commits-por-secao (2026-08-30)
 maintainer: quenching
 ---
 
 # Building with the tool being built
 
-`cq` ticks the box, stamps the record and runs the section squash. `cq` is also, frequently, **what
-the task is editing**. As long as those two sentences are true at the same time, the execution
-procedure has an intermediate state in which it cannot record its own progress.
+`cq` verifies the task, ticks its box and commits the task-level change. `cq` is also, frequently,
+**what the task is editing**. As long as those two sentences are true at the same time, the
+execution procedure has an intermediate state in which it cannot record its own progress.
 
 ## The two forms this takes
 
@@ -25,10 +25,9 @@ task --check` that would close the first box. The two tasks are not two: they ar
 declaring separate `files:` does not separate them. Measured when `granular.py` started importing
 `fold_stray_heading` before `parse/edit.py` existed.
 
-**The ground that moves.** A task fixes the mechanism it itself uses to commit. The section squash
-resolved the base by ref; the spec that traded that for a sha captured and verified as an ancestor
-had to capture the base sha **before any edit**, because after the first edit the mechanism in use
-was no longer the one being described.
+**The ground that moves.** A task fixes the mechanism it itself uses to commit. The task-level
+commit chain must remain usable while its command and references are changing, so the procedure
+captures before editing everything the next step will need to read.
 
 ## What this forces
 
@@ -41,7 +40,6 @@ was no longer the one being described.
   loading the pre-change implementation from `git show <base>:<path>` into a separate module and
   comparing the two outputs is what separates "equivalent" from "looks equivalent".
 
-The compensating property is that the fix proves itself in the same run: the spec that corrected
-the squash ran its own three squashes under the new rule, with `merge-base --is-ancestor` verified
-in all three and zero removals in each section commit — which is exactly the property it existed to
-guarantee.
+The compensating property is that the fix proves itself in the same run: a focused history fixture
+keeps two task commits distinct at a section boundary while the command and reference contracts
+contain no section-level history rewrite.
