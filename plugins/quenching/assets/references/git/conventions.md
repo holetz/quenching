@@ -34,6 +34,10 @@ State in the report which one governed.
 An `authority: background` git standard in the target still wins over these defaults. It is an
 agreed-but-unproven rule someone wrote on purpose; that beats a plugin's opinion either way.
 
+An omitted commit subject may use the default grammar only when the caller resolves exactly one
+spec and one actionable task. An explicit subject takes precedence; missing or ambiguous context
+refuses rather than guessing from the staged diff or recent history.
+
 ## What is never done, on any repo
 
 <!-- rules -->

@@ -1,7 +1,7 @@
 ---
 type: project
 title: Repository layout
-description: What sits where in this checkout — the marketplace root, the plugin payload and its four asset families, the generated Codex mirror, and which command owns each surface
+description: What sits where in this checkout — the marketplace root, the plugin payload and its asset families, the generated Codex mirror, and which command owns each surface
 resource: plugins/**, scripts/**, docs/**
 tags: [repository, layout, plugin, marketplace, codex]
 timestamp: 2026-08-29
@@ -14,7 +14,7 @@ maintainer: quenching
 # Repository layout
 
 This repository is a **Claude Code plugin marketplace**, not an application. There is no build
-step: command bodies and references are executable prose, and four Python tools provide the local
+step: command bodies and references are executable prose, and the local tools provide the local
 checks. Knowing which directory owns what is therefore the difference between editing the source
 of a behaviour and editing a generated copy of it.
 
@@ -43,7 +43,7 @@ plugins/quenching/
   VERSION               one of four artifacts kept in version lockstep
   commands/             one file per entry point — the executable prose
   assets/
-    bin/                the `cq` CLI (`quenching.knowledge`, `.specs`, `.components`, `.git`)
+    bin/                the `cq` CLI (`quenching.knowledge`, `.specs`, `.components`, `.ops`, `.proof`, `.git`)
     references/         the detail a command body cites instead of restating
     knowledge/          the OKF skeleton `knowledge:align` installs into a target repo
     checks/             the shipped verifiers, plus their fixtures

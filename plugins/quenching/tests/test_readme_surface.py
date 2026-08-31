@@ -28,6 +28,7 @@ README = PLUGIN_ROOT / "README.md"
 MANUAL_OPENS = re.compile(r"^## The .* commands\s*$", re.MULTILINE)
 MANUAL_CLOSES = re.compile(r"^## Install\s*$", re.MULTILINE)
 INVOCABLE = re.compile(r"`(/[a-z][a-z:-]*)`")
+EXPECTED_COMMAND_COUNT = 47
 
 
 def _commands_on_disk() -> set[str]:
@@ -50,8 +51,19 @@ class ReadmeManualMatchesTheSurface(unittest.TestCase):
     def test_the_manual_lists_exactly_the_commands_on_disk(self):
         listed = set(INVOCABLE.findall(_manual_span(README.read_text(encoding="utf-8"))))
         on_disk = _commands_on_disk()
+        self.assertEqual(len(on_disk), EXPECTED_COMMAND_COUNT,
+                         "surface count changed; update the catalog and this assertion")
         self.assertEqual(on_disk - listed, set(), "commands on disk the README manual never lists")
         self.assertEqual(listed - on_disk, set(), "commands the README manual names that do not exist")
+
+        self.assertEqual(
+            {command for command in listed if command.startswith("/quenching:ops:")},
+            {"/quenching:ops:align", "/quenching:ops:status", "/quenching:ops:entrypoint:new"},
+        )
+        self.assertEqual(
+            {command for command in listed if command.startswith("/quenching:proof:")},
+            {"/quenching:proof:align", "/quenching:proof:status", "/quenching:proof:layer:new"},
+        )
 
     def test_the_check_can_fail(self):
         """A green that could not go red is not evidence — so prove this one discriminates.

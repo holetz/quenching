@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Task execution contract
-description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the three causes of a check that can never pass (one of them invisible to the falsification run), `files:` naming the derived artifacts an edit invalidates, the failure budget, one commit per task while a section is open squashed to one commit per section at its boundary — onto a sha captured when the section opened, behind an ancestry guard — the two-level review split, the four-event Handoff refresh cadence, and the delegation and [P] disjunction rules
-resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/artifacts.md, plugins/quenching/assets/references/git/commit.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/specs/templates/spec.md, plugins/quenching/assets/checks/section-squash-check.sh
+description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the three causes of a check that can never pass (one of them invisible to the falsification run), `files:` naming the derived artifacts an edit invalidates, the failure budget, one commit per task retained across section boundaries, the two-level review split, the four-event Handoff refresh cadence, and the delegation and [P] disjunction rules
+resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/artifacts.md, plugins/quenching/assets/references/git/commit.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/specs/templates/spec.md
 tags: [workflows, specs, execution, verification, commits, delegation, handoff]
 timestamp: 2026-08-27
 audience: both
 authority: current
-source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3), with the task→commit anchor moved from the subject to the sha by the configurable-spec-backend plan (task 4.4); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30); the inline-markup arm of the falsifiable-verify rule found twice while building that same spec (2026-07-31); the zero-errors-not-warnings arm measured on the stop-develop-offering-follow-up-specs branch (2026-08-03); the declared `cwd:` key by the declarar-o-cwd-de-uma-linha-verify spec (2026-08-05), proved by that same spec's own mixed-cwd `verify:` lines; the closed `files:` grammar by the fix-the-files-field-parser-splitting-on-commas-inside-parentheses spec (2026-08-06), whose repro was found in the route-commands-without-always-on-descriptions archive (2026-08-02); the failing-exit arm of the zero-errors rule added by reduzir-as-chamadas-az-por-escrita-no-azure-boards at its conclude, after a `verify:` asserting `cq specs validate` exit 0 was measured unsatisfiable on the day it was authored — the target workspace already carried seven warnings, and `validate` exits 1 on any finding; the section squash — one commit per section, the per-task chain and its retry safety net unchanged while the section is open — by the reduzir-commits-por-secao spec (2026-08-11); the false-red mirror of the falsifiable-verify rule — a `verify:` that can never pass, by a path that does not resolve from the declared `cwd:` or by a scope wider than the task's blast radius — measured twice on the references-citam-standards-fora-do-esqueleto spec (2026-08-15); its third cause — a phrase the target file's own language standard forbids, which no correct implementation can satisfy and which the falsification run cannot see, since a grep for an absent phrase exits non-zero exactly as a healthy check does — and the `files:` rule for derived artifacts, both from revisar-fluxo-do-develop-custo-e-gates at its branch review (2026-08-16), measured on that spec's own task 1.3 (a pt-BR literal demanded of an English-only command body) and task 2.2 (a golden fixture broken and re-captured while declared nowhere); the no-`files:` arm of the anchor rule — a task that declares no `files:` ticks without `--subject` and attempts no commit — by cq-specs-task-check-stale-subject-sem-commit (2026-08-17), on the unresolvable `subject:` that arm left on task 5.1 of the archived revisar-politica-de-assets-checks (issue 902) under the `github` backend; the captured-sha squash target and the `git merge-base --is-ancestor` guard that runs before the reset, by the squash-de-secao-deve-resetar-para-um-sha spec (task 3.1) and proved by `assets/checks/section-squash-check.sh`, after three section squashes on the holetz/fast-status branch resolved `develop` as a ref while another checkout fast-forwarded it and declared the removal of 17 files the branch had never opened (2026-08-16)
+source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30); the inline-markup arm of the falsifiable-verify rule found twice while building that same spec (2026-07-31); the zero-errors-not-warnings arm measured on the stop-develop-offering-follow-up-specs branch (2026-08-03); the declared `cwd:` key by the declarar-o-cwd-de-uma-linha-verify spec (2026-08-05), proved by that same spec's own mixed-cwd `verify:` lines; the closed `files:` grammar by the fix-the-files-field-parser-splitting-on-commas-inside-parentheses spec (2026-08-06), whose repro was found in the route-commands-without-always-on-descriptions archive (2026-08-02); the failing-exit arm of the zero-errors rule added by reduzir-as-chamadas-az-por-escrita-no-azure-boards at its conclude, after a `verify:` asserting `cq specs validate` exit 0 was measured unsatisfiable on the day it was authored — the target workspace already carried seven warnings, and `validate` exits 1 on any finding; the false-red mirror of the falsifiable-verify rule — a `verify:` that can never pass, by a path that does not resolve from the declared `cwd:` or by a scope wider than the task's blast radius — measured twice on the references-citam-standards-fora-do-esqueleto spec (2026-08-15); its third cause — a phrase the target file's own language standard forbids, which no correct implementation can satisfy and which the falsification run cannot see, since a grep for an absent phrase exits non-zero exactly as a healthy check does — and the `files:` rule for derived artifacts, both from revisar-fluxo-do-develop-custo-e-gates at its branch review (2026-08-16), measured on that spec's own task 1.3 (a pt-BR literal demanded of an English-only command body) and task 2.2 (a golden fixture broken and re-captured while declared nowhere); the no-`files:` arm of the anchor rule — a task that declares no `files:` ticks without `--subject` and attempts no commit — by cq-specs-task-check-stale-subject-sem-commit (2026-08-17), on the unresolvable `subject:` that arm left on task 5.1 of the archived revisar-politica-de-assets-checks (issue 902) under the `github` backend; the per-task commit and section-boundary contract by the remover-agrupamento-de-commits-por-secao spec (2026-08-30)
 maintainer: quenching
 ---
 
@@ -313,123 +313,92 @@ different scale of diff, it precedes an irreversible merge, and bolting it onto 
 run that died after task nine had to redo tasks one through eight to reach it. That it ran is
 recorded as `reviewed`, per [plan-git-record.md](plan-git-record.md).
 
-## One commit per section, squashed from its tasks
+## One commit per task
 
 ```
-plan/<slug>: <section-number> <section title>
+plan/<slug>: <task-id> <task title>
 ```
 
-`git revert` then undoes exactly one section, `git log` reads as the spec's `## Tasks` sections, and
-a review can walk it section by section. N tasks piled into one uncommitted blob gives none of
-that, and neither does a standing commit per task once a section routinely runs to five or ten of
-them — the unit worth reverting, reading and reviewing is the section that shipped together, not
-each task that built it.
+Each task is a reviewable unit: the task's declared change, its verification, its self-review, and
+its own commit. The commit remains intact when the run reaches a section boundary, so `git log` and
+`git revert` can address the task that was actually built.
 
-**Every task still gets its own commit while its section is open.** The chain that verifies, ticks
-and commits it — `plugins/quenching/assets/references/specs-execute/execution.md`
-§The commit — is unchanged: retrying, blocking and resuming a task mid-section reads off a real,
-individual commit, exactly as before. Only once the section's last task commits clean, with none of
-the section `[!]`, does it collapse — a local `git reset --soft` to the **sha captured when the
-section opened**, plus one recommit, per
-`plugins/quenching/assets/references/specs-execute/execution.md` §The section squash
-— never touching a prior section's commits, never anything already shared. The isolation taken at
-the start still buys everything it always did: what changes is which commit survives, never whether
-the work was proved before it landed.
+Sections still group tasks by dependency and are the unit used by the `verification: per-section`
+policy, delegation, and Handoff scoping. That grouping is coordination metadata, not a history
+rewrite.
 
-### The squash target is a captured sha, and ancestry is checked before the reset
+An optional squash belongs to the merge step and combines the finished branch into its base. It is
+not run when a section closes, and it does not rewrite the task records on the work branch.
 
-**The target of a `reset` that rewrites history is always a sha — never a ref, and never a
-hand-counted `HEAD~n`.** A ref is resolved at the moment it is used, and the moment it is used is
-after everything that can move it.
+When a separate incremental commit command is used, its subject follows the same task anchor. An
+explicit subject wins; when omitted, it may be derived only from exactly one current spec and one
+actionable task under the governing target convention. Missing or ambiguous context refuses rather
+than guessing from staged content, branch recency or task order. A resolvable omission runs without a confirmation question,
+while the existing-index, hook and no-rewrite rules still apply.
 
-- **Capture** it once, with `git rev-parse HEAD^{commit}`, *before* the section's first task
-  commits. That is the commit the section found; on a plan's first section it is the tip the branch
-  already carried.
-- **Derive** it, for a run that resumed mid-section with no capture in hand, from the anchor the
-  first task's line already carries — `commit:` where the backend records a sha, else
-  `git log --grep "<its recorded subject>" --fixed-strings --format=%H` — and then that commit's
-  parent. The two answer the same commit; the derivation exists because the capture lives in the
-  session's head and a section can be interrupted mid-way.
-- **Guard** the reset with `git merge-base --is-ancestor <section-base-sha> HEAD`, whose exit 0 is
-  the reset's condition. A target outside the branch's own history is a finding, reported with the
-  section's per-task commits left intact.
+### The subject is the task anchor
 
-**Measured on 2026-08-16**, branch `holetz/fast-status`, spec `listagem-ranqueada-nativa-no-cq-specs`.
-The prose named the target by description — *"the commit immediately BEFORE this section's first
-task"* — and on a first section that commit **is** the base's tip, so the executor reached for the
-cheapest ref that satisfied it: `develop`. Another checkout fast-forwarded `develop` mid-run; three
-section squashes resolved the ref to the **new** tip, and the three commits went on to declare the
-removal of 17 files and the reversion of 45 more the branch had never opened. Nothing caught it —
-the tree was clean before and after, the spec validated, and the suite passed, because the deleted
-files belonged to another front with no test reaching them.
-
-The capture fixes the naming; the guard fixes the class, since on that run the base's new tip was
-**not** an ancestor of the work branch. `assets/checks/section-squash-check.sh` is the proof: the
-claim is about history, not about any file's contents, so it is verified by building a history
-whose base advances mid-section rather than by reading the command bodies —
-[surface-verification.md](../quality/surface-verification.md) §An ordering property is verified by
-running the cycle, not by reading the commands.
-
-### The anchor is the sha, where no backend co-branches with the code
-
-The anchor written back onto the task line is the commit's **sha** —
+The anchor written back onto the task line is the commit's **subject** —
 [plan-git-record.md](plan-git-record.md) §The task→commit link — recorded by
-`cq specs task --check <id> --commit <sha>` **after** the commit exists:
-
-```bash
-git add <the task's files> <the spec file> && git commit -m "<subject>"
-cq specs task --spec <slug> --check <id> --commit "$(git rev-parse HEAD)"
-```
-
-This is possible today because [the configurable spec backend](../architecture/spec-backend.md) guarantees no
-backend lets a spec share a branch with the code being committed: the `files` backend writes to its
-own dedicated specs branch (§Backend files below), and an external backend writes outside git
-entirely. Neither needs the anchor to land in a file versioned on the code branch, which is the one
-constraint that made a sha impossible before.
-
-### What this reverses, and what it does not yet cover
-
-**Subject-before-commit was the prior standard, for a reason that was real and is recorded here
-rather than erased.** Under a sha anchor, the tick had to follow the commit it recorded, so every
-task cost a second, bookkeeping commit, and "one commit per task" was an aspiration the mechanism
-contradicted. Adopting the commit's **subject** instead — known before the commit exists — let the
-tick land inside the same commit it describes:
+`cq specs task --check <id> --subject <subject>` **before** the commit exists:
 
 ```bash
 cq specs task --spec <slug> --check <id> --subject "<subject>"
 git add <the task's files> <the spec file> && git commit -m "<subject>"
 ```
 
-**That mechanism did not go away, and is not deprecated.** `task --commit` is additive to
-`task --subject`, never a replacement — both are accepted, together or alone, by the same command.
-A repository whose specs still live on the code branch has not stopped needing the reason subject
-was chosen for: this repository's own `plans/`/`archive/` remain on the code branch at the time of
-writing — the migration of an already-populated `/.specs/` to the dedicated branch is explicitly
-deferred, never automatic ([spec-backend.md](../architecture/spec-backend.md) §The selected backend is the source
-of truth) — and every spec here still ticks
-with `--subject`, before the commit, for exactly the reason this section used to give as the whole
-rule. The sha anchor is the target for a backend that does not co-branch; it is not yet a fact
-about every repository running this tool.
+The subject is known before the commit exists, so the tick and the task's code travel in one commit.
+`task --commit` remains additive for legacy records that already carry a sha; it is never a
+replacement for `task --subject`. A `commit-msg` hook that replaces the subject is reported as a
+finding, while hooks that add a prefix or trailer remain resolvable by substring.
 
-Whichever anchor a given commit is carrying, the discipline is the same: if the commit fails,
-**undo the tick** so no box claims a commit that does not exist. If a `commit-msg` hook *replaced*
-the subject, report the drift as a finding and write nothing — repairing the record after the
-commit is the ordering this contract exists to prevent, under either anchor.
+When the separate incremental commit command is called without a subject, it uses the same default
+grammar only after resolving exactly one current spec and one actionable task. An explicit subject
+wins. Missing or ambiguous context refuses, and the command never invents a generic subject from
+the diff or recent history.
 
-**A task with no `files:` declared records no anchor at all.** With the line absent, or written
-`files: []`, the task produces no diff of its own: no commit carries it, so neither a subject nor a
-sha could resolve to one. It ticks with a bare `cq specs task --check <id> --spec <slug>` — no
-`--subject`, no `git add`, no `git commit` attempted — and the anchor is left deliberately empty.
-That is the same rule the no-git case above already states, one level down: **no commit exists, so
-no anchor is invented**, rather than a placeholder that reads like a record.
+### Legacy sha anchors remain readable
+
+A repository or backend that already recorded `commit: <sha>` keeps that historical anchor. It is
+resolved by sha and never backfilled to a subject; the recorded fact describes the history that
+existed when it was written. New execution records use subjects, which survive the branch's later
+history operations without requiring a post-commit provider write.
+
+### Why the subject replaced sha for current execution
+
+The subject-before-commit rule replaced sha anchoring for the current execution path for a reason
+that remains useful to preserve. Under a sha anchor, the tick had to follow the commit it recorded,
+so every task cost a second bookkeeping commit and "one commit per task" was an aspiration the
+mechanism contradicted. Knowing the commit's subject before it exists lets the tick travel inside
+the task's own commit instead:
+
+```bash
+cq specs task --spec <slug> --check <id> --subject "<subject>"
+git add <the task's files> <the spec file> && git commit -m "<subject>"
+```
+
+The `task --commit` option remains additive for legacy records, never a replacement for
+`task --subject`; both are accepted together or alone. This repository's `plans/` and `archive/`
+remain on the code branch, while migration of an already-populated `/.specs/` to a dedicated branch
+is deferred and never automatic ([spec-backend.md](../architecture/spec-backend.md) §The selected
+backend is the source of truth). The sha anchor is therefore still valid for a backend that does
+not co-branch, but it is not the new default for execution records.
+
+If the commit fails, **undo the tick** so no box claims a commit that does not exist. A task with no
+`files:` declared produces no diff of its own and records no subject or sha: tick it with a bare
+`cq specs task --check <id> --spec <slug>`, without `git add` or `git commit`.
 
 The trigger is the task's own `files:`, never the configured backend, because `files:` is already a
 deliberate declaration and not a convenience (`plugins/quenching/assets/references/specs-develop/artifacts.md`
-§Execution metadata) — a task written without it has declared it produces no diff. One rule holds on
-both sides of the backend split: where the backend keeps the spec in the working tree the
-checkbox-only commit is merely deferred, riding along in the next task's commit or in the section's
-squash, and where the backend lives outside git there was never a local diff to stage. Conditioning
-on the backend instead would add a second axis of reasoning and change no outcome.
+§Execution metadata). A checkbox-only task has no commit to anchor, whether its backend stores the
+spec in the working tree or outside git.
+
+Measured on this repository's `github` backend (2026-08-17): the archived spec
+`revisar-politica-de-assets-checks` (issue #902) carries a `subject:` on task 5.1 that
+`git log --grep` cannot resolve, because the tick was API-only and the commit it names was never
+made. It is **not** backfilled — an archived spec is never rewritten
+([plan-git-record.md](plan-git-record.md) §The subject is the anchor) — and a task-level checker
+symmetric to `sp-bad-merge` remains a separate surface, deliberately not built here.
 
 Measured on this repository's `github` backend (2026-08-17): the archived spec
 `revisar-politica-de-assets-checks` (issue #902) carries a `subject:` on task 5.1 that
@@ -437,12 +406,6 @@ Measured on this repository's `github` backend (2026-08-17): the archived spec
 made. It is **not** backfilled — an archived spec is never rewritten
 ([plan-git-record.md](plan-git-record.md) §The subject is the anchor) — and a task-level checker
 symmetric to `sp-bad-merge` is a separate surface, deliberately not built here.
-
-**The section squash narrows the anchor's granularity, never its resolvability.** The moment a
-section's commits collapse into one, every task the section held is re-stamped onto that one
-surviving commit's subject (or sha) — `plugins/quenching/assets/references/specs-execute/execution.md`
-§The section squash. `git log --grep`, or the sha lookup, still resolves for every one of those
-tasks; it resolves to the section's commit rather than a commit of that task's own.
 
 ### Hard rules
 
@@ -454,9 +417,7 @@ no "just this once":
   code, or report the task blocked.
 - Never `git commit --no-verify`. A failing hook is a finding to report, not an obstacle to route
   around. Same for `--no-gpg-sign`.
-- Never amend or rewrite an earlier task's commit; never force-push. §The section squash
-  (execution.md) is the one narrow exception — and only ever a section's own just-made commits, at
-  the moment that section closes, never a prior section's or anything already shared.
+- Never amend or rewrite an earlier task's commit; never force-push.
 - Never tick a checkbox for work that was not verified.
 
 ## The Handoff refresh cadence is four events

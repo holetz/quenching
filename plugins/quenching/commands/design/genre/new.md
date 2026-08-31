@@ -1,5 +1,5 @@
 ---
-description: Mint ONE editorial genre under /.design/genres/ with its fields, register and N medium templates, then regenerate MEDIUM.md. Triggers on "create a design genre", "add a report genre", "define a deck contract", "mint an editorial format", or "make one genre render to HTML and PDF". Plans one genre and asks once before invoking cq design genre new. Not for: rendering an existing genre → cq design render; aligning the whole front → /quenching:design:align; visual screen work → Impeccable.
+description: Mint ONE editorial genre under /.design/genres/ with its fields, register and N medium templates, then regenerate MEDIUM.md. Triggers on "create a design genre", "add a report genre", "define a deck contract", "mint an editorial format", or "make one genre render to HTML and PDF". Not for: rendering an existing genre → cq design render; aligning the whole front → /quenching:design:align; visual screen work → Impeccable.
 argument-hint: <genre-name-or-description>
 allowed-tools: Read, Grep, Glob, Bash(python3:*), AskUserQuestion
 ---

@@ -193,10 +193,9 @@ Shape it so `quenching-specs-execute` can walk it top to bottom:
 
 - **Ordered by dependency**, grouped into coherent sections (setup → core → wiring → tests → the
   standards `## Impact` declares). Each item is one reviewable unit of work — small enough to
-  check off honestly, large enough not to be noise. Each task still gets its own commit while its
-  section is open; the section is what survives as **one commit**, squashed at its own boundary
-  ([execution.md](../../references/specs-execute/execution.md) §The section
-  squash), and what a `verification: per-section` spec verifies after.
+  check off honestly, large enough not to be noise. Each task gets its own commit. The section
+  grouping remains the unit that `verification: per-section` verifies after and that execution can
+  delegate by file or by a coherent set of tasks.
 - **Within what the dependency order allows, group by file.** A section is the unit execution
   delegates — *"delegate by file, or by section of tasks, never task by task"*
   ([execution.md](../../references/specs-execute/execution.md) §The cost of

@@ -46,6 +46,18 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertIn("--glossary-term", verify)
         self.assertIn("never the first lexical glossary entry", verify)
 
+    def test_ops_precedes_proof_on_every_conducted_path(self):
+        align = (ROOT / "commands" / "align.md").read_text(encoding="utf-8")
+        workflow = align.split("## Workflow", 1)[1].split("## Invariants", 1)[0]
+        front_calls = [
+            line.split("quenching:", 1)[1].split(":align", 1)[0]
+            for line in workflow.splitlines()
+            if "quenching:ops:align" in line or "quenching:proof:align" in line
+        ]
+
+        self.assertEqual(front_calls, ["ops", "ops", "proof", "proof"])
+        self.assertLess(workflow.index("### 6. Front 4"), workflow.index("### 7. Front 5"))
+
     def test_build_gates_catalog_and_glossary_qa(self):
         build = (ROOT / "commands" / "knowledge" / "documentation" / "build.md").read_text(
             encoding="utf-8"
