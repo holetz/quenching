@@ -154,9 +154,8 @@ sentence, and **link out** rather than explaining in full here.
   action of `/quenching:specs:conclude`. Nothing is inscribed into the message as a trailer: the recorded
   subject is whatever the target repo's own convention produced. A spec built before this change
   carries `commit: <sha>` and resolves by sha; both forms are read forever and neither is
-  backfilled. Squashed to one commit per **Section boundary**, every task the section held is
-  re-stamped onto that one surviving commit's subject — the anchor narrows to section granularity,
-  never loses resolvability.
+  backfilled. Each new task keeps its own subject anchor across section boundaries; an optional
+  squash is a separate merge-time choice.
 - **Contaminating block** (`plugins/quenching/assets/references/specs-fanout/fanout.md`) — a block
   whose pending decision changes the specs *after* it in a queue, as opposed to a **local** one that
   stops only its own spec. The classification is the executor's to declare, because only it knows
@@ -546,13 +545,12 @@ sentence, and **link out** rather than explaining in full here.
   narrower suffices is stated where it is wired. `cq components` holds rung 1 and rung 2 to the same
   checks from one implementation.
 - [**Section boundary**](standards/automation/context-discipline.md) — the moment a `## N.`
-  section's last task commits with none of its tasks blocked: the section's own per-task commits
-  squash into one (execution.md §The section squash) before a build **offers** to stop — a clean
-  point, because the resumption trail (`##
-  Handoff`, `git log`, the recorded commit subjects) is already maintained for other reasons, which
-  is what makes the cut nearly free. The trigger is **that event, never a window size** — a
-  threshold invented before it is measured fixes the answer. It offers and never imposes, never
-  ends a run itself, and writes no new state.
+  section's last task commits with none of its tasks blocked: each task commit stays intact and the
+  build **offers** to stop — a clean point, because the resumption trail (`## Handoff`, `git log`,
+  the recorded commit subjects) is already maintained for other reasons, which is what makes the
+  cut nearly free. The trigger is **that event, never a window size** — a threshold invented before
+  it is measured fixes the answer. It offers and never imposes, never ends a run itself, and writes
+  no new state.
 - [**Section reader**](standards/automation/context-discipline.md) — the verb that resolves the
   `§X` address the prose was already writing: `cq components read <path> --sections "§A"` over free
   markdown, `cq specs section <id> "A,B"` over a spec's fourteen canonical headings. Both take a
@@ -572,20 +570,6 @@ sentence, and **link out** rather than explaining in full here.
   reading it as a list, so a heading carrying its own comma — `## What crosses, what stays` — is
   cited by its full title; `cq specs` splits unconditionally, which is unreachable there because
   the fourteen canonical headings carry no comma and it refuses any name outside them.
-- [**Section squash**](standards/workflows/task-execution.md) — the local `git reset --soft`
-  plus recommit that collapses a `## N.` section's own per-task commits into one, at that
-  section's own **Section boundary**, provided none of its tasks is `[!]`. Its target is a **sha
-  captured when the section opened** — derived from the first task's own anchor on a run that
-  resumed mid-section, and never a branch name, whose tip can move under the run — and
-  `git merge-base --is-ancestor` runs before the reset, refusing any target not ancestral to
-  `HEAD`. The per-task chain that
-  verifies, ticks and commits stays exactly what it always was — this is what buys resumability
-  *while the section runs*; the squash only ever reaches back into commits its own section just
-  made, never a prior section's or anything already shared, which is the narrow, explicit exception
-  to "never rewrite an earlier commit." Every task the section held is re-stamped onto the
-  surviving commit's subject (or sha) in the same step — the **Commit record**'s granularity
-  narrows to the section, never loses resolvability. Distinct from the squash-**merge** strategy
-  `/quenching:specs:conclude` offers, which is a different mechanism at a different moment.
 - [**Report mold**](standards/architecture/report-mold.md) — the single section that owns the shape
   **every** command of a front prints its report in, cited by each body, which declares only its own
   delta. Three fixed bands (header · body · next step), blocks declared fixed or optional, an
