@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-08-28
 audience: human
 authority: current
-source: plugins/quenching/README.md §The six fronts; command bodies under plugins/quenching/commands/{knowledge,design,components,ops,proof}/ and align.md
+source: plugins/quenching/README.md §The six fronts, the seventh pillar, and the one align per front; command bodies under plugins/quenching/commands/{knowledge,design,components,ops,proof}/ and align.md
 maintainer: Israel Holetz
 ---
 
