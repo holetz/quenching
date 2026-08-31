@@ -124,6 +124,18 @@ tracks — no installed dependencies, no `.env`, no venv, no build output.
 {"worktreeSetup": "./scripts/wt-setup.sh"}
 ```
 
+The same file may declare repo-relative paths that must survive across checkouts, under
+`sharedPaths`:
+
+```json
+{"sharedPaths": ["trabalho"]}
+```
+
+The isolation offer displays the declared list verbatim. After `git worktree add`,
+`cq git worktree link` materialises each path as a link to its sibling store before the setup
+command runs. A setup script must not re-create, replace or remove a path declared in
+`sharedPaths`; the link command owns that path for every checkout.
+
 See
 [plugin-configuration.md](../../references/specs-align/plugin-configuration.md)
 §The recognised keys.

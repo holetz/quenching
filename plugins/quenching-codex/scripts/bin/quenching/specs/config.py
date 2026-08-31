@@ -66,7 +66,7 @@ def root_too_high_message(root: str) -> str:
 
 CONFIG_FILE = os.path.join(".claude", "quenching.json")
 LEGACY_CONFIG_FILE = "config.json"
-CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates",
+CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "sharedPaths", "azureStates",
                "hooks", "profiles",
                "azurePlacement", "azureColumns", "subjects", "tagCatalog",
                "workItemTypes", "fanoutMinComplexity", "opsRoot", "router")

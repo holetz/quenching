@@ -33,7 +33,7 @@ python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/qu
 git status --porcelain
 git branch --show-current
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git base --json
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs config --json        # `worktreeSetup`, or null — exit 0 either way
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs config --json        # `worktreeSetup`, `sharedPaths`, or their empty values — exit 0 either way
 ```
 `git status --porcelain` non-empty → refuse, name the offending paths, and stop; isolating a dirty
 tree carries whatever was already sitting there into the first commit on the new ref, silently.
@@ -53,7 +53,8 @@ already isolated and carry it forward; do not offer a second branch or worktree.
 continue with the offer below.
 State the base branch (from step 1), the branch name that would be cut (`plan/<id>-<handle>` with an ID,
 else a kebab-case name derived from `$ARGUMENTS` or asked for), the worktree path, and —
-`worktreeSetup` non-null — the setup command **verbatim**. Then ask with **AskUserQuestion**:
+`worktreeSetup` non-null — the setup command **verbatim**; `sharedPaths` non-empty — the declared
+paths **verbatim**. Then ask with **AskUserQuestion**:
 
 - **Worktree** *(default, recommended)* — `git worktree add ../<repo>-<name> -b <branch>`.
 - **Branch** — `git checkout -b <branch>`, work continues in this checkout.
@@ -66,9 +67,11 @@ the three, or the run stops on a git error from the chosen form.
 
 ### 4. Take it, run the setup, and stamp
 Run the one command for the chosen form; a failure (name taken, dirty path, locked worktree) is
-reported verbatim and nothing is stamped. On **Worktree** with `worktreeSetup` declared, run it once
-with cwd inside the new worktree; a failing setup does not undo the worktree — report both facts
-separately. Then, only with an ID from step 2:
+reported verbatim and nothing is stamped. On **Worktree**, immediately after `git worktree add`,
+run `cq git worktree link --json` with cwd inside the new worktree. A link failure is reported
+verbatim and does not undo the worktree; stop this flow before running `worktreeSetup`. When the
+link succeeds, run a declared `worktreeSetup` once with cwd inside the new worktree; a failing
+setup does not undo the worktree — report both facts separately. Then, only with an ID from step 2:
 ```bash
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record "<id>" branch --set base=<base> --set work=<branch>
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git specs <branch> --add "<id>" --json
