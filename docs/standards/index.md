@@ -47,6 +47,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 | Doc | Covers |
 | --- | --- |
 | [communication.md](agents/communication.md) | The two language bands an agent writes in — durable artifacts in canonical English so they stay portable and greppable across repos, conversation in the one BCP-47 tag the root harness line declares — and the conduct contract that holds whether or not a language is declared |
+| [ephemeral-writes.md](agents/ephemeral-writes.md) | Where an agent puts a file it creates — the three destinations, the one question that sorts them, and the session-start declaration that makes the durable-ignored path present before the first write |
 
 ### architecture/
 
