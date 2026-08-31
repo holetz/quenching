@@ -61,6 +61,23 @@ def _job_blocks(lines: list[str]) -> list[tuple[str, list[str]]]:
     return result
 
 
+def _provider_job_blocks(lines: list[str], kind: str) -> list[tuple[str, list[str]]]:
+    github_jobs = _job_blocks(lines)
+    if kind != "gitlab-ci" or github_jobs:
+        return github_jobs
+    reserved = {"stages", "workflow", "variables", "default", "image", "include",
+                "services", "before_script", "after_script", "cache"}
+    starts = [(index, match.group(1)) for index, line in enumerate(lines)
+              if (match := _TOP_LEVEL.match(line)) and match.group(1) not in reserved]
+    result: list[tuple[str, list[str]]] = []
+    for position, (start, name) in enumerate(starts):
+        end = starts[position + 1][0] if position + 1 < len(starts) else len(lines)
+        block = lines[start:end]
+        if any(re.match(r"^\s+(?:script|stage|rules|needs):", line) for line in block[1:]):
+            result.append((name, block))
+    return result
+
+
 def _key_value(line: str, key: str) -> tuple[int, str] | None:
     match = re.match(rf"^(\s*){re.escape(key)}:\s*(.*?)\s*$", line)
     return (len(match.group(1)), _strip_comment(match.group(2))) if match else None
@@ -92,18 +109,38 @@ def _values_after(lines: list[str], key: str) -> tuple[str, ...]:
     return ()
 
 
-def _job(lines: list[str], name: str) -> Job:
+def _job(lines: list[str], name: str, kind: str) -> Job:
     actions = tuple(sorted(set(match.group(1) for line in lines
                                 if (match := re.search(r"\buses:\s*([^\s#]+)", line)))))
-    commands = tuple(_strip_comment(found.group(1)) for line in lines
-                     if (found := re.match(r"^\s*-?\s*run:\s*(.*?)\s*$", line))
-                     and found.group(1))
+    commands: list[str] = []
+    script_indent: int | None = None
+    for line in lines:
+        run = re.match(r"^\s*-?\s*run:\s*(.*?)\s*$", line)
+        script = re.match(r"^(\s*)script:\s*(.*?)\s*$", line)
+        if run and run.group(1):
+            commands.append(_strip_comment(run.group(1)))
+            continue
+        if script:
+            script_indent = len(script.group(1))
+            if script.group(2):
+                commands.append(_strip_comment(script.group(2)))
+            continue
+        if script_indent is not None:
+            indent = len(line) - len(line.lstrip())
+            if line.strip() and indent <= script_indent:
+                script_indent = None
+            elif (command := re.match(r"^\s*-\s+(.+?)\s*$", line)):
+                commands.append(_strip_comment(command.group(1)))
     runtimes: list[str] = []
     for line in lines:
         match = re.search(r"\b(python|node|ruby|java|go|rust)[-_]version:\s*([^\s#]+)",
                           line, re.IGNORECASE)
         if match:
             runtimes.append(match.group(1).lower() + ":" + match.group(2).strip(" '\""))
+        image = re.search(r"\bimage:\s*(?:[^/\s]+/)?(python|node|ruby|java|go|rust):([^\s#]+)",
+                          line, re.IGNORECASE)
+        if image:
+            runtimes.append(image.group(1).lower() + ":" + image.group(2).strip(" '\""))
     environment = next((found.group(1).strip(" '\"") for line in lines
                         if (found := re.match(r"^\s*environment:\s*(.+?)\s*$", line))), None)
     stage = next((found.group(1).strip(" '\"") for line in lines
@@ -118,10 +155,13 @@ def _job(lines: list[str], name: str) -> Job:
     return Job(
         name=name,
         needs=_values_after(lines, "needs"),
-        commands=commands,
+        commands=tuple(commands),
         actions=actions,
-        checkout=any(action.startswith("actions/checkout@") for action in actions),
-        setup=any(action.startswith("actions/setup-") for action in actions),
+        checkout=any(action.startswith("actions/checkout@") for action in actions)
+        or kind == "gitlab-ci",
+        setup=any(action.startswith("actions/setup-") for action in actions)
+        or kind == "gitlab-ci" and any(re.match(r"^\s*(?:image|before_script):", line)
+                                        for line in lines),
         runtimes=tuple(sorted(set(runtimes))),
         stage=stage,
         release=release,
@@ -131,8 +171,10 @@ def _job(lines: list[str], name: str) -> Job:
     )
 
 
-def _triggers(lines: list[str]) -> tuple[str, ...]:
+def _triggers(lines: list[str], kind: str) -> tuple[str, ...]:
     block = _block(lines, "on") or _block(lines, "trigger")
+    if not block and kind == "gitlab-ci":
+        block = _block(lines, "workflow") or _block(lines, "rules")
     if not block:
         return ()
     first = _TOP_LEVEL.match(block[0])
@@ -152,16 +194,17 @@ def _workflow(root: Path, relative: str, provider: str, kind: str) -> Workflow:
         return Workflow(relative, provider, kind, error)
     assert text is not None
     lines = text.splitlines()
-    jobs = _mapping_names(lines, "jobs")
+    job_blocks = _provider_job_blocks(lines, kind)
+    jobs = tuple(sorted(name for name, _ in job_blocks))
     return Workflow(
         relative,
         provider,
         kind,
         "ok",
-        triggers=_triggers(lines),
+        triggers=_triggers(lines, kind),
         jobs=jobs,
         stages=_list_values(lines, "stages"),
-        job_details=tuple(_job(block, name) for name, block in _job_blocks(lines)),
+        job_details=tuple(_job(block, name, kind) for name, block in job_blocks),
         permissions=_values_after(lines, "permissions"),
     )
 
