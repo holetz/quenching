@@ -11,6 +11,8 @@ from quenching.common.git import _git
 from quenching.common.output import emit
 from quenching.git.base import resolve_base
 
+UNREGISTERED_WORKTREES_KEY = "unregisteredWorktrees"
+
 
 def _merged_branches(cwd: str, base: str, protected: set[str]) -> set[str]:
     out = _git(cwd, "for-each-ref", "--format=%(refname:short)", "refs/heads", "--merged", base)
@@ -65,6 +67,84 @@ def _orphan_worktrees(cwd: str) -> list[dict]:
     return orphans
 
 
+def _unregistered_worktrees(cwd: str) -> list[dict]:
+    common = _git(cwd, "rev-parse", "--path-format=absolute", "--git-common-dir").strip()
+    if not common:
+        return []
+    common = os.path.realpath(common)
+    registered = set()
+    for line in _git(cwd, "worktree", "list", "--porcelain").splitlines():
+        if line.startswith("worktree "):
+            registered.add(os.path.realpath(line[len("worktree "):]))
+
+    siblings = os.path.dirname(os.path.dirname(common))
+    found = []
+    try:
+        entries = sorted(os.scandir(siblings), key=lambda entry: entry.name)
+    except OSError:
+        return []
+    for entry in entries:
+        if not entry.is_dir(follow_symlinks=False):
+            continue
+        path = os.path.realpath(entry.path)
+        if path in registered:
+            continue
+        git_file = os.path.join(entry.path, ".git")
+        if not os.path.isfile(git_file):
+            continue
+        gitdir = _worktree_gitdir(git_file)
+        if not gitdir:
+            continue
+        try:
+            belongs = os.path.commonpath((gitdir, common)) == common and gitdir != common
+        except ValueError:
+            belongs = False
+        if belongs:
+            found.append({"path": path, "branch": _worktree_branch(gitdir),
+                          "size": _directory_size(path)})
+    return found
+
+
+def _worktree_gitdir(git_file: str) -> str | None:
+    try:
+        with open(git_file, encoding="utf-8") as stream:
+            value = next((line[len("gitdir:"):].strip()
+                          for line in stream if line.startswith("gitdir:")), "")
+    except OSError:
+        return None
+    if not value:
+        return None
+    if not os.path.isabs(value):
+        value = os.path.join(os.path.dirname(git_file), value)
+    return os.path.realpath(value)
+
+
+def _worktree_branch(gitdir: str) -> str | None:
+    try:
+        with open(os.path.join(gitdir, "HEAD"), encoding="utf-8") as stream:
+            head = stream.read().strip()
+    except OSError:
+        return None
+    prefix = "ref: refs/heads/"
+    return head[len(prefix):] if head.startswith(prefix) else None
+
+
+def _directory_size(path: str) -> int | None:
+    size = 0
+    try:
+        for root, directories, files in os.walk(path, followlinks=False):
+            for name in [*directories, *files]:
+                try:
+                    entry = os.lstat(os.path.join(root, name))
+                    size += (getattr(entry, "st_blocks", 0) * 512
+                             or entry.st_size)
+                except OSError:
+                    continue
+    except OSError:
+        return None
+    return size
+
+
 def cmd_stale(args) -> int:
     cwd = os.getcwd()
     base, _is_default = resolve_base(cwd)
@@ -83,6 +163,7 @@ def cmd_stale(args) -> int:
     branches = [{"branch": b, "reasons": sorted(r)} for b, r in sorted(reasons.items())]
     remote_branches = _merged_remote_branches(cwd, base, protected)
     worktrees = _orphan_worktrees(cwd)
+    unregistered_worktrees = _unregistered_worktrees(cwd)
 
     lines = [f"base: {base}"]
     lines.append("stale branches:" if branches else "stale branches: none")
@@ -94,8 +175,16 @@ def cmd_stale(args) -> int:
     lines.append("orphan worktrees:" if worktrees else "orphan worktrees: none")
     for w in worktrees:
         lines.append(f"  {w['path']} ({w['branch'] or 'detached'})")
+    lines.append("unregistered worktrees (repository siblings):"
+                 if unregistered_worktrees
+                 else "unregistered worktrees (repository siblings): none")
+    for w in unregistered_worktrees:
+        branch = w["branch"] or "detached"
+        size = f"{w['size']} bytes" if w["size"] is not None else "size unavailable"
+        lines.append(f"  {w['path']} ({branch}, {size})")
 
     emit(args.json, {"ok": True, "base": base, "staleBranches": branches,
-                     "remoteBranches": remote_branches, "orphanWorktrees": worktrees},
+                     "remoteBranches": remote_branches, "orphanWorktrees": worktrees,
+                     UNREGISTERED_WORKTREES_KEY: unregistered_worktrees},
          "\n".join(lines))
     return 0
