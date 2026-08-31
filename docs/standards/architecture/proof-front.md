@@ -20,6 +20,20 @@ that every adopting repository already has every layer.
 
 <!-- rules -->
 
+## Mold adoption
+
+The proof front adopts the common minimum from
+[`front-mold.md`](front-mold.md). Its applicability signal is the `proof` namespace in the
+target's `.claude/quenching.json`; its read model is `cq proof status`, and its verifier is
+`cq proof doctor`. The align and status bodies cite the executor projection at
+`plugins/quenching/assets/references/front-align/mold.md`, while this front keeps proof-specific
+disposition in `plugins/quenching/assets/references/proof-align/bands.md`.
+
+Proof retains its domain deltas: layer meaning and derived markers, fixture reach, measured roots,
+exclusions and ratchet floors, CI invocation and order evidence. Inventory, readme and ratchet are
+extra route verbs; they do not replace the common `doctor`/`status` floor. The proof align and status
+never run a target suite, and `pf-*` findings keep their existing structural or judgement owners.
+
 ## The canonical tree
 
 An adopting repository has one proof root, `tests/` by default. The root owns the suite's entry

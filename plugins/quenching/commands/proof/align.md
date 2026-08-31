@@ -16,6 +16,9 @@ owner. The disposition rules live in
 layer contracts live in
 [proof-align/gate-contract.md](${CLAUDE_PLUGIN_ROOT}/assets/references/proof-align/gate-contract.md)
 and [proof-align/layer-contract.md](${CLAUDE_PLUGIN_ROOT}/assets/references/proof-align/layer-contract.md).
+The common front contract lives in
+[front-align/mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/front-align/mold.md); these references
+keep the layer, fixture, measurement and gate evidence separate from the shared mold.
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted, and pass that
 same root to every `cq proof` call. Resolve `cq` per
