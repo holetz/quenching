@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import os
 
-from quenching.common.git import _git
+from quenching.common.git import _git, _git_run
 from quenching.common.output import emit, refuse
 
 CONFIG_FILE = os.path.join(".claude", "quenching.json")
@@ -79,6 +79,13 @@ def _materialise(repo: str, relative: str, store: str) -> dict:
     return {"path": relative, "store": store, "state": "created"}
 
 
+def _ignore_warning(repo: str, relative: str) -> str | None:
+    code, _stdout, _stderr = _git_run(repo, "check-ignore", "--quiet", "--", relative)
+    if code == 0:
+        return None
+    return f"'{relative}' is not covered by git check-ignore"
+
+
 def cmd_worktree(args) -> int:
     repo = _repo_root(os.getcwd())
     if not repo:
@@ -95,13 +102,21 @@ def cmd_worktree(args) -> int:
                            "message": "git could not resolve the repository's common directory"},
                           args.json)
         try:
-            results.append(_materialise(repo, relative, store))
+            item = _materialise(repo, relative, store)
         except FileExistsError:
             return refuse({"code": "git-worktree-path-not-empty", "path": relative,
                            "message": f"'{relative}' is a real path with content; merge it into "
                                       "the shared store by hand before linking it"}, args.json)
+        warning = _ignore_warning(repo, relative)
+        if warning:
+            item["warning"] = warning
+        results.append(item)
 
-    emit(args.json, {"ok": True, "paths": results},
-         "\n".join(f"{item['path']}: {item['state']} -> {item['store']}" for item in results)
-         or "shared paths: none")
+    human = []
+    for item in results:
+        line = f"{item['path']}: {item['state']} -> {item['store']}"
+        if item.get("warning"):
+            line += f" [warning: {item['warning']}]"
+        human.append(line)
+    emit(args.json, {"ok": True, "paths": results}, "\n".join(human) or "shared paths: none")
     return 0
