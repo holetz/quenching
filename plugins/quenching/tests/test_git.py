@@ -298,6 +298,14 @@ class Worktree(RepoCase):
         self.assertEqual(dotenv.read_text(encoding="utf-8"), "SECRET=keep\n")
         self.assertFalse(self.store.exists())
 
+    def test_second_run_is_idempotent_and_exits_zero(self):
+        _cq_json(self.repo, "worktree", "link")
+        before = os.lstat(self.link)
+        payload = _cq_json(self.repo, "worktree", "link")
+        after = os.lstat(self.link)
+        self.assertEqual(payload["paths"][0]["state"], "unchanged")
+        self.assertEqual((before.st_dev, before.st_ino), (after.st_dev, after.st_ino))
+
 
 class Conventions(RepoCase):
     def test_nothing_declared_is_an_empty_list(self):
