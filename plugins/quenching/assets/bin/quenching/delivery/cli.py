@@ -47,7 +47,7 @@ def _status_payload(payload: dict) -> dict:
         "root": payload["root"],
         "applicability": payload["applicability"],
         "inventory": payload["inventory"],
-        "findings": {},
+        "findings": payload["findings"],
         "ok": payload["ok"],
     }
 
