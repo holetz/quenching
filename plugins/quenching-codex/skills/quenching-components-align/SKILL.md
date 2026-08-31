@@ -1,6 +1,6 @@
 ---
 name: quenching-components-align
-description: "Converge this repo's whole .claude command surface onto one file per entry point, then audit every body and rewrite every description against the writing doctrine. Triggers on \"align the skills\", \"align and update the skills\", \"migrate my commands\", \"fix the .claude surface\", \"collapse the skill wrappers\", \"audit the command bodies\", \"review the skill descriptions\", \"shorten the descriptions\", \"converge the automation surface\". A body is reported with the quenching-components-command-new that fixes it, never rewritten; a description is rewritten in ONE surface-wide pass on its own confirmation. Not for: minting one command → quenching-components-command-new; changing a body → that command's own confirmation."
+description: "Converge this repo's .claude command surface onto one file per entry point and review its descriptions against the writing doctrine. Triggers on \"align the skills\", \"align and update the skills\", \"migrate my commands\", \"fix the .claude surface\", \"collapse the skill wrappers\", \"audit the command bodies\", \"review the skill descriptions\", \"shorten the descriptions\", \"converge the automation surface\". Not for: minting one command → quenching-components-command-new; changing a body → that command's own confirmation."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/components/align.md -->

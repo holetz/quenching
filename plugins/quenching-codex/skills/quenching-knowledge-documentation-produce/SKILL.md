@@ -1,6 +1,6 @@
 ---
 name: quenching-knowledge-documentation-produce
-description: "Conduct the complete documentation pipeline from site setup through sourced pages, bounded editorial review and strict build QA. Triggers on \"produce the documentation\", \"run the documentation pipeline\", or \"generate the complete docs site\". Not for: planning only → quenching-knowledge-documentation-plan; writing an assigned page set → quenching-knowledge-documentation-write; reviewing without writes → quenching-knowledge-documentation-review; site-layer configuration or a standalone build → quenching-knowledge-documentation-build."
+description: "Run the complete documentation pipeline from site setup through sourced pages, review and strict build QA. Triggers on \"produce the documentation\", \"run the documentation pipeline\", or \"generate the complete docs site\". Not for: planning only → quenching-knowledge-documentation-plan; writing an assigned page set → quenching-knowledge-documentation-write; reviewing without writes → quenching-knowledge-documentation-review; site-layer configuration or a standalone build → quenching-knowledge-documentation-build."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/documentation/produce.md -->

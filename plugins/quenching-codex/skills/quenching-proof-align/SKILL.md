@@ -1,6 +1,6 @@
 ---
 name: quenching-proof-align
-description: "Converge a target repository's declared proof surface from its test gate, applying mechanical and bounded structural repairs while reporting verification decisions that belong to the target owner. Triggers on \"align the proof front\", \"set up the verification surface\", \"fix proof drift\", or \"converge the test gate\". Not for: reading proof state only → quenching-proof-status; minting a test layer → quenching-proof-layer-new; changing a proof check → the proof implementation spec."
+description: "Converge a target repository's declared proof surface from its test gate, applying bounded structural repairs and reporting decisions for the target owner. Triggers on \"align the proof front\", \"set up the verification surface\", \"fix proof drift\", or \"converge the test gate\". Not for: reading proof state only → quenching-proof-status; minting a test layer → quenching-proof-layer-new; changing a proof check → the proof implementation spec."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/proof/align.md -->
