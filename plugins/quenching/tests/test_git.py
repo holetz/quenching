@@ -30,6 +30,7 @@ PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
 PR_CREATE = PLUGIN_ROOT / "commands" / "git" / "pr" / "create.md"
 COMMIT_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit.md"
+CLEANUP_COMMAND = PLUGIN_ROOT / "commands" / "git" / "cleanup.md"
 
 
 def _run(cwd: str, *argv: str) -> None:
@@ -283,6 +284,27 @@ class PullRequestPayload(unittest.TestCase):
         self.assertEqual(self.command.count("**AskUserQuestion**"), 1)
         self.assertIn("provider-native link (or its absence)", self.payload_step)
         self.assertIn("one confirmation", self.command.lower())
+
+    def test_cleanup_selects_reported_remote_branches_before_deleting(self):
+        cleanup = CLEANUP_COMMAND.read_text(encoding="utf-8").lower()
+        self.assertIn("remoteBranches".lower(), cleanup)
+        self.assertIn("git push origin --delete", cleanup)
+        self.assertIn("single selection", cleanup)
+        self.assertIn("confirmation", cleanup)
+        self.assertEqual(cleanup.count("**askuserquestion**"), 1)
+
+    def test_cleanup_does_not_fetch_or_prune_implicitly(self):
+        cleanup = CLEANUP_COMMAND.read_text(encoding="utf-8").lower()
+        self.assertIn("do not fetch", cleanup)
+        self.assertIn("git remote prune", cleanup)
+        self.assertIn("fresh `remotebranches` list", cleanup)
+
+    def test_cleanup_protects_force_and_unreported_remote_deletion(self):
+        cleanup = CLEANUP_COMMAND.read_text(encoding="utf-8").lower()
+        self.assertIn("never delete a remote branch", cleanup)
+        self.assertIn("did not report in `remotebranches`", cleanup)
+        self.assertIn("git push --force", cleanup)
+        self.assertIn("never --force", cleanup)
 
 
 class CommitSubjectContract(unittest.TestCase):
