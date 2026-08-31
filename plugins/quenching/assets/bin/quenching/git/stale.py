@@ -161,6 +161,7 @@ def cmd_stale(args) -> int:
     branches = [{"branch": b, "reasons": sorted(r)} for b, r in sorted(reasons.items())]
     remote_branches = _merged_remote_branches(cwd, base, protected)
     worktrees = _orphan_worktrees(cwd)
+    unregistered_worktrees = _unregistered_worktrees(cwd)
 
     lines = [f"base: {base}"]
     lines.append("stale branches:" if branches else "stale branches: none")
@@ -172,8 +173,16 @@ def cmd_stale(args) -> int:
     lines.append("orphan worktrees:" if worktrees else "orphan worktrees: none")
     for w in worktrees:
         lines.append(f"  {w['path']} ({w['branch'] or 'detached'})")
+    lines.append("unregistered worktrees (repository siblings):"
+                 if unregistered_worktrees
+                 else "unregistered worktrees (repository siblings): none")
+    for w in unregistered_worktrees:
+        branch = w["branch"] or "detached"
+        size = f"{w['size']} bytes" if w["size"] is not None else "size unavailable"
+        lines.append(f"  {w['path']} ({branch}, {size})")
 
     emit(args.json, {"ok": True, "base": base, "staleBranches": branches,
-                     "remoteBranches": remote_branches, "orphanWorktrees": worktrees},
+                     "remoteBranches": remote_branches, "orphanWorktrees": worktrees,
+                     "unregisteredWorktrees": unregistered_worktrees},
          "\n".join(lines))
     return 0
