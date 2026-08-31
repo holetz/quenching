@@ -10,6 +10,12 @@ description: "Read the declared proof front and report layers, fixtures, measure
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
+The common front contract is in
+[front-align/mold.md](../../references/front-align/mold.md), and the proof
+disposition map is in
+[proof-align/bands.md](../../references/proof-align/bands.md). This
+read-only view preserves proof's layer, fixture, measurement, floor, CI and order deltas.
+
 This command is the read-only view of the proof front. It reports the declared proof root, layers
 with reach, budgets and test counts, fixture-library health, measured roots and floors, CI
 definitions and invocation evidence, and findings grouped by the disposition bands. It reports an
