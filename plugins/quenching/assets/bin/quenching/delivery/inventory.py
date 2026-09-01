@@ -217,10 +217,15 @@ def _job(lines: list[str], name: str, kind: str) -> Job:
         commands=tuple(commands),
         actions=actions,
         checkout=any(action.startswith("actions/checkout@") for action in actions)
-        or kind == "gitlab-ci",
+        or kind == "gitlab-ci"
+        or kind == "azure-pipelines" and any(
+            re.match(r"^\s*-\s*checkout:\s*self(?:\s|$)", line) for line in lines),
         setup=any(action.startswith("actions/setup-") for action in actions)
         or kind == "gitlab-ci" and any(re.match(r"^\s*(?:image|before_script):", line)
-                                        for line in lines),
+                                        for line in lines)
+        or kind == "azure-pipelines" and any(
+            re.search(r"\btask:\s*(?:UsePythonVersion|UseDotNet|NodeTool)@", line)
+            or re.match(r"^\s*container:", line) for line in lines),
         runtimes=tuple(sorted(set(runtimes))),
         stage=stage,
         release=release,
