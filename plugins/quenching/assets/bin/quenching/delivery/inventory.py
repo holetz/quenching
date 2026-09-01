@@ -237,6 +237,9 @@ def _job(lines: list[str], name: str, kind: str) -> Job:
                         if (found := re.match(r"^\s*environment:\s*(.+?)\s*$", line))), None)
     stage = next((found.group(1).strip(" '\"") for line in lines
                   if (found := re.match(r"^\s*stage:\s*(.+?)\s*$", line))), None)
+    needs = _values_after(lines, "needs")
+    if kind == "azure-pipelines":
+        needs = tuple(sorted(set(needs) | set(_values_after(lines, "dependsOn"))))
     permissions = _values_after(lines, "permissions")
     release = bool(re.search(r"(?i)(release|publish|deploy)", name)
                    or any(re.search(r"(?i)(gh\s+release|npm\s+publish|twine\s+upload|docker\s+push|publish)", value)
@@ -246,7 +249,7 @@ def _job(lines: list[str], name: str, kind: str) -> Job:
                      for line in lines)
     return Job(
         name=name,
-        needs=_values_after(lines, "needs"),
+        needs=needs,
         commands=tuple(commands),
         actions=actions,
         checkout=any(action.startswith("actions/checkout@") for action in actions)
