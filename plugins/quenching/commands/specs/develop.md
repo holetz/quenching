@@ -143,7 +143,7 @@ the input or was inferred, and the payload answers both steps at once.
 
 **The payload also carries the gear and the gap.** `records.priority.complexity` rides it, so
 reading the gear costs nothing; absent, or no `priority` record at all, reads as `high`
-([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §The scale). So does
+([spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §The scale). So does
 `ready: {ok, missing, malformed}`, which is the list compose owes — **no `cq specs next` call is
 needed to obtain it**.
 
