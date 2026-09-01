@@ -620,8 +620,7 @@ Which command carries which:
 **`Complexity` is its own column because it answers its own question.** `level` and `criticality`
 rank a spec against the others; `complexity` says how much a human has to be in the loop while it is
 built — the criterion
-[specs-cycle/gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §Deriving the
-gears plan states. Folding it into the `Priority` cell would read as a third rank, and a reader
+§The scale states. Folding it into the `Priority` cell would read as a third rank, and a reader
 scanning for which specs cannot be run unattended would have to parse three axes out of one field.
 The two empty together, never one without the other: `/quenching:specs:triage` floors a guess at
 `medium` rather than omitting it, so a `—` here means the spec was never ranked at all — never that
