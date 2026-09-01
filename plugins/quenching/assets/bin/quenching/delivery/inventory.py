@@ -15,6 +15,11 @@ _MAPPING = re.compile(r"^\s+([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
 _LIST = re.compile(r"^\s*-\s*([^\s#]+)")
 _AZURE_JOB = re.compile(r"^\s*-\s*(?:job|deployment):\s*([^\s#]+)")
 _AZURE_STAGE = re.compile(r"^\s*-\s*stage:\s*([^\s#]+)")
+_AZURE_RUNTIME_TASKS = {
+    "UsePythonVersion": "python",
+    "UseDotNet": "dotnet",
+    "NodeTool": "node",
+}
 
 
 def _read(path: Path) -> tuple[str | None, str | None]:
@@ -111,6 +116,25 @@ def _azure_stage_job_blocks(lines: list[str]) -> list[tuple[str, list[str]]]:
     return result
 
 
+def _azure_runtime_values(lines: list[str]) -> list[str]:
+    runtimes: list[str] = []
+    language: str | None = None
+    for line in lines:
+        task = re.search(r"\btask:\s*([A-Za-z]+)@", line)
+        if task:
+            language = _AZURE_RUNTIME_TASKS.get(task.group(1))
+            continue
+        if re.match(r"^\s*-\s*", line):
+            language = None
+        if language:
+            version = re.search(r"\bversionSpec:\s*(.*?)\s*$", line)
+            if version:
+                value = _strip_comment(version.group(1)).strip(" '\"")
+                if value:
+                    runtimes.append(f"{language}:{value}")
+    return runtimes
+
+
 def _provider_job_blocks(lines: list[str], kind: str) -> list[tuple[str, list[str]]]:
     github_jobs = _job_blocks(lines)
     if kind == "azure-pipelines":
@@ -200,6 +224,8 @@ def _job(lines: list[str], name: str, kind: str) -> Job:
                           line, re.IGNORECASE)
         if image:
             runtimes.append(image.group(1).lower() + ":" + image.group(2).strip(" '\""))
+    if kind == "azure-pipelines":
+        runtimes.extend(_azure_runtime_values(lines))
     environment = next((found.group(1).strip(" '\"") for line in lines
                         if (found := re.match(r"^\s*environment:\s*(.+?)\s*$", line))), None)
     stage = next((found.group(1).strip(" '\"") for line in lines
