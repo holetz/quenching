@@ -25,10 +25,9 @@ PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMANDS = PLUGIN_ROOT / "commands"
 README = PLUGIN_ROOT / "README.md"
 
-MANUAL_OPENS = re.compile(r"^## The .* commands\s*$", re.MULTILINE)
+MANUAL_OPENS = re.compile(r"^## The (?P<count>\d+) commands\s*$", re.MULTILINE)
 MANUAL_CLOSES = re.compile(r"^## Install\s*$", re.MULTILINE)
 INVOCABLE = re.compile(r"`(/[a-z][a-z:-]*)`")
-EXPECTED_COMMAND_COUNT = 47
 
 
 def _commands_on_disk() -> set[str]:
@@ -49,10 +48,13 @@ def _manual_span(text: str) -> str:
 class ReadmeManualMatchesTheSurface(unittest.TestCase):
 
     def test_the_manual_lists_exactly_the_commands_on_disk(self):
-        listed = set(INVOCABLE.findall(_manual_span(README.read_text(encoding="utf-8"))))
+        manual = README.read_text(encoding="utf-8")
+        opening = MANUAL_OPENS.search(manual)
+        self.assertIsNotNone(opening, "README.md carries no `## The <n> commands` heading")
+        listed = set(INVOCABLE.findall(_manual_span(manual)))
         on_disk = _commands_on_disk()
-        self.assertEqual(len(on_disk), EXPECTED_COMMAND_COUNT,
-                         "surface count changed; update the catalog and this assertion")
+        self.assertEqual(int(opening.group("count")), len(on_disk),
+                         "the manual's displayed count differs from the command surface")
         self.assertEqual(on_disk - listed, set(), "commands on disk the README manual never lists")
         self.assertEqual(listed - on_disk, set(), "commands the README manual names that do not exist")
 

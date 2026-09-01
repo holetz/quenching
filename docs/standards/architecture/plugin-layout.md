@@ -164,9 +164,9 @@ a standard because both **have** a rule this repo is graded against, separable f
 whole into `assets/references/` and the standard is **retired**, under
 [retiring-a-standard.md](../workflows/retiring-a-standard.md), never kept as a stub. A stub that
 restates the reference is the second copy the delegation existed to prevent, now with the two
-halves graded by different validators. `automation/orchestration-gears.md` is the worked case:
-every sentence in it was procedure `/quenching:specs:cycle` reads mid-run, so shrinking it
-would have left a pointer and nothing else.
+halves graded by different validators. The retired orchestration standard is the worked case:
+every sentence in it was runtime procedure, so shrinking it would have left a pointer and nothing
+else.
 
 Read the precedent by what it **kept**, never by its shape: a shrunken standard is evidence that a
 separable rule existed there, not a template for a contract that has none.
@@ -177,9 +177,9 @@ The criterion above does not apply itself at authoring time. A `## Impact` namin
 writes the contract entire. **Nothing mechanical catches that**: `cq knowledge validate` grades the
 standard, `cq components lint` grades the reference, and neither can see the other — which is the
 "two halves graded by different validators" above, arriving through the front door rather than as a
-stub. The worked case is `orquestrar-specs-em-paralelo`, whose branch review measured six of
-`workflows/spec-queue.md`'s eight sections restating `specs-fanout/fanout.md`, while a third task on
-the same branch wrote into [align-surface.md](align-surface.md) that the contract lives in the plugin
+stub. The worked case is `orquestrar-specs-em-paralelo`, whose branch review measured six of eight
+sections in a retired queue standard restating a plugin runtime reference, while a third task on the
+same branch wrote into [align-surface.md](align-surface.md) that the contract lives in the plugin
 and never in the bundle. Declare the split in `## Impact` — the rule this repo is graded against on
 one side, the runtime procedure on the other — and the branch review stops being the only net.
 

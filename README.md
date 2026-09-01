@@ -39,12 +39,14 @@ alvo continua em `plugins/quenching/assets/zensical/`.
 
 ## What it does
 
-Forty-one commands acting on four fronts of a target repository — the `/docs/` OKF bundle
-(`knowledge`), provider-owned `specs`, the `/.design/` DTCG design source, and the target's own
-`.claude/` automation surface (`components`) — plus root `/align`, which spans the three local
-aligned fronts on one confirmation. Every aligned front has exactly one **align**: probe-first,
-so a conformant front costs a couple of tool calls and stops. The full command-by-command manual,
-the fronts, and the cost model live in the
+The command surface acts on seven local fronts of a target repository — the `/docs/` OKF bundle
+(`knowledge`), the `/.design/` DTCG design source (`design`), the `.claude/` automation surface
+(`components`), the declared operations root (`ops`), the declared verification root (`proof`),
+the declared toolchain surface (`toolchain`), and the declared delivery surface (`delivery`) —
+alongside provider-owned `specs` and the read-only `security` and `git` pillars. Root `/align`
+spans the seven local aligned fronts on one confirmation. Every aligned front has exactly one
+**align**: probe-first, so a conformant front costs a couple of tool calls and stops. The full
+command-by-command manual, the fronts, and the cost model live in the
 [plugin README](plugins/quenching/README.md) — this file stays a thin pointer over it rather
 than a second, driftable copy.
 
@@ -77,7 +79,7 @@ Then, inside a target repository, use the `/` menu — every command is
 `/quenching:<front>:<verb>` when installed as a plugin (`/quenching:knowledge:align`,
 `/quenching:specs:execute`, `/quenching:components:command:new`, …); the bare `/<front>:<verb>`
 form only resolves in a repo that vendored the file into its own `.claude/commands/`. The full,
-current list — forty-one commands, one file per entry point — is the
+current list — one file per entry point — is the
 [plugin README](plugins/quenching/README.md), never duplicated here.
 
 Or add this marketplace and enable the plugin the usual way (see the

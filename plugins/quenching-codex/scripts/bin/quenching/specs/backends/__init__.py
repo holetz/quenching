@@ -9,10 +9,10 @@ PEP 420 namespace one — an `__init__.py` that carries the factory, never an em
 for its own sake."""
 from __future__ import annotations
 
+from quenching.common.config import load_config
 from quenching.specs.backends.azure import open_azure_backend
 from quenching.specs.backends.base import SpecBackend
 from quenching.specs.backends.github import open_github_backend
-from quenching.specs.config import load_config
 
 
 _BACKEND_CACHE: dict[str, SpecBackend] = {}
@@ -32,9 +32,13 @@ def open_backend(root: str) -> tuple[SpecBackend | None, dict]:
     if root in _BACKEND_CACHE:
         return _BACKEND_CACHE[root], {}
     cfg = load_config(root)
-    name = cfg["backend"]
-    if cfg.get("unknownBackend"):
-        declared = cfg["unknownBackend"]
+    name = cfg.get("provider") or cfg.get("backend")
+    declared = cfg.get("unknownBackend")
+    raw_backend = cfg.get("data", {}).get("backend")
+    if not declared and isinstance(raw_backend, str) and raw_backend.strip() \
+            and raw_backend.strip() not in ("github", "azure-boards"):
+        declared = raw_backend.strip()
+    if declared:
         if declared == "files":
             return None, {
                 "code": "sp-backend-removed", "exit": 2, "backend": declared,

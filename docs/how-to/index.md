@@ -15,5 +15,5 @@ what you should observe at every step. If the plugin is new to you, take the
 - **[Publish the documentation site](publish-the-docs-site.md)** — turn the `/docs/` bundle into a
   rendered Diátaxis site, planned, sourced, reviewed and gated by a strict build.
 
-**Looking for exact command signatures?** The [command catalog](../project/commands.md) lists all
-forty-seven, by front.
+**Looking for exact command signatures?** The [command catalog](../project/commands.md) lists the
+complete command surface by front.

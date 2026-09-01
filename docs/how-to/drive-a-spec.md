@@ -89,13 +89,12 @@ itself, by the route you chose: local, or a pull request. Nothing lands on the b
     - one merged branch whose per-task subjects resolve on the base;
     - any durable rule the work proved, sitting in `/docs/standards/` — not in a wiki.
 
-## Scaling beyond one spec
+## Working with more than one spec
 
-| You have | Run | Shape |
-| --- | --- | --- |
-| One spec, whole lifecycle | `/quenching:specs:cycle` | conductor: two halves, two authorizations |
-| N approved specs to build | `/quenching:specs:execute-queue` | serial queue over a single isolation, one conclude |
-| N raw specs to define | `/quenching:specs:develop-batch` | parallel batch — nothing writes, so it fans out for real |
+There is no batch or queue conductor. Each spec remains its own unit of work: capture or refine it
+with the command that owns that stage, then execute and conclude it independently. Keep the
+provider record, branch and per-task commits for each spec separate so their decisions remain
+traceable.
 
 **Next:** the reasoning behind records-versus-derived-state is in
 [The spec lifecycle](../explanation/spec-lifecycle.md); every command's one-line contract is in

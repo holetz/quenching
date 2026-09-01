@@ -2,12 +2,12 @@
 type: standard
 title: Proof front
 description: The target repository's canonical verification surface — layered tests, explicit fixture reach, measured source roots, a coverage ratchet, order evidence and a CI gate
-resource: docs/standards/architecture/align-surface.md, docs/standards/quality/selftest-mutation.md, docs/standards/quality/surface-verification.md, plugins/quenching/assets/bin/quenching/proof/**, plugins/quenching/assets/references/proof-align/target-structure.md, plugins/quenching/assets/references/proof-align/layer-contract.md, plugins/quenching/assets/references/proof-align/gate-contract.md
+resource: .claude/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/proof/**, plugins/quenching/assets/references/proof-align/target-structure.md, plugins/quenching/assets/references/proof-align/layer-contract.md, plugins/quenching/assets/references/proof-align/gate-contract.md
 tags: [architecture, proof, tests, coverage, verification]
-timestamp: 2026-08-30
+timestamp: 2026-08-31
 audience: both
 authority: current
-source: spec 1047 — Declare the proof front
+source: spec 1065 (task 3.3) — the `proof` namespace and its shared-loader refusal boundary are implemented by the shipped cq proof route
 maintainer: quenching
 ---
 
@@ -19,6 +19,20 @@ dictating which tests a product must have. The front is a contract for evidence,
 that every adopting repository already has every layer.
 
 <!-- rules -->
+
+## Mold adoption
+
+The proof front adopts the common minimum from
+[`front-mold.md`](front-mold.md). Its applicability signal is the `proof` namespace in the
+target's `.claude/quenching.json`; its read model is `cq proof status`, and its verifier is
+`cq proof doctor`. The align and status bodies cite the executor projection at
+`plugins/quenching/assets/references/front-align/mold.md`, while this front keeps proof-specific
+disposition in `plugins/quenching/assets/references/proof-align/bands.md`.
+
+Proof retains its domain deltas: layer meaning and derived markers, fixture reach, measured roots,
+exclusions and ratchet floors, CI invocation and order evidence. Inventory, readme and ratchet are
+extra route verbs; they do not replace the common `doctor`/`status` floor. The proof align and status
+never run a target suite, and `pf-*` findings keep their existing structural or judgement owners.
 
 ## The canonical tree
 
@@ -50,6 +64,33 @@ The target-structure, layer and gate details are self-contained in the proof-fro
   owns layer meaning, derived markers and fixture reach;
 - [gate contract](../../../plugins/quenching/assets/references/proof-align/gate-contract.md)
   owns measured surfaces, floors, order evidence, CI and entry-point proof.
+
+## Configuration home
+
+The proof declarations are owned by the `proof` namespace in the target repository's single
+configuration home, `.claude/quenching.json`:
+
+```json
+{
+  "proof": {
+    "proofRoot": "tests",
+    "layers": {},
+    "measuredRoots": ["src"],
+    "proofExclusions": [],
+    "ratchetPath": null
+  }
+}
+```
+
+`proofRoot`, `layers`, `measuredRoots`, `proofExclusions`, and `ratchetPath` are paths and
+declarations owned by this front. The shared loader discovers and parses the envelope; the proof
+adapter resolves these values relative to the repository root and applies the defaults and shape
+rules defined below. No proof declaration is read from the `ops` or `specs` namespace.
+
+Root-level copies of these keys are legacy flat declarations. A configuration that contains one,
+alone or alongside `proof`, is refused with `sp-config-unscoped` and exit `2`; the refusal names
+each key and its destination namespace. The proof front never merges the two shapes or treats a
+flat `proofRoot` as an absent namespace.
 
 ## Layers and derived markers
 
@@ -108,7 +149,7 @@ may rise to the measured value but may never fall. The front does not impose a u
 percentage. A repository with no meaningful measurable source root records that decision and its
 reason rather than publishing an empty green number.
 
-Unless `.claude/quenching.json` declares `ratchetPath`, the floor lives at
+Unless `.claude/quenching.json` declares `proof.ratchetPath`, the floor lives at
 `<proofRoot>/../.coverage-floor.json` — `/.coverage-floor.json` for the default `tests/` root.
 An explicit path is resolved from the repository root and is the only override; the verifier never
 searches for a convenient floor file.
@@ -117,7 +158,7 @@ searches for a convenient floor file.
 
 The verifier discovers candidate product surfaces from the repository's top-level source
 directories, excluding the proof root, hidden/tooling directories and the explicit
-`proofExclusions` list. It does not substitute the package metadata for that inventory: a package
+`proof.proofExclusions` list. It does not substitute the package metadata for that inventory: a package
 declaration describes what a build imports, while the proof front must also expose shipped source
 trees that coverage could silently omit. `measuredRoots` is the target's explicit declaration of
 which of those candidates the gate measures, and coverage configuration is checked against it.

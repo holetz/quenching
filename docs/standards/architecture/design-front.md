@@ -17,6 +17,22 @@ The design front keeps values, judgment, and artifacts in separate layers withou
 authority. It is a quenching front; Impeccable is an optional consumer and remains the owner of
 screen craft.
 
+## Mold adoption
+
+The design front adopts the common minimum from
+[`front-mold.md`](front-mold.md). Its applicability signal is the presence of the DTCG source at
+`/.design/tokens.json`; its read model is `cq design status`; its verifier is `cq design doctor`,
+with `cq design build --check` proving generated identity. The align and status bodies cite the
+executor projection at `plugins/quenching/assets/references/front-align/mold.md` and the design
+disposition map at `plugins/quenching/assets/references/design-align/bands.md`.
+
+Design's permitted deltas are the DTCG source/projection graph, explicit source arbitration with
+an optional Impeccable proposal, web versus non-web drift, asset and font evidence, contrast policy,
+and genre rendering. The design route keeps its extra `build`, `import`, `genre` and `render` verbs;
+they do not weaken the common `doctor`/`status` floor. The bands map records that design currently
+has no safe structural finding: source, visual, asset and projection choices remain with the
+owner rather than being disguised as mechanical repairs.
+
 ## One source, three output classes
 
 `/.design/tokens.json` is a DTCG 2025.10 document. Quenching-specific values occupy only the

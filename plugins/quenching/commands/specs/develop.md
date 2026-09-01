@@ -1,5 +1,5 @@
 ---
-description: Develop an existing spec — compose it to ready, argue with it, approve it. Triggers on "develop this spec", "refine the spec", "fill in the missing sections", "approve this spec", "poke holes in this". Not for: defining N specs at once → /quenching:specs:develop-batch; capturing an unrelated new spec → /quenching:specs:create; executing one → /quenching:specs:execute.
+description: Develop an existing spec — compose it to ready, argue with it, approve it. Triggers on "develop this spec", "refine the spec", "fill in the missing sections", "approve this spec", "poke holes in this". Not for: capturing an unrelated new spec → /quenching:specs:create; executing one → /quenching:specs:execute.
 argument-hint: [id-or-description]
 allowed-tools: Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion, Task
 model: opus
@@ -143,7 +143,7 @@ the input or was inferred, and the payload answers both steps at once.
 
 **The payload also carries the gear and the gap.** `records.priority.complexity` rides it, so
 reading the gear costs nothing; absent, or no `priority` record at all, reads as `high`
-([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §The scale). So does
+([spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §The scale). So does
 `ready: {ok, missing, malformed}`, which is the list compose owes — **no `cq specs next` call is
 needed to obtain it**.
 
@@ -396,8 +396,7 @@ blocks:
 Close on §The next-step block — `/quenching:git:branch <id>` once `approved` is stamped, naming it
 the natural moment to isolate before `/quenching:specs:execute <id>` writes any code;
 `/quenching:specs:develop <id>` again to refine a spec that is already `ready`; or
-`/quenching:specs:cycle <id>` to carry it to the end in one run, which takes its own isolation
-inline and needs neither named separately.
+`/quenching:specs:execute <id>` to carry it to the end task by task.
 
 **Isolation is named, never taken.** A pass that rewrites half a spec dirties the tree, so the human
 may want it on a branch before the next pass or before `execute` — naming `/quenching:git:branch

@@ -15,6 +15,7 @@
     ".claude/commands/": ".agents/skills/",
     ".claude/skills/": ".agents/skills/",
     ".claude/": ".agents/",
+    "os.path.join(\".claude\", \"quenching.json\")": "os.path.join(\".agents\", \"quenching.json\")",
     "CLAUDE.md": "AGENTS.md",
     "CLAUDE_PLUGIN_ROOT": "CODEX_PLUGIN_ROOT",
     "COMMANDS_DIR = \"commands\"": "COMMANDS_DIR = \"skills\"",

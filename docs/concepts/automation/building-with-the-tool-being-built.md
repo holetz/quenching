@@ -7,7 +7,7 @@ tags: [automation, self-hosting, bootstrapping, specs, execution]
 timestamp: 2026-08-17
 audience: both
 authority: current
-source: /quenching:specs:execute-queue queue of 2026-08-17 — specs remover-secao-stray-de-um-documento (the fold_stray_heading import); refined by remover-agrupamento-de-commits-por-secao (2026-08-30)
+source: multi-spec execution session of 2026-08-17 — specs remover-secao-stray-de-um-documento (the fold_stray_heading import); refined by remover-agrupamento-de-commits-por-secao (2026-08-30)
 maintainer: quenching
 ---
 
