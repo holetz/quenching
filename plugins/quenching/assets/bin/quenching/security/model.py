@@ -45,5 +45,5 @@ class SecurityReport:
             "pillar": "security",
             "readOnly": True,
             "questions": [question.as_dict() for question in self.questions],
-            "writes": [],
+            "writePolicy": {"values": False, "repairFiles": False},
         }
