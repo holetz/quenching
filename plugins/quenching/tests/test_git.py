@@ -30,6 +30,7 @@ PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
 PR_CREATE = PLUGIN_ROOT / "commands" / "git" / "pr" / "create.md"
 COMMIT_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit.md"
+COMMIT_INCREMENTAL_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit-incremental.md"
 CLEANUP_COMMAND = PLUGIN_ROOT / "commands" / "git" / "cleanup.md"
 
 
@@ -471,6 +472,42 @@ class CommitSubjectContract(unittest.TestCase):
         self.assertIn("commits the existing index only", command)
         self.assertIn("never `git add -a`", command)
         self.assertIn("amends history", command)
+
+
+class IncrementalCommitContract(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.command = COMMIT_INCREMENTAL_COMMAND.read_text(encoding="utf-8")
+        cls.lower = cls.command.lower()
+
+    def test_snapshot_covers_clean_staged_unstaged_and_untracked_states(self):
+        for phrase in ("git status --short", "git diff --name-status", "git diff --cached --name-status",
+                       "git ls-files --others --exclude-standard", "clean\nsnapshot", "no-op"):
+            self.assertIn(phrase.lower(), self.lower)
+
+    def test_safety_guards_stop_before_staging(self):
+        for phrase in ("unmerged", "pre-staging refusal", "credential", "secret", "cannot be read safely",
+                       "no `git add` run before every guard passes"):
+            self.assertIn(phrase.lower(), self.lower)
+
+    def test_each_group_stages_explicit_paths_without_broad_selectors(self):
+        self.assertIn("git add --", self.lower)
+        self.assertIn("explicit path list", self.lower)
+        self.assertIn("never uses `git add -a`", self.lower)
+        self.assertIn("git add .", self.lower)
+
+    def test_subjects_are_resolved_without_interaction_and_reported(self):
+        for phrase in ("gitconventions.commitSubject", "chore: <short english imperative>",
+                       "one short imperative subject", "resolved english subject"):
+            self.assertIn(phrase.lower(), self.lower)
+        self.assertNotIn("askuserquestion", self.lower)
+
+    def test_hooks_and_failures_preserve_previous_commits_and_residue(self):
+        for phrase in ("hooks stay enabled", "if staging fails\nor a commit fails", "leave earlier commits intact",
+                       "preserve the remaining\nworktree changes", "never amend, reset"):
+            self.assertIn(phrase.lower(), self.lower)
+        self.assertIn("--no-verify", self.lower)
+        self.assertIn("--no-gpg-sign", self.lower)
 
 
 if __name__ == "__main__":
