@@ -247,6 +247,44 @@ class Conventions(RepoCase):
         payload = _cq_json(self.repo, "conventions")
         self.assertEqual((payload["governs"], payload["declared"]), ("defaults", []))
 
+    def _declare(self, conventions: dict) -> None:
+        d = os.path.join(self.repo, ".claude")
+        os.makedirs(d, exist_ok=True)
+        with open(os.path.join(d, "quenching.json"), "w", encoding="utf-8") as f:
+            json.dump({"gitConventions": conventions}, f)
+
+    def test_the_declared_directives_ride_the_payload(self):
+        self._declare({"commitSubject": "[TICKET] no imperativo",
+                       "prBody": "tres blocos"})
+        payload = _cq_json(self.repo, "conventions")
+        self.assertEqual(payload["config"], {"commitSubject": "[TICKET] no imperativo",
+                                             "prBody": "tres blocos"})
+        self.assertEqual(payload["configUnknown"], [])
+
+    def test_a_sub_key_nothing_reads_comes_back_named(self):
+        self._declare({"prDescription": "x"})
+        payload = _cq_json(self.repo, "conventions")
+        self.assertEqual((payload["config"], payload["configUnknown"]), ({}, ["prDescription"]))
+
+    def test_governs_and_declared_still_answer_only_the_docs_layer(self):
+        """The two older fields keep their meaning exactly. A config that declares every
+        directive still leaves `governs: defaults` when no `docs/standards/git/**` exists —
+        merging the two layers into one word would make the common case (config names some
+        artifacts, the target's doc covers the rest) unreportable."""
+        self._declare({"commitSubject": "x", "branchName": "y", "prTitle": "z",
+                       "prBody": "w", "mergeSubject": "v"})
+        payload = _cq_json(self.repo, "conventions")
+        self.assertEqual((payload["governs"], payload["declared"]), ("defaults", []))
+        self.assertEqual(len(payload["config"]), 5)
+
+    def test_the_human_line_names_each_declared_directive(self):
+        self._declare({"commitSubject": "[TICKET] no imperativo"})
+        proc = subprocess.run([sys.executable, CQ, "git", "conventions"], cwd=self.repo,
+                              capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("gitConventions.commitSubject", proc.stdout)
+        self.assertIn("[TICKET] no imperativo", proc.stdout)
+
 
 class PullRequestPayload(unittest.TestCase):
     """The PR command's spec-id payload is a deterministic, fixture-shaped contract.
