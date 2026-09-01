@@ -41,6 +41,13 @@ class DeliveryResults(unittest.TestCase):
         self.assertIsNone(payload["inventory"])
         self.assertEqual([], payload["findings"])
 
+    def test_declared_delivery_without_workflow_is_applicable(self):
+        payload, code = self._run({".claude/quenching.json": '{"delivery": {}}\n'})
+        self.assertEqual(1, code)
+        self.assertEqual("applicable", payload["applicability"]["state"])
+        self.assertEqual([], payload["inventory"]["workflows"])
+        self.assertEqual("delivery-provider-policy", payload["findings"][0]["code"])
+
     def test_conformant_workflow_is_stable_and_read_only(self):
         payload, code = self._run({
             ".github/workflows/ci.yml": (
