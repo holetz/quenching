@@ -198,6 +198,13 @@ def _job(lines: list[str], name: str, kind: str) -> Job:
     commands: list[str] = []
     script_indent: int | None = None
     for line in lines:
+        if kind == "azure-pipelines":
+            azure_command = re.match(r"^\s*-\s*(?:bash|script|pwsh):\s*(.*?)\s*$", line)
+            if azure_command:
+                value = _strip_comment(azure_command.group(1))
+                if value and value not in {"|", ">"}:
+                    commands.append(value)
+                continue
         run = re.match(r"^\s*-?\s*run:\s*(.*?)\s*$", line)
         script = re.match(r"^(\s*)script:\s*(.*?)\s*$", line)
         if run and run.group(1):
