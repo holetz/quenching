@@ -13,6 +13,7 @@ _TOP_LEVEL = re.compile(r"^([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
 _CHILD = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
 _MAPPING = re.compile(r"^\s+([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
 _LIST = re.compile(r"^\s*-\s*([^\s#]+)")
+_AZURE_JOB = re.compile(r"^\s*-\s*(?:job|deployment):\s*([^\s#]+)")
 
 
 def _read(path: Path) -> tuple[str | None, str | None]:
@@ -61,9 +62,24 @@ def _job_blocks(lines: list[str]) -> list[tuple[str, list[str]]]:
     return result
 
 
+def _azure_job_blocks(lines: list[str]) -> list[tuple[str, list[str]]]:
+    block = _block(lines, "jobs")
+    starts = [(index, _strip_comment(match.group(1)).strip(" '\""))
+              for index, line in enumerate(block[1:], 1)
+              if (match := _AZURE_JOB.match(line))]
+    result: list[tuple[str, list[str]]] = []
+    for position, (start, name) in enumerate(starts):
+        end = starts[position + 1][0] if position + 1 < len(starts) else len(block)
+        result.append((name, block[start:end]))
+    return result
+
+
 def _provider_job_blocks(lines: list[str], kind: str) -> list[tuple[str, list[str]]]:
     github_jobs = _job_blocks(lines)
-    if kind == "azure-pipelines" and not github_jobs:
+    if kind == "azure-pipelines":
+        azure_jobs = _azure_job_blocks(lines)
+        if azure_jobs:
+            return azure_jobs
         steps = _block(lines, "steps")
         return [("default", steps)] if steps else []
     if kind != "gitlab-ci" or github_jobs:
