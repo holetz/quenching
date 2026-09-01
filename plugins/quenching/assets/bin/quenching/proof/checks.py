@@ -130,11 +130,16 @@ def check_untested_entrypoint(inventory: ProofInventory) -> list[Finding]:
                        f"ops inventory could not be read: {err.get('message', 'unknown error')}")]
     assert operations is not None
     imported = {name for module in inventory.test_modules for name in module.imports}
+    root_module = _ops_root_module(inventory.repo_root, operations.root)
     findings: list[Finding] = []
     for entry in operations.entry_points:
         if not entry.module:
             continue
-        if any(name == entry.module or name.startswith(entry.module + ".") for name in imported):
+        candidates = {entry.module}
+        if root_module:
+            candidates.add(f"{root_module}.{entry.module}")
+        if any(name == candidate or name.startswith(candidate + ".")
+               for candidate in candidates for name in imported):
             continue
         findings.append(_error("pf-untested-entrypoint",
                                f"operations entry point `{entry.module}` is not imported by a test",
