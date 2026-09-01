@@ -31,6 +31,7 @@ CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
 PR_CREATE = PLUGIN_ROOT / "commands" / "git" / "pr" / "create.md"
 PR_STATUS = PLUGIN_ROOT / "commands" / "git" / "pr" / "status.md"
 PUSH_COMMAND = PLUGIN_ROOT / "commands" / "git" / "push.md"
+REVERT_COMMAND = PLUGIN_ROOT / "commands" / "git" / "revert.md"
 PR_REFERENCE = PLUGIN_ROOT / "assets" / "references" / "git" / "pr.md"
 COMMIT_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit.md"
 COMMIT_INCREMENTAL_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit-incremental.md"
@@ -546,6 +547,46 @@ class PullRequestPayload(unittest.TestCase):
             "--no-verify",
         ):
             self.assertNotIn(forbidden, command)
+
+    def test_revert_command_resolves_commit_or_task_and_requires_merge_mainline(self):
+        command = REVERT_COMMAND.read_text(encoding="utf-8")
+        lower = command.lower()
+        for phrase in (
+            "commit:<ref>",
+            "spec:<id> task:<id>",
+            "cq specs status --spec",
+            "git log --grep",
+            "--fixed-strings",
+            "git rev-parse --verify",
+            "git merge-base --is-ancestor",
+            "git rev-list --parents",
+            "git show",
+            "git diff <target>^ <target>",
+            "mainline:<n>",
+            "git revert <target>",
+            "git revert -m <mainline> <target>",
+            "git revert --continue",
+            "git revert --abort",
+            "askuserquestion",
+            "no spec record",
+        ):
+            self.assertIn(phrase.lower(), lower)
+
+    def test_revert_command_preserves_history_and_does_not_publish_or_rewrite(self):
+        command = REVERT_COMMAND.read_text(encoding="utf-8").lower()
+        for forbidden in (
+            "git reset",
+            "git rebase",
+            "git push",
+            "git add",
+            "git commit",
+            "--force",
+            "--no-verify",
+            "cq specs record",
+        ):
+            self.assertNotIn(forbidden, command)
+        self.assertIn("new revert commit", command)
+        self.assertIn("never resolve a conflict", command)
 
     def test_cleanup_selects_reported_remote_branches_before_deleting(self):
         cleanup = CLEANUP_COMMAND.read_text(encoding="utf-8").lower()
