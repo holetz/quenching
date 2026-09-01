@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import re
+from dataclasses import replace
 from pathlib import Path
 
 from quenching.delivery.model import DeliveryInventory, Job, Workflow
@@ -14,6 +15,7 @@ _CHILD = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
 _MAPPING = re.compile(r"^\s+([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
 _LIST = re.compile(r"^\s*-\s*([^\s#]+)")
 _AZURE_JOB = re.compile(r"^\s*-\s*(?:job|deployment):\s*([^\s#]+)")
+_AZURE_STAGE = re.compile(r"^\s*-\s*stage:\s*([^\s#]+)")
 
 
 def _read(path: Path) -> tuple[str | None, str | None]:
@@ -74,9 +76,48 @@ def _azure_job_blocks(lines: list[str]) -> list[tuple[str, list[str]]]:
     return result
 
 
+def _azure_stage_job_blocks(lines: list[str]) -> list[tuple[str, list[str]]]:
+    block = _block(lines, "stages")
+    stage_starts = [(index, len(line) - len(line.lstrip()),
+                     _strip_comment(match.group(1)).strip(" '\""))
+                    for index, line in enumerate(block)
+                    if (match := _AZURE_STAGE.match(line))]
+    stage_data: list[tuple[str, list[str], list[tuple[str, list[str]]]] ] = []
+    for position, (start, stage_indent, stage_name) in enumerate(stage_starts):
+        end = stage_starts[position + 1][0] if position + 1 < len(stage_starts) else len(block)
+        stage_lines = block[start:end]
+        job_starts = [(index, _strip_comment(match.group(1)).strip(" '\""))
+                      for index, line in enumerate(stage_lines[1:], 1)
+                      if (match := _AZURE_JOB.match(line))
+                      and len(line) - len(line.lstrip()) > stage_indent]
+        jobs: list[tuple[str, list[str]]] = []
+        for job_position, (job_start, job_name) in enumerate(job_starts):
+            job_end = (job_starts[job_position + 1][0]
+                       if job_position + 1 < len(job_starts) else len(stage_lines))
+            jobs.append((job_name, stage_lines[job_start:job_end]))
+        stage_data.append((stage_name, stage_lines, jobs))
+
+    jobs_by_stage = {name: tuple(job_name for job_name, _ in jobs)
+                     for name, _, jobs in stage_data}
+    result: list[tuple[str, list[str]]] = []
+    for _, stage_lines, jobs in stage_data:
+        dependencies = _values_after(stage_lines, "dependsOn")
+        needs: list[str] = []
+        for dependency in dependencies:
+            needs.extend(jobs_by_stage.get(dependency, (dependency,)))
+        for job_name, job_lines in jobs:
+            result.append((job_name, job_lines +
+                           [f"  needs: [{', '.join(sorted(set(needs)))}]"]
+                           if needs else job_lines))
+    return result
+
+
 def _provider_job_blocks(lines: list[str], kind: str) -> list[tuple[str, list[str]]]:
     github_jobs = _job_blocks(lines)
     if kind == "azure-pipelines":
+        stage_jobs = _azure_stage_job_blocks(lines)
+        if stage_jobs:
+            return stage_jobs
         azure_jobs = _azure_job_blocks(lines)
         if azure_jobs:
             return azure_jobs
