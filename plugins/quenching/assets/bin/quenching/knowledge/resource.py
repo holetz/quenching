@@ -46,12 +46,34 @@ def parse_resource(value: str) -> list[tuple[str, str]]:
                 violation: no observed value uses them, and guessing at syntax
                 nobody writes would turn a WARN into noise.
     """
-    out: list[tuple[str, str]] = []
-    for raw in str(value or "").split(","):
-        entry = raw.strip()
-        if entry:
-            out.append((entry, _resource_kind(entry)))
-    return out
+    return [(entry, _resource_kind(entry)) for entry in _split_entries(value)]
+
+
+def _split_entries(value: str) -> list[str]:
+    """The comma-separated list, split WITHOUT cutting inside a `{…}` group.
+
+    A plain `.split(",")` defeated the `unknown` classification it feeds. Brace expansion is
+    glob syntax this validator does not implement, and `_resource_kind` answers `unknown` for it
+    precisely so it is never judged — but splitting first shreds one written entry into pieces,
+    and the INNER pieces of a group carry no brace at all. `a/{x.md,y.md,z.md}` became `a/{x.md`
+    (unknown, skipped), `y.md` (a bare `path`, reported as matching nothing on disk) and `z.md}`
+    (unknown, skipped). Measured on the plugin's own bundle the day it was fixed: `ops-front.md`
+    and `ops`, two WARNs against entries nobody wrote, on a doc whose real `resource` resolves.
+    """
+    entries: list[str] = []
+    depth, current = 0, []
+    for char in str(value or ""):
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth = max(0, depth - 1)
+        if char == "," and depth == 0:
+            entries.append("".join(current))
+            current = []
+        else:
+            current.append(char)
+    entries.append("".join(current))
+    return [entry.strip() for entry in entries if entry.strip()]
 
 
 def _resource_kind(entry: str) -> str:
@@ -79,10 +101,29 @@ def _resource_resolves(entry: str, kind: str, project_root: str) -> bool:
     `/docs/**` would walk the whole tree once per doc under the Stop deadline.
     `glob.escape` covers a checkout whose own path contains a glob metacharacter.
     """
+    entry = _root_relative(entry)
     if kind == "glob":
         pattern = os.path.join(glob.escape(project_root), entry)
         return next(glob.iglob(pattern, recursive=True), None) is not None
     return os.path.exists(os.path.join(project_root, entry))
+
+
+def _root_relative(entry: str) -> str:
+    """An entry as a path relative to the CHECKOUT root.
+
+    A leading slash means the checkout root, not the filesystem root. That is the form the OKF
+    prose and the shipped skeleton both write — `/docs/**`, `/.specs/**`, `/.design/**` — and the
+    containment half of this module has always read it that way, since `_entry_contains` and
+    `_glob_contains` both `strip("/")`. Resolution did not: `os.path.join(root, "/docs/**")`
+    discards the root and globs from `/`, so the SAME entry `matched nothing on disk` two lines
+    above where it counted as a bundle aggregate. The two halves of one check disagreed about
+    what a leading slash means; this is the half that was wrong. Measured on the plugin's own
+    bundle the day it was fixed: 8 of 12 `resource-unresolved` were only this asymmetry.
+
+    `lstrip`, not `strip`: a TRAILING slash is a real claim — `docs/standards/naming/` asks for a
+    directory — and resolution keeps it.
+    """
+    return entry.lstrip("/")
 
 
 def _glob_contains(pattern: str, rel_path: str) -> bool:
