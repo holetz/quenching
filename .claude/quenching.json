@@ -1,6 +1,13 @@
 {
   "backend": "github",
   "shared": {
+    "gitConventions": {
+      "commitSubject": "Trabalho de spec: `plan/<id>-<handle>: <task-id> <título da task>`, com o mesmo `<id>-<handle>` do branch, para que `git log --oneline` leia como o `## Tasks` da spec. Fora de uma spec: imperativo curto, sem ponto final e sem prefixo de tipo — `Regenerate Codex descriptions`.",
+      "branchName": "`plan/<id>-<handle>`, com o id da spec liderando; o handle é o título em kebab-case e nunca é reparseado de volta.",
+      "prTitle": "O título da spec verbatim, como `cq specs status` o devolve — nunca o subject de um commit e nunca um resumo reescrito.",
+      "prBody": "As seções `Problem`, `Proposal`, `Impact` e `Validation` da spec sob headings com esses nomes, o resumo de `Tasks` com as contagens, e `Closes #<n>` ao final. Nada além do que a spec carrega.",
+      "mergeSubject": "`plan/<id>-<handle>: merge (<strategy>)` num merge local; um PR mergeado pelo GitHub mantém o subject que o provedor escreve."
+    },
     "hooks": {
       "after_specs_execute_task": [
         { "command": "/my:security-review", "optional": true }

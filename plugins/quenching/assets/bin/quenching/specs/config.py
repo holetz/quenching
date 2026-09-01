@@ -70,7 +70,7 @@ def root_too_high_message(root: str) -> str:
 CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "sharedPaths", "azureStates",
                "hooks", "profiles",
                "azurePlacement", "azureColumns", "subjects", "tagCatalog",
-               "workItemTypes", "opsRoot", "router")
+               "workItemTypes", "gitConventions", "opsRoot", "router")
 PROOF_CONFIG_KEYS = ("proofRoot", "layers", "measuredRoots", "proofExclusions", "ratchetPath")
 CONFIG_KEYS = CONFIG_KEYS + PROOF_CONFIG_KEYS
 BACKENDS = ("github", "azure-boards")
@@ -84,6 +84,11 @@ AZURE_PLACEMENT_KEYS = ("areaPath", "workItemType", "discoveryTag", "team",
 # same argument `specsBranch` already carries — so it defaults rather than refuses;
 # configurable only to resolve a collision with a tag the project already uses.
 AZ_DEFAULT_DISCOVERY_TAG = "quenching-spec"
+# `gitConventions`' recognised sub-keys — one per text the `git` pillar writes. Each value is
+# PROMPT MATERIAL, exactly as a `tagCatalog` value is: an agent reads the directive and writes the
+# text. Nothing here interpolates a placeholder, expands a template, or judges what came out —
+# which is why the tuple is the whole of the contract the loader can hold.
+GIT_CONVENTION_KEYS = ("commitSubject", "branchName", "prTitle", "prBody", "mergeSubject")
 DEFAULT_BACKEND = None
 DEFAULT_SPECS_BRANCH = "specs"
 # Unlike `specsBranch`, these two default to `None` in `load_config`'s own return — never
@@ -219,6 +224,7 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
            "azureStates": None, "hooks": {}, "profiles": None,
            "azurePlacement": {}, "azureColumns": {}, "subjects": {}, "tagCatalog": {},
            "workItemTypes": {},
+           "gitConventions": {}, "unknownGitConventions": [], "badGitConventions": [],
            "proofRoot": "tests", "layers": {}, "measuredRoots": [],
            "proofExclusions": [], "ratchetPath": None,
            "legacyPath": envelope["legacyPath"]}
@@ -388,6 +394,31 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
                 entry["default"] = True
             types[key.strip()] = entry
         out["workItemTypes"] = types
+
+    # The target's own directives for the texts the `git` pillar writes, one per artifact.
+    # `shared`, not `specs`: the `git` pillar is read by every front's build loop, exactly as
+    # `worktreeSetup`, `hooks` and `profiles` are.
+    # Prompt material like `tagCatalog`, so a value that is not a non-empty string cannot direct
+    # anything and is dropped — but it is dropped INTO A NAMED LIST rather than into silence, the
+    # same argument `cmd_doctor` already makes for `worktree_setup` written where `worktreeSetup`
+    # was expected: a directive nobody reads and nobody mentions is the one failure mode of a
+    # machine-read convention.
+    conventions_raw = values.get("gitConventions")
+    if isinstance(conventions_raw, dict):
+        conventions: dict[str, str] = {}
+        bad: list[str] = []
+        for key, val in conventions_raw.items():
+            if not (isinstance(key, str) and key.strip() in GIT_CONVENTION_KEYS):
+                continue
+            if isinstance(val, str) and val.strip():
+                conventions[key.strip()] = val.strip()
+            else:
+                bad.append(key.strip())
+        out["gitConventions"] = conventions
+        out["badGitConventions"] = sorted(bad)
+        out["unknownGitConventions"] = sorted(
+            k.strip() for k in conventions_raw
+            if isinstance(k, str) and k.strip() and k.strip() not in GIT_CONVENTION_KEYS)
     return out
 
 

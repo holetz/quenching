@@ -21,6 +21,9 @@ The four strategies, the squash caveat and the post-merge worktree removal are i
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/merge.md \
   --sections "§Merge strategies" --sections "§The squash caveat" \
   --sections "§The worktree is removed after a successful merge"
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/conventions.md \
+  --sections "§The declared-directive layer"
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git conventions --json   # `config.mergeSubject`, or absent
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git base --json
 git worktree list --porcelain
 ```
@@ -46,6 +49,10 @@ command never deletes the branch. **Done when:** the strategy is chosen, and, un
 branch-survival preference is recorded.
 
 ### 3. Run it in the base's own checkout
+The subject the strategy writes follows §The declared-directive layer's table:
+`config.mergeSubject` from step 1 where declared, else the target's docs, else
+`plan/<id>-<handle>: merge (<strategy>)` from [git/commit.md](../../references/git/commit.md)
+§Commit messages. `fast-forward` writes no commit, so it has no subject to govern.
 ```bash
 git -C <the checkout from step 1> <the chosen strategy's command>
 ```
@@ -71,8 +78,8 @@ own; report the refusal and leave the worktree standing. Never deletes the branc
 its own error reported, or the step was skipped because there was none to remove.
 
 ### 6. Report
-State the strategy, the merge commit (or the explicit none), what was stamped, and the worktree's
-fate. **Done when:** all four are named.
+State the strategy, the merge commit (or the explicit none) and **which layer governed its
+subject**, what was stamped, and the worktree's fate. **Done when:** all four are named.
 
 ## Invariants
 
@@ -81,3 +88,5 @@ fate. **Done when:** all four are named.
   from this command.
 - Never `--force` a worktree removal, and never remove one before a merge verified at exit 0.
 - Offer the strategy; never choose it for the human.
+- Never install `docs/standards/git/**` into the target, and never write `gitConventions` into its
+  `.agents/quenching.json`; a declared convention is read here, never written back.

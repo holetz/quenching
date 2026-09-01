@@ -24,7 +24,7 @@ LEGACY_KEYS = frozenset({
     "worktreeSetup", "sharedPaths", "specsBranch", "azureStates", "hooks", "profiles",
     "azurePlacement", "azureColumns", "subjects", "tagCatalog", "workItemTypes",
     "fanoutMinComplexity", "opsRoot", "router", "registry", "proofRoot", "layers",
-    "measuredRoots", "proofExclusions", "ratchetPath",
+    "measuredRoots", "proofExclusions", "ratchetPath", "gitConventions",
 })
 
 LEGACY_DESTINATIONS = {
@@ -32,6 +32,7 @@ LEGACY_DESTINATIONS = {
     "sharedPaths": "shared",
     "hooks": "shared",
     "profiles": "shared",
+    "gitConventions": "shared",
     "specsBranch": "specs",
     "azureStates": "specs",
     "azurePlacement": "specs",

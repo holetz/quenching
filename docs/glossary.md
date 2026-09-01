@@ -393,7 +393,9 @@ sentence, and **link out** rather than explaining in full here.
 - [**Plugin config**](standards/workflows/plugin-configuration.md) — `.claude/quenching.json`, the
   single file a target repository uses to declare anything to this plugin: `backend`, `specsBranch`,
   `worktreeSetup`, `azureStates`, `azurePlacement`,
-  `azureColumns`, `subjects`, `tagCatalog` and `workItemTypes`. It replaced `/.specs/config.json`,
+  `azureColumns`, `subjects`, `tagCatalog`, `workItemTypes` and `shared.gitConventions` — the last
+  of which carries the `git` pillar's per-artifact writing directives and outranks the target's own
+  `docs/standards/git/**` for every artifact it names. It replaced `/.specs/config.json`,
   whose home stopped working once a repository could have no `/.specs/` folder at all. Absence
   yields the documented defaults, never a null and never a refusal — except `azureStates` and
   `azurePlacement.areaPath`, neither of which has a default because the project itself defines

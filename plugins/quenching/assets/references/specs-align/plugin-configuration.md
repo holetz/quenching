@@ -20,6 +20,7 @@ placement, never a repository store. Other namespaces are read by their owning f
 | `shared.sharedPaths` | a list of repo-relative paths | none — an absent or empty list declares no shared area | `cq git worktree link`, from the isolation flow |
 | `shared.hooks` | `{"<event>": [{"command": "<cmd>", ...}]}` | none — an absent key declares no events | the command that owns the event |
 | `shared.profiles` | `{"installed": ["knowledge", "specs", "design", "components"]}` | none — an absent key leaves all four fronts installed | the align conductor |
+| `shared.gitConventions` | `{commitSubject, branchName, prTitle, prBody, mergeSubject}` — prose directives, never templates | `{}` | the whole `git` pillar, through `cq git conventions`; see [git/conventions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md) §The declared-directive layer |
 | `specs.azureStates` | `{"plans": "<state>", "archive": "<state>"}` | **none, deliberately** — refuses (exit 2, `sp-az-no-states`) rather than guess | the `azure-boards` backend only |
 | `specs.azurePlacement` | `{areaPath, workItemType, discoveryTag, team, iterationPath, boardColumn, defaultSubject}` — `workItemType` retired, see `workItemTypes` below | per sub-key — `areaPath` **none, deliberately**, the rest default | the `azure-boards` backend only |
 | `specs.azureColumns` | `{"<board state>": "<lane>", …}` — any subset | `{}` — falls back to `azurePlacement.boardColumn` per state | the `azure-boards` backend only |
@@ -36,6 +37,13 @@ placement, never a repository store. Other namespaces are read by their owning f
 `specs.azureStates` is the one key whose absence is a refusal rather than a
 default — a guessed state mapping would not fail loudly, it would read every archived spec as
 active in half the projects it ran against.
+
+`shared.gitConventions` is read by the `git` pillar rather than by `cq specs`, and it sits here
+because this table is the one home for what the file recognises. `shared` is its namespace for the
+same reason `worktreeSetup` and `hooks` have it: the pillar runs inside every front's build loop.
+Its two malformed shapes earn their own findings — `sp-config-unknown-git-convention` for a sub-key
+outside the five, `sp-config-bad-git-convention` for a recognised one whose value cannot direct
+anything.
 
 Root-level front-owned keys such as `opsRoot`, `router`, `proofRoot`, `layers`, `hooks` and
 `worktreeSetup` are legacy flat declarations. A flat or mixed document is refused with

@@ -1,13 +1,18 @@
-"""`cq git conventions` — the read-if-present check every command in the `git` pillar runs
-once before its first commit: does the target declare its own `docs/standards/git/**`, or do
-the plugin's defaults apply? `assets/references/git/conventions.md` §The read-if-present rule
-is the contract; this is its one mechanical reading, so five commands stop repeating the same
-`ls` and frontmatter peek.
+"""`cq git conventions` — the one read every command in the `git` pillar runs once before its
+first commit, over BOTH layers a target may declare: the directives it addressed to the plugin in
+`.agents/quenching.json`'s `gitConventions`, and the standard it published under
+`docs/standards/git/**`. `assets/references/git/conventions.md` §The declared-directive layer and
+§The read-if-present rule are the contract; this is their one mechanical reading, so five commands
+stop repeating the same `ls`, frontmatter peek and config load.
 
-Reports FACTS ONLY — which files exist, and each one's own `authority`. Whether a partial
-document covers commits but not merges is a reading a human (or the citing command body) does
-over the listed files; this stays a report for the same reason the rest of the `git` pillar
-carries no `doctor`."""
+Reports FACTS ONLY — which directives are declared, which files exist, and each file's own
+`authority`. Whether a partial document covers commits but not merges is a reading a human (or the
+citing command body) does over what comes back; this stays a report for the same reason the rest of
+the `git` pillar carries no `doctor`.
+
+`governs` and `declared` answer the DOCS layer and nothing else, unchanged. A single word over
+three layers would have to lie in the ordinary case — the config names two artifacts and the
+target's own doc covers the rest — so the config arrives as its own two fields instead."""
 from __future__ import annotations
 
 import os
@@ -15,6 +20,7 @@ import os
 from quenching.common.frontmatter import parse_frontmatter
 from quenching.common.io import read_text
 from quenching.common.output import emit
+from quenching.specs.config import load_config
 
 STANDARDS_DIR = os.path.join("docs", "standards", "git")
 
@@ -36,12 +42,24 @@ def _declared_docs(cwd: str) -> list[dict]:
 
 
 def cmd_conventions(args) -> int:
-    docs = _declared_docs(os.getcwd())
+    cwd = os.getcwd()
+    docs = _declared_docs(cwd)
+    # `detect_provider_info=False`: the config is read here for five prose directives, and the
+    # provider probe behind that flag shells out to `git remote` to answer a question this verb
+    # never asks.
+    cfg = load_config(cwd, detect_provider_info=False)
     governs = "target" if docs else "defaults"
+    lines = []
+    if cfg["gitConventions"]:
+        lines.append("declared in .agents/quenching.json:")
+        lines += [f"  gitConventions.{key}: {value}"
+                  for key, value in sorted(cfg["gitConventions"].items())]
     if docs:
-        human = "governs: the target's own conventions\n" + "\n".join(
-            f"  {d['path']} (authority: {d['authority'] or 'unstated'})" for d in docs)
+        lines.append("governs: the target's own conventions")
+        lines += [f"  {d['path']} (authority: {d['authority'] or 'unstated'})" for d in docs]
     else:
-        human = "governs: the plugin's defaults — nothing declared under " + STANDARDS_DIR
-    emit(args.json, {"ok": True, "governs": governs, "declared": docs}, human)
+        lines.append("governs: the plugin's defaults — nothing declared under " + STANDARDS_DIR)
+    emit(args.json, {"ok": True, "governs": governs, "declared": docs,
+                     "config": cfg["gitConventions"],
+                     "configUnknown": cfg["unknownGitConventions"]}, "\n".join(lines))
     return 0

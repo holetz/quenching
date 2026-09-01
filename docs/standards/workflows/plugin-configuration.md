@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plugin configuration contract
-description: `.claude/quenching.json` is the plugin's single configuration home; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles and proposal catalogues remain explicit target settings
-resource: .claude/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/specs/config.py, plugins/quenching/assets/bin/quenching/ops/**, plugins/quenching/assets/bin/quenching/proof/**, plugins/quenching/assets/bin/quenching/git/base.py
+description: `.claude/quenching.json` is the plugin's single configuration home; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles, proposal catalogues and the `git` pillar's per-artifact writing directives remain explicit target settings
+resource: .claude/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/specs/config.py, plugins/quenching/assets/bin/quenching/ops/**, plugins/quenching/assets/bin/quenching/proof/**, plugins/quenching/assets/bin/quenching/git/base.py, plugins/quenching/assets/bin/quenching/git/conventions.py
 tags: [workflows, specs, configuration, provider, plugin]
-timestamp: 2026-08-31
+timestamp: 2026-09-01
 audience: both
 authority: current
-source: spec 1065 (task 3.1) — the namespaced envelope and migration refusal are implemented and covered by the source test matrix
+source: spec 1065 (task 3.1) — the namespaced envelope and migration refusal are implemented and covered by the source test matrix; extended by spec 1075 (2026-09-01) with `shared.gitConventions`, the `git` pillar's per-artifact writing directives
 maintainer: quenching
 ---
 
@@ -50,7 +50,8 @@ The root-level envelope is deliberately small:
         {"command": "/my:security-review", "optional": true}
       ]
     },
-    "profiles": {"installed": ["knowledge", "specs", "components"]}
+    "profiles": {"installed": ["knowledge", "specs", "components"]},
+    "gitConventions": {"commitSubject": "Prefixe o subject com o ticket entre colchetes."}
   },
   "specs": {
     "specsBranch": "specs",
@@ -81,7 +82,7 @@ Ownership follows the meaning of the key, not the module that happens to read it
 | Namespace | Owned declarations | Boundary |
 | --- | --- | --- |
 | root | `backend` | legacy/provider metadata only; provider selection comes from `origin` |
-| `shared` | `worktreeSetup`, `sharedPaths`, `hooks`, `profiles` | settings used by more than one local surface or by isolation |
+| `shared` | `worktreeSetup`, `sharedPaths`, `hooks`, `profiles`, `gitConventions` | settings used by more than one local surface or by isolation |
 | `specs` | `specsBranch`, Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes` | provider-owned plan lifecycle and proposal conventions |
 | `ops` | `opsRoot`, `router`, `registry` | operations inventory, router and generated registry |
 | `proof` | `proofRoot`, `layers`, `measuredRoots`, `proofExclusions`, `ratchetPath` | verification inventory, layers and coverage evidence |
@@ -132,6 +133,67 @@ Unknown namespace and invalid namespace-shape diagnostics remain visible at the 
 An unknown namespace is not treated as a new front, and an array or scalar where a namespace object
 is expected is not flattened into one. Unknown keys inside an accepted namespace remain that
 namespace adapter's responsibility; no other adapter may claim them.
+
+## The `git` pillar's writing directives
+
+`shared.gitConventions` is how a target tells the plugin how to word the texts the `git` pillar
+writes, without publishing a standard that also governs its humans. Five recognised sub-keys, one
+per artifact — `commitSubject`, `branchName`, `prTitle`, `prBody`, `mergeSubject`:
+
+```json
+{
+  "shared": {
+    "gitConventions": {
+      "commitSubject": "Prefixe o subject com o ticket entre colchetes; imperativo, sem ponto final.",
+      "branchName": "feat/<ticket>-<handle-kebab>.",
+      "prTitle": "O subject do primeiro commit, sem o prefixo do ticket.",
+      "prBody": "Tres blocos: o que muda, como provar, o que fica de fora.",
+      "mergeSubject": "Merge <branch> (<strategy>)."
+    }
+  }
+}
+```
+
+It is `shared` for the same reason `worktreeSetup` and `hooks` are: the `git` pillar runs inside
+every front's build loop, and it consumes the common boundary directly rather than through the
+specs adapter.
+
+Every value is prompt material, exactly as `subjects.<key>.description` and `tagCatalog` values
+are: an agent reads the directive and writes the text. **The core never interpolates a placeholder,
+expands a template, or judges the text that came out** — `<ticket>` above is the target's own
+notation for its own reader, not a field the plugin fills.
+
+Resolution is **per artifact**, and the artifacts never move together:
+
+| Order | What governs |
+| --- | --- |
+| 1 | the caller's explicit value |
+| 2 | `shared.gitConventions.<artifact>` |
+| 3 | `docs/standards/git/**`, for what the doc covers |
+| 4 | the plugin's own default |
+
+The configuration outranks the target's own git standard because it is addressed to the plugin by
+name and is narrower — one artifact per sub-key, against a document that governs humans too — and
+because a key that lost to any `docs/standards/git/**` would be dead in exactly the repositories
+most likely to declare both. The standard still governs every artifact the configuration does not
+name.
+
+`cq git conventions --json` is the one reader of both declared layers: `config` carries the
+directives, `configUnknown` the sub-keys nothing reads, and `governs`/`declared` answer the docs
+layer and only it. A single word over three layers would have to lie in the ordinary case, where
+the configuration names two artifacts and the target's own doc covers the rest.
+
+Two `doctor` findings exist so that a directive which never applies is named rather than silent:
+`sp-config-unknown-git-convention` for a sub-key outside the five, and
+`sp-config-bad-git-convention` for a recognised sub-key whose value is not a non-empty string. Both
+are `warn`. A `gitConventions` declared at the root instead is neither — it is the envelope's own
+`sp-config-unscoped` refusal, which names `shared` as its destination.
+
+**No command writes `gitConventions` into a target.** A directive the plugin authored stops being
+the target's, which is the prohibition the `git` pillar's own `conventions.md` already carries for
+`docs/standards/git/**`. The pillar reads this key and never repairs it, which is why it takes no
+arbiter row under
+[configuration-arbitration.md](../architecture/configuration-arbitration.md).
 
 ## Defaults and refusals
 
