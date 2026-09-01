@@ -161,7 +161,7 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         self.assertIn("Claude side is authoritative", output.getvalue())
 
     def test_package_translation_keeps_both_harness_names_exempt(self):
-        source = translate.REPOSITORY / "plugins" / "quenching"
+        source = translate.payload_root()
         translate.configure(str(source), str(self.root / "quenching-codex"))
         schema = translate.generated_tree()[
             "scripts/bin/quenching/knowledge/schema.py"
@@ -171,7 +171,7 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         self.assertIn('EXEMPT = (CLAUDE_HARNESS, "AGENTS.md")', schema)
 
     def test_package_translation_adjusts_codex_check_root(self):
-        source = translate.REPOSITORY / "plugins" / "quenching"
+        source = translate.payload_root()
         translate.configure(str(source), str(self.root / "quenching-codex"))
         citation = translate.generated_tree()["checks/citation-check.sh"].decode("utf-8")
         functional = translate.generated_tree()["checks/functional-checks.sh"].decode("utf-8")
@@ -181,7 +181,7 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         self.assertNotIn('dirname "${BASH_SOURCE[0]}")/../../../.."', functional)
 
     def test_package_description_review_reduces_routed_surface_and_preserves_slots(self):
-        source = translate.REPOSITORY
+        source = translate.payload_root().parent.parent
         translate.configure(str(source / "plugins" / "quenching"),
                             str(self.root / "quenching-codex"))
         tree = translate.generated_tree()
@@ -212,3 +212,66 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         for relative in TYPED_ONLY_COMMANDS:
             text = (source / relative).read_text(encoding="utf-8")
             self.assertIn("disable-model-invocation: true", text, relative)
+
+
+class PayloadResolution(unittest.TestCase):
+    """Where the translator finds itself, and what a BARE invocation therefore translates.
+
+    Both were read off `Path(__file__).parents[7]`, a hop count that only lands in a development
+    clone of the marketplace. An installed plugin carries the payload alone, so the adaptation map
+    resolved two directories above it and every subcommand died on the missing JSON; a target repo
+    invoking the bare probe measured the PACKAGED pair and reported that verdict as its own.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        (self.root / ".claude" / "commands").mkdir(parents=True)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_payload_root_is_the_directory_carrying_the_adaptation_map(self):
+        payload = translate.payload_root()
+        self.assertTrue((payload / "assets" / "translation" / "codex-adaptation.json").is_file())
+        self.assertTrue((payload / "commands").is_dir())
+
+    def test_installed_layout_resolves_the_adaptation_map(self):
+        """The layout that used to crash: the payload alone under `<marketplace>/<plugin>/<version>/`,
+        with no `plugins/` tree anywhere above it."""
+        installed = self.root / "cache" / "claude-quenching" / "quenching" / "9.9.9"
+        installed.mkdir(parents=True)
+        source = translate.payload_root() / "assets" / "translation" / "codex-adaptation.json"
+        destination = installed / "assets" / "translation" / "codex-adaptation.json"
+        destination.parent.mkdir(parents=True)
+        destination.write_bytes(source.read_bytes())
+        module = installed / "assets" / "bin" / "quenching" / "components" / "commands"
+        module.mkdir(parents=True)
+        resolved = next(parent for parent in (module / "translate.py").parents
+                        if (parent / "assets" / "translation" / "codex-adaptation.json").is_file())
+        self.assertEqual(resolved, installed)
+
+    def test_bare_invocation_outside_the_marketplace_translates_the_callers_repository(self):
+        translate.configure(None, None, str(self.root / ".claude"))
+        self.assertEqual(translate.source(), self.root)
+        self.assertEqual(translate.target(), self.root)
+        self.assertFalse(translate.plugin_translation())
+        self.assertEqual(translate.claude_surface(), self.root / ".claude")
+        self.assertEqual(translate.codex_surface(), self.root / ".agents")
+
+    def test_bare_invocation_inside_the_marketplace_translates_the_packaged_pair(self):
+        payload = translate.payload_root()
+        translate.configure(None, None, str(payload.parent.parent))
+        self.assertEqual(translate.source(), payload)
+        self.assertEqual(translate.target(), payload.parent / "quenching-codex")
+        self.assertTrue(translate.plugin_translation())
+
+    def test_the_adaptation_map_is_the_payloads_whatever_the_pair(self):
+        expected = translate.payload_root() / "assets" / "translation" / "codex-adaptation.json"
+        for source, target, root in ((None, None, str(self.root / ".claude")),
+                                     (str(self.root), str(self.root), str(self.root / ".claude")),
+                                     (None, None, str(translate.payload_root().parent.parent))):
+            with self.subTest(source=source):
+                translate.configure(source, target, root)
+                self.assertEqual(translate.manifest(), expected)
+                self.assertIsInstance(translate.read_adaptation(), dict)

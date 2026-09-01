@@ -11,7 +11,6 @@ from pathlib import Path
 from quenching.common.output import finding, refuse, report_findings
 
 
-REPOSITORY = Path(__file__).resolve().parents[7]
 SOURCE: Path | None = None
 TARGET: Path | None = None
 MANIFEST: Path | None = None
@@ -38,13 +37,61 @@ RELATIVE_CQ_PATH = re.compile(r"(?<![A-Za-z0-9_./])(?:python3\s+)?\"?\.\./\.\./s
 CODEX_CQ_COMMAND = 'python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path \'*/quenching-codex*/scripts/cq\' -print -quit 2>/dev/null)"'
 
 
-def configure(source: str | None, target: str | None) -> None:
+def payload_root() -> Path:
+    """The plugin payload — the directory that carries `assets/`.
+
+    This was `Path(__file__).resolve().parents[7]`, naming the marketplace CHECKOUT and reaching
+    the payload back down through `plugins/quenching/`. That descent exists only in a development
+    clone. An installed plugin unpacks the payload ALONE, under
+    `<cache>/<marketplace>/<plugin>/<version>/`, where the same seven hops land two directories
+    above it — so `read_adaptation()` died with FileNotFoundError on `codex-adaptation.json` and
+    an installed plugin could not translate anything, breaking the promise made in
+    `/docs/standards/architecture/surface-translation.md`. Walking UP to the directory that
+    actually carries the adaptation map resolves both layouts and asserts nothing about what
+    sits above the payload.
+    """
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        if (parent / "assets" / "translation" / "codex-adaptation.json").is_file():
+            return parent
+    raise ValueError("installed plugin does not carry assets/translation/codex-adaptation.json")
+
+
+def _default_pair(payload: Path, root: str | None) -> tuple[Path, Path]:
+    """What a BARE `cq components translate` translates.
+
+    The packaged pair only when the CALLER stands in the marketplace checkout that carries it;
+    anywhere else the subject is the caller's own repository surface. Reading the payload alone
+    made a target repo's bare probe measure the PLUGIN's translation and report it as the repo's
+    — `/quenching:components:align` §1 runs exactly this call and read a green it never measured
+    — while an installed plugin, having no `plugins/` tree at all, reported every generated file
+    as drift. Deciding on the caller's surface root keeps CI's
+    `cq --root . components translate --check` on the packaged pair and points every other
+    invocation at the repository the caller is actually in.
+    """
+    codex = payload.parent / "quenching-codex"
+    surface = Path(root).resolve() if root else None
+    if codex.is_dir() and (surface is None or surface.is_relative_to(payload.parent.parent)):
+        return payload, codex
+    if surface is None:
+        raise ValueError("no repository surface to translate; pass --source and --target")
+    # `find_surface_root` answers with the `.claude` directory when one exists; both halves of
+    # the pair are the repository root, which `claude_surface()`/`codex_surface()` descend from.
+    repository = surface.parent if surface.name == ".claude" else surface
+    return repository, repository
+
+
+def configure(source: str | None, target: str | None, root: str | None = None) -> None:
     """Resolve the pair once per invocation; callers may translate any checkout pair."""
     global SOURCE, TARGET, MANIFEST
-    SOURCE = Path(source).resolve() if source else REPOSITORY / "plugins" / "quenching"
-    TARGET = Path(target).resolve() if target else REPOSITORY / "plugins" / "quenching-codex"
+    payload = payload_root()
     # The adaptation is part of the distributed translator, not of a target repository.
-    MANIFEST = REPOSITORY / "plugins" / "quenching" / "assets" / "translation" / "codex-adaptation.json"
+    MANIFEST = payload / "assets" / "translation" / "codex-adaptation.json"
+    if source or target:
+        SOURCE = Path(source).resolve() if source else payload
+        TARGET = Path(target).resolve() if target else payload.parent / "quenching-codex"
+        return
+    SOURCE, TARGET = _default_pair(payload, root)
 
 
 def source() -> Path:
@@ -556,9 +603,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--json", action="store_true")
 
 
-def cmd_translate(args, _root: str) -> int:
+def cmd_translate(args, root: str) -> int:
     try:
-        configure(args.source, args.target)
+        configure(args.source, args.target, root)
         tree = generated_tree()
     except ValueError as exc:
         return refuse({"code": "ct-translation-refused", "message": str(exc)}, args.json)
@@ -585,4 +632,5 @@ def cmd_translate(args, _root: str) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="cq components translate")
     add_arguments(parser)
-    return cmd_translate(parser.parse_args(argv), str(REPOSITORY))
+    # The compatibility launcher lives in the marketplace checkout and syncs the packaged pair.
+    return cmd_translate(parser.parse_args(argv), str(payload_root().parent.parent))
