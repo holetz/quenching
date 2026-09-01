@@ -2,7 +2,7 @@
 type: standard
 title: Branch flow — PR onto the primary, deliberate release
 description: One long-lived branch — the primary (main) — where every PR merges and review lives, the release as a deliberate local act that bumps, tags and publishes what the primary accumulated, the trigger on demand and with no cadence, the question that pushes toward grouping when the primary carries a single PR since the last tag, and the transition for anyone coming from the two-branch flow
-resource: .claude/commands/release.md, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/cycle.md, plugins/quenching/assets/references/align/convergence.md
+resource: .claude/commands/release.md, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/assets/references/align/convergence.md
 tags: [git, branching, release, workflow, main]
 timestamp: 2026-08-17
 audience: both
