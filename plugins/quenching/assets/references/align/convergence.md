@@ -27,7 +27,7 @@ the pass cap or convergence. Every command
 an align invokes as a stage carries **one** exception sentence pointing here and never restates
 it: the `knowledge/` stages (`/quenching:knowledge:import-memory`, `/quenching:components:harness:align`, `/quenching:knowledge:glossary-backfill`), the
 `specs/` stages (`/quenching:specs:conclude`, `/quenching:specs:triage`), the five front aligns when `/align`
-invokes them, and — under `/quenching:specs:cycle`'s minimal gear only —
+invokes them, and — under the minimal gear only —
 `/quenching:git:pr:create`, the one stage this contract's grantor is a conductor rather than an
 align.
 
@@ -102,7 +102,7 @@ back into a run with gates before it reaches the PR.
 
 The route already exists — nothing new is built for it. `conclude` reviews, distils, archives and
 proves the pre-merge gate green, then stops, naming `/quenching:git:pr:create` as the human's own
-next command; under this gear alone, `/quenching:specs:cycle` invokes that command itself, under
+next command; under this gear alone, the workflow invokes that command itself, under
 the same authorization, rather than leaving the name for a human to act on. `git:pr:create` stamps
 the write-many `pr` record the moment the PR is opened — the fact the base branch's history cannot
 reproduce: which PR carries this spec, and where the review and the checks still live once the
