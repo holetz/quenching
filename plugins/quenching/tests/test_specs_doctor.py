@@ -47,7 +47,7 @@ class _StubBackend:
 
 class GithubDoctorFindings(unittest.TestCase):
 
-    def _findings(self, backend: _StubBackend) -> tuple[list[dict], int]:
+    def _findings(self, backend: _StubBackend, **cfg_overrides) -> tuple[list[dict], int]:
         with tempfile.TemporaryDirectory() as tmp:
             os.makedirs(os.path.join(tmp, ".claude"))
             with open(os.path.join(tmp, ".claude", "quenching.json"), "w") as fh:
@@ -59,7 +59,8 @@ class GithubDoctorFindings(unittest.TestCase):
             buf = io.StringIO()
             cfg = {"backend": "github", "unknownBackend": None, "unknownKeys": [],
                    "unknownFanoutMinComplexity": None, "legacyPath": None,
-                   "unparseable": None}
+                   "unparseable": None, "unknownGitConventions": [],
+                   "badGitConventions": [], **cfg_overrides}
             with mock.patch.object(doctor_mod, "open_github_backend",
                                    lambda _root: (backend, {})), \
                     mock.patch.object(doctor_mod, "load_config", return_value=cfg), \
@@ -96,6 +97,29 @@ class GithubDoctorFindings(unittest.TestCase):
         findings, code = self._findings(_StubBackend(raises=refusal))
         self.assertEqual([f["code"] for f in findings], ["sp-gh-empty-listing"])
         self.assertEqual(findings[0]["severity"], "warn")
+        self.assertEqual(code, 0)
+
+    def test_a_git_convention_sub_key_nothing_reads_is_named_with_the_recognised_set(self):
+        findings, code = self._findings(_StubBackend(rows=[{"slug": "alpha"}]),
+                                        unknownGitConventions=["prDescription"])
+        unknown = [f for f in findings if f["code"] == "sp-config-unknown-git-convention"]
+        self.assertEqual(len(unknown), 1)
+        self.assertEqual(unknown[0]["severity"], "warn")
+        self.assertIn("prDescription", unknown[0]["message"])
+        self.assertIn("commitSubject", unknown[0]["remedy"])
+        self.assertEqual(code, 0)
+
+    def test_a_recognised_directive_with_an_unusable_value_is_named_rather_than_silent(self):
+        # The whole point of `badGitConventions`: the sub-key IS recognised, so nothing above
+        # catches it, and a directive that is `""` or `7` simply never applies. Silence here is
+        # the `worktree_setup` failure mode with a different spelling.
+        findings, code = self._findings(_StubBackend(rows=[{"slug": "alpha"}]),
+                                        badGitConventions=["commitSubject"])
+        bad = [f for f in findings if f["code"] == "sp-config-bad-git-convention"]
+        self.assertEqual(len(bad), 1)
+        self.assertEqual(bad[0]["severity"], "warn")
+        self.assertIn("commitSubject", bad[0]["message"])
+        self.assertTrue(bad[0]["remedy"])
         self.assertEqual(code, 0)
 
     def test_a_refusal_with_no_remedy_of_its_own_still_gets_one(self):
