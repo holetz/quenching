@@ -29,7 +29,8 @@ python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/qu
   --sections "§Isolation happens on the way into a build" --sections "§Branch and worktree names" \
   --sections "§Recording the isolation"
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/conventions.md \
-  --sections "§The read-if-present rule"
+  --sections "§The declared-directive layer" --sections "§The read-if-present rule"
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git conventions --json   # `config.branchName`, or absent
 git status --porcelain
 git branch --show-current
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git base --json
@@ -51,8 +52,9 @@ existing `branch:` record are resolved.
 If the current branch is already different from the resolved base, report that the checkout is
 already isolated and carry it forward; do not offer a second branch or worktree. If it is the base,
 continue with the offer below.
-State the base branch (from step 1), the branch name that would be cut (`plan/<id>-<handle>` with an ID,
-else a kebab-case name derived from `$ARGUMENTS` or asked for), the worktree path, and —
+State the base branch (from step 1), the branch name that would be cut — `config.branchName` from
+step 1 governs it where declared, else the target's docs, else `plan/<id>-<handle>` with an ID and a
+kebab-case name derived from `$ARGUMENTS` or asked for without one — the worktree path, and —
 `worktreeSetup` non-null — the setup command **verbatim**. Then ask with **AskUserQuestion**:
 
 - **Worktree** *(default, recommended)* — `git worktree add ../<repo>-<name> -b <branch>`.
@@ -80,13 +82,14 @@ command controls no branch of its own in that case. **Done when:** the chosen fo
 `branch:` and the `quenching-specs:` marking are stamped or explicitly skipped (**In place**).
 
 ### 5. Report
-State which form was taken (or declined), the branch name, the worktree path (if any), the setup's
-result (if run), and what was stamped. **Done when:** the summary names every fact step 4 produced.
+State which form was taken (or declined), the branch name and **which layer governed it**, the
+worktree path (if any), the setup's result (if run), and what was stamped. **Done when:** the summary
+names every fact step 4 produced.
 
 ## Invariants
 
 - Never isolate over a dirty tree — refuse and name the paths.
 - Recommend Worktree; never impose it, and never choose it by sniffing the target repo.
 - Stamp `branch:` only once per id — a record already present is read, never overwritten.
-- Never install `docs/standards/git/**` into the target; a repo's own conventions are read,
-  never written, by this command.
+- Never install `docs/standards/git/**` into the target, and never write `gitConventions` into its
+  `.agents/quenching.json`; a repo's own conventions are read, never written, by this command.
