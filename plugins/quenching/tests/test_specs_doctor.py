@@ -66,7 +66,7 @@ class GithubDoctorFindings(unittest.TestCase):
             root = os.path.join(tmp, ".specs")
             buf = io.StringIO()
             cfg = {"backend": "github", "unknownBackend": None, "unknownKeys": [],
-                   "unknownFanoutMinComplexity": None, "legacyPath": None,
+                   "legacyPath": None,
                    "unparseable": None}
             with mock.patch.object(doctor_mod, "open_github_backend",
                                    lambda _root: (backend, {})), \
@@ -172,7 +172,7 @@ class ConfigMigrationMatrix(unittest.TestCase):
         self.assertEqual(envelope["unknownNamespaces"], [])
 
         specs = load_specs_config(root, detect_provider_info=False)
-        self.assertEqual(specs["fanoutMinComplexity"], "low")
+        self.assertNotIn("fanoutMinComplexity", specs)
         self.assertEqual(specs["worktreeSetup"], "make setup")
         self.assertNotIn("opsRoot", specs)
 

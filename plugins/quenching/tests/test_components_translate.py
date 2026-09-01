@@ -63,7 +63,6 @@ TRIGGER_PHRASES = {
 
 
 TYPED_ONLY_COMMANDS = (
-    "plugins/quenching/commands/specs/cycle.md",
     "plugins/quenching/commands/components/command/retro.md",
 )
 
