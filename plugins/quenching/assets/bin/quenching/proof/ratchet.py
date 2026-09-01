@@ -168,6 +168,13 @@ def _percent(summary: dict[str, Any]) -> float | None:
     return None
 
 
+def _file_summary(entry: Any) -> dict[str, Any] | None:
+    if not isinstance(entry, dict):
+        return None
+    nested = entry.get("summary")
+    return nested if isinstance(nested, dict) else entry
+
+
 def measured_percentages(payload: dict[str, Any], roots: list[dict]) -> tuple[dict[str, float], dict]:
     """Extract one percentage per configured source root from coverage.py JSON."""
     files = payload.get("files")
@@ -180,9 +187,13 @@ def measured_percentages(payload: dict[str, Any], roots: list[dict]) -> tuple[di
     for root in roots:
         declared = root["relative"]
         prefix = declared.rstrip("/") + "/"
-        matching = [summary for name, summary in files.items()
-                    if isinstance(name, str) and _normalise(name).startswith(prefix)
-                    and isinstance(summary, dict)]
+        matching: list[dict[str, Any]] = []
+        for name, entry in files.items():
+            if not isinstance(name, str) or not _normalise(name).startswith(prefix):
+                continue
+            summary = _file_summary(entry)
+            if summary is not None:
+                matching.append(summary)
         if matching:
             covered = sum(float(item.get("covered_lines", 0)) for item in matching)
             statements = sum(float(item.get("num_statements", 0)) for item in matching)
