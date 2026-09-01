@@ -24,17 +24,20 @@ never a guess at which files belong together.
 ### 1. Read-if-present, and the staged diff
 ```bash
 python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
-  --sections "§The read-if-present rule"
+  --sections "§The declared-directive layer" --sections "§The read-if-present rule"
 python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git conventions --json
 git diff --cached --name-only
 ```
-Nothing staged → refuse: name that the index is empty and say what to stage. **Done when:** which convention governs (target's own, or the plugin default below)
-and the staged file list are both known.
+One `cq git conventions` call answers both declared layers: `config.commitSubject` is the target's
+directive for this artifact, `governs`/`declared` the docs layer. Nothing staged → refuse: name that
+the index is empty and say what to stage. **Done when:** which layer governs the subject
+(`gitConventions.commitSubject`, the target's docs, or the plugin default below) and the staged file
+list are both known.
 
 ### 2. Resolve the subject
-`§The read-if-present rule` governs: a target convention naming a subject format wins outright; a
-target doc covering only part of it governs that part, the default below fills the rest. With
-nothing declared:
+§The declared-directive layer's table governs, for this one artifact: `config.commitSubject` from
+step 1 wins where it is declared; else a target doc naming a subject format wins outright, and a doc
+covering only part of it governs that part. With neither declared:
 ```bash
 python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md --sections "§Commit messages"
 ```
@@ -66,7 +69,9 @@ nothing; one that **replaces** the subject outright is a mismatch, reported as a
 the commit exists and its logged subject either matches or the mismatch is reported.
 
 ### 4. Report
-State the sha, the subject, and the committed files. **Done when:** all three are named.
+State the sha, the subject, the committed files, and **which layer governed the subject** —
+`gitConventions.commitSubject`, the target's docs, or the plugin default. **Done when:** all four
+are named.
 
 ## Invariants
 
@@ -75,5 +80,5 @@ State the sha, the subject, and the committed files. **Done when:** all three ar
 - **Never `--no-verify` or `--no-gpg-sign`.** A rejecting hook is a finding to report, not an
   obstacle to route around.
 - **Never amend or rewrite an existing commit, and never force-push.**
-- **Never install `docs/standards/git/**` into the target.** A convention read here is
-  followed, never written back.
+- **Never install `docs/standards/git/**` into the target, and never write `gitConventions` into
+  its `.claude/quenching.json`.** A convention read here is followed, never written back.

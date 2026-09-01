@@ -21,6 +21,9 @@ as a GitHub repository.
 ### 1. Confirm the route exists, and resolve the base
 ```bash
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs config --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/conventions.md \
+  --sections "§The declared-directive layer"
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git conventions --json   # `config.prTitle`, `config.prBody`
 git remote get-url origin
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git base --json
 ```
@@ -29,8 +32,8 @@ matches it:
 `github` → `gh repo view`; `azure-boards` → `az repos pr list --status all --top 1 --detect
 true`. A missing/mismatched origin, `NO-ROUTE`, or an unauthenticated host CLI → say plainly there
 is no PR route here and stop.
-`cq git base --json` supplies the base and `isDefault`. **Done when:** the provider route and base
-branch are resolved.
+`cq git base --json` supplies the base and `isDefault`. **Done when:** the provider route, the base
+branch, and which layer governs `prTitle` and `prBody` are all resolved.
 
 ### 2. Resolve title, body and the provider link
 A spec id in `$ARGUMENTS` → read its provider-owned status once, then read the named sections once:
@@ -40,11 +43,19 @@ python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/qu
   "Problem,Proposal,Impact,Validation,Tasks" --json
 ```
 The status payload supplies the spec `title`, `path`, `branch` facts and task counts. The section
-payload supplies the text. Build one immutable payload in this order: the spec title; the non-empty
-`Problem`, `Proposal`, `Impact` and `Validation` sections under headings with those names; a
-`Tasks` summary using the status counts (`checked`/`total`); and the resolved branch facts when
-present. Omit an absent or empty optional section — never replace it with invented prose. This is
-the only title/body builder for the spec-id path.
+payload supplies the text.
+
+§The declared-directive layer's table governs each of the two artifacts independently:
+`config.prTitle` and `config.prBody` from step 1 where declared, else the target's docs, else the
+default builder below. **The declared directive says how to shape the text, never what facts to
+invent** — it is followed over the same spec material, and a section the spec does not carry stays
+absent under any directive.
+
+The default builder, and the fallback under a directive that shapes only one of the two: the spec
+title; the non-empty `Problem`, `Proposal`, `Impact` and `Validation` sections under headings with
+those names; a `Tasks` summary using the status counts (`checked`/`total`); and the resolved
+branch facts when present, in that order.
+Omit an absent or empty optional section — never replace it with invented prose.
 
 The status `path` is the provider locator. On `github`, its trailing number is an issue `<n>` and
 append exactly `Closes #<n>` to the generated body. On `azure-boards`, its trailing number is a
@@ -97,8 +108,9 @@ No ID → nothing to stamp; report the PR number and URL only. **Done when:** th
 (with an ID) or the report carries the PR's own facts (without one).
 
 ### 6. Report
-State the provider, PR number/id, URL, base it targets, and the effect of the native issue/work-item
-link (step 3). **Done when:** all four facts are named.
+State the provider, PR number/id, URL, base it targets, the effect of the native issue/work-item
+link (step 3), and **which layer governed the title and the body**. **Done when:** all five facts
+are named.
 
 ## Invariants
 
@@ -110,3 +122,5 @@ link (step 3). **Done when:** all four facts are named.
   shown.
 - Never claim a provider-native issue/work-item link closes or transitions anything beyond the
   host CLI's documented effect; report the provider and the selected base plainly instead.
+- Never install `docs/standards/git/**` into the target, and never write `gitConventions` into its
+  `.agents/quenching.json`; a declared convention is read here, never written back.

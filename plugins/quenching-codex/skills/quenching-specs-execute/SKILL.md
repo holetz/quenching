@@ -267,7 +267,9 @@ d. **On the first pass through 5d–5e, load the rules the chain runs under — 
    python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-execute/execution.md \
      --sections "§The verification policy" --sections "§The validation loop" \
      --sections "§The diff self-review" --sections "§The commit"
-   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/conventions.md --sections "§The read-if-present rule"
+   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/conventions.md \
+     --sections "§The declared-directive layer" --sections "§The read-if-present rule"
+   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git conventions --json
    python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/commit.md --sections "§Commit messages" --sections "§The subject is the anchor"
    python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/isolation.md --sections "§Marking the branch with the specs it built"
    ```
@@ -276,9 +278,11 @@ d. **On the first pass through 5d–5e, load the rules the chain runs under — 
    dead code — and fix what it finds, on the written diff, *before* the chain below, so what the
    chain commits is already the reviewed version.
 
-e. **Then run verify, tick and commit as ONE chained call.** Decide the subject first — it follows
-   [commit.md](../../references/git/commit.md) §Commit messages, or the
-   target's own convention where it declares one — and put it in both places it appears:
+e. **Then run verify, tick and commit as ONE chained call.** Decide the subject first — under §The
+   declared-directive layer's table it is `config.commitSubject` where the target declares one, else
+   the target's own `docs/standards/git/**`, else
+   [commit.md](../../references/git/commit.md) §Commit messages — and put it
+   in both places it appears:
 
    ```bash
    <the task's verify:> \
