@@ -173,12 +173,10 @@ same admission test — a fact no derivation can reproduce:
   creation; free-text PR creation continues to require its own title/body input.
 
   It is distinct from `merge.pr` below, and the distinction is the whole reason it exists. `merge`
-  is stamped only once the merge is about to happen; under `/quenching:specs:cycle`'s minimal
-  gear the PR route deliberately **stops** at the open PR, leaving the merge to human review — the
-  one case this run invokes `git:pr:create` itself rather than leaving the name for a human. With
-  only `merge.pr` to write into, that run would have had no honest way to record the PR it had just
-  opened — stamping the write-once `merge` for a merge that had not been decided would have burned
-  the one write it gets.
+  is stamped only once the merge is about to happen; the PR route deliberately stops at the open PR,
+  leaving the merge to human review. With only `merge.pr` to write into, that run would have had no
+  honest way to record the PR it had just opened — stamping the write-once `merge` for a merge that
+  had not been decided would have burned the one write it gets.
 
 - **`merge: {strategy, subject, pr}`** — stamped by `/quenching:git:merge`, write-once, **on the
   work branch before the merge**. The strategy is a human choice, offered by that command, and the
@@ -278,7 +276,6 @@ write-before-the-thing rule bends without breaking:
 | --- | --- | --- |
 | local | on the branch, before the merge | the subject is knowable the moment the strategy is chosen |
 | pull request | on the branch, after the PR is opened and before it is merged | `merge.pr` names something that does not exist until `gh pr create` returns, and the record is write-once — stamping without it would burn the single write |
-| pull request, minimal gear | **never, this run** | `/quenching:specs:cycle` stops at the open PR by design, leaving the merge to human review; the write-many `pr:` record carries the PR until a later run merges it |
 
 Both stamps still land **before** the merge and **on the work branch**, which is the invariant that
 matters: nothing is written to the base after it. A run interrupted between the stamp and the merge
@@ -291,11 +288,9 @@ commands' own runs, and is reported rather than repaired.
 `/quenching:specs:conclude` proves the branch reviewed, distilled and gate-green, then **names**
 the route rather than choosing it: `/quenching:git:pr:create` where `gh` resolves the repository,
 `/quenching:git:merge` either way, in its own next-step block. Neither is invoked from `conclude`
-itself — the one exception is `/quenching:specs:cycle`'s minimal gear, which invokes
-`git:pr:create` under the same run's own authorization because there is no human mid-flow to hand
-the name to (`plugins/quenching/assets/references/align/convergence.md`
-§The PR route). Every other run reads the name and runs the
-command on its own word.
+itself — every run reads the named route and runs the command on its own word. The PR route and the
+merge route remain separate because human review decides whether and when the branch enters the
+base (`plugins/quenching/assets/references/align/convergence.md` §The PR route).
 
 ## The squash caveat, and what rebase no longer costs
 

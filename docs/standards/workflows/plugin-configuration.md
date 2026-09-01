@@ -59,8 +59,7 @@ The root-level envelope is deliberately small:
     "azureColumns": {},
     "subjects": {},
     "tagCatalog": {},
-    "workItemTypes": {},
-    "fanoutMinComplexity": "medium"
+    "workItemTypes": {}
   },
   "ops": {
     "opsRoot": "scripts",
@@ -83,7 +82,7 @@ Ownership follows the meaning of the key, not the module that happens to read it
 | --- | --- | --- |
 | root | `backend` | legacy/provider metadata only; provider selection comes from `origin` |
 | `shared` | `worktreeSetup`, `sharedPaths`, `hooks`, `profiles` | settings used by more than one local surface or by isolation |
-| `specs` | `specsBranch`, Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes`, `fanoutMinComplexity` | provider-owned plan lifecycle and proposal conventions |
+| `specs` | `specsBranch`, Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes` | provider-owned plan lifecycle and proposal conventions |
 | `ops` | `opsRoot`, `router`, `registry` | operations inventory, router and generated registry |
 | `proof` | `proofRoot`, `layers`, `measuredRoots`, `proofExclusions`, `ratchetPath` | verification inventory, layers and coverage evidence |
 
@@ -142,7 +141,7 @@ Defaults apply only after the document has passed the envelope boundary. In part
   `scripts/` or a router;
 - `proof` keeps its documented proof-root and ratchet defaults, and refuses malformed declarations
   at its own boundary;
-- `specs` keeps its provider, Azure, catalogue, hook, profile and fan-out semantics without
+- `specs` keeps its provider, Azure, catalogue, hook and profile semantics without
   importing values from `ops` or `proof`;
 - `git` derives its base branch from git facts (`origin/HEAD`, then `init.defaultBranch`, then
   `main`) and does not use a front-owned flat key as a fallback.

@@ -7,7 +7,7 @@ tags: [workflows, specs, lifecycle, stages, frontmatter, records, discoveries]
 timestamp: 2026-08-25
 audience: both
 authority: current
-source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review; `date` moved from derived-from-the-basename to declared by evaluate-spec-creation-flow (task 5.6), after an external backend left the derivation with nothing to derive from; `branch`'s owner moved from the retired isolation command to `execute`, and `merge` gained `pr`, by the rework-specs-isolate-flow plan (task 3.4); the follow-up parking rule from the stop-develop-offering-follow-up-specs plan (task 2.1); the records-narration line corrected from "built" to "isolated" by labels-historico-spec-issue (task 7.1), which had read `branch` as narrating the derived `executing` stage it does not write; `complexity`'s own writers (`[triage, create, develop]`) and its exit from the frontmatter admission test by the fluxo-rapido-para-problemas-simplorios plan (task 1.5); the `pr` record, the third append and the isolation narration corrected for the in-place `work == base` pair by vincular-spec-a-branch-commits-e-pr at its conclude — the third append argued against both clauses of the test above, as this section demands, rather than assumed from the two that preceded it; the parking row's edit de-qualified from "confirmed" to "consolidated" by revisar-fluxo-do-develop-custo-e-gates at its branch review (2026-08-16), which removed `/quenching:specs:develop`'s plan gate while leaving the one-edit-per-bank mechanic the row actually depends on; the criterion `complexity` measures — how much a human needs to be part of the process, never size or scope — and the `fanoutMinComplexity` consumer that reads it as a configurable floor, by redefinir-o-que-complexity-mede-e-configurar-o-limiar-do-fan-out (2026-08-16); `pr:`/`merge:` ownership moved off `conclude` onto `git:pr:create`/`git:merge`, the append-only table split by writer and run, the records-narration reordered, and `## Outcome`'s narrowed assertion documented, by pilar-git-e-specs-agnosticas-ao-git (task 6.5)
+source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review; `date` moved from derived-from-the-basename to declared by evaluate-spec-creation-flow (task 5.6), after an external backend left the derivation with nothing to derive from; `branch`'s owner moved from the retired isolation command to `execute`, and `merge` gained `pr`, by the rework-specs-isolate-flow plan (task 3.4); the follow-up parking rule from the stop-develop-offering-follow-up-specs plan (task 2.1); the records-narration line corrected from "built" to "isolated" by labels-historico-spec-issue (task 7.1), which had read `branch` as narrating the derived `executing` stage it does not write; `complexity`'s own writers (`[triage, create, develop]`) and its exit from the frontmatter admission test by the fluxo-rapido-para-problemas-simplorios plan (task 1.5); the `pr` record, the third append and the isolation narration corrected for the in-place `work == base` pair by vincular-spec-a-branch-commits-e-pr at its conclude — the third append argued against both clauses of the test above, as this section demands, rather than assumed from the two that preceded it; the parking row's edit de-qualified from "confirmed" to "consolidated" by revisar-fluxo-do-develop-custo-e-gates at its branch review (2026-08-16), which removed `/quenching:specs:develop`'s plan gate while leaving the one-edit-per-bank mechanic the row actually depends on; the criterion `complexity` measures — how much a human needs to be part of the process, never size or scope — by redefinir-o-que-complexity-mede-e-configurar-o-limiar-do-fan-out (2026-08-16); `pr:`/`merge:` ownership moved off `conclude` onto `git:pr:create`/`git:merge`, the append-only table split by writer and run, the records-narration reordered, and `## Outcome`'s narrowed assertion documented, by pilar-git-e-specs-agnosticas-ao-git (task 6.5)
 maintainer: quenching
 ---
 
@@ -71,7 +71,7 @@ touched, and none of them after the merge:
 | Append | Written by | Why it cannot be written earlier |
 | --- | --- | --- |
 | the distillation's one line per minted doc, appended to `## Outcome` | `conclude`, same run as the archive move | `## Outcome` is drafted at the archive gate, before the distillation pass knows what it minted; the paths do not exist until the harvest runs |
-| `pr: {number, url, date}`, when a PR was opened | `git:pr:create`, a later, separate run | the number does not exist until `gh pr create` returns, which is after the archive move by construction. It is not `merge.pr` restated: under `specs:cycle`'s minimal gear the run **stops** at the open PR, so `merge` is never stamped at all and this is the spec's only record of the PR — the fact would otherwise have no home anywhere |
+| `pr: {number, url, date}`, when a PR was opened | `git:pr:create`, a later, separate run | the number does not exist until `gh pr create` returns, which is after the archive move by construction. It is not `merge.pr` restated: the PR route stops at the open PR, so `merge` is not stamped until a later merge decision and this is the spec's only record of the PR — the fact would otherwise have no home anywhere |
 | `merge: {strategy, subject, pr}` | `git:merge`, a later, separate run | the subject names a merge commit that does not exist yet, and — when a PR came first — `pr` names a pull request that does not exist until it is opened; stamping any of it *after* the merge would mean a write on the base branch, the exact thing the merge-last ordering exists to prevent |
 
 The shape of the test is what generalizes, not the count: an append is permitted only when the
@@ -121,9 +121,8 @@ Then part of it became computed: `/quenching:specs:create` derives a level from 
 the input (a sentence is `low`, a plan file is `medium`), `/quenching:specs:develop` re-evaluates the level
 when a pass closes, and both write through `cq specs record` on a human's confirmation, never a
 silent restamp — the judgment left in the field is the word on the proposal, not the value itself.
-What keeps it in frontmatter is the consumer: the orchestrator derives its whole gears plan from
-this level before the build, when the sections that would evidence it do not exist yet, and no
-file, filesystem or git state carries the level in the discrete scale the gears plan needs. So the
+What keeps it in frontmatter is its provenance: no file, filesystem or git state carries the
+human-involvement judgment, and the sections do not exist when `create` first records it. So the
 field declares its own writers — `[triage, create, develop]` — under a record whose owner stays
 `triage`, and the admission test keeps its shape for every other key.
 
@@ -131,11 +130,9 @@ field declares its own writers — `[triage, create, develop]` — under a recor
 needs to be part of the process — `low` says the LLM can carry it with close to no supervision,
 `medium` accepts some real risk in leaving stage-by-stage judgment to it alone, `high` and `xhigh`
 escalate the need for a human's presence — never the size, scope or difficulty of the input, which
-`triage`'s `level`/`criticality` pair already answers on its own axis. `/quenching:specs:execute-queue` and
-`/quenching:specs:develop-batch` read the level against a configurable floor, `fanoutMinComplexity`
-(`.claude/quenching.json`, via `cq specs config --json`, default `medium`): a spec below the floor
-joins the defining regime and runs through to the end; at or above it, the spec must already be
-`ready`/`approved` to join the building regime.
+`triage`'s `level`/`criticality` pair already answers on its own axis. The recorded level remains a
+human-involvement signal for the ordinary create, develop and execute lifecycle; no separate
+multi-spec route or configurable fan-out floor is derived from it.
 
 Beyond the declared identity (`slug`, `title`, `date`) and the optional `verification` — absent
 means the default, applied on read, never stamped to make it explicit — every optional key is one
