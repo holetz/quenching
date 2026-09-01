@@ -34,6 +34,10 @@ COMMIT_INCREMENTAL_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit-incremen
 CLEANUP_COMMAND = PLUGIN_ROOT / "commands" / "git" / "cleanup.md"
 
 
+def _normalise_prose(text: str) -> str:
+    return " ".join(text.translate(str.maketrans("", "", "*_`")).split())
+
+
 def _run(cwd: str, *argv: str) -> None:
     subprocess.run(["git", *argv], cwd=cwd, check=True, capture_output=True, text=True)
 
@@ -418,11 +422,20 @@ class PullRequestPayload(unittest.TestCase):
                      ("Problem", "Proposal", "Impact", "Validation")]
         self.assertEqual(positions, sorted(positions))
         self.assertIn("`Tasks` summary", self.payload_step)
-        self.assertIn("branch facts", self.payload_step)
+        self.assertIn("branch facts", _normalise_prose(self.payload_step))
 
     def test_missing_optional_sections_are_omitted_not_fabricated(self):
-        self.assertIn("Omit an absent or empty optional section", self.payload_step)
-        self.assertIn("never replace it with invented prose", self.payload_step)
+        payload_step = _normalise_prose(self.payload_step)
+        self.assertIn("Omit an absent or empty optional section", payload_step)
+        self.assertIn("never replace it with invented prose", payload_step)
+
+    def test_prose_assertions_match_reflowed_markdown(self):
+        reflowed = (self.payload_step.replace("branch facts", "branch\n**facts**")
+                    .replace("never replace it with invented prose",
+                             "never **replace**\n`it` with invented prose"))
+        payload_step = _normalise_prose(reflowed)
+        self.assertIn("branch facts", payload_step)
+        self.assertIn("never replace it with invented prose", payload_step)
 
     def test_provider_locator_fixture_keeps_github_and_azure_native(self):
         github = "append exactly `Closes #<n>` to the generated body"
