@@ -13,6 +13,13 @@ _TOP_LEVEL = re.compile(r"^([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
 _CHILD = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
 _MAPPING = re.compile(r"^\s+([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
 _LIST = re.compile(r"^\s*-\s*([^\s#]+)")
+_AZURE_JOB = re.compile(r"^\s*-\s*(?:job|deployment):\s*([^\s#]+)")
+_AZURE_STAGE = re.compile(r"^\s*-\s*stage:\s*([^\s#]+)")
+_AZURE_RUNTIME_TASKS = {
+    "UsePythonVersion": "python",
+    "UseDotNet": "dotnet",
+    "NodeTool": "node",
+}
 
 
 def _read(path: Path) -> tuple[str | None, str | None]:
@@ -61,8 +68,84 @@ def _job_blocks(lines: list[str]) -> list[tuple[str, list[str]]]:
     return result
 
 
+def _azure_job_blocks(lines: list[str]) -> list[tuple[str, list[str]]]:
+    block = _block(lines, "jobs")
+    starts = [(index, _strip_comment(match.group(1)).strip(" '\""))
+              for index, line in enumerate(block[1:], 1)
+              if (match := _AZURE_JOB.match(line))]
+    result: list[tuple[str, list[str]]] = []
+    for position, (start, name) in enumerate(starts):
+        end = starts[position + 1][0] if position + 1 < len(starts) else len(block)
+        result.append((name, block[start:end]))
+    return result
+
+
+def _azure_stage_job_blocks(lines: list[str]) -> list[tuple[str, list[str]]]:
+    block = _block(lines, "stages")
+    stage_starts = [(index, len(line) - len(line.lstrip()),
+                     _strip_comment(match.group(1)).strip(" '\""))
+                    for index, line in enumerate(block)
+                    if (match := _AZURE_STAGE.match(line))]
+    stage_data: list[tuple[str, list[str], list[tuple[str, list[str]]]]] = []
+    for position, (start, stage_indent, stage_name) in enumerate(stage_starts):
+        end = stage_starts[position + 1][0] if position + 1 < len(stage_starts) else len(block)
+        stage_lines = block[start:end]
+        job_starts = [(index, _strip_comment(match.group(1)).strip(" '\""))
+                      for index, line in enumerate(stage_lines[1:], 1)
+                      if (match := _AZURE_JOB.match(line))
+                      and len(line) - len(line.lstrip()) > stage_indent]
+        jobs: list[tuple[str, list[str]]] = []
+        for job_position, (job_start, job_name) in enumerate(job_starts):
+            job_end = (job_starts[job_position + 1][0]
+                       if job_position + 1 < len(job_starts) else len(stage_lines))
+            jobs.append((job_name, stage_lines[job_start:job_end]))
+        stage_data.append((stage_name, stage_lines, jobs))
+
+    jobs_by_stage = {name: tuple(job_name for job_name, _ in jobs)
+                     for name, _, jobs in stage_data}
+    result: list[tuple[str, list[str]]] = []
+    for _, stage_lines, jobs in stage_data:
+        dependencies = _values_after(stage_lines, "dependsOn")
+        needs: list[str] = []
+        for dependency in dependencies:
+            needs.extend(jobs_by_stage.get(dependency, (dependency,)))
+        for job_name, job_lines in jobs:
+            result.append((job_name, job_lines +
+                           [f"  needs: [{', '.join(sorted(set(needs)))}]"]
+                           if needs else job_lines))
+    return result
+
+
+def _azure_runtime_values(lines: list[str]) -> list[str]:
+    runtimes: list[str] = []
+    language: str | None = None
+    for line in lines:
+        task = re.search(r"\btask:\s*([A-Za-z]+)@", line)
+        if task:
+            language = _AZURE_RUNTIME_TASKS.get(task.group(1))
+            continue
+        if re.match(r"^\s*-\s*", line):
+            language = None
+        if language:
+            version = re.search(r"\bversionSpec:\s*(.*?)\s*$", line)
+            if version:
+                value = _strip_comment(version.group(1)).strip(" '\"")
+                if value:
+                    runtimes.append(f"{language}:{value}")
+    return runtimes
+
+
 def _provider_job_blocks(lines: list[str], kind: str) -> list[tuple[str, list[str]]]:
     github_jobs = _job_blocks(lines)
+    if kind == "azure-pipelines":
+        stage_jobs = _azure_stage_job_blocks(lines)
+        if stage_jobs:
+            return stage_jobs
+        azure_jobs = _azure_job_blocks(lines)
+        if azure_jobs:
+            return azure_jobs
+        steps = _block(lines, "steps")
+        return [("default", steps)] if steps else []
     if kind != "gitlab-ci" or github_jobs:
         return github_jobs
     reserved = {"stages", "workflow", "variables", "default", "image", "include",
@@ -115,6 +198,13 @@ def _job(lines: list[str], name: str, kind: str) -> Job:
     commands: list[str] = []
     script_indent: int | None = None
     for line in lines:
+        if kind == "azure-pipelines":
+            azure_command = re.match(r"^\s*-\s*(?:bash|script|pwsh):\s*(.*?)\s*$", line)
+            if azure_command:
+                value = _strip_comment(azure_command.group(1))
+                if value and value not in {"|", ">"}:
+                    commands.append(value)
+                continue
         run = re.match(r"^\s*-?\s*run:\s*(.*?)\s*$", line)
         script = re.match(r"^(\s*)script:\s*(.*?)\s*$", line)
         if run and run.group(1):
@@ -141,10 +231,15 @@ def _job(lines: list[str], name: str, kind: str) -> Job:
                           line, re.IGNORECASE)
         if image:
             runtimes.append(image.group(1).lower() + ":" + image.group(2).strip(" '\""))
+    if kind == "azure-pipelines":
+        runtimes.extend(_azure_runtime_values(lines))
     environment = next((found.group(1).strip(" '\"") for line in lines
                         if (found := re.match(r"^\s*environment:\s*(.+?)\s*$", line))), None)
     stage = next((found.group(1).strip(" '\"") for line in lines
                   if (found := re.match(r"^\s*stage:\s*(.+?)\s*$", line))), None)
+    needs = _values_after(lines, "needs")
+    if kind == "azure-pipelines":
+        needs = tuple(sorted(set(needs) | set(_values_after(lines, "dependsOn"))))
     permissions = _values_after(lines, "permissions")
     release = bool(re.search(r"(?i)(release|publish|deploy)", name)
                    or any(re.search(r"(?i)(gh\s+release|npm\s+publish|twine\s+upload|docker\s+push|publish)", value)
@@ -154,14 +249,19 @@ def _job(lines: list[str], name: str, kind: str) -> Job:
                      for line in lines)
     return Job(
         name=name,
-        needs=_values_after(lines, "needs"),
+        needs=needs,
         commands=tuple(commands),
         actions=actions,
         checkout=any(action.startswith("actions/checkout@") for action in actions)
-        or kind == "gitlab-ci",
+        or kind == "gitlab-ci"
+        or kind == "azure-pipelines" and any(
+            re.match(r"^\s*-\s*checkout:\s*self(?:\s|$)", line) for line in lines),
         setup=any(action.startswith("actions/setup-") for action in actions)
         or kind == "gitlab-ci" and any(re.match(r"^\s*(?:image|before_script):", line)
-                                        for line in lines),
+                                        for line in lines)
+        or kind == "azure-pipelines" and any(
+            re.search(r"\btask:\s*(?:UsePythonVersion|UseDotNet|NodeTool)@", line)
+            or re.match(r"^\s*container:", line) for line in lines),
         runtimes=tuple(sorted(set(runtimes))),
         stage=stage,
         release=release,
