@@ -486,7 +486,7 @@ against §Refine's three signals and leads with the move those signals argue for
 | Recommendation | When | What choosing it does |
 | --- | --- | --- |
 | **Approve** | no signal fired | `cq specs record "<id>" approved --set date=<today> --set by=human`, never by editing the provider document directly |
-| **Refine** | a scope or critique signal fired, and refine has not run this pass | a **raise to `high`** ([spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §Re-evaluating a gear, the fourth signal); the choice IS the OK to restamp `complexity`, and the pass re-enters at refine |
+| **Refine** | a scope or critique signal fired, and refine has not run this pass | a **raise to `high`** because the composition has outgrown its original level; the choice IS the OK to restamp `complexity`, and the pass re-enters at refine |
 | **Refine with the premortem** | the spec is irreversible | a raise to `xhigh`, same mechanics, premortem forced |
 | **Stop here** | — | nothing stamped, and the report says what is open |
 
