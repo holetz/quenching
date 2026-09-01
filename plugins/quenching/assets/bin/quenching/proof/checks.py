@@ -6,6 +6,8 @@ suite itself remains outside this pillar's execution boundary.
 """
 from __future__ import annotations
 
+import os
+
 from quenching.ops.config import load_ops_config
 from quenching.ops.inventory import build_inventory as build_ops_inventory
 from quenching.proof.model import Finding, ProofInventory
@@ -100,6 +102,14 @@ def check_no_ci(inventory: ProofInventory) -> list[Finding]:
         return []
     return [_error("pf-no-ci", "no CI definition invokes the proof gate",
                    path=inventory.ci[0].path if inventory.ci else None)]
+
+
+def _ops_root_module(repo_root: str, operations_root: str) -> str | None:
+    relative = os.path.relpath(operations_root, repo_root)
+    if relative == os.pardir or relative.startswith(os.pardir + os.sep):
+        return None
+    parts = relative.replace(os.sep, "/").split("/")
+    return ".".join(part for part in parts if part not in {"", "."}) or None
 
 
 def check_order_unproven(inventory: ProofInventory) -> list[Finding]:
