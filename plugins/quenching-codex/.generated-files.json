@@ -326,7 +326,7 @@
   ],
   "sha256": {
     ".codex-plugin/plugin.json": "0a696ee33b34996d136d4aa2d32fcc35bd34af35efb475b0cabefbafcaf87f34",
-    ".generated-from.json": "47ba4f9f68a74e93462f409634371a52833bac4b398f68af47a4c60376de52a1",
+    ".generated-from.json": "d3161abea16360a0b017090df0282a0e7b0795652978aaec3db2622f192f367c",
     "README.md": "c7002a0beff26bb29bae7edd9acd2b48b7ffe34651f40f16796449f543d90b3b",
     "VERSION": "e33e70efdb9c35eb184b87ee7abc05ac16a925c9c36e84408999dea33a741fa8",
     "checks/catalog-publication-check.py": "9f4c9b75b524e31bd9420036a5384801ef707ef5708956abba1d6eb62c398f9e",
@@ -570,7 +570,7 @@
     "scripts/bin/quenching/toolchain/model.py": "5ee3d747bd9c1964f7e299610794cace6acdc8d0a24b0b79925ce06db4c05924",
     "scripts/bin/quenching/toolchain/probe.py": "f76a9388586457289497bbf16b9b889ebcde601fb70f0dfcc7f80626da8ce883",
     "scripts/cq": "726cb7295d9ed0724c8e929b03b4a13e61f9b062f7c675b3394471764f0bc352",
-    "skills/quenching-align/SKILL.md": "b390d878cef595ed6a9fb97f4b1071bd76b218b6bb910832e4100f92b21659e6",
+    "skills/quenching-align/SKILL.md": "fff7b8f1786f40dc903222c7853ed91bce68fe8d4b456141662acbcb2eb8c69d",
     "skills/quenching-components-agent-new/SKILL.md": "0a4ddd247871161209e0394342a20512ed18a0608ed031f624039de9c7f343b9",
     "skills/quenching-components-align/SKILL.md": "418bfa0c9fc2e4405cfcb08ab01073ff0c5a12477372155bc008d2a0b021e5f8",
     "skills/quenching-components-command-eval/SKILL.md": "27a4d45ba21077e2440e565df535f125aff4f227ac7d01f558e6970e25ee0344",
