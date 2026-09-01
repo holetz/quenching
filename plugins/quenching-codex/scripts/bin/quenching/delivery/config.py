@@ -24,6 +24,8 @@ def load_delivery_config(root: str) -> tuple[dict[str, Any], dict[str, Any]]:
         }
     if envelope["migrationRefusal"]:
         return {}, envelope["migrationRefusal"]
+    if "delivery" not in envelope["data"]:
+        return {}, {}
     if "delivery" in envelope["invalidNamespaces"]:
         return {}, {
             "code": "delivery-config-invalid",

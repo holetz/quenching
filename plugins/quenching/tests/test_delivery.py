@@ -34,6 +34,73 @@ class DeliveryResults(unittest.TestCase):
         self.assertIsNone(payload["inventory"])
         self.assertEqual([], payload["findings"])
 
+    def test_config_without_delivery_namespace_is_not_applicable(self):
+        payload, code = self._run({".claude/quenching.json": "{}\n"})
+        self.assertEqual(0, code)
+        self.assertEqual("not-applicable", payload["applicability"]["state"])
+        self.assertIsNone(payload["inventory"])
+        self.assertEqual([], payload["findings"])
+
+    def test_declared_delivery_without_workflow_is_applicable(self):
+        payload, code = self._run({".claude/quenching.json": '{"delivery": {}}\n'})
+        self.assertEqual(1, code)
+        self.assertEqual("applicable", payload["applicability"]["state"])
+        self.assertEqual([], payload["inventory"]["workflows"])
+        self.assertEqual("delivery-provider-policy", payload["findings"][0]["code"])
+
+    def test_azure_top_level_steps_prove_job_checkout_setup_and_runtime(self):
+        payload, code = self._run({
+            "azure-pipelines.yml": (
+                "trigger: [main]\n"
+                "steps:\n"
+                "- checkout: self\n"
+                "- task: UsePythonVersion@0\n"
+                "  inputs:\n"
+                "    versionSpec: '3.12'\n"
+                "- script: python -m unittest\n"
+            ),
+        })
+        self.assertEqual(0, code)
+        workflow = payload["inventory"]["workflows"][0]
+        self.assertEqual("azure", workflow["provider"])
+        self.assertEqual(["default"], workflow["jobs"])
+        job = workflow["jobDetails"][0]
+        self.assertTrue(job["checkout"])
+        self.assertTrue(job["setup"])
+        self.assertEqual(["python:3.12"], job["runtimes"])
+        self.assertEqual(["python -m unittest"], job["commands"])
+        self.assertEqual([], payload["findings"])
+
+    def test_azure_named_jobs_prove_dependency_chain(self):
+        payload, code = self._run({
+            "azure-pipelines.yml": (
+                "trigger: [main]\n"
+                "jobs:\n"
+                "- job: build\n"
+                "  steps:\n"
+                "  - checkout: self\n"
+                "  - task: UsePythonVersion@0\n"
+                "    inputs:\n"
+                "      versionSpec: '3.12'\n"
+                "  - script: python -m build\n"
+                "- deployment: deploy\n"
+                "  dependsOn: build\n"
+                "  steps:\n"
+                "  - checkout: self\n"
+                "  - task: UsePythonVersion@0\n"
+                "    inputs:\n"
+                "      versionSpec: '3.12'\n"
+                "  - script: python -m deploy\n"
+            ),
+        })
+        self.assertEqual(0, code)
+        workflow = payload["inventory"]["workflows"][0]
+        self.assertEqual("azure", workflow["provider"])
+        self.assertEqual(["build", "deploy"], workflow["jobs"])
+        self.assertEqual([[], ["build"]],
+                         [job["needs"] for job in workflow["jobDetails"]])
+        self.assertEqual([], payload["findings"])
+
     def test_conformant_workflow_is_stable_and_read_only(self):
         payload, code = self._run({
             ".github/workflows/ci.yml": (

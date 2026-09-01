@@ -44,13 +44,15 @@ def probe_delivery(root: str) -> Applicability:
 
     rows = workflow_artifacts(repo_root)
     configured = configured_provider(config)
+    has_declaration = bool(config)
     providers = sorted({provider for _, provider, _ in rows})
     artifacts = [path for path, _, _ in rows]
-    if config:
+    if has_declaration:
         artifacts.append(".agents/quenching.json#delivery")
-    if not rows and not config:
+    if not rows and not has_declaration:
         return Applicability(str(repo_root), "not-applicable", None)
     provider = configured or (providers[0] if len(providers) == 1 else
                               "multiple" if providers else None)
-    signal = "configuration" if config and not rows else "workflow-tree" if rows else "configuration"
+    signal = ("configuration" if has_declaration and not rows
+              else "workflow-tree" if rows else "configuration")
     return Applicability(str(repo_root), "applicable", signal, provider, tuple(sorted(artifacts)))
