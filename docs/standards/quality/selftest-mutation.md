@@ -151,7 +151,7 @@ predicate fail for the sibling reason: the real surface raises neither `sk-no-bo
 `sk-trigger-position`, so flipping the residency gate has no finding to add or remove.
 
 The two kills are the mirror image, and confirm the reading. Dropping the leading-slash exclusion
-*adds* `/specs:cycle` to the caller set, which is enough to make `sk-inert-stage` fire where it did
+*adds* a command-like caller to the caller set, which is enough to make `sk-inert-stage` fire where it did
 not; ungating `sk-inert-stage` fires it for every `disable-model-invocation` command outright. Both
 push the real surface across a threshold. Nothing that stays on this side of it is observable.
 

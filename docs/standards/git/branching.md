@@ -27,10 +27,9 @@ init.defaultBranch → main` ([plan-git-record.md](../workflows/plan-git-record.
 
 ## The PR is the entry route
 
-All work enters `main` through a pull request: the specs cycle (`/quenching:specs:cycle`,
-`/quenching:specs:execute`, `/quenching:specs:execute-queue`) opens the PR against the primary
-branch and human review lives in the PR. There is no local merge of specs — each change is reviewed
-before it enters, not after.
+All work enters `main` through a pull request: the spec execution route followed by
+`/quenching:git:pr:create` opens the PR against the primary branch and human review lives in the PR.
+There is no local merge of specs — each change is reviewed before it enters, not after.
 
 ## The trigger is demand, not cadence
 
