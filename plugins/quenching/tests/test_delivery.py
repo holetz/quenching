@@ -48,6 +48,29 @@ class DeliveryResults(unittest.TestCase):
         self.assertEqual([], payload["inventory"]["workflows"])
         self.assertEqual("delivery-provider-policy", payload["findings"][0]["code"])
 
+    def test_azure_top_level_steps_prove_job_checkout_setup_and_runtime(self):
+        payload, code = self._run({
+            "azure-pipelines.yml": (
+                "trigger: [main]\n"
+                "steps:\n"
+                "- checkout: self\n"
+                "- task: UsePythonVersion@0\n"
+                "  inputs:\n"
+                "    versionSpec: '3.12'\n"
+                "- script: python -m unittest\n"
+            ),
+        })
+        self.assertEqual(0, code)
+        workflow = payload["inventory"]["workflows"][0]
+        self.assertEqual("azure", workflow["provider"])
+        self.assertEqual(["default"], workflow["jobs"])
+        job = workflow["jobDetails"][0]
+        self.assertTrue(job["checkout"])
+        self.assertTrue(job["setup"])
+        self.assertEqual(["python:3.12"], job["runtimes"])
+        self.assertEqual(["python -m unittest"], job["commands"])
+        self.assertEqual([], payload["findings"])
+
     def test_conformant_workflow_is_stable_and_read_only(self):
         payload, code = self._run({
             ".github/workflows/ci.yml": (
