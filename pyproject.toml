@@ -1,3 +1,8 @@
+# quenching-arbiters-start
+# quenching-arbiters-sha256 8e83510c79b958fbf716ed5359931d19b87936fdc9b751c57d3504d34dd260a8
+# quenching-arbiters-data {"artifact":"pyproject.toml","entries":[{"arbiter":"ops","key":"project.scripts"},{"arbiter":"proof","key":"tool.coverage"},{"arbiter":"proof","key":"tool.pytest"}]}
+# quenching-arbiters-end
+
 [project]
 name = "quenching-documentation"
 version = "0.1.0"

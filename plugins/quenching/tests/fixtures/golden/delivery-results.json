@@ -1,0 +1,36 @@
+{
+  "absent": {
+    "applicability": "not-applicable",
+    "codes": []
+  },
+  "conformant": {
+    "applicability": "applicable",
+    "codes": []
+  },
+  "mechanical": {
+    "codes": [],
+    "note": "the delivery route owns no generated workflow artifact yet"
+  },
+  "structural": {
+    "codes": [
+      "delivery-stage-unreachable",
+      "delivery-checkout-missing",
+      "delivery-setup-missing",
+      "delivery-runtime-drift",
+      "delivery-release-unreachable"
+    ]
+  },
+  "judgement": {
+    "codes": [
+      "delivery-provider-policy",
+      "delivery-environment-policy",
+      "delivery-publish-scope",
+      "delivery-permission-policy"
+    ]
+  },
+  "not-measured": {
+    "state": "applicable",
+    "code": "delivery-provider-policy",
+    "note": "an applicable provider without a recognized workflow adapter is not green"
+  }
+}

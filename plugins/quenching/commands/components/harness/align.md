@@ -98,6 +98,9 @@ contradiction.
 **The language declaration line is always KEEP.** Preserve
 `Language: <tag> — the contract is /docs/standards/agents/communication.md` verbatim; never
 classify it MOVE or DEDUPE.
+**The ephemeral-writes declaration line is always KEEP.** Preserve
+`Ephemeral writes: <path> — the contract is /docs/standards/agents/ephemeral-writes.md` verbatim;
+never classify it MOVE or DEDUPE.
 **Done when:** every unit has one routing verdict and any contradiction is quoted.
 
 ### 4. Sweep the blast radius

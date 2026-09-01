@@ -77,38 +77,6 @@ class InferBaseBranch(unittest.TestCase):
                 self.assertEqual(infer_base_branch(cfg, origin_head, init_default), want)
 
 
-class LoadConfigFanoutMinComplexity(unittest.TestCase):
-    """`fanoutMinComplexity` — the fan-out floor `redefinir-o-que-complexity-mede-e-configurar-o-limiar-do-fan-out`
-    adds beside `backend`/`unknownBackend`, same shape: absent or invalid falls back to the
-    default rather than to no floor at all, and an invalid declared value is kept, not discarded,
-    so `doctor` can quote it back. The default is `medium` — the cut where the gears scale stops
-    answering from evidence and starts asking a human, which is exactly what a fan-out can and
-    cannot buy. It moved from `high` when that line moved: only `low` interrupts nobody now."""
-
-    def _load(self, declared: dict) -> dict:
-        with tempfile.TemporaryDirectory() as tmp:
-            os.makedirs(os.path.join(tmp, ".claude"))
-            with open(os.path.join(tmp, ".claude", "quenching.json"), "w") as f:
-                json.dump(declared, f)
-            return load_config(os.path.join(tmp, ".specs"))
-
-    def test_absent_falls_back_to_the_default_floor(self):
-        cfg = self._load({})
-        self.assertEqual(cfg["fanoutMinComplexity"], "medium")
-        self.assertIsNone(cfg["unknownFanoutMinComplexity"])
-
-    def test_a_declared_level_reflects(self):
-        cfg = self._load({"fanoutMinComplexity": "low"})
-        self.assertEqual(cfg["fanoutMinComplexity"], "low")
-        self.assertIsNone(cfg["unknownFanoutMinComplexity"])
-
-    def test_a_value_outside_the_four_levels_keeps_the_default_and_is_quoted_back(self):
-        cfg = self._load({"fanoutMinComplexity": "yolo"})
-        self.assertEqual(cfg["fanoutMinComplexity"], "medium")
-        self.assertEqual(cfg["unknownFanoutMinComplexity"], "yolo")
-
-
-
 class LoadConfigGitConventions(unittest.TestCase):
     """`gitConventions` — the target's own directives for the texts the `git` pillar writes.
     Prompt material like a `tagCatalog` value, so the read keeps only a non-empty string under a
@@ -116,7 +84,10 @@ class LoadConfigGitConventions(unittest.TestCase):
     discarded: a `commitSubjekt` that silently never applies is the same failure `cmd_doctor`
     already guards `worktreeSetup` against, and only a named sub-key can be reported."""
 
-    def _load(self, declared: dict) -> dict:
+    def _load(self, conventions=None) -> dict:
+        """Declared through the envelope's `shared` namespace — a root-level `gitConventions`
+        is a migration refusal now, not a second way to say the same thing."""
+        declared = {"shared": {"gitConventions": conventions}} if conventions is not None else {}
         with tempfile.TemporaryDirectory() as tmp:
             os.makedirs(os.path.join(tmp, ".claude"))
             with open(os.path.join(tmp, ".claude", "quenching.json"), "w") as f:
@@ -124,35 +95,34 @@ class LoadConfigGitConventions(unittest.TestCase):
             return load_config(os.path.join(tmp, ".specs"))
 
     def test_absent_declares_nothing_and_is_not_an_unknown_key(self):
-        cfg = self._load({})
+        cfg = self._load()
         self.assertEqual(cfg["gitConventions"], {})
         self.assertEqual(cfg["unknownGitConventions"], [])
         self.assertEqual(cfg["badGitConventions"], [])
 
     def test_the_five_recognised_directives_reflect_stripped(self):
-        cfg = self._load({"gitConventions": {
+        cfg = self._load({
             "commitSubject": "  [TICKET] no imperativo  ",
             "branchName": "feat/<ticket>-<handle>",
             "prTitle": "o subject do primeiro commit, sem o prefixo",
             "prBody": "tres blocos: o que muda, como provar, o que fica de fora",
-            "mergeSubject": "Merge <branch> (<strategy>)"}})
+            "mergeSubject": "Merge <branch> (<strategy>)"})
         self.assertEqual(cfg["gitConventions"]["commitSubject"], "[TICKET] no imperativo")
         self.assertEqual(sorted(cfg["gitConventions"]), sorted(GIT_CONVENTION_KEYS))
         self.assertEqual(cfg["badGitConventions"], [])
 
     def test_a_sub_key_outside_the_five_is_named_rather_than_swallowed(self):
-        cfg = self._load({"gitConventions": {"prDescription": "x", "prTitle": "y"}})
+        cfg = self._load({"prDescription": "x", "prTitle": "y"})
         self.assertEqual(cfg["gitConventions"], {"prTitle": "y"})
         self.assertEqual(cfg["unknownGitConventions"], ["prDescription"])
 
     def test_an_empty_or_non_string_directive_is_dropped_and_named(self):
-        cfg = self._load({"gitConventions": {"commitSubject": "   ", "prBody": 7,
-                                             "prTitle": "keep"}})
+        cfg = self._load({"commitSubject": "   ", "prBody": 7, "prTitle": "keep"})
         self.assertEqual(cfg["gitConventions"], {"prTitle": "keep"})
         self.assertEqual(cfg["badGitConventions"], ["commitSubject", "prBody"])
 
     def test_a_non_object_value_declares_nothing(self):
-        cfg = self._load({"gitConventions": "veja docs/standards/git/"})
+        cfg = self._load("veja docs/standards/git/")
         self.assertEqual(cfg["gitConventions"], {})
         self.assertEqual(cfg["unknownGitConventions"], [])
 

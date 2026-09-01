@@ -1,4 +1,4 @@
-"""The `git` pillar's four subcommands, exercised against real throwaway git repositories —
+"""The `git` pillar's five subcommands, exercised against real throwaway git repositories —
 the same choice `test_golden.py` makes for the other three pillars, taken further here
 because `base`, `stale` and `conventions` read facts (refs, a branch's own description, live
 worktrees, an on-disk standards folder) no filesystem-only fixture reproduces honestly.
@@ -24,7 +24,7 @@ from quenching.git.base import (_init_default_branch, _is_host_default, _origin_
 from quenching.git.conventions import STANDARDS_DIR, _declared_docs
 from quenching.git.slugs import _read_specs, cmd_specs
 from quenching.git.stale import (_gone_branches, _merged_branches, _merged_remote_branches,
-                                 _orphan_worktrees)
+                                 _orphan_worktrees, _unregistered_worktrees)
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
@@ -195,6 +195,33 @@ class Stale(RepoCase):
         _run(self.repo, "worktree", "add", "-q", "-b", "wt-branch-2", wt)
         self.assertEqual(_orphan_worktrees(self.repo), [])
 
+    def test_an_unregistered_worktree_is_reported_with_branch_and_size(self):
+        wt = pathlib.Path(self.tmp, "unregistered")
+        _run(self.repo, "worktree", "add", "-q", "-b", "unregistered-branch", str(wt))
+        (wt / "ignored.bin").write_bytes(b"payload\n")
+        pointer = (wt / ".git").read_text(encoding="utf-8").split(":", 1)[1].strip()
+        admin = pathlib.Path(pointer)
+        (admin / "gitdir").unlink()
+
+        rows = _cq_json(self.repo, "stale")["unregisteredWorktrees"]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["path"], str(wt))
+        self.assertEqual(rows[0]["branch"], "unregistered-branch")
+        self.assertGreater(rows[0]["size"], 0)
+        self.assertEqual(_unregistered_worktrees(self.repo), rows)
+
+    def test_plain_sibling_clone_and_other_repository_worktree_are_silent(self):
+        pathlib.Path(self.tmp, "plain").mkdir()
+        clone = pathlib.Path(self.tmp, "clone")
+        subprocess.run(["git", "clone", "-q", self.repo, str(clone)], check=True,
+                       capture_output=True, text=True)
+
+        other = _init_repo(os.path.join(self.tmp, "other-repo"))
+        other_worktree = pathlib.Path(self.tmp, "other-worktree")
+        _run(other, "worktree", "add", "-q", "-b", "other-branch", str(other_worktree))
+
+        self.assertEqual(_cq_json(self.repo, "stale")["unregisteredWorktrees"], [])
+
     def test_cq_git_stale_json_excludes_base_and_reports_merged(self):
         _run(self.repo, "branch", "feature-e")
         payload = _cq_json(self.repo, "stale")
@@ -223,6 +250,90 @@ class Stale(RepoCase):
         self.assertEqual(payload["orphanWorktrees"], [])
 
 
+class Worktree(RepoCase):
+    def setUp(self):
+        super().setUp()
+        self.relative = "shared"
+        config = pathlib.Path(self.repo) / ".claude" / "quenching.json"
+        config.parent.mkdir()
+        config.write_text(json.dumps({"sharedPaths": [self.relative]}) + "\n", encoding="utf-8")
+        pathlib.Path(self.repo, ".gitignore").write_text(f"/{self.relative}\n", encoding="utf-8")
+        _run(self.repo, "add", ".claude/quenching.json", ".gitignore")
+        _run(self.repo, "commit", "-q", "-m", "declare shared path")
+
+    @property
+    def link(self):
+        return pathlib.Path(self.repo, self.relative)
+
+    @property
+    def store(self):
+        common = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=self.repo, check=True, capture_output=True, text=True).stdout.strip()
+        return pathlib.Path(f"{pathlib.Path(common).parent}.{self.relative}")
+
+    def test_absent_path_creates_the_shared_store_link(self):
+        payload = _cq_json(self.repo, "worktree", "link")
+        self.assertEqual(payload["paths"][0]["state"], "created")
+        self.assertTrue(self.link.is_symlink())
+        self.assertEqual(self.link.resolve(), self.store.resolve())
+
+    def test_existing_link_to_the_store_is_unchanged(self):
+        self.store.mkdir()
+        self.link.symlink_to(self.store)
+        payload = _cq_json(self.repo, "worktree", "link")
+        self.assertEqual(payload["paths"][0]["state"], "unchanged")
+        self.assertTrue(self.link.is_symlink())
+        self.assertEqual(self.link.resolve(), self.store.resolve())
+
+    def test_existing_link_to_another_place_is_repointed(self):
+        other = pathlib.Path(self.tmp, "other")
+        other.mkdir()
+        self.link.symlink_to(other)
+        payload = _cq_json(self.repo, "worktree", "link")
+        self.assertEqual(payload["paths"][0]["state"], "repointed")
+        self.assertEqual(self.link.resolve(), self.store.resolve())
+
+    def test_primary_and_worktree_resolve_to_the_same_store(self):
+        primary = _cq_json(self.repo, "worktree", "link")
+        worktree = pathlib.Path(self.tmp, "worktree")
+        _run(self.repo, "worktree", "add", "-q", "-b", "shared-wt", str(worktree))
+        secondary = _cq_json(str(worktree), "worktree", "link")
+        self.assertEqual(primary["paths"][0]["store"], secondary["paths"][0]["store"])
+        self.assertEqual(pathlib.Path(self.repo, self.relative).resolve(),
+                         (worktree / self.relative).resolve())
+
+    def test_real_directory_with_content_is_refused_without_deleting_it(self):
+        self.link.mkdir()
+        keep = self.link / "keep"
+        keep.write_text("preserve\n", encoding="utf-8")
+        proc = subprocess.run([sys.executable, CQ, "git", "worktree", "link", "--json"],
+                              cwd=self.repo, capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 2)
+        self.assertEqual(json.loads(proc.stdout)["code"], "git-worktree-path-not-empty")
+        self.assertEqual(keep.read_text(encoding="utf-8"), "preserve\n")
+        self.assertFalse(self.store.exists())
+
+    def test_directory_with_only_dotenv_is_refused_and_preserved(self):
+        self.link.mkdir()
+        dotenv = self.link / ".env"
+        dotenv.write_text("SECRET=keep\n", encoding="utf-8")
+        proc = subprocess.run([sys.executable, CQ, "git", "worktree", "link", "--json"],
+                              cwd=self.repo, capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 2)
+        self.assertEqual(json.loads(proc.stdout)["code"], "git-worktree-path-not-empty")
+        self.assertEqual(dotenv.read_text(encoding="utf-8"), "SECRET=keep\n")
+        self.assertFalse(self.store.exists())
+
+    def test_second_run_is_idempotent_and_exits_zero(self):
+        _cq_json(self.repo, "worktree", "link")
+        before = os.lstat(self.link)
+        payload = _cq_json(self.repo, "worktree", "link")
+        after = os.lstat(self.link)
+        self.assertEqual(payload["paths"][0]["state"], "unchanged")
+        self.assertEqual((before.st_dev, before.st_ino), (after.st_dev, after.st_ino))
+
+
 class Conventions(RepoCase):
     def test_nothing_declared_is_an_empty_list(self):
         self.assertEqual(_declared_docs(self.repo), [])
@@ -248,10 +359,11 @@ class Conventions(RepoCase):
         self.assertEqual((payload["governs"], payload["declared"]), ("defaults", []))
 
     def _declare(self, conventions: dict) -> None:
+        """Through the envelope's `shared` namespace — where every cross-front setting lives."""
         d = os.path.join(self.repo, ".claude")
         os.makedirs(d, exist_ok=True)
         with open(os.path.join(d, "quenching.json"), "w", encoding="utf-8") as f:
-            json.dump({"gitConventions": conventions}, f)
+            json.dump({"shared": {"gitConventions": conventions}}, f)
 
     def test_the_declared_directives_ride_the_payload(self):
         self._declare({"commitSubject": "[TICKET] no imperativo",

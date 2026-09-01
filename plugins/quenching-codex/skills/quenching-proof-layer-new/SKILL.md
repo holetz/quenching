@@ -68,7 +68,7 @@ structural plan plus the separate migration decision are ready.
 
 Present one plan for the five coupled structural edits:
 
-1. add the named layer to `.agents/quenching.json`'s `layers` map with reach, budget and
+1. add the named layer to `.agents/quenching.json`'s `proof.layers` map with reach, budget and
    `required: false` until the owner has filled and deliberately promoted the layer;
 2. create `tests/<layer>/`;
 3. register the derived marker and its one-line description in the target's pytest configuration;
@@ -136,7 +136,7 @@ and the report hands back every remaining decision without writing anything else
 
 - One named layer per run; no inferred taxonomy and no placeholder layers for unclaimed evidence.
 - The directory, marker, hook, fixture home and generated README are one coupled structural unit.
-- Reach and budget live in `.agents/quenching.json`'s `layers` declaration.
+- Reach and budget live in `.agents/quenching.json`'s `proof.layers` declaration.
 - Existing test moves are proposed with paths and count, and never happen without their own
   confirmation.
 - Existing hook rules and authored README prose survive; generated zones are the only bytes the

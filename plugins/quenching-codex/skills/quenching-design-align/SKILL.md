@@ -14,6 +14,12 @@ The front owns the design source and its documents. Impeccable remains an option
 the owner of screen craft: its `document` flow may propose a new `DESIGN.md`, but that file becomes
 source only through the explicit import choice below.
 
+The common front contract is in
+[front-align/mold.md](../../references/front-align/mold.md); this command
+keeps the design delta in
+[design-align/bands.md](../../references/design-align/bands.md). The mold
+does not choose a DTCG source winner or turn visual policy into an automatic repair.
+
 Resolve `cq` per
 [tool-resolution.md](../../references/align/tool-resolution.md)
 §Resolving the tool. Use the resolved path literally and branch on exit codes

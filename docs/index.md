@@ -22,7 +22,7 @@ before anyone touches a file.
   [the how-to guides](how-to/index.md).
 - **Understand why** — the five local fronts, the OKF bundle, the DTCG design source, and the provider-owned spec lifecycle:
   [the explanations](explanation/index.md).
-- **Look it up** — all forty-seven commands, the local automation registry:
+- **Look it up** — the complete command catalog and the local automation registry:
   [this project's reference](project/index.md), and the [glossary](glossary.md).
 
 ## The problem
@@ -80,7 +80,8 @@ Everything above and below it lives in one **Open Knowledge Format (OKF v0.1)** 
 repositories that adopt this method finds the **same tree in the same place**. This `index.md` is
 that bundle's reserved listing — the only one carrying frontmatter, and only `okf_version`. Folder
 names and frontmatter keys are canonical English kebab-case; the language of authored prose is
-owned by [standards/agents/communication.md](standards/agents/communication.md).
+owned by [standards/agents/communication.md](standards/agents/communication.md), and ephemeral file
+destinations by [standards/agents/ephemeral-writes.md](standards/agents/ephemeral-writes.md).
 
 ### Homes
 

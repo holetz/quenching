@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-08-28
 audience: human
 authority: current
-source: plugins/quenching/README.md §The six fronts; command bodies under plugins/quenching/commands/{knowledge,design,components,ops,proof}/ and align.md
+source: plugins/quenching/README.md §The six fronts, the seventh pillar, and the one align per front; command bodies under plugins/quenching/commands/{knowledge,design,components,ops,proof}/ and align.md
 maintainer: Israel Holetz
 ---
 
@@ -61,7 +61,7 @@ flowchart LR
 2. Type `/quenching:align`. The probe runs each applicable front's own verifier first
    (`cq knowledge validate`, `cq design doctor`, `cq components doctor`/`lint`, `cq ops doctor`,
    `cq proof doctor`); a clean front stops without ceremony. `ops` and `proof` are applicable
-   when `.claude/quenching.json` declares their roots, or when their fixed conventional-root
+   when `.claude/quenching.json` declares `ops.opsRoot` or `proof.proofRoot`, or when their fixed conventional-root
    probes find an entry point or test module. Otherwise the report says *not applicable* and
    offers the declaration path without inventing a plan.
 3. Read the ONE plan per drifted front. It names every move: which stray docs fold into which
@@ -72,13 +72,13 @@ flowchart LR
 
 ## What the operations and proof fronts add
 
-The operations front reads `opsRoot` and `router` from `.claude/quenching.json`, then probes before
+The operations front reads `ops.opsRoot` and `ops.router` from `.claude/quenching.json`, then probes before
 it inventories. It may regenerate a stale registry and make bounded structural repairs; it never
 arms a write-capable entry point, chooses an undeclared router, or drives judgement findings.
 `/quenching:ops:status` is the read-only report, and `/quenching:ops:entrypoint:new` is the gated
 minting path for one new Python entry point.
 
-The proof front follows the same probe-first boundary over `proofRoot`. It can make bounded gate
+The proof front follows the same probe-first boundary over `proof.proofRoot`. It can make bounded gate
 and fixture repairs, but it does not invent layers, choose the measured surface, install CI, run
 the target suite, or raise a deferred floor. `/quenching:proof:status` reports those facts without
 writing, while `/quenching:proof:layer:new` creates one named layer only after its own confirmation
