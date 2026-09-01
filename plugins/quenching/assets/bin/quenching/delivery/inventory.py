@@ -63,6 +63,9 @@ def _job_blocks(lines: list[str]) -> list[tuple[str, list[str]]]:
 
 def _provider_job_blocks(lines: list[str], kind: str) -> list[tuple[str, list[str]]]:
     github_jobs = _job_blocks(lines)
+    if kind == "azure-pipelines" and not github_jobs:
+        steps = _block(lines, "steps")
+        return [("default", steps)] if steps else []
     if kind != "gitlab-ci" or github_jobs:
         return github_jobs
     reserved = {"stages", "workflow", "variables", "default", "image", "include",
