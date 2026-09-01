@@ -322,11 +322,11 @@
   ],
   "sha256": {
     ".codex-plugin/plugin.json": "0a696ee33b34996d136d4aa2d32fcc35bd34af35efb475b0cabefbafcaf87f34",
-    ".generated-from.json": "3fb077d8af6cb8e7890f657b5cab5650b6eaf1a31011848ffcf7215e432eb85d",
+    ".generated-from.json": "8ac83691505de5f6f5568f343f427d6ffd6e62e3f04aca2e33c295922ee99de2",
     "README.md": "d8128145e7e3d7936fb71696877b084e7545c05a866a6d877da9ec21b42dcc58",
     "VERSION": "e33e70efdb9c35eb184b87ee7abc05ac16a925c9c36e84408999dea33a741fa8",
     "checks/catalog-publication-check.py": "9f4c9b75b524e31bd9420036a5384801ef707ef5708956abba1d6eb62c398f9e",
-    "checks/citation-check.sh": "747f3103c834b5e5497a89a10d1c5c396259f32b6621add032626468591d117f",
+    "checks/citation-check.sh": "15bd7ec04367418d06dd17239c63dbd6162fe321007f18f63d50231f201421c4",
     "checks/documentation-site-check.py": "144972ca732c9309a9b3bbbbe03787eef82ef2b54cad8005c9e9b0bfa8a23f73",
     "checks/fixtures/catalog-publication/healthy/reference/catalog/clientes.md": "23c305552a83a1c9ab89ae0d556388391de8b0f3d8130da0a45cb9bec1662492",
     "checks/fixtures/catalog-publication/healthy/reference/catalog/index.md": "53a852f7503ee551ebbb387f21cdd2e0d10e92f75e176b169ea130d1d883dd19",
