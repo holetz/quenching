@@ -1,5 +1,5 @@
 ---
-description: Align the whole repository — /docs/, /.design/, then .claude/, ops and proof — on ONE confirmation, looping until nothing changes. Triggers on "align the repo", "align everything", "align and update everything", "set up quenching here", "converge this repository", "run all the aligns", "fix both fronts", or "fix all fronts". Not for: aligning one front → its `/quenching:*:align` command; changing product code → the owning spec.
+description: Align the whole repository — /docs/, /.design/, then .claude/, ops, proof, toolchain and delivery — on ONE confirmation, looping until nothing changes. Triggers on "align the repo", "align everything", "align and update everything", "set up quenching here", "converge this repository", "run all the aligns", "fix both fronts", or "fix all fronts". Not for: aligning one front → its `/quenching:*:align` command; changing product code → the owning spec.
 argument-hint: [optional-scope]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
 ---
@@ -21,9 +21,12 @@ front named in that cell has completed its inherited authorization.
 | `components` — `.claude/` | `/quenching:components:align` | `design` |
 | `ops` — operations surface | `/quenching:ops:align` | `components` |
 | `proof` — verification surface | `/quenching:proof:align` | `ops` |
+| `toolchain` — toolchain surface | `/quenching:toolchain:align` | `proof` |
+| `delivery` — delivery surface | `/quenching:delivery:align` | `toolchain` |
 
-The `specs` provider flow and the `git` pillar have no row: neither owns a local tree that this
-conductor converges. Their commands remain available through their own namespaces.
+The `specs` provider flow has no row because it owns no local tree, while the `security` and `git`
+pillars have no row because they answer live questions without a converging front tree. Their
+commands remain available through their own namespaces.
 
 Every applicable front must expose the common front mold at
 `${CLAUDE_PLUGIN_ROOT}/assets/references/front-align/mold.md`. The conductor sequences and reports;
@@ -46,14 +49,18 @@ inside one, probe only that front and mark the others skipped by scope.
   `scripts/`, `tools/`, `bin/` and `script/` for an executable entry point.
 - **`proof`** — read `.claude/quenching.json` for `proof.proofRoot`; when absent, inspect only
   `tests/` and `test/` for a test module.
+- **`toolchain`** — run `cq toolchain doctor --json`; use its applicability signal and recognized
+  manifests, locks, language pins and tool configuration as the complete probe result.
+- **`delivery`** — run `cq delivery doctor --json`; use its applicability signal and workflow
+  inventory as the complete probe result.
 
 Use **not applicable** only when the probe found no declared root or conventional signal. Use
 **skipped** only for explicit scope exclusion or an earlier hard failure. A present front with no
 findings is **conformant**.
 
 If all applicable fronts are conformant, report *"all applicable fronts conformant — nothing to
-align"* and stop before presenting a plan. An applicable but undeclared `ops` or `proof` front is
-adoption work, not drift, until its own align is invoked.
+align"* and stop before presenting a plan. An applicable but undeclared front is adoption work,
+not drift, until its own align is invoked.
 
 ### Authorization
 
@@ -104,11 +111,26 @@ When the applicability probe finds no proof signal, report `proof` not applicabl
 `/quenching:proof:align` after `ops`, with the inherited authorization. It consumes the operations
 inventory when configured and reports its own layer and gate residue; it never runs a target suite.
 
+### Front: `toolchain`
+
+When the applicability probe finds no toolchain signal, report `toolchain` not applicable.
+Otherwise invoke `/quenching:toolchain:align` after `proof`, with the inherited authorization.
+It consumes the declared manifests, locks, language pins and tool configuration without choosing
+target-owned build policy; its runtime evidence feeds the delivery front.
+
+### Front: `delivery`
+
+When the applicability probe finds no delivery signal, report `delivery` not applicable. Otherwise
+invoke `/quenching:delivery:align` after `toolchain`, with the inherited authorization. It consumes
+the workflow inventory and reports pipeline reachability while leaving provider, environment,
+promotion, publication and permission policy with the target owner.
+
 ### Re-probe and convergence
 
 Re-run the applicability probes and cross-front edges after a pass. Check whether design added
 product/design standards, components changed the automation registry, ops changed the operations
-inventory or registry for `/docs/`, or proof gained resources for generated listings. A changed edge
+inventory or registry for `/docs/`, proof gained resources for generated listings, toolchain
+changed runtime/dependency evidence, or delivery changed workflow reachability. A changed edge
 justifies another pass under the same authorization; an unchanged pass with residue is residue, not
 a reason to spin. Stop at convergence, residue, or the cap of 3 cross-front passes.
 
