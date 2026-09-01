@@ -25,10 +25,16 @@ This is the slice used by the provider health checks.
 | `subjects` | `{"<key>": {name, description, parent, tags}, …}` | `{}` | `quenching-specs-create`'s subject proposal |
 | `tagCatalog` | `{"<tag>": "<description>", …}` | `{}` | `quenching-specs-create`'s tag proposal |
 | `workItemTypes` | `{"<key>": {description, azure, github, default}, …}` | `{}` | `quenching-specs-create`'s type proposal, `cq specs new --type`, and every backend's `create_spec` |
+| `gitConventions` | `{commitSubject, branchName, prTitle, prBody, mergeSubject}` — prose directives, never templates | `{}` | the whole `git` pillar, through `cq git conventions`; see [git/conventions.md](../../references/git/conventions.md) §The declared-directive layer |
 
 `azureStates` is the one key whose absence is a refusal rather than a
 default — a guessed state mapping would not fail loudly, it would read every archived spec as
 active in half the projects it ran against.
+
+`gitConventions` is read by the `git` pillar rather than by `cq specs`, and it sits here because
+this table is the one home for what the file recognises. Its two malformed shapes earn their own
+findings — `sp-config-unknown-git-convention` for a sub-key outside the five,
+`sp-config-bad-git-convention` for a recognised one whose value cannot direct anything.
 
 The checker's own settings (`warnAsError`, `ignoreGlobs`) and the bundle root never lived in this
 file — they come from the target's own `.agents/hooks/hooks-config.json`, and the bundle root is
