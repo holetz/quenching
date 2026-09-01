@@ -7,7 +7,7 @@ insert new knowledge, capture terms into a fixed glossary, drain the project's C
 Code memory into it, import external sources into it, keep the repo's `CLAUDE.md` a thin pointer over it, and organize
 the repo's own **automation surface** (`.claude/commands/`) under one
 taxonomy — so every repository that adopts the plugin looks the **same**. It also carries the repo's
-**spec-driven plan cycle**: the nine `/quenching:specs:*` commands over a provider-owned specs
+**spec-driven plan lifecycle**: the six `/quenching:specs:*` commands over a provider-owned specs
 front backed by GitHub or Azure Boards, with the OKF bundle as its knowledge substrate, driven end
 to end by the bundled stdlib `cq specs`.
 
@@ -33,7 +33,7 @@ and one root command spans the seven aligned fronts. The `security` and `git` ax
 | Front / pillar | Namespace | **align** — probe-first, structure + content |
 | --- | --- | --- |
 | `/docs/` — the OKF bundle | `/quenching:knowledge:*` | `/quenching:knowledge:align` |
-| provider-owned specs — GitHub issues or Azure work items | `/quenching:specs:*` | cycle and status commands |
+| provider-owned specs — GitHub issues or Azure work items | `/quenching:specs:*` | lifecycle and status commands |
 | `/.design/` — the DTCG design source | `/quenching:design:*` | `/quenching:design:align` |
 | `.claude/` — the automation surface | `/quenching:components:*` | `/quenching:components:align` |
 | target-declared operations root | `/quenching:ops:*` | `/quenching:ops:align` |
@@ -53,7 +53,7 @@ the probe found it work:
 | Front | Content its align carries beyond structure |
 | --- | --- |
 | `docs` | drains project memory, thins the harness (moving durable knowledge into homes), and OFFERS the glossary backfill on a cheap proxy — looping to a fixpoint, the one front with a real internal loop |
-| `specs` | none driven — an empty section, a complete spec awaiting its close, an unresolved discovery are each **reported with the command that owns it**; every cycle action needs fresh human intent |
+| `specs` | none driven — an empty section, a complete spec awaiting its close, an unresolved discovery are each **reported with the command that owns it**; every lifecycle action needs fresh human intent |
 | `/.design/` | imports or preserves an external `DESIGN.md` only after source arbitration, installs missing brand assets, builds projections, and reports optional Impeccable detector results |
 | `.claude/` | audits every command **body** against the writing doctrine — the one thing the migration itself is forbidden to fix — and reports each violation with the `/quenching:components:command:new` that closes it |
 | `ops` | probes the declared root and router, applies mechanical and structural drift under one plan, and reports judgement findings; status is the read-only view |
@@ -66,7 +66,7 @@ across fronts**, because they feed each other: a spec's distillation is glossary
 `docs` front must then index; the design front installs product/design standards; the components front creates the rule and registry that the `docs`
 listings must carry.
 
-The specs front is the second conductor: each spec is captured, defined, built, reviewed and closed
+The specs axis has no sweep conductor: each spec is captured, defined, built, reviewed and closed
 by the command that owns that stage. Defining and building remain separate decisions, and each
 stage's own authorization and verification contract stays visible to the human.
 
@@ -80,7 +80,7 @@ That contract lives once, in
 **One file per entry point** — Claude Code merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs; there is
 no `skills/` tree and no wrapper. The tables below are the manual, and the count is a property of
-their rows rather than a second structural inventory: the `52` in this heading is the manual's
+their rows rather than a second structural inventory: the `49` in this heading is the manual's
 canonical displayed total, while [`tests/test_readme_surface.py`](tests/test_readme_surface.py)
 reads it and fails the suite whenever these tables
 and `commands/**` disagree
@@ -200,10 +200,10 @@ instead of running either.
 | `/quenching:align` | The one align that spans the seven aligned fronts, on ONE confirmation — conducting each front's own align in dependency order, never reimplementing any of them. |
 | `/quenching:handoff` | Compacts the current conversation into a handoff document a fresh session can continue from — referencing existing plans, issues, commits and diffs rather than duplicating them. |
 
-The `specs` front has nine commands and a flow worth reading as a whole, so it gets its own section
+The `specs` front has six commands and a flow worth reading as a whole, so it gets its own section
 below.
 
-## The `specs` flow — the nine `/quenching:specs:*` commands
+## The `specs` flow — the six `/quenching:specs:*` commands
 
 The plugin's **spec-driven plan cycle** is provider-owned: GitHub issues and Azure Boards work
 items are the system of record, and their body carries the canonical spec. The conceptual model
