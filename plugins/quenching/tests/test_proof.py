@@ -272,6 +272,20 @@ class ProofFixtureTrees(unittest.TestCase):
         self.assertNotIn("pf-untested-entrypoint", self._codes(
             ops=True, extra_tests={"unit/test_run.py": "import run\ndef test_run(): pass\n"}))
 
+    def test_qualified_ops_root_import_covers_relative_entrypoint(self):
+        self.assertNotIn("pf-untested-entrypoint", self._codes(
+            ops=True,
+            extra_tests={
+                "unit/test_run.py": "import scripts.run\ndef test_run(): pass\n",
+            },
+        ))
+        self.assertNotIn("pf-untested-entrypoint", self._codes(
+            ops=True,
+            extra_tests={
+                "unit/test_run.py": "import scripts.run.extra\ndef test_run(): pass\n",
+            },
+        ))
+
     def test_silent_untested_entrypoint_reports_not_applicable_without_ops(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
