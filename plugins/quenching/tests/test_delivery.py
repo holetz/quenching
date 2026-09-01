@@ -71,6 +71,36 @@ class DeliveryResults(unittest.TestCase):
         self.assertEqual(["python -m unittest"], job["commands"])
         self.assertEqual([], payload["findings"])
 
+    def test_azure_named_jobs_prove_dependency_chain(self):
+        payload, code = self._run({
+            "azure-pipelines.yml": (
+                "trigger: [main]\n"
+                "jobs:\n"
+                "- job: build\n"
+                "  steps:\n"
+                "  - checkout: self\n"
+                "  - task: UsePythonVersion@0\n"
+                "    inputs:\n"
+                "      versionSpec: '3.12'\n"
+                "  - script: python -m build\n"
+                "- deployment: deploy\n"
+                "  dependsOn: build\n"
+                "  steps:\n"
+                "  - checkout: self\n"
+                "  - task: UsePythonVersion@0\n"
+                "    inputs:\n"
+                "      versionSpec: '3.12'\n"
+                "  - script: python -m deploy\n"
+            ),
+        })
+        self.assertEqual(0, code)
+        workflow = payload["inventory"]["workflows"][0]
+        self.assertEqual("azure", workflow["provider"])
+        self.assertEqual(["build", "deploy"], workflow["jobs"])
+        self.assertEqual([[], ["build"]],
+                         [job["needs"] for job in workflow["jobDetails"]])
+        self.assertEqual([], payload["findings"])
+
     def test_conformant_workflow_is_stable_and_read_only(self):
         payload, code = self._run({
             ".github/workflows/ci.yml": (
