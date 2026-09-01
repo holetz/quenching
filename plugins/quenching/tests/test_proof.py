@@ -67,6 +67,44 @@ class TheCoverageRatchet(unittest.TestCase):
                     self.assertFalse(payload["ok"])
                 previous = current
 
+    def test_coverage_py_nested_summaries_preserve_independent_root_floors(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            coverage = root / "coverage.json"
+            floor = root / ".coverage-floor.json"
+            config = {
+                "repoRoot": str(root),
+                "proofRoot": str(root / "tests"),
+                "ratchetPath": str(floor),
+                "measuredRoots": [{"relative": "src"}, {"relative": "lib"}],
+            }
+            coverage.write_text(json.dumps({
+                "files": {
+                    "src/app.py": {"summary": {
+                        "covered_lines": 9, "num_statements": 10,
+                        "percent_covered": 90.0}},
+                    "lib/app.py": {"summary": {
+                        "covered_lines": 2, "num_statements": 8,
+                        "percent_covered": 25.0}},
+                },
+                "totals": {
+                    "covered_lines": 11, "num_statements": 18,
+                    "percent_covered": 61.111111,
+                },
+            }), encoding="utf-8")
+
+            raised, raise_code = evaluate(config, mode="raise")
+            self.assertEqual(1, raise_code)
+            self.assertEqual({"src": 90.0, "lib": 25.0}, raised["achieved"])
+            self.assertEqual({"lib": 25.0, "src": 90.0},
+                             json.loads(floor.read_text(encoding="utf-8"))["floors"])
+            before_check = floor.read_text(encoding="utf-8")
+
+            checked, check_code = evaluate(config, mode="check")
+            self.assertEqual(0, check_code)
+            self.assertTrue(checked["ok"])
+            self.assertEqual(before_check, floor.read_text(encoding="utf-8"))
+
 
 class GeneratedProofReadme(unittest.TestCase):
     def _inventory(self, root: Path) -> ProofInventory:
