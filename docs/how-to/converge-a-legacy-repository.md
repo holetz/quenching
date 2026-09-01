@@ -40,16 +40,18 @@ write-capable script, installs CI, or runs the target suite as part of alignment
 ## 1. Declare what already exists
 
 Start in a clean target checkout and inspect the target's `.claude/quenching.json`. Declare the
-operations root and its canonical router when they are known:
+operations root and its canonical router in the `ops` namespace when they are known:
 
 ```json
 {
-  "opsRoot": "scripts",
-  "router": "pyproject.toml"
+  "ops": {
+    "opsRoot": "scripts",
+    "router": "pyproject.toml"
+  }
 }
 ```
 
-Do not add `proofRoot` merely because a `tests/` directory exists. A conventional `tests/` or
+Do not add `proof.proofRoot` merely because a `tests/` directory exists. A conventional `tests/` or
 `test/` directory makes the proof front applicable, but an undeclared applicable front is adoption
 work: its owner must choose the proof root and gate contract. This distinction prevents an
 aligner from turning an accidental directory name into a policy.

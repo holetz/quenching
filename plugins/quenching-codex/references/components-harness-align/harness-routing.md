@@ -66,6 +66,11 @@ units.
 | secrets / credentials / personal notes / `CLAUDE.local.md` | **UNROUTABLE** | stays + reported; secrets urged out-of-band, NEVER into shared `knowledge/` |
 | no documentary home | **UNROUTABLE** | stays + reported |
 
+**The ephemeral-writes declaration line is always KEEP.** Its membership test is a root-harness
+line beginning `Ephemeral writes:` and carrying exactly one path plus this citation:
+`Ephemeral writes: <path> — the contract is /docs/standards/agents/ephemeral-writes.md`.
+Preserve it verbatim; never classify it MOVE or DEDUPE.
+
 **Tie-breakers** are `quenching-knowledge-add`'s — see
 [knowledge-add/homes.md](../../references/knowledge-add/homes.md).
 

@@ -1,0 +1,29 @@
+{
+  "absent": {
+    "applicability": "not-applicable",
+    "codes": []
+  },
+  "conformant": {
+    "applicability": "applicable",
+    "codes": []
+  },
+  "mechanical": {
+    "codes": [
+      "tc-lock-stale",
+      "tc-config-duplicate",
+      "tc-generated-stale"
+    ]
+  },
+  "structural": {
+    "codes": [
+      "tc-runtime-drift",
+      "tc-tool-unpinned",
+      "tc-build-backend-missing",
+      "tc-key-unarbitered"
+    ]
+  },
+  "judgement": {
+    "codes": [],
+    "note": "the initial tc vocabulary has no judgement-band code"
+  }
+}

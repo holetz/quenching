@@ -1,5 +1,5 @@
 ---
-description: Build ONE spec task by task — write, verify, self-review, tick and commit. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree and Git; follows the spec's verification policy and commits each task. Not for: N specs → /quenching:specs:execute-queue; writing or sharpening → /quenching:specs:develop; creating → /quenching:specs:create; review/archive/release → /quenching:specs:conclude; the whole cycle → /quenching:specs:cycle.
+description: Build ONE spec task by task — write, verify, self-review, tick and commit. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree and Git; follows the spec's verification policy and commits each task. Not for: writing or sharpening → /quenching:specs:develop; creating → /quenching:specs:create; review/archive/release → /quenching:specs:conclude.
 argument-hint: [id]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Task, Skill
 model: sonnet
@@ -327,7 +327,7 @@ h. **On a section boundary, keep the task commits and OFFER to stop — and keep
 
    **The gear sets the default, never the offer**: `low` announces the boundary and continues
    without offering, `medium` offers and continues if nobody says otherwise, `high` and `xhigh`
-   offer and **wait** ([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md)
+   offer and **wait** ([spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
    §The scale). It never ends the run itself and writes no state — step 6's trail is what makes the
    boundary resumable ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
    §The section boundary).

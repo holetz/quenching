@@ -1,6 +1,7 @@
 # CLAUDE.md — claude-quenching
 
 Language: pt-BR — the contract is /docs/standards/agents/communication.md.
+Ephemeral writes: .quenching/ — the contract is /docs/standards/agents/ephemeral-writes.md
 
 This repository publishes the `quenching` Claude Code plugin marketplace. It has no application
 build: command bodies and references are executable prose, while four Python tools provide the

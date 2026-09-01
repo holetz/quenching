@@ -164,7 +164,7 @@ shortens a stage.** What the level decides is two things — **who answers** a s
 
 The gear is `priority.complexity`, read from the same `cq specs status --spec <id> --json` payload
 that reports the stage
-([gears.md](../../references/specs-cycle/gears.md) §The scale). Absent reads
+([spec-driven.md](../../references/specs-develop/spec-driven.md) §The scale). Absent reads
 as `high`.
 
 | Gear | Who answers compose | Does refine run? |
@@ -486,7 +486,7 @@ against §Refine's three signals and leads with the move those signals argue for
 | Recommendation | When | What choosing it does |
 | --- | --- | --- |
 | **Approve** | no signal fired | `cq specs record "<id>" approved --set date=<today> --set by=human`, never by editing the provider document directly |
-| **Refine** | a scope or critique signal fired, and refine has not run this pass | a **raise to `high`** ([gears.md](../../references/specs-cycle/gears.md) §Re-evaluating a gear, the fourth signal); the choice IS the OK to restamp `complexity`, and the pass re-enters at refine |
+| **Refine** | a scope or critique signal fired, and refine has not run this pass | a **raise to `high`** because the composition has outgrown its original level; the choice IS the OK to restamp `complexity`, and the pass re-enters at refine |
 | **Refine with the premortem** | the spec is irreversible | a raise to `xhigh`, same mechanics, premortem forced |
 | **Stop here** | — | nothing stamped, and the report says what is open |
 

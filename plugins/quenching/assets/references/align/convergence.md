@@ -27,7 +27,7 @@ the pass cap or convergence. Every command
 an align invokes as a stage carries **one** exception sentence pointing here and never restates
 it: the `knowledge/` stages (`/quenching:knowledge:import-memory`, `/quenching:components:harness:align`, `/quenching:knowledge:glossary-backfill`), the
 `specs/` stages (`/quenching:specs:conclude`, `/quenching:specs:triage`), the five front aligns when `/align`
-invokes them, and — under `/quenching:specs:cycle`'s minimal gear only —
+invokes them, and — under the low mode only —
 `/quenching:git:pr:create`, the one stage this contract's grantor is a conductor rather than an
 align.
 
@@ -88,21 +88,21 @@ spec whose tasks are all checked may still be waiting on a deploy.
 ## The PR route — where review lives when the run does not stop
 
 <!-- rules -->
-The minimal gear differs from the contract in exactly one point, and pays for it outside the
+The low mode differs from the contract in exactly one point, and pays for it outside the
 session. The contract requires a code-coupled item and an irreversible cycle action to stop the
-run, always; under the cycle's minimal gear
-([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §The scale binds the two
-names — *minimal gear* here is that file's `low`) neither stops — the building half runs in one session on its own
+run, always; under the cycle's low mode
+([spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §The scale binds the two
+names — *low mode* here is that file's `low`) neither stops — the building half runs in one session on its own
 authorization and ends opening a pull request, so the human review the gates would have hosted
 moves to the PR instead: opened against the repository's primary branch, where the merge waits
 on review and on the checks before it lands. The
 trade is said out loud: if the PR is merged unread, no gate was left anywhere on the path — which
-is what the gear re-evaluation exists to bound, as a run that outgrows the minimal gear climbs
+is what the level re-evaluation exists to bound, as a run that outgrows the low mode climbs
 back into a run with gates before it reaches the PR.
 
 The route already exists — nothing new is built for it. `conclude` reviews, distils, archives and
 proves the pre-merge gate green, then stops, naming `/quenching:git:pr:create` as the human's own
-next command; under this gear alone, `/quenching:specs:cycle` invokes that command itself, under
+next command; under this gear alone, the workflow invokes that command itself, under
 the same authorization, rather than leaving the name for a human to act on. `git:pr:create` stamps
 the write-many `pr` record the moment the PR is opened — the fact the base branch's history cannot
 reproduce: which PR carries this spec, and where the review and the checks still live once the
@@ -110,15 +110,15 @@ branch is gone. Under this gear that record is the only one the run writes: it s
 PR, so `merge` — whose own `pr` field names the same PR once a merge is decided — is never stamped
 at all (§Three frontmatter records carry the underivable git facts).
 
-No gear above the minimal changes the contract: a run that stops stage by stage keeps the two
+No level above low changes the contract: a run that stops stage by stage keeps the two
 classes gating individually, item by item, in the session, exactly as when the stage runs
-standalone. The PR route is the minimal gear's answer — review relocated, never removed.
+standalone. The PR route is the low mode's answer — review relocated, never removed.
 
 <!-- rationale -->
-**The PR route** — a run whose minimal gear stops for nothing would end with nobody having seen
+**The PR route** — a run whose low mode stops for nothing would end with nobody having seen
 the work; the PR is where that review happens instead — before the merge, with the checks, on the
-branch the cycle built. Relocating review is the alternative to adding a stop, which is exactly
-what the minimal gear exists to avoid.
+branch the run built. Relocating review is the alternative to adding a stop, which is exactly
+what the low mode exists to avoid.
 
 ## The convergence contract
 

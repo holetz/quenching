@@ -6,7 +6,7 @@ undoctored.
 
 `base` is minted first (task 3.1). `specs`, `stale` and `conventions` (tasks 3.2-3.4) each add
 one import and one `DISPATCH` row — the same shape `specs.commands.cli` and `knowledge.cli`
-already use for their own pillars, kept flat here because four leaf subcommands need no
+already use for their own pillars, kept flat here because five leaf subcommands need no
 `commands/` package of their own."""
 from __future__ import annotations
 
@@ -19,9 +19,10 @@ from quenching.git.base import cmd_base
 from quenching.git.conventions import cmd_conventions
 from quenching.git.slugs import cmd_specs
 from quenching.git.stale import cmd_stale
+from quenching.git.worktree import cmd_worktree
 
 DISPATCH = {"base": cmd_base, "specs": cmd_specs, "stale": cmd_stale,
-            "conventions": cmd_conventions}
+            "conventions": cmd_conventions, "worktree": cmd_worktree}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -49,6 +50,10 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("conventions", help="read-if-present: whether the target declares "
                                              "its own docs/standards/git/**, or the "
                                              "plugin's defaults govern")
+    sp.add_argument("--json", action="store_true", help="machine-readable output")
+
+    sp = sub.add_parser("worktree", help="materialise declared shared paths in this checkout")
+    sp.add_argument("action", choices=("link",), help="link each declared shared path")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     return p

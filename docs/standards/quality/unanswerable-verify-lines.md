@@ -7,7 +7,7 @@ tags: [quality, verification, verify, authoring, shell-quoting, frontmatter]
 timestamp: 2026-08-17
 audience: both
 authority: current
-source: /quenching:specs:execute-queue queue of 2026-08-17 — three independent instances measured in the specs cq-specs-task-check-stale-subject-sem-commit, falha-de-leitura-do-backend-vira-front-vazio and validar-a-zona-generated-contra-o-disco
+source: multi-spec execution session of 2026-08-17 — three independent instances measured in the specs cq-specs-task-check-stale-subject-sem-commit, falha-de-leitura-do-backend-vira-front-vazio and validar-a-zona-generated-contra-o-disco
 maintainer: quenching
 ---
 

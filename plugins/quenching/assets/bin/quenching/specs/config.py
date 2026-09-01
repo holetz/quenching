@@ -5,12 +5,15 @@ functions that read it: it belongs to `quenching.specs.backends.azure`, which
 imports this module at its top, so a module-level edge would close a cycle."""
 from __future__ import annotations
 
-import json
 import os
 import sys
 
+from quenching.common.config import (CONFIG_FILE, LEGACY_CONFIG_FILE,
+                                     detect_provider as _common_detect_provider,
+                                     find_repo_root as _common_find_repo_root,
+                                     infer_base_branch,
+                                     load_config as load_envelope)
 from quenching.common.git import _git
-from quenching.common.io import read_text
 from quenching.specs.parse.spec import PHASE_DIRS, PHASES
 
 
@@ -64,20 +67,13 @@ def root_too_high_message(root: str) -> str:
             f"workspace's container, not the workspace itself")
 
 
-CONFIG_FILE = os.path.join(".claude", "quenching.json")
-LEGACY_CONFIG_FILE = "config.json"
-CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates",
+CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "sharedPaths", "azureStates",
                "hooks", "profiles",
                "azurePlacement", "azureColumns", "subjects", "tagCatalog",
-               "workItemTypes", "fanoutMinComplexity", "opsRoot", "router")
+               "workItemTypes", "opsRoot", "router")
 PROOF_CONFIG_KEYS = ("proofRoot", "layers", "measuredRoots", "proofExclusions", "ratchetPath")
 CONFIG_KEYS = CONFIG_KEYS + PROOF_CONFIG_KEYS
 BACKENDS = ("github", "azure-boards")
-# Mirrors `schema.py`'s declared `priority.complexity` levels. Redeclared rather than imported —
-# `config.py` and `schema.py` do not import each other today, and a four-word tuple does not earn
-# that coupling.
-DEFAULT_FANOUT_MIN_COMPLEXITY = "medium"
-COMPLEXITY_LEVELS = ("low", "medium", "high", "xhigh")
 # `azurePlacement`'s recognised sub-keys. Only `areaPath` is required, and its absence is a
 # REFUSAL rather than a default — the same argument `azureStates` already carries, applied to
 # where a spec is born rather than what state it reads as. `open_azure_backend` is where that
@@ -157,54 +153,22 @@ def announce_unproved(name: str) -> None:
 
 
 def find_repo_root(specs_root: str) -> str:
-    """The target repo's root — where `.claude/` lives.
-
-    Git's own top level first, because it is the answer that survives being invoked from a
-    subdirectory. Falling back to the specs workspace's parent, which is the repo root by
-    construction: `/.specs/` sits beside `.claude/`, never below it.
-
-    The git call is skipped outright when `specs_root` does not exist. `_git` falls back to
-    running from `.` when its `cwd` is missing, so calling it on a path built to be absent —
-    `load_config`'s own selftest fixture — would silently answer with whatever repo this
-    process happens to be running from instead of "no git facts here", handing back a real
-    `.claude/quenching.json` the fixture exists specifically to avoid."""
-    local = os.path.abspath(specs_root)
-    while True:
-        if os.path.isfile(os.path.join(local, CONFIG_FILE)):
-            return local
-        parent = os.path.dirname(local)
-        if parent == local:
-            break
-        local = parent
-    top = _git(specs_root, "rev-parse", "--show-toplevel").strip() if os.path.isdir(specs_root) else ""
-    if top:
-        return top
-    current = os.path.abspath(specs_root)
-    while True:
-        if os.path.isfile(os.path.join(current, CONFIG_FILE)):
-            return current
-        parent = os.path.dirname(current)
-        if parent == current:
-            break
-        current = parent
-    return os.path.dirname(os.path.abspath(specs_root))
+    """Compatibility export for callers that still import the old specs boundary."""
+    return _common_find_repo_root(specs_root)
 
 
-def _remote_host(remote: str) -> str:
+def detect_provider(root: str) -> tuple[str | None, str | None]:
+    """Compatibility export for callers that still patch the old specs boundary."""
+    # Keep the injectable `_git` seam while the common loader owns all production reads.
+    repo = find_repo_root(root)
+    remote = _git(repo, "remote", "get-url", "origin").strip()
+    if not remote:
+        return _common_detect_provider(root)
     host = remote.strip().split("#", 1)[0]
     if "://" in host:
         host = host.split("://", 1)[1]
     host = host.rsplit("@", 1)[-1]
-    return host.split("/", 1)[0].split(":", 1)[0].lower()
-
-
-def detect_provider(root: str) -> tuple[str | None, str | None]:
-    """Derive the external provider from the repository's origin URL."""
-    repo = find_repo_root(root)
-    remote = _git(repo, "remote", "get-url", "origin").strip()
-    if not remote:
-        return None, None
-    host = _remote_host(remote)
+    host = host.split("/", 1)[0].split(":", 1)[0].lower()
     if host == "github.com" or host.endswith(".github.com"):
         return "github", host
     if (host == "dev.azure.com" or host.endswith(".dev.azure.com")
@@ -236,43 +200,44 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     Whether `worktreeSetup` actually resolves is deliberately NOT answered here: it is judged
     relative to the freshly created worktree, whose path this tool never learns.
     `/quenching:specs:execute`'s inline isolation offer runs it there and reports the exit code."""
-    repo = find_repo_root(root)
-    path = os.path.join(repo, CONFIG_FILE)
-    legacy = os.path.join(root, LEGACY_CONFIG_FILE)
-    provider, provider_host = detect_provider(root) if detect_provider_info else (None, None)
+    envelope = load_envelope(root, detect_provider_info=detect_provider_info)
+    path = envelope["path"]
+    raw = envelope["data"]
+    values: dict = {}
+    for namespace in ("shared", "specs"):
+        values.update(envelope[namespace])
+    provider = envelope["provider"]
+    provider_host = envelope["providerHost"]
     out = {"path": path, "present": os.path.isfile(path), "unparseable": None,
-           "unknownKeys": [], "backend": provider, "provider": provider,
+           "unknownKeys": envelope["unknownKeys"],
+           "unknownNamespaces": envelope["unknownNamespaces"],
+           "migrationRefusal": envelope["migrationRefusal"],
+           "backend": provider, "provider": provider,
            "unknownProvider": provider_host if provider is None else None,
            "unknownBackend": None,
            "specsBranch": DEFAULT_SPECS_BRANCH, "worktreeSetup": None,
            "azureStates": None, "hooks": {}, "profiles": None,
            "azurePlacement": {}, "azureColumns": {}, "subjects": {}, "tagCatalog": {},
            "workItemTypes": {},
-           "fanoutMinComplexity": DEFAULT_FANOUT_MIN_COMPLEXITY, "unknownFanoutMinComplexity": None,
            "proofRoot": "tests", "layers": {}, "measuredRoots": [],
            "proofExclusions": [], "ratchetPath": None,
-           "legacyPath": legacy if os.path.isfile(legacy) else None}
+           "legacyPath": envelope["legacyPath"]}
+    if envelope["unparseable"]:
+        out["unparseable"] = envelope["unparseable"]
+        return out
     if not out["present"]:
         return out
-    try:
-        obj = json.loads(read_text(path) or "")
-    except json.JSONDecodeError as e:
-        out["unparseable"] = str(e)
-        return out
-    if not isinstance(obj, dict):
-        out["unparseable"] = f"top level is {type(obj).__name__}, not an object"
-        return out
-    out["unknownKeys"] = sorted(k for k in obj if k not in CONFIG_KEYS)
+    obj = raw
 
     backend = obj.get("backend")
     if isinstance(backend, str) and backend.strip() and backend.strip() not in BACKENDS:
         out["unknownBackend"] = backend.strip()
 
-    branch = obj.get("specsBranch")
+    branch = values.get("specsBranch")
     if isinstance(branch, str) and branch.strip():
         out["specsBranch"] = branch.strip()
 
-    val = obj.get("worktreeSetup")
+    val = values.get("worktreeSetup")
     if isinstance(val, str) and val.strip():
         out["worktreeSetup"] = val.strip()
 
@@ -281,46 +246,37 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     # both declarations as data here; `quenching.ops.config` is the boundary that refuses a
     # run when either is absent and resolves them relative to the repository root.
     for key in ("opsRoot", "router"):
-        value = obj.get(key)
+        value = values.get(key)
         if isinstance(value, str) and value.strip():
             out[key] = value.strip()
 
-    proof_root = obj.get("proofRoot")
+    proof_root = values.get("proofRoot")
     if isinstance(proof_root, str) and proof_root.strip():
         out["proofRoot"] = proof_root.strip()
 
-    layers = obj.get("layers")
+    layers = values.get("layers")
     if isinstance(layers, dict):
         out["layers"] = layers
 
     for key in ("measuredRoots", "proofExclusions"):
-        values = obj.get(key)
-        if isinstance(values, list):
-            out[key] = [value.strip() for value in values
+        declared = values.get(key)
+        if isinstance(declared, list):
+            out[key] = [value.strip() for value in declared
                         if isinstance(value, str) and value.strip()]
 
-    ratchet_path = obj.get("ratchetPath")
+    ratchet_path = values.get("ratchetPath")
     if isinstance(ratchet_path, str) and ratchet_path.strip():
         out["ratchetPath"] = ratchet_path.strip()
 
-    fanout_floor = obj.get("fanoutMinComplexity")
-    if isinstance(fanout_floor, str) and fanout_floor.strip():
-        if fanout_floor.strip() in COMPLEXITY_LEVELS:
-            out["fanoutMinComplexity"] = fanout_floor.strip()
-        else:
-            # Same shape as `unknownBackend` above: the declared value is kept, not discarded,
-            # and the effective floor stays at the default rather than at no floor at all.
-            out["unknownFanoutMinComplexity"] = fanout_floor.strip()
-
     # Both phases or neither. A half-declared mapping is worse than none: it would archive a
     # spec into a state the project has and then fail to recognise it on the way back.
-    states = obj.get("azureStates")
+    states = values.get("azureStates")
     if isinstance(states, dict):
         named = {p: str(states.get(p, "")).strip() for p in PHASES}
         if all(named.values()):
             out["azureStates"] = named
 
-    events = obj.get("hooks")
+    events = values.get("hooks")
     if isinstance(events, dict):
         parsed: dict[str, list[dict]] = {}
         for event, entries in events.items():
@@ -346,7 +302,7 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
                 parsed[event] = kept
         out["hooks"] = parsed
 
-    profiles = obj.get("profiles")
+    profiles = values.get("profiles")
     if isinstance(profiles, dict):
         installed = profiles.get("installed")
         if (isinstance(installed, list)
@@ -359,7 +315,7 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     # layer — `areaPath`'s absence is a REFUSAL, but that refusal belongs to
     # `open_azure_backend`, which is the one caller in a position to say no spec was read or
     # written; `load_config` only ever reports.
-    placement_raw = obj.get("azurePlacement")
+    placement_raw = values.get("azurePlacement")
     if isinstance(placement_raw, dict):
         out["azurePlacement"] = {k: placement_raw[k].strip()
                                  for k in AZURE_PLACEMENT_KEYS
@@ -369,7 +325,7 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     # A board-state → lane de-para, consulted by the backend and never derived by it. Any
     # subset is legal — `boardColumn` in `azurePlacement` is the declared fallback for a
     # state absent from this table, so the table itself carries no all-or-nothing rule.
-    columns_raw = obj.get("azureColumns")
+    columns_raw = values.get("azureColumns")
     if isinstance(columns_raw, dict):
         out["azureColumns"] = {str(k): v.strip() for k, v in columns_raw.items()
                                if isinstance(k, str) and k.strip()
@@ -379,7 +335,7 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     # for an entry to exist at all — a nameless or description-less subject cannot be
     # proposed to a human, which is the whole point of declaring one — `parent` (the Feature
     # id a human already created) and `tags` (fixed tags applied at creation) are optional.
-    subjects_raw = obj.get("subjects")
+    subjects_raw = values.get("subjects")
     if isinstance(subjects_raw, dict):
         subjects: dict[str, dict] = {}
         for key, val in subjects_raw.items():
@@ -403,7 +359,7 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     # A catalogue of tag → description, read by an agent to PROPOSE a tag at creation time —
     # the description is prompt material, never documentation, which is why an empty one is
     # dropped rather than kept as a nameless tag nobody could ever choose correctly.
-    catalog_raw = obj.get("tagCatalog")
+    catalog_raw = values.get("tagCatalog")
     if isinstance(catalog_raw, dict):
         out["tagCatalog"] = {tag.strip(): desc.strip() for tag, desc in catalog_raw.items()
                              if isinstance(tag, str) and tag.strip()
@@ -414,7 +370,7 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     # so an entry without one cannot be proposed and is dropped at the read, same as there.
     # `azure`/`github` are each independently optional: an entry may name only one backend
     # without breaking the other. `default` marks the repo's fallback entry.
-    types_raw = obj.get("workItemTypes")
+    types_raw = values.get("workItemTypes")
     if isinstance(types_raw, dict):
         types: dict[str, dict] = {}
         for key, val in types_raw.items():
@@ -433,22 +389,6 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
             types[key.strip()] = entry
         out["workItemTypes"] = types
     return out
-
-
-def infer_base_branch(cfg: dict, origin_head: str | None, init_default: str | None) -> str:
-    """An unstamped spec's `base`, stopping at the first that answers — the chain
-    /docs/standards/workflows/plan-git-record.md declares once its own `branch.base`
-    record is absent, and the caller's own git facts (`origin_head`, `init_default`)
-    already resolved: this function decides only the ORDER, never runs git itself.
-
-    `origin/HEAD` leads: under the PR-on-the-primary flow it resolves to the branch the
-    repository publishes to, which is where an unstamped spec's work belongs. `cfg` is
-    kept for the callers that pass it; no declared key enters the chain any more."""
-    if origin_head:
-        return origin_head
-    if init_default:
-        return init_default
-    return "main"
 
 
 def resolve_subject(cfg: dict, key: str | None) -> tuple[dict | None, dict]:

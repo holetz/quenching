@@ -108,7 +108,7 @@ whatever was resolved to step 5's `--tags`; the subject's own fixed tags need no
 **sentence path and the plan-source path yield `medium`**, and `low` only where the input explicitly
 asks for an unattended pass. The level answers how much a human needs to be part of the process,
 never the size or difficulty of the input — the four levels and what each buys are
-[gears.md](../../references/specs-cycle/gears.md) §The scale, never
+[spec-driven.md](../../references/specs-develop/spec-driven.md) §The scale, never
 transcribed here.
 
 **A capture presumes `medium` because that is the level whose judgment is deferred.** `medium` puts
@@ -199,8 +199,8 @@ presumed and why — the shape differs by path:
 | sentence | the descriptive title and drafted `## Problem` text **in full**, exactly what a human wants to check about the capture. Plus subject, type, tags and `complexity`, each with its one-line reason |
 | plan source | subject, type, tags and `complexity` (each reasoned), and the **list** of sections filled with the task count. **Never the bodies** — the plan is large and the human just wrote it |
 
-Then the next-step block — `quenching-specs-develop <id>` and `quenching-specs-cycle <id>`
-named as the two forward candidates — and **one** `AskUserQuestion`, immediately after, exactly as
+Then the next-step block — `quenching-specs-develop <id>` as the forward candidate — and **one**
+`AskUserQuestion`, immediately after, exactly as
 `quenching-specs-execute` prints the same block and then opens its own `AskUserQuestion` at 100%:
 the block is the suggestion, the question is the offer that follows it, and only
 `quenching-specs-create` and `quenching-specs-execute` carry that second half.

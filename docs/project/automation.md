@@ -26,8 +26,9 @@ level (`/skill-map` maps whatever it is pointed at, so no single folder claims i
 that did belong to a subject would path under it instead (`/git:commit`). The rule
 itself is the internal `standards/automation/skills.md` contract.
 
-The `quenching` plugin installed from this marketplace contributes the forty-one
-`/quenching:knowledge:*`, `/quenching:specs:*`, `/quenching:design:*`, `/quenching:components:*`, `/quenching:git:*` and `/align` commands. Those are the **product's** surface,
+The `quenching` plugin installed from this marketplace contributes the published command surface
+across the five local fronts, the provider-owned `specs` front, and the alignless `git` pillar,
+plus root `/align`. Those are the **product's** commands,
 documented in the repository's plugin README, and they stay out
 of the table below — the zone lists only what this repository itself ships in
 `.claude/commands/`.
@@ -49,13 +50,14 @@ them is overwritten by the next run, not merged.
 ## The ops CLI
 
 The plugin's `ops` axis is an executable automation surface rather than a Claude command. Its
-three read-only subcommands share the declared operations root and the same JSON envelope:
+four subcommands share the declared operations root and the same JSON envelope:
 
 | Subcommand | Purpose |
 | --- | --- |
 | `cq ops inventory [--json]` | Build the normalized entry-point inventory. |
 | `cq ops doctor [--json]` | Run the eight static checks and return the typed result. |
 | `cq ops status [--json]` | Summarize packages, router health, lifecycle, and findings. |
+| `cq ops registry [--check\|--write] [--json]` | Check or regenerate the generated operations registry. |
 
 ## The proof CLI
 
@@ -67,6 +69,7 @@ target suite. Its five subcommands share the proof root and expose JSON payloads
 | `cq proof inventory [--json]` | Walk test modules, layers, fixtures, gates, CI definitions, and measured source roots. |
 | `cq proof doctor [--json]` | Run static proof checks and report typed findings. |
 | `cq proof status [--json]` | Summarize layers, fixture health, coverage floors, CI, and findings. |
+| `cq proof readme [--check\|--write] [--json]` | Check or regenerate the generated proof README. |
 | `cq proof ratchet check [--json]` / `raise [--json]` | Check or advance coverage floors from an existing coverage artifact. |
 
 The command surface complements this CLI with `/quenching:proof:layer:new`, which mints one
