@@ -75,7 +75,7 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](assets/references/align/convergence.md).
 
-## The 49 commands
+## The 50 commands
 
 **One file per entry point** — Claude Code merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs; there is
@@ -177,6 +177,7 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 | --- | --- |
 | `/quenching:git:branch` | Takes isolation for a build — worktree, branch, or in place — recommending a worktree, stating its cost, and stamping the `branch:` record. |
 | `/quenching:git:commit` | Commits what is already staged, under the target's own convention when one is declared. Never `git add -A`. |
+| `/quenching:git:commit-incremental` | Turns the current worktree's pending changes into cohesive commits with explicit paths and safe stop conditions. |
 | `/quenching:git:pr:create` | Pushes and opens a pull request, with `Closes #<n>` when an issue is named, reporting plainly whether that keyword will actually close it. |
 | `/quenching:git:merge` | Merges a branch home on one of four strategies, offered and never chosen for the human. |
 | `/quenching:git:sync` | Rebases a work branch onto the latest base, with `--update-refs` so a stacked branch is not orphaned. |

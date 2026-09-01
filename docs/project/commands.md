@@ -134,6 +134,7 @@ align. The specs front hands off to it rather than executing git itself.
 | --- | --- |
 | `/quenching:git:branch` | Takes isolation for a build — worktree, branch, or in place — stating the cost and stamping the `branch:` record. |
 | `/quenching:git:commit` | Commits what is already staged, under the target's own convention when one is declared. Never `git add -A`. |
+| `/quenching:git:commit-incremental` | Turns the current worktree's pending changes into cohesive commits with explicit paths and safe stop conditions. |
 | `/quenching:git:pr:create` | Pushes and opens a pull request, reporting plainly whether a `Closes #<n>` keyword will actually close its issue. |
 | `/quenching:git:merge` | Merges a branch home on one of four strategies — offered, never chosen for the human. |
 | `/quenching:git:sync` | Rebases a work branch onto the latest base, with `--update-refs` so a stacked branch is not orphaned. |
