@@ -47,14 +47,12 @@ a conversation asks for it by name.
 **Defining is never isolated in a sub-agent, at any level.** Isolation means only the summary
 returns, which is incompatible with stopping to ask — and every level but `low` asks. `low` could
 be isolated and is not: it is one pass landing one edit, so the returned summary would be as large
-as the work, which is the sub-agent gear's own test failing (§What a gear is).
+as the work, which is the sub-agent mode's own test failing (§The scale).
 
-**A level's gear is the plan that level derives**, and `low`'s has a second name. "The `low` gear"
-and **"the minimal gear"** are the same thing: the whole plan `low` derives — never a fourth value
-beside in-session, sub-agent and skipped. The three gears stay the modes of ONE stage; a level names
-the set of them. `cycle.md`, `convergence.md`, `plan-git-record.md` and the glossary say *minimal
-gear*; this file and the `priority` record say `low`. **The binding is here**, at the scale itself,
-so neither vocabulary has to be resolved through a third document.
+**A level selects the execution mode for the stage.** `low` means that the pass continues without
+mid-flow stops; it is not a fourth value beside in-session, sub-agent and skipped. The three modes
+remain the options for ONE stage, while the level names the set that applies. **The binding is here**,
+at the scale itself, so the `priority` record and the commands need no second vocabulary.
 
 **What the scale measures.** Not the size of the change, its scope or its difficulty — a small
 change can still need a human at every step, and a large mechanical one can need almost none. It
