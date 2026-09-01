@@ -1,7 +1,7 @@
 ---
 type: explanation
 title: The operating model
-description: The map the whole plugin fits on — seven local fronts, the provider-owned specs axis, the read-only security and git pillars, and conductors that never reimplement what they conduct.
+description: The map the whole plugin fits on — seven local fronts, the provider-owned specs axis, the read-only security and git pillars, and conductor-shaped commands that never reimplement what they conduct.
 resource: plugins/quenching/README.md
 tags:
   - explanation
@@ -22,7 +22,7 @@ sentence.
 A repository has seven local surfaces where drift accumulates, and quenching gives each one a
 *front*: a namespace of commands. The provider-owned `specs` axis has no local tree, while
 `security` and `git` are **pillars** rather than fronts — they answer live questions without
-owning a tree that the conductor converges.
+owning a tree that an align converges.
 
 ```mermaid
 flowchart TD
@@ -74,15 +74,14 @@ honest dry runs: they report in the same finding vocabulary the align would act 
 
 ## Conductors conduct; they never reimplement
 
-Two commands orchestrate the others, and both are bound by the same rule — **every write is
-made by the command that owns it**:
+The conductor-shaped commands are bound by the same rule — **every write is made by the command
+that owns it**:
 
 - `/quenching:align` conducts the seven local fronts in dependency order on one OK. Authorization
   nests one level: each front align inherits the OK and never re-asks — while anything touching
   product code, and every irreversible close, still gates on its own.
-- `/quenching:specs:cycle` conducts the lifecycle of ONE spec — capture, define, build, close —
-  as **two halves authorized separately**, because deciding what a spec is and deciding to
-  build it are two different decisions, and no gear collapses that seam.
+- The provider-owned `specs` axis has no conductor: capture, definition, execution and close are
+  separate commands, each with its own authorization and verification contract.
 
 The same ownership rule shapes the documentation pipeline:
 `/quenching:knowledge:documentation:produce` conducts plan → write → review → build, where only
@@ -102,7 +101,7 @@ predictability is machine-checkable: uniform `--json`, exit codes `0` ok · `1` 
 !!! abstract "TL;DR for agents"
     - Map: local fronts `knowledge` · `design` · `components` · `ops` · `proof` · `toolchain` · `delivery`, plus
       provider-owned `specs`; `security` and `git` are pillars with no align; `/quenching:align` conducts the seven
-      local fronts, `/quenching:specs:cycle` conducts one spec.
+      local fronts; the provider-owned specs axis has no conductor.
     - Interface: probe (front verifier) → read-only inventory → ONE plan → one OK → apply →
       verify; clean probe ⇒ stop.
     - Ownership: conductors never write; every write belongs to the owning command; product-code
