@@ -296,7 +296,7 @@
   ],
   "sha256": {
     ".codex-plugin/plugin.json": "0a696ee33b34996d136d4aa2d32fcc35bd34af35efb475b0cabefbafcaf87f34",
-    ".generated-from.json": "4d6a9d2fb6ba84c5b2064dd9fcd0f7dba46eb891439380bdfc17832f628d4519",
+    ".generated-from.json": "9de132147c31c93aa5b27a63fa512f977f669101d92b859497700b5bed1423cf",
     "README.md": "846b45dd387adde31854794ef120955db3b029e6517cf75c339065030cc6b320",
     "VERSION": "e33e70efdb9c35eb184b87ee7abc05ac16a925c9c36e84408999dea33a741fa8",
     "checks/catalog-publication-check.py": "9f4c9b75b524e31bd9420036a5384801ef707ef5708956abba1d6eb62c398f9e",
@@ -402,7 +402,7 @@
     "references/proof-align/layer-contract.md": "9ae52137fb5a0c7340d23a4485f94f4bdc48b02063fd608d636af889b135cd20",
     "references/proof-align/target-structure.md": "d8dad73cd75943bec07f33e19f06d948e331c8ba946041325a529250b05a10ac",
     "references/specs-align/conformance.md": "6df0ef0bb73c666620316fe2602c4ccb4c3a57ccfb6c31d49b5f1f95294788ff",
-    "references/specs-align/plugin-configuration.md": "6a1a5cad2dd504baccaf52098708a8af18d7c69a70ad039d4c0ce5c4c4afa685",
+    "references/specs-align/plugin-configuration.md": "50ed248f23bfddbe36a21aa25576a3566cdcb45fa6f00bd7fb075028b76cc429",
     "references/specs-conclude/abandoned.md": "9c85542ff051be4af34f56ec1107d4512f796e8391f8e26ec82167f3a66d80ab",
     "references/specs-conclude/auto-discover.md": "d70fd2919d67a3a1979b539ab3ebc79c5c770cc90f07d8eb73ab146b07f49bdb",
     "references/specs-conclude/distill.md": "a07b263212b2aea7f1d01a0cc246bca0533c314f1e4f2c59156a88ec8c3b709c",
