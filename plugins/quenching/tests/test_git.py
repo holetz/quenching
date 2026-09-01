@@ -29,6 +29,8 @@ from quenching.git.stale import (_gone_branches, _merged_branches, _merged_remot
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
 PR_CREATE = PLUGIN_ROOT / "commands" / "git" / "pr" / "create.md"
+PR_STATUS = PLUGIN_ROOT / "commands" / "git" / "pr" / "status.md"
+PR_REFERENCE = PLUGIN_ROOT / "assets" / "references" / "git" / "pr.md"
 COMMIT_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit.md"
 COMMIT_INCREMENTAL_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit-incremental.md"
 CLEANUP_COMMAND = PLUGIN_ROOT / "commands" / "git" / "cleanup.md"
@@ -448,6 +450,61 @@ class PullRequestPayload(unittest.TestCase):
         self.assertEqual(self.command.count("**AskUserQuestion**"), 1)
         self.assertIn("provider-native link (or its absence)", self.payload_step)
         self.assertIn("one confirmation", self.command.lower())
+
+    def test_status_command_routes_both_providers_and_normalizes_the_snapshot(self):
+        command = PR_STATUS.read_text(encoding="utf-8")
+        reference = PR_REFERENCE.read_text(encoding="utf-8")
+        combined = f"{command}\n{reference}"
+        for phrase in (
+            "cq specs config --json",
+            "git remote get-url origin",
+            "gh repo view",
+            "gh pr view",
+            "gh api graphql",
+            "az repos pr show",
+            "az repos pr list",
+            "az devops invoke",
+            "provider",
+            "pullRequest",
+            "source",
+            "base",
+            "checks",
+            "approvals",
+            "unresolvedThreads",
+            "mergeability",
+            "spec",
+            "nextStep",
+            "unknown",
+            "pagination",
+        ):
+            self.assertIn(phrase, combined)
+
+    def test_status_command_is_read_only_and_keeps_provider_failures_distinct(self):
+        command = PR_STATUS.read_text(encoding="utf-8").lower()
+        reference = PR_REFERENCE.read_text(encoding="utf-8").lower()
+        combined = f"{command}\n{reference}"
+        for phrase in (
+            "read-only",
+            "not for: opening a pr",
+            "/quenching:git:pr:create",
+            "/quenching:git:pr:review",
+            "/quenching:git:merge",
+            "authentication",
+            "permission",
+            "not-found",
+            "never pushes",
+            "never push, create, edit",
+        ):
+            self.assertIn(phrase, combined)
+        for forbidden in (
+            "gh pr create",
+            "gh pr merge",
+            "git push",
+            "az repos pr update",
+            "resolvereviewthread",
+            "askuserquestion",
+        ):
+            self.assertNotIn(forbidden, command)
 
     def test_cleanup_selects_reported_remote_branches_before_deleting(self):
         cleanup = CLEANUP_COMMAND.read_text(encoding="utf-8").lower()

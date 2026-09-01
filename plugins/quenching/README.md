@@ -75,12 +75,12 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](assets/references/align/convergence.md).
 
-## The 50 commands
+## The 51 commands
 
 **One file per entry point** — Claude Code merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs; there is
 no `skills/` tree and no wrapper. The tables below are the manual, and the count is a property of
-their rows rather than a second structural inventory: the `49` in this heading is the manual's
+their rows rather than a second structural inventory: the `51` in this heading is the manual's
 canonical displayed total, while [`tests/test_readme_surface.py`](tests/test_readme_surface.py)
 reads it and fails the suite whenever these tables
 and `commands/**` disagree
@@ -179,6 +179,7 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 | `/quenching:git:commit` | Commits what is already staged, under the target's own convention when one is declared. Never `git add -A`. |
 | `/quenching:git:commit-incremental` | Turns the current worktree's pending changes into cohesive commits with explicit paths and safe stop conditions. |
 | `/quenching:git:pr:create` | Pushes and opens a pull request, with `Closes #<n>` when an issue is named, reporting plainly whether that keyword will actually close it. |
+| `/quenching:git:pr:status` | Reports one read-only snapshot of a pull request's provider state, checks, reviews, threads and mergeability, preserving unknown causes. |
 | `/quenching:git:merge` | Merges a branch home on one of four strategies, offered and never chosen for the human. |
 | `/quenching:git:sync` | Rebases a work branch onto the latest base, with `--update-refs` so a stacked branch is not orphaned. |
 | `/quenching:git:cleanup` | Prunes branches merged or gone and worktrees git still registers with no directory on disk — nothing pruned the human did not pick from that report. |
