@@ -39,13 +39,14 @@ alvo continua em `plugins/quenching/assets/zensical/`.
 
 ## What it does
 
-The command surface acts on five local fronts of a target repository — the `/docs/` OKF bundle
+The command surface acts on seven local fronts of a target repository — the `/docs/` OKF bundle
 (`knowledge`), the `/.design/` DTCG design source (`design`), the `.claude/` automation surface
-(`components`), the declared operations root (`ops`), and the declared verification root (`proof`) —
-alongside provider-owned `specs` and the alignless `git` pillar. Root `/align` spans the five local
-aligned fronts on one confirmation. Every aligned front has exactly one **align**: probe-first, so
-a conformant front costs a couple of tool calls and stops. The full command-by-command manual,
-the fronts, and the cost model live in the
+(`components`), the declared operations root (`ops`), the declared verification root (`proof`),
+the declared toolchain surface (`toolchain`), and the declared delivery surface (`delivery`) —
+alongside provider-owned `specs` and the read-only `security` and `git` pillars. Root `/align`
+spans the seven local aligned fronts on one confirmation. Every aligned front has exactly one
+**align**: probe-first, so a conformant front costs a couple of tool calls and stops. The full
+command-by-command manual, the fronts, and the cost model live in the
 [plugin README](plugins/quenching/README.md) — this file stays a thin pointer over it rather
 than a second, driftable copy.
 
