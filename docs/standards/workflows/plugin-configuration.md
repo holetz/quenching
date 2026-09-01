@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plugin configuration contract
-description: `.claude/quenching.json` is the plugin's single configuration home; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles and proposal catalogues remain explicit target settings
-resource: plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/bin/quenching/knowledge/**, plugins/quenching/assets/references/git/isolation.md, plugins/quenching/assets/references/specs-align/conformance.md
+description: `.claude/quenching.json` is the plugin's single configuration home; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles, proposal catalogues and the `git` pillar's per-artifact writing directives remain explicit target settings
+resource: plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/bin/quenching/knowledge/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/references/git/isolation.md, plugins/quenching/assets/references/git/conventions.md, plugins/quenching/assets/references/specs-align/conformance.md
 tags: [workflows, specs, configuration, provider, plugin]
-timestamp: 2026-08-19
+timestamp: 2026-09-01
 audience: both
 authority: current
-source: remover-backend-local-do-plugin (task 4.4) — provider selection moved out of repository storage configuration; `.claude/quenching.json` now carries only provider placement and shared plugin settings
+source: remover-backend-local-do-plugin (task 4.4) — provider selection moved out of repository storage configuration; `.claude/quenching.json` now carries only provider placement and shared plugin settings; extended by declarar-as-convencoes-de-escrita-da-camada-git-no-quenching-json (spec 1075, 2026-09-01) with `gitConventions`
 maintainer: quenching
 ---
 
@@ -60,6 +60,7 @@ with the remote is also a refusal, because silently switching the system of reco
 | `subjects` | `{"<key>": {name, description, parent, tags}, ...}` | `{}` | spec creation proposal |
 | `tagCatalog` | `{"<tag>": "<description>", ...}` | `{}` | spec creation proposal |
 | `workItemTypes` | `{"<key>": {description, azure, github, default}, ...}` | `{}` | spec creation and provider create |
+| `gitConventions` | `{"<artifact>": "<directive>", ...}` over five recognised sub-keys | `{}` | the `git` pillar, through `cq git conventions` |
 
 `azureStates` and `azurePlacement.areaPath` have no default because a guessed value writes a work
 item into the wrong project state or area. Their absence is an actionable exit-2 refusal only
@@ -80,6 +81,58 @@ strings and does not reinterpret the names.
 `subjects.<key>.description`, `tagCatalog` values, and `workItemTypes.<key>.description` are prompt
 material. An agent reads them to propose a subject, tag, or type, and a human confirms. They are
 not executable configuration and the plugin never rewrites them.
+
+## The `git` pillar's writing directives
+
+`gitConventions` is how a target tells the plugin how to word the texts the `git` pillar writes,
+without publishing a standard that also governs its humans. Five recognised sub-keys, one per
+artifact:
+
+```json
+{
+  "gitConventions": {
+    "commitSubject": "Prefixe o subject com o ticket entre colchetes; imperativo, sem ponto final.",
+    "branchName": "feat/<ticket>-<handle-kebab>.",
+    "prTitle": "O subject do primeiro commit, sem o prefixo do ticket.",
+    "prBody": "Tres blocos: o que muda, como provar, o que fica de fora.",
+    "mergeSubject": "Merge <branch> (<strategy>)."
+  }
+}
+```
+
+Every value is prompt material, exactly as `subjects.<key>.description` and `tagCatalog` values
+are: an agent reads the directive and writes the text. **The core never interpolates a
+placeholder, expands a template, or judges the text that came out** — `<ticket>` above is the
+target's own notation for its own reader, not a field the plugin fills.
+
+Resolution is **per artifact**, and the artifacts never move together:
+
+| Order | What governs |
+| --- | --- |
+| 1 | the caller's explicit value |
+| 2 | `gitConventions.<artifact>` |
+| 3 | `docs/standards/git/**`, for what the doc covers |
+| 4 | the plugin's own default |
+
+The configuration outranks the target's own git standard because it is addressed to the plugin by
+name and is narrower — one artifact per sub-key, against a document that governs humans too — and
+because a key that lost to any `docs/standards/git/**` would be dead in exactly the repositories
+most likely to declare both. The standard still governs every artifact the configuration does not
+name.
+
+`cq git conventions --json` is the one reader of both declared layers: `config` carries the
+directives, `configUnknown` the sub-keys nothing reads, and `governs`/`declared` answer the docs
+layer and only it. A single word over three layers would have to lie in the ordinary case, where
+the configuration names two artifacts and the target's own doc covers the rest.
+
+Two `doctor` findings exist so that a directive which never applies is named rather than silent:
+`sp-config-unknown-git-convention` for a sub-key outside the five, and
+`sp-config-bad-git-convention` for a recognised sub-key whose value is not a non-empty string. Both
+are `warn` — the same argument `sp-config-unknown-key` carries one key up.
+
+**No command writes `gitConventions` into a target.** A directive the plugin authored stops being
+the target's, which is the prohibition the `git` pillar's own `conventions.md` already carries for
+`docs/standards/git/**`.
 
 ## Absence and malformed values
 
