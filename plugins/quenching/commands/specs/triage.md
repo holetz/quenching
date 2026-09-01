@@ -59,7 +59,7 @@ The record is `writeOnce: false`: a later sweep re-ranks, and each write restamp
 command writes it.
 
 **`complexity` answers a different question than `level`.** Propose it against the criterion
-[gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §Deriving the gears plan
+[spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §The scale
 states: how much a human needs to be part of the process, from `low` (the LLM can carry it with
 close to no supervision) to `xhigh` (a judgment stage joins the plan).
 
