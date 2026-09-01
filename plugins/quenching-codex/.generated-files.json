@@ -326,8 +326,8 @@
   ],
   "sha256": {
     ".codex-plugin/plugin.json": "0a696ee33b34996d136d4aa2d32fcc35bd34af35efb475b0cabefbafcaf87f34",
-    ".generated-from.json": "d3161abea16360a0b017090df0282a0e7b0795652978aaec3db2622f192f367c",
-    "README.md": "c7002a0beff26bb29bae7edd9acd2b48b7ffe34651f40f16796449f543d90b3b",
+    ".generated-from.json": "759681bf3a34427e3053da7629d26a9da7e2b3e121bc05f620a4e0bf14c1b5c3",
+    "README.md": "b57ecf820b18d8a2b13c9b0c7a53c7e9bbb8bce4c415293a8dbac5bd067175cb",
     "VERSION": "e33e70efdb9c35eb184b87ee7abc05ac16a925c9c36e84408999dea33a741fa8",
     "checks/catalog-publication-check.py": "9f4c9b75b524e31bd9420036a5384801ef707ef5708956abba1d6eb62c398f9e",
     "checks/citation-check.sh": "747f3103c834b5e5497a89a10d1c5c396259f32b6621add032626468591d117f",
