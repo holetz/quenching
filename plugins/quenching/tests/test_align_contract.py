@@ -5,6 +5,7 @@ import re
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+ALIGN_DECLARATION = ROOT.parent.parent / "docs" / "standards" / "architecture" / "align-surface.md"
 
 
 class KnowledgeAlignmentContract(unittest.TestCase):
@@ -44,10 +45,22 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertIn("--glossary-term", verify)
         self.assertIn("never the first lexical glossary entry", verify)
 
-    def test_ops_precedes_proof_on_every_conducted_path(self):
+    def test_conductor_order_follows_the_architecture_declaration(self):
+        declaration = ALIGN_DECLARATION.read_text(encoding="utf-8")
+        edges_block = declaration.split("## Conductor order and dependency edges", 1)[1].split(
+            "The conductor has a separate named", 1
+        )[0]
+        edges = re.findall(r"^\|\s*`([^`]+)\s+→\s+([^`]+)`\s*\|", edges_block, re.MULTILINE)
+        self.assertGreater(len(edges), 1)
+        declared_order = [edges[0][0], *[target for _, target in edges]]
+        self.assertEqual(
+            [source for source, target in edges[1:]],
+            declared_order[1:-1],
+        )
+
         align = (ROOT / "commands" / "align.md").read_text(encoding="utf-8")
-        declaration = align.split("## Execution order", 1)[1].split("## Workflow", 1)[0]
-        rows = [line for line in declaration.splitlines() if line.startswith("| `")]
+        execution = align.split("## Execution order", 1)[1].split("## Workflow", 1)[0]
+        rows = [line for line in execution.splitlines() if line.startswith("| `")]
         parsed = []
         for row in rows:
             cells = [cell.strip() for cell in row.strip("|").split("|")]
@@ -58,6 +71,7 @@ class KnowledgeAlignmentContract(unittest.TestCase):
 
         self.assertGreater(len(parsed), 1)
         self.assertEqual(len({front for front, _, _ in parsed}), len(parsed))
+        self.assertEqual([front for front, _, _ in parsed], declared_order)
         for index, (front, route, dependency) in enumerate(parsed):
             with self.subTest(front=front):
                 self.assertEqual(route, f"/quenching:{front}:align")
