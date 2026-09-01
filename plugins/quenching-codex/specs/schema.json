@@ -25,7 +25,7 @@
         "complexity": {
           "levels": ["low", "medium", "high", "xhigh"],
           "writtenBy": ["triage", "create", "develop"],
-          "why": "the discrete scale the orchestrator derives the gears plan from: low runs the whole cycle in one session on a single authorization and ends opening a PR, medium isolates the larger stages in sub-agents, high keeps the stage-by-stage stops and confirmations, and xhigh adds at least one judgment stage (adversarial review, premortem) to the plan. Each level must change some gear, or it is vocabulary without effect. Computed by create and by the close of develop, and proposed by triage — no longer a value reserved to human judgment, so the field carries its own writtenBy list under a record whose writtenBy stays triage."
+          "why": "the discrete level of human involvement in defining and building a spec: low composes and continues without interruption, medium keeps the stages in session with section boundaries, high adds an automatic refinement pass, and xhigh adds the premortem lens. The level must change the experience of both halves, or it is vocabulary without effect. Computed by create and re-evaluated by develop, and proposed by triage — no longer a value reserved to human judgment, so the field carries its own writtenBy list under a record whose writtenBy stays triage."
         }
       },
       "refined": {
@@ -53,7 +53,7 @@
         "fields": ["number", "url", "date"],
         "writtenBy": "git:pr:create",
         "writeOnce": false,
-        "why": "a PR opened before it is merged — distinct from `merge.pr`, which is stamped only once the merge already happened. `git:pr:create` stamps this the moment `gh pr create` returns; under `specs:cycle`'s minimal-gear authorization, that command runs and stops there rather than merging in the same block, so this is the only record of the PR until a later run (or a human) merges it and `merge` is stamped. `specs:conclude` never opens a PR or writes this record itself — it stops before either and names `git:pr:create` in its own handoff. Restamped if the PR is recreated — closed and reopened, or force-pushed to a fresh number — which is why it carries its own `date` rather than being writeOnce"
+        "why": "a PR opened before it is merged — distinct from `merge.pr`, which is stamped only once the merge already happened. `git:pr:create` stamps this when the provider returns the PR; the review and merge remain separate actions, so this is the record of the open PR until a later run or a human merges it and `merge` is stamped. `specs:conclude` does not open a PR or write this record itself — it reviews and archives the work, then hands off to `git:pr:create`. Restamped if the PR is recreated — closed and reopened, or force-pushed to a fresh number — which is why it carries its own `date` rather than being writeOnce"
       },
       "reviewed": {
         "fields": ["date"],

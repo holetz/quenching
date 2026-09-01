@@ -12,7 +12,7 @@ insert new knowledge, capture terms into a fixed glossary, drain the project's C
 Code memory into it, import external sources into it, keep the repo's `AGENTS.md` a thin pointer over it, and organize
 the repo's own **automation surface** (`.agents/skills/`) under one
 taxonomy — so every repository that adopts the plugin looks the **same**. It also carries the repo's
-**spec-driven plan cycle**: the nine `quenching-specs-*` commands over a provider-owned specs
+**spec-driven plan lifecycle**: the six `quenching-specs-*` commands over a provider-owned specs
 front backed by GitHub or Azure Boards, with the OKF bundle as its knowledge substrate, driven end
 to end by the bundled stdlib `cq specs`.
 
@@ -38,7 +38,7 @@ and one root command spans the seven aligned fronts. The `security` and `git` ax
 | Front / pillar | Namespace | **align** — probe-first, structure + content |
 | --- | --- | --- |
 | `/docs/` — the OKF bundle | `quenching-knowledge-*` | `quenching-knowledge-align` |
-| provider-owned specs — GitHub issues or Azure work items | `quenching-specs-*` | cycle and status commands |
+| provider-owned specs — GitHub issues or Azure work items | `quenching-specs-*` | lifecycle and status commands |
 | `/.design/` — the DTCG design source | `quenching-design-*` | `quenching-design-align` |
 | `.agents/` — the automation surface | `quenching-components-*` | `quenching-components-align` |
 | target-declared operations root | `quenching-ops-*` | `quenching-ops-align` |
@@ -58,7 +58,7 @@ the probe found it work:
 | Front | Content its align carries beyond structure |
 | --- | --- |
 | `docs` | drains project memory, thins the harness (moving durable knowledge into homes), and OFFERS the glossary backfill on a cheap proxy — looping to a fixpoint, the one front with a real internal loop |
-| `specs` | none driven — an empty section, a complete spec awaiting its close, an unresolved discovery are each **reported with the command that owns it**; every cycle action needs fresh human intent |
+| `specs` | none driven — an empty section, a complete spec awaiting its close, an unresolved discovery are each **reported with the command that owns it**; every lifecycle action needs fresh human intent |
 | `/.design/` | imports or preserves an external `DESIGN.md` only after source arbitration, installs missing brand assets, builds projections, and reports optional Impeccable detector results |
 | `.agents/` | audits every command **body** against the writing doctrine — the one thing the migration itself is forbidden to fix — and reports each violation with the `quenching-components-command-new` that closes it |
 | `ops` | probes the declared root and router, applies mechanical and structural drift under one plan, and reports judgement findings; status is the read-only view |
@@ -71,32 +71,21 @@ across fronts**, because they feed each other: a spec's distillation is glossary
 `docs` front must then index; the design front installs product/design standards; the components front creates the rule and registry that the `docs`
 listings must carry.
 
-The **cycle conductor** is the second conductor: `quenching-specs-cycle` conducts the lifecycle of
-ONE spec — capture, define, build, close — entering at the derived stage, invoking each stage as the
-command that owns it, and writing nothing itself. It runs as **two halves authorized separately**,
-defining and then building, because deciding what a spec is and deciding to build it are two
-decisions and no gear collapses that seam. It shares the cycle-authorization contract with `quenching-align`,
-and derives each half's gears plan from the spec's `priority.complexity`
-([`specs-cycle/gears.md`](assets/references/specs-cycle/gears.md)).
-
-**N specs is a different run, and a different shape for each regime.**
-`quenching-specs-execute-queue` builds N as a **serial queue over a single isolation**;
-`quenching-specs-develop-batch` defines N as a **parallel batch**. Neither has a gear: both derive
-their run from the fan-out contract
-([`specs-fanout/fanout.md`](assets/references/specs-fanout/fanout.md)), whose criterion is one —
-whatever writes to the working tree serializes, whatever does not, does not.
+The specs axis has no sweep conductor: each spec is captured, defined, built, reviewed and closed
+by the command that owns that stage. Defining and building remain separate decisions, and each
+stage's own authorization and verification contract stays visible to the human.
 
 Every entry point shares one contract: any item whose blast radius reaches **product code**
 confirms on its own, always — and inside a conducted run, so does every **irreversible close**.
 That contract lives once, in
 [`align/convergence.md`](assets/references/align/convergence.md).
 
-## The 52 commands
+## The 49 commands
 
 **One file per entry point** — Codex merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs; there is
 no `skills/` tree and no wrapper. The tables below are the manual, and the count is a property of
-their rows rather than a second structural inventory: the `52` in this heading is the manual's
+their rows rather than a second structural inventory: the `49` in this heading is the manual's
 canonical displayed total, while [`tests/test_readme_surface.py`](tests/test_readme_surface.py)
 reads it and fails the suite whenever these tables
 and `commands/**` disagree
@@ -216,10 +205,10 @@ instead of running either.
 | `quenching-align` | The one align that spans the seven aligned fronts, on ONE confirmation — conducting each front's own align in dependency order, never reimplementing any of them. |
 | `quenching-handoff` | Compacts the current conversation into a handoff document a fresh session can continue from — referencing existing plans, issues, commits and diffs rather than duplicating them. |
 
-The `specs` front has nine commands and a flow worth reading as a whole, so it gets its own section
+The `specs` front has six commands and a flow worth reading as a whole, so it gets its own section
 below.
 
-## The `specs` flow — the nine `quenching-specs-*` commands
+## The `specs` flow — the six `quenching-specs-*` commands
 
 The plugin's **spec-driven plan cycle** is provider-owned: GitHub issues and Azure Boards work
 items are the system of record, and their body carries the canonical spec. The conceptual model
@@ -266,9 +255,6 @@ names for losing access to an external backend.
 | `quenching-specs-execute` | Builds `## Tasks` one verified commit at a time: clean tree required, isolation offered inline when it starts from the base branch, `verify:` run under the spec's declared policy, four-item diff self-review, then the box ticked with the subject of the commit it is about to make (`cq specs task --check --subject`) so code and box land in ONE commit. Writes only the `/docs/standards/` a task explicitly names; everything else is one `cq specs discover` line. Marks an isolated branch's own description with the slug(s) it built there — never under `In place` — so `conclude` can self-discover it later. Stops at the last commit. |
 | `quenching-specs-conclude` | Closes a spec out, resumable, **merging last**: whole-branch review (`reviewed:`), the emergent `/docs/`, the archive with `outcome: done` (refuses on open boxes unless forced) or `abandoned` (always allowed), ONE distillation pass, the release obligations your standards attach to the merge itself (a version bump, a changelog entry — never a spec task) and the `merge: {strategy, subject, pr}` stamp — all on the work branch — and only then the merge, by the **route** you chose alongside the strategy: local, or a pull request where `gh` resolves the repo (pushed, opened and merged in one consented block, with `pr:` recorded). Called with no `--spec`, reads the branch's own marking first — one valid slug resolves silently, several ask, none falls to a diff-measured offer to materialize a minimal spec — before falling back to a plain list-and-ask. Nothing is committed to the base after it. |
 | `quenching-specs-triage` | Ranks the whole front in ONE confirmed table, writing `priority: {level, criticality, complexity, date}` per spec and nothing else — merging, never clobbering a human's ranking. |
-| `quenching-specs-cycle` | The **cycle conductor** over ONE spec: capture, define, build, close — entering at the derived stage, invoking each stage as the command that owns it, never reimplementing any, and writing nothing of its own. **Two halves, two authorizations** (defining, then building), each opening on its own gears plan derived from `priority.complexity`, re-evaluated at the end of every stage and re-asked when the work reveals a larger size. A slug that resolves to nothing is captured through `quenching-specs-create` — with no authorization declared, so capture keeps its own gate — and the run carries on at defining. Typed-only: a whole lifecycle is a human's choice. |
-| `quenching-specs-execute-queue` | Builds **N specs as a serial queue over a single isolation**: isolate once, `quenching-specs-execute` N times on that same branch, one `quenching-specs-conclude` with no `--spec` closing the lot into one pull request against the declared `integrationBranch`. Serialization is the feature — it removes the collision by construction and makes spec N's gate run over the result of 1..N−1, which the conductor re-runs after each spec under that spec's own declared policy. Candidates are filtered by the fan-out entry contract; ONE plan carries the whole list, the N, the recursion form and the human's stopping criterion **before** any isolation. A local block leaves its `[!]` and comes off the branch's `quenching-slugs:` line so the PR never implies it carries what it does not; a contaminating one stops and asks. |
-| `quenching-specs-develop-batch` | Takes **N specs below the `ready` gate toward `ready` as a parallel batch** — every admitted spec launched in one message, each defined by `quenching-specs-develop` in a sub-agent of its own. It fans out for real because nothing it runs takes a branch or writes code, so the write sets are disjoint by construction. A question no evidence answers becomes an `## Open Decisions` line rather than an invented answer: the batch buys the drafting, not the judgment. The authorization, a contaminating block and every `approved` stamp stay with the conductor, which re-derives each spec's real stage from disk before offering it. |
 
 The shared facts live once — the provider-owned document, the thirteen canonical sections, the
 gates, the record vocabulary, and the `cq specs` surface in
@@ -374,9 +360,6 @@ graded and with a should-not-trigger arm.
 | `quenching-components-align` | no pin. Its §7 doctrine audit **may delegate collection** to read-only `Task` collectors — one per slice, reporting *what each body contains* (which levers its frontmatter carries, what it cites, where its steps end) on a surface large enough that reading every body would bury the conversation. Every verdict stays with the orchestrator: "this body has no positive prescription" is a claim about behaviour, and the read that makes it must also weigh the fix |
 | `quenching-specs-develop` | **`model: opus`** — the whole command *is* judgment: generating the questions a spec never answered, recommending an answer to each, and deciding when the interrogation is done. There is nothing mechanical here to downgrade, and a cheap model that asks generic questions produces exactly the refinement theatre the command exists to replace. Cost is bounded by each stage's declared stop condition and by one edit per pass, not by a model tier. One **read-only** sub-agent is permitted, and only for compose and refine: it sweeps the code and the `/docs/standards/` the spec declares and returns one table (`assets/references/specs-develop/questions.md` §Gathering the evidence). It reads; it never asks, writes, or decides — every question, every `cq specs` call and every confirmation stays with the orchestrator. **This is not `context: fork`**, which cannot ask a question at all, so the never-fork rule is untouched |
 | `quenching-specs-execute` | **`model: sonnet`** — the loop is write · verify · self-review · tick · commit against a spec that already decided what to build, and the judgment it does keep is gated by a human at every confirmation. A per-task **executor sub-agent is permitted** when the task declares `files:` and touches no `/docs/` — pinned to the **session model, never `haiku`**; with this command pinned, *session model* means `sonnet` for those executors (it writes production code, the same rationale that protects `quenching-knowledge-import-memory`'s executors). The orchestrator keeps spec selection, every confirmation, every `cq specs task --check`/`--block`, every `/docs/standards/` write, the commit, and the pause decision. Two tasks run concurrently only when `cq specs parallel` reports the `[P]` group eligible; serial is the default. **This is not `context: fork`** — the orchestrator stays in the live conversation, so the never-fork rule is untouched (`assets/references/specs-execute/execution.md` §This is not `context: fork`) |
-| `quenching-specs-cycle` | **no pin** — typed-only (`disable-model-invocation: true`): a whole lifecycle is a human's choice, so the description pays no routed budget; each half's plan gate and every nested confirmation stay in the conducting session, and each stage runs under its own policy row |
-| `quenching-specs-execute-queue` | **no pin** on the conductor; **one executor sub-agent per spec, pinned to the session model — never `haiku`**: each runs `quenching-specs-execute` over the repo's production code, the same rationale that protects `quenching-knowledge-import-memory`'s executors. `Bash` is unrestricted **and priced in the body**: the queue drives the target repo's own `git` and re-runs the repo's own declared gate after every spec, neither enumerable in advance — and it is the *only* file-touching tool granted, because every read the conductor makes goes through `cq` and the repo's files are read inside the sub-agents |
-| `quenching-specs-develop-batch` | **no pin** on the conductor; **N sub-agents launched in ONE message**, one slug each, pinned to the session model — never `haiku`, since a misdrafted section is one a human is about to approve. `Bash` scoped to `python3` / `py` / `git status` — the tool, plus the porcelain check that *measures* the disjunction the batch claims instead of asserting it; no sub-agent may talk to the human, stamp `approved`, promote a discovery or write into `/docs/` |
 
 Two rules are deliberate and must survive any future "optimization":
 
@@ -388,17 +371,9 @@ Two rules are deliberate and must survive any future "optimization":
 - **Never downgrade classification or executor agents to haiku** in
   `quenching-knowledge-import-memory` — a misclassification becomes a wrong memory deletion.
 
-**Fan-out cost — the saving is context isolation, not concurrency.** What an N-spec run saves comes
-from each spec running in a **sub-agent of its own context**: an in-session queue would make spec N
-re-send the previous N−1 specs' context on every turn, and that is the cost the sub-agent removes.
-Serializing the build therefore costs none of the saving — and `quenching-specs-execute-queue` adds
-a second one on top, since **one** `quenching-specs-conclude` instead of N pays for the branch
-review, the release obligations and the archive once rather than per spec. Against that sit the
-serial run's own charges: the declared gate is re-run after every spec, and the conductor's own
-preamble is re-sent every turn of a run that may hold N specs — which is why these bodies load their
-contract by section (`cq components read --sections`) rather than by file. **There is no cap on N
-and no soft warning** in either entry: the size is decided on the plan, and a threshold nobody
-measured would add the appearance of measurement without the measurement.
+The specs front keeps each task's context local to its command and each gate explicit. The commands
+load shared contracts by section rather than duplicating them, so the work remains readable as the
+front evolves.
 
 **External backend cost — network, not tokens.** `github`/`azure-boards` reach the vendor through
 `subprocess` over `gh`/`az`, never a bundled HTTP client, so every write and every list is one
