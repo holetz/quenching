@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Ops front
-description: The target repository's canonical operations surface — one normalized router, its entry-point contract, lifecycle and finding vocabulary; implementation follows in named specs
-resource: https://github.com/holetz/claude-quenching/issues/1043
+description: The target repository's current operations surface — one normalized router, its entry-point contract, lifecycle and finding vocabulary, verified by the shipped cq ops route
+resource: .claude/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/ops/**
 tags: [architecture, ops, automation, scripts, contract]
-timestamp: 2026-08-30
+timestamp: 2026-08-31
 audience: both
-authority: background
-source: declare-the-ops-front spec 1043 (2026-08-30), grounded in GitHub's Scripts To Rule Them All pattern and the measured target repository; implementation ownership is recorded below
+authority: current
+source: spec 1065 (task 3.2) — the `ops` namespace and its shared-loader refusal boundary are implemented by the shipped cq ops route
 maintainer: quenching
 ---
 
@@ -15,11 +15,28 @@ maintainer: quenching
 
 The ops front is the operations surface a target repository converges toward. It gives routine
 work a predictable outer interface while leaving domain logic in the packages that own it. The
-front is a contract for the surface, not an implementation of the target repository's operations.
+front is both the contract for that surface and the shipped implementation boundary that checks
+it.
+
+## Mold adoption
+
+The ops front adopts the common minimum from
+[`front-mold.md`](front-mold.md). Its applicability signal is the `ops` namespace in the target's
+`.claude/quenching.json`; its read model is `cq ops status`, and its verifier is `cq ops doctor`.
+The align and status bodies cite the executor projection at
+`plugins/quenching/assets/references/front-align/mold.md`, while this front keeps the ops-specific
+disposition map in `plugins/quenching/assets/references/ops-align/bands.md`.
+
+Ops retains its domain deltas: `opsRoot`, `router` and `registry` ownership, inventory and generated
+registry freshness, lifecycle and entry-point reachability, typed exits, output channels and
+preview-first write policy. Its `inventory`, `registry` and entry-point commands are extra route
+verbs; they do not replace the common `doctor`/`status` floor or change the owners of `op-*`
+findings.
 
 ## The canonical tree
 
-An adopting repository declares one operations root, `scripts/` by default. The root holds the
+An adopting repository declares one operations root. `scripts/` is a conventional example, not an
+implicit default. The root holds the
 normalized entry points and a generated registry; domain packages are grouped by domain, never by
 the lifecycle action that happens to call them:
 
@@ -44,20 +61,29 @@ keeps retired entry points visible without presenting them as part of the active
 
 ## Configuration home
 
-The operations root and canonical router are declared together in the target repository's
-`.claude/quenching.json`:
+The operations root, canonical router, and optional generated-registry path are owned by the `ops`
+namespace in the target repository's `.claude/quenching.json`:
 
 ```json
 {
-  "opsRoot": "scripts",
-  "router": "pyproject.toml"
+  "ops": {
+    "opsRoot": "scripts",
+    "router": "pyproject.toml",
+    "registry": "scripts/registry.md"
+  }
 }
 ```
 
 `opsRoot` and `router` are paths relative to the repository root. Both declarations are required;
-the ops tooling reads them through the shared configuration loader and refuses with
-`op-config-missing` when either one is absent. It never guesses `scripts/` or chooses among
-multiple router files.
+the optional `registry` path overrides the default `<opsRoot>/README.md` location. The ops tooling
+reads all three through the shared configuration loader and refuses with `op-config-missing` when
+either required declaration is absent. It never guesses `scripts/` or chooses among multiple
+router files.
+
+Root-level `opsRoot`, `router`, or `registry` keys are legacy flat declarations. A configuration
+that contains any of them, alone or alongside `ops`, is refused with `sp-config-unscoped` and exit
+`2`; the refusal names each key and its destination namespace. The ops front never merges the two
+shapes and never treats a flat declaration as an absent `ops` namespace.
 
 ## The generated registry
 
@@ -132,7 +158,7 @@ before it is retained as a contract check.
 ## Why a front and not a pillar
 
 The distinction is owned by [`align-surface.md`](align-surface.md), §The aligned-front column and
-§The sixth pillar has no align: a front is a tree this plugin can converge toward and probe, while
+§The seventh pillar has no align: a front is a tree this plugin can converge toward and probe, while
 the `git` pillar answers live questions about a target repository. The operations surface qualifies
 as a front because its tree, router, registry, lifecycle, and entry-point contract give a verifier a
 decidable target. It therefore earns its own alignment stages; it is not merely another `cq` axis
@@ -148,20 +174,21 @@ mistaking an explanatory comment for a disabled check. The mechanism is publishe
 finding must be reviewable, and it follows the measured target's existing `tokenize` plus AST
 technique rather than relying on an unpublished heuristic.
 
-## Contract first, tooling later
+## The shipped implementation
 
-Spec 1043 publishes this contract and its vocabulary; it does not ship the `cq ops` route, a
-verifier, or command bodies. The implementation is deliberately owned by the following specs:
+The bundled `cq ops` route implements this contract and keeps the operations surface measurable:
 
-| Contract part | Builder |
+| Surface | Implementation |
 | --- | --- |
-| The contract, vocabulary, and reference surface | Spec 1043 — Declare the ops front |
-| The `cq ops` axis, inventory, and verifier/doctor | Spec 1044 — Build the cq ops axis |
-| The ops front's align and status command bodies | Spec 1045 — Mint the ops front's align and status command bodies |
-| Cross-front `/align` integration, surface claims, and adoption path | Spec 1051 — Conduct the ops and proof fronts |
+| Axis and route | `cq ops` exposes `inventory`, `doctor`, `status`, and `registry` under one operations namespace. |
+| Inventory | `cq ops inventory` reads the declared root, router, entry points, lifecycle and write-policy facts. |
+| Verification | `cq ops doctor --json` runs the static checks and emits typed findings with the contract's exit codes. |
+| Registry | `cq ops registry --check` proves freshness; `cq ops registry --write` regenerates only the owned registry block. |
+| Reader view | `cq ops status` reports configuration, packages, lifecycle, findings by band and registry freshness without writing. |
 
-Until those builders land, this standard is an agreed target shape with no claim that the target
-repository already conforms to it.
+The route, inventory model, registry generator and verifier live in the bundled `quenching.ops`
+package. The align and status command bodies consume the same route and keep judgment findings in
+the report; they do not create a second operations implementation.
 
 ## Finding vocabulary
 

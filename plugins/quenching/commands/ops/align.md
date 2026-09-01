@@ -14,6 +14,9 @@ repairs, and leaves production-risk decisions with the target owner. The disposi
 [ops-align/bands.md](${CLAUDE_PLUGIN_ROOT}/assets/references/ops-align/bands.md); the target tree and
 router contract live in [ops-align/target-structure.md](${CLAUDE_PLUGIN_ROOT}/assets/references/ops-align/target-structure.md)
 and [ops-align/entrypoint-contract.md](${CLAUDE_PLUGIN_ROOT}/assets/references/ops-align/entrypoint-contract.md).
+The common front contract lives in
+[front-align/mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/front-align/mold.md); these references
+keep the router, registry and entry-point-specific evidence separate from the shared mold.
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted, and pass that
 same root to every `cq ops` call.

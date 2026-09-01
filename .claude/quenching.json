@@ -1,16 +1,19 @@
 {
   "backend": "github",
-  "hooks": {
-    "after_specs_execute_task": [
-      { "command": "/my:security-review", "optional": true }
-    ]
+  "shared": {
+    "hooks": {
+      "after_specs_execute_task": [
+        { "command": "/my:security-review", "optional": true }
+      ]
+    },
+    "profiles": {
+      "installed": ["knowledge", "specs", "components"]
+    }
   },
-  "profiles": {
-    "installed": ["knowledge", "specs", "components"]
-  },
-  "azurePlacement": {
-    "defaultSubject": "plugin"
-  },
+  "specs": {
+    "azurePlacement": {
+      "defaultSubject": "plugin"
+    },
   "subjects": {
     "knowledge": {
       "name": "Front /docs/",
@@ -58,5 +61,6 @@
     "chore": {
       "description": "Manutenção sem mudança de comportamento observável: dedupe, renomeação interna, enxugar prosa, mover um arquivo. Escolha quando um usuário do plugin não notaria nada depois do merge."
     }
+  }
   }
 }

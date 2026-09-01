@@ -7,11 +7,12 @@ import json
 import os
 
 from quenching.common.git import _git
+from quenching.common.config import CONFIG_FILE, find_repo_root
 from quenching.specs.backends.base import BackendRefusal, SpecBackend
 from quenching.specs.backends.hybrid import (hybrid_project, hybrid_split, hybrid_title_join,
                                              hybrid_unwrap, hybrid_wrap)
-from quenching.specs.config import (AZ_DEFAULT_DISCOVERY_TAG, CONFIG_FILE, announce_unproved,
-                                    find_repo_root, load_config, resolve_work_item_type)
+from quenching.specs.config import (AZ_DEFAULT_DISCOVERY_TAG, announce_unproved, load_config,
+                                    resolve_work_item_type)
 from quenching.specs.parse import (FIELD_KEYS, PHASES, board_state_of,
                                    carry_forward_fields, declared_tags, derive_info,
                                    derive_labels, strip_frontmatter_keys, tags_outside_catalog)

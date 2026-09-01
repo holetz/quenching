@@ -9,12 +9,13 @@ import re
 import sys
 
 from quenching.common.git import _git
+from quenching.common.config import CONFIG_FILE, find_repo_root
 from quenching.specs.backends.base import BackendRefusal, SpecBackend
 from quenching.specs.backends.hybrid import (GH_BODY_MAX, GH_PART_MAX, hybrid_join,
                                              hybrid_project, hybrid_split, hybrid_title_join,
                                              hybrid_unwrap, hybrid_unwrap_part, hybrid_wrap,
                                              hybrid_wrap_part)
-from quenching.specs.config import CONFIG_FILE, find_repo_root, load_config
+from quenching.specs.config import load_config
 from quenching.specs.parse import (PHASES, carry_forward_fields, declared_tags,
                                    derive_info, derive_labels, reconcile_label_set,
                                    strip_frontmatter_keys)

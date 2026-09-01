@@ -2,101 +2,162 @@
 type: standard
 title: Plugin configuration contract
 description: `.claude/quenching.json` is the plugin's single configuration home; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles and proposal catalogues remain explicit target settings
-resource: plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/bin/quenching/knowledge/**, plugins/quenching/assets/references/git/isolation.md, plugins/quenching/assets/references/specs-align/conformance.md
+resource: .claude/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/specs/config.py, plugins/quenching/assets/bin/quenching/ops/**, plugins/quenching/assets/bin/quenching/proof/**, plugins/quenching/assets/bin/quenching/git/base.py
 tags: [workflows, specs, configuration, provider, plugin]
-timestamp: 2026-08-19
+timestamp: 2026-08-31
 audience: both
 authority: current
-source: remover-backend-local-do-plugin (task 4.4) — provider selection moved out of repository storage configuration; `.claude/quenching.json` now carries only provider placement and shared plugin settings
+source: spec 1065 (task 3.1) — the namespaced envelope and migration refusal are implemented and covered by the source test matrix
 maintainer: quenching
 ---
 
 # Plugin configuration contract
 
-One file holds the target settings that this plugin is allowed to declare. Provider selection is
-derived from the repository remote; the file refines placement and project conventions without
-creating a second specs store.
+The target repository has one configuration home. It is a plain JSON object whose root carries
+provider-neutral metadata and explicit namespaces for settings owned by a front or shared by more
+than one pillar. The file is configuration, not a second specs store: provider-owned specs remain
+on the selected external provider.
 
-## One file at the repository root
+## One configuration home
+
+The Claude projection reads:
 
 ```text
 .claude/quenching.json
 ```
 
-At the root of the target repository, beside the rest of `.claude/`. It is read with `json.load` as
-a plain object. `cq specs` is the one reader for specs settings; no command switches the provider
-mid-flight.
+The file is at the root of the target repository, beside the rest of `.claude/`. The Codex
+projection uses the corresponding `.agents/quenching.json` home; both projections carry the same
+envelope and namespace contract. A leftover `/.specs/config.json` is diagnostic residue and is
+never merged with this file.
+
+There is no per-front configuration file and no precedence order between two configuration
+sources. One file and one namespace owner keep a declaration visible to every reader that needs
+it.
+
+## The envelope and its owners
+
+The root-level envelope is deliberately small:
 
 ```json
 {
-  "worktreeSetup": "./scripts/wt-setup.sh",
-  "azureStates": {"plans": "New", "archive": "Closed"},
-  "azurePlacement": {"areaPath": "Project\\Specs"}
+  "backend": "github",
+  "shared": {
+    "worktreeSetup": "./scripts/wt-setup.sh",
+    "sharedPaths": [".cache"],
+    "hooks": {
+      "after_specs_execute_task": [
+        {"command": "/my:security-review", "optional": true}
+      ]
+    },
+    "profiles": {"installed": ["knowledge", "specs", "components"]}
+  },
+  "specs": {
+    "specsBranch": "specs",
+    "azureStates": {"plans": "New", "archive": "Closed"},
+    "azurePlacement": {"areaPath": "Project\\Specs"},
+    "azureColumns": {},
+    "subjects": {},
+    "tagCatalog": {},
+    "workItemTypes": {}
+  },
+  "ops": {
+    "opsRoot": "scripts",
+    "router": "pyproject.toml",
+    "registry": "scripts/registry.md"
+  },
+  "proof": {
+    "proofRoot": "tests",
+    "layers": {},
+    "measuredRoots": ["src"],
+    "proofExclusions": [],
+    "ratchetPath": null
+  }
 }
 ```
 
+Ownership follows the meaning of the key, not the module that happens to read it:
+
+| Namespace | Owned declarations | Boundary |
+| --- | --- | --- |
+| root | `backend` | legacy/provider metadata only; provider selection comes from `origin` |
+| `shared` | `worktreeSetup`, `sharedPaths`, `hooks`, `profiles` | settings used by more than one local surface or by isolation |
+| `specs` | `specsBranch`, Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes` | provider-owned plan lifecycle and proposal conventions |
+| `ops` | `opsRoot`, `router`, `registry` | operations inventory, router and generated registry |
+| `proof` | `proofRoot`, `layers`, `measuredRoots`, `proofExclusions`, `ratchetPath` | verification inventory, layers and coverage evidence |
+
+The shared loader discovers the home, parses JSON, derives provider metadata, and classifies the
+envelope. It does not interpret a front's values. Each adapter validates and resolves only its own
+namespace. `ops`, `proof`, and `git` consume the common boundary directly; they do not import the
+specs adapter to obtain shared configuration.
+
 ## Provider-derived selection
 
-The provider comes from `origin`:
+The provider is derived from the repository's `origin` remote:
 
-- `github.com` selects GitHub and uses issue URLs as spec locators.
-- an Azure DevOps host selects Azure Boards and uses work-item URLs as spec locators.
-- no remote or an unknown host refuses with exit 2; it never falls back to another provider.
+- a `github.com` host selects GitHub Issues;
+- an Azure DevOps host selects Azure Boards;
+- no recognized remote host is an exit-2 refusal, never a silent switch to another provider.
 
-The legacy `backend` key is refusal-only. `backend: files` is not a supported store and must not
-create a repository directory, branch, or worktree. A configured provider value that disagrees
-with the remote is also a refusal, because silently switching the system of record loses work.
+The root `backend` value is not a second provider selector. Unsupported or retired backend values
+are refused, and a valid provider is still established from the remote. Provider-owned specs are
+read and written only after that selection succeeds.
 
-## The recognised keys
+The `specs` namespace does not name a local specs root, archive, or storage branch. A declared
+`specsBranch` is a lifecycle input for the branch record, not a repository-backed specs store.
 
-| Key | Values | Default | Read by |
-| --- | --- | --- | --- |
-| `worktreeSetup` | a shell command, run as written | none | the execute isolation offer, after `git worktree add` |
-| `azureStates` | `{"plans": "<state>", "archive": "<state>"}` | none — Azure refuses rather than guess | Azure Boards transport |
-| `hooks` | `{"<event>": [{"command": "<cmd>", ...}]}` | none — no events | the command that owns the event |
-| `profiles` | `{"installed": ["knowledge", "specs", "design", "components"]}` | none — all installed | the align conductor |
-| `azurePlacement` | area, type, discovery tag, team, iteration, column and subject settings | per sub-key; `areaPath` has no default | Azure Boards transport |
-| `azureColumns` | `{"<board state>": "<lane>", ...}` | `{}` — falls back to placement | Azure Boards transport |
-| `subjects` | `{"<key>": {name, description, parent, tags}, ...}` | `{}` | spec creation proposal |
-| `tagCatalog` | `{"<tag>": "<description>", ...}` | `{}` | spec creation proposal |
-| `workItemTypes` | `{"<key>": {description, azure, github, default}, ...}` | `{}` | spec creation and provider create |
+## No flat fallback and no merge
 
-`azureStates` and `azurePlacement.areaPath` have no default because a guessed value writes a work
-item into the wrong project state or area. Their absence is an actionable exit-2 refusal only
-when Azure Boards is selected; GitHub does not read them.
+The old root-level front keys are migration evidence, not a compatibility API. If a configuration
+contains one of them — whether alone or alongside a namespace — the common loader returns the
+dedicated `sp-config-unscoped` refusal with exit `2`. The payload names every offending key, its
+destination namespace, whether the document is pure-flat or mixed, and the direct migration
+instruction.
 
-`worktreeSetup` is an execution setting, not a specs-storage setting. Its command, cwd, failure
-behavior, and human consent are owned by [worktree-setup.md](worktree-setup.md). A worktree is
-isolation for code changes; it never hosts a provider document.
+```json
+{
+  "code": "sp-config-unscoped",
+  "exit": 2,
+  "shape": "mixed",
+  "keys": ["opsRoot"],
+  "destinations": [{"key": "opsRoot", "namespace": "ops"}]
+}
+```
 
-## Hooks, profiles and proposal prose
+The front must not read a flat key as an absent namespace, merge flat and namespaced values, or let
+the namespaced value silently win. The absence of a front-owned declaration is a different state:
+it uses the adapter's documented default or its existing required-key refusal.
 
-`hooks` declares work attached to an event a command announces. The core validates shape and
-passes the command through; it does not evaluate the hook or its optional condition.
+Unknown namespace and invalid namespace-shape diagnostics remain visible at the envelope boundary.
+An unknown namespace is not treated as a new front, and an array or scalar where a namespace object
+is expected is not flattened into one. Unknown keys inside an accepted namespace remain that
+namespace adapter's responsibility; no other adapter may claim them.
 
-`profiles` declares which plugin fronts a target installs. The core validates a list of non-empty
-strings and does not reinterpret the names.
+## Defaults and refusals
 
-`subjects.<key>.description`, `tagCatalog` values, and `workItemTypes.<key>.description` are prompt
-material. An agent reads them to propose a subject, tag, or type, and a human confirms. They are
-not executable configuration and the plugin never rewrites them.
+Defaults apply only after the document has passed the envelope boundary. In particular:
 
-## Absence and malformed values
+- `ops` refuses `op-config-missing` when either `opsRoot` or `router` is absent; it never guesses
+  `scripts/` or a router;
+- `proof` keeps its documented proof-root and ratchet defaults, and refuses malformed declarations
+  at its own boundary;
+- `specs` keeps its provider, Azure, catalogue, hook and profile semantics without
+  importing values from `ops` or `proof`;
+- `git` derives its base branch from git facts (`origin/HEAD`, then `init.defaultBranch`, then
+  `main`) and does not use a front-owned flat key as a fallback.
 
-The provider remote is required. Once a supported provider is selected, absent optional settings
-use their documented defaults. `cq specs config` returns the parsed settings; `doctor` reports
-malformed JSON, unknown keys, invalid values, and missing provider requirements.
+The command result vocabulary remains uniform: `0` means the requested state is valid, `1` means
+the command found reportable drift, and `2` means it refused to guess, migrate, or operate without
+an unambiguous declaration.
 
-Provider selection errors are refusals, not defaults. Other malformed settings remain findings so
-the health command can report all of them in one pass, but a write never proceeds when its provider
-or required Azure placement is unresolved.
+## Migration is diagnostic
 
-There is no legacy configuration location to merge. A stranded repository-store configuration is
-named and refused, never read alongside the new home, because two competing sources of truth have
-no safe precedence rule.
+The plugin does not rewrite an installed target's file, create a migration command, or choose a
+release boundary for this breaking change. To migrate, move each listed root key into the
+destination namespace named by `sp-config-unscoped`, then run the owning front's verifier. A
+configuration is ready only when the refusal disappears and the front-specific defaults or
+required declarations are evaluated normally.
 
-## Configuration does not name roots
-
-The OKF bundle is always `/docs/` ([bundle-root.md](../architecture/bundle-root.md)). Specs
-are in the selected provider. No setting in this file names a specs directory, branch, archive, or
-worktree for provider documents.
+This standard defines the source projection's contract. Its Codex projection must preserve the
+same ownership, refusal payload and no-fallback rule while using `.agents/quenching.json` as its
+configuration home.

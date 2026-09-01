@@ -1,5 +1,5 @@
 ---
-description: Align the whole repository — /docs/, /.design/, then .claude/, ops and proof — on ONE confirmation, looping until nothing changes. Triggers on "align the repo", "align everything", "align and update everything", "set up quenching here", "converge this repository", "run all the aligns", "fix both fronts", or "fix all fronts". Not for: aligning one front → its `/quenching:*:align` command; changing product code → the owning spec.
+description: Align the whole repository — /docs/, /.design/, then .claude/, ops, proof, toolchain and delivery — on ONE confirmation, looping until nothing changes. Triggers on "align the repo", "align everything", "align and update everything", "set up quenching here", "converge this repository", "run all the aligns", "fix both fronts", or "fix all fronts". Not for: aligning one front → its `/quenching:*:align` command; changing product code → the owning spec.
 argument-hint: [optional-scope]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
 ---
@@ -8,184 +8,146 @@ allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
 
 **Input**: `$ARGUMENTS` (an optional scope; omit to align the whole repository).
 
-| # | Front | Align | What converges |
-| --- | --- | --- | --- |
-| 1 | `/docs/` — the OKF bundle | `/quenching:knowledge:align` | homes, frontmatter stamps, every `index.md`, the validator — then project memory, the harness, the glossary |
-| 2 | `/.design/` — the design source | `/quenching:design:align` | DTCG source, product/design/medium projections, sidecar, adapters, assets and non-web drift |
-| 3 | `.claude/` — the automation surface | `/quenching:components:align` | command paths on the taxonomy axis, collapsed pairs, the rule + registry, the GENERATED zone — then the read-only doctrine audit |
-| 4 | `ops` — the operations surface | `/quenching:ops:align` | declared operation roots, entry-point inventory, registry and lifecycle/write-policy findings |
-| 5 | `proof` — the verification surface | `/quenching:proof:align` | test layers, fixture ownership, gate evidence, measured surfaces and the coverage floor |
+## Execution order
 
-**The `specs` front has no align, and that is not an omission.** Its canonical documents live in the
-repository provider — GitHub Issues or Azure Boards — so there is no local workspace to converge:
-`remover-backend-local-do-plugin` retired the local backend and the front's align with it. What
-survived as commands is `/quenching:specs:status` (read the front, writes nothing) and
-`/quenching:specs:triage` (rank it, on the human's own confirmation), and neither is an align —
-this conductor never invokes them in place of one.
+This table is the **one executable declaration** of the local-front order. The `Depends on`
+column is a dependency edge, not a display ordinal: a later front is never invoked before the
+front named in that cell has completed its inherited authorization.
 
-Align probes first.
+| Front | Route | Depends on |
+| --- | --- | --- |
+| `knowledge` — `/docs/` | `/quenching:knowledge:align` | applicability |
+| `design` — `/.design/` | `/quenching:design:align` | `knowledge` |
+| `components` — `.claude/` | `/quenching:components:align` | `design` |
+| `ops` — operations surface | `/quenching:ops:align` | `components` |
+| `proof` — verification surface | `/quenching:proof:align` | `ops` |
+| `toolchain` — toolchain surface | `/quenching:toolchain:align` | `proof` |
+| `delivery` — delivery surface | `/quenching:delivery:align` | `toolchain` |
 
-Resolve `cq` — written bare in the probe below — per
-[tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
-§Resolving the tool. Branch on the **exit code**
-(0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
+The `specs` provider flow has no row because it owns no local tree, while the `security` and `git`
+pillars have no row because they answer live questions without a converging front tree. Their
+commands remain available through their own namespaces.
 
-## Doctrine
+Every applicable front must expose the common front mold at
+`${CLAUDE_PLUGIN_ROOT}/assets/references/front-align/mold.md`. The conductor sequences and reports;
+it never reimplements a front's verifier or repair logic.
 
-- **Order is a dependency, not a preference.** `/docs/` → `/.design/` → `.claude/` → `ops` → `proof`.
-  Never run a later front before an earlier one.
-- **Loop across fronts.**
-- **Conduct, never reimplement.** The conductor sequences, gates, and reports. If a front's
-  behaviour must change, change that front's align — the same ONE-authority-per-concern rule that
-  keeps each align from re-deriving its own stages' logic.
-- **Front presence decides the pass; only `/docs/` is installed unasked.** An absent `/docs/` bundle
-  is *the* thing this plugin installs, so front 1 always runs. An absent `/.design/` front runs
-  only when the request names design/setup or portable product/design artifacts already signal it;
-  otherwise it is reported as available. An empty `.claude/` surface skips front 3 rather than
-  scaffolding a taxonomy for nothing. `ops` and `proof` are conditional too: their declared roots
-  or the conventional-root probes in step 1 decide applicability, while an absent front is only
-  reported as available.
-- **Converge or report — never spin.** Cross-front pass cap **3** (each front align keeps its own
-  internal cap of 5). An empty pass with residual findings is **residue**: stop, and report it
-  front by front with the command that owns each item.
+## Workflow
 
-## Workflow (probe → ONE OK → five local fronts → re-probe → loop)
+### Applicability
 
-### 1. Probe the five local fronts (read-only, cheap)
-If `$ARGUMENTS` names a front or a path inside one, resolve it to that front and probe only that
-front; report the other fronts as skipped by scope. With no argument, probe all and preserve
-the dependency order below.
-Presence and rough scale only:
-- **`/docs/`** — does the bundle root exist (`/docs/index.md` with `okf_version`)? Run
-  `cq knowledge validate /docs --json` and keep
-  the finding counts; note whether the project memory dir
-  (`~/.claude/projects/<cwd>/memory/`) holds files and which harness files exist.
-- **`/.design/`** — run `cq --root . design status --json` when installed; when absent, run
-  `cq --root . design align --check --json` only if the request or existing portable artifacts
-  signal this front. Record root PRODUCT/DESIGN provenance and any pending import/build choice.
-- **.claude/** — `cq components doctor --json` for the command count and its findings; `Glob`
-  `.claude/skills/*/SKILL.md` and directory-scoped `**/.claude/skills/*/SKILL.md` for legacy pairs,
-  noting how many are legacy CLI-generated `openspec-*` shadow copies.
-- **`ops`** — read `.claude/quenching.json` for `opsRoot`; when it is absent, inspect only the fixed
-  conventional roots `scripts/`, `tools/`, `bin/` and `script/` for an executable entry point. A
-  declared root or a conventional root with an executable entry point makes the front applicable;
-  neither means *not applicable*, with a one-line invitation to declare it. Do not turn that
-  invitation into a plan item.
-- **`proof`** — read `.claude/quenching.json` for `proofRoot`; when it is absent, inspect only
-  `tests/` and `test/` for a test module. A declared root or a conventional root with a test module
-  makes the front applicable; neither means *not applicable*, with the same one-line invitation.
-  An applicable but undeclared front is adoption work, not drift, until its own align is invoked.
+Probe every declared front in the table before inventory. If `$ARGUMENTS` names a front or a path
+inside one, probe only that front and mark the others skipped by scope.
 
-**All applicable fronts probe clean** → say so and stop, before any plan: *"all applicable fronts conformant
-— nothing to align."*
-Use **not applicable** only when the applicability probe found no declared root or conventional
-signal. Use **skipped** only for an explicit scope exclusion or an earlier dependency failure; a
-present front with no findings is **conformant**. Do not turn either no-op state into a plan item.
+- **`knowledge`** — run `cq knowledge validate /docs --json`; record the bundle, validator counts,
+  project memory and harness files.
+- **`design`** — run `cq --root . design status --json` when installed; when absent, run
+  `design align --check --json` only when scope or root `PRODUCT.md`/`DESIGN.md` artifacts signal
+  adoption.
+- **`components`** — run `cq components doctor --json`; inspect command skills for legacy pairs.
+- **`ops`** — read `.claude/quenching.json` for `ops.opsRoot`; when absent, inspect only
+  `scripts/`, `tools/`, `bin/` and `script/` for an executable entry point.
+- **`proof`** — read `.claude/quenching.json` for `proof.proofRoot`; when absent, inspect only
+  `tests/` and `test/` for a test module.
+- **`toolchain`** — run `cq toolchain doctor --json`; use its applicability signal and recognized
+  manifests, locks, language pins and tool configuration as the complete probe result.
+- **`delivery`** — run `cq delivery doctor --json`; use its applicability signal and workflow
+  inventory as the complete probe result.
 
-**Done when:** each front is marked *present / not applicable / skipped* with its counts, and
-nothing has been written.
+Use **not applicable** only when the probe found no declared root or conventional signal. Use
+**skipped** only for explicit scope exclusion or an earlier hard failure. A present front with no
+findings is **conformant**.
 
-### 2. Present the RUN plan → gate on ONE OK (once, before pass 1)
-One short table: front · state · what its align will do, including which of its **content stages**
-have work (counts and scope, **not** full diffs — each align still presents its own detailed plan
-as narration when it runs) · skipped-and-why.
+If all applicable fronts are conformant, report *"all applicable fronts conformant — nothing to
+align"* and stop before presenting a plan. An applicable but undeclared front is adoption work,
+not drift, until its own align is invoked.
 
-State plainly: *"this authorizes up to 3 cross-front passes of every stage below; each front align
-inherits this OK and will not ask again; taste arbitration, a rename touching product code and each
-spec's close-out still require their own human choice."* Wait for **one** OK.
-**Done when:** the user has answered; declined → nothing written, run ends.
+### Authorization
 
-### 3. Front 1 — `/quenching:knowledge:align` (the `/docs/` bundle)
-Invoke via the **Skill** tool under its registry name **`quenching:knowledge:align`** — the command path
-prefixed by the plugin. Every front below is named the same way; the forms and the condition
-on each are [sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
-§7. Citing a command.
-Declare the authorization mode verbatim per
-[convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
-§The cycle-authorization contract, naming *this* command as the grantor: *"Running under /align authorization
-granted at run start — skip your plan-confirmation pause; present your plan as narration and
-execute; code-coupled and irreversible items still gate individually."*
+Present one short plan: front, state, work in its content stages, counts and scope, plus skipped
+fronts and their reasons. State plainly:
 
-It loops the `docs` front to its own fixpoint. Record what it changed and its residual validator
-findings. A hard failure here (the bundle could not be established) **stops the run** — fronts 2
-through 5 write into or depend on the bundle.
-**Done when:** the align has finished and its outcome is recorded.
+> This authorizes up to 3 cross-front passes of every stage below; each front align inherits this
+> OK and will not ask again. Taste arbitration, a rename touching product code and each spec's
+> close-out still require their own human choice.
 
-### 4. Front 2 — `/quenching:design:align` (the `/.design/` source)
-Report the front as **not applicable** when it is absent and neither scope nor existing portable
-artifacts signal adoption. Report it as **skipped** when the request scope excludes design.
-Otherwise invoke **`quenching:design:align`** with the inherited declaration. Product truth and
-design standards land in the bundle front 1 established; taste arbitration remains a human choice,
-not a second authorization. A hard failure to establish valid DTCG stops front 3.
-**Done when:** the design align has finished or been reported not applicable/skipped with a stated
-reason.
+Wait for one OK. A decline writes nothing.
 
-### 5. Front 3 — `/quenching:components:align` (the `.claude/` surface)
-Skip if the surface is empty (nothing to migrate). Otherwise invoke **`quenching:components:align`**
-with the same declaration. Its rule + registry creation lands in the bundle front 1 just aligned —
-verify both earlier fronts held before invoking. Record its counts and its **doctrine findings**
-(read-only, routed to `/quenching:components:command:new`).
-**Done when:** the align has finished or been skipped with a stated reason.
+### Front: `knowledge`
 
-### 6. Front 4 — `/quenching:ops:align` (the `ops` surface)
-Report the front as **not applicable** when the applicability probe finds no operations signal;
-report it as **skipped** when the request scope excludes ops or an earlier hard failure stops it.
-Otherwise invoke
-`quenching:ops:align` after the components front, under the inherited declaration. Its findings
-and registry output feed the proof front's conditional entry-point check.
-**Done when:** the align has finished or been reported not applicable/skipped with a stated reason.
+Invoke `/quenching:knowledge:align` through the Skill tool under its registry name, with the
+inherited authorization:
 
-### 7. Front 5 — `/quenching:proof:align` (the `proof` surface)
-Report the front as **not applicable** when the applicability probe finds no proof signal; report it
-as **skipped** when the request scope excludes proof or an earlier hard failure stops it. Otherwise
-invoke
-`quenching:proof:align` after the ops front, under the inherited declaration. It consumes the ops
-inventory when that front is configured and reports its own layer and gate residue.
-**Done when:** the align has finished or been reported not applicable/skipped with a stated reason.
+> Running under `/align` authorization granted at run start — skip your plan-confirmation pause;
+> present your plan as narration and execute; code-coupled and irreversible items still gate
+> individually.
 
-### 8. Re-probe across fronts → decide (loop or stop)
-Re-run step 1's probe **plus** the cross-front edges: did front 2 add product/design standards, did
-front 3 create the automation rule/registry, did front 4 add an operations registry for `/docs/`,
-did front 4's inventory change what front 5 must check, or did front 5 add proof resources for
-`/docs/` listings (either → regenerate the affected front on the next pass)?
-Then decide by the four outcomes in
-[convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
-§The convergence contract: **progress** → another cross-front pass from step 3 under the same
-authorization, narrating what each front will do this time (fronts whose input is unchanged will
-probe clean and cost one call each); **converged** → step 9; **residue** → stop and report;
-**cross-front pass cap of 3 reached** → stop and report what remains.
+The knowledge align loops the `/docs/` bundle to its own fixpoint. Record its changes and residual
+validator findings. A hard failure establishing the bundle stops the conductor because later fronts
+write into or depend on it.
 
-A front align's own read-only findings — the doctrine audit, the cycle actions it can only report —
-are **not** progress and never justify another cross-front pass.
-**Done when:** the loop has stopped for a stated reason.
+### Front: `design`
 
-### 9. Consolidated report
-One report, front by front: passes run, what each front's stages did in total, its ending verify
-state (validator findings · `doctor`/`validate` · registry-vs-disk), and — explicitly — everything
-**deferred**, each with the command that closes it (`/quenching:knowledge:add`, `/quenching:knowledge:learn`, `/quenching:knowledge:define`,
-`/quenching:specs:develop`, `/quenching:specs:conclude`, `/quenching:design:genre:new`,
-`/quenching:components:command:new`). Name the cross-front edges that actually fired,
-so the loop's value is visible.
+When `/.design/` is absent and neither scope nor portable artifacts signal adoption, report this
+front not applicable. Otherwise invoke `/quenching:design:align` with the inherited authorization.
+Product truth and design standards land in the knowledge bundle; source arbitration and visual taste
+remain human choices. A hard failure establishing valid DTCG stops later fronts.
 
-This command writes **nothing** of its own — not even a record that it ran. Every write belongs
-to the front align that made it, and the report is where this run is accounted for.
-**Done when:** every front's outcome and every deferral is stated.
+### Front: `components`
 
-## Invariants to never violate
+When the automation surface is empty, skip it rather than scaffolding a taxonomy. Otherwise invoke
+`/quenching:components:align` with the inherited authorization after `design` has completed. Its
+rule and registry changes belong to the knowledge bundle; its doctrine findings remain report-only.
 
-- Never run the fronts out of order, and never continue when an earlier front failed to establish
-  what the next front writes into or consumes.
-- Never ask for a second authorization, and never let a front align re-gate — authorization nests
-  one level ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
-  §The cycle-authorization contract). Equally, never suppress the interruptions the contract never
-  covers: taste arbitration, code-coupled renames and irreversible closes.
-- Never reimplement a front's or a stage's logic here — **invoke** the front align via the Skill
-  tool, always.
-- Never act on a front's reported residue (concluding a spec it only listed, minting a command or
-  genre, writing a standard) — carry it into the report and name the command that owns it.
-- Never scaffold a `.claude/` taxonomy for an empty surface; never silently install a visual world
-  when design adoption was not requested or signalled.
-- Never loop past the cross-front pass cap of 3, never re-run a pass that just changed nothing, and
-  never widen scope to force a clean number.
-- Never hand this command file `context: fork` — the gate and every nested confirmation are
-  mid-flow.
+### Front: `ops`
+
+When the applicability probe finds no operations signal, report `ops` not applicable. Otherwise
+invoke `/quenching:ops:align` after `components`, with the inherited authorization. Its inventory
+and registry feed the proof front's conditional entry-point check.
+
+### Front: `proof`
+
+When the applicability probe finds no proof signal, report `proof` not applicable. Otherwise invoke
+`/quenching:proof:align` after `ops`, with the inherited authorization. It consumes the operations
+inventory when configured and reports its own layer and gate residue; it never runs a target suite.
+
+### Front: `toolchain`
+
+When the applicability probe finds no toolchain signal, report `toolchain` not applicable.
+Otherwise invoke `/quenching:toolchain:align` after `proof`, with the inherited authorization.
+It consumes the declared manifests, locks, language pins and tool configuration without choosing
+target-owned build policy; its runtime evidence feeds the delivery front.
+
+### Front: `delivery`
+
+When the applicability probe finds no delivery signal, report `delivery` not applicable. Otherwise
+invoke `/quenching:delivery:align` after `toolchain`, with the inherited authorization. It consumes
+the workflow inventory and reports pipeline reachability while leaving provider, environment,
+promotion, publication and permission policy with the target owner.
+
+### Re-probe and convergence
+
+Re-run the applicability probes and cross-front edges after a pass. Check whether design added
+product/design standards, components changed the automation registry, ops changed the operations
+inventory or registry for `/docs/`, proof gained resources for generated listings, toolchain
+changed runtime/dependency evidence, or delivery changed workflow reachability. A changed edge
+justifies another pass under the same authorization; an unchanged pass with residue is residue, not
+a reason to spin. Stop at convergence, residue, or the cap of 3 cross-front passes.
+
+### Report
+
+Report passes, each front's ending verifier state, validator/doctor findings, registry-vs-disk state,
+cross-front edges that fired, and every deferred decision with its owning command. This conductor
+writes nothing of its own; each front owns its writes and its report is the account of its run.
+
+## Invariants
+
+- Never run a front before its dependency in the declaration table has completed.
+- Never ask for a second authorization or suppress an interruption the front contract still owns.
+- Never reimplement a front's stages, verifier or repairs here; invoke its align through Skill.
+- Never act on residue owned by `/quenching:knowledge:add`, `/quenching:knowledge:learn`,
+  `/quenching:knowledge:define`, `/quenching:specs:develop`, `/quenching:specs:conclude`,
+  `/quenching:design:genre:new`, or `/quenching:components:command:new`.
+- Never scaffold an empty `.claude/` surface or silently install a visual world.
+- Never loop past 3 passes or widen scope to force a clean number.
+- Never hand this command `context: fork`; the gate and nested confirmations are mid-flow.

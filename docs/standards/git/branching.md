@@ -2,7 +2,7 @@
 type: standard
 title: Branch flow — PR onto the primary, deliberate release
 description: One long-lived branch — the primary (main) — where every PR merges and review lives, the release as a deliberate local act that bumps, tags and publishes what the primary accumulated, the trigger on demand and with no cadence, the question that pushes toward grouping when the primary carries a single PR since the last tag, and the transition for anyone coming from the two-branch flow
-resource: .claude/commands/release.md, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/cycle.md, plugins/quenching/assets/references/align/convergence.md
+resource: .claude/commands/release.md, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/assets/references/align/convergence.md
 tags: [git, branching, release, workflow, main]
 timestamp: 2026-08-17
 audience: both
@@ -27,10 +27,9 @@ init.defaultBranch → main` ([plan-git-record.md](../workflows/plan-git-record.
 
 ## The PR is the entry route
 
-All work enters `main` through a pull request: the specs cycle (`/quenching:specs:cycle`,
-`/quenching:specs:execute`, `/quenching:specs:execute-queue`) opens the PR against the primary
-branch and human review lives in the PR. There is no local merge of specs — each change is reviewed
-before it enters, not after.
+All work enters `main` through a pull request: the spec execution route followed by
+`/quenching:git:pr:create` opens the PR against the primary branch and human review lives in the PR.
+There is no local merge of specs — each change is reviewed before it enters, not after.
 
 ## The trigger is demand, not cadence
 

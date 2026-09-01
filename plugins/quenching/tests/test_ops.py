@@ -55,7 +55,7 @@ class AlignCleanPath(unittest.TestCase):
             scripts = root / "scripts"
             scripts.mkdir()
             (root / ".claude" / "quenching.json").write_text(
-                json.dumps({"opsRoot": "scripts", "router": "pyproject.toml"}),
+                json.dumps({"ops": {"opsRoot": "scripts", "router": "pyproject.toml"}}),
                 encoding="utf-8")
             (root / "pyproject.toml").write_text(
                 "[project.scripts]\nrun = 'run:main'\n", encoding="utf-8")
@@ -106,7 +106,7 @@ class AlignThreeBands(unittest.TestCase):
             scripts = root / "scripts"
             scripts.mkdir()
             (root / ".claude" / "quenching.json").write_text(
-                json.dumps({"opsRoot": "scripts", "router": "pyproject.toml"}),
+                json.dumps({"ops": {"opsRoot": "scripts", "router": "pyproject.toml"}}),
                 encoding="utf-8")
             (root / "pyproject.toml").write_text(
                 "[project.scripts]\nrun = 'run:main'\n", encoding="utf-8")
@@ -166,7 +166,7 @@ class StatusReadOnly(unittest.TestCase):
             scripts = root / "scripts"
             scripts.mkdir()
             (root / ".claude" / "quenching.json").write_text(
-                json.dumps({"opsRoot": "scripts", "router": "pyproject.toml"}),
+                json.dumps({"ops": {"opsRoot": "scripts", "router": "pyproject.toml"}}),
                 encoding="utf-8")
             (root / "pyproject.toml").write_text(
                 "[project.scripts]\nrun = 'run:main'\n", encoding="utf-8")
@@ -317,7 +317,7 @@ class MintedEntryPoints(unittest.TestCase):
             scripts.mkdir()
             (root / ".claude").mkdir()
             (root / ".claude" / "quenching.json").write_text(
-                json.dumps({"opsRoot": "scripts", "router": "pyproject.toml"}),
+                json.dumps({"ops": {"opsRoot": "scripts", "router": "pyproject.toml"}}),
                 encoding="utf-8",
             )
             (root / "pyproject.toml").write_text(
@@ -407,7 +407,7 @@ class MintedEntryPoints(unittest.TestCase):
             (root / ".claude").mkdir()
             (root / "scripts").mkdir()
             (root / ".claude" / "quenching.json").write_text(
-                json.dumps({"opsRoot": "scripts"}), encoding="utf-8"
+                json.dumps({"ops": {"opsRoot": "scripts"}}), encoding="utf-8"
             )
 
             payload, err, exit_code = doctor(str(root))
@@ -430,7 +430,7 @@ class GoldenPayloads(unittest.TestCase):
             scripts = root / "scripts" / "pkg"
             scripts.mkdir(parents=True)
             (root / ".claude" / "quenching.json").write_text(
-                json.dumps({"opsRoot": "scripts", "router": "pyproject.toml"}),
+                json.dumps({"ops": {"opsRoot": "scripts", "router": "pyproject.toml"}}),
                 encoding="utf-8")
             (root / "pyproject.toml").write_text(
                 "[project.scripts]\nrun = 'pkg.run:main'\n", encoding="utf-8")
@@ -575,7 +575,7 @@ class FindingFixtures(unittest.TestCase):
             scripts = root / "scripts"
             scripts.mkdir()
             (root / ".claude" / "quenching.json").write_text(
-                json.dumps({"opsRoot": "scripts", "router": "pyproject.toml"}),
+                json.dumps({"ops": {"opsRoot": "scripts", "router": "pyproject.toml"}}),
                 encoding="utf-8")
             (root / "pyproject.toml").write_text(
                 "[project.scripts]\nrun = 'run:main'\n", encoding="utf-8")

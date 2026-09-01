@@ -17,17 +17,19 @@ not sub-folders); each carries `type: standard` + a derived `resource:`; add eac
 | Doc | Covers |
 | --- | --- |
 | [communication.md](communication.md) | The language a repo declares for the prose its agents author — one BCP-47 tag on the root harness line, governing artifact and conversation alike — and the conduct contract that holds in every repo whether or not a language is declared |
+| [ephemeral-writes.md](ephemeral-writes.md) | Where an agent puts a file it creates — the three destinations, the one question that sorts them, and the session-start declaration that makes the durable-ignored path present before the first write |
 
 ## Candidate sub-standards
 
 Break this subject **one concept per file**. The method evaluates each candidate against
 the repo, generates the applicable ones (`file:line`-anchored, full OKF frontmatter), and
 records the rest below as deferrals (never a silent skip):
-`communication`.
+`communication` · `ephemeral-writes`.
 
 ## Coverage / deferred sub-standards
 
 Per-subject ledger the verify gate reads. A subject is "done" only when every candidate is
 **present or listed here** with a one-line why.
 
-- [communication.md](communication.md) — the declared language and the conduct constant (present)
+- [communication.md](communication.md) — the declared language and the conduct constant (present).
+- [ephemeral-writes.md](ephemeral-writes.md) — the three write destinations and the sorting question (present).
