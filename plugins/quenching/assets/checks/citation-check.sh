@@ -316,7 +316,7 @@ commands_dir = os.path.join(plugin, "commands")
 PLUGIN_ROOT_RE    = re.compile(r"\$\{CLAUDE_PLUGIN_ROOT\}/([A-Za-z0-9_./-]+)")
 MD_LINK_RE        = re.compile(r"\]\(([^)\s]+)\)")
 REPO_PATH_RE      = re.compile(r"(?<![A-Za-z0-9_./-])(plugins/quenching/[A-Za-z0-9_./-]+)")
-KNOWLEDGE_PATH_RE = re.compile(r"(?<![A-Za-z0-9_./-])/?(docs/[A-Za-z0-9_./-]+)")
+KNOWLEDGE_PATH_RE = re.compile(r"(?<![A-Za-z0-9_./-])/?(docs/[A-Za-z0-9_./-]+)(?![A-Za-z0-9_./-]|\{)")
 # Both citation forms. The Skill tool takes the bare `quenching:<ns>:<cmd>`; a human types the slash.
 CMD_RE            = re.compile(r"/?(quenching(?::[a-z][a-z0-9-]*){2,})")
 
