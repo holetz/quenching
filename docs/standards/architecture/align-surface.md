@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Align surface — one align per front, probe first
-description: The aligned-front column — one align per local front carrying its content stages, the seventh pillar (`git`) declared with no align because it ships no verifier a probe could run, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, the rule that no sweep records itself, and conductor categories sharing the cycle-authorization contract — `/align` conducts the five local fronts (`knowledge`, `design`, `components`, `ops`, `proof`), `/quenching:specs:cycle` the four stages of one spec, and the two fan-out entries N specs each; none reimplements what it conducts
-resource: plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/design/align.md, plugins/quenching/commands/specs/cycle.md, plugins/quenching/commands/specs/execute-queue.md, plugins/quenching/commands/specs/develop-batch.md, plugins/quenching/commands/components/align.md, plugins/quenching/commands/ops/align.md, plugins/quenching/commands/proof/align.md, plugins/quenching/assets/bin/quenching/design/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/references/align/**, plugins/quenching/assets/references/proof-align/**, plugins/quenching/assets/references/specs-fanout/**
+description: The aligned-front column — one align per local front carrying its content stages, the `security` and `git` pillars declared outside the conductor, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, the rule that no sweep records itself, and conductor categories sharing the cycle-authorization contract — `/align` conducts the seven local fronts (`knowledge`, `design`, `components`, `ops`, `proof`, `toolchain`, `delivery`), `/quenching:specs:cycle` the four stages of one spec, and the two fan-out entries N specs each; none reimplements what it conducts
+resource: plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/design/align.md, plugins/quenching/commands/specs/cycle.md, plugins/quenching/commands/specs/execute-queue.md, plugins/quenching/commands/specs/develop-batch.md, plugins/quenching/commands/components/align.md, plugins/quenching/commands/ops/align.md, plugins/quenching/commands/proof/align.md, plugins/quenching/commands/toolchain/align.md, plugins/quenching/commands/delivery/align.md, plugins/quenching/commands/security/status.md, plugins/quenching/assets/bin/quenching/design/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/bin/quenching/toolchain/**, plugins/quenching/assets/bin/quenching/delivery/**, plugins/quenching/assets/bin/quenching/security/**, plugins/quenching/assets/references/align/**, plugins/quenching/assets/references/proof-align/**, plugins/quenching/assets/references/specs-fanout/**
 tags: [architecture, aligns, commands, probe, convergence]
-timestamp: 2026-08-27
+timestamp: 2026-08-31
 audience: both
 authority: current
-source: specs-flow-consolidation plan (section 4); the cross-front drift probe added by the notice-installed-tool-version-drift spec, 2026-07-28, and retired by modularizar-specs-knowledge-components task 10.3 once the four scripts it compared a legacy copy against stopped existing; the no-sweep-records-itself rule from the retire-docs-log spec's branch review, 2026-07-29; the probe's subject rewritten from stale-copy to legacy-copy (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) once no align installed a tool any more; the two conductor categories and the drop of "cited by `/align` alone" by the fluxo-rapido-para-problemas-simplorios plan (task 2.4); retired with orchestration-gears.md (marchas-do-orquestrador-vivem-no-plugin, 2026-08-11); the conductor rows and the N-is-the-only-difference rule by orquestrar-specs-em-paralelo (task 4.3), which also carried the orchestrate → cycle rename through; pilar-git-e-specs-agnosticas-ao-git (task 6.1) minted the alignless `git` pillar; spec 1043 added `ops` as a local front alongside it; spec 1047 added `proof`; varrer-nomes-de-comando-legados (2026-08-27) retired the specs front's align with its local backend, so the column reads none for two rows and each carries its own reason
+source: specs-flow-consolidation plan (section 4); the cross-front drift probe added by the notice-installed-tool-version-drift spec, 2026-07-28, and retired by modularizar-specs-knowledge-components task 10.3 once the four scripts it compared a legacy copy against stopped existing; the no-sweep-records-itself rule from the retire-docs-log spec's branch review, 2026-07-29; the probe's subject rewritten from stale-copy to legacy-copy (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) once no align installed a tool any more; the two conductor categories and the drop of "cited by `/align` alone" by the fluxo-rapido-para-problemas-simplorios plan (task 2.4); retired with orchestration-gears.md (marchas-do-orquestrador-vivem-no-plugin, 2026-08-11); the conductor rows and the N-is-the-only-difference rule by orquestrar-specs-em-paralelo (task 4.3), which also carried the orchestrate → cycle rename through; pilar-git-e-specs-agnosticas-ao-git (task 6.1) minted the alignless `git` pillar; spec 1043 added `ops` as a local front alongside it; spec 1047 added `proof`; specs 1067 and 1069 admitted `toolchain` and `delivery`; spec 1071 classified `security` as a read-only pillar; spec 1072 integrates the seven-front conductor and its declaration-backed claims; varrer-nomes-de-comando-legados (2026-08-27) retired the specs front's align with its local backend, so the column reads none for the provider-owned specs and the pillars, each for its own reason
 maintainer: quenching
 ---
 
@@ -31,10 +31,12 @@ The executable order has one owner: the declaration table in
 | `design → components` | components follows the product/design surface before rebuilding automation inventory |
 | `components → ops` | ops follows the target automation surface and its generated registry |
 | `ops → proof` | proof may classify active operations entry points using the ops inventory |
+| `proof → toolchain` | toolchain reads the proof gate and tool declarations without taking ownership of proof |
+| `toolchain → delivery` | delivery consumes runtime and dependency provenance from the toolchain surface |
 
 The conductor has a separate named `Applicability` stage before those front stages. Each applicable
-front then runs as `Front: knowledge`, `Front: design`, `Front: components`, `Front: ops` and
-`Front: proof`; absent fronts are `not applicable`, scoped exclusions are `skipped`, and a present
+front then runs as `Front: knowledge`, `Front: design`, `Front: components`, `Front: ops`,
+`Front: proof`, `Front: toolchain` and `Front: delivery`; absent fronts are `not applicable`, scoped exclusions are `skipped`, and a present
 front with no findings is `conformant`. This standard explains the membership and edges; it does not
 create a second executable order list.
 
@@ -71,15 +73,15 @@ The measured evidence from umbrella 1057 classifies `security` as a pillar-shape
 candidate observations are live answers distributed across other owners — workflow permissions,
 dependency advisory configuration, secret and ignore patterns, and the existing “never ingest a
 secret” hygiene rule — rather than one security-owned local tree with an independent static
-verifier. Those observations do not create a security front, and this classification does not
-mint a security route or command.
+verifier. Those observations do not create a security front, align, doctor or bands contract. A
+separate read-only security route may report the questions, but it remains outside the conductor.
 
 ### A classification is not a namespace
 
 An admitted front or classified pillar name is not evidence that its front, pillar, command, route,
 or namespace has been built. Only a separate implementation spec that builds and verifies the
-corresponding surface can make that claim. This contract records an admission decision, not a
-promise about unbuilt toolchains, delivery surfaces, or security verbs.
+corresponding surface can make that claim. This contract records an admission decision and its
+conductor boundary; it does not transfer ownership between toolchain, delivery or security.
 
 ## The aligned-front column
 
@@ -91,12 +93,15 @@ promise about unbuilt toolchains, delivery surfaces, or security verbs.
 | `.claude/` | `/quenching:components:align` |
 | `ops` | `/quenching:ops:align` |
 | `proof` | `/quenching:proof:align` |
-| `git` | **none** — see §The seventh pillar has no align, below |
-| all five aligned fronts | `/align` — conducts them in dependency order, on one nested OK |
+| `toolchain` | `/quenching:toolchain:align` |
+| `delivery` | `/quenching:delivery:align` |
+| `security` | **none** — read-only pillar; see §The security subject is pillar-shaped, above |
+| `git` | **none** — see §The git pillar has no align, below |
+| all seven aligned fronts | `/align` — conducts them in dependency order, on one nested OK |
 
-The column has seven pillars in total: five aligned local fronts (`knowledge`, `design`,
-`components`, `ops`, `proof`) and two intentionally alignless pillars (`specs` and `git`), each
-with its own structural reason below.
+The column has seven aligned local fronts (`knowledge`, `design`, `components`, `ops`, `proof`,
+`toolchain`, `delivery`), one provider-owned axis with no local tree (`specs`), and two
+intentionally alignless pillars (`security`, `git`). Each non-front has its own structural reason.
 
 There is no `align-and-update` anywhere. The previous surface was a 2×4 matrix — a structural
 align plus a looping content conductor per front — which gave equal billing to conductors that
@@ -125,7 +130,7 @@ exist. The check's own header carries the same restraint for the same reason.
 a tree; the specs front had one and lost it. So the column below reads **none** for both, and the
 two paragraphs are not interchangeable: were a local backend to come back, so would its align.
 
-### The seventh pillar has no align, and the reason is structural
+### The git pillar has no align, and the reason is structural
 
 `git` — the `cq git` axis and its seven `commands/git/**` bodies — is a **pillar**, in the sense
 [glossary.md](../../glossary.md) already gives the term: an axis `cq` routes. It is not a
@@ -148,9 +153,10 @@ conducts only through a stage's own gate.
 
 The two real loops survive where the looping is real: `/quenching:knowledge:align` keeps its
 internal fixpoint (memory → harness → glossary feed each other), and `/align` keeps the
-cross-front pass, because the five aligned fronts feed each other (the design front's standards,
-the components front's registry, the ops front's inventory and registry, and the proof front's gate
-is a `/docs/` listing). The conductor contract — one human OK
+cross-front pass, because the seven aligned fronts feed each other (the design front's standards,
+the components front's registry, the ops front's inventory and registry, the proof front's gate,
+the toolchain's runtime evidence and the delivery front's pipeline reachability all form a
+dependency chain). The conductor contract — one human OK
 authorizing the whole run, nesting one
 level, with code-coupled confirmations still surfacing individually — lives in
 `align/convergence.md`, shared by every conductor and restated by none (§The conductor
@@ -172,7 +178,7 @@ The conductor contract is shared, never owned by a single command. Conductors ar
 
 | The conductor | What it conducts | The contract |
 | --- | --- | --- |
-| `/align` | the five local fronts (`knowledge`, `design`, `components`, `ops`, `proof`), in dependency order, on one nested OK | `align/convergence.md` — cited, never restated |
+| `/align` | the seven local fronts (`knowledge`, `design`, `components`, `ops`, `proof`, `toolchain`, `delivery`), in dependency order, on one nested OK | `align/convergence.md` — cited, never restated |
 | `/quenching:specs:cycle` | the four stages of ONE spec — create, develop, execute, conclude — in one run, entering at the derived stage | `align/convergence.md`, plus its own gears plan (`specs-cycle/gears.md`, retired with `orchestration-gears.md` — see below) |
 | `/quenching:specs:execute-queue` | N specs, serially, over one isolation — one branch, one pull request | `align/convergence.md`, plus `specs-fanout/fanout.md` |
 | `/quenching:specs:develop-batch` | N specs to the `ready` gate, in real parallel | `align/convergence.md`, plus `specs-fanout/fanout.md` |
