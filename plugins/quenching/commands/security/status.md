@@ -34,9 +34,9 @@ Report one compact table:
 | `access-ownership` | `present`/`missing` | recognized ownership declaration paths, never owner values |
 
 Preserve every question key, state, evidence path and detail returned by the route. Distinguish a
-missing declaration from a source that was not measurable or was refused. Report that the pillar
-read workflow permissions, ignore patterns, advisory configuration and ownership declarations
-only; it did not expose secret or owner values.
+missing declaration from a source that was not measurable or was refused. Preserve the payload's
+`readOnly` and `writePolicy` values: the pillar read workflow permissions, ignore patterns,
+advisory configuration and ownership declarations only; it did not expose secret or owner values.
 
 State that this command wrote nothing and did not change workflows, ignore rules, dependencies,
 configuration, access policy or generated files. Security has no align, doctor, bands file or
