@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import os
 import re
-from dataclasses import replace
 from pathlib import Path
 
 from quenching.delivery.model import DeliveryInventory, Job, Workflow
@@ -82,7 +81,7 @@ def _azure_stage_job_blocks(lines: list[str]) -> list[tuple[str, list[str]]]:
                      _strip_comment(match.group(1)).strip(" '\""))
                     for index, line in enumerate(block)
                     if (match := _AZURE_STAGE.match(line))]
-    stage_data: list[tuple[str, list[str], list[tuple[str, list[str]]]] ] = []
+    stage_data: list[tuple[str, list[str], list[tuple[str, list[str]]]]] = []
     for position, (start, stage_indent, stage_name) in enumerate(stage_starts):
         end = stage_starts[position + 1][0] if position + 1 < len(stage_starts) else len(block)
         stage_lines = block[start:end]
