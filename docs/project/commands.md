@@ -75,9 +75,6 @@ commands share is explained in [The spec lifecycle](../explanation/spec-lifecycl
 | `/quenching:specs:execute` | Builds `## Tasks` one verified commit at a time — clean tree, inline isolation offer, `verify:` under the spec's policy, code and tick in ONE commit. |
 | `/quenching:specs:conclude` | Closes a spec out, **merging last**: branch review, emergent `/docs/`, archive (`outcome:`), distillation, `merge:` stamp — then the merge, and nothing after it. |
 | `/quenching:specs:triage` | Ranks the whole front in ONE confirmed table, writing `priority:` per spec and nothing else — merging, never clobbering a human's ranking. |
-| `/quenching:specs:cycle` | The cycle conductor over ONE spec — capture, define, build, close — two halves authorized separately, writing nothing itself. |
-| `/quenching:specs:execute-queue` | Builds N specs as a **serial queue over a single isolation**: isolate once, execute N times, one conclude closing the lot. |
-| `/quenching:specs:develop-batch` | Takes N specs toward `ready` as a **parallel batch** — safe because defining writes no code; approvals stay with the conductor. |
 
 ## The design front
 
