@@ -14,8 +14,7 @@ from quenching.specs.backends.github import (GH_LISTING_SUSPECT_REMEDY, listing_
                                              listing_suspect_message, open_github_backend)
 from quenching.specs.commands.output import Emitter, front_fields
 from quenching.specs.commands.validate import _finding
-from quenching.specs.config import (BACKENDS, COMPLEXITY_LEVELS, CONFIG_FILE, CONFIG_KEYS,
-                                    LEGACY_CONFIG_FILE,
+from quenching.specs.config import (BACKENDS, CONFIG_FILE, CONFIG_KEYS, LEGACY_CONFIG_FILE,
                                     UNPROVED_BACKENDS, azure_workitemtype_retirement,
                                     load_config)
 
@@ -69,15 +68,6 @@ def cmd_doctor(args, root: str, out: Emitter) -> int:
                                  f"is in effect",
                                  path=CONFIG_FILE, backend=cfg["unknownBackend"],
                                  remedy=f"the implemented backend(s): {', '.join(BACKENDS)}"))
-    if cfg["unknownFanoutMinComplexity"]:
-        findings.append(_finding("sp-config-unknown-fanout-min-complexity", "warn",
-                                 f"{CONFIG_FILE} declares fanoutMinComplexity "
-                                 f"`{cfg['unknownFanoutMinComplexity']}`, which is not one of "
-                                 f"the four levels — `{cfg['fanoutMinComplexity']}` is in "
-                                 f"effect instead",
-                                 path=CONFIG_FILE,
-                                 fanoutMinComplexity=cfg["unknownFanoutMinComplexity"],
-                                 remedy=f"the recognised level(s): {', '.join(COMPLEXITY_LEVELS)}"))
     # The permanent half of the "warn or stay silent" answer, and the reason it is a finding
     # and not a line on every call: a backend that was never run against a real target is a
     # fact about the CONFIGURATION, unchanged between operations, so it belongs where a

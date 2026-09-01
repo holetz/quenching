@@ -70,15 +70,10 @@ def root_too_high_message(root: str) -> str:
 CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "sharedPaths", "azureStates",
                "hooks", "profiles",
                "azurePlacement", "azureColumns", "subjects", "tagCatalog",
-               "workItemTypes", "fanoutMinComplexity", "opsRoot", "router")
+               "workItemTypes", "opsRoot", "router")
 PROOF_CONFIG_KEYS = ("proofRoot", "layers", "measuredRoots", "proofExclusions", "ratchetPath")
 CONFIG_KEYS = CONFIG_KEYS + PROOF_CONFIG_KEYS
 BACKENDS = ("github", "azure-boards")
-# Mirrors `schema.py`'s declared `priority.complexity` levels. Redeclared rather than imported —
-# `config.py` and `schema.py` do not import each other today, and a four-word tuple does not earn
-# that coupling.
-DEFAULT_FANOUT_MIN_COMPLEXITY = "medium"
-COMPLEXITY_LEVELS = ("low", "medium", "high", "xhigh")
 # `azurePlacement`'s recognised sub-keys. Only `areaPath` is required, and its absence is a
 # REFUSAL rather than a default — the same argument `azureStates` already carries, applied to
 # where a spec is born rather than what state it reads as. `open_azure_backend` is where that
@@ -224,7 +219,6 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
            "azureStates": None, "hooks": {}, "profiles": None,
            "azurePlacement": {}, "azureColumns": {}, "subjects": {}, "tagCatalog": {},
            "workItemTypes": {},
-           "fanoutMinComplexity": DEFAULT_FANOUT_MIN_COMPLEXITY, "unknownFanoutMinComplexity": None,
            "proofRoot": "tests", "layers": {}, "measuredRoots": [],
            "proofExclusions": [], "ratchetPath": None,
            "legacyPath": envelope["legacyPath"]}
@@ -273,15 +267,6 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     ratchet_path = values.get("ratchetPath")
     if isinstance(ratchet_path, str) and ratchet_path.strip():
         out["ratchetPath"] = ratchet_path.strip()
-
-    fanout_floor = values.get("fanoutMinComplexity")
-    if isinstance(fanout_floor, str) and fanout_floor.strip():
-        if fanout_floor.strip() in COMPLEXITY_LEVELS:
-            out["fanoutMinComplexity"] = fanout_floor.strip()
-        else:
-            # Same shape as `unknownBackend` above: the declared value is kept, not discarded,
-            # and the effective floor stays at the default rather than at no floor at all.
-            out["unknownFanoutMinComplexity"] = fanout_floor.strip()
 
     # Both phases or neither. A half-declared mapping is worse than none: it would archive a
     # spec into a state the project has and then fail to recognise it on the way back.
