@@ -198,8 +198,8 @@ presumed and why — the shape differs by path:
 | sentence | the descriptive title and drafted `## Problem` text **in full**, exactly what a human wants to check about the capture. Plus subject, type, tags and `complexity`, each with its one-line reason |
 | plan source | subject, type, tags and `complexity` (each reasoned), and the **list** of sections filled with the task count. **Never the bodies** — the plan is large and the human just wrote it |
 
-Then the next-step block — `/quenching:specs:develop <id>` and `/quenching:specs:cycle <id>`
-named as the two forward candidates — and **one** `AskUserQuestion`, immediately after, exactly as
+Then the next-step block — `/quenching:specs:develop <id>` as the forward candidate — and **one**
+`AskUserQuestion`, immediately after, exactly as
 `/quenching:specs:execute` prints the same block and then opens its own `AskUserQuestion` at 100%:
 the block is the suggestion, the question is the offer that follows it, and only
 `/quenching:specs:create` and `/quenching:specs:execute` carry that second half.

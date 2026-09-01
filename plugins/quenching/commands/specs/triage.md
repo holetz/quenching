@@ -1,5 +1,5 @@
 ---
-description: Rank the provider-owned plans front — ONE ordered list the human confirms and writes as priority records. Triggers on "triage the specs", "prioritize the front", "rank the plans", "what matters most", "re-rank these", "order the plans", "which of these first". Reads the provider front and writes only priority fields. Not for: closing → /quenching:specs:conclude; resolving discoveries → /quenching:specs:develop; building → /quenching:specs:cycle; conformance → /quenching:specs:status.
+description: Rank the provider-owned plans front — ONE ordered list the human confirms and writes as priority records. Triggers on "triage the specs", "prioritize the front", "rank the plans", "what matters most", "re-rank these", "order the plans", "which of these first". Reads the provider front and writes only priority fields. Not for: closing → /quenching:specs:conclude; resolving discoveries → /quenching:specs:develop; building → /quenching:specs:execute; conformance → /quenching:specs:status.
 argument-hint: [optional-id]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion
 model: opus
@@ -182,7 +182,7 @@ Emit §The report mold. Two body blocks:
    row's `Recommended action` **runnable as printed**: the command with its real argument
    substituted, never a bare command name the reader has to complete.
 
-Then §The next-step block, whose recommended line is `/quenching:specs:cycle <id>` for the
+Then §The next-step block, whose recommended line is `/quenching:specs:execute <id>` for the
 spec the approved ranking put first — the first thing the `priority` this just wrote decides.
 **Done when:** both blocks and the next-step block are shown.
 
