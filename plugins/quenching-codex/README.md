@@ -26,14 +26,14 @@ probe-first, so a clean front costs a couple of tool calls — that forces the s
 shape and carries that front's content stages. Read the next section and you know the whole
 plugin.
 
-## The seven fronts, the eighth pillar, and the one align per front
+## The seven fronts, the non-converging axes, and the one align per front
 
 The plugin acts on **seven** surfaces of a repository, and the interface is the **same on each**.
-Seven local fronts have an align, the provider-owned specs front has no local tree to converge,
-and one root command spans the seven aligned fronts. An eighth axis, `git`, is a
-**pillar** rather than a front — it converges no tree of its own, so it carries no align at all
+Seven local fronts have an align, the provider-owned specs axis has no local tree to converge,
+and one root command spans the seven aligned fronts. The `security` and `git` axes are
+**pillars** rather than fronts — they converge no tree of their own, so they carry no align at all
 (see [`architecture/align-surface.md`](../../docs/standards/architecture/align-surface.md)
-§The seventh pillar has no align):
+§The security subject is pillar-shaped and §The git pillar has no align):
 
 | Front / pillar | Namespace | **align** — probe-first, structure + content |
 | --- | --- | --- |
@@ -45,6 +45,7 @@ and one root command spans the seven aligned fronts. An eighth axis, `git`, is a
 | target-declared verification root | `quenching-proof-*` | `quenching-proof-align` |
 | target-declared toolchain surface | `quenching-toolchain-*` | `quenching-toolchain-align` |
 | target-declared delivery surface | `quenching-delivery-*` | `quenching-delivery-align` |
+| *(pillar)* — read-only security questions | `quenching-security-*` | **none** |
 | *(pillar)* — a repository's own git facts | `quenching-git-*` | **none** |
 | **all seven aligned fronts** | *(root)* | **`quenching-align`** |
 
@@ -198,10 +199,11 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 | `quenching-git-cleanup` | Prunes branches merged or gone and worktrees git still registers with no directory on disk — nothing pruned the human did not pick from that report. |
 | `quenching-git-pr-review` | Works through a PR's unresolved review threads, one confirmation per thread. |
 
-None of the seven carries an `align`: the pillar converges no tree, only answers questions about the
-target's own live git state, so there is nothing a probe could find drifted
+The `security` and `git` pillars carry no `align`: they converge no tree, only answer read-only
+questions about the target's live evidence, so there is nothing a probe could find drifted
 ([`architecture/align-surface.md`](../../docs/standards/architecture/align-surface.md) §The
-seventh pillar has no align). The `specs` front hands off to this pillar rather than executing git
+security subject is pillar-shaped and §The git pillar has no align). The `specs` axis hands off to
+the git pillar rather than executing git
 itself — `quenching-specs-execute` invokes `quenching-git-branch` for isolation, and
 `quenching-specs-conclude` reviews, distils, archives and proves the pre-merge gate green, then
 **names** `quenching-git-pr-create` or `quenching-git-merge` as the human's own next command
@@ -211,7 +213,7 @@ instead of running either.
 
 | Command | Does |
 | --- | --- |
-| `quenching-align` | The one align that spans the five aligned fronts, on ONE confirmation — conducting each front's own align in dependency order, never reimplementing any of them. |
+| `quenching-align` | The one align that spans the seven aligned fronts, on ONE confirmation — conducting each front's own align in dependency order, never reimplementing any of them. |
 | `quenching-handoff` | Compacts the current conversation into a handoff document a fresh session can continue from — referencing existing plans, issues, commits and diffs rather than duplicating them. |
 
 The `specs` front has nine commands and a flow worth reading as a whole, so it gets its own section
