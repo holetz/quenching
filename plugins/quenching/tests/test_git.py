@@ -30,6 +30,7 @@ PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
 PR_CREATE = PLUGIN_ROOT / "commands" / "git" / "pr" / "create.md"
 PR_STATUS = PLUGIN_ROOT / "commands" / "git" / "pr" / "status.md"
+PUSH_COMMAND = PLUGIN_ROOT / "commands" / "git" / "push.md"
 PR_REFERENCE = PLUGIN_ROOT / "assets" / "references" / "git" / "pr.md"
 COMMIT_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit.md"
 COMMIT_INCREMENTAL_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit-incremental.md"
@@ -503,6 +504,46 @@ class PullRequestPayload(unittest.TestCase):
             "az repos pr update",
             "resolvereviewthread",
             "askuserquestion",
+        ):
+            self.assertNotIn(forbidden, command)
+
+    def test_push_command_resolves_destination_upstream_and_normal_refspec(self):
+        command = PUSH_COMMAND.read_text(encoding="utf-8")
+        lower = command.lower()
+        for phrase in (
+            "git status --porcelain --untracked-files=all",
+            "git branch --show-current",
+            "git remote -v",
+            "git remote get-url <remote>",
+            "cq git base --json",
+            "git ls-remote",
+            "git rev-list --left-right --count",
+            "git log",
+            "git push --set-upstream",
+            "head:refs/heads/<branch>",
+            "askuserquestion",
+            "origin",
+            "dirty tree",
+            "detached head",
+            "divergent",
+            "no commits\nahead",
+            "/quenching:git:pr:create",
+        ):
+            self.assertIn(phrase.lower(), lower)
+
+    def test_push_command_has_no_force_or_hidden_history_operation(self):
+        command = PUSH_COMMAND.read_text(encoding="utf-8").lower()
+        for forbidden in (
+            "--force",
+            "--force-with-lease",
+            "git fetch",
+            "git add",
+            "git commit",
+            "git rebase",
+            "git reset",
+            "git merge",
+            "gh pr create",
+            "--no-verify",
         ):
             self.assertNotIn(forbidden, command)
 
