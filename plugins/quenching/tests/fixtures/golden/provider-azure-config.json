@@ -21,8 +21,6 @@
   "subjects": {},
   "tagCatalog": {},
   "workItemTypes": {},
-  "fanoutMinComplexity": "medium",
-  "unknownFanoutMinComplexity": null,
   "proofRoot": "tests",
   "layers": {},
   "measuredRoots": [],
