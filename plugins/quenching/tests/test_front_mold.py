@@ -111,7 +111,7 @@ class FrontMoldContract(unittest.TestCase):
         final = {
             "design": (8, 67_806),
             "ops": (18, 98_911),
-            "proof": (18, 103_875),
+            "proof": (18, 105_627),
         }
         baseline_section = self.document.split(
             "### Pre-adoption baseline (task 1.1)", 1
@@ -141,15 +141,15 @@ class FrontMoldContract(unittest.TestCase):
             total_bytes += measured[1]
 
         self.assertIn("42 files / 253,850 bytes", baseline_section)
-        self.assertEqual((total_files, total_bytes), (44, 270_592))
-        self.assertIn("44 files / 270,592 bytes", final_section)
+        self.assertEqual((total_files, total_bytes), (44, 272_344))
+        self.assertIn("44 files / 272,344 bytes", final_section)
         conductor = (
             ROOT / "plugins" / "quenching" / "commands" / "align.md",
             ROOT / "plugins" / "quenching" / "tests" / "test_align_contract.py",
         )
         self.assertEqual(sum(path.stat().st_size for path in conductor), 14_472)
         self.assertIn("2 files / 17,813 bytes", baseline_section)
-        self.assertIn("46 files / 285,064 bytes", final_section)
+        self.assertIn("46 files / 286,816 bytes", final_section)
 
 
 if __name__ == "__main__":
