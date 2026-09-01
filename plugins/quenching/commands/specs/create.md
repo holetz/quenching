@@ -107,7 +107,7 @@ whatever was resolved to step 5's `--tags`; the subject's own fixed tags need no
 **sentence path and the plan-source path yield `medium`**, and `low` only where the input explicitly
 asks for an unattended pass. The level answers how much a human needs to be part of the process,
 never the size or difficulty of the input — the four levels and what each buys are
-[gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §The scale, never
+[spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §The scale, never
 transcribed here.
 
 **A capture presumes `medium` because that is the level whose judgment is deferred.** `medium` puts

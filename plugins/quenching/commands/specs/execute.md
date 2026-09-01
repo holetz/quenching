@@ -327,7 +327,7 @@ h. **On a section boundary, keep the task commits and OFFER to stop — and keep
 
    **The gear sets the default, never the offer**: `low` announces the boundary and continues
    without offering, `medium` offers and continues if nobody says otherwise, `high` and `xhigh`
-   offer and **wait** ([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md)
+   offer and **wait** ([spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
    §The scale). It never ends the run itself and writes no state — step 6's trail is what makes the
    boundary resumable ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
    §The section boundary).
