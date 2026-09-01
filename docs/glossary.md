@@ -67,7 +67,7 @@ sentence, and **link out** rather than explaining in full here.
 - [**Approved record**](standards/workflows/plan-lifecycle.md) — the `approved: {date, by}`
   frontmatter entry recording that a spec may be built, and on whose authority: `by: human` is a
   person's word (the fact the retired `backlog/` → `ready/` `git mv` carried), `by: low-gear` is the
-  `low` level of the gears scale authorizing the mode and the develop pass stamping on it. Absent
+  `low` level authorizing the mode and the develop pass stamping on it. Absent
   `by:` reads as `human`; `execute` asks inline and stamps `by: human` rather than refusing an
   unapproved spec.
 - [**Batching contract**](standards/automation/context-discipline.md) — a named block in a
@@ -156,13 +156,6 @@ sentence, and **link out** rather than explaining in full here.
   carries `commit: <sha>` and resolves by sha; both forms are read forever and neither is
   backfilled. Each new task keeps its own subject anchor across section boundaries; an optional
   squash is a separate merge-time choice.
-- **Contaminating block** (`plugins/quenching/assets/references/specs-fanout/fanout.md`) — a block
-  whose pending decision changes the specs *after* it in a queue, as opposed to a **local** one that
-  stops only its own spec. The classification is the executor's to declare, because only it knows
-  what the decision touches: a local block marks `[!]` and the queue moves on, a contaminating one
-  stops the run and asks. A red declared gate stops the queue whichever was declared, and the
-  blocked spec leaves the branch's `quenching-specs:` mark so the pull request never implies it
-  carries what it does not.
 - [**Coverage ratchet**](standards/architecture/proof-front.md) — a per-source-root floor that a
   verification gate may raise after a successful run but may never lower, preserving progress
   without forcing tests toward a fixed percentage target.
@@ -240,27 +233,9 @@ sentence, and **link out** rather than explaining in full here.
   plugin ships is read against the skeleton, which is why `citation-check.sh`'s half 3 measures
   shipped markdown links against it rather than against this checkout
   (`/docs/standards/quality/citation-verification.md` §Half 3).
-- **Fan-out floor** (`plugins/quenching/assets/references/specs-fanout/fanout.md`) —
-  `fanoutMinComplexity`, the `.claude/quenching.json` key §The entry contract measures a
-  candidate's `priority.complexity` against: below it, a spec joins the defining regime; at or
-  above it, the spec must already be `ready`/`approved` to join the building regime. Declared,
-  read through `cq specs config --json`, default `medium` — the same line the gears scale draws
-  between the one level that interrupts nobody and every level that asks, because a fan-out buys the
-  drafting and never the judgment.
 - [**Fixture library**](standards/architecture/proof-front.md) — the shared home for fixtures
   needed by more than one test module, keeping reusable setup from becoming duplicated module
   definitions.
-- **Gear** — the execution mode of one lifecycle stage in `/quenching:specs:cycle`: in-session, in
-  a sub-agent, or skipped, set by the ONE gears plan the command derives from
-  `priority.complexity`. By extension, "the `low` gear" names the whole plan a *level* derives, not
-  a fourth mode. A level also reaches **inside** a stage, twice: it decides whether
-  `/quenching:specs:develop` answers its own questions from evidence (`low`) or asks a human (every
-  level above it), and whether that pass **refines** without being asked to (`high`, `xhigh`) or only
-  recommends it (`medium`). Under `low` it also has the pass stamp `approved` itself. Governs ONE spec — conducting N of them is the
-  [spec queue](standards/workflows/spec-queue.md)'s subject, though both fan-out entries read the
-  scale to know which spec is stamped unasked. The contract lives in the plugin's own
-  `specs-cycle/gears.md` reference (§The scale) — retired with `automation/orchestration-gears.md`
-  (marchas-do-orquestrador-vivem-no-plugin, 2026-08-11)
 - [**Generated listing**](standards/architecture/generated-listings.md) — a file, or a marked
   zone inside one, that a command rebuilds from what a directory holds. Always a **second source**
   of a fact the disk already carries, so it earns its keep only where nothing else derives that
@@ -425,13 +400,12 @@ sentence, and **link out** rather than explaining in full here.
   them, and whose absence refuses instead of guessing; every other way it can be wrong comes back
   as a field for `doctor` to judge.
 - [**PR record**](standards/workflows/plan-git-record.md) — the `pr: {number, url, date}`
-  frontmatter entry stamped by `/quenching:specs:conclude` the moment `gh pr create` returns, on the
+  frontmatter entry stamped by `git:pr:create` the moment the provider returns the PR, on the
   PR route only, and **write-many** where the other git records are write-once: a PR may be closed
   and reopened, or force-pushed to a fresh number, and each is a new fact rather than a
   falsification of the old one. It is not `merge.pr`, which is stamped only once the merge is
-  about to happen — under `/quenching:specs:cycle`'s **minimal gear** the PR route deliberately
-  stops at the open PR and leaves the merge to human review, so `merge` never lands and this is the
-  spec's only record of the pull request. On backend `github` it is also what makes the branch
+  about to happen — the PR route deliberately stops at the open PR and leaves the merge to human
+  review, so `merge` never lands and this is the spec's only record of the pull request. On backend `github` it is also what makes the branch
   visible on the issue: the PR body's `Refs #<issue>` line populates the Development panel at no
   extra call, which a branch alone cannot do (`createLinkedBranch` only ever creates a NEW branch).
 - [**Probe**](standards/architecture/align-surface.md) — the opening run of a front's own
@@ -471,12 +445,6 @@ sentence, and **link out** rather than explaining in full here.
   it is the ONE hop a spec ever makes: the `backlog/` → `ready/` promote is retired, and the human
   OK it used to carry is the **Approved record** instead. Promoting as `done` refuses
   while `- [ ]` boxes remain unless forced; `abandoned` is always allowed.
-- **Recursive return** (`plugins/quenching/assets/references/specs-fanout/fanout.md`) — a fan-out
-  run absorbing the specs it promoted out of `## Discoveries`, in one of three forms: no recursion,
-  one generation, or an unbounded fixpoint. All three are always presented in the authorization
-  plan, with the chosen one and the human's stopping criterion. What bounds the third is the entry
-  contract, not a counter: a promoted spec at or above the fan-out floor (`fanoutMinComplexity`,
-  default `medium`) needs `ready`/`approved`, and therefore never enters a return on its own.
 - **Refine** (`plugins/quenching/assets/references/specs-develop/questions.md`) — the
   non-monotonic half of a `/quenching:specs:develop` pass, and the only operation licensed to
   overturn what the spec already says, the `## Proposal` included. Runs **after** **Compose**, over
@@ -598,11 +566,6 @@ sentence, and **link out** rather than explaining in full here.
   code and cannot diverge between targets. The selected backend is the sole source of truth: there
   is no shadow local store, and a declared-but-unimplemented backend refuses rather than falling
   back to `files`.
-- [**Spec queue**](standards/workflows/spec-queue.md) — building N specs **serially** over a
-  single isolation — one branch, one pull request, no chaining — rather than concurrently, because
-  the specs' declared files collide at a density the doc measures. Serializing buys a second
-  property outright: spec N's gate runs over the result of 1..N−1. Its counterpart, defining N
-  specs, fans out for real and is a **batch**, never a queue — nothing it runs takes a branch.
 - [**Typed-only command**](standards/automation/skills.md) — a command carrying
   `disable-model-invocation: true`, reached only by a human typing it; its `description` leaves
   every session's context. Residency and content are
