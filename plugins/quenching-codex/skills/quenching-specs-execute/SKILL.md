@@ -156,7 +156,7 @@ subjects, **`verification`** — the spec's declared policy, which decides when 
 command never has to — and **`records.priority.complexity`**, the gear. The gear changes exactly one
 thing in this loop, item 5i's default, and **nothing about delegation**: whether a task goes to an
 executor sub-agent stays the two conditions of
-[execution.md](../../references/specs-execute/execution.md) §Delegating an
+[execution-delegation.md](../../references/specs-execute/execution-delegation.md) §Delegating an
 executor, at every level.
 
 - **`approved` unset** → ask for it inline, in one question showing what the spec commits to, and
@@ -200,7 +200,7 @@ The path comes from what `status` resolved; never assume filenames. `## Impact` 
 Then, if the repo carries an OKF bundle (`/docs/index.md` with `okf_version`), read the
 `/docs/standards/**.md` files the spec **declares** under `## Impact`, plus the ones the current
 task's own text names — **never the folder** `/docs/standards/<subject>/`, the wrong and the
-expensive unit ([execution.md](../../references/specs-execute/execution.md)
+expensive unit ([execution-tooling.md](../../references/specs-execute/execution-tooling.md)
 §Tooling asides has the measurement). Those files are **binding contracts** for
 HOW the work is built, complementing the spec's own sections (WHAT to build). A task that
 contradicts one is surfaced (step 5), never silently resolved. No bundle → skip silently.
@@ -213,7 +213,7 @@ spec's own author wrote, never an economy the executor takes on its own.
 
 **No mechanical net for a contract nobody declared — deliberately.** Deciding a standard governs a
 task is reading, not parsing, so nothing scans the folder to net one
-([execution.md](../../references/specs-execute/execution.md)
+([execution-tooling.md](../../references/specs-execute/execution-tooling.md)
 §Tooling asides has the failure modes this avoids). What covers the gap is one line at the
 moment it shows up — `cq specs discover` records it while building, and `quenching-specs-develop`
 repairs `## Impact`.
@@ -233,12 +233,12 @@ a. **Show what is being worked on** — the ID, its declared `files:` and its `v
 
 b. **Write the code**, minimal and scoped to the declared files. A task that declares `files:` and
    writes nothing under `/docs/` **may** go to an executor sub-agent under
-   [execution.md](../../references/specs-execute/execution.md)
+   [execution-delegation.md](../../references/specs-execute/execution-delegation.md)
    §Delegating an executor — which also explains why this is **not** `context: fork` and leaves
    that rule untouched; when it is, load the rules that bound it before dispatching:
 
    ```bash
-   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-execute/execution.md \
+   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-execute/execution-delegation.md \
      --sections "§Delegating an executor"
    ```
 
@@ -246,7 +246,7 @@ c. **Write only the `/docs/` this task names.** When this task writes `/docs/`, 
    draws the line between declared and emergent, and the boundary it crosses:
 
    ```bash
-   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-execute/execution.md \
+   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-execute/execution-delegation.md \
      --sections "§Declared versus emergent"
    python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/spec-driven.md \
      --sections "§Boundary"
@@ -341,7 +341,7 @@ h. **On a section boundary, keep the task commits and OFFER to stop — and keep
    without offering, `medium` offers and continues if nobody says otherwise, `high` and `xhigh`
    offer and **wait** ([spec-driven.md](../../references/specs-develop/spec-driven.md)
    §The scale). It never ends the run itself and writes no state — step 6's trail is what makes the
-   boundary resumable ([execution.md](../../references/specs-execute/execution.md)
+   boundary resumable ([execution-cadence.md](../../references/specs-execute/execution-cadence.md)
    §The section boundary).
 
 **Pause if:** a task is unclear; implementation reveals a design problem (→ `quenching-specs-develop`); a
@@ -375,7 +375,7 @@ targeted again: `--scope current` always resolves to whichever section still has
 closing costs nothing extra and adds no event of its own.
 
 **Not after every committed task, and not on a judgment call either** — both were tried and both
-failed; [execution.md](../../references/specs-execute/execution.md) §The
+failed; [execution-cadence.md](../../references/specs-execute/execution-cadence.md) §The
 Handoff cadence has the measurement. Each trigger above is a moment this body *just finished doing
 something*, never one where it appraises something.
 
@@ -472,7 +472,7 @@ front of you before the loop starts:
 - Write **only** the `/docs/` a task explicitly names. Emergent findings are one `cq specs discover`
   line — never an unrequested standard, and never a loose code comment.
 - Delegate an executor only under
-  [execution.md](../../references/specs-execute/execution.md)
+  [execution-delegation.md](../../references/specs-execute/execution-delegation.md)
   §Delegating an executor (declares `files:`, touches no `/docs/`, pinned to the session model —
   **never `haiku`**), and run two tasks in parallel only when `cq specs parallel` reports the `[P]`
   group eligible.
