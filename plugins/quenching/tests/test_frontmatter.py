@@ -238,6 +238,14 @@ class Anomalies(unittest.TestCase):
         self.assertEqual(kinds(doc(self.HOOKS_BLOCK.format(key="settings"))),
                          ("indented-continuation",))
 
+    def test_a_known_key_swallowed_by_a_folded_scalar_is_reported_with_its_line(self):
+        text = doc("description: >-\n  Trigger prose\n argument-hint: [input]\nallowed-tools: Read")
+        anomaly, = [a for a in frontmatter_anomalies(text) if a["kind"] == "swallowed-key"]
+        self.assertEqual(anomaly["key"], "argument-hint")
+        self.assertEqual(anomaly["parent"], "description")
+        self.assertEqual(anomaly["line"], 4)
+        self.assertIn("top-level", anomaly["detail"])
+
 
 if __name__ == "__main__":
     unittest.main()
