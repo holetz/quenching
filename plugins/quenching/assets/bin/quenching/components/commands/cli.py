@@ -20,19 +20,20 @@ whether the verb survives is task 6.3's to decide, and re-adding it is one subpa
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 
-from quenching.common.output import CQArgumentParser, finding_code, refuse
+from quenching.common.output import CQArgumentParser, emit, finding_code, refuse
 from quenching.common.version import VERSION
 from quenching.components.commands.cost import cmd_cost
-from quenching.components.commands.doctor import cmd_doctor
+from quenching.components.commands.doctor import _doctor_findings, cmd_doctor
 from quenching.components.commands.lint import cmd_lint
 from quenching.components.commands.read import cmd_read
 from quenching.components.commands.registry import REGISTRY_RELPATH, cmd_registry
 from quenching.components.commands.translate import add_arguments as add_translate_arguments
 from quenching.components.commands.translate import cmd_translate
 from quenching.components.sections import RULES_MARKER
-from quenching.components.surface import find_surface_root
+from quenching.components.surface import find_surface_root, load_surface
 from quenching.session.commands.cli import add_subcommands as add_session_subcommands
 
 
@@ -61,6 +62,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_json(sp)
 
     add_json(sub.add_parser("doctor"))
+    add_json(sub.add_parser("status", help="summarize the command surface"))
 
     sp = sub.add_parser("registry")
     sp.add_argument("registry_cmd", choices=["reindex"])
@@ -110,10 +112,45 @@ def cmd_session(args, root: str) -> int:
     return args.func(args)
 
 
+def cmd_status(args, root: str) -> int:
+    """Report the command surface without writing or duplicating the doctor output."""
+    surface = load_surface(root)
+    if not os.path.isdir(surface["commandsDir"]):
+        payload = {"root": root, "applicable": False, "state": "missing",
+                   "commands": 0, "findings": {}, "errors": 0, "warnings": 0, "ok": True}
+    else:
+        findings = _doctor_findings(surface)
+        codes = {code: sum(item.get("code") == code for item in findings)
+                 for code in sorted({item.get("code") for item in findings})}
+        fronts = {}
+        for command in surface["commands"]:
+            parts = command["relpath"].split("/", 1)
+            front = parts[0] if parts else ""
+            fronts[front] = fronts.get(front, 0) + 1
+        payload = {
+            "root": root,
+            "applicable": True,
+            "state": "conformant" if not findings else "findings",
+            "commands": len(surface["commands"]),
+            "fronts": dict(sorted(fronts.items())),
+            "findings": codes,
+            "errors": sum(item.get("severity") == "error" for item in findings),
+            "warnings": sum(item.get("severity") != "error" for item in findings),
+            "ok": not findings,
+        }
+    human = (f"components status — {root}\n"
+             f"  commands: {payload['commands']}\n"
+             f"  state: {payload['state']}\n"
+             f"  findings: {', '.join(f'{key}={value}' for key, value in payload['findings'].items()) or '(none)'}")
+    emit(args.json, payload, human)
+    return 0 if payload["ok"] else 1
+
+
 DISPATCH: dict = {
     "cost": cmd_cost,
     "lint": cmd_lint,
     "doctor": cmd_doctor,
+    "status": cmd_status,
     "registry": cmd_registry,
     "read": cmd_read,
     "translate": cmd_translate,
@@ -143,7 +180,7 @@ def main(argv: list[str]) -> int:
         return 0
     if not args.cmd:
         return refuse({"code": finding_code("ct", "no-command"), "message":
-                      "choose `cost`, `lint`, `doctor`, `registry`, `read`, `translate`, or `session`"},
+                      "choose `cost`, `lint`, `doctor`, `status`, `registry`, `read`, `translate`, or `session`"},
                       False)
     if not hasattr(args, "json"):
         args.json = False

@@ -68,6 +68,34 @@ class KnowledgeCliContract(unittest.TestCase):
         self.assertEqual(raised.exception.code, 0)
         self.assertIn("usage: cq knowledge", output.getvalue())
 
+    def test_doctor_is_a_read_only_molded_view(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pathlib.Path(tmp, "docs").mkdir()
+            output = io.StringIO()
+            with (mock.patch.object(knowledge_cli, "validate_tree", return_value=[]),
+                  contextlib.redirect_stdout(output)):
+                code = knowledge_cli.main(["doctor", "--root", tmp, "--json"])
+
+        payload = json.loads(output.getvalue())
+        self.assertEqual(code, 0)
+        self.assertEqual(payload["state"], "conformant")
+        self.assertEqual(payload["findings"], [])
+        self.assertTrue(payload["ok"])
+
+    def test_status_adds_density_without_turning_figures_into_findings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pathlib.Path(tmp, "docs").mkdir()
+            output = io.StringIO()
+            with (mock.patch.object(knowledge_cli, "validate_tree", return_value=[]),
+                  contextlib.redirect_stdout(output)):
+                code = knowledge_cli.main(["status", "--root", tmp, "--json"])
+
+        payload = json.loads(output.getvalue())
+        self.assertEqual(code, 0)
+        self.assertEqual(payload["findingCodes"], {})
+        self.assertIn("density", payload)
+        self.assertNotIn("code", payload["density"])
+
 
 # --------------------------------------------------------------------------- #
 # the retired `log.md` checker — `log.md` lost its checker, never its reservation

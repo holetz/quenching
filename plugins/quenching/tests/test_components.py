@@ -16,6 +16,11 @@ an index `test_sections.py` asserts on too.
 `canonical_case_failures()` (the FRONTMATTER cases) is also not here — it moved to
 `test_frontmatter.py` with the one parser that now answers for all three tools.
 """
+import contextlib
+import io
+import json
+import pathlib
+import tempfile
 import unittest
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
@@ -27,6 +32,7 @@ from quenching.components.sections import (
     select_sections,
     split_rule_and_rationale,
 )
+from quenching.components.commands import cli as components_cli
 
 # The fixture lives in `test_sections.py`, which owns it for BOTH readers (task 6.4 collapsed
 # the `EDIT BOTH, OR NEITHER` pair). What stays here is only what this pillar answers alone:
@@ -116,6 +122,25 @@ class RulesOnlyLadder(unittest.TestCase):
             with self.subTest(case=label):
                 got_text, _ = split_rule_and_rationale(body)
                 self.assertTrue(got_text.strip())
+
+
+class ComponentsStatus(unittest.TestCase):
+    def test_status_reports_the_surface_without_writing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            commands = pathlib.Path(tmp, "commands", "front")
+            commands.mkdir(parents=True)
+            pathlib.Path(commands, "verb.md").write_text(
+                "---\ndescription: a command\n---\n\nBody.\n", encoding="utf-8")
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                code = components_cli.main(["--root", tmp, "status", "--json"])
+
+        payload = json.loads(output.getvalue())
+        self.assertEqual(code, 0)
+        self.assertEqual(payload["commands"], 1)
+        self.assertEqual(payload["fronts"], {"front": 1})
+        self.assertEqual(payload["findings"], {})
+        self.assertTrue(payload["ok"])
 
 
 if __name__ == "__main__":

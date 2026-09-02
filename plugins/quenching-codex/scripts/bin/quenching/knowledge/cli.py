@@ -21,7 +21,7 @@ CLI  `site-source [<bundle-dir>] [<destination>] [--write|--check|--json]`
    Materializes or verifies the bounded tree that Zensical may read. Raw `catalog/` and
    `external/` homes are never copied into it.
 
-`validate`, `project`, `nav` and `site-source` are the verbs `main` routes. The `hook` verb (`quenching.knowledge.hook.run_hook`,
+`validate`, `doctor`, `status`, `project`, `nav` and `site-source` are the verbs `main` routes. The `hook` verb (`quenching.knowledge.hook.run_hook`,
 answering the plugin's self-installed `PostToolUse`/`Stop`/`PreToolUse` wiring) was retired along
 with that wiring — this pillar no longer answers a hook event at all.
 
@@ -33,12 +33,14 @@ and re-adding it is one branch in `main`.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import json
 import os
 import sys
 from pathlib import Path
 
-from quenching.common.output import FINDINGS, OK, REFUSAL
+from quenching.common.frontmatter import parse_frontmatter
+from quenching.common.output import FINDINGS, OK, REFUSAL, emit
 from quenching.common.version import VERSION
 from quenching.knowledge.config import _load_config, _project_dir
 from quenching.knowledge.render import _render_activity, _render_text, _split
@@ -69,6 +71,109 @@ def _activity_rows(bundle_root: str, ignore_globs: tuple[str, ...]) -> list[tupl
         if activity is not None:
             rows.append((os.path.relpath(path, bundle_root).replace(os.sep, "/"), activity))
     return rows
+
+
+HOMES = ("standards", "vision", "tutorials", "how-to", "explanation", "project",
+         "concepts", "external", "catalog")
+EXEMPT_DENSITY_NAMES = {"index.md", "log.md", "AGENTS.md", "AGENTS.md"}
+
+
+def _knowledge_findings(findings: list[tuple[str, str, str, str]] | None) -> list[dict]:
+    return [{"severity": severity.lower(), "path": path, "code": code, "message": message}
+            for severity, path, code, message in (findings or [])]
+
+
+def _density(bundle_root: str) -> dict:
+    """Return the status figures without turning any figure into a finding."""
+    root = Path(bundle_root)
+    docs = [path for path in root.rglob("*.md")
+            if not any(part.startswith((".", "_")) for part in path.relative_to(root).parts)]
+    concept_docs = [path for path in docs if path.name not in EXEMPT_DENSITY_NAMES]
+    per_home = {home: 0 for home in HOMES if (root / home).is_dir()}
+    for path in concept_docs:
+        relative = path.relative_to(root).parts
+        if relative and relative[0] in per_home:
+            per_home[relative[0]] += 1
+    glossary_terms = 0
+    glossary = root / "glossary.md"
+    if glossary.is_file():
+        in_terms = False
+        for line in glossary.read_text(encoding="utf-8").splitlines():
+            if line.strip().casefold() == "## terms":
+                in_terms = True
+            elif in_terms and line.startswith("## "):
+                break
+            elif in_terms and line.lstrip().startswith(("- ", "* ")):
+                glossary_terms += 1
+    standards = root / "standards"
+    subjects = sorted(path.name for path in standards.iterdir()
+                      if path.is_dir()) if standards.is_dir() else []
+    timestamps = []
+    for path in concept_docs:
+        try:
+            timestamp = parse_frontmatter(path.read_text(encoding="utf-8")).get("timestamp")
+        except (OSError, UnicodeDecodeError):
+            timestamp = None
+        if timestamp:
+            timestamps.append(str(timestamp))
+    logs = sorted(str(path.relative_to(root)) for path in docs if path.name == "log.md")
+    return {
+        "conceptDocs": {"total": len(concept_docs), "perHome": per_home},
+        "glossary": {"terms": glossary_terms},
+        "standards": {"subjects": len(subjects), "withDocs": sum(
+            any(child.is_file() and child.suffix == ".md" and child.name not in EXEMPT_DENSITY_NAMES
+                for child in (standards / subject).iterdir())
+            for subject in subjects)},
+        "lastActivity": max(timestamps) if timestamps else None,
+        "retiredLogs": {"count": len(logs), "paths": logs},
+    }
+
+
+def _surface_payload(bundle_root: str, *, density: bool = False) -> dict:
+    if not os.path.isdir(bundle_root):
+        return {"root": bundle_root, "applicable": False, "state": "missing",
+                "findings": [], "errors": 0, "warnings": 0, "ok": True,
+                **({"density": {}} if density else {})}
+    findings = _knowledge_findings(validate_tree(bundle_root))
+    payload = {
+        "root": bundle_root,
+        "applicable": True,
+        "state": "conformant" if not findings else "findings",
+        "findings": findings,
+        "errors": sum(item["severity"] == "error" for item in findings),
+        "warnings": sum(item["severity"] == "warn" for item in findings),
+        "ok": not findings,
+    }
+    if density:
+        payload["density"] = _density(bundle_root)
+    return payload
+
+
+def _knowledge_args(argv: list[str], prog: str) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(prog=prog)
+    parser.add_argument("bundle", nargs="?", default="docs")
+    parser.add_argument("--root", default=".")
+    parser.add_argument("--json", action="store_true")
+    return parser.parse_args(argv)
+
+
+def _run_doctor(argv: list[str]) -> int:
+    args = _knowledge_args(argv, "cq knowledge doctor")
+    payload = _surface_payload(_rooted(args.root, args.bundle))
+    if not payload["applicable"]:
+        payload["message"] = "knowledge bundle is not installed; run knowledge align to install it"
+    emit(args.json, payload,
+         f"knowledge doctor — {payload['root']} ({len(payload['findings'])} finding(s))")
+    return 0 if payload["ok"] else FINDINGS
+
+
+def _run_status(argv: list[str]) -> int:
+    args = _knowledge_args(argv, "cq knowledge status")
+    payload = _surface_payload(_rooted(args.root, args.bundle), density=True)
+    payload["findingCodes"] = dict(sorted(Counter(item["code"] for item in payload["findings"]).items()))
+    emit(args.json, payload,
+         f"knowledge status — {payload['root']} ({payload['density'].get('conceptDocs', {}).get('total', 0)} document(s))")
+    return 0 if payload["ok"] else FINDINGS
 
 
 def run_cli(argv: list[str]) -> int:
@@ -273,7 +378,7 @@ def main(argv: list[str]) -> int:
     )
     parser.add_argument("--root", help="repository root (default: current directory)")
     parser.add_argument("--version", action="version", version=f"cq knowledge {VERSION}")
-    parser.add_argument("verb", nargs="?", choices=("validate", "project", "nav", "site-source"),
+    parser.add_argument("verb", nargs="?", choices=("validate", "doctor", "status", "project", "nav", "site-source"),
                         help="the knowledge operation")
     parser.add_argument("rest", nargs=argparse.REMAINDER,
                         help="the operation's bundle and options")
@@ -284,6 +389,7 @@ def main(argv: list[str]) -> int:
     rest = list(args.rest)
     if args.root:
         rest = ["--root", args.root] + rest
-    dispatch = {"validate": run_cli, "project": run_project,
+    dispatch = {"validate": run_cli, "doctor": _run_doctor, "status": _run_status,
+                "project": run_project,
                 "nav": run_nav, "site-source": run_site_source}
     return dispatch[args.verb](rest)
