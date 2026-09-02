@@ -17,11 +17,17 @@ import io
 import json
 import os
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 from unittest import mock
 
-import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
+try:
+    import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
+except ModuleNotFoundError:  # package-qualified unittest invocation from the repository root
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import _paths  # noqa: F401
+from quenching.common import config as common_config
 from quenching.specs.backends.base import BackendRefusal
 from quenching.common.config import load_config as load_envelope, namespace
 from quenching.specs.commands import doctor as doctor_mod
@@ -232,6 +238,52 @@ class ConfigMigrationMatrix(unittest.TestCase):
         self.assertEqual(namespace({"proofRoot": "tests"}, "proof"), {})
         self.assertEqual(namespace({"namespaces": {"proof": {"proofRoot": "tests"}}},
                                    "proof"), {"proofRoot": "tests"})
+
+
+class FirstUseConfig(unittest.TestCase):
+    def _root(self) -> str:
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        root = directory.name
+        os.makedirs(os.path.join(root, "docs"))
+        os.makedirs(os.path.join(root, ".claude", "commands"))
+        Path(root, ".claude", "commands", "example.md").write_text("# command\n", encoding="utf-8")
+        Path(root, "pyproject.toml").write_text("[project]\nname = 'target'\n", encoding="utf-8")
+        return root
+
+    def test_setup_preview_detects_backend_and_only_signalled_fronts(self):
+        root = self._root()
+        with mock.patch.object(common_config, "find_repo_root", return_value=root), \
+                mock.patch.object(common_config, "detect_provider",
+                                  return_value=("github", "github.com")):
+            plan, error = common_config.prepare_minimal_config(root)
+        self.assertEqual({}, error)
+        self.assertEqual("github", plan["backend"])
+        self.assertEqual(["knowledge", "specs", "components", "toolchain"], plan["profile"])
+        self.assertFalse(os.path.exists(os.path.join(root, ".claude", "quenching.json")))
+
+    def test_confirmed_setup_writes_namespaced_json_and_second_setup_refuses(self):
+        root = self._root()
+        with mock.patch.object(common_config, "find_repo_root", return_value=root), \
+                mock.patch.object(common_config, "detect_provider",
+                                  return_value=("github", "github.com")):
+            written, error = common_config.write_minimal_config(root)
+            again, refusal = common_config.write_minimal_config(root)
+        self.assertEqual({}, error)
+        self.assertTrue(written["written"])
+        self.assertIsNone(again)
+        self.assertEqual("cq-config-present", refusal["code"])
+        document = json.loads(Path(written["path"]).read_text(encoding="utf-8"))
+        self.assertEqual("github", document["backend"])
+        self.assertEqual(written["profile"], document["shared"]["profiles"]["installed"])
+
+    def test_setup_refuses_without_a_detectable_provider(self):
+        root = self._root()
+        with mock.patch.object(common_config, "find_repo_root", return_value=root), \
+                mock.patch.object(common_config, "detect_provider", return_value=(None, None)):
+            plan, error = common_config.prepare_minimal_config(root)
+        self.assertIsNone(plan)
+        self.assertEqual("cq-setup-provider-missing", error["code"])
 
 
 if __name__ == "__main__":

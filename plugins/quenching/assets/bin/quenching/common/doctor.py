@@ -18,7 +18,8 @@ import sys
 from pathlib import Path
 from typing import Callable
 
-from quenching.common.config import load_config
+from quenching.common.config import (detect_profile, load_config, prepare_minimal_config,
+                                     write_minimal_config)
 from quenching.common.io import read_text
 from quenching.common.output import OK, emit, refuse
 
@@ -85,7 +86,8 @@ def required_tools(root: str, config: dict | None = None) -> tuple[str | None, d
     reasons: dict[str, str] = {}
     if backend in BACKEND_TO_TOOL:
         reasons[BACKEND_TO_TOOL[backend]] = f"backend `{backend}`"
-    effective = set(profile["effective"])
+    effective = (set(profile["effective"]) if profile["declared"]
+                 else set(detect_profile(root, backend)))
     if "knowledge" in effective:
         reasons["zensical"] = "profile `knowledge`"
         if _uses_uv(root):
@@ -140,7 +142,22 @@ def _missing_payload(report: dict) -> dict:
     }
 
 
-def run(as_json: bool, root: str) -> int:
+def _run_setup(as_json: bool, root: str, write: bool) -> int:
+    result, error = (write_minimal_config(root) if write else prepare_minimal_config(root))
+    if error:
+        return refuse(error, as_json)
+    assert result is not None
+    action = "written" if write else "preview"
+    human = (f"cq doctor setup — {result['path']}\n"
+             f"  backend: {result['backend']}\n"
+             f"  profile: {', '.join(result['profile']) or '(none)'}\n"
+             f"  {action}: {'yes' if write else 'no — rerun with `--setup --write` to confirm'}")
+    payload = {"ok": True, "action": f"setup-{action}", **result}
+    emit(as_json, payload, human)
+    return OK
+
+
+def run(as_json: bool, root: str, *, setup: bool = False, write: bool = False) -> int:
     """Render the top-level doctor and preserve the CQ refusal door for missing prerequisites."""
     resolved_root = os.path.abspath(root)
     if not os.path.isdir(resolved_root):
@@ -149,6 +166,14 @@ def run(as_json: bool, root: str) -> int:
             "root": resolved_root,
             "message": f"target root does not exist: {resolved_root}",
             "remedy": "pass `--root` a directory that contains the target repository",
+        }, as_json)
+    if setup:
+        return _run_setup(as_json, resolved_root, write)
+    if write:
+        return refuse({
+            "code": "cq-setup-write-without-setup",
+            "message": "`--write` is valid only with `--setup`",
+            "remedy": "run `cq doctor --setup --write` when you intend to create the config",
         }, as_json)
     report = inspect_environment(resolved_root)
     if not report["python"]["available"]:
