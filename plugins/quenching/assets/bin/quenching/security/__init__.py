@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 
 from quenching.common.front import resolve_root
 from quenching.common.output import emit, refuse
