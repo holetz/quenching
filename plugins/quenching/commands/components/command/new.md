@@ -1,7 +1,7 @@
 ---
 description: Mint or edit ONE command in this repo's .claude surface — one file per entry point. Triggers on "create a command", "mint a command for X", "add a new entry point to the .claude surface". Not for: creating an agent → /quenching:components:agent:new; creating a hook → /quenching:components:hook:new; rewriting the whole surface → /quenching:components:align.
 argument-hint: [skill-name-or-description]
-allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit
+allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
 ---
 
 # /quenching:components:command:new — mint ONE conformant command, registry included

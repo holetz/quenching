@@ -1,7 +1,7 @@
 ---
 description: Refactor CLAUDE.md/AGENTS.md into thin pointers over the /docs/ bundle. Triggers on "refactor CLAUDE.md", "slim down CLAUDE.md", "move CLAUDE.md content into docs", "align CLAUDE.md/AGENTS.md with /docs/". Not for: changing durable knowledge without a harness source → /quenching:knowledge:add; changing command bodies → /quenching:components:command:new.
 argument-hint: [optional-harness-file]
-allowed-tools: Read, Grep, Glob, Bash(find:*), Bash(git grep:*), Bash(git check-ignore:*), Bash(grep:*), Bash(python3:*), Bash(py:*), Write, Edit, Task
+allowed-tools: Read, Grep, Glob, Bash(find:*), Bash(git grep:*), Bash(git check-ignore:*), Bash(grep:*), Bash(python3:*), Bash(py:*), Write, Edit, Task, AskUserQuestion
 ---
 
 # /quenching:components:harness:align — make CLAUDE.md a thin, honest pointer into the bundle

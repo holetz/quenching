@@ -1,7 +1,7 @@
 ---
 description: Drain the project's Claude Code memory into the OKF bundle, then clear it. Triggers on "convert the memory into docs", "move project memory into the knowledge base", "flush the memory into docs". Not for: importing an external source → /quenching:knowledge:import; capturing one stated concept → /quenching:knowledge:learn.
 argument-hint: [optional-scope]
-allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(rm:*), Write, Edit, Task
+allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(rm:*), Write, Edit, Task, AskUserQuestion
 ---
 
 # /quenching:knowledge:import-memory — drain project memory into the OKF bundle
