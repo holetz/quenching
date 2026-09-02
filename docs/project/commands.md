@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: derived from plugins/quenching/README.md §The 53 commands and §The specs flow (tables preserved, long rows condensed); the machine authority is cq components doctor --json
+source: derived from plugins/quenching/README.md §The 54 commands and §The specs flow (tables preserved, long rows condensed); the machine authority is cq components doctor --json
 maintainer: Israel Holetz
 ---
 
@@ -98,6 +98,7 @@ Acts on the target repository's `.claude/` automation surface.
 | Command | Does |
 | --- | --- |
 | `/quenching:components:align` | Converges `.claude/` onto one file per entry point, audits every body against the writing doctrine, rewrites every description. |
+| `/quenching:components:status` | Reports command count, fronts and finding codes for the target automation surface without writing. |
 | `/quenching:components:command:new` | Mints or edits ONE command — the structural half, including its `description`. |
 | `/quenching:components:command:eval` | Measures whether a command actually teaches anything: with/without runs, graded on evidence. |
 | `/quenching:components:command:retro` | Mines ONE session for what it evidences about ONE command that ran in it — cost, redundancy, bugs. |
