@@ -282,7 +282,8 @@ class Worktree(RepoCase):
         self.relative = "shared"
         config = pathlib.Path(self.repo) / ".claude" / "quenching.json"
         config.parent.mkdir()
-        config.write_text(json.dumps({"sharedPaths": [self.relative]}) + "\n", encoding="utf-8")
+        config.write_text(json.dumps({"shared": {"sharedPaths": [self.relative]}}) + "\n",
+                          encoding="utf-8")
         pathlib.Path(self.repo, ".gitignore").write_text(f"/{self.relative}\n", encoding="utf-8")
         _run(self.repo, "add", ".claude/quenching.json", ".gitignore")
         _run(self.repo, "commit", "-q", "-m", "declare shared path")
@@ -303,6 +304,18 @@ class Worktree(RepoCase):
         self.assertEqual(payload["paths"][0]["state"], "created")
         self.assertTrue(self.link.is_symlink())
         self.assertEqual(self.link.resolve(), self.store.resolve())
+
+    def test_legacy_flat_shared_paths_are_refused(self):
+        config = pathlib.Path(self.repo) / ".claude" / "quenching.json"
+        config.write_text(json.dumps({"sharedPaths": [self.relative]}) + "\n",
+                          encoding="utf-8")
+        proc = subprocess.run([sys.executable, CQ, "git", "worktree", "link", "--json"],
+                              cwd=self.repo, capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 2)
+        payload = json.loads(proc.stdout)
+        self.assertEqual(payload["code"], "sp-config-unscoped")
+        self.assertEqual(payload["keys"], ["sharedPaths"])
+        self.assertFalse(self.link.exists())
 
     def test_existing_link_to_the_store_is_unchanged(self):
         self.store.mkdir()
