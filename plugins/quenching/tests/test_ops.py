@@ -8,9 +8,12 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest import mock
 
 import _paths  # noqa: F401 — must precede the `quenching` import
+from quenching.common.front import (Finding as FrontFinding, CheckRegistry, build_parser,
+                                    doctor as front_doctor, register_checks, resolve_root)
 from quenching.ops.checks import (
     check_adhoc_root,
     check_disabled_check,
@@ -39,6 +42,56 @@ HERE = pathlib.Path(__file__).resolve().parent
 GOLDEN = HERE / "fixtures" / "golden" / "ops-registry-absent.json"
 ALIGN_BODY = HERE.parent / "commands" / "ops" / "align.md"
 STATUS_BODY = HERE.parent / "commands" / "ops" / "status.md"
+
+
+class FrontKernel(unittest.TestCase):
+    def test_finding_preserves_optional_evidence_without_empty_fields(self):
+        finding = FrontFinding("pf-example", "error", "layer is empty", path="tests/unit",
+                               layer="unit", band="Structural")
+        self.assertEqual(finding.as_dict(), {
+            "code": "pf-example", "severity": "error", "message": "layer is empty",
+            "band": "Structural", "path": "tests/unit", "layer": "unit",
+        })
+
+    def test_registry_runs_declared_checks_in_order_and_rejects_duplicates(self):
+        calls = []
+
+        def first(inventory):
+            calls.append("first")
+            return [FrontFinding("one", "warning", inventory.value)]
+
+        def second(inventory):
+            calls.append("second")
+            return [{"code": "two", "severity": "error", "message": inventory.value}]
+
+        registry = register_checks(("first", first), ("second", second))
+        self.assertEqual(registry.names, ("first", "second"))
+        self.assertEqual([item["code"] if isinstance(item, dict) else item.code
+                          for item in registry.run(SimpleNamespace(value="seen"))], ["one", "two"])
+        self.assertEqual(calls, ["first", "second"])
+        with self.assertRaises(ValueError):
+            CheckRegistry((("first", first), ("first", second)))
+
+    def test_generic_doctor_builds_one_payload_and_typed_exit(self):
+        class Inventory:
+            def as_dict(self):
+                return {"root": "/repo", "entries": 2}
+
+        def build(root):
+            return Inventory(), {}
+
+        registry = register_checks(("clean", lambda inventory: []))
+        payload, error, code = front_doctor("/repo", build, registry,
+                                            enrich=lambda inventory: {"scanned": 2})
+        self.assertEqual((error, code), ({}, 0))
+        self.assertEqual(payload, {"root": "/repo", "entries": 2, "scanned": 2,
+                                   "findings": [], "errors": 0, "warnings": 0, "ok": True})
+
+    def test_common_parser_has_root_json_doctor_and_status(self):
+        parser = build_parser("cq example", "example front", (("doctor", "check"), "status"))
+        args = parser.parse_args(["--root", "repo", "doctor", "--json"])
+        self.assertEqual((args.cmd, args.root, args.json), ("doctor", "repo", True))
+        self.assertEqual(resolve_root(None), str(pathlib.Path.cwd()))
 
 
 class AlignCleanPath(unittest.TestCase):
