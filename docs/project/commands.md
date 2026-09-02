@@ -125,6 +125,32 @@ Acts on the target repository's declared verification surface.
 | `/quenching:proof:status` | Reports layers, fixtures, measured roots, floors, CI evidence, and findings by band without writing; it states that the suite was not run. |
 | `/quenching:proof:layer:new` | Mints one named layer with its marker, reach, budget, fixture home and collection rule, then proposes test moves for a separate confirmation. |
 
+## The toolchain front
+
+Acts on the target repository's manifests, locks, language pins and tool configuration.
+
+| Command | Does |
+| --- | --- |
+| `/quenching:toolchain:align` | Probes applicability, inventories the target's toolchain artifacts, applies only mechanical and bounded structural repairs, and reports target-owned build policy. |
+| `/quenching:toolchain:status` | Reports applicability, manifests, locks, language pins, tool configuration and `tc-*` findings without writing. |
+
+## The delivery front
+
+Acts on the target repository's provider-equivalent workflows and release shape.
+
+| Command | Does |
+| --- | --- |
+| `/quenching:delivery:align` | Probes provider-equivalent workflows, applies bounded pipeline-shape repairs under one plan, and reports provider and release policy without choosing it. |
+| `/quenching:delivery:status` | Reports applicability, workflow inventory, reachability, provenance and `delivery-*` findings without writing or running a pipeline. |
+
+## The security pillar
+
+Answers read-only repository security questions; it converges no tree and carries no align.
+
+| Command | Does |
+| --- | --- |
+| `/quenching:security:status` | Reports workflow permissions, secret and ignore coverage, advisory dependency configuration and access ownership without writing repository values. |
+
 ## The git pillar
 
 Answers questions about the repository's own git state; converges no tree, so it carries no
@@ -148,7 +174,7 @@ align. The specs front hands off to it rather than executing git itself.
 
 | Command | Does |
 | --- | --- |
-| `/quenching:align` | The one align spanning the five local fronts on ONE confirmation — conducting each front's own align, never reimplementing any. |
+| `/quenching:align` | The one align spanning the seven local fronts on ONE confirmation — conducting each front's own align, never reimplementing any. |
 | `/quenching:handoff` | Compacts the current conversation into a handoff document a fresh session can continue from. |
 
 **Next:** this repository's own local automation surface (four development commands) is the

@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-08-28
 audience: human
 authority: current
-source: plugins/quenching/README.md §Install, §The six fronts, the seventh pillar, and the one align per front; command bodies under plugins/quenching/commands/
+source: plugins/quenching/README.md §The seven fronts, the non-converging axes, and the one align per front; command bodies under plugins/quenching/commands/
 maintainer: Israel Holetz
 ---
 
@@ -65,10 +65,13 @@ The status commands are read-only by construction — their tool grants exclude 
 /quenching:specs:status
 /quenching:ops:status
 /quenching:proof:status
+/quenching:toolchain:status
+/quenching:delivery:status
+/quenching:security:status
 ```
 
-These reports cover the available knowledge, design, provider-owned specs, operations and proof
-surfaces. Each finding is named with the command that would fix it — that is the plugin's habit
+These reports cover the seven aligned fronts, provider-owned specs and the read-only security
+pillar. Each finding is named with the command that would fix it — that is the plugin's habit
 everywhere: **report with the owner, never repair silently**.
 
 ## 4. Run your first alignment
@@ -77,7 +80,7 @@ everywhere: **report with the owner, never repair silently**.
 /quenching:align
 ```
 
-This conducts the five local fronts in dependency order. What happens next depends on what the probe
+This conducts the seven local fronts in dependency order. What happens next depends on what the probe
 finds:
 
 - **A clean front stops there.** The probe found nothing, so there is no inventory, no plan and
