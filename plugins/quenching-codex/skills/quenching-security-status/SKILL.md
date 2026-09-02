@@ -24,7 +24,16 @@ Branch on the JSON and exit code: `0` is a measured report, `1` carries reported
 provider policy or missing security declaration. On exit `0` or `1`, use the returned payload as the
 complete read model and do not invoke a write-capable command.
 
-## Report
+## Workflow
+
+### 1. Read the status payload
+
+Re-read the payload using the `cq security --json` invocation above. Branch on its exit code and
+preserve its measured, refused or not-measured state.
+
+**Done when:** the payload is captured, or the refusal is preserved with its reason.
+
+### 2. Report the questions
 
 Report one compact table:
 
@@ -40,9 +49,16 @@ missing declaration from a source that was not measurable or was refused. Preser
 `readOnly` and `writePolicy` values: the pillar read workflow permissions, ignore patterns,
 advisory configuration and ownership declarations only; it did not expose secret or owner values.
 
+**Done when:** every returned question has a state and evidence row, and no secret or owner value
+has entered the report.
+
+### 3. Hand back control
+
 State that this command wrote nothing and did not change workflows, ignore rules, dependencies,
 configuration, access policy or generated files. Security has no align, doctor, bands file or
 conductor row; status names no repair command because the target owner decides any action.
+
+**Done when:** the report states its read-only boundary and observed exit code.
 
 ## Invariants
 

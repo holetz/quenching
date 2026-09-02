@@ -29,7 +29,16 @@ exit `2`, preserve the refusal and the affected configuration exactly; do not gu
 workflow tree. On exit `0` or `1`, use the returned payload as the complete read model and do not
 invoke a write-capable command.
 
-## Report
+## Workflow
+
+### 1. Read the status payload
+
+Re-read the status payload using the `cq delivery status --json` invocation above. Branch on its
+exit code and preserve its applicability, refusal or findings.
+
+**Done when:** the payload is captured, or the refusal is preserved with its reason.
+
+### 2. Classify and report the front
 
 Report one compact table:
 
@@ -46,8 +55,15 @@ Preserve every finding's code, band, severity, message and path. Distinguish no 
 actionable mechanical or structural finding, name `quenching-delivery-align`; for a judgement
 finding, retain the evidence and name the target owner's closing decision from `delivery-align/bands.md`.
 
+**Done when:** every returned field has an evidence row, every finding keeps its code and band,
+and no missing state is presented as healthy.
+
+### 3. Hand back control
+
 State that this command wrote nothing and that it did not run a workflow, test suite, release or
 deployment.
+
+**Done when:** the report states its read-only boundary and observed exit code.
 
 ## Invariants
 

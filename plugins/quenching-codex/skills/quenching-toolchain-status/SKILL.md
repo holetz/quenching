@@ -30,7 +30,16 @@ refusal. On exit `2`, preserve the refusal and every missing or invalid declarat
 guess a root, ecosystem, lock requirement, language version or tool owner. On `0` or `1`, use the
 returned payload as the complete read model and do not invoke a write-capable command.
 
-## Report
+## Workflow
+
+### 1. Read the status payload
+
+Re-read the status payload using the `cq toolchain status --json` invocation above. Branch on its
+exit code and preserve its applicability, refusal or findings.
+
+**Done when:** the payload is captured, or the refusal is preserved with its reason.
+
+### 2. Classify and report the front
 
 Report one compact table:
 
@@ -50,9 +59,16 @@ recognized artifact is not a defect when it is outside the target's declared eco
 with no recognized artifact is `not-applicable`, not silently clean. Preserve every code, path and
 message returned by the route.
 
+**Done when:** every returned field has an evidence row, every finding keeps its code and
+disposition, and absent policy remains unmeasured.
+
+### 3. Hand back control
+
 State that this command wrote nothing. For mechanical or bounded structural residue, name
 `quenching-toolchain-align` as the closing command. For a target-owned build decision, retain the
 evidence and name the owner action from `toolchain-align/bands.md`; status never runs it.
+
+**Done when:** the report states its read-only boundary and observed exit code.
 
 ## Invariants
 

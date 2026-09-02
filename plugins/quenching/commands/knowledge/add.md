@@ -1,5 +1,10 @@
 ---
-description: Insert ONE new concept doc into the OKF bundle — right home, type, and stamp. Triggers on "insert new information into the base", "add a standard/table/announcement". Not for: refining one glossary term → /quenching:knowledge:define; bulk backfill → /quenching:knowledge:glossary-backfill; importing a source batch → /quenching:knowledge:import; generating documentation pages → /quenching:knowledge:documentation:produce.
+description: >-
+  Insert ONE new concept doc into the OKF bundle — right home, type, and stamp. Triggers on
+  "insert new information into the base", "add a standard/table/announcement". Not for: refining
+  one glossary term → /quenching:knowledge:define; bulk backfill →
+  /quenching:knowledge:glossary-backfill; importing a source batch → /quenching:knowledge:import;
+  generating documentation pages → /quenching:knowledge:documentation:produce.
 argument-hint: [the-knowledge-to-add]
 allowed-tools: Read, Grep, Glob, Write, Edit, AskUserQuestion
 ---
@@ -96,3 +101,12 @@ Verify every file you touched against
   consolidated `<schema>.md`. Never create an empty detailed page.
 - **Binary (a regulation PDF we consume)** → write a `sidecar.md` extract under
   `external/regulations/` (`type: sidecar`), never ingest the binary.
+
+## Invariants
+
+- One requested knowledge item gets one canonical path and one owning home.
+- Existing frontmatter and authored content are merged; filled values are never clobbered.
+- `type`, `resource`, timestamp, authority and source remain evidence-backed and are never invented.
+- Every new document is listed by its owning index, and introduced repository terms are handed to
+  the glossary workflow.
+- The conformance core is the closing check; this command does not call a bulk align or import path.
