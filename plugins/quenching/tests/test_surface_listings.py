@@ -92,6 +92,26 @@ class ManifestSurfaceTests(unittest.TestCase):
         self.assertNotIn("/quenching:invented:command", commands)
         self.assertNotEqual(len(commands), len(commands | {"/quenching:invented:command"}))
 
+    def test_manifest_projection_covers_each_namespace_derived_from_the_surface(self):
+        commands = _commands_on_disk()
+        expected = {
+            "knowledge": 13,
+            "specs": 6,
+            "design": 3,
+            "components": 7,
+            "ops": 3,
+            "proof": 3,
+            "toolchain": 2,
+            "delivery": 2,
+            "security": 1,
+            "git": 11,
+        }
+        actual = {
+            namespace: sum(command.startswith(f"/quenching:{namespace}:") for command in commands)
+            for namespace in expected
+        }
+        self.assertEqual(actual, expected)
+
 
 class ListingSurfaceTests(unittest.TestCase):
     def test_project_catalog_lists_exactly_the_commands_on_disk(self):
