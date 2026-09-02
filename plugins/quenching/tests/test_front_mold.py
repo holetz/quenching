@@ -147,9 +147,9 @@ class FrontMoldContract(unittest.TestCase):
             ROOT / "plugins" / "quenching" / "commands" / "align.md",
             ROOT / "plugins" / "quenching" / "tests" / "test_align_contract.py",
         )
-        self.assertEqual(sum(path.stat().st_size for path in conductor), 14_472)
+        self.assertEqual(sum(path.stat().st_size for path in conductor), 14_864)
         self.assertIn("2 files / 17,813 bytes", baseline_section)
-        self.assertIn("46 files / 284,182 bytes", final_section)
+        self.assertIn("46 files / 284,574 bytes", final_section)
 
 
 if __name__ == "__main__":
