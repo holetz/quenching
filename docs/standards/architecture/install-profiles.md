@@ -1,28 +1,27 @@
 ---
 type: standard
-title: Install profiles — the front is the unit of installation
-description: A profile declares which of the seven local fronts, provider-owned `specs`, and the `security` and `git` pillars a repository uses, in `.claude/quenching.json` — what it turns on and off is the residency of an entry's command descriptions (`disable-model-invocation: true`), never a command or a file; the `/align` conductor runs the installed local fronts in dependency order and names an uninstalled one in its report instead of failing on it, while the pillars carry no conductor to skip at all, only their own residency toggles
+title: Install profiles — the front is the unit of alignment
+description: A profile declares which of the seven local fronts a repository asks the root align to conduct; provider-owned specs and the security and git pillars remain available axes, and the profile does not alter command files or host invocation behavior
 resource: .claude/quenching.json, plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/**, plugins/quenching/commands/specs/**, plugins/quenching/commands/design/**, plugins/quenching/commands/components/**, plugins/quenching/commands/ops/**, plugins/quenching/commands/proof/**, plugins/quenching/commands/toolchain/**, plugins/quenching/commands/delivery/**, plugins/quenching/commands/security/**, plugins/quenching/commands/git/**
 tags: [architecture, install, profiles, fronts, configuration]
-timestamp: 2026-08-31
+timestamp: 2026-09-02
 audience: both
 authority: current
-source: extensible-surface-and-budget-retirement plan (task 4.1, 2026-08-06); the `git` pillar, installed by default and carrying no conductor of its own, added by pilar-git-e-specs-agnosticas-ao-git (task 6.3); specs 1067 and 1069 admitted the `toolchain` and `delivery` fronts; spec 1071 established the read-only `security` pillar; varrer-nomes-de-comando-legados (2026-08-27) retired the local specs backend; spec 1072 updates the profile unit and conductor boundary
+source: spec 1111 — a fresh Claude Code 2.1.258 session showed no observable profile-controlled context difference, so the profile contract is limited to `/align` conduction scope
 maintainer: quenching
 ---
 
-# Install profiles — the front is the unit of installation
+# Install profiles — the front is the unit of alignment
 
-An install profile is the declaration, in `.claude/quenching.json`, of which fronts — and the two
-pillars, `security` and `git` — a repository uses. What it turns on and off is the **residency** of an entry's
-command descriptions: an entry out of the profile is not removed, not shortened, and not made
-uninvocable — its commands stay reachable by name and stay citable, and their descriptions simply
-stop being carried in every session's always-on context.
+An install profile is the declaration, in `.claude/quenching.json`, of which entries a repository
+asks the root `/align` conductor to consider. It is a planning and conduction scope, not an
+installation mechanism: the plugin's command files remain present and their host invocation and
+context behavior remain unchanged.
 
-## The front is the unit of installation — and two pillars join the same list
+## The seven local fronts and the non-conducted axes
 
-The plugin installs seven local fronts, one provider-owned axis, and two pillars, and installation
-is decided per entry, never per command:
+The plugin exposes seven local fronts, one provider-owned specs axis, and two pillars. The profile
+uses the same entry names, while `/align` can conduct only the seven local fronts:
 
 | Entry | Commands | Kind |
 | --- | --- | --- |
@@ -37,69 +36,46 @@ is decided per entry, never per command:
 | `security` | `/quenching:security:*` | pillar |
 | `git` | `/quenching:git:*` | pillar |
 
-These names are the ones the profile uses. The `components` front is the `.claude/` surface of the
-target repository; [align-surface.md](align-surface.md) §The aligned-front column names the same seven
-local fronts and the alignless axes from the align side — where the distinction actually bites:
-`specs` has no local tree, while `security` and `git` are pillars that earn no row of their own to
-conduct.
+`specs` has no local tree, and `security` and `git` have no conductor row. Their commands remain
+available through their own namespaces regardless of the local-front scope.
 
-A profile is the set of entries declared installed:
+## The declaration
+
+A profile is a `shared.profiles.installed` list in the repository envelope:
 
 ```json
 {
   "backend": "github",
-  "profiles": { "installed": ["knowledge", "specs", "design", "components", "ops", "proof", "toolchain", "delivery", "security", "git"] }
+  "shared": {
+    "profiles": {
+      "installed": ["knowledge", "specs", "components"]
+    }
+  }
 }
 ```
 
-The block lives in the file that already carries the plugin's other declarations, and holds the
-same place in the recognised set as any other key
-([plugin-configuration.md](../workflows/plugin-configuration.md) §The recognised keys). Absent, it
-declares nothing and nothing changes: behaviour with no profile is behaviour with all declared entries
-installed. That is the ordinary case, and it is why `installed` lists what is **on** rather than
-what is off — the current behaviour is the default, and a profile is an explicit declaration over
-it. **The pillars default on the same way** — they are not local fronts a repository opts into,
-they are the plugin's read-only procedures, resident unless a profile says otherwise.
+An absent profile means that all seven local fronts are eligible for `/align`, which is the
+default behavior. A declared list names the entries the conductor may run; malformed values belong
+to the configuration doctor's findings and never become a silent partial scope.
 
-## What a profile turns on and off
+## What `/align` does with a profile
 
-A profile turns **residency** on and off — never a command, never a file. The mechanism is the
-field `disable-model-invocation: true`, which removes a command's description from always-on
-context entirely while the command stays invocable by name and keeps its description at full
-length ([../automation/skills.md](../automation/skills.md) §The admission criterion).
+Before probing, `/align` reads `cq specs config --json`. If `shared.profiles.installed` is absent,
+it considers all seven local fronts. If it is present, it conducts only the named local fronts in
+the declared dependency order and reports each other local front as skipped by profile. The
+provider-owned axis and pillars are not rows in this conductor and are not silently invoked.
 
-A front in `installed` keeps its descriptions resident — that is what makes the front usable by
-spoken routing. A front out of it has every command carry the field: nothing in a session's
-context reaches its commands, and a human who knows a name still types it. The profile changes the
-one thing the field changes — residency — and nothing else.
+The profile does not remove, shorten, hide or rewrite a command. A human who knows a command name
+can still invoke it, and a direct front command keeps its own contract. The profile changes only
+which local align stages the root conductor considers in this run.
 
-**The profile is not a removal.** The alternative — uninstalling a front by deleting its commands —
-is simpler to measure and worse to operate: a command that is gone cannot be cited by name by the
-aligns, and cannot be typed by a human who knows it. The field keeps both, which is why the
-profile is a residency decision and why `/align` can still name a front that is out of it.
+## Boundary
 
-## What `/align` does with an uninstalled front
+The host's command-registration and context rules are outside this repository's profile contract.
+Do not infer a residency, invocation or context effect from a profile entry. If the host exposes a
+future supported mechanism, it needs its own measured spec and explicit adapter; this standard
+remains valid without it.
 
-`/align` conducts the installed local **fronts** in dependency order, on one nested OK per run
-([align-surface.md](align-surface.md) §The aligned-front column). With a profile, it conducts **the
-installed ones** — in the same dependency order — and an uninstalled front is named in the report
-and skipped. It is never an error, and it is never a question.
-
-- The conductor does not invoke the uninstalled front's align, and does not ask whether to.
-- The report names the front and why it was not conducted — one line, once per run. The report is
-  the align's only account of its own run
-  ([align-surface.md](align-surface.md) §No sweep records itself), so the mention lives there,
-  never in the bundle.
-- Declaring all seven local fronts installed — the profile of this repository itself — changes nothing:
-  the conductor behaves exactly as it did before the profile existed.
-
-Why the conductor must not fail: an uninstalled front is a legitimate configuration, not a defect.
-The assumption a profile exists to retire is that a repository has all seven local fronts or something
-is wrong — and a conductor that refused on the retired assumption would make the profile unusable
-for the one case it exists to serve.
-
-**The pillars have no conductor to skip, and turning them off skips nothing.** They earn no row in
-the align column at all ([align-surface.md](align-surface.md) §The security subject is pillar-shaped
-and §The git pillar has no align), so there is no align invocation for `/align` to withhold and no
-"not conducted" line to report — an uninstalled pillar is purely a residency fact, read the same way any other command's
-`disable-model-invocation: true` is read, with no conductor-side behavior riding on it.
+Declaring all seven local fronts installed — the profile of this repository when one is needed —
+keeps the conductor's default behavior. Omitting the profile is the ordinary equivalent and avoids
+duplicating that declaration.
