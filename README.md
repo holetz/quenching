@@ -9,6 +9,8 @@ between repos sees one structure.
 This repository is a **plugin marketplace**. The plugin itself lives in
 [`plugins/quenching/`](plugins/quenching/).
 
+Release history is maintained in the [`CHANGELOG`](CHANGELOG.md).
+
 The Codex sibling lives in [`plugins/quenching-codex/`](plugins/quenching-codex/). Claude remains
 the only editable source; refresh the Codex snapshot locally with:
 
