@@ -45,6 +45,7 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import os
 import sys
 from typing import NamedTuple
 
@@ -67,6 +68,7 @@ if not _check_python_floor():
 
 from quenching.common.output import CQArgumentParser, USAGE
 from quenching.common.version import VERSION
+from quenching.common.doctor import run as run_doctor
 
 
 class Pillar(NamedTuple):
@@ -117,7 +119,8 @@ def build_parser() -> argparse.ArgumentParser:
         epilog="pillars:\n"
                + "\n".join(f"  {name:<11} {pillar.help}"
                            for name, pillar in PILLARS.items())
-               + "\n\n`cq <pillar> --help` prints that pillar's own subcommands.")
+               + "\n\n`cq doctor --help` prints the top-level prerequisite check; "
+                 "`cq <pillar> --help` prints that pillar's own subcommands.")
     p.add_argument("--root",
                     help="forwarded to the pillar as its own --root; design, specs, "
                     "components, ops, proof, delivery, toolchain, and security declare one")
@@ -135,7 +138,48 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+def build_doctor_parser() -> argparse.ArgumentParser:
+    p = CQArgumentParser(
+        prog="cq doctor",
+        description="check the Python floor and prerequisites selected by the backend/profile",
+    )
+    p.add_argument("--root", default=os.getcwd(),
+                   help="target repository root (default: current directory)")
+    p.add_argument("--json", action="store_true", help="machine-readable output")
+    return p
+
+
+def _top_level_command(argv: list[str]) -> tuple[str | None, int | None]:
+    """Find the first command while allowing the global `--root` before it."""
+    index = 0
+    while index < len(argv):
+        token = argv[index]
+        if token == "--root":
+            if index + 1 >= len(argv):
+                return None, None
+            index += 2
+            continue
+        if token.startswith("--root="):
+            index += 1
+            continue
+        if token.startswith("-"):
+            return None, None
+        return token, index
+    return None, None
+
+
+def _run_top_doctor(argv: list[str], command_index: int) -> int:
+    # Remove the command token so both `cq doctor --root .` and `cq --root . doctor` share
+    # one parser and one output contract.
+    args = argv[:command_index] + argv[command_index + 1:]
+    parsed = build_doctor_parser().parse_args(args)
+    return run_doctor(parsed.json, os.path.abspath(parsed.root))
+
+
 def main(argv: list[str]) -> int:
+    command, command_index = _top_level_command(argv)
+    if command == "doctor" and command_index is not None:
+        return _run_top_doctor(argv, command_index)
     parser = build_parser()
     args = parser.parse_args(argv)
     if not args.pillar:

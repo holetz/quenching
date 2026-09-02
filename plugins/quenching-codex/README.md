@@ -393,11 +393,25 @@ a missing auth is a named **refusal (exit 2)**, on the first operation, never mi
 
 ## Install
 
+Published installation (recommended): from inside Codex, add the marketplace and install
+the plugin:
+
+```text
+/plugin marketplace add holetz/claude-quenching
+/plugin install quenching@quenching
+```
+
+Run `/reload-plugins` after installation when the session was already open.
+
+Local development only:
+
 ```bash
 claude --plugin-dir ./plugins/quenching
 ```
 
-All skills reach the shared payload via `../../assets/...`.
+`--plugin-dir` loads the checkout directly for plugin development and testing; it is not the
+normal adoption or upgrade path. A published installation is managed by Codex. All skills
+reach the shared payload via `../../assets/...`.
 
 The CLI is bundled inside the plugin and is **not** installed in the user's PATH. Codex skills define a per-call `cq` wrapper that resolves the installed plugin and executes `scripts/cq` by absolute path; the wrapper is repeated because each Bash call and each sub-agent may start with a fresh shell. The resolver and its no-global-install rule live in `references/align/tool-resolution.md`.
 
