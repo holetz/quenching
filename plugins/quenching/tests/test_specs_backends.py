@@ -25,6 +25,7 @@ except ModuleNotFoundError:  # package-qualified unittest invocation from the re
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
 from quenching.common.frontmatter import parse_frontmatter
+from quenching.git.pr import labelled_links, normalize_pull_request
 from quenching.specs.backends import azure as az_mod
 from quenching.specs.backends import github as gh_mod
 from quenching.specs.backends.azure import AzureBoardsBackend
@@ -458,6 +459,33 @@ class AzureExternalRoundTrip(unittest.TestCase):
         self.assertEqual(patches[2]["operations"], [{
             "op": "add", "path": "/fields/System.State", "value": "Closed",
         }])
+
+
+class PullRequestAdapterFixture(unittest.TestCase):
+    """A provider-shaped Azure PR response must keep its two URLs in separate fields."""
+
+    AZURE_RESPONSE = {
+        "pullRequestId": 314,
+        "title": "Normalize review URLs",
+        "url": "https://dev.azure.com/unicred/proj/_apis/git/repositories/repo/pullRequests/314",
+        "repository": {
+            "id": "repo-id",
+            "name": "repo",
+            "webUrl": "https://dev.azure.com/unicred/proj/_git/repo",
+        },
+    }
+
+    def test_azure_fixture_has_a_navigable_review_link_and_a_labeled_api_url(self):
+        snapshot = normalize_pull_request("azure-boards", self.AZURE_RESPONSE)
+        self.assertEqual(snapshot, {
+            "id": 314,
+            "webUrl": "https://dev.azure.com/unicred/proj/_git/repo/pullrequest/314",
+            "apiUrl": self.AZURE_RESPONSE["url"],
+        })
+        labels = labelled_links(snapshot)
+        self.assertEqual(labels["Link para revisão"], snapshot["webUrl"])
+        self.assertEqual(labels["API URL"], snapshot["apiUrl"])
+        self.assertNotIn("/_apis/", labels["Link para revisão"])
 
 
 class ExternalBackendDiscrimination(unittest.TestCase):
