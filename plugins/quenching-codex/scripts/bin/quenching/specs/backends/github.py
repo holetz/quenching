@@ -228,6 +228,18 @@ def lean_limit_refusal(action: str, observed: int, attempts: int = 1) -> dict:
     }
 
 
+def stale_write_refusal(number: int, expected: str, actual: str | None) -> dict:
+    """Refuse a write whose issue changed after the caller read it."""
+    return {
+        "code": "sp-gh-stale-write", "exit": 2, "issue": number,
+        "expectedUpdatedAt": expected, "actualUpdatedAt": actual,
+        "message": f"GitHub issue #{number} changed after it was read — expected updated_at "
+                   f"{expected!r}, received {actual!r}; re-read the spec and reapply the "
+                   "change instead of merging two documents automatically",
+        "remedy": "re-read the spec and reapply the change",
+    }
+
+
 GH_LISTING_SUSPECT_REMEDY = (
     "re-run the command — a listing that comes back the same way twice is the front's real "
     "state, and one that does not was a transport fault"
@@ -421,7 +433,7 @@ class GitHubBackend(SpecBackend):
         # descriptor, issue number, first chunk, how many parts the marker declares,
         # issue title, and the issue's own labels as of this listing — what the label
         # reconciliation in `_store` diffs against, so it costs no call of its own
-        self._rows: list[tuple[dict, int, str, int, str, dict, list[str]]] | None = None
+        self._rows: list[tuple[dict, int, str, int, str, dict, list[str], str | None]] | None = None
         # `spec:` labels already confirmed correctly colored THIS process — so a repo
         # this tool has been reconciling against for a while pays no repeat GET+PATCH for
         # a label it fixed on an earlier write in the same command.
@@ -476,7 +488,7 @@ class GitHubBackend(SpecBackend):
                          stdin=json.dumps(payload))
 
     # -- the listing, fetched once ------------------------------------------- #
-    def _load(self) -> list[tuple[dict, int, str, int, str, list[str]]]:
+    def _load(self) -> list[tuple[dict, int, str, int, str, dict, list[str], str | None]]:
         if self._rows is not None:
             return self._rows
         # `--slurp` because `--paginate` alone concatenates one JSON array per page, which
@@ -492,7 +504,7 @@ class GitHubBackend(SpecBackend):
         refusal = empty_listing_refusal(action, pages, self.open_issues)
         if refusal:
             raise BackendRefusal(refusal)
-        rows: list[tuple[dict, int, str, int, str, dict, list[str]]] = []
+        rows: list[tuple[dict, int, str, int, str, dict, list[str], str | None]] = []
         for page in pages:
             for issue in (page or []):
                 if not isinstance(issue, dict) or "pull_request" in issue:
@@ -512,7 +524,7 @@ class GitHubBackend(SpecBackend):
                     "path": issue.get("html_url")
                             or f"https://github.com/{self.repo}/issues/{number}",
                 }, number, head, parts, str(issue.get("title") or ""), self._native_fields(issue),
-                    self._issue_labels(issue)))
+                    self._issue_labels(issue), issue.get("updated_at")))
         self._rows = rows
         return rows
 
@@ -604,7 +616,7 @@ class GitHubBackend(SpecBackend):
             rows = [row for row in self._lean_rows()
                     if phase is None or row["phase"] == phase]
             return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["id"]))
-        rows = [dict(d) for d, _, _, _, _, _, _ in self._load()
+        rows = [dict(d) for d, _, _, _, _, _, _, _ in self._load()
                 if phase is None or d["phase"] == phase]
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["id"]))
 
@@ -637,9 +649,9 @@ class GitHubBackend(SpecBackend):
             if row is None:
                 return None, {"code": "sp-unknown-id", "exit": 1, "id": spec_id,
                               "message": f"no spec with id '{spec_id}'"}
-            descriptor, _, head, parts, title, native_fields, labels = row
+            descriptor, _, head, parts, title, native_fields, labels, updated_at = row
             return self._assemble(dict(descriptor), number, head, parts, title,
-                                  native_fields, labels), {}
+                                  native_fields, labels, updated_at), {}
         issue = self._api(f"reading issue #{number}", f"repos/{self.repo}/issues/{number}")
         head, parts = hybrid_unwrap((issue or {}).get("body") or "")
         if not parts:
@@ -652,10 +664,11 @@ class GitHubBackend(SpecBackend):
                     or f"https://github.com/{self.repo}/issues/{number}",
         }
         return self._assemble(spec, number, head, parts, str(issue.get("title") or ""),
-                              self._native_fields(issue), self._issue_labels(issue)), {}
+                              self._native_fields(issue), self._issue_labels(issue),
+                              issue.get("updated_at")), {}
 
     def _assemble(self, spec: dict, number: int, head: str, parts: int, native_title: str,
-                  native_fields: dict, labels: list[str]) -> dict:
+                  native_fields: dict, labels: list[str], updated_at: str | None = None) -> dict:
         """The one derivation both read paths go through, so neither can drift from the
         other about what a spec's `info` holds."""
         full_text = head if parts <= 1 else self._joined(number, head, parts)
@@ -663,6 +676,8 @@ class GitHubBackend(SpecBackend):
         info["frontmatter"].update(native_fields)
         info["_github_parts"] = parts
         info["_github_labels"] = labels
+        if updated_at:
+            info["_github_updated_at"] = updated_at
         return info
 
     # `start`/`target` have no native counterpart on an issue (no scheduling fields) and
@@ -671,6 +686,14 @@ class GitHubBackend(SpecBackend):
 
     def write_spec(self, info: dict, text: str) -> None:
         number = int(info["id"])
+        expected_updated_at = info.get("_github_updated_at")
+        if expected_updated_at:
+            current = self._api(f"checking issue #{number} before writing",
+                                f"repos/{self.repo}/issues/{number}")
+            actual_updated_at = current.get("updated_at") if isinstance(current, dict) else None
+            if actual_updated_at != expected_updated_at:
+                raise BackendRefusal(stale_write_refusal(
+                    number, expected_updated_at, actual_updated_at))
         had_parts = int(info.get("_github_parts", 1))
         current_labels = info.get("_github_labels", [])
         # `derive_info` — the SAME shared derivation every read goes through — off the text

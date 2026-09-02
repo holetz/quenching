@@ -961,6 +961,52 @@ class GhLeanListing(unittest.TestCase):
         self.assertIn(str(gh_mod.GH_LEAN_LIMIT), transport.calls[0]["argv"])
 
 
+class GithubConditionalWrite(unittest.TestCase):
+    """A read marker must protect the following PATCH from overwriting a newer issue."""
+
+    def _info(self, updated_at: str) -> tuple[GitHubBackend, dict]:
+        backend = GitHubBackend("owner/repo", os.getcwd())
+        info = derive_info({
+            "id": 101, "phase": "plans", "folder": "plans", "legacy": False,
+            "path": "https://github.test/issues/101",
+        }, _case_doc())
+        info["_github_parts"] = 1
+        info["_github_labels"] = []
+        info["_github_updated_at"] = updated_at
+        return backend, info
+
+    def test_read_spec_keeps_updated_at_as_the_write_marker(self):
+        backend = GitHubBackend("owner/repo", os.getcwd())
+        issue = {"body": hybrid_wrap(_case_doc()), "title": "Alpha", "state": "open",
+                 "number": 101, "updated_at": "2026-09-02T10:00:00Z"}
+        with mock.patch.object(backend, "_api", return_value=issue):
+            info, error = backend.read_spec(101)
+        self.assertEqual(error, {})
+        self.assertEqual(info["_github_updated_at"], issue["updated_at"])
+
+    def test_write_with_a_newer_updated_at_refuses_before_patch(self):
+        backend, info = self._info("2026-09-02T10:00:00Z")
+        with mock.patch.object(backend, "_api",
+                               return_value={"updated_at": "2026-09-02T10:01:00Z"}), \
+                mock.patch.object(backend, "_store") as store:
+            with self.assertRaises(BackendRefusal) as ctx:
+                backend.write_spec(info, info["text"])
+        self.assertEqual(ctx.exception.err, gh_mod.stale_write_refusal(
+            101, "2026-09-02T10:00:00Z", "2026-09-02T10:01:00Z"))
+        store.assert_not_called()
+
+    def test_write_with_the_same_updated_at_reaches_one_patch(self):
+        backend, info = self._info("2026-09-02T10:00:00Z")
+        with mock.patch.object(backend, "_api",
+                               return_value={"updated_at": "2026-09-02T10:00:00Z"}) as api, \
+                mock.patch.object(backend, "_store") as store, \
+                mock.patch.object(backend, "_ensure_label_colors"):
+            backend.write_spec(info, info["text"])
+        api.assert_called_once_with("checking issue #101 before writing",
+                                   "repos/owner/repo/issues/101")
+        store.assert_called_once()
+
+
 # --------------------------------------------------------------------------- #
 # the hybrid serialisation both external backends share
 # --------------------------------------------------------------------------- #
