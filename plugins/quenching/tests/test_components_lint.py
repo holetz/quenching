@@ -162,6 +162,40 @@ class StrictFrontmatter(unittest.TestCase):
         self.assertEqual(payload["commandCount"], 53)
 
 
+class GateAndGrantLint(unittest.TestCase):
+    def _findings(self, body: str, allowed: str) -> list[dict]:
+        item = command(body)
+        item["frontmatter"]["allowed-tools"] = allowed
+        return lint_command(item, BASE)
+
+    def test_a_confirmation_gate_without_ask_user_question_is_an_error(self):
+        found = [f for f in self._findings(
+            "Present the plan. Wait for the user's confirmation before writing.", "Read, Write")
+                 if f["code"] == "sk-prose-gate"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["severity"], "error")
+        self.assertIn("AskUserQuestion", found[0]["remedy"])
+
+    def test_a_fenced_git_call_without_a_matching_grant_is_an_error(self):
+        found = [f for f in self._findings("```bash\ngit add -- file\n```",
+                                            "Read, Bash(git status:*)")
+                 if f["code"] == "sk-grant-gap"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["tool"], "git add")
+        self.assertEqual(found[0]["line"], 2)
+        self.assertIn("Bash(git add:*)", found[0]["remedy"])
+
+    def test_historical_or_negative_confirmation_prose_is_not_a_gate(self):
+        bodies = (
+            "A previous run waited for confirmation; this report only describes it.",
+            "Never ask for confirmation here; the operation is read-only.",
+        )
+        for body in bodies:
+            with self.subTest(body=body):
+                self.assertNotIn("sk-prose-gate",
+                                 {f["code"] for f in self._findings(body, "Read")})
+
+
 class MarkerPredicate(unittest.TestCase):
     def test_a_line_opening_with_the_marker_prices_the_grant(self):
         """Kills: `marker_present` → always `False`."""
