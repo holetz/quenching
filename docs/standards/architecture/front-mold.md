@@ -2,12 +2,12 @@
 type: standard
 title: Front mold
 description: The one binding minimum for a local front declaration, route, align/status surface, disposition bands and Codex projection, with measured domain-specific deltas
-resource: docs/standards/architecture/{design-front.md,ops-front.md,proof-front.md}, plugins/quenching/commands/{design,ops,proof}/**
-tags: [architecture, front, mold, design, ops, proof]
+resource: docs/standards/architecture/{design-front.md,ops-front.md,proof-front.md,toolchain-front.md,delivery-front.md,security-pillar.md}, plugins/quenching/commands/{design,ops,proof,toolchain,delivery,security}/**
+tags: [architecture, front, mold, design, ops, proof, toolchain, delivery, security]
 timestamp: 2026-08-31
 audience: both
 authority: current
-source: spec 1066 (tasks 1.1 and 4.3) — the common front contract, its pre-adoption baseline and the final post-adoption footprint were measured against the tracked design, ops, proof and conductor surfaces
+source: specs 1066 and 1120 — the common front contract, its pre-adoption baseline and the final post-adoption footprint were measured against the tracked front and conductor surfaces
 maintainer: quenching
 ---
 
@@ -23,8 +23,9 @@ explicit.
 
 ## One binding host
 
-This file is the canonical host for the mold. The architecture standards for design, ops and proof
-cite it for the shared minimum, while the executor-facing
+This file is the canonical host for the mold. The architecture standards for design, ops, proof,
+toolchain and delivery cite it for the shared minimum; the security pillar cites it for the
+read-only route and reporting floor. The executor-facing
 `plugins/quenching/assets/references/front-align/mold.md` is a projection for command readers and
 must not introduce a competing binding rule. Its Codex copy mirrors the source projection after
 the source and projection are generated.
@@ -147,6 +148,9 @@ The shared minimum does not erase these proven differences:
 | design | `/.design/tokens.json` is the DTCG source; projections cover interoperability, editorial and internal adapters; source arbitration with optional Impeccable input remains human-owned; web and non-web detection stay distinct; genres add render destinations. |
 | ops | `.claude/quenching.json` owns `opsRoot`, `router` and optional `registry`; inventory and generated registry are first-class; entry points carry lifecycle, reachability, typed exit, output and write-policy evidence; `op-*` findings retain their existing owners. |
 | proof | `.claude/quenching.json` owns `proofRoot`, layers, fixtures, measured roots, exclusions and ratchet; layer markers and fixture reach are derived evidence; floors, CI and order evidence remain explicit; the target suite is not run by align or status; `pf-*` findings retain their bands. |
+| toolchain | `.claude/quenching.json` owns the declared toolchain scope; manifests, locks, language pins and tool configuration are inventoried without selecting versions or build policy; `tc-*` findings retain their owners. |
+| delivery | `.claude/quenching.json` and provider-equivalent workflow trees define applicability and inventory; triggers, jobs, reachability and release shape are reported while provider, environment, publication and permission policy remain target-owned; `delivery-*` findings retain their owners. |
+| security | the security pillar answers read-only questions over workflow permissions, secret-ignore coverage, advisory configuration and access ownership; it owns no converging tree, never exposes values and leaves every policy decision with the target owner. |
 
 These deltas are why the mold is a contract and not a shared runtime implementation. No generic
 Python dispatcher or second configuration schema belongs here. Each front keeps its own payload,

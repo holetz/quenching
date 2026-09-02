@@ -334,7 +334,7 @@
   ],
   "sha256": {
     ".codex-plugin/plugin.json": "0a696ee33b34996d136d4aa2d32fcc35bd34af35efb475b0cabefbafcaf87f34",
-    ".generated-from.json": "0175bd23d058ddcbcf46b1400c0338c0e5fc4a42d98e506d0e59f9c4dfc3d0ea",
+    ".generated-from.json": "899b94a941c3e2d202f3086c0c5d0ceaae44e7c0eed680083c081b32bf37f0dd",
     "README.md": "ea9a6bf0ecbb3be336342fb2db5fbc1347de8d86f2266e2aa8ceeb51532a34dc",
     "VERSION": "e33e70efdb9c35eb184b87ee7abc05ac16a925c9c36e84408999dea33a741fa8",
     "checks/catalog-publication-check.py": "9f4c9b75b524e31bd9420036a5384801ef707ef5708956abba1d6eb62c398f9e",
@@ -415,7 +415,7 @@
     "references/components-harness-align/harness-routing.md": "bd3b6acc2811d083e80c3c3c76c456058b5d43eece207c81571b77ec4054a1f5",
     "references/delivery-align/bands.md": "eb24ba066104eb8452c45b7f3a315ae088946af9cdd4460c3494c3369782c581",
     "references/design-align/bands.md": "c269aa22535a28ff6877405f916a5156a22099b78c6e2142f005e8a007559cff",
-    "references/front-align/mold.md": "f458d292c813e91e366884876ee23f99ecd2fb8e34065aec07b3bbc6df351ac5",
+    "references/front-align/mold.md": "91bb98bf7e2bf1e58b29f64e7f5471d929225677c5e3847d8d348c7955221d41",
     "references/git/commit.md": "64193ef32a6c46a4922cf4be6ca317ac639534a1e881756ba63e5922982c80cd",
     "references/git/conventions.md": "cb7dc40b244d638d1413fc54411b911ebf134f991818f9ec6fd8019ba5594b09",
     "references/git/isolation.md": "e059aa19556b418c22a09daf033ff308664f4414103b0a5dd23669c39131598d",
