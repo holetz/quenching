@@ -34,6 +34,7 @@ PR_STATUS = PLUGIN_ROOT / "commands" / "git" / "pr" / "status.md"
 PUSH_COMMAND = PLUGIN_ROOT / "commands" / "git" / "push.md"
 REVERT_COMMAND = PLUGIN_ROOT / "commands" / "git" / "revert.md"
 PR_REFERENCE = PLUGIN_ROOT / "assets" / "references" / "git" / "pr.md"
+MERGE_REFERENCE = PLUGIN_ROOT / "assets" / "references" / "git" / "merge.md"
 COMMIT_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit.md"
 COMMIT_INCREMENTAL_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit-incremental.md"
 CLEANUP_COMMAND = PLUGIN_ROOT / "commands" / "git" / "cleanup.md"
@@ -482,6 +483,16 @@ class PullRequestPayload(unittest.TestCase):
         self.assertEqual(self.command.count("**AskUserQuestion**"), 1)
         self.assertIn("provider-native link (or its absence)", self.payload_step)
         self.assertIn("one confirmation", self.command.lower())
+
+    def test_azure_source_branch_deletion_is_an_explicit_offer(self):
+        command = self.command.lower()
+        reference = MERGE_REFERENCE.read_text(encoding="utf-8").lower()
+        combined = f"{command}\n{reference}"
+        self.assertIn("separate source-branch deletion offer", combined)
+        self.assertIn("deletion offer defaults to preserve the branch", command)
+        self.assertIn("[--delete-source-branch true]", command)
+        self.assertIn("never pass `--delete-source-branch true` by default", command)
+        self.assertIn("keep it, especially after a squash merge", reference)
 
     def test_status_command_routes_both_providers_and_normalizes_the_snapshot(self):
         command = PR_STATUS.read_text(encoding="utf-8")
