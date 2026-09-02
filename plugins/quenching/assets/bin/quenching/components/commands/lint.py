@@ -50,6 +50,8 @@ HEADING_RE = re.compile(r"^#{1,6}\s")
 STEP_HEADING_RE = re.compile(r"^#{2,6}\s+\d+[.)]\s")
 STEP_ITEM_RE = re.compile(r"^\d+[.)]\s")
 WORKFLOW_MARKER_RE = re.compile(r"^(?:\*\*Steps\*\*|#{1,6}\s+(?:Steps|Workflow)\b)", re.IGNORECASE)
+WORKFLOW_HEADING_RE = re.compile(r"^(#{1,6})\s+(?:Steps|Workflow)\b", re.IGNORECASE)
+UNNUMBERED_ITEM_RE = re.compile(r"^[-*]\s+\S")
 DONE_WHEN_RE = re.compile(re.escape(DONE_WHEN_MARKER))
 
 FRONTMATTER_KEY_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):(.*)$")
@@ -96,21 +98,59 @@ def _split_tools(spec: str) -> list[str]:
 
 
 def _numbered_steps(body: str) -> list[str]:
-    """The workflow's numbered steps: `### N. Title` headings, and top-level `N. …`
-    list items once a `**Steps**` / `## Steps` / `## Workflow` marker has opened the
-    workflow. Numbered prose lists elsewhere in the body are NOT steps — counting them
-    would report a criterion missing from a list that never promised one."""
-    steps, in_workflow = [], False
+    """Return explicit workflow steps, including unnumbered sequences.
+
+    A child heading under `## Workflow`/`## Steps` is an operational step even without a
+    numeric prefix. When the workflow uses a list instead, at least two top-level list items
+    form the explicit sequence; a lone bullet remains prose. Lists outside those markers are
+    never steps, so ordinary narrative and report tables stay outside this check.
+    """
+    steps: list[str] = []
+    workflow_level: int | None = None
+    workflow_steps: list[str] = []
+    workflow_items: list[str] = []
+
+    def close_workflow() -> None:
+        nonlocal workflow_level, workflow_steps, workflow_items
+        if workflow_steps:
+            steps.extend(workflow_steps)
+        elif len(workflow_items) >= 2:
+            steps.extend(workflow_items)
+        workflow_level = None
+        workflow_steps = []
+        workflow_items = []
+
     for line in body.splitlines():
+        marker = WORKFLOW_HEADING_RE.match(line)
+        if marker or WORKFLOW_MARKER_RE.match(line):
+            close_workflow()
+            workflow_level = len(marker.group(1)) if marker else 0
+            continue
+
+        if workflow_level is None:
+            if STEP_HEADING_RE.match(line):
+                steps.append(line.strip())
+            continue
+
         if STEP_HEADING_RE.match(line):
-            steps.append(line.strip())
-            in_workflow = False
-        elif WORKFLOW_MARKER_RE.match(line):
-            in_workflow = True
-        elif in_workflow and STEP_ITEM_RE.match(line):
-            steps.append(line.strip())
-        elif in_workflow and HEADING_RE.match(line):
-            in_workflow = False
+            workflow_steps.append(line.strip())
+            continue
+
+        heading = re.match(r"^(#{1,6})\s+\S", line)
+        if heading:
+            level = len(heading.group(1))
+            if level <= workflow_level:
+                close_workflow()
+                if STEP_HEADING_RE.match(line):
+                    steps.append(line.strip())
+            elif level == workflow_level + 1:
+                workflow_steps.append(line.strip())
+            continue
+
+        if not line[:1].isspace() and (STEP_ITEM_RE.match(line) or UNNUMBERED_ITEM_RE.match(line)):
+            workflow_items.append(line.strip())
+
+    close_workflow()
     return steps
 
 
@@ -494,7 +534,7 @@ def lint_command(cmd: dict, base: str, named_by: set[str] | None = None) -> list
     steps, covered = _step_criteria(body)
     if steps and covered < steps:
         out.append(finding("sk-step-criterion", "warn",
-                           f"{steps - covered} of {steps} numbered steps carry no "
+                           f"{steps - covered} of {steps} workflow steps carry no "
                            f"`{DONE_WHEN_MARKER}` criterion — a step with no observable end state "
                            "can be claimed done early", steps=steps, covered=covered, **where))
 
