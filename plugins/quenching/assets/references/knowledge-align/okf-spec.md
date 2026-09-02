@@ -14,7 +14,7 @@ the plugin enforces; [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/kn
 - **`index.md`** — a directory **listing** (progressive disclosure). It MUST NOT be used for
   a concept document.
 - **`log.md`** — an **update history**. Also reserved. OKF v0.1 keeps it; the OKF-strict
-  profile **retires** it (§4 below) without unreserving it.
+  profile **retires** it (§Reserved filenames) without unreserving it.
 - Every **other** `.md` file is a **concept document**.
 
 ## Frontmatter
