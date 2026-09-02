@@ -14,15 +14,18 @@ anyone ever rewrites it as an import — `assets/bin/cq` reaches its `quenching`
 """
 
 import os
+import json
 import pathlib
 import subprocess
 import sys
 import unittest
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
+REPO_ROOT = PLUGIN_ROOT.parent.parent
 SHIM = PLUGIN_ROOT / "bin" / "cq"
 REAL = PLUGIN_ROOT / "assets" / "bin" / "cq"
 VERSION = (PLUGIN_ROOT / "VERSION").read_text().strip()
+CODEX_ROOT = REPO_ROOT / "plugins" / "quenching-codex"
 
 
 class ThePathShim(unittest.TestCase):
@@ -45,6 +48,30 @@ class ThePathShim(unittest.TestCase):
         run = subprocess.run([str(SHIM), "--version"], capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stderr)
         self.assertEqual(run.stdout.strip(), VERSION)
+
+    def test_every_published_version_surface_is_in_lockstep(self):
+        """Claude and Codex consumers must receive the same published version."""
+        claude_manifest = json.loads(
+            (PLUGIN_ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
+        codex_manifest = json.loads(
+            (CODEX_ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
+        marketplace = json.loads(
+            (REPO_ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
+        published = {
+            "plugins/quenching/VERSION": VERSION,
+            "plugins/quenching-codex/VERSION":
+                (CODEX_ROOT / "VERSION").read_text(encoding="utf-8").strip(),
+            "plugins/quenching/.claude-plugin/plugin.json": claude_manifest["version"],
+            "plugins/quenching-codex/.codex-plugin/plugin.json": codex_manifest["version"],
+        }
+        self.assertEqual({VERSION}, set(published.values()), published)
+        marketplace_versions = {
+            item["name"]: item["version"]
+            for item in marketplace["plugins"]
+            if item["name"] in {"quenching", "quenching-codex"}
+        }
+        self.assertEqual({"quenching": VERSION, "quenching-codex": VERSION},
+                         marketplace_versions)
 
     def test_the_entrypoint_declares_and_checks_the_python_floor_before_package_imports(self):
         source = REAL.read_text(encoding="utf-8")
