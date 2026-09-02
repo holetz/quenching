@@ -8,6 +8,11 @@ description: "Commit what is already staged under this repo's own commit convent
 
 # quenching-git-commit — commit what is staged, under the target's own convention
 
+This command is the single commit boundary for the repository. Commands that build a spec,
+including `quenching-specs-execute`, delegate here after verification and pass the current
+spec/task context; this command resolves the subject, commits the existing index and reports the
+subject actually written. It never receives a request to stage an unrelated path.
+
 **Input**: `$ARGUMENTS` — an optional explicit commit subject. When omitted, resolve one from the
 current spec/task context; never invent it from the diff and never ask for confirmation.
 

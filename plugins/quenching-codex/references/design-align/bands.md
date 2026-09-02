@@ -2,22 +2,8 @@
 
 <!-- rules -->
 
-This file is self-contained: a design align reads it to decide what it may apply and what it must
-report for a human decision. The common band shape comes from
-`docs/standards/architecture/front-mold.md`; this file owns only design's finding codes and
-closures.
-
-## The axis is who decides
-
-The band is a disposition, not a severity. A finding may be an `error` while still belonging to
-the judgement band: severity says that the design contract is violated, while the band says who
-may choose the repair.
-
-| Band | Who decides | What the align does |
-| --- | --- | --- |
-| **Mechanical** | the deterministic projection and an already chosen source winner | rebuilds missing generated output and re-runs the doctor |
-| **Structural** | the contract plus the one run authorization | no design finding currently has a safe bounded repair in this contract |
-| **Judgement** | the product or design owner | reports evidence and the closing command; never chooses source, visual or asset policy |
+This file owns design's finding codes and closures. The common disposition axis is defined in
+[`front-align/mold.md`](../front-align/mold.md) §Disposition bands.
 
 ## Mechanical findings
 

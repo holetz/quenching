@@ -12,14 +12,15 @@ description: "Build ONE spec task by task — write, verify, self-review, tick a
 auto-select when exactly one spec is under way; vague or ambiguous → you MUST prompt.
 
 Builds the `## Tasks` of ONE spec: writing each task, verifying it under the spec's declared
-policy, reviewing its diff, and committing it alone with the box already ticked inside that commit.
+policy, reviewing its diff, committing it alone, and recording the provider task after that commit.
 
 **This command stops at the last commit.** Reviewing the whole branch, writing the `/docs/` the work
 revealed, merging, and archiving belong to `quenching-specs-conclude`.
 
 **Why `Bash` is unrestricted here.** Execution invokes the spec's target-declared verification,
 provider-backed `cq` operations and Git commands; their prefixes and arguments are resolved from
-the live spec and cannot be safely enumerated in metadata.
+the live spec and cannot be safely enumerated in metadata. The commit itself is delegated to
+`quenching-git-commit`, whose command owns subject resolution and commits the existing index.
 
 ## Resolving the tool
 
@@ -278,48 +279,54 @@ d. **On the first pass through 5d–5e, load the rules the chain runs under — 
    dead code — and fix what it finds, on the written diff, *before* the chain below, so what the
    chain commits is already the reviewed version.
 
-e. **Then run verify, tick and commit as ONE chained call.** Decide the subject first — under §The
-   declared-directive layer's table it is `config.commitSubject` where the target declares one, else
-   the target's own `docs/standards/git/**`, else
-   [commit.md](../../references/git/commit.md) §Commit messages — and put it
-   in both places it appears:
+e. **Then verify, stage, delegate the commit and confirm the provider task as ONE chained operation.**
+   The subject belongs to `quenching-git-commit`, under the declared-directive layer's table and
+   its [commit.md](../../references/git/commit.md) contract. Execute stages
+   only the task's declared files, passes the existing index and resolved task context to that
+   command, then sends its reported subject and sha to `cq specs task --check`:
 
    ```bash
    <the task's verify:> \
-     && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <id> --spec "<id>" --subject "plan/<id>-<handle>: <id> <title>" \
-     && git add <the task's declared files> <the spec file> \
-     && git commit -m "plan/<id>-<handle>: <id> <title>" \
-     && git log -1 --format=%s
+     && git add <the task's declared files> \
+     && Skill("quenching:git:commit", "<id>") \
+     && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <id> --spec "<id>" --subject "<subject reported by git:commit>" --commit "<sha reported by git:commit>"
    ```
 
-   **The `&&` is the ordering**, not a shortcut around it. Every guarantee the four separate acts
-   carried is still enforced, and now mechanically rather than by the body being obeyed in sequence:
-   verify precedes the tick, the tick precedes the commit so the box travels *inside* the commit
-   that implements it, and any link failing short-circuits every link after it. Run `verify:` only
+   **The ordering remains explicit:** verify precedes staging, staging precedes the delegated
+   commit, and the provider tick follows the commit. Any failure stops the operation. A commit that
+   already succeeded is preserved when the external provider write fails; report its sha and retry
+   `cq specs task --check` without rebuilding or amending it. Run `verify:` only
    when the spec's declared policy says this task is a gate ([execution.md](../../references/specs-execute/execution.md)
-   §The verification policy); otherwise the chain starts at `cq specs task`. A task with
+   §The verification policy); otherwise the chain starts at `git add`. A task with
    **no `files:` declared** — the line absent, or `files: []` — has no diff to commit, so its
-   chain *ends* at the tick, run without `--subject` and with neither `git add` nor `git commit`;
-   a subject recorded there would point at a commit that was never made. A `branch:` record
-   also gets the branch marked, per the rule loaded in 5d.
+   chain *ends* at the tick, run without `--subject` or `--commit`, and with neither `git add` nor
+   delegate `git:commit`; a subject recorded there would point at a commit that was never made. A
+   `branch:` record also gets the branch marked, per the rule loaded in 5d.
 
 f. **Read the chain's tail, and act on which link broke** — per §The commit, already loaded in
-   5d: `verify:` failed → nothing ticked, nothing committed; fix and retry, or block it when
-   attempts stop converging. The commit failed → undo the tick, report. The recorded subject
-   drifted → report it as a finding and write nothing.
+   5d: `verify:`/staging failed → nothing ticked, nothing committed; fix and retry, or block it
+   when attempts stop converging. The commit failed → report with the task still unchecked. The
+   provider tick failed after a successful commit → preserve the commit and retry only the remote
+   write. The recorded subject or sha drifted → report it as a finding and write nothing further.
 
-g. **Announce the declared hook for this event, and move on.** Once the task has committed,
-   `after_specs_execute_task` has fired: print what the config declared for it — the event's
-   name, the declared command, and the prompt whoever executes the hook must follow — then move
-   on. Announcing is not executing: never invoke the declared command, never wait for it, never
-   integrate its result. The step-2 read already filtered `enabled: false` hooks out, so this
-   announces exactly what the read returned, whether or not the hook was written for this repo —
-   the body announces name, command and prompt, and moves on:
+g. **Run and report the declared hook for this event, and move on.** Once the provider task has
+   committed and been confirmed, `after_specs_execute_task` has fired. For every hook the config
+   read returned, report the event, command, prompt, `optional` flag and any declared `condition`,
+   then invoke the declared command as a `Skill` with the task and commit context:
 
    ```text
-   after_specs_execute_task — declared hook: /my:security-review
+   after_specs_execute_task — hook: /my:security-review — optional: true
+     condition: none declared
      prompt: none declared
+   Skill("<declared hook command>", "<declared prompt plus task and commit context>")
    ```
+
+   `enabled: false` was filtered during the config read and is never announced or invoked;
+   absence of `enabled` means enabled. The executor never evaluates `condition`: it reports the
+   declaration and passes it as context to the hook. An optional hook failure is reported and the
+   run continues; a non-optional hook failure is reported and pauses the run. Neither failure
+   undoes the provider tick or rebuilds the already successful commit. A hook absent from config
+   is silent.
 
 h. **On a section boundary, keep the task commits and OFFER to stop — and keep going if nobody says otherwise.**
    The branch is at a clean, independently anchored boundary; another section may still be ahead.
@@ -437,9 +444,10 @@ front of you before the loop starts:
   disable, skip, `xfail` or delete a test. Change the code, or report the task blocked.
 - **Never amend or rewrite an earlier task's commit**, and never force-push. A rewritten history
   makes every earlier record a lie at once.
-- **Never tick a checkbox for work that was not verified.** The box is ticked before the commit but
-  only ever *after* the task verified and self-reviewed — the commit boundary moved, the proof did
-  not. If nothing could verify it, say so in the report rather than implying the task was proved.
+- **Never tick a checkbox for work that was not verified.** The provider task is ticked only after
+  the task was verified, self-reviewed and committed; its remote record cannot travel inside the
+  local commit. If nothing could verify it, say so in the report rather than implying the task was
+  proved.
 
 ## Invariants to never violate
 
@@ -452,10 +460,12 @@ front of you before the loop starts:
   choose the next task by reading `## Tasks`, and never hand-edit a `- [ ]` / `- [x]` character.
 - Verify per the spec's **declared** policy. Never decide mid-build when to test, and never ask the
   human to decide it then.
-- Tick each box **after** the task verified and self-reviewed, and **before** its commit — with the
-  subject that commit will carry, so code and box land together. Undo the tick if the commit fails.
-- Never write an ordinary record after the commit it describes. Task records are anchored by the
-  commit that carries the task; no later history rewrite or anchor repair is part of a section close.
+- Tick each provider task **after** its commit succeeds — with the subject and sha that commit
+  actually carried. A failed provider write leaves the commit preserved and the task unchecked for
+  a retry; never rebuild or amend that commit.
+- Never write an ordinary record after the commit it describes. The provider task is the explicit
+  post-commit exception and carries that commit's subject and sha; no later history rewrite or
+  anchor repair is part of a section close.
 - Never refuse over a missing `approved`; ask inline and stamp it with `cq specs record`, never by
   editing the frontmatter.
 - Stamp `branch:` once the work ref is resolved, taken or declined (`work` then equals `base`) — never over an existing record, through `cq specs record`, never the frontmatter.

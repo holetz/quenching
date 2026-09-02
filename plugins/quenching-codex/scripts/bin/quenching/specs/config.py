@@ -111,7 +111,9 @@ DEFAULT_RELEASE_BRANCH = "main"
 # The shape is checked at the read: an event must map to a list of hook objects each
 # carrying a non-empty string `command`; anything else is left out of the read. One filter
 # rides on that shape check — `enabled: false` never leaves here, per extension-points.md —
-# and `condition` is carried along untouched, never evaluated by anything in this tool.
+# and `condition` is carried along untouched for the owning executor, never evaluated by the
+# parser. `optional` is normalised to a boolean so a hook runner can report its failure policy
+# without guessing what an absent field means.
 
 # `profiles` has NO default — an absent key declares nothing, which install-profiles.md reads
 # as "all four fronts installed", the ordinary case. Like `hooks`, its shape is checked at
@@ -298,7 +300,7 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
                 if hook.get("enabled") is False:
                     # extension-points.md: filtered at the read, never announced.
                     continue
-                row: dict = {"command": command.strip()}
+                row: dict = {"command": command.strip(), "optional": hook.get("optional") is True}
                 for field, kind in (("optional", bool), ("condition", str), ("prompt", str)):
                     value = hook.get(field)
                     if isinstance(value, kind):

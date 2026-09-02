@@ -44,6 +44,11 @@ recommends, `high` and `xhigh` refine on their own authority. `low` is therefore
 that is fast by construction, and that is its whole content — a spec that should be defined without
 a conversation asks for it by name.
 
+At the end of a `low` build, the close-out command carries the PR handoff by `Skill` after its
+green gate: `Skill("quenching:git:pr:create", "<id>")`. The PR command keeps its own confirmation,
+push and provider record; `low` removes the extra handoff choice from `conclude`, not the safety
+gate owned by the PR command. The other levels retain `conclude`'s named handoff for the human.
+
 **Defining is never isolated in a sub-agent, at any level.** Isolation means only the summary
 returns, which is incompatible with stopping to ask — and every level but `low` asks. `low` could
 be isolated and is not: it is one pass landing one edit, so the returned summary would be as large
@@ -341,18 +346,18 @@ assertion the spec's own author makes, never an economy the executor infers on i
 <!-- rules -->
 
 Checkboxes `- [ ] <id> <text>` grouped under `### N. <Section>` headings, carrying optional
-`files:` / `verify:` / `pattern:` / `subject:` / `[P]` metadata. `cq specs task --check <id>` flips a
-box mechanically — **never by string surgery**.
+`files:` / `verify:` / `pattern:` / `subject:` / `commit:` / `[P]` metadata. `cq specs task
+--check <id>` flips a box mechanically — **never by string surgery**.
 
-`subject:` is written by `task --check --subject <line>` and records **the subject of the commit
-that implements that task**, resolved with `git log --grep --fixed-strings`. It lives on the task
-line rather than as a trailer inside the commit message, which leaves the target repo's message
-format entirely its own. Because the subject is known BEFORE the commit, the box is ticked into
-that commit and there is no per-task bookkeeping commit; and it cannot go stale, because amending
-a recorded commit and force-pushing are both forbidden
+`subject:` and `commit:` are written by `task --check --subject <line> --commit <sha>` and record
+the subject and sha of the commit that implements that task. They live on the task line rather
+than as a trailer inside the commit message, which leaves the target repo's message format
+entirely its own. The provider task is checked after the local commit because an external backend
+cannot put its remote mutation inside that commit; the recorded commit facts let a failed remote
+write be retried without rebuilding or amending it
 ([execution.md](../../references/specs-execute/execution.md) §The commit).
-A spec built before this change carries `commit: <sha>`; both forms are read and neither is
-backfilled.
+A spec built before this change may carry only `subject:` or only `commit:`; both forms are read and
+neither is backfilled.
 `## Tasks` is the file's churn zone by design — its boxes already flip — so the low-churn doctrine
 that governs frontmatter does not reach it.
 

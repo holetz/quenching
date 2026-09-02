@@ -12,7 +12,7 @@ This command owns the delivery front's bounded convergence pass. It probes the w
 classifies static pipeline findings, applies only authorized mechanical or structural shape
 repairs, and leaves provider, environment, promotion, publication and permission choices with the
 target owner. The finding bands live in
-[delivery/bands.md](${CLAUDE_PLUGIN_ROOT}/assets/bin/quenching/delivery/bands.md); the common
+[delivery-align/bands.md](${CLAUDE_PLUGIN_ROOT}/assets/references/delivery-align/bands.md); the common
 front floor lives in [front-align/mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/front-align/mold.md).
 
 Set `TARGET_ROOT` to the supplied argument, or to `.` when omitted, and pass that same root to
@@ -38,7 +38,7 @@ plan; do not rediscover workflow files.
 
 ### 2. Classify one bounded plan
 
-Group every finding using `delivery/bands.md`:
+Group every finding using `delivery-align/bands.md`:
 
 | Band | Finding codes | Disposition |
 | --- | --- | --- |

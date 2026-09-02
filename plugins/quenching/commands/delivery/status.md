@@ -12,7 +12,7 @@ runtime evidence, release reachability and findings. It never edits a workflow, 
 provider or invokes a deployment.
 
 The delivery finding map is in
-[delivery/bands.md](${CLAUDE_PLUGIN_ROOT}/assets/bin/quenching/delivery/bands.md); the common
+[delivery-align/bands.md](${CLAUDE_PLUGIN_ROOT}/assets/references/delivery-align/bands.md); the common
 front floor is in [front-align/mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/front-align/mold.md).
 Resolve `cq` per
 [tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
@@ -42,7 +42,7 @@ Report one compact table:
 Preserve every finding's code, band, severity, message and path. Distinguish no delivery signal
 (`not-applicable`) from an applicable provider whose workflow shape was not measured. For an
 actionable mechanical or structural finding, name `/quenching:delivery:align`; for a judgement
-finding, retain the evidence and name the target owner's closing decision from `delivery/bands.md`.
+finding, retain the evidence and name the target owner's closing decision from `delivery-align/bands.md`.
 
 State that this command wrote nothing and that it did not run a workflow, test suite, release or
 deployment.

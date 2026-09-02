@@ -28,7 +28,6 @@ placement, never a repository store. Other namespaces are read by their owning f
 | `specs.tagCatalog` | `{"<tag>": "<description>", …}` | `{}` | `quenching-specs-create`'s tag proposal |
 | `specs.workItemTypes` | `{"<key>": {description, azure, github, default}, …}` | `{}` | `quenching-specs-create`'s type proposal, `cq specs new --type`, and every backend's `create_spec` |
 | `specs.specsBranch` | a branch name | `specs` | specs lifecycle records |
-| `specs.fanoutMinComplexity` | `low` · `medium` · `high` · `xhigh` | `medium` | specs fan-out selection |
 | `ops.opsRoot`, `ops.router` | repository-relative paths | none — `op-config-missing` when absent | `cq ops` |
 | `ops.registry` | a repository-relative path | `<ops.opsRoot>/README.md` | `cq ops registry` |
 | `proof.proofRoot` | a repository-relative path | `tests` | `cq proof` |
