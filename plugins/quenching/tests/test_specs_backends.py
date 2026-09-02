@@ -10,6 +10,7 @@ import contextlib
 import io
 import json
 import os
+import pathlib
 import socket
 import subprocess
 import sys
@@ -17,7 +18,11 @@ import tempfile
 import unittest
 from unittest import mock
 
-import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
+try:
+    import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
+except ModuleNotFoundError:  # package-qualified unittest invocation from the repository root
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    import _paths  # noqa: F401
 from quenching.common.frontmatter import parse_frontmatter
 from quenching.specs.backends import azure as az_mod
 from quenching.specs.backends import github as gh_mod
@@ -744,6 +749,51 @@ class GhBodyCeiling(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------- #
+# the gh transport's bounded retry contract
+# --------------------------------------------------------------------------- #
+class GhTransport(unittest.TestCase):
+    """Transient transport failures retry three times at most and keep the final attempt."""
+
+    def test_timeout_retries_then_becomes_a_named_refusal(self):
+        timeout = subprocess.TimeoutExpired(["gh", "api"], 30)
+        with mock.patch("subprocess.run", side_effect=timeout), \
+                mock.patch.object(gh_mod.time, "sleep") as sleep:
+            result = gh_mod._gh_run(os.getcwd(), "api")
+
+        self.assertEqual(result[0], gh_mod.GH_TIMEOUT)
+        self.assertEqual(result[3], 3)
+        self.assertEqual(len(sleep.call_args_list), 2)
+        refusal = gh_mod.gh_refusal("reading a spec", *result[:3], attempts=result[3])
+        self.assertEqual(refusal["code"], "sp-gh-timeout")
+        self.assertEqual(refusal["attempts"], 3)
+
+    def test_rate_limit_retries_and_success_keeps_attempt_count(self):
+        failed = subprocess.CompletedProcess(
+            ["gh", "api"], 1, stdout='{"message":"rate limit"}',
+            stderr="gh: API rate limit exceeded (HTTP 429)\n")
+        passed = subprocess.CompletedProcess(["gh", "api"], 0, stdout="{}", stderr="")
+        with mock.patch("subprocess.run", side_effect=[failed, passed]), \
+                mock.patch.object(gh_mod.time, "sleep") as sleep:
+            result = gh_mod._gh_run(os.getcwd(), "api")
+
+        self.assertEqual(result[:3], (0, "{}", ""))
+        self.assertEqual(result[3], 2)
+        sleep.assert_called_once_with(gh_mod.GH_RETRY_BACKOFF[0])
+
+    def test_permanent_api_error_is_not_retried(self):
+        failed = subprocess.CompletedProcess(
+            ["gh", "api"], 1, stdout='{"message":"Not Found"}',
+            stderr="gh: Not Found (HTTP 404)\n")
+        with mock.patch("subprocess.run", return_value=failed), \
+                mock.patch.object(gh_mod.time, "sleep") as sleep:
+            result = gh_mod._gh_run(os.getcwd(), "api")
+
+        self.assertEqual(result[0], 1)
+        self.assertEqual(result[3], 1)
+        sleep.assert_not_called()
+
+
+# --------------------------------------------------------------------------- #
 # a listing that never arrived, told apart from a front that is genuinely empty
 # --------------------------------------------------------------------------- #
 class GhEmptyListing(unittest.TestCase):
@@ -755,9 +805,10 @@ class GhEmptyListing(unittest.TestCase):
     stub one level higher would step straight over it. No network and no `gh`."""
 
     def setUp(self):
-        self.backend = GitHubBackend("owner/repo", os.getcwd())
+        self.backend = GitHubBackend("owner/repo", os.getcwd(), open_issues=38)
 
-    def _load_returning(self, stdout: str):
+    def _load_returning(self, stdout: str, open_issues: int | None = 38):
+        self.backend.open_issues = open_issues
         with mock.patch.object(gh_mod, "_gh_run", lambda cwd, *a, **k: (0, stdout, "")):
             return self.backend._load()
 
@@ -773,7 +824,7 @@ class GhEmptyListing(unittest.TestCase):
         self.assertEqual(ctx.exception.err.get("code"), "sp-gh-empty-listing")
 
     def test_one_empty_page_is_a_genuinely_empty_front_and_does_not_refuse(self):
-        self.assertEqual(self._load_returning("[[]]"), [])
+        self.assertEqual(self._load_returning("[[]]", open_issues=0), [])
 
     def test_a_write_whose_legitimate_answer_is_empty_still_does_not_refuse(self):
         # The DELETE of a stale continuation comment: GitHub answers 204 No Content, `gh`
@@ -792,13 +843,10 @@ class GhEmptyListing(unittest.TestCase):
 # the OTHER half: an empty front that may be genuine, said out loud as a suspicion
 # --------------------------------------------------------------------------- #
 class GhListingSuspect(unittest.TestCase):
-    """`[[]]` — one empty page — is a shape that proves nothing, so this half warns and never
-    refuses. The corroboration is the open-issue count the repository resolution already paid
-    for, and the three states it separates are asserted here.
+    """`[[]]` — one empty page — is a shape that proves nothing on its own. A positive open-issue
+    count now makes the contradiction strong enough for the listing guard to refuse.
 
-    A repository that adopted this backend over an existing tracker and has created no spec
-    yet IS the warning state, legitimately, which is exactly why the assertion below checks
-    that the call still SUCCEEDS while it warns.
+    A repository with no open issues, or with an unknown count, remains an allowed empty result.
 
     The process-level flag is restored, so this class cannot change what a later test or a
     later command prints."""
@@ -820,10 +868,10 @@ class GhListingSuspect(unittest.TestCase):
             rows = backend._load()
         return rows, err.getvalue(), out.getvalue()
 
-    def test_zero_rows_with_open_issues_warns_and_does_not_refuse(self):
-        rows, said, _ = self._load_empty(38)
-        self.assertEqual(rows, [])
-        self.assertIn("38 open issue(s)", said)
+    def test_zero_rows_with_open_issues_refuses_instead_of_being_read_as_empty(self):
+        with self.assertRaises(BackendRefusal) as ctx:
+            self._load_empty(38)
+        self.assertEqual(ctx.exception.err["code"], "sp-gh-empty-listing")
 
     def test_zero_rows_with_no_open_issues_says_nothing(self):
         # A repository with no issues at all corroborates nothing, and a warning here would
@@ -833,8 +881,8 @@ class GhListingSuspect(unittest.TestCase):
     def test_an_unknown_count_is_never_read_as_zero_and_never_as_proof(self):
         self.assertEqual(self._load_empty(None)[1], "")
 
-    def test_the_warning_never_reaches_stdout_where_the_json_payload_is(self):
-        self.assertEqual(self._load_empty(38)[2], "")
+    def test_empty_result_never_reaches_stdout_where_the_json_payload_is(self):
+        self.assertEqual(self._load_empty(0)[2], "")
 
     def test_the_warning_is_one_line_per_process_and_not_one_per_call(self):
         err = io.StringIO()
@@ -845,6 +893,41 @@ class GhListingSuspect(unittest.TestCase):
 
     def test_a_front_that_read_rows_is_never_suspect_however_many_issues_are_open(self):
         self.assertFalse(listing_is_suspect(1, 38))
+
+
+class GhLeanListing(unittest.TestCase):
+    """The cheap index shares the empty-list guard and refuses its hard result ceiling."""
+
+    def _lean(self, issues, open_issues):
+        backend = GitHubBackend("owner/repo", os.getcwd(), open_issues=open_issues)
+        with mock.patch.object(gh_mod, "_gh_run",
+                               return_value=(0, json.dumps(issues), "")):
+            return backend._lean_rows()
+
+    def test_empty_lean_listing_with_open_issues_is_a_refusal(self):
+        with self.assertRaises(BackendRefusal) as ctx:
+            self._lean([], 38)
+        self.assertEqual(ctx.exception.err["code"], "sp-gh-empty-listing")
+        self.assertEqual(ctx.exception.err["openIssues"], 38)
+
+    def test_empty_lean_listing_without_positive_count_is_allowed(self):
+        self.assertEqual(self._lean([], 0), [])
+        self.assertEqual(self._lean([], None), [])
+
+    def test_lean_listing_at_the_gh_limit_refuses_as_potentially_truncated(self):
+        with self.assertRaises(BackendRefusal) as ctx:
+            self._lean([{}] * gh_mod.GH_LEAN_LIMIT, 0)
+        self.assertEqual(ctx.exception.err["code"], "sp-gh-lean-truncated")
+        self.assertEqual(ctx.exception.err["limit"], gh_mod.GH_LEAN_LIMIT)
+
+    def test_lean_listing_below_the_limit_projects_spec_rows(self):
+        rows = self._lean([{"number": 12, "title": "Alpha", "state": "OPEN",
+                            "labels": [{"name": "spec:approved"}]}], 0)
+        self.assertEqual(rows, [{
+            "id": 12, "title": "Alpha", "state": "open",
+            "records": ["spec:approved"], "phase": "plans", "folder": "plans",
+            "legacy": False, "path": "https://github.com/owner/repo/issues/12",
+        }])
 
 
 # --------------------------------------------------------------------------- #
