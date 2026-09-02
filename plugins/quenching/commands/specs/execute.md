@@ -153,7 +153,7 @@ The `cq specs status --json` payload is **already in hand** from step 2 — do n
 From it: the derived stage, the section states, task progress, the blocked tasks, the recorded
 subjects, **`verification`** — the spec's declared policy, which decides when the suite runs so this
 command never has to — and **`records.priority.complexity`**, the gear. The gear changes exactly one
-thing in this loop, item 5i's default, and **nothing about delegation**: whether a task goes to an
+thing in this loop, item 5h's default, and **nothing about delegation**: whether a task goes to an
 executor sub-agent stays the two conditions of
 [execution-delegation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-delegation.md) §Delegating an
 executor, at every level.
