@@ -550,23 +550,31 @@ class PullRequestPayload(unittest.TestCase):
             "git ls-remote",
             "git rev-list --left-right --count",
             "git log",
+            "git reflog show <branch>",
             "git push --set-upstream",
+            "git push --force-with-lease=refs/heads/<branch>:<expected-remote-sha>",
             "head:refs/heads/<branch>",
             "askuserquestion",
             "origin",
             "dirty tree",
             "detached head",
             "divergent",
-            "no commits\nahead",
+            "no commits ahead",
             "/quenching:git:pr:create",
         ):
             self.assertIn(phrase.lower(), lower)
 
-    def test_push_command_has_no_force_or_hidden_history_operation(self):
+    def test_push_command_only_allows_a_confirmed_lease_after_proven_rebase(self):
         command = PUSH_COMMAND.read_text(encoding="utf-8").lower()
+        for required in (
+            "same work after a rebase",
+            "expected remote sha",
+            "current\nremote sha",
+            "fresh confirmation",
+            "unproven divergence",
+        ):
+            self.assertIn(required, command)
         for forbidden in (
-            "--force",
-            "--force-with-lease",
             "git fetch",
             "git add",
             "git commit",
@@ -577,6 +585,7 @@ class PullRequestPayload(unittest.TestCase):
             "--no-verify",
         ):
             self.assertNotIn(forbidden, command)
+        self.assertNotIn("git push --force ", command)
 
     def test_revert_command_resolves_commit_or_task_and_requires_merge_mainline(self):
         command = REVERT_COMMAND.read_text(encoding="utf-8")
@@ -670,6 +679,11 @@ class SyncContract(unittest.TestCase):
         for forbidden in ("git config fetch.prune", "fetch.prune=true", "configure fetch.prune",
                           "pruning configuration"):
             self.assertNotIn(forbidden, self.lower)
+
+    def test_sync_hands_rebased_publication_to_push_with_a_lease(self):
+        self.assertIn("force-with-lease", self.lower)
+        self.assertIn("git:push", self.lower)
+        self.assertIn("do not publish", self.lower)
 
 
 class IncrementalCommitContract(unittest.TestCase):
