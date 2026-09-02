@@ -5,6 +5,7 @@ the git history shape that language promises: two tasks remain two commits after
 finishes.
 """
 
+import json
 from pathlib import Path
 import subprocess
 import tempfile
@@ -49,6 +50,20 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertIn("provider tick **fails**", reference)
         self.assertIn("preserve the commit", reference)
         self.assertNotIn("<the spec file>", reference)
+
+    def test_execute_runs_enabled_hooks_and_reports_optional_failures(self):
+        command = COMMAND.read_text(encoding="utf-8")
+        config = json.loads((ROOT / ".agents" / "quenching.json").read_text(encoding="utf-8"))
+
+        self.assertIn('Skill("<declared hook command>",', command)
+        self.assertIn("optional: true", command)
+        self.assertIn("condition", command)
+        self.assertIn("enabled: false", command)
+        self.assertIn("An optional hook failure is reported", command)
+        self.assertEqual(
+            config["shared"]["hooks"]["after_specs_execute_task"],
+            [{"command": "/my:security-review", "optional": True}],
+        )
 
     def test_explicit_subject_commits_only_staged_files(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -308,18 +308,24 @@ f. **Read the chain's tail, and act on which link broke** — per §The commit, 
    provider tick failed after a successful commit → preserve the commit and retry only the remote
    write. The recorded subject or sha drifted → report it as a finding and write nothing further.
 
-g. **Announce the declared hook for this event, and move on.** Once the task has committed,
-   `after_specs_execute_task` has fired: print what the config declared for it — the event's
-   name, the declared command, and the prompt whoever executes the hook must follow — then move
-   on. Announcing is not executing: never invoke the declared command, never wait for it, never
-   integrate its result. The step-2 read already filtered `enabled: false` hooks out, so this
-   announces exactly what the read returned, whether or not the hook was written for this repo —
-   the body announces name, command and prompt, and moves on:
+g. **Run and report the declared hook for this event, and move on.** Once the provider task has
+   committed and been confirmed, `after_specs_execute_task` has fired. For every hook the config
+   read returned, report the event, command, prompt, `optional` flag and any declared `condition`,
+   then invoke the declared command as a `Skill` with the task and commit context:
 
    ```text
-   after_specs_execute_task — declared hook: /my:security-review
+   after_specs_execute_task — hook: /my:security-review — optional: true
+     condition: none declared
      prompt: none declared
+   Skill("<declared hook command>", "<declared prompt plus task and commit context>")
    ```
+
+   `enabled: false` was filtered during the config read and is never announced or invoked;
+   absence of `enabled` means enabled. The executor never evaluates `condition`: it reports the
+   declaration and passes it as context to the hook. An optional hook failure is reported and the
+   run continues; a non-optional hook failure is reported and pauses the run. Neither failure
+   undoes the provider tick or rebuilds the already successful commit. A hook absent from config
+   is silent.
 
 h. **On a section boundary, keep the task commits and OFFER to stop — and keep going if nobody says otherwise.**
    The branch is at a clean, independently anchored boundary; another section may still be ahead.
