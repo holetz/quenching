@@ -327,7 +327,7 @@
   ],
   "sha256": {
     ".codex-plugin/plugin.json": "0a696ee33b34996d136d4aa2d32fcc35bd34af35efb475b0cabefbafcaf87f34",
-    ".generated-from.json": "bcb316063c3f68ae05e80d8b8477115f9d3d94260be94ca3b1b97e2efd49113e",
+    ".generated-from.json": "80fd9f0c7fad90649ec7cf199c40d555d1f0438c6c782682953c94d31b1651df",
     "README.md": "0c34c6d490bc7c5d01eb221926612a01acaac363bcdf6c40e50c128359e3f1ae",
     "VERSION": "e33e70efdb9c35eb184b87ee7abc05ac16a925c9c36e84408999dea33a741fa8",
     "checks/catalog-publication-check.py": "9f4c9b75b524e31bd9420036a5384801ef707ef5708956abba1d6eb62c398f9e",
@@ -484,7 +484,7 @@
     "scripts/bin/quenching/design/markdown.py": "fe65c5fee7173906019bc1b06a7d15aa4fcabdb78c1f69622e16daecb112640a",
     "scripts/bin/quenching/design/model.py": "c5eadfaabaad3e3959cd77e7d58fd19b007ecac8ff2ed026f73e774efe4bcb42",
     "scripts/bin/quenching/git/__init__.py": "752ddf86f502a08c2ed9150f06912af1a13c80e8465e267cd81604d700a29df6",
-    "scripts/bin/quenching/git/base.py": "4a2baf03d0eca93e2cc662c7240281695b6ec447d78c16aeafc84f69d65dd578",
+    "scripts/bin/quenching/git/base.py": "85ffbf2b45d22e1f48f68bd5bf9b97ccfac0a246cf7f2c74ad808582842607f2",
     "scripts/bin/quenching/git/conventions.py": "db61245dcf96d49f80e646eff9fe55034fba586f172b07c89c35ecf497c7d088",
     "scripts/bin/quenching/git/slugs.py": "f1dfd616a496462d75d2f94bd3478d6664bddf9e596c93297475f55b5a6a4fc2",
     "scripts/bin/quenching/git/stale.py": "d79fd949521182503209d90416a50f4bac6e1053a15485cbe76dd44edccdf3a2",
