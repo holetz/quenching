@@ -2,13 +2,20 @@
 from __future__ import annotations
 
 import json
+import contextlib
+import io
 import pathlib
 import subprocess
 import sys
 import tempfile
 import unittest
 
-import _paths  # noqa: F401 — must precede the `quenching` import
+try:
+    import _paths  # noqa: F401 — must precede the `quenching` import
+except ModuleNotFoundError:  # package-qualified unittest invocation from the repository root
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    import _paths  # noqa: F401
+from quenching.toolchain.cli import main
 from quenching.toolchain.doctor import doctor
 
 
@@ -132,6 +139,27 @@ class FrozenToolchainResults(unittest.TestCase):
                          set(payload["mechanical"]["codes"]))
         self.assertEqual({"tc-runtime-drift", "tc-tool-unpinned", "tc-build-backend-missing",
                           "tc-key-unarbitered"}, set(payload["structural"]["codes"]))
+
+
+class ToolchainCli(unittest.TestCase):
+    def test_cli_routes_no_command_and_status(self):
+        with tempfile.TemporaryDirectory() as raw:
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                self.assertEqual(2, main(["--root", raw]))
+
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                self.assertEqual(0, main(["--root", raw, "status", "--json"]))
+            payload = json.loads(output.getvalue())
+            self.assertEqual("not-applicable", payload["applicability"]["state"])
+            self.assertTrue(payload["ok"])
+
+    def test_cli_version_is_stable(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            self.assertEqual(0, main(["--version"]))
+        self.assertRegex(output.getvalue().strip(), r"^cq toolchain \d+\.\d+\.\d+$")
 
 
 if __name__ == "__main__":

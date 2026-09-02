@@ -327,7 +327,7 @@
   ],
   "sha256": {
     ".codex-plugin/plugin.json": "0a696ee33b34996d136d4aa2d32fcc35bd34af35efb475b0cabefbafcaf87f34",
-    ".generated-from.json": "6dc8315fdd9c573d6f7d9ce8f7d42bdd616947a5f167949da0b4be6f9068fdaf",
+    ".generated-from.json": "4b172f55627339f3725c260e6b968950bce914828e5fa9625b0fab05ecd5ba05",
     "README.md": "0c34c6d490bc7c5d01eb221926612a01acaac363bcdf6c40e50c128359e3f1ae",
     "VERSION": "e33e70efdb9c35eb184b87ee7abc05ac16a925c9c36e84408999dea33a741fa8",
     "checks/catalog-publication-check.py": "9f4c9b75b524e31bd9420036a5384801ef707ef5708956abba1d6eb62c398f9e",
@@ -519,7 +519,7 @@
     "scripts/bin/quenching/proof/model.py": "b25b05ae70bd5c682ef7778e2f62c0a9098cf8eecef9e2ae2eef966e3f8e77a9",
     "scripts/bin/quenching/proof/ratchet.py": "8fc20da7f1c77b472d50604161eb3f07e7a6450fe9034518691cc81afd812361",
     "scripts/bin/quenching/proof/readme.py": "86ae85542d6a4fe3d2585cb1bdf9706e3442ce567c69a1af67131502bae76d59",
-    "scripts/bin/quenching/security/__init__.py": "c5b70e1e7b36dfc6bca42de44f625381c03cd694b05f364760509ae52b98115f",
+    "scripts/bin/quenching/security/__init__.py": "cc8c71e46b02c23c53c98f1e3b5066d03ac58c7c4f29d6f6840eb9d6e5028077",
     "scripts/bin/quenching/security/model.py": "5c2e839a1b80384c97d115a24cab934530c3e08d5ca01a7d86a305a84eb6ea6e",
     "scripts/bin/quenching/security/probe.py": "e6b990833092314a971ab701e1a31fb812317451242e1abf7ba00d7c845fe21a",
     "scripts/bin/quenching/session/commands/cli.py": "d6d813a6c2f25589346c8f1ea1bd0b618cb5aeb8df9e4ef80b1e6dd4b9ec7f00",
