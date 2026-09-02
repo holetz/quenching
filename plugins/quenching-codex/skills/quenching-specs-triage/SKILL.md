@@ -23,11 +23,14 @@ ordering and not a judgment. Triage is what turns it into one.
 that anything is finished — those are `quenching-specs-conclude` and `quenching-specs-develop`'s discoveries stage.
 A sweep that could also delete is a sweep nobody can safely re-run.
 
-The layout, the derived stages, the front's on-write check and the `cq specs` surface live in
+The layout, the derived stages and the front's on-write check live in
 [specs-develop/spec-driven.md](../../references/specs-develop/spec-driven.md)
-§The provider-owned document §Derived stages §The `cq specs` tool surface §The report mold, which owns the
-shape of both the step 2 table and the step 6 report; how the tool is resolved and its path
-written in
+§The provider-owned document §Derived stages. The `cq specs` surface lives in
+[specs-surface.md](../../references/specs-develop/specs-surface.md)
+§The `cq specs` tool surface; the report mold, which owns the shape of both the step 2 table and
+the step 6 report, lives in
+[report-mold.md](../../references/specs-develop/report-mold.md)
+§The report mold. How the tool is resolved and its path written lives in
 [align/tool-resolution.md](../../references/align/tool-resolution.md)
 §Resolving the tool §Write the resolved path literally on every invocation. Both cited, never
 restated.
@@ -150,7 +153,7 @@ bundle — the log this used to append to is retired.
 ### 6. Report
 
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/spec-driven.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/report-mold.md \
   --sections "§The report mold" --rules-only
 ```
 

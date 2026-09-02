@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 
+from quenching.common.io import write_text
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, display_locator, front_fields, read_one
 from quenching.specs.parse import PHASES, derive_info, spec_handle
@@ -227,8 +228,7 @@ def cmd_export(args, root: str, out: Emitter) -> int:
         name = spec_handle(info["id"], str(info["frontmatter"].get("title") or ""))
         dest = os.path.join(args.out, info["folder"], f"{name}.md")
         os.makedirs(os.path.dirname(dest), exist_ok=True)
-        with open(dest, "w", encoding="utf-8") as f:
-            f.write(info["text"])
+        write_text(dest, info["text"])
         written.append(dest)
     obj = {"ok": True, "out": args.out, "count": len(written), "files": written}
     human = f"exported {len(written)} spec(s) to {args.out}/\n" + \

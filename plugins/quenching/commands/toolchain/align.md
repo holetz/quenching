@@ -75,6 +75,9 @@ authorization.
 
 If authorization is rejected, write nothing and report the findings unchanged.
 
+**Done when:** one complete plan has been presented and either authorized or rejected without a
+target edit.
+
 ### 5. Apply only authorized mechanical and structural closures
 
 Under the authorization, edit only the affected manifest, lock, pin or tool-configuration block
@@ -102,6 +105,9 @@ row, applied changes, the closing verifier result and all residual findings with
 owner action. State explicitly when the front was not applicable, already conformant, refused
 configuration, or remains non-conformant. This command's report is the run record; do not append a
 log file to the target.
+
+**Done when:** the report distinguishes applicability, evidence, applied closures, verifier state
+and every residual owner action.
 
 ## Invariants
 

@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 from collections import Counter
 from pathlib import Path
 
+from quenching.common.front import build_parser as build_front_parser, resolve_root
 from quenching.common.output import emit, refuse
 from quenching.common.version import VERSION
 from quenching.ops.config import load_ops_config
@@ -16,20 +16,15 @@ from quenching.ops.registry import inventory_digest, render_registry_document, w
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="cq ops",
-        description="read and verify a repository's declared operations surface",
+    parser = build_front_parser(
+        "cq ops", "read and verify a repository's declared operations surface",
+        (("inventory", "walk the declared operations tree and print its read model"),
+         ("doctor", "run the static operations checks"),
+         ("status", "summarize packages, lifecycle, router, and findings")),
     )
-    parser.add_argument("--root", help="repository root (default: current directory)")
     parser.add_argument("--version", action="store_true", help="print the ops pillar version")
-    sub = parser.add_subparsers(dest="cmd")
-    for name, help_text in (
-        ("inventory", "walk the declared operations tree and print its read model"),
-        ("doctor", "run the static operations checks"),
-        ("status", "summarize packages, lifecycle, router, and findings"),
-    ):
-        child = sub.add_parser(name, help=help_text)
-        child.add_argument("--json", action="store_true", help="print machine-readable output")
+    sub = next(action for action in parser._actions
+               if isinstance(action, argparse._SubParsersAction))
     registry = sub.add_parser("registry", help="write or check the generated operations registry")
     mode = registry.add_mutually_exclusive_group()
     mode.add_argument("--write", action="store_true", help="update the generated registry")
@@ -39,7 +34,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _root(value: str | None) -> str:
-    return os.path.abspath(value or os.getcwd())
+    return resolve_root(value)
 
 
 def _human_inventory(payload: dict) -> str:

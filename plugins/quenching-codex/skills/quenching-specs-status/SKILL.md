@@ -11,6 +11,11 @@ description: "Read the provider-owned specs front without writing. Use when the 
 The canonical documents live in the repository provider: GitHub Issues or Azure Boards. There is no
 local `/.specs/` root.
 
+The recognised configuration envelope and its defaults live in
+[specs-align/plugin-configuration.md](../../references/specs-align/plugin-configuration.md)
+§The envelope and recognised namespaces. This command reports that provider-owned state; it does
+not create a local specs store or infer missing configuration.
+
 ## Workflow
 
 1. Resolve `cq` through the repository's declared tool-resolution rule.

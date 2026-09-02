@@ -9,13 +9,48 @@ tags:
 timestamp: 2026-08-28
 audience: human
 authority: current
-source: plugins/quenching/README.md §The six fronts, the seventh pillar, and the one align per front; command bodies under plugins/quenching/commands/{knowledge,design,components,ops,proof}/ and align.md
+source: plugins/quenching/README.md §The seven fronts, the non-converging axes, and the one align per front; command bodies under plugins/quenching/commands/{knowledge,design,components,ops,proof,toolchain,delivery}/ and align.md
 maintainer: Israel Holetz
 ---
 
 # Adopt quenching in a repository
 
 *Audience: implementer · One OK per front*
+
+## Install the plugin
+
+For adoption, install the published plugin from its marketplace inside Claude Code:
+
+```text
+/plugin marketplace add holetz/claude-quenching
+/plugin install quenching@quenching
+```
+
+Run `/reload-plugins` if the session was already open. The direct checkout form is reserved for
+plugin development and testing:
+
+```bash
+claude --plugin-dir ./plugins/quenching
+```
+
+Do not use `--plugin-dir` as the normal installation or upgrade path; the marketplace installation
+lets Claude Code manage the published copy.
+
+## Uninstall or reverse
+
+To stop using the plugin but keep the marketplace configured, run:
+
+```text
+/plugin uninstall quenching@quenching
+/reload-plugins
+```
+
+Uninstalling the plugin does not remove the target repository's `/docs/`, `.claude/` or
+`.claude/quenching.json`; those files belong to the repository. If you need to undo an alignment,
+review the target's commits and use its normal Git revert workflow. Removing the plugin is not a
+rollback of data it already wrote. For an upgrade regression, disable or uninstall the plugin,
+then reinstall the previously published version (or use a known checkout with `--plugin-dir` for
+development-only recovery) and reload the session.
 
 You have a real repository — a README that grew sideways, notes in three places, a `.claude/`
 folder of one-off commands — and you want it on the canonical shape without losing anything it
@@ -43,7 +78,9 @@ flowchart LR
 | Just the design source | `/quenching:design:align` | `/.design/` source, projections, and genres |
 | Just the operations surface | `/quenching:ops:align` | the declared root, router, registry and bounded structural drift |
 | Just the verification surface | `/quenching:proof:align` | the declared test gate, fixtures, layers and bounded structural drift |
-| The whole repository | `/quenching:align` | all five local aligned fronts, dependency order, one nested OK |
+| Just the toolchain surface | `/quenching:toolchain:align` | manifests, locks, pins and tool configuration |
+| Just the delivery surface | `/quenching:delivery:align` | workflows, reachability, provenance and release shape |
+| The whole repository | `/quenching:align` | all seven local aligned fronts, dependency order, one nested OK |
 
 !!! tip "Recommendation"
     Default to `/quenching:align` on adoption. The fronts feed each other — a spec's
@@ -60,7 +97,7 @@ flowchart LR
    diff you end up reviewing.
 2. Type `/quenching:align`. The probe runs each applicable front's own verifier first
    (`cq knowledge validate`, `cq design doctor`, `cq components doctor`/`lint`, `cq ops doctor`,
-   `cq proof doctor`); a clean front stops without ceremony. `ops` and `proof` are applicable
+   `cq proof doctor`, `cq toolchain doctor`, `cq delivery doctor`); a clean front stops without ceremony. `ops` and `proof` are applicable
    when `.claude/quenching.json` declares `ops.opsRoot` or `proof.proofRoot`, or when their fixed conventional-root
    probes find an entry point or test module. Otherwise the report says *not applicable* and
    offers the declaration path without inventing a plan.

@@ -6,7 +6,7 @@ description: >-
   through the open review threads". Not for: opening a PR → /quenching:git:pr:create; merging it →
   /quenching:git:merge.
 argument-hint: [pr-number-or-id]
-allowed-tools: Bash(gh pr view:*), Bash(gh repo view:*), Bash(gh api graphql:*), Bash(az repos pr:*), Bash(az devops invoke:*), Bash(az rest:*), Bash(git branch:*), Bash(git remote get-url:*), Bash(python3:*), Read, Edit, AskUserQuestion, Skill
+allowed-tools: Bash(gh pr view:*), Bash(gh repo view:*), Bash(gh api graphql:*), Bash(az repos pr:*), Bash(az devops invoke:*), Bash(az rest:*), Bash(git branch:*), Bash(git remote get-url:*), Bash(git add:*), Bash(python3:*), Read, Edit, AskUserQuestion, Skill
 ---
 
 # /quenching:git:pr:review — work through a PR's unresolved threads

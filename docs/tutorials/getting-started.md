@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-08-28
 audience: human
 authority: current
-source: plugins/quenching/README.md §Install, §The six fronts, the seventh pillar, and the one align per front; command bodies under plugins/quenching/commands/
+source: plugins/quenching/README.md §The seven fronts, the non-converging axes, and the one align per front; command bodies under plugins/quenching/commands/
 maintainer: Israel Holetz
 ---
 
@@ -23,12 +23,20 @@ run your first alignment knowing exactly what it was about to change, because it
 
 !!! note "Prerequisites"
     - **Claude Code** installed and working in a terminal.
-    - **Python 3** on the PATH — the `cq` CLI is a self-contained stdlib tool, no `pip install`.
+    - **Python 3.11 or newer** on the PATH — the `cq` CLI is a self-contained stdlib tool, no `pip install`.
     - A **git repository** to point the plugin at (any repo; a fresh one works fine).
 
-## 1. Load the plugin
+## 1. Install the plugin
 
-Clone the marketplace repository and start Claude Code with the plugin directory:
+For the published adoption path, start Claude Code in the target repository and run:
+
+```text
+/plugin marketplace add holetz/claude-quenching
+/plugin install quenching@quenching
+```
+
+Run `/reload-plugins` when Claude Code was already open. For local plugin development and testing,
+clone the marketplace repository and load the checkout directly instead:
 
 ```bash
 git clone https://github.com/holetz/claude-quenching
@@ -36,8 +44,26 @@ cd your-repository
 claude --plugin-dir ../claude-quenching/plugins/quenching
 ```
 
+The `--plugin-dir` form is a development path; marketplace installation is the normal adoption
+and upgrade path.
+
 Claude Code appends the plugin's `bin/` to the session PATH, which is what lets every command —
 and you — call `cq` bare.
+
+### Stop or undo the installation
+
+To remove the plugin without removing the marketplace:
+
+```text
+/plugin uninstall quenching@quenching
+/reload-plugins
+```
+
+This leaves the target repository's `/docs/`, `.claude/` and `.claude/quenching.json` intact.
+Plugin removal is not a rollback of repository changes: review the target's Git history and
+revert the commits that you want to undo. For a bad plugin upgrade, reinstall the previously
+published version or use a known checkout with `--plugin-dir` only for development recovery, then
+reload the session.
 
 ## 2. Verify the tool answers
 
@@ -65,10 +91,13 @@ The status commands are read-only by construction — their tool grants exclude 
 /quenching:specs:status
 /quenching:ops:status
 /quenching:proof:status
+/quenching:toolchain:status
+/quenching:delivery:status
+/quenching:security:status
 ```
 
-These reports cover the available knowledge, design, provider-owned specs, operations and proof
-surfaces. Each finding is named with the command that would fix it — that is the plugin's habit
+These reports cover the seven aligned fronts, provider-owned specs and the read-only security
+pillar. Each finding is named with the command that would fix it — that is the plugin's habit
 everywhere: **report with the owner, never repair silently**.
 
 ## 4. Run your first alignment
@@ -77,7 +106,7 @@ everywhere: **report with the owner, never repair silently**.
 /quenching:align
 ```
 
-This conducts the five local fronts in dependency order. What happens next depends on what the probe
+This conducts the seven local fronts in dependency order. What happens next depends on what the probe
 finds:
 
 - **A clean front stops there.** The probe found nothing, so there is no inventory, no plan and
@@ -102,7 +131,7 @@ cq knowledge validate docs
 
 ## Recap
 
-You installed the plugin (`--plugin-dir`), proved the rail answers (`cq --version`), read the available
+You installed the plugin from the marketplace, proved the rail answers (`cq --version`), read the available
 read-only status reports, and ran one conducted alignment that asked before writing. That
 probe → plan → OK → apply → verify loop is the plugin's one interface — every front repeats it.
 

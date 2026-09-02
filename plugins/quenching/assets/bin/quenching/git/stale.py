@@ -148,6 +148,7 @@ def _directory_size(path: str) -> int | None:
 def cmd_stale(args) -> int:
     cwd = os.getcwd()
     base, _is_default = resolve_base(cwd)
+    remote = getattr(args, "remote", None) or "origin"
     current = _git(cwd, "branch", "--show-current").strip()
     # `base` is permanent by convention, not "safe to delete just because its tip is an
     # ancestor of base". `current` is excluded because you cannot delete the branch you are
@@ -161,7 +162,7 @@ def cmd_stale(args) -> int:
     for b in _gone_branches(cwd, protected):
         reasons.setdefault(b, set()).add("gone")
     branches = [{"branch": b, "reasons": sorted(r)} for b, r in sorted(reasons.items())]
-    remote_branches = _merged_remote_branches(cwd, base, protected)
+    remote_branches = _merged_remote_branches(cwd, base, protected, remote)
     worktrees = _orphan_worktrees(cwd)
     unregistered_worktrees = _unregistered_worktrees(cwd)
 
@@ -183,7 +184,8 @@ def cmd_stale(args) -> int:
         size = f"{w['size']} bytes" if w["size"] is not None else "size unavailable"
         lines.append(f"  {w['path']} ({branch}, {size})")
 
-    emit(args.json, {"ok": True, "base": base, "staleBranches": branches,
+    emit(args.json, {"ok": True, "base": base, "remote": remote,
+                     "staleBranches": branches,
                      "remoteBranches": remote_branches, "orphanWorktrees": worktrees,
                      UNREGISTERED_WORKTREES_KEY: unregistered_worktrees},
          "\n".join(lines))

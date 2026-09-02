@@ -99,7 +99,7 @@ committed to a full sweep, or entered §8 directly.
 those is a pair awaiting collapse** — pair each with the wrapper whose body invokes it (the
 `quenching:<name>` or bare `<name>` reference), and record a skill with no wrapper, or a
 wrapper naming no skill, as an item needing a human decision rather than a mechanical merge.
-Set aside every legacy `openspec-*` skill and `opsx/` wrapper (Doctrine §the legacy `openspec-*`
+Set aside every legacy `openspec-*` skill and `opsx/` wrapper (Doctrine's legacy `openspec-*`
 surface); list them as *out of scope, owned by no command — a human's call* and drop them from the
 working set, including from the tool's findings.
 

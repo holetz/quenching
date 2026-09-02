@@ -11,7 +11,7 @@ from quenching.specs.release import RELEASE_ARTIFACTS, SEMVER_RE, bump_release_a
 
 
 def cmd_release(args, root: str, out: Emitter) -> int:
-    """Move the plugin's seven version-carrying artifacts to ONE new version, commit them,
+    """Move the plugin's four version-carrying artifacts to ONE new version, commit them,
     and tag that commit — the MECHANICAL half of a release. Judging what the number should
     be, whether a lone PR on the primary branch is a release or a habit, and the
     publication itself all belong to the command that calls this; see

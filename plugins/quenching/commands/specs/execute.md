@@ -11,14 +11,15 @@ model: sonnet
 auto-select when exactly one spec is under way; vague or ambiguous → you MUST prompt.
 
 Builds the `## Tasks` of ONE spec: writing each task, verifying it under the spec's declared
-policy, reviewing its diff, and committing it alone with the box already ticked inside that commit.
+policy, reviewing its diff, committing it alone, and recording the provider task after that commit.
 
 **This command stops at the last commit.** Reviewing the whole branch, writing the `/docs/` the work
 revealed, merging, and archiving belong to `/quenching:specs:conclude`.
 
 **Why `Bash` is unrestricted here.** Execution invokes the spec's target-declared verification,
 provider-backed `cq` operations and Git commands; their prefixes and arguments are resolved from
-the live spec and cannot be safely enumerated in metadata.
+the live spec and cannot be safely enumerated in metadata. The commit itself is delegated to
+`/quenching:git:commit`, whose command owns subject resolution and commits the existing index.
 
 ## Resolving the tool
 
@@ -152,9 +153,9 @@ The `cq specs status --json` payload is **already in hand** from step 2 — do n
 From it: the derived stage, the section states, task progress, the blocked tasks, the recorded
 subjects, **`verification`** — the spec's declared policy, which decides when the suite runs so this
 command never has to — and **`records.priority.complexity`**, the gear. The gear changes exactly one
-thing in this loop, item 5i's default, and **nothing about delegation**: whether a task goes to an
+thing in this loop, item 5h's default, and **nothing about delegation**: whether a task goes to an
 executor sub-agent stays the two conditions of
-[execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §Delegating an
+[execution-delegation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-delegation.md) §Delegating an
 executor, at every level.
 
 - **`approved` unset** → ask for it inline, in one question showing what the spec commits to, and
@@ -198,7 +199,7 @@ The path comes from what `status` resolved; never assume filenames. `## Impact` 
 Then, if the repo carries an OKF bundle (`/docs/index.md` with `okf_version`), read the
 `/docs/standards/**.md` files the spec **declares** under `## Impact`, plus the ones the current
 task's own text names — **never the folder** `/docs/standards/<subject>/`, the wrong and the
-expensive unit ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+expensive unit ([execution-tooling.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-tooling.md)
 §Tooling asides has the measurement). Those files are **binding contracts** for
 HOW the work is built, complementing the spec's own sections (WHAT to build). A task that
 contradicts one is surfaced (step 5), never silently resolved. No bundle → skip silently.
@@ -211,7 +212,7 @@ spec's own author wrote, never an economy the executor takes on its own.
 
 **No mechanical net for a contract nobody declared — deliberately.** Deciding a standard governs a
 task is reading, not parsing, so nothing scans the folder to net one
-([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+([execution-tooling.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-tooling.md)
 §Tooling asides has the failure modes this avoids). What covers the gap is one line at the
 moment it shows up — `cq specs discover` records it while building, and `/quenching:specs:develop`
 repairs `## Impact`.
@@ -231,12 +232,12 @@ a. **Show what is being worked on** — the ID, its declared `files:` and its `v
 
 b. **Write the code**, minimal and scoped to the declared files. A task that declares `files:` and
    writes nothing under `/docs/` **may** go to an executor sub-agent under
-   [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+   [execution-delegation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-delegation.md)
    §Delegating an executor — which also explains why this is **not** `context: fork` and leaves
    that rule untouched; when it is, load the rules that bound it before dispatching:
 
    ```bash
-   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
+   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-delegation.md \
      --sections "§Delegating an executor"
    ```
 
@@ -244,7 +245,7 @@ c. **Write only the `/docs/` this task names.** When this task writes `/docs/`, 
    draws the line between declared and emergent, and the boundary it crosses:
 
    ```bash
-   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
+   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-delegation.md \
      --sections "§Declared versus emergent"
    cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
      --sections "§Boundary"
@@ -277,48 +278,55 @@ d. **On the first pass through 5d–5e, load the rules the chain runs under — 
    dead code — and fix what it finds, on the written diff, *before* the chain below, so what the
    chain commits is already the reviewed version.
 
-e. **Then run verify, tick and commit as ONE chained call.** Decide the subject first — under §The
-   declared-directive layer's table it is `config.commitSubject` where the target declares one, else
-   the target's own `docs/standards/git/**`, else
-   [commit.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md) §Commit messages — and put it
-   in both places it appears:
+e. **Then verify, stage, delegate the commit and confirm the provider task as ONE chained operation.**
+   The subject belongs to `/quenching:git:commit`, under the declared-directive layer's table and
+   its [commit.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md) contract
+   §Commit messages §The subject is the anchor. Execute stages
+   only the task's declared files, passes the existing index and resolved task context to that
+   command, then sends its reported subject and sha to `cq specs task --check`:
 
    ```bash
    <the task's verify:> \
-     && cq specs task --check <id> --spec "<id>" --subject "plan/<id>-<handle>: <id> <title>" \
-     && git add <the task's declared files> <the spec file> \
-     && git commit -m "plan/<id>-<handle>: <id> <title>" \
-     && git log -1 --format=%s
+     && git add <the task's declared files> \
+     && Skill("quenching:git:commit", "<id>") \
+     && cq specs task --check <id> --spec "<id>" --subject "<subject reported by git:commit>" --commit "<sha reported by git:commit>"
    ```
 
-   **The `&&` is the ordering**, not a shortcut around it. Every guarantee the four separate acts
-   carried is still enforced, and now mechanically rather than by the body being obeyed in sequence:
-   verify precedes the tick, the tick precedes the commit so the box travels *inside* the commit
-   that implements it, and any link failing short-circuits every link after it. Run `verify:` only
+   **The ordering remains explicit:** verify precedes staging, staging precedes the delegated
+   commit, and the provider tick follows the commit. Any failure stops the operation. A commit that
+   already succeeded is preserved when the external provider write fails; report its sha and retry
+   `cq specs task --check` without rebuilding or amending it. Run `verify:` only
    when the spec's declared policy says this task is a gate ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
-   §The verification policy); otherwise the chain starts at `cq specs task`. A task with
+   §The verification policy); otherwise the chain starts at `git add`. A task with
    **no `files:` declared** — the line absent, or `files: []` — has no diff to commit, so its
-   chain *ends* at the tick, run without `--subject` and with neither `git add` nor `git commit`;
-   a subject recorded there would point at a commit that was never made. A `branch:` record
-   also gets the branch marked, per the rule loaded in 5d.
+   chain *ends* at the tick, run without `--subject` or `--commit`, and with neither `git add` nor
+   delegate `git:commit`; a subject recorded there would point at a commit that was never made. A
+   `branch:` record also gets the branch marked, per the rule loaded in 5d.
 
 f. **Read the chain's tail, and act on which link broke** — per §The commit, already loaded in
-   5d: `verify:` failed → nothing ticked, nothing committed; fix and retry, or block it when
-   attempts stop converging. The commit failed → undo the tick, report. The recorded subject
-   drifted → report it as a finding and write nothing.
+   5d: `verify:`/staging failed → nothing ticked, nothing committed; fix and retry, or block it
+   when attempts stop converging. The commit failed → report with the task still unchecked. The
+   provider tick failed after a successful commit → preserve the commit and retry only the remote
+   write. The recorded subject or sha drifted → report it as a finding and write nothing further.
 
-g. **Announce the declared hook for this event, and move on.** Once the task has committed,
-   `after_specs_execute_task` has fired: print what the config declared for it — the event's
-   name, the declared command, and the prompt whoever executes the hook must follow — then move
-   on. Announcing is not executing: never invoke the declared command, never wait for it, never
-   integrate its result. The step-2 read already filtered `enabled: false` hooks out, so this
-   announces exactly what the read returned, whether or not the hook was written for this repo —
-   the body announces name, command and prompt, and moves on:
+g. **Run and report the declared hook for this event, and move on.** Once the provider task has
+   committed and been confirmed, `after_specs_execute_task` has fired. For every hook the config
+   read returned, report the event, command, prompt, `optional` flag and any declared `condition`,
+   then invoke the declared command as a `Skill` with the task and commit context:
 
    ```text
-   after_specs_execute_task — declared hook: /my:security-review
+   after_specs_execute_task — hook: /my:security-review — optional: true
+     condition: none declared
      prompt: none declared
+   Skill("<declared hook command>", "<declared prompt plus task and commit context>")
    ```
+
+   `enabled: false` was filtered during the config read and is never announced or invoked;
+   absence of `enabled` means enabled. The executor never evaluates `condition`: it reports the
+   declaration and passes it as context to the hook. An optional hook failure is reported and the
+   run continues; a non-optional hook failure is reported and pauses the run. Neither failure
+   undoes the provider tick or rebuilds the already successful commit. A hook absent from config
+   is silent.
 
 h. **On a section boundary, keep the task commits and OFFER to stop — and keep going if nobody says otherwise.**
    The branch is at a clean, independently anchored boundary; another section may still be ahead.
@@ -333,7 +341,7 @@ h. **On a section boundary, keep the task commits and OFFER to stop — and keep
    without offering, `medium` offers and continues if nobody says otherwise, `high` and `xhigh`
    offer and **wait** ([spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
    §The scale). It never ends the run itself and writes no state — step 6's trail is what makes the
-   boundary resumable ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+   boundary resumable ([execution-cadence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-cadence.md)
    §The section boundary).
 
 **Pause if:** a task is unclear; implementation reveals a design problem (→ `/quenching:specs:develop`); a
@@ -367,7 +375,7 @@ targeted again: `--scope current` always resolves to whichever section still has
 closing costs nothing extra and adds no event of its own.
 
 **Not after every committed task, and not on a judgment call either** — both were tried and both
-failed; [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The
+failed; [execution-cadence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-cadence.md) §The
 Handoff cadence has the measurement. Each trigger above is a moment this body *just finished doing
 something*, never one where it appraises something.
 
@@ -383,7 +391,7 @@ it stands after the run's last commit.
 ### 7. Report, and hand off
 
 ```bash
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/report-mold.md \
   --sections "§The report mold" --rules-only
 ```
 
@@ -436,9 +444,10 @@ front of you before the loop starts:
   disable, skip, `xfail` or delete a test. Change the code, or report the task blocked.
 - **Never amend or rewrite an earlier task's commit**, and never force-push. A rewritten history
   makes every earlier record a lie at once.
-- **Never tick a checkbox for work that was not verified.** The box is ticked before the commit but
-  only ever *after* the task verified and self-reviewed — the commit boundary moved, the proof did
-  not. If nothing could verify it, say so in the report rather than implying the task was proved.
+- **Never tick a checkbox for work that was not verified.** The provider task is ticked only after
+  the task was verified, self-reviewed and committed; its remote record cannot travel inside the
+  local commit. If nothing could verify it, say so in the report rather than implying the task was
+  proved.
 
 ## Invariants to never violate
 
@@ -451,17 +460,19 @@ front of you before the loop starts:
   choose the next task by reading `## Tasks`, and never hand-edit a `- [ ]` / `- [x]` character.
 - Verify per the spec's **declared** policy. Never decide mid-build when to test, and never ask the
   human to decide it then.
-- Tick each box **after** the task verified and self-reviewed, and **before** its commit — with the
-  subject that commit will carry, so code and box land together. Undo the tick if the commit fails.
-- Never write an ordinary record after the commit it describes. Task records are anchored by the
-  commit that carries the task; no later history rewrite or anchor repair is part of a section close.
+- Tick each provider task **after** its commit succeeds — with the subject and sha that commit
+  actually carried. A failed provider write leaves the commit preserved and the task unchecked for
+  a retry; never rebuild or amend that commit.
+- Never write an ordinary record after the commit it describes. The provider task is the explicit
+  post-commit exception and carries that commit's subject and sha; no later history rewrite or
+  anchor repair is part of a section close.
 - Never refuse over a missing `approved`; ask inline and stamp it with `cq specs record`, never by
   editing the frontmatter.
 - Stamp `branch:` once the work ref is resolved, taken or declined (`work` then equals `base`) — never over an existing record, through `cq specs record`, never the frontmatter.
 - Write **only** the `/docs/` a task explicitly names. Emergent findings are one `cq specs discover`
   line — never an unrequested standard, and never a loose code comment.
 - Delegate an executor only under
-  [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+  [execution-delegation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-delegation.md)
   §Delegating an executor (declares `files:`, touches no `/docs/`, pinned to the session model —
   **never `haiku`**), and run two tasks in parallel only when `cq specs parallel` reports the `[P]`
   group eligible.

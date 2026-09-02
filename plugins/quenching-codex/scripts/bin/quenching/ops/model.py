@@ -11,6 +11,8 @@ import os
 from dataclasses import dataclass, field
 from typing import Any
 
+from quenching.common.front import Finding
+
 
 def _relative(path: str) -> str:
     """Use the payload's stable separator on every platform."""
@@ -53,7 +55,6 @@ class EntryPoint:
             "language": self.language,
         }
 
-
 @dataclass(frozen=True)
 class Router:
     """The one configured canonical router and the operations it exposes."""
@@ -95,33 +96,3 @@ class Inventory:
             "router": self.router.as_dict(),
             "entryPoints": [entry.as_dict() for entry in self.entry_points],
         }
-
-
-@dataclass(frozen=True)
-class Finding:
-    """One stable verifier finding, optionally attached to an entry-point path."""
-
-    code: str
-    severity: str
-    message: str
-    path: str | None = None
-    entry_point: str | None = None
-
-    def __post_init__(self) -> None:
-        if self.path is not None:
-            object.__setattr__(self, "path", _require_relative(self.path, "finding path"))
-        if self.entry_point is not None:
-            object.__setattr__(self, "entry_point",
-                               _require_relative(self.entry_point, "finding entry-point"))
-
-    def as_dict(self) -> dict[str, Any]:
-        out: dict[str, Any] = {
-            "code": self.code,
-            "severity": self.severity,
-            "message": self.message,
-        }
-        if self.path is not None:
-            out["path"] = self.path
-        if self.entry_point is not None:
-            out["entryPoint"] = self.entry_point
-        return out

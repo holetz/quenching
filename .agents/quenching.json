@@ -1,0 +1,20 @@
+{
+  "backend": "github",
+  "shared": {
+    "hooks": {
+      "after_specs_execute_task": [
+        {"command": "/my:security-review", "optional": true}
+      ]
+    }
+  },
+  "proof": {
+    "proofRoot": "plugins/quenching/tests",
+    "layers": {},
+    "measuredRoots": ["plugins/quenching/assets/bin/quenching"],
+    "proofExclusions": ["scripts"],
+    "ratchetPath": ".coverage-floor.json"
+  },
+  "delivery": {
+    "provider": "github"
+  }
+}

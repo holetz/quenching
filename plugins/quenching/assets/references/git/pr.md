@@ -11,7 +11,7 @@ Every report carries these fields when the provider supplies them:
 | Field | Meaning |
 | --- | --- |
 | `provider` | `github` or `azure-boards` |
-| `pullRequest` | number/id, title, URL and state |
+| `pullRequest` | normalized `id`, `webUrl`, `apiUrl`, title and state |
 | `source` / `base` | source branch and target branch |
 | `checks` | check name, status, conclusion and URL when available |
 | `approvals` | review decision, reviewer states and requested reviewers |
@@ -24,6 +24,19 @@ Every report carries these fields when the provider supplies them:
 credentials, permission-limited fields, missing PRs and unsupported provider responses remain
 separate in the report. A report with an unknown field never claims that the PR is approved,
 mergeable or clear.
+
+## URL normalization
+
+The provider adapter returns exactly three identity fields: `id`, `webUrl` and `apiUrl`.
+`webUrl` is the **Link para revisão** shown to a human; `apiUrl` is the **API URL** shown as a
+technical endpoint. Never use one label for the other, and never print a URL containing `/_apis/`
+as the Link para revisão.
+
+Azure's response `url` is the API URL. When `repository.webUrl` and `pullRequestId` are present,
+the adapter constructs the browser link as `repository.webUrl/pullrequest/pullRequestId`; it does
+not promote the `url` field into a human link. GitHub accepts its browser `url`/`html_url` and
+REST `url` separately, deriving the API endpoint from the repository and PR number only when the
+provider did not return one.
 
 ## Selection and provider route
 
@@ -62,23 +75,26 @@ state and never reduce it to a boolean green value.
 Use `az repos pr show --id <id> --detect true --output json` for an explicit id and
 `az repos pr list --source-branch <branch> --status active --detect true --output json` for the
 current branch. Preserve the returned pull request id, URL, source/target refs, status, reviewers,
-merge status and policy/status rows. Collect threads through the read-only
+merge status and policy/status rows. Normalize the identity as `id`, `webUrl` and `apiUrl`: use
+`repository.webUrl/pullrequest/pullRequestId` for the Link para revisão and keep the response's
+`url` as the API URL. Collect threads through the read-only
 `az devops invoke --area git --resource pullRequestThreads` route using the project, repository and
 pull request ids returned by the PR object. Count non-terminal thread statuses and report any
 pagination or provider truncation.
 
 Azure fields that have no GitHub equivalent stay in the provider-specific detail; only the common
 snapshot fields are normalized. A missing reviewer approval is not an approval, and an absent
-merge status is `unknown`.
+merge status is `unknown`. The report keeps the normalized **Link para revisão** and **API URL**
+labels distinct from provider-specific detail.
 
 ## Recommendation rules
 
 Recommendations are text only:
 
-- unresolved threads → `quenching-git-pr-review`;
+- unresolved threads → `/quenching:git:pr:review`;
 - failed checks or conflicts → inspect/fix before merge;
 - pending checks or unknown mergeability → wait or refresh provider state;
-- known clean checks, approvals and mergeability → `quenching-git-merge` may be the next human step;
+- known clean checks, approvals and mergeability → `/quenching:git:merge` may be the next human step;
 - missing PR, authentication failure or incomplete evidence → no action until the cause is resolved.
 
 The command never pushes, edits, resolves threads, changes a spec record or merges a PR.

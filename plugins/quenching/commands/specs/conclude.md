@@ -13,10 +13,12 @@ Closes ONE spec out, short of the merge itself. Four things happen, in this orde
 separate decision: the whole branch is **reviewed**, the `/docs/` the work *revealed* is
 **written**, the spec is **archived and distilled** into the OKF bundle, and the pre-merge gate is
 **proven green** — then the run **stops**, naming `/quenching:git:pr:create` or
-`/quenching:git:merge` as the human's own next command.
+`/quenching:git:merge` as the human's own next command — except that `low` gear chains directly
+to `/quenching:git:pr:create` through `Skill` after the green gate.
 
 **Done work ends on the work branch; abandoned close-out writes land in the checkout holding the
-base.** The human chooses the next command for done work.
+base.** For done work, `low` gear invokes the PR handoff after the gate; every other gear names the
+next command for the human to choose.
 
 **Why `Bash` is unrestricted here.** Closing a spec combines provider reads/writes, Git inspection,
 archive operations and the repository's own verification command; those host-specific commands
@@ -24,11 +26,14 @@ cannot be safely reduced to one static prefix.
 
 The distillation doctrine — what crosses into `/docs/`, what stays, and how it is graded — lives in
 [specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)
-§What crosses, what stays. The layout, the gates and the
-`cq specs` surface live in
+§What crosses, what stays. The layout and the gates live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-§The provider-owned document §The gates and the stage-scoped explicit-none rule §The `cq specs` tool
-surface §The report mold, which owns the shape printed by step 7.
+§The provider-owned document §The gates and the stage-scoped explicit-none rule. The `cq specs`
+surface lives in
+[specs-surface.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/specs-surface.md)
+§The `cq specs` tool surface; the report shape lives in
+[report-mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/report-mold.md)
+§The report mold.
 ## Resolving the tool
 
 Resolve `cq specs` per
@@ -57,7 +62,8 @@ never on prose.
   moving to `/quenching:git:cleanup` — it is this run's own report of what became of the work it
   just closed, not a later sweep over branches nobody is thinking about right now.
 - **Everything `abandoned` writes lands in the checkout holding `<base>`, never this branch** — see
-  [specs-conclude/abandoned.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/abandoned.md).
+  [specs-conclude/abandoned.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/abandoned.md)
+  §Locating the checkout and writing into it §The branch-delete offer, informed rather than defensive.
   There is no merge to carry a branch commit home, so a record left on the branch would depend on a
   branch nobody adopted still existing.
 - **Declared rules were already written.** The `/docs/standards/` a task explicitly named went in
@@ -262,13 +268,23 @@ whole suite by reflex is the expensive way to learn nothing. When the repo's `##
 the scope, follow it; when it does not, run what it says and report the cost as a finding worth a
 selector.
 
-The gate passed — the branch is reviewed, distilled, archived, and proven. **Name the handoff and
-stop:**
+The gate passed — the branch is reviewed, distilled, archived, and proven. For a `done` outcome,
+read the complexity from the status payload already in hand. **`low` chains the provider handoff
+now:**
+
+```text
+Skill("quenching:git:pr:create", "<id>")
+```
+
+Invoke it with the spec id; `/quenching:git:pr:create` owns its own confirmation, push and PR
+record. Do not offer a second handoff or invoke `/quenching:git:merge` on the low path. **For
+`medium`, `high` and `xhigh`, name the handoff and stop:**
 
 Use the provider configuration already read in step 1 to name the next command: recommend
 `/quenching:git:pr:create` when the configured provider supports the PR route, otherwise
 `/quenching:git:merge`. The human picks, and neither is invoked from here. Name the branch and the
-base so the recommendation is copy-pasteable.
+base so the recommendation is copy-pasteable. For an `abandoned` outcome, skip this handoff and
+follow the branch-disposal path below.
 
 For `abandoned`, there is nothing to hand off toward — do not remove any worktree; frame and make
 the branch-delete offer per
@@ -281,7 +297,7 @@ nothing could be handed off — a red gate, or (abandoned) the branch's own fate
 ### 7. Report
 
 ```bash
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/report-mold.md \
   --sections "§The report mold" --rules-only
 ```
 

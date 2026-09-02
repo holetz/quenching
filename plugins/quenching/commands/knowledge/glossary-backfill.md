@@ -1,7 +1,7 @@
 ---
 description: Sweep the whole bundle to backfill glossary.md with missing terms. Triggers on "scan the docs for glossary terms", "backfill the glossary", "find terms we never added to the glossary". Not for: defining one term → /quenching:knowledge:define; authoring its concept doc → /quenching:knowledge:learn.
 argument-hint: [optional-home-scope]
-allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Write, Edit, Task
+allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Write, Edit, Task, AskUserQuestion
 ---
 
 # /quenching:knowledge:glossary-backfill — backfill the glossary from the whole bundle
@@ -86,7 +86,7 @@ glossary passes the conformance and link checks.
 - Never let a sub-agent write `glossary.md` directly — sub-agents only propose; the
   orchestrator is the sole writer.
 - Never skip the single consolidated confirmation or present per-slice lists — every slice
-  merges into ONE plan before any write. A cycle-authorized run (convergence.md §contract) replaces
+  merges into ONE plan before any write. A cycle-authorized run (convergence.md §The cycle-authorization contract) replaces
   the gate with narration but still merges everything into ONE presented plan.
 - Never clobber a filled entry (definition or link) on merge, and never leave the list
   unsorted.

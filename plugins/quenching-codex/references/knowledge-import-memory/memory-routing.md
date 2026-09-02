@@ -44,7 +44,7 @@ metadata:
 The Windows drive letter produces the **double** dash (`c:` + `\`) and its case is not stable. This
 is why the path is resolved in Python rather than from `pwd`, which under Windows Git Bash reports
 `/c/Users/…` and encodes to a directory that does not exist —
-`quenching-knowledge-import-memory` §1 owns the resolver.
+`quenching-knowledge-import-memory` §The memory file owns the resolver.
 
 ## Routing table — memory `type` → likely home (content overrides)
 
