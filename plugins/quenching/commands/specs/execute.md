@@ -18,7 +18,8 @@ revealed, merging, and archiving belong to `/quenching:specs:conclude`.
 
 **Why `Bash` is unrestricted here.** Execution invokes the spec's target-declared verification,
 provider-backed `cq` operations and Git commands; their prefixes and arguments are resolved from
-the live spec and cannot be safely enumerated in metadata.
+the live spec and cannot be safely enumerated in metadata. The commit itself is delegated to
+`/quenching:git:commit`, whose command owns subject resolution and commits the existing index.
 
 ## Resolving the tool
 
@@ -277,28 +278,25 @@ d. **On the first pass through 5d–5e, load the rules the chain runs under — 
    dead code — and fix what it finds, on the written diff, *before* the chain below, so what the
    chain commits is already the reviewed version.
 
-e. **Then run verify, tick and commit as ONE chained call.** Decide the subject first — under §The
-   declared-directive layer's table it is `config.commitSubject` where the target declares one, else
-   the target's own `docs/standards/git/**`, else
-   [commit.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md) §Commit messages — and put it
-   in both places it appears:
+e. **Then verify, tick and delegate the commit as ONE chained operation.** The subject belongs to
+   `/quenching:git:commit`, under the declared-directive layer's table and its
+   [commit.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md) contract. Execute passes the
+   resolved task context and the existing staged index to that command; it does not duplicate the
+   subject table or invoke Git's commit command itself:
 
    ```bash
    <the task's verify:> \
-     && cq specs task --check <id> --spec "<id>" --subject "plan/<id>-<handle>: <id> <title>" \
-     && git add <the task's declared files> <the spec file> \
-     && git commit -m "plan/<id>-<handle>: <id> <title>" \
-     && git log -1 --format=%s
+     && Skill("quenching:git:commit", "<id>")
    ```
 
-   **The `&&` is the ordering**, not a shortcut around it. Every guarantee the four separate acts
-   carried is still enforced, and now mechanically rather than by the body being obeyed in sequence:
-   verify precedes the tick, the tick precedes the commit so the box travels *inside* the commit
-   that implements it, and any link failing short-circuits every link after it. Run `verify:` only
+   **The ordering remains explicit:** verify precedes the delegated commit, and the commit command
+   stages only the declared paths, ticks the provider-owned task with its subject at the correct
+   point for the backend, commits the index and asserts the resulting subject. Any failure stops
+   the operation. Run `verify:` only
    when the spec's declared policy says this task is a gate ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
    §The verification policy); otherwise the chain starts at `cq specs task`. A task with
    **no `files:` declared** — the line absent, or `files: []` — has no diff to commit, so its
-   chain *ends* at the tick, run without `--subject` and with neither `git add` nor `git commit`;
+   chain *ends* at the tick, run without `--subject` and with neither `git add` nor delegate `git:commit`;
    a subject recorded there would point at a commit that was never made. A `branch:` record
    also gets the branch marked, per the rule loaded in 5d.
 

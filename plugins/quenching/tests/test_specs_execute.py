@@ -28,6 +28,15 @@ def git(cwd, *args):
 
 
 class TaskExecutionContractTests(unittest.TestCase):
+    def test_execute_delegates_commit_and_does_not_duplicate_subject_resolution(self):
+        command = COMMAND.read_text(encoding="utf-8")
+        commit = (ROOT / "plugins/quenching/commands/git/commit.md").read_text(encoding="utf-8")
+
+        self.assertIn('Skill("quenching:git:commit", "<id>")', command)
+        self.assertIn("single commit boundary", commit)
+        self.assertNotIn("git commit -m", command)
+        self.assertNotIn('--subject "plan/<id>-<handle>', command)
+
     def test_explicit_subject_commits_only_staged_files(self):
         with tempfile.TemporaryDirectory() as directory:
             git(directory, "init", "-q", "-b", "main")
