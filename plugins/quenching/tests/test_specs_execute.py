@@ -72,7 +72,7 @@ class TaskExecutionContractTests(unittest.TestCase):
         scale = SCALE.read_text(encoding="utf-8")
 
         self.assertIn('Skill("quenching:git:pr:create", "<id>")', conclude)
-        self.assertIn("`low` chains the provider handoff now", conclude)
+        self.assertIn("`low` chains the provider handoff", conclude)
         self.assertIn('Skill("quenching:git:pr:create", "<id>")', scale)
         self.assertIn("The other levels retain", scale)
 
