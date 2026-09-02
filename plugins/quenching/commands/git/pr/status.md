@@ -56,6 +56,11 @@ their provider section. Represent unavailable evidence as `unknown` plus its cau
 approval, green checks, clear threads or mergeability. **Done when:** every common field is present
 with a fact or an explained unknown.
 
+Within `pullRequest`, normalize the identity as `id`, `webUrl` and `apiUrl`. Render `webUrl` with
+the label **Link para revisão** and `apiUrl` with **API URL**. The first is the browser address a
+human opens; the second is the technical endpoint. A value containing `/_apis/` is never rendered
+as Link para revisão; if no safe browser link can be derived, report it as `unknown` with its cause.
+
 ### 4. Choose the textual next step
 
 Apply the reference's recommendation rules to the normalized facts. Point to
@@ -73,5 +78,7 @@ read-only snapshot is returned and its evidence boundaries are explicit.
 ## Invariants
 
 - Use only the provider selected by `cq specs config --json` and the matching `origin` host.
+- Keep the normalized **Link para revisão** and **API URL** labels distinct; never expose an
+  Azure `/_apis/` endpoint as the human review link.
 - Preserve not-found, authentication, permission and unknown states; none is a green result.
 - Never push, create, edit, close, merge or resolve anything during this status read.
