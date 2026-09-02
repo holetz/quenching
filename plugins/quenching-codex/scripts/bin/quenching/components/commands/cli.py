@@ -159,7 +159,7 @@ DISPATCH: dict = {
 
 
 def _force_utf8_output() -> None:
-    """Skill descriptions are prose — em-dashes, arrows, accented words — and a Windows
+    """Command descriptions are prose — em-dashes, arrows, accented words — and a Windows
     console defaults to cp1252, where printing one raises UnicodeEncodeError AFTER the
     write already landed. That turns a clean report into a traceback and a nonzero exit,
     which the exit-code contract (0 ok / 1 findings / 2 refusal) reads as a finding.

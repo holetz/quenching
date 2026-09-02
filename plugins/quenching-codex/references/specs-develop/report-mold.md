@@ -123,8 +123,9 @@ Which command carries which:
 
 **`Complexity` is its own column because it answers its own question.** `level` and `criticality`
 rank a spec against the others; `complexity` says how much a human has to be in the loop while it is
-built — the criterion
-§The scale states. Folding it into the `Priority` cell would read as a third rank, and a reader
+built — the criterion in
+[spec-driven.md](../../references/specs-develop/spec-driven.md) §The scale.
+Folding it into the `Priority` cell would read as a third rank, and a reader
 scanning for which specs cannot be run unattended would have to parse three axes out of one field.
 The two empty together, never one without the other: `quenching-specs-triage` floors a guess at
 `medium` rather than omitting it, so a `—` here means the spec was never ranked at all — never that
@@ -273,4 +274,3 @@ The labels moved; nothing a grep depends on did.
 A column label is prose, not one of the six canonical categories that standard fixes, so it
 translates like the rest of the report. Leaving the labels English would be the exact failure it
 names — reading the tag at session start and still reporting in English.
-

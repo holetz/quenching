@@ -1,5 +1,6 @@
 {
   "replacements": {
+    "Claude Code": "Codex",
     "${CLAUDE_PLUGIN_ROOT}/assets/references/": "../../references/",
     "${CLAUDE_PLUGIN_ROOT}/assets/templates/": "../../templates/",
     "${CLAUDE_PLUGIN_ROOT}/assets/specs/": "../../specs/",
