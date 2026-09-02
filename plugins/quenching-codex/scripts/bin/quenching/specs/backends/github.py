@@ -3,14 +3,17 @@
 Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
 import sys
 import time
+from urllib.parse import urlsplit
 
 from quenching.common.git import COMMAND_TIMEOUT_S, _git
 from quenching.common.config import CONFIG_FILE, find_repo_root
+from quenching.common.io import read_text, write_text
 from quenching.specs.backends.base import BackendRefusal, SpecBackend
 from quenching.specs.backends.hybrid import (GH_BODY_MAX, GH_PART_MAX, hybrid_join,
                                              hybrid_project, hybrid_split, hybrid_title_join,
@@ -32,6 +35,71 @@ GH_TIMEOUT = 124
 GH_MAX_ATTEMPTS = 3
 GH_LEAN_LIMIT = 1000
 GH_RETRY_BACKOFF = (0.25, 0.5)
+GH_CACHE_VERSION = 1
+GH_CACHE_TTL_S = 300
+
+
+def normalize_github_remote(remote: str) -> str:
+    """Normalize SSH/scp and HTTPS remotes to one case-insensitive cache key."""
+    value = remote.strip()
+    if not value:
+        return ""
+    if "://" in value:
+        parsed = urlsplit(value)
+        host = parsed.hostname or ""
+        path = parsed.path
+    else:
+        left, separator, path = value.partition(":")
+        host = left.rsplit("@", 1)[-1] if separator else ""
+    if not host or not path:
+        return ""
+    path = path.split("?", 1)[0].split("#", 1)[0].strip("/")
+    if path.lower().endswith(".git"):
+        path = path[:-4]
+    return f"https://{host.lower()}/{path.lower()}"
+
+
+def github_cache_path(remote: str) -> str:
+    """Return the per-user cache path for one normalized GitHub remote."""
+    normalized = normalize_github_remote(remote)
+    key = hashlib.sha256(normalized.encode()).hexdigest()[:32]
+    base = os.environ.get("XDG_CACHE_HOME") or os.path.join(os.path.expanduser("~"), ".cache")
+    return os.path.join(base, "quenching", "github", f"{key}.json")
+
+
+def github_cache_read(remote: str) -> dict:
+    """Read a fresh resolution cache entry, treating every malformed entry as a miss."""
+    normalized = normalize_github_remote(remote)
+    if not normalized:
+        return {}
+    try:
+        value = json.loads(read_text(github_cache_path(normalized)) or "null")
+    except (TypeError, ValueError):
+        return {}
+    if not isinstance(value, dict) or value.get("version") != GH_CACHE_VERSION \
+            or value.get("remote") != normalized:
+        return {}
+    created = value.get("createdAt")
+    if not isinstance(created, (int, float)) or time.time() - created > GH_CACHE_TTL_S:
+        return {}
+    if not isinstance(value.get("repo"), str) or not value["repo"].strip():
+        return {}
+    return value
+
+
+def github_cache_write(remote: str, repo: str, open_issues: int | None) -> None:
+    """Remember a resolution without making the cache authoritative or part of the repository."""
+    normalized = normalize_github_remote(remote)
+    if not normalized:
+        return
+    payload = {"version": GH_CACHE_VERSION, "remote": normalized, "repo": repo,
+               "openIssues": open_issues, "createdAt": time.time()}
+    path = github_cache_path(normalized)
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        write_text(path, json.dumps(payload))
+    except OSError:
+        pass
 
 
 def _gh_transient(code: int, stdout: str, stderr: str) -> bool:
@@ -323,6 +391,12 @@ def resolve_github_repo(cwd: str) -> tuple[str, int | None, dict]:
 
     Never guesses a repository it cannot name. A wrong answer here does not fail — it
     silently reads and writes somebody else's issues."""
+    remote = _git(cwd, "remote", "get-url", "origin").strip()
+    normalized_remote = normalize_github_remote(remote)
+    cached = github_cache_read(normalized_remote)
+    if cached:
+        return cached["repo"], cached.get("openIssues"), {}
+
     code, out, err, attempts = _gh_result(
         _gh_run(cwd, "repo", "view", "--json", "nameWithOwner,issues"))
     if code == 0 and out.strip():
@@ -337,16 +411,20 @@ def resolve_github_repo(cwd: str) -> tuple[str, int | None, dict]:
         name = str(view.get("nameWithOwner") or "").strip()
         if name:
             issues = view.get("issues")
-            return name, (issues.get("totalCount") if isinstance(issues, dict) else None), {}
+            open_issues = issues.get("totalCount") if isinstance(issues, dict) else None
+            github_cache_write(normalized_remote, name, open_issues)
+            return name, open_issues, {}
     # The two failures the remote cannot repair — no binary, nobody logged in — refuse here
     # with their own remedy instead of degrading into "could not resolve the repository".
     if code in (GH_MISSING, GH_NOT_AUTHENTICATED) or "gh auth login" in (err or ""):
         return "", None, gh_refusal("resolving the repository", code, out, err, attempts)
-    url = _git(cwd, "remote", "get-url", "origin").strip()
+    url = remote
     m = GH_REMOTE_RE.search(url) if url else None
     if m:
         # The remote answers the name and nothing else: no count, and never a guess at one.
-        return f"{m.group(1)}/{m.group(2)}", None, {}
+        name = f"{m.group(1)}/{m.group(2)}"
+        github_cache_write(normalized_remote, name, None)
+        return name, None, {}
     return "", None, {
         "code": "sp-gh-repo-unresolved", "exit": 2, "remote": url or None,
         "gh": _gh_said(out, err),
