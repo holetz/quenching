@@ -24,6 +24,7 @@ with `apply` enabled.
 ## Desenvolvimento local
 
 Este checkout já declara o toolchain no `pyproject.toml` e fixa a resolução em `uv.lock`:
+o `cq` publicado requer Python 3.11 ou mais recente.
 
 ```bash
 uv sync --all-groups
