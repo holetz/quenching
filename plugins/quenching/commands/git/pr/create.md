@@ -74,22 +74,23 @@ base **is** the repository's own default branch; otherwise it cross-references t
 not close it on merge. State that case from `isDefault`. For `azure-boards`, state that the native
 `--work-items <n>` association will be attached to the PR; `--transition-work-items true`, when
 chosen, asks Azure to transition linked work items when the PR is completed; and
-`--delete-source-branch true` asks Azure to delete the source branch after the PR is completed and
-merged. **Done when:** the provider-native link and branch-deletion effects are stated before
-publication.
+`--delete-source-branch true`, when the separate deletion offer is accepted, asks Azure to delete
+the source branch after the PR is completed and merged. Preserving the source branch is the default.
+**Done when:** the provider-native link and branch-deletion effects are stated before publication.
 
 ### 4. Push and open, on one confirmation
 Show the remote, the branch name it pushes under, and the title/body, and ask with
 **AskUserQuestion**:
-For Azure, show the work item id, that `--delete-source-branch true` is included, and whether
-`--transition-work-items true` is included in the command the human is confirming.
+For Azure, show the work item id, whether the separate source-branch deletion offer was accepted
+(`--delete-source-branch true`), and whether `--transition-work-items true` is included in the
+command the human is confirming. The deletion offer defaults to preserve the branch.
 ```bash
 git push -u origin <branch>
 # github
 gh pr create --base <base> --title "<title>" --body "<body>"
 # azure-boards
 az repos pr create --detect true --source-branch <branch> --target-branch <base> \
-  --title "<title>" --description "<body>" --delete-source-branch true [--work-items <n>] \
+  --title "<title>" --description "<body>" [--delete-source-branch true] [--work-items <n>] \
   [--transition-work-items true] --output json
 ```
 The host-specific command is selected from the configured provider. The target branch is explicit
@@ -120,8 +121,9 @@ are named.
 
 - Never route an Azure repository through `gh`, or a GitHub repository through `az`.
 - Never omit `--base` on `gh pr create` or `--target-branch` on `az repos pr create`.
-- Always pass `--delete-source-branch true` on `az repos pr create`, so Azure removes the source
-  branch after the PR is completed and merged.
+- Never pass `--delete-source-branch true` by default. Offer it as a separate choice, explain that
+  it removes the source branch after completion, and include it only when the human confirms that
+  exact deletion.
 - Never push or open a PR without the human's confirmation on the exact remote, branch and title
   shown.
 - Never claim a provider-native issue/work-item link closes or transitions anything beyond the
