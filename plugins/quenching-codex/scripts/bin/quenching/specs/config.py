@@ -109,9 +109,9 @@ DEFAULT_RELEASE_BRANCH = "main"
 # without guessing what an absent field means.
 
 # `profiles` has NO default — an absent key declares nothing, which install-profiles.md reads
-# as "all four fronts installed", the ordinary case. Like `hooks`, its shape is checked at
-# the read (`installed` must be a list of non-empty strings) and its content is never
-# interpreted: what a front is, and what the list means, is the standard's, not the loader's.
+# as all seven local fronts eligible for the root align, the ordinary case. Like `hooks`, its
+# shape is checked at the read (`installed` must be a list of non-empty strings) and its content is
+# carried as data: the align conductor owns the scope decision, not this loader.
 
 # The backends that ship without ever having run against a real target. Empty now:
 # `azure-boards` was the one name here, and the provar-e-posicionar-o-backend-azure-boards
