@@ -938,6 +938,15 @@ class GhLeanListing(unittest.TestCase):
             "legacy": False, "path": "https://github.com/owner/repo/issues/12",
         }])
 
+    def test_lean_preserves_a_transport_timeout_and_its_attempt_count(self):
+        backend = GitHubBackend("owner/repo", os.getcwd(), open_issues=0)
+        with mock.patch.object(gh_mod, "_gh_run",
+                               return_value=(gh_mod.GH_TIMEOUT, "", "timed out", 3)):
+            with self.assertRaises(BackendRefusal) as ctx:
+                backend.list_specs(lean=True)
+        self.assertEqual(ctx.exception.err["code"], "sp-gh-timeout")
+        self.assertEqual(ctx.exception.err["attempts"], 3)
+
     def test_remote_fixture_answers_the_real_gh_issue_list_wire_shape(self):
         transport = GithubRemoteFixture()
         transport.lean_issues = [{
