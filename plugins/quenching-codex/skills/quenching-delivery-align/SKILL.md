@@ -38,6 +38,9 @@ read a second inventory or ask for authorization. On exit `2`, preserve the refu
 stop. On exit `1`, use the returned `inventory` and `findings` as the complete evidence for the
 plan; do not rediscover workflow files.
 
+**Done when:** the clean or refused result has stopped the pass, or the non-clean payload is in
+hand as the sole source for the plan.
+
 ### 2. Classify one bounded plan
 
 Group every finding using `delivery-align/bands.md`:
@@ -50,6 +53,8 @@ Group every finding using `delivery-align/bands.md`:
 
 Keep each finding's code, band, severity, affected workflow and closing command in the plan.
 Missing delivery is not drift; an applicable but unmeasured provider is not a green result.
+
+**Done when:** every finding has one band, evidence, affected workflow and permitted disposition.
 
 ### 3. Ask once and apply only the first two bands
 
@@ -67,12 +72,18 @@ cq --root "$TARGET_ROOT" delivery doctor --json
 If structural residue remains, report it rather than widening the plan. Judgement findings remain
 report-only even when a routine batch was approved.
 
+**Done when:** the authorized bounded changes are applied, the same verifier has run again, and
+judgement findings remain untouched.
+
 ### 4. Report
 
 Report the target root, applicability, workflow count, applied repairs, closing doctor result and
 every residual finding with its evidence and the exact owner action from `delivery/bands.md`.
 State explicitly when the front is not applicable, refused, not measured or already conformant.
 This report is the run record; do not append a log file to the target.
+
+**Done when:** the report distinguishes applicability, applied repairs, verifier state and every
+residual owner action.
 
 ## Invariants
 
