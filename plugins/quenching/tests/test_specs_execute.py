@@ -15,6 +15,8 @@ import unittest
 ROOT = Path(__file__).resolve().parents[3]
 COMMAND = ROOT / "plugins/quenching/commands/specs/execute.md"
 REFERENCE = ROOT / "plugins/quenching/assets/references/specs-execute/execution.md"
+CONCLUDE = ROOT / "plugins/quenching/commands/specs/conclude.md"
+SCALE = ROOT / "plugins/quenching/assets/references/specs-develop/spec-driven.md"
 
 
 def git(cwd, *args):
@@ -64,6 +66,15 @@ class TaskExecutionContractTests(unittest.TestCase):
             config["shared"]["hooks"]["after_specs_execute_task"],
             [{"command": "/my:security-review", "optional": True}],
         )
+
+    def test_low_gear_chains_conclude_to_the_provider_pr_skill(self):
+        conclude = CONCLUDE.read_text(encoding="utf-8")
+        scale = SCALE.read_text(encoding="utf-8")
+
+        self.assertIn('Skill("quenching:git:pr:create", "<id>")', conclude)
+        self.assertIn("`low` chains the provider handoff now", conclude)
+        self.assertIn('Skill("quenching:git:pr:create", "<id>")', scale)
+        self.assertIn("The other levels retain", scale)
 
     def test_explicit_subject_commits_only_staged_files(self):
         with tempfile.TemporaryDirectory() as directory:
