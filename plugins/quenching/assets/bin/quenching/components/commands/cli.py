@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import sys
 
+from quenching.common.output import CQArgumentParser, refuse
 from quenching.common.version import VERSION
 from quenching.components.commands.doctor import cmd_doctor
 from quenching.components.commands.lint import cmd_lint
@@ -35,11 +36,12 @@ from quenching.session.commands.cli import add_subcommands as add_session_subcom
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="cq components",
-                                description="deterministic trail for the .claude/ front")
+    p = CQArgumentParser(prog="cq components",
+                         description="deterministic trail for the .claude/ front")
     p.add_argument("--root", help="the surface root holding commands/ "
                                   "(default: nearest .claude/ or commands/ upward)")
-    sub = p.add_subparsers(dest="cmd", required=True)
+    p.add_argument("--version", action="store_true", help="print the version and exit")
+    sub = p.add_subparsers(dest="cmd")
 
     def add_json(sp):
         sp.add_argument("--json", action="store_true", help="machine-readable output")
@@ -122,10 +124,15 @@ def _force_utf8_output() -> None:
 
 def main(argv: list[str]) -> int:
     _force_utf8_output()
-    if "--version" in argv:
-        print(f"skills {VERSION}")
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if args.version:
+        print(f"cq components {VERSION}")
         return 0
-    args = build_parser().parse_args(argv)
+    if not args.cmd:
+        return refuse({"code": "ct-no-command", "message":
+                       "choose `lint`, `doctor`, `registry`, `read`, `translate`, or `session`"},
+                      False)
     if not hasattr(args, "json"):
         args.json = False
     return DISPATCH[args.cmd](args, find_surface_root(args.root))
