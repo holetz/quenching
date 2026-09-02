@@ -46,6 +46,13 @@ class ThePathShim(unittest.TestCase):
         self.assertEqual(run.returncode, 0, run.stderr)
         self.assertEqual(run.stdout.strip(), VERSION)
 
+    def test_the_entrypoint_declares_and_checks_the_python_floor_before_package_imports(self):
+        source = REAL.read_text(encoding="utf-8")
+        self.assertIn("PYTHON_FLOOR = (3, 11)", source)
+        self.assertLess(source.index("if not _check_python_floor():"),
+                        source.index("from quenching.common.output import"))
+        self.assertIn("cq-python-floor:", source)
+
     def test_each_pillar_uses_the_same_version_grammar(self):
         pillars = ("specs", "knowledge", "design", "components", "ops", "proof", "git",
                    "toolchain", "delivery", "security")

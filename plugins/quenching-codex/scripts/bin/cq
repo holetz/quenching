@@ -5,18 +5,19 @@
     python3 "../../scripts/cq" --version
 
 Ten pillars, each answering with the same contract its launcher answered with — the
-subcommands, the `--json` payloads and the exit codes (0 ok · 1 findings · 2 refusal) are
+subcommands, the `--json` payloads and the exit codes (0 ok · 1 findings · 2 refusal · 3 usage) are
 the ones frozen in `tests/fixtures/golden/`. This file routes; it decides nothing else.
+
+Python 3.11 is the minimum runtime. The check below runs before the package imports so a runtime
+without `tomllib` gets a named refusal instead of a traceback from a pillar that needs it.
 
 WHY THE TABLE CARRIES `takes_root`
 ----------------------------------
 `--root` is the one option that reads as global and is not: `specs --root` names the
 `/.specs/` workspace, `components --root` names the surface holding `commands/`, and
-`ops --root` names the operations surface, while
-`knowledge` takes a bundle directory as a POSITIONAL. Forwarding `--root` there would not
-fail — `run_cli` collects every non-dash token as a path, so the value would be silently
-read as the bundle to validate. So the table says which pillars declare one, and naming
-`--root` for a pillar that does not is a refusal, not a guess.
+`ops --root` names the operations surface. `knowledge --root` names the repository root and its
+bundle remains a positional override. The table says which pillars declare one, and naming
+`--root` for a pillar that does not is a usage error, not a guess.
 
 WHY THE IMPORT IS LAZY
 ----------------------
@@ -46,6 +47,23 @@ import argparse
 import importlib
 import sys
 from typing import NamedTuple
+
+
+PYTHON_FLOOR = (3, 11)
+PYTHON_FLOOR_EXIT = 2
+
+
+def _check_python_floor() -> bool:
+    if sys.version_info[:2] >= PYTHON_FLOOR:
+        return True
+    found = f"{sys.version_info[0]}.{sys.version_info[1]}"
+    print(f"cq-python-floor: Python {PYTHON_FLOOR[0]}.{PYTHON_FLOOR[1]} or newer is required; "
+          f"found {found}", file=sys.stderr)
+    return False
+
+
+if not _check_python_floor():
+    raise SystemExit(PYTHON_FLOOR_EXIT)
 
 from quenching.common.output import CQArgumentParser, USAGE
 from quenching.common.version import VERSION
