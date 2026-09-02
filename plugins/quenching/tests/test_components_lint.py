@@ -43,6 +43,8 @@ from types import SimpleNamespace
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.components.commands.lint import (
     UNSCOPED_TOOLS,
+    _numbered_steps,
+    _step_criteria,
     cmd_lint,
     lint_command,
     marker_present,
@@ -159,7 +161,23 @@ class StrictFrontmatter(unittest.TestCase):
         errors = [f for f in payload["findings"] if f["severity"] == "error"]
         self.assertEqual(status, 0)
         self.assertEqual(errors, [])
-        self.assertEqual(payload["commandCount"], 53)
+        self.assertEqual(payload["commandCount"], 54)
+
+
+class StepCriterion(unittest.TestCase):
+    def test_child_headings_under_workflow_are_steps_without_numbers(self):
+        body = ("## Workflow\n\n### Probe\n\nRead the payload.\n\n"
+                "### Report\n\nWrite the report.\n\n**Done when:** report exists.\n")
+        self.assertEqual(_numbered_steps(body), ["### Probe", "### Report"])
+        self.assertEqual(_step_criteria(body), (2, 1))
+
+    def test_a_top_level_bullet_sequence_under_steps_is_operational(self):
+        body = "## Steps\n\n- Probe the front.\n- Report the result.\n"
+        self.assertEqual(_numbered_steps(body), ["- Probe the front.", "- Report the result."])
+
+    def test_narrative_bullets_and_a_lone_bullet_are_not_steps(self):
+        self.assertEqual(_numbered_steps("## Notes\n\n- A narrative note.\n- Another note.\n"), [])
+        self.assertEqual(_numbered_steps("## Workflow\n\n- One sentence of context.\n"), [])
 
 
 class GateAndGrantLint(unittest.TestCase):

@@ -334,7 +334,7 @@
   ],
   "sha256": {
     ".codex-plugin/plugin.json": "0a696ee33b34996d136d4aa2d32fcc35bd34af35efb475b0cabefbafcaf87f34",
-    ".generated-from.json": "4c210764d80f3059ab113c05d31f21d5141ecc3578698d742a3ef3d6babd0189",
+    ".generated-from.json": "0175bd23d058ddcbcf46b1400c0338c0e5fc4a42d98e506d0e59f9c4dfc3d0ea",
     "README.md": "ea9a6bf0ecbb3be336342fb2db5fbc1347de8d86f2266e2aa8ceeb51532a34dc",
     "VERSION": "e33e70efdb9c35eb184b87ee7abc05ac16a925c9c36e84408999dea33a741fa8",
     "checks/catalog-publication-check.py": "9f4c9b75b524e31bd9420036a5384801ef707ef5708956abba1d6eb62c398f9e",
@@ -473,7 +473,7 @@
     "scripts/bin/quenching/components/commands/cli.py": "4ade1a45561586acb5c32375d6de37ba105e4822a2717ca20b2c13ab5d17cd5e",
     "scripts/bin/quenching/components/commands/cost.py": "d19e2f30905c9f4040e8510b64bb8bd0dea9ca09df6f02075361234d50c61fa5",
     "scripts/bin/quenching/components/commands/doctor.py": "de003b92b69e527467250f3135216546a0830f4fcd202202bebe13a32cc733fa",
-    "scripts/bin/quenching/components/commands/lint.py": "95b60c547fcdbc917bbfb8eed699a1785f6249a9a6ee667e3e7a956b61e0f9ef",
+    "scripts/bin/quenching/components/commands/lint.py": "e59e9eb3fe42bb167846280075b4f7597eac19ad8e997df0729d888d3e67d8db",
     "scripts/bin/quenching/components/commands/read.py": "a0dd7e9c409dda70939e3c1d502da0154bfb02c81d92d09e038c75926567964f",
     "scripts/bin/quenching/components/commands/registry.py": "ad78de7cf65313759289d8df13849e7cc479c2d04d697d93c5c52daaa0f2a9cf",
     "scripts/bin/quenching/components/commands/translate.py": "fe29c51276912b30760e457f04cc65148b305efdd2bd3b5f39a7417245646451",
