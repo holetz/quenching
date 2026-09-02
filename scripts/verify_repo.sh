@@ -35,6 +35,8 @@ run_check "Codex artifact lockstep" \
   python3 scripts/validate_codex_plugin.py
 run_check "citation checks" \
   bash plugins/quenching/assets/checks/citation-check.sh
+run_check "documentation site source" \
+  python3 plugins/quenching/assets/bin/cq knowledge site-source docs site-source --write
 run_check "Zensical strict build" \
   uv run zensical build --clean --strict
 run_check "built-site checks" \
