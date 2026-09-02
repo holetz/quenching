@@ -98,7 +98,7 @@ class ManifestSurfaceTests(unittest.TestCase):
             "knowledge": 13,
             "specs": 6,
             "design": 3,
-            "components": 7,
+            "components": 8,
             "ops": 3,
             "proof": 3,
             "toolchain": 2,

@@ -1,7 +1,7 @@
 {
   "name": "quenching",
   "version": "6.3.0",
-  "description": "OKF knowledge, provider-owned specs, DTCG design, automation, operations, verification, toolchain, delivery, security and git workflows for Claude Code. The design front keeps /.design/tokens.json as one DTCG 2025.10 source, emits PRODUCT.md, DESIGN.md, the Impeccable sidecar, and HTML/Typst adapters, and imports external DESIGN.md proposals only after explicit human arbitration. 7 local fronts align in dependency order under /align; Impeccable is an optional web consumer. This plugin ships 53 commands, including 6 specs commands and 11 git commands, with one file per entry point, uniform --json payloads, and strict exit codes.",
+  "description": "OKF knowledge, provider-owned specs, DTCG design, automation, operations, verification, toolchain, delivery, security and git workflows for Claude Code. The design front keeps /.design/tokens.json as one DTCG 2025.10 source, emits PRODUCT.md, DESIGN.md, the Impeccable sidecar, and HTML/Typst adapters, and imports external DESIGN.md proposals only after explicit human arbitration. 7 local fronts align in dependency order under /align; Impeccable is an optional web consumer. This plugin ships 54 commands, including 6 specs commands and 11 git commands, with one file per entry point, uniform --json payloads, and strict exit codes.",
   "author": {
     "name": "Israel Holetz",
     "email": "holetz@gmail.com"
