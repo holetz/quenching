@@ -281,7 +281,8 @@ d. **On the first pass through 5d–5e, load the rules the chain runs under — 
 
 e. **Then verify, stage, delegate the commit and confirm the provider task as ONE chained operation.**
    The subject belongs to `quenching-git-commit`, under the declared-directive layer's table and
-   its [commit.md](../../references/git/commit.md) contract. Execute stages
+   its [commit.md](../../references/git/commit.md) contract
+   §Commit messages §The subject is the anchor. Execute stages
    only the task's declared files, passes the existing index and resolved task context to that
    command, then sends its reported subject and sha to `cq specs task --check`:
 

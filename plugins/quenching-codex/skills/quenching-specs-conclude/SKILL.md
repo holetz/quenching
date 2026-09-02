@@ -63,7 +63,8 @@ never on prose.
   moving to `quenching-git-cleanup` — it is this run's own report of what became of the work it
   just closed, not a later sweep over branches nobody is thinking about right now.
 - **Everything `abandoned` writes lands in the checkout holding `<base>`, never this branch** — see
-  [specs-conclude/abandoned.md](../../references/specs-conclude/abandoned.md).
+  [specs-conclude/abandoned.md](../../references/specs-conclude/abandoned.md)
+  §Locating the checkout and writing into it §The branch-delete offer, informed rather than defensive.
   There is no merge to carry a branch commit home, so a record left on the branch would depend on a
   branch nobody adopted still existing.
 - **Declared rules were already written.** The `/docs/standards/` a task explicitly named went in
