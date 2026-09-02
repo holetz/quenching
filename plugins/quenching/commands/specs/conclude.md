@@ -13,10 +13,12 @@ Closes ONE spec out, short of the merge itself. Four things happen, in this orde
 separate decision: the whole branch is **reviewed**, the `/docs/` the work *revealed* is
 **written**, the spec is **archived and distilled** into the OKF bundle, and the pre-merge gate is
 **proven green** — then the run **stops**, naming `/quenching:git:pr:create` or
-`/quenching:git:merge` as the human's own next command.
+`/quenching:git:merge` as the human's own next command — except that `low` gear chains directly
+to `/quenching:git:pr:create` through `Skill` after the green gate.
 
 **Done work ends on the work branch; abandoned close-out writes land in the checkout holding the
-base.** The human chooses the next command for done work.
+base.** For done work, `low` gear invokes the PR handoff after the gate; every other gear names the
+next command for the human to choose.
 
 **Why `Bash` is unrestricted here.** Closing a spec combines provider reads/writes, Git inspection,
 archive operations and the repository's own verification command; those host-specific commands
@@ -262,8 +264,16 @@ whole suite by reflex is the expensive way to learn nothing. When the repo's `##
 the scope, follow it; when it does not, run what it says and report the cost as a finding worth a
 selector.
 
-The gate passed — the branch is reviewed, distilled, archived, and proven. **Name the handoff and
-stop:**
+The gate passed — the branch is reviewed, distilled, archived, and proven. Read the complexity from
+the status payload already in hand. **`low` chains the provider handoff now:**
+
+```text
+Skill("quenching:git:pr:create", "<id>")
+```
+
+Invoke it with the spec id; `/quenching:git:pr:create` owns its own confirmation, push and PR
+record. Do not offer a second handoff or invoke `/quenching:git:merge` on the low path. **For
+`medium`, `high` and `xhigh`, name the handoff and stop:**
 
 Use the provider configuration already read in step 1 to name the next command: recommend
 `/quenching:git:pr:create` when the configured provider supports the PR route, otherwise
