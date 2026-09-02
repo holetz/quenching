@@ -6,14 +6,15 @@ description: >-
   for review". Given a spec id it derives title, body and the provider locator from the spec and
   stamps its write-many `pr:` record. Not for: merging an already-open PR → /quenching:git:merge;
   resolving PR review comments → /quenching:git:pr:review.
-argument-hint: [id-or-title]
+argument-hint: [id-or-title] [remote:<name>]
 allowed-tools: Bash(git push:*), Bash(git remote get-url:*), Bash(gh repo view:*), Bash(gh pr create:*), Bash(az repos pr:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
 # /quenching:git:pr:create — push and open the pull request
 
 **Input**: `$ARGUMENTS` — a spec id (derives title, body and the provider's issue/work-item
-link), or free text to use as the PR title. Omitted → ask.
+link), or free text to use as the PR title. Append `remote:<name>` to select a remote; omitted
+→ `origin`. Omitted title → ask.
 
 Opens the PR and **stops there** — merging is `/quenching:git:merge`'s, on its own confirmation.
 The route follows `cq specs config --json`: `github` uses `gh`, `azure-boards` uses `az repos`; an
@@ -28,10 +29,11 @@ python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs config --json
 python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
   --sections "§The declared-directive layer"
 python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git conventions --json   # `config.prTitle`, `config.prBody`
-git remote get-url origin
+git remote -v
+git remote get-url <remote>
 python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git base --json
 ```
-After reading the config, run only the matching provider probe, after confirming the origin host
+After reading the config, run only the matching provider probe, after confirming the selected remote's host
 matches it:
 `github` → `gh repo view`; `azure-boards` → `az repos pr list --status all --top 1 --detect
 true`. A missing/mismatched origin, `NO-ROUTE`, or an unauthenticated host CLI → say plainly there
@@ -85,7 +87,7 @@ For Azure, show the work item id, whether the separate source-branch deletion of
 (`--delete-source-branch true`), and whether `--transition-work-items true` is included in the
 command the human is confirming. The deletion offer defaults to preserve the branch.
 ```bash
-git push -u origin <branch>
+git push -u <remote> <branch>
 # github
 gh pr create --base <base> --title "<title>" --body "<body>"
 # azure-boards
@@ -120,6 +122,8 @@ are named.
 ## Invariants
 
 - Never route an Azure repository through `gh`, or a GitHub repository through `az`.
+- Publish to the selected remote (`origin` when omitted); never silently substitute another
+  remote or treat a branch name as one.
 - Never omit `--base` on `gh pr create` or `--target-branch` on `az repos pr create`.
 - Never pass `--delete-source-branch true` by default. Offer it as a separate choice, explain that
   it removes the source branch after completion, and include it only when the human confirms that

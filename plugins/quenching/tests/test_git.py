@@ -172,24 +172,25 @@ class Specs(RepoCase):
 
 
 class Stale(RepoCase):
-    def _origin_with_merged_branch(self):
-        origin = os.path.join(self.tmp, "origin.git")
-        os.makedirs(origin, exist_ok=True)
-        _run(origin, "init", "-q", "--bare")
-        _run(self.repo, "remote", "add", "origin", origin)
-        _run(self.repo, "push", "-q", "-u", "origin", "main")
-        _run(self.repo, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main")
+    def _origin_with_merged_branch(self, remote="origin"):
+        remote_repo = os.path.join(self.tmp, f"{remote}.git")
+        os.makedirs(remote_repo, exist_ok=True)
+        _run(remote_repo, "init", "-q", "--bare")
+        _run(self.repo, "remote", "add", remote, remote_repo)
+        _run(self.repo, "push", "-q", "-u", remote, "main")
+        _run(self.repo, "symbolic-ref", f"refs/remotes/{remote}/HEAD",
+             f"refs/remotes/{remote}/main")
 
         _run(self.repo, "branch", "remote-feature")
         _run(self.repo, "checkout", "-q", "remote-feature")
         pathlib.Path(self.repo, "remote-feature.txt").write_text("remote\n", encoding="utf-8")
         _run(self.repo, "add", "remote-feature.txt")
         _run(self.repo, "commit", "-q", "-m", "remote feature")
-        _run(self.repo, "push", "-q", "-u", "origin", "remote-feature")
+        _run(self.repo, "push", "-q", "-u", remote, "remote-feature")
         _run(self.repo, "checkout", "-q", "main")
         _run(self.repo, "merge", "-q", "--ff-only", "remote-feature")
-        _run(self.repo, "push", "-q", "origin", "main")
-        return origin
+        _run(self.repo, "push", "-q", remote, "main")
+        return remote_repo
 
     def test_a_trivially_merged_branch_is_reported_merged(self):
         _run(self.repo, "branch", "feature-b")
@@ -275,6 +276,14 @@ class Stale(RepoCase):
                            "reasons": ["merged"]}])
         self.assertIn("remote-feature", {b["branch"] for b in payload["staleBranches"]})
         self.assertEqual(payload["orphanWorktrees"], [])
+
+    def test_cq_git_stale_reads_the_selected_remote(self):
+        self._origin_with_merged_branch("upstream")
+        payload = _cq_json(self.repo, "stale", "--remote", "upstream")
+        self.assertEqual(payload["remote"], "upstream")
+        self.assertEqual(payload["remoteBranches"],
+                         [{"remote": "upstream", "branch": "remote-feature",
+                           "reasons": ["merged"]}])
 
 
 class Worktree(RepoCase):
@@ -458,6 +467,14 @@ class PullRequestPayload(unittest.TestCase):
         self.assertEqual(positions, sorted(positions))
         self.assertIn("`Tasks` summary", self.payload_step)
         self.assertIn("branch facts", _normalise_prose(self.payload_step))
+
+    def test_pr_create_selects_a_named_remote_and_defaults_to_origin(self):
+        command = self.command.lower()
+        self.assertIn("remote:<name>", command)
+        self.assertIn("git remote -v", command)
+        self.assertIn("git remote get-url <remote>", command)
+        self.assertIn("git push -u <remote> <branch>", command)
+        self.assertIn("origin", command)
 
     def test_missing_optional_sections_are_omitted_not_fabricated(self):
         payload_step = _normalise_prose(self.payload_step)
@@ -646,7 +663,9 @@ class PullRequestPayload(unittest.TestCase):
     def test_cleanup_selects_reported_remote_branches_before_deleting(self):
         cleanup = CLEANUP_COMMAND.read_text(encoding="utf-8").lower()
         self.assertIn("remoteBranches".lower(), cleanup)
-        self.assertIn("git push origin --delete", cleanup)
+        self.assertIn("git push <remote> --delete", cleanup)
+        self.assertIn("remote:<name>", cleanup)
+        self.assertIn("--remote <remote>", cleanup)
         self.assertIn("local selection", cleanup)
         self.assertIn("remote selection", cleanup)
         self.assertIn("remote branch is never", cleanup)
