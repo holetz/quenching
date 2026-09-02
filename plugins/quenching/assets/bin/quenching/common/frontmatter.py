@@ -38,6 +38,12 @@ import re
 # The block-scalar header. Matched before the comment rule is applied, because a header carries no
 # value for a `#` to trail.
 BLOCK_SCALAR_RE = re.compile(r"^([|>])(?:[+-]?)(?:\d*)\s*$")
+FRONTMATTER_KEY_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):(.*)$")
+KNOWN_FRONTMATTER_KEYS = {
+    "name", "description", "argument-hint", "allowed-tools", "disallowed-tools",
+    "user-invocable", "disable-model-invocation", "effort", "context", "agent",
+    "background", "paths", "hooks",
+}
 
 # `hooks:` is read by `parse_frontmatter_hooks`, which is the `components` pillar's own reader for
 # a nested block no generic top-level parser resolves. Whatever this parser makes of that block —
@@ -304,7 +310,22 @@ def frontmatter_anomalies(text: str) -> list[dict]:
                                 "nothing guarantees another parser resolves it the same way"))
         seen.add(key)
 
-        if not BLOCK_SCALAR_RE.match(val):     # a block-scalar header takes no comment
+        block = BLOCK_SCALAR_RE.match(val)
+        if block:
+            for offset, continuation in enumerate(run):
+                swallowed = FRONTMATTER_KEY_RE.match(continuation.strip())
+                if not swallowed or swallowed.group(1) not in KNOWN_FRONTMATTER_KEYS:
+                    continue
+                swallowed_key = swallowed.group(1)
+                out.append(_anomaly(
+                    swallowed_key, "swallowed-key",
+                    f"`{swallowed_key}` is indented under folded `{key}` and was absorbed into "
+                    "its value; align it with the top-level frontmatter keys",
+                    line=j + 3 + offset, parent=key))
+            j = k
+            continue
+
+        if not block:     # a block-scalar header takes no comment
             value, comment = _split_comment(val)
             if comment:
                 out.append(_anomaly(key, "comment-stripped",
@@ -324,5 +345,7 @@ def frontmatter_anomalies(text: str) -> list[dict]:
     return out
 
 
-def _anomaly(key: str, kind: str, detail: str) -> dict:
-    return {"key": key, "kind": kind, "detail": detail}
+def _anomaly(key: str, kind: str, detail: str, **extra) -> dict:
+    anomaly = {"key": key, "kind": kind, "detail": detail}
+    anomaly.update(extra)
+    return anomaly
