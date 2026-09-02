@@ -47,7 +47,7 @@ its `quenching-specs:` mark:
 ```bash
 git branch --show-current
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git specs <current-branch> --json
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs next --spec <唯一-spec-id> --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs next --spec <spec-id> --json
 ```
 If that produces exactly one spec and one actionable task, derive the subject with the governing
 convention from the spec id, task id and task title. If the execution caller already supplies a

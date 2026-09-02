@@ -6,7 +6,7 @@ description: >-
   for review". Given a spec id it derives title, body and the provider locator from the spec and
   stamps its write-many `pr:` record. Not for: merging an already-open PR → /quenching:git:merge;
   resolving PR review comments → /quenching:git:pr:review.
- argument-hint: [id-or-title]
+argument-hint: [id-or-title]
 allowed-tools: Bash(git push:*), Bash(git remote get-url:*), Bash(gh repo view:*), Bash(gh pr create:*), Bash(az repos pr:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
