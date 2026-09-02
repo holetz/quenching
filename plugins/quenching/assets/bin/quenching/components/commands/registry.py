@@ -2,7 +2,7 @@
 
 Moved verbatim out of the pre-refactor components script.
 
-Until this existed `taxonomy.md` described the row format and two skills reproduced it by hand,
+Until this existed `taxonomy.md` described the row format and two commands reproduced it by hand,
 which asked one LLM to both generate a derived table and verify its own output. The zone is
 derived here, exactly as the specs pillar owns its own derived listings, and `taxonomy.md` cites
 this instead of restating it.
@@ -29,7 +29,7 @@ def registry_rows(surface: dict) -> list[dict]:
     frontmatter. Commands contributed by installed plugins are not part of the surface
     and never reach the zone.
 
-    The Skill column is gone with the pair — the command path was always the other
+    The mirror column is gone with the pair — the command path was always the other
     cell's flattened twin, and a table cannot usefully show a name next to itself."""
     rows = []
     for c in surface["commands"]:
@@ -75,27 +75,27 @@ def cmd_registry(args, root: str) -> int:
     path = find_registry(args.registry, root)
     if path is None or not os.path.isfile(path):
         return report_findings(
-            args.json, f"skills registry — {root}", {"root": root},
+            args.json, f"components registry — {root}", {"root": root},
             [finding("sk-no-registry", "error",
-                     f"no registry at {'/'.join(REGISTRY_RELPATH)} above {root}", skill="-",
+                     f"no registry at {'/'.join(REGISTRY_RELPATH)} above {root}", command="-",
                      remedy="install it from assets/templates/automation/registry.md, then rerun")],
-            "skill")
+            "command")
     text = read_text(path)
     if text is None:
-        return report_findings(args.json, f"skills registry — {path}", {"root": root},
+        return report_findings(args.json, f"components registry — {path}", {"root": root},
                                [finding("sk-no-registry", "error",
-                                        f"{path} is unreadable", skill="-",
+                                        f"{path} is unreadable", command="-",
                                         remedy="check the file's encoding and permissions")],
-                               "skill")
+                               "command")
     begin, end = text.find(ZONE_BEGIN), text.find(ZONE_END)
     if begin == -1 or end == -1 or end < begin:
         return report_findings(
-            args.json, f"skills registry — {path}", {"root": root},
+            args.json, f"components registry — {path}", {"root": root},
             [finding("sk-no-zone", "error",
-                     f"the registry carries no `{ZONE_BEGIN}` … `{ZONE_END}` zone", skill="-",
+                     f"the registry carries no `{ZONE_BEGIN}` … `{ZONE_END}` zone", command="-",
                      remedy="add the markers from assets/templates/automation/registry.md — the "
                             "table is never placed at a guessed anchor inside curated prose")],
-            "skill")
+            "command")
     rows = registry_rows(surface)
     new = f"{text[:begin + len(ZONE_BEGIN)]}\n{render_registry_zone(rows)}\n{text[end:]}"
     changed = new != text
@@ -105,7 +105,7 @@ def cmd_registry(args, root: str) -> int:
     if args.json:
         print(json.dumps(payload, indent=2, ensure_ascii=False))
     else:
-        print(f"skills registry — {path}")
+        print(f"components registry — {path}")
         print(f"  {'rewrote' if changed else 'already current —'} "
               f"{plural(len(rows), 'row')} in the GENERATED zone")
     return 0
