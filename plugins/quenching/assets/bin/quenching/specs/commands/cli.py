@@ -212,7 +212,7 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
 
     add_json(sub.add_parser("config", help="the workspace's declared parameters, as data"))
 
-    sp = add_json(sub.add_parser("release", help="bump the plugin's seven version-carrying "
+    sp = add_json(sub.add_parser("release", help="bump the plugin's four version-carrying "
                                                   "artifacts and tag the commit — the plugin's "
                                                   "own repository only"))
     sp.add_argument("version", help="the new version, X.Y.Z")
