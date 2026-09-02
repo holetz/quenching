@@ -4,6 +4,8 @@ Use this catalog before adding a plugin-like feature to the site layer. Zensical
 build small; a capability is enabled only when its prerequisite, decision, configuration and
 rendered effect are all recorded in the documentation plan.
 
+## Capability catalog
+
 | Capability | Prerequisite | Decision | Configuration/dependency | Verifiable rendered effect |
 | --- | --- | --- | --- | --- |
 | Heading autorefs | stable heading IDs and a tested extension | enable only for cross-page heading links | `toc.permalink` plus a fixture anchor | link resolves to the expected `#anchor` |
