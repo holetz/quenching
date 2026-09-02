@@ -685,7 +685,15 @@ class IncrementalCommitContract(unittest.TestCase):
         for phrase in ("gitconventions.commitSubject", "chore: <short english imperative>",
                        "one short imperative subject", "resolved english subject"):
             self.assertIn(phrase.lower(), self.lower)
-        self.assertNotIn("askuserquestion", self.lower)
+        self.assertIn("askuserquestion", self.lower)
+        self.assertIn("with one confirmation", self.lower)
+        self.assertNotIn("without confirmation", self.lower)
+
+    def test_content_guards_have_bounded_reads_and_do_not_report_secret_values(self):
+        for phrase in ("1 mib per file", "10 mib total", "scan content, not only filenames",
+                       "private-key headers", "api[_-]?key", "client[_-]?secret",
+                       "never the value"):
+            self.assertIn(phrase, self.lower)
 
     def test_hooks_and_failures_preserve_previous_commits_and_residue(self):
         for phrase in ("hooks stay enabled", "if staging fails\nor a commit fails", "leave earlier commits intact",
