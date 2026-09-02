@@ -301,7 +301,11 @@ the portable form, including for sub-agents.
 
 def codex_readme(text: str) -> str:
     """Keep the generated README aligned with Codex's actual tool-loading contract."""
-    install = text.index("The tool itself is reached through **two doors onto one file**.")
+    install_marker = "The CLI has two equivalent entry points:"
+    if install_marker in text:
+        install = text.index(install_marker)
+    else:
+        install = text.index("The tool itself is reached through **two doors onto one file**.")
     upgrade = text.index("## Upgrade", install)
     text = (
         text[:install]
@@ -313,18 +317,21 @@ def codex_readme(text: str) -> str:
         + text[upgrade:]
     )
     upgrade = text.index("## Upgrade")
-    # The prose under ## Upgrade is replaced; the changelog under it is kept. The seam is the
-    # first changelog bullet, never a sentence — prose is rewritten, `- **<version>:**` is not.
+    # The prose under ## Upgrade is replaced. Older source snapshots kept the changelog there;
+    # preserve those entries when present, while the current source keeps them in CHANGELOG.md.
     changelog = re.search(r"^- \*\*\d+\.\d+\.\d+:\*\*", text[upgrade:], re.MULTILINE)
-    if changelog is None:
-        raise ValueError("README.md: no `- **<version>:**` changelog entry under ## Upgrade")
+    seam = upgrade + changelog.start() if changelog else len(text)
+    codex_upgrade = (
+        "## Upgrade\n\n"
+        "Resolution is **plugin-first, with no user-level install**: every skill resolves the "
+        "installed plugin copy at call time, so a version bump reaches consumers when Codex "
+        "refreshes the plugin. There is no global `cq` executable to keep in sync."
+    )
     text = (
         text[:upgrade]
-        + "## Upgrade\n\n"
-          "Resolution is **plugin-first, with no user-level install**: every skill resolves the "
-          "installed plugin copy at call time, so a version bump reaches consumers when Codex "
-          "refreshes the plugin. There is no global `cq` executable to keep in sync.\n\n"
-        + text[upgrade + changelog.start():]
+        + codex_upgrade
+        + ("\n\n" if changelog else "\n")
+        + text[seam:]
     )
     return text
 
