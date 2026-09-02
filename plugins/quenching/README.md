@@ -75,7 +75,7 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](assets/references/align/convergence.md).
 
-## The 53 commands
+## The 54 commands
 
 **One file per entry point** — Claude Code merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs; there is
@@ -128,6 +128,7 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 | Command | Does |
 | --- | --- |
 | `/quenching:components:align` | Converges the whole `.claude/` surface onto one file per entry point, then audits every body and rewrites every description against the writing doctrine. |
+| `/quenching:components:status` | Reports the command count, fronts and finding codes for the target's automation surface without writing. |
 | `/quenching:components:command:new` | Mints or edits ONE command — the structural half, including its `description`. |
 | `/quenching:components:command:eval` | Measures whether a command actually teaches anything: with/without runs, graded on evidence rather than on how the body reads. |
 | `/quenching:components:command:retro` | Mines ONE session for what it evidences about ONE command that ran in it — cost, redundancy, bugs, and what the human had to fix by hand. |
