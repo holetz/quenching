@@ -15,6 +15,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -1302,6 +1303,46 @@ class ProviderSelection(unittest.TestCase):
         self.assertEqual(error["code"], "sp-provider-unknown")
         self.assertEqual(error["exit"], 2)
         self.assertNotIn("files", error["message"])
+
+
+class GithubResolutionCache(unittest.TestCase):
+    """The cross-process resolution cache is keyed, bounded and non-authoritative."""
+
+    def test_ssh_scp_and_https_remotes_share_one_normalized_key(self):
+        keys = {
+            gh_mod.normalize_github_remote(remote)
+            for remote in (
+                "git@github.com:Owner/Repo.git",
+                "ssh://git@github.com/Owner/Repo.git",
+                "https://github.com/Owner/Repo.git",
+            )
+        }
+        self.assertEqual(keys, {"https://github.com/owner/repo"})
+
+    def test_resolution_is_cached_and_second_process_skips_gh_repo_view(self):
+        with tempfile.TemporaryDirectory() as raw:
+            remote = "git@github.com:owner/repo.git"
+            response = (0, json.dumps({"nameWithOwner": "owner/repo",
+                                       "issues": {"totalCount": 38}}), "")
+            with mock.patch.dict(os.environ, {"XDG_CACHE_HOME": raw}), \
+                    mock.patch.object(gh_mod, "_git", return_value=remote), \
+                    mock.patch.object(gh_mod, "_gh_run", return_value=response) as gh_run:
+                self.assertEqual(gh_mod.resolve_github_repo(raw)[:2], ("owner/repo", 38))
+                self.assertTrue(pathlib.Path(gh_mod.github_cache_path(remote)).is_file())
+
+                gh_run.reset_mock()
+                self.assertEqual(gh_mod.resolve_github_repo(raw)[:2], ("owner/repo", 38))
+                gh_run.assert_not_called()
+
+    def test_cache_miss_is_safe_for_a_different_or_expired_remote(self):
+        with tempfile.TemporaryDirectory() as raw:
+            with mock.patch.dict(os.environ, {"XDG_CACHE_HOME": raw}):
+                remote = "https://github.com/owner/repo.git"
+                gh_mod.github_cache_write(remote, "owner/repo", 38)
+                self.assertEqual(gh_mod.github_cache_read("https://github.com/other/repo.git"), {})
+                with mock.patch.object(gh_mod.time, "time",
+                                       return_value=time.time() + gh_mod.GH_CACHE_TTL_S + 1):
+                    self.assertEqual(gh_mod.github_cache_read(remote), {})
 
 
 if __name__ == "__main__":
