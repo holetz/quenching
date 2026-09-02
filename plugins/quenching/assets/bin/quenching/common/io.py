@@ -21,9 +21,8 @@ def write_text(path: str, text: str) -> None:
 
     Write-then-rename rather than `Path.write_text`, which truncates first: a reader landing in
     the window between the truncate and the write gets an empty or torn document. That window
-    is why this is here rather than left alone — `SpecsLock` serialises WRITERS ONLY, and the
-    argument for letting readers run unlocked is exactly that a write is never observable
-    half-done. `os.replace` is atomic on POSIX and on Windows.
+    is why this is here rather than left alone — callers may read while a writer runs, and a
+    write is never observable half-done. `os.replace` is atomic on POSIX and on Windows.
 
     The temp file is created in the SAME directory, so the rename never crosses a filesystem.
     `mkstemp` gives each writer its own name even where no lock covers them (a workspace still in
