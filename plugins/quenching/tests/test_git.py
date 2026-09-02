@@ -608,9 +608,11 @@ class PullRequestPayload(unittest.TestCase):
         cleanup = CLEANUP_COMMAND.read_text(encoding="utf-8").lower()
         self.assertIn("remoteBranches".lower(), cleanup)
         self.assertIn("git push origin --delete", cleanup)
-        self.assertIn("single selection", cleanup)
+        self.assertIn("local selection", cleanup)
+        self.assertIn("remote selection", cleanup)
+        self.assertIn("remote branch is never", cleanup)
         self.assertIn("confirmation", cleanup)
-        self.assertEqual(cleanup.count("**askuserquestion**"), 1)
+        self.assertEqual(cleanup.count("**askuserquestion**"), 2)
 
     def test_cleanup_does_not_fetch_or_prune_implicitly(self):
         cleanup = CLEANUP_COMMAND.read_text(encoding="utf-8").lower()
