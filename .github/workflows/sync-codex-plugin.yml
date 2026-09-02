@@ -23,5 +23,5 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-      - name: Check source conversion
-        run: python3 plugins/quenching/assets/bin/cq --root . components translate --check --json
+      - name: Run repository gate
+        run: bash scripts/verify_repo.sh
