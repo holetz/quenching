@@ -125,13 +125,13 @@ baseline evidence.
 
 | Front | Declaration | Command bodies | Source refs | Codex skills | Codex refs | Proof files | Total |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| design | 1 | 2 | 1 | 2 | 1 | 1 | **8 files / 67,806 bytes** |
-| ops | 1 | 2 | 4 | 2 | 4 | 5 | **18 files / 98,911 bytes** |
-| proof | 1 | 2 | 4 | 2 | 4 | 5 | **18 files / 106,147 bytes** |
-| **three fronts** | **3** | **6** | **9** | **6** | **9** | **11** | **44 files / 272,864 bytes** |
+| design | 1 | 2 | 1 | 2 | 1 | 1 | **8 files / 66,148 bytes** |
+| ops | 1 | 2 | 4 | 2 | 4 | 5 | **18 files / 99,493 bytes** |
+| proof | 1 | 2 | 4 | 2 | 4 | 5 | **18 files / 104,069 bytes** |
+| **three fronts** | **3** | **6** | **9** | **6** | **9** | **11** | **44 files / 269,710 bytes** |
 
 The re-derived shared conductor now adds the same two files at **14,472 bytes**, making the final
-common footprint **46 files / 287,336 bytes**. The three creation commands remain measured outside
+common footprint **46 files / 284,182 bytes**. The three creation commands remain measured outside
 both snapshots as domain-owned extensions, not silently counted as common mold obligations.
 
 The byte counts are dated evidence for this consumer after extraction. A later front may reuse the

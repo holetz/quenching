@@ -1,6 +1,6 @@
 """`cq git conventions` — the one read every command in the `git` pillar runs once before its
 first commit, over BOTH layers a target may declare: the directives it addressed to the plugin in
-`.claude/quenching.json`'s `gitConventions`, and the standard it published under
+`.claude/quenching.json`'s `shared.gitConventions`, and the standard it published under
 `docs/standards/git/**`. `assets/references/git/conventions.md` §The declared-directive layer and
 §The read-if-present rule are the contract; this is their one mechanical reading, so five commands
 stop repeating the same `ls`, frontmatter peek and config load.
@@ -18,11 +18,33 @@ from __future__ import annotations
 import os
 
 from quenching.common.frontmatter import parse_frontmatter
+from quenching.common.config import load_config, namespace
 from quenching.common.io import read_text
 from quenching.common.output import emit
-from quenching.specs.config import load_config
 
 STANDARDS_DIR = os.path.join("docs", "standards", "git")
+GIT_CONVENTION_KEYS = ("commitSubject", "branchName", "prTitle", "prBody", "mergeSubject")
+
+
+def load_git_conventions(root: str) -> dict:
+    """Read and validate only the shared directives owned by the git pillar."""
+    envelope = load_config(root, detect_provider_info=False)
+    raw = namespace(envelope, "shared").get("gitConventions")
+    conventions: dict[str, str] = {}
+    unknown: list[str] = []
+    bad: list[str] = []
+    if isinstance(raw, dict):
+        for key, value in raw.items():
+            if not (isinstance(key, str) and key.strip() in GIT_CONVENTION_KEYS):
+                if isinstance(key, str) and key.strip():
+                    unknown.append(key.strip())
+                continue
+            if isinstance(value, str) and value.strip():
+                conventions[key.strip()] = value.strip()
+            else:
+                bad.append(key.strip())
+    return {"config": conventions, "configUnknown": sorted(unknown),
+            "configBad": sorted(bad), "migrationRefusal": envelope.get("migrationRefusal")}
 
 
 def _declared_docs(cwd: str) -> list[dict]:
@@ -47,19 +69,19 @@ def cmd_conventions(args) -> int:
     # `detect_provider_info=False`: the config is read here for five prose directives, and the
     # provider probe behind that flag shells out to `git remote` to answer a question this verb
     # never asks.
-    cfg = load_config(cwd, detect_provider_info=False)
+    cfg = load_git_conventions(cwd)
     governs = "target" if docs else "defaults"
     lines = []
-    if cfg["gitConventions"]:
+    if cfg["config"]:
         lines.append("declared in .claude/quenching.json:")
         lines += [f"  gitConventions.{key}: {value}"
-                  for key, value in sorted(cfg["gitConventions"].items())]
+                  for key, value in sorted(cfg["config"].items())]
     if docs:
         lines.append("governs: the target's own conventions")
         lines += [f"  {d['path']} (authority: {d['authority'] or 'unstated'})" for d in docs]
     else:
         lines.append("governs: the plugin's defaults — nothing declared under " + STANDARDS_DIR)
     emit(args.json, {"ok": True, "governs": governs, "declared": docs,
-                     "config": cfg["gitConventions"],
-                     "configUnknown": cfg["unknownGitConventions"]}, "\n".join(lines))
+                     "config": cfg["config"], "configUnknown": cfg["configUnknown"],
+                     "configBad": cfg["configBad"]}, "\n".join(lines))
     return 0
