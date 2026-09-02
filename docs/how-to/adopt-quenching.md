@@ -36,6 +36,22 @@ claude --plugin-dir ./plugins/quenching
 Do not use `--plugin-dir` as the normal installation or upgrade path; the marketplace installation
 lets Claude Code manage the published copy.
 
+## Uninstall or reverse
+
+To stop using the plugin but keep the marketplace configured, run:
+
+```text
+/plugin uninstall quenching@quenching
+/reload-plugins
+```
+
+Uninstalling the plugin does not remove the target repository's `/docs/`, `.claude/` or
+`.claude/quenching.json`; those files belong to the repository. If you need to undo an alignment,
+review the target's commits and use its normal Git revert workflow. Removing the plugin is not a
+rollback of data it already wrote. For an upgrade regression, disable or uninstall the plugin,
+then reinstall the previously published version (or use a known checkout with `--plugin-dir` for
+development-only recovery) and reload the session.
+
 You have a real repository — a README that grew sideways, notes in three places, a `.claude/`
 folder of one-off commands — and you want it on the canonical shape without losing anything it
 already has. That is exactly what the aligns are for: **convergence over accommodation**, but

@@ -408,6 +408,23 @@ claude --plugin-dir ./plugins/quenching
 normal adoption or upgrade path. A published installation is managed by Claude Code. All skills
 reach the shared payload via `${CLAUDE_PLUGIN_ROOT}/assets/...`.
 
+## Uninstall or reverse
+
+To remove the installed plugin while keeping the marketplace available:
+
+```text
+/plugin uninstall quenching@quenching
+/reload-plugins
+```
+
+Removing the marketplace itself (`/plugin marketplace remove quenching`) also uninstalls plugins
+installed from it. Neither operation deletes the target repository's `/docs/`, `.claude/` or
+`.claude/quenching.json` files: those are repository-owned data and configuration. To reverse an
+alignment, review and revert the target repository's own commits; uninstalling the plugin is not
+a data rollback. If an upgrade is the problem, disable or uninstall the plugin first, then
+reinstall the previously published version or load its known checkout with `--plugin-dir` for
+development-only recovery. Reload the session after changing the installation.
+
 The tool itself is reached through **two doors onto one file**. `bin/cq` is a shim in the directory
 Claude Code appends to `PATH` for every enabled plugin, which is what lets a command body write
 `cq specs …` bare. `assets/bin/cq` is the entry point itself, invoked with the plugin root written

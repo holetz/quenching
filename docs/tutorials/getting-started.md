@@ -50,6 +50,21 @@ and upgrade path.
 Claude Code appends the plugin's `bin/` to the session PATH, which is what lets every command —
 and you — call `cq` bare.
 
+### Stop or undo the installation
+
+To remove the plugin without removing the marketplace:
+
+```text
+/plugin uninstall quenching@quenching
+/reload-plugins
+```
+
+This leaves the target repository's `/docs/`, `.claude/` and `.claude/quenching.json` intact.
+Plugin removal is not a rollback of repository changes: review the target's Git history and
+revert the commits that you want to undo. For a bad plugin upgrade, reinstall the previously
+published version or use a known checkout with `--plugin-dir` only for development recovery, then
+reload the session.
+
 ## 2. Verify the tool answers
 
 Inside the session (or any shell with the plugin's `bin/` on the PATH):
@@ -116,7 +131,7 @@ cq knowledge validate docs
 
 ## Recap
 
-You installed the plugin (`--plugin-dir`), proved the rail answers (`cq --version`), read the available
+You installed the plugin from the marketplace, proved the rail answers (`cq --version`), read the available
 read-only status reports, and ran one conducted alignment that asked before writing. That
 probe → plan → OK → apply → verify loop is the plugin's one interface — every front repeats it.
 

@@ -413,6 +413,23 @@ claude --plugin-dir ./plugins/quenching
 normal adoption or upgrade path. A published installation is managed by Codex. All skills
 reach the shared payload via `../../assets/...`.
 
+## Uninstall or reverse
+
+To remove the installed plugin while keeping the marketplace available:
+
+```text
+/plugin uninstall quenching@quenching
+/reload-plugins
+```
+
+Removing the marketplace itself (`/plugin marketplace remove quenching`) also uninstalls plugins
+installed from it. Neither operation deletes the target repository's `/docs/`, `.agents/` or
+`.agents/quenching.json` files: those are repository-owned data and configuration. To reverse an
+alignment, review and revert the target repository's own commits; uninstalling the plugin is not
+a data rollback. If an upgrade is the problem, disable or uninstall the plugin first, then
+reinstall the previously published version or load its known checkout with `--plugin-dir` for
+development-only recovery. Reload the session after changing the installation.
+
 The CLI is bundled inside the plugin and is **not** installed in the user's PATH. Codex skills define a per-call `cq` wrapper that resolves the installed plugin and executes `scripts/cq` by absolute path; the wrapper is repeated because each Bash call and each sub-agent may start with a fresh shell. The resolver and its no-global-install rule live in `references/align/tool-resolution.md`.
 
 ## Upgrade
