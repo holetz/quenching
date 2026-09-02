@@ -130,8 +130,8 @@ baseline evidence.
 | proof | 1 | 2 | 4 | 2 | 4 | 5 | **18 files / 104,069 bytes** |
 | **three fronts** | **3** | **6** | **9** | **6** | **9** | **11** | **44 files / 269,710 bytes** |
 
-The re-derived shared conductor now adds the same two files at **14,472 bytes**, making the final
-common footprint **46 files / 284,182 bytes**. The three creation commands remain measured outside
+The re-derived shared conductor now adds the same two files at **14,864 bytes**, making the final
+common footprint **46 files / 284,574 bytes**. The three creation commands remain measured outside
 both snapshots as domain-owned extensions, not silently counted as common mold obligations.
 
 The byte counts are dated evidence for this consumer after extraction. A later front may reuse the
