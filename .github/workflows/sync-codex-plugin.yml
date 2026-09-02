@@ -2,15 +2,7 @@ name: Sync Codex plugin
 
 on:
   push:
-    paths:
-      - 'plugins/quenching/**'
-      - 'plugins/quenching-codex/**'
-      - '.github/workflows/sync-codex-plugin.yml'
   pull_request:
-    paths:
-      - 'plugins/quenching/**'
-      - 'plugins/quenching-codex/**'
-      - '.github/workflows/sync-codex-plugin.yml'
 
 permissions:
   contents: read
