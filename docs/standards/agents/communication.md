@@ -2,7 +2,7 @@
 type: standard
 title: Agent communication
 description: The two language bands an agent writes in — durable artifacts in canonical English so they stay portable and greppable across repos, conversation in the one BCP-47 tag the root harness line declares — and the conduct contract that holds whether or not a language is declared
-resource: /docs/**, /.specs/**
+resource: /docs/**
 tags: [agents, language, communication, harness]
 timestamp: 2026-08-29
 audience: both

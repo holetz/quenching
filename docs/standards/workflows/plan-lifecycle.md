@@ -2,7 +2,7 @@
 type: standard
 title: Plan lifecycle contract
 description: The single-folder lifecycle — plans/ plus archive/ — the derived ready stage and the approved record, `conclude` archiving before the merge and what `## Outcome` asserts because of it, the rule that frontmatter records human judgments while the filesystem, git and section presence record everything else, `branch`/`pr`/`merge` split across `execute`-or-`git:branch`, `git:pr:create` and `git:merge` now that `conclude` writes neither of the last two, the append-only archive rule for facts that did not exist at the move — no longer all landing in the same run — and the moment a follow-up becomes a spec — definition parks it as a Discoveries line, close-out mints it
-resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/**, plugins/quenching/commands/git/branch.md, plugins/quenching/commands/git/merge.md, plugins/quenching/commands/git/pr/create.md, plugins/quenching/assets/references/specs-develop/questions.md, /.specs/**
+resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/**, plugins/quenching/commands/git/branch.md, plugins/quenching/commands/git/merge.md, plugins/quenching/commands/git/pr/create.md, plugins/quenching/assets/references/specs-develop/questions.md
 tags: [workflows, specs, lifecycle, stages, frontmatter, records, discoveries]
 timestamp: 2026-08-25
 audience: both
