@@ -157,13 +157,14 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                     help="archive as done despite open tasks")
     sp.add_argument("--dry-run", action="store_true", dest="dry_run")
 
-    sp = add_json(sub.add_parser("task", help="flip or block a checkbox"))
+    sp = add_json(sub.add_parser("task", help="check, reopen or block a checkbox"))
     sp.add_argument("--spec", required=True)
     sp.add_argument("--check")
     sp.add_argument("--uncheck")
     sp.add_argument("--block", help="mark TASK blocked (requires --reason)")
     sp.add_argument("--descope", help="close TASK as deliberately out of scope (requires --reason)")
-    sp.add_argument("--reason", help="why the task is blocked or descoped — written into the spec")
+    sp.add_argument("--reason", help="why the task is blocked, reopened or descoped — written "
+                                      "into the spec")
     sp.add_argument("--subject", help="the subject of the commit that implements the task, "
                                       "recorded as a `subject:` metadata line "
                                       "(goes with --check)")
