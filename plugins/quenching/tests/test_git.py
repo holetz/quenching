@@ -383,6 +383,69 @@ class Worktree(RepoCase):
         self.assertEqual((before.st_dev, before.st_ino), (after.st_dev, after.st_ino))
 
 
+class LifecycleBehavior(RepoCase):
+    """The lifecycle cases that prose-only command tests cannot prove.
+
+    Each case creates the refs it inspects and then asks Git to perform the operation. The
+    command bodies still own the confirmation and refusal policy; these tests pin the Git facts
+    that policy promises to show and preserve.
+    """
+
+    def _add_bare_remote(self, name="origin"):
+        remote = os.path.join(self.tmp, f"{name}.git")
+        os.makedirs(remote, exist_ok=True)
+        _run(remote, "init", "-q", "--bare")
+        _run(self.repo, "remote", "add", name, remote)
+        _run(self.repo, "push", "-q", "-u", name, "main")
+        return remote
+
+    def test_rebase_then_confirmed_lease_push_replaces_only_the_expected_remote_tip(self):
+        self._add_bare_remote()
+        _run(self.repo, "checkout", "-q", "-b", "feature")
+        pathlib.Path(self.repo, "feature.txt").write_text("feature\n", encoding="utf-8")
+        _run(self.repo, "add", "feature.txt")
+        _run(self.repo, "commit", "-q", "-m", "feature work")
+        _run(self.repo, "push", "-q", "-u", "origin", "feature")
+        old_remote_tip = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
+                                         check=True, capture_output=True, text=True).stdout.strip()
+
+        _run(self.repo, "checkout", "-q", "main")
+        pathlib.Path(self.repo, "base.txt").write_text("base\n", encoding="utf-8")
+        _run(self.repo, "add", "base.txt")
+        _run(self.repo, "commit", "-q", "-m", "base advances")
+        _run(self.repo, "push", "-q", "origin", "main")
+        _run(self.repo, "checkout", "-q", "feature")
+        _run(self.repo, "rebase", "-q", "origin/main")
+        rebased_tip = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
+                                      check=True, capture_output=True, text=True).stdout.strip()
+        self.assertNotEqual(rebased_tip, old_remote_tip)
+
+        _run(self.repo, "push", "-q", f"--force-with-lease=refs/heads/feature:{old_remote_tip}",
+             "origin", "HEAD:refs/heads/feature")
+        remote_tip = subprocess.run(["git", "ls-remote", "origin", "refs/heads/feature"],
+                                     cwd=self.repo, check=True, capture_output=True,
+                                     text=True).stdout.split()[0]
+        self.assertEqual(remote_tip, rebased_tip)
+
+    def test_revert_creates_a_new_commit_and_preserves_the_target(self):
+        pathlib.Path(self.repo, "a.txt").write_text("changed\n", encoding="utf-8")
+        _run(self.repo, "add", "a.txt")
+        _run(self.repo, "commit", "-q", "-m", "change to compensate")
+        target = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo, check=True,
+                                capture_output=True, text=True).stdout.strip()
+
+        _run(self.repo, "revert", "--no-edit", target)
+        revert = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo, check=True,
+                                capture_output=True, text=True).stdout.strip()
+        subject = subprocess.run(["git", "show", "-s", "--format=%s", "HEAD"],
+                                 cwd=self.repo, check=True, capture_output=True,
+                                 text=True).stdout.strip()
+        self.assertNotEqual(revert, target)
+        self.assertTrue(subject.startswith("Revert \"change to compensate\""))
+        self.assertEqual(pathlib.Path(self.repo, "a.txt").read_text(encoding="utf-8"), "x\n")
+        _run(self.repo, "merge-base", "--is-ancestor", target, "HEAD")
+
+
 class Conventions(RepoCase):
     def test_nothing_declared_is_an_empty_list(self):
         self.assertEqual(_declared_docs(self.repo), [])
