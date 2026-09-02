@@ -4,7 +4,7 @@
     python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" [--root PATH] <pillar> <subcommand> ...
     python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --version
 
-Ten pillars, each answering with the same contract its launcher answered with — the
+The registered pillars, each answering with the same contract its launcher answered with — the
 subcommands, the `--json` payloads and the exit codes (0 ok · 1 findings · 2 refusal · 3 usage) are
 the ones frozen in `tests/fixtures/golden/`. This file routes; it decides nothing else.
 
@@ -13,8 +13,8 @@ without `tomllib` gets a named refusal instead of a traceback from a pillar that
 
 WHY THE TABLE CARRIES `takes_root`
 ----------------------------------
-`--root` is the one option that reads as global and is not: `specs --root` names the
-`/.specs/` workspace, `components --root` names the surface holding `commands/`, and
+`--root` is the one option that reads as global and is not: `specs --root` names the repository
+whose configured provider owns the specs, `components --root` names the surface holding `commands/`, and
 `ops --root` names the operations surface. `knowledge --root` names the repository root and its
 bundle remains a positional override. The table says which pillars declare one, and naming
 `--root` for a pillar that does not is a usage error, not a guess.
@@ -30,16 +30,14 @@ import cannot take the other two down with it.
 The spec asked whether `session` survives as a fourth first-level pillar, and declared how
 to decide it: at this task, if no command body but the retro invokes it, it becomes
 `cq components session` and leaves the root. Measured on the surface as it stands, exactly
-one body cites the tool — `commands/skill/retro.md` — so the criterion fires. `design` is a
+one body cites the tool — `commands/components/command/retro.md` — so the criterion fires. `design` is a
 separate pillar because its DTCG source, portable projections, and rendered artifacts form a
 front of their own; it is not session's replacement.
 
 It is mounted as a real subcommand of `components`, in that pillar's own parser, and not
 intercepted here: a route this file knew about and `cq components --help` did not would be a
-surface that lies about itself. The one thing that is out of step until task 7.5 is the
-caller — the retro still lives under `commands/skill/`, so for now the tool sits under a
-pillar its only caller has not moved into yet. That is an ordering artefact of the rename,
-not a reason to hold the decision the spec placed here.
+surface that lies about itself. The caller also lives in the components command surface, so
+the tool and its only caller now share the same front.
 """
 from __future__ import annotations
 
@@ -80,7 +78,7 @@ class Pillar(NamedTuple):
 PILLARS: dict[str, Pillar] = {
     "specs": Pillar(
         "quenching.specs.commands.cli", True,
-        "the /.specs/ workspace — capture, read, task, promote, validate"),
+        "the provider-owned specs front — capture, read, task, promote, validate"),
     "knowledge": Pillar(
         "quenching.knowledge.cli", True,
         "the /docs/ OKF bundle — validate, project and stage documentation surfaces"),

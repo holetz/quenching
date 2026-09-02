@@ -697,11 +697,11 @@ def resolve_lint_targets(path_arg: str | None, root: str) -> tuple[str, list[dic
 def cmd_lint(args, root: str) -> int:
     base, commands, references = resolve_lint_targets(args.path, root)
     if not commands:
-        return report_findings(args.json, f"skills lint — {base}",
+        return report_findings(args.json, f"components lint — {base}",
                                {"root": base, "commandCount": 0},
                                [finding("sk-no-commands", "error",
                                         f"no command file found under {base}",
-                                        command=SURFACE_MISSING)], "skill")
+                                        command=SURFACE_MISSING)], "command")
     prefix = plugin_prefix(root)
     # Same surface-versus-scope rule as the citations below, and for the same reason: the
     # body that names a stage is usually NOT the file being linted, so deriving this from
@@ -726,8 +726,8 @@ def cmd_lint(args, root: str) -> int:
                                            {"command": SURFACE_MISSING,
                                             "path": rel(ref["path"], base)}))
 
-    header = f"skills lint — {base} ({plural(len(commands), 'command')}"
+    header = f"components lint — {base} ({plural(len(commands), 'command')}"
     header += f", {plural(len(references), 'reference')})" if references else ")"
     return report_findings(args.json, header,
                            {"root": base, "commandCount": len(commands),
-                            "referenceCount": len(references)}, findings, "skill")
+                            "referenceCount": len(references)}, findings, "command")
