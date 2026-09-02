@@ -93,7 +93,7 @@ wrapper reports **ERROR `okf-legacy-documentation-home`** — structural, one si
 Resolve it in this order:
 
 1. `documentation/tutorials/`, `documentation/how-to/` and `documentation/explanation/` move to the
-   bundle root under the same names. Run §1c FIRST if the target still has a `guides/` home: a
+   bundle root under the same names. Run §1c. FIRST if the target still has a `guides/` home: a
    quadrant has to exist before it can be promoted.
 2. `documentation/reference/` becomes **`project/`** — this repository's own manual. **Never
    `reference/`**: that is a retired home name `okf-legacy-home` still claims, and reclaiming it
@@ -191,7 +191,8 @@ documentation site's own source. That is a measured external constraint, not a n
 **The root's name no longer distinguishes it from anything.** While the root was dotted, the dot
 did that work — `.knowledge/` was the root, undotted `knowledge/` was a home's old name one level
 inside it, and the two could not be confused. `docs/` has no such marker, and it is the single
-commonest documentation folder name in the wild: the left column of §1's own table is full of it.
+commonest documentation folder name in the wild: the left column of the `§1. Map variant → canonical`
+section's own table is full of it.
 Two consequences follow, and both are load-bearing:
 
 - **A directory is not a bundle.** What identifies an OKF bundle is its **signature** — a root
@@ -216,7 +217,7 @@ Each is **idempotent** — migrating one site clears exactly its own finding, so
 halfway (an interrupted previous run) converges the same way `align` already converges everything
 else: run it again.
 
-**Resolve root-first, then the rest, same order every time**: `git mv` the root itself (§1, same
+**Resolve root-first, then the rest, same order every time**: `git mv` the root itself (§1. Map variant → canonical, same
 mechanism as any other rename), then the homes, quadrants and glossary underneath it — each swept
 for blast radius (§3) and each gated on its OWN confirmation when it reaches product code (§4). A
 root rename is *never* a bare `git mv`: the root's name is also a **path constant** hard-coded into
@@ -262,7 +263,7 @@ A migration whose blast radius reaches **product code**, or is otherwise irrever
 opt-in. A rename that resolves to a code constant is a **refactor of the target's product**, not
 a docs move: alert the user, never perform it silently. **Exception — cycle-authorized runs:** a run invoked as a stage of
 `/quenching:knowledge:align`'s cycle (or of `/align`) under the cycle-authorization contract
-([convergence.md §contract](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)) replaces only the batch gate
+([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md) §The cycle-authorization contract) replaces only the batch gate
 with narration — a code-coupled rename still confirms on its own, always.
 
 ## 5. Frontmatter migration (field renames)
@@ -272,7 +273,7 @@ While aligning legacy docs, migrate field names to OKF (MERGE, never clobber):
 - `summary:` → `description:`
 - `updated:` → `timestamp:`
 - add non-empty `type:` (from the home's vocabulary in [taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md))
-- rename the retired type `type: guide` → `type: documentation` (§1c)
+- rename the retired type `type: guide` → `type: documentation` (§1c.)
 - rename the retired type `type: idea` → `type: task` (§1d; the files then leave the bundle per §1e)
 - rename the retired type `type: decision` → `type: standard` (§1f; stamp `authority: background`, or `current` if implemented)
 - normalize enums to canonical English (`authority: vigente` → `current`; `audience: ambos` → `both`)

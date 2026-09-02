@@ -625,6 +625,8 @@ def resolve_address(address, headings):
         key = normalize(candidate)
         if not key:
             continue
+        if count == 1 and key in ("the", "a", "an", "what", "why", "how"):
+            continue
         matches = heading_matches(key, headings)
         if len(matches) == 1:
             return True
@@ -663,6 +665,8 @@ def unique_global_target(address, heading_index):
         )
         key = normalize(candidate)
         if not key:
+            continue
+        if count == 1 and key in ("the", "a", "an", "what", "why", "how"):
             continue
         hits = [
             (target, heading)
