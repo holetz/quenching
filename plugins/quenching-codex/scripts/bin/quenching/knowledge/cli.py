@@ -32,9 +32,11 @@ and re-adding it is one branch in `main`.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import sys
+from pathlib import Path
 
 from quenching.common.output import FINDINGS, OK, REFUSAL
 from quenching.common.version import VERSION
@@ -50,8 +52,9 @@ from quenching.knowledge.stale import resource_activity
 from quenching.knowledge.validate import _build_corpus, validate_tree
 
 
-USAGE = ("usage: cq knowledge {validate|project|nav|site-source} [<bundle-dir>] [options]   "
-         "(default bundle-dir: docs)")
+def _rooted(root: str, path: str) -> str:
+    """Resolve a pillar-relative path under the caller's repository root."""
+    return os.path.normpath(path if os.path.isabs(path) else os.path.join(root, path))
 
 
 def _activity_rows(bundle_root: str, ignore_globs: tuple[str, ...]) -> list[tuple[str, dict]]:
@@ -69,16 +72,25 @@ def _activity_rows(bundle_root: str, ignore_globs: tuple[str, ...]) -> list[tupl
 
 
 def run_cli(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(
+        prog="cq knowledge validate",
+        description="validate the OKF bundle without writing it",
+    )
+    parser.add_argument("bundle", nargs="?", default="docs")
+    parser.add_argument("--root", default=".", help="repository root (default: current directory)")
+    parser.add_argument("--activity", action="store_true", help="report activity instead of findings")
+    parser.add_argument("--json", action="store_true", help="machine-readable output")
+    args = parser.parse_args(argv)
+
     cfg = _load_config(_project_dir())
-    as_json = "--json" in argv
-    paths = [a for a in argv if not a.startswith("-")]
-    target = paths[0] if paths else "docs"
+    as_json = args.json
+    target = _rooted(args.root, args.bundle)
     ignore_globs = tuple(cfg.get("ignoreGlobs") or ())
     # The figure is its OWN output, never a section of the report. `stale-doc` was retired
     # because the comparison cannot support a verdict; printing the numbers beside findings
     # would rebuild the verdict out of adjacency. It also exits 0 whatever it prints — there
     # is no interval that is a failure.
-    if "--activity" in argv:
+    if args.activity:
         rows = _activity_rows(target, ignore_globs)
         if as_json:
             print(json.dumps([dict(activity, path=rel) for rel, activity in rows], indent=2))
@@ -108,10 +120,9 @@ def run_project(argv: list[str]) -> int:
     canonical glossary is staged as `glossary.md` in `site-source`, and no second editable copy
     exists.
     """
-    import argparse
-
     parser = argparse.ArgumentParser(prog="cq knowledge project")
     parser.add_argument("bundle", nargs="?", default="docs")
+    parser.add_argument("--root", default=".", help="repository root (default: current directory)")
     parser.add_argument("--snippet", default=DEFAULT_SNIPPET)
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--write", action="store_true", help="write the deterministic projection")
@@ -119,9 +130,7 @@ def run_project(argv: list[str]) -> int:
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
-    from pathlib import Path
-
-    bundle = Path(args.bundle)
+    bundle = Path(_rooted(args.root, args.bundle))
     if args.write:
         written = write_projection(bundle, args.snippet)
         payload = dict(written)
@@ -151,10 +160,9 @@ def run_nav(argv: list[str]) -> int:
 
     `--check` is the gate `site-nav-stale` reads: it is a byte comparison, because the generator
     is idempotent by construction. Anything it would change is a diff, never a judgement call."""
-    import argparse
-
     parser = argparse.ArgumentParser(prog="cq knowledge nav")
     parser.add_argument("bundle", nargs="?", default="docs")
+    parser.add_argument("--root", default=".", help="repository root (default: current directory)")
     parser.add_argument("--config", default="zensical.toml",
                         help="root zensical.toml whose nav is generated (default: zensical.toml)")
     mode = parser.add_mutually_exclusive_group()
@@ -165,62 +173,65 @@ def run_nav(argv: list[str]) -> int:
 
     from quenching.knowledge.nav import generate
 
-    if not os.path.isdir(args.bundle):
+    bundle = _rooted(args.root, args.bundle)
+    config = _rooted(args.root, args.config)
+    if not os.path.isdir(bundle):
         payload = {"ok": False, "code": "nav-no-bundle",
-                   "message": f"{args.bundle} is not a directory"}
+                   "message": f"{bundle} is not a directory"}
         print(json.dumps(payload, indent=2) if args.json else f"error: {payload['message']}",
               file=None if args.json else sys.stderr)
         return FINDINGS
 
-    current, desired = generate(args.bundle, args.config)
+    current, desired = generate(bundle, config)
     if not current:
         payload = {"ok": False, "code": "nav-config-unreadable",
-                   "message": f"{args.config} is missing or unreadable"}
+                   "message": f"{config} is missing or unreadable"}
         print(json.dumps(payload, indent=2) if args.json else f"error: {payload['message']}",
               file=None if args.json else sys.stderr)
         return FINDINGS
 
     stale = current != desired
     if stale and args.write:
-        with open(args.config, "w", encoding="utf-8") as handle:
+        with open(config, "w", encoding="utf-8") as handle:
             handle.write(desired)
     payload = {"ok": not stale or args.write,
                "mode": "write" if args.write else "check",
-               "config": args.config, "bundle": args.bundle,
+               "config": config, "bundle": bundle,
                "changed": bool(stale and args.write),
                "findings": ([] if not stale or args.write else
-                            [{"path": args.config, "code": "site-nav-stale",
+                            [{"path": config, "code": "site-nav-stale",
                               "message": "the nav does not match the bundle tree — "
                                          "run `cq knowledge nav --write`"}])}
     if args.json:
         print(json.dumps(payload, indent=2, ensure_ascii=False))
     elif args.write:
-        print(f"knowledge nav — {'rewrote' if stale else 'already current:'} {args.config}")
+        print(f"knowledge nav — {'rewrote' if stale else 'already current:'} {config}")
     else:
-        print(f"knowledge nav — {'STALE' if stale else 'current'}: {args.config}")
+        print(f"knowledge nav — {'STALE' if stale else 'current'}: {config}")
     return FINDINGS if payload["findings"] else OK
 
 
 def run_site_source(argv: list[str]) -> int:
     """Stage or verify the small, explicit source tree used by Zensical."""
-    import argparse
-
     parser = argparse.ArgumentParser(prog="cq knowledge site-source")
     parser.add_argument("bundle", nargs="?", default="docs")
     parser.add_argument("destination", nargs="?", default="site-source")
+    parser.add_argument("--root", default=".", help="repository root (default: current directory)")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--write", action="store_true", help="replace the generated source tree")
     mode.add_argument("--check", action="store_true", help="check without writing (the default)")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
+    bundle = _rooted(args.root, args.bundle)
+    destination = _rooted(args.root, args.destination)
 
     try:
         if args.write:
-            payload = stage_site_source(args.bundle, args.destination)
+            payload = stage_site_source(bundle, destination)
             payload["mode"] = "write"
             errors: list[dict] = []
         else:
-            payload, errors = site_source_findings(args.bundle, args.destination)
+            payload, errors = site_source_findings(bundle, destination)
             payload["mode"] = "check"
         payload["findings"] = errors
         payload["ok"] = not errors
@@ -234,7 +245,7 @@ def run_site_source(argv: list[str]) -> int:
         state = "OK" if payload["ok"] else "FINDINGS"
         print(f"knowledge site source — {state} ({payload.get('files', 0)} files)")
         for finding in payload["findings"]:
-            print(f"  [ERROR] {finding.get('path', args.destination)}: "
+            print(f"  [ERROR] {finding.get('path', destination)}: "
                   f"{finding['message']} ({finding['code']})")
     return FINDINGS if payload["findings"] else OK
 
@@ -256,21 +267,23 @@ def main(argv: list[str]) -> int:
     a move. A bundle root that is not a directory is still a `no-bundle` ERROR finding
     exiting `FINDINGS`, exactly as it always did. The `REFUSAL` below is the ROUTER's, on a
     word that names no verb, and it can only be reached before any bundle is read."""
-    if "--version" in argv:
-        # `cq knowledge`, not the pre-refactor validator's filename: task 10.1 deleted that file,
-        # so the stamp was naming an artifact the repo no longer ships. `citation-check.sh` cannot
-        # see it — its dead patterns match the script names WITH their extension, and this string
-        # carries none.
-        print(f"cq knowledge {VERSION}")
-        return OK
-    verb = argv[0] if argv else ""
-    if verb == "validate":
-        return run_cli(argv[1:])
-    if verb == "project":
-        return run_project(argv[1:])
-    if verb == "nav":
-        return run_nav(argv[1:])
-    if verb == "site-source":
-        return run_site_source(argv[1:])
-    print(USAGE, file=sys.stderr)
-    return REFUSAL
+    parser = argparse.ArgumentParser(
+        prog="cq knowledge",
+        description="the OKF bundle — validate and stage documentation surfaces",
+    )
+    parser.add_argument("--root", help="repository root (default: current directory)")
+    parser.add_argument("--version", action="version", version=f"cq knowledge {VERSION}")
+    parser.add_argument("verb", nargs="?", choices=("validate", "project", "nav", "site-source"),
+                        help="the knowledge operation")
+    parser.add_argument("rest", nargs=argparse.REMAINDER,
+                        help="the operation's bundle and options")
+    args = parser.parse_args(argv)
+    if not args.verb:
+        parser.print_help(sys.stderr)
+        return REFUSAL
+    rest = list(args.rest)
+    if args.root:
+        rest = ["--root", args.root] + rest
+    dispatch = {"validate": run_cli, "project": run_project,
+                "nav": run_nav, "site-source": run_site_source}
+    return dispatch[args.verb](rest)
