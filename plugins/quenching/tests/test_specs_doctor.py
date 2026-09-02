@@ -23,7 +23,7 @@ from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.specs.backends.base import BackendRefusal
-from quenching.common.config import load_config as load_envelope
+from quenching.common.config import load_config as load_envelope, namespace
 from quenching.specs.commands import doctor as doctor_mod
 from quenching.specs.commands.doctor import cmd_doctor
 from quenching.specs.commands.output import Emitter
@@ -107,29 +107,6 @@ class GithubDoctorFindings(unittest.TestCase):
         self.assertEqual(findings[0]["severity"], "warn")
         self.assertEqual(code, 0)
 
-    def test_a_git_convention_sub_key_nothing_reads_is_named_with_the_recognised_set(self):
-        findings, code = self._findings(_StubBackend(rows=[{"slug": "alpha"}]),
-                                        unknownGitConventions=["prDescription"])
-        unknown = [f for f in findings if f["code"] == "sp-config-unknown-git-convention"]
-        self.assertEqual(len(unknown), 1)
-        self.assertEqual(unknown[0]["severity"], "warn")
-        self.assertIn("prDescription", unknown[0]["message"])
-        self.assertIn("commitSubject", unknown[0]["remedy"])
-        self.assertEqual(code, 0)
-
-    def test_a_recognised_directive_with_an_unusable_value_is_named_rather_than_silent(self):
-        # The whole point of `badGitConventions`: the sub-key IS recognised, so nothing above
-        # catches it, and a directive that is `""` or `7` simply never applies. Silence here is
-        # the `worktree_setup` failure mode with a different spelling.
-        findings, code = self._findings(_StubBackend(rows=[{"slug": "alpha"}]),
-                                        badGitConventions=["commitSubject"])
-        bad = [f for f in findings if f["code"] == "sp-config-bad-git-convention"]
-        self.assertEqual(len(bad), 1)
-        self.assertEqual(bad[0]["severity"], "warn")
-        self.assertIn("commitSubject", bad[0]["message"])
-        self.assertTrue(bad[0]["remedy"])
-        self.assertEqual(code, 0)
-
     def test_a_refusal_with_no_remedy_of_its_own_still_gets_one(self):
         # `gh_refusal`'s three classifications carry no `remedy` key, and they reach this
         # block too — a KeyError here would crash the command it is meant to keep alive.
@@ -201,6 +178,8 @@ class ConfigMigrationMatrix(unittest.TestCase):
         self.assertNotIn("fanoutMinComplexity", specs)
         self.assertEqual(specs["worktreeSetup"], "make setup")
         self.assertNotIn("opsRoot", specs)
+        self.assertNotIn("proofRoot", specs)
+        self.assertNotIn("gitConventions", specs)
 
         ops, ops_error = load_ops_config(root)
         self.assertEqual(ops_error, {})
@@ -248,6 +227,11 @@ class ConfigMigrationMatrix(unittest.TestCase):
         self.assertIsNone(config)
         self.assertEqual(error["code"], "sp-config-unscoped")
         self.assertEqual(error["exit"], 2)
+
+    def test_namespace_accessor_never_falls_back_to_a_flat_key(self):
+        self.assertEqual(namespace({"proofRoot": "tests"}, "proof"), {})
+        self.assertEqual(namespace({"namespaces": {"proof": {"proofRoot": "tests"}}},
+                                   "proof"), {"proofRoot": "tests"})
 
 
 if __name__ == "__main__":

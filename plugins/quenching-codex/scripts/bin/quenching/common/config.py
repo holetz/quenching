@@ -189,3 +189,17 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     )
     out["migrationRefusal"] = _migration_refusal(path, obj, out["legacyKeys"])
     return out
+
+
+def namespace(config: dict, name: str) -> dict:
+    """Return one parsed namespace without letting a caller fall back to another one.
+
+    The envelope is the shared loader's boundary; this small accessor keeps adapters from
+    reaching through it with a flat-key fallback.  A malformed or absent namespace is an empty
+    declaration and remains the owning adapter's decision to accept or refuse.
+    """
+    namespaces = config.get("namespaces")
+    if not isinstance(namespaces, dict):
+        return {}
+    value = namespaces.get(name)
+    return value if isinstance(value, dict) else {}
