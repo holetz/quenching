@@ -45,6 +45,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp = sub.add_parser("stale", help="branches merged or gone, and worktrees git still "
                                        "registers with no directory on disk — a report only")
+    sp.add_argument("--remote", default="origin", metavar="REMOTE",
+                    help="remote whose fetched branches are reported (default: origin)")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("conventions", help="read-if-present: whether the target declares "
