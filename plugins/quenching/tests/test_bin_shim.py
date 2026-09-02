@@ -46,6 +46,16 @@ class ThePathShim(unittest.TestCase):
         self.assertEqual(run.returncode, 0, run.stderr)
         self.assertEqual(run.stdout.strip(), VERSION)
 
+    def test_each_pillar_uses_the_same_version_grammar(self):
+        pillars = ("specs", "knowledge", "design", "components", "ops", "proof", "git",
+                   "toolchain", "delivery", "security")
+        for pillar in pillars:
+            with self.subTest(pillar=pillar):
+                run = subprocess.run([str(SHIM), pillar, "--version"],
+                                     capture_output=True, text=True)
+                self.assertEqual(run.returncode, 0, run.stderr)
+                self.assertEqual(run.stdout.strip(), f"cq {pillar} {VERSION}")
+
     def test_it_is_a_literally_equivalent_invocation(self):
         """Same argv through both doors — same stdout, same exit code. The `os.execv` claim."""
         argv = ["components", "doctor", "--root", str(PLUGIN_ROOT), "--json"]
@@ -58,6 +68,12 @@ class ThePathShim(unittest.TestCase):
         """Every command body branches on 0/1/2. A shim that normalised one would break all of them."""
         run = subprocess.run([str(SHIM), "knowledge", "--root", "."], capture_output=True, text=True)
         self.assertEqual(run.returncode, 2, run.stdout + run.stderr)
+
+    def test_argparse_misuse_arrives_as_the_distinct_usage_exit(self):
+        run = subprocess.run([str(SHIM), "knowledge", "--root", ".", "validate", "--bogus"],
+                             capture_output=True, text=True)
+        self.assertEqual(run.returncode, 3, run.stdout + run.stderr)
+        self.assertIn("usage: cq knowledge validate", run.stderr)
 
 
 if __name__ == "__main__":

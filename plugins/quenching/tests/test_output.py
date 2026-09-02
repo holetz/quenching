@@ -12,9 +12,11 @@ import unittest
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.common.output import (
+    CQArgumentParser,
     FINDINGS,
     OK,
     REFUSAL,
+    USAGE,
     emit,
     emit_err,
     exit_for,
@@ -34,8 +36,23 @@ def captured():
 
 
 class Ladder(unittest.TestCase):
-    def test_the_three_steps_are_zero_one_two_in_that_order(self):
+    def test_the_verdict_steps_are_zero_one_two_in_that_order(self):
         self.assertEqual((OK, FINDINGS, REFUSAL), (0, 1, 2))
+
+    def test_usage_is_the_first_code_after_the_refusal_ladder(self):
+        self.assertEqual(USAGE, 3)
+
+
+class Parser(unittest.TestCase):
+    def test_argparse_syntax_uses_the_distinct_usage_exit(self):
+        parser = CQArgumentParser(prog="cq test")
+        parser.add_argument("command", choices=("run",))
+        with captured() as (out, err):
+            with self.assertRaises(SystemExit) as raised:
+                parser.parse_args(["unknown"])
+        self.assertEqual(raised.exception.code, USAGE)
+        self.assertEqual(out.getvalue(), "")
+        self.assertIn("usage: cq test", err.getvalue())
 
 
 class Emit(unittest.TestCase):
@@ -85,6 +102,13 @@ class EmitErr(unittest.TestCase):
         with captured() as (out, _):
             emit_err(False, {"code": "sp-missing", "message": "no such spec"})
         self.assertEqual(out.getvalue(), "error: no such spec\n")
+
+    def test_a_refusal_uses_the_refusal_door(self):
+        with captured() as (out, err):
+            self.assertEqual(emit_err(False, {"code": "sp-no-backend", "message": "no backend",
+                                               "exit": REFUSAL}), REFUSAL)
+        self.assertEqual(out.getvalue(), "")
+        self.assertEqual(err.getvalue(), "refused: no backend\n")
 
 
 class Refuse(unittest.TestCase):

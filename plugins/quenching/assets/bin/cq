@@ -47,7 +47,7 @@ import importlib
 import sys
 from typing import NamedTuple
 
-from quenching.common.output import REFUSAL
+from quenching.common.output import CQArgumentParser, USAGE
 from quenching.common.version import VERSION
 
 
@@ -62,7 +62,7 @@ PILLARS: dict[str, Pillar] = {
         "quenching.specs.commands.cli", True,
         "the /.specs/ workspace — capture, read, task, promote, validate"),
     "knowledge": Pillar(
-        "quenching.knowledge.cli", False,
+        "quenching.knowledge.cli", True,
         "the /docs/ OKF bundle — validate, project and stage documentation surfaces"),
     "design": Pillar(
         "quenching.design.cli", True,
@@ -92,7 +92,7 @@ PILLARS: dict[str, Pillar] = {
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(
+    p = CQArgumentParser(
         prog="cq",
         description="the quenching plugin's tooling, one pillar at a time",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -121,15 +121,21 @@ def main(argv: list[str]) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     if not args.pillar:
-        parser.print_help()
-        return REFUSAL
+        parser.error("choose a pillar")
     pillar = PILLARS[args.pillar]
     rest = list(args.rest)
     if args.root:
         if not pillar.takes_root:
             parser.error(f"{args.pillar} declares no --root")
         rest = ["--root", args.root] + rest
-    return importlib.import_module(pillar.module).main(rest)
+    try:
+        return importlib.import_module(pillar.module).main(rest)
+    except SystemExit as exc:
+        # A child parser still owns its syntax and its usage text. Normalize argparse's historic
+        # exit 2 at the one shipped entry point, while preserving --help/--version exit 0.
+        if exc.code == 2:
+            return USAGE
+        raise
 
 
 if __name__ == "__main__":
