@@ -18,11 +18,11 @@ looping until a pass changes nothing.
 The payload (skeleton, molds, validator) lives at `../../assets/`; the contract at
 `../../references/knowledge-align/`:
 
-- [knowledge-align/okf-spec.md](../../references/knowledge-align/okf-spec.md) — the normative OKF v0.1 rules (MUST/SHOULD/MAY).
-- [knowledge-align/taxonomy.md](../../references/knowledge-align/taxonomy.md) — the canonical tree, homes, `type` vocabulary, boundaries.
-- [knowledge-align/migration.md](../../references/knowledge-align/migration.md) — variant→canonical map + blast-radius doctrine.
-- [knowledge-align/conformance.md](../../references/knowledge-align/conformance.md) — the exact checks the validator applies.
-- [knowledge-align/cycle.md](../../references/knowledge-align/cycle.md) — the stage pipeline, the parallel-prep flow, and the finding → owning-command routing table.
+- [knowledge-align/okf-spec.md](../../references/knowledge-align/okf-spec.md) §Normative rules §Bundle & conformance — the normative OKF v0.1 rules (MUST/SHOULD/MAY).
+- [knowledge-align/taxonomy.md](../../references/knowledge-align/taxonomy.md) §The canonical tree (locked) §The `type` vocabulary §Boundary rules (memorable summary) §The homes, one by one — the canonical tree, homes, `type` vocabulary, boundaries.
+- [knowledge-align/migration.md](../../references/knowledge-align/migration.md) §1. Map variant → canonical §3. Measure and SURFACE the blast radius BEFORE executing §4. Propose the migration; NEVER rename/delete without OK — variant→canonical map + blast-radius doctrine.
+- [knowledge-align/conformance.md](../../references/knowledge-align/conformance.md) §Bundle level §Structural integrity (whole-tree — CLI + `Stop` only) §Resource integrity (per-doc — every mode) — the exact checks the validator applies.
+- [knowledge-align/cycle.md](../../references/knowledge-align/cycle.md) §The stage pipeline §Finding → owning-command routing table — the stage pipeline, the parallel-prep flow, and the finding → owning-command routing table.
 
 The executable checker is `cq`
 (`cq knowledge validate /docs` → exit 0 = conforms). Define the per-call wrapper from
@@ -32,7 +32,8 @@ the tool-resolution reference, then invoke `cq` in that same Bash call —
 
 ## Doctrine (non-negotiable)
 
-Read [align/sweep-doctrine.md](../../references/align/sweep-doctrine.md).
+Read [align/sweep-doctrine.md](../../references/align/sweep-doctrine.md)
+§1. Probe before the inventory §2. Convergence, not accommodation §3. Force with ONE confirmation §4. The blast-radius sweep §5. MERGE, never clobber; never delete on a guess §6. Align conformance; report the cycle §7. Citing a command — three forms, one condition each §8. End honest.
 What follows is specific to `/docs/`:
 
 **Why `Bash` is unrestricted here.** This front probes and updates the target's fixed bundle,
@@ -44,7 +45,7 @@ to enumerate in `allowed-tools`, and each write remains gated by the workflow be
   the harness MOVEs in is a term the glossary must then index. The loop ends at a **fixpoint** —
   a pass that changed nothing with the validator clean — never after a fixed count, bounded by a
   pass cap and a no-progress guard
-  ([convergence.md](../../references/align/convergence.md)).
+  ([convergence.md](../../references/align/convergence.md) §The convergence contract).
 - **Conduct the content stages, never reimplement them.** Steps 6–7 **invoke**
   `quenching-knowledge-import-memory`, `quenching-components-harness-align` and `quenching-knowledge-glossary-backfill` through the `Skill` tool
   under their registry names (`quenching:knowledge:import-memory`, …). Each runs under its own doctrine
@@ -127,11 +128,12 @@ inventory, plan, and structural write set to that scope; report out-of-scope fin
 them. With no argument, use the whole bundle.
 Detect the existing sections, which docs carry frontmatter, and match each section to a canonical
 home via the variant→canonical map
-([knowledge-align/migration.md](../../references/knowledge-align/migration.md)) —
+([knowledge-align/migration.md](../../references/knowledge-align/migration.md) §1. Map variant → canonical) —
 top-level (`arquitetura/`→`standards/`) and subfolder (`codigo/`→`code/`). Read
-[knowledge-align/conformance.md](../../references/knowledge-align/conformance.md) and
+[knowledge-align/conformance.md](../../references/knowledge-align/conformance.md)
+§Structural integrity (whole-tree — CLI + `Stop` only) §Resource integrity (per-doc — every mode) and
 route every probe finding to its owner via
-[knowledge-align/cycle.md](../../references/knowledge-align/cycle.md)'s table. Produce
+[knowledge-align/cycle.md](../../references/knowledge-align/cycle.md) §Finding → owning-command routing table. Produce
 the plan — enumerate:
   - **(a)** homes to scaffold (only those that apply);
   - **(a2)** pre-rename plugin-layout sites to migrate (`okf-legacy-root`/`-home`/

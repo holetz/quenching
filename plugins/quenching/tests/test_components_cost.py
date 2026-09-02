@@ -25,7 +25,7 @@ class ComponentsCost(unittest.TestCase):
         reference.write_text("## Rule\n\nBinding rule.\n\n## Story\n\nRationale.\n", encoding="utf-8")
         (root / "commands" / "front" / "verb.md").write_text(
             "---\ndescription: do it\n---\n\nBody é.\n\n"
-            "[rules](${CLAUDE_PLUGIN_ROOT}/assets/references/front/rules.md) §Rule\n",
+            "[rules](${CLAUDE_PLUGIN_ROOT}/assets/references/" + "front/rules.md) §Rule\n",
             encoding="utf-8",
         )
         output = io.StringIO()
@@ -35,7 +35,7 @@ class ComponentsCost(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertEqual(payload["commandCount"], 1)
         row = payload["commands"][0]
-        self.assertEqual(row["bodyBytes"], len("\nBody é.\n\n[rules](${CLAUDE_PLUGIN_ROOT}/assets/references/front/rules.md) §Rule".encode()))
+        self.assertEqual(row["bodyBytes"], len(("\nBody é.\n\n[rules](${CLAUDE_PLUGIN_ROOT}/assets/references/" + "front/rules.md) §Rule").encode()))
         self.assertEqual(row["wholeReferences"], [])
         self.assertEqual(row["sections"], [{"path": "front/rules.md", "heading": "Rule", "bytes": len("Binding rule.".encode())}])
         self.assertEqual(payload, json.loads(output.getvalue()))
@@ -47,8 +47,8 @@ class ComponentsCost(unittest.TestCase):
         (references / "rules.md").write_text("## Rule\n\nWhole.\n", encoding="utf-8")
         body = "\n".join([
             "Body.",
-            "[one](${CLAUDE_PLUGIN_ROOT}/assets/references/front/rules.md)",
-            "[two](${CLAUDE_PLUGIN_ROOT}/assets/references/front/rules.md)",
+            "[one](${CLAUDE_PLUGIN_ROOT}/assets/references/" + "front/rules.md)",
+            "[two](${CLAUDE_PLUGIN_ROOT}/assets/references/" + "front/rules.md)",
             "",
         ])
         (root / "commands" / "front" / "verb.md").write_text(
@@ -66,7 +66,7 @@ class ComponentsCost(unittest.TestCase):
         (references / "rules.md").write_text("## Rule\n\nWhole.\n", encoding="utf-8")
         (root / "commands" / "front" / "verb.md").write_text(
             "---\ndescription: do it\n---\n\n"
-            "[rules](${CLAUDE_PLUGIN_ROOT}/assets/references/front/rules.md) §Missing\n",
+            "[rules](${CLAUDE_PLUGIN_ROOT}/assets/references/" + "front/rules.md) §Missing\n",
             encoding="utf-8",
         )
         output = io.StringIO()
