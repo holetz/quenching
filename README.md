@@ -17,9 +17,9 @@ python3 scripts/sync_codex_plugin.py --write
 python3 scripts/sync_codex_plugin.py --check
 ```
 
-The same conversion can be requested manually through the `Sync Codex plugin` workflow. It does
-not run automatically on Claude changes; it generates an artifact only when a human dispatches it
-with `apply` enabled.
+The `Sync Codex plugin` workflow runs on pushes and pull requests. It installs the locked
+toolchain and runs the repository gate; it does not write the generated snapshot in CI. Refresh
+the Codex artifact locally after changing Claude sources.
 
 ## Desenvolvimento local
 
@@ -62,11 +62,11 @@ optional consumer, and `cq design import` is the explicit route for folding its 
 
 ## Install
 
-This repository publishes under a **`develop` → `main`** flow
-([`docs/standards/git/branching.md`](docs/standards/git/branching.md)): `develop` is where specs
-accumulate, and `main` — the GitHub repository's default branch — only ever receives a
-deliberate, tagged release. Installing normally therefore always gets you a release someone
-chose to publish, never an arbitrary in-progress merge.
+This repository publishes from the single **`main`** branch
+([`docs/standards/git/branching.md`](docs/standards/git/branching.md)). Pull requests merge into
+`main`, and a deliberate local release act creates the tag and publishes the accumulated work.
+Installing normally therefore gets the repository's default branch, not an arbitrary in-progress
+checkout.
 
 Local (no marketplace publish needed):
 
@@ -74,8 +74,7 @@ Local (no marketplace publish needed):
 claude --plugin-dir ./plugins/quenching
 ```
 
-Run from a checkout of `main` for the latest release; a checkout of `develop` carries whatever
-has been merged since, unreleased.
+Run from a checkout of `main` for the latest published repository state.
 
 Then, inside a target repository, use the `/` menu — every command is
 `/quenching:<front>:<verb>` when installed as a plugin (`/quenching:knowledge:align`,

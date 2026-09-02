@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-08-28
 audience: human
 authority: current
-source: plugins/quenching/README.md §The six fronts, the seventh pillar, and the one align per front; command bodies under plugins/quenching/commands/{knowledge,design,components,ops,proof}/ and align.md
+source: plugins/quenching/README.md §The seven fronts, the non-converging axes, and the one align per front; command bodies under plugins/quenching/commands/{knowledge,design,components,ops,proof,toolchain,delivery}/ and align.md
 maintainer: Israel Holetz
 ---
 
@@ -43,7 +43,9 @@ flowchart LR
 | Just the design source | `/quenching:design:align` | `/.design/` source, projections, and genres |
 | Just the operations surface | `/quenching:ops:align` | the declared root, router, registry and bounded structural drift |
 | Just the verification surface | `/quenching:proof:align` | the declared test gate, fixtures, layers and bounded structural drift |
-| The whole repository | `/quenching:align` | all five local aligned fronts, dependency order, one nested OK |
+| Just the toolchain surface | `/quenching:toolchain:align` | manifests, locks, pins and tool configuration |
+| Just the delivery surface | `/quenching:delivery:align` | workflows, reachability, provenance and release shape |
+| The whole repository | `/quenching:align` | all seven local aligned fronts, dependency order, one nested OK |
 
 !!! tip "Recommendation"
     Default to `/quenching:align` on adoption. The fronts feed each other — a spec's
@@ -60,7 +62,7 @@ flowchart LR
    diff you end up reviewing.
 2. Type `/quenching:align`. The probe runs each applicable front's own verifier first
    (`cq knowledge validate`, `cq design doctor`, `cq components doctor`/`lint`, `cq ops doctor`,
-   `cq proof doctor`); a clean front stops without ceremony. `ops` and `proof` are applicable
+   `cq proof doctor`, `cq toolchain doctor`, `cq delivery doctor`); a clean front stops without ceremony. `ops` and `proof` are applicable
    when `.claude/quenching.json` declares `ops.opsRoot` or `proof.proofRoot`, or when their fixed conventional-root
    probes find an entry point or test module. Otherwise the report says *not applicable* and
    offers the declaration path without inventing a plan.
