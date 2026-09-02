@@ -17,6 +17,25 @@ maintainer: Israel Holetz
 
 *Audience: implementer · One OK per front*
 
+## Install the plugin
+
+For adoption, install the published plugin from its marketplace inside Claude Code:
+
+```text
+/plugin marketplace add holetz/claude-quenching
+/plugin install quenching@quenching
+```
+
+Run `/reload-plugins` if the session was already open. The direct checkout form is reserved for
+plugin development and testing:
+
+```bash
+claude --plugin-dir ./plugins/quenching
+```
+
+Do not use `--plugin-dir` as the normal installation or upgrade path; the marketplace installation
+lets Claude Code manage the published copy.
+
 You have a real repository — a README that grew sideways, notes in three places, a `.claude/`
 folder of one-off commands — and you want it on the canonical shape without losing anything it
 already has. That is exactly what the aligns are for: **convergence over accommodation**, but
