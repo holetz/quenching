@@ -41,7 +41,8 @@ so, where it does not.
 The stages' own sections, the per-section authoring doctrine in
 [specs-develop/artifacts.md](../../references/specs-develop/artifacts.md),
 and the records' shapes are loaded **inside the step that uses them** — steps 3b and 6; step 8
-loads spec-driven.md's §The report mold, whose shape that step's report is built from, the same way.
+loads specs-develop/report-mold.md's §The report mold, whose shape that step's report is built from,
+the same way.
 
 ## Resolving the tool
 
@@ -378,7 +379,7 @@ present it — a sub-agent never talks to the human, at any gear.
 Then report:
 
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/spec-driven.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/report-mold.md \
   --sections "§The report mold" --rules-only
 ```
 

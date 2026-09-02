@@ -390,7 +390,7 @@ it stands after the run's last commit.
 ### 7. Report, and hand off
 
 ```bash
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/report-mold.md \
   --sections "§The report mold" --rules-only
 ```
 

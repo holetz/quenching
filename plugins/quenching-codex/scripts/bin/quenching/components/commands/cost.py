@@ -95,15 +95,16 @@ def _section_candidates(fragment: str) -> list[str]:
     the first stable words. Possessives and shell/markdown punctuation are syntax, not address
     content.
     """
-    cleaned = fragment.replace("`", " ").replace('"', " ").replace("\\", " ")
-    tokens = cleaned.split()
+    raw_tokens = fragment.replace('"', " ").replace("\\", " ").split()
+    cleaned_tokens = fragment.replace("`", " ").replace('"', " ").replace("\\", " ").split()
     candidates = []
-    for count in range(len(tokens), 0, -1):
-        candidate = " ".join(tokens[:count]).strip("`\\\"'.,;:)]}")
-        if candidate.endswith("'s"):
-            candidate = candidate[:-2].rstrip()
-        if candidate and candidate not in candidates:
-            candidates.append(candidate)
+    for count in range(len(raw_tokens), 0, -1):
+        for tokens in (raw_tokens, cleaned_tokens):
+            candidate = " ".join(tokens[:count]).strip("\\\"'.,;:)]}")
+            if candidate.endswith("'s"):
+                candidate = candidate[:-2].rstrip()
+            if candidate and candidate not in candidates:
+                candidates.append(candidate)
     return candidates
 
 

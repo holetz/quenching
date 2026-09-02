@@ -26,11 +26,14 @@ cannot be safely reduced to one static prefix.
 
 The distillation doctrine — what crosses into `/docs/`, what stays, and how it is graded — lives in
 [specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)
-§What crosses, what stays. The layout, the gates and the
-`cq specs` surface live in
+§What crosses, what stays. The layout and the gates live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-§The provider-owned document §The gates and the stage-scoped explicit-none rule §The `cq specs` tool
-surface §The report mold, which owns the shape printed by step 7.
+§The provider-owned document §The gates and the stage-scoped explicit-none rule. The `cq specs`
+surface lives in
+[specs-surface.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/specs-surface.md)
+§The `cq specs` tool surface; the report shape lives in
+[report-mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/report-mold.md)
+§The report mold.
 ## Resolving the tool
 
 Resolve `cq specs` per
@@ -293,7 +296,7 @@ nothing could be handed off — a red gate, or (abandoned) the branch's own fate
 ### 7. Report
 
 ```bash
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/report-mold.md \
   --sections "§The report mold" --rules-only
 ```
 

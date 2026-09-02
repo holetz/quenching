@@ -89,8 +89,8 @@ class ManifestSurfaceTests(unittest.TestCase):
 
     def test_manifest_count_check_discriminates_a_changed_population(self):
         commands = _commands_on_disk()
-        self.assertNotIn("/quenching:invented:command", commands)
-        self.assertNotEqual(len(commands), len(commands | {"/quenching:invented:command"}))
+        self.assertNotIn("/quenching:" + "invented:command", commands)
+        self.assertNotEqual(len(commands), len(commands | {"/quenching:" + "invented:command"}))
 
     def test_manifest_projection_covers_each_namespace_derived_from_the_surface(self):
         commands = _commands_on_disk()
