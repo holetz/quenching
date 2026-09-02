@@ -264,8 +264,9 @@ whole suite by reflex is the expensive way to learn nothing. When the repo's `##
 the scope, follow it; when it does not, run what it says and report the cost as a finding worth a
 selector.
 
-The gate passed — the branch is reviewed, distilled, archived, and proven. Read the complexity from
-the status payload already in hand. **`low` chains the provider handoff now:**
+The gate passed — the branch is reviewed, distilled, archived, and proven. For a `done` outcome,
+read the complexity from the status payload already in hand. **`low` chains the provider handoff
+now:**
 
 ```text
 Skill("quenching:git:pr:create", "<id>")
@@ -278,7 +279,8 @@ record. Do not offer a second handoff or invoke `/quenching:git:merge` on the lo
 Use the provider configuration already read in step 1 to name the next command: recommend
 `/quenching:git:pr:create` when the configured provider supports the PR route, otherwise
 `/quenching:git:merge`. The human picks, and neither is invoked from here. Name the branch and the
-base so the recommendation is copy-pasteable.
+base so the recommendation is copy-pasteable. For an `abandoned` outcome, skip this handoff and
+follow the branch-disposal path below.
 
 For `abandoned`, there is nothing to hand off toward — do not remove any worktree; frame and make
 the branch-delete offer per
