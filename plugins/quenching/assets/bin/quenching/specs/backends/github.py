@@ -217,6 +217,17 @@ def empty_listing_refusal(action: str, pages, open_issues: int | None = None) ->
     }
 
 
+def lean_limit_refusal(action: str, observed: int, attempts: int = 1) -> dict:
+    """Refuse a lean result that reached `gh issue list`'s hard return ceiling."""
+    return {
+        "code": "sp-gh-lean-truncated", "exit": 2, "action": action,
+        "limit": GH_LEAN_LIMIT, "observed": observed, "attempts": attempts,
+        "message": f"`gh issue list` returned the limit of {GH_LEAN_LIMIT} rows while "
+                   f"{action}; the lean index may be truncated, so no complete listing "
+                   "can be derived — paginate below the limit or use the full listing",
+    }
+
+
 GH_LISTING_SUSPECT_REMEDY = (
     "re-run the command — a listing that comes back the same way twice is the front's real "
     "state, and one that does not was a transport fault"
@@ -545,13 +556,7 @@ class GitHubBackend(SpecBackend):
         if refusal:
             raise BackendRefusal(refusal)
         if len(issues) >= GH_LEAN_LIMIT:
-            raise BackendRefusal({
-                "code": "sp-gh-lean-truncated", "exit": 2, "action": action,
-                "limit": GH_LEAN_LIMIT, "observed": len(issues), "attempts": attempts,
-                "message": f"`gh issue list` returned the limit of {GH_LEAN_LIMIT} rows while "
-                           f"{action}; the lean index may be truncated, so no complete listing "
-                           "can be derived — paginate below the limit or use the full listing",
-            })
+            raise BackendRefusal(lean_limit_refusal(action, len(issues), attempts))
         rows: list[dict] = []
         for issue in issues:
             if not isinstance(issue, dict):
