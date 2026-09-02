@@ -2,6 +2,9 @@
 
 import pathlib
 import re
+import shutil
+import subprocess
+import tempfile
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -122,6 +125,77 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertNotIn("--plan .quenching/documentation/plan.md --config", validation)
         self.assertIn("site-source/assets/glossary-abbreviations.txt", validation)
         self.assertIn("--glossary-term", validation)
+
+    def test_citation_check_rejects_unknown_section_addresses(self):
+        check = ROOT / "assets" / "checks" / "citation-check.sh"
+        with tempfile.TemporaryDirectory() as directory:
+            repo = pathlib.Path(directory)
+            script = repo / "plugins" / "quenching" / "assets" / "checks" / check.name
+            script.parent.mkdir(parents=True)
+            shutil.copy2(check, script)
+            command = repo / "plugins" / "quenching" / "commands" / "knowledge" / "align.md"
+            command.parent.mkdir(parents=True)
+            command.write_text(
+                "/quenching:knowledge:align\n"
+                "`plugins/quenching/commands/knowledge/align.md`\n"
+                "[reference.md](../../assets/references/reference.md) §Inexistente\n",
+                encoding="utf-8",
+            )
+            reference = repo / "plugins" / "quenching" / "assets" / "references" / "reference.md"
+            reference.parent.mkdir(parents=True)
+            reference.write_text("# Reference\n\n## Existing\n", encoding="utf-8")
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=repo, check=True)
+            subprocess.run(["git", "config", "user.name", "Citation Test"], cwd=repo, check=True)
+            subprocess.run(["git", "add", "."], cwd=repo, check=True)
+            subprocess.run(["git", "commit", "-qm", "fixture"], cwd=repo, check=True)
+
+            result = subprocess.run(
+                ["bash", str(script), "--half", "2"],
+                cwd=repo,
+                text=True,
+                capture_output=True,
+            )
+
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("§Inexistente", result.stdout)
+        self.assertIn("cited sections", result.stdout)
+
+    def test_citation_check_rejects_missing_plugin_root_paths(self):
+        check = ROOT / "assets" / "checks" / "citation-check.sh"
+        with tempfile.TemporaryDirectory() as directory:
+            repo = pathlib.Path(directory)
+            script = repo / "plugins" / "quenching" / "assets" / "checks" / check.name
+            script.parent.mkdir(parents=True)
+            shutil.copy2(check, script)
+            command = repo / "plugins" / "quenching" / "commands" / "knowledge" / "align.md"
+            command.parent.mkdir(parents=True)
+            missing_path = "${CLAUDE_PLUGIN_ROOT}/assets/references/" + "missing.md"
+            command.write_text(
+                "/quenching:knowledge:align\n"
+                f"`{missing_path}`\n"
+                "[reference.md](../../assets/references/reference.md) §Existing\n",
+                encoding="utf-8",
+            )
+            reference = repo / "plugins" / "quenching" / "assets" / "references" / "reference.md"
+            reference.parent.mkdir(parents=True)
+            reference.write_text("# Reference\n\n## Existing\n", encoding="utf-8")
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=repo, check=True)
+            subprocess.run(["git", "config", "user.name", "Citation Test"], cwd=repo, check=True)
+            subprocess.run(["git", "add", "."], cwd=repo, check=True)
+            subprocess.run(["git", "commit", "-qm", "fixture"], cwd=repo, check=True)
+
+            result = subprocess.run(
+                ["bash", str(script), "--half", "2"],
+                cwd=repo,
+                text=True,
+                capture_output=True,
+            )
+
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("missing.md", result.stdout)
+        self.assertIn("cited paths", result.stdout)
 
 
 if __name__ == "__main__":
