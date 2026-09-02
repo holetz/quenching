@@ -1,6 +1,7 @@
 """The executor's two verbs — `task` and `discover`.
 
 `task` flips a checkbox MECHANICALLY and records the anchor of the commit that implements it;
+`--uncheck --reason` reopens a task and records why in `## Discoveries`;
 `--descope` closes a task as deliberately out of scope and records why in `## Outcome`;
 `discover` appends one line to `## Discoveries`. Both are written during a build, and both exist
 so nothing does string surgery on a spec from the caller's side."""
@@ -8,6 +9,7 @@ from __future__ import annotations
 
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, read_one
+from quenching.specs.parse.derive import derive_info
 from quenching.specs.parse.edit import upsert_section
 from quenching.specs.parse.tasks import (BLOCKED_REASON_RE, CHECKBOX_RE, COMMIT_SHA_RE,
                                          SUBJECT_RE)
@@ -30,6 +32,11 @@ def cmd_task(args, root: str, out: Emitter) -> int:
     `--descope` writes a checked box with a visible `descoped:` suffix and appends the reason
     to `## Outcome`. It is a closed task, not a blocked one: `promote --outcome done` can
     archive it without `--force`, while the Outcome remains the durable explanation.
+
+    `--uncheck` requires `--reason`. It removes any stale `subject:`/`commit:` anchor and
+    appends the reason to `## Discoveries` in the same backend write. A revert therefore leaves
+    the task open without losing the explanation or pretending that the reverted commit still
+    implements it.
 
     `--check` may carry `--subject`, `--commit`, both, or neither. `--commit <sha>` is
     called AFTER the commit implementing the task already exists — the CLI records the sha
@@ -91,6 +98,11 @@ def cmd_task(args, root: str, out: Emitter) -> int:
                              "message": "--descope requires --reason"},
                  "error: --descope requires --reason (the reason is written into ## Outcome)")
         return 1
+    if args.uncheck and not args.reason:
+        out.emit(args.json, {"ok": False, "code": "sp-no-reason",
+                             "message": "--uncheck requires --reason"},
+                 "error: --uncheck requires --reason (the reason is written into ## Discoveries)")
+        return 1
     t = _find_task(info["tasks"], ident)
     if not t:
         out.emit(args.json, {"ok": False, "code": "sp-unknown-task", "task": ident,
@@ -150,6 +162,18 @@ def cmd_task(args, root: str, out: Emitter) -> int:
         for off in sorted((o for o in (t["subjectLineno"], t["commitLineno"])
                            if o is not None), reverse=True):
             del lines[off]
+    if args.uncheck:
+        # Anchor removal may shift every section below the task. Re-derive before the splice;
+        # using the first read's line numbers here would insert the discovery into the wrong
+        # section whenever the task carried metadata and `## Discoveries` followed it.
+        edited_info = derive_info(info, "".join(lines))
+        discoveries = edited_info["sections"].get("Discoveries")
+        prior = discoveries["body"].rstrip() if discoveries and discoveries["filled"] else ""
+        entry = f"- task {ident} unchecked: {args.reason.strip()}"
+        discovery_body = f"## Discoveries\n{prior}\n{entry}\n" if prior else \
+            f"## Discoveries\n\n{entry}\n"
+        edited, _ = upsert_section(edited_info, "Discoveries", discovery_body)
+        lines = edited.splitlines(keepends=True)
     if args.descope:
         # A descoped task is closed in the checklist, but its reason belongs to the close-out
         # narrative too. Replace an empty guidance block; otherwise append without losing prior
@@ -178,7 +202,7 @@ def cmd_task(args, root: str, out: Emitter) -> int:
     out.emit(args.json,
              {"ok": True, "id": info["id"], "task": ident, "action": verb,
               "state": mark, "text": body, "subject": subject, "commit": commit,
-              "reason": args.reason if args.block or args.descope else None},
+              "reason": args.reason.strip() if args.block or args.descope or args.uncheck else None},
              f"task {ident} {verb}: {body}" + anchor_lines)
     return 0
 

@@ -619,6 +619,10 @@ class PullRequestPayload(unittest.TestCase):
             "git revert --abort",
             "askuserquestion",
             "no spec record",
+            "cq specs task --spec",
+            "--uncheck",
+            "--reason",
+            "## discoveries",
         ):
             self.assertIn(phrase.lower(), lower)
 
@@ -629,7 +633,6 @@ class PullRequestPayload(unittest.TestCase):
             "git rebase",
             "git push",
             "git add",
-            "git commit",
             "--force",
             "--no-verify",
             "cq specs record",
@@ -637,6 +640,8 @@ class PullRequestPayload(unittest.TestCase):
             self.assertNotIn(forbidden, command)
         self.assertIn("new revert commit", command)
         self.assertIn("never resolve a conflict", command)
+        self.assertIn("only after", command)
+        self.assertIn("new revert commit is verified", command)
 
     def test_cleanup_selects_reported_remote_branches_before_deleting(self):
         cleanup = CLEANUP_COMMAND.read_text(encoding="utf-8").lower()
