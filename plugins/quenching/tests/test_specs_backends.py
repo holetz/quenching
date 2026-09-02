@@ -1344,6 +1344,21 @@ class GithubResolutionCache(unittest.TestCase):
                                        return_value=time.time() + gh_mod.GH_CACHE_TTL_S + 1):
                     self.assertEqual(gh_mod.github_cache_read(remote), {})
 
+    def test_ten_cached_status_resolutions_stay_below_half_a_second(self):
+        with tempfile.TemporaryDirectory() as raw:
+            remote = "git@github.com:owner/repo.git"
+            response = (0, json.dumps({"nameWithOwner": "owner/repo",
+                                       "issues": {"totalCount": 38}}), "")
+            with mock.patch.dict(os.environ, {"XDG_CACHE_HOME": raw}), \
+                    mock.patch.object(gh_mod, "_git", return_value=remote), \
+                    mock.patch.object(gh_mod, "_gh_run", return_value=response):
+                gh_mod.resolve_github_repo(raw)
+                started = time.perf_counter()
+                results = [gh_mod.resolve_github_repo(raw) for _ in range(10)]
+                elapsed = time.perf_counter() - started
+        self.assertEqual(results, [("owner/repo", 38, {})] * 10)
+        self.assertLess(elapsed, 0.5, f"cached resolution took {elapsed:.3f}s")
+
 
 if __name__ == "__main__":
     unittest.main()
