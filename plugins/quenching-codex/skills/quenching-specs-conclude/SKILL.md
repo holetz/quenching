@@ -27,11 +27,14 @@ cannot be safely reduced to one static prefix.
 
 The distillation doctrine — what crosses into `/docs/`, what stays, and how it is graded — lives in
 [specs-conclude/distill.md](../../references/specs-conclude/distill.md)
-§What crosses, what stays. The layout, the gates and the
-`cq specs` surface live in
+§What crosses, what stays. The layout and the gates live in
 [specs-develop/spec-driven.md](../../references/specs-develop/spec-driven.md)
-§The provider-owned document §The gates and the stage-scoped explicit-none rule §The `cq specs` tool
-surface §The report mold, which owns the shape printed by step 7.
+§The provider-owned document §The gates and the stage-scoped explicit-none rule. The `cq specs`
+surface lives in
+[specs-surface.md](../../references/specs-develop/specs-surface.md)
+§The `cq specs` tool surface; the report shape lives in
+[report-mold.md](../../references/specs-develop/report-mold.md)
+§The report mold.
 ## Resolving the tool
 
 Resolve `cq specs` per
@@ -294,7 +297,7 @@ nothing could be handed off — a red gate, or (abandoned) the branch's own fate
 ### 7. Report
 
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/spec-driven.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/report-mold.md \
   --sections "§The report mold" --rules-only
 ```
 
