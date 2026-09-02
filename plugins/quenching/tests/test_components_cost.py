@@ -38,6 +38,8 @@ class ComponentsCost(unittest.TestCase):
         self.assertEqual(row["bodyBytes"], len(("\nBody é.\n\n[rules](${CLAUDE_PLUGIN_ROOT}/assets/references/" + "front/rules.md) §Rule").encode()))
         self.assertEqual(row["wholeReferences"], [])
         self.assertEqual(row["sections"], [{"path": "front/rules.md", "heading": "Rule", "bytes": len("Binding rule.".encode())}])
+        self.assertEqual(row["totalBytes"], row["bodyBytes"] + row["sections"][0]["bytes"])
+        self.assertEqual(payload["totalBytes"], row["totalBytes"])
         self.assertEqual(payload, json.loads(output.getvalue()))
         self.assertIn("cost", DISPATCH)
         self.assertEqual(build_parser().parse_args(["cost", "--json"]).cmd, "cost")
