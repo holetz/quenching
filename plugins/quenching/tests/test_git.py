@@ -37,6 +37,7 @@ PR_REFERENCE = PLUGIN_ROOT / "assets" / "references" / "git" / "pr.md"
 COMMIT_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit.md"
 COMMIT_INCREMENTAL_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit-incremental.md"
 CLEANUP_COMMAND = PLUGIN_ROOT / "commands" / "git" / "cleanup.md"
+SYNC_COMMAND = PLUGIN_ROOT / "commands" / "git" / "sync.md"
 
 
 def _normalise_prose(text: str) -> str:
@@ -642,6 +643,20 @@ class CommitSubjectContract(unittest.TestCase):
         self.assertIn("commits the existing index only", command)
         self.assertIn("never `git add -a`", command)
         self.assertIn("amends history", command)
+
+
+class SyncContract(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.lower = SYNC_COMMAND.read_text(encoding="utf-8").lower()
+
+    def test_sync_fetches_without_persisting_pruning_configuration(self):
+        for phrase in ("git remote get-url origin", "git fetch origin <base>",
+                       "no persistent fetch configuration is changed", "no-remote"):
+            self.assertIn(phrase, self.lower)
+        for forbidden in ("git config fetch.prune", "fetch.prune=true", "configure fetch.prune",
+                          "pruning configuration"):
+            self.assertNotIn(forbidden, self.lower)
 
 
 class IncrementalCommitContract(unittest.TestCase):
