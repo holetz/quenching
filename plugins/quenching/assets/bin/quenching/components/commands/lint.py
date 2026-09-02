@@ -59,6 +59,19 @@ KNOWN_FRONTMATTER_KEYS = {
     "background", "paths", "hooks",
 }
 
+GATE_PATTERNS = (
+    re.compile(r"\bwait\s+for\b[^\n]{0,80}\bconfirmation\b", re.IGNORECASE),
+    re.compile(r"\b(?:one|single)\s+confirmation\b[^\n]{0,80}\b(?:before|gates?|executes?)\b",
+               re.IGNORECASE),
+    re.compile(r"\bconfirmation\b[^\n]{0,80}\b(?:before|on|gates?)\b", re.IGNORECASE),
+    re.compile(r"\bask(?:s|ed)?\b[^\n]{0,80}\b(?:confirmation|yes|OK)\b", re.IGNORECASE),
+    re.compile(r"\bon\s+(?:its\s+own\s+)?(?:a\s+)?yes\b", re.IGNORECASE),
+)
+
+SHELL_COMMANDS = ("git", "gh", "az", "python3", "py", "rm", "mv", "mkdir", "find",
+                  "grep", "rg", "mktemp", "npx", "uv", "zensical")
+SHELL_COMMAND_RE = re.compile(r"^(?:" + "|".join(SHELL_COMMANDS) + r")\b")
+
 
 def _split_sentences(text: str) -> list[str]:
     return [s for s in re.split(r"(?<=[.!?])\s+", text.strip()) if s]
@@ -117,6 +130,77 @@ def _step_criteria(body: str) -> tuple[int, int]:
         elif current and DONE_WHEN_RE.search(line):
             covered.add(current)
     return len(steps), len(covered)
+
+
+def _body_has_confirmation_gate(body: str) -> bool:
+    """Recognise a user-decision gate in prose, while leaving historical/negative wording alone."""
+    fenced = False
+    for line in body.splitlines():
+        if line.lstrip().startswith(("```", "~~~")):
+            fenced = not fenced
+            continue
+        if fenced:
+            continue
+        for pattern in GATE_PATTERNS:
+            match = pattern.search(line)
+            if not match:
+                continue
+            prefix = line[:match.start()].lower()
+            if re.search(r"\b(?:not|never|no)\s*$", prefix):
+                continue
+            if re.search(r"\b(?:not|never|no)\s+(?:to\s+)?(?:ask|wait|confirmation)", prefix):
+                continue
+            return True
+    return False
+
+
+def _shell_command_lines(body: str) -> list[tuple[int, str]]:
+    """Return executable-looking shell commands from fenced blocks, with body line numbers.
+
+    Prose and examples outside a shell fence are not execution claims. ``cq`` is intentionally not
+    in this inventory: command bodies use it as the unresolved shorthand that the preceding tool
+    resolution step replaces with a literal path, so treating the shorthand as a grant would report
+    the notation rather than the operation.
+    """
+    out: list[tuple[int, str]] = []
+    fenced = False
+    for lineno, line in enumerate(body.splitlines(), 1):
+        stripped = line.strip()
+        if stripped.startswith(("```", "~~~")):
+            fenced = not fenced
+            continue
+        if not fenced or not stripped or stripped.startswith("#"):
+            continue
+        for part in re.split(r"\s*(?:&&|\|\|)\s*", stripped):
+            part = re.sub(r"^(?:if|then|else|elif)\s+", "", part).strip()
+            if not SHELL_COMMAND_RE.match(part):
+                continue
+            tokens = part.split()
+            if tokens[0] == "git" and len(tokens) >= 2 and tokens[1] == "-C":
+                if len(tokens) < 4 or tokens[2].startswith("<"):
+                    continue
+                tokens = [tokens[0], *tokens[3:]]
+            if tokens[0] == "git" and len(tokens) < 2:
+                continue
+            out.append((lineno, " ".join(tokens)))
+    return out
+
+
+def _bash_grants(fm: dict) -> tuple[bool, list[str]]:
+    """Return whether all shell commands are granted, plus each scoped Bash prefix."""
+    prefixes: list[str] = []
+    for tool in _split_tools(str(fm.get("allowed-tools", ""))):
+        if tool == "Bash":
+            return True, []
+        if not tool.startswith("Bash(") or not tool.endswith(")"):
+            continue
+        spec = tool[5:-1]
+        prefixes.append(spec[:-2] if spec.endswith(":*") else spec)
+    return False, prefixes
+
+
+def _grant_covers(command: str, prefixes: list[str]) -> bool:
+    return any(command == prefix or command.startswith(prefix + " ") for prefix in prefixes)
 
 
 def _frontmatter_strict_issues(text: str) -> list[dict]:
@@ -326,6 +410,26 @@ def lint_command(cmd: dict, base: str, named_by: set[str] | None = None) -> list
                            f"{issue['remedy']}",
                            key=issue["key"], line=issue["line"], kind=issue["kind"],
                            remedy=issue["remedy"], **where))
+
+    tools = _split_tools(str(fm.get("allowed-tools", "")))
+    if _body_has_confirmation_gate(body) and "AskUserQuestion" not in tools:
+        out.append(finding("sk-prose-gate", "error",
+                           "the body pauses for a user confirmation but `AskUserQuestion` is "
+                           "not granted — add the narrow tool grant",
+                           tool="AskUserQuestion", remedy="add `AskUserQuestion` to allowed-tools",
+                           **where))
+
+    unrestricted_bash, bash_prefixes = _bash_grants(fm)
+    if not unrestricted_bash:
+        for line, command in _shell_command_lines(body):
+            if _grant_covers(command, bash_prefixes):
+                continue
+            tool = " ".join(command.split()[:2]) if command.startswith("git ") else command.split()[0]
+            remedy = f"add `Bash({tool}:*)` to allowed-tools or remove the call"
+            out.append(finding("sk-grant-gap", "error",
+                               f"`{tool}` at body line {line} is called without a matching "
+                               "scoped Bash grant — " + remedy,
+                               tool=tool, invocation=command, line=line, remedy=remedy, **where))
 
     # BEFORE any content check, so a parse failure is never presented as a content
     # gap. A `description` truncated at a `#` used to surface as `sk-no-description`,
