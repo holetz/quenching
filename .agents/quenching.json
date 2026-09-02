@@ -13,5 +13,8 @@
     "measuredRoots": ["plugins/quenching/assets/bin/quenching"],
     "proofExclusions": ["scripts"],
     "ratchetPath": ".coverage-floor.json"
+  },
+  "delivery": {
+    "provider": "github"
   }
 }
