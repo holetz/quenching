@@ -20,3 +20,9 @@ dev = [
 [tool.uv]
 # This repository is a plugin marketplace, not an installable Python package.
 package = false
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers"
+
+[tool.coverage.run]
+source = ["plugins/quenching/assets/bin/quenching"]

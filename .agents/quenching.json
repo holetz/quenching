@@ -6,5 +6,12 @@
         {"command": "/my:security-review", "optional": true}
       ]
     }
+  },
+  "proof": {
+    "proofRoot": "plugins/quenching/tests",
+    "layers": {},
+    "measuredRoots": ["plugins/quenching/assets/bin/quenching"],
+    "proofExclusions": ["scripts"],
+    "ratchetPath": ".coverage-floor.json"
   }
 }
