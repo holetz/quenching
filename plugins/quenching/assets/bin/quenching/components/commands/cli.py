@@ -24,6 +24,7 @@ import sys
 
 from quenching.common.output import CQArgumentParser, finding_code, refuse
 from quenching.common.version import VERSION
+from quenching.components.commands.cost import cmd_cost
 from quenching.components.commands.doctor import cmd_doctor
 from quenching.components.commands.lint import cmd_lint
 from quenching.components.commands.read import cmd_read
@@ -50,6 +51,13 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("lint")
     sp.add_argument("path", nargs="?",
                     help="a command file, a commands/ directory, or a surface root")
+    add_json(sp)
+
+    sp = sub.add_parser("cost", help="measure command and reference context cost")
+    sp.add_argument("path", nargs="?",
+                    help="a command file, a commands/ directory, or a surface root")
+    sp.add_argument("--ratchet", metavar="PATH",
+                    help="a JSON baseline whose totalBytes is an allowed ceiling")
     add_json(sp)
 
     add_json(sub.add_parser("doctor"))
@@ -103,6 +111,7 @@ def cmd_session(args, root: str) -> int:
 
 
 DISPATCH: dict = {
+    "cost": cmd_cost,
     "lint": cmd_lint,
     "doctor": cmd_doctor,
     "registry": cmd_registry,
@@ -134,7 +143,7 @@ def main(argv: list[str]) -> int:
         return 0
     if not args.cmd:
         return refuse({"code": finding_code("ct", "no-command"), "message":
-                       "choose `lint`, `doctor`, `registry`, `read`, `translate`, or `session`"},
+                      "choose `cost`, `lint`, `doctor`, `registry`, `read`, `translate`, or `session`"},
                       False)
     if not hasattr(args, "json"):
         args.json = False
