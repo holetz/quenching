@@ -9,24 +9,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[3]
 DOC = ROOT / "docs" / "standards" / "architecture" / "front-mold.md"
 COMMANDS = ROOT / "plugins" / "quenching" / "commands"
 SOURCE_REFS = ROOT / "plugins" / "quenching" / "assets" / "references"
-CODEX = ROOT / "plugins" / "quenching-codex"
-TESTS = ROOT / "plugins" / "quenching" / "tests"
-
-
-def front_footprint(front: str) -> list[pathlib.Path]:
-    """Return the measured mold footprint, excluding front-specific creation commands."""
-    paths = [
-        ROOT / "docs" / "standards" / "architecture" / f"{front}-front.md",
-        COMMANDS / front / "align.md",
-        COMMANDS / front / "status.md",
-        *sorted((SOURCE_REFS / f"{front}-align").glob("*.md")),
-        CODEX / "skills" / f"quenching-{front}-align" / "SKILL.md",
-        CODEX / "skills" / f"quenching-{front}-status" / "SKILL.md",
-        *sorted((CODEX / "references" / f"{front}-align").glob("*.md")),
-        TESTS / f"test_{front}.py",
-        *sorted((TESTS / "fixtures" / "golden").glob(f"{front}-*.json")),
-    ]
-    return [path for path in paths if path.is_file()]
+CONDUCTOR = COMMANDS / "align.md"
 
 
 class FrontMoldContract(unittest.TestCase):
@@ -89,6 +72,9 @@ class FrontMoldContract(unittest.TestCase):
             "design": ("DTCG", "Impeccable", "genres"),
             "ops": ("opsRoot", "router", "registry", "op-*"),
             "proof": ("proofRoot", "layers", "fixtures", "pf-*"),
+            "toolchain": ("toolchain", "manifests", "locks", "tc-*"),
+            "delivery": ("workflow", "provider", "publication", "delivery-*"),
+            "security": ("read-only", "permissions", "advisory", "owner"),
         }.items():
             with self.subTest(front=front):
                 row = deltas.split(f"| {front} |", 1)[1].split("\n", 1)[0]
@@ -102,54 +88,37 @@ class FrontMoldContract(unittest.TestCase):
             self.assertIn(band, bands)
         self.assertIn("maps every finding exactly once", bands)
 
-    def test_measured_baseline_and_final_footprint_are_distinct(self):
-        baseline = {
-            "design": (6, 55_860),
-            "ops": (18, 96_529),
-            "proof": (18, 101_461),
+    def test_the_conductor_declares_all_seven_aligned_fronts(self):
+        order = CONDUCTOR.read_text(encoding="utf-8")
+        execution = order.split("## Execution order", 1)[1].split("## Workflow", 1)[0]
+        expected = {
+            "knowledge": "/quenching:knowledge:align",
+            "design": "/quenching:design:align",
+            "components": "/quenching:components:align",
+            "ops": "/quenching:ops:align",
+            "proof": "/quenching:proof:align",
+            "toolchain": "/quenching:toolchain:align",
+            "delivery": "/quenching:delivery:align",
         }
-        final = {
-            "design": (8, 66_148),
-            "ops": (18, 99_493),
-            "proof": (18, 104_069),
-        }
-        baseline_section = self.document.split(
-            "### Pre-adoption baseline (task 1.1)", 1
-        )[1].split("### Post-adoption final footprint (task 4.3)", 1)[0]
-        final_section = self.document.split(
-            "### Post-adoption final footprint (task 4.3)", 1
-        )[1].split("## Explicit front deltas", 1)[0]
+        for front, route in expected.items():
+            with self.subTest(front=front):
+                self.assertIn(f"| `{front}`", execution)
+                self.assertIn(route, execution)
 
-        for front, (expected_files, expected_bytes) in baseline.items():
-            with self.subTest(snapshot="baseline", front=front):
-                self.assertRegex(
-                    baseline_section,
-                    rf"{front} \| .*\*\*{expected_files} files / {expected_bytes:,} bytes\*\*",
-                )
+    def test_the_mold_resource_and_projection_cover_the_domain_surfaces(self):
+        resource = self.document.split("resource:", 1)[1].split("\n", 1)[0]
+        for path in (
+            "design-front.md", "ops-front.md", "proof-front.md", "toolchain-front.md",
+            "delivery-front.md", "security-pillar.md",
+        ):
+            with self.subTest(resource=path):
+                self.assertIn(path, resource)
 
-        total_files = total_bytes = 0
-        for front, (expected_files, expected_bytes) in final.items():
-            paths = front_footprint(front)
-            measured = (len(paths), sum(path.stat().st_size for path in paths))
-            with self.subTest(snapshot="final", front=front):
-                self.assertEqual(measured, (expected_files, expected_bytes))
-                self.assertRegex(
-                    final_section,
-                    rf"{front} \| .*\*\*{expected_files} files / {expected_bytes:,} bytes\*\*",
-                )
-            total_files += measured[0]
-            total_bytes += measured[1]
-
-        self.assertIn("42 files / 253,850 bytes", baseline_section)
-        self.assertEqual((total_files, total_bytes), (44, 269_710))
-        self.assertIn("44 files / 269,710 bytes", final_section)
-        conductor = (
-            ROOT / "plugins" / "quenching" / "commands" / "align.md",
-            ROOT / "plugins" / "quenching" / "tests" / "test_align_contract.py",
-        )
-        self.assertEqual(sum(path.stat().st_size for path in conductor), 14_864)
-        self.assertIn("2 files / 17,813 bytes", baseline_section)
-        self.assertIn("46 files / 284,574 bytes", final_section)
+        projection = (SOURCE_REFS / "front-align" / "mold.md").read_text(encoding="utf-8")
+        deltas = projection.split("## Domain deltas", 1)[1]
+        for front in ("design", "ops", "proof", "toolchain", "delivery", "security"):
+            with self.subTest(projection=front):
+                self.assertRegex(deltas, rf"(?m)^- {front} ")
 
 
 if __name__ == "__main__":
