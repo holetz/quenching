@@ -235,6 +235,9 @@ class GithubRemoteFixture:
         raise AssertionError(f"unexpected GitHub API request: {argv!r}, {payload!r}")
 
     def __call__(self, cwd: str, *argv: str, stdin: str | None = None):
+        if argv[:2] == ("issue", "list"):
+            self.calls.append({"kind": "lean", "argv": list(argv), "payload": None})
+            return 0, json.dumps(getattr(self, "lean_issues", [])), ""
         if argv[:2] == ("issue", "edit"):
             if argv[2:4] != ("101", "--repo") or "--type" not in argv:
                 raise AssertionError(f"unexpected GitHub type request: {argv!r}")
@@ -934,6 +937,19 @@ class GhLeanListing(unittest.TestCase):
             "records": ["spec:approved"], "phase": "plans", "folder": "plans",
             "legacy": False, "path": "https://github.com/owner/repo/issues/12",
         }])
+
+    def test_remote_fixture_answers_the_real_gh_issue_list_wire_shape(self):
+        transport = GithubRemoteFixture()
+        transport.lean_issues = [{
+            "number": 17, "title": "Lean", "state": "OPEN",
+            "labels": [{"name": "spec:built"}],
+        }]
+        backend = GitHubBackend("owner/repo", os.getcwd(), open_issues=0)
+        with mock.patch.object(gh_mod, "_gh_run", side_effect=transport):
+            self.assertEqual(backend.list_specs(lean=True)[0]["id"], 17)
+        self.assertEqual([call["kind"] for call in transport.calls], ["lean"])
+        self.assertIn("--limit", transport.calls[0]["argv"])
+        self.assertIn(str(gh_mod.GH_LEAN_LIMIT), transport.calls[0]["argv"])
 
 
 # --------------------------------------------------------------------------- #
