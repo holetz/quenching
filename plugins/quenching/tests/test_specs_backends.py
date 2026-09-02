@@ -920,6 +920,12 @@ class GhLeanListing(unittest.TestCase):
         self.assertEqual(ctx.exception.err["code"], "sp-gh-lean-truncated")
         self.assertEqual(ctx.exception.err["limit"], gh_mod.GH_LEAN_LIMIT)
 
+    def test_lean_limit_refusal_names_the_observed_ceiling(self):
+        refusal = gh_mod.lean_limit_refusal("listing specs", gh_mod.GH_LEAN_LIMIT, attempts=2)
+        self.assertEqual(refusal["observed"], gh_mod.GH_LEAN_LIMIT)
+        self.assertEqual(refusal["attempts"], 2)
+        self.assertIn("paginate below the limit", refusal["message"])
+
     def test_lean_listing_below_the_limit_projects_spec_rows(self):
         rows = self._lean([{"number": 12, "title": "Alpha", "state": "OPEN",
                             "labels": [{"name": "spec:approved"}]}], 0)
