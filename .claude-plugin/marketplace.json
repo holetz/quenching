@@ -4,12 +4,12 @@
     "name": "Israel Holetz",
     "email": "holetz@gmail.com"
   },
-  "description": "Marketplace hosting quenching: a 7-front aligner for the docs/ OKF bundle, /.design/ source, .claude/ automation, operations, verification, toolchain, and delivery surfaces, alongside the provider-owned specs and read-only security and git pillars. The plugin ships 53 commands: 6 specs commands and 11 git commands, plus the 7 aligned fronts and two root entry points.",
+  "description": "Marketplace hosting quenching: a 7-front aligner for the docs/ OKF bundle, /.design/ source, .claude/ automation, operations, verification, toolchain, and delivery surfaces, alongside the provider-owned specs and read-only security and git pillars. The plugin ships 54 commands: 6 specs commands and 11 git commands, plus the 7 aligned fronts and two root entry points.",
   "plugins": [
     {
       "name": "quenching",
       "source": "./plugins/quenching",
-      "description": "Forces any repository's 7 local fronts into one canonical shape and keeps them conformant: the docs/ OKF bundle, /.design/ source, .claude/ automation, declared operations, verification, toolchain, and delivery surfaces. Provider-owned specs plus read-only security and git remain explicit axes without a local align. One root align conducts all 7 local fronts in dependency order on one confirmation and loops until nothing changes. The 7 fronts are probe-first; a clean front stops. This plugin ships 53 commands: 6 specs commands, 11 git commands, 7 front namespaces, and two root entry points. Every command is one file whose path is its identity, backed by deterministic stdlib Python rails with uniform --json output and strict exit codes.",
+      "description": "Forces any repository's 7 local fronts into one canonical shape and keeps them conformant: the docs/ OKF bundle, /.design/ source, .claude/ automation, declared operations, verification, toolchain, and delivery surfaces. Provider-owned specs plus read-only security and git remain explicit axes without a local align. One root align conducts all 7 local fronts in dependency order on one confirmation and loops until nothing changes. The 7 fronts are probe-first; a clean front stops. This plugin ships 54 commands: 6 specs commands, 11 git commands, 7 front namespaces, and two root entry points. Every command is one file whose path is its identity, backed by deterministic stdlib Python rails with uniform --json output and strict exit codes.",
       "version": "6.3.0",
       "author": {
         "name": "Israel Holetz",
