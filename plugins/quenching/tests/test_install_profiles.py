@@ -1,6 +1,7 @@
 """The profile contract is conduction scope, not a host-residency promise."""
 from __future__ import annotations
 
+import json
 import pathlib
 import unittest
 
@@ -11,6 +12,7 @@ STANDARD = REPO_ROOT / "docs" / "standards" / "architecture" / "install-profiles
 ALIGN = REPO_ROOT / "plugins" / "quenching" / "commands" / "align.md"
 CONFIG_REFERENCE = (REPO_ROOT / "plugins" / "quenching" / "assets" / "references" /
                     "specs-align" / "plugin-configuration.md")
+REPO_CONFIG = REPO_ROOT / ".claude" / "quenching.json"
 
 
 class InstallProfileContract(unittest.TestCase):
@@ -33,6 +35,13 @@ class InstallProfileContract(unittest.TestCase):
         self.assertIn("shared.profiles", reference)
         self.assertIn("all seven local fronts eligible", reference)
         self.assertIn("conduction scope", reference)
+
+    def test_this_repository_profile_declares_every_current_entry(self):
+        config = json.loads(REPO_CONFIG.read_text(encoding="utf-8"))
+        self.assertEqual(set(config["shared"]["profiles"]["installed"]), {
+            "knowledge", "specs", "design", "components", "ops", "proof", "toolchain",
+            "delivery", "security", "git",
+        })
 
 
 if __name__ == "__main__":
