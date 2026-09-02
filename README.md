@@ -68,13 +68,23 @@ This repository publishes from the single **`main`** branch
 Installing normally therefore gets the repository's default branch, not an arbitrary in-progress
 checkout.
 
-Local (no marketplace publish needed):
+Published installation (recommended): inside Claude Code, add this marketplace and install the plugin:
+
+```text
+/plugin marketplace add holetz/claude-quenching
+/plugin install quenching@quenching
+```
+
+Run `/reload-plugins` after installation when Claude Code was already open.
+
+Local development only (no marketplace publish needed):
 
 ```bash
 claude --plugin-dir ./plugins/quenching
 ```
 
-Run from a checkout of `main` for the latest published repository state.
+`--plugin-dir` loads the working checkout directly for plugin development and testing; it is not
+the normal adoption or upgrade path. A published installation is managed by Claude Code.
 
 Then, inside a target repository, use the `/` menu — every command is
 `/quenching:<front>:<verb>` when installed as a plugin (`/quenching:knowledge:align`,

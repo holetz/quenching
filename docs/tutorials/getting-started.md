@@ -23,18 +23,29 @@ run your first alignment knowing exactly what it was about to change, because it
 
 !!! note "Prerequisites"
     - **Claude Code** installed and working in a terminal.
-    - **Python 3** on the PATH — the `cq` CLI is a self-contained stdlib tool, no `pip install`.
+    - **Python 3.11 or newer** on the PATH — the `cq` CLI is a self-contained stdlib tool, no `pip install`.
     - A **git repository** to point the plugin at (any repo; a fresh one works fine).
 
-## 1. Load the plugin
+## 1. Install the plugin
 
-Clone the marketplace repository and start Claude Code with the plugin directory:
+For the published adoption path, start Claude Code in the target repository and run:
+
+```text
+/plugin marketplace add holetz/claude-quenching
+/plugin install quenching@quenching
+```
+
+Run `/reload-plugins` when Claude Code was already open. For local plugin development and testing,
+clone the marketplace repository and load the checkout directly instead:
 
 ```bash
 git clone https://github.com/holetz/claude-quenching
 cd your-repository
 claude --plugin-dir ../claude-quenching/plugins/quenching
 ```
+
+The `--plugin-dir` form is a development path; marketplace installation is the normal adoption
+and upgrade path.
 
 Claude Code appends the plugin's `bin/` to the session PATH, which is what lets every command —
 and you — call `cq` bare.

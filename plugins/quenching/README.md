@@ -388,11 +388,25 @@ a missing auth is a named **refusal (exit 2)**, on the first operation, never mi
 
 ## Install
 
+Published installation (recommended): from inside Claude Code, add the marketplace and install
+the plugin:
+
+```text
+/plugin marketplace add holetz/claude-quenching
+/plugin install quenching@quenching
+```
+
+Run `/reload-plugins` after installation when the session was already open.
+
+Local development only:
+
 ```bash
 claude --plugin-dir ./plugins/quenching
 ```
 
-All skills reach the shared payload via `${CLAUDE_PLUGIN_ROOT}/assets/...`.
+`--plugin-dir` loads the checkout directly for plugin development and testing; it is not the
+normal adoption or upgrade path. A published installation is managed by Claude Code. All skills
+reach the shared payload via `${CLAUDE_PLUGIN_ROOT}/assets/...`.
 
 The tool itself is reached through **two doors onto one file**. `bin/cq` is a shim in the directory
 Claude Code appends to `PATH` for every enabled plugin, which is what lets a command body write
