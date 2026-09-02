@@ -113,6 +113,13 @@ class ListingSurfaceTests(unittest.TestCase):
                        "develop` carries"):
             self.assertNotIn(stale, combined)
 
+    def test_root_workflow_prose_matches_the_declared_ci_and_branch_flow(self):
+        root_readme = README.read_text(encoding="utf-8").lower()
+        self.assertIn("runs on pushes and pull requests", root_readme)
+        self.assertIn("single **`main`** branch", root_readme)
+        for stale in ("workflow_dispatch", "apply enabled", "checkout of `develop`"):
+            self.assertNotIn(stale, root_readme)
+
     def test_zensical_nav_matches_every_published_markdown_document(self):
         config = tomllib.loads(ZENSICAL.read_text(encoding="utf-8"))
         nav = _nav_paths(config["project"]["nav"])
