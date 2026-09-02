@@ -6,10 +6,16 @@ Migrated from the pre-refactor specs script's `_failures()` suites — `carry_fo
 handoff and slug resolution live in `test_specs_parse.py`.
 """
 import unittest
+import argparse
+import contextlib
+import io
+import json
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.common.frontmatter import parse_frontmatter
 from quenching.specs.backends.memory import MemoryBackend
+from quenching.specs.commands import task as task_module
+from quenching.specs.commands.output import Emitter
 from quenching.specs.commands.fields import parse_field_date, record_field_value_error
 from quenching.specs.commands.validate import validate_spec
 from quenching.specs.parse.fields import FIELD_KEYS, carry_forward_fields, set_frontmatter_record
@@ -144,6 +150,40 @@ class SpBadComplexity(unittest.TestCase):
         b.create_spec("plans", _spec_doc("medium"))
         codes = [f["code"] for f in validate_spec(b, b.list_specs()[0])]
         self.assertNotIn("sp-bad-complexity", codes)
+
+
+class DescopeTask(unittest.TestCase):
+    """A descope closes the checkbox while carrying its reason into the close-out section.
+
+    The state is intentionally represented by the existing checked marker: every downstream
+    reader already knows that `[x]` is closed, while the explicit `descoped:` line and Outcome
+    entry preserve why it is closed rather than pretending the work shipped."""
+
+    DOC = ("---\ntitle: Descope fixture\nverification: per-task\n---\n\n"
+           "## Tasks\n\n- [ ] 1.1 Remove the unused path\n")
+
+    def test_descope_closes_the_task_and_appends_the_reason_to_outcome(self):
+        backend = MemoryBackend()
+        backend.create_spec("plans", self.DOC)
+        spec_id = max(backend.docs)
+        previous = task_module.open_backend
+        self.addCleanup(setattr, task_module, "open_backend", previous)
+        task_module.open_backend = lambda _root: (backend, {})
+
+        args = argparse.Namespace(json=True, spec=spec_id, check=None, uncheck=None,
+                                  block=None, descope="1.1", reason="não será construído",
+                                  subject=None, commit=None)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = task_module.cmd_task(args, ".", Emitter())
+
+        self.assertEqual(code, 0, buf.getvalue())
+        payload = json.loads(buf.getvalue())
+        self.assertEqual(payload["action"], "descoped")
+        self.assertEqual(payload["text"], "1.1 Remove the unused path — descoped: não será construído")
+        text = backend.docs[spec_id][1]
+        self.assertIn("- [x] 1.1 Remove the unused path — descoped: não será construído", text)
+        self.assertIn("## Outcome\n\n- task 1.1 descoped: não será construído", text)
 
 
 if __name__ == "__main__":

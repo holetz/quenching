@@ -1,6 +1,7 @@
 """The executor's two verbs — `task` and `discover`.
 
 `task` flips a checkbox MECHANICALLY and records the anchor of the commit that implements it;
+`--descope` closes a task as deliberately out of scope and records why in `## Outcome`;
 `discover` appends one line to `## Discoveries`. Both are written during a build, and both exist
 so nothing does string surgery on a spec from the caller's side."""
 from __future__ import annotations
@@ -26,6 +27,10 @@ def cmd_task(args, root: str, out: Emitter) -> int:
     v1 kept an attempt counter in `.specs.json` that nobody read, and a task went quiet
     after five failures with no trace of why.
 
+    `--descope` writes a checked box with a visible `descoped:` suffix and appends the reason
+    to `## Outcome`. It is a closed task, not a blocked one: `promote --outcome done` can
+    archive it without `--force`, while the Outcome remains the durable explanation.
+
     `--check` may carry `--subject`, `--commit`, both, or neither. `--commit <sha>` is
     called AFTER the commit implementing the task already exists — the CLI records the sha
     it is given, it never resolves or invents one — and is additive: `--subject` keeps
@@ -38,11 +43,11 @@ def cmd_task(args, root: str, out: Emitter) -> int:
     info, err = read_one(backend, args.spec, out)
     if err:
         return out.emit_err(args.json, err)
-    ident = args.check or args.uncheck or args.block
+    ident = args.check or args.uncheck or args.block or args.descope
     if not ident:
         out.emit(args.json, {"ok": False, "code": "sp-no-action",
-                             "message": "pass --check, --uncheck or --block"},
-                 "error: pass --check, --uncheck or --block")
+                             "message": "pass --check, --uncheck, --block or --descope"},
+                 "error: pass --check, --uncheck, --block or --descope")
         return 1
     # The subject names WHICH COMMIT IMPLEMENTS THIS TASK, so it is meaningful only on the
     # transition that says the task is done. On --uncheck any recorded anchor is dropped
@@ -81,6 +86,11 @@ def cmd_task(args, root: str, out: Emitter) -> int:
                  "error: --block requires --reason (a blocked task without a reason is the "
                  "hidden state this replaced)")
         return 1
+    if args.descope and not args.reason:
+        out.emit(args.json, {"ok": False, "code": "sp-no-reason",
+                             "message": "--descope requires --reason"},
+                 "error: --descope requires --reason (the reason is written into ## Outcome)")
+        return 1
     t = _find_task(info["tasks"], ident)
     if not t:
         out.emit(args.json, {"ok": False, "code": "sp-unknown-task", "task": ident,
@@ -97,12 +107,15 @@ def cmd_task(args, root: str, out: Emitter) -> int:
                              "message": "the parsed line is not a checkbox — the file changed"},
                  "error: the parsed line is not a checkbox — re-read the spec")
         return 1
-    mark = {"check": "x", "uncheck": " ", "block": "!"}[
-        "check" if args.check else "uncheck" if args.uncheck else "block"]
+    action = ("check" if args.check else "uncheck" if args.uncheck else
+              "block" if args.block else "descope")
+    mark = {"check": "x", "uncheck": " ", "block": "!", "descope": "x"}[action]
     body = m.group(3).rstrip()
     body = BLOCKED_REASON_RE.sub("", body).rstrip()      # drop any stale blocked suffix
     if args.block:
         body = f"{body} — blocked: {args.reason.strip()}"
+    elif args.descope:
+        body = f"{body} — descoped: {args.reason.strip()}"
     lines[t["lineno"]] = f"{m.group(1)}- [{mark}] {body}\n"
 
     # Upsert the `subject:`/`commit:` metadata lines — replace one that is already there,
@@ -137,6 +150,17 @@ def cmd_task(args, root: str, out: Emitter) -> int:
         for off in sorted((o for o in (t["subjectLineno"], t["commitLineno"])
                            if o is not None), reverse=True):
             del lines[off]
+    if args.descope:
+        # A descoped task is closed in the checklist, but its reason belongs to the close-out
+        # narrative too. Replace an empty guidance block; otherwise append without losing prior
+        # outcome facts or a reason recorded for another descoped task.
+        info["text"] = "".join(lines)
+        outcome = info["sections"].get("Outcome")
+        prior = outcome["body"].strip() if outcome and outcome["filled"] else ""
+        entry = f"- task {ident} descoped: {args.reason.strip()}"
+        outcome_body = f"{prior}\n\n{entry}" if prior else entry
+        edited, _ = upsert_section(info, "Outcome", f"## Outcome\n\n{outcome_body}\n")
+        lines = edited.splitlines(keepends=True)
     # THE FAILURE-REPORTING CONTRACT: this call is the one that can fail out from under a
     # tick that already looks applied to `lines`. The backend either persists the document or
     # raises. `GitHubBackend` pushes the same edited task block into the task's own
@@ -147,13 +171,14 @@ def cmd_task(args, root: str, out: Emitter) -> int:
     # and nothing here prints a success message before this line returns.
     backend.write_spec(info, "".join(lines))
 
-    verb = "checked" if args.check else "unchecked" if args.uncheck else "blocked"
+    verb = ("checked" if args.check else "unchecked" if args.uncheck else
+            "blocked" if args.block else "descoped")
     anchor_lines = ((f"\n  subject: {subject}" if subject else "") +
                     (f"\n  commit: {commit}" if commit else ""))
     out.emit(args.json,
              {"ok": True, "id": info["id"], "task": ident, "action": verb,
               "state": mark, "text": body, "subject": subject, "commit": commit,
-              "reason": args.reason if args.block else None},
+              "reason": args.reason if args.block or args.descope else None},
              f"task {ident} {verb}: {body}" + anchor_lines)
     return 0
 
