@@ -22,7 +22,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from quenching.common.output import CQArgumentParser, refuse
+from quenching.common.output import CQArgumentParser, finding_code, refuse
 from quenching.common.version import VERSION
 from quenching.components.commands.doctor import cmd_doctor
 from quenching.components.commands.lint import cmd_lint
@@ -81,6 +81,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp = sub.add_parser("session",
                         help="read a Claude Code session transcript as evidence")
+    sp.add_argument("--json", action="store_true", dest="session_json",
+                    help="print machine-readable output (also accepted before the child verb)")
     add_session_subcommands(sp.add_subparsers(dest="session_cmd", required=True))
 
     return p
@@ -96,6 +98,7 @@ def cmd_session(args, root: str) -> int:
     `root` is this front's surface root and the session verbs have no use for it — their
     input is `~/.claude/projects/**`, the operator's machine, not a repo. It is accepted
     and dropped so the row keeps `DISPATCH`'s one signature."""
+    args.json = bool(getattr(args, "json", False) or getattr(args, "session_json", False))
     return args.func(args)
 
 
@@ -130,7 +133,7 @@ def main(argv: list[str]) -> int:
         print(f"cq components {VERSION}")
         return 0
     if not args.cmd:
-        return refuse({"code": "ct-no-command", "message":
+        return refuse({"code": finding_code("ct", "no-command"), "message":
                        "choose `lint`, `doctor`, `registry`, `read`, `translate`, or `session`"},
                       False)
     if not hasattr(args, "json"):
