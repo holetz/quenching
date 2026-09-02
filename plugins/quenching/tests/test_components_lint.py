@@ -32,13 +32,18 @@ the near miss says `scoped` where the marker says `unrestricted`, so it contains
 sentence that names it. A rule with no case that fails without it is a rule nobody is holding.
 """
 
+import contextlib
+import io
+import json
 import pathlib
 import tempfile
 import unittest
+from types import SimpleNamespace
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.components.commands.lint import (
     UNSCOPED_TOOLS,
+    cmd_lint,
     lint_command,
     marker_present,
     unscoped_marker,
@@ -144,6 +149,17 @@ class StrictFrontmatter(unittest.TestCase):
         self.assertEqual(len(found), 1)
         self.assertEqual(found[0]["kind"], "plain-colon-space")
         self.assertIn(">-", found[0]["remedy"])
+
+    def test_the_plugin_command_surface_has_no_lint_errors(self):
+        plugin_root = pathlib.Path(__file__).resolve().parent.parent
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            status = cmd_lint(SimpleNamespace(path=None, json=True), str(plugin_root))
+        payload = json.loads(output.getvalue())
+        errors = [f for f in payload["findings"] if f["severity"] == "error"]
+        self.assertEqual(status, 0)
+        self.assertEqual(errors, [])
+        self.assertEqual(payload["commandCount"], 53)
 
 
 class MarkerPredicate(unittest.TestCase):
