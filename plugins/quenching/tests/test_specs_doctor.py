@@ -183,7 +183,7 @@ class ConfigMigrationMatrix(unittest.TestCase):
         self.assertEqual(error["code"], "sp-config-unscoped")
         self.assertEqual(error["exit"], 2)
 
-    def test_namespaced_configuration_resolves_each_front_without_cross_front_leakage(self):
+    def test_retired_fanout_key_is_ignored_without_cross_front_leakage(self):
         root = self._write({
             "backend": "github",
             "shared": {"worktreeSetup": "make setup"},
@@ -196,6 +196,8 @@ class ConfigMigrationMatrix(unittest.TestCase):
         self.assertEqual(envelope["unknownNamespaces"], [])
 
         specs = load_specs_config(root, detect_provider_info=False)
+        # Retired: no executor selection consumes this declaration, so it must not become a
+        # silently active specs setting merely because it remains in an old target config.
         self.assertNotIn("fanoutMinComplexity", specs)
         self.assertEqual(specs["worktreeSetup"], "make setup")
         self.assertNotIn("opsRoot", specs)
