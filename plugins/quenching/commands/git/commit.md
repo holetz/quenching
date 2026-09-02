@@ -52,7 +52,7 @@ its `quenching-specs:` mark:
 ```bash
 git branch --show-current
 python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git specs <current-branch> --json
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs next --spec <唯一-spec-id> --json
+python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs next --spec <spec-id> --json
 ```
 If that produces exactly one spec and one actionable task, derive the subject with the governing
 convention from the spec id, task id and task title. If the execution caller already supplies a

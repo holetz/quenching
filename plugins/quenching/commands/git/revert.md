@@ -5,7 +5,7 @@ description: >-
   "reverse a published commit". It resolves the target, shows its effect and stops on conflict before
   any recovery choice. Not for: rewriting history or discarding local work; publishing the revert →
   /quenching:git:push; opening a PR → /quenching:git:pr:create; changing spec records.
-argument-hint: [commit:ref|spec:id task:id [mainline:n]]
+argument-hint: "[commit:ref|spec:id task:id [mainline:n]]"
 allowed-tools: Bash(git status:*), Bash(git branch --show-current:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git merge-base:*), Bash(git log:*), Bash(git show:*), Bash(git diff:*), Bash(git revert:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
