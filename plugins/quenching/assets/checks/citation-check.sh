@@ -382,6 +382,8 @@ for rel in sys.stdin.buffer.read().split(b"\x00"):
     rel = rel.decode("utf-8", "replace")
     if not rel or rel.endswith((".png", ".jpg", ".gif", ".ico")):
         continue
+    if rel == plugin + "/assets/checks/citation-check.sh":
+        continue
     if rel.startswith(FROZEN_DATA) or is_frozen_eval_run(rel):
         continue
     try:
@@ -464,6 +466,304 @@ sys.exit(1 if bad else 0)
   case $? in
     0) ;;
     2) echo; echo "  half 2 could not be measured"; exit 2 ;;
+    *) FAIL=$((FAIL+1)) ;;
+  esac
+  echo
+
+  # Section addresses are claims too.  Keep this as a separate probe so the path and command
+  # counters above remain comparable with the historical half-2 output.
+  python3 - "$REPO" <<'PY'
+import os
+import re
+import subprocess
+import sys
+
+repo = sys.argv[1]
+plugin = os.path.join(repo, "plugins", "quenching")
+source_roots = ("plugins/quenching/commands/", "plugins/quenching/assets/references/")
+link_re = re.compile(r"\]\(([^)\s]+)\)")
+bare_path_re = re.compile(
+    r"(?<![A-Za-z0-9_./-])/?(?:\$\{CLAUDE_PLUGIN_ROOT\}/)?"
+    r"(?:[A-Za-z0-9_.-]+/)+[A-Za-z0-9_.-]+\.md(?:#[A-Za-z0-9_.-]+)?"
+)
+filename_re = re.compile(r"(?<![A-Za-z0-9_./-])([A-Za-z0-9_.-]+\.md(?:#[A-Za-z0-9_.-]+)?)")
+section_re = re.compile(r"§")
+
+
+def tracked_files():
+    result = subprocess.run(
+        ["git", "ls-files", "-z"], cwd=repo, check=True, stdout=subprocess.PIPE
+    )
+    return [path.decode("utf-8", "replace") for path in result.stdout.split(b"\x00") if path]
+
+
+def normalize(value):
+    value = value.strip()
+    value = re.sub(r"^#+", "", value)
+    value = value.lstrip("§").strip()
+    value = value.replace("`", "").replace("*", "")
+    value = re.sub(r"['’]s\b", "", value)
+    value = re.sub(r"\s+", " ", value)
+    return value.casefold()
+
+
+def heading_names(relative):
+    names = []
+    in_fence = False
+    fence = None
+    try:
+        lines = open(os.path.join(repo, relative), encoding="utf-8", errors="replace")
+    except FileNotFoundError:
+        return names
+    with lines:
+        for line in lines:
+            fence_match = re.match(r"^ {0,3}(`{3,}|~{3,})", line)
+            if fence_match:
+                marker = fence_match.group(1)[0]
+                if not in_fence:
+                    in_fence = True
+                    fence = marker
+                elif marker == fence:
+                    in_fence = False
+                continue
+            if in_fence:
+                continue
+            heading = re.match(r"^ {0,3}#{1,6}\s+(.+?)\s*#*\s*$", line)
+            if heading:
+                names.append(normalize(heading.group(1)))
+    return names
+
+
+def relative_target(source, raw):
+    target = raw.split("#", 1)[0].strip().rstrip(".,;:)")
+    if not target:
+        return None
+    if target.startswith(("http:", "https:", "mailto:", "#")):
+        return None
+    if target.startswith("${CLAUDE_PLUGIN_ROOT}/"):
+        target = target[len("${CLAUDE_PLUGIN_ROOT}/") :]
+        if any(char in target for char in "*?<>${}|"):
+            return None
+        return os.path.normpath(os.path.join("plugins/quenching", target))
+    if any(char in target for char in "*?<>${}|"):
+        return None
+    if target.startswith("plugins/quenching/"):
+        return os.path.normpath(target)
+    if target.startswith("docs/"):
+        return os.path.normpath(target)
+    if target.startswith("/"):
+        return os.path.normpath(target[1:])
+    relative = os.path.normpath(os.path.join(os.path.dirname(source), target))
+    if os.path.isfile(os.path.join(repo, relative)):
+        return relative
+    basename = os.path.basename(target.split("#", 1)[0])
+    matches = [
+        path
+        for path in files
+        if path.startswith("plugins/quenching/") and os.path.basename(path) == basename
+    ]
+    return matches[0] if len(matches) == 1 else relative
+
+
+def target_for(source, marker_start, line):
+    candidates = []
+    for match in link_re.finditer(line):
+        if match.start() >= marker_start:
+            continue
+        target = relative_target(source, match.group(1))
+        if target:
+            candidates.append((match.start(), target))
+    for match in bare_path_re.finditer(line):
+        if match.start() >= marker_start:
+            continue
+        target = relative_target(source, match.group(0))
+        if target:
+            candidates.append((match.start(), target))
+    for match in filename_re.finditer(line):
+        if match.start() >= marker_start:
+            continue
+        target = relative_target(source, match.group(1))
+        if target:
+            candidates.append((match.start(), target))
+    return candidates[-1][1] if candidates else source
+
+
+def targets_on_line(source, line):
+    candidates = []
+    for match in link_re.finditer(line):
+        target = relative_target(source, match.group(1))
+        if target:
+            candidates.append((match.start(), target))
+    for match in bare_path_re.finditer(line):
+        target = relative_target(source, match.group(0))
+        if target:
+            candidates.append((match.start(), target))
+    return candidates
+
+
+def resolve_address(address, headings):
+    address = re.sub(r"\s+", " ", address).strip()
+    if not address or "<the cited file>" in address:
+        return True
+    if re.match(r"^[`\"']?[A-Za-z](?:[`\"'.,;:)]|$)", address):
+        return True
+    range_match = re.match(r"^(\d+)[–-](\d+)(?:[`\"'.,;:)]|\s|$)", address)
+    if range_match and all(
+        len(heading_matches(number, headings)) == 1
+        for number in range_match.groups()
+    ):
+        return True
+    tokens = address.split()
+    for count in range(1, min(len(tokens), 32) + 1):
+        raw_candidate = " ".join(tokens[:count])
+        numeric_heading = re.match(r"^(\d+[a-z]?)\.[\]\[\),;:'\"`]*$", raw_candidate)
+        candidate = (
+            numeric_heading.group(1) + "."
+            if numeric_heading
+            else raw_candidate.rstrip(".,;:)]}\"'`")
+        )
+        key = normalize(candidate)
+        if not key:
+            continue
+        if count == 1 and key in ("the", "a", "an", "what", "why", "how"):
+            continue
+        matches = heading_matches(key, headings)
+        if len(matches) == 1:
+            return True
+    return False
+
+
+def heading_matches(key, headings):
+    exact = [heading for heading in headings if heading == key]
+    if exact:
+        return exact
+    matches = []
+    for heading in headings:
+        forms = [heading]
+        title = re.sub(r"^\d+[a-z]?\.\s+", "", heading)
+        if title != heading:
+            forms.append(title)
+        if any(form == key or form.startswith(key) for form in forms):
+            matches.append(heading)
+    return matches
+
+
+def unique_global_target(address, heading_index):
+    address = re.sub(r"\s+", " ", address).strip()
+    if not address or "<the cited file>" in address:
+        return None
+    if re.match(r"^[`\"']?[A-Za-z](?:[`\"'.,;:)]|$)", address):
+        return None
+    tokens = address.split()
+    for count in range(1, min(len(tokens), 32) + 1):
+        raw_candidate = " ".join(tokens[:count])
+        numeric_heading = re.match(r"^(\d+[a-z]?)\.[\]\[\),;:'\"`]*$", raw_candidate)
+        candidate = (
+            numeric_heading.group(1) + "."
+            if numeric_heading
+            else raw_candidate.rstrip(".,;:)]}\"'`")
+        )
+        key = normalize(candidate)
+        if not key:
+            continue
+        if count == 1 and key in ("the", "a", "an", "what", "why", "how"):
+            continue
+        hits = [
+            (target, heading)
+            for target, headings in heading_index.items()
+            for heading in heading_matches(key, headings)
+        ]
+        if len(hits) == 1:
+            return hits[0][0]
+    return None
+
+
+files = tracked_files()
+source_files = [
+    path for path in files if path.startswith(source_roots) and path.endswith(".md")
+]
+heading_cache = {
+    path: heading_names(path)
+    for path in files
+    if path.endswith(".md") and (path.startswith("plugins/quenching/") or path.startswith("docs/"))
+}
+heading_index = heading_cache
+findings = []
+checked = 0
+
+for source in source_files:
+    try:
+        text = open(os.path.join(repo, source), encoding="utf-8", errors="replace").read()
+    except FileNotFoundError:
+        continue
+    lines = text.splitlines()
+    active_target = None
+    for index, line in enumerate(lines):
+        markers = list(section_re.finditer(line))
+        if not markers:
+            for _, target in targets_on_line(source, line):
+                if target.startswith(("plugins/quenching/", "docs/")):
+                    active_target = target
+            continue
+        for marker in markers:
+            if (
+                marker.start() > 0
+                and line[marker.start() - 1] == "`"
+                and marker.end() < len(line)
+                and line[marker.end()] == "`"
+            ):
+                continue
+            window = line[marker.end() :] + " " + " ".join(lines[index + 1 : index + 6])
+            address = window.split("§", 1)[0]
+            same_line_target = target_for(source, marker.start(), line)
+            targets = [same_line_target]
+            if same_line_target == source:
+                targets = [source]
+                if active_target and active_target != source:
+                    targets.append(active_target)
+                global_target = unique_global_target(address, heading_index)
+                if global_target and global_target not in targets:
+                    targets.append(global_target)
+            target = next(
+                (
+                    candidate
+                    for candidate in targets
+                    if candidate.startswith(("plugins/quenching/", "docs/"))
+                    and os.path.isfile(os.path.join(repo, candidate))
+                    and resolve_address(address, heading_names(candidate))
+                ),
+                targets[0],
+            )
+            if not target.startswith(("plugins/quenching/", "docs/")):
+                continue
+            if not os.path.isfile(os.path.join(repo, target)):
+                continue
+            if target not in heading_cache:
+                heading_cache[target] = heading_names(target)
+            checked += 1
+            if not resolve_address(address, heading_cache[target]):
+                findings.append((source, index + 1, target, "§" + address.strip()))
+        for _, target in targets_on_line(source, line):
+            if target.startswith(("plugins/quenching/", "docs/")):
+                active_target = target
+
+if findings:
+    for source, line, target, address in findings[:200]:
+        print("         %s:%d: %s -> %s" % (source, line, address, target))
+    if len(findings) > 200:
+        print("         … and %d more" % (len(findings) - 200))
+    print("  FAIL   cited sections: %d distinct, over %d checked" % (len(set(findings)), checked))
+else:
+    print("  ok     cited sections: %d checked, all resolve" % checked)
+
+if not checked:
+    print("  no section addresses could be measured — this is not a pass")
+    sys.exit(2)
+sys.exit(1 if findings else 0)
+PY
+  case $? in
+    0) ;;
+    2) echo; echo "  section citation check could not be measured"; exit 2 ;;
     *) FAIL=$((FAIL+1)) ;;
   esac
   echo

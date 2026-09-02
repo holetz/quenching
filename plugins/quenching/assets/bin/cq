@@ -4,19 +4,20 @@
     python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" [--root PATH] <pillar> <subcommand> ...
     python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --version
 
-Ten pillars, each answering with the same contract its launcher answered with — the
-subcommands, the `--json` payloads and the exit codes (0 ok · 1 findings · 2 refusal) are
+The registered pillars, each answering with the same contract its launcher answered with — the
+subcommands, the `--json` payloads and the exit codes (0 ok · 1 findings · 2 refusal · 3 usage) are
 the ones frozen in `tests/fixtures/golden/`. This file routes; it decides nothing else.
+
+Python 3.11 is the minimum runtime. The check below runs before the package imports so a runtime
+without `tomllib` gets a named refusal instead of a traceback from a pillar that needs it.
 
 WHY THE TABLE CARRIES `takes_root`
 ----------------------------------
-`--root` is the one option that reads as global and is not: `specs --root` names the
-`/.specs/` workspace, `components --root` names the surface holding `commands/`, and
-`ops --root` names the operations surface, while
-`knowledge` takes a bundle directory as a POSITIONAL. Forwarding `--root` there would not
-fail — `run_cli` collects every non-dash token as a path, so the value would be silently
-read as the bundle to validate. So the table says which pillars declare one, and naming
-`--root` for a pillar that does not is a refusal, not a guess.
+`--root` is the one option that reads as global and is not: `specs --root` names the repository
+whose configured provider owns the specs, `components --root` names the surface holding `commands/`, and
+`ops --root` names the operations surface. `knowledge --root` names the repository root and its
+bundle remains a positional override. The table says which pillars declare one, and naming
+`--root` for a pillar that does not is a usage error, not a guess.
 
 WHY THE IMPORT IS LAZY
 ----------------------
@@ -29,26 +30,43 @@ import cannot take the other two down with it.
 The spec asked whether `session` survives as a fourth first-level pillar, and declared how
 to decide it: at this task, if no command body but the retro invokes it, it becomes
 `cq components session` and leaves the root. Measured on the surface as it stands, exactly
-one body cites the tool — `commands/skill/retro.md` — so the criterion fires. `design` is a
+one body cites the tool — `commands/components/command/retro.md` — so the criterion fires. `design` is a
 separate pillar because its DTCG source, portable projections, and rendered artifacts form a
 front of their own; it is not session's replacement.
 
 It is mounted as a real subcommand of `components`, in that pillar's own parser, and not
 intercepted here: a route this file knew about and `cq components --help` did not would be a
-surface that lies about itself. The one thing that is out of step until task 7.5 is the
-caller — the retro still lives under `commands/skill/`, so for now the tool sits under a
-pillar its only caller has not moved into yet. That is an ordering artefact of the rename,
-not a reason to hold the decision the spec placed here.
+surface that lies about itself. The caller also lives in the components command surface, so
+the tool and its only caller now share the same front.
 """
 from __future__ import annotations
 
 import argparse
 import importlib
+import os
 import sys
 from typing import NamedTuple
 
-from quenching.common.output import REFUSAL
+
+PYTHON_FLOOR = (3, 11)
+PYTHON_FLOOR_EXIT = 2
+
+
+def _check_python_floor() -> bool:
+    if sys.version_info[:2] >= PYTHON_FLOOR:
+        return True
+    found = f"{sys.version_info[0]}.{sys.version_info[1]}"
+    print(f"cq-python-floor: Python {PYTHON_FLOOR[0]}.{PYTHON_FLOOR[1]} or newer is required; "
+          f"found {found}", file=sys.stderr)
+    return False
+
+
+if not _check_python_floor():
+    raise SystemExit(PYTHON_FLOOR_EXIT)
+
+from quenching.common.output import CQArgumentParser, USAGE
 from quenching.common.version import VERSION
+from quenching.common.doctor import run as run_doctor
 
 
 class Pillar(NamedTuple):
@@ -60,9 +78,9 @@ class Pillar(NamedTuple):
 PILLARS: dict[str, Pillar] = {
     "specs": Pillar(
         "quenching.specs.commands.cli", True,
-        "the /.specs/ workspace — capture, read, task, promote, validate"),
+        "the provider-owned specs front — capture, read, task, promote, validate"),
     "knowledge": Pillar(
-        "quenching.knowledge.cli", False,
+        "quenching.knowledge.cli", True,
         "the /docs/ OKF bundle — validate, project and stage documentation surfaces"),
     "design": Pillar(
         "quenching.design.cli", True,
@@ -92,14 +110,15 @@ PILLARS: dict[str, Pillar] = {
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(
+    p = CQArgumentParser(
         prog="cq",
         description="the quenching plugin's tooling, one pillar at a time",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="pillars:\n"
                + "\n".join(f"  {name:<11} {pillar.help}"
                            for name, pillar in PILLARS.items())
-               + "\n\n`cq <pillar> --help` prints that pillar's own subcommands.")
+               + "\n\n`cq doctor --help` prints the top-level prerequisite check; "
+                 "`cq <pillar> --help` prints that pillar's own subcommands.")
     p.add_argument("--root",
                     help="forwarded to the pillar as its own --root; design, specs, "
                     "components, ops, proof, delivery, toolchain, and security declare one")
@@ -117,19 +136,71 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+def build_doctor_parser() -> argparse.ArgumentParser:
+    p = CQArgumentParser(
+        prog="cq doctor",
+        description="check the Python floor and prerequisites selected by the backend/profile",
+    )
+    p.add_argument("--root", default=os.getcwd(),
+                   help="target repository root (default: current directory)")
+    p.add_argument("--json", action="store_true", help="machine-readable output")
+    p.add_argument("--setup", action="store_true",
+                   help="preview a minimal .claude/quenching.json from detected provider/fronts")
+    p.add_argument("--write", action="store_true",
+                   help="confirm writing the setup preview (requires --setup)")
+    return p
+
+
+def _top_level_command(argv: list[str]) -> tuple[str | None, int | None]:
+    """Find the first command while allowing the global `--root` before it."""
+    index = 0
+    while index < len(argv):
+        token = argv[index]
+        if token == "--root":
+            if index + 1 >= len(argv):
+                return None, None
+            index += 2
+            continue
+        if token.startswith("--root="):
+            index += 1
+            continue
+        if token.startswith("-"):
+            return None, None
+        return token, index
+    return None, None
+
+
+def _run_top_doctor(argv: list[str], command_index: int) -> int:
+    # Remove the command token so both `cq doctor --root .` and `cq --root . doctor` share
+    # one parser and one output contract.
+    args = argv[:command_index] + argv[command_index + 1:]
+    parsed = build_doctor_parser().parse_args(args)
+    return run_doctor(parsed.json, os.path.abspath(parsed.root), setup=parsed.setup,
+                      write=parsed.write)
+
+
 def main(argv: list[str]) -> int:
+    command, command_index = _top_level_command(argv)
+    if command == "doctor" and command_index is not None:
+        return _run_top_doctor(argv, command_index)
     parser = build_parser()
     args = parser.parse_args(argv)
     if not args.pillar:
-        parser.print_help()
-        return REFUSAL
+        parser.error("choose a pillar")
     pillar = PILLARS[args.pillar]
     rest = list(args.rest)
     if args.root:
         if not pillar.takes_root:
             parser.error(f"{args.pillar} declares no --root")
         rest = ["--root", args.root] + rest
-    return importlib.import_module(pillar.module).main(rest)
+    try:
+        return importlib.import_module(pillar.module).main(rest)
+    except SystemExit as exc:
+        # A child parser still owns its syntax and its usage text. Normalize argparse's historic
+        # exit 2 at the one shipped entry point, while preserving --help/--version exit 0.
+        if exc.code == 2:
+            return USAGE
+        raise
 
 
 if __name__ == "__main__":

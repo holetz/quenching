@@ -74,6 +74,9 @@ def cmd_promote(args, root: str, out: Emitter) -> int:
             return 2
         # An abandoned spec is EXPECTED to have open tasks — refusing there would make
         # every abandonment a forced promote. Only `done` has to be true.
+        # `task --descope` deliberately closes its box as `[x] … — descoped: …` and writes
+        # the reason into `## Outcome`; it is therefore a truthful closed task here, unlike
+        # `[!]`, which remains open and still refuses a `done` archive.
         open_tasks = [t for t in info["tasks"] if not t["checked"]]
         if outcome == "done" and open_tasks and not args.force:
             out.emit(args.json,

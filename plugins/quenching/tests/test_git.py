@@ -17,11 +17,15 @@ import sys
 import tempfile
 import unittest
 from types import SimpleNamespace
+from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.git.base import (_init_default_branch, _is_host_default, _origin_head_branch,
                                 resolve_base)
 from quenching.git.conventions import STANDARDS_DIR, _declared_docs
+from quenching.git.pr import (labelled_links, normalize_azure_pull_request,
+                              normalize_github_pull_request, normalize_pull_request,
+                              review_link)
 from quenching.git.slugs import _read_specs, cmd_specs
 from quenching.git.stale import (_gone_branches, _merged_branches, _merged_remote_branches,
                                  _orphan_worktrees, _unregistered_worktrees)
@@ -33,9 +37,11 @@ PR_STATUS = PLUGIN_ROOT / "commands" / "git" / "pr" / "status.md"
 PUSH_COMMAND = PLUGIN_ROOT / "commands" / "git" / "push.md"
 REVERT_COMMAND = PLUGIN_ROOT / "commands" / "git" / "revert.md"
 PR_REFERENCE = PLUGIN_ROOT / "assets" / "references" / "git" / "pr.md"
+MERGE_REFERENCE = PLUGIN_ROOT / "assets" / "references" / "git" / "merge.md"
 COMMIT_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit.md"
 COMMIT_INCREMENTAL_COMMAND = PLUGIN_ROOT / "commands" / "git" / "commit-incremental.md"
 CLEANUP_COMMAND = PLUGIN_ROOT / "commands" / "git" / "cleanup.md"
+SYNC_COMMAND = PLUGIN_ROOT / "commands" / "git" / "sync.md"
 
 
 def _normalise_prose(text: str) -> str:
@@ -100,17 +106,32 @@ class Base(RepoCase):
              "refs/remotes/origin/develop")
         self.assertEqual(_origin_head_branch(self.repo), "develop")
 
-    def test_is_host_default_is_false_for_an_unknown_backend(self):
-        self.assertFalse(_is_host_default(self.repo, "unknown-provider", "main"))
+    def test_is_host_default_is_unknown_for_an_unknown_backend(self):
+        self.assertIsNone(_is_host_default(self.repo, "unknown-provider", "main"))
 
-    def test_is_host_default_is_false_when_the_host_cli_cannot_answer(self):
+    def test_is_host_default_is_unknown_when_the_host_cli_cannot_answer(self):
         # no GitHub remote in this throwaway repo — a missing or refusing host CLI reads as
         # "unknown", never as a crash.
-        self.assertFalse(_is_host_default(self.repo, "github", "main"))
+        self.assertIsNone(_is_host_default(self.repo, "github", "main"))
+
+    def test_is_host_default_distinguishes_a_known_github_default(self):
+        result = SimpleNamespace(returncode=0, stdout="main\n")
+        with mock.patch.object(subprocess, "run", return_value=result):
+            self.assertTrue(_is_host_default(self.repo, "github", "main"))
+            self.assertFalse(_is_host_default(self.repo, "github", "develop"))
+
+    def test_is_host_default_asks_azure_through_its_runner(self):
+        with mock.patch("quenching.git.base._az_run", return_value=(0, "main\n", "")) as run:
+            self.assertTrue(_is_host_default(self.repo, "azure-boards", "main"))
+        run.assert_called_once_with(self.repo, "repos", "show", "--query", "defaultBranch", "-o", "tsv")
+
+    def test_is_host_default_is_unknown_for_an_azure_runner_failure(self):
+        with mock.patch("quenching.git.base._az_run", return_value=(127, "", "missing")):
+            self.assertIsNone(_is_host_default(self.repo, "azure-boards", "main"))
 
     def test_cq_git_base_json_matches_the_resolved_pair(self):
         payload = _cq_json(self.repo, "base")
-        self.assertEqual((payload["base"], payload["isDefault"]), ("main", False))
+        self.assertEqual((payload["base"], payload["isDefault"]), ("main", None))
 
 
 class Specs(RepoCase):
@@ -154,24 +175,25 @@ class Specs(RepoCase):
 
 
 class Stale(RepoCase):
-    def _origin_with_merged_branch(self):
-        origin = os.path.join(self.tmp, "origin.git")
-        os.makedirs(origin, exist_ok=True)
-        _run(origin, "init", "-q", "--bare")
-        _run(self.repo, "remote", "add", "origin", origin)
-        _run(self.repo, "push", "-q", "-u", "origin", "main")
-        _run(self.repo, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main")
+    def _origin_with_merged_branch(self, remote="origin"):
+        remote_repo = os.path.join(self.tmp, f"{remote}.git")
+        os.makedirs(remote_repo, exist_ok=True)
+        _run(remote_repo, "init", "-q", "--bare")
+        _run(self.repo, "remote", "add", remote, remote_repo)
+        _run(self.repo, "push", "-q", "-u", remote, "main")
+        _run(self.repo, "symbolic-ref", f"refs/remotes/{remote}/HEAD",
+             f"refs/remotes/{remote}/main")
 
         _run(self.repo, "branch", "remote-feature")
         _run(self.repo, "checkout", "-q", "remote-feature")
         pathlib.Path(self.repo, "remote-feature.txt").write_text("remote\n", encoding="utf-8")
         _run(self.repo, "add", "remote-feature.txt")
         _run(self.repo, "commit", "-q", "-m", "remote feature")
-        _run(self.repo, "push", "-q", "-u", "origin", "remote-feature")
+        _run(self.repo, "push", "-q", "-u", remote, "remote-feature")
         _run(self.repo, "checkout", "-q", "main")
         _run(self.repo, "merge", "-q", "--ff-only", "remote-feature")
-        _run(self.repo, "push", "-q", "origin", "main")
-        return origin
+        _run(self.repo, "push", "-q", remote, "main")
+        return remote_repo
 
     def test_a_trivially_merged_branch_is_reported_merged(self):
         _run(self.repo, "branch", "feature-b")
@@ -258,6 +280,14 @@ class Stale(RepoCase):
         self.assertIn("remote-feature", {b["branch"] for b in payload["staleBranches"]})
         self.assertEqual(payload["orphanWorktrees"], [])
 
+    def test_cq_git_stale_reads_the_selected_remote(self):
+        self._origin_with_merged_branch("upstream")
+        payload = _cq_json(self.repo, "stale", "--remote", "upstream")
+        self.assertEqual(payload["remote"], "upstream")
+        self.assertEqual(payload["remoteBranches"],
+                         [{"remote": "upstream", "branch": "remote-feature",
+                           "reasons": ["merged"]}])
+
 
 class Worktree(RepoCase):
     def setUp(self):
@@ -265,7 +295,8 @@ class Worktree(RepoCase):
         self.relative = "shared"
         config = pathlib.Path(self.repo) / ".claude" / "quenching.json"
         config.parent.mkdir()
-        config.write_text(json.dumps({"sharedPaths": [self.relative]}) + "\n", encoding="utf-8")
+        config.write_text(json.dumps({"shared": {"sharedPaths": [self.relative]}}) + "\n",
+                          encoding="utf-8")
         pathlib.Path(self.repo, ".gitignore").write_text(f"/{self.relative}\n", encoding="utf-8")
         _run(self.repo, "add", ".claude/quenching.json", ".gitignore")
         _run(self.repo, "commit", "-q", "-m", "declare shared path")
@@ -286,6 +317,18 @@ class Worktree(RepoCase):
         self.assertEqual(payload["paths"][0]["state"], "created")
         self.assertTrue(self.link.is_symlink())
         self.assertEqual(self.link.resolve(), self.store.resolve())
+
+    def test_legacy_flat_shared_paths_are_refused(self):
+        config = pathlib.Path(self.repo) / ".claude" / "quenching.json"
+        config.write_text(json.dumps({"sharedPaths": [self.relative]}) + "\n",
+                          encoding="utf-8")
+        proc = subprocess.run([sys.executable, CQ, "git", "worktree", "link", "--json"],
+                              cwd=self.repo, capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 2)
+        payload = json.loads(proc.stdout)
+        self.assertEqual(payload["code"], "sp-config-unscoped")
+        self.assertEqual(payload["keys"], ["sharedPaths"])
+        self.assertFalse(self.link.exists())
 
     def test_existing_link_to_the_store_is_unchanged(self):
         self.store.mkdir()
@@ -341,6 +384,107 @@ class Worktree(RepoCase):
         after = os.lstat(self.link)
         self.assertEqual(payload["paths"][0]["state"], "unchanged")
         self.assertEqual((before.st_dev, before.st_ino), (after.st_dev, after.st_ino))
+
+
+class LifecycleBehavior(RepoCase):
+    """The lifecycle cases that prose-only command tests cannot prove.
+
+    Each case creates the refs it inspects and then asks Git to perform the operation. The
+    command bodies still own the confirmation and refusal policy; these tests pin the Git facts
+    that policy promises to show and preserve.
+    """
+
+    def _add_bare_remote(self, name="origin"):
+        remote = os.path.join(self.tmp, f"{name}.git")
+        os.makedirs(remote, exist_ok=True)
+        _run(remote, "init", "-q", "--bare")
+        _run(self.repo, "remote", "add", name, remote)
+        _run(self.repo, "push", "-q", "-u", name, "main")
+        return remote
+
+    def test_rebase_then_confirmed_lease_push_replaces_only_the_expected_remote_tip(self):
+        self._add_bare_remote()
+        _run(self.repo, "checkout", "-q", "-b", "feature")
+        pathlib.Path(self.repo, "feature.txt").write_text("feature\n", encoding="utf-8")
+        _run(self.repo, "add", "feature.txt")
+        _run(self.repo, "commit", "-q", "-m", "feature work")
+        _run(self.repo, "push", "-q", "-u", "origin", "feature")
+        old_remote_tip = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
+                                         check=True, capture_output=True, text=True).stdout.strip()
+
+        _run(self.repo, "checkout", "-q", "main")
+        pathlib.Path(self.repo, "base.txt").write_text("base\n", encoding="utf-8")
+        _run(self.repo, "add", "base.txt")
+        _run(self.repo, "commit", "-q", "-m", "base advances")
+        _run(self.repo, "push", "-q", "origin", "main")
+        _run(self.repo, "checkout", "-q", "feature")
+        _run(self.repo, "rebase", "-q", "origin/main")
+        rebased_tip = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
+                                      check=True, capture_output=True, text=True).stdout.strip()
+        self.assertNotEqual(rebased_tip, old_remote_tip)
+
+        _run(self.repo, "push", "-q", f"--force-with-lease=refs/heads/feature:{old_remote_tip}",
+             "origin", "HEAD:refs/heads/feature")
+        remote_tip = subprocess.run(["git", "ls-remote", "origin", "refs/heads/feature"],
+                                     cwd=self.repo, check=True, capture_output=True,
+                                     text=True).stdout.split()[0]
+        self.assertEqual(remote_tip, rebased_tip)
+
+    def test_revert_creates_a_new_commit_and_preserves_the_target(self):
+        pathlib.Path(self.repo, "a.txt").write_text("changed\n", encoding="utf-8")
+        _run(self.repo, "add", "a.txt")
+        _run(self.repo, "commit", "-q", "-m", "change to compensate")
+        target = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo, check=True,
+                                capture_output=True, text=True).stdout.strip()
+
+        _run(self.repo, "revert", "--no-edit", target)
+        revert = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo, check=True,
+                                capture_output=True, text=True).stdout.strip()
+        subject = subprocess.run(["git", "show", "-s", "--format=%s", "HEAD"],
+                                 cwd=self.repo, check=True, capture_output=True,
+                                 text=True).stdout.strip()
+        self.assertNotEqual(revert, target)
+        self.assertTrue(subject.startswith("Revert \"change to compensate\""))
+        self.assertEqual(pathlib.Path(self.repo, "a.txt").read_text(encoding="utf-8"), "x\n")
+        _run(self.repo, "merge-base", "--is-ancestor", target, "HEAD")
+
+
+class PullRequestNormalization(unittest.TestCase):
+    def test_azure_keeps_rest_url_as_api_and_builds_the_browser_link(self):
+        payload = {
+            "pullRequestId": 42,
+            "url": "https://dev.azure.com/org/proj/_apis/git/repositories/r/pullRequests/42",
+            "repository": {"webUrl": "https://dev.azure.com/org/proj/_git/repo"},
+        }
+        expected = {
+            "id": 42,
+            "webUrl": "https://dev.azure.com/org/proj/_git/repo/pullrequest/42",
+            "apiUrl": payload["url"],
+        }
+        self.assertEqual(normalize_azure_pull_request(payload), expected)
+        self.assertEqual(normalize_pull_request("azure-boards", payload), expected)
+        self.assertEqual(review_link(expected), expected["webUrl"])
+        self.assertEqual(labelled_links(expected),
+                         {"Link para revisão": expected["webUrl"], "API URL": payload["url"]})
+
+    def test_azure_never_uses_an_api_endpoint_as_the_human_link(self):
+        payload = {
+            "pullRequestId": 7,
+            "url": "https://dev.azure.com/org/proj/_apis/git/pullRequests/7",
+            "webUrl": "https://dev.azure.com/org/proj/_apis/git/pullRequests/7",
+        }
+        snapshot = normalize_azure_pull_request(payload)
+        self.assertIsNone(snapshot["webUrl"])
+        self.assertIsNone(review_link(snapshot))
+
+    def test_github_separates_html_url_and_derives_missing_api_url(self):
+        payload = {"number": 9, "url": "https://github.com/o/r/pull/9"}
+        repository = {"owner": {"login": "o"}, "name": "r"}
+        self.assertEqual(normalize_github_pull_request(payload, repository), {
+            "id": 9,
+            "webUrl": payload["url"],
+            "apiUrl": "https://api.github.com/repos/o/r/pulls/9",
+        })
 
 
 class Conventions(RepoCase):
@@ -428,6 +572,14 @@ class PullRequestPayload(unittest.TestCase):
         self.assertIn("`Tasks` summary", self.payload_step)
         self.assertIn("branch facts", _normalise_prose(self.payload_step))
 
+    def test_pr_create_selects_a_named_remote_and_defaults_to_origin(self):
+        command = self.command.lower()
+        self.assertIn("remote:<name>", command)
+        self.assertIn("git remote -v", command)
+        self.assertIn("git remote get-url <remote>", command)
+        self.assertIn("git push -u <remote> <branch>", command)
+        self.assertIn("origin", command)
+
     def test_missing_optional_sections_are_omitted_not_fabricated(self):
         payload_step = _normalise_prose(self.payload_step)
         self.assertIn("Omit an absent or empty optional section", payload_step)
@@ -452,6 +604,16 @@ class PullRequestPayload(unittest.TestCase):
         self.assertEqual(self.command.count("**AskUserQuestion**"), 1)
         self.assertIn("provider-native link (or its absence)", self.payload_step)
         self.assertIn("one confirmation", self.command.lower())
+
+    def test_azure_source_branch_deletion_is_an_explicit_offer(self):
+        command = self.command.lower()
+        reference = MERGE_REFERENCE.read_text(encoding="utf-8").lower()
+        combined = f"{command}\n{reference}"
+        self.assertIn("separate source-branch deletion offer", combined)
+        self.assertIn("deletion offer defaults to preserve the branch", command)
+        self.assertIn("[--delete-source-branch true]", command)
+        self.assertIn("never pass `--delete-source-branch true` by default", command)
+        self.assertIn("keep it, especially after a squash merge", reference)
 
     def test_status_command_routes_both_providers_and_normalizes_the_snapshot(self):
         command = PR_STATUS.read_text(encoding="utf-8")
@@ -520,23 +682,31 @@ class PullRequestPayload(unittest.TestCase):
             "git ls-remote",
             "git rev-list --left-right --count",
             "git log",
+            "git reflog show <branch>",
             "git push --set-upstream",
+            "git push --force-with-lease=refs/heads/<branch>:<expected-remote-sha>",
             "head:refs/heads/<branch>",
             "askuserquestion",
             "origin",
             "dirty tree",
             "detached head",
             "divergent",
-            "no commits\nahead",
+            "no commits ahead",
             "/quenching:git:pr:create",
         ):
             self.assertIn(phrase.lower(), lower)
 
-    def test_push_command_has_no_force_or_hidden_history_operation(self):
+    def test_push_command_only_allows_a_confirmed_lease_after_proven_rebase(self):
         command = PUSH_COMMAND.read_text(encoding="utf-8").lower()
+        for required in (
+            "same work after a rebase",
+            "expected remote sha",
+            "current\nremote sha",
+            "fresh confirmation",
+            "unproven divergence",
+        ):
+            self.assertIn(required, command)
         for forbidden in (
-            "--force",
-            "--force-with-lease",
             "git fetch",
             "git add",
             "git commit",
@@ -547,6 +717,7 @@ class PullRequestPayload(unittest.TestCase):
             "--no-verify",
         ):
             self.assertNotIn(forbidden, command)
+        self.assertNotIn("git push --force ", command)
 
     def test_revert_command_resolves_commit_or_task_and_requires_merge_mainline(self):
         command = REVERT_COMMAND.read_text(encoding="utf-8")
@@ -569,6 +740,10 @@ class PullRequestPayload(unittest.TestCase):
             "git revert --abort",
             "askuserquestion",
             "no spec record",
+            "cq specs task --spec",
+            "--uncheck",
+            "--reason",
+            "## discoveries",
         ):
             self.assertIn(phrase.lower(), lower)
 
@@ -579,7 +754,6 @@ class PullRequestPayload(unittest.TestCase):
             "git rebase",
             "git push",
             "git add",
-            "git commit",
             "--force",
             "--no-verify",
             "cq specs record",
@@ -587,14 +761,20 @@ class PullRequestPayload(unittest.TestCase):
             self.assertNotIn(forbidden, command)
         self.assertIn("new revert commit", command)
         self.assertIn("never resolve a conflict", command)
+        self.assertIn("only after", command)
+        self.assertIn("new revert commit is verified", command)
 
     def test_cleanup_selects_reported_remote_branches_before_deleting(self):
         cleanup = CLEANUP_COMMAND.read_text(encoding="utf-8").lower()
         self.assertIn("remoteBranches".lower(), cleanup)
-        self.assertIn("git push origin --delete", cleanup)
-        self.assertIn("single selection", cleanup)
+        self.assertIn("git push <remote> --delete", cleanup)
+        self.assertIn("remote:<name>", cleanup)
+        self.assertIn("--remote <remote>", cleanup)
+        self.assertIn("local selection", cleanup)
+        self.assertIn("remote selection", cleanup)
+        self.assertIn("remote branch is never", cleanup)
         self.assertIn("confirmation", cleanup)
-        self.assertEqual(cleanup.count("**askuserquestion**"), 1)
+        self.assertEqual(cleanup.count("**askuserquestion**"), 2)
 
     def test_cleanup_does_not_fetch_or_prune_implicitly(self):
         cleanup = CLEANUP_COMMAND.read_text(encoding="utf-8").lower()
@@ -626,6 +806,25 @@ class CommitSubjectContract(unittest.TestCase):
         self.assertIn("amends history", command)
 
 
+class SyncContract(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.lower = SYNC_COMMAND.read_text(encoding="utf-8").lower()
+
+    def test_sync_fetches_without_persisting_pruning_configuration(self):
+        for phrase in ("git remote get-url origin", "git fetch origin <base>",
+                       "no persistent fetch configuration is changed", "no-remote"):
+            self.assertIn(phrase, self.lower)
+        for forbidden in ("git config fetch.prune", "fetch.prune=true", "configure fetch.prune",
+                          "pruning configuration"):
+            self.assertNotIn(forbidden, self.lower)
+
+    def test_sync_hands_rebased_publication_to_push_with_a_lease(self):
+        self.assertIn("force-with-lease", self.lower)
+        self.assertIn("git:push", self.lower)
+        self.assertIn("do not publish", self.lower)
+
+
 class IncrementalCommitContract(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -652,7 +851,15 @@ class IncrementalCommitContract(unittest.TestCase):
         for phrase in ("gitconventions.commitSubject", "chore: <short english imperative>",
                        "one short imperative subject", "resolved english subject"):
             self.assertIn(phrase.lower(), self.lower)
-        self.assertNotIn("askuserquestion", self.lower)
+        self.assertIn("askuserquestion", self.lower)
+        self.assertIn("with one confirmation", self.lower)
+        self.assertNotIn("without confirmation", self.lower)
+
+    def test_content_guards_have_bounded_reads_and_do_not_report_secret_values(self):
+        for phrase in ("1 mib per file", "10 mib total", "scan content, not only filenames",
+                       "private-key headers", "api[_-]?key", "client[_-]?secret",
+                       "never the value"):
+            self.assertIn(phrase, self.lower)
 
     def test_hooks_and_failures_preserve_previous_commits_and_residue(self):
         for phrase in ("hooks stay enabled", "if staging fails\nor a commit fails", "leave earlier commits intact",

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import os
 import pathlib
+import tempfile
 
 
 def read_text(path: str) -> str | None:
@@ -20,20 +21,26 @@ def write_text(path: str, text: str) -> None:
 
     Write-then-rename rather than `Path.write_text`, which truncates first: a reader landing in
     the window between the truncate and the write gets an empty or torn document. That window
-    is why this is here rather than left alone — `SpecsLock` serialises WRITERS ONLY, and the
-    argument for letting readers run unlocked is exactly that a write is never observable
-    half-done. `os.replace` is atomic on POSIX and on Windows.
+    is why this is here rather than left alone — callers may read while a writer runs, and a
+    write is never observable half-done. `os.replace` is atomic on POSIX and on Windows.
 
-    The temp file is created in the SAME directory, so the rename never crosses a filesystem,
-    and carries the pid, so two writers cannot collide on the temp name even where no lock
-    covers them (a workspace still in the code tree has no worktree and takes no lock)."""
+    The temp file is created in the SAME directory, so the rename never crosses a filesystem.
+    `mkstemp` gives each writer its own name even where no lock covers them (a workspace still in
+    the code tree has no worktree and takes no lock)."""
     p = pathlib.Path(path)
-    tmp = p.with_name(f".{p.name}.tmp-{os.getpid()}")
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{p.name}.tmp-", dir=str(p.parent))
+    owned_fd: int | None = fd
     try:
-        tmp.write_text(text, encoding="utf-8")
-        os.replace(tmp, p)
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            owned_fd = None
+            handle.write(text)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp_name, p)
     finally:
+        if owned_fd is not None:
+            os.close(owned_fd)
         try:
-            tmp.unlink()      # a no-op after a successful replace; cleanup after a failure
+            os.unlink(tmp_name)      # a no-op after a successful replace; cleanup after a failure
         except OSError:
             pass

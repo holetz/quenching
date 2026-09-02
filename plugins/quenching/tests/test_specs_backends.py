@@ -10,15 +10,22 @@ import contextlib
 import io
 import json
 import os
+import pathlib
 import socket
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 
-import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
+try:
+    import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
+except ModuleNotFoundError:  # package-qualified unittest invocation from the repository root
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    import _paths  # noqa: F401
 from quenching.common.frontmatter import parse_frontmatter
+from quenching.git.pr import labelled_links, normalize_pull_request
 from quenching.specs.backends import azure as az_mod
 from quenching.specs.backends import github as gh_mod
 from quenching.specs.backends.azure import AzureBoardsBackend
@@ -230,6 +237,9 @@ class GithubRemoteFixture:
         raise AssertionError(f"unexpected GitHub API request: {argv!r}, {payload!r}")
 
     def __call__(self, cwd: str, *argv: str, stdin: str | None = None):
+        if argv[:2] == ("issue", "list"):
+            self.calls.append({"kind": "lean", "argv": list(argv), "payload": None})
+            return 0, json.dumps(getattr(self, "lean_issues", [])), ""
         if argv[:2] == ("issue", "edit"):
             if argv[2:4] != ("101", "--repo") or "--type" not in argv:
                 raise AssertionError(f"unexpected GitHub type request: {argv!r}")
@@ -449,6 +459,33 @@ class AzureExternalRoundTrip(unittest.TestCase):
         self.assertEqual(patches[2]["operations"], [{
             "op": "add", "path": "/fields/System.State", "value": "Closed",
         }])
+
+
+class PullRequestAdapterFixture(unittest.TestCase):
+    """A provider-shaped Azure PR response must keep its two URLs in separate fields."""
+
+    AZURE_RESPONSE = {
+        "pullRequestId": 314,
+        "title": "Normalize review URLs",
+        "url": "https://dev.azure.com/unicred/proj/_apis/git/repositories/repo/pullRequests/314",
+        "repository": {
+            "id": "repo-id",
+            "name": "repo",
+            "webUrl": "https://dev.azure.com/unicred/proj/_git/repo",
+        },
+    }
+
+    def test_azure_fixture_has_a_navigable_review_link_and_a_labeled_api_url(self):
+        snapshot = normalize_pull_request("azure-boards", self.AZURE_RESPONSE)
+        self.assertEqual(snapshot, {
+            "id": 314,
+            "webUrl": "https://dev.azure.com/unicred/proj/_git/repo/pullrequest/314",
+            "apiUrl": self.AZURE_RESPONSE["url"],
+        })
+        labels = labelled_links(snapshot)
+        self.assertEqual(labels["Link para revisão"], snapshot["webUrl"])
+        self.assertEqual(labels["API URL"], snapshot["apiUrl"])
+        self.assertNotIn("/_apis/", labels["Link para revisão"])
 
 
 class ExternalBackendDiscrimination(unittest.TestCase):
@@ -744,6 +781,51 @@ class GhBodyCeiling(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------- #
+# the gh transport's bounded retry contract
+# --------------------------------------------------------------------------- #
+class GhTransport(unittest.TestCase):
+    """Transient transport failures retry three times at most and keep the final attempt."""
+
+    def test_timeout_retries_then_becomes_a_named_refusal(self):
+        timeout = subprocess.TimeoutExpired(["gh", "api"], 30)
+        with mock.patch("subprocess.run", side_effect=timeout), \
+                mock.patch.object(gh_mod.time, "sleep") as sleep:
+            result = gh_mod._gh_run(os.getcwd(), "api")
+
+        self.assertEqual(result[0], gh_mod.GH_TIMEOUT)
+        self.assertEqual(result[3], 3)
+        self.assertEqual(len(sleep.call_args_list), 2)
+        refusal = gh_mod.gh_refusal("reading a spec", *result[:3], attempts=result[3])
+        self.assertEqual(refusal["code"], "sp-gh-timeout")
+        self.assertEqual(refusal["attempts"], 3)
+
+    def test_rate_limit_retries_and_success_keeps_attempt_count(self):
+        failed = subprocess.CompletedProcess(
+            ["gh", "api"], 1, stdout='{"message":"rate limit"}',
+            stderr="gh: API rate limit exceeded (HTTP 429)\n")
+        passed = subprocess.CompletedProcess(["gh", "api"], 0, stdout="{}", stderr="")
+        with mock.patch("subprocess.run", side_effect=[failed, passed]), \
+                mock.patch.object(gh_mod.time, "sleep") as sleep:
+            result = gh_mod._gh_run(os.getcwd(), "api")
+
+        self.assertEqual(result[:3], (0, "{}", ""))
+        self.assertEqual(result[3], 2)
+        sleep.assert_called_once_with(gh_mod.GH_RETRY_BACKOFF[0])
+
+    def test_permanent_api_error_is_not_retried(self):
+        failed = subprocess.CompletedProcess(
+            ["gh", "api"], 1, stdout='{"message":"Not Found"}',
+            stderr="gh: Not Found (HTTP 404)\n")
+        with mock.patch("subprocess.run", return_value=failed), \
+                mock.patch.object(gh_mod.time, "sleep") as sleep:
+            result = gh_mod._gh_run(os.getcwd(), "api")
+
+        self.assertEqual(result[0], 1)
+        self.assertEqual(result[3], 1)
+        sleep.assert_not_called()
+
+
+# --------------------------------------------------------------------------- #
 # a listing that never arrived, told apart from a front that is genuinely empty
 # --------------------------------------------------------------------------- #
 class GhEmptyListing(unittest.TestCase):
@@ -755,9 +837,10 @@ class GhEmptyListing(unittest.TestCase):
     stub one level higher would step straight over it. No network and no `gh`."""
 
     def setUp(self):
-        self.backend = GitHubBackend("owner/repo", os.getcwd())
+        self.backend = GitHubBackend("owner/repo", os.getcwd(), open_issues=38)
 
-    def _load_returning(self, stdout: str):
+    def _load_returning(self, stdout: str, open_issues: int | None = 38):
+        self.backend.open_issues = open_issues
         with mock.patch.object(gh_mod, "_gh_run", lambda cwd, *a, **k: (0, stdout, "")):
             return self.backend._load()
 
@@ -773,7 +856,7 @@ class GhEmptyListing(unittest.TestCase):
         self.assertEqual(ctx.exception.err.get("code"), "sp-gh-empty-listing")
 
     def test_one_empty_page_is_a_genuinely_empty_front_and_does_not_refuse(self):
-        self.assertEqual(self._load_returning("[[]]"), [])
+        self.assertEqual(self._load_returning("[[]]", open_issues=0), [])
 
     def test_a_write_whose_legitimate_answer_is_empty_still_does_not_refuse(self):
         # The DELETE of a stale continuation comment: GitHub answers 204 No Content, `gh`
@@ -792,13 +875,10 @@ class GhEmptyListing(unittest.TestCase):
 # the OTHER half: an empty front that may be genuine, said out loud as a suspicion
 # --------------------------------------------------------------------------- #
 class GhListingSuspect(unittest.TestCase):
-    """`[[]]` — one empty page — is a shape that proves nothing, so this half warns and never
-    refuses. The corroboration is the open-issue count the repository resolution already paid
-    for, and the three states it separates are asserted here.
+    """`[[]]` — one empty page — is a shape that proves nothing on its own. A positive open-issue
+    count now makes the contradiction strong enough for the listing guard to refuse.
 
-    A repository that adopted this backend over an existing tracker and has created no spec
-    yet IS the warning state, legitimately, which is exactly why the assertion below checks
-    that the call still SUCCEEDS while it warns.
+    A repository with no open issues, or with an unknown count, remains an allowed empty result.
 
     The process-level flag is restored, so this class cannot change what a later test or a
     later command prints."""
@@ -820,10 +900,10 @@ class GhListingSuspect(unittest.TestCase):
             rows = backend._load()
         return rows, err.getvalue(), out.getvalue()
 
-    def test_zero_rows_with_open_issues_warns_and_does_not_refuse(self):
-        rows, said, _ = self._load_empty(38)
-        self.assertEqual(rows, [])
-        self.assertIn("38 open issue(s)", said)
+    def test_zero_rows_with_open_issues_refuses_instead_of_being_read_as_empty(self):
+        with self.assertRaises(BackendRefusal) as ctx:
+            self._load_empty(38)
+        self.assertEqual(ctx.exception.err["code"], "sp-gh-empty-listing")
 
     def test_zero_rows_with_no_open_issues_says_nothing(self):
         # A repository with no issues at all corroborates nothing, and a warning here would
@@ -833,8 +913,8 @@ class GhListingSuspect(unittest.TestCase):
     def test_an_unknown_count_is_never_read_as_zero_and_never_as_proof(self):
         self.assertEqual(self._load_empty(None)[1], "")
 
-    def test_the_warning_never_reaches_stdout_where_the_json_payload_is(self):
-        self.assertEqual(self._load_empty(38)[2], "")
+    def test_empty_result_never_reaches_stdout_where_the_json_payload_is(self):
+        self.assertEqual(self._load_empty(0)[2], "")
 
     def test_the_warning_is_one_line_per_process_and_not_one_per_call(self):
         err = io.StringIO()
@@ -845,6 +925,115 @@ class GhListingSuspect(unittest.TestCase):
 
     def test_a_front_that_read_rows_is_never_suspect_however_many_issues_are_open(self):
         self.assertFalse(listing_is_suspect(1, 38))
+
+
+class GhLeanListing(unittest.TestCase):
+    """The cheap index shares the empty-list guard and refuses its hard result ceiling."""
+
+    def _lean(self, issues, open_issues):
+        backend = GitHubBackend("owner/repo", os.getcwd(), open_issues=open_issues)
+        with mock.patch.object(gh_mod, "_gh_run",
+                               return_value=(0, json.dumps(issues), "")):
+            return backend._lean_rows()
+
+    def test_empty_lean_listing_with_open_issues_is_a_refusal(self):
+        with self.assertRaises(BackendRefusal) as ctx:
+            self._lean([], 38)
+        self.assertEqual(ctx.exception.err["code"], "sp-gh-empty-listing")
+        self.assertEqual(ctx.exception.err["openIssues"], 38)
+
+    def test_empty_lean_listing_without_positive_count_is_allowed(self):
+        self.assertEqual(self._lean([], 0), [])
+        self.assertEqual(self._lean([], None), [])
+
+    def test_lean_listing_at_the_gh_limit_refuses_as_potentially_truncated(self):
+        with self.assertRaises(BackendRefusal) as ctx:
+            self._lean([{}] * gh_mod.GH_LEAN_LIMIT, 0)
+        self.assertEqual(ctx.exception.err["code"], "sp-gh-lean-truncated")
+        self.assertEqual(ctx.exception.err["limit"], gh_mod.GH_LEAN_LIMIT)
+
+    def test_lean_limit_refusal_names_the_observed_ceiling(self):
+        refusal = gh_mod.lean_limit_refusal("listing specs", gh_mod.GH_LEAN_LIMIT, attempts=2)
+        self.assertEqual(refusal["observed"], gh_mod.GH_LEAN_LIMIT)
+        self.assertEqual(refusal["attempts"], 2)
+        self.assertIn("paginate below the limit", refusal["message"])
+
+    def test_lean_listing_below_the_limit_projects_spec_rows(self):
+        rows = self._lean([{"number": 12, "title": "Alpha", "state": "OPEN",
+                            "labels": [{"name": "spec:approved"}]}], 0)
+        self.assertEqual(rows, [{
+            "id": 12, "title": "Alpha", "state": "open",
+            "records": ["spec:approved"], "phase": "plans", "folder": "plans",
+            "legacy": False, "path": "https://github.com/owner/repo/issues/12",
+        }])
+
+    def test_lean_preserves_a_transport_timeout_and_its_attempt_count(self):
+        backend = GitHubBackend("owner/repo", os.getcwd(), open_issues=0)
+        with mock.patch.object(gh_mod, "_gh_run",
+                               return_value=(gh_mod.GH_TIMEOUT, "", "timed out", 3)):
+            with self.assertRaises(BackendRefusal) as ctx:
+                backend.list_specs(lean=True)
+        self.assertEqual(ctx.exception.err["code"], "sp-gh-timeout")
+        self.assertEqual(ctx.exception.err["attempts"], 3)
+
+    def test_remote_fixture_answers_the_real_gh_issue_list_wire_shape(self):
+        transport = GithubRemoteFixture()
+        transport.lean_issues = [{
+            "number": 17, "title": "Lean", "state": "OPEN",
+            "labels": [{"name": "spec:built"}],
+        }]
+        backend = GitHubBackend("owner/repo", os.getcwd(), open_issues=0)
+        with mock.patch.object(gh_mod, "_gh_run", side_effect=transport):
+            self.assertEqual(backend.list_specs(lean=True)[0]["id"], 17)
+        self.assertEqual([call["kind"] for call in transport.calls], ["lean"])
+        self.assertIn("--limit", transport.calls[0]["argv"])
+        self.assertIn(str(gh_mod.GH_LEAN_LIMIT), transport.calls[0]["argv"])
+
+
+class GithubConditionalWrite(unittest.TestCase):
+    """A read marker must protect the following PATCH from overwriting a newer issue."""
+
+    def _info(self, updated_at: str) -> tuple[GitHubBackend, dict]:
+        backend = GitHubBackend("owner/repo", os.getcwd())
+        info = derive_info({
+            "id": 101, "phase": "plans", "folder": "plans", "legacy": False,
+            "path": "https://github.test/issues/101",
+        }, _case_doc())
+        info["_github_parts"] = 1
+        info["_github_labels"] = []
+        info["_github_updated_at"] = updated_at
+        return backend, info
+
+    def test_read_spec_keeps_updated_at_as_the_write_marker(self):
+        backend = GitHubBackend("owner/repo", os.getcwd())
+        issue = {"body": hybrid_wrap(_case_doc()), "title": "Alpha", "state": "open",
+                 "number": 101, "updated_at": "2026-09-02T10:00:00Z"}
+        with mock.patch.object(backend, "_api", return_value=issue):
+            info, error = backend.read_spec(101)
+        self.assertEqual(error, {})
+        self.assertEqual(info["_github_updated_at"], issue["updated_at"])
+
+    def test_write_with_a_newer_updated_at_refuses_before_patch(self):
+        backend, info = self._info("2026-09-02T10:00:00Z")
+        with mock.patch.object(backend, "_api",
+                               return_value={"updated_at": "2026-09-02T10:01:00Z"}), \
+                mock.patch.object(backend, "_store") as store:
+            with self.assertRaises(BackendRefusal) as ctx:
+                backend.write_spec(info, info["text"])
+        self.assertEqual(ctx.exception.err, gh_mod.stale_write_refusal(
+            101, "2026-09-02T10:00:00Z", "2026-09-02T10:01:00Z"))
+        store.assert_not_called()
+
+    def test_write_with_the_same_updated_at_reaches_one_patch(self):
+        backend, info = self._info("2026-09-02T10:00:00Z")
+        with mock.patch.object(backend, "_api",
+                               return_value={"updated_at": "2026-09-02T10:00:00Z"}) as api, \
+                mock.patch.object(backend, "_store") as store, \
+                mock.patch.object(backend, "_ensure_label_colors"):
+            backend.write_spec(info, info["text"])
+        api.assert_called_once_with("checking issue #101 before writing",
+                                   "repos/owner/repo/issues/101")
+        store.assert_called_once()
 
 
 # --------------------------------------------------------------------------- #
@@ -1142,6 +1331,61 @@ class ProviderSelection(unittest.TestCase):
         self.assertEqual(error["code"], "sp-provider-unknown")
         self.assertEqual(error["exit"], 2)
         self.assertNotIn("files", error["message"])
+
+
+class GithubResolutionCache(unittest.TestCase):
+    """The cross-process resolution cache is keyed, bounded and non-authoritative."""
+
+    def test_ssh_scp_and_https_remotes_share_one_normalized_key(self):
+        keys = {
+            gh_mod.normalize_github_remote(remote)
+            for remote in (
+                "git@github.com:Owner/Repo.git",
+                "ssh://git@github.com/Owner/Repo.git",
+                "https://github.com/Owner/Repo.git",
+            )
+        }
+        self.assertEqual(keys, {"https://github.com/owner/repo"})
+
+    def test_resolution_is_cached_and_second_process_skips_gh_repo_view(self):
+        with tempfile.TemporaryDirectory() as raw:
+            remote = "git@github.com:owner/repo.git"
+            response = (0, json.dumps({"nameWithOwner": "owner/repo",
+                                       "issues": {"totalCount": 38}}), "")
+            with mock.patch.dict(os.environ, {"XDG_CACHE_HOME": raw}), \
+                    mock.patch.object(gh_mod, "_git", return_value=remote), \
+                    mock.patch.object(gh_mod, "_gh_run", return_value=response) as gh_run:
+                self.assertEqual(gh_mod.resolve_github_repo(raw)[:2], ("owner/repo", 38))
+                self.assertTrue(pathlib.Path(gh_mod.github_cache_path(remote)).is_file())
+
+                gh_run.reset_mock()
+                self.assertEqual(gh_mod.resolve_github_repo(raw)[:2], ("owner/repo", 38))
+                gh_run.assert_not_called()
+
+    def test_cache_miss_is_safe_for_a_different_or_expired_remote(self):
+        with tempfile.TemporaryDirectory() as raw:
+            with mock.patch.dict(os.environ, {"XDG_CACHE_HOME": raw}):
+                remote = "https://github.com/owner/repo.git"
+                gh_mod.github_cache_write(remote, "owner/repo", 38)
+                self.assertEqual(gh_mod.github_cache_read("https://github.com/other/repo.git"), {})
+                with mock.patch.object(gh_mod.time, "time",
+                                       return_value=time.time() + gh_mod.GH_CACHE_TTL_S + 1):
+                    self.assertEqual(gh_mod.github_cache_read(remote), {})
+
+    def test_ten_cached_status_resolutions_stay_below_half_a_second(self):
+        with tempfile.TemporaryDirectory() as raw:
+            remote = "git@github.com:owner/repo.git"
+            response = (0, json.dumps({"nameWithOwner": "owner/repo",
+                                       "issues": {"totalCount": 38}}), "")
+            with mock.patch.dict(os.environ, {"XDG_CACHE_HOME": raw}), \
+                    mock.patch.object(gh_mod, "_git", return_value=remote), \
+                    mock.patch.object(gh_mod, "_gh_run", return_value=response):
+                gh_mod.resolve_github_repo(raw)
+                started = time.perf_counter()
+                results = [gh_mod.resolve_github_repo(raw) for _ in range(10)]
+                elapsed = time.perf_counter() - started
+        self.assertEqual(results, [("owner/repo", 38, {})] * 10)
+        self.assertLess(elapsed, 0.5, f"cached resolution took {elapsed:.3f}s")
 
 
 if __name__ == "__main__":

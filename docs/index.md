@@ -20,10 +20,11 @@ before anyone touches a file.
   [the getting-started tutorial](tutorials/getting-started.md).
 - **Do a task** — adopt quenching in a repo, drive one spec to merge, publish a docs site:
   [the how-to guides](how-to/index.md).
-- **Understand why** — the five local fronts, the OKF bundle, the DTCG design source, and the provider-owned spec lifecycle:
+- **Understand why** — the seven local fronts, the OKF bundle, the DTCG design source, and the provider-owned spec lifecycle:
   [the explanations](explanation/index.md).
-- **Look it up** — the complete command catalog and the local automation registry:
-  [this project's reference](project/index.md), and the [glossary](glossary.md).
+- **Look it up** — the complete command catalog, release history and local automation registry:
+  [this project's reference](project/index.md), the [changelog](project/changelog.md), and the
+  [glossary](glossary.md).
 
 ## The problem
 
@@ -39,7 +40,7 @@ plans, and vaguer plans produce automation nobody dares to reorganize.
 
 ## The solution
 
-quenching acts on five local surfaces where that drift lives, with **the same interface on each**:
+quenching acts on seven local surfaces where that drift lives, with **the same interface on each**:
 each local front has exactly ONE `align` command that probes first — a clean front costs a couple of
 tool calls and stops there — then presents one consolidated plan and waits for one OK before
 writing anything.
@@ -52,9 +53,12 @@ writing anything.
 | `.claude/` | one file per entry point, every description audited | `/quenching:components:align` |
 | `ops` | a declared operations root, its entry-point inventory, registry and lifecycle/write policy | `/quenching:ops:align` |
 | `proof` | test layers, fixture ownership, gate evidence, measured surfaces and the coverage floor | `/quenching:proof:align` |
+| `toolchain` | manifests, locks, language pins and tool configuration | `/quenching:toolchain:align` |
+| `delivery` | provider-equivalent workflows, reachability, provenance and release shape | `/quenching:delivery:align` |
+| `security` | read-only workflow, secret, dependency and access questions | *(none, by design)* |
 | *(git)* | nothing — a pillar that answers questions, converges no tree | *(none, by design)* |
 
-One more command, `/quenching:align`, conducts the five local aligned fronts in dependency order on a single
+One more command, `/quenching:align`, conducts the seven local aligned fronts in dependency order on a single
 OK. Read [the operating model](explanation/operating-model.md) and you know the whole plugin.
 
 ## Quick start
@@ -114,10 +118,11 @@ skills' `references/`.
 
 ## TL;DR for agents
 
-- Contract: five local fronts (`knowledge`, `design`, `components`, `ops`, `proof`) plus the
+- Contract: seven local fronts (`knowledge`, `design`, `components`, `ops`, `proof`, `toolchain`,
+  `delivery`) plus the
   provider-owned `specs` flow and a `git` pillar; ONE align per local front, probe-first;
-  `/quenching:align` conducts the five aligned fronts on one OK.
-- Rails: `cq` CLI — `cq knowledge`, `cq specs`, `cq design`, `cq components`, `cq ops`, `cq proof`, `cq git`; uniform `--json`;
+  `/quenching:align` conducts the seven aligned fronts on one OK.
+- Rails: `cq` CLI — `cq knowledge`, `cq specs`, `cq design`, `cq components`, `cq ops`, `cq proof`, `cq toolchain`, `cq delivery`, `cq git`; uniform `--json`;
   exit codes `0` ok · `1` findings · `2` refusal.
 - Invariants: nothing is written before a human OK; blast radius reaching product code
   confirms on its own; a probe that finds nothing ends the run.

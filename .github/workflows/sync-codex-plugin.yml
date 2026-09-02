@@ -2,15 +2,7 @@ name: Sync Codex plugin
 
 on:
   push:
-    paths:
-      - 'plugins/quenching/**'
-      - 'plugins/quenching-codex/**'
-      - '.github/workflows/sync-codex-plugin.yml'
   pull_request:
-    paths:
-      - 'plugins/quenching/**'
-      - 'plugins/quenching-codex/**'
-      - '.github/workflows/sync-codex-plugin.yml'
 
 permissions:
   contents: read
@@ -22,6 +14,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
-      - name: Check source conversion
-        run: python3 plugins/quenching/assets/bin/cq --root . components translate --check --json
+          python-version: '3.11'
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install locked dependencies
+        run: uv sync --frozen --all-groups
+      - name: Run repository gate
+        run: bash scripts/verify_repo.sh

@@ -157,11 +157,11 @@ is still restated inline; run `cq knowledge validate` over `/docs/` → 0 errors
 - Never cut a unit before its doc is written **and** passes the conformance self-check.
 - Never silently drop a unit; never file secrets or personal notes into shared `/docs/`.
 - Never leave a lying pointer — **every** link in a rewritten harness file resolves before the run ends.
-- Never give a harness file frontmatter or a `type` (okf-spec §strict-7 — they are exempt).
+- Never give a harness file frontmatter or a `type` (okf-spec's strict-7 rule — they are exempt).
 - Never drop or paraphrase the root file's language declaration line — it is KEEP by rule (step 3),
   and nothing downstream would report its loss.
 - Never skip the single up-front plan + confirmation; a product-code edit confirms on its own. A
-  cycle-authorized run (convergence.md §contract) replaces the batch gate with narration — never the
+  cycle-authorized run (convergence.md §The cycle-authorization contract) replaces the batch gate with narration — never the
   product-code item's own OK — and a pre-collected table is delta-rechecked before any write.
-- Never blanket-create subfolder `AGENTS.md`s — creation is evidence-gated per routing §6, and a
+- Never blanket-create subfolder `AGENTS.md`s — creation is evidence-gated per harness-routing.md §6. Nesting rules, and a
   data/output/asset folder earns none.

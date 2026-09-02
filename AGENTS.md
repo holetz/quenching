@@ -13,6 +13,7 @@ continuar sendo um ponteiro curto. Antes de alterar ferramentas do plugin, valid
 superfície correspondente:
 
 ```bash
+bash scripts/verify_repo.sh
 python3 plugins/quenching-codex/scripts/bin/cq knowledge validate docs
 python3 plugins/quenching-codex/scripts/bin/cq --root .agents components doctor --json
 ```

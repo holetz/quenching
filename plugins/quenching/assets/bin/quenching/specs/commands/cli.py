@@ -17,6 +17,7 @@ import argparse
 import os
 import sys
 
+from quenching.common.output import CQArgumentParser, OK, refuse
 from quenching.common.version import VERSION
 from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.commands.create import cmd_new
@@ -39,8 +40,8 @@ from quenching.specs.schema import DEFAULT_VERIFICATION, OUTCOMES, VERIFICATION_
 
 
 def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]:
-    p = argparse.ArgumentParser(prog="cq specs",
-                                description="deterministic trail for the specs front")
+    p = CQArgumentParser(prog="cq specs",
+                         description="deterministic trail for the specs front")
     p.add_argument("--root", help="the repository directory (default: current repository)")
     p.add_argument("--version", action="store_true", help="print the version and exit")
     sub = p.add_subparsers(dest="cmd")
@@ -65,8 +66,8 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                     help="a comma-separated list — REPLACES the whole list, same as "
                          "`cq specs tags`; the subject's fixed tags are folded in "
                          "automatically and need not be repeated")
-    # No `choices=`: argparse would refuse a bad value with a usage message on stderr and no
-    # JSON, the same reason `verification`'s `policy` argument below has none. The refusal
+    # No `choices=`: argparse would turn a bad value into a usage error with no JSON, the same
+    # reason `verification`'s `policy` argument below has none. The command-level refusal
     # carries `sp-bad-complexity` and the declared levels like every other refusal here.
     sp.add_argument("--complexity",
                     help="one of low/medium/high/xhigh — written into the new spec's "
@@ -121,10 +122,10 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp = add_json(sub.add_parser("verification",
                                  help="read or set ONE spec's verification policy"))
     sp.add_argument("spec")
-    # No `choices=`: argparse would refuse a bad value with a usage message on stderr and
-    # exit 2 with no JSON, and every caller of this tool is told to branch on the exit code
-    # AND the `--json` payload. The check lives in the command, where the refusal carries
-    # `sp-bad-verification` and the declared set like every other refusal here.
+    # No `choices=`: argparse would turn a bad value into a usage error with no JSON, and every
+    # caller of this tool is told to branch on the exit code AND the `--json` payload. The
+    # check lives in the command, where the refusal carries `sp-bad-verification` and the
+    # declared set like every other refusal here.
     sp.add_argument("policy", nargs="?",
                     help="omit to read; one of " + ", ".join(VERIFICATION_POLICIES))
 
@@ -156,12 +157,14 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                     help="archive as done despite open tasks")
     sp.add_argument("--dry-run", action="store_true", dest="dry_run")
 
-    sp = add_json(sub.add_parser("task", help="flip or block a checkbox"))
+    sp = add_json(sub.add_parser("task", help="check, reopen or block a checkbox"))
     sp.add_argument("--spec", required=True)
     sp.add_argument("--check")
     sp.add_argument("--uncheck")
     sp.add_argument("--block", help="mark TASK blocked (requires --reason)")
-    sp.add_argument("--reason", help="why the task is blocked — written into the line")
+    sp.add_argument("--descope", help="close TASK as deliberately out of scope (requires --reason)")
+    sp.add_argument("--reason", help="why the task is blocked, reopened or descoped — written "
+                                      "into the spec")
     sp.add_argument("--subject", help="the subject of the commit that implements the task, "
                                       "recorded as a `subject:` metadata line "
                                       "(goes with --check)")
@@ -210,7 +213,7 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
 
     add_json(sub.add_parser("config", help="the workspace's declared parameters, as data"))
 
-    sp = add_json(sub.add_parser("release", help="bump the plugin's seven version-carrying "
+    sp = add_json(sub.add_parser("release", help="bump the plugin's four version-carrying "
                                                   "artifacts and tag the commit — the plugin's "
                                                   "own repository only"))
     sp.add_argument("version", help="the new version, X.Y.Z")
@@ -274,14 +277,14 @@ def _force_utf8_output() -> None:
 
 def main(argv: list[str]) -> int:
     _force_utf8_output()
-    if "--version" in argv:
-        print(f"specs {VERSION}")
-        return 0
     parser, _ = build_parser()
     args = parser.parse_args(argv)
+    if args.version:
+        print(f"cq specs {VERSION}")
+        return OK
     if not getattr(args, "cmd", None):
-        parser.print_help()
-        return 1
+        return refuse({"code": "sp-no-command", "message":
+                        "choose a specs command"}, False)
     if not hasattr(args, "json"):
         args.json = False
     root = find_repo_root(os.path.abspath(args.root or os.getcwd()))

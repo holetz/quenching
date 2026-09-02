@@ -1,6 +1,6 @@
 # Merging a work branch home — the four strategies, and the caveats each carries
 
-The strategies `quenching-specs-conclude` offers once a spec's branch is reviewed and archived, what
+The strategies `quenching-git-merge` offers once a spec's branch is reviewed and archived, what
 each buys and costs, and how the worktree that held the work comes down afterward. Read
 [conventions.md](../../references/git/conventions.md) first: the read-if-present
 rule and the two prohibitions bind here too.
@@ -62,9 +62,18 @@ none (`sp-bad-merge`).
 <!-- rules -->
 
 **The per-task commits survive only on the
-branch.** So when squash is chosen, `quenching-specs-conclude` offers **not** to delete the branch, and says
+branch.** So when squash is chosen, `quenching-git-merge` offers **not** to delete the branch, and says
 why. Keeping it costs a ref; deleting it silently turns every `subject:` field in the archived spec
 into a reference that resolves to nothing.
+
+### Source branch deletion is a separate offer
+
+<!-- rules -->
+
+Provider PR creation preserves the source branch by default. GitHub and Azure deletion are separate
+choices made only after the source branch, the PR and the effect on recorded task subjects have been
+shown; Azure includes `--delete-source-branch true` only when that choice is confirmed. A spec whose
+task subjects still resolve from that branch must keep it, especially after a squash merge.
 
 ### Rebase is no longer the strategy that destroys the record
 
@@ -79,7 +88,7 @@ applies only to specs still carrying the sha form.
 <!-- rules -->
 
 Once the merge exits 0,
-`quenching-specs-conclude` removes the worktree — from the base's checkout, because nothing removes the tree
+`quenching-git-merge` removes the worktree — from the base's checkout, because nothing removes the tree
 it is standing in:
 
 ```bash

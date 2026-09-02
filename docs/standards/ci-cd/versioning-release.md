@@ -1,8 +1,8 @@
 ---
 type: standard
-title: Versioning and release — the Claude/Codex lockstep
-description: Every published Claude and Codex version surface must agree at release time, including both marketplace entries and the generated Codex manifest
-resource: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, plugins/quenching-codex/.codex-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py
+title: Versioning and release — the four-artifact lockstep
+description: The four source version surfaces that cq specs release bumps together, with the generated Codex sibling refreshed from the same source version
+resource: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py
 tags: [release, versioning, lockstep, plugin, distribution]
 timestamp: 2026-08-15
 audience: both
@@ -11,14 +11,14 @@ source: modularizar-specs-knowledge-components spec, tasks 9.2 and 10.2 — rewr
 maintainer: quenching
 ---
 
-# Versioning and release — the Claude/Codex lockstep
+# Versioning and release — the four-artifact lockstep
 
-A release bumps the Claude source and its published Codex sibling in lockstep. The rule is not bookkeeping
-tidiness: two independent consumers read two different halves of the set, and a partial bump
-makes each one wrong in its own way.
+A release bumps four source version surfaces in lockstep. The rule is not bookkeeping tidiness:
+Claude, the marketplace and the bundled `cq` identity read different halves of the set, and a
+partial bump makes one of them wrong.
 
-`cq specs release <version>` — the tool this section's *Verifying* block names — moves the source
-version and regenerates the Codex manifest from it in one release operation.
+`cq specs release <version>` — the tool this section's *Verifying* block names — requires a matching
+`## <version>` entry in `CHANGELOG.md`, then moves the four surfaces in one release operation.
 
 ## The published set
 
@@ -28,8 +28,6 @@ version and regenerates the Codex manifest from it in one release operation.
 | 2 | `plugins/quenching/VERSION` | the same detection, as the pair's other half |
 | 3 | `.claude-plugin/marketplace.json` → the plugin entry's `version` | the marketplace listing |
 | 4 | `plugins/quenching/assets/bin/quenching/common/version.py` → `VERSION` | every pillar's own `--version` (`cq specs`, `cq knowledge`, `cq components`) |
-| 5 | `plugins/quenching-codex/.codex-plugin/plugin.json` → `version` | Codex marketplace installation and upgrade detection |
-| 6 | `.claude-plugin/marketplace.json` → `plugins[].version` for both `quenching` and `quenching-codex` | the marketplace entries that publish the two installable surfaces |
 
 ## Why each half matters
 
@@ -37,6 +35,9 @@ version and regenerates the Codex manifest from it in one release operation.
 the pair Claude Code uses to decide that an installed plugin is stale and should be replaced. Bump
 one without the other and the upgrade either never fires or fires against a plugin that reports a
 version it does not have.
+
+**Artifact 3 is the marketplace listing.** It must agree with the two Claude upgrade surfaces so the
+published plugin advertises the version it actually contains.
 
 **Artifact 4 is the *tool identity*, now held once.** Nothing installs a tool standalone any more —
 every command invokes the plugin's own `cq`, bare through the `bin/` shim on `PATH` or at
@@ -50,11 +51,9 @@ forced, back when each pillar shipped as its own script
 internal imports has no such constraint: `common/version.py` is read by every pillar's `--version`,
 not duplicated by it.
 
-**Artifacts 5–6 publish the generated sibling.** The Codex manifest is generated from the same
-source version and marketplace exposes it as a separate installable plugin. A release that bumps
-only Claude leaves Codex pinned to an older generated tree; a release that edits Codex's version
-independently breaks the deterministic generation contract. Regenerate first, then publish both
-marketplace entries at the identical version.
+The generated Codex sibling is a derived publication output, not a fifth or sixth release input.
+`cq components translate` regenerates its manifest, `VERSION` and copied assets from the Claude
+source; the translation and Codex artifact gates prove that generated surface after a source bump.
 
 ## When the bump happens — once, at the release, on the primary branch
 

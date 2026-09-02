@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 from collections import Counter
 from pathlib import Path
 
+from quenching.common.front import build_parser as build_front_parser, resolve_root
 from quenching.common.output import emit, refuse
 from quenching.common.version import VERSION
 from quenching.proof.doctor import doctor as run_doctor, inspect_proof
@@ -17,20 +17,15 @@ from quenching.proof.ratchet import evaluate
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="cq proof",
-        description="read and verify a repository's declared proof surface",
+    parser = build_front_parser(
+        "cq proof", "read and verify a repository's declared proof surface",
+        (("inventory", "walk the proof tree and print its read model"),
+         ("doctor", "run static proof checks without running the suite"),
+         ("status", "summarize layers, fixtures, floors and findings")),
     )
-    parser.add_argument("--root", help="repository root (default: current directory)")
     parser.add_argument("--version", action="store_true", help="print the proof pillar version")
-    sub = parser.add_subparsers(dest="cmd")
-    for name, help_text in (
-        ("inventory", "walk the proof tree and print its read model"),
-        ("doctor", "run static proof checks without running the suite"),
-        ("status", "summarize layers, fixtures, floors and findings"),
-    ):
-        child = sub.add_parser(name, help=help_text)
-        child.add_argument("--json", action="store_true", help="print machine-readable output")
+    sub = next(action for action in parser._actions
+               if isinstance(action, argparse._SubParsersAction))
     readme = sub.add_parser("readme", help="write or check the generated proof README")
     mode = readme.add_mutually_exclusive_group()
     mode.add_argument("--write", action="store_true", help="update the generated block")
@@ -47,7 +42,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _root(value: str | None) -> str:
-    return os.path.abspath(value or os.getcwd())
+    return resolve_root(value)
 
 
 def _human_inventory(payload: dict) -> str:

@@ -1,6 +1,6 @@
 ---
 name: quenching-git-revert
-description: "Revert one known commit into a new commit while preserving the existing history and task facts. Use when the user asks to \"revert this commit\", \"undo a task safely\", \"back out this change\", or \"reverse a published commit\". It resolves the target, shows its effect and stops on conflict before any recovery choice. Not for: rewriting history or discarding local work; publishing the revert → quenching-git-push; opening a PR → quenching-git-pr-create; changing spec records."
+description: "Revert one known commit into a new commit while preserving the existing history and task facts. Use when the user asks to \"revert this commit\", \"undo a task safely\", \"back out this change\", or \"reverse a published commit\". It resolves the target, shows its effect and stops on conflict before any recovery choice. Not for: rewriting history or discarding local work; publishing the revert → quenching-git-push; opening a PR → quenching-git-pr-create; changing an unrelated spec record."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/git/revert.md -->
@@ -13,7 +13,9 @@ recorded task subject to exactly one commit; append `mainline:<n>` when the targ
 No input, an ambiguous subject or a missing target refuses without touching the index or history.
 
 The commit contract in `../../references/git/commit.md` owns task subjects
-and their anchor semantics. This command never changes that record: it creates a new Git fact.
+and their anchor semantics. A successful revert of a task's implementing commit also reopens that
+task with a reason: the task anchor is no longer true, and the explanation belongs in the spec's
+`## Discoveries` section.
 
 ## Workflow
 
@@ -54,8 +56,8 @@ explicit `mainline:<n>` naming one valid parent; never choose a mainline by posi
 
 Show the branch, target SHA, original subject, author/date, files, selected mainline, expected
 inverse effect and the native `git revert` command. Ask with **AskUserQuestion** for confirmation of
-that exact new commit. The command must not alter spec records, task checkboxes, remote refs or the
-target commit. **Done when:** the human confirms or declines the exact revert.
+that exact new commit. Before confirmation, do not alter spec records, task checkboxes, remote refs
+or the target commit. **Done when:** the human confirms or declines the exact revert.
 
 ### 5. Create and verify the compensating commit
 
@@ -63,19 +65,33 @@ For a normal commit, run `git revert <target>`; for a merge, run `git revert -m 
 Keep hooks enabled and use no history-rewriting or bypass option. If Git reports a conflict, stop
 immediately, preserve its state and message, and leave `git revert --continue` or `git revert --abort`
 as the human's explicit recovery choice; do not run either one. On success, read `git rev-parse HEAD`
-and `git show --stat --summary HEAD`. **Done when:** the new revert SHA and subject are verified, or
-the conflict/failure is reported without a recovery action.
+and `git show --stat --summary HEAD`. If the input resolved through `spec:<id> task:<id>`, only after
+that new revert commit is verified, run:
+
+```bash
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --spec <id> --uncheck <task> \
+  --reason "reverted by <new-revert-sha>"
+```
+
+That one specs write removes the task's stale `subject:`/`commit:` anchor and records the reason
+in `## Discoveries`. If the task update fails, report the backend failure explicitly; do not claim
+the spec is reopened. A direct `commit:<ref>` revert has no task record to update. **Done when:**
+the new revert SHA and subject are verified and, when applicable, the task reopening is confirmed,
+or the conflict/failure is reported without a recovery action.
 
 ### 6. Report the boundary
 
 State the original target, new revert commit, branch, whether a mainline was used, files affected,
-and that no spec record or remote was changed. Name `quenching-git-push` only as a later human action;
-do not invoke it. **Done when:** the compensating commit or the unchanged conflict state is fully
-reported.
+and, for a task selector, the `--uncheck --reason` write to `## Discoveries`; for a direct commit
+selector, state that no spec record was selected. In either case no remote was changed. Name
+`quenching-git-push` only as a later human action; do not invoke it. **Done when:** the compensating
+commit or the unchanged conflict state is fully reported.
 
 ## Invariants
 
 - Create a new revert commit; never erase, amend, reset, rebase, force-push or alter the original.
 - Require a clean tree, attached current branch, unique target and explicit mainline for merges.
-- Never resolve a conflict, change spec records, checkboxes or remote state in this command.
+- Never resolve a conflict, alter an unrelated spec, or change remote state in this command. For a
+  confirmed `spec:<id> task:<id>` selector, reopening that exact task with `cq specs task --uncheck
+  --reason` is the required post-revert bookkeeping, and happens only after the revert commit.
 - Preserve Git's own failure and conflict output; never infer a successful revert from a changed file.

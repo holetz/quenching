@@ -7,14 +7,14 @@ is where the front's convergence condition actually lives. Every finding carries
 sweep applies rather than invents, the same contract `cq specs doctor` already gives the specs
 front.
 
-WHAT REPLACED THE BIJECTION. This used to check that every skill had exactly one mirrored
+WHAT REPLACED THE BIJECTION. This used to check that every command had exactly one mirrored
 wrapper and vice versa. With one file per entry point there is no second half that can be
 missing, duplicated, dangling, or misnamed, so `sk-orphan-skill`, `sk-dangling-wrapper`,
 `sk-duplicate-wrapper`, `sk-wrapper-no-target` and `sk-path-mismatch` are deleted rather than
 reinterpreted. The invariant that took their place is narrower and total: every command carries
 a non-empty `description`, no two resolve to the same `/` path, and every segment is kebab-case.
 
-The bijection did catch a real class of error — a skill minted without a wrapper — and nothing
+The bijection did catch a real class of error — a command minted without a wrapper — and nothing
 replaces it, because after the collapse that state cannot exist.
 """
 from __future__ import annotations
@@ -114,13 +114,13 @@ def cmd_doctor(args, root: str) -> int:
     surface = load_surface(root)
     if not os.path.isdir(surface["commandsDir"]):
         return report_findings(
-            args.json, f"skills doctor — {root}", {"root": root},
+            args.json, f"components doctor — {root}", {"root": root},
             [finding("sk-no-surface", "error",
                      f"no {COMMANDS_DIR}/ under {root}", command=SURFACE_MISSING,
                      remedy="point --root at the surface, or scaffold "
-                            f"{COMMANDS_DIR}/")], "skill")
+                            f"{COMMANDS_DIR}/")], "command")
     commands = surface["commands"]
     payload = {"root": root, "commands": len(commands)}
-    return report_findings(args.json, f"skills doctor — {root} "
+    return report_findings(args.json, f"components doctor — {root} "
                                       f"({plural(len(commands), 'command')})", payload,
-                           _doctor_findings(surface), "skill")
+                           _doctor_findings(surface), "command")

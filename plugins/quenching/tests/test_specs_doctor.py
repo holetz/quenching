@@ -17,13 +17,19 @@ import io
 import json
 import os
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 from unittest import mock
 
-import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
+try:
+    import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
+except ModuleNotFoundError:  # package-qualified unittest invocation from the repository root
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import _paths  # noqa: F401
+from quenching.common import config as common_config
 from quenching.specs.backends.base import BackendRefusal
-from quenching.common.config import load_config as load_envelope
+from quenching.common.config import load_config as load_envelope, namespace
 from quenching.specs.commands import doctor as doctor_mod
 from quenching.specs.commands.doctor import cmd_doctor
 from quenching.specs.commands.output import Emitter
@@ -107,29 +113,6 @@ class GithubDoctorFindings(unittest.TestCase):
         self.assertEqual(findings[0]["severity"], "warn")
         self.assertEqual(code, 0)
 
-    def test_a_git_convention_sub_key_nothing_reads_is_named_with_the_recognised_set(self):
-        findings, code = self._findings(_StubBackend(rows=[{"slug": "alpha"}]),
-                                        unknownGitConventions=["prDescription"])
-        unknown = [f for f in findings if f["code"] == "sp-config-unknown-git-convention"]
-        self.assertEqual(len(unknown), 1)
-        self.assertEqual(unknown[0]["severity"], "warn")
-        self.assertIn("prDescription", unknown[0]["message"])
-        self.assertIn("commitSubject", unknown[0]["remedy"])
-        self.assertEqual(code, 0)
-
-    def test_a_recognised_directive_with_an_unusable_value_is_named_rather_than_silent(self):
-        # The whole point of `badGitConventions`: the sub-key IS recognised, so nothing above
-        # catches it, and a directive that is `""` or `7` simply never applies. Silence here is
-        # the `worktree_setup` failure mode with a different spelling.
-        findings, code = self._findings(_StubBackend(rows=[{"slug": "alpha"}]),
-                                        badGitConventions=["commitSubject"])
-        bad = [f for f in findings if f["code"] == "sp-config-bad-git-convention"]
-        self.assertEqual(len(bad), 1)
-        self.assertEqual(bad[0]["severity"], "warn")
-        self.assertIn("commitSubject", bad[0]["message"])
-        self.assertTrue(bad[0]["remedy"])
-        self.assertEqual(code, 0)
-
     def test_a_refusal_with_no_remedy_of_its_own_still_gets_one(self):
         # `gh_refusal`'s three classifications carry no `remedy` key, and they reach this
         # block too — a KeyError here would crash the command it is meant to keep alive.
@@ -183,7 +166,7 @@ class ConfigMigrationMatrix(unittest.TestCase):
         self.assertEqual(error["code"], "sp-config-unscoped")
         self.assertEqual(error["exit"], 2)
 
-    def test_namespaced_configuration_resolves_each_front_without_cross_front_leakage(self):
+    def test_retired_fanout_key_is_ignored_without_cross_front_leakage(self):
         root = self._write({
             "backend": "github",
             "shared": {"worktreeSetup": "make setup"},
@@ -196,9 +179,13 @@ class ConfigMigrationMatrix(unittest.TestCase):
         self.assertEqual(envelope["unknownNamespaces"], [])
 
         specs = load_specs_config(root, detect_provider_info=False)
+        # Retired: no executor selection consumes this declaration, so it must not become a
+        # silently active specs setting merely because it remains in an old target config.
         self.assertNotIn("fanoutMinComplexity", specs)
         self.assertEqual(specs["worktreeSetup"], "make setup")
         self.assertNotIn("opsRoot", specs)
+        self.assertNotIn("proofRoot", specs)
+        self.assertNotIn("gitConventions", specs)
 
         ops, ops_error = load_ops_config(root)
         self.assertEqual(ops_error, {})
@@ -246,6 +233,57 @@ class ConfigMigrationMatrix(unittest.TestCase):
         self.assertIsNone(config)
         self.assertEqual(error["code"], "sp-config-unscoped")
         self.assertEqual(error["exit"], 2)
+
+    def test_namespace_accessor_never_falls_back_to_a_flat_key(self):
+        self.assertEqual(namespace({"proofRoot": "tests"}, "proof"), {})
+        self.assertEqual(namespace({"namespaces": {"proof": {"proofRoot": "tests"}}},
+                                   "proof"), {"proofRoot": "tests"})
+
+
+class FirstUseConfig(unittest.TestCase):
+    def _root(self) -> str:
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        root = directory.name
+        os.makedirs(os.path.join(root, "docs"))
+        os.makedirs(os.path.join(root, ".claude", "commands"))
+        Path(root, ".claude", "commands", "example.md").write_text("# command\n", encoding="utf-8")
+        Path(root, "pyproject.toml").write_text("[project]\nname = 'target'\n", encoding="utf-8")
+        return root
+
+    def test_setup_preview_detects_backend_and_only_signalled_fronts(self):
+        root = self._root()
+        with mock.patch.object(common_config, "find_repo_root", return_value=root), \
+                mock.patch.object(common_config, "detect_provider",
+                                  return_value=("github", "github.com")):
+            plan, error = common_config.prepare_minimal_config(root)
+        self.assertEqual({}, error)
+        self.assertEqual("github", plan["backend"])
+        self.assertEqual(["knowledge", "specs", "components", "toolchain"], plan["profile"])
+        self.assertFalse(os.path.exists(os.path.join(root, ".claude", "quenching.json")))
+
+    def test_confirmed_setup_writes_namespaced_json_and_second_setup_refuses(self):
+        root = self._root()
+        with mock.patch.object(common_config, "find_repo_root", return_value=root), \
+                mock.patch.object(common_config, "detect_provider",
+                                  return_value=("github", "github.com")):
+            written, error = common_config.write_minimal_config(root)
+            again, refusal = common_config.write_minimal_config(root)
+        self.assertEqual({}, error)
+        self.assertTrue(written["written"])
+        self.assertIsNone(again)
+        self.assertEqual("cq-config-present", refusal["code"])
+        document = json.loads(Path(written["path"]).read_text(encoding="utf-8"))
+        self.assertEqual("github", document["backend"])
+        self.assertEqual(written["profile"], document["shared"]["profiles"]["installed"])
+
+    def test_setup_refuses_without_a_detectable_provider(self):
+        root = self._root()
+        with mock.patch.object(common_config, "find_repo_root", return_value=root), \
+                mock.patch.object(common_config, "detect_provider", return_value=(None, None)):
+            plan, error = common_config.prepare_minimal_config(root)
+        self.assertIsNone(plan)
+        self.assertEqual("cq-setup-provider-missing", error["code"])
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ import os
 import re
 
 from quenching.common.output import finding, report_findings
+from quenching.common.io import read_text
 from quenching.components.hooks import hook_ladder_findings
 from quenching.components.surface import (COMMANDS_DIR, REFERENCES_DIR, SURFACE_MISSING,
                                           _quoted_phrases, discover_commands,
@@ -49,7 +50,29 @@ HEADING_RE = re.compile(r"^#{1,6}\s")
 STEP_HEADING_RE = re.compile(r"^#{2,6}\s+\d+[.)]\s")
 STEP_ITEM_RE = re.compile(r"^\d+[.)]\s")
 WORKFLOW_MARKER_RE = re.compile(r"^(?:\*\*Steps\*\*|#{1,6}\s+(?:Steps|Workflow)\b)", re.IGNORECASE)
+WORKFLOW_HEADING_RE = re.compile(r"^(#{1,6})\s+(?:Steps|Workflow)\b", re.IGNORECASE)
+UNNUMBERED_ITEM_RE = re.compile(r"^[-*]\s+\S")
 DONE_WHEN_RE = re.compile(re.escape(DONE_WHEN_MARKER))
+
+FRONTMATTER_KEY_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):(.*)$")
+KNOWN_FRONTMATTER_KEYS = {
+    "name", "description", "argument-hint", "allowed-tools", "disallowed-tools",
+    "user-invocable", "disable-model-invocation", "effort", "context", "agent",
+    "background", "paths", "hooks",
+}
+
+GATE_PATTERNS = (
+    re.compile(r"\bwait\s+for\b[^\n]{0,80}\bconfirmation\b", re.IGNORECASE),
+    re.compile(r"\b(?:one|single)\s+confirmation\b[^\n]{0,80}\b(?:before|gates?|executes?)\b",
+               re.IGNORECASE),
+    re.compile(r"\bconfirmation\b[^\n]{0,80}\b(?:before|on|gates?)\b", re.IGNORECASE),
+    re.compile(r"\bask(?:s|ed)?\b[^\n]{0,80}\b(?:confirmation|yes|OK)\b", re.IGNORECASE),
+    re.compile(r"\bon\s+(?:its\s+own\s+)?(?:a\s+)?yes\b", re.IGNORECASE),
+)
+
+SHELL_COMMANDS = ("git", "gh", "az", "python3", "py", "rm", "mv", "mkdir", "find",
+                  "grep", "rg", "mktemp", "npx", "uv", "zensical")
+SHELL_COMMAND_RE = re.compile(r"^(?:" + "|".join(SHELL_COMMANDS) + r")\b")
 
 
 def _split_sentences(text: str) -> list[str]:
@@ -75,21 +98,59 @@ def _split_tools(spec: str) -> list[str]:
 
 
 def _numbered_steps(body: str) -> list[str]:
-    """The workflow's numbered steps: `### N. Title` headings, and top-level `N. …`
-    list items once a `**Steps**` / `## Steps` / `## Workflow` marker has opened the
-    workflow. Numbered prose lists elsewhere in the body are NOT steps — counting them
-    would report a criterion missing from a list that never promised one."""
-    steps, in_workflow = [], False
+    """Return explicit workflow steps, including unnumbered sequences.
+
+    A child heading under `## Workflow`/`## Steps` is an operational step even without a
+    numeric prefix. When the workflow uses a list instead, at least two top-level list items
+    form the explicit sequence; a lone bullet remains prose. Lists outside those markers are
+    never steps, so ordinary narrative and report tables stay outside this check.
+    """
+    steps: list[str] = []
+    workflow_level: int | None = None
+    workflow_steps: list[str] = []
+    workflow_items: list[str] = []
+
+    def close_workflow() -> None:
+        nonlocal workflow_level, workflow_steps, workflow_items
+        if workflow_steps:
+            steps.extend(workflow_steps)
+        elif len(workflow_items) >= 2:
+            steps.extend(workflow_items)
+        workflow_level = None
+        workflow_steps = []
+        workflow_items = []
+
     for line in body.splitlines():
+        marker = WORKFLOW_HEADING_RE.match(line)
+        if marker or WORKFLOW_MARKER_RE.match(line):
+            close_workflow()
+            workflow_level = len(marker.group(1)) if marker else 0
+            continue
+
+        if workflow_level is None:
+            if STEP_HEADING_RE.match(line):
+                steps.append(line.strip())
+            continue
+
         if STEP_HEADING_RE.match(line):
-            steps.append(line.strip())
-            in_workflow = False
-        elif WORKFLOW_MARKER_RE.match(line):
-            in_workflow = True
-        elif in_workflow and STEP_ITEM_RE.match(line):
-            steps.append(line.strip())
-        elif in_workflow and HEADING_RE.match(line):
-            in_workflow = False
+            workflow_steps.append(line.strip())
+            continue
+
+        heading = re.match(r"^(#{1,6})\s+\S", line)
+        if heading:
+            level = len(heading.group(1))
+            if level <= workflow_level:
+                close_workflow()
+                if STEP_HEADING_RE.match(line):
+                    steps.append(line.strip())
+            elif level == workflow_level + 1:
+                workflow_steps.append(line.strip())
+            continue
+
+        if not line[:1].isspace() and (STEP_ITEM_RE.match(line) or UNNUMBERED_ITEM_RE.match(line)):
+            workflow_items.append(line.strip())
+
+    close_workflow()
     return steps
 
 
@@ -109,6 +170,153 @@ def _step_criteria(body: str) -> tuple[int, int]:
         elif current and DONE_WHEN_RE.search(line):
             covered.add(current)
     return len(steps), len(covered)
+
+
+def _body_has_confirmation_gate(body: str) -> bool:
+    """Recognise a user-decision gate in prose, while leaving historical/negative wording alone."""
+    fenced = False
+    for line in body.splitlines():
+        if line.lstrip().startswith(("```", "~~~")):
+            fenced = not fenced
+            continue
+        if fenced:
+            continue
+        for pattern in GATE_PATTERNS:
+            match = pattern.search(line)
+            if not match:
+                continue
+            prefix = line[:match.start()].lower()
+            if re.search(r"\b(?:not|never|no)\s*$", prefix):
+                continue
+            if re.search(r"\b(?:not|never|no)\s+(?:to\s+)?(?:ask|wait|confirmation)", prefix):
+                continue
+            return True
+    return False
+
+
+def _shell_command_lines(body: str) -> list[tuple[int, str]]:
+    """Return executable-looking shell commands from fenced blocks, with body line numbers.
+
+    Prose and examples outside a shell fence are not execution claims. ``cq`` is intentionally not
+    in this inventory: command bodies use it as the unresolved shorthand that the preceding tool
+    resolution step replaces with a literal path, so treating the shorthand as a grant would report
+    the notation rather than the operation.
+    """
+    out: list[tuple[int, str]] = []
+    fenced = False
+    for lineno, line in enumerate(body.splitlines(), 1):
+        stripped = line.strip()
+        if stripped.startswith(("```", "~~~")):
+            fenced = not fenced
+            continue
+        if not fenced or not stripped or stripped.startswith("#"):
+            continue
+        for part in re.split(r"\s*(?:&&|\|\|)\s*", stripped):
+            part = re.sub(r"^(?:if|then|else|elif)\s+", "", part).strip()
+            if not SHELL_COMMAND_RE.match(part):
+                continue
+            tokens = part.split()
+            if tokens[0] == "git" and len(tokens) >= 2 and tokens[1] == "-C":
+                if len(tokens) < 4 or tokens[2].startswith("<"):
+                    continue
+                tokens = [tokens[0], *tokens[3:]]
+            if tokens[0] == "git" and len(tokens) < 2:
+                continue
+            out.append((lineno, " ".join(tokens)))
+    return out
+
+
+def _bash_grants(fm: dict) -> tuple[bool, list[str]]:
+    """Return whether all shell commands are granted, plus each scoped Bash prefix."""
+    prefixes: list[str] = []
+    for tool in _split_tools(str(fm.get("allowed-tools", ""))):
+        if tool == "Bash":
+            return True, []
+        if not tool.startswith("Bash(") or not tool.endswith(")"):
+            continue
+        spec = tool[5:-1]
+        prefixes.append(spec[:-2] if spec.endswith(":*") else spec)
+    return False, prefixes
+
+
+def _grant_covers(command: str, prefixes: list[str]) -> bool:
+    return any(command == prefix or command.startswith(prefix + " ") for prefix in prefixes)
+
+
+def _frontmatter_strict_issues(text: str) -> list[dict]:
+    """Find the three frontmatter shapes whose YAML meaning is unambiguous here.
+
+    This is intentionally a small structural reader, not a second YAML parser. It reports a
+    folded scalar swallowing a known top-level key, an unquoted flow sequence nested inside
+    itself, and an unquoted plain scalar containing ``: ``. Other YAML that this plugin does not
+    model remains outside the lint's claim rather than being guessed at.
+    """
+    if not text.startswith("---"):
+        return []
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return []
+    end = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+    if end is None:
+        return []
+
+    issues: list[dict] = []
+    i = 1
+    while i < end:
+        raw = lines[i]
+        if not raw.strip() or raw.lstrip().startswith("#") or raw[:1] in (" ", "\t"):
+            i += 1
+            continue
+        match = FRONTMATTER_KEY_RE.match(raw)
+        if not match:
+            i += 1
+            continue
+        key, value = match.group(1), match.group(2).strip()
+        if value in {">", ">-", ">+", "|", "|-", "|+"}:
+            j = i + 1
+            while j < end and (not lines[j].strip() or lines[j][:1] in (" ", "\t")):
+                swallowed = FRONTMATTER_KEY_RE.match(lines[j].strip())
+                if swallowed and swallowed.group(1) in KNOWN_FRONTMATTER_KEYS:
+                    issues.append({
+                        "kind": "swallowed-key",
+                        "key": swallowed.group(1),
+                        "parent": key,
+                        "line": j + 1,
+                        "remedy": (f"align `{swallowed.group(1)}:` with the top-level keys; "
+                                   "do not indent it under the folded scalar"),
+                    })
+                j += 1
+            i = j
+            continue
+
+        if value and value[0] not in ("'", '"'):
+            if value.startswith("["):
+                depth = 0
+                nested = False
+                for char in value:
+                    if char == "[":
+                        depth += 1
+                        nested = nested or depth > 1
+                    elif char == "]":
+                        depth = max(0, depth - 1)
+                if nested:
+                    issues.append({
+                        "kind": "nested-flow-sequence",
+                        "key": key,
+                        "line": i + 1,
+                        "remedy": (f"quote the complete `{key}` value or use a flat sequence; "
+                                   "do not nest `[` inside an unquoted hint"),
+                    })
+            elif ": " in value:
+                issues.append({
+                    "kind": "plain-colon-space",
+                    "key": key,
+                    "line": i + 1,
+                    "remedy": (f"quote the `{key}` value or write it as a `>-` block scalar "
+                               "before using `: ` inside the text"),
+                })
+        i += 1
+    return issues
 
 
 FENCE_RE = re.compile(r"^\s*(```|~~~)")
@@ -233,6 +441,36 @@ def lint_command(cmd: dict, base: str, named_by: set[str] | None = None) -> list
                         **where)]
     out: list[dict] = []
 
+    source = cmd.get("source")
+    if source is None:
+        source = read_text(cmd["path"])
+    for issue in _frontmatter_strict_issues(source or ""):
+        out.append(finding("sk-frontmatter-strict", "warn",
+                           f"`{issue['key']}` at line {issue['line']}: {issue['kind']} — "
+                           f"{issue['remedy']}",
+                           key=issue["key"], line=issue["line"], kind=issue["kind"],
+                           remedy=issue["remedy"], **where))
+
+    tools = _split_tools(str(fm.get("allowed-tools", "")))
+    if _body_has_confirmation_gate(body) and "AskUserQuestion" not in tools:
+        out.append(finding("sk-prose-gate", "error",
+                           "the body pauses for a user confirmation but `AskUserQuestion` is "
+                           "not granted — add the narrow tool grant",
+                           tool="AskUserQuestion", remedy="add `AskUserQuestion` to allowed-tools",
+                           **where))
+
+    unrestricted_bash, bash_prefixes = _bash_grants(fm)
+    if not unrestricted_bash:
+        for line, command in _shell_command_lines(body):
+            if _grant_covers(command, bash_prefixes):
+                continue
+            tool = " ".join(command.split()[:2]) if command.startswith("git ") else command.split()[0]
+            remedy = f"add `Bash({tool}:*)` to allowed-tools or remove the call"
+            out.append(finding("sk-grant-gap", "error",
+                               f"`{tool}` at body line {line} is called without a matching "
+                               "scoped Bash grant — " + remedy,
+                               tool=tool, invocation=command, line=line, remedy=remedy, **where))
+
     # BEFORE any content check, so a parse failure is never presented as a content
     # gap. A `description` truncated at a `#` used to surface as `sk-no-description`,
     # which names a missing part rather than the truncation that removed it.
@@ -296,7 +534,7 @@ def lint_command(cmd: dict, base: str, named_by: set[str] | None = None) -> list
     steps, covered = _step_criteria(body)
     if steps and covered < steps:
         out.append(finding("sk-step-criterion", "warn",
-                           f"{steps - covered} of {steps} numbered steps carry no "
+                           f"{steps - covered} of {steps} workflow steps carry no "
                            f"`{DONE_WHEN_MARKER}` criterion — a step with no observable end state "
                            "can be claimed done early", steps=steps, covered=covered, **where))
 
@@ -459,11 +697,11 @@ def resolve_lint_targets(path_arg: str | None, root: str) -> tuple[str, list[dic
 def cmd_lint(args, root: str) -> int:
     base, commands, references = resolve_lint_targets(args.path, root)
     if not commands:
-        return report_findings(args.json, f"skills lint — {base}",
+        return report_findings(args.json, f"components lint — {base}",
                                {"root": base, "commandCount": 0},
                                [finding("sk-no-commands", "error",
                                         f"no command file found under {base}",
-                                        command=SURFACE_MISSING)], "skill")
+                                        command=SURFACE_MISSING)], "command")
     prefix = plugin_prefix(root)
     # Same surface-versus-scope rule as the citations below, and for the same reason: the
     # body that names a stage is usually NOT the file being linted, so deriving this from
@@ -488,8 +726,8 @@ def cmd_lint(args, root: str) -> int:
                                            {"command": SURFACE_MISSING,
                                             "path": rel(ref["path"], base)}))
 
-    header = f"skills lint — {base} ({plural(len(commands), 'command')}"
+    header = f"components lint — {base} ({plural(len(commands), 'command')}"
     header += f", {plural(len(references), 'reference')})" if references else ")"
     return report_findings(args.json, header,
                            {"root": base, "commandCount": len(commands),
-                            "referenceCount": len(references)}, findings, "skill")
+                            "referenceCount": len(references)}, findings, "command")

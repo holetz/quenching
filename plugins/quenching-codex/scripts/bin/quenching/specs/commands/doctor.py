@@ -15,7 +15,7 @@ from quenching.specs.backends.github import (GH_LISTING_SUSPECT_REMEDY, listing_
 from quenching.specs.commands.output import Emitter, front_fields
 from quenching.specs.commands.validate import _finding
 from quenching.specs.config import (BACKENDS, CONFIG_FILE, CONFIG_KEYS,
-                                    GIT_CONVENTION_KEYS, LEGACY_CONFIG_FILE,
+                                    LEGACY_CONFIG_FILE,
                                     UNPROVED_BACKENDS, azure_workitemtype_retirement,
                                     load_config)
 
@@ -34,9 +34,7 @@ def cmd_config(args, root: str, out: Emitter) -> int:
              "  hooks: " + (", ".join(f"{event}: {len(entries)}" for event, entries in cfg["hooks"].items())
                             if cfg["hooks"] else "(none declared)"),
              "  profiles: " + (", ".join(cfg["profiles"]["installed"])
-                               if cfg["profiles"] else "(none declared)"),
-             "  gitConventions: " + (", ".join(sorted(cfg["gitConventions"]))
-                                     if cfg["gitConventions"] else "(none declared)")]
+                               if cfg["profiles"] else "(none declared)")]
     if cfg["legacyPath"]:
         lines.append(f"  legacy config still on disk, unread: {cfg['legacyPath']}")
     out.emit(args.json, {"ok": True, **front_fields(root), **cfg}, "\n".join(lines))
@@ -64,26 +62,6 @@ def cmd_doctor(args, root: str, out: Emitter) -> int:
                                  f"{CONFIG_FILE} declares `{key}`, which nothing reads",
                                  path=CONFIG_FILE, key=key,
                                  remedy=f"the recognised key(s): {', '.join(CONFIG_KEYS)}"))
-    # `gitConventions` has a second floor below `sp-config-unknown-key`: the KEY is recognised,
-    # so nothing above ever looks inside it. Both findings exist so that a directive which never
-    # applies is named rather than merely absent from the run — the same silence `worktreeSetup`
-    # is guarded against one level up.
-    for key in cfg["unknownGitConventions"]:
-        findings.append(_finding("sp-config-unknown-git-convention", "warn",
-                                 f"{CONFIG_FILE} declares `gitConventions.{key}`, which "
-                                 f"nothing reads",
-                                 path=CONFIG_FILE, key=key,
-                                 remedy=f"the recognised directive(s): "
-                                        f"{', '.join(GIT_CONVENTION_KEYS)}"))
-    for key in cfg["badGitConventions"]:
-        findings.append(_finding("sp-config-bad-git-convention", "warn",
-                                 f"{CONFIG_FILE} declares `gitConventions.{key}` with a value "
-                                 f"that is not a non-empty string — the directive is recognised "
-                                 f"and will never apply",
-                                 path=CONFIG_FILE, key=key,
-                                 remedy="write the directive as prose an agent can follow, or "
-                                        "remove the sub-key — an absent directive falls through "
-                                        "to docs/standards/git/** and then to the plugin default"))
     if cfg["unknownBackend"]:
         findings.append(_finding("sp-config-unknown-backend", "warn",
                                  f"{CONFIG_FILE} declares backend `{cfg['unknownBackend']}`, "

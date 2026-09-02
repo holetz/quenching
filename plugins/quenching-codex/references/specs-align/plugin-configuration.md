@@ -19,7 +19,7 @@ placement, never a repository store. Other namespaces are read by their owning f
 | `shared.worktreeSetup` | a shell command, run as written | none | `quenching-specs-execute`'s isolation offer, after `git worktree add` |
 | `shared.sharedPaths` | a list of repo-relative paths | none — an absent or empty list declares no shared area | `cq git worktree link`, from the isolation flow |
 | `shared.hooks` | `{"<event>": [{"command": "<cmd>", ...}]}` | none — an absent key declares no events | the command that owns the event |
-| `shared.profiles` | `{"installed": ["knowledge", "specs", "design", "components"]}` | none — an absent key leaves all four fronts installed | the align conductor |
+| `shared.profiles` | `{"installed": ["knowledge", "specs", "design", "components", "ops", "proof", "toolchain", "delivery", "security", "git"]}` | none — an absent key leaves all seven local fronts eligible | the align conductor's conduction scope |
 | `shared.gitConventions` | `{commitSubject, branchName, prTitle, prBody, mergeSubject}` — prose directives, never templates | `{}` | the whole `git` pillar, through `cq git conventions`; see [git/conventions.md](../../references/git/conventions.md) §The declared-directive layer |
 | `specs.azureStates` | `{"plans": "<state>", "archive": "<state>"}` | **none, deliberately** — refuses (exit 2, `sp-az-no-states`) rather than guess | the `azure-boards` backend only |
 | `specs.azurePlacement` | `{areaPath, workItemType, discoveryTag, team, iterationPath, boardColumn, defaultSubject}` — `workItemType` retired, see `workItemTypes` below | per sub-key — `areaPath` **none, deliberately**, the rest default | the `azure-boards` backend only |
@@ -28,7 +28,6 @@ placement, never a repository store. Other namespaces are read by their owning f
 | `specs.tagCatalog` | `{"<tag>": "<description>", …}` | `{}` | `quenching-specs-create`'s tag proposal |
 | `specs.workItemTypes` | `{"<key>": {description, azure, github, default}, …}` | `{}` | `quenching-specs-create`'s type proposal, `cq specs new --type`, and every backend's `create_spec` |
 | `specs.specsBranch` | a branch name | `specs` | specs lifecycle records |
-| `specs.fanoutMinComplexity` | `low` · `medium` · `high` · `xhigh` | `medium` | specs fan-out selection |
 | `ops.opsRoot`, `ops.router` | repository-relative paths | none — `op-config-missing` when absent | `cq ops` |
 | `ops.registry` | a repository-relative path | `<ops.opsRoot>/README.md` | `cq ops registry` |
 | `proof.proofRoot` | a repository-relative path | `tests` | `cq proof` |

@@ -88,7 +88,7 @@ glossary passes the conformance and link checks.
 - Never let a sub-agent write `glossary.md` directly — sub-agents only propose; the
   orchestrator is the sole writer.
 - Never skip the single consolidated confirmation or present per-slice lists — every slice
-  merges into ONE plan before any write. A cycle-authorized run (convergence.md §contract) replaces
+  merges into ONE plan before any write. A cycle-authorized run (convergence.md §The cycle-authorization contract) replaces
   the gate with narration but still merges everything into ONE presented plan.
 - Never clobber a filled entry (definition or link) on merge, and never leave the list
   unsorted.

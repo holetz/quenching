@@ -10,9 +10,8 @@ carries `type: standard` + a derived `resource:`; add each to [../index.md](../i
 
 ## Current docs
 
-* [versioning-release.md](versioning-release.md) — Every published Claude and Codex version
-  surface must agree at release time, including both marketplace entries and the generated Codex
-  manifest
+* [versioning-release.md](versioning-release.md) — The four source version surfaces that
+  `cq specs release` bumps together, with the generated Codex sibling refreshed from the same source version
 
 ## Candidate sub-standards
 
