@@ -94,7 +94,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 
 | Doc | Covers |
 | --- | --- |
-| [versioning-release.md](ci-cd/versioning-release.md) | Every published Claude and Codex version surface must agree at release time, including both marketplace entries and the generated Codex manifest |
+| [versioning-release.md](ci-cd/versioning-release.md) | The four source version surfaces that cq specs release bumps together, with the generated Codex sibling refreshed from the same source version |
 
 ### code/
 

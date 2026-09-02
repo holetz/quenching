@@ -1,6 +1,6 @@
 """The version lockstep — `bump_release_artifacts` proved against a disposable tree standing
-in for the four real artifacts, never the plugin's own, so this runs safely on every test
-run without ever bumping a real version.
+in for the four real artifacts and its changelog gate, never the plugin's own, so this runs
+safely on every test run without ever bumping a real version.
 
 Migrated from the pre-refactor specs script's `release_lockstep_failures`. Both directions
 matter: four agreeing values all move together, and one already-drifted value refuses before
@@ -37,6 +37,7 @@ class Lockstep(unittest.TestCase):
             path = os.path.join(self.tmp, rel)
             os.makedirs(os.path.dirname(path), exist_ok=True)
             write_text(path, KINDS[kind])
+        write_text(os.path.join(self.tmp, "CHANGELOG.md"), "# Changelog\n\n## 9.10.0\n")
 
     def test_four_agreeing_artifacts_are_reported_moved(self):
         result = bump_release_artifacts(self.tmp, "9.10.0")
@@ -60,6 +61,18 @@ class Lockstep(unittest.TestCase):
         text = read_text(os.path.join(
             self.tmp, "plugins/quenching/assets/bin/quenching/common/version.py"))
         self.assertIn("# a comment that must survive the bump", text)
+
+    def test_a_release_without_a_matching_changelog_entry_is_refused_before_writes(self):
+        write_text(os.path.join(self.tmp, "CHANGELOG.md"), "# Changelog\n\n## 9.9.9\n")
+
+        result = bump_release_artifacts(self.tmp, "9.10.0")
+
+        self.assertFalse(result["ok"])
+        self.assertIn("CHANGELOG.md", result["error"])
+        self.assertIn("9.10.0", result["error"])
+        for rel, kind in RELEASE_ARTIFACTS:
+            with self.subTest(artifact=rel):
+                self.assertEqual(read_text(os.path.join(self.tmp, rel)), KINDS[kind])
 
     def test_a_lockstep_already_drifted_is_refused_rather_than_compounded(self):
         # Precondition: one artifact disagreeing with the rest BEFORE the bump is a refusal,
