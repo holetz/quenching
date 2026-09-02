@@ -1,7 +1,7 @@
 ---
 description: Create or update the Zensical site layer from a confirmed map with extensions, CSS, navigation and strict-build QA. Triggers on "build the docs site", "generate the site for /docs", or "fix the documentation site's nav". Not for: planning pages → /quenching:knowledge:documentation:plan; writing documentation prose → /quenching:knowledge:documentation:write; reviewing page quality → /quenching:knowledge:documentation:review; conducting the complete pipeline → /quenching:knowledge:documentation:produce.
 argument-hint: [optional-section-or-config-path]
-allowed-tools: Read, Grep, Glob, Bash, Write, Edit
+allowed-tools: Read, Grep, Glob, Bash, Write, Edit, AskUserQuestion
 ---
 
 # /quenching:knowledge:documentation:build — create/update the editorially mapped site

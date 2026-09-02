@@ -1,7 +1,7 @@
 ---
 description: Capture ONE piece of generic knowledge into the bundle's concepts/ home. Triggers on "add this knowledge", "record what we learned", "put this in the knowledge base". Not for: a repo contract or procedure → /quenching:knowledge:add; one glossary term → /quenching:knowledge:define.
 argument-hint: [the-knowledge]
-allowed-tools: Read, Grep, Glob, Write, Edit
+allowed-tools: Read, Grep, Glob, Write, Edit, AskUserQuestion
 ---
 
 # /quenching:knowledge:learn — capture generic knowledge, OKF-conformant

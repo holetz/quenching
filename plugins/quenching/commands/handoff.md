@@ -5,7 +5,7 @@ description: >-
   handoff para a próxima sessão" ou "resumir esta sessão para outro agente continuar". Not for:
   executar a implementação → o comando dono do trabalho.
 argument-hint: "What will the next session be used for?"
-allowed-tools: Bash(mktemp:*), Read, Write
+allowed-tools: Bash(mktemp:*), Read, Write, AskUserQuestion
 ---
 
 **Input**: `$ARGUMENTS` (o foco da próxima sessão).
