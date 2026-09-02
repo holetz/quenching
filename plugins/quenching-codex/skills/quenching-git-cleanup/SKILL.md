@@ -26,10 +26,15 @@ fresh cleanup run. **Done when:** all four lists are in hand.
 Show every local stale branch with its reason(s), every remote branch as `<remote>/<branch>` with
 its reason(s), and every orphan worktree with its path and branch. Show each `unregisteredWorktrees`
 finding with its path, branch and size as information, but do not include it in the prune choices.
-Ask once with **AskUserQuestion** (multi-select) which items to prune — defaulting to none
-pre-selected, never to "all". For a remote selection, show the exact destructive action `git push
-origin --delete <branch>` and the remote branch that action removes. **Done when:** the human has
-chosen a subset (possibly empty) of each prunable list and has seen any remote deletion command.
+Ask once with **AskUserQuestion** (multi-select) which local branches and live worktrees to prune —
+defaulting to none pre-selected, never to "all". Show the exact local actions in those choices:
+`git branch -d <branch>` or `git worktree remove <path>`. **Done when:** the local selection is
+settled.
+
+For any remote branch in the fresh `remoteBranches` list, show its exact destructive action `git
+push origin --delete <branch>` and ask separately with **AskUserQuestion**. A remote branch is never
+included in the local confirmation. **Done when:** the remote selection is settled and every selected
+item has one explicit action.
 
 ### 3. Delete the chosen branches
 ```bash
@@ -51,7 +56,7 @@ removed, or its refusal is reported.
 ```bash
 git push origin --delete <branch>
 ```
-Run this only for a selected item from the fresh `remoteBranches` list, after the single selection
+Run this only for a selected item from the fresh `remoteBranches` list, after the separate remote
 confirmation. The command is an external write: report its exact remote/branch and its output. A
 refusal leaves the server branch standing; never retry with another command or infer success from a
 local remote-tracking ref. **Done when:** every selected remote branch was deleted, or its refusal
