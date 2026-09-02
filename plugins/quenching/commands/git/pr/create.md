@@ -95,9 +95,14 @@ az repos pr create --detect true --source-branch <branch> --target-branch <base>
   --title "<title>" --description "<body>" [--delete-source-branch true] [--work-items <n>] \
   [--transition-work-items true] --output json
 ```
-The host-specific command is selected from the configured provider. The target branch is explicit
+The host-specific command is selected from the configured provider. Normalize the create response
+to `id`, `webUrl` and `apiUrl` before reporting it: show `webUrl` as **Link para revisão** and
+`apiUrl` as **API URL**. For Azure, `webUrl` is
+`repository.webUrl/pullrequest/pullRequestId`, while the response's `url` remains `apiUrl`; never
+show a URL containing `/_apis/` as the Link para revisão. The target branch is explicit
 on both routes: `--base` for GitHub and `--target-branch` for Azure; neither may be omitted. Read
-the created PR's number/id and URL from the JSON/CLI result. **Done when:** the PR exists, or the
+the created PR's `id`, `webUrl` and `apiUrl` from the normalized JSON/CLI result. **Done when:**
+the PR exists, or the
 push/create failed and its error is reported verbatim.
 **Done when:** the provider-specific publication succeeded or its failure is reported.
 
@@ -108,14 +113,14 @@ records pass. A target that carries `standards/workflows/plan-git-record.md` sta
 
 ### 5. Stamp, with an ID
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs record "<id>" pr --set number=<provider-pr-id> --set url=<provider-url> --set date=<today>
+python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs record "<id>" pr --set number=<provider-pr-id> --set url=<webUrl> --set date=<today>
 ```
 `pr:` is **write-many** — a later PR on the same spec is a new fact.
 No ID → nothing to stamp; report the PR number and URL only. **Done when:** the record is stamped
 (with an ID) or the report carries the PR's own facts (without one).
 
 ### 6. Report
-State the provider, PR number/id, URL, base it targets, the effect of the native issue/work-item
+State the provider, PR id, **Link para revisão** (`webUrl`), **API URL** (`apiUrl`), base it targets, the effect of the native issue/work-item
 link (step 3), and **which layer governed the title and the body**. **Done when:** all five facts
 are named.
 

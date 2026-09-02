@@ -23,6 +23,9 @@ import _paths  # noqa: F401  — must precede the `quenching` import; see its do
 from quenching.git.base import (_init_default_branch, _is_host_default, _origin_head_branch,
                                 resolve_base)
 from quenching.git.conventions import STANDARDS_DIR, _declared_docs
+from quenching.git.pr import (labelled_links, normalize_azure_pull_request,
+                              normalize_github_pull_request, normalize_pull_request,
+                              review_link)
 from quenching.git.slugs import _read_specs, cmd_specs
 from quenching.git.stale import (_gone_branches, _merged_branches, _merged_remote_branches,
                                  _orphan_worktrees, _unregistered_worktrees)
@@ -444,6 +447,44 @@ class LifecycleBehavior(RepoCase):
         self.assertTrue(subject.startswith("Revert \"change to compensate\""))
         self.assertEqual(pathlib.Path(self.repo, "a.txt").read_text(encoding="utf-8"), "x\n")
         _run(self.repo, "merge-base", "--is-ancestor", target, "HEAD")
+
+
+class PullRequestNormalization(unittest.TestCase):
+    def test_azure_keeps_rest_url_as_api_and_builds_the_browser_link(self):
+        payload = {
+            "pullRequestId": 42,
+            "url": "https://dev.azure.com/org/proj/_apis/git/repositories/r/pullRequests/42",
+            "repository": {"webUrl": "https://dev.azure.com/org/proj/_git/repo"},
+        }
+        expected = {
+            "id": 42,
+            "webUrl": "https://dev.azure.com/org/proj/_git/repo/pullrequest/42",
+            "apiUrl": payload["url"],
+        }
+        self.assertEqual(normalize_azure_pull_request(payload), expected)
+        self.assertEqual(normalize_pull_request("azure-boards", payload), expected)
+        self.assertEqual(review_link(expected), expected["webUrl"])
+        self.assertEqual(labelled_links(expected),
+                         {"Link para revisão": expected["webUrl"], "API URL": payload["url"]})
+
+    def test_azure_never_uses_an_api_endpoint_as_the_human_link(self):
+        payload = {
+            "pullRequestId": 7,
+            "url": "https://dev.azure.com/org/proj/_apis/git/pullRequests/7",
+            "webUrl": "https://dev.azure.com/org/proj/_apis/git/pullRequests/7",
+        }
+        snapshot = normalize_azure_pull_request(payload)
+        self.assertIsNone(snapshot["webUrl"])
+        self.assertIsNone(review_link(snapshot))
+
+    def test_github_separates_html_url_and_derives_missing_api_url(self):
+        payload = {"number": 9, "url": "https://github.com/o/r/pull/9"}
+        repository = {"owner": {"login": "o"}, "name": "r"}
+        self.assertEqual(normalize_github_pull_request(payload, repository), {
+            "id": 9,
+            "webUrl": payload["url"],
+            "apiUrl": "https://api.github.com/repos/o/r/pulls/9",
+        })
 
 
 class Conventions(RepoCase):
