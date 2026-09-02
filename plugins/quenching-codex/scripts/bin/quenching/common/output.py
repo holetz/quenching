@@ -16,6 +16,11 @@ body already assumes it is doing.
 A REFUSAL IS NOT A FINDING. The distinction is the whole reason the ladder has three steps rather
 than two: `1` says the verb looked and did not like what it saw, `2` says the verb declined to
 look. A conductor that cannot tell them apart retries the one case that will never succeed.
+
+Finding codes are stable machine keys in the form `<prefix>-<name>`. The prefix identifies the
+owning pillar or adapter (`sp`, `design`, `sk`, `ct`, `op`, `pf`, `delivery`, `tc`, `security`,
+`git`, `site`, `nav`, or `glossary`); the name identifies the predicate. Human wording may evolve,
+but a code does not, because callers filter on it.
 """
 
 import argparse
@@ -81,6 +86,15 @@ def finding(code: str, severity: str, message: str, **extra) -> dict:
     f = {"code": code, "severity": severity, "message": message}
     f.update(extra)
     return f
+
+
+def finding_code(prefix: str, name: str) -> str:
+    """Build one stable `<prefix>-<name>` finding key at the point that declares it."""
+    prefix = prefix.strip()
+    name = name.strip()
+    if not prefix or not name or "-" in prefix:
+        raise ValueError("finding codes require a non-empty hyphen-free prefix and name")
+    return f"{prefix}-{name}"
 
 
 def exit_for(findings: list[dict]) -> int:

@@ -21,6 +21,7 @@ from quenching.common.output import (
     emit_err,
     exit_for,
     finding,
+    finding_code,
     refuse,
     report_findings,
 )
@@ -53,6 +54,14 @@ class Parser(unittest.TestCase):
         self.assertEqual(raised.exception.code, USAGE)
         self.assertEqual(out.getvalue(), "")
         self.assertIn("usage: cq test", err.getvalue())
+
+    def test_finding_code_keeps_prefix_and_name_as_separate_contract_parts(self):
+        self.assertEqual(finding_code("design", "front-absent"),
+                         "design-front-absent")
+
+    def test_finding_code_rejects_ambiguous_parts(self):
+        with self.assertRaises(ValueError):
+            finding_code("design-front", "absent")
 
 
 class Emit(unittest.TestCase):
