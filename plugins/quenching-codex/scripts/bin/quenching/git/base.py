@@ -17,7 +17,7 @@ from __future__ import annotations
 import os
 import subprocess
 
-from quenching.common.git import _git
+from quenching.common.git import COMMAND_TIMEOUT_S, _git
 from quenching.common.output import emit
 from quenching.common.config import infer_base_branch, load_config
 
@@ -45,7 +45,7 @@ def _is_host_default(cwd: str, backend: str, base: str) -> bool:
     else:
         return False
     try:
-        out = subprocess.run(argv, capture_output=True, text=True, timeout=10, cwd=cwd)
+        out = subprocess.run(argv, capture_output=True, text=True, timeout=COMMAND_TIMEOUT_S, cwd=cwd)
     except (OSError, ValueError, subprocess.SubprocessError):
         return False
     if out.returncode != 0:

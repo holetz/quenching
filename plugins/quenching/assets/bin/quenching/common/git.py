@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import os
 
+COMMAND_TIMEOUT_S = 60
+
 
 def _git(cwd: str, *argv: str) -> str:
     """Stdout of one git command, or "" for every way it can fail — no git on PATH, not a
@@ -13,7 +15,8 @@ def _git(cwd: str, *argv: str) -> str:
     which is a real state and never an error."""
     import subprocess
     try:
-        out = subprocess.run(["git", *argv], capture_output=True, text=True, timeout=10,
+        out = subprocess.run(["git", *argv], capture_output=True, text=True,
+                             timeout=COMMAND_TIMEOUT_S,
                              cwd=cwd if os.path.isdir(cwd) else ".")
         return out.stdout if out.returncode == 0 else ""
     except (OSError, ValueError, subprocess.SubprocessError):
@@ -36,7 +39,8 @@ def _git_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, 
     if not os.path.isdir(cwd):
         return 127, "", f"not a directory: {cwd}"
     try:
-        out = subprocess.run(["git", *argv], capture_output=True, text=True, timeout=30,
+        out = subprocess.run(["git", *argv], capture_output=True, text=True,
+                             timeout=COMMAND_TIMEOUT_S,
                              cwd=cwd, input=stdin)
         return out.returncode, out.stdout, out.stderr
     except (OSError, ValueError, subprocess.SubprocessError) as e:   # noqa: BLE001

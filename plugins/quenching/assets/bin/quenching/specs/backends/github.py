@@ -8,7 +8,7 @@ import os
 import re
 import sys
 
-from quenching.common.git import _git
+from quenching.common.git import COMMAND_TIMEOUT_S, _git
 from quenching.common.config import CONFIG_FILE, find_repo_root
 from quenching.specs.backends.base import BackendRefusal, SpecBackend
 from quenching.specs.backends.hybrid import (GH_BODY_MAX, GH_PART_MAX, hybrid_join,
@@ -53,7 +53,8 @@ def _gh_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, s
     if not os.path.isdir(cwd):
         return 1, "", f"not a directory: {cwd}"
     try:
-        out = subprocess.run(["gh", *argv], capture_output=True, text=True, timeout=60,
+        out = subprocess.run(["gh", *argv], capture_output=True, text=True,
+                             timeout=COMMAND_TIMEOUT_S,
                              cwd=cwd, input=stdin)
         return out.returncode, out.stdout, out.stderr
     except FileNotFoundError as e:

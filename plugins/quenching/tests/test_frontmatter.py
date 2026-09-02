@@ -8,7 +8,10 @@ one implementation left to hold to the table's word — and holding it there is 
 selftest subcommand's. The three in-script copies go with the parsers they were guarding.
 """
 
+import pathlib
+import tempfile
 import unittest
+from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.common.frontmatter import (
@@ -18,6 +21,7 @@ from quenching.common.frontmatter import (
     frontmatter_block,
     parse_frontmatter,
 )
+from quenching.common.io import write_text
 
 
 def doc(body: str) -> str:
@@ -59,6 +63,32 @@ class CanonicalCases(unittest.TestCase):
         for label, body, _, want in CANONICAL_CASES:
             with self.subTest(case=label):
                 self.assertEqual(kinds(doc(body)), tuple(sorted(want)))
+
+
+class AtomicWriter(unittest.TestCase):
+    def test_write_text_replaces_in_the_target_directory_and_leaves_no_temp_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target = pathlib.Path(tmp) / "nested" / "spec.md"
+            target.parent.mkdir()
+            target.write_text("old\n", encoding="utf-8")
+            with mock.patch("quenching.common.io.tempfile.mkstemp",
+                            wraps=tempfile.mkstemp) as mkstemp:
+                write_text(str(target), "new\n")
+
+            self.assertEqual(target.read_text(encoding="utf-8"), "new\n")
+            self.assertEqual(mkstemp.call_args.kwargs["dir"], str(target.parent))
+            self.assertEqual(list(target.parent.glob(f".{target.name}.tmp-*")), [])
+
+    def test_a_replace_failure_keeps_the_previous_document_and_cleans_the_temp_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target = pathlib.Path(tmp) / "spec.md"
+            target.write_text("old\n", encoding="utf-8")
+            with mock.patch("quenching.common.io.os.replace", side_effect=OSError("full disk")):
+                with self.assertRaises(OSError):
+                    write_text(str(target), "new\n")
+
+            self.assertEqual(target.read_text(encoding="utf-8"), "old\n")
+            self.assertEqual(list(target.parent.glob(f".{target.name}.tmp-*")), [])
 
 
 # (label, frontmatter body, expected type, expected value)
