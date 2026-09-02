@@ -7,7 +7,7 @@ description: >-
   stamps its write-many `pr:` record. Not for: merging an already-open PR → /quenching:git:merge;
   resolving PR review comments → /quenching:git:pr:review.
 argument-hint: [id-or-title] [remote:<name>]
-allowed-tools: Bash(git push:*), Bash(git remote get-url:*), Bash(gh repo view:*), Bash(gh pr create:*), Bash(az repos pr:*), Bash(python3:*), Read, AskUserQuestion
+allowed-tools: Bash(git push:*), Bash(git remote:*), Bash(gh repo view:*), Bash(gh pr create:*), Bash(az repos pr:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
 # /quenching:git:pr:create — push and open the pull request
