@@ -4,6 +4,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from quenching.common.front import Finding
+
 
 @dataclass(frozen=True)
 class Artifact:
@@ -15,22 +17,6 @@ class Artifact:
 
     def as_dict(self) -> dict[str, Any]:
         return {"path": self.path, "kind": self.kind, **self.details}
-
-
-@dataclass(frozen=True)
-class Finding:
-    code: str
-    band: str
-    severity: str
-    message: str
-    path: str | None = None
-
-    def as_dict(self) -> dict[str, Any]:
-        result = {"code": self.code, "band": self.band,
-                  "severity": self.severity, "message": self.message}
-        if self.path is not None:
-            result["path"] = self.path
-        return result
 
 
 @dataclass(frozen=True)

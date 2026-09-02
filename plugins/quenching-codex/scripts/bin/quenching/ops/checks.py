@@ -14,6 +14,7 @@ import tokenize
 from pathlib import Path
 from typing import Callable
 
+from quenching.common.front import register_checks
 from quenching.ops import registry
 from quenching.ops.model import EntryPoint, Finding, Inventory
 
@@ -381,15 +382,18 @@ CHECKS: tuple[Callable[[Inventory], list[Finding]], ...] = (
     check_no_router,
 )
 
+AST_CHECK_REGISTRY = register_checks(*(tuple((check.__name__, check) for check in CHECKS)))
+CHECK_REGISTRY = register_checks(
+    *(tuple((check.__name__, check) for check in CHECKS) +
+      (("disabled-check", check_disabled_check),))
+)
+
 
 def run_ast_checks(inventory: Inventory) -> list[Finding]:
     """Run the seven non-tokenize checks in their stable code order."""
-    findings: list[Finding] = []
-    for check in CHECKS:
-        findings.extend(check(inventory))
-    return findings
+    return AST_CHECK_REGISTRY.run(inventory)
 
 
 def run_checks(inventory: Inventory) -> list[Finding]:
-    """Run all eight checks, adding the tokenizer-backed disabled-gate check last."""
-    return run_ast_checks(inventory) + check_disabled_check(inventory)
+    """Run all eight checks in the declared registry order."""
+    return CHECK_REGISTRY.run(inventory)

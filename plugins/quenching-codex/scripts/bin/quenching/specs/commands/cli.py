@@ -161,7 +161,8 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--check")
     sp.add_argument("--uncheck")
     sp.add_argument("--block", help="mark TASK blocked (requires --reason)")
-    sp.add_argument("--reason", help="why the task is blocked — written into the line")
+    sp.add_argument("--descope", help="close TASK as deliberately out of scope (requires --reason)")
+    sp.add_argument("--reason", help="why the task is blocked or descoped — written into the spec")
     sp.add_argument("--subject", help="the subject of the commit that implements the task, "
                                       "recorded as a `subject:` metadata line "
                                       "(goes with --check)")

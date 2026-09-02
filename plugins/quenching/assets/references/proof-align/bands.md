@@ -2,31 +2,9 @@
 
 <!-- rules -->
 
-This file is self-contained: a proof align reads it to decide what it may apply and what it must
-report for a human decision.
-
-The common front minimum and route floor live in
-`docs/standards/architecture/front-mold.md`. This file owns only proof finding codes, their
-disposition bands and the layer, fixture, measurement, floor, CI and order-specific closures.
-
-## Contents
-
-`cq components read <this file>` returns the heading index; `--sections` addresses one.
-
-## The axis is who decides
-
-Every finding belongs to one band according to the person or mechanism that can honestly decide
-its closure:
-
-| Band | Who decides | What the align does |
-| --- | --- | --- |
-| **Mechanical** | The generated artifact and its deterministic source | Applies the repair without a per-item question. |
-| **Structural** | The contract and the one run authorization | Applies the safe gate or shape repair under the run's single OK. |
-| **Judgement** | A human who owns the verification and product risk | Reports evidence and a closing command; never drives the change. |
-
-The band is a disposition, not a severity. A finding may be an `error` while still belonging to
-the judgement band: severity says that the contract is violated, while the band says who is
-allowed to choose the repair.
+This file owns only proof finding codes, their disposition bands and the layer, fixture,
+measurement, floor, CI and order-specific closures. The common axis is defined in
+[`front-align/mold.md`](../front-align/mold.md) §Disposition bands.
 
 ## Mechanical findings
 

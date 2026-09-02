@@ -32,11 +32,6 @@ def _find_repo_root(root: str) -> str:
     return find_repo_root(root)
 
 
-def _loader_root(repo_root: str) -> str:
-    """Give the shared loader a non-directory root so its provider lookup stays dormant."""
-    return os.path.join(repo_root, ".quenching-ops-loader-root")
-
-
 def load_ops_config(root: str) -> tuple[dict | None, dict]:
     """Return the resolved operations configuration, or the one refusal it can carry.
 
@@ -46,7 +41,7 @@ def load_ops_config(root: str) -> tuple[dict | None, dict]:
     point would make the verifier inspect the wrong surface while appearing healthy.
     """
     repo_root = _find_repo_root(root)
-    cfg = load_config(_loader_root(repo_root), detect_provider_info=False)
+    cfg = load_config(repo_root, detect_provider_info=False)
     if cfg.get("migrationRefusal"):
         return None, cfg["migrationRefusal"]
     ops = dict(cfg.get("ops") or {})

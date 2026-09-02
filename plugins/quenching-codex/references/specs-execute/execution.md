@@ -160,30 +160,35 @@ whole-branch review runs once, and it belongs to `quenching-specs-conclude`.
 
 <!-- rules -->
 
-After the self-review passes, **decide the subject, then verify, tick the box with it, commit, and
-assert the subject survived**. Every task gets its own commit and stays resumable from it.
+After the self-review passes, **verify, stage the declared files, commit, assert the subject survived,
+then tick the provider task with its subject and commit**. Every task with a diff gets its own commit
+and stays resumable from it. The provider write is deliberately last: an external backend cannot
+travel inside the local commit, and a failed write must leave the commit available for a retry.
 
 Run it as **one chained call**, gate included:
 
 ```bash
 <the task's verify:> \
-  && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <id> --spec "<id>" --subject "<subject>" \
-  && git add <the task's files> <the spec file> \
-  && git commit -m "<subject>" \
-  && git log -1 --format=%s
+  && git add <the task's files> \
+  && Skill("quenching:git:commit", "<id>") \
+  && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <id> --spec "<id>" --subject "<subject reported by git:commit>" --commit "<sha reported by git:commit>"
 ```
 
-**The `&&` is the ordering:** verify before the tick, the tick before the commit, and a broken link
-short-circuits every link after it. When the spec's declared policy says this task is not a gate,
-the chain simply starts at `cq specs task`.
+**The `&&` is the ordering:** verify before staging, staging before the delegated commit, the
+commit before the provider tick, and a broken link short-circuits every link after it. When the
+spec's declared policy says this task is not a gate, the chain simply starts at `git add`.
 
-Stage the task's declared `files:` **and the spec file**, never the whole tree — `git add -A` also
-picks up whatever an editor or a tool wrote while the task ran, which is the same contamination
-§The precondition refuses at the start.
+Stage only the task's declared `files:`, never the whole tree and never an assumed spec file —
+`git add -A` also picks up whatever an editor or a tool wrote while the task ran, which is the same
+contamination §The precondition refuses at the start. The delegated `quenching-git-commit` owns
+subject resolution and the existing index; execute passes its reported subject and sha to the
+provider write.
 
-If the commit **fails** — a rejecting hook, nothing staged — undo the tick
-(`cq specs task --spec "<id>" --uncheck <id>`) so no box claims a commit that does not exist, and
-report the failure.
+If verification, staging or the commit **fails** — a rejecting hook or nothing staged — no provider
+tick has happened; report the failure and leave the task unchecked. If the commit succeeds but the
+provider tick **fails** — a network error, refusal or timeout — preserve the commit, report the
+recoverable remote-write failure with its subject and sha, and retry the provider write without
+rebuilding or amending the commit.
 
 The **subject line format** is the target repo's to declare. Read
 [git/commit.md](../../references/git/commit.md)
@@ -205,8 +210,9 @@ standard into a target to create the answer.
 The chain's last link **asserts the subject survived**, and the rule is report rather than repair:
 its `git log -1 --format=%s` must equal what was recorded.
 
-The subject lands on the task line as `subject: <line>`, in the indented metadata grammar `files:`
-and `verify:` already use, and resolves with `git log --grep=<subject> --fixed-strings`. A
+The subject lands on the task line as `subject: <line>` together with `commit: <sha>`, in the
+indented metadata grammar `files:` and `verify:` already use. The subject resolves with
+`git log --grep=<subject> --fixed-strings`; the commit sha is the stronger direct anchor. A
 `commit-msg` hook that only *adds* — a ticket prefix, a `Change-Id`, a sign-off — leaves it
 matching as a substring and needs nothing. A hook that **replaces** the subject outright breaks the
 link: **report it as a finding and write nothing.**
@@ -215,15 +221,15 @@ With no git in the repo there is nothing to anchor to: tick the box without `--s
 once in the report, rather than inventing a placeholder.
 
 **A task with no `files:` declared** — the line absent, or written `files: []` — is the same rule one
-level down: it produces no diff of its own, so there is no commit to anchor to and no subject to
-record. Its chain ends at the tick:
+level down: it produces no diff of its own, so there is no commit to anchor to and no subject or
+commit sha to record. Its chain ends at the provider tick:
 
 ```bash
 <the task's verify:> && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <id> --spec "<id>"
 ```
 
 — no `--subject`, no `git add`, no `git commit`. The box still ticks. Where the backend keeps the
-spec in the tree, that tick rides along in the next task's commit; under an external backend it was
+spec in the tree, that tick rides along in the next task's commit; under an external backend it is
 never a local diff at all. Passing `--subject` here would write a
 `subject:` onto the task line that `git log --grep` can never resolve, which is exactly the
 placeholder the paragraph above refuses.
@@ -459,39 +465,39 @@ cost a full-diff read.
 On item 1, reuse: duplicating it is the most common cost of task-scoped work. On item 2, useless
 defense: defensive code for an impossible state hides real failures.
 
-### Why the subject is decided before the commit exists
+### Why the provider task is recorded after the commit
 
 <!-- rationale -->
 
-That order is the point: the subject is known before the commit exists, so the checkbox travels
-*inside* the commit that implements it. Correcting the record after the fact would put a write
-after the commit again, which is the whole thing this ordering removes.
+That order is the point for an external backend: the commit is a local fact, while the task checkbox
+is a remote write that cannot travel inside it. Recording the subject and sha only after the commit
+exists lets a failed provider call be retried without rebuilding or amending the code commit.
 
 ### Why the commit chain is one call and not four
 
 <!-- rationale -->
 
-Written as four separate calls the sequence was a rule the body had to be obeyed to hold; chained,
-it is enforced by the shell — verify before the tick, the tick before the commit, and a broken link
-short-circuiting every link after it, which is exactly the failure behaviour the separate form
-documented and the chained form gets for free. Nothing about what is guaranteed moved; only the
-number of calls did.
+Written as separate calls the sequence was a rule the body had to be obeyed to hold; chained, it is
+enforced by the shell — verify before staging, the commit before the provider tick, and a broken
+link short-circuiting every link after it. The external write is intentionally after the local
+commit, so the two facts have the failure behaviour their different stores require.
 
-### Why each task has its own commit, and why the subject rather than a sha
+### Why each task has its own commit, and why both subject and sha
 
 <!-- rationale -->
 
-**There is no per-task bookkeeping commit any more.** It existed only because a sha cannot be known
-before the commit that carries it, so the tick had to follow the commit and could not join it. One
-task is one commit: code, docs the task named, and the ticked box.
+**There is no per-task bookkeeping commit any more.** The provider task write happens after the
+commit and does not create another local commit. One task is one commit for code and docs the task
+named, plus one remote task record carrying the commit's subject and sha.
 
 One commit per task is what makes retrying and resuming worth having: a bad task can be blocked or
 undone without touching what already landed. The branch keeps those independently anchored commits
 through the whole run, so review and reversion can stay at task granularity.
 
-The subject, rather than a sha, is the durable task anchor: it survives a rebase, while a commit sha
-does not. The rules still forbid amending an earlier task or force-pushing, so no later repair is
-needed.
+The subject is the durable human-readable task anchor and the sha is the direct machine anchor. The
+subject survives a rebase while a sha does not; recording both gives status and validation the
+stronger direct fact without losing the readable fallback. The rules still forbid amending an
+earlier task or force-pushing, so no later repair is needed.
 
 ### Why discoveries are captured indiscriminately
 

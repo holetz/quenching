@@ -75,10 +75,10 @@ merge status is `unknown`.
 
 Recommendations are text only:
 
-- unresolved threads → `quenching-git-pr-review`;
+- unresolved threads → `/quenching:git:pr:review`;
 - failed checks or conflicts → inspect/fix before merge;
 - pending checks or unknown mergeability → wait or refresh provider state;
-- known clean checks, approvals and mergeability → `quenching-git-merge` may be the next human step;
+- known clean checks, approvals and mergeability → `/quenching:git:merge` may be the next human step;
 - missing PR, authentication failure or incomplete evidence → no action until the cause is resolved.
 
 The command never pushes, edits, resolves threads, changes a spec record or merges a PR.
