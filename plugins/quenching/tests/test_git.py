@@ -17,6 +17,7 @@ import sys
 import tempfile
 import unittest
 from types import SimpleNamespace
+from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.git.base import (_init_default_branch, _is_host_default, _origin_head_branch,
@@ -100,17 +101,32 @@ class Base(RepoCase):
              "refs/remotes/origin/develop")
         self.assertEqual(_origin_head_branch(self.repo), "develop")
 
-    def test_is_host_default_is_false_for_an_unknown_backend(self):
-        self.assertFalse(_is_host_default(self.repo, "unknown-provider", "main"))
+    def test_is_host_default_is_unknown_for_an_unknown_backend(self):
+        self.assertIsNone(_is_host_default(self.repo, "unknown-provider", "main"))
 
-    def test_is_host_default_is_false_when_the_host_cli_cannot_answer(self):
+    def test_is_host_default_is_unknown_when_the_host_cli_cannot_answer(self):
         # no GitHub remote in this throwaway repo — a missing or refusing host CLI reads as
         # "unknown", never as a crash.
-        self.assertFalse(_is_host_default(self.repo, "github", "main"))
+        self.assertIsNone(_is_host_default(self.repo, "github", "main"))
+
+    def test_is_host_default_distinguishes_a_known_github_default(self):
+        result = SimpleNamespace(returncode=0, stdout="main\n")
+        with mock.patch.object(subprocess, "run", return_value=result):
+            self.assertTrue(_is_host_default(self.repo, "github", "main"))
+            self.assertFalse(_is_host_default(self.repo, "github", "develop"))
+
+    def test_is_host_default_asks_azure_through_its_runner(self):
+        with mock.patch("quenching.git.base._az_run", return_value=(0, "main\n", "")) as run:
+            self.assertTrue(_is_host_default(self.repo, "azure-boards", "main"))
+        run.assert_called_once_with(self.repo, "repos", "show", "--query", "defaultBranch", "-o", "tsv")
+
+    def test_is_host_default_is_unknown_for_an_azure_runner_failure(self):
+        with mock.patch("quenching.git.base._az_run", return_value=(127, "", "missing")):
+            self.assertIsNone(_is_host_default(self.repo, "azure-boards", "main"))
 
     def test_cq_git_base_json_matches_the_resolved_pair(self):
         payload = _cq_json(self.repo, "base")
-        self.assertEqual((payload["base"], payload["isDefault"]), ("main", False))
+        self.assertEqual((payload["base"], payload["isDefault"]), ("main", None))
 
 
 class Specs(RepoCase):

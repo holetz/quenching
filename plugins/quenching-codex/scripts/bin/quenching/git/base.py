@@ -20,6 +20,7 @@ import subprocess
 from quenching.common.git import COMMAND_TIMEOUT_S, _git
 from quenching.common.output import emit
 from quenching.common.config import infer_base_branch, load_config
+from quenching.specs.backends.azure import _az_run
 
 
 def _origin_head_branch(cwd: str) -> str | None:
@@ -31,7 +32,7 @@ def _init_default_branch(cwd: str) -> str | None:
     return _git(cwd, "config", "init.defaultBranch").strip() or None
 
 
-def _is_host_default(cwd: str, backend: str, base: str) -> bool:
+def _is_host_default(cwd: str, backend: str, base: str) -> bool | None:
     """Whether `base` is the host's own default branch.
 
     A host CLI that is missing, unauthenticated, or answers with no remote to name reads the
@@ -41,20 +42,25 @@ def _is_host_default(cwd: str, backend: str, base: str) -> bool:
         argv = ["gh", "repo", "view", "--json", "defaultBranchRef",
                 "-q", ".defaultBranchRef.name"]
     elif backend == "azure-boards":
-        argv = ["az", "repos", "show", "--query", "defaultBranch", "-o", "tsv"]
+        code, stdout, _stderr = _az_run(
+            cwd, "repos", "show", "--query", "defaultBranch", "-o", "tsv")
+        if code != 0:
+            return None
+        default = stdout.strip().rsplit("/", 1)[-1]
+        return default == base if default else None
     else:
-        return False
+        return None
     try:
         out = subprocess.run(argv, capture_output=True, text=True, timeout=COMMAND_TIMEOUT_S, cwd=cwd)
     except (OSError, ValueError, subprocess.SubprocessError):
-        return False
+        return None
     if out.returncode != 0:
-        return False
+        return None
     default = out.stdout.strip().rsplit("/", 1)[-1]
-    return bool(default) and default == base
+    return default == base if default else None
 
 
-def resolve_base(cwd: str) -> tuple[str, bool]:
+def resolve_base(cwd: str) -> tuple[str, bool | None]:
     """The base branch, and whether it is the host's own default — the one pair `git stale`
     (task 3.3) also needs, factored out so a second caller is an import rather than a second
     chain."""
@@ -65,6 +71,7 @@ def resolve_base(cwd: str) -> tuple[str, bool]:
 
 def cmd_base(args) -> int:
     base, is_default = resolve_base(os.getcwd())
-    human = f"base: {base}\ndefault branch: {'yes' if is_default else 'no'}"
+    default_label = {True: "yes", False: "no", None: "unknown"}[is_default]
+    human = f"base: {base}\ndefault branch: {default_label}"
     emit(args.json, {"ok": True, "base": base, "isDefault": is_default}, human)
     return 0
