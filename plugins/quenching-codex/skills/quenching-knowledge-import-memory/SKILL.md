@@ -240,7 +240,7 @@ if it ends empty.
 - Never fabricate a `resource` or `source`; never clobber a filled key on merge.
 - Never add frontmatter to an `index.md`; keep every touched index honest.
 - Never skip the single up-front plan+confirmation — this writes docs and deletes memory. A
-  cycle-authorized run (convergence.md §contract) replaces the gate with narration; the plan is still
+  cycle-authorized run (convergence.md §The cycle-authorization contract) replaces the gate with narration; the plan is still
   presented in full and write-then-verify-then-delete still holds.
 - Never write outside the three destinations (`standards/` + `concepts/` in `/docs/`, or a provider-owned spec)
   — re-route to the nearest, or flag-and-keep; never fabricate a

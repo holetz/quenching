@@ -59,7 +59,7 @@ homes with a fixed shape, follow it
 (`catalog/<system>/<catalog>/<schema>/<table>.md`). **Done when:** the canonical path is fixed.
 
 ### 3. Fill the mold
-Copy the mold from `../../templates/...` and complete the frontmatter:
+Copy the matching mold from `../../templates/` and complete the frontmatter:
 non-empty `type` + the OKF recommended fields (`title`/`description`/`resource`/`timestamp`) +
 the method labels (`audience`/`authority`/`source`/`maintainer`). Derive `resource`; an
 unproven standard is `authority: background`. **Done when:** the stamp is complete and
