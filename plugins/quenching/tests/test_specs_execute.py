@@ -37,6 +37,19 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertNotIn("git commit -m", command)
         self.assertNotIn('--subject "plan/<id>-<handle>', command)
 
+    def test_external_backend_records_task_after_the_delegated_commit(self):
+        command = COMMAND.read_text(encoding="utf-8")
+        reference = REFERENCE.read_text(encoding="utf-8")
+
+        self.assertLess(command.index("git add <the task's declared files>"),
+                        command.index('Skill("quenching:git:commit", "<id>")'))
+        self.assertLess(command.index('Skill("quenching:git:commit", "<id>")'),
+                        command.index("cq specs task --check <id>"))
+        self.assertIn('--commit "<sha reported by git:commit>"', command)
+        self.assertIn("provider tick **fails**", reference)
+        self.assertIn("preserve the commit", reference)
+        self.assertNotIn("<the spec file>", reference)
+
     def test_explicit_subject_commits_only_staged_files(self):
         with tempfile.TemporaryDirectory() as directory:
             git(directory, "init", "-q", "-b", "main")
