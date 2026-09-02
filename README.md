@@ -28,6 +28,7 @@ o `cq` publicado requer Python 3.11 ou mais recente.
 
 ```bash
 uv sync --all-groups
+bash scripts/verify_repo.sh
 python3 plugins/quenching/assets/bin/cq knowledge site-source docs site-source --write
 uv run zensical build --clean --strict
 python3 plugins/quenching/assets/checks/documentation-site-check.py site --local --remote-policy error
