@@ -186,5 +186,44 @@ class DescopeTask(unittest.TestCase):
         self.assertIn("## Outcome\n\n- task 1.1 descoped: não será construído", text)
 
 
+class UncheckTask(unittest.TestCase):
+    """Reopening a reverted task drops its stale implementation anchors and leaves a discovery.
+
+    The single write matters for provider-backed specs: a revert must not leave `[x]` pointing at
+    a commit that has just been compensated, and its reason must survive as durable spec text."""
+
+    DOC = ("---\ntitle: Revert fixture\nverification: per-task\n---\n\n"
+           "## Tasks\n\n- [x] 1.1 Remove the unused path\n"
+           "      subject: plan/revert-fixture: remove the unused path\n"
+           "      commit: 1234567\n\n"
+           "## Discoveries\n\n- prior discovery\n")
+
+    def test_uncheck_requires_reason_and_records_discovery(self):
+        backend = MemoryBackend()
+        backend.create_spec("plans", self.DOC)
+        spec_id = max(backend.docs)
+        previous = task_module.open_backend
+        self.addCleanup(setattr, task_module, "open_backend", previous)
+        task_module.open_backend = lambda _root: (backend, {})
+
+        args = argparse.Namespace(json=True, spec=spec_id, check=None, uncheck="1.1",
+                                  block=None, descope=None, reason="revert commit 7654321",
+                                  subject=None, commit=None)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = task_module.cmd_task(args, ".", Emitter())
+
+        self.assertEqual(code, 0, buf.getvalue())
+        payload = json.loads(buf.getvalue())
+        self.assertEqual(payload["action"], "unchecked")
+        self.assertEqual(payload["reason"], "revert commit 7654321")
+        text = backend.docs[spec_id][1]
+        self.assertIn("- [ ] 1.1 Remove the unused path", text)
+        self.assertNotIn("subject: plan/revert-fixture", text)
+        self.assertNotIn("commit: 1234567", text)
+        self.assertIn("- prior discovery", text)
+        self.assertIn("- task 1.1 unchecked: revert commit 7654321", text)
+
+
 if __name__ == "__main__":
     unittest.main()
