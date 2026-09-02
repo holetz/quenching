@@ -32,6 +32,8 @@ the near miss says `scoped` where the marker says `unrestricted`, so it contains
 sentence that names it. A rule with no case that fails without it is a rule nobody is holding.
 """
 
+import pathlib
+import tempfile
 import unittest
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
@@ -111,6 +113,37 @@ def unscoped(body: str) -> dict:
     found = [f for f in lint_command(command(body), BASE) if f["code"] == "sk-unscoped-bash"]
     assert len(found) == 1, f"expected exactly one sk-unscoped-bash, got {len(found)}"
     return found[0]
+
+
+def strict_findings(frontmatter: str) -> list[dict]:
+    """Run the command lint against a real frontmatter file, preserving source syntax."""
+    with tempfile.TemporaryDirectory() as tmp:
+        path = pathlib.Path(tmp) / "command.md"
+        path.write_text(f"---\n{frontmatter}\n---\n\nbody\n", encoding="utf-8")
+        item = command("body\n")
+        item["path"] = str(path)
+        return [f for f in lint_command(item, BASE) if f["code"] == "sk-frontmatter-strict"]
+
+
+class StrictFrontmatter(unittest.TestCase):
+    def test_a_folded_scalar_swallowing_a_known_key_reports_the_key_and_line(self):
+        found = strict_findings("description: >-\n  Trigger prose\n argument-hint: [input]\nallowed-tools: Read")
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["key"], "argument-hint")
+        self.assertEqual(found[0]["line"], 4)
+        self.assertIn("align", found[0]["remedy"])
+
+    def test_an_unquoted_nested_flow_sequence_reports_a_flat_or_quoted_remedy(self):
+        found = strict_findings("description: trigger\nargument-hint: [ref [mainline]]")
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["kind"], "nested-flow-sequence")
+        self.assertIn("quote", found[0]["remedy"])
+
+    def test_an_unquoted_plain_scalar_with_colon_space_reports_a_safe_form(self):
+        found = strict_findings("description: Use when: this is explicit\nallowed-tools: Read")
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["kind"], "plain-colon-space")
+        self.assertIn(">-", found[0]["remedy"])
 
 
 class MarkerPredicate(unittest.TestCase):

@@ -13,6 +13,7 @@ import os
 import re
 
 from quenching.common.output import finding, report_findings
+from quenching.common.io import read_text
 from quenching.components.hooks import hook_ladder_findings
 from quenching.components.surface import (COMMANDS_DIR, REFERENCES_DIR, SURFACE_MISSING,
                                           _quoted_phrases, discover_commands,
@@ -50,6 +51,13 @@ STEP_HEADING_RE = re.compile(r"^#{2,6}\s+\d+[.)]\s")
 STEP_ITEM_RE = re.compile(r"^\d+[.)]\s")
 WORKFLOW_MARKER_RE = re.compile(r"^(?:\*\*Steps\*\*|#{1,6}\s+(?:Steps|Workflow)\b)", re.IGNORECASE)
 DONE_WHEN_RE = re.compile(re.escape(DONE_WHEN_MARKER))
+
+FRONTMATTER_KEY_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):(.*)$")
+KNOWN_FRONTMATTER_KEYS = {
+    "name", "description", "argument-hint", "allowed-tools", "disallowed-tools",
+    "user-invocable", "disable-model-invocation", "effort", "context", "agent",
+    "background", "paths", "hooks",
+}
 
 
 def _split_sentences(text: str) -> list[str]:
@@ -109,6 +117,82 @@ def _step_criteria(body: str) -> tuple[int, int]:
         elif current and DONE_WHEN_RE.search(line):
             covered.add(current)
     return len(steps), len(covered)
+
+
+def _frontmatter_strict_issues(text: str) -> list[dict]:
+    """Find the three frontmatter shapes whose YAML meaning is unambiguous here.
+
+    This is intentionally a small structural reader, not a second YAML parser. It reports a
+    folded scalar swallowing a known top-level key, an unquoted flow sequence nested inside
+    itself, and an unquoted plain scalar containing ``: ``. Other YAML that this plugin does not
+    model remains outside the lint's claim rather than being guessed at.
+    """
+    if not text.startswith("---"):
+        return []
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return []
+    end = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+    if end is None:
+        return []
+
+    issues: list[dict] = []
+    i = 1
+    while i < end:
+        raw = lines[i]
+        if not raw.strip() or raw.lstrip().startswith("#") or raw[:1] in (" ", "\t"):
+            i += 1
+            continue
+        match = FRONTMATTER_KEY_RE.match(raw)
+        if not match:
+            i += 1
+            continue
+        key, value = match.group(1), match.group(2).strip()
+        if value in {">", ">-", ">+", "|", "|-", "|+"}:
+            j = i + 1
+            while j < end and (not lines[j].strip() or lines[j][:1] in (" ", "\t")):
+                swallowed = FRONTMATTER_KEY_RE.match(lines[j].strip())
+                if swallowed and swallowed.group(1) in KNOWN_FRONTMATTER_KEYS:
+                    issues.append({
+                        "kind": "swallowed-key",
+                        "key": swallowed.group(1),
+                        "parent": key,
+                        "line": j + 1,
+                        "remedy": (f"align `{swallowed.group(1)}:` with the top-level keys; "
+                                   "do not indent it under the folded scalar"),
+                    })
+                j += 1
+            i = j
+            continue
+
+        if value and value[0] not in ("'", '"'):
+            if value.startswith("["):
+                depth = 0
+                nested = False
+                for char in value:
+                    if char == "[":
+                        depth += 1
+                        nested = nested or depth > 1
+                    elif char == "]":
+                        depth = max(0, depth - 1)
+                if nested:
+                    issues.append({
+                        "kind": "nested-flow-sequence",
+                        "key": key,
+                        "line": i + 1,
+                        "remedy": (f"quote the complete `{key}` value or use a flat sequence; "
+                                   "do not nest `[` inside an unquoted hint"),
+                    })
+            elif ": " in value:
+                issues.append({
+                    "kind": "plain-colon-space",
+                    "key": key,
+                    "line": i + 1,
+                    "remedy": (f"quote the `{key}` value or write it as a `>-` block scalar "
+                               "before using `: ` inside the text"),
+                })
+        i += 1
+    return issues
 
 
 FENCE_RE = re.compile(r"^\s*(```|~~~)")
@@ -232,6 +316,16 @@ def lint_command(cmd: dict, base: str, named_by: set[str] | None = None) -> list
                         "the command file has no YAML frontmatter — Claude Code cannot load it",
                         **where)]
     out: list[dict] = []
+
+    source = cmd.get("source")
+    if source is None:
+        source = read_text(cmd["path"])
+    for issue in _frontmatter_strict_issues(source or ""):
+        out.append(finding("sk-frontmatter-strict", "warn",
+                           f"`{issue['key']}` at line {issue['line']}: {issue['kind']} — "
+                           f"{issue['remedy']}",
+                           key=issue["key"], line=issue["line"], kind=issue["kind"],
+                           remedy=issue["remedy"], **where))
 
     # BEFORE any content check, so a parse failure is never presented as a content
     # gap. A `description` truncated at a `#` used to surface as `sk-no-description`,
