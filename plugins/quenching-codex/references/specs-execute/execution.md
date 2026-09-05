@@ -336,19 +336,18 @@ finally fires, borrowing that section's own `## Tasks` heading as its title.
 <!-- rules -->
 
 A `## N.` section's last task committing, with another section still ahead, is a **clean boundary**:
-the loop offers to stop there, names the command that resumes, and continues unless told otherwise.
+the loop keeps the task commits and continues with the next task.
 
 - **The trigger is that event, never a window size.** No threshold, no token count, no "this is
   getting long".
 - **Nothing extra is written.** `## Handoff`, `git log`, and the `subjects` `cq specs status`
   returns already carry everything a fresh session needs; the boundary adds no record and no fifth
-  Handoff event. Accepted, the stop is a pause and a last commit — two events the cadence already
-  has.
-- **It offers and never imposes.** The loop does not end itself, and an unanswered offer means
-  carry on.
-- **The contract still ends at the last commit.** A stop here is not a close-out: the branch
-  review, the merge and the archive remain `quenching-specs-conclude`'s, exactly as they are for a
-  run that goes to the end.
+  Handoff event. The boundary is not a question and never pauses the loop.
+- **Only a human-required question or a real blocker pauses the loop.** A section boundary is
+  neither; the pause conditions remain the command body's own.
+- **The contract still ends at the last commit.** Reaching this boundary is not a close-out: the
+  branch review, the merge and the archive remain `quenching-specs-conclude`'s, exactly as they are
+  for a run that goes to the end.
 
 ## The loop's progress banner
 
