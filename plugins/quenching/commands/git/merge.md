@@ -6,7 +6,7 @@ description: >-
   "bring this branch home". Given a spec id it stamps the write-once `merge:` record and removes
   the worktree afterward. Not for: opening a pull request first → /quenching:git:pr:create; pruning
   branches already merged → /quenching:git:cleanup.
- argument-hint: [id-or-branch]
+argument-hint: [id-or-branch]
 allowed-tools: Bash(git worktree:*), Bash(git merge:*), Bash(git rebase:*), Bash(git branch:*), Bash(python3:*), Read, AskUserQuestion
 ---
 

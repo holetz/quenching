@@ -2,7 +2,7 @@
 type: standard
 title: The bundle root is the fixed `/docs/` convention
 description: The OKF bundle of a target repo lives at the fixed `/docs/` root and the design source at `/.design/` — neither root is configurable, because an LLM executor runs command bodies literally and a root it must resolve from configuration is a root it can resolve wrong
-resource: /docs/**, /.design/**
+resource: /docs/**
 tags: [architecture, bundle, okf, convention, config]
 timestamp: 2026-08-29
 audience: both

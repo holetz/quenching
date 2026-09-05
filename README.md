@@ -9,6 +9,8 @@ between repos sees one structure.
 This repository is a **plugin marketplace**. The plugin itself lives in
 [`plugins/quenching/`](plugins/quenching/).
 
+Release history is maintained in the [`CHANGELOG`](CHANGELOG.md).
+
 The Codex sibling lives in [`plugins/quenching-codex/`](plugins/quenching-codex/). Claude remains
 the only editable source; refresh the Codex snapshot locally with:
 
@@ -17,16 +19,18 @@ python3 scripts/sync_codex_plugin.py --write
 python3 scripts/sync_codex_plugin.py --check
 ```
 
-The same conversion can be requested manually through the `Sync Codex plugin` workflow. It does
-not run automatically on Claude changes; it generates an artifact only when a human dispatches it
-with `apply` enabled.
+The `Sync Codex plugin` workflow runs on pushes and pull requests. It installs the locked
+toolchain and runs the repository gate; it does not write the generated snapshot in CI. Refresh
+the Codex artifact locally after changing Claude sources.
 
 ## Desenvolvimento local
 
 Este checkout já declara o toolchain no `pyproject.toml` e fixa a resolução em `uv.lock`:
+o `cq` publicado requer Python 3.11 ou mais recente.
 
 ```bash
 uv sync --all-groups
+bash scripts/verify_repo.sh
 python3 plugins/quenching/assets/bin/cq knowledge site-source docs site-source --write
 uv run zensical build --clean --strict
 python3 plugins/quenching/assets/checks/documentation-site-check.py site --local --remote-policy error
@@ -60,20 +64,29 @@ optional consumer, and `cq design import` is the explicit route for folding its 
 
 ## Install
 
-This repository publishes under a **`develop` → `main`** flow
-([`docs/standards/git/branching.md`](docs/standards/git/branching.md)): `develop` is where specs
-accumulate, and `main` — the GitHub repository's default branch — only ever receives a
-deliberate, tagged release. Installing normally therefore always gets you a release someone
-chose to publish, never an arbitrary in-progress merge.
+This repository publishes from the single **`main`** branch
+([`docs/standards/git/branching.md`](docs/standards/git/branching.md)). Pull requests merge into
+`main`, and a deliberate local release act creates the tag and publishes the accumulated work.
+Installing normally therefore gets the repository's default branch, not an arbitrary in-progress
+checkout.
 
-Local (no marketplace publish needed):
+Published installation (recommended): inside Claude Code, add this marketplace and install the plugin:
+
+```text
+/plugin marketplace add holetz/claude-quenching
+/plugin install quenching@quenching
+```
+
+Run `/reload-plugins` after installation when Claude Code was already open.
+
+Local development only (no marketplace publish needed):
 
 ```bash
 claude --plugin-dir ./plugins/quenching
 ```
 
-Run from a checkout of `main` for the latest release; a checkout of `develop` carries whatever
-has been merged since, unreleased.
+`--plugin-dir` loads the working checkout directly for plugin development and testing; it is not
+the normal adoption or upgrade path. A published installation is managed by Claude Code.
 
 Then, inside a target repository, use the `/` menu — every command is
 `/quenching:<front>:<verb>` when installed as a plugin (`/quenching:knowledge:align`,

@@ -80,9 +80,11 @@ bundle; every install, update, and re-verification after that is **this** skill.
   offer `azure-pipelines-docs.yml` as a separate confirmation, and preserve any existing pipeline.
   The payload only publishes the strict `site/` directory as `documentation-site`; it is not a
   remote deployment.
-- **Capability register is the allow-list.** Read the accepted plan's capability register before
-  changing `zensical.toml` or requirements. For each `enabled` row, prove its prerequisite and merge
-  only its missing keys/dependency; `disabled` rows produce no configuration or install action.
+- **Capability register is the allow-list.** Read the accepted plan's capability register and the
+  [Zensical capability catalog](../../references/knowledge-documentation/zensical-capabilities.md)
+  §Capability catalog §Agent contract before changing `zensical.toml` or requirements. For each
+  `enabled` row, prove its prerequisite and merge only its missing keys/dependency; `disabled` rows
+  produce no configuration or install action.
 - **A legacy `mkdocs.yml` is read, never converted behind the human's back.** Zensical reads
   `mkdocs.yml` natively and says it always will, so a target that has one still builds and nothing
   is urgent. What silently stopped working there is its whole `plugins:` list, which is why any
@@ -305,7 +307,9 @@ warning is either a site-layer finding you fix now (a nav entry, a feature, an e
 page-level one you **report**. Where `site/` is tracked, run it against the throwaway root config
 instead (Doctrine), and delete that config afterwards. Inspect the rendered HTML for the title,
 `class="mermaid"`, `class="q-badge"`, the connected CSS and the `prefers-reduced-motion` guard. If
-no browser is available, use the static checks in `knowledge-documentation/validation.md` and state
+no browser is available, use the static checks in
+[knowledge-documentation/validation.md](../../references/knowledge-documentation/validation.md)
+§Static rendered checks §Required rendered effects and state
 that pixel-level dark/light/mobile QA was not run. If the toolchain is absent, report `unverified`
 and print the two commands. Never run `zensical serve`; never commit a built site. **Done when:**
 the build and rendered QA are real or explicitly unverified/static-only. Where the glossary is

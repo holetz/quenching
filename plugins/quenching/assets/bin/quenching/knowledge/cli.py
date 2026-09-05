@@ -21,7 +21,7 @@ CLI  `site-source [<bundle-dir>] [<destination>] [--write|--check|--json]`
    Materializes or verifies the bounded tree that Zensical may read. Raw `catalog/` and
    `external/` homes are never copied into it.
 
-`validate`, `project`, `nav` and `site-source` are the verbs `main` routes. The `hook` verb (`quenching.knowledge.hook.run_hook`,
+`validate`, `doctor`, `status`, `project`, `nav` and `site-source` are the verbs `main` routes. The `hook` verb (`quenching.knowledge.hook.run_hook`,
 answering the plugin's self-installed `PostToolUse`/`Stop`/`PreToolUse` wiring) was retired along
 with that wiring — this pillar no longer answers a hook event at all.
 
@@ -32,11 +32,15 @@ and re-adding it is one branch in `main`.
 """
 from __future__ import annotations
 
+import argparse
+from collections import Counter
 import json
 import os
 import sys
+from pathlib import Path
 
-from quenching.common.output import FINDINGS, OK, REFUSAL
+from quenching.common.frontmatter import parse_frontmatter
+from quenching.common.output import FINDINGS, OK, REFUSAL, emit
 from quenching.common.version import VERSION
 from quenching.knowledge.config import _load_config, _project_dir
 from quenching.knowledge.render import _render_activity, _render_text, _split
@@ -50,8 +54,9 @@ from quenching.knowledge.stale import resource_activity
 from quenching.knowledge.validate import _build_corpus, validate_tree
 
 
-USAGE = ("usage: cq knowledge {validate|project|nav|site-source} [<bundle-dir>] [options]   "
-         "(default bundle-dir: docs)")
+def _rooted(root: str, path: str) -> str:
+    """Resolve a pillar-relative path under the caller's repository root."""
+    return os.path.normpath(path if os.path.isabs(path) else os.path.join(root, path))
 
 
 def _activity_rows(bundle_root: str, ignore_globs: tuple[str, ...]) -> list[tuple[str, dict]]:
@@ -68,17 +73,129 @@ def _activity_rows(bundle_root: str, ignore_globs: tuple[str, ...]) -> list[tupl
     return rows
 
 
+HOMES = ("standards", "vision", "tutorials", "how-to", "explanation", "project",
+         "concepts", "external", "catalog")
+EXEMPT_DENSITY_NAMES = {"index.md", "log.md", "CLAUDE.md", "AGENTS.md"}
+
+
+def _knowledge_findings(findings: list[tuple[str, str, str, str]] | None) -> list[dict]:
+    return [{"severity": severity.lower(), "path": path, "code": code, "message": message}
+            for severity, path, code, message in (findings or [])]
+
+
+def _density(bundle_root: str) -> dict:
+    """Return the status figures without turning any figure into a finding."""
+    root = Path(bundle_root)
+    docs = [path for path in root.rglob("*.md")
+            if not any(part.startswith((".", "_")) for part in path.relative_to(root).parts)]
+    concept_docs = [path for path in docs if path.name not in EXEMPT_DENSITY_NAMES]
+    per_home = {home: 0 for home in HOMES if (root / home).is_dir()}
+    for path in concept_docs:
+        relative = path.relative_to(root).parts
+        if relative and relative[0] in per_home:
+            per_home[relative[0]] += 1
+    glossary_terms = 0
+    glossary = root / "glossary.md"
+    if glossary.is_file():
+        in_terms = False
+        for line in glossary.read_text(encoding="utf-8").splitlines():
+            if line.strip().casefold() == "## terms":
+                in_terms = True
+            elif in_terms and line.startswith("## "):
+                break
+            elif in_terms and line.lstrip().startswith(("- ", "* ")):
+                glossary_terms += 1
+    standards = root / "standards"
+    subjects = sorted(path.name for path in standards.iterdir()
+                      if path.is_dir()) if standards.is_dir() else []
+    timestamps = []
+    for path in concept_docs:
+        try:
+            timestamp = parse_frontmatter(path.read_text(encoding="utf-8")).get("timestamp")
+        except (OSError, UnicodeDecodeError):
+            timestamp = None
+        if timestamp:
+            timestamps.append(str(timestamp))
+    logs = sorted(str(path.relative_to(root)) for path in docs if path.name == "log.md")
+    return {
+        "conceptDocs": {"total": len(concept_docs), "perHome": per_home},
+        "glossary": {"terms": glossary_terms},
+        "standards": {"subjects": len(subjects), "withDocs": sum(
+            any(child.is_file() and child.suffix == ".md" and child.name not in EXEMPT_DENSITY_NAMES
+                for child in (standards / subject).iterdir())
+            for subject in subjects)},
+        "lastActivity": max(timestamps) if timestamps else None,
+        "retiredLogs": {"count": len(logs), "paths": logs},
+    }
+
+
+def _surface_payload(bundle_root: str, *, density: bool = False) -> dict:
+    if not os.path.isdir(bundle_root):
+        return {"root": bundle_root, "applicable": False, "state": "missing",
+                "findings": [], "errors": 0, "warnings": 0, "ok": True,
+                **({"density": {}} if density else {})}
+    findings = _knowledge_findings(validate_tree(bundle_root))
+    payload = {
+        "root": bundle_root,
+        "applicable": True,
+        "state": "conformant" if not findings else "findings",
+        "findings": findings,
+        "errors": sum(item["severity"] == "error" for item in findings),
+        "warnings": sum(item["severity"] == "warn" for item in findings),
+        "ok": not findings,
+    }
+    if density:
+        payload["density"] = _density(bundle_root)
+    return payload
+
+
+def _knowledge_args(argv: list[str], prog: str) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(prog=prog)
+    parser.add_argument("bundle", nargs="?", default="docs")
+    parser.add_argument("--root", default=".")
+    parser.add_argument("--json", action="store_true")
+    return parser.parse_args(argv)
+
+
+def _run_doctor(argv: list[str]) -> int:
+    args = _knowledge_args(argv, "cq knowledge doctor")
+    payload = _surface_payload(_rooted(args.root, args.bundle))
+    if not payload["applicable"]:
+        payload["message"] = "knowledge bundle is not installed; run knowledge align to install it"
+    emit(args.json, payload,
+         f"knowledge doctor — {payload['root']} ({len(payload['findings'])} finding(s))")
+    return 0 if payload["ok"] else FINDINGS
+
+
+def _run_status(argv: list[str]) -> int:
+    args = _knowledge_args(argv, "cq knowledge status")
+    payload = _surface_payload(_rooted(args.root, args.bundle), density=True)
+    payload["findingCodes"] = dict(sorted(Counter(item["code"] for item in payload["findings"]).items()))
+    emit(args.json, payload,
+         f"knowledge status — {payload['root']} ({payload['density'].get('conceptDocs', {}).get('total', 0)} document(s))")
+    return 0 if payload["ok"] else FINDINGS
+
+
 def run_cli(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(
+        prog="cq knowledge validate",
+        description="validate the OKF bundle without writing it",
+    )
+    parser.add_argument("bundle", nargs="?", default="docs")
+    parser.add_argument("--root", default=".", help="repository root (default: current directory)")
+    parser.add_argument("--activity", action="store_true", help="report activity instead of findings")
+    parser.add_argument("--json", action="store_true", help="machine-readable output")
+    args = parser.parse_args(argv)
+
     cfg = _load_config(_project_dir())
-    as_json = "--json" in argv
-    paths = [a for a in argv if not a.startswith("-")]
-    target = paths[0] if paths else "docs"
+    as_json = args.json
+    target = _rooted(args.root, args.bundle)
     ignore_globs = tuple(cfg.get("ignoreGlobs") or ())
     # The figure is its OWN output, never a section of the report. `stale-doc` was retired
     # because the comparison cannot support a verdict; printing the numbers beside findings
     # would rebuild the verdict out of adjacency. It also exits 0 whatever it prints — there
     # is no interval that is a failure.
-    if "--activity" in argv:
+    if args.activity:
         rows = _activity_rows(target, ignore_globs)
         if as_json:
             print(json.dumps([dict(activity, path=rel) for rel, activity in rows], indent=2))
@@ -108,10 +225,9 @@ def run_project(argv: list[str]) -> int:
     canonical glossary is staged as `glossary.md` in `site-source`, and no second editable copy
     exists.
     """
-    import argparse
-
     parser = argparse.ArgumentParser(prog="cq knowledge project")
     parser.add_argument("bundle", nargs="?", default="docs")
+    parser.add_argument("--root", default=".", help="repository root (default: current directory)")
     parser.add_argument("--snippet", default=DEFAULT_SNIPPET)
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--write", action="store_true", help="write the deterministic projection")
@@ -119,9 +235,7 @@ def run_project(argv: list[str]) -> int:
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
-    from pathlib import Path
-
-    bundle = Path(args.bundle)
+    bundle = Path(_rooted(args.root, args.bundle))
     if args.write:
         written = write_projection(bundle, args.snippet)
         payload = dict(written)
@@ -151,10 +265,9 @@ def run_nav(argv: list[str]) -> int:
 
     `--check` is the gate `site-nav-stale` reads: it is a byte comparison, because the generator
     is idempotent by construction. Anything it would change is a diff, never a judgement call."""
-    import argparse
-
     parser = argparse.ArgumentParser(prog="cq knowledge nav")
     parser.add_argument("bundle", nargs="?", default="docs")
+    parser.add_argument("--root", default=".", help="repository root (default: current directory)")
     parser.add_argument("--config", default="zensical.toml",
                         help="root zensical.toml whose nav is generated (default: zensical.toml)")
     mode = parser.add_mutually_exclusive_group()
@@ -165,62 +278,65 @@ def run_nav(argv: list[str]) -> int:
 
     from quenching.knowledge.nav import generate
 
-    if not os.path.isdir(args.bundle):
+    bundle = _rooted(args.root, args.bundle)
+    config = _rooted(args.root, args.config)
+    if not os.path.isdir(bundle):
         payload = {"ok": False, "code": "nav-no-bundle",
-                   "message": f"{args.bundle} is not a directory"}
+                   "message": f"{bundle} is not a directory"}
         print(json.dumps(payload, indent=2) if args.json else f"error: {payload['message']}",
               file=None if args.json else sys.stderr)
         return FINDINGS
 
-    current, desired = generate(args.bundle, args.config)
+    current, desired = generate(bundle, config)
     if not current:
         payload = {"ok": False, "code": "nav-config-unreadable",
-                   "message": f"{args.config} is missing or unreadable"}
+                   "message": f"{config} is missing or unreadable"}
         print(json.dumps(payload, indent=2) if args.json else f"error: {payload['message']}",
               file=None if args.json else sys.stderr)
         return FINDINGS
 
     stale = current != desired
     if stale and args.write:
-        with open(args.config, "w", encoding="utf-8") as handle:
+        with open(config, "w", encoding="utf-8") as handle:
             handle.write(desired)
     payload = {"ok": not stale or args.write,
                "mode": "write" if args.write else "check",
-               "config": args.config, "bundle": args.bundle,
+               "config": config, "bundle": bundle,
                "changed": bool(stale and args.write),
                "findings": ([] if not stale or args.write else
-                            [{"path": args.config, "code": "site-nav-stale",
+                            [{"path": config, "code": "site-nav-stale",
                               "message": "the nav does not match the bundle tree — "
                                          "run `cq knowledge nav --write`"}])}
     if args.json:
         print(json.dumps(payload, indent=2, ensure_ascii=False))
     elif args.write:
-        print(f"knowledge nav — {'rewrote' if stale else 'already current:'} {args.config}")
+        print(f"knowledge nav — {'rewrote' if stale else 'already current:'} {config}")
     else:
-        print(f"knowledge nav — {'STALE' if stale else 'current'}: {args.config}")
+        print(f"knowledge nav — {'STALE' if stale else 'current'}: {config}")
     return FINDINGS if payload["findings"] else OK
 
 
 def run_site_source(argv: list[str]) -> int:
     """Stage or verify the small, explicit source tree used by Zensical."""
-    import argparse
-
     parser = argparse.ArgumentParser(prog="cq knowledge site-source")
     parser.add_argument("bundle", nargs="?", default="docs")
     parser.add_argument("destination", nargs="?", default="site-source")
+    parser.add_argument("--root", default=".", help="repository root (default: current directory)")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--write", action="store_true", help="replace the generated source tree")
     mode.add_argument("--check", action="store_true", help="check without writing (the default)")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
+    bundle = _rooted(args.root, args.bundle)
+    destination = _rooted(args.root, args.destination)
 
     try:
         if args.write:
-            payload = stage_site_source(args.bundle, args.destination)
+            payload = stage_site_source(bundle, destination)
             payload["mode"] = "write"
             errors: list[dict] = []
         else:
-            payload, errors = site_source_findings(args.bundle, args.destination)
+            payload, errors = site_source_findings(bundle, destination)
             payload["mode"] = "check"
         payload["findings"] = errors
         payload["ok"] = not errors
@@ -234,7 +350,7 @@ def run_site_source(argv: list[str]) -> int:
         state = "OK" if payload["ok"] else "FINDINGS"
         print(f"knowledge site source — {state} ({payload.get('files', 0)} files)")
         for finding in payload["findings"]:
-            print(f"  [ERROR] {finding.get('path', args.destination)}: "
+            print(f"  [ERROR] {finding.get('path', destination)}: "
                   f"{finding['message']} ({finding['code']})")
     return FINDINGS if payload["findings"] else OK
 
@@ -256,21 +372,24 @@ def main(argv: list[str]) -> int:
     a move. A bundle root that is not a directory is still a `no-bundle` ERROR finding
     exiting `FINDINGS`, exactly as it always did. The `REFUSAL` below is the ROUTER's, on a
     word that names no verb, and it can only be reached before any bundle is read."""
-    if "--version" in argv:
-        # `cq knowledge`, not the pre-refactor validator's filename: task 10.1 deleted that file,
-        # so the stamp was naming an artifact the repo no longer ships. `citation-check.sh` cannot
-        # see it — its dead patterns match the script names WITH their extension, and this string
-        # carries none.
-        print(f"cq knowledge {VERSION}")
-        return OK
-    verb = argv[0] if argv else ""
-    if verb == "validate":
-        return run_cli(argv[1:])
-    if verb == "project":
-        return run_project(argv[1:])
-    if verb == "nav":
-        return run_nav(argv[1:])
-    if verb == "site-source":
-        return run_site_source(argv[1:])
-    print(USAGE, file=sys.stderr)
-    return REFUSAL
+    parser = argparse.ArgumentParser(
+        prog="cq knowledge",
+        description="the OKF bundle — validate and stage documentation surfaces",
+    )
+    parser.add_argument("--root", help="repository root (default: current directory)")
+    parser.add_argument("--version", action="version", version=f"cq knowledge {VERSION}")
+    parser.add_argument("verb", nargs="?", choices=("validate", "doctor", "status", "project", "nav", "site-source"),
+                        help="the knowledge operation")
+    parser.add_argument("rest", nargs=argparse.REMAINDER,
+                        help="the operation's bundle and options")
+    args = parser.parse_args(argv)
+    if not args.verb:
+        parser.print_help(sys.stderr)
+        return REFUSAL
+    rest = list(args.rest)
+    if args.root:
+        rest = ["--root", args.root] + rest
+    dispatch = {"validate": run_cli, "doctor": _run_doctor, "status": _run_status,
+                "project": run_project,
+                "nav": run_nav, "site-source": run_site_source}
+    return dispatch[args.verb](rest)

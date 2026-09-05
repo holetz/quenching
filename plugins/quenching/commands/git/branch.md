@@ -6,7 +6,7 @@ description: >-
   isolation for this build". Given a spec id it also stamps that spec's `branch:` record and
   marks the branch's own `quenching-specs:` description line. Not for: pruning branches/worktrees
   already merged or gone → /quenching:git:cleanup.
- argument-hint: [id-or-branch-name]
+argument-hint: [id-or-branch-name]
 allowed-tools: Bash, Read, AskUserQuestion
 ---
 

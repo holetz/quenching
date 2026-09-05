@@ -26,8 +26,8 @@ from quenching.specs.commands import read as read_module
 from quenching.specs.commands import validate as validate_module
 from quenching.specs.commands.cli import DISPATCH, build_parser
 from quenching.specs.commands.output import Emitter
-from quenching.specs.config import (GIT_CONVENTION_KEYS, infer_base_branch, load_config,
-                                    resolve_subject)
+from quenching.git.conventions import GIT_CONVENTION_KEYS, load_git_conventions
+from quenching.specs.config import infer_base_branch, load_config, resolve_subject
 from quenching.specs.parse.derive import derive_info
 from quenching.specs.parse.edit import write_handoff_block
 from quenching.specs.parse.handoff import current_handoff_section, parse_handoff
@@ -77,7 +77,7 @@ class InferBaseBranch(unittest.TestCase):
                 self.assertEqual(infer_base_branch(cfg, origin_head, init_default), want)
 
 
-class LoadConfigGitConventions(unittest.TestCase):
+class LoadGitConventions(unittest.TestCase):
     """`gitConventions` — the target's own directives for the texts the `git` pillar writes.
     Prompt material like a `tagCatalog` value, so the read keeps only a non-empty string under a
     recognised sub-key. The two ways it can be wrong are kept as their own lists rather than
@@ -92,13 +92,13 @@ class LoadConfigGitConventions(unittest.TestCase):
             os.makedirs(os.path.join(tmp, ".claude"))
             with open(os.path.join(tmp, ".claude", "quenching.json"), "w") as f:
                 json.dump(declared, f)
-            return load_config(os.path.join(tmp, ".specs"))
+            return load_git_conventions(tmp)
 
     def test_absent_declares_nothing_and_is_not_an_unknown_key(self):
         cfg = self._load()
-        self.assertEqual(cfg["gitConventions"], {})
-        self.assertEqual(cfg["unknownGitConventions"], [])
-        self.assertEqual(cfg["badGitConventions"], [])
+        self.assertEqual(cfg["config"], {})
+        self.assertEqual(cfg["configUnknown"], [])
+        self.assertEqual(cfg["configBad"], [])
 
     def test_the_five_recognised_directives_reflect_stripped(self):
         cfg = self._load({
@@ -107,24 +107,24 @@ class LoadConfigGitConventions(unittest.TestCase):
             "prTitle": "o subject do primeiro commit, sem o prefixo",
             "prBody": "tres blocos: o que muda, como provar, o que fica de fora",
             "mergeSubject": "Merge <branch> (<strategy>)"})
-        self.assertEqual(cfg["gitConventions"]["commitSubject"], "[TICKET] no imperativo")
-        self.assertEqual(sorted(cfg["gitConventions"]), sorted(GIT_CONVENTION_KEYS))
-        self.assertEqual(cfg["badGitConventions"], [])
+        self.assertEqual(cfg["config"]["commitSubject"], "[TICKET] no imperativo")
+        self.assertEqual(sorted(cfg["config"]), sorted(GIT_CONVENTION_KEYS))
+        self.assertEqual(cfg["configBad"], [])
 
     def test_a_sub_key_outside_the_five_is_named_rather_than_swallowed(self):
         cfg = self._load({"prDescription": "x", "prTitle": "y"})
-        self.assertEqual(cfg["gitConventions"], {"prTitle": "y"})
-        self.assertEqual(cfg["unknownGitConventions"], ["prDescription"])
+        self.assertEqual(cfg["config"], {"prTitle": "y"})
+        self.assertEqual(cfg["configUnknown"], ["prDescription"])
 
     def test_an_empty_or_non_string_directive_is_dropped_and_named(self):
         cfg = self._load({"commitSubject": "   ", "prBody": 7, "prTitle": "keep"})
-        self.assertEqual(cfg["gitConventions"], {"prTitle": "keep"})
-        self.assertEqual(cfg["badGitConventions"], ["commitSubject", "prBody"])
+        self.assertEqual(cfg["config"], {"prTitle": "keep"})
+        self.assertEqual(cfg["configBad"], ["commitSubject", "prBody"])
 
     def test_a_non_object_value_declares_nothing(self):
         cfg = self._load("veja docs/standards/git/")
-        self.assertEqual(cfg["gitConventions"], {})
-        self.assertEqual(cfg["unknownGitConventions"], [])
+        self.assertEqual(cfg["config"], {})
+        self.assertEqual(cfg["configUnknown"], [])
 
 
 class ResolveSubject(unittest.TestCase):

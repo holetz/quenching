@@ -8,7 +8,10 @@ one implementation left to hold to the table's word — and holding it there is 
 selftest subcommand's. The three in-script copies go with the parsers they were guarding.
 """
 
+import pathlib
+import tempfile
 import unittest
+from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.common.frontmatter import (
@@ -18,6 +21,7 @@ from quenching.common.frontmatter import (
     frontmatter_block,
     parse_frontmatter,
 )
+from quenching.common.io import write_text
 
 
 def doc(body: str) -> str:
@@ -59,6 +63,32 @@ class CanonicalCases(unittest.TestCase):
         for label, body, _, want in CANONICAL_CASES:
             with self.subTest(case=label):
                 self.assertEqual(kinds(doc(body)), tuple(sorted(want)))
+
+
+class AtomicWriter(unittest.TestCase):
+    def test_write_text_replaces_in_the_target_directory_and_leaves_no_temp_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target = pathlib.Path(tmp) / "nested" / "spec.md"
+            target.parent.mkdir()
+            target.write_text("old\n", encoding="utf-8")
+            with mock.patch("quenching.common.io.tempfile.mkstemp",
+                            wraps=tempfile.mkstemp) as mkstemp:
+                write_text(str(target), "new\n")
+
+            self.assertEqual(target.read_text(encoding="utf-8"), "new\n")
+            self.assertEqual(mkstemp.call_args.kwargs["dir"], str(target.parent))
+            self.assertEqual(list(target.parent.glob(f".{target.name}.tmp-*")), [])
+
+    def test_a_replace_failure_keeps_the_previous_document_and_cleans_the_temp_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target = pathlib.Path(tmp) / "spec.md"
+            target.write_text("old\n", encoding="utf-8")
+            with mock.patch("quenching.common.io.os.replace", side_effect=OSError("full disk")):
+                with self.assertRaises(OSError):
+                    write_text(str(target), "new\n")
+
+            self.assertEqual(target.read_text(encoding="utf-8"), "old\n")
+            self.assertEqual(list(target.parent.glob(f".{target.name}.tmp-*")), [])
 
 
 # (label, frontmatter body, expected type, expected value)
@@ -207,6 +237,31 @@ class Anomalies(unittest.TestCase):
     def test_the_same_unreadable_block_under_any_other_key_is_still_reported(self):
         self.assertEqual(kinds(doc(self.HOOKS_BLOCK.format(key="settings"))),
                          ("indented-continuation",))
+
+    def test_a_known_key_swallowed_by_a_folded_scalar_is_reported_with_its_line(self):
+        text = doc("description: >-\n  Trigger prose\n argument-hint: [input]\nallowed-tools: Read")
+        anomaly, = [a for a in frontmatter_anomalies(text) if a["kind"] == "swallowed-key"]
+        self.assertEqual(anomaly["key"], "argument-hint")
+        self.assertEqual(anomaly["parent"], "description")
+        self.assertEqual(anomaly["line"], 4)
+        self.assertIn("top-level", anomaly["detail"])
+
+
+class GitCommandFrontmatter(unittest.TestCase):
+    ROOT = pathlib.Path(__file__).resolve().parent.parent / "commands" / "git"
+
+    def test_git_commands_keep_argument_hint_at_the_top_level(self):
+        paths = [self.ROOT / "merge.md", self.ROOT / "branch.md",
+                 self.ROOT / "pr" / "create.md", self.ROOT / "revert.md"]
+        for path in paths:
+            with self.subTest(path=path):
+                parsed = parse_frontmatter(path.read_text(encoding="utf-8"))
+                self.assertIn("argument-hint", parsed)
+
+    def test_commit_uses_the_canonical_spec_id_placeholder(self):
+        text = (self.ROOT / "commit.md").read_text(encoding="utf-8")
+        self.assertIn("--spec <spec-id>", text)
+        self.assertNotIn("唯一", text)
 
 
 if __name__ == "__main__":

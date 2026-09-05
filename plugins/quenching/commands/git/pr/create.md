@@ -6,14 +6,15 @@ description: >-
   for review". Given a spec id it derives title, body and the provider locator from the spec and
   stamps its write-many `pr:` record. Not for: merging an already-open PR → /quenching:git:merge;
   resolving PR review comments → /quenching:git:pr:review.
- argument-hint: [id-or-title]
-allowed-tools: Bash(git push:*), Bash(git remote get-url:*), Bash(gh repo view:*), Bash(gh pr create:*), Bash(az repos pr:*), Bash(python3:*), Read, AskUserQuestion
+argument-hint: [id-or-title] [remote:<name>]
+allowed-tools: Bash(git push:*), Bash(git remote:*), Bash(gh repo view:*), Bash(gh pr create:*), Bash(az repos pr:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
 # /quenching:git:pr:create — push and open the pull request
 
 **Input**: `$ARGUMENTS` — a spec id (derives title, body and the provider's issue/work-item
-link), or free text to use as the PR title. Omitted → ask.
+link), or free text to use as the PR title. Append `remote:<name>` to select a remote; omitted
+→ `origin`. Omitted title → ask.
 
 Opens the PR and **stops there** — merging is `/quenching:git:merge`'s, on its own confirmation.
 The route follows `cq specs config --json`: `github` uses `gh`, `azure-boards` uses `az repos`; an
@@ -28,10 +29,11 @@ python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs config --json
 python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
   --sections "§The declared-directive layer"
 python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git conventions --json   # `config.prTitle`, `config.prBody`
-git remote get-url origin
+git remote -v
+git remote get-url <remote>
 python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git base --json
 ```
-After reading the config, run only the matching provider probe, after confirming the origin host
+After reading the config, run only the matching provider probe, after confirming the selected remote's host
 matches it:
 `github` → `gh repo view`; `azure-boards` → `az repos pr list --status all --top 1 --detect
 true`. A missing/mismatched origin, `NO-ROUTE`, or an unauthenticated host CLI → say plainly there
@@ -74,27 +76,33 @@ base **is** the repository's own default branch; otherwise it cross-references t
 not close it on merge. State that case from `isDefault`. For `azure-boards`, state that the native
 `--work-items <n>` association will be attached to the PR; `--transition-work-items true`, when
 chosen, asks Azure to transition linked work items when the PR is completed; and
-`--delete-source-branch true` asks Azure to delete the source branch after the PR is completed and
-merged. **Done when:** the provider-native link and branch-deletion effects are stated before
-publication.
+`--delete-source-branch true`, when the separate deletion offer is accepted, asks Azure to delete
+the source branch after the PR is completed and merged. Preserving the source branch is the default.
+**Done when:** the provider-native link and branch-deletion effects are stated before publication.
 
 ### 4. Push and open, on one confirmation
 Show the remote, the branch name it pushes under, and the title/body, and ask with
 **AskUserQuestion**:
-For Azure, show the work item id, that `--delete-source-branch true` is included, and whether
-`--transition-work-items true` is included in the command the human is confirming.
+For Azure, show the work item id, whether the separate source-branch deletion offer was accepted
+(`--delete-source-branch true`), and whether `--transition-work-items true` is included in the
+command the human is confirming. The deletion offer defaults to preserve the branch.
 ```bash
-git push -u origin <branch>
+git push -u <remote> <branch>
 # github
 gh pr create --base <base> --title "<title>" --body "<body>"
 # azure-boards
 az repos pr create --detect true --source-branch <branch> --target-branch <base> \
-  --title "<title>" --description "<body>" --delete-source-branch true [--work-items <n>] \
+  --title "<title>" --description "<body>" [--delete-source-branch true] [--work-items <n>] \
   [--transition-work-items true] --output json
 ```
-The host-specific command is selected from the configured provider. The target branch is explicit
+The host-specific command is selected from the configured provider. Normalize the create response
+to `id`, `webUrl` and `apiUrl` before reporting it: show `webUrl` as **Link para revisão** and
+`apiUrl` as **API URL**. For Azure, `webUrl` is
+`repository.webUrl/pullrequest/pullRequestId`, while the response's `url` remains `apiUrl`; never
+show a URL containing `/_apis/` as the Link para revisão. The target branch is explicit
 on both routes: `--base` for GitHub and `--target-branch` for Azure; neither may be omitted. Read
-the created PR's number/id and URL from the JSON/CLI result. **Done when:** the PR exists, or the
+the created PR's `id`, `webUrl` and `apiUrl` from the normalized JSON/CLI result. **Done when:**
+the PR exists, or the
 push/create failed and its error is reported verbatim.
 **Done when:** the provider-specific publication succeeded or its failure is reported.
 
@@ -105,23 +113,26 @@ records pass. A target that carries `standards/workflows/plan-git-record.md` sta
 
 ### 5. Stamp, with an ID
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs record "<id>" pr --set number=<provider-pr-id> --set url=<provider-url> --set date=<today>
+python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs record "<id>" pr --set number=<provider-pr-id> --set url=<webUrl> --set date=<today>
 ```
 `pr:` is **write-many** — a later PR on the same spec is a new fact.
 No ID → nothing to stamp; report the PR number and URL only. **Done when:** the record is stamped
 (with an ID) or the report carries the PR's own facts (without one).
 
 ### 6. Report
-State the provider, PR number/id, URL, base it targets, the effect of the native issue/work-item
+State the provider, PR id, **Link para revisão** (`webUrl`), **API URL** (`apiUrl`), base it targets, the effect of the native issue/work-item
 link (step 3), and **which layer governed the title and the body**. **Done when:** all five facts
 are named.
 
 ## Invariants
 
 - Never route an Azure repository through `gh`, or a GitHub repository through `az`.
+- Publish to the selected remote (`origin` when omitted); never silently substitute another
+  remote or treat a branch name as one.
 - Never omit `--base` on `gh pr create` or `--target-branch` on `az repos pr create`.
-- Always pass `--delete-source-branch true` on `az repos pr create`, so Azure removes the source
-  branch after the PR is completed and merged.
+- Never pass `--delete-source-branch true` by default. Offer it as a separate choice, explain that
+  it removes the source branch after completion, and include it only when the human confirms that
+  exact deletion.
 - Never push or open a PR without the human's confirmation on the exact remote, branch and title
   shown.
 - Never claim a provider-native issue/work-item link closes or transitions anything beyond the

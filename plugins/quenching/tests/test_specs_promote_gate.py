@@ -24,6 +24,7 @@ import tempfile
 import unittest
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
+from quenching.common.frontmatter import parse_frontmatter
 from quenching.specs.backends.memory import MemoryBackend
 from quenching.specs.commands import promote as promote_module
 from quenching.specs.commands.output import Emitter
@@ -47,7 +48,7 @@ def _promote_would_accept(info: dict) -> bool:
     return not [t for t in info["tasks"] if not t["checked"]]
 
 
-def _document(tasks: str | None) -> str:
+def _document(tasks: str | None, outcome: str = "- none — fixture") -> str:
     """A spec with every canonical section filled, so the SECTION half of the gate is satisfied
     and the task half is the only axis under test."""
     parts = ["---", "title: Gate fixture", "date: 2026-08-11", "---", ""]
@@ -58,8 +59,12 @@ def _document(tasks: str | None) -> str:
             if tasks is not None:
                 parts += ["### 1. The work", "", tasks.rstrip("\n"), ""]
         else:
-            parts += ["- none — fixture", ""]
+            parts += [outcome if heading == "Outcome" else "- none — fixture", ""]
     return "\n".join(parts) + "\n"
+
+
+def _document_with_outcome(tasks: str, outcome: str) -> str:
+    return _document(tasks, outcome)
 
 
 def _info(tasks: str | None) -> dict:
@@ -103,6 +108,16 @@ class ArchiveGateAgreement(unittest.TestCase):
         self.assertFalse(blocked[0]["checked"])
         self.assertFalse(_promote_would_accept(info))
 
+    def test_a_descoped_task_is_closed_by_its_explicit_outcome_reason(self):
+        reason = "task 1.1 descoped: this path is no longer needed"
+        info = derive_info({"phase": "plans", "slug": "gate-fixture", "file": "gate-fixture.md"},
+                           _document_with_outcome(
+                               "- [x] 1.1 Removed — descoped: this path is no longer needed\n",
+                               reason))
+        self.assertEqual(info["tasks"][0]["state"], "x")
+        self.assertTrue(_promote_would_accept(info))
+        self.assertIn(reason, info["sections"]["Outcome"]["body"])
+
 
 class TheSharedVerbAsksNoFilesystemQuestion(unittest.TestCase):
     """An external-style backend makes `promote` independent of any local path.
@@ -132,6 +147,26 @@ class TheSharedVerbAsksNoFilesystemQuestion(unittest.TestCase):
 
             self.assertEqual(code, 0, payload)
             self.assertEqual(backend.docs[spec_id][0], "archive")
+
+    def test_promote_accepts_a_descoped_task_without_force(self):
+        reason = "task 1.1 descoped: this path is no longer needed"
+        backend = MemoryBackend()
+        backend.create_spec("plans", _document_with_outcome(
+            "- [x] 1.1 Removed — descoped: this path is no longer needed\n", reason))
+        spec_id = max(backend.docs)
+        previous = promote_module.open_backend
+        self.addCleanup(setattr, promote_module, "open_backend", previous)
+        promote_module.open_backend = lambda _root: (backend, {})
+
+        buf = io.StringIO()
+        args = argparse.Namespace(json=True, spec=spec_id, to="archive", outcome="done",
+                                  force=False, dry_run=False)
+        with contextlib.redirect_stdout(buf):
+            code = promote_module.cmd_promote(args, ".", Emitter())
+
+        self.assertEqual(code, 0, buf.getvalue())
+        self.assertEqual(backend.docs[spec_id][0], "archive")
+        self.assertEqual(parse_frontmatter(backend.docs[spec_id][1])["outcome"], "done")
 
 
 if __name__ == "__main__":

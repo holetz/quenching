@@ -14,7 +14,7 @@
       ]
     },
     "profiles": {
-      "installed": ["knowledge", "specs", "components"]
+      "installed": ["knowledge", "specs", "design", "components", "ops", "proof", "toolchain", "delivery", "security", "git"]
     }
   },
   "specs": {

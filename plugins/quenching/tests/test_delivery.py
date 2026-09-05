@@ -2,11 +2,19 @@
 from __future__ import annotations
 
 import json
+import contextlib
+import io
 import pathlib
+import sys
 import tempfile
 import unittest
 
-import _paths  # noqa: F401 — must precede the `quenching` import
+try:
+    import _paths  # noqa: F401 — must precede the `quenching` import
+except ModuleNotFoundError:  # package-qualified unittest invocation from the repository root
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    import _paths  # noqa: F401
+from quenching.delivery.cli import main
 from quenching.delivery.doctor import doctor
 
 
@@ -205,6 +213,35 @@ class FrozenDeliveryResults(unittest.TestCase):
         self.assertEqual({"delivery-provider-policy", "delivery-environment-policy",
                           "delivery-publish-scope", "delivery-permission-policy"},
                          set(payload["judgement"]["codes"]))
+
+
+class DeliveryCli(unittest.TestCase):
+    def test_cli_routes_inventory_status_and_no_command(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                self.assertEqual(2, main(["--root", str(root)]))
+
+            workflow = root / ".github" / "workflows" / "ci.yml"
+            workflow.parent.mkdir(parents=True)
+            workflow.write_text(
+                "name: CI\non: [push, pull_request]\njobs:\n"
+                "  test:\n    runs-on: ubuntu-latest\n    steps:\n"
+                "      - uses: actions/checkout@v4\n"
+                "      - uses: actions/setup-python@v5\n"
+                "        with:\n          python-version: '3.11'\n"
+                "      - run: python -m unittest\n", encoding="utf-8")
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                self.assertEqual(0, main(["--root", str(root), "inventory", "--json"]))
+            self.assertEqual([".github/workflows/ci.yml"],
+                             [item["path"] for item in json.loads(output.getvalue())["workflows"]])
+
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                self.assertEqual(0, main(["--root", str(root), "status", "--json"]))
+            self.assertTrue(json.loads(output.getvalue())["ok"])
 
 
 if __name__ == "__main__":

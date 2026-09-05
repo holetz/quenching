@@ -12,11 +12,16 @@ they moved to `test_frontmatter.py` with the parser they prove, per that module'
 """
 import os
 import pathlib
+import contextlib
+import io
+import json
 import tempfile
 import unittest
+from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.knowledge.schema import RESERVED
+from quenching.knowledge import cli as knowledge_cli
 from quenching.knowledge.validate import validate_tree
 
 
@@ -27,6 +32,69 @@ def _validated(fixture: dict) -> list[tuple[str, str, str, str]]:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             pathlib.Path(path).write_text(text, encoding="utf-8")
         return validate_tree(tmp)
+
+
+class KnowledgeCliContract(unittest.TestCase):
+    def test_validate_resolves_bundle_under_root(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = io.StringIO()
+            with (mock.patch.object(knowledge_cli, "_load_config", return_value={}),
+                  mock.patch.object(knowledge_cli, "_project_dir", return_value=tmp),
+                  mock.patch.object(knowledge_cli, "validate_tree", return_value=[]) as validate,
+                  contextlib.redirect_stdout(output)):
+                code = knowledge_cli.main(["--root", tmp, "validate", "--json"])
+
+        self.assertEqual(code, 0)
+        self.assertEqual(validate.call_args.args[0], os.path.join(tmp, "docs"))
+        self.assertEqual(json.loads(output.getvalue()), [])
+
+    def test_validate_accepts_root_after_the_verb(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with (mock.patch.object(knowledge_cli, "_load_config", return_value={}),
+                  mock.patch.object(knowledge_cli, "_project_dir", return_value=tmp),
+                  mock.patch.object(knowledge_cli, "validate_tree", return_value=[]) as validate,
+                  contextlib.redirect_stdout(io.StringIO())):
+                code = knowledge_cli.main(["validate", "--root", tmp, "--json"])
+
+        self.assertEqual(code, 0)
+        self.assertEqual(validate.call_args.args[0], os.path.join(tmp, "docs"))
+
+    def test_help_is_argparse_help(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            with self.assertRaises(SystemExit) as raised:
+                knowledge_cli.main(["--help"])
+
+        self.assertEqual(raised.exception.code, 0)
+        self.assertIn("usage: cq knowledge", output.getvalue())
+
+    def test_doctor_is_a_read_only_molded_view(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pathlib.Path(tmp, "docs").mkdir()
+            output = io.StringIO()
+            with (mock.patch.object(knowledge_cli, "validate_tree", return_value=[]),
+                  contextlib.redirect_stdout(output)):
+                code = knowledge_cli.main(["doctor", "--root", tmp, "--json"])
+
+        payload = json.loads(output.getvalue())
+        self.assertEqual(code, 0)
+        self.assertEqual(payload["state"], "conformant")
+        self.assertEqual(payload["findings"], [])
+        self.assertTrue(payload["ok"])
+
+    def test_status_adds_density_without_turning_figures_into_findings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pathlib.Path(tmp, "docs").mkdir()
+            output = io.StringIO()
+            with (mock.patch.object(knowledge_cli, "validate_tree", return_value=[]),
+                  contextlib.redirect_stdout(output)):
+                code = knowledge_cli.main(["status", "--root", tmp, "--json"])
+
+        payload = json.loads(output.getvalue())
+        self.assertEqual(code, 0)
+        self.assertEqual(payload["findingCodes"], {})
+        self.assertIn("density", payload)
+        self.assertNotIn("code", payload["density"])
 
 
 # --------------------------------------------------------------------------- #

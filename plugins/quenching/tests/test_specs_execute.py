@@ -5,6 +5,7 @@ the git history shape that language promises: two tasks remain two commits after
 finishes.
 """
 
+import json
 from pathlib import Path
 import subprocess
 import tempfile
@@ -14,6 +15,8 @@ import unittest
 ROOT = Path(__file__).resolve().parents[3]
 COMMAND = ROOT / "plugins/quenching/commands/specs/execute.md"
 REFERENCE = ROOT / "plugins/quenching/assets/references/specs-execute/execution.md"
+CONCLUDE = ROOT / "plugins/quenching/commands/specs/conclude.md"
+SCALE = ROOT / "plugins/quenching/assets/references/specs-develop/spec-driven.md"
 
 
 def git(cwd, *args):
@@ -28,6 +31,51 @@ def git(cwd, *args):
 
 
 class TaskExecutionContractTests(unittest.TestCase):
+    def test_execute_delegates_commit_and_does_not_duplicate_subject_resolution(self):
+        command = COMMAND.read_text(encoding="utf-8")
+        commit = (ROOT / "plugins/quenching/commands/git/commit.md").read_text(encoding="utf-8")
+
+        self.assertIn('Skill("quenching:git:commit", "<id>")', command)
+        self.assertIn("single commit boundary", commit)
+        self.assertNotIn("git commit -m", command)
+        self.assertNotIn('--subject "plan/<id>-<handle>', command)
+
+    def test_external_backend_records_task_after_the_delegated_commit(self):
+        command = COMMAND.read_text(encoding="utf-8")
+        reference = REFERENCE.read_text(encoding="utf-8")
+
+        self.assertLess(command.index("git add <the task's declared files>"),
+                        command.index('Skill("quenching:git:commit", "<id>")'))
+        self.assertLess(command.index('Skill("quenching:git:commit", "<id>")'),
+                        command.index("cq specs task --check <id>"))
+        self.assertIn('--commit "<sha reported by git:commit>"', command)
+        self.assertIn("provider tick **fails**", reference)
+        self.assertIn("preserve the commit", reference)
+        self.assertNotIn("<the spec file>", reference)
+
+    def test_execute_runs_enabled_hooks_and_reports_optional_failures(self):
+        command = COMMAND.read_text(encoding="utf-8")
+        config = json.loads((ROOT / ".agents" / "quenching.json").read_text(encoding="utf-8"))
+
+        self.assertIn('Skill("<declared hook command>",', command)
+        self.assertIn("optional: true", command)
+        self.assertIn("condition", command)
+        self.assertIn("enabled: false", command)
+        self.assertIn("An optional hook failure is reported", command)
+        self.assertEqual(
+            config["shared"]["hooks"]["after_specs_execute_task"],
+            [{"command": "/my:security-review", "optional": True}],
+        )
+
+    def test_low_gear_chains_conclude_to_the_provider_pr_skill(self):
+        conclude = CONCLUDE.read_text(encoding="utf-8")
+        scale = SCALE.read_text(encoding="utf-8")
+
+        self.assertIn('Skill("quenching:git:pr:create", "<id>")', conclude)
+        self.assertIn("`low` chains the provider handoff", conclude)
+        self.assertIn('Skill("quenching:git:pr:create", "<id>")', scale)
+        self.assertIn("The other levels retain", scale)
+
     def test_explicit_subject_commits_only_staged_files(self):
         with tempfile.TemporaryDirectory() as directory:
             git(directory, "init", "-q", "-b", "main")

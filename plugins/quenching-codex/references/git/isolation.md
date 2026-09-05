@@ -138,7 +138,7 @@ command runs. A setup script must not re-create, replace or remove a path declar
 
 See
 [plugin-configuration.md](../../references/specs-align/plugin-configuration.md)
-§The recognised keys.
+§The envelope and recognised namespaces.
 
 Read by `cq specs config --json` (exit 0 whether or not anything is declared) and run **once** by
 the inline offer, immediately after `git worktree add`, with **cwd inside the new worktree** — the

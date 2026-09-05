@@ -1,4 +1,5 @@
-"""The version lockstep's mechanical half — the four artifacts and the two-pass
+"""The version lockstep's mechanical half — the four artifacts and the changelog
+entry check, followed by the two-pass
 bump that moves all of them or none.
 
 Moved verbatim out of the pre-refactor specs script."""
@@ -29,16 +30,22 @@ RELEASE_ARTIFACTS = (
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
 _RELEASE_JSON_VERSION_RE = re.compile(r'("version"\s*:\s*")([^"]+)(")')
 _RELEASE_PY_VERSION_RE = re.compile(r'^(VERSION\s*=\s*["\'])([^"\']+)(["\'])', re.M)
+_CHANGELOG_ENTRY_RE = re.compile(r"^##\s+([^\s#]+)\s*$", re.MULTILINE)
 
 
 def bump_release_artifacts(repo_root: str, new_version: str) -> dict:
-    """Move all four version-carrying artifacts to `new_version`, or change NOTHING.
+    """Require a changelog entry, then move all four artifacts or change NOTHING.
 
-    Two passes on purpose. The first only READS: every artifact's current version is
+    The changelog gate and the first pass only READ: every artifact's current version is
     collected before anything is written, so a lockstep that is ALREADY drifted — one
     artifact disagreeing with the rest — is refused outright rather than compounded with
     a fifth value. The second pass writes only once every artifact was read
     successfully and every one of them agreed."""
+    changelog = read_text(os.path.join(repo_root, "CHANGELOG.md"))
+    if changelog is None or new_version not in _CHANGELOG_ENTRY_RE.findall(changelog):
+        return {"ok": False,
+                "error": f"CHANGELOG.md has no release entry: ## {new_version}",
+                "artifacts": []}
     reads: list[dict] = []
     for rel, kind in RELEASE_ARTIFACTS:
         path = os.path.join(repo_root, rel)

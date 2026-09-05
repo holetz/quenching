@@ -12,7 +12,7 @@ from quenching.common.config import (CONFIG_FILE, LEGACY_CONFIG_FILE,
                                      detect_provider as _common_detect_provider,
                                      find_repo_root as _common_find_repo_root,
                                      infer_base_branch,
-                                     load_config as load_envelope)
+                                     load_config as load_envelope, namespace)
 from quenching.common.git import _git
 from quenching.specs.parse.spec import PHASE_DIRS, PHASES
 
@@ -70,9 +70,7 @@ def root_too_high_message(root: str) -> str:
 CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "sharedPaths", "azureStates",
                "hooks", "profiles",
                "azurePlacement", "azureColumns", "subjects", "tagCatalog",
-               "workItemTypes", "gitConventions", "opsRoot", "router")
-PROOF_CONFIG_KEYS = ("proofRoot", "layers", "measuredRoots", "proofExclusions", "ratchetPath")
-CONFIG_KEYS = CONFIG_KEYS + PROOF_CONFIG_KEYS
+               "workItemTypes")
 BACKENDS = ("github", "azure-boards")
 # `azurePlacement`'s recognised sub-keys. Only `areaPath` is required, and its absence is a
 # REFUSAL rather than a default — the same argument `azureStates` already carries, applied to
@@ -84,11 +82,6 @@ AZURE_PLACEMENT_KEYS = ("areaPath", "workItemType", "discoveryTag", "team",
 # same argument `specsBranch` already carries — so it defaults rather than refuses;
 # configurable only to resolve a collision with a tag the project already uses.
 AZ_DEFAULT_DISCOVERY_TAG = "quenching-spec"
-# `gitConventions`' recognised sub-keys — one per text the `git` pillar writes. Each value is
-# PROMPT MATERIAL, exactly as a `tagCatalog` value is: an agent reads the directive and writes the
-# text. Nothing here interpolates a placeholder, expands a template, or judges what came out —
-# which is why the tuple is the whole of the contract the loader can hold.
-GIT_CONVENTION_KEYS = ("commitSubject", "branchName", "prTitle", "prBody", "mergeSubject")
 DEFAULT_BACKEND = None
 DEFAULT_SPECS_BRANCH = "specs"
 # Unlike `specsBranch`, these two default to `None` in `load_config`'s own return — never
@@ -111,12 +104,14 @@ DEFAULT_RELEASE_BRANCH = "main"
 # The shape is checked at the read: an event must map to a list of hook objects each
 # carrying a non-empty string `command`; anything else is left out of the read. One filter
 # rides on that shape check — `enabled: false` never leaves here, per extension-points.md —
-# and `condition` is carried along untouched, never evaluated by anything in this tool.
+# and `condition` is carried along untouched for the owning executor, never evaluated by the
+# parser. `optional` is normalised to a boolean so a hook runner can report its failure policy
+# without guessing what an absent field means.
 
 # `profiles` has NO default — an absent key declares nothing, which install-profiles.md reads
-# as "all four fronts installed", the ordinary case. Like `hooks`, its shape is checked at
-# the read (`installed` must be a list of non-empty strings) and its content is never
-# interpreted: what a front is, and what the list means, is the standard's, not the loader's.
+# as all seven local fronts eligible for the root align, the ordinary case. Like `hooks`, its
+# shape is checked at the read (`installed` must be a list of non-empty strings) and its content is
+# carried as data: the align conductor owns the scope decision, not this loader.
 
 # The backends that ship without ever having run against a real target. Empty now:
 # `azure-boards` was the one name here, and the provar-e-posicionar-o-backend-azure-boards
@@ -209,8 +204,8 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     path = envelope["path"]
     raw = envelope["data"]
     values: dict = {}
-    for namespace in ("shared", "specs"):
-        values.update(envelope[namespace])
+    for name in ("shared", "specs"):
+        values.update(namespace(envelope, name))
     provider = envelope["provider"]
     provider_host = envelope["providerHost"]
     out = {"path": path, "present": os.path.isfile(path), "unparseable": None,
@@ -224,9 +219,6 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
            "azureStates": None, "hooks": {}, "profiles": None,
            "azurePlacement": {}, "azureColumns": {}, "subjects": {}, "tagCatalog": {},
            "workItemTypes": {},
-           "gitConventions": {}, "unknownGitConventions": [], "badGitConventions": [],
-           "proofRoot": "tests", "layers": {}, "measuredRoots": [],
-           "proofExclusions": [], "ratchetPath": None,
            "legacyPath": envelope["legacyPath"]}
     if envelope["unparseable"]:
         out["unparseable"] = envelope["unparseable"]
@@ -256,24 +248,6 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
         if isinstance(value, str) and value.strip():
             out[key] = value.strip()
 
-    proof_root = values.get("proofRoot")
-    if isinstance(proof_root, str) and proof_root.strip():
-        out["proofRoot"] = proof_root.strip()
-
-    layers = values.get("layers")
-    if isinstance(layers, dict):
-        out["layers"] = layers
-
-    for key in ("measuredRoots", "proofExclusions"):
-        declared = values.get(key)
-        if isinstance(declared, list):
-            out[key] = [value.strip() for value in declared
-                        if isinstance(value, str) and value.strip()]
-
-    ratchet_path = values.get("ratchetPath")
-    if isinstance(ratchet_path, str) and ratchet_path.strip():
-        out["ratchetPath"] = ratchet_path.strip()
-
     # Both phases or neither. A half-declared mapping is worse than none: it would archive a
     # spec into a state the project has and then fail to recognise it on the way back.
     states = values.get("azureStates")
@@ -298,7 +272,7 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
                 if hook.get("enabled") is False:
                     # extension-points.md: filtered at the read, never announced.
                     continue
-                row: dict = {"command": command.strip()}
+                row: dict = {"command": command.strip(), "optional": hook.get("optional") is True}
                 for field, kind in (("optional", bool), ("condition", str), ("prompt", str)):
                     value = hook.get(field)
                     if isinstance(value, kind):
@@ -395,30 +369,6 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
             types[key.strip()] = entry
         out["workItemTypes"] = types
 
-    # The target's own directives for the texts the `git` pillar writes, one per artifact.
-    # `shared`, not `specs`: the `git` pillar is read by every front's build loop, exactly as
-    # `worktreeSetup`, `hooks` and `profiles` are.
-    # Prompt material like `tagCatalog`, so a value that is not a non-empty string cannot direct
-    # anything and is dropped — but it is dropped INTO A NAMED LIST rather than into silence, the
-    # same argument `cmd_doctor` already makes for `worktree_setup` written where `worktreeSetup`
-    # was expected: a directive nobody reads and nobody mentions is the one failure mode of a
-    # machine-read convention.
-    conventions_raw = values.get("gitConventions")
-    if isinstance(conventions_raw, dict):
-        conventions: dict[str, str] = {}
-        bad: list[str] = []
-        for key, val in conventions_raw.items():
-            if not (isinstance(key, str) and key.strip() in GIT_CONVENTION_KEYS):
-                continue
-            if isinstance(val, str) and val.strip():
-                conventions[key.strip()] = val.strip()
-            else:
-                bad.append(key.strip())
-        out["gitConventions"] = conventions
-        out["badGitConventions"] = sorted(bad)
-        out["unknownGitConventions"] = sorted(
-            k.strip() for k in conventions_raw
-            if isinstance(k, str) and k.strip() and k.strip() not in GIT_CONVENTION_KEYS)
     return out
 
 

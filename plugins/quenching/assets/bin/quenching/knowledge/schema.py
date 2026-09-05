@@ -28,6 +28,8 @@ from __future__ import annotations
 
 import re
 
+from quenching.common.git import COMMAND_TIMEOUT_S
+
 # `log.md` is RETIRED, not unreserved: it keeps its slot here (and its skip in the
 # PreToolUse hard block) so a log surviving in an already-aligned bundle stays
 # recognized. Drop it from this tuple and every such file falls through to the
@@ -60,7 +62,7 @@ RESOLVABLE_KINDS = ("path", "glob")
 ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 # Seconds `stale-doc` waits on one `git log`. CLI-only, but a pathological repo must
 # not hang an operator's sweep; a timeout yields no finding rather than a wrong one.
-GIT_TIMEOUT_S = 10
+GIT_TIMEOUT_S = COMMAND_TIMEOUT_S
 # Directories that never need an `index.md` and hold no OKF concepts: `_`-prefixed
 # private/raw sidecar folders (`_curadoria/`, `_azimutt/`), dotfolders, and common
 # asset dirs. Pruned from the structural walk (dir-index / broken-link / orphan).

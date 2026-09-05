@@ -10,7 +10,7 @@ import json
 import os
 
 from quenching.common.git import _git
-from quenching.common.io import read_text
+from quenching.common.io import read_text, write_text
 
 
 CONFIG_FILE = os.path.join(".claude", "quenching.json")
@@ -189,3 +189,116 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     )
     out["migrationRefusal"] = _migration_refusal(path, obj, out["legacyKeys"])
     return out
+
+
+def namespace(config: dict, name: str) -> dict:
+    """Return one parsed namespace without letting a caller fall back to another one.
+
+    The envelope is the shared loader's boundary; this small accessor keeps adapters from
+    reaching through it with a flat-key fallback.  A malformed or absent namespace is an empty
+    declaration and remains the owning adapter's decision to accept or refuse.
+    """
+    namespaces = config.get("namespaces")
+    if not isinstance(namespaces, dict):
+        return {}
+    value = namespaces.get(name)
+    return value if isinstance(value, dict) else {}
+
+
+def detect_profile(root: str, backend: str | None = None) -> list[str]:
+    """Detect the fronts with a local signal for a first-use profile.
+
+    This is deliberately a conservative signal inventory, not an align implementation. It
+    only names a front when the same inexpensive filesystem evidence that `/align` documents is
+    present. The provider-owned `specs` axis is included when a backend is known, because its
+    external document store has no local directory to probe.
+    """
+    repo = os.path.abspath(root)
+
+    def has_executable(directory: str) -> bool:
+        path = os.path.join(repo, directory)
+        if not os.path.isdir(path):
+            return False
+        try:
+            with os.scandir(path) as entries:
+                return any(entry.is_file() and os.access(entry.path, os.X_OK)
+                           for entry in entries)
+        except OSError:
+            return False
+
+    def has_file(directory: str) -> bool:
+        path = os.path.join(repo, directory)
+        if not os.path.isdir(path):
+            return False
+        try:
+            with os.scandir(path) as entries:
+                return any(entry.is_file() for entry in entries)
+        except OSError:
+            return False
+
+    detected: list[str] = []
+    if os.path.isdir(os.path.join(repo, "docs")):
+        detected.append("knowledge")
+    if any(os.path.exists(os.path.join(repo, name))
+           for name in (".design", "PRODUCT.md", "DESIGN.md")):
+        detected.append("design")
+    if any(has_file(name) for name in (os.path.join(".claude", "commands"),
+                                       os.path.join(".agents", "skills"), "commands")):
+        detected.append("components")
+    if any(has_executable(name) for name in ("scripts", "tools", "bin", "script")):
+        detected.append("ops")
+    if any(has_file(name) for name in ("tests", "test")):
+        detected.append("proof")
+    if any(os.path.isfile(os.path.join(repo, name)) for name in (
+            "pyproject.toml", "setup.cfg", "package.json", "Cargo.toml", "uv.lock",
+            "poetry.lock", "package-lock.json", "Cargo.lock", ".python-version", ".nvmrc")):
+        detected.append("toolchain")
+    if any(has_file(name) for name in (os.path.join(".github", "workflows"),
+                                       ".azure-pipelines", ".gitlab")):
+        detected.append("delivery")
+    if backend:
+        # `specs` is not part of LOCAL_FRONT_ORDER because it has no local align row. Keeping it
+        # beside knowledge still makes the generated profile stable and human-readable.
+        detected.insert(1 if detected and detected[0] == "knowledge" else 0, "specs")
+    return detected
+
+
+def prepare_minimal_config(root: str) -> tuple[dict | None, dict]:
+    """Prepare the first-use envelope without writing it or clobbering an existing one."""
+    repo = os.path.abspath(find_repo_root(root))
+    path = os.path.join(repo, CONFIG_FILE)
+    if os.path.isfile(path):
+        return None, {
+            "code": "cq-config-present",
+            "exit": 2,
+            "config": path,
+            "message": f"{CONFIG_FILE} already exists; setup will not overwrite it",
+            "remedy": f"use the existing {CONFIG_FILE}, or edit it explicitly before rerunning doctor",
+        }
+    backend, host = detect_provider(repo)
+    if not backend:
+        return None, {
+            "code": "cq-setup-provider-missing",
+            "exit": 2,
+            "config": path,
+            "provider": host,
+            "message": "first-use setup could not detect a GitHub or Azure DevOps provider",
+            "remedy": "configure an origin remote for GitHub or Azure DevOps, then rerun `cq doctor --setup`",
+        }
+    profile = detect_profile(repo, backend)
+    document = {
+        "backend": backend,
+        "shared": {"profiles": {"installed": profile}},
+    }
+    return {"path": path, "backend": backend, "profile": profile, "document": document}, {}
+
+
+def write_minimal_config(root: str) -> tuple[dict | None, dict]:
+    """Write the prepared first-use envelope after the caller's explicit confirmation."""
+    plan, error = prepare_minimal_config(root)
+    if error:
+        return None, error
+    assert plan is not None
+    os.makedirs(os.path.dirname(plan["path"]), exist_ok=True)
+    write_text(plan["path"], json.dumps(plan["document"], indent=2, ensure_ascii=False) + "\n")
+    return {**plan, "written": True}, {}

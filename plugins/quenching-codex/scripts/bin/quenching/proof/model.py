@@ -10,6 +10,8 @@ import os
 from dataclasses import dataclass, field
 from typing import Any
 
+from quenching.common.front import Finding
+
 
 def _relative(path: str, root: str) -> str:
     value = os.path.relpath(path, root).replace(os.sep, "/")
@@ -161,21 +163,3 @@ class ProofInventory:
             "exclusions": list(self.exclusions),
             "sourceSurfaces": list(self.source_surfaces),
         }
-
-
-@dataclass(frozen=True)
-class Finding:
-    code: str
-    severity: str
-    message: str
-    path: str | None = None
-    layer: str | None = None
-
-    def as_dict(self) -> dict[str, Any]:
-        value: dict[str, Any] = {"code": self.code, "severity": self.severity,
-                                 "message": self.message}
-        if self.path is not None:
-            value["path"] = self.path
-        if self.layer is not None:
-            value["layer"] = self.layer
-        return value

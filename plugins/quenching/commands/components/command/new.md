@@ -1,7 +1,7 @@
 ---
 description: Mint or edit ONE command in this repo's .claude surface — one file per entry point. Triggers on "create a command", "mint a command for X", "add a new entry point to the .claude surface". Not for: creating an agent → /quenching:components:agent:new; creating a hook → /quenching:components:hook:new; rewriting the whole surface → /quenching:components:align.
 argument-hint: [skill-name-or-description]
-allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit
+allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
 ---
 
 # /quenching:components:command:new — mint ONE conformant command, registry included
@@ -164,7 +164,7 @@ named in the report with its code.
 - Never write before the single OK; a declined plan leaves the repo untouched.
 - Never delete a command, and never clobber an existing body — MERGE.
 - Never path a generic command under a folder; never mint a directory-scoped surface
-  (accepted variation when found, never generated — taxonomy §placement).
+  (accepted variation when found, never generated — taxonomy.md §Placement).
 - Never write anything but an entry point under `commands/` — shared procedure, references and
   fixtures live outside it and are cited by absolute path.
 - Never hand this command file `context: fork` — the plan gate is mid-flow.

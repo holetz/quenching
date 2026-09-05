@@ -59,7 +59,13 @@ The mold does not erase domain meaning:
   genre destinations;
 - ops keeps its namespaced `opsRoot`, router, registry, inventory, lifecycle and `op-*` findings;
 - proof keeps its namespaced proof root, layers, fixture reach, measured roots, floors, CI, order
-  evidence and `pf-*` findings.
+  evidence and `pf-*` findings;
+- toolchain keeps its declared scope, manifests, locks, language pins, tool configuration and
+  `tc-*` findings while build policy remains target-owned;
+- delivery keeps its provider-equivalent workflow inventory, reachability and `delivery-*`
+  findings while provider, environment, publication and permission policy remains target-owned;
+- security remains a read-only pillar over workflow permissions, secret-ignore coverage, advisory
+  configuration and access ownership, with no converging tree and no exposed values.
 
 Read the binding architecture standard for the measured footprint, host decision and full delta
 contract. This projection is updated only when that host changes, then translated to the Codex

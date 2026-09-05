@@ -15,3 +15,4 @@ stable headings. The vocabulary lives one level up, in the bundle's own
   `cq components registry reindex`.
 - [Repository layout](layout.md) — what sits where in this checkout, directory by directory,
   and which command owns each surface.
+- [Changelog](changelog.md) — the versioned release history extracted from the plugin README.

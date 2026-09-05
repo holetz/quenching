@@ -2,22 +2,9 @@
 
 <!-- rules -->
 
-This file is self-contained: a delivery align reads it to decide what it may apply and what it
-must report for a human decision. The common front minimum and route floor live in
-`docs/standards/architecture/front-mold.md`; this file owns delivery finding codes, their
-disposition bands and the pipeline-specific closure shapes.
-
-## The axis is who decides
-
-Every finding belongs to one band according to the person or mechanism that can honestly decide
-its closure. The band is a disposition, not a severity: severity says how the contract is
-violated, while the band says who may choose the repair.
-
-| Band | Who decides | What the align does |
-| --- | --- | --- |
-| **Mechanical** | A deterministic source and its generated delivery artifact | Regenerates the artifact and reruns the verifier without a per-item question. |
-| **Structural** | The delivery contract and the one run authorization | Reports the bounded shape repair and reruns the verifier after an authorized change. |
-| **Judgement** | The human who owns delivery and release risk | Reports evidence and a closing decision; never chooses policy automatically. |
+This file owns delivery finding codes, their disposition bands and the pipeline-specific closure
+shapes. The common axis is defined in
+[`front-align/mold.md`](../front-align/mold.md) §Disposition bands.
 
 ## Mechanical findings
 

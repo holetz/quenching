@@ -2,7 +2,7 @@
 type: standard
 title: Retiring a standard — removal, the stamp, and the review as the net
 description: How a bundle standard is retired — removal, never deprecation (the verb is `git rm`; a doc that survives annotated becomes a ritual nobody acts on); the inheriting doc carries the `retired with <doc> (<spec>, <data>)` stamp in its `source:` and in its body; the citation sweep is human and `## Impact` must name the class of docs that cite it; the listing's GENERATED zone is rebuilt in the same movement; and the branch review is the net — with resource activity read as a figure, never as a failure
-resource: /docs/**, /.specs/**
+resource: /docs/**
 tags: [workflows, docs, bundle, retirement]
 timestamp: 2026-08-27
 audience: both

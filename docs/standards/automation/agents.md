@@ -2,7 +2,7 @@
 type: standard
 title: Subagent authoring
 description: When work becomes a subagent, the definition contract for .claude/agents/, and how the surface is inventoried
-resource: .claude/agents/**, plugins/quenching/commands/components/agent/new.md, plugins/quenching/commands/components/align.md, plugins/quenching/assets/bin/quenching/components/**
+resource: plugins/quenching/commands/components/agent/new.md, plugins/quenching/commands/components/align.md, plugins/quenching/assets/bin/quenching/components/**
 tags: [automation, agents, delegation]
 timestamp: 2026-08-10
 audience: both

@@ -180,6 +180,20 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         self.assertIn('dirname "${BASH_SOURCE[0]}")/../../../"', functional)
         self.assertNotIn('dirname "${BASH_SOURCE[0]}")/../../../.."', functional)
 
+    def test_codex_readme_accepts_changelog_extracted_from_upgrade_section(self):
+        source = (
+            "The CLI has two equivalent entry points: `bin/cq` and `assets/bin/cq`.\n\n"
+            "## Upgrade\n\n"
+            "The release history is kept in the root `CHANGELOG.md`.\n"
+        )
+
+        translated = translate.codex_readme(source)
+
+        self.assertIn("The CLI is bundled inside the plugin", translated)
+        self.assertIn("Resolution is **plugin-first, with no user-level install**", translated)
+        self.assertNotIn("The release history is kept in the root", translated)
+        self.assertTrue(translated.endswith("\n"))
+
     def test_package_description_review_reduces_routed_surface_and_preserves_slots(self):
         source = translate.payload_root().parent.parent
         translate.configure(str(source / "plugins" / "quenching"),

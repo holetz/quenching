@@ -1,7 +1,7 @@
 ---
 description: Add or refine ONE entry in the fixed glossary (glossary.md). Triggers on "add a term to the glossary", "define this term", "add this acronym/jargon to the glossary". Not for: writing a concept doc → /quenching:knowledge:learn; bulk glossary sweep → /quenching:knowledge:glossary-backfill.
 argument-hint: [term]
-allowed-tools: Read, Grep, Glob, Bash(python3:*), Write, Edit
+allowed-tools: Read, Grep, Glob, Bash(python3:*), Write, Edit, AskUserQuestion
 ---
 
 # /quenching:knowledge:define — add/refine one glossary term

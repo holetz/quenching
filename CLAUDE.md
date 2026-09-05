@@ -9,16 +9,10 @@ local checks. Treat command-body edits like code.
 
 ## Operating
 
-After changing `plugins/quenching/`, run the shipped checks from that directory:
+After changing the repository, run the single repository gate from its root:
 
 ```bash
-cd plugins/quenching
-cat VERSION
-python3 assets/bin/cq --version
-python3 assets/bin/cq knowledge validate assets/knowledge
-python3 assets/bin/cq --root . components doctor --json
-python3 assets/bin/cq --root . components lint --json
-python3 -m unittest discover -s tests
+bash scripts/verify_repo.sh
 ```
 
 The bundle gate is zero errors; `stale-doc` is advisory. Surface-load checks live at
