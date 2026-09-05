@@ -150,12 +150,10 @@ cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-dr
 
 The `cq specs status --json` payload is **already in hand** from step 2 — do not read it again.
 From it: the derived stage, the section states, task progress, the blocked tasks, the recorded
-subjects, **`verification`** — the spec's declared policy, which decides when the suite runs so this
-command never has to — and **`records.priority.complexity`**, the gear. The gear changes exactly one
-thing in this loop, item 5i's default, and **nothing about delegation**: whether a task goes to an
-executor sub-agent stays the two conditions of
-[execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §Delegating an
-executor, at every level.
+subjects, and **`verification`** — the spec's declared policy, which decides when the suite runs so
+this command never has to. Whether a task goes to an executor sub-agent stays the two conditions
+of [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+§Delegating an executor.
 
 - **`approved` unset** → ask for it inline, in one question showing what the spec commits to, and
   on a yes stamp it `--set by=human` (`cq specs record "<id>" approved --set date=<today> --set
@@ -320,21 +318,10 @@ g. **Announce the declared hook for this event, and move on.** Once the task has
      prompt: none declared
    ```
 
-h. **On a section boundary, keep the task commits and OFFER to stop — and keep going if nobody says otherwise.**
-   The branch is at a clean, independently anchored boundary; another section may still be ahead.
-   Say it and continue:
-
-   ```text
-   Section 3 of 7 done, at a clean boundary. `/quenching:specs:execute <id>` resumes from here —
-   say the word and I stop; otherwise I continue with 4.1.
-   ```
-
-   **The gear sets the default, never the offer**: `low` announces the boundary and continues
-   without offering, `medium` offers and continues if nobody says otherwise, `high` and `xhigh`
-   offer and **wait** ([spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-   §The scale). It never ends the run itself and writes no state — step 6's trail is what makes the
-   boundary resumable ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
-   §The section boundary).
+h. **At a section boundary, keep the task commits and continue to the next task.** The branch is at
+   a clean, independently anchored boundary; another section may still be ahead. A section boundary
+   is not a question and does not pause the run. Stop only when the workflow reaches a question that
+   requires a human answer, or under the pause conditions below.
 
 **Pause if:** a task is unclear; implementation reveals a design problem (→ `/quenching:specs:develop`); a
 task contradicts a `/docs/standards/` contract (surface it and let the human pick — revise the

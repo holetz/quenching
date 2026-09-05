@@ -25,16 +25,21 @@ canonical document on read, and refusal on unsupported selection — is owned by
 
 <!-- rules -->
 
-Four levels, and each changes something real in **both** halves — how the definition is reached,
-and how the stages run during building. A level that changes nothing in either half is vocabulary,
-and this table is the whole of what each one buys:
+Four levels, and each changes something real in the **definition** half — how the spec is reached
+and argued with. The building half deliberately has one continuous mode for every level, so a
+level that changes nothing in definition is vocabulary and this table is the whole of what each one
+buys:
 
-| Level | Defining — who answers, and whether the spec is argued with | Building — how the stages run |
-| --- | --- | --- |
-| `low` | the pass **composes** the whole spec from evidence and interrupts nobody; it **never refines**; it stamps `approved` itself, `by: low-gear`, and the review window is the spec's URL in the backend | every stage in one session on that half's one OK, nothing stopping mid-flow, ending by opening a pull request |
-| `medium` | the pass **asks at every stage of the composition**, and does not refine on its own — the closing screen recommends it where a signal fired, and taking that recommendation raises the level | every stage in session, stopping at each section boundary |
-| `high` | `medium`, and **the refine pass runs automatically** once the composition closes: the spec is argued with rather than only completed | every stage in session; the stage-by-stage stops and confirmations are kept, and a section boundary waits for an answer rather than continuing by default |
-| `xhigh` | `high`, plus the refine pass's **premortem lens runs unconditionally** — not only when the spec's own risk triggers it | `high`, plus each section boundary's self-review going to a reviewer that did not write the code |
+| Level | Defining — who answers, and whether the spec is argued with |
+| --- | --- |
+| `low` | the pass **composes** the whole spec from evidence and interrupts nobody; it **never refines**; it stamps `approved` itself, `by: low-gear`, and the review window is the spec's URL in the backend |
+| `medium` | the pass **asks at every stage of the composition**, and does not refine on its own — the closing screen recommends it where a signal fired, and taking that recommendation raises the level |
+| `high` | `medium`, and **the refine pass runs automatically** once the composition closes: the spec is argued with rather than only completed |
+| `xhigh` | `high`, plus the refine pass's **premortem lens runs unconditionally** — not only when the spec's own risk triggers it |
+
+**Building is the same at every level:** every stage runs in one session and crosses section
+boundaries without pausing. The loop stops only for a question that requires a human answer or for
+an actual blocker.
 
 **Where the levels split, twice, and neither split is about how much work there is.** The first is
 **who answers**, and it falls between `low` and everything above it: `low` interrupts nobody, every
@@ -42,22 +47,22 @@ other level asks at every stage of the composition. The second is **whether the 
 without anyone asking for it**, and it falls between `medium` and `high`: `medium` composes and
 recommends, `high` and `xhigh` refine on their own authority. `low` is therefore the only level
 that is fast by construction, and that is its whole content — a spec that should be defined without
-a conversation asks for it by name.
+a conversation asks for it by name. Neither distinction changes the continuous execution loop.
 
 **Defining is never isolated in a sub-agent, at any level.** Isolation means only the summary
 returns, which is incompatible with stopping to ask — and every level but `low` asks. `low` could
 be isolated and is not: it is one pass landing one edit, so the returned summary would be as large
 as the work, which is the sub-agent mode's own test failing (§The scale).
 
-**A level selects the execution mode for the stage.** `low` means that the pass continues without
-mid-flow stops; it is not a fourth value beside in-session, sub-agent and skipped. The three modes
-remain the options for ONE stage, while the level names the set that applies. **The binding is here**,
-at the scale itself, so the `priority` record and the commands need no second vocabulary.
+**A level selects the definition mode, not the execution mode.** The execution loop is continuous
+across section boundaries for every level; its only stops are human-required questions and real
+blockers. Delegation remains a separate decision for one stage, so the `priority` record and the
+commands need no second vocabulary for execution.
 
 **What the scale measures.** Not the size of the change, its scope or its difficulty — a small
 change can still need a human at every step, and a large mechanical one can need almost none. It
-measures **how much a human needs to be part of the process**, and the two columns above are that
-measure spent. `triage`, `create` and `develop` propose a level against this criterion, never
+measures **how much a human needs to be part of the process**, and the definition column above is
+that measure spent. `triage`, `create` and `develop` propose a level against this criterion, never
 against the word's plain reading.
 
 **Absent reads as `high`, never `low`.** A spec whose `priority` record carries no `complexity` has
@@ -67,10 +72,9 @@ wrong. Guessing upward costs a refine pass nobody asked for; guessing downward c
 on nobody's word ([triage.md](../../commands/specs/triage.md) states the same asymmetry for a ranked
 row's floor).
 
-**Every stage reads the level from a payload it already fetches.** `cq specs status --spec <slug>
---json` returns `records`, and `priority.complexity` is inside it — so reading the gear costs no
-call of its own, which is the condition under which a command may trade a stop for a record it
-announces instead.
+**Every defining stage reads the level from a payload it already fetches.** `cq specs status --spec
+<slug> --json` returns `records`, and `priority.complexity` is inside it — so reading the gear costs
+no call of its own. The execution loop does not consult this field for section boundaries.
 
 ## The provider-owned document
 
