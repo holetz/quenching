@@ -1,7 +1,7 @@
 ---
 type: tutorial
 title: Getting started
-description: Install the quenching plugin, verify the bundled CLI, probe a repository read-only, and run the first alignment.
+description: Load the quenching study artifact, verify the bundled CLI, probe a repository read-only, and inspect the first alignment.
 resource: plugins/quenching/README.md
 tags:
   - tutorial
@@ -15,7 +15,7 @@ maintainer: Israel Holetz
 
 # Getting started
 
-*Audience: implementer · ~10 min at 4 steps · Nothing written without your OK*
+*Audience: implementer · ~10 min at 4 steps · The first probe writes nothing; alignment waits for your OK*
 
 By the end of this page you will have quenching loaded in a Claude Code session, the bundled
 `cq` CLI answering, and a read-only report of where your repository stands — and you will have
@@ -28,7 +28,8 @@ run your first alignment knowing exactly what it was about to change, because it
 
 ## 1. Install the plugin
 
-For the published adoption path, start Claude Code in the target repository and run:
+For a disposable study target, start Claude Code in the target repository and run the published
+plugin path:
 
 ```text
 /plugin marketplace add holetz/claude-quenching
@@ -82,8 +83,8 @@ cq --version
 
 ## 3. Probe before you change anything
 
-The status commands are read-only by construction — their tool grants exclude `Write` and
-`Edit`, so this step cannot touch a file:
+The status commands are intended as read-only views, and their declared tool grants exclude
+`Write` and `Edit`:
 
 ```text
 /quenching:knowledge:status
@@ -98,7 +99,8 @@ The status commands are read-only by construction — their tool grants exclude 
 
 These reports cover the seven aligned fronts, provider-owned specs and the read-only security
 pillar. Each finding is named with the command that would fix it — that is the plugin's habit
-everywhere: **report with the owner, never repair silently**.
+everywhere: **report with the owner, never repair silently**. This is a command-surface guarantee,
+not a sandbox: an available shell or Python interpreter remains outside the status contract.
 
 ## 4. Run your first alignment
 
@@ -115,8 +117,8 @@ finds:
   would change, and nothing is written until you give one OK. Declining leaves the repository
   untouched.
 
-After your OK, the alignment installs or repairs the canonical `/docs/` bundle — the same
-tree in every repository that adopts the plugin — and verifies its own work with the front's
+After your OK, the alignment installs or repairs the canonical `/docs/` bundle and verifies its
+own work with the front's
 validator:
 
 ```bash
@@ -135,7 +137,8 @@ You installed the plugin from the marketplace, proved the rail answers (`cq --ve
 read-only status reports, and ran one conducted alignment that asked before writing. That
 probe → plan → OK → apply → verify loop is the plugin's one interface — every front repeats it.
 
-**Next:** adopt the full workflow in an existing repository with
+**Next:** reproduce the bounded workflow in a disposable fixture with
+[First workflow study](first-workflow-study.md), then read the full workflow in an existing repository with
 [Adopt quenching in a repository](../how-to/adopt-quenching.md), or read
 [the operating model](../explanation/operating-model.md#the-operating-model) to see why the local fronts feed each
 other.

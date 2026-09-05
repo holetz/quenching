@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Adopt quenching in a repository
-description: Take an existing repository through its first full convergence — probe, one plan, one OK per front — without losing anything it already has.
+description: Exercise the full convergence workflow on a disposable repository copy — probe, one plan, one OK per front — while preserving the target's existing files.
 resource: plugins/quenching/README.md
 tags:
   - how-to
@@ -13,13 +13,17 @@ source: plugins/quenching/README.md §The seven fronts, the non-converging axes,
 maintainer: Israel Holetz
 ---
 
-# Adopt quenching in a repository
+# Exercise quenching in a repository
 
-*Audience: implementer · One OK per front*
+*Audience: implementer · One OK per front · Use a disposable copy while studying the workflow*
+
+This page describes the adoption-shaped workflow as a study. It is not evidence that the plugin is
+production-ready or that its declared read-only views provide process isolation. Copy the target
+first if you are learning the method or testing a change.
 
 ## Install the plugin
 
-For adoption, install the published plugin from its marketplace inside Claude Code:
+For a bounded study target, install the published plugin from its marketplace inside Claude Code:
 
 ```text
 /plugin marketplace add holetz/claude-quenching
@@ -83,7 +87,7 @@ flowchart LR
 | The whole repository | `/quenching:align` | all seven local aligned fronts, dependency order, one nested OK |
 
 !!! tip "Recommendation"
-    Default to `/quenching:align` on adoption. The fronts feed each other — a spec's
+    Default to `/quenching:align` for the study target. The fronts feed each other — a spec's
     distillation is glossary work for the knowledge front; the design front's standards feed its
     projections; the automation front's registry is a listing the knowledge front indexes; the
     operations registry feeds the proof front's entry-point check; and proof resources can feed

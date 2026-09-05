@@ -9,7 +9,7 @@ the same file inside the plugin — so a version bump reaches every consumer the
 applies the plugin upgrade; there is nothing installed to compare against and nothing to sync.
 
 What a bump moves, when it moves, and why each half of the lockstep matters is one rule with one
-owner: [`ci-cd/versioning-release.md`](../../docs/standards/ci-cd/versioning-release.md). The
+owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.md). The
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
