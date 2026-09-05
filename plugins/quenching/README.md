@@ -1,8 +1,8 @@
 # quenching (plugin)
 
-An **OKF-centric knowledge-base aligner** for the Claude Code surface of any
+An **OKF-centric workflow-study artifact** for the Claude Code surface of a
 repository. It carries one canonical **Open Knowledge Format (OKF v0.1)** bundle
-of `/docs/` and the tools to install it, force an existing base into conformance,
+of `/docs/` and the tools used to inspect it, force an existing base into conformance,
 insert new knowledge, capture terms into a fixed glossary, drain the project's Claude
 Code memory into it, import external sources into it, keep the repo's `CLAUDE.md` a thin pointer over it, and organize
 the repo's own **automation surface** (`.claude/commands/`) under one
@@ -15,6 +15,10 @@ The **design front** adds one DTCG source at `/.design/tokens.json`, determinist
 for Impeccable and editorial media, and a human-arbitrated import path for an Impeccable-authored
 `DESIGN.md`. Impeccable remains optional and owns web craft; quenching owns the source, product
 projection, genres, and non-web adapters.
+
+This is an educational, reproducible study surface rather than a production control or security
+boundary. A disposable target can exercise the workflow, but the documentation makes no claim that
+an assistant cannot write through an available shell or Python interpreter.
 
 All of it sits behind **one interface, repeated on every front**: ONE `align` per front —
 probe-first, so a clean front costs a couple of tool calls — that forces the structure into
@@ -80,7 +84,7 @@ That contract lives once, in
 **One file per entry point** — Claude Code merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs; there is
 no `skills/` tree and no wrapper. The tables below are the manual, and the count is a property of
-their rows rather than a second structural inventory: the `53` in this heading is the manual's
+their rows rather than a second structural inventory: the `54` in this heading is the manual's
 canonical displayed total, while [`tests/test_readme_surface.py`](tests/test_readme_surface.py)
 reads it and fails the suite whenever these tables
 and `commands/**` disagree
@@ -357,8 +361,8 @@ Shared contracts keep gates explicit; missing `gh` or `az` is a named refusal
 
 ## Install
 
-Published installation (recommended): from inside Claude Code, add the marketplace and install
-the plugin:
+For a disposable study target, the published Claude plugin can be installed from inside Claude
+Code by adding the marketplace and installing the plugin:
 
 ```text
 /plugin marketplace add holetz/claude-quenching

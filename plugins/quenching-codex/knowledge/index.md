@@ -33,7 +33,7 @@ language — [standards/agents/communication.md](standards/agents/communication.
 - `tutorials/` `how-to/` `explanation/` `project/` = the **reader-facing** quadrants. A page you
   would publish for a human belongs to one of them; internal team understanding goes to
   `concepts/`, a current contract to `standards/`.
-- The **task inbox** lives at `specs/backlog/`, **outside** this bundle (quenching-managed).
+- The **task inbox** is the provider-owned `specs` front, **outside** this bundle.
 - `patterns` **is not a silo** — it dissolves into `standards/architecture/`.
 
 **Resolving a term.** Unfamiliar repo word, acronym, or codename? Look it up in the glossary
