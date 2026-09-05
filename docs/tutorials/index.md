@@ -10,6 +10,8 @@ honest way: by making you watch it refuse to act on a clean repository.
 - [Getting started](getting-started.md) — install the plugin, verify the CLI answers, probe a
   repository read-only, and run your first alignment. **~10 min** (estimated from its 4 steps,
   excluding your repo's own alignment time).
+- [First workflow study](first-workflow-study.md) — run one disposable, deterministic
+  status/check/write/check experiment and inspect its evidence boundary. **~5 min**.
 
 What you leave with: a loaded plugin, a `cq` that answers, and the one mental model every other
 command reuses — so the [how-to guides](../how-to/index.md) read as variations on a loop you

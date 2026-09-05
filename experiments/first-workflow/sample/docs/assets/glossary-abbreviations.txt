@@ -1,0 +1,1 @@
+<!-- deliberately stale; the runner repairs this file from docs/glossary.md -->
