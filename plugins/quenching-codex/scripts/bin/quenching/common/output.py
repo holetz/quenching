@@ -3,6 +3,7 @@
     0  ok        the verb answered
     1  findings  the verb answered, and what it found fails the gate
     2  refusal   the verb did not answer, and says why
+    3  usage     the invocation could not be parsed
 
 Before this module the contract was declared in three docstrings and implemented in none: only
 the pre-refactor session script named the three steps as constants, the pre-refactor OKF
@@ -15,12 +16,31 @@ body already assumes it is doing.
 A REFUSAL IS NOT A FINDING. The distinction is the whole reason the ladder has three steps rather
 than two: `1` says the verb looked and did not like what it saw, `2` says the verb declined to
 look. A conductor that cannot tell them apart retries the one case that will never succeed.
+
+Finding codes are stable machine keys in the form `<prefix>-<name>`. The prefix identifies the
+owning pillar or adapter (`sp`, `design`, `sk`, `ct`, `op`, `pf`, `delivery`, `tc`, `security`,
+`git`, `site`, `nav`, or `glossary`); the name identifies the predicate. Human wording may evolve,
+but a code does not, because callers filter on it.
 """
 
+import argparse
 import json
 import sys
 
-OK, FINDINGS, REFUSAL = 0, 1, 2
+OK, FINDINGS, REFUSAL, USAGE = 0, 1, 2, 3
+
+
+class CQArgumentParser(argparse.ArgumentParser):
+    """The parser shared by entry points that own the CQ usage contract.
+
+    ``argparse`` uses exit 2 for malformed syntax, but CQ reserves 2 for a deliberate refusal
+    after a command has been selected. Keeping the normal usage/error rendering while changing
+    only the exit door lets callers distinguish those cases without making a second parser.
+    """
+
+    def error(self, message: str) -> None:
+        self.print_usage(sys.stderr)
+        self.exit(USAGE, f"{self.prog}: error: {message}\n")
 
 
 def emit(as_json: bool, obj: dict, human: str, prefix: str = "") -> None:
@@ -43,6 +63,8 @@ def emit_err(as_json: bool, err: dict, prefix: str = "") -> int:
     the error, decided where the error is raised and known there. It defaults to FINDINGS, so a
     refusal is the case that has to say so — which is the right way round, because a verb that
     refuses knows it, and a verb that merely found something does not have to remember."""
+    if err.get("exit", FINDINGS) == REFUSAL:
+        return refuse({k: v for k, v in err.items() if k != "exit"}, as_json)
     emit(as_json, {"ok": False, **{k: v for k, v in err.items() if k != "exit"}},
          f"error: {err['message']}", prefix)
     return err.get("exit", FINDINGS)
@@ -64,6 +86,15 @@ def finding(code: str, severity: str, message: str, **extra) -> dict:
     f = {"code": code, "severity": severity, "message": message}
     f.update(extra)
     return f
+
+
+def finding_code(prefix: str, name: str) -> str:
+    """Build one stable `<prefix>-<name>` finding key at the point that declares it."""
+    prefix = prefix.strip()
+    name = name.strip()
+    if not prefix or not name or "-" in prefix:
+        raise ValueError("finding codes require a non-empty hyphen-free prefix and name")
+    return f"{prefix}-{name}"
 
 
 def exit_for(findings: list[dict]) -> int:

@@ -1,7 +1,7 @@
 ---
 description: Import an external source (files/folders/URLs) into the OKF bundle as many docs. Triggers on "import/ingest a source into the base", "enrich the knowledge base from X", "generate OKF docs from these files/URLs". Not for: one stated knowledge item → /quenching:knowledge:add; memory migration → /quenching:knowledge:import-memory; generating documentation pages → /quenching:knowledge:documentation:produce.
 argument-hint: [source-paths-or-urls]
-allowed-tools: Read, Grep, Glob, WebFetch, Bash(python3:*), Write, Edit, Task
+allowed-tools: Read, Grep, Glob, WebFetch, Bash(python3:*), Write, Edit, Task, AskUserQuestion
 ---
 
 # /quenching:knowledge:import — import an external source into the OKF bundle

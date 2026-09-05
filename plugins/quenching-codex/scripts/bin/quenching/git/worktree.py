@@ -6,27 +6,18 @@ relative ``.git`` and would create a different sibling store depending on the ca
 """
 from __future__ import annotations
 
-import json
 import os
 
 from quenching.common.git import _git, _git_run
+from quenching.common.config import load_config, namespace
 from quenching.common.output import emit, refuse
-
-CONFIG_FILE = os.path.join(".agents", "quenching.json")
-
 
 def _repo_root(cwd: str) -> str:
     return _git(cwd, "rev-parse", "--show-toplevel").strip()
 
 
-def _declared_paths(repo: str) -> list[str]:
-    path = os.path.join(repo, CONFIG_FILE)
-    try:
-        with open(path, encoding="utf-8") as stream:
-            config = json.load(stream)
-    except (OSError, ValueError):
-        return []
-    values = config.get("sharedPaths") if isinstance(config, dict) else None
+def _declared_paths(config: dict) -> list[str]:
+    values = namespace(config, "shared").get("sharedPaths")
     if not isinstance(values, list):
         return []
 
@@ -93,8 +84,12 @@ def cmd_worktree(args) -> int:
                         "message": "the current directory is not inside a git repository"},
                        args.json)
 
+    config = load_config(repo)
+    if config.get("migrationRefusal"):
+        return refuse(config["migrationRefusal"], args.json)
+
     results = []
-    for relative in _declared_paths(repo):
+    for relative in _declared_paths(config):
         store = _store_for(repo, relative)
         if store is None:
             return refuse({"code": "git-worktree-no-common-dir",

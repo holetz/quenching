@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import os
 
+from quenching.common.front import resolve_root
 from quenching.common.output import emit, refuse
 from quenching.common.version import VERSION
 from quenching.security.probe import build_report
@@ -34,7 +35,7 @@ def main(argv: list[str]) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     as_json = bool(args.json)
-    root = os.path.abspath(args.root or os.getcwd())
+    root = resolve_root(args.root)
     if not os.path.isdir(root):
         return refuse({
             "code": "security-root-missing",

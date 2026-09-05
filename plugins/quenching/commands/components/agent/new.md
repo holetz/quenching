@@ -1,7 +1,7 @@
 ---
 description: Mint or edit ONE subagent definition in this repo's .claude/agents/ — a delegation that returns a summary. Use when the user asks to "create an agent", "add a subagent", "make a verifier agent", "delegate this to an agent", or "set up something that audits our migrations and reports back". Applies the delegation test and the narrowest tool scope. Not for: creating a command → /quenching:components:command:new; creating a hook → /quenching:components:hook:new.
 argument-hint: [agent-name-or-description]
-allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit
+allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
 ---
 
 # /quenching:components:agent:new — mint ONE subagent definition

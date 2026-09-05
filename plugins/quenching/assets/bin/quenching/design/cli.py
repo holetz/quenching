@@ -7,7 +7,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from quenching.common.output import OK, emit, emit_err, exit_for, report_findings
+from quenching.common.output import (CQArgumentParser, OK, emit, emit_err, exit_for,
+                                     finding_code, report_findings)
 from quenching.common.version import VERSION
 from quenching.design.align import align_plan, align_write, read_product
 from quenching.design.build import build_drift, compute_build, write_build
@@ -18,7 +19,7 @@ from quenching.design.model import DesignError
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser = CQArgumentParser(
         prog="cq design",
         description="one DTCG source projected into portable design and editorial artifacts",
     )
@@ -57,6 +58,8 @@ def build_parser() -> argparse.ArgumentParser:
     importer.add_argument("--json", action="store_true")
 
     genre = sub.add_parser("genre", help="manage editorial genre contracts")
+    genre.add_argument("--json", action="store_true", dest="genre_json",
+                       help="print machine-readable output (also accepted before the child verb)")
     genre_sub = genre.add_subparsers(dest="genre_cmd")
     new = genre_sub.add_parser("new", help="mint one genre and its medium templates")
     new.add_argument("slug")
@@ -90,7 +93,7 @@ def main(argv: list[str]) -> int:
         parser.print_usage(sys.stderr)
         return 2
     root = Path(args.root)
-    as_json = bool(getattr(args, "json", False))
+    as_json = bool(getattr(args, "json", False) or getattr(args, "genre_json", False))
     try:
         if args.cmd == "align":
             product = read_product(args.product_json)
@@ -104,7 +107,8 @@ def main(argv: list[str]) -> int:
                 root, product, design_winner=args.design_winner,
                 product_reviewed=args.product_reviewed,
             )
-            findings = [{"severity": "error", "code": "design-align-blocker", "path": ".design",
+            findings = [{"severity": "error", "code": finding_code("design", "align-blocker"),
+                         "path": ".design",
                          "message": message} for message in payload["blockers"]]
             if as_json:
                 print(json.dumps({"ok": not findings, **payload, "findings": findings}, indent=2,
@@ -138,12 +142,12 @@ def main(argv: list[str]) -> int:
             payload = import_design(root, write=not args.check)
             if args.check:
                 findings = [
-                    {"severity": "error", "code": "design-import-diff",
+                    {"severity": "error", "code": finding_code("design", "import-diff"),
                      "path": path, "message": "portable value differs from tokens.json; run import without --check"}
                     for path in payload["changed"]
                 ]
                 findings.extend(
-                    {"severity": "warning", "code": "design-import-skipped",
+                    {"severity": "warning", "code": finding_code("design", "import-skipped"),
                      "path": path, "message": "richer Impeccable value has no honest DTCG projection and was retained"}
                     for path in payload.get("skipped", [])
                 )
@@ -164,7 +168,8 @@ def main(argv: list[str]) -> int:
             payload = render_genre(root, args.genre, args.medium, args.data, args.output)
             return _payload(as_json, payload, f"design render — {payload['output']}")
     except DesignError as exc:
-        return emit_err(as_json, {"code": "design-refusal", "message": str(exc)})
+        return emit_err(as_json, {"code": finding_code("design", "refusal"),
+                                  "message": str(exc)})
     parser.error(f"unknown design command: {args.cmd}")
     return 2
 

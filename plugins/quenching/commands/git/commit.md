@@ -13,6 +13,11 @@ allowed-tools: >-
 
 # /quenching:git:commit — commit what is staged, under the target's own convention
 
+This command is the single commit boundary for the repository. Commands that build a spec,
+including `/quenching:specs:execute`, delegate here after verification and pass the current
+spec/task context; this command resolves the subject, commits the existing index and reports the
+subject actually written. It never receives a request to stage an unrelated path.
+
 **Input**: `$ARGUMENTS` — an optional explicit commit subject. When omitted, resolve one from the
 current spec/task context; never invent it from the diff and never ask for confirmation.
 
@@ -47,7 +52,7 @@ its `quenching-specs:` mark:
 ```bash
 git branch --show-current
 python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git specs <current-branch> --json
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs next --spec <唯一-spec-id> --json
+python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs next --spec <spec-id> --json
 ```
 If that produces exactly one spec and one actionable task, derive the subject with the governing
 convention from the spec id, task id and task title. If the execution caller already supplies a

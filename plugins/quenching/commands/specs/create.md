@@ -14,11 +14,13 @@ Creates ONE spec. That locator is a spec's whole active life, so what is created
 built: this command creates it, `/quenching:specs:develop` fills its sections, `/quenching:specs:execute` builds it, and
 `/quenching:specs:conclude` closes it out under the same identity.
 
-The layout, the thirteen canonical sections, the gates, the front's on-write check and the
-`cq specs` surface live in
+The layout, the thirteen canonical sections, the gates and the front's on-write check live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-§The thirteen sections §The gates and the stage-scoped explicit-none rule
-§The `cq specs` tool surface §The report mold, which owns the shape step 6's report prints in.
+§The thirteen sections §The gates and the stage-scoped explicit-none rule. The `cq specs` surface
+lives in [specs-surface.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/specs-surface.md)
+§The `cq specs` tool surface; the report shape lives in
+[report-mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/report-mold.md)
+§The report mold.
 
 Resolve the fields before the closing screen.
 
@@ -186,7 +188,7 @@ returned is in hand.
 ### 6. The one screen — capture, correction and direction
 
 ```bash
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/report-mold.md \
   --sections "§The report mold" --rules-only
 ```
 

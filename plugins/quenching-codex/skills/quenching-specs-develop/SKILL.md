@@ -40,8 +40,12 @@ so, where it does not.
 
 The stages' own sections, the per-section authoring doctrine in
 [specs-develop/artifacts.md](../../references/specs-develop/artifacts.md),
+§Writing a section through stdin §The explicit-none rule §The nine definition sections
+§`## Impact` — the parsed sub-heading §`## Tasks`
+§Execution metadata — optional, indented, additive,
 and the records' shapes are loaded **inside the step that uses them** — steps 3b and 6; step 8
-loads spec-driven.md's §The report mold, whose shape that step's report is built from, the same way.
+loads specs-develop/report-mold.md's §The report mold, whose shape that step's report is built from,
+the same way.
 
 ## Resolving the tool
 
@@ -74,8 +78,10 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
   `/docs/standards/` and `/docs/glossary.md` are binding on wording. Only **compose**
   and **refine** ask questions that reading answers, so it is step 3b's and never the preamble's.
   Read it per
-  [align/evidence-doctrine.md](../../references/align/evidence-doctrine.md)
-  — `cq components read <path> --sections "§X"`, not the whole file, when only a rule or two
+[align/evidence-doctrine.md](../../references/align/evidence-doctrine.md)
+§1. Extract the aggregate; never paste the raw dump
+§2. Section-address any markdown — a target's `/docs/` included
+— `cq components read <path> --sections "§X"`, not the whole file, when only a rule or two
   governs the question at hand; it resolves `/docs/` the same way it resolves this plugin's own
   references. No OKF bundle in the repo (`/docs/index.md` with `okf_version`) → skip silently.
 - **Never edit code.** If the work implies code changes, that is `quenching-specs-execute`.
@@ -378,7 +384,7 @@ present it — a sub-agent never talks to the human, at any gear.
 Then report:
 
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/spec-driven.md \
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/report-mold.md \
   --sections "§The report mold" --rules-only
 ```
 

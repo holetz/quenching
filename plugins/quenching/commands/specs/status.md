@@ -11,6 +11,11 @@ allowed-tools: Bash(python3:*), Read
 The canonical documents live in the repository provider: GitHub Issues or Azure Boards. There is no
 local `/.specs/` root.
 
+The recognised configuration envelope and its defaults live in
+[specs-align/plugin-configuration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/plugin-configuration.md)
+§The envelope and recognised namespaces. This command reports that provider-owned state; it does
+not create a local specs store or infer missing configuration.
+
 ## Workflow
 
 1. Resolve `cq` through the repository's declared tool-resolution rule.

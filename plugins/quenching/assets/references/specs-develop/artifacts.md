@@ -133,7 +133,7 @@ writing the heading**. An unfilled `<placeholder>` declares nothing either.
 This sub-heading is also the **declared/emergent line**: a `docs/standards/` doc named here *and*
 by a task is written during execution; anything the work merely reveals is one `cq specs discover`
 line and is written at conclude
-([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §Declared
+([execution-delegation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-delegation.md) §Declared
 versus emergent `knowledge/`).
 
 <!-- rationale -->
@@ -198,7 +198,7 @@ Shape it so `/quenching:specs:execute` can walk it top to bottom:
   delegate by file or by a coherent set of tasks.
 - **Within what the dependency order allows, group by file.** A section is the unit execution
   delegates — *"delegate by file, or by section of tasks, never task by task"*
-  ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The cost of
+  ([execution-delegation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-delegation.md) §The cost of
   delegating) — so six tasks over one file, kept in one section, cost that file **one** read; the
   same six scattered across four phase-shaped sections cost it four. A `[P]` group is bounded to
   one `### N.` section too, so scattering forecloses the parallelism as well as the delegation.

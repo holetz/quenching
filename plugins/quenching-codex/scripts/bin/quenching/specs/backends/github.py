@@ -3,13 +3,17 @@
 Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
 import sys
+import time
+from urllib.parse import urlsplit
 
-from quenching.common.git import _git
+from quenching.common.git import COMMAND_TIMEOUT_S, _git
 from quenching.common.config import CONFIG_FILE, find_repo_root
+from quenching.common.io import read_text, write_text
 from quenching.specs.backends.base import BackendRefusal, SpecBackend
 from quenching.specs.backends.hybrid import (GH_BODY_MAX, GH_PART_MAX, hybrid_join,
                                              hybrid_project, hybrid_split, hybrid_title_join,
@@ -27,9 +31,95 @@ from quenching.specs.parse import (PHASES, carry_forward_fields, declared_tags,
 GH_NOT_AUTHENTICATED = 4
 # OURS, never one of gh's: the binary is not on PATH, so no process ever started.
 GH_MISSING = 127
+GH_TIMEOUT = 124
+GH_MAX_ATTEMPTS = 3
+GH_LEAN_LIMIT = 1000
+GH_RETRY_BACKOFF = (0.25, 0.5)
+GH_CACHE_VERSION = 1
+GH_CACHE_TTL_S = 300
 
 
-def _gh_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, str]:
+def normalize_github_remote(remote: str) -> str:
+    """Normalize SSH/scp and HTTPS remotes to one case-insensitive cache key."""
+    value = remote.strip()
+    if not value:
+        return ""
+    if "://" in value:
+        parsed = urlsplit(value)
+        host = parsed.hostname or ""
+        path = parsed.path
+    else:
+        left, separator, path = value.partition(":")
+        host = left.rsplit("@", 1)[-1] if separator else ""
+    if not host or not path:
+        return ""
+    path = path.split("?", 1)[0].split("#", 1)[0].strip("/")
+    if path.lower().endswith(".git"):
+        path = path[:-4]
+    return f"https://{host.lower()}/{path.lower()}"
+
+
+def github_cache_path(remote: str) -> str:
+    """Return the per-user cache path for one normalized GitHub remote."""
+    normalized = normalize_github_remote(remote)
+    key = hashlib.sha256(normalized.encode()).hexdigest()[:32]
+    base = os.environ.get("XDG_CACHE_HOME") or os.path.join(os.path.expanduser("~"), ".cache")
+    return os.path.join(base, "quenching", "github", f"{key}.json")
+
+
+def github_cache_read(remote: str) -> dict:
+    """Read a fresh resolution cache entry, treating every malformed entry as a miss."""
+    normalized = normalize_github_remote(remote)
+    if not normalized:
+        return {}
+    try:
+        value = json.loads(read_text(github_cache_path(normalized)) or "null")
+    except (TypeError, ValueError):
+        return {}
+    if not isinstance(value, dict) or value.get("version") != GH_CACHE_VERSION \
+            or value.get("remote") != normalized:
+        return {}
+    created = value.get("createdAt")
+    if not isinstance(created, (int, float)) or time.time() - created > GH_CACHE_TTL_S:
+        return {}
+    if not isinstance(value.get("repo"), str) or not value["repo"].strip():
+        return {}
+    return value
+
+
+def github_cache_write(remote: str, repo: str, open_issues: int | None) -> None:
+    """Remember a resolution without making the cache authoritative or part of the repository."""
+    normalized = normalize_github_remote(remote)
+    if not normalized:
+        return
+    payload = {"version": GH_CACHE_VERSION, "remote": normalized, "repo": repo,
+               "openIssues": open_issues, "createdAt": time.time()}
+    path = github_cache_path(normalized)
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        write_text(path, json.dumps(payload))
+    except OSError:
+        pass
+
+
+def _gh_transient(code: int, stdout: str, stderr: str) -> bool:
+    """Whether a failed `gh` call may succeed if the same request is tried again."""
+    if code == GH_TIMEOUT:
+        return True
+    text = f"{stdout}\n{stderr}".lower()
+    return "rate limit" in text or bool(re.search(r"http\s+(?:429|500|502|503|504)\b", text))
+
+
+def _gh_result(result) -> tuple[int, str, str, int]:
+    """Normalize the historical three-field test doubles and the four-field transport result."""
+    if len(result) == 4:
+        code, stdout, stderr, attempts = result
+        return code, stdout, stderr, attempts
+    code, stdout, stderr = result
+    return code, stdout, stderr, 1
+
+
+def _gh_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, str, int]:
     """Exit code, stdout AND stderr of one `gh` command.
 
     A SIBLING of `_git_run`, deliberately not a reuse of it. The two binaries fail
@@ -52,14 +142,24 @@ def _gh_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, s
     import subprocess
     if not os.path.isdir(cwd):
         return 1, "", f"not a directory: {cwd}"
-    try:
-        out = subprocess.run(["gh", *argv], capture_output=True, text=True, timeout=60,
-                             cwd=cwd, input=stdin)
-        return out.returncode, out.stdout, out.stderr
-    except FileNotFoundError as e:
-        return GH_MISSING, "", str(e)
-    except (OSError, ValueError, subprocess.SubprocessError) as e:   # noqa: BLE001
-        return 1, "", str(e)
+    for attempt in range(1, GH_MAX_ATTEMPTS + 1):
+        try:
+            out = subprocess.run(["gh", *argv], capture_output=True, text=True,
+                                 timeout=COMMAND_TIMEOUT_S,
+                                 cwd=cwd, input=stdin)
+            code, stdout, stderr = out.returncode, out.stdout, out.stderr
+        except FileNotFoundError as e:
+            return GH_MISSING, "", str(e), attempt
+        except subprocess.TimeoutExpired as e:
+            detail = e.stderr or str(e) or "gh command timed out"
+            if isinstance(detail, bytes):
+                detail = detail.decode(errors="replace")
+            code, stdout, stderr = GH_TIMEOUT, "", str(detail)
+        except (OSError, ValueError, subprocess.SubprocessError) as e:   # noqa: BLE001
+            return 1, "", str(e), attempt
+        if code == 0 or attempt == GH_MAX_ATTEMPTS or not _gh_transient(code, stdout, stderr):
+            return code, stdout, stderr, attempt
+        time.sleep(GH_RETRY_BACKOFF[attempt - 1])
 
 
 def _gh_said(stdout: str, stderr: str) -> str:
@@ -86,7 +186,7 @@ def _gh_said(stdout: str, stderr: str) -> str:
     return head or "gh failed without saying why"
 
 
-def gh_refusal(action: str, code: int, stdout: str, stderr: str) -> dict:
+def gh_refusal(action: str, code: int, stdout: str, stderr: str, attempts: int = 1) -> dict:
     """Every way a `gh` call can fail, as an exit-2 refusal a human can act on.
 
     THREE OUTCOMES, THREE DIFFERENT REMEDIES, and separating them is the reason this
@@ -105,20 +205,30 @@ def gh_refusal(action: str, code: int, stdout: str, stderr: str) -> dict:
     if code == GH_MISSING:
         return {
             "code": "sp-gh-missing", "exit": 2, "action": action,
+            "attempts": attempts,
             "message": "backend 'github' needs the `gh` CLI and it is not on PATH — install "
                        "GitHub CLI (https://cli.github.com), then run `gh auth login`; no "
                        "spec was read or written",
         }
     said = _gh_said(stdout, stderr)
+    if code == GH_TIMEOUT:
+        return {
+            "code": "sp-gh-timeout", "exit": 2, "action": action, "attempts": attempts,
+            "gh": said,
+            "message": f"`gh` timed out while {action} after {attempts} attempt(s) — "
+                       f"the GitHub request did not complete; gh said: {said}",
+        }
     if code == GH_NOT_AUTHENTICATED or "HTTP 401" in (stderr or "") \
             or "gh auth login" in (stderr or ""):
         return {
-            "code": "sp-gh-unauthenticated", "exit": 2, "action": action, "gh": said,
+            "code": "sp-gh-unauthenticated", "exit": 2, "action": action,
+            "attempts": attempts, "gh": said,
             "message": f"`gh` is installed but not authenticated for this repository — run "
                        f"`gh auth login`; gh said: {said}",
         }
     return {
-        "code": "sp-gh-api-error", "exit": 2, "action": action, "gh": said, "ghExit": code,
+        "code": "sp-gh-api-error", "exit": 2, "action": action, "attempts": attempts,
+        "gh": said, "ghExit": code,
         "message": f"github refused {action} — gh said: {said}",
     }
 
@@ -135,36 +245,66 @@ GH_EMPTY_LISTING_REMEDY = (
 )
 
 
-def empty_listing_refusal(action: str, pages) -> dict | None:
+def empty_listing_refusal(action: str, pages, open_issues: int | None = None) -> dict | None:
     """The exit-2 refusal for a paginated listing that did not come back, or `None` when the
-    payload has the shape a listing legitimately has.
+    payload has the shape a listing legitimately has or the available issue count cannot prove
+    that the empty result is truncated.
 
-    THREE SHAPES, AND TWO OF THEM PROVE A FAULT. Measured on this repository:
+    A BLANK RESULT IS A REFUSAL ONLY WHEN THE COUNT PROVES IT IS SUSPICIOUS. Measured on this
+    repository:
 
     - `None` — `gh` exited 0 and printed nothing, which `_api`'s `json.loads(out or "null")`
-      turns into a valid `null`. That is a response that never arrived, laundered into data.
+      turns into a valid `null`. It is a response that never arrived, but without a positive
+      issue count it cannot be distinguished from a repository with no specs yet.
     - `[]` — zero pages. A front that genuinely holds nothing answers `[[]]`, ONE page that
-      is empty; zero pages is a response that did not happen.
+      is empty; zero pages is suspicious only when the repository has open issues.
     - `[[]]` — one empty page: a genuinely empty front, which passes. Suspicion about THAT
-      state is the `stderr`/`doctor` half, never a refusal, because a repository whose specs
-      have not been created yet is exactly it and is legitimate.
+      state is a refusal only when the count is positive; a missing or zero count leaves the
+      result as an honest empty front.
 
     THE CALLER ASKS, AND NEVER `_api`. `_api` is shared with the writes, and one of those is
     a DELETE whose legitimate GitHub answer is 204 No Content — `gh` prints nothing there and
     `null` is the RIGHT answer. Only the caller knows which shape it asked for. It is the
     same line `az_refusal` already draws for its own transport, and this is the sibling the
-    `gh` side was missing."""
-    if isinstance(pages, list) and pages:
+    `gh` side was missing. The caller supplies the count because only the resolved repository
+    knows whether an empty result is contradicted by open issues."""
+    if isinstance(pages, list) and any(page for page in pages):
+        return None
+    if open_issues is None or open_issues <= 0:
         return None
     observed = "no output at all (`gh` exited 0 and printed nothing)" if pages is None \
         else f"`{json.dumps(pages)}`"
     return {
         "code": "sp-gh-empty-listing", "exit": 2, "action": action, "observed": observed,
+        "openIssues": open_issues,
         "message": f"`gh api` exited 0 while {action} but returned {observed} — a front that "
                    f"legitimately holds nothing answers with ONE empty page (`[[]]`), never "
                    f"with zero pages, so this response was cut short and is not an empty "
                    f"front (measured on {GH_MEASURED_VERSION}); nothing was read",
         "remedy": GH_EMPTY_LISTING_REMEDY,
+    }
+
+
+def lean_limit_refusal(action: str, observed: int, attempts: int = 1) -> dict:
+    """Refuse a lean result that reached `gh issue list`'s hard return ceiling."""
+    return {
+        "code": "sp-gh-lean-truncated", "exit": 2, "action": action,
+        "limit": GH_LEAN_LIMIT, "observed": observed, "attempts": attempts,
+        "message": f"`gh issue list` returned the limit of {GH_LEAN_LIMIT} rows while "
+                   f"{action}; the lean index may be truncated, so no complete listing "
+                   "can be derived — paginate below the limit or use the full listing",
+    }
+
+
+def stale_write_refusal(number: int, expected: str, actual: str | None) -> dict:
+    """Refuse a write whose issue changed after the caller read it."""
+    return {
+        "code": "sp-gh-stale-write", "exit": 2, "issue": number,
+        "expectedUpdatedAt": expected, "actualUpdatedAt": actual,
+        "message": f"GitHub issue #{number} changed after it was read — expected updated_at "
+                   f"{expected!r}, received {actual!r}; re-read the spec and reapply the "
+                   "change instead of merging two documents automatically",
+        "remedy": "re-read the spec and reapply the change",
     }
 
 
@@ -251,7 +391,14 @@ def resolve_github_repo(cwd: str) -> tuple[str, int | None, dict]:
 
     Never guesses a repository it cannot name. A wrong answer here does not fail — it
     silently reads and writes somebody else's issues."""
-    code, out, err = _gh_run(cwd, "repo", "view", "--json", "nameWithOwner,issues")
+    remote = _git(cwd, "remote", "get-url", "origin").strip()
+    normalized_remote = normalize_github_remote(remote)
+    cached = github_cache_read(normalized_remote)
+    if cached:
+        return cached["repo"], cached.get("openIssues"), {}
+
+    code, out, err, attempts = _gh_result(
+        _gh_run(cwd, "repo", "view", "--json", "nameWithOwner,issues"))
     if code == 0 and out.strip():
         try:
             parsed = json.loads(out)
@@ -264,16 +411,20 @@ def resolve_github_repo(cwd: str) -> tuple[str, int | None, dict]:
         name = str(view.get("nameWithOwner") or "").strip()
         if name:
             issues = view.get("issues")
-            return name, (issues.get("totalCount") if isinstance(issues, dict) else None), {}
+            open_issues = issues.get("totalCount") if isinstance(issues, dict) else None
+            github_cache_write(normalized_remote, name, open_issues)
+            return name, open_issues, {}
     # The two failures the remote cannot repair — no binary, nobody logged in — refuse here
     # with their own remedy instead of degrading into "could not resolve the repository".
     if code in (GH_MISSING, GH_NOT_AUTHENTICATED) or "gh auth login" in (err or ""):
-        return "", None, gh_refusal("resolving the repository", code, out, err)
-    url = _git(cwd, "remote", "get-url", "origin").strip()
+        return "", None, gh_refusal("resolving the repository", code, out, err, attempts)
+    url = remote
     m = GH_REMOTE_RE.search(url) if url else None
     if m:
         # The remote answers the name and nothing else: no count, and never a guess at one.
-        return f"{m.group(1)}/{m.group(2)}", None, {}
+        name = f"{m.group(1)}/{m.group(2)}"
+        github_cache_write(normalized_remote, name, None)
+        return name, None, {}
     return "", None, {
         "code": "sp-gh-repo-unresolved", "exit": 2, "remote": url or None,
         "gh": _gh_said(out, err),
@@ -360,7 +511,7 @@ class GitHubBackend(SpecBackend):
         # descriptor, issue number, first chunk, how many parts the marker declares,
         # issue title, and the issue's own labels as of this listing — what the label
         # reconciliation in `_store` diffs against, so it costs no call of its own
-        self._rows: list[tuple[dict, int, str, int, str, dict, list[str]]] | None = None
+        self._rows: list[tuple[dict, int, str, int, str, dict, list[str], str | None]] | None = None
         # `spec:` labels already confirmed correctly colored THIS process — so a repo
         # this tool has been reconciling against for a while pays no repeat GET+PATCH for
         # a label it fixed on an earlier write in the same command.
@@ -369,9 +520,10 @@ class GitHubBackend(SpecBackend):
     # -- transport ---------------------------------------------------------- #
     def _api(self, action: str, *argv: str, stdin: str | None = None):
         """One `gh api` call, parsed. Raises `BackendRefusal` for every way it can fail."""
-        code, out, err = _gh_run(self.cwd, "api", *argv, stdin=stdin)
+        code, out, err, attempts = _gh_result(
+            _gh_run(self.cwd, "api", *argv, stdin=stdin))
         if code != 0:
-            raise BackendRefusal(gh_refusal(action, code, out, err))
+            raise BackendRefusal(gh_refusal(action, code, out, err, attempts))
         try:
             return json.loads(out or "null")
         except json.JSONDecodeError as e:
@@ -379,6 +531,7 @@ class GitHubBackend(SpecBackend):
             # separately so it can never be read as "GitHub said no".
             raise BackendRefusal({
                 "code": "sp-gh-bad-response", "exit": 2, "action": action,
+                "attempts": attempts,
                 "message": f"`gh api` exited 0 while {action} but its output is not JSON: {e}",
             }) from e
 
@@ -413,7 +566,7 @@ class GitHubBackend(SpecBackend):
                          stdin=json.dumps(payload))
 
     # -- the listing, fetched once ------------------------------------------- #
-    def _load(self) -> list[tuple[dict, int, str, int, str, list[str]]]:
+    def _load(self) -> list[tuple[dict, int, str, int, str, dict, list[str], str | None]]:
         if self._rows is not None:
             return self._rows
         # `--slurp` because `--paginate` alone concatenates one JSON array per page, which
@@ -426,10 +579,10 @@ class GitHubBackend(SpecBackend):
         # asked for a list of pages, and the whole front is derived from what it returns —
         # a listing that silently comes back empty reports every spec in the repository as
         # missing, with `ok: true` and exit 0.
-        refusal = empty_listing_refusal(action, pages)
+        refusal = empty_listing_refusal(action, pages, self.open_issues)
         if refusal:
             raise BackendRefusal(refusal)
-        rows: list[tuple[dict, int, str, int, str, dict, list[str]]] = []
+        rows: list[tuple[dict, int, str, int, str, dict, list[str], str | None]] = []
         for page in pages:
             for issue in (page or []):
                 if not isinstance(issue, dict) or "pull_request" in issue:
@@ -449,10 +602,8 @@ class GitHubBackend(SpecBackend):
                     "path": issue.get("html_url")
                             or f"https://github.com/{self.repo}/issues/{number}",
                 }, number, head, parts, str(issue.get("title") or ""), self._native_fields(issue),
-                    self._issue_labels(issue)))
+                    self._issue_labels(issue), issue.get("updated_at")))
         self._rows = rows
-        if listing_is_suspect(len(rows), self.open_issues):
-            announce_listing_suspect(self.repo, self.open_issues)
         return rows
 
     def _invalidate(self) -> None:
@@ -471,23 +622,31 @@ class GitHubBackend(SpecBackend):
         crosses the wire. It is intentionally separate from `_load`: a caller asking for the
         complete front still needs the canonical document and its native fields."""
         action = "listing specs through GitHub's lean index"
-        code, out, err = _gh_run(
+        code, out, err, attempts = _gh_result(_gh_run(
             self.cwd, "issue", "list", "--repo", self.repo, "--state", "all", "--search",
-            '"quenching-spec" in:body', "--json", "number,title,state,labels", "--limit", "1000")
+            '"quenching-spec" in:body', "--json", "number,title,state,labels", "--limit",
+            str(GH_LEAN_LIMIT)))
         if code != 0:
-            raise BackendRefusal(gh_refusal(action, code, out, err))
+            raise BackendRefusal(gh_refusal(action, code, out, err, attempts))
         try:
             issues = json.loads(out or "null")
         except json.JSONDecodeError as e:
             raise BackendRefusal({
                 "code": "sp-gh-bad-response", "exit": 2, "action": action,
+                "attempts": attempts,
                 "message": f"`gh` exited 0 while {action} but its output is not JSON: {e}",
             }) from e
         if not isinstance(issues, list):
             raise BackendRefusal({
                 "code": "sp-gh-bad-response", "exit": 2, "action": action,
+                "attempts": attempts,
                 "message": f"`gh` returned {type(issues).__name__}, not a list, for {action}",
             })
+        refusal = empty_listing_refusal(action, issues, self.open_issues)
+        if refusal:
+            raise BackendRefusal(refusal)
+        if len(issues) >= GH_LEAN_LIMIT:
+            raise BackendRefusal(lean_limit_refusal(action, len(issues), attempts))
         rows: list[dict] = []
         for issue in issues:
             if not isinstance(issue, dict):
@@ -535,7 +694,7 @@ class GitHubBackend(SpecBackend):
             rows = [row for row in self._lean_rows()
                     if phase is None or row["phase"] == phase]
             return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["id"]))
-        rows = [dict(d) for d, _, _, _, _, _, _ in self._load()
+        rows = [dict(d) for d, _, _, _, _, _, _, _ in self._load()
                 if phase is None or d["phase"] == phase]
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["id"]))
 
@@ -568,9 +727,9 @@ class GitHubBackend(SpecBackend):
             if row is None:
                 return None, {"code": "sp-unknown-id", "exit": 1, "id": spec_id,
                               "message": f"no spec with id '{spec_id}'"}
-            descriptor, _, head, parts, title, native_fields, labels = row
+            descriptor, _, head, parts, title, native_fields, labels, updated_at = row
             return self._assemble(dict(descriptor), number, head, parts, title,
-                                  native_fields, labels), {}
+                                  native_fields, labels, updated_at), {}
         issue = self._api(f"reading issue #{number}", f"repos/{self.repo}/issues/{number}")
         head, parts = hybrid_unwrap((issue or {}).get("body") or "")
         if not parts:
@@ -583,10 +742,11 @@ class GitHubBackend(SpecBackend):
                     or f"https://github.com/{self.repo}/issues/{number}",
         }
         return self._assemble(spec, number, head, parts, str(issue.get("title") or ""),
-                              self._native_fields(issue), self._issue_labels(issue)), {}
+                              self._native_fields(issue), self._issue_labels(issue),
+                              issue.get("updated_at")), {}
 
     def _assemble(self, spec: dict, number: int, head: str, parts: int, native_title: str,
-                  native_fields: dict, labels: list[str]) -> dict:
+                  native_fields: dict, labels: list[str], updated_at: str | None = None) -> dict:
         """The one derivation both read paths go through, so neither can drift from the
         other about what a spec's `info` holds."""
         full_text = head if parts <= 1 else self._joined(number, head, parts)
@@ -594,6 +754,8 @@ class GitHubBackend(SpecBackend):
         info["frontmatter"].update(native_fields)
         info["_github_parts"] = parts
         info["_github_labels"] = labels
+        if updated_at:
+            info["_github_updated_at"] = updated_at
         return info
 
     # `start`/`target` have no native counterpart on an issue (no scheduling fields) and
@@ -602,6 +764,14 @@ class GitHubBackend(SpecBackend):
 
     def write_spec(self, info: dict, text: str) -> None:
         number = int(info["id"])
+        expected_updated_at = info.get("_github_updated_at")
+        if expected_updated_at:
+            current = self._api(f"checking issue #{number} before writing",
+                                f"repos/{self.repo}/issues/{number}")
+            actual_updated_at = current.get("updated_at") if isinstance(current, dict) else None
+            if actual_updated_at != expected_updated_at:
+                raise BackendRefusal(stale_write_refusal(
+                    number, expected_updated_at, actual_updated_at))
         had_parts = int(info.get("_github_parts", 1))
         current_labels = info.get("_github_labels", [])
         # `derive_info` — the SAME shared derivation every read goes through — off the text
@@ -757,10 +927,11 @@ class GitHubBackend(SpecBackend):
         `gh_refusal` already reports for `gh api`, reused here because `gh`'s three failure
         modes (missing binary, unauthenticated, said no) are the same across both."""
         action = f"setting issue #{number}'s type to '{type_name}'"
-        code, out, err = _gh_run(self.cwd, "issue", "edit", str(number),
-                                 "--repo", self.repo, "--type", type_name)
+        code, out, err, attempts = _gh_result(
+            _gh_run(self.cwd, "issue", "edit", str(number),
+                    "--repo", self.repo, "--type", type_name))
         if code != 0:
-            raise BackendRefusal(gh_refusal(action, code, out, err))
+            raise BackendRefusal(gh_refusal(action, code, out, err, attempts))
 
     # -- the continuation comments a spilled document uses --------------------- #
     def _comments(self, number: int) -> list[dict]:

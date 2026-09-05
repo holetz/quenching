@@ -1,6 +1,7 @@
 """Static C3 findings over the delivery workflow inventory."""
 from __future__ import annotations
 
+from quenching.common.front import register_checks
 from quenching.delivery.model import DeliveryInventory, Finding, Workflow
 
 
@@ -20,8 +21,8 @@ _BANDS = {
 
 def _finding(code: str, message: str, path: str, *, severity: str | None = None) -> Finding:
     band = _BANDS[code]
-    return Finding(code, band, severity or ("warning" if band == "Judgement" else "error"),
-                   message, path)
+    return Finding(code, severity or ("warning" if band == "Judgement" else "error"), message,
+                   path=path, band=band)
 
 
 def _reachable(workflow: Workflow) -> set[str]:
@@ -155,8 +156,16 @@ def check_judgement_policy(inventory: DeliveryInventory) -> list[Finding]:
 
 
 def run_checks(inventory: DeliveryInventory) -> list[Finding]:
-    findings = check_provider_policy(inventory)
-    findings.extend(finding for workflow in inventory.workflows
-                    for finding in _workflow_findings(workflow))
-    findings.extend(check_judgement_policy(inventory))
-    return findings
+    return CHECK_REGISTRY.run(inventory)
+
+
+def check_workflows(inventory: DeliveryInventory) -> list[Finding]:
+    return [finding for workflow in inventory.workflows
+            for finding in _workflow_findings(workflow)]
+
+
+CHECK_REGISTRY = register_checks(
+    ("provider-policy", check_provider_policy),
+    ("workflows", check_workflows),
+    ("judgement-policy", check_judgement_policy),
+)

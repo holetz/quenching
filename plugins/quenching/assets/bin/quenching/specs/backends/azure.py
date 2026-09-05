@@ -6,8 +6,9 @@ from __future__ import annotations
 import json
 import os
 
-from quenching.common.git import _git
+from quenching.common.git import COMMAND_TIMEOUT_S, _git
 from quenching.common.config import CONFIG_FILE, find_repo_root
+from quenching.common.io import write_text
 from quenching.specs.backends.base import BackendRefusal, SpecBackend
 from quenching.specs.backends.hybrid import (hybrid_project, hybrid_split, hybrid_title_join,
                                              hybrid_unwrap, hybrid_wrap)
@@ -106,8 +107,7 @@ def azure_cache_write(org: str, project: str, **entries) -> None:
     data.update(entries)
     try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w", encoding="utf-8") as fh:
-            json.dump(data, fh)
+        write_text(path, json.dumps(data))
     except OSError:
         pass
 
@@ -133,7 +133,7 @@ def _az_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, s
         return 1, "", f"not a directory: {cwd}"
     try:
         out = subprocess.run(["az", *argv, "--only-show-errors"], capture_output=True,
-                             text=True, timeout=60, cwd=cwd, input=stdin)
+                             text=True, timeout=COMMAND_TIMEOUT_S, cwd=cwd, input=stdin)
         return out.returncode, out.stdout, out.stderr
     except FileNotFoundError as e:
         return AZ_MISSING, "", str(e)
@@ -687,7 +687,7 @@ class AzureBoardsBackend(SpecBackend):
         items: list[dict] = []
         for start in range(0, len(ids), AZ_BATCH_SIZE):
             chunk = ids[start:start + AZ_BATCH_SIZE]
-            fd, path = tempfile.mkstemp(suffix=".json")
+            fd, path = tempfile.mkstemp(suffix=".json", dir=self.cwd)
             try:
                 with os.fdopen(fd, "w", encoding="utf-8") as fh:
                     fields = list(AZ_LEAN_BATCH_FIELDS if lean else AZ_BATCH_FIELDS)
@@ -1201,7 +1201,7 @@ class AzureBoardsBackend(SpecBackend):
                                f"{action}; nothing was written",
                 })
         import tempfile
-        fd, path = tempfile.mkstemp(suffix=".json")
+        fd, path = tempfile.mkstemp(suffix=".json", dir=self.cwd)
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as fh:
                 json.dump(ops, fh)

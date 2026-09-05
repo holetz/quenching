@@ -1,5 +1,6 @@
 {
   "replacements": {
+    "Claude Code": "Codex",
     "${CLAUDE_PLUGIN_ROOT}/assets/references/": "../../references/",
     "${CLAUDE_PLUGIN_ROOT}/assets/templates/": "../../templates/",
     "${CLAUDE_PLUGIN_ROOT}/assets/specs/": "../../specs/",
@@ -36,7 +37,7 @@
     "Skill",
     "context: fork",
     "hooks",
-    "align — preserve the five-front dependency order, applicability probes, not-applicable versus skipped vocabulary, and cross-front re-probe",
+    "align — preserve the seven-front dependency order, applicability probes, not-applicable versus skipped vocabulary, and cross-front re-probe",
     "ops:align — preserve the probe-before-inventory boundary, three-band disposition, and report-only judgement findings",
     "ops:status — preserve the read-only boundary, finding bands, and explicit configuration/refusal states",
     "ops:entrypoint:new — preserve its four-question human gate when translating the body",

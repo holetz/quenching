@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import argparse
-import os
 
+from quenching.common.front import build_parser as build_front_parser, resolve_root
 from quenching.common.output import emit, refuse
 from quenching.common.version import VERSION
 from quenching.delivery.doctor import doctor, inspect_delivery
@@ -11,25 +11,18 @@ from quenching.delivery.inventory import build_inventory
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="cq delivery",
-        description="probe and report a repository's delivery workflow surface",
+    parser = build_front_parser(
+        "cq delivery", "probe and report a repository's delivery workflow surface",
+        (("inventory", "read the provider or provider-equivalent workflow tree"),
+         ("doctor", "probe applicability and report delivery findings"),
+         ("status", "read the delivery applicability state")),
     )
-    parser.add_argument("--root", help="repository root (default: current directory)")
     parser.add_argument("--version", action="store_true", help="print the delivery version")
-    sub = parser.add_subparsers(dest="cmd")
-    for name, help_text in (
-        ("inventory", "read the provider or provider-equivalent workflow tree"),
-        ("doctor", "probe applicability and report delivery findings"),
-        ("status", "read the delivery applicability state"),
-    ):
-        child = sub.add_parser(name, help=help_text)
-        child.add_argument("--json", action="store_true", help="print machine-readable output")
     return parser
 
 
 def _root(value: str | None) -> str:
-    return os.path.abspath(value or os.getcwd())
+    return resolve_root(value)
 
 
 def _human_inventory(payload: dict) -> str:

@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 
 from quenching.ops.config import load_ops_config
+from quenching.common.front import register_checks
 from quenching.ops.inventory import build_inventory as build_ops_inventory
 from quenching.proof.model import Finding, ProofInventory
 from quenching.proof.readme import readme_path, render_readme_document
@@ -16,7 +17,7 @@ from quenching.proof.readme import readme_path, render_readme_document
 
 def _error(code: str, message: str, *, path: str | None = None,
            layer: str | None = None) -> Finding:
-    return Finding(code, "error", message, path, layer)
+    return Finding(code, "error", message, path=path, layer=layer)
 
 
 def check_unlayered(inventory: ProofInventory) -> list[Finding]:
@@ -170,9 +171,22 @@ def conditional_status(inventory: ProofInventory) -> dict[str, str]:
     return {}
 
 
+CHECK_REGISTRY = register_checks(
+    ("unlayered", check_unlayered),
+    ("unmarked", check_unmarked),
+    ("loose-fixture", check_loose_fixture),
+    ("fat-conftest", check_fat_conftest),
+    ("unmeasured-surface", check_unmeasured_surface),
+    ("no-floor", check_no_floor),
+    ("stop-first", check_stop_first),
+    ("empty-layer", check_empty_layer),
+    ("no-ci", check_no_ci),
+    ("order-unproven", check_order_unproven),
+    ("untested-entrypoint", check_untested_entrypoint),
+    ("readme-stale", check_readme_stale),
+)
+
+
 def run_checks(inventory: ProofInventory) -> list[Finding]:
-    checks = (check_unlayered, check_unmarked, check_loose_fixture, check_fat_conftest,
-              check_unmeasured_surface, check_no_floor, check_stop_first, check_empty_layer,
-              check_no_ci, check_order_unproven, check_untested_entrypoint, check_readme_stale)
-    findings = [finding for check in checks for finding in check(inventory)]
+    findings = CHECK_REGISTRY.run(inventory)
     return sorted(findings, key=lambda item: (item.code, item.path or "", item.message))

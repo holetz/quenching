@@ -32,11 +32,20 @@ the near miss says `scoped` where the marker says `unrestricted`, so it contains
 sentence that names it. A rule with no case that fails without it is a rule nobody is holding.
 """
 
+import contextlib
+import io
+import json
+import pathlib
+import tempfile
 import unittest
+from types import SimpleNamespace
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.components.commands.lint import (
     UNSCOPED_TOOLS,
+    _numbered_steps,
+    _step_criteria,
+    cmd_lint,
     lint_command,
     marker_present,
     unscoped_marker,
@@ -111,6 +120,98 @@ def unscoped(body: str) -> dict:
     found = [f for f in lint_command(command(body), BASE) if f["code"] == "sk-unscoped-bash"]
     assert len(found) == 1, f"expected exactly one sk-unscoped-bash, got {len(found)}"
     return found[0]
+
+
+def strict_findings(frontmatter: str) -> list[dict]:
+    """Run the command lint against a real frontmatter file, preserving source syntax."""
+    with tempfile.TemporaryDirectory() as tmp:
+        path = pathlib.Path(tmp) / "command.md"
+        path.write_text(f"---\n{frontmatter}\n---\n\nbody\n", encoding="utf-8")
+        item = command("body\n")
+        item["path"] = str(path)
+        return [f for f in lint_command(item, BASE) if f["code"] == "sk-frontmatter-strict"]
+
+
+class StrictFrontmatter(unittest.TestCase):
+    def test_a_folded_scalar_swallowing_a_known_key_reports_the_key_and_line(self):
+        found = strict_findings("description: >-\n  Trigger prose\n argument-hint: [input]\nallowed-tools: Read")
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["key"], "argument-hint")
+        self.assertEqual(found[0]["line"], 4)
+        self.assertIn("align", found[0]["remedy"])
+
+    def test_an_unquoted_nested_flow_sequence_reports_a_flat_or_quoted_remedy(self):
+        found = strict_findings("description: trigger\nargument-hint: [ref [mainline]]")
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["kind"], "nested-flow-sequence")
+        self.assertIn("quote", found[0]["remedy"])
+
+    def test_an_unquoted_plain_scalar_with_colon_space_reports_a_safe_form(self):
+        found = strict_findings("description: Use when: this is explicit\nallowed-tools: Read")
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["kind"], "plain-colon-space")
+        self.assertIn(">-", found[0]["remedy"])
+
+    def test_the_plugin_command_surface_has_no_lint_errors(self):
+        plugin_root = pathlib.Path(__file__).resolve().parent.parent
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            status = cmd_lint(SimpleNamespace(path=None, json=True), str(plugin_root))
+        payload = json.loads(output.getvalue())
+        errors = [f for f in payload["findings"] if f["severity"] == "error"]
+        self.assertEqual(status, 0)
+        self.assertEqual(errors, [])
+        self.assertEqual(payload["commandCount"], 54)
+
+
+class StepCriterion(unittest.TestCase):
+    def test_child_headings_under_workflow_are_steps_without_numbers(self):
+        body = ("## Workflow\n\n### Probe\n\nRead the payload.\n\n"
+                "### Report\n\nWrite the report.\n\n**Done when:** report exists.\n")
+        self.assertEqual(_numbered_steps(body), ["### Probe", "### Report"])
+        self.assertEqual(_step_criteria(body), (2, 1))
+
+    def test_a_top_level_bullet_sequence_under_steps_is_operational(self):
+        body = "## Steps\n\n- Probe the front.\n- Report the result.\n"
+        self.assertEqual(_numbered_steps(body), ["- Probe the front.", "- Report the result."])
+
+    def test_narrative_bullets_and_a_lone_bullet_are_not_steps(self):
+        self.assertEqual(_numbered_steps("## Notes\n\n- A narrative note.\n- Another note.\n"), [])
+        self.assertEqual(_numbered_steps("## Workflow\n\n- One sentence of context.\n"), [])
+
+
+class GateAndGrantLint(unittest.TestCase):
+    def _findings(self, body: str, allowed: str) -> list[dict]:
+        item = command(body)
+        item["frontmatter"]["allowed-tools"] = allowed
+        return lint_command(item, BASE)
+
+    def test_a_confirmation_gate_without_ask_user_question_is_an_error(self):
+        found = [f for f in self._findings(
+            "Present the plan. Wait for the user's confirmation before writing.", "Read, Write")
+                 if f["code"] == "sk-prose-gate"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["severity"], "error")
+        self.assertIn("AskUserQuestion", found[0]["remedy"])
+
+    def test_a_fenced_git_call_without_a_matching_grant_is_an_error(self):
+        found = [f for f in self._findings("```bash\ngit add -- file\n```",
+                                            "Read, Bash(git status:*)")
+                 if f["code"] == "sk-grant-gap"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["tool"], "git add")
+        self.assertEqual(found[0]["line"], 2)
+        self.assertIn("Bash(git add:*)", found[0]["remedy"])
+
+    def test_historical_or_negative_confirmation_prose_is_not_a_gate(self):
+        bodies = (
+            "A previous run waited for confirmation; this report only describes it.",
+            "Never ask for confirmation here; the operation is read-only.",
+        )
+        for body in bodies:
+            with self.subTest(body=body):
+                self.assertNotIn("sk-prose-gate",
+                                 {f["code"] for f in self._findings(body, "Read")})
 
 
 class MarkerPredicate(unittest.TestCase):

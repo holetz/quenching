@@ -34,6 +34,11 @@ Every applicable front must expose the common front mold at
 `../../references/front-align/mold.md`. The conductor sequences and reports;
 it never reimplements a front's verifier or repair logic.
 
+Before probing, read `cq specs config --json`. An absent `shared.profiles.installed` means all seven
+local fronts are eligible; a declared list limits the conductor to its named local fronts, in the
+dependency order above. Report other local fronts as skipped by profile. This scope affects only
+this conductor run: it does not remove commands or change a command's own invocation contract.
+
 ## Workflow
 
 ### Applicability

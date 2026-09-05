@@ -59,7 +59,7 @@ homes with a fixed shape, follow it
 (`catalog/<system>/<catalog>/<schema>/<table>.md`). **Done when:** the canonical path is fixed.
 
 ### 3. Fill the mold
-Copy the mold from `../../templates/...` and complete the frontmatter:
+Copy the matching mold from `../../templates/` and complete the frontmatter:
 non-empty `type` + the OKF recommended fields (`title`/`description`/`resource`/`timestamp`) +
 the method labels (`audience`/`authority`/`source`/`maintainer`). Derive `resource`; an
 unproven standard is `authority: background`. **Done when:** the stamp is complete and
@@ -98,3 +98,12 @@ Verify every file you touched against
   consolidated `<schema>.md`. Never create an empty detailed page.
 - **Binary (a regulation PDF we consume)** → write a `sidecar.md` extract under
   `external/regulations/` (`type: sidecar`), never ingest the binary.
+
+## Invariants
+
+- One requested knowledge item gets one canonical path and one owning home.
+- Existing frontmatter and authored content are merged; filled values are never clobbered.
+- `type`, `resource`, timestamp, authority and source remain evidence-backed and are never invented.
+- Every new document is listed by its owning index, and introduced repository terms are handed to
+  the glossary workflow.
+- The conformance core is the closing check; this command does not call a bulk align or import path.

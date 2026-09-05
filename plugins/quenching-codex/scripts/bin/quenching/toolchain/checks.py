@@ -4,6 +4,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from quenching.common.front import register_checks
 from quenching.toolchain.model import Artifact, Finding, ToolchainInventory
 
 
@@ -20,7 +21,7 @@ def _finding(code: str, message: str, path: str) -> Finding:
     band = "Mechanical" if code in {
         "tc-lock-stale", "tc-config-duplicate", "tc-generated-stale"
     } else "Structural"
-    return Finding(code, band, "error", message, path)
+    return Finding(code, "error", message, path=path, band=band)
 
 
 def check_lock_stale(inventory: ToolchainInventory) -> list[Finding]:
@@ -151,7 +152,15 @@ def check_key_unarbitered(inventory: ToolchainInventory) -> list[Finding]:
 
 
 def run_checks(inventory: ToolchainInventory) -> list[Finding]:
-    checks = (check_lock_stale, check_config_duplicate, check_generated_stale,
-              check_runtime_drift, check_tool_unpinned, check_build_backend,
-              check_key_unarbitered)
-    return [finding for check in checks for finding in check(inventory)]
+    return CHECK_REGISTRY.run(inventory)
+
+
+CHECK_REGISTRY = register_checks(
+    ("lock-stale", check_lock_stale),
+    ("config-duplicate", check_config_duplicate),
+    ("generated-stale", check_generated_stale),
+    ("runtime-drift", check_runtime_drift),
+    ("tool-unpinned", check_tool_unpinned),
+    ("build-backend", check_build_backend),
+    ("key-unarbitered", check_key_unarbitered),
+)
