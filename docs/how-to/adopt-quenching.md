@@ -13,7 +13,7 @@ source: plugins/quenching/README.md §The seven fronts, the non-converging axes,
 maintainer: Israel Holetz
 ---
 
-# Exercise quenching in a repository
+# Adopt quenching in a repository
 
 *Audience: implementer · One OK per front · Use a disposable copy while studying the workflow*
 
