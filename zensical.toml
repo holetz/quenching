@@ -16,6 +16,7 @@
     { "Getting started" = [
       "tutorials/index.md",
       "tutorials/getting-started.md",
+      "tutorials/first-workflow-study.md",
     ] },
     { "How-to guides" = [
       "how-to/index.md",
