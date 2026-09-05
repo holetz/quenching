@@ -301,9 +301,10 @@ the portable form, including for sub-agents.
 
 def codex_readme(text: str) -> str:
     """Keep the generated README aligned with Codex's actual tool-loading contract."""
-    install_start = text.index("## Install")
-    uninstall_start = text.index("## Uninstall or reverse", install_start)
-    codex_install = """## Install
+    if "## Install" in text and "## Uninstall or reverse" in text:
+        install_start = text.index("## Install")
+        uninstall_start = text.index("## Uninstall or reverse", install_start)
+        codex_install = """## Install
 
 For a disposable study target, make this plugin's generated `skills/` tree available under the
 target repository's `.agents/skills/` directory, then run `codex` from that target. Codex discovers
@@ -323,7 +324,7 @@ There is no Claude-style `--plugin-dir` command here. The experiment in
 path for inspecting the workflow without installing a host integration.
 
 """
-    text = text[:install_start] + codex_install + text[uninstall_start:]
+        text = text[:install_start] + codex_install + text[uninstall_start:]
     install_marker = "The CLI has two equivalent entry points:"
     if install_marker in text:
         install = text.index(install_marker)
