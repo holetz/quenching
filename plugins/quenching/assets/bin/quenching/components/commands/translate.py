@@ -301,6 +301,29 @@ the portable form, including for sub-agents.
 
 def codex_readme(text: str) -> str:
     """Keep the generated README aligned with Codex's actual tool-loading contract."""
+    install_start = text.index("## Install")
+    uninstall_start = text.index("## Uninstall or reverse", install_start)
+    codex_install = """## Install
+
+For a disposable study target, make this plugin's generated `skills/` tree available under the
+target repository's `.agents/skills/` directory, then run `codex` from that target. Codex discovers
+repository-local skills there, and symlinks are supported. For a managed installation, use Codex's
+plugin mechanism for the published `quenching-codex` plugin. The official [skills documentation](https://learn.chatgpt.com/docs/build-skills)
+describes the discovery and plugin model.
+
+```bash
+mkdir -p /path/to/target/.agents/skills/quenching-codex
+cp -R /path/to/this/checkout/plugins/quenching-codex/skills/. \\
+  /path/to/target/.agents/skills/quenching-codex/
+codex
+```
+
+There is no Claude-style `--plugin-dir` command here. The experiment in
+`docs/tutorials/first-workflow-study.md` uses the bundled `cq` directly and is the deterministic
+path for inspecting the workflow without installing a host integration.
+
+"""
+    text = text[:install_start] + codex_install + text[uninstall_start:]
     install_marker = "The CLI has two equivalent entry points:"
     if install_marker in text:
         install = text.index(install_marker)

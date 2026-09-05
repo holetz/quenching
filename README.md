@@ -1,12 +1,10 @@
 # quenching
 
-A **Claude Code plugin** that forces any repository's `/docs/` into a single
-canonical **[Open Knowledge Format (OKF v0.1)](https://github.com/GoogleCloudPlatform/knowledge-catalog)**
-bundle — and keeps it that way. Every repository that adopts it ends up with the
-**same rich, greppable knowledge tree** in the same places, so anyone moving
-between repos sees one structure.
+A workflow-study repository and a packaged **Claude Code plugin** for examining how an
+OKF-shaped knowledge workflow behaves. Its material is educational and reproducible, not a
+production control, security boundary, or adoption guarantee.
 
-This repository is a **plugin marketplace**. The plugin itself lives in
+This repository contains a **plugin marketplace** and the study's source material. The plugin itself lives in
 [`plugins/quenching/`](plugins/quenching/).
 
 Release history is maintained in the [`CHANGELOG`](CHANGELOG.md).
@@ -54,9 +52,9 @@ command-by-command manual, the fronts, and the cost model live in the
 [plugin README](plugins/quenching/README.md) — this file stays a thin pointer over it rather
 than a second, driftable copy.
 
-The **`cq knowledge hook`** hook (zero dependencies) keeps future edits
-conformant: it validates touched `/docs/**` files against the OKF core on
-`Write`/`Edit` and at `Stop`, and can optionally block a non-conformant write.
+There is no background write hook in the current artifact. Conformance is evaluated explicitly by
+the commands and validators; the disposable experiment records that boundary instead of implying
+that a declared read-only command provides shell or Python containment.
 
 The design source is DTCG 2025.10 at `/.design/tokens.json`; `cq design build` emits portable
 `PRODUCT.md`/`DESIGN.md`, the Impeccable sidecar, and HTML/Typst adapters. Impeccable is an
@@ -64,13 +62,16 @@ optional consumer, and `cq design import` is the explicit route for folding its 
 
 ## Install
 
+The paths below are for inspecting the packaged Claude artifact in a disposable study target.
+They document the current workflow; they are not a production adoption recommendation.
+
 This repository publishes from the single **`main`** branch
 ([`docs/standards/git/branching.md`](docs/standards/git/branching.md)). Pull requests merge into
 `main`, and a deliberate local release act creates the tag and publishes the accumulated work.
 Installing normally therefore gets the repository's default branch, not an arbitrary in-progress
 checkout.
 
-Published installation (recommended): inside Claude Code, add this marketplace and install the plugin:
+Published plugin path: inside Claude Code, add this marketplace and install the plugin:
 
 ```text
 /plugin marketplace add holetz/claude-quenching
