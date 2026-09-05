@@ -5,9 +5,9 @@ Run `python3 scripts/sync_codex_plugin.py --write` to refresh it.
 
 # quenching (plugin)
 
-An **OKF-centric knowledge-base aligner** for the Codex surface of any
+An **OKF-centric workflow-study artifact** for the Codex surface of a
 repository. It carries one canonical **Open Knowledge Format (OKF v0.1)** bundle
-of `/docs/` and the tools to install it, force an existing base into conformance,
+of `/docs/` and the tools used to inspect it, force an existing base into conformance,
 insert new knowledge, capture terms into a fixed glossary, drain the project's Codex
 Code memory into it, import external sources into it, keep the repo's `AGENTS.md` a thin pointer over it, and organize
 the repo's own **automation surface** (`.agents/skills/`) under one
@@ -20,6 +20,10 @@ The **design front** adds one DTCG source at `/.design/tokens.json`, determinist
 for Impeccable and editorial media, and a human-arbitrated import path for an Impeccable-authored
 `DESIGN.md`. Impeccable remains optional and owns web craft; quenching owns the source, product
 projection, genres, and non-web adapters.
+
+This is an educational, reproducible study surface rather than a production control or security
+boundary. A disposable target can exercise the workflow, but the documentation makes no claim that
+an assistant cannot write through an available shell or Python interpreter.
 
 All of it sits behind **one interface, repeated on every front**: ONE `align` per front —
 probe-first, so a clean front costs a couple of tool calls — that forces the structure into
@@ -85,7 +89,7 @@ That contract lives once, in
 **One file per entry point** — Codex merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs; there is
 no `skills/` tree and no wrapper. The tables below are the manual, and the count is a property of
-their rows rather than a second structural inventory: the `53` in this heading is the manual's
+their rows rather than a second structural inventory: the `54` in this heading is the manual's
 canonical displayed total, while [`tests/test_readme_surface.py`](tests/test_readme_surface.py)
 reads it and fails the suite whenever these tables
 and `commands/**` disagree
@@ -362,25 +366,22 @@ Shared contracts keep gates explicit; missing `gh` or `az` is a named refusal
 
 ## Install
 
-Published installation (recommended): from inside Codex, add the marketplace and install
-the plugin:
-
-```text
-/plugin marketplace add holetz/claude-quenching
-/plugin install quenching@quenching
-```
-
-Run `/reload-plugins` after installation when the session was already open.
-
-Local development only:
+For a disposable study target, make this plugin's generated `skills/` tree available under the
+target repository's `.agents/skills/` directory, then run `codex` from that target. Codex discovers
+repository-local skills there, and symlinks are supported. For a managed installation, use Codex's
+plugin mechanism for the published `quenching-codex` plugin. The official [skills documentation](https://learn.chatgpt.com/docs/build-skills)
+describes the discovery and plugin model.
 
 ```bash
-claude --plugin-dir ./plugins/quenching
+mkdir -p /path/to/target/.agents/skills/quenching-codex
+cp -R /path/to/this/checkout/plugins/quenching-codex/skills/. \
+  /path/to/target/.agents/skills/quenching-codex/
+codex
 ```
 
-`--plugin-dir` loads the checkout directly for plugin development and testing; it is not the
-normal adoption or upgrade path. A published installation is managed by Codex. All skills
-reach the shared payload via `../../assets/...`.
+There is no Claude-style `--plugin-dir` command here. The experiment in
+`docs/tutorials/first-workflow-study.md` uses the bundled `cq` directly and is the deterministic
+path for inspecting the workflow without installing a host integration.
 
 ## Uninstall or reverse
 
