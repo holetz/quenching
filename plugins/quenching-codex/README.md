@@ -382,6 +382,20 @@ claude --plugin-dir ./plugins/quenching
 normal adoption or upgrade path. A published installation is managed by Codex. All skills
 reach the shared payload via `../../assets/...`.
 
+### Read-only: another project's specs only
+
+A project that only reads another project's specs (for example, an Obsidian vault using them as
+its to-do list) installs the sibling plugin instead. It registers one command and cannot write
+the tracker:
+
+```text
+/plugin install quenching-specs-reader@quenching
+```
+
+Point it at a checkout of the project to read with `QUENCHING_SPECS_ROOT` in that project's
+`.agents/settings.json` `env` block, then run `/quenching-specs-reader:read`. Its README is
+[../quenching-specs-reader/README.md](../quenching-specs-reader/README.md).
+
 ## Uninstall or reverse
 
 To remove the installed plugin while keeping the marketplace available:
