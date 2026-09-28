@@ -62,7 +62,11 @@ code `sp-read-only`.
 The allowlist keeps the refusal cheap and legible. The runtime block covers a read verb that
 someday grows a side effect. A command body that says "never write" without either layer is a
 promise that no grant enforces, which is the failure [read-only-views.md](read-only-views.md)
-rules out.
+rules out. The reader's one command therefore pre-grants `Bash(cq-specs-read:*)` and nothing
+else, not a broad `python3`. That grant covers the default permission mode only. Measured on
+Claude Code 2.1.284, a `dontAsk` session did not admit the call through the command's
+`allowed-tools`, so a target that never prompts adds the same pattern to its own
+`permissions.allow`.
 
 ## Selecting the project to read
 
