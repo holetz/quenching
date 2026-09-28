@@ -1,0 +1,44 @@
+# quenching-specs-reader
+
+A read-only view of another project's provider-owned [quenching](../quenching/README.md) specs.
+It registers **one** command, `/quenching-specs-reader:read`, for a project that needs to read a
+specs front (an Obsidian vault reading its to-do list, for example) without enabling the full
+`quenching` plugin and its 54 commands.
+
+## Install in a target project
+
+Add the marketplace once, then enable only this plugin in the target's `.claude/settings.json`,
+pointing it at a local checkout of the project whose specs you read:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "quenching": { "source": { "source": "github", "repo": "holetz/claude-quenching" } }
+  },
+  "enabledPlugins": { "quenching-specs-reader@quenching": true },
+  "env": { "QUENCHING_SPECS_ROOT": "/absolute/path/to/the/project/checkout" }
+}
+```
+
+The provider and repository are derived from that checkout's remote, as for `cq specs`. Reading
+GitHub issues needs an authenticated `gh`; reading Azure Boards needs an authenticated `az`.
+
+## Use
+
+- `/quenching-specs-reader:read`: the ranked front of active specs, with task progress.
+- `/quenching-specs-reader:read 1139`: one spec's open, blocked and done tasks.
+- `/quenching-specs-reader:read --root ~/code/other-project`: overrides `QUENCHING_SPECS_ROOT`.
+
+The executable is `cq-specs-read` (on `PATH` while the plugin is enabled). It admits only `list`,
+`status`, `show`, `section` (read form), `next` and `config`. Every write verb, `section --write`
+and `--fold` are refused with exit 2, and every backend write path is disabled before dispatch.
+
+## Maintenance
+
+Only `commands/`, `bin/` and this README are edited here. `assets/**`, `VERSION`,
+`.claude-plugin/plugin.json` and `.generated-from.json` are generated from `plugins/quenching/`:
+
+```bash
+python3 scripts/sync_specs_reader_plugin.py --write   # after changing plugins/quenching
+bash scripts/verify_repo.sh                            # runs the --check
+```
