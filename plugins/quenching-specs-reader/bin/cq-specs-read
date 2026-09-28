@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+"""cq-specs-read — the read-only door to another project's provider-owned specs.
+
+Claude Code appends `<pluginRoot>/bin` to PATH for every enabled plugin, so a target that
+enables `quenching-specs-reader` alone finds this file by name. It is NOT called `cq`: with the
+full `quenching` plugin also enabled, a second `cq` on PATH would shadow the one that writes.
+
+READ-ONLY IN TWO LAYERS
+-----------------------
+1. An allowlist at the argument boundary: only the read verbs of `cq specs` pass, and
+   `section`'s `--write`/`--fold` (or any prefix argparse would expand to them) is refused.
+2. Before dispatch, every write path of every loaded backend class is replaced with a
+   refusal. A read verb that one day grows a side effect still cannot reach the tracker.
+
+Both refuse with exit 2 — the same refusal code every `cq` verb uses.
+
+WHICH PROJECT
+-------------
+`--root <checkout>` wins; otherwise `QUENCHING_SPECS_ROOT`; otherwise the working directory.
+The root must be a checkout of the project whose specs are read: the provider (GitHub or
+Azure Boards) and the repository are derived from its remote.
+
+The package it runs is `assets/bin/quenching`, generated from `plugins/quenching` by
+`scripts/sync_specs_reader_plugin.py`. The plugin root comes from `__file__`, never from
+`${CLAUDE_PLUGIN_ROOT}`, which is empty in a shell.
+"""
+from __future__ import annotations
+
+import json
+import os
+import sys
+
+PLUGIN_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+PACKAGE_ROOT = os.path.join(PLUGIN_ROOT, "assets", "bin")
+
+READ_VERBS = ("list", "status", "show", "section", "next", "config")
+WRITE_FLAGS = ("--write", "--fold")
+WRITE_METHODS = ("write_spec", "create_spec", "move_spec", "_store", "_write_api",
+                 "_set_state", "_set_type", "_link_artifact", "_link_new_artifacts")
+ROOT_ENV = "QUENCHING_SPECS_ROOT"
+OK, REFUSED = 0, 2
+
+USAGE = f"""usage: cq-specs-read [--root CHECKOUT] {{{','.join(READ_VERBS)}}} [args...]
+
+Read-only `cq specs`. The project is --root, else ${ROOT_ENV}, else the working directory.
+Every verb takes --json. Examples:
+  cq-specs-read next --front --json          the ranked to-do front
+  cq-specs-read list --phase plans --lean --json
+  cq-specs-read show --spec 1139 --json      one spec's map and its tasks
+  cq-specs-read section 1139 Problem,Tasks --json
+"""
+
+
+def refuse(code: str, message: str, as_json: bool) -> int:
+    if as_json:
+        print(json.dumps({"ok": False, "code": code, "message": message}, indent=2))
+    else:
+        print(f"cq-specs-read: {message}", file=sys.stderr)
+    return REFUSED
+
+
+def split_root(argv: list[str]) -> tuple[str | None, list[str]]:
+    """Take a leading `--root X` / `--root=X` off the front; the rest is the verb and its args."""
+    root = None
+    rest = list(argv)
+    while rest and rest[0].startswith("--root"):
+        token = rest.pop(0)
+        if token == "--root":
+            if not rest:
+                return None, ["--root"]
+            root = rest.pop(0)
+        elif token.startswith("--root="):
+            root = token.split("=", 1)[1]
+        else:
+            rest.insert(0, token)
+            break
+    return root, rest
+
+
+def is_write_flag(token: str) -> bool:
+    """True for `--write`, `--fold` and every prefix argparse would expand to one of them."""
+    if not token.startswith("--") or len(token) < 3:
+        return False
+    name = token.split("=", 1)[0]
+    return any(flag.startswith(name) for flag in WRITE_FLAGS)
+
+
+def block_writes() -> None:
+    """Replace every write path on every loaded backend class with a refusal."""
+    from quenching.specs.backends import base
+    import quenching.specs.backends  # noqa: F401 — registers the provider classes
+
+    def refused(name):
+        def method(self, *args, **kwargs):
+            raise base.BackendRefusal({
+                "code": "sp-read-only", "exit": REFUSED,
+                "message": f"quenching-specs-reader is read-only; {type(self).__name__}.{name} "
+                           f"was refused and nothing was written",
+            })
+        return method
+
+    pending = [base.SpecBackend]
+    while pending:
+        cls = pending.pop()
+        pending.extend(cls.__subclasses__())
+        for name in WRITE_METHODS:
+            if name in vars(cls):
+                setattr(cls, name, refused(name))
+
+
+def main(argv: list[str]) -> int:
+    as_json = "--json" in argv
+    root, rest = split_root(argv)
+    if rest == ["--root"]:
+        return refuse("sp-read-usage", "--root needs a checkout path", as_json)
+    if not rest or rest[0] in ("-h", "--help"):
+        print(USAGE, end="")
+        return OK
+    verb = rest[0]
+    if verb not in READ_VERBS:
+        return refuse("sp-read-only",
+                      f"`{verb}` is not a read verb; quenching-specs-reader admits only "
+                      f"{', '.join(READ_VERBS)}", as_json)
+    blocked = [token for token in rest[1:] if is_write_flag(token)]
+    if blocked:
+        return refuse("sp-read-only",
+                      f"{', '.join(blocked)} writes the spec; quenching-specs-reader is read-only",
+                      as_json)
+    root = root or os.environ.get(ROOT_ENV) or os.getcwd()
+    root = os.path.abspath(os.path.expanduser(root))
+    if not os.path.isdir(root):
+        return refuse("sp-read-root", f"project checkout not found: {root}", as_json)
+
+    sys.path.insert(0, PACKAGE_ROOT)
+    block_writes()
+    from quenching.specs.commands.cli import main as specs_main
+    try:
+        return specs_main(["--root", root, *rest])
+    except SystemExit as exc:
+        return REFUSED if exc.code == 2 else (exc.code or OK)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
