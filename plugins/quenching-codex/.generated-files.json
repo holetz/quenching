@@ -334,11 +334,11 @@
   ],
   "sha256": {
     ".codex-plugin/plugin.json": "0a696ee33b34996d136d4aa2d32fcc35bd34af35efb475b0cabefbafcaf87f34",
-    ".generated-from.json": "247802fd615199ea777fb822d3a2498fc55f5512fe691d0e71f380f4e95a73e0",
+    ".generated-from.json": "da6cd991dec1f0f18dfee73529d446b1b6ddddee02fe150fac5928986164d2dc",
     "README.md": "5b461d699b88b70f60e3d2b3c854d87d00f01feb63b64b2bfed33a3738811cb7",
     "VERSION": "e33e70efdb9c35eb184b87ee7abc05ac16a925c9c36e84408999dea33a741fa8",
     "checks/catalog-publication-check.py": "9f4c9b75b524e31bd9420036a5384801ef707ef5708956abba1d6eb62c398f9e",
-    "checks/citation-check.sh": "9dbd81ac212db38f042b03479e0f72edbb6a0a02536f5d74caab2b743f8fcdf0",
+    "checks/citation-check.sh": "c6842d3f237c5f3781158e7aa5ccc6ef8971c91c82d213bf3ab9d31b42f5cb1c",
     "checks/documentation-site-check.py": "144972ca732c9309a9b3bbbbe03787eef82ef2b54cad8005c9e9b0bfa8a23f73",
     "checks/fixtures/catalog-publication/healthy/reference/catalog/clientes.md": "23c305552a83a1c9ab89ae0d556388391de8b0f3d8130da0a45cb9bec1662492",
     "checks/fixtures/catalog-publication/healthy/reference/catalog/index.md": "53a852f7503ee551ebbb387f21cdd2e0d10e92f75e176b169ea130d1d883dd19",

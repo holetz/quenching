@@ -33,6 +33,8 @@ run_check "Claude/Codex translation" \
   python3 plugins/quenching/assets/bin/cq --root . components translate --check --json
 run_check "Codex artifact lockstep" \
   python3 scripts/validate_codex_plugin.py
+run_check "specs reader lockstep" \
+  python3 scripts/sync_specs_reader_plugin.py --check
 run_check "citation checks" \
   bash plugins/quenching/assets/checks/citation-check.sh
 run_check "documentation site source" \
