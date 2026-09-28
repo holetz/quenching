@@ -16,9 +16,15 @@ pointing it at a local checkout of the project whose specs you read:
     "quenching": { "source": { "source": "github", "repo": "holetz/claude-quenching" } }
   },
   "enabledPlugins": { "quenching-specs-reader@quenching": true },
-  "env": { "QUENCHING_SPECS_ROOT": "/absolute/path/to/the/project/checkout" }
+  "env": { "QUENCHING_SPECS_ROOT": "/absolute/path/to/the/project/checkout" },
+  "permissions": { "allow": ["Bash(cq-specs-read:*)"] }
 }
 ```
+
+The command pre-grants `Bash(cq-specs-read:*)` itself, and that is enough in the default
+permission mode. The `permissions.allow` line is for sessions that never prompt (`dontAsk`, a
+scheduled run): measured on Claude Code 2.1.284, a command's `allowed-tools` did not admit the
+call there, and the entry point is read-only, so allowing it project-wide grants no write.
 
 The provider and repository are derived from that checkout's remote, as for `cq specs`. Reading
 GitHub issues needs an authenticated `gh`; reading Azure Boards needs an authenticated `az`.
