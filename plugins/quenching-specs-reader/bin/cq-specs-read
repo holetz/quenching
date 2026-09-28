@@ -86,9 +86,18 @@ def is_write_flag(token: str) -> bool:
 
 
 def block_writes() -> None:
-    """Replace every write path on every loaded backend class with a refusal."""
+    """Replace every write path on every backend class with a refusal.
+
+    Every module of the backends package is imported first: a class defined after the patch
+    would escape it, so relying on what `backends/__init__.py` happens to import is not enough."""
+    import importlib
+    import pkgutil
+
+    import quenching.specs.backends as backends
     from quenching.specs.backends import base
-    import quenching.specs.backends  # noqa: F401 — registers the provider classes
+
+    for module in pkgutil.iter_modules(backends.__path__):
+        importlib.import_module(f"{backends.__name__}.{module.name}")
 
     def refused(name):
         def method(self, *args, **kwargs):
