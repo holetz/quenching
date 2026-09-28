@@ -5,7 +5,7 @@ description: >-
   the tasks of spec <id>", or "what should I work on next". Not for: creating, developing,
   executing or closing a spec → the full `quenching` plugin's /quenching:specs:* commands.
 argument-hint: "[spec-id] [--root <checkout>]"
-allowed-tools: Bash(cq-specs-read:*), Bash(python3:*)
+allowed-tools: Bash(cq-specs-read:*)
 ---
 
 # /quenching-specs-reader:read — read a specs front, never write it
@@ -18,7 +18,8 @@ Arguments: `$ARGUMENTS`
 ## Workflow
 
 1. **Resolve the tool.** Run `cq-specs-read --help`; if it is not on `PATH`, use
-   `python3 "${CLAUDE_PLUGIN_ROOT}/bin/cq-specs-read"` for every call below.
+   `python3 "${CLAUDE_PLUGIN_ROOT}/bin/cq-specs-read"` for every call below; that form is not
+   pre-granted, so the host asks before running it.
    **Done when:** one invocation form answered `--help` with exit 0.
 2. **Resolve the project.** A path in the arguments is passed as `--root <path>`. Otherwise the
    tool reads `QUENCHING_SPECS_ROOT`, then the working directory. If a call refuses with
