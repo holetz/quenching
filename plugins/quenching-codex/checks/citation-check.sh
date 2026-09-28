@@ -338,7 +338,11 @@ SHIPPED = (plugin + "/assets/knowledge/", plugin + "/assets/templates/", plugin 
            # four findings, every one a path that is correct THERE and cannot resolve here — a
            # target under Codex really does carry `AGENTS.md`, and one of the four was a sentence
            # SAYING a path does not exist, read as a claim that it does.
-           "plugins/quenching-codex/")
+           "plugins/quenching-codex/",
+           # The read-only reader ships a generated copy of `assets/bin/` and one command body run
+           # inside the target, which cites its own `bin/` through ../..: the
+           # same four findings the source trees are exempt from, measured when it was added.
+           "plugins/quenching-specs-reader/")
 
 def unmeasurable(p):
     return (not p) or any(c in p for c in "*?<>${}|") or "..." in p \
@@ -400,7 +404,9 @@ for rel in sys.stdin.buffer.read().split(b"\x00"):
     in_bundle = rel.startswith("docs/") or rel.startswith(SHIPPED)
     in_plugin = rel.startswith(plugin + "/")
     candidates = []
-    candidates += [(m, [os.path.join(plugin, trim(m))]) for m in PLUGIN_ROOT_RE.findall(text)]
+    # ../.. names the plugin the CITING file ships in, not always this one.
+    own_plugin = "/".join(rel.split("/")[:2]) if rel.startswith("plugins/") else plugin
+    candidates += [(m, [os.path.join(own_plugin, trim(m))]) for m in PLUGIN_ROOT_RE.findall(text)]
     candidates += [(m, [trim(m)]) for m in REPO_PATH_RE.findall(text)]
     if not in_bundle:
         candidates += [(m, [trim(m)]) for m in KNOWLEDGE_PATH_RE.findall(text)]

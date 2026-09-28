@@ -65,6 +65,7 @@
         "standards/architecture/root-migration.md",
         "standards/architecture/shared-mold-keys.md",
         "standards/architecture/spec-backend.md",
+        "standards/architecture/specs-reader-plugin.md",
         "standards/architecture/surface-translation.md",
         "standards/architecture/security-pillar.md",
         "standards/architecture/type-follows-home.md",
