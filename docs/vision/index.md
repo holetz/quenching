@@ -5,7 +5,7 @@ The vision is **segmented by area**: one file per pillar/area (`<area>.md`, `typ
 not a single `VISION.md`.
 
 **Boundary:** direction **carries no deadline, milestone, or order**. A **raw task** toward
-it lands in `/.specs/backlog/` (the task inbox, outside this bundle); what **has already
+it lands in the provider-owned `specs` front (outside this bundle); what **has already
 become reality** distills into [standards/](../standards/index.md); an agreed-but-unproven
 decision about *how* also lands in [standards/](../standards/index.md) as
 `authority: background`.
