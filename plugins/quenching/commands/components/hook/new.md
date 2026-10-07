@@ -1,5 +1,6 @@
 ---
-description: Wire ONE scoped hook — the narrowest scope and cheapest handler that catches it. Use when the user asks to "create a hook", "add a validation hook", "check this after every edit", "block that command before it runs", or "catch it automatically whenever a migration lands". Applies on one OK; warns by default and blocks only by the human's word. Not for: changing a command's body → /quenching:components:command:new; documenting a rule without automation → /quenching:knowledge:add.
+description: >-
+  Wire ONE scoped hook with the narrowest scope and cheapest handler. Use for "create a hook", "check this after every edit", "block that command". Not for: command bodies → /quenching:components:command:new.
 argument-hint: [what-the-hook-should-catch]
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
 ---

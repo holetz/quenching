@@ -1,5 +1,6 @@
 ---
-description: Develop an existing spec — compose it to ready, argue with it, approve it. Triggers on "develop this spec", "refine the spec", "fill in the missing sections", "approve this spec", "poke holes in this". Not for: capturing an unrelated new spec → /quenching:specs:create; executing one → /quenching:specs:execute.
+description: >-
+  Develop an existing spec to ready, argue with it, approve it. Use for "develop this spec", "refine the spec", "approve this spec". Not for: new specs → /quenching:specs:create; building → /quenching:specs:execute.
 argument-hint: [id-or-description]
 allowed-tools: Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion, Task
 model: opus

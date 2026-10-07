@@ -1,5 +1,6 @@
 ---
-description: Build ONE spec task by task — write, verify, self-review, tick and commit. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree and Git; follows the spec's verification policy and commits each task. Not for: writing or sharpening → /quenching:specs:develop; creating → /quenching:specs:create; review/archive/release → /quenching:specs:conclude.
+description: >-
+  Build ONE spec task by task: write, verify, self-review, tick, commit. Use for "execute this spec", "build it", "implement the tasks", "continue building". Not for: sharpening → /quenching:specs:develop; closing → /quenching:specs:conclude.
 argument-hint: [id]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Task, Skill
 model: sonnet

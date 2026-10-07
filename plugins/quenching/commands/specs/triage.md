@@ -1,5 +1,6 @@
 ---
-description: Rank the provider-owned plans front — ONE ordered list the human confirms and writes as priority records. Triggers on "triage the specs", "prioritize the front", "rank the plans", "what matters most", "re-rank these", "order the plans", "which of these first". Reads the provider front and writes only priority fields. Not for: closing → /quenching:specs:conclude; resolving discoveries → /quenching:specs:develop; building → /quenching:specs:execute; conformance → /quenching:specs:status.
+description: >-
+  Rank the provider-owned plans front into ONE ordered list the human confirms. Use for "triage the specs", "prioritize the front", "which of these first". Not for: building → /quenching:specs:execute.
 argument-hint: [optional-id]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion
 model: opus

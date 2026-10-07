@@ -1,5 +1,6 @@
 ---
-description: Add or refine ONE entry in the fixed glossary (glossary.md). Triggers on "add a term to the glossary", "define this term", "add this acronym/jargon to the glossary". Not for: writing a concept doc → /quenching:knowledge:learn; bulk glossary sweep → /quenching:knowledge:glossary-backfill.
+description: >-
+  Add or refine ONE glossary.md entry. Use for "add a term to the glossary", "define this term". Not for: concept docs → /quenching:knowledge:learn; bulk sweeps → /quenching:knowledge:glossary-backfill.
 argument-hint: [term]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Write, Edit, AskUserQuestion
 ---

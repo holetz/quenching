@@ -1,5 +1,6 @@
 ---
-description: Force /docs/ into the canonical OKF v0.1 bundle and pull in out-of-band content, looping until nothing changes. Triggers on "align the docs", "align and update docs", "fix the documentation structure", "install the OKF bundle", "set up /docs/", or "converge the knowledge base". Not for: adding one knowledge item → /quenching:knowledge:add; reading status only → /quenching:knowledge:status; producing documentation pages → /quenching:knowledge:documentation:produce.
+description: >-
+  Force /docs/ into the canonical OKF v0.1 bundle and absorb out-of-band content until stable. Use for "align the docs", "set up /docs/", "converge the knowledge base". Not for: one item → /quenching:knowledge:add.
 argument-hint: [optional-docs-path]
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Task, Skill, AskUserQuestion
 ---

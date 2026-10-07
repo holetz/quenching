@@ -1,10 +1,7 @@
 ---
 description: >-
-  Transform pending changes in the current Git worktree into small, cohesive commits while keeping
-  staging explicit and stopping safely on unsafe input. Use when the user asks to "commit all
-  worktree changes autonomously", "organize and commit my worktree", or "make incremental commits
-  with one confirmation". Not for: committing only the prepared index → /quenching:git:commit;
-  opening or merging a pull request → /quenching:git:pr:create, /quenching:git:merge.
+  Turn pending worktree changes into small cohesive commits with one confirmation. Use for "organize and commit my worktree". Not for: the staged index → /quenching:git:commit.
+disable-model-invocation: true
 argument-hint: [optional subject prefix]
 allowed-tools: >-
   Read, Bash(git status:*), Bash(git diff:*), Bash(git ls-files:*), Bash(git add:*),

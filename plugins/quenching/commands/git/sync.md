@@ -1,9 +1,6 @@
 ---
 description: >-
-  Rebase the current (or named) work branch onto the latest base, with `--update-refs`. Use when the user
-  asks to "sync this branch with develop/main", "rebase onto the base", "catch this branch up", or
-  "update my branch before I keep working". Not for: resolving conflicts → the human; creating a
-  branch → /quenching:git:branch.
+  Rebase the work branch onto the latest base with `--update-refs`. Use for "sync this branch with main", "rebase onto the base", "catch this branch up". Not for: conflicts → the human.
 argument-hint: [branch]
 allowed-tools: Bash(git status:*), Bash(git remote get-url:*), Bash(git fetch:*), Bash(git rebase:*), Bash(git for-each-ref:*), Bash(python3:*), Read
 ---

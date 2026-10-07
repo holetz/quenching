@@ -1,5 +1,7 @@
 ---
-description: Converge a target repository's toolchain surface from its manifests, locks, language pins and tool configuration while preserving target-owned build policy. Triggers on "align the toolchain front", "fix toolchain drift", or "converge the toolchain tree". Not for: reading the toolchain state only → /quenching:toolchain:status.
+description: >-
+  Converge a repository's toolchain surface from manifests, locks, language pins and tool config, preserving build policy. Use for "align the toolchain front", "fix toolchain drift". Not for: read-only → /quenching:toolchain:status.
+disable-model-invocation: true
 argument-hint: [optional-target-root]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
