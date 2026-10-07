@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: derived from plugins/quenching/README.md §The 56 commands and §The specs flow (tables preserved, long rows condensed); the machine authority is cq components doctor --json
+source: plugins/quenching/README.md §The 56 commands (long rows condensed); command set held in lockstep by test_commands_catalog.py
 maintainer: Israel Holetz
 ---
 
