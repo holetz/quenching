@@ -71,7 +71,9 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - [**Approved record**](standards/workflows/plan-lifecycle.md) — the `approved: {date, by}`
   frontmatter entry recording that a spec may be built, and on whose authority: `by: human` is a
   person's word (the fact the retired `backlog/` → `ready/` `git mv` carried), `by: low-gear` is the
-  `low` level authorizing the mode and the develop pass stamping on it.
+  `low` level authorizing the mode and the develop pass stamping on it, and `by: orchestrator-forced`
+  is a conductor running `--autonomous` forcing the `low` gear over a higher level (only `develop`
+  stamps it, after `ready`); an absent `by:` reads as `human`.
 - [**Authority**](standards/index.md) — the frontmatter field saying how binding a doc is: `current`
   (proven) or `background` (agreed but unproven).
 - [**Batching contract**](standards/automation/context-discipline.md) — a named block in a command
