@@ -166,6 +166,7 @@
       "decisions/0005-glossary-long-forms.md",
       "decisions/0006-specs-move-to-a-git-store-with-thin-cards.md",
       "decisions/0007-native-claude-code-features.md",
+      "decisions/0008-seguranca-das-mudancas-do-epico-1145.md",
     ] },
     { "Vision" = [
       "vision/index.md",

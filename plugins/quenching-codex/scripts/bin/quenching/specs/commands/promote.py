@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from quenching.specs.backends import open_backend
+from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.commands.output import Emitter, read_one
 from quenching.specs.commands.read import _next_phase
 from quenching.specs.parse import PHASES
@@ -120,7 +121,16 @@ def cmd_promote(args, root: str, out: Emitter) -> int:
     # outcome on it.
     if outcome:
         backend.write_spec(info, set_frontmatter_key(info["text"], "outcome", outcome))
-    backend.move_spec(info, dest)
+    try:
+        backend.move_spec(info, dest)
+    except BackendRefusal as refusal:
+        if outcome:
+            # The first step is already on the spec; saying so keeps the retry honest.
+            refusal.err["outcomeWritten"] = True
+            refusal.err["message"] = (f"{refusal.err.get('message', 'the move failed')} — the "
+                                      f"outcome '{outcome}' was ALREADY written to "
+                                      f"'{info['id']}' and the spec did not move; re-run promote")
+        raise
     out.emit(args.json,
              {"ok": True, "id": info["id"], "from": info["folder"], "to": dest,
               "outcome": outcome, "warn": gates["warn"]},

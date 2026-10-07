@@ -365,14 +365,25 @@ fi
 if want 2; then
 echo "2. a conductor invokes its stage by registry name"
 newbox "$WORK/sandbox2"
+# A conformant box makes /align report "all applicable fronts conformant — nothing to align" and
+# stop BEFORE Front 1, which the body is right to do: the check then grades the model's
+# disobedience, not the routing. Seed one real knowledge finding (a concept doc with no
+# frontmatter) so Front 1 has work and the conductor must reach it.
+printf '# Orphan\n' > "$WORK/sandbox2/docs/standards/orphan.md"
 ( cd "$WORK/sandbox2" && claude -p --plugin-dir "$PLUGIN" "quenching-align
 
 You have my authorization for the whole run — treat the plan gate as granted and proceed. I only
 need you to reach and INVOKE Front 1 via the Skill tool; stop right after that stage is invoked." \
   --max-turns 12 --output-format stream-json --verbose < /dev/null > "$WORK/2.jsonl" 2>&1 )
 if evidence "$WORK/2.jsonl"; then
-  if grep -q '"quenching:knowledge:align"' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=yes; else r=no; fi
-  check "$r" "invoked quenching:knowledge:align by name"
+  if grep -q '"quenching:knowledge:align"' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=yes
+  elif grep -q '"subtype":"error_max_turns"' "$WORK/2.jsonl"; then r=cap
+  else r=no; fi
+  if [ "$r" = cap ]; then
+    inconc "invoked quenching:knowledge:align by name" "hit the turn cap before routing"
+  else
+    check "$r" "invoked quenching:knowledge:align by name"
+  fi
   if grep -qE '"skill": *"[^"]*quenching-knowledge-align"' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=no; else r=yes; fi
   check "$r" "invoked no retired quenching-* skill name"
 else
