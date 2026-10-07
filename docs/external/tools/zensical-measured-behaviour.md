@@ -7,7 +7,7 @@ tags: [zensical, mkdocs, static-site-generator, documentation, tooling]
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: 'spec 1003 (2026-08-27) — measured against `zensical 0.0.57` from PyPI, built repeatedly over this plugin''s own `documentation/` payload; the documentation read is the `github.com/zensical/docs` tarball at branch `master` on the same date; the dot-prefixed `docs_dir` and `site_dir` sections were measured on 2026-08-28 against the same 0.0.57, by building this repository''s own bundle from throwaway root configs'
+source: 2026-08-27, 2026-08-28; lineage in ADR 0004
 maintainer: quenching
 ---
 

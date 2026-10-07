@@ -8,8 +8,9 @@ concept doc carries `type: standard` + a derived `resource:` (the repo scope it 
 [external/](../external/index.md) (external facts we consume) and
 [catalog/](../catalog/index.md) (our data). Direction lives in
 [vision/](../vision/index.md). An **agreed-but-unproven** rule sits here as
-`authority: background` and graduates to `current` once proven — there is no separate decisions
-home.
+`authority: background` and graduates to `current` once proven. The **history** of a rule — its
+measurements, dates and the specs that moved it — lives in [decisions/](../decisions/index.md), and
+the standard links it.
 
 Keep only the subtopics that apply to the repo; within each, break standards **one
 concept per file** by considering the candidate sub-standards catalog (a

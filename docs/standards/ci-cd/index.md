@@ -32,6 +32,7 @@ Per-subject ledger the verify gate reads. A subject is "done" only when every ca
   Code's own plugin upgrade; nothing is deployed to a running environment.
 - `manifest-generation` — **deferred.** Both manifests (`plugin.json`, `marketplace.json`) are
   hand-edited and small; nothing generates them today.
-- `pipeline-stages` — **deferred, not applicable.** There is no CI pipeline for the plugin itself;
-  the verification gates are the test suite, `functional-checks.sh`, `conclude-order-check.sh` and
-  `citation-check.sh`, run locally.
+- `pipeline-stages` — **deferred, not applicable.** The only workflow (`.github/workflows/sync-codex-plugin.yml`) runs the
+  repository gate, `bash scripts/verify_repo.sh`, on every push and pull request; it is a gate, not a
+  build or deploy pipeline. The gate bundles the test suite, `functional-checks.sh`,
+  `conclude-order-check.sh` and `citation-check.sh`, and runs the same way locally.

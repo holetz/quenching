@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Empty-response honesty
 
+<!-- rules -->
+
 **A third-party process that exits 0 and returns nothing did not say "there is nothing" — it said
 nothing.** The two sentences are indistinguishable to whoever reads the return value, and it is that
 indistinction that turns a transport failure into a fact: the listing comes back empty, the command

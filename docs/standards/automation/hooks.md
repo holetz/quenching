@@ -7,11 +7,13 @@ tags: [automation, hooks, performance, budget]
 timestamp: 2026-08-15
 audience: both
 authority: current
-source: skill-front capability research (2026-07-27) — hookify/plugin-dev + official docs; the knowledge checker's dirty-gate precedent. Graduated to current on an adopting surface, and the components pillar enforces both rungs from one implementation (8 selftest cases, since ported to the test suite). The adopting surface changed shape (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec): the plugin's own hooks/hooks.json wires the checker for every repo, so the three rung-1 frontmatter blocks it replaced were removed; the dead-rung paragraph gained this repo's own measurement (2026-08-06) after its frozen 4.4.5 copy was caught reporting `bundle root is not a directory` against a bundle the shipped 4.13.0 passed clean
+source: 2026-07-27, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, 2026-08-06; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Scoped hooks
+
+<!-- rules -->
 
 A hook charges **other people's operations**: it fires on events the command that installed
 it does not own, so a session-wide hook taxes every iteration in the repo — including every

@@ -7,11 +7,13 @@ tags: [quality, verification, okf, validator, conformance]
 timestamp: 2026-08-27
 audience: both
 authority: current
-source: docs-verification-layer plan (sections 2-4); the grep-reach rule from collapse-remaining-language-clause-restatements (2026-07-31) — a census invariant that returned 14 against a real population of 19; the generated-listing pair from validar-a-zona-generated-contra-o-disco (2026-08-17); narrow-stale-doc (2026-08-27) — `stale-doc` retired and its measurement republished as a figure, emptying the advisory category and leaving the rule that a measurement earns a finding code only when what it measures is what the code names
+source: docs-verification-layer, collapse-remaining-language-clause-restatements, 2026-07-31, validar-a-zona-generated-contra-o-disco, 2026-08-17, narrow-stale-doc; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Bundle verification
+
+<!-- rules -->
 
 What the `knowledge` front proves mechanically, what it leaves to a skill reading its own work, and
 how to tell which a given invariant deserves. `assets/bin/cq knowledge` is the
@@ -109,6 +111,8 @@ nothing in this front can:
   local seeds matched by concept, not by URI, on the second run. Accepted rather than closed — a
   list-valued key would buy that one seed its exactness at the cost of the property every lookup
   depends on.
+
+<!-- rationale -->
 
 What was done instead is the cut the corollary demands. The rule that an imported doc records where
 it came from used to be written in **four** places — `sources.md`, `/quenching:knowledge:import` twice over, and

@@ -7,11 +7,13 @@ tags: [workflows, specs, execution, verification, commits, delegation, handoff]
 timestamp: 2026-08-27
 audience: both
 authority: current
-source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30); the inline-markup arm of the falsifiable-verify rule found twice while building that same spec (2026-07-31); the zero-errors-not-warnings arm measured on the stop-develop-offering-follow-up-specs branch (2026-08-03); the declared `cwd:` key by the declarar-o-cwd-de-uma-linha-verify spec (2026-08-05), proved by that same spec's own mixed-cwd `verify:` lines; the closed `files:` grammar by the fix-the-files-field-parser-splitting-on-commas-inside-parentheses spec (2026-08-06), whose repro was found in the route-commands-without-always-on-descriptions archive (2026-08-02); the failing-exit arm of the zero-errors rule added by reduzir-as-chamadas-az-por-escrita-no-azure-boards at its conclude, after a `verify:` asserting `cq specs validate` exit 0 was measured unsatisfiable on the day it was authored — the target workspace already carried seven warnings, and `validate` exits 1 on any finding; the false-red mirror of the falsifiable-verify rule — a `verify:` that can never pass, by a path that does not resolve from the declared `cwd:` or by a scope wider than the task's blast radius — measured twice on the references-citam-standards-fora-do-esqueleto spec (2026-08-15); its third cause — a phrase the target file's own language standard forbids, which no correct implementation can satisfy and which the falsification run cannot see, since a grep for an absent phrase exits non-zero exactly as a healthy check does — and the `files:` rule for derived artifacts, both from revisar-fluxo-do-develop-custo-e-gates at its branch review (2026-08-16), measured on that spec's own task 1.3 (a pt-BR literal demanded of an English-only command body) and task 2.2 (a golden fixture broken and re-captured while declared nowhere); the no-`files:` arm of the anchor rule — a task that declares no `files:` ticks without `--subject` and attempts no commit — by cq-specs-task-check-stale-subject-sem-commit (2026-08-17), on the unresolvable `subject:` that arm left on task 5.1 of the archived revisar-politica-de-assets-checks (issue 902) under the `github` backend; the per-task commit and section-boundary contract by the remover-agrupamento-de-commits-por-secao spec (2026-08-30)
+source: refine-and-execute-specs-flow, cut-specs-execute-turns; history in ADR 0002
 maintainer: quenching
 ---
 
 # Task execution contract
+
+<!-- rules -->
 
 A task is not done when the code is written. It is done when it **ran**, its diff was
 **reviewed**, and it is **committed on its own, with its own checkbox inside that commit**. This standard is the contract;
@@ -283,15 +285,9 @@ returning it to `- [ ]` (`cq specs task --uncheck <id>`) — never merely to ret
 
 ### Why the marker replaced the counter
 
-The earlier contract kept an attempt count in a `.specs.json` sidecar and hard-stopped at five. The
-count was machine state a human never saw: a task went quiet after five failures with **no trace of
-why**, and the only way to resume was a `--reset-attempts` incantation that bought five more
-attempts at the same wrong approach.
+<!-- rationale -->
 
-The objection to a third glyph was that `- [!]` would break consumers of `CHECKBOX_RE` and would not
-survive hand-editing. Both were answered rather than argued away: the regex admits the glyph
-explicitly, and a marker a human can read is *more* likely to survive hand-editing than a sidecar
-they never open — because the reason is right there in the line they are already looking at.
+A blocked marker replaced a hidden attempt counter: the reason now sits in the line a human reads ([ADR 0002](../decisions/0002-task-execution-history.md) §Why the marker replaced the counter).
 
 ## Review splits by cost into two levels, owned by two commands
 
@@ -393,32 +389,9 @@ deliberate declaration and not a convenience (`plugins/quenching/assets/referenc
 §Execution metadata). A checkbox-only task has no commit to anchor, whether its backend stores the
 spec in the working tree or outside git.
 
-Measured on this repository's `github` backend (2026-08-17): the archived spec
-`revisar-politica-de-assets-checks` (issue #902) carries a `subject:` on task 5.1 that
-`git log --grep` cannot resolve, because the tick was API-only and the commit it names was never
-made. It is **not** backfilled — an archived spec is never rewritten
-([plan-git-record.md](plan-git-record.md) §The subject is the anchor) — and a task-level checker
-symmetric to `sp-bad-merge` remains a separate surface, deliberately not built here.
+<!-- rationale -->
 
-Measured on this repository's `github` backend (2026-08-17): the archived spec
-`revisar-politica-de-assets-checks` (issue #902) carries a `subject:` on task 5.1 that
-`git log --grep` cannot resolve, because the tick was API-only and the commit it names was never
-made. It is **not** backfilled — an archived spec is never rewritten
-([plan-git-record.md](plan-git-record.md) §The subject is the anchor) — and a task-level checker
-symmetric to `sp-bad-merge` is a separate surface, deliberately not built here.
-
-### Hard rules
-
-These are the ways an implementation ships a lie behind a green checkbox. Each is absolute, with
-no "just this once":
-
-- Never disable, skip, `xfail`, or delete a test to make a task pass.
-- Never edit the `verify:` command, the test, or the assertion so it stops failing. Change the
-  code, or report the task blocked.
-- Never `git commit --no-verify`. A failing hook is a finding to report, not an obstacle to route
-  around. Same for `--no-gpg-sign`.
-- Never amend or rewrite an earlier task's commit; never force-push.
-- Never tick a checkbox for work that was not verified.
+An archived spec's unresolvable `subject:` is not backfilled ([ADR 0002](../decisions/0002-task-execution-history.md) §Unresolvable subject on an archived spec).
 
 ## The Handoff refresh cadence is four events
 
@@ -437,9 +410,9 @@ It is refreshed on exactly four events:
 | a **discovery recorded** | a discovery is by definition a finding nothing else holds yet |
 | the run's **last commit** | that commit is where the next run picks up |
 
-The cadence it replaced was *after each committed task*. Measured on a 13-task run, four rewrites of
-~400 words each were **~90% identical** to one another: the section is sent with every task, so the
-cost is paid on both sides, and near-identical rewrites buy nothing on either.
+<!-- rationale -->
+
+The cadence it replaced was *after each committed task* ([ADR 0002](../decisions/0002-task-execution-history.md) §Why the Handoff cadence is four events).
 
 ### A cadence trigger can never be a judgment
 

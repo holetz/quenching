@@ -7,11 +7,13 @@ tags: [quality, findings, remedy, cli, surface]
 timestamp: 2026-08-27
 audience: both
 authority: current
-source: spec remover-secao-stray-de-um-documento (task 2.2) — the `sp-stray-heading` whose declared remedy advised two actions the very CLI that emitted it refused with exit 2, measured on 2026-08-17; the family's second site — the remedy whose conclusion the check itself does not observe — added by sk-unscoped-bash-le-o-corpo (2026-08-27), measured over the `sk-unscoped-bash` that advised declaring the reason in the body while reading only `allowed-tools`
+source: remover-secao-stray-de-um-documento, sp-stray-heading, 2026-08-17, sk-unscoped-bash-le-o-corpo, 2026-08-27, sk-unscoped-bash; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Applicability of a finding's remedy
+
+<!-- rules -->
 
 **A `remedy` names an action the surface that emitted the finding offers.** Not a description of the
 desired state, not editorial advice: a path whoever reads the finding can walk with the same tool
@@ -36,10 +38,14 @@ renamed or folded. There was no `--delete`, and `upsert_section` only reached a 
 resolution had already accepted. Closing the warning required editing the document outside the tool;
 under an external backend, that means editing the issue by hand.
 
+<!-- rationale -->
+
 The cost is not the warning. It is that it was **permanent by construction**: nine documents in
 `archive/` carried the finding on 2026-08-17, and not one of them had a way out.
 
 ## Why the yardstick is this one, and not "the text is correct"
+
+<!-- rationale -->
 
 An inapplicable remedy does not cost only the finding it accompanies. **It teaches readers to ignore
 the whole output.** Whoever tries to follow a piece of advice and finds that the tool refuses it
