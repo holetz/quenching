@@ -1,6 +1,6 @@
 ---
 name: quenching-delivery-align
-description: "Converge a target repository's delivery surface from its workflow tree while preserving provider, environment, promotion, publication and permission policy. Triggers on \"align the delivery front\", \"fix delivery drift\", or \"converge the delivery pipeline\". Not for: reading delivery state only → quenching-delivery-status."
+description: "Converge a repository's delivery surface from its workflow tree, preserving provider and permission policy. Use for \"align the delivery front\", \"fix delivery drift\". Not for: read-only → quenching-delivery-status."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/delivery/align.md -->

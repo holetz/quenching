@@ -1,17 +1,8 @@
 ---
 description: >-
-  Mine ONE session for what it evidences about ONE command that ran in it — performance, redundancy,
-  bugs, and the problems the human had to fix by hand. Reach for it when you want to ask "what did
-  this command cost", "retro this session", "what went wrong in this run", "improve the command that
-  started this session", or "what should this command do differently". Counts come from code reading
-  the session transcript, never from a model recalling its own run, and every counted claim is
-  reported with its count and the turn that evidences it. Each finding lands with the
-  `/quenching:components:command:new` invocation that would close it, and nothing is applied.
-  A retro reads your transcripts, so a human chooses it. Not for: changing the audited body;
-  minting a command → `/quenching:components:command:new`; aligning the whole surface →
-  `/quenching:components:align`.
+  Mine ONE session for what it shows about the command that ran in it: cost, redundancy, bugs, manual fixes. Use for "retro this session", "what did this command cost". Reads transcripts; applies nothing.
 argument-hint: "[session id or transcript path — omit for this session; optionally a command name]"
-allowed-tools: Read, AskUserQuestion, Bash(python3:*), Bash(py:*)
+allowed-tools: Bash(cq:*), Read, AskUserQuestion, Bash(python3:*), Bash(py:*)
 disable-model-invocation: true
 ---
 
@@ -23,7 +14,7 @@ command to analyse. Omitted → this session, and the command that opened it.
 The session that ran the command holds the evidence of what it cost, what it repeated, where it
 misfired and what the human had to fix. This command reads it back.
 
-**Counting is the extractor's job, never yours.** `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq components session`
+**Counting is the extractor's job, never yours.** `cq components session`
 reads the transcript JSONL and returns a bounded digest; you read the digest and judge it. It
 resolves the transcript itself (explicit path, bare session id, or the newest session for this
 cwd). Resolve `cq` per
@@ -41,7 +32,7 @@ any remainder names the command to analyse. Pass **only** the transcript token b
 carry the rest to step 2; nothing given → pass nothing and let the tool resolve this session.
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq components session list --json <transcript-or-nothing>
+cq components session list --json <transcript-or-nothing>
 ```
 Exit 2 is a refusal carrying its reason — an absent transcript, an empty one, or a non-empty
 one that yielded no command. Show the reason and stop; a session that proved nothing is never
@@ -57,7 +48,7 @@ to the session opener.
 
 ### 3. Get its evidence
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq components session digest --command "<chosen>" --json <transcript-or-nothing>
+cq components session digest --command "<chosen>" --json <transcript-or-nothing>
 ```
 An unknown `--command` refuses with exit 2 and lists what the session did hold — reach step 2's
 question rather than repeating the call.

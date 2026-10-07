@@ -1,45 +1,37 @@
 # AGENTS.md — claude-quenching
 
-Este repositório publica o plugin `quenching` e sua tradução para Codex. Os corpos de comando em
-`plugins/quenching/commands/` e as skills em `plugins/quenching-codex/skills/` são a fonte de
-comportamento: trate alterações neles como alterações de código.
-
 Language: pt-BR — the contract is /docs/standards/agents/communication.md.
+Ephemeral writes: .quenching/ — the contract is /docs/standards/agents/ephemeral-writes.md
 
-## Operating this repo
+This repository publishes the `quenching` Claude Code plugin marketplace (and its Codex
+translation). It has no application build: command bodies and references are executable prose,
+while a few Python tools provide the local checks. Treat command-body edits like code.
 
-O conhecimento durável vive em `/docs/`; este arquivo é apenas o harness Codex e deve
-continuar sendo um ponteiro curto. Antes de alterar ferramentas do plugin, valide o bundle e a
-superfície correspondente:
+## Operating
+
+After changing the repository, run the single repository gate from its root:
 
 ```bash
 bash scripts/verify_repo.sh
-python3 plugins/quenching-codex/scripts/bin/cq knowledge validate docs
-python3 plugins/quenching-codex/scripts/bin/cq --root .agents components doctor --json
 ```
 
-Quando a superfície `.agents/skills/` ganhar um comando local, acrescente a verificação
-`python3 plugins/quenching-codex/scripts/bin/cq --root .agents components lint --json`.
-Este checkout não contém `plugins/quenching-codex/tests/`; não há suíte local a executar aqui.
+The gate is zero errors. Surface-load checks live at
+`plugins/quenching/assets/checks/functional-checks.sh`; exit 2 is inconclusive, not green. The spec
+backend is GitHub, so there is no local `/.specs/` workspace.
 
-Não há aplicação ou build convencional neste repositório; o backend de specs é GitHub e não há
-workspace local `/.specs/`.
+## Safety that must stay visible
 
-## Where knowledge lives
+- Do not add `context: fork` beside a command's mid-flow gate; the minimal building cycle is the
+  only documented exception, and its review lives in the PR.
+- Never downgrade classification or executor sub-agents to `haiku` in
+  `/quenching:knowledge:import-memory`.
 
-Resolva termos desconhecidos primeiro no [glossário](/docs/glossary.md).
+Both rules are also scoped in `.claude/rules/` so they load when those files are touched.
 
-- [/docs/standards/](/docs/standards/index.md) — contratos e convenções do repositório.
-- [/docs/concepts/](/docs/concepts/index.md) — entendimento genérico mantido pelo projeto.
-- [/docs/external/](/docs/external/index.md) — fatos sobre ferramentas, bibliotecas e fontes externas.
-- [/docs/tutorials/](/docs/tutorials/index.md), [/docs/how-to/](/docs/how-to/index.md),
-  [/docs/explanation/](/docs/explanation/index.md) — a documentação do produto, por quadrante.
-- [/docs/project/](/docs/project/index.md) — o manual deste repositório: comandos, automação, layout.
-- [/docs/catalog/](/docs/catalog/index.md) — dados e domínio do repositório.
-- [/docs/vision/](/docs/vision/index.md) — direção do projeto.
+## Navigation
 
-Para criar, mover ou alinhar conhecimento, use as skills quenching correspondentes; não replique
-conhecimento durável neste harness.
-
-<!-- Root harness pointer, auto-loaded by Codex on every turn. Keep this file thin: operational
-     rules and navigation only; durable knowledge belongs in /docs/. -->
+Durable knowledge lives in [/docs/index.md](/docs/index.md); resolve unfamiliar terms in
+[/docs/glossary.md](/docs/glossary.md). The product manual, command catalog, cost model and install
+path live in [plugins/quenching/README.md](plugins/quenching/README.md). The registered sources are
+`plugins/quenching/commands/**` and `plugins/quenching/assets/references/**`. Do not replicate
+durable knowledge in this file.

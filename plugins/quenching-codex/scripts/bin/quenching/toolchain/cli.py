@@ -34,7 +34,9 @@ def _status_payload(payload: dict) -> dict:
     return {
         "root": payload["root"],
         "applicability": applicability,
-        "findings": {},
+        "findings": payload["findings"],
+        "errors": payload["errors"],
+        "warnings": payload["warnings"],
         "ok": payload["ok"],
     }
 
@@ -59,13 +61,15 @@ def main(argv: list[str]) -> int:
         payload, err, code = doctor(root)
         if err:
             return refuse(err, as_json)
-        assert payload is not None
+        if payload is None:
+            return refuse({"code": "tc-no-payload", "message": "toolchain doctor returned nothing"}, as_json)
         emit(as_json, payload, _human_doctor(payload))
         return code
     payload, err = inspect_toolchain(root)
     if err:
         return refuse(err, as_json)
-    assert payload is not None
+    if payload is None:
+        return refuse({"code": "tc-no-payload", "message": "toolchain inspection returned nothing"}, as_json)
     summary = _status_payload(payload)
     emit(as_json, summary, _human_status(summary))
-    return 0
+    return 0 if summary["ok"] else 1

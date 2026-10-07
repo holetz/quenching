@@ -1,6 +1,6 @@
 ---
 name: quenching-knowledge-documentation-review
-description: "Critique and score documentation pages against the eleven-dimension quality gate without writing. Triggers on \"review the documentation\", \"score the docs pages\", or \"critique the documentation quality\". Not for: creating the architecture plan → quenching-knowledge-documentation-plan; editing prose or fixing gaps → quenching-knowledge-documentation-write; configuring or building the site → quenching-knowledge-documentation-build; conducting the complete run → quenching-knowledge-documentation-produce."
+description: "Score documentation pages against the eleven-dimension quality gate, read-only. Use for \"review the documentation\", \"score the docs pages\". Not for: fixing gaps → quenching-knowledge-documentation-write."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/documentation/review.md -->

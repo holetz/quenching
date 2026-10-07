@@ -965,6 +965,7 @@ class GhLeanListing(unittest.TestCase):
             "id": 12, "title": "Alpha", "state": "open",
             "records": ["spec:approved"], "phase": "plans", "folder": "plans",
             "legacy": False, "path": "https://github.com/owner/repo/issues/12",
+            "consistency": "eventual",
         }])
 
     def test_lean_preserves_a_transport_timeout_and_its_attempt_count(self):

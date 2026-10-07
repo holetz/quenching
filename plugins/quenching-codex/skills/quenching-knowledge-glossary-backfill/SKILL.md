@@ -1,6 +1,6 @@
 ---
 name: quenching-knowledge-glossary-backfill
-description: "Sweep the whole bundle to backfill glossary.md with missing terms. Triggers on \"scan the docs for glossary terms\", \"backfill the glossary\", \"find terms we never added to the glossary\". Not for: defining one term → quenching-knowledge-define; authoring its concept doc → quenching-knowledge-learn."
+description: "Sweep the whole bundle to backfill glossary.md with missing terms. Use for \"backfill the glossary\", \"find terms we never added\". Not for: one term → quenching-knowledge-define."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/glossary-backfill.md -->

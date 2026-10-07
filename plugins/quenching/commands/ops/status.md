@@ -1,7 +1,9 @@
 ---
-description: Read the complete operations front and report its declared root, router, entry points, lifecycle, findings and registry freshness without writing. Triggers on "ops status", "check the operations surface", "report operations drift", or "what is the state of the ops front". Not for: converging findings → /quenching:ops:align; minting an entry point or router → /quenching:ops:entrypoint:new.
+description: >-
+  Report the operations front: root, router, entry points, lifecycle and findings, read-only. Use for "ops status", "report operations drift". Not for: converging → /quenching:ops:align.
+disable-model-invocation: true
 argument-hint: [optional-target-root]
-allowed-tools: Read, Grep, Glob, Bash(python3:*)
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
 # /quenching:ops:status — read the operations front
@@ -34,7 +36,7 @@ The payload and target tree are defined by
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted, and run:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" ops status --json
+cq --root "$TARGET_ROOT" ops status --json
 ```
 
 On exit `2`, report the refusal and every missing configuration key exactly as returned. Do not

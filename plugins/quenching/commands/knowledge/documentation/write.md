@@ -1,7 +1,8 @@
 ---
-description: Write sourced Diátaxis pages from a documentation plan with storytelling, visuals and agent-readable contracts. Triggers on "write the documentation pages", "draft the docs from the plan", or "apply the documentation writing pass". Not for: diagnosing or planning the architecture → /quenching:knowledge:documentation:plan; scoring or critiquing pages → /quenching:knowledge:documentation:review; changing only the site configuration → /quenching:knowledge:documentation:build; conducting the complete run → /quenching:knowledge:documentation:produce.
+description: >-
+  Write sourced Diátaxis pages from a documentation plan. Use for "write the documentation pages", "draft the docs from the plan". Not for: planning → /quenching:knowledge:documentation:plan; scoring → /quenching:knowledge:documentation:review.
 argument-hint: [optional-page-slice-or-plan-path]
-allowed-tools: Read, Grep, Glob, Write, Edit, Task, Bash(python3:*), Bash(py:*), AskUserQuestion
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Write, Edit, Task, Bash(python3:*), Bash(py:*), AskUserQuestion
 ---
 
 # /quenching:knowledge:documentation:write — draft pages from the accepted plan

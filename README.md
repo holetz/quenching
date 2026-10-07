@@ -1,11 +1,17 @@
 # quenching
 
-A workflow-study repository and a packaged **Claude Code plugin** for examining how an
-OKF-shaped knowledge workflow behaves. Its material is educational and reproducible, not a
-production control, security boundary, or adoption guarantee.
+A **Claude Code plugin** for teams that build with AI agents: it keeps a repository's knowledge,
+specs and version-control workflow in one canonical, verifiable shape. It is not a security
+boundary: a command declared read-only does not contain an assistant that has a shell.
 
-This repository contains a **plugin marketplace** and the study's source material. The plugin itself lives in
+This repository contains the **plugin marketplace** and the plugin's source. The plugin itself lives in
 [`plugins/quenching/`](plugins/quenching/).
+
+**Core fronts** — maintained actively, with reliability, adoption and cost as priorities:
+`knowledge`, `specs`, `git` and `components`. **Non-core fronts** — `design`, `ops`, `proof`,
+`toolchain`, `delivery` and `security`: they stay in the plugin under the same names, are
+human-only (`disable-model-invocation: true`) and receive reduced maintenance, meaning defect fixes
+but no new features. Type the command name to use one.
 
 Release history is maintained in the [`CHANGELOG`](CHANGELOG.md).
 
@@ -21,10 +27,10 @@ The `Sync Codex plugin` workflow runs on pushes and pull requests. It installs t
 toolchain and runs the repository gate; it does not write the generated snapshot in CI. Refresh
 the Codex artifact locally after changing Claude sources.
 
-## Desenvolvimento local
+## Local development
 
-Este checkout já declara o toolchain no `pyproject.toml` e fixa a resolução em `uv.lock`:
-o `cq` publicado requer Python 3.11 ou mais recente.
+This checkout declares its toolchain in `pyproject.toml` and pins resolution in `uv.lock`:
+the published `cq` requires Python 3.11 or newer.
 
 ```bash
 uv sync --all-groups
@@ -35,9 +41,9 @@ python3 plugins/quenching/assets/checks/documentation-site-check.py site --local
 uv run pytest plugins/quenching/tests -q
 ```
 
-O `zensical.toml` raiz é somente a configuração do site de desenvolvimento deste repositório;
-artefatos em `site/` e `.cache/` não entram no Git. O payload que o plugin instala em um projeto
-alvo continua em `plugins/quenching/assets/zensical/`.
+The root `zensical.toml` is only the configuration of this repository's development site;
+artifacts in `site/` and `.cache/` stay out of Git. The payload the plugin installs into a target
+project remains in `plugins/quenching/assets/zensical/`.
 
 ## What it does
 
@@ -62,8 +68,7 @@ optional consumer, and `cq design import` is the explicit route for folding its 
 
 ## Install
 
-The paths below are for inspecting the packaged Claude artifact in a disposable study target.
-They document the current workflow; they are not a production adoption recommendation.
+The paths below install the packaged Claude plugin. Try it first in a disposable repository.
 
 This repository publishes from the single **`main`** branch
 ([`docs/standards/git/branching.md`](docs/standards/git/branching.md)). Pull requests merge into

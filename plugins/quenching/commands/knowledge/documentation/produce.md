@@ -1,7 +1,8 @@
 ---
-description: Run the complete documentation pipeline from site setup through sourced pages, review and strict build QA. Triggers on "produce the documentation", "run the documentation pipeline", or "generate the complete docs site". Not for: planning only → /quenching:knowledge:documentation:plan; writing an assigned page set → /quenching:knowledge:documentation:write; reviewing without writes → /quenching:knowledge:documentation:review; site-layer configuration or a standalone build → /quenching:knowledge:documentation:build.
+description: >-
+  Run the complete documentation pipeline: site setup, sourced pages, review, strict build. Use for "produce the documentation", "generate the complete docs site". Not for: one stage → its own command.
 argument-hint: [optional-source-scope] [--desde <git-ref>]
-allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
 ---
 
 # /quenching:knowledge:documentation:produce — conduct the documentation pipeline
@@ -35,7 +36,7 @@ and the cycle authorization wording is in
   source gaps and leaked internal markers remain explicit, then name the next stage or route that
   leaves the current page.
 - **Glossary is default-on when it has content.** The canonical `/docs/glossary.md` is a
-  mandatory derived surface unless the accepted map contains an explicit `não publicar` decision.
+  mandatory derived surface unless the accepted map contains an explicit `do not publish` decision.
   The write stage runs `cq knowledge project --write`; the final build runs its `--check` mode and
   the rendered site checker, including a known `<abbr>` assertion.
 - **Delivery destination is explicit.** At cycle start, identify the selected host (GitHub Pages,

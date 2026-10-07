@@ -1,7 +1,7 @@
 ---
 type: standard
 title: Agent communication
-description: The language a repo declares for the prose its agents author — one BCP-47 tag on the root harness line, governing artifact and conversation alike — and the conduct contract that holds in every repo whether or not a language is declared
+description: The two languages a repo declares for what its agents write — the conversation tag on the root harness line, and an artifact language declared by a standard or the artifactLanguage config key — and the conduct contract that holds whether or not either is declared
 resource: /docs/**, /.specs/**
 tags: [agents, language, communication, harness]
 timestamp: 2026-07-30
@@ -16,13 +16,13 @@ maintainer: <the team>
 How an agent communicates here, in two halves: the **language** it writes in, which each repo
 declares for itself, and the **conduct** it owes whoever is reading, which no repo overrides.
 
-One is a variable, the other a constant — see [Why only one is declared](#why-only-one-is-declared).
+One is a variable, the other a constant — see [Why conduct is not declared](#why-conduct-is-not-declared).
 
 ## The language
 
 ### Declaring it
 
-A repo declares its language as **one BCP-47 tag**, on a single line of its **root** harness file
+A repo declares its **conversation** language as **one BCP-47 tag**, on a single line of its **root** harness file
 (`AGENTS.md` / `AGENTS.md`):
 
 ```
@@ -49,36 +49,53 @@ mistake to report, never a second place to look.
 `Português`, `portugues` and `Portuguese` to mean the same thing, and no amount of citation fixes
 that.
 
-### What it governs
+### What it governs — conversation only
 
-**All prose the agent authors** — artifact and conversation alike:
+The declared `Language:` tag governs the **conversation band** and nothing else:
 
-| Band | Examples |
-| --- | --- |
-| Artifact | a concept doc's body · a spec's body, `## Handoff` and `## Tasks` included · a commit subject and message · a PR body |
-| Conversation | an answer to the human · a question a command asks · a report a command prints |
+| Band | Examples | Language |
+| --- | --- | --- |
+| **Conversation** | an answer to the human · a question a command asks · a report a command prints | **the declared tag** |
+| **Artifact** | a concept doc's body · a spec's body, `## Handoff` and `## Tasks` included · a commit subject and message · a PR body | **the artifact language, declared separately — see [Artifact language](#artifact-language)** |
 
-The agent-facing sections stay terse, because they are agent context — terse **in the declared
-language**. The conversation band is the one that costs most per day when it is missed: an agent
-that reads `pt-BR` at session start and still answers, asks and reports in English has followed
-none of this.
+The conversation band is the one that costs most per day when it is missed: an agent that reads the
+tag at session start and still answers, asks and reports in a language the human did not choose has
+followed none of this.
 
 Two exclusions, and only two:
 
 1. **The canonical structure.** Folder names, file slugs, frontmatter keys, enum values, the `type`
    vocabulary and the parsed `##` headings stay canonical English, so they stay greppable across
-   repos. That rule is not this doc's — it belongs to the naming standard for the canonical
-   surface, and this doc only names it as its own boundary.
-2. **A plugin's own command surface.** Command bodies shipped by a plugin are English whatever a
-   target repo declares. **Their output is not.** A question a command asks and a report it prints
-   are prose aimed at the human, and they follow the tag. The body in English, the output in the
-   language — translating a body is the error this distinction exists to prevent.
+   repos. That rule is not this doc's — it belongs to
+   [../naming/command-surface.md](../naming/command-surface.md), and this doc only names it as its
+   own boundary.
+2. **This plugin's own command surface.** Every body under `plugins/quenching/commands/**` is
+   English whatever a target repo declares. **Their output is not.** A question a command asks and a
+   report it prints are prose aimed at the human, and they follow the tag. The body in English, the
+   output in the language — translating a body is the error this distinction exists to prevent.
+
+### Artifact language
+
+**The repository decides its own artifact language**, independently of the conversation tag. It
+declares it in one of two places:
+
+- a **standard** under its own `/docs/standards/` that names the language its artifacts use; or
+- the **`artifactLanguage`** key (one BCP-47 tag) in its quenching configuration —
+  `.agents/quenching.json` or, when specs-axis configuration lives on the `quenching` branch, the
+  `quenching.json` at that branch's root.
+
+Either one is enough. If both exist and disagree, the standard is the written contract and the key
+is the defect to fix. The two bands may take different languages: a team can converse in `pt-BR`
+and write its durable artifacts in `en`, or the reverse.
 
 ### What silence means
 
-**A repo that declares nothing is under no constraint.** Silence is not a default of `en` and it is
-not a finding. Adoption is opt-in per repo: nothing becomes retroactively non-conformant, and no
-repo that already carries the bundle has to change.
+**A target that declares nothing is under no constraint** — in either band. Silence is not a
+default of `en` and it is not a finding. No artifact language declared means the agent writes
+artifacts in whatever the surrounding material already uses, and asks only when that is unclear.
+Adoption is opt-in per target: nothing becomes retroactively non-conformant, and no repo that
+already carries the bundle has to change. Declaring a language does not retranslate the docs already
+written — that is a migration, and a separate piece of work.
 
 Nothing machine-checks any of this. A validator cannot reliably identify the language of a
 document, so this rule is applied by convention — as every rule about what prose *says*, rather
@@ -119,11 +136,11 @@ What is left — and what this doc owns — is only what holds in **every** task
 is the band none of the three above occupies, and keeping to it is the single failure mode this
 half has.
 
-## Why only one is declared
+## Why conduct is not declared
 
 The test is which of the two facts actually varies.
 
-**Language varies between repos.** That is why it needs one place per repo to be said.
+**Conversation language varies between repos.** That is why it needs one place per repo to be said, on the harness line. The artifact language is a second declaration, but a cold one: read when an artifact is written, from a standard or a config key, never on the harness line.
 
 **Conduct does not.** "Report what happened", "confirm before the irreversible" and "ask when the
 answer changes the work" are not local preferences; they are the contract. Declaring what does not
@@ -131,5 +148,5 @@ vary buys nothing and costs an entire configuration surface: the set of valid pr
 evolution, and the end of the *one line, zero tool calls* argument that chose this form in the
 first place.
 
-A doc with one variable and one constant is a single definition. Two declared values would be two
-configurations sharing a file.
+A doc with one variable and one constant is a single definition. Two values on the harness line would be two
+configurations sharing a line.

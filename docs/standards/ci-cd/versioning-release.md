@@ -51,9 +51,14 @@ forced, back when each pillar shipped as its own script
 internal imports has no such constraint: `common/version.py` is read by every pillar's `--version`,
 not duplicated by it.
 
-The generated Codex sibling is a derived publication output, not a fifth or sixth release input.
-`cq components translate` regenerates its manifest, `VERSION` and copied assets from the Claude
-source; the translation and Codex artifact gates prove that generated surface after a source bump.
+The two generated siblings are bumped in the same operation. `cq specs release` also moves
+`plugins/quenching-codex/VERSION`, `plugins/quenching-codex/.codex-plugin/plugin.json`,
+`plugins/quenching-specs-reader/VERSION` and its `.claude-plugin/plugin.json`, and it rewrites the
+`version` of **every** plugin entry in `.claude-plugin/marketplace.json`, never only the first. A
+marketplace entry with no `version` is refused. Afterwards `cq components translate --write` and
+`sync_specs_reader_plugin.py --write` regenerate the copied assets, and the translation and Codex
+artifact gates prove them. `test_specs_release.py` asserts that every one of these versions is
+equal. The manifests carry no hard-coded command counts, since they drift on the next command change.
 
 ## When the bump happens — once, at the release, on the primary branch
 

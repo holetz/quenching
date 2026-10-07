@@ -77,7 +77,7 @@ exist, exists; every step's criterion held. Report what was written.>
 
      What lint checks (fix an `error`, report a `warn` by its code):
        • the two caps — the description against `sk-metadata-cap` (error) and against
-         `sk-description-portable` (warn), both counted on the PARSED value, never the YAML
+         `sk-description-portable` (warn) and the 250-character budget (`sk-description-budget`, warn), all counted on the PARSED value, never the YAML
          source lines.
        • triggers in the SECOND sentence (`sk-trigger-position`), so truncation never eats them.
        • the `Not for:` boundary present (`sk-no-boundary`).

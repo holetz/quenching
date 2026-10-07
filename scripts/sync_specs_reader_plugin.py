@@ -98,7 +98,7 @@ def differences(tree: dict[str, tuple[bytes, int]]) -> list[str]:
             drift.append(f"missing {rel}")
         elif path.read_bytes() != data:
             drift.append(f"changed {rel}")
-        elif (path.stat().st_mode & 0o777) != mode:
+        elif bool(path.stat().st_mode & 0o111) != bool(mode & 0o111):
             drift.append(f"mode {rel}")
     drift.extend(f"stale {rel}" for rel in sorted(existing_generated() - tree.keys()))
     return drift

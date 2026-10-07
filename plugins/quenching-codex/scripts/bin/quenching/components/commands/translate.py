@@ -160,6 +160,14 @@ def source_files() -> list[Path]:
     return [path for path in files if path.is_file() and not _is_build_artefact(path)]
 
 
+def _portable(path: Path) -> str:
+    """The provenance path relative to the working tree, never a machine-absolute path."""
+    try:
+        return str(path.resolve().relative_to(Path.cwd().resolve()))
+    except ValueError:
+        return path.name
+
+
 def source_digest() -> str:
     digest = hashlib.sha256()
     for path in source_files():
@@ -475,10 +483,12 @@ def generated_tree() -> dict[str, bytes]:
                     translated = transform_codex_markdown(translated)
                 output[str(Path("references") / relative)] = translated.encode()
         harness = claude_surface().parent / "CLAUDE.md"
-        if harness.is_file():
+        if harness.is_file() and not harness.read_text(encoding="utf-8").lstrip().startswith("@AGENTS.md"):
+            # A CLAUDE.md that only imports the root AGENTS.md has nothing to translate: Codex
+            # already reads that root file.
             output["AGENTS.md"] = transform_platform(harness.read_text(encoding="utf-8"), adaptation).encode()
         output[".generated-from.json"] = json.dumps({
-            "source": str(claude_surface()), "source_sha256": source_digest(),
+            "source": _portable(claude_surface()), "source_sha256": source_digest(),
             "generator": "cq components translate",
             "command_count": len(list(commands.rglob("*.md"))),
         }, indent=2).encode() + b"\n"

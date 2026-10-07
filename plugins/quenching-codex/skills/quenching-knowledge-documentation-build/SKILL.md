@@ -1,6 +1,6 @@
 ---
 name: quenching-knowledge-documentation-build
-description: "Create or update the Zensical site layer from a confirmed map with extensions, CSS, navigation and strict-build QA. Triggers on \"build the docs site\", \"generate the site for /docs\", or \"fix the documentation site's nav\". Not for: planning pages → quenching-knowledge-documentation-plan; writing documentation prose → quenching-knowledge-documentation-write; reviewing page quality → quenching-knowledge-documentation-review; conducting the complete pipeline → quenching-knowledge-documentation-produce."
+description: "Create or update the Zensical site layer with extensions, CSS, navigation and strict-build QA. Use for \"build the docs site\", \"fix the docs nav\". Not for: prose → quenching-knowledge-documentation-write."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/documentation/build.md -->
@@ -32,14 +32,14 @@ bundle; every install, update, and re-verification after that is **this** skill.
   inside it, this skill owns exactly one file — the CSS asset. The OKF markdown stays
   **generator-neutral** — never add generator-specific syntax, a nav entry inside a page, or
   generator frontmatter to a concept doc.
-- **The confirmed Mapa editorial de publicação is the publication boundary.** Zensical 0.0.57
+- **The confirmed Publication map is the publication boundary.** Zensical 0.0.57
   builds every Markdown below `docs_dir` and does not support `exclude_docs`, `draft_docs` or
   `not_in_nav`. Therefore `docs_dir = "site-source"` and the command stages only the shared
   publication allow-list with `cq knowledge site-source docs site-source --write`; it never points
   at the complete bundle. Raw `catalog/` and `external/` homes are excluded from that tree even
-  when they remain useful knowledge sources. A home marked `publicar` or `publicar derivado` is
+  when they remain useful knowledge sources. A home marked `publish` or `publish derived` is
   exposed only when its content is in the allow-list or is curated into an allowlisted page;
-  `não publicar` creates no nav entry, staged file or published link. The map, not a home's name,
+  `do not publish` creates no nav entry, staged file or published link. The map, not a home's name,
   decides editorial intent, while the staging boundary enforces the generator's file semantics.
   A missing or stale derived route is reported to the planning or writing stage; this site-layer
   command never invents or rewrites Markdown.
@@ -66,7 +66,7 @@ bundle; every install, update, and re-verification after that is **this** skill.
   `cq knowledge site-source --check` prove the projection and staging; the rendered checker proves
   a known `<abbr>`. Never
   ask an author to edit the derived snippet or a duplicate term list. A non-empty canonical glossary is required by default;
-  only an accepted `não publicar` map row can exclude it.
+  only an accepted `do not publish` map row can exclude it.
 - **The whole bundle is the knowledge inventory, not the generator input.** Inventory every `docs` home —
   `tutorials/`, `how-to/`, `explanation/`, `project/`, `standards/`, `concepts/`, `external/`,
   `catalog/`, `vision/` and the root glossary — and compare coverage **document by document** in the
@@ -133,13 +133,13 @@ of git.
 | `site-docs-dir-mismatch` | `docs_dir` does not point at generated `site-source/` | **FIX, own confirmation** — pointing at the bundle would process excluded homes |
 | `site-source-missing` | generated bounded source tree is absent | **FIX** — run `cq knowledge site-source docs site-source --write` |
 | `site-source-stale` | generated source manifest differs from the allowlisted bundle files | **FIX** — restage with `cq knowledge site-source docs site-source --write` |
-| `site-publication-map-absent` | the accepted plan has no Mapa editorial de publicação | **REPORT** → `quenching-knowledge-documentation-plan` |
-| `site-publication-route-missing` | a `publicar`/`publicar derivado` row has no corresponding built page | **REPORT** → `quenching-knowledge-documentation-write` |
-| `site-publication-leak` | a `não publicar` home appears in nav, a route or an internal link | **FIX** only in config/nav; otherwise **REPORT** → page author |
+| `site-publication-map-absent` | the accepted plan has no Publication map | **REPORT** → `quenching-knowledge-documentation-plan` |
+| `site-publication-route-missing` | a `publish`/`publish derived` row has no corresponding built page | **REPORT** → `quenching-knowledge-documentation-write` |
+| `site-publication-leak` | a `do not publish` home appears in nav, a route or an internal link | **FIX** only in config/nav; otherwise **REPORT** → page author |
 | `site-glossary-projection-stale` | route/snippet origin or source hash differs from the canonical glossary | **FIX** with `cq knowledge project --write`; never rewrite the source glossary |
 | `site-glossary-snippet-missing` | the accepted glossary projection has no generated abbreviation snippet | **REPORT** → `quenching-knowledge-documentation-write` |
 | `site-glossary-term-unrendered` | a known canonical term is not present as rendered `<abbr>` | **REPORT** → `quenching-knowledge-documentation-write` |
-| `site-coverage-incomplete` | a publishable document has no built, non-empty page and no explicit `não publicar` row of its own | **REPORT** → `quenching-knowledge-documentation-write` |
+| `site-coverage-incomplete` | a publishable document has no built, non-empty page and no explicit `do not publish` row of its own | **REPORT** → `quenching-knowledge-documentation-write` |
 | `site-skeleton-stub` | a mandatory route's page is byte-identical to the shipped skeleton's section descriptor, or carries only that descriptor's boilerplate | **REPORT** → `quenching-knowledge-documentation-write`; the route is not coverage |
 | `site-catalog-index-missing` | a catalog is incorrectly proposed as a Zensical route | **REPORT** → revise the map; keep raw catalog outside `site-source/` |
 | `site-catalog-lineage-missing` | a catalog fact is being curated without stable source lineage | **REPORT** → `quenching-knowledge-documentation-write`; do not stage raw detail |
@@ -195,10 +195,10 @@ offer `quenching-knowledge-align`; never scaffold a home here.
 
 ### 2. Inventory the site layer (read-only)
 Collect, without writing anything:
-- the accepted `.quenching/documentation/plan.md` and its **Mapa editorial de publicação**; reject
+- the accepted `.quenching/documentation/plan.md` and its **Publication map**; reject
   a missing map as a planning finding, and use its routes as the only allowed cross-home surface.
 - every source home and every `.md` source under `/docs/`; count the mandatory
-  `publicar`/`publicar derivado` rows separately from intentional `não publicar` rows. If the
+  `publish`/`publish derived` rows separately from intentional `do not publish` rows. If the
   root glossary exists and has content, treat it as mandatory unless the accepted map explicitly
   excludes it.
 - root `/docs/glossary.md` and the generated `assets/glossary-abbreviations.txt`.
@@ -231,7 +231,7 @@ Collect, without writing anything:
 Read the capability register alongside the map. An enabled row must have a tested prerequisite,
 configuration source and expected HTML effect; an unsupported row is a reported disabled decision.
 Walk the `site-*` table above over the inventory. Compare every map row with the real routes: every
-exposed row needs a non-empty built page; a `não publicar` row must be absent from nav and
+exposed row needs a non-empty built page; a `do not publish` row must be absent from nav and
 published links. For `site-link-escapes`, grep for bundle paths that should instead target a mapped
 route. For `site-coverage-incomplete`, the denominator is **every publishable `.md` in the staged
 `site-source/` tree**, not raw `catalog/` or `external/` files, the map's rows or the pages assigned
@@ -351,7 +351,7 @@ and its result. **Done when:** every fixed/reported finding, build status, and r
 - Never point `docs_dir` at the complete bundle or a dot-prefixed path. Zensical has no supported
   file exclusion setting, so raw `catalog/` and `external/` must be absent from `site-source/`, not
   merely absent from `nav`. Never expose a home without an accepted map row, or
-  expose a `não publicar` row; creating its Markdown route belongs to the page-owning stage.
+  expose a `do not publish` row; creating its Markdown route belongs to the page-owning stage.
 - Never put generator-specific syntax or generator frontmatter into an OKF page — the markdown stays
   generator-neutral.
 - Never run `zensical serve` and never commit the built `site/`.

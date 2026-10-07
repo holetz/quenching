@@ -27,6 +27,8 @@ run_check "components doctor" \
   python3 plugins/quenching/assets/bin/cq --root plugins/quenching components doctor --json
 run_check "components lint" \
   python3 plugins/quenching/assets/bin/cq --root plugins/quenching components lint --json
+run_check "harness (AGENTS.md / CLAUDE.md)" \
+  python3 scripts/check_claude_harness.py
 run_check "docs bundle" \
   python3 plugins/quenching/assets/bin/cq knowledge validate docs
 run_check "Claude/Codex translation" \

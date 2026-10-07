@@ -1,11 +1,9 @@
 ---
 description: >-
-  Read the complete toolchain front and report applicability, manifests, locks, language pins,
-  tool configuration and finding bands without writing. Triggers on "toolchain status", "check
-  the toolchain surface", or "what is the state of the toolchain front". Not for: converging
-  findings → /quenching:toolchain:align.
+  Report the toolchain front: manifests, locks, language pins, tool config and findings, read-only. Use for "toolchain status", "check the toolchain surface". Not for: converging → /quenching:toolchain:align.
+disable-model-invocation: true
 argument-hint: [optional-target-root]
-allowed-tools: Read, Grep, Glob, Bash(python3:*)
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
 # /quenching:toolchain:status — read the toolchain front
@@ -24,7 +22,7 @@ Resolve `cq` per
 §Resolving the tool. Set `TARGET_ROOT` to the supplied argument, or to `.` when omitted, and run:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" toolchain status --json
+cq --root "$TARGET_ROOT" toolchain status --json
 ```
 
 Branch on the JSON and exit code: `0` is a clean report, `1` carries findings, and `2` is a
