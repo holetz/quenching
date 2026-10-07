@@ -38,7 +38,6 @@ missing one is a **refusal (exit 2) naming it, never a traceback**.
 | `cq specs doctor` | workspace shape — the two folders, strays, older layouts; remedies **declared** for the command to apply |
 | `cq specs migrate` | one-way fold to the current layout (`backlog/` + `ready/` → `plans/`, and v1 three-file folders → one file); **exit 2** when there is nothing to migrate; `specs/archive/**` never touched |
 | `cq specs export --spec <id> \| --all [--out DIR]` | dump the canonical markdown to disk — **write-only**; nothing reads it back and nothing syncs it, so it is a rescue copy for an external backend and never a second store |
-| `cq specs selftest` | prove the embedded schema and template have not drifted from their asset files |
 
 `--outcome` is the only content a promote ever writes.
 
