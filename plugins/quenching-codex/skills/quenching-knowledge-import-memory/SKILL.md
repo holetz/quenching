@@ -34,7 +34,7 @@ the home boundaries, `type` vocabulary, and molds are shared with
   presented as narration, not a gate — the write-then-verify-then-delete contract is unchanged.
 - **Three destinations only.** This skill writes into exactly two `/docs/` homes — `standards/`
   and `concepts/` — plus the provider-owned `plans` phase for a **unit of work**
-  outside the OKF bundle). A memory whose natural fit is a
+  outside the OKF bundle. A memory whose natural fit is a
   `vision`, `documentation`, or `external` doc is **re-routed to the nearest of the three** per the routing
   table ([knowledge-import-memory/memory-routing.md](../../references/knowledge-import-memory/memory-routing.md)
   §Routing table — memory `type` → likely home (content overrides)); a memory that fits none of
