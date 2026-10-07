@@ -17,8 +17,8 @@ maintainer: quenching
 
 The target repository has one configuration home. It is a plain JSON object whose root carries
 provider-neutral metadata and explicit namespaces for settings owned by a front or shared by more
-than one pillar. The file is configuration, not a second specs store: provider-owned specs remain
-on the selected external provider.
+than one pillar. The file is configuration, not a second specs store: specs remain
+on the `quenching` branch (or, deprecated, in the selected tracker).
 
 ## One configuration home
 
@@ -101,9 +101,9 @@ The provider is derived from the repository's `origin` remote:
 - an Azure DevOps host selects Azure Boards;
 - no recognized remote host is an exit-2 refusal, never a silent switch to another provider.
 
-The root `backend` value is not a second provider selector. Unsupported or retired backend values
-are refused, and a valid provider is still established from the remote. Provider-owned specs are
-read and written only after that selection succeeds.
+The root `backend` value selects the store: `git` for the `quenching` branch, otherwise a
+deprecated tracker backend established from the remote. Unsupported or retired backend values are
+refused. Specs are read and written only after that selection succeeds.
 
 <!-- rationale -->
 

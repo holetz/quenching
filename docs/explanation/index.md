@@ -4,11 +4,11 @@ Three ideas explain the whole plugin. If you read nothing else, read the first: 
 model is the map every command fits on — the other two are its deepest rooms.
 
 - **[The operating model](operating-model.md#the-operating-model)** — seven aligned local fronts,
-  the provider-owned specs axis, the read-only security and git pillars, probe-first, and why the
+  the specs axis, the read-only security and git pillars, probe-first, and why the
   pillars deliberately have no align.
 - **[The OKF bundle](okf-bundle.md)** — the signature `/docs/` tree every adopted repository
   shares, and the strict rules that keep it greppable.
-- **[The spec lifecycle](spec-lifecycle.md)** — why the unit of work is one provider-owned
+- **[The spec lifecycle](spec-lifecycle.md)** — why the unit of work is one spec
   document, why `ready` is computed and never written, and why the merge comes last.
 
 **Prefer doing over reading?** The [getting-started tutorial](../tutorials/getting-started.md)

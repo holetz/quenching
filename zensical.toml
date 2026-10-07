@@ -15,8 +15,8 @@
     "index.md",
     { "Getting started" = [
       "tutorials/index.md",
-      "tutorials/getting-started.md",
       "tutorials/first-workflow-study.md",
+      "tutorials/getting-started.md",
     ] },
     { "How-to guides" = [
       "how-to/index.md",
@@ -34,9 +34,9 @@
     { "This project" = [
       "project/index.md",
       "project/automation.md",
+      "project/changelog.md",
       "project/commands.md",
       "project/layout.md",
-      "project/changelog.md",
     ] },
     { "Standards" = [
       "standards/index.md",
@@ -63,13 +63,13 @@
         "standards/architecture/report-mold.md",
         "standards/architecture/retiring-a-reserved-artifact.md",
         "standards/architecture/root-migration.md",
+        "standards/architecture/security-pillar.md",
         "standards/architecture/shared-mold-keys.md",
         "standards/architecture/spec-backend.md",
         "standards/architecture/specs-reader-plugin.md",
         "standards/architecture/surface-translation.md",
-        "standards/architecture/security-pillar.md",
-        "standards/architecture/type-follows-home.md",
         "standards/architecture/toolchain-front.md",
+        "standards/architecture/type-follows-home.md",
       ] },
       { "Automation" = [
         "standards/automation/index.md",
@@ -157,6 +157,9 @@
         "concepts/automation/test-layering.md",
       ] },
     ] },
+    { "Vision" = [
+      "vision/index.md",
+    ] },
     { "Decisions" = [
       "decisions/index.md",
       "decisions/0001-spec-backend-measurements.md",
@@ -164,9 +167,7 @@
       "decisions/0003-plan-git-record-history.md",
       "decisions/0004-standards-source-lineage.md",
       "decisions/0005-glossary-long-forms.md",
-    ] },
-    { "Vision" = [
-      "vision/index.md",
+      "decisions/0006-specs-move-to-a-git-store-with-thin-cards.md",
     ] },
     "glossary.md",
   ]

@@ -1,7 +1,7 @@
 ---
 type: standard
 title: Spec document contract
-description: The one provider-owned spec document, its thirteen canonical sections, the phase-scoped explicit-none rule, the parsed Impact sub-heading, the duplicated template and the three-copy record vocabulary, and how to read a v1 plan in /.specs/archive/
+description: The one spec document, its thirteen canonical sections, the phase-scoped explicit-none rule, the parsed Impact sub-heading, the duplicated template and the three-copy record vocabulary, and how to read a v1 plan in /.specs/archive/
 resource: plugins/quenching/assets/specs/templates/spec.md, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/quenching/specs/schema.py, plugins/quenching/commands/specs/**
 tags: [workflows, specs, sections, gates, validation]
 timestamp: 2026-08-22
@@ -31,22 +31,23 @@ artifacts (`proposal.md`, `design.md`, `tasks.md`) plus a `.specs.json` sidecar,
 `applyRequires`. Plans written under that contract still sit in `/.specs/archive/`; §Reading a v1
 plan below is what a reader of those needs.
 
-## One spec is one provider document
+## One spec is one document
 
-A spec is one canonical provider-owned document for its entire lifecycle. Phases enrich it; they
-never split it. GitHub stores it in an issue body and Azure Boards in a work-item description. The
-provider's native ID is the identity outside the document; the capture date is stamped once into
-the document's `date:` and never rewritten.
+A spec is one canonical document for its entire lifecycle. Phases enrich it; they never split it.
+The git store keeps it as `specs/<id>.md` on the `quenching` branch (a deprecated tracker backend
+keeps it in the issue body or work-item description). The ID is the identity outside the document;
+the capture date is stamped once into the document's `date:` and never rewritten. A tracker card
+beside it is a projection and never holds the plan.
 
 Two consequences are load-bearing:
 
-- **Identity is the provider ID, not the path or document text.** Every cross-reference names the
-  native ID; the selected provider resolves it exactly. A locator points to the document but is not
+- **Identity is the spec ID, not the path or document text.** Every cross-reference names the ID;
+  the selected store resolves it exactly. A locator points to the document but is not
   its identity, and a title is descriptive data rather than a lookup key.
 - **The date remains in the document because the store has no honest copy of it.** `cq specs
-  next --front` sorts on the declared `date`, whether the document is read from a provider or an
-  exported file. A provider's `created_at` records when the issue was made, not when the spec was
-  captured, so deriving the date from it would rewrite historical capture dates during migration.
+  next --front` sorts on the declared `date`, whether the document is read from the store or an
+  exported file. A card's or issue's `created_at` records when the item was made, not when the spec
+  was captured, so the date is never derived from it.
 
 There is **no `phase:` frontmatter field**, because two declared sources of one fact diverge and a
 folder cannot lie. Which folders exist, and the one hop a spec makes between them, are
@@ -61,9 +62,8 @@ exclusion is this file's: there is **no attempt counter**, because machine state
 reads does not belong in a spec.
 
 **`date` is here because nothing else holds it honestly.** An issue's `created_at` is when the
-ISSUE was made, and a migration can make many issues in one afternoon; it is not the capture date of
-the spec. So the date stays declared in the document, where every backend reads the same fact. The
-provider ID is deliberately absent: identity is already owned by the store, so mirroring it would
+ISSUE was made, not the capture date of the spec. So the date stays declared in the document,
+where every backend reads the same fact. The ID is deliberately absent: identity is already owned by the store, so mirroring it would
 reopen the duplicate-truth problem rather than solve one.
 
 **`verification` is OPTIONAL, and absent means the default** (`per-section`), applied on read by
@@ -71,13 +71,12 @@ reopen the duplicate-truth problem rather than solve one.
 record a decision nobody made. It stopped being required because it answers how long *this repo's*
 suite takes — a judgment a one-sentence capture has nobody to make yet — and requiring it forced
 `new` to invent a value at the one moment there is no opinion to record. The post-capture writer is
-`cq specs verification <id> [<policy>]`; before it existed the policy was decidable exactly once,
-at capture, and under an external backend it could not be changed at all.
+`cq specs verification <id> [<policy>]`.
 
-**There is no document identity field.** The provider ID is a native store fact, so this document
+**There is no document identity field.** The spec ID is a store fact, so this document
 does not derive, normalize or mirror it. The exception that once allowed a `slug` mirror under the
 no-duplicate-truth rule disappears with that field; `validate` checks the document contract, while
-the backend checks the provider ID.
+the backend checks the ID.
 
 ## Thirteen canonical sections
 

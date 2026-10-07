@@ -29,7 +29,7 @@ The distillation doctrine — what crosses into `/docs/`, what stays, and how it
 [specs-conclude/distill.md](../../references/specs-conclude/distill.md)
 §What crosses, what stays. The layout and the gates live in
 [specs-develop/spec-driven.md](../../references/specs-develop/spec-driven.md)
-§The provider-owned document §The gates and the stage-scoped explicit-none rule. The `cq specs`
+§The spec document §The gates and the stage-scoped explicit-none rule. The `cq specs`
 surface lives in
 [specs-surface.md](../../references/specs-develop/specs-surface.md)
 §The `cq specs` tool surface; the report shape lives in
