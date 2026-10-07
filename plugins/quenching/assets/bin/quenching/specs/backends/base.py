@@ -47,6 +47,15 @@ class SpecBackend:
         ready-to-emit refusal. Never raises for an unknown ID."""
         raise NotImplementedError
 
+    def read_specs(self, spec_ids: list) -> dict[str, dict | None]:
+        """`id (str) -> info`, or `None` for an id no spec carries. The default is one
+        `read_spec` each; a store that can answer N reads from one snapshot overrides it."""
+        out: dict[str, dict | None] = {}
+        for spec_id in spec_ids:
+            info, _ = self.read_spec(spec_id)
+            out[str(spec_id)] = info
+        return out
+
     def write_spec(self, info: dict, text: str) -> None:
         """Replace one spec's whole document with `text`."""
         raise NotImplementedError

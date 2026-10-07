@@ -5,6 +5,7 @@ from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, read_one
 from quenching.specs.commands.read import _next_phase
 from quenching.specs.parse import PHASES
+from quenching.specs.parse.epics import is_epic, open_items, parse_items
 from quenching.specs.parse.fields import set_frontmatter_key
 from quenching.specs.parse.sections import gate_report
 from quenching.specs.schema import OUTCOMES
@@ -78,6 +79,12 @@ def cmd_promote(args, root: str, out: Emitter) -> int:
         # the reason into `## Outcome`; it is therefore a truthful closed task here, unlike
         # `[!]`, which remains open and still refuses a `done` archive.
         open_tasks = [t for t in info["tasks"] if not t["checked"]]
+        if is_epic(info["frontmatter"]):
+            # Epic items are never ticked: what is open is what the members have not finished.
+            ids = [i["spec"] for i in parse_items(info) if i["spec"]]
+            open_tasks = [{"id": i["label"], "text": f"{i['label']} {i['title']}",
+                           "state": i["status"]}
+                          for i in open_items(info, backend.read_specs(ids))]
         if outcome == "done" and open_tasks and not args.force:
             out.emit(args.json,
                      {"ok": False, "code": "sp-open-tasks", "id": info["id"],
