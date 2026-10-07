@@ -84,7 +84,11 @@ A go/no-go may leave the pass — and only under the three conditions, together:
    level — not the command — that waives the stop. The authorization belongs to the **mode**, never
    to that one spec.
 2. **The record writes down the provenance.** `approved: {date, by}` — `by: human` when a person
-   answered, `by: low-gear` when the level authorized the mode and the pass stamped it. A record
+   answered, `by: low-gear` when the level authorized the mode and the pass stamped it, and
+   `by: orchestrator-forced` when a conductor ran `--autonomous` and forced the `low` gear over a
+   spec whose level on disk is higher: there the human authorized the **run**, not the mode the
+   spec's own level declares, and only `develop` writes the value, after `ready` is proved —
+   the orchestrator itself writes no record. A record
    that does not say whose word it is cannot tell the two apart, and that is where the waiver stops
    being delegation and becomes falsification.
 3. **The review window counts double.** The record's URL is announced before any read and repeated
@@ -97,7 +101,7 @@ With any one of the three missing, the stop stays.
 
 The criterion in §The criterion has not changed: the two protected classes are still the same, and
 `approved` was never one of them — it was the third thing that stopped the pass, and it stopped it
-by being the **sole origin** of a fact. What provenance changes is exactly that: there are now two
+by being the **sole origin** of a fact. What provenance changes is exactly that: there are now three
 declared, distinguishable origins, and whoever reads the record chooses which to trust. Without the
 field, waiving the go/no-go would erase the fact; with it, the waiver is a second entry in the same
 ledger, and review goes on existing — asynchronous, about the result, at the address the pass
