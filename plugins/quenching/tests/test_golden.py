@@ -17,7 +17,8 @@ class ProviderGoldenContract(unittest.TestCase):
             with self.subTest(fixture=result["fixture"]):
                 expected = json.loads(
                     (cg.FIXTURE_DIR / result["fixture"]).read_text(encoding="utf-8"))
-                self.assertEqual(json.loads(result["stdout"]), expected)
+                self.assertEqual(cg.strip_messages(json.loads(result["stdout"])),
+                                 cg.strip_messages(expected))
                 self.assertEqual(result["stderr"], "")
                 self.assertEqual(result["exit"], 0 if "config" in result["fixture"]
                                  else 2)

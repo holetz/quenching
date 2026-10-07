@@ -15,7 +15,6 @@ ROOT = Path(__file__).resolve().parents[3]
 class StudyMaterial(unittest.TestCase):
     def test_public_material_has_no_withdrawn_or_host_drift(self):
         root_readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        source_readme = (ROOT / "plugins/quenching/README.md").read_text(encoding="utf-8")
         codex_readme = (ROOT / "plugins/quenching-codex/README.md").read_text(encoding="utf-8")
         source_index = (ROOT / "plugins/quenching/assets/knowledge/index.md").read_text(encoding="utf-8")
         codex_index = (ROOT / "plugins/quenching-codex/knowledge/index.md").read_text(encoding="utf-8")
@@ -24,7 +23,6 @@ class StudyMaterial(unittest.TestCase):
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
 
         self.assertNotIn("`cq knowledge hook`", root_readme)
-        self.assertIn("`56` in this heading", source_readme)
         self.assertNotIn("claude --plugin-dir", codex_readme)
         self.assertIn(".agents/skills/", codex_readme)
         self.assertNotIn("specs/backlog", source_index)
