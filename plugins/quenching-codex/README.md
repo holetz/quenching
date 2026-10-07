@@ -12,7 +12,7 @@ insert new knowledge, capture terms into a fixed glossary, drain the project's C
 Code memory into it, import external sources into it, keep the repo's `AGENTS.md` a thin pointer over it, and organize
 the repo's own **automation surface** (`.agents/skills/`) under one
 taxonomy — so every repository that adopts the plugin looks the **same**. It also carries the repo's
-**spec-driven plan lifecycle**: the seven `quenching-specs-*` commands over a specs
+**spec-driven plan lifecycle**: the nine `quenching-specs-*` commands over a specs
 front stored on a git branch with thin GitHub or Azure Boards cards, with the OKF bundle as its knowledge substrate, driven end
 to end by the bundled stdlib `cq specs`.
 
@@ -86,12 +86,12 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](assets/references/align/convergence.md).
 
-## The 56 commands
+## The 57 commands
 
 **One file per entry point** — Codex merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs; there is
 no `skills/` tree and no wrapper. The tables below are the manual, and the count is a property of
-their rows rather than a second structural inventory: the `56` in this heading is the manual's
+their rows rather than a second structural inventory: the `57` in this heading is the manual's
 canonical displayed total, while [`tests/test_readme_surface.py`](tests/test_readme_surface.py)
 reads it and fails the suite whenever these tables
 and `commands/**` disagree
@@ -219,7 +219,7 @@ instead of running either.
 The `specs` front has six commands and a flow worth reading as a whole, so it gets its own section
 below.
 
-## The `specs` flow — the seven `quenching-specs-*` commands
+## The `specs` flow — the nine `quenching-specs-*` commands
 
 The plugin's **spec-driven plan cycle** keeps each spec as a canonical document on the `quenching`
 branch of the code repository's remote (`"backend": "git"`), with a thin GitHub or Azure Boards
@@ -264,6 +264,7 @@ write-only, nothing reads it back, so it is never a second store.
 | `quenching-specs-develop` | Two operations in ONE pass, both derived and neither offered as a choice: **compose** takes the spec from wherever its derived stage leaves it to a closed ten-section ready set, and **refine** argues with the composed spec and may overturn anything in it, the proposal included. Discovery resolution opens the pass, the approval close ends it — recommending approve, refine, or refine with the premortem against the spec's own signals. Questions grouped by dependency, each with an inline recommendation; one edit per pass, records `refined:`. Never edits code. |
 | `quenching-specs-execute` | Builds `## Tasks` one verified commit at a time: clean tree required, isolation offered inline when it starts from the base branch, `verify:` run under the spec's declared policy, four-item diff self-review, then the box ticked with the subject of the commit it is about to make (`cq specs task --check --subject`) so code and box land in ONE commit. Writes only the `/docs/standards/` a task explicitly names; everything else is one `cq specs discover` line. Marks an isolated branch's own description with the slug(s) it built there — never under `In place` — so `conclude` can self-discover it later. Stops at the last commit. |
 | `quenching-specs-conclude` | Closes a spec out, resumable, **merging last**: whole-branch review (`reviewed:`), the emergent `/docs/`, the archive with `outcome: done` (refuses on open boxes unless forced) or `abandoned` (always allowed), ONE distillation pass, the release obligations your standards attach to the merge itself (a version bump, a changelog entry — never a spec task) and the `merge: {strategy, subject, pr}` stamp — all on the work branch — and only then the merge, by the **route** you chose alongside the strategy: local, or a pull request where `gh` resolves the repo (pushed, opened and merged in one consented block, with `pr:` recorded). Called with no `--spec`, reads the branch's own marking first — one valid slug resolves silently, several ask, none falls to a diff-measured offer to materialize a minimal spec — before falling back to a plain list-and-ask. Nothing is committed to the base after it. |
+| `quenching-specs-improve` | **Typed only.** Maps a repository's genuinely relevant improvement opportunities with read-only scouts (evidence, consequence, no duplicate of an open spec, at most 15), settles the owner's decisions in rounds, and turns the approved part of the plan into an epic with member specs. Never builds. |
 | `quenching-specs-orchestrate` | Launches the `orchestrator` agent over an epic id or a list of spec ids: dependency waves, at most 3 workers, a result accepted only on a `verifier` PASS. A thin launcher; the protocol lives in `agents/orchestrator.md`. |
 | `quenching-specs-triage` | Ranks the whole front in ONE confirmed table, writing `priority: {level, criticality, complexity, date}` per spec and nothing else — merging, never clobbering a human's ranking. |
 | `quenching-specs-board` | Human-only. Starts `cq specs serve` in the background and prints the URL: a local browser portal (board by derived stage, drag-to-rank list, spec detail, search, capture, approve as `by: human`) over the same backend as the CLI. Loopback only, per-run token, `Host`/`Origin` checks, `--read-only` disables writes on the server; `cq-specs-read serve` is always read-only. |
