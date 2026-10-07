@@ -14,7 +14,8 @@ from urllib.parse import urlsplit
 from quenching.common.git import COMMAND_TIMEOUT_S, _git
 from quenching.common.config import CONFIG_FILE, find_repo_root
 from quenching.common.io import read_text, write_text
-from quenching.specs.backends.base import BackendRefusal, SpecBackend
+from quenching.specs.backends.base import (BackendRefusal, SpecBackend, parse_retry_after,
+                                           read_only_refusal, transport_read_only)
 from quenching.specs.backends.hybrid import (GH_BODY_MAX, GH_PART_MAX, hybrid_join,
                                              hybrid_project, hybrid_split, hybrid_title_join,
                                              hybrid_unwrap, hybrid_unwrap_part, hybrid_wrap,
@@ -110,6 +111,30 @@ def _gh_transient(code: int, stdout: str, stderr: str) -> bool:
     return "rate limit" in text or bool(re.search(r"http\s+(?:429|500|502|503|504)\b", text))
 
 
+_GH_WRITE_FLAGS = ("-f", "-F", "--field", "--raw-field", "--input")
+
+
+def _gh_is_read(argv: tuple[str, ...]) -> bool:
+    """Whether a `gh` call only reads, and is therefore safe to repeat.
+
+    `gh api` is a GET unless `-X`/`--method` says otherwise OR a body/field flag is present
+    (gh then defaults to POST). Of the porcelain verbs only `list` and `view` read; anything
+    unrecognised counts as a write, because the guard that uses this must fail closed."""
+    if not argv:
+        return False
+    if argv[0] == "api":
+        method = "GET"
+        for i, token in enumerate(argv):
+            if token in ("-X", "--method") and i + 1 < len(argv):
+                method = argv[i + 1].upper()
+            elif token.startswith("--method="):
+                method = token.split("=", 1)[1].upper()
+            elif token in _GH_WRITE_FLAGS and method == "GET":
+                method = "POST"
+        return method == "GET"
+    return len(argv) > 1 and argv[1] in ("list", "view")
+
+
 def _gh_result(result) -> tuple[int, str, str, int]:
     """Normalize the historical three-field test doubles and the four-field transport result."""
     if len(result) == 4:
@@ -140,9 +165,16 @@ def _gh_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, s
     60s and not git's 30: this is a round trip to api.github.com, not a local object
     lookup, and a paginated listing of a busy repository legitimately takes seconds."""
     import subprocess
+    reads = _gh_is_read(argv)
+    if not reads and transport_read_only():
+        raise read_only_refusal("gh", argv)
     if not os.path.isdir(cwd):
         return 1, "", f"not a directory: {cwd}"
-    for attempt in range(1, GH_MAX_ATTEMPTS + 1):
+    # ONLY READS ARE REPEATED. A timeout can fire after GitHub accepted a POST, and a second
+    # attempt would then create a second issue or comment; a failed write is reported once
+    # and the caller decides what is safe to do next.
+    max_attempts = GH_MAX_ATTEMPTS if reads else 1
+    for attempt in range(1, max_attempts + 1):
         try:
             out = subprocess.run(["gh", *argv], capture_output=True, text=True,
                                  timeout=COMMAND_TIMEOUT_S,
@@ -157,9 +189,10 @@ def _gh_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, s
             code, stdout, stderr = GH_TIMEOUT, "", str(detail)
         except (OSError, ValueError, subprocess.SubprocessError) as e:   # noqa: BLE001
             return 1, "", str(e), attempt
-        if code == 0 or attempt == GH_MAX_ATTEMPTS or not _gh_transient(code, stdout, stderr):
+        if code == 0 or attempt == max_attempts or not _gh_transient(code, stdout, stderr):
             return code, stdout, stderr, attempt
-        time.sleep(GH_RETRY_BACKOFF[attempt - 1])
+        delay = parse_retry_after(stderr, stdout)
+        time.sleep(GH_RETRY_BACKOFF[attempt - 1] if delay is None else delay)
 
 
 def _gh_said(stdout: str, stderr: str) -> str:
@@ -344,7 +377,7 @@ def listing_suspect_message(repo: str, open_issues: int) -> str:
 _LISTING_SUSPECT_ANNOUNCED: set[str] = set()
 
 
-def announce_listing_suspect(repo: str, open_issues: int) -> None:
+def announce_listing_suspect(repo: str, open_issues: int | None) -> None:
     """One line on stderr, once per process, at the read that could have lost something.
 
     THE READ AND NOT THE WRITE, which is where `announce_unproved`'s own gloss puts the
@@ -359,8 +392,16 @@ def announce_listing_suspect(repo: str, open_issues: int) -> None:
     if repo in _LISTING_SUSPECT_ANNOUNCED:
         return
     _LISTING_SUSPECT_ANNOUNCED.add(repo)
-    print(f"warning: {listing_suspect_message(repo, open_issues)}; "
-          f"{GH_LISTING_SUSPECT_REMEDY}", file=sys.stderr)
+    if open_issues is None:
+        # The lean index is a SEARCH, which is eventually consistent, and the open-issue count
+        # could not be learned (the name came from the git remote): nothing corroborates the
+        # emptiness either way, so the line says exactly that and never claims a fault.
+        message = (f"{repo}: the lean listing came back with no specs, and it reads GitHub's "
+                   f"search index, which is eventually consistent; the open-issue count is "
+                   f"unknown, so this empty front is unproven")
+    else:
+        message = listing_suspect_message(repo, open_issues)
+    print(f"warning: {message}; {GH_LISTING_SUSPECT_REMEDY}", file=sys.stderr)
 
 
 GH_REMOTE_RE = re.compile(r"github\.com[:/]+([^/\s]+)/([^/\s]+?)(?:\.git)?/?$")
@@ -603,6 +644,8 @@ class GitHubBackend(SpecBackend):
                             or f"https://github.com/{self.repo}/issues/{number}",
                 }, number, head, parts, str(issue.get("title") or ""), self._native_fields(issue),
                     self._issue_labels(issue), issue.get("updated_at")))
+        if listing_is_suspect(len(rows), self.open_issues):
+            announce_listing_suspect(self.repo, self.open_issues)
         self._rows = rows
         return rows
 
@@ -662,7 +705,14 @@ class GitHubBackend(SpecBackend):
                             if label.startswith("spec:")],
                 "phase": phase, "folder": phase, "legacy": False,
                 "path": f"https://github.com/{self.repo}/issues/{number}",
+                # The rows come from a search index, not the issues REST resource: a write
+                # made moments ago may not be visible yet.
+                "consistency": "eventual",
             })
+        if not rows and self.open_issues != 0:
+            # NEVER an empty front as a quiet success. With a positive count it is the known
+            # suspect state; with an unknown count it is merely unproven; both say so.
+            announce_listing_suspect(self.repo, self.open_issues)
         return rows
 
     def _native_fields(self, issue: dict) -> dict:
