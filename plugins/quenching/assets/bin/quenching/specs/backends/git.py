@@ -307,6 +307,23 @@ class GitBackend(SpecBackend):
         info["_git_blob"] = blob
         return info, {}
 
+    def read_specs(self, spec_ids: list) -> dict[str, dict | None]:
+        """N reads from ONE snapshot: one index, one batched blob load, no per-spec listing."""
+        snapshot = self._snapshot(self._tip())
+        index = self._index(snapshot)
+        wanted = {str(s): index.get(int(s)) if str(s).isdigit() else None for s in spec_ids}
+        snapshot._backend._texts([snapshot.blobs[p[1]] for p in wanted.values() if p])
+        out: dict[str, dict | None] = {}
+        for key, hit in wanted.items():
+            if hit is None:
+                out[key] = None
+                continue
+            blob, text = snapshot[hit[1]]
+            info = derive_info(self._descriptor(int(key), hit[0], hit[1]), text)
+            info["_git_blob"] = blob
+            out[key] = info
+        return out
+
     def write_spec(self, info: dict, text: str) -> None:
         self.write_specs([(info, text)])
 
