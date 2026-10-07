@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Surface translation — Claude and Codex coexistence
 
+<!-- rules -->
+
 A repository may expose `.claude/` and `.agents/` at the same time. They are paired surfaces,
 not alternatives: Claude remains the authoritative source for configuration and the translator
 generates the Codex representation deterministically.

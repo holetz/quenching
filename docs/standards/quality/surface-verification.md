@@ -7,11 +7,13 @@ tags: [quality, verification, automation, commands, functional-tests, cost]
 timestamp: 2026-08-27
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (tasks 7.1-7.3); fourth precondition and the ordering-check pattern from the move-conclude-merge-last spec (2026-07-28); fifth precondition measured by the verify-allowed-tools-enforcement spec (2026-07-28), inverted into the --plugin-dir rule on 2026-07-29 by the cost review of the harness — which also measured, over the whole /.specs/archive/ record, that every red run this harness produced traced to a defect in itself and none to a surface regression, and narrowed its ownership to the components front on that evidence; the stale-installed-copy half of the check-3 residue account marked impossible once resolution went plugin-first (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec); plugin-dir-for-functional-checks task 3.2 (2026-08-19) — the harness now witnesses the precondition with static and observed-path guards; the same spec's task 2.4 (2026-08-27) added the guard's third invariant — the raw-grep form it replaced can no longer come back, since the check 4 the task originally aimed at was removed by the modularization and left the intention with no target; the hand-written-inventory rule from the rewrite-readme-collapsed-surface spec task 1.2 (2026-08-27), measured against the plugin's own README
+source: collapse-skills-into-commands, move-conclude-merge-last, 2026-07-28, verify-allowed-tools-enforcement, 2026-07-29, stale-installed-copy; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Surface verification
+
+<!-- rules -->
 
 What it takes to claim a change under `commands/**` works. The sibling
 [bundle-verification.md](bundle-verification.md) covers the `docs` front, where a checker reads

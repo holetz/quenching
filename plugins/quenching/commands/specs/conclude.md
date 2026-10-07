@@ -18,18 +18,13 @@ separate decision: the whole branch is **reviewed**, the `/docs/` the work *reve
 to `/quenching:git:pr:create` through `Skill` after the green gate.
 
 **Done work ends on the work branch; abandoned close-out writes land in the checkout holding the
-base.** For done work, `low` gear invokes the PR handoff after the gate; every other gear names the
-next command for the human to choose.
-
-**Why `Bash` is unrestricted here.** Closing a spec combines provider reads/writes, Git inspection,
-archive operations and the repository's own verification command; those host-specific commands
-cannot be safely reduced to one static prefix.
+base.**
 
 The distillation doctrine — what crosses into `/docs/`, what stays, and how it is graded — lives in
 [specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)
 §What crosses, what stays. The layout and the gates live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-§The provider-owned document §The gates and the stage-scoped explicit-none rule. The `cq specs`
+§The spec document §The gates and the stage-scoped explicit-none rule. The `cq specs`
 surface lives in
 [specs-surface.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/specs-surface.md)
 §The `cq specs` tool surface; the report shape lives in
@@ -48,37 +43,24 @@ never on prose.
   same file, and nothing — not task progress, not staleness, not a sweep — may decide which was
   meant. If the human has not said, ask.
 - **Concluding as `done` refuses to lie.** Open `- [ ]` boxes with `--outcome done` is exit 2 with
-  the list. That refusal is the point: a spec archived as done with half its boxes unticked is a
-  green checkbox over work nobody did. `--force` exists for the case where the human knows why —
-  the work was descoped, or proven elsewhere — and says so.
-- **Abandoning is always allowed.** Open tasks are precisely what you expect when closing out work
-  that will not be built, so `--outcome abandoned` never refuses and never needs `--force`.
+  the list. `--force` exists for the case where the human knows why — the work was descoped, or
+  proven elsewhere — and says so.
+- **Abandoning is always allowed.** `--outcome abandoned` never refuses and never needs `--force`.
 - **`done` distils; `abandoned` does not.** Concluding as done mints by-products into `/docs/` as
-  knowledge the product **adopted**. That is wrong for dropped work — it would enshrine a rule
-  nobody kept. An abandoned spec harvests at most what was learned by *not* building it, as
+  knowledge the product **adopted**. An abandoned spec harvests at most what was learned by *not*
+  building it, as
   `authority: background`; a decision it *would* have made never crosses.
 - **An abandoned spec's branch is offered for deletion, never handed off toward a merge.** Partial
   work on a branch nobody adopted is history, not a change; offer to keep it or delete it, and
   default to keeping. This is the one branch-disposal decision that stays inline here rather than
-  moving to `/quenching:git:cleanup` — it is this run's own report of what became of the work it
-  just closed, not a later sweep over branches nobody is thinking about right now.
+  in `/quenching:git:cleanup`.
 - **Everything `abandoned` writes lands in the checkout holding `<base>`, never this branch** — see
   [specs-conclude/abandoned.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/abandoned.md)
   §Locating the checkout and writing into it §The branch-delete offer, informed rather than defensive.
-  There is no merge to carry a branch commit home, so a record left on the branch would depend on a
-  branch nobody adopted still existing.
 - **Declared rules were already written.** The `/docs/standards/` a task explicitly named went in
-  during execution, honestly graded. What lands here is what the work *revealed* — and there is no
-  delta and no second store to sync either way.
-- **What a standard attaches to the *merge* is settled here, not built as a task.** A version bump,
-  a changelog entry, a manifest re-stamp: none of them is knowable at task 1, because what the
-  release turns out to be depends on what the last task turned out to be. Scheduled as work they
-  also collide — two branches bump from the same base to the same number and the second one merges
-  into a conflict. Settled at step 5 they start from the base being merged into, and ride the same
-  merge as the code that earned them.
-- **Abandonment is never inferred.** No sweep, no conductor and no age threshold triggers it — a
-  spec untouched for a year may be waiting on a vendor. Only the human concludes with
-  `--outcome abandoned`.
+  during execution, honestly graded. What lands here is what the work *revealed*.
+- **What a standard attaches to the *merge* is settled at step 5, not built as a task** — a version
+  bump, a changelog entry, a manifest re-stamp.
 
 ## Resuming
 
@@ -95,11 +77,10 @@ is already set is **reported and skipped**, not repeated:
 | validation gate | no record — it is a verdict on the tree as it stands *now* | always re-run it; a green run from before the last commit proves nothing |
 | already merged | `git branch --merged <base>` lists the work branch, or a `merge`/`pr` record already exists | report that a later `/quenching:git:merge` or `/quenching:git:pr:create` run already finished this — there is nothing left to hand off |
 
-`reviewed` is `writeOnce: false` on purpose: a diff that changed and was read again is a new fact.
-`outcome` is `writeOnce: true` — if it is already set and reality disagrees, that is a **finding to
-report**, never a value to overwrite. `merge` and `pr` are no longer this command's to write at
-all — reading either is only ever to answer the "already merged" row above, and for `abandoned`
-that read happens from the base checkout (Doctrine), never wherever this run stands.
+`reviewed` is `writeOnce: false`: a diff read again is a new fact. `outcome` is `writeOnce: true` —
+if it is already set and reality disagrees, that is a **finding to report**, never a value to
+overwrite. `merge` and `pr` are read only to answer the "already merged" row above, and for
+`abandoned` from the base checkout (Doctrine).
 
 ## Workflow
 
@@ -111,9 +92,9 @@ branch's own marking:
 restated. One valid id resolves it silently, naming the marking as the source; more than one asks
 which, via **AskUserQuestion**. No valid marking → §The fallback there measures the diff and always
 asks whether to materialize a minimal spec — accepted, its new id is used from here on exactly
-like a marked one. **Declined, headless completion — closing with no spec file at all — is not yet
+like a marked one. **Declined, headless completion — closing with no spec file at all — is not
 built**: say so, record it with `cq specs discover`, and fall back to `cq specs list --json` and
-ask, exactly as before this spec. Establish the outcome — **ask if it was not stated**, via
+ask. Establish the outcome — **ask if it was not stated**, via
 **AskUserQuestion**: *done* (it shipped) or *abandoned* (it will not be built).
 ```bash
 cq specs status --spec "<id>" --json
@@ -132,9 +113,7 @@ can choose between finishing them, forcing, or switching to `abandoned`.
 ```bash
 git diff <base>...HEAD          # <base> is the branch record's `base`
 ```
-This is a different thing at a different scale from execute's per-task self-review, and does not
-replace it: that one asks four cheap questions of one task's diff, this one reads the whole change
-for **coherence** — two tasks that solved the same problem differently, an abstraction that wanted
+This reads the whole change for **coherence**, beyond execute's per-task self-review — two tasks that solved the same problem differently, an abstraction that wanted
 extracting once the third caller appeared, a `## Impact` path nothing ever wrote, a standard the
 diff contradicts.
 
@@ -173,9 +152,7 @@ cq specs section "<id>" Outcome --write     # body on stdin
 cq specs promote "<id>" --to archive --outcome done|abandoned [--force]
 ```
 For `done`: what shipped, what was left out, what the next reader needs — **reviewed, distilled,
-ready for merge**. Neither the strategy nor a PR is named here: both are `/quenching:git:merge`'s
-and `/quenching:git:pr:create`'s own choices, made after this run ends, and a value written here
-before either exists would only be a guess. For `abandoned`: the reason it will not be built is the
+ready for merge**; name neither a merge strategy nor a PR. For `abandoned`: the reason it will not be built is the
 whole content.
 
 A refusal (exit 2) lists exactly what is missing or which boxes are open — surface it verbatim and
@@ -231,22 +208,10 @@ standing on), so what it grades is the change being proposed.
 
 **A failing check stops the handoff.** Report which check failed and what it printed, leave the
 branch unmerged, and let the human fix it *on the branch* — then this command is re-run. Never hand
-off past a red check, and never repair one with a commit that isn't the fix itself: whatever lands
-rides the same eventual merge as everything else.
-
-This is why the gate sits *before* the merge rather than after it. A check that runs afterwards can
-only narrate — the base already carries the change, and the only repair left is a commit on the
-base, which is the exact thing this ordering exists to prevent. Run on the branch, a red check
-still has somewhere to be fixed.
-
-**Nothing is stranded by stopping here.** A gate failure leaves nothing archived-and-unmerged
-behind it that a later run cannot re-derive: `## Outcome` and the archive move already happened in
-step 4, on the branch, and a red gate found here is reported and fixed on that same branch before
-anyone hands off toward a merge.
+off past a red check, and never repair one with a commit that isn't the fix itself.
 
 **The gate grades the branch, so the branch must already carry the base.** If the base moved since
-the branch was cut, the merge produces a tree *neither* side ever validated, and a green gate says
-nothing about it:
+the branch was cut, a green gate says nothing about the merged tree:
 
 ```bash
 git rev-list --count plan/<id>-<handle>..<base>      # commits on the base the branch does not have
@@ -255,17 +220,16 @@ git rev-list --count plan/<id>-<handle>..<base>      # commits on the base the b
 Non-zero → **say so and stop before the gate**, naming the count. Bringing the branch up to date is
 a write, and it is the human's call which way — merging the base in, or `/quenching:git:sync`'s own
 rebase, which carries the recorded task subjects through the rewrite. Never do it unasked, and
-never run the gate over a branch you know is behind: that is a verdict about a tree that is not
-being merged.
+never run the gate over a branch you know is behind.
 
 **An inconclusive result is not a green one.** A check that cannot tell "this failed" from "this
 could not be measured" has returned no verdict — say which it was, and ask, rather than merging on
 it. Where the repo keeps `/docs/standards/quality/surface-verification.md`, its §The five
 preconditions a check must satisfy is where that distinction is defined for the command surface.
 
-**Run the scope the diff justifies.** A harness that spawns fresh agent sessions bills for every
-one, so a check with a `--only`-style selector gets the subset this branch can actually break — the
-whole suite by reflex is the expensive way to learn nothing. When the repo's `## Validation` names
+**Run the scope the diff justifies.** A check with a `--only`-style selector gets the subset this
+branch can actually break, because a harness that spawns fresh agent sessions bills for every one.
+When the repo's `## Validation` names
 the scope, follow it; when it does not, run what it says and report the cost as a finding worth a
 selector.
 
@@ -331,27 +295,24 @@ reported.
   refusal over a not-fully-merged branch is the safety, and forcing past it destroys the only copy
   of work nobody adopted.
 - **Never hand off past a red `## Validation` gate**, and never count an inconclusive check as a
-  green one. The gate runs on the branch precisely so that a failure still has somewhere to be
-  fixed — recommending a merge command anyway spends that.
+  green one.
 - **Never run the gate over a branch that is behind its base.** Report the count and stop; bringing
   it up to date is a write, and which way is the human's call.
 - **This command's own commits end at step 5.** Nothing it does writes to the branch after the gate
   in step 6 — the merge, the PR, and whatever they each commit belong entirely to
   `/quenching:git:merge` and `/quenching:git:pr:create`, run separately, on the human's own word.
 - Never overwrite the `writeOnce` `outcome` record to make reality fit — report the disagreement
-  instead. It is stamped with `cq specs record`, which refuses on its own; editing the frontmatter
-  to get past that refusal is the thing the refusal exists to stop.
+  instead, and never edit the frontmatter to get past `cq specs record`'s refusal.
 - Never re-run a stage whose signal is already set without saying so and being asked to.
 - Never re-write a rule a task already wrote into `/docs/standards/` during execution — concluding
   syncs nothing.
 - Never settle a release obligation for an **abandoned** spec, and never invent one no standard
-  states — a bump nobody asked for is a release claim this command had no authority to make.
+  states.
 - Never bulk-copy a spec into `/docs/`; only what outlives it crosses.
 - Never distil an abandoned spec's decisions as adopted knowledge; `background` is the ceiling.
 - Never edit or delete anything already in `archive/`, with exactly one exception, onto the spec
-  this run is closing: the distillation's `## Outcome` append. It records a fact that did not exist
-  at the archive move and has nowhere earlier to live — the two-clause test a further exception is
-  argued against, never assumed into. It revises nothing the spec claimed. Never touch a spec other
-  than that one, nor an archived spec from an earlier run.
+  this run is closing: the distillation's `## Outcome` append, which records a fact that did not
+  exist at the archive move and revises nothing the spec claimed. Never touch a spec other than
+  that one, nor an archived spec from an earlier run.
 - Never rewrite history: no amend of a task commit, no force-push, no `--no-verify` and no
   `--no-gpg-sign` on the commits this command makes.

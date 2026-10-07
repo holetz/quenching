@@ -7,11 +7,13 @@ tags: [architecture, references, commands, skills, cq]
 timestamp: 2026-08-10
 audience: both
 authority: current
-source: spec plans/alinhar-specs-ao-report-mold.md, Design section decision 2 (proved on 2026-08-05) — before this spec's tasks 1.1-1.3, seven of the eight /quenching:specs:* bodies cited spec-driven.md §The report mold as preamble prose ("owns the shape step N prints in") and not one of the eight contained the string --sections "§The report mold"; develop.md went as far as explicitly deferring to step 8, and step 8 carried no call at all
+source: alinhar-specs-ao-report-mold, 2026-08-05; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Loading is a call inside the step; citing is preamble prose
+
+<!-- rules -->
 
 Every `commands/**/*.md` body in this plugin cites references by `§`-address instead of restating
 them — that is the context saving the whole architecture rests on. But a citation and a load are two

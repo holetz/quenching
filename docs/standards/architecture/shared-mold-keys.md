@@ -13,6 +13,8 @@ maintainer: quenching
 
 # A shared mold carries only keys every citer may write
 
+<!-- rules -->
+
 `knowledge-add/homes.md` §The frontmatter stamp is a **mold**: a block of keys that four commands —
 `/quenching:knowledge:add`, `/quenching:knowledge:learn`, `/quenching:components:harness:align`,
 `/quenching:knowledge:import-memory` — cite by absolute path and fill
@@ -29,6 +31,8 @@ So the rule is about *membership*, not about wording:
 > that writer's own contract, and the mold gets at most a line saying the key exists and who owns it.
 
 ## Why a warning in the mold is not the same thing
+
+<!-- rationale -->
 
 The tempting alternative is to keep the key in the mold and annotate it — *"only `/quenching:knowledge:import`
 writes this"*. This repo has already run that experiment with `resource:`.

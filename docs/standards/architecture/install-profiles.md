@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Install profiles — the front is the unit of alignment
 
+<!-- rules -->
+
 An install profile is the declaration, in `.claude/quenching.json`, of which entries a repository
 asks the root `/align` conductor to consider. It is a planning and conduction scope, not an
 installation mechanism: the plugin's command files remain present and their host invocation and

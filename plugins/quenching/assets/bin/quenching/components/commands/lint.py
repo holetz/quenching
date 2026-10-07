@@ -33,6 +33,8 @@ CAP_METADATA = 1536             # the description; Claude Code truncates past it
 CAP_DESCRIPTION_PORTABLE = 1024  # the Agent Skills standard's hard limit
 CAP_DESCRIPTION_BUDGET = 250    # the budget: use case first, so the listing stays cheap
 CAP_BODY_LINES = 500
+BODY_BYTES_BUDGET = 12 * 1024   # a body is re-sent every turn it governs; past this it warns
+BODY_SIZE_OPT_OUT_RE = re.compile(r"^<!--\s*body-size:\s*justified\b[^>]*-->\s*$", re.MULTILINE)
 TRIGGER_SENTENCE_MAX = 2        # triggers live by the second sentence, so truncation keeps them
 BOUNDARY_MARKER = "Not for:"
 DONE_WHEN_MARKER = "**Done when:**"
@@ -538,6 +540,15 @@ def lint_command(cmd: dict, base: str, named_by: set[str] | None = None) -> list
                            "push shared procedure into a bundled reference and cite it by "
                            "absolute path",
                            lines=cmd["bodyLines"], cap=CAP_BODY_LINES, **where))
+
+    body_bytes = len(body.encode("utf-8"))
+    if body_bytes > BODY_BYTES_BUDGET and not BODY_SIZE_OPT_OUT_RE.search(body):
+        out.append(finding("sk-body-size", "warn",
+                           f"body is {body_bytes} bytes, over the {BODY_BYTES_BUDGET}-byte budget "
+                           "— cut dead weight, move shared procedure into a reference, or declare "
+                           "the exception on its own line: "
+                           "`<!-- body-size: justified — <reason> -->`",
+                           bytes=body_bytes, budget=BODY_BYTES_BUDGET, **where))
 
     steps, covered = _step_criteria(body)
     if steps and covered < steps:

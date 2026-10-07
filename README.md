@@ -23,8 +23,8 @@ python3 scripts/sync_codex_plugin.py --write
 python3 scripts/sync_codex_plugin.py --check
 ```
 
-The `Sync Codex plugin` workflow runs on pushes and pull requests. It installs the locked
-toolchain and runs the repository gate; it does not write the generated snapshot in CI. Refresh
+The `CI` workflow (`.github/workflows/ci.yml`) runs on pushes to `main` and on pull requests. It installs the locked
+toolchain, runs the repository gate on Python 3.11 and 3.13, lints with ruff and reports the functional checks (exit 2 is inconclusive); it does not write the generated snapshot in CI. Refresh
 the Codex artifact locally after changing Claude sources.
 
 ## Local development

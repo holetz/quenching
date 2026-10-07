@@ -3,11 +3,10 @@ from __future__ import annotations
 
 import copy
 import datetime as dt
-import os
-import tempfile
 from pathlib import Path
 from typing import Any
 
+from quenching.common.io import write_text
 from quenching.design.markdown import parse_frontmatter
 from quenching.design.model import (
     DESIGN_COMPONENT_PROPERTIES,
@@ -116,7 +115,7 @@ def import_design(root: Path, write: bool = True) -> dict[str, Any]:
         raise DesignError("import would make tokens.json invalid: "
                           + "; ".join(item["message"] for item in findings))
     if write and changed:
-        _atomic_write(source_path, dump_json(candidate))
+        write_text(str(source_path), dump_json(candidate))
     return {
         "ok": True,
         "mode": "write" if write else "check",
@@ -178,14 +177,3 @@ def _node_at(source: dict[str, Any], path: tuple[str, ...]) -> dict[str, Any]:
 def _group_type(group: str) -> str:
     return {"colors": "color", "typography": "typography",
             "rounded": "dimension", "spacing": "dimension"}[group]
-
-
-def _atomic_write(path: Path, content: str) -> None:
-    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
-            handle.write(content)
-        Path(temporary).replace(path)
-    finally:
-        if Path(temporary).exists():
-            Path(temporary).unlink()

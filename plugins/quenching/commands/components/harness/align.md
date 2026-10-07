@@ -10,9 +10,8 @@ allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(find:*), Bash(git grep:*), Bas
 **Input**: `$ARGUMENTS` (an optional specific harness file; omit to sweep every CLAUDE.md/AGENTS.md).
 
 Refactors a repo's **harness files** (the root `CLAUDE.md`, every subfolder `CLAUDE.md`, and
-`AGENTS.md`) into thin navigation pointers over the OKF `/docs/` bundle. A harness file is **context
-tax** the agent pays on every turn, so it earns each line: operational rules stay; durable knowledge
-is **moved** into its `/docs/` home and cited, never re-inlined. Assumes the bundle already exists (run
+`AGENTS.md`) into thin navigation pointers over the OKF `/docs/` bundle: operational rules stay;
+durable knowledge is **moved** into its `/docs/` home and cited. Assumes the bundle already exists (run
 `/quenching:knowledge:align` first if not). It also **creates** a thin subfolder `CLAUDE.md` where discovery
 finds a folder with a local operational surface but no harness — evidence-gated, never one per
 directory (routing §6). The unit → verdict → home routing and the pointer-honesty gate are
@@ -31,11 +30,9 @@ molds live at `${CLAUDE_PLUGIN_ROOT}/assets/templates/harness/`.
   pointer)?
 - **A folder earns a harness; a harness is never assumed.** Beyond slimming the files that exist,
   the skill **creates** a thin subfolder `CLAUDE.md` where a folder has local operational commands
-  but none — but only where the folder earns it (routing §6). Never blanket-create one per
-  directory; data, output, and asset folders earn nothing.
+  but none (routing §6); data, output, and asset folders earn nothing.
 - **Move, never copy.** After the run each fact lives in exactly **ONE** place — its concept doc.
-  A rule restated in CLAUDE.md is the same drift as a lying index; the pointer **cites** the doc,
-  it never paraphrases it.
+  The pointer **cites** the doc, never paraphrases it.
 - **Plan first, execute on one confirmation.** Read every harness file, classify every unit, and
   present **ONE** table — file → unit → verdict → destination. A single OK executes the batch; an
   edit whose blast radius reaches **product code** is its own confirmation item. **Exception —
@@ -64,23 +61,22 @@ catch gitignored ones. Confirm `/docs/index.md` carries `okf_version` — if the
 **stop** and offer `/quenching:knowledge:align` first. List every harness file found.
 
 Then **discover greenfield candidates** (read-only), swept **repo-wide from the repository
-root** — one pass over the entire tree, e.g. `find . -type f \( -name '*.sh' -o -name Makefile
--o -name package.json -o -name justfile \)` anchored at the root, never a search pre-scoped to a
-hand-picked list of top-level directories. Sweep candidates outside the existing harness set too.
+root** in one pass, e.g. `find . -type f \( -name '*.sh' -o -name Makefile
+-o -name package.json -o -name justfile \)`.
 Folders that have a **local operational surface** but **no** `CLAUDE.md` qualify only if they
 carry commands the agent would need on **every** task under them that **don't derive from the
 root** — a `*.sh` / `Makefile` / `justfile` / `package.json`-script, a distinct toolchain, or a
 `README` whose fenced blocks are run-commands. **Exclude** generated-output, asset, and vendored
 dirs (`.build/`, `dist/`, `build/`, `target/`, `node_modules/`, `**/__pycache__/`, `fonts/`,
 `assets/`, `.venv/`, any nested `site-packages`/vendored dependency tree) and anything gitignored
-as a build artifact — check each hit with `git check-ignore`, don't assume from the path alone.
+as a build artifact — check each hit with `git check-ignore`.
 Each survivor is a **proposed** subfolder `CLAUDE.md`, carried into the plan (step 5) as its own
 gated item — never auto-created. See [components-harness-align/harness-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-harness-align/harness-routing.md) §6.
 
 On a large repo, delegate this repo-wide `find`/`grep` sweep to **one read-only `Task`
 sub-agent** (`model: haiku`, `effort: low`) that only **collects** — harness paths, candidate
 folders and the operational evidence found in each (`folder → [Makefile, run.sh, …]`) — while
-every qualify/exclude judgment stays with the orchestrator; the sweep is mechanical.
+every qualify/exclude judgment stays with the orchestrator.
 **Done when:** every existing harness and every evidence-gated candidate is listed.
 
 ### 2. Parse each file into content units
@@ -129,8 +125,7 @@ For each MOVE row, run the full insert procedure exactly as
 [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)) —
 with this skill's deltas kept inline:
 - `source:` = the harness file the unit came from; an unproven rule enters
-  `authority: background`. The retired `log.md` is never created or updated; the source remains in
-  the new document's frontmatter.
+  `authority: background`.
 - **Only after the self-check passes:** cut the unit from the harness file. A failed insert
   leaves the unit in place; a **DEDUPE** unit is cut once the existing doc is confirmed to
 cover it.
@@ -159,8 +154,9 @@ is still restated inline; run `cq knowledge validate` over `/docs/` → 0 errors
 - Never give a harness file frontmatter or a `type` (okf-spec's strict-7 rule — they are exempt).
 - Never drop or paraphrase the root file's language declaration line — it is KEEP by rule (step 3),
   and nothing downstream would report its loss.
+- Never drop or paraphrase the root file's `Ephemeral writes:` declaration line — it is KEEP by rule
+  (step 3), exactly as the language line is.
 - Never skip the single up-front plan + confirmation; a product-code edit confirms on its own. A
   cycle-authorized run (convergence.md §The cycle-authorization contract) replaces the batch gate with narration — never the
   product-code item's own OK — and a pre-collected table is delta-rechecked before any write.
-- Never blanket-create subfolder `CLAUDE.md`s — creation is evidence-gated per harness-routing.md §6. Nesting rules, and a
-  data/output/asset folder earns none.
+- Never blanket-create subfolder `CLAUDE.md`s — creation is evidence-gated per harness-routing.md §6.

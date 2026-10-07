@@ -1,17 +1,17 @@
 ---
 description: >-
-  Report the provider-owned specs front, read-only. Use for "specs status", "provider configuration". Not for: developing or executing → /quenching:specs:develop; ranking → /quenching:specs:triage.
+  Report the specs front and store configuration, read-only. Use for "specs status", "store configuration". Not for: developing or executing → /quenching:specs:develop; ranking → /quenching:specs:triage.
 allowed-tools: Bash(cq:*), Bash(python3:*), Read
 ---
 
-# /quenching:specs:status — read the provider-owned front
+# /quenching:specs:status — read the specs front
 
-The canonical documents live in the repository provider: GitHub Issues or Azure Boards. There is no
-local `/.specs/` root.
+The canonical documents live on the `quenching` branch (the git store), or in a deprecated tracker
+backend. There is no local `/.specs/` root.
 
 The recognised configuration envelope and its defaults live in
 [specs-align/plugin-configuration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/plugin-configuration.md)
-§The envelope and recognised namespaces. This command reports that provider-owned state; it does
+§The envelope and recognised namespaces. This command reports that state; it does
 not create a local specs store or infer missing configuration.
 
 ## Workflow

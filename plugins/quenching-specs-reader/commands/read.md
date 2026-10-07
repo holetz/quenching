@@ -10,7 +10,7 @@ allowed-tools: Bash(cq-specs-read:*)
 
 # /quenching-specs-reader:read — read a specs front, never write it
 
-The specs live in the project's repository provider (GitHub Issues or Azure Boards). This command
+The specs live in the project's git store (the `quenching` branch), or in a deprecated tracker backend. This command
 reads them through `cq-specs-read`, a read-only `cq specs` that refuses every write with exit 2.
 
 Arguments: `$ARGUMENTS`
@@ -44,9 +44,9 @@ Arguments: `$ARGUMENTS`
 
 ## Invariants
 
-- Never write the provider, and never try: `new`, `task`, `record`, `promote`, `discover` and
+- Never write the store or a card, and never try: `new`, `task`, `record`, `promote`, `discover` and
   `section --write` are refused by the tool, and asking for them means the human needs the full
   `quenching` plugin.
-- Never call `gh` or `az` to change an issue or work item as a substitute for a refused verb.
+- Never call `gh`, `az` or `git` to change an issue, work item or the specs branch as a substitute for a refused verb.
 - The output is data for the human. Writing it into this project (a note, a checklist file) is a
   separate request, never a side effect of reading.

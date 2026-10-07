@@ -13,6 +13,8 @@ maintainer: quenching
 
 # The seams a prose deletion opens
 
+<!-- rules -->
+
 Two standards already cover what a removal leaves *unedited*:
 [withdrawn-contract-residue.md](withdrawn-contract-residue.md) — the sites the branch never
 opened, asserting the withdrawn contract in their own words — and
@@ -75,6 +77,8 @@ capability leaves both: the grant, which is now wider than
 [skills.md](../automation/skills.md) §`allowed-tools` is always scoped permits, and the sentence
 justifying it, which now describes work nobody does.
 
+<!-- rationale -->
+
 The general form: **an artefact removed for being unused takes its enabling declarations with it.**
 `allowed-tools` entries are the instance this repo measured; the class also holds a dependency
 whose only importer went away, and a config key whose only reader was deleted. Ask of every
@@ -82,6 +86,8 @@ removal *what was only there because of this?* — the answer is rarely nothing,
 found by grepping for the removed thing's name, since a grant names a capability, not its purpose.
 
 ## Why every checker stays green
+
+<!-- rationale -->
 
 Same structural blindness the two sibling standards tabulate, for the same reason. All three
 defects are well-formed prose:

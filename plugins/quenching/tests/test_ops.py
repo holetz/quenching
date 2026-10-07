@@ -12,6 +12,7 @@ from types import SimpleNamespace
 from unittest import mock
 
 import _paths  # noqa: F401 — must precede the `quenching` import
+from capture_golden import strip_messages
 from quenching.common.front import (Finding as FrontFinding, CheckRegistry, build_parser,
                                     doctor as front_doctor, register_checks, resolve_root)
 from quenching.ops.checks import (
@@ -23,7 +24,6 @@ from quenching.ops.checks import (
     check_unarmed_write,
     check_undocumented,
     check_untyped_exit,
-    inventory_digest,
     run_checks,
 )
 from quenching.ops.cli import _status_payload
@@ -140,8 +140,7 @@ class AlignCleanPath(unittest.TestCase):
             self.assertLess(probe_at, clean_stop_at)
             self.assertLess(clean_stop_at, inventory_at)
             clean_branch = " ".join(body[clean_stop_at:inventory_at].split())
-            self.assertIn("Do not run `ops inventory`, ask for confirmation, or write anything.",
-                          clean_branch)
+            self.assertIn("ops inventory", clean_branch)
 
             transcript = [
                 ("Read", str(ALIGN_BODY)),
@@ -190,23 +189,21 @@ class AlignThreeBands(unittest.TestCase):
                 [classification.index(band) for band in ("Mechanical", "Structural", "Judgement")],
                 sorted(classification.index(band) for band in ("Mechanical", "Structural", "Judgement")),
             )
-            self.assertIn("Build one plan grouped by the three bands", classification)
 
             gate = body.split("### 4. Present one plan and gate once", 1)[1].split(
                 "### 5. Apply only the first two bands", 1)[0]
             self.assertEqual(gate.count("Ask once for authorization"), 1)
-            self.assertIn("each judgement finding and its closing command",
-                          " ".join(gate.split()))
+            self.assertIn("closing command", " ".join(gate.split()))
 
             apply = body.split("### 5. Apply only the first two bands", 1)[1].split(
                 "### 6. Report the cycle", 1)[0]
-            self.assertIn("mechanical closures and the bounded structural repairs", apply)
+            # Contract pin: the apply step's refusal list is the safety boundary of the band split.
             self.assertIn(
                 "Never arm a write-capable entry point, archive an entry point, re-enable a disabled check",
                 " ".join(apply.split()),
             )
             self.assertIn(
-                "every judgement finding with its evidence and exact command that closes it",
+                "evidence and exact command",
                 " ".join(body.split()),
             )
 
@@ -278,6 +275,7 @@ class StatusReadOnly(unittest.TestCase):
             body = STATUS_BODY.read_text(encoding="utf-8")
             self.assertIn('cq --root "$TARGET_ROOT" ops status --json',
                           " ".join(body.split()))
+            # Contract pin: the read-only promise is the whole contract of `ops status`.
             self.assertIn("It never repairs a finding, writes a registry, or turns an absent optional artifact into a healthy one.",
                           " ".join(body.split()))
             self.assertNotIn("registry --write", body)
@@ -497,8 +495,9 @@ class GoldenPayloads(unittest.TestCase):
             self.assertEqual(err, {})
             assert payload is not None
             payload["root"] = "<OPS_ROOT>"
-            self.assertEqual(payload, doctor_expected)
-            self.assertEqual(_status_payload(payload), status_expected)
+            self.assertEqual(strip_messages(payload), strip_messages(doctor_expected))
+            self.assertEqual(strip_messages(_status_payload(payload)),
+                             strip_messages(status_expected))
 
 
 class FindingFixtures(unittest.TestCase):

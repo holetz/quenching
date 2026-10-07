@@ -7,7 +7,7 @@ tags: [architecture, aligns, commands, probe, convergence]
 timestamp: 2026-08-31
 audience: both
 authority: current
-source: specs-flow-consolidation plan (section 4); the cross-front drift probe added by the notice-installed-tool-version-drift spec, 2026-07-28, and retired by modularizar-specs-knowledge-components task 10.3 once the four scripts it compared a legacy copy against stopped existing; the no-sweep-records-itself rule from the retire-docs-log spec's branch review, 2026-07-29; the probe's subject rewritten from stale-copy to legacy-copy (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) once no align installed a tool any more; the two conductor categories and the drop of "cited by `/align` alone" by the fluxo-rapido-para-problemas-simplorios plan (task 2.4); retired with orchestration-gears.md (marchas-do-orquestrador-vivem-no-plugin, 2026-08-11); pilar-git-e-specs-agnosticas-ao-git (task 6.1) minted the alignless `git` pillar; spec 1043 added `ops` as a local front alongside it; spec 1047 added `proof`; specs 1067 and 1069 admitted `toolchain` and `delivery`; spec 1071 classified `security` as a read-only pillar; spec 1072 integrates the seven-front conductor and its declaration-backed claims; varrer-nomes-de-comando-legados (2026-08-27) retired the specs front's align with its local backend, so the column reads none for the provider-owned specs and the pillars, each for its own reason; spec 1073 (task 4.2) retires the remaining spec conductors from this column
+source: specs-flow-consolidation, notice-installed-tool-version-drift, 2026-07-28, modularizar-specs-knowledge-components, no-sweep-records-itself, retire-docs-log; lineage in ADR 0004
 maintainer: quenching
 ---
 

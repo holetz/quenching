@@ -22,7 +22,7 @@ WHICH PROJECT
 The root must be a checkout of the project whose specs are read: the provider (GitHub or
 Azure Boards) and the repository are derived from its remote.
 
-The package it runs is `assets/bin/quenching`, generated from `plugins/quenching` by
+The package it runs is `assets/bin/quenching` (only `common/` and `specs/`), generated from `plugins/quenching` by
 `scripts/sync_specs_reader_plugin.py`. The plugin root comes from `__file__`, never from
 `${CLAUDE_PLUGIN_ROOT}`, which is empty in a shell.
 """

@@ -7,11 +7,13 @@ tags: [automation, commands, taxonomy, authoring]
 timestamp: 2026-08-27
 audience: both
 authority: current
-source: the skill-authoring + skill-alignment change that first paired a skill with its wrapper (predates collapse-skills-into-commands) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31) + route-commands-without-always-on-descriptions (2026-08-02), which measured the disable-model-invocation claim this doc had asserted unmeasured and added the routed/typed-only admission criterion + the surface-wide description review added to /quenching:components:align (2026-08-02) + alocar-comandos-skills-por-categoria (2026-08-15), which made category/subject the primary classification test ahead of domain-bound/generic + revisar-fluxo-do-develop-custo-e-gates (2026-08-16), which widened the `context: fork` prohibition from "gates a mid-flow confirmation" to "asks the human anything mid-flow", aligning the written rule with the `sk-fork-gate` check that had always graded the `AskUserQuestion` grant itself; the directional-boundary rule added by the orquestrar-specs-em-paralelo branch review (2026-08-16), which found the two new fan-out entries naming their neighbours while no neighbour named them back — a one-directional surface no lint code can see; varrer-nomes-de-comando-legados (2026-08-27) — the standing example of a deliberate unscoped Bash grant is now /quenching:specs:execute, the command lint actually reports it on; sk-unscoped-bash-le-o-corpo (2026-08-27) — the stated reason has a literal marker `lint` can observe, carried as `priced` in the JSON
+source: collapse-skills-into-commands, 2026-07-26, correct-command-citation-form, 2026-07-31, route-commands-without-always-on-descriptions, 2026-08-02; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Command authoring and alignment
+
+<!-- rules -->
 
 The contract for how a command enters and stays in this plugin's automation surface, distilled
 from the skill-authoring + skill-alignment change that first paired a skill with its wrapper.
@@ -162,6 +164,8 @@ Two arms with a control, filesystem-verified, Claude Code 2.1.220 — recorded a
 [claude-code-skill-command-mechanics.md](../../external/tools/claude-code-skill-command-mechanics.md).
 The control arm, identical but for the field, was listed and invoked by name successfully.
 
+<!-- rationale -->
+
 Recorded plainly because being right by luck is worth as much as being wrong here: the opposite
 assertion would have been equally easy to write, and
 [the mechanics doc's own history](../../external/tools/claude-code-skill-command-mechanics.md)
@@ -212,7 +216,7 @@ noisy, summary-out work whose trail would otherwise sit in the main context fore
 Every further capability a command uses — `context: fork` with `agent`/`background`, a
 `model`/`effort` pin, `paths`, frontmatter `hooks:` — is an **authored, priced decision**: the
 default profile is all levers off, and each departure enters the mint's plan with its stated
-buy. An inline pin invalidates the session's prompt cache (a pin inside a fork or an agent is
+buy. The five inline `model:` pins on `/quenching:specs:*` (opus: develop, conclude, triage; sonnet: create, execute) are that decision made on purpose — a pinned model is a price the spec lifecycle pays for judgment or throughput — and are recorded in [ADR 0007](../../decisions/0007-native-claude-code-features.md). An inline pin invalidates the session's prompt cache (a pin inside a fork or an agent is
 cache-safe); `paths` binds a domain-bound command's autonomous firing to its folder. Subagents
 are governed by [agents.md](agents.md), hooks by [hooks.md](hooks.md); the pricing doctrine
 lives once in the plugin

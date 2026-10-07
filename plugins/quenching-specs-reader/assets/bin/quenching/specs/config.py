@@ -14,6 +14,7 @@ from quenching.common.config import (CONFIG_FILE, LEGACY_CONFIG_FILE,
                                      infer_base_branch,
                                      load_config as load_envelope, namespace)
 from quenching.common.git import _git
+from quenching.common.remote import remote_host as _remote_host
 from quenching.specs.parse.spec import PHASE_DIRS, PHASES
 
 
@@ -167,17 +168,190 @@ def detect_provider(root: str) -> tuple[str | None, str | None]:
     remote = _git(repo, "remote", "get-url", "origin").strip()
     if not remote:
         return _common_detect_provider(root)
-    host = remote.strip().split("#", 1)[0]
-    if "://" in host:
-        host = host.split("://", 1)[1]
-    host = host.rsplit("@", 1)[-1]
-    host = host.split("/", 1)[0].split(":", 1)[0].lower()
+    host = _remote_host(remote)
     if host == "github.com" or host.endswith(".github.com"):
         return "github", host
     if (host == "dev.azure.com" or host.endswith(".dev.azure.com")
             or host == "visualstudio.com" or host.endswith(".visualstudio.com")):
         return "azure-boards", host
     return None, host
+
+
+def _read_backend(out: dict, obj: dict, values: dict, root: str) -> None:
+    backend = obj.get("backend")
+    if isinstance(backend, str) and backend.strip() and backend.strip() not in BACKENDS:
+        out["unknownBackend"] = backend.strip()
+    if isinstance(backend, str) and backend.strip() == "git":
+        from quenching.specs.backends.git import branch_config   # deferred: git imports parse
+        out["backend"] = "git"
+        branch_values = branch_config(root)
+        for key in BRANCH_CONFIG_KEYS:
+            if key in branch_values:
+                values[key] = branch_values[key]
+        value = values.get("artifactLanguage")
+        if isinstance(value, str) and value.strip():
+            out["artifactLanguage"] = value.strip()
+        # `card` is `{"provider": github|azure-boards|none, "at": "capture"}`; the bare string
+        # (`"card": "github"`) and the sibling `cardAt` are read as the same declaration. An
+        # absent provider is left out, so the card layer can default it from the remote.
+        raw_card = values.get("card")
+        card = dict(raw_card) if isinstance(raw_card, dict) else (
+            {"provider": raw_card} if isinstance(raw_card, str) else {})
+        if values.get("cardAt") and "at" not in card:
+            card["at"] = values["cardAt"]
+        out["card"] = {k: str(v).strip() for k, v in card.items()
+                       if k in ("provider", "at") and isinstance(v, str) and v.strip()}
+
+
+def _read_scalars(out: dict, values: dict) -> None:
+    val = values.get("worktreeSetup")
+    if isinstance(val, str) and val.strip():
+        out["worktreeSetup"] = val.strip()
+
+    # The operations front has no safe default: `scripts/` is the conventional shape, but
+    # the same path may be an imported helper tree or a target's own domain package.  Keep
+    # both declarations as data here; `quenching.ops.config` is the boundary that refuses a
+    # run when either is absent and resolves them relative to the repository root.
+    for key in ("opsRoot", "router"):
+        value = values.get(key)
+        if isinstance(value, str) and value.strip():
+            out[key] = value.strip()
+
+
+def _read_azure_states(out: dict, values: dict) -> None:
+    # Both phases or neither. A half-declared mapping is worse than none: it would archive a
+    # spec into a state the project has and then fail to recognise it on the way back.
+    states = values.get("azureStates")
+    if isinstance(states, dict):
+        named = {p: str(states.get(p, "")).strip() for p in PHASES}
+        if all(named.values()):
+            out["azureStates"] = named
+
+
+def _read_hooks(out: dict, values: dict) -> None:
+    events = values.get("hooks")
+    if isinstance(events, dict):
+        parsed: dict[str, list[dict]] = {}
+        for event, entries in events.items():
+            if not isinstance(entries, list):
+                continue
+            kept: list[dict] = []
+            for hook in entries:
+                if not isinstance(hook, dict):
+                    continue
+                command = hook.get("command")
+                if not (isinstance(command, str) and command.strip()):
+                    continue
+                if hook.get("enabled") is False:
+                    # extension-points.md: filtered at the read, never announced.
+                    continue
+                row: dict = {"command": command.strip(), "optional": hook.get("optional") is True}
+                for field, kind in (("optional", bool), ("condition", str), ("prompt", str)):
+                    value = hook.get(field)
+                    if isinstance(value, kind):
+                        row[field] = value
+                kept.append(row)
+            if kept:
+                parsed[event] = kept
+        out["hooks"] = parsed
+
+
+def _read_profiles(out: dict, values: dict) -> None:
+    profiles = values.get("profiles")
+    if isinstance(profiles, dict):
+        installed = profiles.get("installed")
+        if (isinstance(installed, list)
+                and all(isinstance(front, str) and front.strip() for front in installed)):
+            out["profiles"] = {"installed": [front.strip() for front in installed]}
+
+
+def _read_placement(out: dict, values: dict) -> None:
+    # `azurePlacement` describes the PROJECT, not the backend — `subjects` and `tagCatalog`
+    # apply equally to `github`, so they are read here unconditionally, the same as
+    # `azurePlacement` and `azureColumns` themselves; a repository on `files` or `github`
+    # simply never has anything ask for them. Every sub-key is independently optional at this
+    # layer — `areaPath`'s absence is a REFUSAL, but that refusal belongs to
+    # `open_azure_backend`, which is the one caller in a position to say no spec was read or
+    # written; `load_config` only ever reports.
+    placement_raw = values.get("azurePlacement")
+    if isinstance(placement_raw, dict):
+        out["azurePlacement"] = {k: placement_raw[k].strip()
+                                 for k in AZURE_PLACEMENT_KEYS
+                                 if isinstance(placement_raw.get(k), str)
+                                 and placement_raw[k].strip()}
+
+    # A board-state → lane de-para, consulted by the backend and never derived by it. Any
+    # subset is legal — `boardColumn` in `azurePlacement` is the declared fallback for a
+    # state absent from this table, so the table itself carries no all-or-nothing rule.
+    columns_raw = values.get("azureColumns")
+    if isinstance(columns_raw, dict):
+        out["azureColumns"] = {str(k): v.strip() for k, v in columns_raw.items()
+                               if isinstance(k, str) and k.strip()
+                               and isinstance(v, str) and v.strip()}
+
+
+def _read_subjects(out: dict, values: dict) -> None:
+    # One entry per subject a spec may be born under. `name` and `description` are required
+    # for an entry to exist at all — a nameless or description-less subject cannot be
+    # proposed to a human, which is the whole point of declaring one — `parent` (the Feature
+    # id a human already created) and `tags` (fixed tags applied at creation) are optional.
+    subjects_raw = values.get("subjects")
+    if isinstance(subjects_raw, dict):
+        subjects: dict[str, dict] = {}
+        for key, val in subjects_raw.items():
+            if not (isinstance(key, str) and key.strip() and isinstance(val, dict)):
+                continue
+            name = val.get("name")
+            description = val.get("description")
+            if not (isinstance(name, str) and name.strip()
+                    and isinstance(description, str) and description.strip()):
+                continue
+            entry = {"name": name.strip(), "description": description.strip()}
+            parent = val.get("parent")
+            if isinstance(parent, int) and not isinstance(parent, bool):
+                entry["parent"] = parent
+            tags = val.get("tags")
+            if isinstance(tags, list):
+                entry["tags"] = [t.strip() for t in tags if isinstance(t, str) and t.strip()]
+            subjects[key.strip()] = entry
+        out["subjects"] = subjects
+
+
+def _read_tag_catalog(out: dict, values: dict) -> None:
+    # A catalogue of tag → description, read by an agent to PROPOSE a tag at creation time —
+    # the description is prompt material, never documentation, which is why an empty one is
+    # dropped rather than kept as a nameless tag nobody could ever choose correctly.
+    catalog_raw = values.get("tagCatalog")
+    if isinstance(catalog_raw, dict):
+        out["tagCatalog"] = {tag.strip(): desc.strip() for tag, desc in catalog_raw.items()
+                             if isinstance(tag, str) and tag.strip()
+                             and isinstance(desc, str) and desc.strip()}
+
+
+def _read_work_item_types(out: dict, values: dict) -> None:
+    # The abstract key a spec's `workItemType:` and `--type` carry — `{description, azure,
+    # github, default}`. `description` is prompt material exactly like a `tagCatalog` value,
+    # so an entry without one cannot be proposed and is dropped at the read, same as there.
+    # `azure`/`github` are each independently optional: an entry may name only one backend
+    # without breaking the other. `default` marks the repo's fallback entry.
+    types_raw = values.get("workItemTypes")
+    if isinstance(types_raw, dict):
+        types: dict[str, dict] = {}
+        for key, val in types_raw.items():
+            if not (isinstance(key, str) and key.strip() and isinstance(val, dict)):
+                continue
+            description = val.get("description")
+            if not (isinstance(description, str) and description.strip()):
+                continue
+            entry = {"description": description.strip()}
+            for backend_key in ("azure", "github"):
+                name = val.get(backend_key)
+                if isinstance(name, str) and name.strip():
+                    entry[backend_key] = name.strip()
+            if val.get("default") is True:
+                entry["default"] = True
+            types[key.strip()] = entry
+        out["workItemTypes"] = types
 
 
 def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
@@ -229,165 +403,15 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     if not out["present"]:
         return out
     obj = raw
-
-    backend = obj.get("backend")
-    if isinstance(backend, str) and backend.strip() and backend.strip() not in BACKENDS:
-        out["unknownBackend"] = backend.strip()
-    if isinstance(backend, str) and backend.strip() == "git":
-        from quenching.specs.backends.git import branch_config   # deferred: git imports parse
-        out["backend"] = "git"
-        branch_values = branch_config(root)
-        for key in BRANCH_CONFIG_KEYS:
-            if key in branch_values:
-                values[key] = branch_values[key]
-        value = values.get("artifactLanguage")
-        if isinstance(value, str) and value.strip():
-            out["artifactLanguage"] = value.strip()
-        # `card` is `{"provider": github|azure-boards|none, "at": "capture"}`; the bare string
-        # (`"card": "github"`) and the sibling `cardAt` are read as the same declaration. An
-        # absent provider is left out, so the card layer can default it from the remote.
-        raw_card = values.get("card")
-        card = dict(raw_card) if isinstance(raw_card, dict) else (
-            {"provider": raw_card} if isinstance(raw_card, str) else {})
-        if values.get("cardAt") and "at" not in card:
-            card["at"] = values["cardAt"]
-        out["card"] = {k: str(v).strip() for k, v in card.items()
-                       if k in ("provider", "at") and isinstance(v, str) and v.strip()}
-
-    val = values.get("worktreeSetup")
-    if isinstance(val, str) and val.strip():
-        out["worktreeSetup"] = val.strip()
-
-    # The operations front has no safe default: `scripts/` is the conventional shape, but
-    # the same path may be an imported helper tree or a target's own domain package.  Keep
-    # both declarations as data here; `quenching.ops.config` is the boundary that refuses a
-    # run when either is absent and resolves them relative to the repository root.
-    for key in ("opsRoot", "router"):
-        value = values.get(key)
-        if isinstance(value, str) and value.strip():
-            out[key] = value.strip()
-
-    # Both phases or neither. A half-declared mapping is worse than none: it would archive a
-    # spec into a state the project has and then fail to recognise it on the way back.
-    states = values.get("azureStates")
-    if isinstance(states, dict):
-        named = {p: str(states.get(p, "")).strip() for p in PHASES}
-        if all(named.values()):
-            out["azureStates"] = named
-
-    events = values.get("hooks")
-    if isinstance(events, dict):
-        parsed: dict[str, list[dict]] = {}
-        for event, entries in events.items():
-            if not isinstance(entries, list):
-                continue
-            kept: list[dict] = []
-            for hook in entries:
-                if not isinstance(hook, dict):
-                    continue
-                command = hook.get("command")
-                if not (isinstance(command, str) and command.strip()):
-                    continue
-                if hook.get("enabled") is False:
-                    # extension-points.md: filtered at the read, never announced.
-                    continue
-                row: dict = {"command": command.strip(), "optional": hook.get("optional") is True}
-                for field, kind in (("optional", bool), ("condition", str), ("prompt", str)):
-                    value = hook.get(field)
-                    if isinstance(value, kind):
-                        row[field] = value
-                kept.append(row)
-            if kept:
-                parsed[event] = kept
-        out["hooks"] = parsed
-
-    profiles = values.get("profiles")
-    if isinstance(profiles, dict):
-        installed = profiles.get("installed")
-        if (isinstance(installed, list)
-                and all(isinstance(front, str) and front.strip() for front in installed)):
-            out["profiles"] = {"installed": [front.strip() for front in installed]}
-    # `azurePlacement` describes the PROJECT, not the backend — `subjects` and `tagCatalog`
-    # apply equally to `github`, so they are read here unconditionally, the same as
-    # `azurePlacement` and `azureColumns` themselves; a repository on `files` or `github`
-    # simply never has anything ask for them. Every sub-key is independently optional at this
-    # layer — `areaPath`'s absence is a REFUSAL, but that refusal belongs to
-    # `open_azure_backend`, which is the one caller in a position to say no spec was read or
-    # written; `load_config` only ever reports.
-    placement_raw = values.get("azurePlacement")
-    if isinstance(placement_raw, dict):
-        out["azurePlacement"] = {k: placement_raw[k].strip()
-                                 for k in AZURE_PLACEMENT_KEYS
-                                 if isinstance(placement_raw.get(k), str)
-                                 and placement_raw[k].strip()}
-
-    # A board-state → lane de-para, consulted by the backend and never derived by it. Any
-    # subset is legal — `boardColumn` in `azurePlacement` is the declared fallback for a
-    # state absent from this table, so the table itself carries no all-or-nothing rule.
-    columns_raw = values.get("azureColumns")
-    if isinstance(columns_raw, dict):
-        out["azureColumns"] = {str(k): v.strip() for k, v in columns_raw.items()
-                               if isinstance(k, str) and k.strip()
-                               and isinstance(v, str) and v.strip()}
-
-    # One entry per subject a spec may be born under. `name` and `description` are required
-    # for an entry to exist at all — a nameless or description-less subject cannot be
-    # proposed to a human, which is the whole point of declaring one — `parent` (the Feature
-    # id a human already created) and `tags` (fixed tags applied at creation) are optional.
-    subjects_raw = values.get("subjects")
-    if isinstance(subjects_raw, dict):
-        subjects: dict[str, dict] = {}
-        for key, val in subjects_raw.items():
-            if not (isinstance(key, str) and key.strip() and isinstance(val, dict)):
-                continue
-            name = val.get("name")
-            description = val.get("description")
-            if not (isinstance(name, str) and name.strip()
-                    and isinstance(description, str) and description.strip()):
-                continue
-            entry = {"name": name.strip(), "description": description.strip()}
-            parent = val.get("parent")
-            if isinstance(parent, int) and not isinstance(parent, bool):
-                entry["parent"] = parent
-            tags = val.get("tags")
-            if isinstance(tags, list):
-                entry["tags"] = [t.strip() for t in tags if isinstance(t, str) and t.strip()]
-            subjects[key.strip()] = entry
-        out["subjects"] = subjects
-
-    # A catalogue of tag → description, read by an agent to PROPOSE a tag at creation time —
-    # the description is prompt material, never documentation, which is why an empty one is
-    # dropped rather than kept as a nameless tag nobody could ever choose correctly.
-    catalog_raw = values.get("tagCatalog")
-    if isinstance(catalog_raw, dict):
-        out["tagCatalog"] = {tag.strip(): desc.strip() for tag, desc in catalog_raw.items()
-                             if isinstance(tag, str) and tag.strip()
-                             and isinstance(desc, str) and desc.strip()}
-
-    # The abstract key a spec's `workItemType:` and `--type` carry — `{description, azure,
-    # github, default}`. `description` is prompt material exactly like a `tagCatalog` value,
-    # so an entry without one cannot be proposed and is dropped at the read, same as there.
-    # `azure`/`github` are each independently optional: an entry may name only one backend
-    # without breaking the other. `default` marks the repo's fallback entry.
-    types_raw = values.get("workItemTypes")
-    if isinstance(types_raw, dict):
-        types: dict[str, dict] = {}
-        for key, val in types_raw.items():
-            if not (isinstance(key, str) and key.strip() and isinstance(val, dict)):
-                continue
-            description = val.get("description")
-            if not (isinstance(description, str) and description.strip()):
-                continue
-            entry = {"description": description.strip()}
-            for backend_key in ("azure", "github"):
-                name = val.get(backend_key)
-                if isinstance(name, str) and name.strip():
-                    entry[backend_key] = name.strip()
-            if val.get("default") is True:
-                entry["default"] = True
-            types[key.strip()] = entry
-        out["workItemTypes"] = types
-
+    _read_backend(out, obj, values, root)
+    _read_scalars(out, values)
+    _read_azure_states(out, values)
+    _read_hooks(out, values)
+    _read_profiles(out, values)
+    _read_placement(out, values)
+    _read_subjects(out, values)
+    _read_tag_catalog(out, values)
+    _read_work_item_types(out, values)
     return out
 
 

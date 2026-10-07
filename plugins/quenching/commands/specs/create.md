@@ -11,9 +11,8 @@ model: sonnet
 file, or a plan already developed in this session (including a `<proposed_plan>` block). With no
 argument and no identifiable plan in the conversation, ask what to capture.
 
-Creates ONE spec. That locator is a spec's whole active life, so what is created here is what gets
-built: this command creates it, `/quenching:specs:develop` fills its sections, `/quenching:specs:execute` builds it, and
-`/quenching:specs:conclude` closes it out under the same identity.
+Creates ONE spec: `/quenching:specs:develop` fills its sections, `/quenching:specs:execute` builds
+it, and `/quenching:specs:conclude` closes it out under the same identity.
 
 The layout, the thirteen canonical sections, the gates and the front's on-write check live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
@@ -22,8 +21,6 @@ lives in [specs-surface.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develo
 §The `cq specs` tool surface; the report shape lives in
 [report-mold.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/report-mold.md)
 §The report mold.
-
-Resolve the fields before the closing screen.
 
 ## The one rule: effort proportional to input
 
@@ -56,17 +53,15 @@ or a plan already developed in this session — including the contents of `<prop
 plan-source path. Use the complete plan available in the conversation as the source; it does not
 need an intermediate file. With no argument and no identifiable plan in the conversation, ask what
 to capture. Never search plan directories automatically for a candidate. This is the one decision
-the CLI cannot make for you: `cq specs new`
-(step 5) resolves the backend, the workspace and the seed on its own, and reports a legacy
-`backlog/`/`ready/` folder as a finding rather than writing into one.
+the CLI cannot make: `cq specs new` (step 5) resolves the backend and the workspace on its own.
 **Done when:** the path is chosen.
 
 ### 2. Choose the title
 
 Take a descriptive title and a one-sentence problem from the input. On the plan-source path, use
 the plan's title or goal ("Add rate limiting to the API" → "Add API rate limiting"). The title is
-the human-readable name sent to the provider; the provider-native ID is assigned when it stores
-the spec.
+the human-readable name stored in the document and shown on the card; the ID is the card's native
+number when a card is configured, else the branch's counter, assigned when the spec is stored.
 
 **Done when:** a descriptive title is in hand.
 
@@ -77,8 +72,7 @@ Read the whole plan file, or the complete plan content from the current session,
 §The mapping and classify the plan's parts against it. When the plan is inside
 `<proposed_plan>`, use that block as the plan source and ignore the wrapper itself.
 
-**On the sentence path, skip this step entirely** — reading a bundle to write two sentences is
-exactly the cost this command exists to avoid.
+**On the sentence path, skip this step entirely.**
 **Done when:** the plan's parts are classified, or the sentence path skipped this.
 
 ### 4. Resolve a subject, a type, tags and `complexity` — decide, never ask
@@ -93,16 +87,14 @@ Where only one or two are declared, resolve only those — this is per-key, neve
 
 **A declared `subjects`:** read each key's `name`/`description`, judge which one the input best
 fits — or fall back to `azurePlacement.defaultSubject` where nothing beats it — and carry the
-chosen key to step 5's `--subject`. Keep the one-line reason it was chosen: the closing screen
-(step 6) shows it, which is where a wrong presumption is caught, not here.
+chosen key to step 5's `--subject`. Keep the one-line reason it was chosen for step 6's screen.
 
 **A declared `workItemTypes`:** read each key's `description` — the same prompt material a
 `tagCatalog` value already is — judge which entry the input best fits, or fall back to a declared
 `default`, and carry the chosen key to step 5's `--type`. Keep the one-line reason for step 6.
 
-**A declared `tagCatalog`:** read each tag's description — prompt material, not documentation,
-written for exactly this judgment — and resolve zero or more that fit the input. A tag outside the
-declared catalog is never chosen: `tagCatalog` is the closed set this judgment draws from. Carry
+**A declared `tagCatalog`:** read each tag's description — prompt material — and resolve zero or
+more that fit the input. A tag outside the declared catalog is never chosen. Carry
 whatever was resolved to step 5's `--tags`; the subject's own fixed tags need not be repeated —
 `cq specs new` folds them in on its own.
 
@@ -113,21 +105,15 @@ never the size or difficulty of the input — the four levels and what each buys
 [spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §The scale, never
 transcribed here.
 
-**A capture presumes `medium` because that is the level whose judgment is deferred.** `medium` puts
-a human on every question of the definition and then **recommends** whether the spec needs arguing
-with — judged against a composed spec rather than guessed from a sentence, which is the one input
-that could never support the guess. Presuming `high` here would run a refine pass over every
-sentence anyone captured, on no evidence that it was needed; presuming `low` would claim the pass
-may stamp its own `approved`, which nobody has yet earned the right to make. Guessing upward costs
-a refine nobody asked for; guessing downward costs a spec built on nobody's word
-(`/quenching:specs:triage` states the same asymmetry for a ranked row's floor).
+**A capture presumes `medium`**: it puts a human on every question of the definition and then
+**recommends** whether the spec needs arguing with, judged against a composed spec rather than a
+sentence.
 
 Carry the level to step 5's `--complexity`, and the one-line reason ("a capture, so a human answers
-the definition and the close recommends whether it needs arguing with") to step 6. The close of the
-develop pass re-evaluates it, so a level that turns out too small stays correctable.
+the definition and the close recommends whether it needs arguing with") to step 6.
 
-**Every one of these four is a presumption, not a verdict.** Nothing here is confirmed before it is
-written — step 6 is where the human sees it and can correct it in one answer.
+**Every one of these four is a presumption, not a verdict**, confirmed nowhere before it is written;
+step 6 is where the human sees it and corrects it in one answer.
 **Done when:** a subject, a type, zero or more tags and a `complexity` level are each resolved (to
 a value, or explicitly to none) and reasoned; metadata may be absent, but `complexity` is always
 resolved.
@@ -179,10 +165,8 @@ Any other backend failure (`sp-backend-unavailable`, `sp-worktree-unusable`,
 `sp-worktree-failed`) is reported verbatim, with the finding's own declared remedy and nothing
 invented beside it.
 
-The chained `cq specs validate --spec <id>` is the whole of what checking this spec means — its
-own finding, if any, is named verbatim in step 6, never silently swallowed by the `&&`.
-**Sentence path: nothing beyond `## Problem` is in the stream.** A plan from a
-file or the current session may add only sections its source supports.
+The chained `cq specs validate --spec <id>` is the whole check — its own finding, if any, is named
+verbatim in step 6, never swallowed by the `&&`.
 **Done when:** `cq specs new` exited 0, `validate` ran in the same call, and the locator it
 returned is in hand.
 
@@ -202,19 +186,13 @@ presumed and why — the shape differs by path:
 | plan source | subject, type, tags and `complexity` (each reasoned), and the **list** of sections filled with the task count. **Never the bodies** — the plan is large and the human just wrote it |
 
 Then the next-step block — `/quenching:specs:develop <id>` as the forward candidate — and **one**
-`AskUserQuestion`, immediately after, exactly as
-`/quenching:specs:execute` prints the same block and then opens its own `AskUserQuestion` at 100%:
-the block is the suggestion, the question is the offer that follows it, and only
-`/quenching:specs:create` and `/quenching:specs:execute` carry that second half.
-
-Two options — the third the old screen carried, *with or without questions*, is now the
-`complexity` on the screen itself:
+`AskUserQuestion`, immediately after. Two options:
 
 1. **Develop now (Recommended)** — narrate, then invoke `quenching:specs:develop <id>` through
-   the **Skill** tool, with **no declared sentence at all**. Whether that pass asks anything is the
-   `complexity` this capture just wrote and showed on this same screen: `high` and `xhigh` ask,
-   `low` and `medium` answer from evidence and park the rest in `## Open Decisions`. The level is on
-   the screen, so correcting it with `Other` is also how the human chooses to be asked or not.
+   the **Skill** tool, with no sentence declared. Whether that pass asks anything is the
+   `complexity` shown on this screen: `high` and `xhigh` ask, `low` and `medium` answer from
+   evidence and park the rest in `## Open Decisions`; correcting it with `Other` is how the human
+   chooses to be asked or not.
 2. **Stop here** — nothing more is invoked; the report above is the whole of this run.
 
 **The correction is `Other`**, which the tool always offers and which the question text invites
@@ -225,10 +203,6 @@ complexity=<level> --set date=<today>`, `cq specs section <id> "<Heading>" --wri
 then** honour whichever of the two options the same answer also names. An `Other` answer that names
 no direction falls to option 2.
 
-There is no patch-then-edit sequence to reason about: the capture already made ONE write with
-everything the input supported (step 5); a correction, when there is one, is one more write; and
-and `/quenching:specs:develop` makes ONE write per pass — its own batching contract already
-requires this.
 **Done when:** the screen has been shown and the human's answer — a correction, a direction, or
 both — has been fully honoured.
 
@@ -247,6 +221,5 @@ both — has been fully honoured.
   are resolved and written in step 5; the human is asked only after, on the closing screen.
 - **Never invoke `/quenching:specs:develop` without the human having chosen a direction** on the
   closing screen — a correction alone, with no direction named, ends the run at option 2.
-- **Never print the closing screen without naming what was presumed and why.** A subject, a type, a
-  tag or a `complexity` level with no stated reason costs the human a re-read of the config to judge
-  it; the reason is what makes disagreeing cost one second instead.
+- **Never print the closing screen without naming what was presumed and why** — every subject,
+  type, tag and `complexity` level carries its reason.

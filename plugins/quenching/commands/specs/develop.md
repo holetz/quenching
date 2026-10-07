@@ -17,7 +17,7 @@ executor discovered, **composing** a bare `## Problem` into a closed ten-section
 **Two operations, and both are derived.** **Compose** is monotonic — it fills what is absent and
 closes the ready gate. **Refine** may overturn anything it finds, the proposal included. The
 spec's **derived stage** says where composing starts; the **gear** says whether refining runs
-without anyone asking for it. Neither is ever put to the human as a choice.
+without anyone asking for it.
 
 **Every `§X` below is an address, and it is loaded as one — never by opening the file.**
 
@@ -74,28 +74,20 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
   own gate is legal —
   [spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
   §The gates.
-- **Read `/docs/` before writing — in the branch that needs it, and by section.** The relevant
-  `/docs/standards/` and `/docs/glossary.md` are binding on wording. Only **compose**
-  and **refine** ask questions that reading answers, so it is step 3b's and never the preamble's.
-  Read it per
+- **Read `/docs/` before writing — in step 3b, by section.** The relevant
+  `/docs/standards/` and `/docs/glossary.md` are binding on wording. Read it per
 [align/evidence-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/evidence-doctrine.md)
 §1. Extract the aggregate; never paste the raw dump
 §2. Section-address any markdown — a target's `/docs/` included
 — `cq components read <path> --sections "§X"`, not the whole file, when only a rule or two
   governs the question at hand; it resolves `/docs/` the same way it resolves this plugin's own
   references. No OKF bundle in the repo (`/docs/index.md` with `okf_version`) → skip silently.
-- **Never edit code.** If the work implies code changes, that is `/quenching:specs:execute`.
-- **`complexity` is re-evaluated at the close, never mid-pass.** The level
-  `/quenching:specs:create` computed from the input is stale the moment this pass writes what the
-  input could not support. The close's own recommendation IS that re-evaluation where it names a
-  raise; where the pass merely outgrew its size, the evidence that moved it is named and the level
-  proposed. A pass that changed no size proposes nothing — the level on disk is still the latest
-  word on it.
-- **Capture confirms no classification at all — every pass reviews it in silence.**
-  `/quenching:specs:create` writes subject, tags and `complexity` as presumptions the human may
-  never have looked at. So every pass here also reviews `tags` — silently, narrated in step 6's
-  consolidated plan and applied in step 7's single edit. No new screen, anywhere: the review rides
-  the edit that was already going to happen.
+- **`complexity` is re-evaluated at the close, never mid-pass.** The close's own recommendation IS
+  that re-evaluation where it names a raise; where the pass merely outgrew its size, the evidence
+  that moved it is named and the level proposed. A pass that changed no size proposes nothing.
+- **Every pass reviews `tags` in silence** — `/quenching:specs:create` presumes them. The review is
+  narrated in step 6's consolidated plan and applied in step 7's single edit, with no screen of its
+  own.
 
 ## The batching contract
 
@@ -121,9 +113,7 @@ payload — the recommended option first and marked "(Recommended)", the reasoni
 **This contract stops at the edge of how questions are grouped.**
 [questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared
 mechanics §1 is the only authority there: a question travels with the ones whose answers cannot
-change it, and alone otherwise. "Fewer turns" is a rule about tool calls and about prose turns; it
-is never a licence to put two dependent questions into one call, and **never a licence to skip a
-question** — this command changes when a question is asked, never whether it is.
+change it, and alone otherwise.
 
 ## Workflow
 
@@ -133,13 +123,11 @@ with **AskUserQuestion** (most recently modified marked "(Recommended)"). Announ
 override. Two matches for one id is exit 2 — report both paths and stop, never guess which was
 meant. An archived spec has nothing to develop: say so and stop.
 
-**Announce the spec's URL in the backend along with it.** It is the `path` field of the
-`cq specs status --spec <id> --json` payload step 2 takes in this same call, so nothing extra is
-invoked to obtain it — an issue or work-item URL under an external backend, the file's path under
-`files`. The announcement is load-bearing rather than decorative: with the plan narrated instead of
-submitted (step 6), the backend is the window the human watches the pass through and the place a
-correction is given, so it is stated before anything is read and repeated in the report (step 8).
-**Done when:** one provider-owned spec is resolved and its backend URL has been announced.
+**Announce the spec's URL in the backend along with it** — the `path` field of the
+`cq specs status --spec <id> --json` payload step 2 takes in this same call (the card's URL when
+one exists, else the spec's file location on the `quenching` branch), stated before anything is
+read and repeated in the report (step 8).
+**Done when:** one spec is resolved and its URL or location has been announced.
 
 ### 2. Read the spec's STATE — not its body
 ```bash
@@ -148,11 +136,10 @@ cq specs status --spec <id> --json      # stage, section states, ready map, reco
 **This is the same call as step 1** — §The batching contract's first row. The id either came in
 the input or was inferred, and the payload answers both steps at once.
 
-**The payload also carries the gear and the gap.** `records.priority.complexity` rides it, so
-reading the gear costs nothing; absent, or no `priority` record at all, reads as `high`
+**The payload also carries the gear and the gap.** `records.priority.complexity` is the gear;
+absent, or no `priority` record at all, reads as `high`
 ([spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §The scale). So does
-`ready: {ok, missing, malformed}`, which is the list compose owes — **no `cq specs next` call is
-needed to obtain it**.
+`ready: {ok, missing, malformed}`, which is the list compose owes.
 
 That is the whole of this step. **No section body is pulled here.**
 **Done when:** the spec's stage, section states, ready map, records, gate, backend URL and gear are
@@ -288,8 +275,7 @@ on stdin) — it creates each heading in canonical position on first write, so c
 are the same call. An emptied section becomes an explicit `- none — <reason>`, never a deleted
 heading.
 
-**The bodies go on stdin as one heredoc, in the same call** — a scratch file, a `mkdir` and a `cat`
-are three turns buying what one already does:
+**The bodies go on stdin as one heredoc, in the same call:**
 
 ```bash
 cq specs section "<id>" "<Heading>,<Other Heading>" --write <<'BODY'
@@ -307,9 +293,8 @@ Quote the delimiter (`<<'BODY'`) so nothing in the prose is expanded by the shel
 
 The `## <Heading>` lines in the stream are the delimiter, and the set they carry must equal the set
 declared on the command line — a mismatch, a repeat, or a heading outside the canonical thirteen
-refuses (exit 2) **without writing any of them**, so a rejected edit leaves the spec exactly as it
-was. One heading with a raw body and no `## ` line is the singular form and is unchanged. The N
-splices land as ONE write, which is what makes a pass all-or-nothing.
+refuses (exit 2) **without writing any of them**. One heading with a raw body and no `## ` line is
+the singular form. The N splices land as ONE write.
 
 Every follow-up the plan parked is written in this same edit — `cq specs discover <id>
 "<finding>"`, one call per line — and never mid-stage, which
@@ -337,15 +322,13 @@ stamped in step 8.
 together with whatever this pass adds, or the fixed ones are lost.
 
 The title is the sole short description every ranked listing prints (`cq specs next --front
---table`). Keep it descriptive when the spec's scope changes; the sections carry the rationale and
-detail, so no separate summary field is maintained.
+--table`); keep it descriptive when the spec's scope changes.
 
-`verification` is a plain frontmatter key rather than a record, so it has a verb of its own instead
-of a `--set`. Omit the value to read what is in force and whether anything declared it; absent
-means the default, and stamping the default to make it explicit records a decision nobody made.
+`verification` is a plain frontmatter key with a verb of its own. Omit the value to read what is in
+force; absent means the default, and the default is never stamped to make it explicit.
 
 `complexity` is a field of `priority`, and the record merges — `level` and `criticality` survive
-a re-stamp that touches only the size, and `date` is the ranking's own.
+a re-stamp that touches only the size.
 
 Then, in the same call, **verify where the pass landed**: `cq specs validate --spec <id>` and
 `cq specs status --spec <id> --json`. **When this pass touched `## Tasks`, run `cq specs parallel
@@ -405,10 +388,8 @@ the natural moment to isolate before `/quenching:specs:execute <id>` writes any 
 `/quenching:specs:develop <id>` again to refine a spec that is already `ready`; or
 `/quenching:specs:execute <id>` to carry it to the end task by task.
 
-**Isolation is named, never taken.** A pass that rewrites half a spec dirties the tree, so the human
-may want it on a branch before the next pass or before `execute` — naming `/quenching:git:branch
-<id>` in the next-step block is that suggestion, stated once at the close and never asked as a
-question mid-pass.
+**Isolation is named, never taken** — `/quenching:git:branch <id>` appears once, in the next-step
+block, and is never asked as a question mid-pass.
 **Done when:** the pass closed or re-entered, and the summary is shown.
 
 ## Invariants to never violate

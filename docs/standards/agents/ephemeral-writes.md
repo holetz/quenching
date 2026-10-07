@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Agent ephemeral writes
 
+<!-- rules -->
+
 An agent has three honest destinations for a file it creates. The destination is decided at the
 moment of writing, because that is when its reproducibility and audience are known. The test is
 one question: **can I make it again?**

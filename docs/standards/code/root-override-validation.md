@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Specs commands must not accept a repository-root override
 
+<!-- rules -->
+
 **Provider selection and repository paths are different facts.** Specs live in GitHub issues or
 Azure Boards work items. The repository remote selects the provider, while the provider returns the
 locator to show a human. No `--root`, `SPECS_ROOT`, or equivalent repository path may redirect a
@@ -27,6 +29,8 @@ name? It must distinguish three cases:
 - an Azure DevOps host selects Azure Boards and returns a work-item locator.
 - an absent, malformed, or unknown host refuses with exit 2 and names the missing or unsupported
   provider.
+
+<!-- rationale -->
 
 An explicit legacy repository-store setting is the same refusal. It must never be treated as an
 empty front, silently mapped to a provider, or used to create a directory.

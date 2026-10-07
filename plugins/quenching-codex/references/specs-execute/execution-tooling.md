@@ -91,28 +91,28 @@ cost a full-diff read.
 On item 1, reuse: duplicating it is the most common cost of task-scoped work. On item 2, useless
 defense: defensive code for an impossible state hides real failures.
 
-### Why the provider task is recorded after the commit
+### Why the spec task is recorded after the commit
 
 <!-- rationale -->
 
-That order is the point for an external backend: the commit is a local fact, while the task checkbox
+That order is the point for the specs store: the commit is a local fact, while the task checkbox
 is a remote write that cannot travel inside it. Recording the subject and sha only after the commit
-exists lets a failed provider call be retried without rebuilding or amending the code commit.
+exists lets a failed spec write be retried without rebuilding or amending the code commit.
 
 ### Why the commit chain is one call and not four
 
 <!-- rationale -->
 
 Written as separate calls the sequence was a rule the body had to be obeyed to hold; chained, it is
-enforced by the shell — verify before staging, the commit before the provider tick, and a broken
-link short-circuiting every link after it. The external write is intentionally after the local
+enforced by the shell — verify before staging, the commit before the spec tick, and a broken
+link short-circuiting every link after it. The spec write is intentionally after the local
 commit, so the two facts have the failure behaviour their different stores require.
 
 ### Why each task has its own commit, and why both subject and sha
 
 <!-- rationale -->
 
-**There is no per-task bookkeeping commit any more.** The provider task write happens after the
+**There is no per-task bookkeeping commit any more.** The spec task write happens after the
 commit and does not create another local commit. One task is one commit for code and docs the task
 named, plus one remote task record carrying the commit's subject and sha.
 

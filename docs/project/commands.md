@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: derived from plugins/quenching/README.md §The 56 commands and §The specs flow (tables preserved, long rows condensed); the machine authority is cq components doctor --json
+source: plugins/quenching/README.md §The 56 commands (long rows condensed); command set held in lockstep by test_commands_catalog.py
 maintainer: Israel Holetz
 ---
 
@@ -64,7 +64,7 @@ Acts on the `/docs/` OKF bundle.
 
 ## The specs front
 
-Acts on provider-owned specs — GitHub issues or Azure Boards work items. The lifecycle these
+Acts on specs stored on the `quenching` branch, with GitHub or Azure Boards cards. The lifecycle these
 commands share is explained in [The spec lifecycle](../explanation/spec-lifecycle.md).
 
 | Command | Does |

@@ -16,6 +16,7 @@ language — [standards/agents/communication.md](standards/agents/communication.
 
 * [standards/](standards/index.md) — how **WE** do it (current contracts/conventions), by subject; agreed-but-unproven rules sit here as `authority: background`
 * [vision/](vision/index.md) — direction segmented by area, no deadline
+* [decisions/](decisions/index.md) — the history behind a contract (measurements, dates, spec chain); standards keep only the rule
 * [tutorials/](tutorials/index.md) — learning-oriented pages ("get it running")
 * [how-to/](how-to/index.md) — task-oriented recipes for a reader with a goal
 * [explanation/](explanation/index.md) — how and why, for the site's reader
@@ -26,7 +27,7 @@ language — [standards/agents/communication.md](standards/agents/communication.
 
 ## Boundaries (memorable summary)
 
-- `standards/` = "how **WE** do it (current/active)"; an agreed-but-unproven rule sits here as `authority: background` (no separate decisions home).
+- `standards/` = "how **WE** do it (current/active)"; an agreed-but-unproven rule sits here as `authority: background` (its history lives in `decisions/`).
 - `concepts/` = "generic **understanding** we hold" (concepts/explanations; non-binding).
 - `external/` = "facts about what **WE CONSUME** (external, background)".
 - `catalog/` = "our **data** / domain".

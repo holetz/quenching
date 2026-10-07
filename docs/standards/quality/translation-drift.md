@@ -2,7 +2,7 @@
 type: standard
 title: Translation drift is a finding
 description: Translation divergence is a named, repairable finding with exit 1; refusal remains exit 2 and neither result is a silent success
-resource: plugins/quenching/assets/bin/quenching/components/commands/translate.py, .github/workflows/sync-codex-plugin.yml, plugins/quenching/commands/components/align.md
+resource: plugins/quenching/assets/bin/quenching/components/commands/translate.py, .github/workflows/ci.yml, plugins/quenching/commands/components/align.md
 tags: [quality, translation, drift, ci, findings]
 timestamp: 2026-08-18
 audience: both
@@ -12,6 +12,8 @@ maintainer: quenching
 ---
 
 # Translation drift is a finding
+
+<!-- rules -->
 
 `cq components translate --check --json` exits 0 when the generated Codex surface matches its
 Claude source. Each divergent path is a `ct-translation-drift` finding with severity `error`; the
