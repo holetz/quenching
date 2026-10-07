@@ -2,7 +2,7 @@
 description: >-
   Align the whole repository (docs, design, .claude, ops, proof, toolchain, delivery) on one confirmation. Use for "align the repo", "align everything", "set up quenching here". Not for: one front → its /quenching:*:align.
 argument-hint: [optional-scope]
-allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
 ---
 
 # /align — one confirmation, the whole repository

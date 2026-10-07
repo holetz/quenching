@@ -2,7 +2,7 @@
 description: >-
   Report the /.design/ front: source validity, generated identity, genres and drift, read-only. Use for "design status", "is DESIGN.md current". Not for: fixes → /quenching:design:align.
 disable-model-invocation: true
-allowed-tools: Read, Grep, Glob, Bash(python3:*)
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
 # /quenching:design:status — read the whole design front
@@ -20,8 +20,8 @@ Resolve `cq` per
 §Resolving the tool, then run:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root . design status --json
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root . design build --check --json
+cq --root . design status --json
+cq --root . design build --check --json
 ```
 
 Read the source and named findings only as needed to explain them. Do not write, import, build,

@@ -130,9 +130,9 @@ class AlignCleanPath(unittest.TestCase):
             self.assertEqual(payload["findings"], [])
 
             body = ALIGN_BODY.read_text(encoding="utf-8")
-            probe = ('python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root '
+            probe = ('cq --root '
                      '"$TARGET_ROOT" ops doctor --json')
-            inventory = ('python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root '
+            inventory = ('cq --root '
                          '"$TARGET_ROOT" ops inventory --json')
             probe_at = body.index(probe)
             clean_stop_at = body.index("When it exits `0` with no findings", probe_at)
@@ -276,7 +276,7 @@ class StatusReadOnly(unittest.TestCase):
             self.assertEqual(after, "")
 
             body = STATUS_BODY.read_text(encoding="utf-8")
-            self.assertIn('python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" ops status --json',
+            self.assertIn('cq --root "$TARGET_ROOT" ops status --json',
                           " ".join(body.split()))
             self.assertIn("It never repairs a finding, writes a registry, or turns an absent optional artifact into a healthy one.",
                           " ".join(body.split()))

@@ -2,7 +2,7 @@
 description: >-
   Rebase the work branch onto the latest base with `--update-refs`. Use for "sync this branch with main", "rebase onto the base", "catch this branch up". Not for: conflicts → the human.
 argument-hint: [branch]
-allowed-tools: Bash(git status:*), Bash(git remote get-url:*), Bash(git fetch:*), Bash(git rebase:*), Bash(git for-each-ref:*), Bash(python3:*), Read
+allowed-tools: Bash(cq:*), Bash(git status:*), Bash(git remote get-url:*), Bash(git fetch:*), Bash(git rebase:*), Bash(git for-each-ref:*), Bash(python3:*), Read
 ---
 
 # /quenching:git:sync — rebase onto the latest base, refs and all
@@ -17,7 +17,7 @@ local refs with `git rebase --update-refs`.
 ### 1. Confirm a clean tree, and snapshot the refs before rewriting
 ```bash
 git status --porcelain
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git base --json
+cq git base --json
 git for-each-ref --format='%(refname:short) %(objectname)' refs/heads
 ```
 Non-empty `git status --porcelain` → refuse and name the paths. **Done when:** the

@@ -1,7 +1,7 @@
 ---
 description: >-
   Report the provider-owned specs front, read-only. Use for "specs status", "provider configuration". Not for: developing or executing → /quenching:specs:develop; ranking → /quenching:specs:triage.
-allowed-tools: Bash(python3:*), Read
+allowed-tools: Bash(cq:*), Bash(python3:*), Read
 ---
 
 # /quenching:specs:status — read the provider-owned front

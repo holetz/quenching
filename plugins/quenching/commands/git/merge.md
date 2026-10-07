@@ -2,7 +2,7 @@
 description: >-
   Merge a branch into its base with one of four strategies, offered to the human. Use for "merge this branch", "land this work". Not for: opening a PR → /quenching:git:pr:create; pruning → /quenching:git:cleanup.
 argument-hint: [id-or-branch]
-allowed-tools: Bash(git worktree:*), Bash(git merge:*), Bash(git rebase:*), Bash(git branch:*), Bash(python3:*), Read, AskUserQuestion
+allowed-tools: Bash(cq:*), Bash(git worktree:*), Bash(git merge:*), Bash(git rebase:*), Bash(git branch:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
 # /quenching:git:merge — bring a branch home, on the human's own strategy
@@ -17,13 +17,13 @@ The four strategies, the squash caveat and the post-merge worktree removal are i
 
 ### 1. Load the rules and resolve branch, base and checkout
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/merge.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/merge.md \
   --sections "§Merge strategies" --sections "§The squash caveat" \
   --sections "§The worktree is removed after a successful merge"
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
   --sections "§The declared-directive layer"
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git conventions --json   # `config.mergeSubject`, or absent
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git base --json
+cq git conventions --json   # `config.mergeSubject`, or absent
+cq git base --json
 git worktree list --porcelain
 ```
 An ID in `$ARGUMENTS` → `cq specs status --spec "<id>" --json`, its `branch.work` is the branch
@@ -61,7 +61,7 @@ merge command exits 0, or the run has stopped on its failure.
 
 ### 4. Stamp, with an ID
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs record "<id>" merge --set strategy=<strategy> --set subject=<the merge commit's subject, or "none — <why>" under fast-forward/rebase>
+cq specs record "<id>" merge --set strategy=<strategy> --set subject=<the merge commit's subject, or "none — <why>" under fast-forward/rebase>
 ```
 Write-once — a record already present is read, never overwritten. No ID → nothing to stamp.
 **Done when:** the record is stamped (with an ID) or explicitly skipped (without one).

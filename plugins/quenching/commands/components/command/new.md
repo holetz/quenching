@@ -2,7 +2,7 @@
 description: >-
   Mint or edit ONE command in .claude, one file per entry point. Use for "create a command", "mint a command for X". Not for: agents → /quenching:components:agent:new; hooks → /quenching:components:hook:new.
 argument-hint: [skill-name-or-description]
-allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
+allowed-tools: Bash(cq:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
 ---
 
 # /quenching:components:command:new — mint ONE conformant command, registry included

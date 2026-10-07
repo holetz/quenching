@@ -3,7 +3,7 @@ description: >-
   Report the proof front: layers, fixtures, floors, CI evidence and findings, read-only. Use for "proof status", "check the verification surface". Not for: converging → /quenching:proof:align.
 disable-model-invocation: true
 argument-hint: [optional-target-root]
-allowed-tools: Read, Grep, Glob, Bash(python3:*)
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
 # /quenching:proof:status — read the verification surface
@@ -37,7 +37,7 @@ on exit code and JSON: `0` is a clean report, `1` carries findings, and `2` is a
 Set `TARGET_ROOT` to the supplied argument, or to `.` when the argument is omitted, and run:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" proof status --json
+cq --root "$TARGET_ROOT" proof status --json
 ```
 
 On exit `2`, report the refusal and every missing or invalid declaration exactly as returned. Do

@@ -2,7 +2,7 @@
 description: >-
   Read a PR's checks, reviews, threads and mergeability, read-only. Use for "check the PR status", "show the review state". Not for: opening → /quenching:git:pr:create; threads → /quenching:git:pr:review; merging → /quenching:git:merge.
 argument-hint: [spec-id|pr-number|pr-url]
-allowed-tools: Bash(python3:*), Bash(git remote get-url:*), Bash(git branch:*), Bash(gh repo view:*), Bash(gh pr view:*), Bash(gh api graphql:*), Bash(az repos pr:*), Bash(az devops invoke:*), Read
+allowed-tools: Bash(cq:*), Bash(python3:*), Bash(git remote get-url:*), Bash(git branch:*), Bash(gh repo view:*), Bash(gh pr view:*), Bash(gh api graphql:*), Bash(az repos pr:*), Bash(az devops invoke:*), Read
 ---
 
 # /quenching:git:pr:status — read one pull request snapshot
@@ -27,7 +27,7 @@ missing, ambiguous, mismatched or unauthenticated route.
 For the initial facts, use the bundled `cq` route and the local git identity:
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs config --json
+cq specs config --json
 git remote get-url origin
 git branch --show-current
 ```

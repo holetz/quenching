@@ -3,7 +3,7 @@ description: >-
   Mint one named proof test layer: marker, reach, budget, fixtures, README. Use for "create a proof layer", "add a test layer". Not for: existing drift → /quenching:proof:align.
 disable-model-invocation: true
 argument-hint: <layer-name> [optional-target-root]
-allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(mkdir:*), Bash(mv:*), AskUserQuestion, Write, Edit
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(mkdir:*), Bash(mv:*), AskUserQuestion, Write, Edit
 ---
 
 # /quenching:proof:layer:new — mint one proof layer
@@ -30,7 +30,7 @@ and branch on exit code and JSON: `0` is clean, `1` carries findings, and `2` is
 Set `TARGET_ROOT` to the supplied root, or `.` when it is omitted. Read the current state first:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" proof inventory --json
+cq --root "$TARGET_ROOT" proof inventory --json
 ```
 
 Refuse if the proof root is missing, the layer name already exists, the name is empty or unsafe as
@@ -98,7 +98,7 @@ tests, invent another layer, retire an existing layer, install CI, or run the ta
 Regenerate the README:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" proof readme --write --json
+cq --root "$TARGET_ROOT" proof readme --write --json
 ```
 
 The operation must either leave all five declarations complete or leave a state the doctor names
@@ -118,7 +118,7 @@ unconfirmed test move or target-suite execution occurred.
 Run the static verifier:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" proof doctor --json
+cq --root "$TARGET_ROOT" proof doctor --json
 ```
 
 Report the layer name, purpose, reach, budget, required state, marker, fixture module, test paths

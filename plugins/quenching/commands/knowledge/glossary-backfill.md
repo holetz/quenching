@@ -2,7 +2,7 @@
 description: >-
   Sweep the whole bundle to backfill glossary.md with missing terms. Use for "backfill the glossary", "find terms we never added". Not for: one term → /quenching:knowledge:define.
 argument-hint: [optional-home-scope]
-allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Write, Edit, Task, AskUserQuestion
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Write, Edit, Task, AskUserQuestion
 ---
 
 # /quenching:knowledge:glossary-backfill — backfill the glossary from the whole bundle

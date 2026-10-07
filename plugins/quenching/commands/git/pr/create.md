@@ -2,7 +2,7 @@
 description: >-
   Push the branch and open a PR on GitHub or Azure DevOps against the resolved base. Use for "open a PR", "create a pull request", "submit this for review". Not for: merging → /quenching:git:merge.
 argument-hint: [id-or-title] [remote:<name>]
-allowed-tools: Bash(git push:*), Bash(git remote:*), Bash(gh repo view:*), Bash(gh pr create:*), Bash(az repos pr:*), Bash(python3:*), Read, AskUserQuestion
+allowed-tools: Bash(cq:*), Bash(git push:*), Bash(git remote:*), Bash(gh repo view:*), Bash(gh pr create:*), Bash(az repos pr:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
 # /quenching:git:pr:create — push and open the pull request
@@ -20,13 +20,13 @@ as a GitHub repository.
 
 ### 1. Confirm the route exists, and resolve the base
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs config --json
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
+cq specs config --json
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
   --sections "§The declared-directive layer"
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git conventions --json   # `config.prTitle`, `config.prBody`
+cq git conventions --json   # `config.prTitle`, `config.prBody`
 git remote -v
 git remote get-url <remote>
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git base --json
+cq git base --json
 ```
 After reading the config, run only the matching provider probe, after confirming the selected remote's host
 matches it:
@@ -39,8 +39,8 @@ branch, and which layer governs `prTitle` and `prBody` are all resolved.
 ### 2. Resolve title, body and the provider link
 A spec id in `$ARGUMENTS` → read its provider-owned status once, then read the named sections once:
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs status --spec "<id>" --json
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs section "<id>" \
+cq specs status --spec "<id>" --json
+cq specs section "<id>" \
   "Problem,Proposal,Impact,Validation,Tasks" --json
 ```
 The status payload supplies the spec `title`, `path`, `branch` facts and task counts. The section
@@ -108,7 +108,7 @@ records pass. A target that carries `standards/workflows/plan-git-record.md` sta
 
 ### 5. Stamp, with an ID
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs record "<id>" pr --set number=<provider-pr-id> --set url=<webUrl> --set date=<today>
+cq specs record "<id>" pr --set number=<provider-pr-id> --set url=<webUrl> --set date=<today>
 ```
 `pr:` is **write-many** — a later PR on the same spec is a new fact.
 No ID → nothing to stamp; report the PR number and URL only. **Done when:** the record is stamped

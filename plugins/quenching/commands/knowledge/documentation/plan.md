@@ -2,7 +2,7 @@
 description: >-
   Build a sourced documentation plan for the OKF bundle with reader journeys. Use for "plan the documentation", "design the documentation architecture". Not for: pages → /quenching:knowledge:documentation:write.
 argument-hint: [optional-source-paths-or-scope]
-allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(rg:*), Write, AskUserQuestion
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(rg:*), Write, AskUserQuestion
 ---
 
 # /quenching:knowledge:documentation:plan — diagnose sources and record the documentation plan

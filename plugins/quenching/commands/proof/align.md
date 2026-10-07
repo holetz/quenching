@@ -3,7 +3,7 @@ description: >-
   Converge a repository's proof surface from its test gate with bounded structural repairs. Use for "align the proof front", "fix proof drift". Not for: read-only → /quenching:proof:status.
 disable-model-invocation: true
 argument-hint: [optional-target-root]
-allowed-tools: Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
 # /quenching:proof:align — converge the verification surface
@@ -34,7 +34,7 @@ on exit code and JSON: `0` is clean, `1` carries findings, and `2` is a refusal.
 Run the verifier before reading the proof tree:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" proof doctor --json
+cq --root "$TARGET_ROOT" proof doctor --json
 ```
 
 When it exits `0` with no findings, report "proof conformant, nothing to align" and stop. Do not
@@ -50,7 +50,7 @@ has authorized the inventory stage below.
 Only after exit `1`, run the single inventory pass:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" proof inventory --json
+cq --root "$TARGET_ROOT" proof inventory --json
 ```
 
 Read `proof-align/bands.md`, `proof-align/gate-contract.md`, `proof-align/layer-contract.md`, and
@@ -96,7 +96,7 @@ only when `bands.md`'s non-blocking condition is satisfied. Raise a floor only a
 scope is unchanged and the target has produced the artifact the ratchet reads:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" proof ratchet --raise --json
+cq --root "$TARGET_ROOT" proof ratchet --raise --json
 ```
 
 Never create a layer, choose a measured surface, install CI, classify an empty layer as required,
@@ -106,7 +106,7 @@ not call the ratchet; state the reason in the report.
 After edits, run the same probe again:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" proof doctor --json
+cq --root "$TARGET_ROOT" proof doctor --json
 ```
 
 Distinguish remaining judgement residue from a failed structural convergence. Do not loop an empty

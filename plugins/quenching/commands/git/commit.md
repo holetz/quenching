@@ -3,6 +3,7 @@ description: >-
   Commit what is already staged under the repo's commit convention. Use for "commit this", "make a commit", "wrap this up in a commit". Not for: staging, merging or pushing → /quenching:git:merge.
 argument-hint: [subject]
 allowed-tools: >-
+  Bash(cq:*),
   Bash(git status:*), Bash(git branch --show-current:*), Bash(git diff:*), Bash(git commit:*),
   Bash(git log:*), Bash(python3:*), Read
 ---
@@ -24,9 +25,9 @@ never a guess at which files belong together.
 
 ### 1. Read-if-present, and the staged diff
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
   --sections "§The declared-directive layer" --sections "§The read-if-present rule"
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git conventions --json
+cq git conventions --json
 git diff --cached --name-only
 ```
 One `cq git conventions` call answers both declared layers: `config.commitSubject` is the target's
@@ -40,15 +41,15 @@ list are both known.
 step 1 wins where it is declared; else a target doc naming a subject format wins outright, and a doc
 covering only part of it governs that part. With neither declared:
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md --sections "§Commit messages"
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md --sections "§Commit messages"
 ```
 `$ARGUMENTS` given → use it verbatim, wrapped rather than truncated past 72 characters where the
 title allows; an explicit subject always wins. When it is omitted, resolve the current branch and
 its `quenching-specs:` mark:
 ```bash
 git branch --show-current
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git specs <current-branch> --json
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs next --spec <spec-id> --json
+cq git specs <current-branch> --json
+cq specs next --spec <spec-id> --json
 ```
 If that produces exactly one spec and one actionable task, derive the subject with the governing
 convention from the spec id, task id and task title. If the execution caller already supplies a

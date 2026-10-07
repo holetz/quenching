@@ -2,7 +2,7 @@
 description: >-
   Develop an existing spec to ready, argue with it, approve it. Use for "develop this spec", "refine the spec", "approve this spec". Not for: new specs → /quenching:specs:create; building → /quenching:specs:execute.
 argument-hint: [id-or-description]
-allowed-tools: Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion, Task
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion, Task
 model: opus
 ---
 

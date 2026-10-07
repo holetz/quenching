@@ -2,7 +2,7 @@
 description: >-
   Converge the .claude command surface onto one file per entry point and review descriptions. Use for "align the skills", "audit the command bodies", "shorten the descriptions". Not for: one command → /quenching:components:command:new.
 argument-hint: [optional-scope]
-allowed-tools: Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion
+allowed-tools: Bash(cq:*), Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion
 ---
 
 # /quenching:components:align — force the automation surface onto the taxonomy
