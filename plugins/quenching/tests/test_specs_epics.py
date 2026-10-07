@@ -270,7 +270,7 @@ class GitStoreEpics(Scenarios, GitStoreFixture):
         self.assertEqual("[skip ci] specs: write 1 2", self.remote_log()[0])
 
     def test_a_status_reads_every_member_from_one_snapshot(self):
-        b = self.diamond()
+        self.diamond()
         fresh = GitBackend(self.clone("b"))
         calls = []
         real = fresh._snapshot
