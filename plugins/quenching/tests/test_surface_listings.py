@@ -131,7 +131,12 @@ class ListingSurfaceTests(unittest.TestCase):
 
     def test_root_workflow_prose_matches_the_declared_ci_and_branch_flow(self):
         root_readme = README.read_text(encoding="utf-8").lower()
-        self.assertIn("runs on pushes and pull requests", root_readme)
+        workflow = REPO_ROOT / ".github" / "workflows" / "ci.yml"
+        self.assertIn(".github/workflows/ci.yml", root_readme)
+        self.assertTrue(workflow.is_file())
+        declared = workflow.read_text(encoding="utf-8")
+        self.assertRegex(declared, r"(?m)^  push:\n    branches: \[main\]")
+        self.assertRegex(declared, r"(?m)^  pull_request:")
         self.assertIn("single **`main`** branch", root_readme)
         for stale in ("workflow_dispatch", "apply enabled", "checkout of `develop`"):
             self.assertNotIn(stale, root_readme)
