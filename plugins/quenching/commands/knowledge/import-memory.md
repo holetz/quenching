@@ -9,10 +9,8 @@ allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(r
 
 **Input**: `$ARGUMENTS` (an optional subset or scope; omit to drain all project memory).
 
-Promotes the durable facts the user has accumulated in **project memory** into the canonical
-OKF `/docs/` bundle, then clears them from memory — so knowledge that was living in
-`~/.claude/projects/<cwd>/memory/` becomes conformant docs anyone browsing the repo can find.
-Assumes the bundle already exists (run `/quenching:knowledge:align` first if not). The memory-type → home routing
+Promotes the durable facts in **project memory** (`~/.claude/projects/<cwd>/memory/`) into the
+canonical OKF `/docs/` bundle, then clears them from memory. Assumes the bundle already exists (run `/quenching:knowledge:align` first if not). The memory-type → home routing
 and the deletion contract are in [knowledge-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import-memory/memory-routing.md)
 §Routing table — memory `type` → likely home (content overrides) §Deletion contract;
 the home boundaries, `type` vocabulary, and molds are shared with
@@ -28,8 +26,7 @@ the home boundaries, `type` vocabulary, and molds are shared with
 
 - **Plan first, execute on one confirmation.** Cover **every** memory, classify each, and present
   ONE table — every memory → its target home + doc path + whether it will be deleted. Execute the
-  whole batch on a single OK. This is invasive (it writes docs **and** deletes memory); the user
-  sees the full blast radius before anything moves. **Exception — cycle-authorized runs:**
+  whole batch on a single OK. **Exception — cycle-authorized runs:**
   invoked as a stage of `/quenching:knowledge:align`'s cycle (or of `/align`) under the cycle-authorization contract
   ([align/convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
   §The cycle-authorization contract), the plan is
@@ -43,43 +40,35 @@ the home boundaries, `type` vocabulary, and molds are shared with
   them **stays** in memory and is flagged (like a `user`/unroutable fact). Never create a
   `vision/`, a reader-facing quadrant, `external/`, or `catalog/` doc from a
   memory.
-- **Bounded reconnaissance — read indexes, not the whole tree.** Because the skill writes to only
-  two `/docs/` homes (plus the backlog), it only ever inspects those. **Never enumerate the whole bundle** (`find docs
-  -type f`, `find docs -type d`): a real repo's `catalog/` and `external/repositories/` can hold
-  thousands of files and will drown the session at startup — the exact failure this skill must
-  avoid. To learn a home's existing subjects (so a concept path doesn't collide), read that home's
-  top `index.md` (the honest listing) plus one bounded `Glob` listing of its immediate subjects — never a
-  recursive file dump, never a descent into `catalog/`. Defer reading any concept doc's body to the
-  moment you actually MERGE-write into that home (Step 5).
-- **Metadata-first orchestrator; bodies read lazily.** Building the plan does **not** require the
-  orchestrator to load every memory body. Read `MEMORY.md` (index + hooks) and each memory's
-  frontmatter (`name`/`description`/`metadata.type`) up front; that routes most memories at plan
-  time. Read a full body only when the hook is too thin to route — and for a large dir, defer that
-  to the per-slice sub-agents (below). A 50 KB memory should never enter the main context just to be
-  classified.
-- **Scale by fanning out — one plan, still.** When the memory set is too large to read+classify in
-  a single pass, you **MAY** split the memory dir into disjoint slices (by count, ~10–15 memories
-  per agent, or by the filename type-prefix `feedback_*` / `project_*` / `reference_*`) and dispatch
-  a sub-agent per slice (via `Task`) to read the full bodies for its slice and classify against
+- **Bounded reconnaissance — read indexes, not the whole tree.** The skill inspects only the two
+  `/docs/` homes it writes to. **Never enumerate the whole bundle** (`find docs -type f`) or descend
+  into `catalog/`. To learn a home's existing subjects, read its top `index.md` plus one bounded
+  `Glob` of its immediate subjects. Read a concept doc's body only when MERGE-writing into it
+  (Step 5).
+- **Metadata-first orchestrator; bodies read lazily.** Read `MEMORY.md` (index + hooks) and each
+  memory's frontmatter (`name`/`description`/`metadata.type`) up front; that routes most memories.
+  Read a full body only when the hook is too thin to route — and for a large dir, defer that to the
+  per-slice sub-agents (below).
+- **Scale by fanning out — one plan, still.** When the memory set is too large for one pass, you
+  **MAY** split it into disjoint slices (~10–15 memories per agent, or by filename type-prefix
+  `feedback_*` / `project_*` / `reference_*`) and dispatch a sub-agent per slice (via `Task`) to
+  read the full bodies and classify against
   [knowledge-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import-memory/memory-routing.md)
   §Routing table — memory `type` → likely home, each returning a partial table. The
   orchestrator stays metadata-first — it only reads `MEMORY.md` + frontmatter to draw the slice
   boundaries and merge partials; the sub-agents are the only readers of full bodies. Dispatch
-  **classification** sub-agents with `model: sonnet`, `effort: low` — routing a fact to its home is
-  real judgment (a misroute becomes a wrong deletion decision), but each slice is small. Consolidate
-  the partials into the **one** plan — a single confirmation still gates every write and delete.
+  **classification** sub-agents with `model: sonnet`, `effort: low`. Consolidate the partials into
+  the **one** plan — a single confirmation still gates every write and delete.
   Execution MAY likewise fan out per slice, each agent honoring write-then-verify-then-delete; **no
   agent deletes a memory before its doc lands and self-checks**. **Executor** sub-agents (the
-  write-verify-delete leg) inherit the session model — never downgrade them: their self-check is
-  what authorizes deleting a memory. Fan-out must never fracture the single up-front plan or skip a
-  memory.
-- **Delete only after the doc lands.** A memory is removed **only after** its concept doc is
-  written and passes the conformance self-check. Write-then-verify-then-delete, per memory —
-  never delete ahead of a successful insert. A failed insert leaves that memory untouched.
-- **Never silently drop a memory.** A `user` memory (who the user is) usually does **not** belong
-  in shared repo docs — flag it and ask; migrate only a durable, team-relevant fact. Any memory
-  with no documentary home **stays** in memory and is reported. Deletion is only ever the tail of
-  a successful migration.
+  write-verify-delete leg) inherit the session model — never downgrade them: their self-check
+  authorizes deleting a memory.
+- **Delete only after the doc lands.** Write-then-verify-then-delete, per memory: a memory is
+  removed **only after** its concept doc is written and passes the conformance self-check. A failed
+  insert leaves that memory untouched.
+- **Never silently drop a memory.** A `user` memory usually does **not** belong in shared repo
+  docs — flag it and ask; migrate only a durable, team-relevant fact. Any memory with no
+  documentary home **stays** in memory and is reported.
 - **Content decides the home; `metadata.type` is a hint.** Route by what the fact IS
   ([knowledge-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import-memory/memory-routing.md)
   §Routing table — memory `type` → likely home (content overrides)), reusing `/quenching:knowledge:add`'s home
@@ -94,13 +83,9 @@ the home boundaries, `type` vocabulary, and molds are shared with
   `glossary.md` (the fixed A–Z lookup) as the tail of that memory's insert — the same
   step `/quenching:knowledge:add`/`/quenching:knowledge:learn` run — so the term is resolvable once the doc lands.
 - **One resolver, both platforms.** The memory directory is derived from the **native** working
-  directory, so it is resolved in Python — the runtime this plugin already requires — and never
-  from shell string-munging. `pwd` under Windows Git Bash reports the MSYS form (`/c/Users/…`),
-  which encodes to a directory name that does **not** exist, while the real one is keyed to
-  `c:\Users\…`; a POSIX-only recipe therefore misses on every Windows target and silently reports
-  "no memory". Resolution is by data — an exact match, then the nearest ancestor, then the
-  candidate list — never by a guess, and it is **case-insensitive** because the drive letter's
-  case is not stable.
+  directory in Python, never from `pwd` or shell string-munging (Windows Git Bash reports the MSYS
+  form `/c/Users/…`, whose encoding names no directory). Resolution is by data — exact match, then
+  nearest ancestor, then the candidate list — and **case-insensitive**.
 
 Resolve `cq` per
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
@@ -112,8 +97,7 @@ Resolve `cq` per
 The project's memory lives at `~/.claude/projects/<encoded-cwd>/memory/`, where `<encoded-cwd>` is
 the **native** absolute working directory with every `\`, `/`, `:` and `.` replaced by `-`
 (`c:\repos\app` → `c--repos-app`; `/home/me/repos/app` → `-home-me-repos-app`). Run the resolver
-below **as-is** — it is the same on Linux, macOS and Windows, and it also covers the worktree and
-ambiguity cases that used to need a second pass:
+below **as-is** on every platform:
 
 ```bash
 python3 - <<'PY'
@@ -156,10 +140,6 @@ never on a guess:
 **Done when:** the exact memory directory and its scope are resolved, or the run stops without
 deleting anything.
 
-**Do not** derive the path with `pwd`: under Windows Git Bash it reports the MSYS form
-(`/c/Users/…`), which encodes to a name that does not exist, and the run misreports an empty
-memory on a target that has one.
-
 ### 2. Take inventory (metadata-first)
 Read `MEMORY.md` (the index) and, for each memory `.md`, its **frontmatter** (`name`,
 `description`, `metadata.type`) and MEMORY.md hook. Do **not** read every body here — that is what
@@ -176,18 +156,15 @@ First **orient, bounded** — only the required `Read`s and `Glob`s, no shell, s
 every platform. Never enumerate the whole tree (`catalog/` and `external/repositories/` will
 overflow the session):
 
-- `Read` — `/docs/standards/index.md` and `/docs/concepts/index.md` (the honest listings; a missing
-  file just means that home is empty). For what the provider-owned `plans` phase already holds,
-  `cq specs list --json` derives it from the backend — there is no listing file to read.
+- `Read` — `/docs/standards/index.md` and `/docs/concepts/index.md` (a missing file means that
+  home is empty). For what the `plans` phase already holds, run `cq specs list --json`.
 - `Glob` — `/docs/standards/*/index.md` and `/docs/concepts/*/index.md` for the existing subject
   folders, so a new concept path does not collide. One level only, and never a recursive file dump.
 
 Then apply [knowledge-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import-memory/memory-routing.md)
-§Routing table — memory `type` → likely home (content overrides): map by content (type is a
-hint) to its destination, `type`, and mold. This skill writes to **only** `standards/` and
-`concepts/` (in `/docs/`) plus the provider-owned `plans` phase (a spec); a memory whose natural fit is `vision`,
-`documentation`, or `external` is **re-routed to the nearest of the three** per the routing table, and a
-memory that fits none is flagged. Split multi-fact memories. Mark `user` memories and any
+§Routing table — memory `type` → likely home (content overrides): map by content to its
+destination, `type`, and mold, within the three destinations (Doctrine). Split multi-fact
+memories. Mark `user` memories and any
 unroutable fact as **KEEP (ask)** — not for deletion.
 **Done when:** every memory has one destination/action or an explicit KEEP reason.
 
@@ -206,23 +183,20 @@ stamp → index → glossary → self-check (against
 [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)
 §Concept docs (`check_concept`) §Resource integrity (per-doc — every mode)) —
 with this skill's deltas kept inline:
-- `source` defaults to "project memory"; salvage the terse body into a structured doc. The retired
-  `log.md` is never created or updated; the source is carried by the doc's frontmatter.
+- `source` defaults to "project memory"; salvage the terse body into a structured doc.
 - A **unit of work** row instead follows the `/quenching:specs:create` path: run `cq specs new
   <name>` and write the memory's content into `## Problem` and nothing else, then `cq specs
   validate --spec <id>` — the ID the create reported — as the self-check per
   [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
   §The spec document §The gates and the stage-scoped explicit-none rule
   (`cq knowledge validate` never covers the specs front); carry the memory source in the spec's
-  own record rather than creating a bundle log entry.
+  own record.
   **Never stamp an OKF `type:` on it** — a spec is not a concept doc, and never invent a
   `priority`: an unranked spec is `/quenching:specs:triage`'s to place.
 - **Only after the self-check passes:** delete the memory `.md` (`rm` — the one destructive shell
   this command runs, and the only reason `Bash(rm:*)` is granted) and prune its `- [..](..)` line
-  from `MEMORY.md` with `Edit`. Pass the path the Step 1 resolver printed, quoted, so a Windows
-  path with spaces survives. A failed write leaves that memory untouched — write-then-verify-then-delete,
-  and a per-slice executor sub-agent honors the same contract (never deleting ahead of a landed,
-self-checked doc).
+  from `MEMORY.md` with `Edit`. Pass the path the Step 1 resolver printed, quoted. A failed write
+  leaves that memory untouched; a per-slice executor sub-agent honors the same contract.
 **Done when:** every migrated memory is deleted only after its doc self-checks, and every kept or
 failed row is named.
 
@@ -249,6 +223,4 @@ if it ends empty.
 - When a migrated memory names a repo-specific term, feed `glossary.md` before deleting
   the memory — but never clobber a filled glossary entry, and keep it a one-liner + link.
 - Never enumerate the whole bundle (`find docs -type f`) or descend into `catalog/` /
-  `external/repositories/` — inspect only the two `/docs/` homes' `index.md` plus the backlog
-  index (bounded). Never load every memory body into the orchestrator; recon is metadata-first,
-  bodies are read inline (small dir) or by per-slice sub-agents (large dir).
+  `external/repositories/`. Never load every memory body into the orchestrator.
