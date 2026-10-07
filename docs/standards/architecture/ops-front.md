@@ -80,6 +80,10 @@ reads all three through the shared configuration loader and refuses with `op-con
 either required declaration is absent. It never guesses `scripts/` or chooses among multiple
 router files.
 
+This repository does not adopt the ops front: it declares neither key, so `cq ops doctor` exits `2`
+with `op-config-missing`. That is the expected, inconclusive answer, not a defect; `scripts/verify_repo.sh`
+reports it as such and fails only on any other ops outcome.
+
 Root-level `opsRoot`, `router`, or `registry` keys are legacy flat declarations. A configuration
 that contains any of them, alone or alongside `ops`, is refused with `sp-config-unscoped` and exit
 `2`; the refusal names each key and its destination namespace. The ops front never merges the two
