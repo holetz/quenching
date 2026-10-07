@@ -149,11 +149,75 @@ def _surface_payload(bundle_root: str, *, density: bool = False) -> dict:
     return payload
 
 
-def _knowledge_args(argv: list[str], prog: str) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog=prog)
+def _declare_surface(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("bundle", nargs="?", default="docs")
     parser.add_argument("--root", default=".")
     parser.add_argument("--json", action="store_true")
+
+
+def _declare_validate(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("bundle", nargs="?", default="docs")
+    parser.add_argument("--root", default=".", help="repository root (default: current directory)")
+    parser.add_argument("--activity", action="store_true", help="report activity instead of findings")
+    parser.add_argument("--json", action="store_true", help="machine-readable output")
+
+
+def _declare_project(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("bundle", nargs="?", default="docs")
+    parser.add_argument("--root", default=".", help="repository root (default: current directory)")
+    parser.add_argument("--snippet", default=DEFAULT_SNIPPET)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--write", action="store_true", help="write the deterministic projection")
+    mode.add_argument("--check", action="store_true", help="check without writing (the default)")
+    parser.add_argument("--json", action="store_true")
+
+
+def _declare_nav(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("bundle", nargs="?", default="docs")
+    parser.add_argument("--root", default=".", help="repository root (default: current directory)")
+    parser.add_argument("--config", default="zensical.toml",
+                        help="root zensical.toml whose nav is generated (default: zensical.toml)")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--write", action="store_true", help="write the generated nav")
+    mode.add_argument("--check", action="store_true", help="check without writing (the default)")
+    parser.add_argument("--json", action="store_true")
+
+
+def _declare_site_source(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("bundle", nargs="?", default="docs")
+    parser.add_argument("destination", nargs="?", default="site-source")
+    parser.add_argument("--root", default=".", help="repository root (default: current directory)")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--write", action="store_true", help="replace the generated source tree")
+    mode.add_argument("--check", action="store_true", help="check without writing (the default)")
+    parser.add_argument("--json", action="store_true")
+
+
+_VERB_DECLARERS = {"validate": _declare_validate, "doctor": _declare_surface,
+                   "status": _declare_surface, "project": _declare_project,
+                   "nav": _declare_nav, "site-source": _declare_site_source}
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """The pillar's verbs with their real options, for a caller that checks a call against them.
+
+    `main` routes through its own REMAINDER parser and each `run_*` builds its verb parser from
+    the same `_declare_*` functions, so the two cannot drift."""
+    parser = argparse.ArgumentParser(
+        prog="cq knowledge",
+        description="the OKF bundle — validate and stage documentation surfaces",
+    )
+    parser.add_argument("--root", help="repository root (default: current directory)")
+    parser.add_argument("--version", action="version", version=f"cq knowledge {VERSION}")
+    sub = parser.add_subparsers(dest="verb")
+    for name, declare in _VERB_DECLARERS.items():
+        declare(sub.add_parser(name))
+    return parser
+
+
+def _knowledge_args(argv: list[str], prog: str) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(prog=prog)
+    _declare_surface(parser)
     return parser.parse_args(argv)
 
 
@@ -181,10 +245,7 @@ def run_cli(argv: list[str]) -> int:
         prog="cq knowledge validate",
         description="validate the OKF bundle without writing it",
     )
-    parser.add_argument("bundle", nargs="?", default="docs")
-    parser.add_argument("--root", default=".", help="repository root (default: current directory)")
-    parser.add_argument("--activity", action="store_true", help="report activity instead of findings")
-    parser.add_argument("--json", action="store_true", help="machine-readable output")
+    _declare_validate(parser)
     args = parser.parse_args(argv)
 
     cfg = _load_config(_project_dir())
@@ -226,13 +287,7 @@ def run_project(argv: list[str]) -> int:
     exists.
     """
     parser = argparse.ArgumentParser(prog="cq knowledge project")
-    parser.add_argument("bundle", nargs="?", default="docs")
-    parser.add_argument("--root", default=".", help="repository root (default: current directory)")
-    parser.add_argument("--snippet", default=DEFAULT_SNIPPET)
-    mode = parser.add_mutually_exclusive_group()
-    mode.add_argument("--write", action="store_true", help="write the deterministic projection")
-    mode.add_argument("--check", action="store_true", help="check without writing (the default)")
-    parser.add_argument("--json", action="store_true")
+    _declare_project(parser)
     args = parser.parse_args(argv)
 
     bundle = Path(_rooted(args.root, args.bundle))
@@ -266,14 +321,7 @@ def run_nav(argv: list[str]) -> int:
     `--check` is the gate `site-nav-stale` reads: it is a byte comparison, because the generator
     is idempotent by construction. Anything it would change is a diff, never a judgement call."""
     parser = argparse.ArgumentParser(prog="cq knowledge nav")
-    parser.add_argument("bundle", nargs="?", default="docs")
-    parser.add_argument("--root", default=".", help="repository root (default: current directory)")
-    parser.add_argument("--config", default="zensical.toml",
-                        help="root zensical.toml whose nav is generated (default: zensical.toml)")
-    mode = parser.add_mutually_exclusive_group()
-    mode.add_argument("--write", action="store_true", help="write the generated nav")
-    mode.add_argument("--check", action="store_true", help="check without writing (the default)")
-    parser.add_argument("--json", action="store_true")
+    _declare_nav(parser)
     args = parser.parse_args(argv)
 
     from quenching.knowledge.nav import generate
@@ -319,13 +367,7 @@ def run_nav(argv: list[str]) -> int:
 def run_site_source(argv: list[str]) -> int:
     """Stage or verify the small, explicit source tree used by Zensical."""
     parser = argparse.ArgumentParser(prog="cq knowledge site-source")
-    parser.add_argument("bundle", nargs="?", default="docs")
-    parser.add_argument("destination", nargs="?", default="site-source")
-    parser.add_argument("--root", default=".", help="repository root (default: current directory)")
-    mode = parser.add_mutually_exclusive_group()
-    mode.add_argument("--write", action="store_true", help="replace the generated source tree")
-    mode.add_argument("--check", action="store_true", help="check without writing (the default)")
-    parser.add_argument("--json", action="store_true")
+    _declare_site_source(parser)
     args = parser.parse_args(argv)
     bundle = _rooted(args.root, args.bundle)
     destination = _rooted(args.root, args.destination)

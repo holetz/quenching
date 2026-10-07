@@ -143,7 +143,7 @@ else.**
 | `verification` | **optional** | `create` / `develop` | `per-task` · `per-section` · `end-of-plan` — when `verify:` runs. Absent means the default (`per-section`), applied on read; written after capture with `cq specs verification`, **never** by editing the frontmatter |
 | `priority` | once ranked | `triage` | `{level, criticality, complexity, date}` — a human's ranking against every other spec. `complexity` alone is also written at capture, by `create` — the one field of this record a second command may write (`assets/specs/schema.json`'s `complexity.writtenBy: [triage, create, develop]`) |
 | `refined` | once interrogated | `develop` | `{mode, date}` — that a real interrogation happened, and which operation ran it |
-| `approved` | once approved | `develop`, or `execute` inline | `{date, by}` — **that this spec may be built, and on whose authority**: `by: human` is a person's word, `by: low-gear` the level's; absent reads as `human` |
+| `approved` | once approved | `develop`, or `execute` inline | `{date, by}` — **that this spec may be built, and on whose authority**: `by: human` is a person's word, `by: low-gear` the level's, `by: orchestrator-forced` a conductor's forced `low` over a higher level; absent reads as `human` |
 | `branch` | once building | `execute` | `{base, work}` — after a merge, git cannot say what the base was |
 | `pr` | once opened | `conclude` | `{number, url, date}` — a PR opened but not yet merged, distinct from `merge.pr`, which is stamped only once the merge already happened. Restamped if the PR is recreated |
 | `reviewed` | once reviewed | `conclude` | `{date}` — that a human read the whole branch diff |
@@ -248,7 +248,7 @@ what makes a spec ready; no file moves, so there is nothing to refuse. It is a *
 filled, which is where the old promote's teeth went. The OK to build is a separate fact,
 `approved:`, asked for inline rather than encoded in a folder — or, under the `low` gear alone,
 stamped by the pass itself with `by: low-gear`, the human having authorized the mode rather than
-this spec.
+this spec — or `by: orchestrator-forced` when a conductor running `--autonomous` forced that gear.
 
 `## Tasks` is in that set because nothing may be built with nothing to execute.
 

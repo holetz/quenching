@@ -14,9 +14,12 @@ import re
 
 from quenching.common.output import finding, report_findings
 from quenching.common.io import read_text
+from quenching.common.frontmatter import parse_frontmatter
+from quenching.components.cq_calls import check_cq_calls, extract_calls
 from quenching.components.hooks import hook_ladder_findings
 from quenching.components.surface import (COMMANDS_DIR, REFERENCES_DIR, SURFACE_MISSING,
-                                          _quoted_phrases, discover_commands,
+                                          _quoted_phrases, agent_definitions,
+                                          body_after_frontmatter, discover_commands,
                                           discover_references, plugin_prefix, plural, rel)
 
 # conformance thresholds — the normative statement of the front's mechanical rules.
@@ -244,6 +247,62 @@ def _bash_grants(fm: dict) -> tuple[bool, list[str]]:
 
 def _grant_covers(command: str, prefixes: list[str]) -> bool:
     return any(command == prefix or command.startswith(prefix + " ") for prefix in prefixes)
+
+
+def _cq_call_findings(body: str, where: dict) -> list[dict]:
+    """A `cq` call the parsers of the pillar it names would refuse — the verb that does not exist,
+    the required option left out, the flag nobody declared. One finding per call, at its line."""
+    out = []
+    for issue in check_cq_calls(body):
+        code = "sk-cq-unknown-verb" if issue.kind == "unknown-verb" else "sk-cq-flag"
+        out.append(finding(code, "error",
+                           f"`{issue.call}` at body line {issue.line}: {issue.detail}",
+                           invocation=issue.call, line=issue.line, **where))
+    return out
+
+
+def _granted_words(binary: str, args: list[str]) -> list[str]:
+    """The call's words without its options — what a `Bash(<prefix>:*)` grant is matched against."""
+    args = list(args)
+    while args and args[0].startswith("-"):
+        args = args[2:] if args[0] in ("--root", "-C") else args[1:]
+    return [binary, *[a for a in args if not a.startswith("-")]]
+
+
+def _agent_grant_findings(body: str, tools: str, where: dict) -> list[dict]:
+    """Every `cq`, `git` or `gh` an agent body tells it to run must sit under a `Bash(<prefix>:*)`
+    of its own `tools:` — the agent has no other grant to fall back on."""
+    unrestricted, prefixes = _bash_grants({"allowed-tools": tools})
+    if unrestricted:
+        return []
+    out, flagged = [], set()
+    for call in extract_calls(body, ("cq", "git", "gh")):
+        if call.binary == "cq" and not any(not a.startswith("-") for a in call.args):
+            continue
+        words = _granted_words(call.binary, call.args)
+        form = " ".join(words[:3 if call.binary == "cq" else 2])
+        if form in flagged or _grant_covers(" ".join(words), prefixes):
+            continue
+        flagged.add(form)
+        remedy = f"add `Bash({form}:*)` to tools or remove the call"
+        out.append(finding("sk-agent-grant-gap", "error",
+                           f"`{form}` at body line {call.line} is called without a matching "
+                           "scoped Bash grant — " + remedy,
+                           tool=form, invocation=call.text, line=call.line, remedy=remedy,
+                           **where))
+    return out
+
+
+def lint_agents(root: str, base: str) -> list[dict]:
+    out: list[dict] = []
+    for filename, fm in agent_definitions(root):
+        path = os.path.join(root, "agents", filename)
+        body = body_after_frontmatter(read_text(path) or "")
+        where = {"command": f"agent:{filename[:-3]}", "path": rel(path, base)}
+        out.extend(_cq_call_findings(body, where))
+        if "tools" in fm:
+            out.extend(_agent_grant_findings(body, str(fm["tools"]), where))
+    return out
 
 
 def _frontmatter_strict_issues(text: str) -> list[dict]:
@@ -733,6 +792,10 @@ def cmd_lint(args, root: str) -> int:
     for cmd in commands:
         findings.extend(lint_command(cmd, base,
                                      named_by.get(cmd["command"]) if prefix else None))
+        findings.extend(_cq_call_findings(cmd["body"], {"command": cmd["command"],
+                                                         "path": rel(cmd["path"], base)}))
+    if base == root:
+        findings.extend(lint_agents(root, base))
 
     if prefix:
         invocations = {c["command"] for c in surface_commands}
