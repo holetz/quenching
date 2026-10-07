@@ -391,7 +391,7 @@ sentence, and **link out** rather than explaining in full here.
   <subcomando>…`). It is the single vocabulary of the fronts' axis, replacing the names `docs` /
   `specs` / `skill` that competed before the merge into one package.
 - [**Plugin config**](standards/workflows/plugin-configuration.md) — `.claude/quenching.json`, the
-  single file a target repository uses to declare anything to this plugin: `backend`, `specsBranch`,
+  single file a target repository uses to declare anything to this plugin: `backend`,
   `worktreeSetup`, `azureStates`, `azurePlacement`,
   `azureColumns`, `subjects`, `tagCatalog`, `workItemTypes` and `shared.gitConventions` — the last
   of which carries the `git` pillar's per-artifact writing directives and outranks the target's own

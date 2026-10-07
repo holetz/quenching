@@ -92,6 +92,19 @@ class TheCollapsedCapture(_Workspace):
         self.assertEqual(info["sections"]["Problem"]["body"].strip(), "O problema.")
         self.assertNotIn("Overview", info["sections"])
 
+    def test_the_new_spec_id_is_reported_beside_the_locator(self):
+        code, obj = self.run_new(stdin="## Problem\n\nO problema.\n")
+        self.assertEqual(code, 0, obj)
+        self.assertEqual(obj["id"], max(self.backend.docs))
+        self.assertTrue(obj["path"].endswith(str(obj["id"])))
+
+    def test_the_new_spec_id_is_printed_in_human_output(self):
+        buf, stream = io.StringIO(), io.StringIO("## Problem\n\nx\n")
+        stream.isatty = lambda: False
+        with mock.patch("sys.stdin", stream), redirect_stdout(buf):
+            cmd_new(_Args(json=False), self.root, Emitter())
+        self.assertIn(f"id: {max(self.backend.docs)}", buf.getvalue())
+
     def test_the_subject_s_fixed_tags_are_folded_into_an_explicit_tags_list(self):
         # No declared `subjects` in this bare workspace, so nothing to fold in here beyond
         # what was typed — this proves `--tags` alone still lands as the whole list, exactly

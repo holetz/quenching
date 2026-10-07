@@ -70,22 +70,18 @@ class ManifestSurfaceTests(unittest.TestCase):
     def test_manifest_counts_match_the_command_population(self):
         commands = _commands_on_disk()
         counts = {
-            "commands": len(commands),
             "local fronts": len({command.split(":")[1] for command in commands
                                   if command.split(":")[1] in {
                                       "knowledge", "design", "components", "ops", "proof",
                                       "toolchain", "delivery",
                                   }}),
-            "specs commands": sum(command.startswith("/quenching:specs:") for command in commands),
-            "git commands": sum(command.startswith("/quenching:git:") for command in commands),
         }
         for description in _manifest_descriptions():
-            for label, count in counts.items():
-                if label == "local fronts":
-                    pattern = rf"\b{count} (?:local|aligned) fronts\b"
-                else:
-                    pattern = rf"\b{count} {re.escape(label)}\b"
-                self.assertRegex(description, pattern)
+            # The front count is stable enough to name, but when named it must be right.
+            for stated in re.findall(r"\b(\d+) (?:local|aligned) fronts\b", description):
+                self.assertEqual(counts["local fronts"], int(stated))
+            # A command count drifts the moment a command is minted; none is frozen in prose.
+            self.assertNotRegex(description, r"\b\d+ (?:specs |git )?commands\b")
 
     def test_manifest_count_check_discriminates_a_changed_population(self):
         commands = _commands_on_disk()
