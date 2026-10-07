@@ -3,7 +3,7 @@ description: >-
   Publish a local branch to a named remote without opening a PR. Use for "push this branch", "push a checkpoint". Not for: PRs → /quenching:git:pr:create; rebasing → /quenching:git:sync.
 disable-model-invocation: true
 argument-hint: [branch|--remote remote branch]
-allowed-tools: Bash(git status:*), Bash(git branch --show-current:*), Bash(git remote:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git log:*), Bash(git reflog:*), Bash(git ls-remote:*), Bash(git push:*), Bash(python3:*), Read, AskUserQuestion
+allowed-tools: Bash(cq:*), Bash(git status:*), Bash(git branch --show-current:*), Bash(git remote:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git log:*), Bash(git reflog:*), Bash(git ls-remote:*), Bash(git push:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
 # /quenching:git:push — publish one branch, without opening a PR
@@ -24,7 +24,7 @@ git status --porcelain --untracked-files=all
 git branch --show-current
 git remote -v
 git remote get-url <remote>
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git base --json
+cq git base --json
 ```
 
 Refuse a dirty tree, detached HEAD, missing remote, missing branch, or target equal to the resolved

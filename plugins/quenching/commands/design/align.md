@@ -3,7 +3,7 @@ description: >-
   Converge /.design/ from one DTCG source through PRODUCT.md, DESIGN.md, MEDIUM.md and adapters. Use for "align the design", "install the brand pack", "fix design drift". Not for: read-only → /quenching:design:status.
 disable-model-invocation: true
 argument-hint: [optional-scope]
-allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(npx:*), AskUserQuestion
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(npx:*), AskUserQuestion
 ---
 
 # /quenching:design:align — one source, every projection
@@ -32,9 +32,9 @@ Resolve `cq` per
 Run:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root . design status --json
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root . design align --check --json
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" knowledge validate docs --json
+cq --root . design status --json
+cq --root . design align --check --json
+cq knowledge validate docs --json
 ```
 
 Inventory `/docs/` headings that can project the product record, `/.design/tokens.json`, the
@@ -80,7 +80,7 @@ Create or merge the confirmed product facts under the applicable `/docs/vision/`
 source is an external `DESIGN.md`, preserve it until the pack's `tokens.json` exists, then run:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root . design import --json
+cq --root . design import --json
 ```
 
 Otherwise let the DTCG source win. Keep `.impeccable/config.json` untouched: it belongs to
@@ -94,7 +94,7 @@ source has been folded without overwriting the losing source prematurely.
 Run:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root . design build --json
+cq --root . design build --json
 ```
 
 This emits root `PRODUCT.md`, `DESIGN.md`, `MEDIUM.md`, `.impeccable/design.json` schema 2 and

@@ -2,7 +2,7 @@
 description: >-
   Wire ONE scoped hook with the narrowest scope and cheapest handler. Use for "create a hook", "check this after every edit", "block that command". Not for: command bodies → /quenching:components:command:new.
 argument-hint: [what-the-hook-should-catch]
-allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
+allowed-tools: Bash(cq:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
 ---
 
 # /quenching:components:hook:new — wire ONE scoped hook

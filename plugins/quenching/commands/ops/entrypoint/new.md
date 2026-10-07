@@ -3,7 +3,7 @@ description: >-
   Mint ONE Python ops entry point, register it in the router and regenerate the registry. Use for "mint an ops entry point", "add a command to the ops router". Not for: repairs → /quenching:ops:align.
 disable-model-invocation: true
 argument-hint: <entry-point-name-or-purpose>
-allowed-tools: Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
 # /quenching:ops:entrypoint:new — mint one operations entry point
@@ -32,7 +32,7 @@ Set `TARGET_ROOT` to the target repository root, or `.` when the caller did not 
 target. Run:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" ops doctor --json
+cq --root "$TARGET_ROOT" ops doctor --json
 ```
 
 Read the returned configuration and inventory state. Stop on exit `2`, naming every missing key;
@@ -100,7 +100,7 @@ Apply the snippet for the declared router from
 leave an archived entry point out of the active router. Then regenerate the registry:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" ops registry --write --json
+cq --root "$TARGET_ROOT" ops registry --write --json
 ```
 
 The generator owns the marked block. Preserve authored prose around it and do not edit generated
@@ -115,8 +115,8 @@ Run the closing verifier and, when it reports a finding, fix only the new entry 
 router registration or the generated registry block:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" ops doctor --json
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" ops registry --check --json
+cq --root "$TARGET_ROOT" ops doctor --json
+cq --root "$TARGET_ROOT" ops registry --check --json
 ```
 
 For a write-capable entry point, exercise the preview path without `--apply` and confirm no

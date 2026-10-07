@@ -3,7 +3,7 @@ description: >-
   Measure whether a command teaches anything with with/without runs graded on evidence. Use for "run the with/without eval on this skill". Not for: unevidenced edits → /quenching:components:command:new.
 disable-model-invocation: true
 argument-hint: [skill-name]
-allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion
+allowed-tools: Bash(cq:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion
 ---
 
 # /quenching:components:command:eval — measure whether a skill teaches anything

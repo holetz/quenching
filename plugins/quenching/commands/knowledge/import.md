@@ -2,7 +2,7 @@
 description: >-
   Import an external source (files, folders, URLs) into the OKF bundle as many docs. Use for "ingest a source into the base", "generate OKF docs from these files". Not for: one item → /quenching:knowledge:add.
 argument-hint: [source-paths-or-urls]
-allowed-tools: Read, Grep, Glob, WebFetch, Bash(python3:*), Write, Edit, Task, AskUserQuestion
+allowed-tools: Bash(cq:*), Read, Grep, Glob, WebFetch, Bash(python3:*), Write, Edit, Task, AskUserQuestion
 ---
 
 # /quenching:knowledge:import — import an external source into the OKF bundle
@@ -100,7 +100,7 @@ reported.
 ### 5. Self-check + validate
 Self-check every touched file against homes.md §Self-check /
 [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md),
-then run `python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" knowledge validate /docs` over the
+then run `cq knowledge validate /docs` over the
 bundle: **zero errors**, and the structural WARNs (`dir-no-index` / `index-broken-link` /
 `index-orphan`) cleared. Report residue — units deferred, sources left unfetched, MERGE
 targets skipped. **Done when:** validation has run and deferred work is named.

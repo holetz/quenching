@@ -2,7 +2,7 @@
 description: >-
   Run the complete documentation pipeline: site setup, sourced pages, review, strict build. Use for "produce the documentation", "generate the complete docs site". Not for: one stage → its own command.
 argument-hint: [optional-source-scope] [--desde <git-ref>]
-allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
 ---
 
 # /quenching:knowledge:documentation:produce — conduct the documentation pipeline

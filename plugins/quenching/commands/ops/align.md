@@ -3,7 +3,7 @@ description: >-
   Converge a repository's operations surface from its declared root and router under one plan. Use for "align the ops front", "fix operational drift". Not for: read-only → /quenching:ops:status.
 disable-model-invocation: true
 argument-hint: [optional-target-root]
-allowed-tools: Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
 # /quenching:ops:align — converge the operations surface
@@ -35,7 +35,7 @@ Resolve `cq` per
 Resolve the tool, then run the verifier before reading the operations tree:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" ops doctor --json
+cq --root "$TARGET_ROOT" ops doctor --json
 ```
 
 When it exits `0` with no findings, report "ops conformant, nothing to align" and stop. Do not
@@ -53,7 +53,7 @@ non-clean verifier result has authorized the inventory stage below.
 Only after exit `1`, read the verifier's JSON and run the single inventory pass:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" ops inventory --json
+cq --root "$TARGET_ROOT" ops inventory --json
 ```
 
 Read `ops-align/bands.md`, `ops-align/entrypoint-contract.md`, `ops-align/lifecycle.md`, and
@@ -102,7 +102,7 @@ archive an entry point, re-enable a disabled check, or select a router the targe
 After the edits, run the same probe again:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" ops doctor --json
+cq --root "$TARGET_ROOT" ops doctor --json
 ```
 
 If the probe still reports findings, distinguish remaining judgement residue from failed

@@ -3,7 +3,7 @@ description: >-
   Revert one known commit into a new commit, preserving history. Use for "revert this commit", "undo a task safely", "back out this change". Not for: rewriting history; publishing → /quenching:git:push.
 disable-model-invocation: true
 argument-hint: "[commit:ref|spec:id task:id [mainline:n]]"
-allowed-tools: Bash(git status:*), Bash(git branch --show-current:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git merge-base:*), Bash(git log:*), Bash(git show:*), Bash(git diff:*), Bash(git revert:*), Bash(python3:*), Read, AskUserQuestion
+allowed-tools: Bash(cq:*), Bash(git status:*), Bash(git branch --show-current:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git merge-base:*), Bash(git log:*), Bash(git show:*), Bash(git diff:*), Bash(git revert:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
 # /quenching:git:revert — compensate one commit without rewriting history
@@ -27,7 +27,7 @@ Read the current branch, HEAD, working-tree status and resolved base:
 git status --porcelain
 git branch --show-current
 git rev-parse --verify HEAD
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git base --json
+cq git base --json
 ```
 
 Refuse a dirty tree, detached HEAD, missing repository, or a request to rewrite history. The
@@ -69,7 +69,7 @@ and `git show --stat --summary HEAD`. If the input resolved through `spec:<id> t
 that new revert commit is verified, run:
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs task --spec <id> --uncheck <task> \
+cq specs task --spec <id> --uncheck <task> \
   --reason "reverted by <new-revert-sha>"
 ```
 

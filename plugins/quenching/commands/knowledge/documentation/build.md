@@ -2,7 +2,7 @@
 description: >-
   Create or update the Zensical site layer with extensions, CSS, navigation and strict-build QA. Use for "build the docs site", "fix the docs nav". Not for: prose → /quenching:knowledge:documentation:write.
 argument-hint: [optional-section-or-config-path]
-allowed-tools: Read, Grep, Glob, Bash, Write, Edit, AskUserQuestion
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash, Write, Edit, AskUserQuestion
 ---
 
 # /quenching:knowledge:documentation:build — create/update the editorially mapped site

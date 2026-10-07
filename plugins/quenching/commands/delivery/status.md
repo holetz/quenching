@@ -3,7 +3,7 @@ description: >-
   Report the delivery front (workflow inventory, pipeline findings), read-only. Use for "delivery status", "check the delivery surface". Not for: converging → /quenching:delivery:align.
 disable-model-invocation: true
 argument-hint: [optional-target-root]
-allowed-tools: Read, Grep, Glob, Bash(python3:*)
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
 # /quenching:delivery:status — read the delivery front
@@ -21,7 +21,7 @@ Resolve `cq` per
 §Resolving the tool. Set `TARGET_ROOT` to `$ARGUMENTS`, or `.` when omitted, and run:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" delivery status --json
+cq --root "$TARGET_ROOT" delivery status --json
 ```
 
 Branch on the JSON and exit code: `0` is clean, `1` carries findings, and `2` is a refusal. On

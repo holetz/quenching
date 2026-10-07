@@ -2,7 +2,7 @@
 description: >-
   Score documentation pages against the eleven-dimension quality gate, read-only. Use for "review the documentation", "score the docs pages". Not for: fixing gaps → /quenching:knowledge:documentation:write.
 argument-hint: [optional-page-slice-or-plan-path]
-allowed-tools: Read, Grep, Glob, Task
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Task
 ---
 
 # /quenching:knowledge:documentation:review — score and report without writing

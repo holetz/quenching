@@ -4,6 +4,7 @@ description: >-
 disable-model-invocation: true
 argument-hint: [optional subject prefix]
 allowed-tools: >-
+  Bash(cq:*),
   Read, Bash(git status:*), Bash(git diff:*), Bash(git ls-files:*), Bash(git add:*),
   Bash(git commit:*), Bash(git log:*), Bash(python3:*), AskUserQuestion
 ---
@@ -26,7 +27,7 @@ language, while commit subjects and messages remain canonical English artifacts.
 Read the target's git conventions, then collect one initial snapshot:
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git conventions --json
+cq git conventions --json
 git status --short
 git diff --name-status
 git diff --cached --name-status

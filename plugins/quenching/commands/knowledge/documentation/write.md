@@ -2,7 +2,7 @@
 description: >-
   Write sourced Diátaxis pages from a documentation plan. Use for "write the documentation pages", "draft the docs from the plan". Not for: planning → /quenching:knowledge:documentation:plan; scoring → /quenching:knowledge:documentation:review.
 argument-hint: [optional-page-slice-or-plan-path]
-allowed-tools: Read, Grep, Glob, Write, Edit, Task, Bash(python3:*), Bash(py:*), AskUserQuestion
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Write, Edit, Task, Bash(python3:*), Bash(py:*), AskUserQuestion
 ---
 
 # /quenching:knowledge:documentation:write — draft pages from the accepted plan
