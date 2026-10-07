@@ -43,6 +43,18 @@ class StrictYamlAndDocLinks(unittest.TestCase):
         fixture = {"index.md": _ROOT_INDEX, "a.md": _GOOD_DOC % (description, body)}
         return {f[2] for f in _validated(fixture)}
 
+    def test_dead_prose_link_is_a_warning(self):
+        fixture = {"index.md": _ROOT_INDEX,
+                   "a.md": _GOOD_DOC % ("plain", "see [x](missing.md)")}
+        hits = [f for f in _validated(fixture) if f[2] == "doc-broken-link"]
+        self.assertEqual([h[0] for h in hits], ["WARN"])
+
+    def test_live_prose_link_is_clean(self):
+        fixture = {"index.md": _ROOT_INDEX + "- [b](b.md)\n",
+                   "a.md": _GOOD_DOC % ("plain", "see [b](b.md)"),
+                   "b.md": _GOOD_DOC % ("plain", "")}
+        self.assertNotIn("doc-broken-link", {f[2] for f in _validated(fixture)})
+
     def test_colon_space_in_plain_scalar_is_an_error(self):
         self.assertIn("frontmatter-not-yaml", self._codes("measured: yes"))
 

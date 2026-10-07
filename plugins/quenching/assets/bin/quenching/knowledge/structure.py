@@ -12,6 +12,7 @@ STRUCTURAL INTEGRITY (whole-tree only — CLI + Stop; all WARN, OKF-tolerant)
 - **`glossary-broken-link`** the same link rule applied to `glossary.md`,
   whose links ARE its content — a dead entry is a dead lookup, and `index-broken-link`
   never reached it because the glossary is a concept doc, not an `index.md`.
+- **`doc-broken-link`**   the same link rule applied to every other concept doc's prose links.
 - **`generated-listing-missing`** a `standards/**` doc no row inside the `<!-- BEGIN GENERATED -->`
   zone of `standards/index.md` links. `index-orphan` does not reach it: any sibling doc citing it
   disarms that check, and a doc outside the listing is still unreachable by navigation.
@@ -179,6 +180,10 @@ def validate_structure(bundle_root: str, corpus: dict) -> list[tuple[str, str, s
     glossary = os.path.join(root, *GLOSSARY_REL.split("/"))
     if glossary in corpus:
         link_checked.append((glossary, "glossary-broken-link", "glossary entry"))
+    # every other concept doc: a dead prose link 404s in the built site, so it is reported too,
+    # under its own code so it is never read as a dead listing entry.
+    listed = {ap for ap, _, _ in link_checked}
+    link_checked += [(ap, "doc-broken-link", "doc") for ap in concept_md if ap not in listed]
     for ap, code, noun in sorted(link_checked):
         text = corpus.get(ap)
         if text is None:
