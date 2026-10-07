@@ -7,7 +7,7 @@ tags: [automation, skills, evaluation, testing, benchmark]
 timestamp: 2026-08-10
 audience: both
 authority: current
-source: instrument-and-extend-skill-front plan — formats adopted from Anthropic's skill-creator. Graduated to current on its own stated gate: /quenching:components:agent:new and /quenching:components:hook:new each carry a committed evals.json + grading.json + benchmark.json with a non-zero stated delta (2026-07-27)
+source: "instrument-and-extend-skill-front plan — formats adopted from Anthropic's skill-creator. Graduated to current on its own stated gate: /quenching:components:agent:new and /quenching:components:hook:new each carry a committed evals.json + grading.json + benchmark.json with a non-zero stated delta (2026-07-27)"
 maintainer: quenching
 ---
 

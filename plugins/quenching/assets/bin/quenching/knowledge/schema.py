@@ -84,7 +84,7 @@ LEGACY_ROOT_NAMES = (".docs", ".knowledge")
 # `docs/` — the commonest folder name there is, and the same name as the OKF root since the
 # dot came off — from reporting one ERROR per document.
 CONCEPT_DOC_CODES = (
-    "no-frontmatter", "broken-frontmatter", "missing-type", "okf-frontmatter-unparsed",
+    "no-frontmatter", "broken-frontmatter", "frontmatter-not-yaml", "missing-type", "okf-frontmatter-unparsed",
     "index-has-type", "index-has-frontmatter",
     "source-too-long",
     "missing-title", "missing-description", "missing-resource", "missing-timestamp",
