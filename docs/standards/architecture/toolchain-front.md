@@ -25,8 +25,8 @@ while target-specific policy remains with the owner of the build.
 This front was admitted from measured seams in the current repository, not from a promise about a
 future implementation:
 
-- `pyproject.toml` declares Python `>=3.11`, while `.github/workflows/sync-codex-plugin.yml` and
-  `plugins/quenching/assets/zensical/ci-github-pages.yml` use the open-ended `3.x` runtime and no
+- `pyproject.toml` declares Python `>=3.11`, while `.github/workflows/ci.yml` runs a Python 3.11 and 3.13 matrix and
+  `plugins/quenching/assets/zensical/ci-github-pages.yml` uses the open-ended `3.x` runtime; no
   `.python-version` is present.
 - The development dependency group declares `pytest>=8.0`, while the repository harness in
   `CLAUDE.md` runs `unittest` discovery.
