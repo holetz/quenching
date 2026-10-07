@@ -4,7 +4,7 @@
 Codex appends `<pluginRoot>/bin` to PATH for every enabled plugin, whether or not the
 directory exists. This file is what makes a bare `cq` — the form every command body writes —
 resolve at all. The real entry point is `scripts/bin/cq`, where it has to stay: it is cited by
-absolute path from the command surface, from `hooks/hooks.json` and from the golden fixtures.
+absolute path from the command surface and from the golden fixtures.
 
 WHY THIS RE-EXECUTES INSTEAD OF IMPORTING
 -----------------------------------------

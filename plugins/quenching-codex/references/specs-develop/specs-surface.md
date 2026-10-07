@@ -59,5 +59,5 @@ and HTML comments, with any example inside a comment or written as a `<placehold
 
 Owned by
 [align/tool-resolution.md](../../references/align/tool-resolution.md)
-§Resolving the tool: define the per-call wrapper there, then invoke the bundled `cq specs`
-function in the same Bash call — **one door onto one file, and no third rung**.
+§Resolving the tool: bare `cq specs`, with `Bash(cq:*)` in the body's `allowed-tools` — **one
+form, no second door**.

@@ -67,7 +67,7 @@ def root_too_high_message(root: str) -> str:
             f"workspace's container, not the workspace itself")
 
 
-CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "sharedPaths", "azureStates",
+CONFIG_KEYS = ("backend", "worktreeSetup", "sharedPaths", "azureStates",
                "hooks", "profiles",
                "azurePlacement", "azureColumns", "subjects", "tagCatalog",
                "workItemTypes")
@@ -79,12 +79,10 @@ BACKENDS = ("github", "azure-boards")
 AZURE_PLACEMENT_KEYS = ("areaPath", "workItemType", "discoveryTag", "team",
                         "iterationPath", "boardColumn", "defaultSubject", "repository")
 # `discoveryTag`'s default. Unlike `areaPath`, this name is the TOOL's, not the project's —
-# same argument `specsBranch` already carries — so it defaults rather than refuses;
-# configurable only to resolve a collision with a tag the project already uses.
+# so it defaults rather than refuses; configurable only to resolve a collision with a tag the project already uses.
 AZ_DEFAULT_DISCOVERY_TAG = "quenching-spec"
 DEFAULT_BACKEND = None
-DEFAULT_SPECS_BRANCH = "specs"
-# Unlike `specsBranch`, these two default to `None` in `load_config`'s own return — never
+# These two default to `None` in `load_config`'s own return — never
 # to the literal "develop"/"main" below. The base-inference chain
 # (`infer_base_branch`) must tell "declared" from "not declared" to know whether it may
 # skip `origin/HEAD`; baking the default into `load_config` would erase that distinction
@@ -215,7 +213,7 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
            "backend": provider, "provider": provider,
            "unknownProvider": provider_host if provider is None else None,
            "unknownBackend": None,
-           "specsBranch": DEFAULT_SPECS_BRANCH, "worktreeSetup": None,
+           "worktreeSetup": None,
            "azureStates": None, "hooks": {}, "profiles": None,
            "azurePlacement": {}, "azureColumns": {}, "subjects": {}, "tagCatalog": {},
            "workItemTypes": {},
@@ -230,10 +228,6 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     backend = obj.get("backend")
     if isinstance(backend, str) and backend.strip() and backend.strip() not in BACKENDS:
         out["unknownBackend"] = backend.strip()
-
-    branch = values.get("specsBranch")
-    if isinstance(branch, str) and branch.strip():
-        out["specsBranch"] = branch.strip()
 
     val = values.get("worktreeSetup")
     if isinstance(val, str) and val.strip():

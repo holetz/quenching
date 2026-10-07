@@ -44,7 +44,7 @@ generate list). The **agent-facing pointer** for this home is [AGENTS.md](AGENTS
 
 | Doc | Covers |
 | --- | --- |
-| [communication.md](agents/communication.md) | The language a repo declares for the prose its agents author — one BCP-47 tag on the root harness line, governing artifact and conversation alike — and the conduct contract that holds in every repo whether or not a language is declared |
+| [communication.md](agents/communication.md) | The two languages a repo declares for what its agents write — the conversation tag on the root harness line, and an artifact language declared by a standard or the artifactLanguage config key — and the conduct contract that holds whether or not either is declared |
 | [ephemeral-writes.md](agents/ephemeral-writes.md) | Where an agent puts a file it creates — the three destinations, the one question that sorts them, and the session-start declaration that makes the durable-ignored path present before the first write |
 
 _(other subjects fill in as standards are created — these tables are regenerated deterministically from the real files)_

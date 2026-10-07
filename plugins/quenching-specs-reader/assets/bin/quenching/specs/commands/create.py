@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 
 from quenching.common.dates import today
@@ -149,11 +150,16 @@ def cmd_new(args, root: str, out: Emitter) -> int:
     if subject and subject.get("parent") and hasattr(backend, "parent_id"):
         backend.parent_id = subject["parent"]
     path = backend.create_spec("plans", body)
+    # The provider-native id is the locator's trailing number (issue or work-item URL); a
+    # caller chaining `validate --spec <id>` must not have to parse the URL to get it.
+    id_match = re.search(r"(\d+)/?(?:[?#].*)?$", path or "")
+    spec_id = int(id_match.group(1)) if id_match else None
+    id_note = f"  id: {spec_id}" if spec_id is not None else ""
     out.emit(args.json,
-             {"ok": True, "title": title, "verification": policy,
+             {"ok": True, "id": spec_id, "title": title, "verification": policy,
               "workItemType": type_key,
               "phase": "plans", "stage": "captured",
               "path": display_locator(path, root)},
-             f"created '{title}'  (verification: {policy})\n"
+             f"created '{title}'  (verification: {policy}){id_note}\n"
              "next: write ## Problem, then continue with the provider-native spec ID")
     return 0

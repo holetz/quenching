@@ -1,6 +1,6 @@
 ---
 name: quenching-design-genre-new
-description: "Mint ONE editorial genre under /.design/genres/ with its fields, register and N medium templates, then regenerate MEDIUM.md. Triggers on \"create a design genre\", \"add a report genre\", \"define a deck contract\", \"mint an editorial format\", or \"make one genre render to HTML and PDF\". Not for: rendering an existing genre → cq design render; aligning the whole front → quenching-design-align; visual screen work → Impeccable."
+description: "Mint ONE editorial genre under /.design/genres/ with fields, register and medium templates. Use for \"create a design genre\", \"define a deck contract\". Not for: whole front → quenching-design-align."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/design/genre/new.md -->

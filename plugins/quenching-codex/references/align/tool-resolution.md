@@ -1,8 +1,8 @@
-# Resolving a plugin tool, and writing its path
+# Resolving a plugin tool
 
-Front-neutral: every `quenching-knowledge-*`, `quenching-specs-*`, `quenching-design-*` and `quenching-components-*` command body
-shells out to the same single entry point, `cq`, naming its pillar (`specs`, `knowledge` or
-`components`) as the first argument. All three resolve it the same way.
+Front-neutral: every command body shells out to the same single entry point, `cq`, naming its
+front as the first argument. The fronts are `specs`, `git`, `knowledge`, `components`, `design`,
+`ops`, `proof`, `toolchain`, `delivery` and `security`; all resolve it the same way.
 
 ## Resolving the tool
 

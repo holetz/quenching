@@ -1,6 +1,6 @@
 ---
 name: quenching-knowledge-align
-description: "Force /docs/ into the canonical OKF v0.1 bundle and pull in out-of-band content, looping until nothing changes. Triggers on \"align the docs\", \"align and update docs\", \"fix the documentation structure\", \"install the OKF bundle\", \"set up /docs/\", or \"converge the knowledge base\". Not for: adding one knowledge item → quenching-knowledge-add; reading status only → quenching-knowledge-status; producing documentation pages → quenching-knowledge-documentation-produce."
+description: "Force /docs/ into the canonical OKF v0.1 bundle and absorb out-of-band content until stable. Use for \"align the docs\", \"set up /docs/\", \"converge the knowledge base\". Not for: one item → quenching-knowledge-add."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/align.md -->
@@ -24,11 +24,10 @@ The payload (skeleton, molds, validator) lives at `../../assets/`; the contract 
 - [knowledge-align/conformance.md](../../references/knowledge-align/conformance.md) §Bundle level §Structural integrity (whole-tree — CLI + `Stop` only) §Resource integrity (per-doc — every mode) — the exact checks the validator applies.
 - [knowledge-align/cycle.md](../../references/knowledge-align/cycle.md) §The stage pipeline §Finding → owning-command routing table — the stage pipeline, the parallel-prep flow, and the finding → owning-command routing table.
 
-The executable checker is `cq`
-(`cq knowledge validate /docs` → exit 0 = conforms). Define the per-call wrapper from
-the tool-resolution reference, then invoke `cq` in that same Bash call —
+The executable checker is bare `cq` (`cq knowledge validate /docs` → exit 0 = conforms), the one
+form every body writes —
 [align/tool-resolution.md](../../references/align/tool-resolution.md)
-§Write the resolved path literally on every invocation.
+§Resolving the tool.
 
 ## Doctrine (non-negotiable)
 
@@ -116,7 +115,7 @@ command or package operation that can close it. A checker whose publication is d
 accepted map or capability register is `not-applicable`, not a failed run.
 
 The preflight also reads the accepted `.quenching/documentation/plan.md` when a site layer exists.
-Its `### Mapa editorial de publicação` is the authority for homes, routes and derived pages. A
+Its `### Publication map` is the authority for homes, routes and derived pages. A
 disagreement between that map and `nav` or `site-source/` is `plan-drift`; regenerate the plan or
 the owned projection through the documentation planning/build command rather than hand-editing a
 large generated artifact. Semantic resource ambiguity remains a human-pending `source-gap` until
