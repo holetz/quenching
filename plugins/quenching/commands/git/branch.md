@@ -1,13 +1,8 @@
 ---
 description: >-
-  Take isolation for a piece of work — a worktree, a plain branch, or in place — recommending a
-  worktree by default, stating its cost, and stamping what was taken. Use when the user asks to
-  "isolate this work", "cut a branch for this", "take a worktree before I start", or "set up
-  isolation for this build". Given a spec id it also stamps that spec's `branch:` record and
-  marks the branch's own `quenching-specs:` description line. Not for: pruning branches/worktrees
-  already merged or gone → /quenching:git:cleanup.
+  Take isolation for a piece of work: worktree, plain branch or in place, stamped. Use for "isolate this work", "cut a branch for this", "take a worktree". Not for: pruning → /quenching:git:cleanup.
 argument-hint: [id-or-branch-name]
-allowed-tools: Bash, Read, AskUserQuestion
+allowed-tools: Bash(cq:*), Bash, Read, AskUserQuestion
 ---
 
 # /quenching:git:branch — take isolation before writing code
@@ -34,10 +29,10 @@ cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/isolation.md \
   --sections "§Recording the isolation"
 cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
   --sections "§The declared-directive layer" --sections "§The read-if-present rule"
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git conventions --json   # `config.branchName`, or absent
+cq git conventions --json   # `config.branchName`, or absent
 git status --porcelain
 git branch --show-current
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git base --json
+cq git base --json
 cq specs config --json        # `worktreeSetup`, `sharedPaths`, or their empty values — exit 0 either way
 ```
 `git status --porcelain` non-empty → refuse, name the offending paths, and stop; isolating a dirty
@@ -80,7 +75,7 @@ link succeeds, run a declared `worktreeSetup` once with cwd inside the new workt
 setup does not undo the worktree — report both facts separately. Then, only with an ID from step 2:
 ```bash
 cq specs record "<id>" branch --set base=<base> --set work=<branch>
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git specs <branch> --add "<id>" --json
+cq git specs <branch> --add "<id>" --json
 ```
 **In place** stamps `work` equal to `base` instead of skipping the record — §Recording the isolation
 draws that distinction; nothing is marked on the branch description under **In place**, since this

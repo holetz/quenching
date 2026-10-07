@@ -1,6 +1,8 @@
 ---
-description: Read the whole /.design/ front and report source validity, generated identity, Impeccable interoperability, genres, assets and non-web drift without writing. Triggers on "design status", "what is the state of the design front", "is DESIGN.md current", or "check the brand pack". Not for: fixing findings → /quenching:design:align; creating a genre → /quenching:design:genre:new; auditing a screen → Impeccable.
-allowed-tools: Read, Grep, Glob, Bash(python3:*)
+description: >-
+  Report the /.design/ front: source validity, generated identity, genres and drift, read-only. Use for "design status", "is DESIGN.md current". Not for: fixes → /quenching:design:align.
+disable-model-invocation: true
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
 # /quenching:design:status — read the whole design front
@@ -18,8 +20,8 @@ Resolve `cq` per
 §Resolving the tool, then run:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root . design status --json
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root . design build --check --json
+cq --root . design status --json
+cq --root . design build --check --json
 ```
 
 Read the source and named findings only as needed to explain them. Do not write, import, build,

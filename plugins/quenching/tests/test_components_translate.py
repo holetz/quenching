@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 import _paths  # noqa: F401 — must precede the quenching import
+from quenching.common.frontmatter import parse_frontmatter
 from quenching.components.commands import translate
 
 
@@ -42,23 +43,23 @@ DESCRIPTION_BASELINES = {
 
 
 TRIGGER_PHRASES = {
-    "plugins/quenching/commands/align.md": ("align the repo", "align everything", "align and update everything", "set up quenching here", "converge this repository", "run all the aligns", "fix both fronts", "fix all fronts"),
-    "plugins/quenching/commands/components/align.md": ("align the skills", "align and update the skills", "migrate my commands", "fix the .claude surface", "collapse the skill wrappers", "audit the command bodies", "review the skill descriptions", "shorten the descriptions", "converge the automation surface"),
-    "plugins/quenching/commands/specs/conclude.md": ("conclude this spec", "close it out", "wrap up the plan", "review the branch", "archive this spec", "abandon this spec", "it will not be built"),
-    "plugins/quenching/commands/specs/triage.md": ("triage the specs", "prioritize the front", "rank the plans", "what matters most", "re-rank these", "order the plans", "which of these first"),
-    "plugins/quenching/commands/specs/execute.md": ("execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks"),
-    "plugins/quenching/commands/knowledge/align.md": ("align the docs", "align and update docs", "fix the documentation structure", "install the OKF bundle", "set up /docs/", "converge the knowledge base"),
-    "plugins/quenching/commands/knowledge/documentation/write.md": ("write the documentation pages", "draft the docs from the plan", "apply the documentation writing pass"),
-    "plugins/quenching/commands/components/agent/new.md": ("create an agent", "add a subagent", "make a verifier agent", "delegate this to an agent", "set up something that audits our migrations and reports back"),
-    "plugins/quenching/commands/design/align.md": ("align the design", "set up the design front", "install the brand pack", "rebuild the design projections", "fix design drift"),
-    "plugins/quenching/commands/components/hook/new.md": ("create a hook", "add a validation hook", "check this after every edit", "block that command before it runs", "catch it automatically whenever a migration lands"),
-    "plugins/quenching/commands/knowledge/documentation/produce.md": ("produce the documentation", "run the documentation pipeline", "generate the complete docs site"),
-    "plugins/quenching/commands/knowledge/documentation/build.md": ("build the docs site", "generate the site for /docs", "fix the documentation site's nav"),
-    "plugins/quenching/commands/knowledge/documentation/review.md": ("review the documentation", "score the docs pages", "critique the documentation quality"),
-    "plugins/quenching/commands/proof/layer/new.md": ("create a proof layer", "add a test layer", "define a verification layer", "organize tests into a layer"),
-    "plugins/quenching/commands/knowledge/documentation/plan.md": ("plan the documentation", "diagnose the docs structure", "design the documentation architecture"),
-    "plugins/quenching/commands/design/genre/new.md": ("create a design genre", "add a report genre", "define a deck contract", "mint an editorial format", "make one genre render to HTML and PDF"),
-    "plugins/quenching/commands/proof/align.md": ("align the proof front", "set up the verification surface", "fix proof drift", "converge the test gate"),
+    "plugins/quenching/commands/align.md": ("align the repo", "align everything", "set up quenching here"),
+    "plugins/quenching/commands/components/align.md": ("align the skills", "audit the command bodies", "shorten the descriptions"),
+    "plugins/quenching/commands/specs/conclude.md": ("conclude this spec", "close it out", "abandon this spec"),
+    "plugins/quenching/commands/specs/triage.md": ("triage the specs", "prioritize the front", "which of these first"),
+    "plugins/quenching/commands/specs/execute.md": ("execute this spec", "build it", "implement the tasks", "continue building"),
+    "plugins/quenching/commands/knowledge/align.md": ("align the docs", "set up /docs/", "converge the knowledge base"),
+    "plugins/quenching/commands/knowledge/documentation/write.md": ("write the documentation pages", "draft the docs from the plan"),
+    "plugins/quenching/commands/components/agent/new.md": ("create an agent", "add a subagent", "make a verifier agent"),
+    "plugins/quenching/commands/design/align.md": ("align the design", "install the brand pack", "fix design drift"),
+    "plugins/quenching/commands/components/hook/new.md": ("create a hook", "check this after every edit", "block that command"),
+    "plugins/quenching/commands/knowledge/documentation/produce.md": ("produce the documentation", "generate the complete docs site"),
+    "plugins/quenching/commands/knowledge/documentation/build.md": ("build the docs site", "fix the docs nav"),
+    "plugins/quenching/commands/knowledge/documentation/review.md": ("review the documentation", "score the docs pages"),
+    "plugins/quenching/commands/proof/layer/new.md": ("create a proof layer", "add a test layer"),
+    "plugins/quenching/commands/knowledge/documentation/plan.md": ("plan the documentation", "design the documentation architecture"),
+    "plugins/quenching/commands/design/genre/new.md": ("create a design genre", "define a deck contract"),
+    "plugins/quenching/commands/proof/align.md": ("align the proof front", "fix proof drift"),
 }
 
 
@@ -68,9 +69,7 @@ TYPED_ONLY_COMMANDS = (
 
 
 def source_description(path):
-    line = next(line for line in path.read_text(encoding="utf-8").splitlines()
-                if line.startswith("description: "))
-    return line.removeprefix("description: ")
+    return str(parse_frontmatter(path.read_text(encoding="utf-8"))["description"])
 
 
 def generated_description(text):
@@ -207,7 +206,7 @@ class RepositorySurfaceTranslation(unittest.TestCase):
             description = source_description(command)
             after += len(description)
             self.assertLess(len(description), baseline, relative)
-            self.assertTrue("Triggers on " in description or "Use when " in description, relative)
+            self.assertTrue(any(lead in description for lead in ("Triggers on ", "Use when ", "Use for ")), relative)
             self.assertIn("Not for:", description, relative)
 
             command_path = command.relative_to(source / "plugins" / "quenching" / "commands")

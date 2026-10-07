@@ -1,11 +1,9 @@
 ---
 description: >-
-  Read the security pillar and report workflow permissions, secret and ignore coverage, advisory
-  dependency configuration and access ownership without writing. Triggers on "security status",
-  "security audit", or "check repository security coverage". Not for: changing permissions,
-  secrets, dependencies or access policy — those remain target-owner decisions.
+  Report workflow permissions, secret and ignore coverage, advisory dependency config and access ownership, read-only. Use for "security status", "security audit". Not for: changing policy.
+disable-model-invocation: true
 argument-hint: [optional-target-root]
-allowed-tools: Read, Grep, Glob, Bash(python3:*)
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
 # /quenching:security:status — read the security pillar
@@ -18,7 +16,7 @@ without owning a security tree, selecting a target policy or repairing a finding
 §Resolving the tool. Set `TARGET_ROOT` to `$ARGUMENTS`, or `.` when omitted, and run:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" security --json
+cq --root "$TARGET_ROOT" security --json
 ```
 
 Branch on the JSON and exit code: `0` is a measured report, `1` carries reported observations, and

@@ -1,6 +1,6 @@
 # Conformance — the exact checks
 
-The executable `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate` implements **exactly** these
+The executable `cq knowledge validate` implements **exactly** these
 checks; the skills apply the same rules by hand when they cannot shell out, and their self-check
 steps **cite this file** rather than restating the rules. Severities: **ERROR** fails conformance
 (validator exit 1); **WARN** is a recommendation (exit 0 unless `warnAsError`).
@@ -171,8 +171,8 @@ that the plugin's self-installed enforcement hook — the one caller with a late
 <!-- rules -->
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate <repo>/docs        # human report; exit 0/1
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate <repo>/docs --json # machine-readable findings
+cq knowledge validate <repo>/docs        # human report; exit 0/1
+cq knowledge validate <repo>/docs --json # machine-readable findings
 ```
 
 Config block `okfValidate` in `hooks-config.json` (`warnAsError`, plus `ignoreGlobs` alongside it)

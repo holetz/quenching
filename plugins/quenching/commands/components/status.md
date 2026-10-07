@@ -1,11 +1,8 @@
 ---
 description: >-
-  Read the target's automation surface and report its command count, fronts and findings without
-  writing. Triggers on "components status", "check the automation surface", or "what is the state
-  of the command surface". Not for: repairing findings → /quenching:components:align; minting one
-  command → /quenching:components:command:new.
+  Report the automation surface: command count, fronts and findings, read-only. Use for "components status", "check the automation surface". Not for: repairs → /quenching:components:align.
 argument-hint: [optional-target-root]
-allowed-tools: Read, Grep, Glob, Bash(python3:*)
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
 # /quenching:components:status — read the automation surface
@@ -24,7 +21,7 @@ commands, fronts and finding codes without choosing an axis or repairing a body.
 Set `TARGET_ROOT` to `$ARGUMENTS`, or to `.` when the argument is omitted, and run:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" components status --json
+cq --root "$TARGET_ROOT" components status --json
 ```
 
 Branch on the JSON and exit code: `0` is a clean report, `1` carries findings, and `2` is a

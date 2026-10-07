@@ -649,7 +649,7 @@ class PullRequestPayload(unittest.TestCase):
         combined = f"{command}\n{reference}"
         for phrase in (
             "read-only",
-            "not for: opening a pr",
+            "not for:",
             "/quenching:git:pr:create",
             "/quenching:git:pr:review",
             "/quenching:git:merge",

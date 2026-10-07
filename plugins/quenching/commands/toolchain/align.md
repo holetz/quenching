@@ -1,7 +1,9 @@
 ---
-description: Converge a target repository's toolchain surface from its manifests, locks, language pins and tool configuration while preserving target-owned build policy. Triggers on "align the toolchain front", "fix toolchain drift", or "converge the toolchain tree". Not for: reading the toolchain state only → /quenching:toolchain:status.
+description: >-
+  Converge a repository's toolchain surface from manifests, locks, language pins and tool config, preserving build policy. Use for "align the toolchain front", "fix toolchain drift". Not for: read-only → /quenching:toolchain:status.
+disable-model-invocation: true
 argument-hint: [optional-target-root]
-allowed-tools: Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
 # /quenching:toolchain:align — converge the toolchain front
@@ -27,7 +29,7 @@ per [tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-reso
 Run the route before reading or editing a target:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" toolchain doctor --json
+cq --root "$TARGET_ROOT" toolchain doctor --json
 ```
 
 The probe establishes applicability from recognized toolchain artifacts. `not-applicable` is an
@@ -89,7 +91,7 @@ already made them deterministic.
 Re-run the same closing verifier:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" toolchain doctor --json
+cq --root "$TARGET_ROOT" toolchain doctor --json
 ```
 
 If findings remain, distinguish unresolved judgement residue from a failed mechanical or structural

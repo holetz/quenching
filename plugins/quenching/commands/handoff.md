@@ -1,9 +1,8 @@
 ---
 description: >-
-  Compact the current conversation into a handoff document another agent can continue from. Use
-  when the user asks to "generate a handoff", "compact the conversation into a handoff", "prepare a
-  handoff for the next session" or "summarize this session so another agent can continue". Not for:
-  carrying out the implementation → the command that owns the work.
+  Compact the current conversation into a handoff document for another agent to continue. Use for
+  "generate a handoff" or "prepare a handoff for the next session". Not for: implementing → the
+  owning command.
 argument-hint: "What will the next session be used for?"
 allowed-tools: Bash(mktemp:*), Read, Write, AskUserQuestion
 ---

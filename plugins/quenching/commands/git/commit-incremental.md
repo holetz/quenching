@@ -1,12 +1,10 @@
 ---
 description: >-
-  Transform pending changes in the current Git worktree into small, cohesive commits while keeping
-  staging explicit and stopping safely on unsafe input. Use when the user asks to "commit all
-  worktree changes autonomously", "organize and commit my worktree", or "make incremental commits
-  with one confirmation". Not for: committing only the prepared index → /quenching:git:commit;
-  opening or merging a pull request → /quenching:git:pr:create, /quenching:git:merge.
+  Turn pending worktree changes into small cohesive commits with one confirmation. Use for "organize and commit my worktree". Not for: the staged index → /quenching:git:commit.
+disable-model-invocation: true
 argument-hint: [optional subject prefix]
 allowed-tools: >-
+  Bash(cq:*),
   Read, Bash(git status:*), Bash(git diff:*), Bash(git ls-files:*), Bash(git add:*),
   Bash(git commit:*), Bash(git log:*), Bash(python3:*), AskUserQuestion
 ---
@@ -29,7 +27,7 @@ language, while commit subjects and messages remain canonical English artifacts.
 Read the target's git conventions, then collect one initial snapshot:
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git conventions --json
+cq git conventions --json
 git status --short
 git diff --name-status
 git diff --cached --name-status
