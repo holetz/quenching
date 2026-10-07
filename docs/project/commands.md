@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: derived from plugins/quenching/README.md §The 54 commands and §The specs flow (tables preserved, long rows condensed); the machine authority is cq components doctor --json
+source: derived from plugins/quenching/README.md §The 55 commands and §The specs flow (tables preserved, long rows condensed); the machine authority is cq components doctor --json
 maintainer: Israel Holetz
 ---
 
@@ -74,6 +74,7 @@ commands share is explained in [The spec lifecycle](../explanation/spec-lifecycl
 | `/quenching:specs:develop` | Compose + refine in one pass: takes the spec to a closed ready set, argues with it, ends at the approval close. Records `refined:`; never edits code. |
 | `/quenching:specs:execute` | Builds `## Tasks` one verified commit at a time — clean tree, inline isolation offer, `verify:` under the spec's policy, code and tick in ONE commit. |
 | `/quenching:specs:conclude` | Closes a spec out, **merging last**: branch review, emergent `/docs/`, archive (`outcome:`), distillation, `merge:` stamp — then the merge, and nothing after it. |
+| `/quenching:specs:orchestrate` | Launches the `orchestrator` agent over an epic or a list of specs: waves, at most 3 workers, accepted only on a verifier PASS. |
 | `/quenching:specs:triage` | Ranks the whole front in ONE confirmed table, writing `priority:` per spec and nothing else — merging, never clobbering a human's ranking. |
 
 ## The design front

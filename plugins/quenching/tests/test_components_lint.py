@@ -161,7 +161,7 @@ class StrictFrontmatter(unittest.TestCase):
         errors = [f for f in payload["findings"] if f["severity"] == "error"]
         self.assertEqual(status, 0)
         self.assertEqual(errors, [])
-        self.assertEqual(payload["commandCount"], 54)
+        self.assertEqual(payload["commandCount"], 55)
 
 
 class StepCriterion(unittest.TestCase):
