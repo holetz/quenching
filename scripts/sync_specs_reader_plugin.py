@@ -25,7 +25,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "plugins/quenching"
 TARGET = ROOT / "plugins/quenching-specs-reader"
-COPY_DIRS = ("assets/bin", "assets/specs")
+COPY_DIRS = ("assets/bin", "assets/specs", "assets/portal")
 EXECUTABLE = 0o755
 REGULAR = 0o644
 
