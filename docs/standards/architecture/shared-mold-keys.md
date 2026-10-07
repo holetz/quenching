@@ -7,7 +7,7 @@ tags: [architecture, frontmatter, references, anti-fabrication, ownership]
 timestamp: 2026-08-11
 audience: both
 authority: current
-source: add-import-provenance spec (2026-07-25) §Design Decisão 2 — proved by the source_uri rollout; the resource: precedent from the docs-verification-layer plan
+source: "add-import-provenance spec (2026-07-25) §Design Decisão 2 — proved by the source_uri rollout; the resource: precedent from the docs-verification-layer plan"
 maintainer: quenching
 ---
 

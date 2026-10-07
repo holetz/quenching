@@ -288,5 +288,5 @@ that cannot be established offline and needs an end-to-end run. `azure-boards` `
 atomic between creating the work item and patching its board column.
 
 A finding that an implementation cannot satisfy some rule above is a reason to revisit this
-document, not to work around it quietly. Evidence and measurements: [ADR 0001](../decisions/0001-spec-backend-measurements.md),
-[ADR 0006](../decisions/0006-specs-move-to-a-git-store-with-thin-cards.md).
+document, not to work around it quietly. Evidence and measurements: [ADR 0001](../../decisions/0001-spec-backend-measurements.md),
+[ADR 0006](../../decisions/0006-specs-move-to-a-git-store-with-thin-cards.md).

@@ -34,6 +34,31 @@ from quenching.knowledge.schema import (
 )
 
 
+_YAML_INDICATOR_STARTS = ("`", "@", "%", "*", "&", "!")
+_YAML_PLAIN_OPENERS = ('"', "'", "[", "{", "|", ">", "-", "#")
+
+
+def _strict_yaml_findings(text: str) -> list[tuple[str, str, str]]:
+    """Top-level plain scalars a strict YAML loader rejects, which this tolerant parser reads.
+
+    Stdlib-only heuristic: a plain scalar containing `: ` (or ending in `:`), or opening with a
+    reserved indicator, is not valid YAML — zensical's strict loader fails the whole build on it."""
+    out: list[tuple[str, str, str]] = []
+    block = text.split("\n---", 1)[0].splitlines()[1:]
+    for line in block:
+        if not line or line[0] in " \t#" or ":" not in line:
+            continue
+        key, _, val = line.partition(":")
+        val = val.strip()
+        if not val or val[0] in _YAML_PLAIN_OPENERS:
+            continue
+        if val.startswith(_YAML_INDICATOR_STARTS) or ": " in val or val.endswith(":"):
+            out.append(("ERROR", "frontmatter-not-yaml",
+                        f"`{key.strip()}` is an unquoted value strict YAML rejects (`: ` inside it, or it "
+                        "opens with a reserved character) — wrap the value in double quotes"))
+    return out
+
+
 def check_concept(text: str) -> list[tuple[str, str, str]]:
     out: list[tuple[str, str, str]] = []
     fm = parse_frontmatter(text)
@@ -49,6 +74,7 @@ def check_concept(text: str) -> list[tuple[str, str, str]]:
     # BEFORE the content checks, so a misread is never presented as a content gap: a
     # value this parser could not represent used to surface as `missing-type` or a
     # missing recommended field, naming the absence rather than the misread.
+    out.extend(_strict_yaml_findings(text))
     for a in frontmatter_anomalies(text):
         out.append(("WARN", "okf-frontmatter-unparsed", f"`{a['key']}`: {a['detail']}"))
     if not _nonempty(fm, "type"):

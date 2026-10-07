@@ -7,7 +7,7 @@ tags: [architecture, bundle, okf, convention, config]
 timestamp: 2026-08-29
 audience: both
 authority: current
-source: docs-em-diretorio-customizado spec (task 1.4, 2026-08-06) — proved by the migration itself: the bundle moved to the fixed root and every shipped reader updated in the same branch; provider-owned specs have no repository root
+source: "docs-em-diretorio-customizado spec (task 1.4, 2026-08-06) — proved by the migration itself: the bundle moved to the fixed root and every shipped reader updated in the same branch; provider-owned specs have no repository root"
 maintainer: quenching
 ---
 

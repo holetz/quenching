@@ -34,6 +34,40 @@ def _validated(fixture: dict) -> list[tuple[str, str, str, str]]:
         return validate_tree(tmp)
 
 
+_GOOD_DOC = "---\ntype: concept\ntitle: T\ndescription: %s\nresource: x\ntimestamp: 2026-10-07\n---\nbody %s\n"
+_ROOT_INDEX = "---\nokf_version: 0.1\n---\n# Index\n- [a](a.md)\n"
+
+
+class StrictYamlAndDocLinks(unittest.TestCase):
+    def _codes(self, description, body=""):
+        fixture = {"index.md": _ROOT_INDEX, "a.md": _GOOD_DOC % (description, body)}
+        return {f[2] for f in _validated(fixture)}
+
+    def test_dead_prose_link_is_a_warning(self):
+        fixture = {"index.md": _ROOT_INDEX,
+                   "a.md": _GOOD_DOC % ("plain", "see [x](missing.md)")}
+        hits = [f for f in _validated(fixture) if f[2] == "doc-broken-link"]
+        self.assertEqual([h[0] for h in hits], ["WARN"])
+
+    def test_live_prose_link_is_clean(self):
+        fixture = {"index.md": _ROOT_INDEX + "- [b](b.md)\n",
+                   "a.md": _GOOD_DOC % ("plain", "see [b](b.md)"),
+                   "b.md": _GOOD_DOC % ("plain", "")}
+        self.assertNotIn("doc-broken-link", {f[2] for f in _validated(fixture)})
+
+    def test_colon_space_in_plain_scalar_is_an_error(self):
+        self.assertIn("frontmatter-not-yaml", self._codes("measured: yes"))
+
+    def test_backtick_opening_is_an_error(self):
+        self.assertIn("frontmatter-not-yaml", self._codes("`cq` runs it"))
+
+    def test_quoted_value_is_clean(self):
+        self.assertNotIn("frontmatter-not-yaml", self._codes('"measured: yes"'))
+
+    def test_plain_value_is_clean(self):
+        self.assertNotIn("frontmatter-not-yaml", self._codes("plain words"))
+
+
 class KnowledgeCliContract(unittest.TestCase):
     def test_validate_resolves_bundle_under_root(self):
         with tempfile.TemporaryDirectory() as tmp:
