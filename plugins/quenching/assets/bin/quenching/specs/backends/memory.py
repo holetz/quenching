@@ -11,9 +11,9 @@ class MemoryBackend(SpecBackend):
     """Specs in a dict. No disk, no network, no repository to stage.
 
     This exists to be the OTHER side of the selftest's equality: the canonical case list runs
-    against `files` and against this, and the two must agree. A backend that shares nothing
-    with the filesystem but the interface is the only honest way to prove the interface is
-    what the CLI depends on — if a command reaches around it to a path, this backend is where
+    against the provider backends and against this, and the two must agree. A backend that
+    shares nothing with the filesystem but the interface is the only honest way to prove the
+    interface is what the CLI depends on — if a command reaches around it to a path, this backend is where
     that shows up, immediately and without a fixture.
 
     It is deliberately NOT a cache and never reachable from the config: nothing a human can

@@ -43,12 +43,13 @@ class TheReaderSurface(unittest.TestCase):
         self.assertEqual(["cq-specs-read"], sorted(p.name for p in (READER / "bin").iterdir()
                                                   if p.name != "__pycache__"))
 
-    def test_the_marketplace_publishes_it_without_a_hand_kept_version(self):
+    def test_the_marketplace_pins_its_version_to_the_source(self):
         marketplace = json.loads((REPO_ROOT / ".claude-plugin" / "marketplace.json")
                                  .read_text(encoding="utf-8"))
         entry = next(p for p in marketplace["plugins"] if p["name"] == "quenching-specs-reader")
         self.assertEqual("./plugins/quenching-specs-reader", entry["source"])
-        self.assertNotIn("version", entry)
+        version = (REPO_ROOT / "plugins" / "quenching" / "VERSION").read_text().strip()
+        self.assertEqual(version, entry["version"])
 
     def test_its_payload_is_in_lockstep_with_the_source(self):
         run = subprocess.run([sys.executable, str(SYNC), "--check"], capture_output=True,

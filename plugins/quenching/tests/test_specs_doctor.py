@@ -198,7 +198,7 @@ class ConfigMigrationMatrix(unittest.TestCase):
     def test_specs_adapter_carries_flat_migration_refusal_without_using_the_legacy_value(self):
         root = self._write({"specsBranch": "legacy"})
         specs = load_specs_config(root, detect_provider_info=False)
-        self.assertEqual(specs["specsBranch"], "specs")
+        self.assertNotIn("specsBranch", specs)
         self.assertEqual(specs["migrationRefusal"]["code"], "sp-config-unscoped")
         self.assertEqual(specs["migrationRefusal"]["exit"], 2)
 

@@ -3,6 +3,7 @@
 # quenching-arbiters-data {"artifact":"pyproject.toml","entries":[{"arbiter":"ops","key":"project.scripts"},{"arbiter":"proof","key":"tool.coverage"},{"arbiter":"proof","key":"tool.pytest"}]}
 # quenching-arbiters-end
 
+# uv.lock serves only the documentation site (zensical) and the tests (pytest); the plugin itself is stdlib-only.
 [project]
 name = "quenching-documentation"
 version = "0.1.0"
