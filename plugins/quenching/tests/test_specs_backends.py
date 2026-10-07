@@ -453,6 +453,18 @@ class AzureExternalRoundTrip(unittest.TestCase):
         }])
 
 
+class AzureShortBatch(unittest.TestCase):
+    def test_a_batch_that_returns_fewer_items_than_queried_refuses(self):
+        backend = AzureBoardsBackend("org", "proj", {"plans": "Active", "archive": "Closed"},
+                                     os.getcwd(), discovery_tag="quenching-spec")
+        with mock.patch.object(backend, "_az", return_value=[{"id": 7}, {"id": 8}]), \
+                mock.patch.object(backend, "_show_many", return_value=[{"id": 7}]):
+            with self.assertRaises(BackendRefusal) as ctx:
+                backend._load()
+        self.assertEqual(ctx.exception.err.get("code"), "sp-az-batch-short")
+        self.assertEqual(ctx.exception.err.get("missing"), [8])
+
+
 class PullRequestAdapterFixture(unittest.TestCase):
     """A provider-shaped Azure PR response must keep its two URLs in separate fields."""
 
