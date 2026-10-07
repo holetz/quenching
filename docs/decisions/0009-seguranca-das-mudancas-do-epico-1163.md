@@ -86,3 +86,23 @@ one named line, not by a pattern. Accepted.
 `Bash(bash:*)` and `Bash(QUENCHING_FUNCTIONAL=1 bash:*)` became the single command
 `Bash(QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh:*)`, which closes the finding decision 0008
 parked on #1162. `Bash(git:*)` and `Bash(python3:*)` stay wide and predate the epic. Accepted.
+
+## Hook evidence
+
+Question left open by decision 0008: does the `after_specs_execute_task` hook fire in a worker?
+Measured on 2026-10-07 from the spec 1180 worker (a sub-agent with the `Skill` tool), after task 1.1
+(commit `0b094313`), by invoking `Skill("security-review", ...)` with the declared `condition` as
+context.
+
+- **Classification: `failed`.** The command resolved (the skill started), so it is not `unresolved`.
+  Its own preprocessing aborted before any review ran: `git diff --name-only origin/HEAD...` exited
+  with `ambiguous argument 'origin/HEAD...'`.
+- **Measured cause:** `git symbolic-ref refs/remotes/origin/HEAD` exits 128 in this repository
+  (`origin/HEAD` is not set locally), so the built-in `/security-review` cannot compute its diff here.
+  Setting it (`git remote set-head origin -a`) writes the shared `.git`, outside the worker's worktree,
+  so the worker did not do it.
+- **Reading:** the hook is wired and reachable from a worker; since the hook is `optional`, the failure
+  does not stop the run, and it is now visible through the `HOOKS:` line of #1172. What kept it from
+  producing a review is the missing `origin/HEAD`, not the configuration. Whether the review is
+  then useful in an orchestrated run is not proved: no review output exists yet.
+- **Follow-up:** parked as a discovery of spec 1180 for conclude to turn into a spec.
