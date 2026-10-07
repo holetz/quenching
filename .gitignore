@@ -23,6 +23,8 @@ site/
 .cache/
 # Generated, bounded Zensical input; the complete OKF bundle remains under docs/.
 site-source/
+# Throwaway experiment directories.
+.tmp-*/
 
 # The documentation-site checker keeps a committed static fixture named `site/`.
 !plugins/quenching/assets/checks/fixtures/documentation-site-check/glossary/site/

@@ -155,6 +155,21 @@ class ToolchainCli(unittest.TestCase):
             self.assertEqual("not-applicable", payload["applicability"]["state"])
             self.assertTrue(payload["ok"])
 
+    def test_status_reports_findings_and_exits_one(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            (root / "pyproject.toml").write_text("[project]\nname = 'demo'\n", encoding="utf-8")
+            (root / "package.json").write_text('{"name":"demo"}\n', encoding="utf-8")
+            (root / "package-lock.json").write_text("{\n", encoding="utf-8")
+            (root / "uv.lock").write_text("version = 1\n", encoding="utf-8")
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                code = main(["--root", raw, "status", "--json"])
+            payload = json.loads(output.getvalue())
+            self.assertEqual(1, code)
+            self.assertFalse(payload["ok"])
+            self.assertIn("tc-lock-stale", {item["code"] for item in payload["findings"]})
+
     def test_cli_version_is_stable(self):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
