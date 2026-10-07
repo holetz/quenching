@@ -1,7 +1,9 @@
 ---
-description: Mint ONE editorial genre under /.design/genres/ with its fields, register and N medium templates, then regenerate MEDIUM.md. Triggers on "create a design genre", "add a report genre", "define a deck contract", "mint an editorial format", or "make one genre render to HTML and PDF". Not for: rendering an existing genre → cq design render; aligning the whole front → /quenching:design:align; visual screen work → Impeccable.
+description: >-
+  Mint ONE editorial genre under /.design/genres/ with fields, register and medium templates. Use for "create a design genre", "define a deck contract". Not for: whole front → /quenching:design:align.
+disable-model-invocation: true
 argument-hint: <genre-name-or-description>
-allowed-tools: Read, Grep, Glob, Bash(python3:*), AskUserQuestion
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion
 ---
 
 # /quenching:design:genre:new — one genre, N destinations
@@ -50,7 +52,7 @@ background run or hook. Wait for one OK.
 Invoke one command, repeating `--media` and `--field`:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root . design genre new <slug> \
+cq --root . design genre new <slug> \
   --name "<name>" --register "<register>" \
   --media <medium> --field "<name>:<required|optional>:<description>" --json
 ```

@@ -1,7 +1,8 @@
 ---
-description: Build a sourced documentation plan for the OKF bundle with reader journeys and seven output contracts. Triggers on "plan the documentation", "diagnose the docs structure", or "design the documentation architecture". Not for: writing pages → /quenching:knowledge:documentation:write; scoring pages → /quenching:knowledge:documentation:review; configuring or building the site → /quenching:knowledge:documentation:build; conducting the complete run → /quenching:knowledge:documentation:produce.
+description: >-
+  Build a sourced documentation plan for the OKF bundle with reader journeys. Use for "plan the documentation", "design the documentation architecture". Not for: pages → /quenching:knowledge:documentation:write.
 argument-hint: [optional-source-paths-or-scope]
-allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(rg:*), Write, AskUserQuestion
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(rg:*), Write, AskUserQuestion
 ---
 
 # /quenching:knowledge:documentation:plan — diagnose sources and record the documentation plan

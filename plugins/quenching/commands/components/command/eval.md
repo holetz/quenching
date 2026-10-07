@@ -1,7 +1,9 @@
 ---
-description: Measure whether a skill/command teaches anything — with/without runs, graded on evidence. Triggers on "measure whether this command teaches anything", "run the with/without eval on this skill", "tune this command's description on the hit rates". Not for: editing a command without evidence → /quenching:components:command:new; aligning the whole surface → /quenching:components:align.
+description: >-
+  Measure whether a command teaches anything with with/without runs graded on evidence. Use for "run the with/without eval on this skill". Not for: unevidenced edits → /quenching:components:command:new.
+disable-model-invocation: true
 argument-hint: [skill-name]
-allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion
+allowed-tools: Bash(cq:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion
 ---
 
 # /quenching:components:command:eval — measure whether a skill teaches anything

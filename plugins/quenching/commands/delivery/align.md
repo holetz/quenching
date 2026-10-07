@@ -1,7 +1,9 @@
 ---
-description: Converge a target repository's delivery surface from its workflow tree while preserving provider, environment, promotion, publication and permission policy. Triggers on "align the delivery front", "fix delivery drift", or "converge the delivery pipeline". Not for: reading delivery state only → /quenching:delivery:status.
+description: >-
+  Converge a repository's delivery surface from its workflow tree, preserving provider and permission policy. Use for "align the delivery front", "fix delivery drift". Not for: read-only → /quenching:delivery:status.
+disable-model-invocation: true
 argument-hint: [optional-target-root]
-allowed-tools: Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
 # /quenching:delivery:align — converge the delivery front
@@ -28,7 +30,7 @@ every `cq delivery` call. Resolve `cq` per
 Run the verifier before interpreting the workflow tree:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" delivery doctor --json
+cq --root "$TARGET_ROOT" delivery doctor --json
 ```
 
 On exit `0`, report the applicability state and "delivery conformant, nothing to align"; do not
@@ -64,7 +66,7 @@ branch, publish scope, permission set or deployment command. Never run a release
 After authorized edits, run the same probe again:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --root "$TARGET_ROOT" delivery doctor --json
+cq --root "$TARGET_ROOT" delivery doctor --json
 ```
 
 If structural residue remains, report it rather than widening the plan. Judgement findings remain

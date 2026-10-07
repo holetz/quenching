@@ -31,6 +31,7 @@ from quenching.components.surface import (COMMANDS_DIR, REFERENCES_DIR, SURFACE_
 # never pays for.
 CAP_METADATA = 1536             # the description; Claude Code truncates past it
 CAP_DESCRIPTION_PORTABLE = 1024  # the Agent Skills standard's hard limit
+CAP_DESCRIPTION_BUDGET = 250    # the budget: use case first, so the listing stays cheap
 CAP_BODY_LINES = 500
 TRIGGER_SENTENCE_MAX = 2        # triggers live by the second sentence, so truncation keeps them
 BOUNDARY_MARKER = "Not for:"
@@ -501,6 +502,13 @@ def lint_command(cmd: dict, base: str, named_by: set[str] | None = None) -> list
                            f"{CAP_DESCRIPTION_PORTABLE} limit of the Agent Skills standard — the "
                            "command is not portable outside Claude Code",
                            characters=len(description), cap=CAP_DESCRIPTION_PORTABLE, **where))
+
+    if len(description) > CAP_DESCRIPTION_BUDGET:
+        out.append(finding("sk-description-budget", "warn",
+                           f"description is {len(description)} characters, over the "
+                           f"{CAP_DESCRIPTION_BUDGET} budget — put the key use case first and "
+                           "trim the rest",
+                           characters=len(description), cap=CAP_DESCRIPTION_BUDGET, **where))
 
     # Both codes below judge ROUTING FROM PROSE, so both are scoped to a description
     # that is actually in context. For a typed-only command there is no listing for a
