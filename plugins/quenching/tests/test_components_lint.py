@@ -162,8 +162,8 @@ class StrictFrontmatter(unittest.TestCase):
             status = cmd_lint(SimpleNamespace(path=None, json=True), str(plugin_root))
         payload = json.loads(output.getvalue())
         errors = [f for f in payload["findings"] if f["severity"] == "error"]
+        self.assertEqual(errors, [])  # first: a red gate names the finding, not just the status
         self.assertEqual(status, 0)
-        self.assertEqual(errors, [])
         self.assertEqual(payload["commandCount"], 57)
 
 
