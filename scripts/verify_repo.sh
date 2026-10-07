@@ -41,6 +41,9 @@ else
   run_check "unit tests" \
     python3 -m unittest discover -s plugins/quenching/tests
 fi
+# The CI `lint` job runs this exact command; the local gate must not pass what the CI refuses.
+run_check "ruff" \
+  uv run ruff check .
 run_check "proof doctor" \
   python3 plugins/quenching/assets/bin/cq proof doctor
 # The ops front is not adopted here (no `ops.opsRoot`/`ops.router`): `op-config-missing` is expected
