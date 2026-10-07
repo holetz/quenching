@@ -926,6 +926,21 @@ class GitHubBackend(SpecBackend):
                                 payload)
         number = int((issue or {}).get("number") or 0)
         url = (issue or {}).get("html_url") or f"https://github.com/{self.repo}/issues/{number}"
+        try:
+            return self._finish_create(phase, number, url, fresh, chunks)
+        except BackendRefusal as refusal:
+            # The issue EXISTS. A refusal that hid its number invites a blind retry of `new`,
+            # which duplicates it; name it and say what is left to do.
+            refusal.err.update({
+                "issue": number, "url": url,
+                "message": f"{refusal.err.get('message', 'a step failed')} — issue #{number} "
+                           f"({url}) was ALREADY created; do not run `new` again, finish "
+                           f"that issue instead",
+            })
+            raise
+
+    def _finish_create(self, phase: str, number: int, url: str, fresh: dict,
+                       chunks: list[tuple[str, bool]]) -> str:
         # The abstract `workItemType:` key, projected to GitHub's own Issue Type — through
         # `_set_type` (`gh issue edit --type`), NEVER a `type` field on the create payload
         # above. MEASURED live (2026-08-07, holetz/claude-quenching#898): the REST create
@@ -1018,7 +1033,8 @@ class GitHubBackend(SpecBackend):
                 "code": "sp-gh-parts-missing", "exit": 2, "issue": number,
                 "found": len(chunks), "declared": parts,
                 "message": f"issue #{number} declares {parts} document parts and "
-                           f"{len(chunks)} are present — a continuation comment was deleted; "
+                           f"{len(chunks)} are present — a continuation comment was deleted, or a "
+                           f"multi-part write was interrupted before it finished; "
                            f"nothing was read and nothing was written",
             })
         return hybrid_join(chunks)

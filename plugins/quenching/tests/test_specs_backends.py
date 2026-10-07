@@ -743,6 +743,23 @@ class GithubCreateType(unittest.TestCase):
         self.assertEqual(ctx.exception.err.get("exit"), 2)
 
 
+class GhCreatePartialFailure(unittest.TestCase):
+    """A create whose later step fails must not hide the issue the POST already made."""
+
+    def test_failure_after_the_post_names_the_created_issue(self):
+        backend = GitHubBackend("owner/repo", os.getcwd(), types={"incidente": "Bug"})
+        backend._write_api = lambda *a, **k: {"number": 77, "html_url": "https://x/77"}
+        boom = BackendRefusal({"code": "sp-gh-api-error", "exit": 2, "message": "gh said 500"})
+        with mock.patch.object(backend, "_set_type", side_effect=boom), \
+                mock.patch.object(backend, "_sync_parts"):
+            with self.assertRaises(BackendRefusal) as ctx:
+                backend.create_spec("plans", "---\nworkItemType: incidente\n---\n"
+                                    "# T\n\n## Problem\n\nx\n")
+        self.assertEqual(ctx.exception.err["issue"], 77)
+        self.assertIn("#77", ctx.exception.err["message"])
+        self.assertIn("do not run `new` again", ctx.exception.err["message"])
+
+
 # --------------------------------------------------------------------------- #
 # the GitHub issue body ceiling
 # --------------------------------------------------------------------------- #
