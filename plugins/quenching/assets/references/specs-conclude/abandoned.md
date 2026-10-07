@@ -44,8 +44,8 @@ path>/.specs status --spec <id> --json`, in place of the bare form.
 <!-- rules -->
 
 - **Step 3, the emergent `/docs/`** — whatever the branch review surfaced, in its own commit.
-- **Step 4, the archive move** — the promote itself lands in the PROVIDER, which no checkout owns,
-  so there is nothing to mirror into the base for it. What this step commits into the base checkout
+- **Step 4, the archive move** — the promote itself lands on the `quenching` branch (and closes the card), which no
+  code checkout owns, so there is nothing to mirror into the base for it. What this step commits into the base checkout
   is whatever local record the move produced beside it, and nothing else.
 - **Step 5, the distillation's background note** — the same checkout, the same rule.
 
