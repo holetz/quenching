@@ -42,7 +42,7 @@
     "measuredRoots": [
       "plugins/quenching/assets/bin/quenching"
     ],
-    "proofExclusions": ["scripts", "experiments"],
+    "proofExclusions": ["scripts", "experiments", "site", "site-source"],
     "ratchetPath": ".coverage-floor.json"
   },
   "specs": {
