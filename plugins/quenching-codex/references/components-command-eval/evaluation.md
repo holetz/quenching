@@ -27,7 +27,7 @@ have installed.
 ```
 
 `<path>` **mirrors the command path**: `quenching-knowledge-add` is measured by
-`.agents/evals/docs/add/evals.json`. In this plugin the same tree lives at
+`.agents/evals/knowledge/add/evals.json`. In this plugin the same tree lives at
 `../../assets/evals/<path>/`.
 
 Run outputs are timestamped so two runs can be compared rather than overwriting each other — pass
@@ -81,7 +81,7 @@ to sit *beside* the skill it measured, so that it survived a rename and was revi
 diff as the body it tests. A command is a single file — there is no folder to sit beside.
 Mirroring the path keeps both properties by a different mechanism: renaming a command renames its
 eval folder in the same mechanical step, and the two paths differ by one prefix, so a reviewer
-looking at `commands/docs/add.md` can find `evals/docs/add/` without searching. What it does
+looking at `commands/knowledge/add.md` can find `evals/knowledge/add/` without searching. What it does
 **not** preserve is co-location in a single directory listing; that is the honest cost of a
 one-file surface.
 
