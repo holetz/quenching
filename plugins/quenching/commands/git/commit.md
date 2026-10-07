@@ -6,6 +6,13 @@ allowed-tools: >-
   Bash(cq:*),
   Bash(git status:*), Bash(git branch --show-current:*), Bash(git diff:*), Bash(git commit:*),
   Bash(git log:*), Bash(python3:*), Read
+hooks:
+  PreToolUse:
+    - matcher: Bash
+      hooks:
+        - type: command
+          command: test -f "${CLAUDE_PLUGIN_ROOT}/assets/hooks/warn-git-add-all.sh" || exit 0; bash "${CLAUDE_PLUGIN_ROOT}/assets/hooks/warn-git-add-all.sh"
+          timeout: 5
 ---
 
 # /quenching:git:commit — commit what is staged, under the target's own convention
