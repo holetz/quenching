@@ -10,6 +10,7 @@ import json
 import os
 
 from quenching.common.git import _git
+from quenching.common.remote import remote_host as _remote_host
 from quenching.common.io import read_text, write_text
 
 
@@ -67,14 +68,6 @@ def find_repo_root(specs_root: str) -> str:
     if top:
         return top
     return os.path.dirname(os.path.abspath(specs_root))
-
-
-def _remote_host(remote: str) -> str:
-    host = remote.strip().split("#", 1)[0]
-    if "://" in host:
-        host = host.split("://", 1)[1]
-    host = host.rsplit("@", 1)[-1]
-    return host.split("/", 1)[0].split(":", 1)[0].lower()
 
 
 def detect_provider(root: str) -> tuple[str | None, str | None]:
