@@ -55,19 +55,14 @@ jobs:
         run: uv run ruff check .
 
   functional:
-    name: Functional checks
+    name: Functional checks (static guards only; the surface-load measurement runs in the opt-in gate and the release)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Static guard (selfcheck)
         run: bash plugins/quenching/assets/checks/functional-checks.sh --selfcheck
-      - name: Surface-load checks (exit 2 is inconclusive, not a pass and not a failure)
-        run: |
-          rc=0
-          bash plugins/quenching/assets/checks/functional-checks.sh || rc=$?
-          case "$rc" in
-            0) echo "functional checks: every measured assertion passed" ;;
-            2) echo "::warning::functional checks inconclusive (exit 2): nothing could be measured on this runner" ;;
-            *) echo "::error::functional checks failed (exit $rc)"; exit "$rc" ;;
-          esac
+      - name: Observed-path guard (selftest)
+        run: bash plugins/quenching/assets/checks/functional-checks.sh --selftest
+      - name: Where the surface-load measurement runs
+        run: echo "CI measures no surface load (no claude CLI here). Run QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh locally; /release requires it before the bump."
