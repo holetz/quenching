@@ -71,7 +71,7 @@ OK. Read [the operating model](explanation/operating-model.md) and you know the 
 
 ```bash
 claude --plugin-dir ./plugins/quenching   # load the plugin into Claude Code
-cq --version                              # 6.3.0 — the bundled CLI answers
+cq --version                              # prints the plugin version — the bundled CLI answers
 ```
 
 Then, inside the session, ask for a read-only status before you change anything:
