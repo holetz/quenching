@@ -46,7 +46,7 @@ Three bands, in this order, always: **header · body · next step**.
 
 <!-- rationale -->
 
-The empty-fixed / omit-optional split is the rule `commands/docs/status.md` carries and its `specs/`
+The empty-fixed / omit-optional split is the rule `commands/knowledge/status.md` carries and its `specs/`
 sibling does not. A fixed block that vanishes when empty is indistinguishable from a pass that
 dropped it; an optional block printed empty is noise on every run.
 
