@@ -225,7 +225,7 @@ sentence, and **link out** rather than explaining in full here.
 - [**Entry point**](standards/architecture/ops-front.md) — an operation exposed by the ops router
   and named in its generated registry, whose implementation may live in a domain package rather
   than in the router itself.
-- **Esqueleto publicado** *(published skeleton)* — the OKF bundle the plugin SHIPS, at
+- **Published skeleton** — the OKF bundle the plugin SHIPS, at
   `plugins/quenching/assets/knowledge/`: index files plus a single leaf standard
   (`standards/agents/communication.md`). It is scaffolding a target fills in, never this
   repository's own library — so it is **not** the same thing as this repo's `/docs/` bundle,

@@ -56,19 +56,19 @@ flowchart LR
 ## What makes a plan acceptable
 
 The plan is not a page list — it is a **closed coverage contract**. Its publication map decides
-every source home explicitly: `publicar`, `publicar derivado`, or `não publicar` with a reason.
+every source home explicitly: `publish`, `publish derived`, or `do not publish` with a reason.
 Coverage is then measured against every mandatory row, not against the pages one pass happened
 to select — a page you wrote cannot hide a home you forgot.
 
 | Decision | Meaning | Example |
 | --- | --- | --- |
-| `publicar` | the home's pages ship as-is under the site | `documentation/` itself |
-| `publicar derivado` | the source stays outside `docs_dir`; a generated projection ships | root glossary → `reference/glossary.md` |
-| `não publicar` | an explicit editorial exclusion, with motive | internal `standards/` |
+| `publish` | the home's pages ship as-is under the site | `documentation/` itself |
+| `publish derived` | the source stays outside `docs_dir`; a generated projection ships | root glossary → `reference/glossary.md` |
+| `do not publish` | an explicit editorial exclusion, with motive | internal `standards/` |
 
 ## The glossary is default-on
 
-A populated root `glossary.md` publishes by default; only an explicit `não publicar` row
+A populated root `glossary.md` publishes by default; only an explicit `do not publish` row
 overrides that. The projection is generated — never hand-maintained — and provable:
 
 ```bash

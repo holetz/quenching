@@ -60,7 +60,7 @@ every `.md` in the bundle, **counted one by one**, never the handful of rows in 
 That distinction is the whole gate. While the denominator was the map's rows, a bundle of 106
 documents reached 100% coverage with 12 pages and the check reported green: a map has around seven
 rows, so sub-sampling a home was structurally invisible. A document is covered when it has a built,
-non-empty page, or an explicit `não publicar` row naming that document and why.
+non-empty page, or an explicit `do not publish` row naming that document and why.
 
 The inventory covers the whole `/docs/` bundle, not only pages selected for one write slice. A section with only a heading, placeholder, source gap, or the shipped skeleton's own
 section descriptor is not content and fails the gate

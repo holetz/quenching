@@ -35,7 +35,7 @@ and the cycle authorization wording is in
   source gaps and leaked internal markers remain explicit, then name the next stage or route that
   leaves the current page.
 - **Glossary is default-on when it has content.** The canonical `/docs/glossary.md` is a
-  mandatory derived surface unless the accepted map contains an explicit `não publicar` decision.
+  mandatory derived surface unless the accepted map contains an explicit `do not publish` decision.
   The write stage runs `cq knowledge project --write`; the final build runs its `--check` mode and
   the rendered site checker, including a known `<abbr>` assertion.
 - **Delivery destination is explicit.** At cycle start, identify the selected host (GitHub Pages,
