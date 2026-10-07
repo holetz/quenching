@@ -86,6 +86,17 @@ def github_cache_write(remote: str, repo: str, open_issues: int | None) -> None:
         pass
 
 
+def github_cache_forget(remote: str) -> None:
+    """Drop one remote's resolution entry so the next run re-reads the open-issue count."""
+    normalized = normalize_github_remote(remote)
+    if not normalized:
+        return
+    try:
+        os.remove(github_cache_path(normalized))
+    except OSError:
+        pass
+
+
 def _gh_transient(code: int, stdout: str, stderr: str) -> bool:
     """Whether a failed `gh` call may succeed if the same request is tried again."""
     if code == GH_TIMEOUT:
@@ -315,6 +326,32 @@ def empty_listing_refusal(action: str, pages, open_issues: int | None = None) ->
                    f"legitimately holds nothing answers with ONE empty page (`[[]]`), never "
                    f"with zero pages, so this response was cut short and is not an empty "
                    f"front (measured on {GH_MEASURED_VERSION}); nothing was read",
+        "remedy": GH_EMPTY_LISTING_REMEDY,
+    }
+
+
+def short_listing_refusal(action: str, pages, open_issues: int | None) -> dict | None:
+    """The exit-2 refusal for a full listing that holds FEWER open issues than the repository
+    reports open — proof of truncation, where zero specs is only suspicion.
+
+    The REST listing returns every issue, PRs included; `open_issues` (`issues.totalCount`)
+    counts open issues only and excludes PRs. Open non-PR issues seen below that count means
+    pages went missing. The count is cached up to `GH_CACHE_TTL_S`, so a concurrent close can
+    make the listing legitimately shorter; the caller drops the cached count on refusal and
+    the remedy is one re-run."""
+    if open_issues is None or open_issues <= 0 or not isinstance(pages, list):
+        return None
+    seen = sum(1 for page in pages for issue in (page or [])
+               if isinstance(issue, dict) and "pull_request" not in issue
+               and issue.get("state") == "open")
+    if seen >= open_issues:
+        return None
+    return {
+        "code": "sp-gh-short-listing", "exit": 2, "action": action, "observed": seen,
+        "openIssues": open_issues,
+        "message": f"`gh api` exited 0 while {action} but listed {seen} open issue(s) where "
+                   f"the repository reports {open_issues}; the listing was cut short, so "
+                   f"nothing was derived from it",
         "remedy": GH_EMPTY_LISTING_REMEDY,
     }
 
@@ -620,6 +657,11 @@ class GitHubBackend(SpecBackend):
         refusal = empty_listing_refusal(action, pages, self.open_issues)
         if refusal:
             raise BackendRefusal(refusal)
+        short = short_listing_refusal(action, pages, self.open_issues)
+        if short:
+            # The count may be the stale half: forget it so the re-run reads a fresh one.
+            github_cache_forget(_git(self.cwd, "remote", "get-url", "origin").strip())
+            raise BackendRefusal(short)
         rows: list[tuple[dict, int, str, int, str, dict, list[str], str | None]] = []
         for page in pages:
             for issue in (page or []):
