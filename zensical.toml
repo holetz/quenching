@@ -164,6 +164,7 @@
       "decisions/0003-plan-git-record-history.md",
       "decisions/0004-standards-source-lineage.md",
       "decisions/0005-glossary-long-forms.md",
+      "decisions/0007-native-claude-code-features.md",
     ] },
     { "Vision" = [
       "vision/index.md",

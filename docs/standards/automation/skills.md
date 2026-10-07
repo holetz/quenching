@@ -216,7 +216,7 @@ noisy, summary-out work whose trail would otherwise sit in the main context fore
 Every further capability a command uses — `context: fork` with `agent`/`background`, a
 `model`/`effort` pin, `paths`, frontmatter `hooks:` — is an **authored, priced decision**: the
 default profile is all levers off, and each departure enters the mint's plan with its stated
-buy. An inline pin invalidates the session's prompt cache (a pin inside a fork or an agent is
+buy. The five inline `model:` pins on `/quenching:specs:*` (opus: develop, conclude, triage; sonnet: create, execute) are that decision made on purpose — a pinned model is a price the spec lifecycle pays for judgment or throughput — and are recorded in [ADR 0007](../../decisions/0007-native-claude-code-features.md). An inline pin invalidates the session's prompt cache (a pin inside a fork or an agent is
 cache-safe); `paths` binds a domain-bound command's autonomous firing to its folder. Subagents
 are governed by [agents.md](agents.md), hooks by [hooks.md](hooks.md); the pricing doctrine
 lives once in the plugin
