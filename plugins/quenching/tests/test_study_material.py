@@ -24,7 +24,7 @@ class StudyMaterial(unittest.TestCase):
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
 
         self.assertNotIn("`cq knowledge hook`", root_readme)
-        self.assertIn("`54` in this heading", source_readme)
+        self.assertIn("`55` in this heading", source_readme)
         self.assertNotIn("claude --plugin-dir", codex_readme)
         self.assertIn(".agents/skills/", codex_readme)
         self.assertNotIn("specs/backlog", source_index)
