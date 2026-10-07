@@ -9,9 +9,9 @@ import os
 import re
 import sys
 import time
-from urllib.parse import urlsplit
 
 from quenching.common.git import COMMAND_TIMEOUT_S, _git
+from quenching.common.remote import github_slug, normalize_remote
 from quenching.common.config import CONFIG_FILE, find_repo_root
 from quenching.common.io import read_text, write_text
 from quenching.specs.backends.base import (BackendRefusal, SpecBackend, parse_retry_after,
@@ -40,24 +40,7 @@ GH_CACHE_VERSION = 1
 GH_CACHE_TTL_S = 300
 
 
-def normalize_github_remote(remote: str) -> str:
-    """Normalize SSH/scp and HTTPS remotes to one case-insensitive cache key."""
-    value = remote.strip()
-    if not value:
-        return ""
-    if "://" in value:
-        parsed = urlsplit(value)
-        host = parsed.hostname or ""
-        path = parsed.path
-    else:
-        left, separator, path = value.partition(":")
-        host = left.rsplit("@", 1)[-1] if separator else ""
-    if not host or not path:
-        return ""
-    path = path.split("?", 1)[0].split("#", 1)[0].strip("/")
-    if path.lower().endswith(".git"):
-        path = path[:-4]
-    return f"https://{host.lower()}/{path.lower()}"
+normalize_github_remote = normalize_remote
 
 
 def github_cache_path(remote: str) -> str:
@@ -404,9 +387,6 @@ def announce_listing_suspect(repo: str, open_issues: int | None) -> None:
     print(f"warning: {message}; {GH_LISTING_SUSPECT_REMEDY}", file=sys.stderr)
 
 
-GH_REMOTE_RE = re.compile(r"github\.com[:/]+([^/\s]+)/([^/\s]+?)(?:\.git)?/?$")
-
-
 def resolve_github_repo(cwd: str) -> tuple[str, int | None, dict]:
     """`owner/name` for the repository this checkout points at, how many issues it has open,
     and a refusal — the count being `None` wherever it could not be learned for free.
@@ -460,10 +440,9 @@ def resolve_github_repo(cwd: str) -> tuple[str, int | None, dict]:
     if code in (GH_MISSING, GH_NOT_AUTHENTICATED) or "gh auth login" in (err or ""):
         return "", None, gh_refusal("resolving the repository", code, out, err, attempts)
     url = remote
-    m = GH_REMOTE_RE.search(url) if url else None
-    if m:
+    name = github_slug(url)
+    if name:
         # The remote answers the name and nothing else: no count, and never a guess at one.
-        name = f"{m.group(1)}/{m.group(2)}"
         github_cache_write(normalized_remote, name, None)
         return name, None, {}
     return "", None, {

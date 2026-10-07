@@ -94,6 +94,22 @@ def _finding_dict(item: Finding | dict[str, Any] | Any) -> dict[str, Any]:
     raise TypeError("a front check must return Finding objects or dictionaries")
 
 
+def findings_envelope(findings: list[dict[str, Any]]) -> dict[str, Any]:
+    """The one findings/errors/warnings/ok block every front payload ends with."""
+    errors = sum(item["severity"] == "error" for item in findings)
+    return {
+        "findings": findings,
+        "errors": errors,
+        "warnings": len(findings) - errors,
+        "ok": not findings,
+    }
+
+
+def doctor_result(payload: dict[str, Any]) -> tuple[dict | None, dict, int]:
+    """Map a finished envelope to the shared ``(payload, error, exit)`` contract."""
+    return payload, {}, OK if payload["ok"] else FINDINGS
+
+
 def inspect(root: str, build_inventory: Callable[[str], tuple[Any, dict]],
             checks: CheckRegistry | Iterable[tuple[str, Check] | Check], *,
             enrich: Callable[[Any], dict[str, Any]] | None = None) -> tuple[dict | None, dict]:
@@ -113,12 +129,7 @@ def inspect(root: str, build_inventory: Callable[[str], tuple[Any, dict]],
     payload = inventory.as_dict()
     if enrich:
         payload.update(enrich(inventory))
-    payload.update({
-        "findings": findings,
-        "errors": sum(item["severity"] == "error" for item in findings),
-        "warnings": sum(item["severity"] != "error" for item in findings),
-        "ok": not findings,
-    })
+    payload.update(findings_envelope(findings))
     return payload, {}
 
 
@@ -130,7 +141,7 @@ def doctor(root: str, build_inventory: Callable[[str], tuple[Any, dict]],
     if error:
         return None, error, REFUSAL
     assert payload is not None
-    return payload, {}, OK if payload["ok"] else FINDINGS
+    return doctor_result(payload)
 
 
 def resolve_root(value: str | None) -> str:
