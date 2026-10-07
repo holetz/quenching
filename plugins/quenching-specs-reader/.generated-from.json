@@ -1,9 +1,10 @@
 {
   "source": "plugins/quenching",
-  "source_sha256": "a9ff81a2880192a84faa629784736ed68c06701dce9d32b4e860eaa8edb06d2a",
+  "source_sha256": "3b0ee6e513417fc291b283fa4ce2f05815a3d37df0edbd5a8c30cafb0a3ac3fa",
   "generator": "scripts/sync_specs_reader_plugin.py",
   "copied": [
     "assets/bin",
-    "assets/specs"
+    "assets/specs",
+    "assets/portal"
   ]
 }

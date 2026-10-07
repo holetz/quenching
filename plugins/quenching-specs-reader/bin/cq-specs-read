@@ -35,7 +35,7 @@ import sys
 PLUGIN_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 PACKAGE_ROOT = os.path.join(PLUGIN_ROOT, "assets", "bin")
 
-READ_VERBS = ("list", "status", "show", "section", "next", "config")
+READ_VERBS = ("list", "status", "show", "section", "next", "config", "serve")
 WRITE_FLAGS = ("--write", "--fold")
 WRITE_METHODS = ("write_spec", "create_spec", "move_spec", "_store", "_write_api",
                  "_set_state", "_set_type", "_link_artifact", "_link_new_artifacts")
@@ -45,7 +45,8 @@ OK, REFUSED = 0, 2
 USAGE = f"""usage: cq-specs-read [--root CHECKOUT] {{{','.join(READ_VERBS)}}} [args...]
 
 Read-only `cq specs`. The project is --root, else ${ROOT_ENV}, else the working directory.
-Every verb takes --json. Examples:
+Every verb takes --json. `serve` is the local portal and is always started --read-only.
+Examples:
   cq-specs-read next --front --json          the ranked to-do front
   cq-specs-read list --phase plans --lean --json
   cq-specs-read show --spec 1139 --json      one spec's map and its tasks
@@ -145,6 +146,8 @@ def main(argv: list[str]) -> int:
     if not os.path.isdir(root):
         return refuse("sp-read-root", f"project checkout not found: {root}", as_json)
 
+    if verb == "serve" and not any(t == "--read-only" for t in rest[1:]):
+        rest = [*rest, "--read-only"]      # the portal's write routes stay off, server-side
     sys.path.insert(0, PACKAGE_ROOT)
     block_writes()
     from quenching.specs.commands.cli import main as specs_main
