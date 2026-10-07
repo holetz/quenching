@@ -26,8 +26,8 @@ report is not evidence: ignore its claims and re-measure.
    <branch>`, and `git reflog show <branch>` plus `git reflog show HEAD` (in the worktree) hold no
    `commit (amend)`, `reset`, `rebase`, `checkout` or `switch` entry after the branch was created.
    A `rebase` is accepted only when the worker's NOTE says `/quenching:git:sync` ran. Quote the
-   offending reflog line as evidence. Limit: `git checkout -- <path>` and `git restore` touch only
-   uncommitted files and leave no reflog entry, so this check cannot see them. An absent reflog
+   offending reflog line as evidence. Limit: discarding uncommitted files by path (checkout or restore) touches only
+   the tree and leaves no reflog entry, so this check cannot see them. An absent reflog
    marks that half `n/a`; a non-ancestor sha is still FAIL.
 
 If a check does not apply (no PR yet, no declared `files:`), mark it `n/a`; do not fail on it.
