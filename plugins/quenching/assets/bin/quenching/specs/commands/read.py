@@ -10,6 +10,7 @@ import os
 
 from quenching.common.io import write_text
 from quenching.specs.backends import open_backend
+from quenching.specs.commands.epic import cmd_epic_status
 from quenching.specs.commands.output import Emitter, display_locator, front_fields, read_one
 from quenching.specs.parse import PHASES, derive_info, spec_handle
 from quenching.specs.parse.records import spec_records
@@ -111,6 +112,14 @@ def _next_phase(phase: str, schema: dict | None = None) -> str | None:
 
 
 def cmd_status(args, root: str, out: Emitter) -> int:
+    if getattr(args, "epic", None):
+        if args.spec:
+            return out.emit_err(args.json, {"code": "sp-epic-conflict", "exit": 2,
+                                            "message": "pass --epic or --spec, not both"})
+        return cmd_epic_status(args, root, out)
+    if not args.spec:
+        return out.emit_err(args.json, {"code": "sp-no-target", "exit": 2,
+                                        "message": "pass --spec <id>, or --epic <id>"})
     backend, err = open_backend(root)
     if err:
         return out.emit_err(args.json, err)

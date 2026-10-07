@@ -10,6 +10,8 @@ from quenching.specs.backends import open_backend
 from quenching.specs.backends.base import SpecBackend
 from quenching.specs.commands.output import Emitter, front_fields, read_one
 from quenching.specs.parse import PHASES
+from quenching.specs.parse.epics import (claim_findings, epic_findings, epic_ref, is_epic,
+                                         parse_items)
 from quenching.specs.parse.sections import (gate_report, parse_impact_standards, ready_report,
                                             section_state, stray_headings)
 from quenching.specs.parse.tasks import _files_bad_annotation
@@ -23,7 +25,7 @@ def _finding(code: str, severity: str, message: str, **extra) -> dict:
 
 
 def validate_spec(backend: SpecBackend, s: dict,
-                  emitter: Emitter | None = None) -> list[dict]:
+                  emitter: Emitter | None = None, sink: dict | None = None) -> list[dict]:
     """Every finding for ONE provider spec, in the v2 `sp-*` vocabulary.
 
     The phase-scoped rule is asserted against the schema's per-phase sets — the SAME sets
@@ -45,6 +47,8 @@ def validate_spec(backend: SpecBackend, s: dict,
     text, fm = info["text"], info["frontmatter"]
     sections, tasks = info["sections"], info["tasks"]
     out: list[dict] = []
+    if sink is not None:
+        sink[spec_id] = info      # the epic cross-check reads what this sweep already read
 
     # BEFORE the required-key checks, so a parse failure is never presented as a
     # content gap — a value this parser could not represent used to surface as a
@@ -218,6 +222,28 @@ def merge_record_finding(fm: dict, where: str, spec_id: str) -> dict | None:
 BY_CODE_SPECS_SHOWN = 6
 
 
+def epic_sweep(backend: SpecBackend, read: dict) -> list[dict]:
+    """The epic findings for the specs a sweep already read (`read`: id -> info).
+
+    Only an id the sweep did not read — a member outside a narrowed `--spec` — costs one more
+    `read_specs` call, so a full sweep adds no reads at all."""
+    wanted: set[str] = set()
+    for info in read.values():
+        fm = info["frontmatter"]
+        if is_epic(fm):
+            wanted.update(str(i["spec"]) for i in parse_items(info) if i["spec"])
+        elif epic_ref(fm):
+            wanted.add(epic_ref(fm))
+    missing = sorted(wanted - set(read))
+    known = {**read, **(backend.read_specs(missing) if missing else {})}
+    out: list[dict] = []
+    for info in read.values():
+        if is_epic(info["frontmatter"]):
+            out.extend(epic_findings(info, known))
+        out.extend(claim_findings(info, known))
+    return out
+
+
 def _emit_by_code(args, root: str, specs: list, findings: list, errors: list) -> int:
     """The same sweep, one line per `(code, severity)` instead of one per finding.
 
@@ -279,8 +305,10 @@ def cmd_validate(args, root: str, out: Emitter) -> int:
                              "message": f"no spec with id '{args.spec}'"},
                  f"error: no spec with id '{args.spec}'")
         return 1
+    read: dict[str, dict] = {}
     for s in target:
-        findings.extend(validate_spec(backend, s, out))
+        findings.extend(validate_spec(backend, s, out, sink=read))
+    findings.extend(epic_sweep(backend, read))
 
     errors = [f for f in findings if f["severity"] == "error"]
     if getattr(args, "by_code", False):
