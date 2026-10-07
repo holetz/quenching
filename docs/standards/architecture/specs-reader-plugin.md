@@ -32,7 +32,7 @@ commands.
 | `commands/read.md` | hand-owned — the only command |
 | `bin/cq-specs-read` | hand-owned — the read-only entry point |
 | `README.md` | hand-owned |
-| `assets/bin/**`, `assets/specs/**` | generated from `plugins/quenching/` |
+| `assets/bin/quenching/{common,specs}/**`, `assets/specs/**`, `assets/portal/**` | generated from `plugins/quenching/`; the other pillars and the `cq` router are not copied |
 | `VERSION`, `.claude-plugin/plugin.json`, `.generated-from.json` | generated |
 
 `scripts/sync_specs_reader_plugin.py --write` regenerates the generated set, and `--check` runs

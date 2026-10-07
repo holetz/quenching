@@ -4,8 +4,9 @@
 The reader plugin is one hand-owned command (`commands/read.md`), one hand-owned read-only
 entry point (`bin/cq-specs-read`) and its README. Everything it EXECUTES is the `quenching`
 package, and that package has exactly one editable source: `plugins/quenching/assets/bin/`.
-This script copies it — with `assets/specs/`, which `quenching/specs/schema.py` finds relative
-to its own package — and derives `VERSION` and `.claude-plugin/plugin.json` from the source
+This script copies only the slice `quenching.specs` imports — `common/` and `specs/` — with
+`assets/specs/` (which `quenching/specs/schema.py` finds relative to its own package) and
+`assets/portal/` (the read-only portal), and derives `VERSION` and `.claude-plugin/plugin.json` from the source
 `VERSION`, so a release never needs to remember the reader.
 
     --write   rewrite the generated set and delete generated files the source no longer has
@@ -25,7 +26,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "plugins/quenching"
 TARGET = ROOT / "plugins/quenching-specs-reader"
-COPY_DIRS = ("assets/bin", "assets/specs", "assets/portal")
+# `specs` imports only `common` and itself (checked by the lockstep test), so the other pillars
+# (design, toolchain, delivery, ...) and the `cq` router stay out: `bin/cq-specs-read` calls
+# `quenching.specs.commands.cli` directly and never routes through `cq`.
+COPY_DIRS = ("assets/bin/quenching/common", "assets/bin/quenching/specs",
+             "assets/specs", "assets/portal")
 EXECUTABLE = 0o755
 REGULAR = 0o644
 
