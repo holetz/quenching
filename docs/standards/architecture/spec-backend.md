@@ -587,6 +587,42 @@ and the GitHub and Azure Boards backends keep working unchanged beside it.
 - **A batch is one commit.** `write_specs` replaces N documents in a single commit, checking every
   blob before writing. A triage writes its priorities this way.
 
+### Cards
+
+The card is the thin tracker item beside a git-store spec: a projection a human can read, label
+and discuss under. The spec on the branch stays the source of truth.
+
+- **Configuration.** `card: {"provider": "github" | "azure-boards" | "none", "at": "capture"}`
+  on the branch or in `.claude/quenching.json`. An absent provider is `github` when the remote is
+  GitHub and `none` otherwise.
+- **Identity.** With a provider, the card is created first, in one request, and its native number
+  is the spec ID. `cq specs new --card <n>` adopts an existing issue or work item instead: its
+  text becomes `## Problem` when the spec has none, `<n>` is the ID, and the item is rewritten to
+  the thin card after the spec is written. A tracker backend refuses `--card`.
+- **Body.** A `<!-- quenching-card -->` marker (never the tracker backends' spec marker), the
+  title, the summary or the first paragraph of `## Problem`, `Tasks n/N`, phase and stage, and the
+  location of the spec file on the branch. The `spec:*` labels come from `derive_labels` and
+  `reconcile_label_set`, and the item closes and reopens with the phase.
+- **Written only on lifecycle transitions.** The facts that justify a write are the title, the
+  tags, the derived `spec:*` labels, the board state and the phase. The card layer compares them
+  before and after the spec write, and a plain section edit or a task tick that changes none of
+  them makes no card request. The first tick is a transition, because it moves the stage to
+  `executing`. One transition is one request, and progress and summary ride along without
+  causing a write.
+- **Azure Boards.** Writes use `az boards work-item create|update`, which accept a PAT, and never
+  `az rest`. `azurePlacement` (area, iteration, board column, declared state) is applied at
+  create and at transitions only, so a tick never undoes a move on the board.
+- **A card failure never rolls back the spec.** The spec is written first (the card first only
+  at creation, where there is no spec yet). A failed card write after it raises `sp-card-failed`
+  naming the spec, and the next transition refreshes the card.
+- **Migration.** `cq specs migrate --to git` is a dry run unless `--write`. It writes every spec
+  under its own ID in one commit (open in `specs/`, closed in `specs/archive/`), copies the
+  specs-axis keys into the branch `quenching.json`, and prints the `.claude/quenching.json`
+  change. It then proves that the `git` listing equals the source modulo locator and reports
+  every difference. `--thin-open-cards` rewrites only open items to the thin card; closed ones
+  are never touched. The tracker backends stay supported, and `cq specs doctor` flags them as
+  deprecated.
+
 ## What this standard does not yet cover
 
 The interface and the equality are proved for the two supported providers and the memory fake, and

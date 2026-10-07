@@ -240,10 +240,19 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
         for key in BRANCH_CONFIG_KEYS:
             if key in branch_values:
                 values[key] = branch_values[key]
-        for key in ("artifactLanguage", "card", "cardAt"):
-            value = values.get(key)
-            if isinstance(value, str) and value.strip():
-                out[key] = value.strip()
+        value = values.get("artifactLanguage")
+        if isinstance(value, str) and value.strip():
+            out["artifactLanguage"] = value.strip()
+        # `card` is `{"provider": github|azure-boards|none, "at": "capture"}`; the bare string
+        # (`"card": "github"`) and the sibling `cardAt` are read as the same declaration. An
+        # absent provider is left out, so the card layer can default it from the remote.
+        raw_card = values.get("card")
+        card = dict(raw_card) if isinstance(raw_card, dict) else (
+            {"provider": raw_card} if isinstance(raw_card, str) else {})
+        if values.get("cardAt") and "at" not in card:
+            card["at"] = values["cardAt"]
+        out["card"] = {k: str(v).strip() for k, v in card.items()
+                       if k in ("provider", "at") and isinstance(v, str) and v.strip()}
 
     val = values.get("worktreeSetup")
     if isinstance(val, str) and val.strip():
