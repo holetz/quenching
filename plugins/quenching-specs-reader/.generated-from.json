@@ -1,6 +1,6 @@
 {
   "source": "plugins/quenching",
-  "source_sha256": "cfaa010d298b47e615ae45d65dab905f17a836f5266ad74b4b28547c6143dda2",
+  "source_sha256": "e001309615c0d3e87eb790bbb93692034882122cc15ff7d632a647ad1472feb7",
   "generator": "scripts/sync_specs_reader_plugin.py",
   "copied": [
     "assets/bin/quenching/common",

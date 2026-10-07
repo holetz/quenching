@@ -289,7 +289,7 @@ g. **Run and report the declared hook for this event, and move on.** Once the sp
    then invoke the declared command as a `Skill` with the task and commit context:
 
    ```text
-   after_specs_execute_task — hook: /my:security-review — optional: true
+   after_specs_execute_task — hook: /security-review — optional: true
      condition: none declared
      prompt: none declared
    Skill("<declared hook command>", "<declared prompt plus task and commit context>")
@@ -299,8 +299,11 @@ g. **Run and report the declared hook for this event, and move on.** Once the sp
    absence of `enabled` means enabled. The executor never evaluates `condition`: it reports the
    declaration and passes it as context to the hook. An optional hook failure is reported and the
    run continues; a non-optional hook failure is reported and pauses the run. Neither failure
-   undoes the spec tick or rebuilds the already successful commit. A hook absent from config
-   is silent.
+   undoes the spec tick or rebuilds the already successful commit. **Classify every hook that
+   was invoked as `ran`, `failed` (the command resolved and its run failed) or `unresolved` (no such
+   command exists), and carry the classification to the report** — an orchestrated run returns it
+   as the spec-runner's `HOOKS:` line, so an optional hook that never resolved is never lost. A hook
+   absent from config is silent.
 
 h. **At a section boundary, keep the task commits and continue to the next task.** The branch is at
    a clean, independently anchored boundary; another section may still be ahead. A section boundary

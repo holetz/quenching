@@ -24,8 +24,11 @@ there.
 
 ## Forbidden
 
-`git stash`, `git checkout`, `git switch`, `git reset`, `git clean`, `git push --force`, and any
-write outside your worktree. To set work aside, make a WIP commit. If a command seems to need one
+`git stash`, `git checkout` (including `git checkout -- <path>`), `git switch`, `git reset`,
+`git restore`, `git rebase`, `git commit --amend`, `git clean`, `git push --force`, and any
+write outside your worktree. A sha already reported in `SHAS` is never rewritten; a mistake is
+fixed by a new commit. The verifier checks the ancestry of every `SHAS` entry and the reflog.
+To set work aside, make a WIP commit. If a command seems to need one
 of these, stop and return `STATE: blocked` with the reason.
 
 ## Budget
@@ -43,6 +46,7 @@ TASKS: <checked>/<total>
 GATE: pass | fail | not-run — <command and exit code>
 PR: <url or ->
 DISCOVERIES: <count> — <one line each, max 5>
+HOOKS: <event> <command> ran|failed|unresolved — one line per declared hook, `-` when none
 GIT AUDIT: stash list <empty|n entries>; status <clean|dirty>; branch <name>
 NOTE: <one line, only if state is not done>
 ```

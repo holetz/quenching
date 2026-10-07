@@ -164,6 +164,10 @@ its remedy verbatim, and stop; migrating the target's config is not this command
 Any other backend failure (`sp-backend-unavailable`, `sp-worktree-unusable`,
 `sp-worktree-failed`) is reported verbatim, with the finding's own declared remedy and nothing
 invented beside it.
+**A failure after the issue was created** (a refusal carrying `issue`/`url`, or any `new` that
+died past its POST) is never retried blind: search the target by exact title first
+(`cq specs list --json`, matched on the title), and finish or reuse the issue that exists instead
+of running `new` again — a blind retry duplicates it.
 
 The chained `cq specs validate --spec <id>` is the whole check — its own finding, if any, is named
 verbatim in step 6, never swallowed by the `&&`.
