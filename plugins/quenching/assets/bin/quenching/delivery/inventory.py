@@ -223,10 +223,18 @@ def _job(lines: list[str], name: str, kind: str) -> Job:
                 commands.append(_strip_comment(command.group(1)))
     runtimes: list[str] = []
     for line in lines:
-        match = re.search(r"\b(python|node|ruby|java|go|rust)[-_]version:\s*([^\s#]+)",
+        match = re.search(r"\b(python|node|ruby|java|go|rust)[-_]version:\s*(.*?)\s*$",
                           line, re.IGNORECASE)
         if match:
-            runtimes.append(match.group(1).lower() + ":" + match.group(2).strip(" '\""))
+            language = match.group(1).lower()
+            value = _strip_comment(match.group(2)).strip()
+            if value.startswith("["):
+                # A flow list is a matrix axis: every element is one deliberate cell.
+                for item in value.strip("[]").split(","):
+                    if item.strip(" '\""):
+                        runtimes.append(f"{language}:matrix:{item.strip(' ' + chr(39) + chr(34))}")
+            elif "${{" not in value and value:
+                runtimes.append(f"{language}:{value.strip(chr(39) + chr(34) + ' ')}")
         image = re.search(r"\bimage:\s*(?:[^/\s]+/)?(python|node|ruby|java|go|rust):([^\s#]+)",
                           line, re.IGNORECASE)
         if image:
@@ -256,7 +264,7 @@ def _job(lines: list[str], name: str, kind: str) -> Job:
         or kind == "gitlab-ci"
         or kind == "azure-pipelines" and any(
             re.match(r"^\s*-\s*checkout:\s*self(?:\s|$)", line) for line in lines),
-        setup=any(action.startswith("actions/setup-") for action in actions)
+        setup=any(re.match(r"^(?:[^/@]+/)?setup-", action) for action in actions)
         or kind == "gitlab-ci" and any(re.match(r"^\s*(?:image|before_script):", line)
                                         for line in lines)
         or kind == "azure-pipelines" and any(

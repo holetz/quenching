@@ -152,6 +152,44 @@ class DeliveryResults(unittest.TestCase):
         self.assertTrue(all(item["band"] == "Structural"
                             for item in payload["findings"]))
 
+    def test_matrix_setup_uv_and_bash_only_jobs_raise_no_false_errors(self):
+        payload, code = self._run({
+            ".github/workflows/ci.yml": (
+                "name: CI\non:\n  push:\n    branches: [main]\njobs:\n"
+                "  gate:\n    strategy:\n      matrix:\n"
+                "        python-version: ['3.11', '3.13']\n    steps:\n"
+                "      - uses: actions/checkout@v4\n"
+                "      - uses: actions/setup-python@v5\n"
+                "        with:\n          python-version: ${{ matrix.python-version }}\n"
+                "      - run: python -m unittest\n"
+                "  lint:\n    steps:\n      - uses: actions/checkout@v4\n"
+                "      - uses: astral-sh/setup-uv@v5\n"
+                "      - run: uv run ruff check .\n"
+                "  functional:\n    steps:\n      - uses: actions/checkout@v4\n"
+                "      - run: bash scripts/check.sh\n"
+            ),
+        })
+        self.assertEqual([], [item for item in payload["findings"]
+                              if item["severity"] == "error"])
+        gate = payload["inventory"]["workflows"][0]["jobDetails"][0]
+        self.assertEqual(["python:matrix:3.11", "python:matrix:3.13"], gate["runtimes"])
+
+    def test_real_runtime_drift_still_reports_beside_a_matrix(self):
+        payload, _ = self._run({
+            ".github/workflows/ci.yml": (
+                "name: CI\non: push\njobs:\n"
+                "  gate:\n    steps:\n      - uses: actions/checkout@v4\n"
+                "      - uses: actions/setup-python@v5\n"
+                "        with:\n          python-version: ['3.11', '3.13']\n"
+                "      - run: pytest\n"
+                "  old:\n    steps:\n      - uses: actions/checkout@v4\n"
+                "      - uses: actions/setup-python@v5\n"
+                "        with:\n          python-version: '3.9'\n"
+                "      - run: pytest\n"
+            ),
+        })
+        self.assertIn("delivery-runtime-drift", {item["code"] for item in payload["findings"]})
+
     def test_judgement_findings_preserve_owner_boundaries(self):
         payload, code = self._run({
             ".github/workflows/release.yml": (
