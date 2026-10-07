@@ -29,6 +29,13 @@
 # cp1252 read, a hardcoded marketplace ref, a turn cap, a flaky probe — and not one to a surface
 # regression. A check that has only ever caught itself earns a narrow trigger, not a broad one.
 #
+# Two further triggers, both opt-in by construction. `QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh`
+# runs checks 1, 2 and 4 inside the repository gate, and there exit 1 OR 2 fails the gate: whoever
+# asked for the measurement does not accept "inconclusive", and a missing `claude` fails too. Without
+# the variable the gate prints SKIPPED and stays deterministic. `/release` runs that gated form before
+# the bump and blocks on any exit other than 0. CI runs only `--selfcheck` and `--selftest`: it has no
+# `claude` CLI, so it measures no surface load.
+#
 # COST — each check is a full agent session, so scope the run to what the change can break:
 #
 #   (no flag)      checks 1, 2, 4 — command bodies, citation paths, and both declared fronts
