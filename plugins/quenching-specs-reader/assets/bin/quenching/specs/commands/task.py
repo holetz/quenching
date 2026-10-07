@@ -11,6 +11,7 @@ from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, read_one
 from quenching.specs.parse.derive import derive_info
 from quenching.specs.parse.edit import upsert_section
+from quenching.specs.parse.epics import is_epic
 from quenching.specs.parse.tasks import (BLOCKED_REASON_RE, CHECKBOX_RE, COMMIT_SHA_RE,
                                          SUBJECT_RE)
 
@@ -51,6 +52,14 @@ def cmd_task(args, root: str, out: Emitter) -> int:
     if err:
         return out.emit_err(args.json, err)
     ident = args.check or args.uncheck or args.block or args.descope
+    if ident and is_epic(info["frontmatter"]):
+        # An epic item is DERIVED from its member spec — a box written here would be a second,
+        # stale copy of a fact the member already holds.
+        return out.emit_err(args.json, {
+            "code": "sp-epic-derived-task", "exit": 2, "id": info["id"], "task": ident,
+            "message": f"'{info['id']}' is an epic — its items are derived from the member "
+                       f"specs and never ticked; act on the member spec "
+                       f"(`cq specs status --epic {info['id']}`)"})
     if not ident:
         out.emit(args.json, {"ok": False, "code": "sp-no-action",
                              "message": "pass --check, --uncheck, --block or --descope"},

@@ -89,6 +89,9 @@
       },
       "chore": {
         "description": "Maintenance with no observable behavior change: dedupe, internal rename, tightening prose, moving a file. Choose when a plugin user would notice nothing after the merge."
+      },
+      "epic": {
+        "description": "A program of work that spans several specs: its tasks are member specs, with dependencies and waves, and their state is derived from the members. Choose when the work is too large for one spec and the value is in sequencing the specs, not in building anything in the epic itself."
       }
     }
   }

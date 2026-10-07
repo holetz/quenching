@@ -225,6 +225,10 @@ sentence, and **link out** rather than explaining in full here.
 - [**Entry point**](standards/architecture/ops-front.md) — an operation exposed by the ops router
   and named in its generated registry, whose implementation may live in a domain package rather
   than in the router itself.
+- [**Epic**](standards/workflows/epics.md) — a spec with `workItemType: epic` whose `## Tasks`
+  items reference member specs (`— spec: #<id> — after: S1`) and whose item state is derived from
+  the member, never ticked; the members carry `epic: <id>` back. It is how work larger than one
+  spec is sequenced, read with `cq specs status --epic` and `cq specs next --epic`.
 - **Published skeleton** — the OKF bundle the plugin SHIPS, at
   `plugins/quenching/assets/knowledge/`: index files plus a single leaf standard
   (`standards/agents/communication.md`). It is scaffolding a target fills in, never this
