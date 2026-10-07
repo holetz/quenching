@@ -44,8 +44,11 @@ import _paths  # noqa: F401  — must precede the `quenching` import; see its do
 from quenching.components.commands.lint import (
     UNSCOPED_TOOLS,
     _numbered_steps,
+    _agent_grant_findings,
+    _cq_call_findings,
     _step_criteria,
     cmd_lint,
+    lint_agents,
     lint_command,
     marker_present,
     unscoped_marker,
@@ -159,8 +162,8 @@ class StrictFrontmatter(unittest.TestCase):
             status = cmd_lint(SimpleNamespace(path=None, json=True), str(plugin_root))
         payload = json.loads(output.getvalue())
         errors = [f for f in payload["findings"] if f["severity"] == "error"]
+        self.assertEqual(errors, [])  # first: a red gate names the finding, not just the status
         self.assertEqual(status, 0)
-        self.assertEqual(errors, [])
         self.assertEqual(payload["commandCount"], 57)
 
 
@@ -296,6 +299,70 @@ class BodySizeBudgetTests(unittest.TestCase):
 
     def test_the_budget_counts_bytes_not_characters(self):
         self.assertIn("sk-body-size", self._codes("é" * 7000))
+
+
+class CqCallsAgainstTheParsers(unittest.TestCase):
+    """A `cq` call in prose is checked against the pillar's real argparse, in commands and agents."""
+
+    WHERE = {"command": "agent:x", "path": "agents/x.md"}
+
+    def _codes(self, body):
+        return [f["code"] for f in _cq_call_findings(body, self.WHERE)]
+
+    def test_a_missing_required_option_is_a_flag_finding(self):
+        found = _cq_call_findings("run `cq specs show <id>` first", self.WHERE)
+        self.assertEqual([f["code"] for f in found], ["sk-cq-flag"])
+        self.assertEqual(found[0]["severity"], "error")
+        self.assertEqual(found[0]["line"], 1)
+        self.assertIn("--spec", found[0]["message"])
+
+    def test_an_unknown_flag_is_a_flag_finding(self):
+        self.assertEqual(self._codes("`cq specs show --spec <id> --nope`"), ["sk-cq-flag"])
+
+    def test_an_unknown_verb_is_named(self):
+        found = _cq_call_findings("`cq specs bogus`", self.WHERE)
+        self.assertEqual([f["code"] for f in found], ["sk-cq-unknown-verb"])
+        self.assertIn("bogus", found[0]["message"])
+
+    def test_a_correct_call_is_clean_inline_and_fenced(self):
+        body = "`cq specs show --spec <id> --json`\n\n```bash\ncq --root . specs status --spec 1\n```\n"
+        self.assertEqual(self._codes(body), [])
+
+    def test_a_negated_line_is_ignored(self):
+        self.assertEqual(self._codes("never run `cq specs bogus`"), [])
+
+    def test_a_span_that_only_names_the_verb_cites_it(self):
+        self.assertEqual(self._codes("the tick is `cq specs task --check`"), [])
+
+    def test_a_fenced_call_continued_with_a_backslash_is_one_call(self):
+        body = "```bash\ncq specs show \\\n  --spec 1\n```\n"
+        self.assertEqual(self._codes(body), [])
+
+
+class AgentGrantGap(unittest.TestCase):
+    WHERE = {"command": "agent:x", "path": "agents/x.md"}
+
+    def test_a_cq_call_without_its_grant_is_a_gap(self):
+        found = _agent_grant_findings("run `cq specs record 1 branch`", "Read, Bash(cq specs show:*)",
+                                      self.WHERE)
+        self.assertEqual([f["code"] for f in found], ["sk-agent-grant-gap"])
+        self.assertEqual(found[0]["tool"], "cq specs record")
+
+    def test_a_granted_call_and_an_unscoped_bash_are_clean(self):
+        body = "`cq specs show --spec 1` and `git log -3`"
+        self.assertEqual(_agent_grant_findings(body, "Bash(cq specs show:*), Bash(git log:*)",
+                                               self.WHERE), [])
+        self.assertEqual(_agent_grant_findings(body, "Bash, Read", self.WHERE), [])
+
+    def test_lint_agents_reads_the_agents_folder(self):
+        with tempfile.TemporaryDirectory() as root:
+            agents = pathlib.Path(root, "agents")
+            agents.mkdir()
+            (agents / "a.md").write_text(
+                "---\nname: a\ntools: Read, Bash(cq specs show:*)\n---\n"
+                "Run `cq specs show <id>` then `cq specs record 1 branch`.\n", encoding="utf-8")
+            codes = sorted(f["code"] for f in lint_agents(root, root))
+        self.assertEqual(codes, ["sk-agent-grant-gap", "sk-cq-flag"])
 
 
 if __name__ == "__main__":
