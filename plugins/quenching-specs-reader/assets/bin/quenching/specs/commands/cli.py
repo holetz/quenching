@@ -243,7 +243,7 @@ def _add_inspection(sub) -> None:
     sp = add_json(sub.add_parser("release", help="bump the plugin's version-carrying "
                                                   "artifacts and tag the commit — the plugin's "
                                                   "own repository only"))
-    sp.add_argument("version", help="the new version, X.Y.Z")
+    sp.add_argument("new_version", metavar="version", help="the new version, X.Y.Z")
 
     add_json(sub.add_parser("doctor", help="workspace shape; remedies declared"))
 
