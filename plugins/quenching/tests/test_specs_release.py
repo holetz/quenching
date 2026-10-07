@@ -7,6 +7,7 @@ matter: four agreeing values all move together, and one already-drifted value re
 any of the four is touched — kept as two separate cases below rather than folded into one, so
 a failure names which direction broke.
 """
+import json
 import os
 import tempfile
 import unittest
@@ -24,6 +25,8 @@ from quenching.specs.release import (
 KINDS = {
     "plain": "9.9.9\n",
     "json": '{\n  "name": "x",\n  "version": "9.9.9"\n}\n',
+    "jsonall": '{\n  "plugins": [\n    {"name": "a", "version": "9.9.9"},\n'
+               '    {"name": "b", "version": "9.9.9"}\n  ]\n}\n',
     "py": 'VERSION = "9.9.9"  # a comment that must survive the bump\n',
 }
 
@@ -46,13 +49,15 @@ class Lockstep(unittest.TestCase):
 
     def test_every_artifact_reads_back_the_new_version(self):
         bump_release_artifacts(self.tmp, "9.10.0")
-        pattern = {"plain": None, "json": _RELEASE_JSON_VERSION_RE, "py": _RELEASE_PY_VERSION_RE}
+        pattern = {"plain": None, "json": _RELEASE_JSON_VERSION_RE,
+                   "jsonall": _RELEASE_JSON_VERSION_RE, "py": _RELEASE_PY_VERSION_RE}
         for rel, kind in RELEASE_ARTIFACTS:
             with self.subTest(artifact=rel):
                 text = read_text(os.path.join(self.tmp, rel))
                 pat = pattern[kind]
-                got = text.strip() if pat is None else pat.search(text).group(2)
-                self.assertEqual(got, "9.10.0")
+                got = ({text.strip()} if pat is None
+                       else {m.group(2) for m in pat.finditer(text)})
+                self.assertEqual(got, {"9.10.0"})
 
     def test_bumping_a_py_artifact_touches_only_the_quoted_value(self):
         # The substitution is a regex on the VERSION line, not a line replacement — a comment
@@ -89,6 +94,38 @@ class Lockstep(unittest.TestCase):
                 continue
             with self.subTest(artifact=rel):
                 self.assertEqual(read_text(os.path.join(self.tmp, rel)), KINDS[kind])
+
+    def test_a_marketplace_entry_without_a_version_is_refused(self):
+        path = os.path.join(self.tmp, ".claude-plugin/marketplace.json")
+        write_text(path, '{"plugins": [{"name": "a", "version": "9.9.9"}, {"name": "b"}]}')
+        self.assertFalse(bump_release_artifacts(self.tmp, "9.10.0")["ok"])
+
+
+REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+
+
+class RealRepoLockstep(unittest.TestCase):
+    def test_every_published_version_is_equal(self):
+        found = {}
+        for rel, kind in RELEASE_ARTIFACTS:
+            text = read_text(os.path.join(REPO, rel))
+            self.assertIsNotNone(text, rel)
+            if kind == "plain":
+                found[rel] = text.strip()
+            elif kind == "py":
+                found[rel] = _RELEASE_PY_VERSION_RE.search(text).group(2)
+            elif kind == "json":
+                found[rel] = json.loads(text)["version"]
+        market = json.loads(read_text(os.path.join(REPO, ".claude-plugin/marketplace.json")))
+        for entry in market["plugins"]:
+            self.assertIn("version", entry, entry["name"])
+            found["marketplace:" + entry["name"]] = entry["version"]
+        self.assertEqual(len(set(found.values())), 1, found)
+
+    def test_manifests_carry_no_hard_coded_command_count(self):
+        for rel in (".claude-plugin/marketplace.json",
+                    "plugins/quenching/.claude-plugin/plugin.json"):
+            self.assertNotRegex(read_text(os.path.join(REPO, rel)), r"\d+ commands", rel)
 
 
 if __name__ == "__main__":
