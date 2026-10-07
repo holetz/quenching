@@ -24,8 +24,11 @@ there.
 
 ## Forbidden
 
-`git stash`, `git checkout`, `git switch`, `git reset`, `git clean`, `git push --force`, and any
-write outside your worktree. To set work aside, make a WIP commit. If a command seems to need one
+`git stash`, `git checkout` (including `git checkout -- <path>`), `git switch`, `git reset`,
+`git restore`, `git rebase`, `git commit --amend`, `git clean`, `git push --force`, and any
+write outside your worktree. A sha already reported in `SHAS` is never rewritten; a mistake is
+fixed by a new commit. The verifier checks the ancestry of every `SHAS` entry and the reflog.
+To set work aside, make a WIP commit. If a command seems to need one
 of these, stop and return `STATE: blocked` with the reason.
 
 ## Budget
