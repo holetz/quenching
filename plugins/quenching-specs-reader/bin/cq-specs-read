@@ -11,6 +11,8 @@ READ-ONLY IN TWO LAYERS
    `section`'s `--write`/`--fold` (or any prefix argparse would expand to them) is refused.
 2. Before dispatch, every write path of every loaded backend class is replaced with a
    refusal. A read verb that one day grows a side effect still cannot reach the tracker.
+3. `SpecBackend.read_only` is set, which the lowest-level `gh`/`az` runners check for every
+   call that is not a read. It covers private helpers the method list above does not name.
 
 Both refuse with exit 2 — the same refusal code every `cq` verb uses.
 
@@ -107,6 +109,9 @@ def block_writes() -> None:
                            f"was refused and nothing was written",
             })
         return method
+
+    # The transport-level guard: any non-read `gh`/`az` call is refused before a process starts.
+    base.SpecBackend.read_only = True
 
     pending = [base.SpecBackend]
     while pending:
