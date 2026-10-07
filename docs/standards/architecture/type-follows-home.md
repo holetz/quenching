@@ -7,7 +7,7 @@ tags: [architecture, taxonomy, frontmatter, okf, convention]
 timestamp: 2026-08-13
 audience: both
 authority: current
-source: renomear-docs-para-knowledge spec (task 1.2, 2026-08-13) — proved by the rename itself: every doc under the home that became `concepts/` was restamped `type: concept` in the same commit that moved it
+source: "renomear-docs-para-knowledge spec (task 1.2, 2026-08-13) — proved by the rename itself: every doc under the home that became `concepts/` was restamped `type: concept` in the same commit that moved it"
 maintainer: quenching
 ---
 

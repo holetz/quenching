@@ -183,7 +183,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   refreshed on four events so the next run picks up where the last stopped.
 - **Harness** — the agent-facing instruction files of a repository (`CLAUDE.md`, `AGENTS.md`) that
   point into `/docs/` instead of duplicating it.
-- [**Impeccable**](../standards/architecture/design-front.md) — optional screen-craft consumer that
+- [**Impeccable**](standards/architecture/design-front.md) — optional screen-craft consumer that
   reads generated `PRODUCT.md`, `DESIGN.md`, and `.impeccable/design.json` artifacts.
 - [**Integration branch**](standards/git/branching.md) — under the develop/main flow, `develop`:
   where every `plan/<id>-<handle>` merges at conclude. It accumulates as many specs as it likes with

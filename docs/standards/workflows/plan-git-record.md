@@ -193,7 +193,7 @@ same admission test — a fact no derivation can reproduce:
 
 **Where the host links the merge back to the branch, both records shed the "mandatory" half of
 their name.** `cq git base --json` reports `isDefault` alongside the resolved base — whether that
-base is the host's own default branch. `Closes #<n>` only populates `closingIssuesReferences` — the fact a caller can read back — when the PR's base is that default; on any other base nothing readable exists to fall back on ([ADR 0003](../decisions/0003-plan-git-record-history.md) §closingIssuesReferences). The rule this forces:
+base is the host's own default branch. `Closes #<n>` only populates `closingIssuesReferences` — the fact a caller can read back — when the PR's base is that default; on any other base nothing readable exists to fall back on ([ADR 0003](../../decisions/0003-plan-git-record-history.md) §closingIssuesReferences). The rule this forces:
 
 | `cq git base`'s `isDefault` | `pr:`/`merge:` |
 | --- | --- |
@@ -202,7 +202,7 @@ base is the host's own default branch. `Closes #<n>` only populates `closingIssu
 
 `/quenching:git:pr:create` and `/quenching:git:merge` both consult this fact before deciding
 whether to stamp; `/quenching:specs:conclude` consults it only to decide which of the two to name
-in its own handoff. The same rule is assumed, not yet measured, for `azure-boards` ([ADR 0003](../decisions/0003-plan-git-record-history.md) §azure-boards assumption).
+in its own handoff. The same rule is assumed, not yet measured, for `azure-boards` ([ADR 0003](../../decisions/0003-plan-git-record-history.md) §azure-boards assumption).
 
 **The record is never the signal.** A human may cut `plan/<id>-<handle>` by hand and stamp nothing, and a
 record outlives the branch it names. Anything asking whether a spec is in flight asks git for a
@@ -217,7 +217,7 @@ record IS the signal.
 
 <!-- rationale -->
 
-The exception was found when every in-place spec ranked first in `cq specs next` ([ADR 0003](../decisions/0003-plan-git-record-history.md) §The in-place liveness exception). An expiry condition the sentinel value can never satisfy is not a guard.
+The exception was found when every in-place spec ranked first in `cq specs next` ([ADR 0003](../../decisions/0003-plan-git-record-history.md) §The in-place liveness exception). An expiry condition the sentinel value can never satisfy is not a guard.
 
 ## The branch also carries a git-native mark, outside any frontmatter record
 

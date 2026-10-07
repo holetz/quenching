@@ -1,7 +1,7 @@
 ---
 type: concept
 title: cq components lint exits 0 with warning-severity findings still present
-description: cq components lint's exit code alone never proves a warning-severity finding closed, and a single-file invocation re-roots the command path — both need naming so a verify: written against this tool does not pass in silence
+description: "cq components lint's exit code alone never proves a warning-severity finding closed, and a single-file invocation re-roots the command path — both need naming so a verify: written against this tool does not pass in silence"
 resource: plugins/quenching/assets/bin/quenching/components/commands/lint.py
 tags: [automation, cq, components, lint, verification, gotcha]
 timestamp: 2026-08-10
