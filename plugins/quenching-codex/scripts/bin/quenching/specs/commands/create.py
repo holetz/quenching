@@ -16,6 +16,7 @@ from quenching.specs.config import (azure_workitemtype_retirement, load_config,
 from quenching.specs.parse import derive_info
 from quenching.specs.parse.edit import split_section_stream, upsert_section
 from quenching.specs.parse.fields import set_frontmatter_record
+from quenching.specs.parse.sections import section_state
 from quenching.specs.schema import (DEFAULT_VERIFICATION, canonical_headings, capture_form,
                                     load_schema, section_guidance)
 
@@ -149,10 +150,25 @@ def cmd_new(args, root: str, out: Emitter) -> int:
     # `defaultSubject` `open_azure_backend` applied when the backend was opened.
     if subject and subject.get("parent") and hasattr(backend, "parent_id"):
         backend.parent_id = subject["parent"]
-    path = backend.create_spec("plans", body)
+    card_args = {}
+    if getattr(args, "card", None) is not None:
+        if not hasattr(backend, "read_card"):
+            return out.emit_err(args.json, {
+                "code": "sp-card-unsupported", "exit": 2,
+                "message": "--card adopts an existing issue or work item into the branch "
+                           f"store; backend '{backend.name}' keeps the spec in the tracker "
+                           "item itself — nothing was written"})
+        # Adoption: the item's own text becomes `## Problem` when the capture supplied none,
+        # and the item is rewritten to the thin card once the spec is on the branch.
+        item = backend.read_card(args.card)
+        cur = derive_info({"phase": "plans"}, body)
+        if item["body"].strip() and section_state(cur["sections"], "Problem") != "filled":
+            body, _ = upsert_section(cur, "Problem", f"## Problem\n\n{item['body'].strip()}\n")
+        card_args = {"card": args.card}
+    path = backend.create_spec("plans", body, **card_args)
     # The provider-native id is the locator's trailing number (issue or work-item URL); a
     # caller chaining `validate --spec <id>` must not have to parse the URL to get it.
-    id_match = re.search(r"(\d+)/?(?:[?#].*)?$", path or "")
+    id_match = re.search(r"(\d+)(?:\.md)?/?(?:[?#].*)?$", path or "")
     spec_id = int(id_match.group(1)) if id_match else None
     id_note = f"  id: {spec_id}" if spec_id is not None else ""
     out.emit(args.json,

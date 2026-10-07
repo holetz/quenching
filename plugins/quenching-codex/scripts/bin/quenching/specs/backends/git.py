@@ -70,6 +70,9 @@ def _cache_path(key: str) -> str:
     return os.path.join(base, "quenching", "git", f"{digest}.json")
 
 
+_UNSET = object()
+
+
 class GitBackend(SpecBackend):
     """Specs on a git branch, written by plumbing and read from the remote-tracking ref.
 
@@ -80,7 +83,7 @@ class GitBackend(SpecBackend):
 
     def __init__(self, repo_root: str, remote: str = DEFAULT_REMOTE,
                  branch: str = STORE_BRANCH, mirror_dir: str | None = None,
-                 remote_url: str | None = None) -> None:
+                 remote_url: str | None = None, card=_UNSET) -> None:
         self.repo_root = os.path.abspath(repo_root)
         self.remote = remote
         self.branch = branch
@@ -93,6 +96,46 @@ class GitBackend(SpecBackend):
         self._blob_text: dict[str, str] = {}
         cache_key = f"{self.mirror_dir or self.repo_root}\0{remote}\0{branch}"
         self._cache_file = _cache_path(cache_key)
+        # The card client: `_UNSET` resolves it from the configuration on first use, `None`
+        # means "no card", and a client object is used as given (tests, migration).
+        self._card_client = card
+
+    # -- the card -------------------------------------------------------------- #
+    def card(self):
+        """The configured card client, or None when this repository keeps no card."""
+        if self._card_client is _UNSET:
+            if self.read_only:
+                self._card_client = None
+            else:
+                from quenching.specs import cards          # deferred: cards imports the trackers
+                self._card_client = cards.resolve_card_client(self.repo_root)
+        return self._card_client
+
+    def read_card(self, number: int) -> dict:
+        """`{title, body, closed}` of an existing tracker item, for `new --card <n>`."""
+        client = self.card()
+        if client is None:
+            raise _refusal("sp-card-none", "no card provider is configured, so there is no "
+                           "issue or work item to adopt; set `card` in the branch config")
+        return client.read(int(number))
+
+    def _card_transitions(self, pairs: list[tuple[dict, dict]]) -> None:
+        """One request per spec whose lifecycle facts changed — after the spec is written, so
+        a tracker failure is raised loudly and never undoes the document."""
+        from quenching.specs import cards
+        client = self.card()
+        if client is None:
+            return
+        failure = None
+        for old, new in pairs:
+            if cards.lifecycle_key(old) == cards.lifecycle_key(new):
+                continue
+            try:
+                client.update(int(new["id"]), cards.card_state(new))
+            except BackendRefusal as exc:
+                failure = failure or cards.card_refusal(new["id"], "updated", exc.err)
+        if failure:
+            raise failure
 
     # -- transport ------------------------------------------------------------ #
     def _base(self) -> list[str]:
@@ -290,15 +333,52 @@ class GitBackend(SpecBackend):
             return changes, None
 
         ids = " ".join(str(int(info["id"])) for info, _ in items)
+        old_infos = [dict(info) for info, _ in items]
         blobs = self._store(apply, f"write {ids}")
         for info, _ in items:
             for path, blob in blobs.items():
                 if path.endswith(f"/{int(info['id'])}.md"):
                     info["_git_blob"] = blob
+        if blobs and self.card() is not None:
+            self._card_transitions([(old, derive_info(old, text))
+                                    for old, (_, text) in zip(old_infos, items)])
 
-    def create_spec(self, phase: str, text: str, spec_id: int | str | None = None) -> str:
-        """Store a new spec. `spec_id` is the hook for an ID a tracker card already owns;
-        without it the branch counter allocates one under the same compare-and-swap."""
+    def create_spec(self, phase: str, text: str, spec_id: int | str | None = None,
+                    card: int | None = None) -> str:
+        """Store a new spec.
+
+        With a card provider and no explicit ID, the card is created FIRST (one request) and
+        its native number becomes the spec's ID. `card=<n>` adopts an existing tracker item
+        instead: the document is written under that number, then the item is rewritten to the
+        thin card. `spec_id` alone is the hook for an ID the caller already owns; with none of
+        them the branch counter allocates one under the same compare-and-swap."""
+        from quenching.specs import cards
+        client = self.card()
+        fresh = derive_info({"phase": phase}, text)
+        adopting = card is not None
+        created_card = False
+        if adopting:
+            if client is None:
+                raise _refusal("sp-card-none", "--card needs a card provider; none is configured")
+            spec_id = int(card)
+        elif spec_id is None and client is not None:
+            try:
+                spec_id = client.create(cards.card_state(fresh))
+            except BackendRefusal as exc:
+                exc.err["message"] += " — the card is created first, so no spec was written"
+                raise
+            created_card = True
+        locator = self._create(phase, text, spec_id, orphan_card=created_card)
+        if adopting:
+            adopted = derive_info({"id": int(spec_id), "phase": phase}, text)
+            try:
+                client.update(int(spec_id), cards.card_state(adopted))
+            except BackendRefusal as exc:
+                raise cards.card_refusal(spec_id, "rewritten as a thin card", exc.err)
+        return locator
+
+    def _create(self, phase: str, text: str, spec_id: int | str | None,
+                orphan_card: bool = False) -> str:
         allocated: dict[str, int] = {}
 
         def apply(snapshot):
@@ -313,14 +393,58 @@ class GitBackend(SpecBackend):
             else:
                 new_id = int(spec_id)
                 if new_id in ids:
+                    extra = (f"; the card #{new_id} was already created and is now an orphan "
+                             "to close by hand" if orphan_card else "")
                     raise _refusal("sp-git-id-taken", f"spec {new_id} already exists on branch "
-                                   f"'{self.branch}'; nothing was written", id=new_id)
+                                   f"'{self.branch}'; nothing was written{extra}", id=new_id)
             allocated["id"] = new_id
             return {self._path(phase, new_id): text,
                     COUNTER_PATH: f"{max(counter, new_id + 1)}\n"}, None
 
         self._store(apply, lambda: f"create {allocated['id']}")
         return LOCATOR_PREFIX + self._path(phase, allocated["id"])
+
+    def import_specs(self, items: list[tuple[int, str, str]],
+                     config: dict | None = None) -> list[str]:
+        """Write N documents under THEIR OWN IDs in ONE commit — the migration batch.
+
+        `items` is `[(id, phase, text)]`. A document already on the branch with the same text
+        and phase is left alone, so a re-run is a no-op; one that differs refuses the whole
+        batch, because a migration must never overwrite what the branch already holds.
+        `config`, when given, is the `specs` namespace written to the branch's
+        `quenching.json` in the SAME commit. Returns the paths written."""
+        def apply(snapshot):
+            index = self._index(snapshot)
+            changes: dict[str, str | None] = {}
+            conflicts = []
+            for spec_id, phase, text in items:
+                dest = self._path(phase, spec_id)
+                if spec_id in index:
+                    held = index[spec_id][1]
+                    if held == dest and snapshot[held][1] == text:
+                        continue
+                    conflicts.append(spec_id)
+                    continue
+                changes[dest] = text
+            if conflicts:
+                raise _refusal("sp-git-id-taken", "the branch already holds different "
+                               f"documents for spec(s) {', '.join(map(str, conflicts))}; "
+                               "nothing was written", ids=conflicts)
+            if config is not None:
+                rendered = json.dumps({"specs": config}, indent=2, ensure_ascii=False) + "\n"
+                if self._config_text(snapshot) != rendered:
+                    changes[CONFIG_PATH] = rendered
+            if any(path != CONFIG_PATH for path in changes):
+                try:
+                    counter = int(snapshot.get(COUNTER_PATH, ("", ""))[1].strip())
+                except ValueError:
+                    counter = 0
+                top = max([int(i) for i, _, _ in items] + list(index) + [0])
+                changes[COUNTER_PATH] = f"{max(counter, top + 1)}\n"
+            return changes, None
+
+        written = self._store(apply, f"import {len(items)} specs")
+        return sorted(path for path in written if path not in (COUNTER_PATH, CONFIG_PATH))
 
     def move_spec(self, info: dict, dest_phase: str) -> str:
         spec_id = int(info["id"])
@@ -337,7 +461,10 @@ class GitBackend(SpecBackend):
             return {path: None, dest: snapshot[path][1]}, None
 
         verb = "archive" if dest_phase == "archive" else "restore"
-        self._store(apply, f"{verb} {spec_id}")
+        moved = self._store(apply, f"{verb} {spec_id}")
+        if moved and self.card() is not None:
+            self._card_transitions([(info, derive_info({**info, "phase": dest_phase},
+                                                       info["text"]))])
         return LOCATOR_PREFIX + dest
 
     # -- configuration on the branch ------------------------------------------ #
@@ -355,6 +482,14 @@ class GitBackend(SpecBackend):
             return {}
         specs = value.get("specs") if isinstance(value, dict) else None
         return specs if isinstance(specs, dict) else {}
+
+    def _config_text(self, _snapshot=None) -> str | None:
+        """The raw `quenching.json` at the current tracking tip, or None."""
+        tip = self._local_tip()
+        if tip is None:
+            return None
+        code, out, _ = self._git("cat-file", "blob", f"{tip}:{CONFIG_PATH}")
+        return out.decode("utf-8") if code == 0 else None
 
     def write_config(self, specs_namespace: dict) -> None:
         """Replace the branch's `quenching.json` with `{"specs": specs_namespace}`."""
