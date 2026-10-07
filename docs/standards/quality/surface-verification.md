@@ -158,6 +158,19 @@ A check that has only ever caught itself earns a narrow trigger. Two things foll
   **opt-in** (`--only 3`), kept only to re-guard phrases already tuned; the default run is
   `1,2,4`.
 
+Two further triggers run the same harness, both opt-in by construction, so neither widens the
+mandate above:
+
+- **The repository gate, on request.** `QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh` runs the
+  default `1,2,4` as a "surface-load checks" block. There exit **1 or 2** fails the gate, because
+  whoever asked for the measurement does not accept "inconclusive", and a missing `claude` on PATH
+  fails too. Without the variable the block prints `SKIPPED` and the gate stays deterministic.
+- **The release.** `/release` runs that gated form before the bump and blocks on any exit other than
+  0: it is the last moment before a loading regression reaches whoever installs the plugin.
+
+CI keeps the `functional` job as static only (`--selfcheck` and `--selftest`): it has no `claude`
+CLI and measures no surface load, so no step stays green on an exit 2.
+
 ## Scope the run to what the change can break
 
 Every check here is a fresh agent session, billed per run, and they are not interchangeable in
