@@ -5,11 +5,15 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import tempfile
+import time
 
 from quenching.common.git import COMMAND_TIMEOUT_S, _git
 from quenching.common.config import CONFIG_FILE, find_repo_root
 from quenching.common.io import write_text
-from quenching.specs.backends.base import BackendRefusal, SpecBackend
+from quenching.specs.backends.base import (BackendRefusal, SpecBackend, parse_retry_after,
+                                           read_only_refusal, transport_read_only)
 from quenching.specs.backends.hybrid import (hybrid_project, hybrid_split, hybrid_title_join,
                                              hybrid_unwrap, hybrid_wrap)
 from quenching.specs.config import (AZ_DEFAULT_DISCOVERY_TAG, announce_unproved, load_config,
@@ -23,6 +27,12 @@ from quenching.specs.parse import (FIELD_KEYS, PHASES, board_state_of,
 # number and same meaning as `GH_MISSING`, kept separate so neither constant becomes the
 # other's by accident.
 AZ_MISSING = 127
+# OURS, like `AZ_MISSING`: the call hit the timeout, so the outcome of a write is UNKNOWN.
+AZ_TIMEOUT = 124
+AZ_MAX_ATTEMPTS = 3
+AZ_RETRY_BACKOFF = (0.25, 0.5)
+# WIQL answers at most this many ids; at the ceiling the listing may be truncated.
+AZ_WIQL_LIMIT = 20_000
 # Azure DevOps' own application id. `az rest` issues a token for whatever `--resource` names,
 # and the default (ARM) is rejected by dev.azure.com — this is the audience the API accepts,
 # and it is a constant of the service rather than of any organisation.
@@ -112,6 +122,49 @@ def azure_cache_write(org: str, project: str, **entries) -> None:
         pass
 
 
+def _az_transient(code: int, stdout: str, stderr: str) -> bool:
+    """Whether a failed `az` call may succeed if the same request is tried again."""
+    if code == AZ_TIMEOUT:
+        return True
+    text = f"{stdout}\n{stderr}".lower()
+    return ("rate limit" in text or "too many requests" in text
+            or bool(re.search(r"\b(?:429|500|502|503|504)\b", text)))
+
+
+def _az_option(argv: tuple[str, ...], *names: str, default: str = "") -> str:
+    for i, token in enumerate(argv):
+        if token in names and i + 1 < len(argv):
+            return argv[i + 1]
+        for name in names:
+            if token.startswith(name + "="):
+                return token.split("=", 1)[1]
+    return default
+
+
+def _az_is_read(argv: tuple[str, ...]) -> bool:
+    """Whether an `az` call only reads, and is therefore safe to repeat.
+
+    `az rest` is a GET unless `--method` says otherwise. `devops invoke` against the
+    `workitemsbatch` resource is a POST by transport but a pure read by meaning, so it is
+    admitted. `boards query` and `work-item show` read; everything unrecognised counts as a
+    write, because the guard that uses this must fail closed."""
+    if not argv:
+        return False
+    if argv[0] == "rest":
+        return _az_option(argv, "--method", "-m", default="get").lower() == "get"
+    if argv[0] == "devops":
+        if len(argv) > 1 and argv[1] == "invoke":
+            return (_az_option(argv, "--http-method", default="GET").upper() == "GET"
+                    or _az_option(argv, "--resource") == "workitemsbatch")
+        return len(argv) > 1 and argv[1] == "configure" and "--list" in argv \
+            or argv[:3] == ("devops", "project", "show")
+    if argv[0] == "repos":
+        return len(argv) > 1 and argv[1] == "show"
+    if argv[0] == "boards":
+        return argv[1:2] == ("query",) or argv[1:3] == ("work-item", "show")
+    return False
+
+
 def _az_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, str]:
     """Exit code, stdout AND stderr of one `az` command.
 
@@ -129,16 +182,33 @@ def _az_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, s
 
     60s and not git's 30, matching `_gh_run`: this is a round trip to dev.azure.com."""
     import subprocess
+    reads = _az_is_read(argv)
+    if not reads and transport_read_only():
+        raise read_only_refusal("az", argv)
     if not os.path.isdir(cwd):
         return 1, "", f"not a directory: {cwd}"
-    try:
-        out = subprocess.run(["az", *argv, "--only-show-errors"], capture_output=True,
-                             text=True, timeout=COMMAND_TIMEOUT_S, cwd=cwd, input=stdin)
-        return out.returncode, out.stdout, out.stderr
-    except FileNotFoundError as e:
-        return AZ_MISSING, "", str(e)
-    except (OSError, ValueError, subprocess.SubprocessError) as e:   # noqa: BLE001
-        return 1, "", str(e)
+    # ONLY READS ARE REPEATED, exactly as in `_gh_run`: a timeout can fire after Azure
+    # accepted a create, and repeating it would make a second work item.
+    max_attempts = AZ_MAX_ATTEMPTS if reads else 1
+    for attempt in range(1, max_attempts + 1):
+        try:
+            out = subprocess.run(["az", *argv, "--only-show-errors"], capture_output=True,
+                                 text=True, timeout=COMMAND_TIMEOUT_S, cwd=cwd, input=stdin)
+            code, stdout, stderr = out.returncode, out.stdout, out.stderr
+        except FileNotFoundError as e:
+            return AZ_MISSING, "", str(e)
+        except subprocess.TimeoutExpired as e:
+            detail = e.stderr or str(e) or "az command timed out"
+            if isinstance(detail, bytes):
+                detail = detail.decode(errors="replace")
+            code, stdout, stderr = AZ_TIMEOUT, "", str(detail)
+        except (OSError, ValueError, subprocess.SubprocessError) as e:   # noqa: BLE001
+            return 1, "", str(e)
+        if code == 0 or attempt == max_attempts or not _az_transient(code, stdout, stderr):
+            return code, stdout, stderr
+        delay = parse_retry_after(stderr, stdout)
+        time.sleep(AZ_RETRY_BACKOFF[attempt - 1] if delay is None else delay)
+    return code, stdout, stderr
 
 
 def _az_said(stdout: str, stderr: str) -> str:
@@ -181,6 +251,13 @@ def az_refusal(action: str, code: int, stdout: str, stderr: str) -> dict:
                        "install `az` (https://aka.ms/azure-cli), then run "
                        "`az extension add --name azure-devops` and `az devops login`; no "
                        "spec was read or written",
+        }
+    if code == AZ_TIMEOUT:
+        return {
+            "code": "sp-az-timeout", "exit": 2, "action": action,
+            "message": f"`az` timed out while {action}; if that was a write its outcome is "
+                       f"UNKNOWN and it was not retried — re-read the work item before "
+                       f"writing again",
         }
     if code == 0:
         return {
@@ -556,6 +633,9 @@ class AzureBoardsBackend(SpecBackend):
         # it belongs to — a stale entry would diff a write against the item as it was
         # two writes ago and elide an op that was still needed.
         self._raw: dict[int, dict] = {}
+        # The `rev` each work item had when it was read: `write_spec` sends it back as a
+        # JSON-Patch `test` op, so a write over a newer revision is refused by the server.
+        self._revs: dict[int, int] = {}
 
     # -- transport ---------------------------------------------------------- #
     def _az_raw(self, action: str, *argv: str, expect: str = "object"):
@@ -635,6 +715,20 @@ class AzureBoardsBackend(SpecBackend):
                 out[key] = value[:10]
         return out
 
+    def _guard_wiql(self, action: str, found: list) -> list:
+        """Refuse a WIQL result that reached the API's id ceiling: it may be truncated, and a
+        listing derived from a cut-short result would read the missing specs as absent."""
+        if isinstance(found, list) and len(found) >= AZ_WIQL_LIMIT:
+            raise BackendRefusal({
+                "code": "sp-az-wiql-truncated", "exit": 2, "action": action,
+                "limit": AZ_WIQL_LIMIT, "observed": len(found),
+                "message": f"the WIQL query returned {len(found)} work items while {action}, "
+                           f"the API's ceiling of {AZ_WIQL_LIMIT}; the listing may be "
+                           f"truncated, so nothing was derived from it — narrow the area "
+                           f"path or archive old work items",
+            })
+        return found
+
     # -- the listing, fetched once ------------------------------------------- #
     def _load(self) -> list[tuple[dict, int, str, str, dict, list[str]]]:
         if self._rows is not None:
@@ -645,6 +739,7 @@ class AzureBoardsBackend(SpecBackend):
                          self.project, "--wiql",
                          azure_query_wiql(self.project, self.area_path, self.discovery_tag),
                          expect="array") or []
+        self._guard_wiql("querying the project's work items", found)
         ids = [int(r.get("id") or (r.get("fields") or {}).get("System.Id") or 0)
                for r in found]
         rows = [row for row in (self._row_of(item)
@@ -667,6 +762,8 @@ class AzureBoardsBackend(SpecBackend):
         # backend died on it. One writer here, readers ask by id, and the unpack sites stay
         # exactly as they are.
         self._raw[item_id] = azure_comparable_fields(item.get("fields") or {})
+        if item.get("rev") is not None:
+            self._revs[item_id] = item["rev"]
         phase = self._phase_of(item)
         return ({
             "id": item_id, "phase": phase, "folder": phase, "legacy": False,
@@ -683,11 +780,10 @@ class AzureBoardsBackend(SpecBackend):
         only for the native index fields, so the WIQL query and the batch both avoid document
         bodies. The cost is still declared, not hidden: it is why the full listing stays cached
         for the whole process."""
-        import tempfile
         items: list[dict] = []
         for start in range(0, len(ids), AZ_BATCH_SIZE):
             chunk = ids[start:start + AZ_BATCH_SIZE]
-            fd, path = tempfile.mkstemp(suffix=".json", dir=self.cwd)
+            fd, path = tempfile.mkstemp(suffix=".json", prefix="quenching-az-")
             try:
                 with os.fdopen(fd, "w", encoding="utf-8") as fh:
                     fields = list(AZ_LEAN_BATCH_FIELDS if lean else AZ_BATCH_FIELDS)
@@ -750,6 +846,7 @@ class AzureBoardsBackend(SpecBackend):
     def _invalidate(self) -> None:
         self._rows = None
         self._raw = {}
+        self._revs = {}
 
     def _item_id(self, spec_id: str | int) -> int:
         return int(spec_id)
@@ -823,6 +920,7 @@ class AzureBoardsBackend(SpecBackend):
                              "--project", self.project, "--wiql",
                              azure_query_wiql(self.project, self.area_path, self.discovery_tag),
                              expect="array") or []
+            self._guard_wiql("querying the project's work items (lean index)", found)
             ids = [int(r.get("id") or (r.get("fields") or {}).get("System.Id") or 0)
                    for r in found]
             rows = []
@@ -874,6 +972,8 @@ class AzureBoardsBackend(SpecBackend):
         # (`write_spec` strips them — §Stored is not projected), so the native fields ARE
         # the only copy, and they win outright over whatever the raw text happened to say.
         info["frontmatter"].update(native_fields)
+        if item_id in self._revs:
+            info["_azure_rev"] = self._revs[item_id]
         return info, {}
 
     def write_spec(self, info: dict, text: str) -> None:
@@ -940,7 +1040,8 @@ class AzureBoardsBackend(SpecBackend):
         ops = azure_patch_body(self._raw.get(item_id, {}), desired, markdown=True,
                                parent=parent)
         if ops:
-            self._az_patch(f"updating work item {item_id}", item_id, ops)
+            rev = info.get("_azure_rev", self._revs.get(item_id))
+            self._az_patch(f"updating work item {item_id}", item_id, ops, rev=rev)
         if self.repository:
             self._link_new_artifacts(item_id, info, fresh)
         self._invalidate()
@@ -1166,7 +1267,7 @@ class AzureBoardsBackend(SpecBackend):
         self._invalidate()
         return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
 
-    def _az_patch(self, action: str, item_id: int, ops: list[dict]):
+    def _az_patch(self, action: str, item_id: int, ops: list[dict], rev: int | None = None):
         """One work item, one JSON patch — the whole write in a single `az` process.
 
         `az rest`, and NOT `az devops invoke` — measured, not preferred. The extension routes
@@ -1200,11 +1301,14 @@ class AzureBoardsBackend(SpecBackend):
                                f"answers TF401262 above it) — shorten a section while "
                                f"{action}; nothing was written",
                 })
-        import tempfile
-        fd, path = tempfile.mkstemp(suffix=".json", dir=self.cwd)
+        # COMPARE-AND-SWAP: a leading `test /rev` op makes the server refuse the whole patch
+        # when the item moved on after it was read. Never sent for creations or links, which
+        # have no revision they could be stale against.
+        sent = [{"op": "test", "path": "/rev", "value": rev}, *ops] if rev is not None else ops
+        fd, path = tempfile.mkstemp(suffix=".json", prefix="quenching-az-")
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as fh:
-                json.dump(ops, fh)
+                json.dump(sent, fh)
             from urllib.parse import quote
             uri = (f"{self.org.rstrip('/')}/{quote(self.project)}/_apis/wit/workitems/"
                    f"{item_id}?api-version=7.1")
@@ -1214,6 +1318,8 @@ class AzureBoardsBackend(SpecBackend):
                 "--headers", "Content-Type=application/json-patch+json",
                 "--body", f"@{path}")
             if code != 0:
+                if rev is not None and azure_is_stale_error(out, err):
+                    raise BackendRefusal(azure_stale_write_refusal(item_id, rev, action))
                 raise BackendRefusal(az_refusal(action, code, out, err))
             try:
                 return json.loads(out or "null")
@@ -1234,6 +1340,29 @@ class AzureBoardsBackend(SpecBackend):
             raise
         finally:
             os.unlink(path)
+
+
+AZ_STALE_FRAGMENTS = ("tf26071", "test operation", "has been changed by someone else",
+                      "jsonpatchtest", "/rev")
+
+
+def azure_is_stale_error(stdout: str, stderr: str) -> bool:
+    """Whether `az` said the patch's `test /rev` op failed, i.e. the item changed after it
+    was read."""
+    text = f"{stderr or ''}\n{stdout or ''}".lower()
+    return any(fragment in text for fragment in AZ_STALE_FRAGMENTS)
+
+
+def azure_stale_write_refusal(item_id: int, expected_rev: int, action: str) -> dict:
+    """Refuse a write whose work item moved to a newer revision after the caller read it."""
+    return {
+        "code": "sp-az-stale-write", "exit": 2, "item": item_id, "expectedRev": expected_rev,
+        "action": action,
+        "message": f"work item {item_id} changed after it was read — expected revision "
+                   f"{expected_rev} while {action}; re-read the spec and reapply the change "
+                   f"instead of merging two documents automatically; nothing was written",
+        "remedy": "re-read the spec and reapply the change",
+    }
 
 
 def azure_restore_trailing_newline(doc: str) -> str:

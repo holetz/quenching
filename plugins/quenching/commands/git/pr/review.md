@@ -1,12 +1,8 @@
 ---
 description: >-
-  Fetch a pull request's unresolved review threads, address each on the human's own confirmation, and
-  mark it resolved once the fix is committed, on GitHub or Azure DevOps. Use when the user asks to
-  "resolve PR comments", "address the review feedback", "fix what the reviewer flagged", or "work
-  through the open review threads". Not for: opening a PR → /quenching:git:pr:create; merging it →
-  /quenching:git:merge.
+  Fetch a PR's unresolved review threads and address each on the human's confirmation. Use for "resolve PR comments", "address the review feedback". Not for: opening a PR → /quenching:git:pr:create.
 argument-hint: [pr-number-or-id]
-allowed-tools: Bash(gh pr view:*), Bash(gh repo view:*), Bash(gh api graphql:*), Bash(az repos pr:*), Bash(az devops invoke:*), Bash(az rest:*), Bash(git branch:*), Bash(git remote get-url:*), Bash(git add:*), Bash(python3:*), Read, Edit, AskUserQuestion, Skill
+allowed-tools: Bash(cq:*), Bash(gh pr view:*), Bash(gh repo view:*), Bash(gh api graphql:*), Bash(az repos pr:*), Bash(az devops invoke:*), Bash(az rest:*), Bash(git branch:*), Bash(git remote get-url:*), Bash(git add:*), Bash(python3:*), Read, Edit, AskUserQuestion, Skill
 ---
 
 # /quenching:git:pr:review — work through a PR's unresolved threads
@@ -22,7 +18,7 @@ resolved.
 ### 1. Resolve the provider, PR and repository
 ```bash
 # Read `backend` from this result before choosing a host CLI.
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs config --json
+cq specs config --json
 git remote get-url origin
 # github
 gh repo view --json owner,name -q '.owner.login + " " + .name'

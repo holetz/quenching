@@ -54,7 +54,6 @@ The root-level envelope is deliberately small:
     "gitConventions": {"commitSubject": "Prefixe o subject com o ticket entre colchetes."}
   },
   "specs": {
-    "specsBranch": "specs",
     "azureStates": {"plans": "New", "archive": "Closed"},
     "azurePlacement": {"areaPath": "Project\\Specs"},
     "azureColumns": {},
@@ -83,7 +82,7 @@ Ownership follows the meaning of the key, not the module that happens to read it
 | --- | --- | --- |
 | root | `backend` | legacy/provider metadata only; provider selection comes from `origin` |
 | `shared` | `worktreeSetup`, `sharedPaths`, `hooks`, `profiles`, `gitConventions` | settings used by more than one local surface or by isolation |
-| `specs` | `specsBranch`, Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes` | provider-owned plan lifecycle and proposal conventions |
+| `specs` | Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes` | provider-owned plan lifecycle and proposal conventions |
 | `ops` | `opsRoot`, `router`, `registry` | operations inventory, router and generated registry |
 | `proof` | `proofRoot`, `layers`, `measuredRoots`, `proofExclusions`, `ratchetPath` | verification inventory, layers and coverage evidence |
 
@@ -104,8 +103,8 @@ The root `backend` value is not a second provider selector. Unsupported or retir
 are refused, and a valid provider is still established from the remote. Provider-owned specs are
 read and written only after that selection succeeds.
 
-The `specs` namespace does not name a local specs root, archive, or storage branch. A declared
-`specsBranch` is a lifecycle input for the branch record, not a repository-backed specs store.
+The `specs` namespace does not name a local specs root, archive, or storage branch.
+The retired `specsBranch` key is no longer read.
 
 ## No flat fallback and no merge
 

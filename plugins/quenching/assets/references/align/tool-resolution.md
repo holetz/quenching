@@ -1,70 +1,54 @@
-# Resolving a plugin tool, and writing its path
+# Resolving a plugin tool
 
-Front-neutral: every `/quenching:knowledge:*`, `/quenching:specs:*`, `/quenching:design:*` and `/quenching:components:*` command body
-shells out to the same single entry point, `cq`, naming its pillar (`specs`, `knowledge` or
-`components`) as the first argument. All three resolve it the same way.
+Front-neutral: every command body shells out to the same single entry point, `cq`, naming its
+front as the first argument. The fronts are `specs`, `git`, `knowledge`, `components`, `design`,
+`ops`, `proof`, `toolchain`, `delivery` and `security`; all resolve it the same way.
 
 ## Resolving the tool
 
-**Two routes to the same file, in this order.**
+**One form: bare `cq …`.** Claude Code appends `<pluginRoot>/bin` to `PATH` for every enabled
+plugin, and the plugin ships an executable `bin/cq` there (a shim that re-executes
+`assets/bin/cq`). Every command body and reference writes `cq specs …`, never a path and never
+`python3 …/cq`.
 
-1. **`cq …`, bare.** Claude Code appends `<pluginRoot>/bin` to `PATH` for every enabled plugin, and
-   the plugin ships an executable `bin/cq` there. This is why command bodies write `cq specs …`
-   and not a path; where the PATH holds, it is the whole answer.
-2. **`python3 "<pluginRoot>/assets/bin/cq" …`**, with the root written out in full. Use it wherever
-   route 1 does not resolve — a restricted `allowed-tools`, a shell that never got the session's
-   PATH — and **always when working on the quenching repository itself**: the PATH entry names the
-   *installed* checkout, so a bare `cq` there runs the plugin the session loaded rather than the
-   code being written.
+A body that runs `cq` declares `Bash(cq:*)` in its `allowed-tools`; without it the call prompts
+(or is denied in a never-prompt session). A body must not widen it to `Bash(python3:*)`
+to reach the tool.
 
-Either route is followed by the pillar and its subcommand: `cq specs ...`, `cq knowledge ...`,
-`cq components ...`. **There is no third rung**: never look for a copy under a target's
-`.claude/hooks/`, never install one there, never merge anything into a target's
-`.claude/settings.json` to make a tool resolve. The two routes are one file reached two ways, never
-two installations.
+The command is followed by the front and its subcommand: `cq specs ...`, `cq git ...`,
+`cq knowledge ...`, `cq components ...`, `cq design ...`, `cq ops ...`, `cq proof ...`,
+`cq toolchain ...`, `cq delivery ...`, `cq security ...`. **There is no second form and no third
+rung**: never look for a copy under a target's `.claude/hooks/`, never install one there, never
+merge anything into a target's `.claude/settings.json` to make a tool resolve.
 
 Branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json` payload, never on
 prose.
 
+### Working on the quenching repository itself
+
+The `PATH` entry names the *installed* checkout, so a bare `cq` there runs the plugin the session
+loaded rather than the code being written. When editing this repository, run the checkout's own
+file explicitly — `python3 plugins/quenching/assets/bin/cq …` — as the author's check. That is a
+developer invocation, never something a command body or reference writes for a target.
+
 ### `${CLAUDE_PLUGIN_ROOT}` is empty in a shell
 
-The variable is substituted into a **command body's text** when Claude Code loads it, so a body
-citing `${CLAUDE_PLUGIN_ROOT}/…` arrives already expanded and its absolute path can be copied
-straight into a call. **The shell has no such variable.** The same spelling reached any other way —
-most often by opening a reference with `Read` — expands to nothing, and the call silently becomes
-`python3 "/assets/bin/cq"`.
-
-So route 2 is written with the **expanded** root, never with the variable. `<pluginRoot>` below
-stands for that absolute path, the one the citing body arrived with:
-
-```bash
-python3 "<pluginRoot>/assets/bin/cq" specs status --spec my-spec --json
-```
-
-The same rule binds anything executable the plugin ships: it locates itself from its own
-`__file__`, never from `${CLAUDE_PLUGIN_ROOT}` — which is what `bin/cq` does to find
-`assets/bin/cq`.
+The variable is substituted into a **command body's text** when Claude Code loads it. **The shell
+has no such variable**: the same spelling reached any other way (most often by opening a reference
+with `Read`) expands to nothing. Bare `cq` needs no root at all, which is why it is the one form.
+Anything else executable the plugin ships locates itself from its own `__file__`, never from
+`${CLAUDE_PLUGIN_ROOT}`.
 
 ### Write the resolved path literally on every invocation
 
-Never hold the interpreter plus the script path in a shell variable and expand it as a command —
-zsh does not word-split scalars, so the call fails silently:
+Never hold an interpreter plus a path in a shell variable and expand it as a command — zsh does not
+word-split scalars. Write `cq` on each call. **Chain several writes so a failure stops the run** —
+`set -e`, or `&&` between them:
 
 ```bash
-CQ="python3 <pluginRoot>/assets/bin/cq"
-$CQ specs status --spec my-spec --json      # WRONG
-```
-
-Write the path in full and **quoted** — a plugin root can contain spaces — on each call. When one
-`Bash` call issues several invocations, a shell **function** is the only correct abbreviation, and
-only *within that call* — shell state does not survive between calls:
-
-```bash
-cq() { python3 "<pluginRoot>/assets/bin/cq" "$@"; }
+set -e
 cq specs section my-spec "Proposal" --write <<'EOF'
 …
 EOF
 cq specs validate --spec my-spec --json
 ```
-
-**Chain several writes so a failure stops the run** — `set -e`, or `&&` between them.

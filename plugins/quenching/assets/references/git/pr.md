@@ -40,7 +40,7 @@ provider did not return one.
 
 ## Selection and provider route
 
-Read `python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs config --json` and the `origin` URL before
+Read `cq specs config --json` and the `origin` URL before
 choosing a provider. A GitHub route requires a GitHub host and `gh repo view`; an Azure route
 requires a DevOps host and the `az` CLI's detected project/repository context. A host mismatch,
 unknown backend or unauthenticated CLI is a refusal with its cause.

@@ -1,12 +1,10 @@
 ---
 description: >-
-  Prune branches already merged or gone and worktrees git still registers with no directory on disk,
-  over `cq git stale`'s report.
-  Use when the user asks to "clean up old branches", "prune stale branches", "remove finished
-  worktrees", or "tidy up after merging". Not for: creating isolation → /quenching:git:branch;
-  merging or opening a PR → /quenching:git:merge, /quenching:git:pr:create.
+  Prune merged or gone branches and orphan worktrees from `cq git stale`. Use for "clean up old branches", "prune stale branches". Not for: isolation → /quenching:git:branch.
+disable-model-invocation: true
 argument-hint: [remote:<name>]
 allowed-tools: >-
+  Bash(cq:*),
   Bash(python3:*), Bash(git branch:*), Bash(git push:*), Bash(git worktree:*),
   Read, AskUserQuestion
 ---
@@ -20,7 +18,7 @@ from a fresh report for the selected remote.
 
 ### 1. Ask the tool for the current report
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq git stale --remote <remote> --json
+cq git stale --remote <remote> --json
 ```
 The report contains local `staleBranches`, fetched `remoteBranches` from `<remote>`, registered
 `orphanWorktrees`, and unregistered `unregisteredWorktrees` siblings with their path, branch and

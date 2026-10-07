@@ -1,6 +1,6 @@
 ---
 name: quenching-git-push
-description: "Publish a local branch to a named remote without opening or changing a pull request. Use when the user asks to \"push this branch\", \"publish the branch\", \"send these commits to the remote\", or \"push a checkpoint\". It resolves the exact destination, upstream state and commits ahead before one confirmation. Not for: opening or updating a PR → quenching-git-pr-create; rebasing or resolving an unproven divergence → quenching-git-sync; merging → quenching-git-merge."
+description: "Publish a local branch to a named remote without opening a PR. Use for \"push this branch\", \"push a checkpoint\". Not for: PRs → quenching-git-pr-create; rebasing → quenching-git-sync."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/git/push.md -->

@@ -1,6 +1,6 @@
 ---
 name: quenching-design-align
-description: "Converge the /.design/ front from one DTCG source through PRODUCT.md, DESIGN.md, MEDIUM.md and every medium adapter. Triggers on \"align the design\", \"set up the design front\", \"install the brand pack\", \"rebuild the design projections\", or \"fix design drift\". Probes, asks once and loops to byte identity. Not for: reading design health only → quenching-design-status; creating one editorial genre → quenching-design-genre-new; visual screen craft → Impeccable."
+description: "Converge /.design/ from one DTCG source through PRODUCT.md, DESIGN.md, MEDIUM.md and adapters. Use for \"align the design\", \"install the brand pack\", \"fix design drift\". Not for: read-only → quenching-design-status."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/design/align.md -->

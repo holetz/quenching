@@ -1,7 +1,8 @@
 ---
-description: Force /docs/ into the canonical OKF v0.1 bundle and pull in out-of-band content, looping until nothing changes. Triggers on "align the docs", "align and update docs", "fix the documentation structure", "install the OKF bundle", "set up /docs/", or "converge the knowledge base". Not for: adding one knowledge item → /quenching:knowledge:add; reading status only → /quenching:knowledge:status; producing documentation pages → /quenching:knowledge:documentation:produce.
+description: >-
+  Force /docs/ into the canonical OKF v0.1 bundle and absorb out-of-band content until stable. Use for "align the docs", "set up /docs/", "converge the knowledge base". Not for: one item → /quenching:knowledge:add.
 argument-hint: [optional-docs-path]
-allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Task, Skill, AskUserQuestion
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash, Write, Edit, Task, Skill, AskUserQuestion
 ---
 
 # /quenching:knowledge:align — force the knowledge base into OKF shape, and keep filling it
@@ -22,11 +23,10 @@ The payload (skeleton, molds, validator) lives at `${CLAUDE_PLUGIN_ROOT}/assets/
 - [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md) §Bundle level §Structural integrity (whole-tree — CLI + `Stop` only) §Resource integrity (per-doc — every mode) — the exact checks the validator applies.
 - [knowledge-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/cycle.md) §The stage pipeline §Finding → owning-command routing table — the stage pipeline, the parallel-prep flow, and the finding → owning-command routing table.
 
-The executable checker is `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`
-(`python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" knowledge validate /docs` → exit 0 = conforms). Invoke it by its **literal quoted
-path** on every call, never through a shell variable holding the interpreter plus the path —
+The executable checker is bare `cq` (`cq knowledge validate /docs` → exit 0 = conforms), the one
+form every body writes —
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
-§Write the resolved path literally on every invocation.
+§Resolving the tool.
 
 ## Doctrine (non-negotiable)
 
@@ -114,7 +114,7 @@ command or package operation that can close it. A checker whose publication is d
 accepted map or capability register is `not-applicable`, not a failed run.
 
 The preflight also reads the accepted `.quenching/documentation/plan.md` when a site layer exists.
-Its `### Mapa editorial de publicação` is the authority for homes, routes and derived pages. A
+Its `### Publication map` is the authority for homes, routes and derived pages. A
 disagreement between that map and `nav` or `site-source/` is `plan-drift`; regenerate the plan or
 the owned projection through the documentation planning/build command rather than hand-editing a
 large generated artifact. Semantic resource ambiguity remains a human-pending `source-gap` until

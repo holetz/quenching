@@ -1,0 +1,34 @@
+name: Feature request
+description: Propose a change or an addition to the quenching plugin.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Specs are created by the tool (`/quenching:specs:create`). This form opens an ordinary issue;
+        a maintainer converts it into a spec if it is accepted.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do that is hard or impossible today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like
+    validations:
+      required: true
+  - type: dropdown
+    id: front
+    attributes:
+      label: Front
+      description: The core fronts are maintained actively; the others receive defect fixes only.
+      options:
+        - knowledge
+        - specs
+        - git
+        - components
+        - design, ops, proof, toolchain, delivery or security (maintenance only)
+        - not sure

@@ -1,6 +1,6 @@
 ---
 name: quenching-security-status
-description: "Read the security pillar and report workflow permissions, secret and ignore coverage, advisory dependency configuration and access ownership without writing. Triggers on \"security status\", \"security audit\", or \"check repository security coverage\". Not for: changing permissions, secrets, dependencies or access policy — those remain target-owner decisions."
+description: "Report workflow permissions, secret and ignore coverage, advisory dependency config and access ownership, read-only. Use for \"security status\", \"security audit\". Not for: changing policy."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/security/status.md -->

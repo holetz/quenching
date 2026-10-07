@@ -1,6 +1,6 @@
 ---
 name: quenching-ops-status
-description: "Read the complete operations front and report its declared root, router, entry points, lifecycle, findings and registry freshness without writing. Triggers on \"ops status\", \"check the operations surface\", \"report operations drift\", or \"what is the state of the ops front\". Not for: converging findings → quenching-ops-align; minting an entry point or router → quenching-ops-entrypoint-new."
+description: "Report the operations front: root, router, entry points, lifecycle and findings, read-only. Use for \"ops status\", \"report operations drift\". Not for: converging → quenching-ops-align."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/ops/status.md -->

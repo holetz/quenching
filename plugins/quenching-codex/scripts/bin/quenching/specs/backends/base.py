@@ -5,6 +5,9 @@ Moved verbatim out of the pre-refactor specs script. `BackendRefusal` travels wi
 other."""
 from __future__ import annotations
 
+import os
+import re
+
 
 class SpecBackend:
     """Where a repo's specs actually live. One implementation per target; every command
@@ -28,6 +31,12 @@ class SpecBackend:
     the backend had to fetch the whole document to find them."""
 
     name = "abstract"
+
+    # TRANSPORT-LEVEL READ-ONLY GUARD. Checked by the lowest-level `gh`/`az` runners for every
+    # non-read call, so it holds for private helpers and future write paths alike, which a
+    # list of method names cannot promise. `quenching-specs-reader` flips it before dispatch;
+    # `QUENCHING_SPECS_READ_ONLY=1` does the same for any other embedding.
+    read_only = False
 
     def list_specs(self, phase: str | None = None, lean: bool = False) -> list[dict]:
         """Every spec descriptor, or a lean native index row, oldest first within each phase."""
@@ -74,3 +83,34 @@ class BackendRefusal(Exception):
     def __init__(self, err: dict) -> None:
         super().__init__(err.get("message", "the backend failed"))
         self.err = err
+
+
+READ_ONLY_ENV = "QUENCHING_SPECS_READ_ONLY"
+RETRY_AFTER_CAP_S = 30.0
+
+
+def transport_read_only() -> bool:
+    """Whether the transport must refuse every call that is not a read."""
+    return bool(SpecBackend.read_only) or os.environ.get(READ_ONLY_ENV, "") not in ("", "0")
+
+
+def read_only_refusal(tool: str, argv: tuple[str, ...]) -> BackendRefusal:
+    """The refusal a non-read transport call gets while the guard is on. Nothing was sent."""
+    return BackendRefusal({
+        "code": "sp-read-only", "exit": 2,
+        "message": f"the specs backend is read-only; `{tool} {' '.join(argv[:4])}` is not a "
+                   f"read and was refused before any process started — nothing was written",
+    })
+
+
+_RETRY_AFTER_RE = re.compile(r"retry-after\s*[:=]\s*(\d+(?:\.\d+)?)", re.IGNORECASE)
+
+
+def parse_retry_after(*texts: str) -> float | None:
+    """Seconds named by a `Retry-After` header quoted in a transport's output, capped so a
+    hostile or absurd value cannot stall a command, or None when none is present."""
+    for text in texts:
+        match = _RETRY_AFTER_RE.search(text or "")
+        if match:
+            return min(float(match.group(1)), RETRY_AFTER_CAP_S)
+    return None

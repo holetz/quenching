@@ -16,7 +16,7 @@ contract for `.claude/agents/` and not part of this subject. Naming lives in
 
 | Doc | Covers |
 | --- | --- |
-| [communication.md](communication.md) | The two language bands an agent writes in — durable artifacts in canonical English so they stay portable and greppable across repos, conversation in the one BCP-47 tag the root harness line declares — and the conduct contract that holds whether or not a language is declared |
+| [communication.md](communication.md) | The two language bands an agent writes in — artifacts, English in this repository and declared per target by a standard or the artifactLanguage config key, and conversation in the one BCP-47 tag the root harness line declares — and the conduct contract that holds whether or not a language is declared |
 | [ephemeral-writes.md](ephemeral-writes.md) | Where an agent puts a file it creates — the three destinations, the one question that sorts them, and the session-start declaration that makes the durable-ignored path present before the first write |
 
 ## Candidate sub-standards

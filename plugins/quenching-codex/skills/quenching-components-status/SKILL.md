@@ -1,6 +1,6 @@
 ---
 name: quenching-components-status
-description: "Read the target's automation surface and report its command count, fronts and findings without writing. Triggers on \"components status\", \"check the automation surface\", or \"what is the state of the command surface\". Not for: repairing findings → quenching-components-align; minting one command → quenching-components-command-new."
+description: "Report the automation surface: command count, fronts and findings, read-only. Use for \"components status\", \"check the automation surface\". Not for: repairs → quenching-components-align."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/components/status.md -->

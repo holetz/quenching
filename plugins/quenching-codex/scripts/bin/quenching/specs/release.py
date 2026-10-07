@@ -1,10 +1,11 @@
-"""The version lockstep's mechanical half — the four artifacts and the changelog
+"""The version lockstep's mechanical half — the version artifacts and the changelog
 entry check, followed by the two-pass
 bump that moves all of them or none.
 
 Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
+import json
 import os
 import re
 
@@ -21,10 +22,16 @@ from quenching.common.io import read_text, write_text
 # four are relative to the REPO root, and this verb only makes sense run from the
 # plugin's own checkout — a target repository that merely has this plugin installed
 # carries none of them.
+# The generated siblings (Codex, specs-reader) and EVERY marketplace entry move too: a
+# "jsonall" artifact carries one `"version"` per plugin entry and each is rewritten.
 RELEASE_ARTIFACTS = (
     ("plugins/quenching/VERSION", "plain"),
     ("plugins/quenching/.claude-plugin/plugin.json", "json"),
-    (".claude-plugin/marketplace.json", "json"),
+    ("plugins/quenching-codex/VERSION", "plain"),
+    ("plugins/quenching-codex/.codex-plugin/plugin.json", "json"),
+    ("plugins/quenching-specs-reader/VERSION", "plain"),
+    ("plugins/quenching-specs-reader/.claude-plugin/plugin.json", "json"),
+    (".claude-plugin/marketplace.json", "jsonall"),
     ("plugins/quenching/assets/bin/quenching/common/version.py", "py"),
 )
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
@@ -34,7 +41,7 @@ _CHANGELOG_ENTRY_RE = re.compile(r"^##\s+([^\s#]+)\s*$", re.MULTILINE)
 
 
 def bump_release_artifacts(repo_root: str, new_version: str) -> dict:
-    """Require a changelog entry, then move all four artifacts or change NOTHING.
+    """Require a changelog entry, then move every artifact or change NOTHING.
 
     The changelog gate and the first pass only READ: every artifact's current version is
     collected before anything is written, so a lockstep that is ALREADY drifted — one
@@ -55,11 +62,23 @@ def bump_release_artifacts(repo_root: str, new_version: str) -> dict:
         if kind == "plain":
             old = text.strip()
         else:
-            pat = _RELEASE_JSON_VERSION_RE if kind == "json" else _RELEASE_PY_VERSION_RE
-            m = pat.search(text)
-            if not m:
+            pat = _RELEASE_PY_VERSION_RE if kind == "py" else _RELEASE_JSON_VERSION_RE
+            found = [m.group(2) for m in pat.finditer(text)]
+            if not found:
                 return {"ok": False, "error": f"no version found in: {rel}", "artifacts": []}
-            old = m.group(2)
+            if kind == "jsonall":
+                try:
+                    entries = json.loads(text).get("plugins", [])
+                except ValueError:
+                    return {"ok": False, "error": f"not valid JSON: {rel}", "artifacts": []}
+                if len(found) != len(entries):
+                    return {"ok": False, "artifacts": [],
+                            "error": f"{rel}: {len(entries)} plugin entries but "
+                                     f"{len(found)} versions — an entry has no version"}
+                if len(set(found)) > 1:
+                    return {"ok": False, "artifacts": [],
+                            "error": f"{rel}: plugin entries disagree: {', '.join(found)}"}
+            old = found[0]
         reads.append({"rel": rel, "kind": kind, "path": path, "text": text, "old": old})
 
     disagreeing = sorted({r["old"] for r in reads})
@@ -77,8 +96,10 @@ def bump_release_artifacts(repo_root: str, new_version: str) -> dict:
         if r["kind"] == "plain":
             new_text = new_version + ("\n" if r["text"].endswith("\n") else "")
         else:
-            pat = _RELEASE_JSON_VERSION_RE if r["kind"] == "json" else _RELEASE_PY_VERSION_RE
-            new_text = pat.sub(rf"\g<1>{new_version}\g<3>", r["text"], count=1)
+            pat = _RELEASE_PY_VERSION_RE if r["kind"] == "py" else _RELEASE_JSON_VERSION_RE
+            # every plugin entry of the marketplace, never just the first
+            new_text = pat.sub(rf"\g<1>{new_version}\g<3>", r["text"],
+                               count=0 if r["kind"] == "jsonall" else 1)
         write_text(r["path"], new_text)
         artifacts.append({"path": r["rel"], "old": r["old"], "new": new_version})
     return {"ok": True, "oldVersion": old_version, "newVersion": new_version,

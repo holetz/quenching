@@ -23,7 +23,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 * [architecture/](architecture/index.md) — system structure + architectural patterns (patterns live here)
 * [automation/](automation/index.md) — the Claude Code skill + command surface (classification, authoring, alignment)
 * [code/](code/index.md) — code conventions, imports, lint, pins, SYMBOL naming
-* [git/](git/index.md) — branches de longa duração, o gatilho de publicação, as convenções lidas como read-if-present
+* [git/](git/index.md) — long-lived branches, the publication trigger, the conventions read as read-if-present
 * [naming/](naming/index.md) — naming conventions (here: the command surface)
 * [data-modeling/](data-modeling/index.md) — grain, key, joins, catalog/schema choice
 * [ci-cd/](ci-cd/index.md) — build/deploy, "code defines YAML", manifest generation
@@ -46,7 +46,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 
 | Doc | Covers |
 | --- | --- |
-| [communication.md](agents/communication.md) | The two language bands an agent writes in — durable artifacts in canonical English so they stay portable and greppable across repos, conversation in the one BCP-47 tag the root harness line declares — and the conduct contract that holds whether or not a language is declared |
+| [communication.md](agents/communication.md) | The two language bands an agent writes in — artifacts, English in this repository and declared per target by a standard or the artifactLanguage config key, and conversation in the one BCP-47 tag the root harness line declares — and the conduct contract that holds whether or not a language is declared |
 | [ephemeral-writes.md](agents/ephemeral-writes.md) | Where an agent puts a file it creates — the three destinations, the one question that sorts them, and the session-start declaration that makes the durable-ignored path present before the first write |
 
 ### architecture/
