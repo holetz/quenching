@@ -4,7 +4,7 @@ title: Spec backend interface
 description: Provider-owned GitHub and Azure Boards specs share five document primitives, one native-ID identity and one refusal boundary; external serialisation may use native fields only when it reassembles the canonical document, while locators, lean listings, placement, and the memory fake keep every consumer on the same contract, a direct read by native ID that reuses an in-process listing rather than paying a request per spec
 resource: plugins/quenching/assets/bin/quenching/specs/backends/**, plugins/quenching/assets/bin/quenching/specs/commands/**, plugins/quenching/assets/references/specs-develop/spec-driven.md
 tags: [architecture, specs, backend, interface, serialization]
-timestamp: 2026-08-23
+timestamp: 2026-10-07
 audience: both
 authority: current
 source: abandonar-slug-por-id-nativo (sections 1-2) — the provider ID became the spec identity, exact reads replaced tolerant slug resolution, and the lean listing measurement established the cost boundary beside the existing native-field and memory-fake contract; §A direct read reuses the listing the process already paid for came from the branch review of the same spec, which measured the direct read regressing `list --json` from 4.82 s to 78 s over 157 issues
@@ -548,6 +548,44 @@ have the same date and stage everywhere.
 
 The fake is deliberately **not selectable from configuration**. A store that forgets on exit must
 never be somewhere real work can land.
+
+## The git store
+
+`"backend": "git"` in `.claude/quenching.json` selects the `git` store whatever provider the
+remote URL implies. It keeps the canonical documents on a branch of the code repository's remote,
+and the GitHub and Azure Boards backends keep working unchanged beside it.
+
+- **Layout.** The branch is `quenching`, on remote `origin`. `specs/<id>.md` holds an open spec and
+  `specs/archive/<id>.md` an archived one. Each file is the canonical document, byte for byte, so
+  `derive_info` reads it unchanged. The phase is the directory and never a frontmatter fact, so
+  archiving moves the file without editing its text. `specs/.next-id` is the ID counter and
+  `quenching.json` at the branch root holds the specs-axis configuration under its `specs`
+  namespace. The locator is `quenching:<path>`.
+- **Configuration.** With the git store selected, each specs-axis key the branch declares
+  (`subjects`, `tagCatalog`, `workItemTypes`, `azurePlacement`, `azureColumns`, `azureStates`,
+  `artifactLanguage`, `card`, `cardAt`) replaces the same key from `.claude/quenching.json`.
+  Everything that describes the code tree stays in `.claude/quenching.json`.
+- **Reads never check out.** A process fetches the branch into its remote-tracking ref at most
+  once, and not at all while the per-repository fetch stamp under
+  `${XDG_CACHE_HOME:-~/.cache}/quenching/git/` is fresh. It then reads with `git ls-tree` and one
+  `git cat-file --batch`. A read is therefore as fresh as the last fetch. A reader that must not
+  touch the target's `.git` fetches into a bare mirror of its own and cannot write.
+- **Writes never check out.** A write builds one commit on the tip with a throwaway
+  `GIT_INDEX_FILE` and pushes it without force, so the push is the compare-and-swap. Commit
+  subjects are `[skip ci] specs: <verb> <id>`. The first write to a remote without the branch
+  creates it as an orphan commit.
+- **A rejected push re-applies the same operation, never a merge.** The writer fetches and runs
+  the same operation again on the new tip, for five attempts at most. A document whose blob on the
+  new tip differs from the blob it was read at refuses with `sp-git-stale-write`, and nothing is
+  written. Writes to different specs therefore both land, while two writes to the same spec land
+  once and refuse once. A creation allocates its ID again on each attempt, so concurrent creations
+  never share an ID. When the attempts run out, the writer refuses with `sp-git-cas-exhausted`,
+  never with a silent loss.
+- **Identity.** Without a tracker, the store owns identity: the counter is read and incremented
+  inside the same compare-and-swap as the document. `create_spec(phase, text, spec_id=...)`
+  accepts an ID that a tracker card already allocated, and refuses one the branch already holds.
+- **A batch is one commit.** `write_specs` replaces N documents in a single commit, checking every
+  blob before writing. A triage writes its priorities this way.
 
 ## What this standard does not yet cover
 
