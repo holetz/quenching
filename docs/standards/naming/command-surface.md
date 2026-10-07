@@ -7,11 +7,13 @@ tags: [naming, commands, taxonomy]
 timestamp: 2026-08-27
 audience: both
 authority: current
-source: rename-command-surface change (2026-07-21) + the specs-native refactor (2026-07-24) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31); the `.claude/` front renamed `components` and split into four artifact-named contexts by modularizar-specs-knowledge-components (task 9.7, 2026-08-10), inheriting the split's own design from the retired restructure-claude-front-namespace spec — the split is orthogonal to the front's name and survived the rename intact; the declare-the-class rule for a rename's citation residual added by the orquestrar-specs-em-paralelo branch review (2026-08-16), whose `orchestrate` → `cycle` command rename found five citing files its `## Impact` had not named; the fourth namespace (`git`) and its coexistence with a target's own `git` category added by pilar-git-e-specs-agnosticas-ao-git (task 6.2); varrer-nomes-de-comando-legados (2026-08-27) — the front-level-verb example no longer cites the retired specs align
+source: rename-command-surface, 2026-07-21, 2026-07-24, collapse-skills-into-commands, 2026-07-26, correct-command-citation-form; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Command surface naming
+
+<!-- rules -->
 
 How the `quenching` plugin names its commands.
 
@@ -171,6 +173,8 @@ holding no skills: a name that lies is forbidden of the surface this standard go
   retired standard; a `## Impact` that enumerates instead is a list that will be short.
 
 ## Why there is no longer a wrapper
+
+<!-- rationale -->
 
 This standard used to carry a §*Why the wrapper still exists*, arguing that the mandatory 1:1
 wrapper bought exactly one thing — the `:`-namespaced `/` tree — at a measured cost of ~2,072

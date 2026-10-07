@@ -4,7 +4,7 @@ How this repo's Claude Code **automation surface** — skills and their command 
 classified, named, authored, and swept into conformance.
 
 **Boundary:** `automation/` governs the `.claude/`-style skill + command surface (here, the
-plugin's own `skills/` + `commands/`). The naming of the commands themselves lives one level over
+plugin's own `commands/` — there is no `skills/` directory). The naming of the commands themselves lives one level over
 in [../naming/command-surface.md](../naming/command-surface.md); code conventions live in
 [../code/](../code/index.md). One standard per file; each carries `type: standard` + a derived
 `resource:`.

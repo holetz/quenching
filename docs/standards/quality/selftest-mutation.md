@@ -7,11 +7,13 @@ tags: [quality, testing, mutation, verification]
 timestamp: 2026-08-27
 audience: both
 authority: background
-source: improve-command-from-session plan — the mutation pass was run against the session tool's (pre-refactor) selftest at task 2.1 and recorded in that spec's `## Discoveries`; a second pass, over the routing rules only, ran against the components tool's (pre-refactor) selftest during route-commands-without-always-on-descriptions (7 mutations, 2026-08-02) — a third, over its `--sections` ladder, ran during skills-py-sections-comma-split-bug (3 mutations, 2026-08-05 — two killed, one recorded equivalent), and contributed the both-modes and equivalent-mutant rules; reframed by modularizar-specs-knowledge-components task 9.3 once tests/ replaced the four `selftest` subcommands this file used to govern (its own §Testes closed the loop the historical passes below could only gesture at — the `-k backend`/`-k parse`/`-k command`/`-k config` verify: lines of that spec's sections 3–5 collected ZERO tests and exited 0, the exact failure mode `test_discovery_is_not_empty` now asserts against); §The third pass added by make-named-by-bodies-scale-with-the-surface-it-was-built-for task 1.2 (2026-08-17), the first pass run against `tests/` rather than a retired selftest — it re-ran the seven mutations of §The second pass and found five of them no longer killed by anything, which is a measurement of the replacement suite and not of the rewrite it was run beside; §The fourth pass (2026-08-27, same seven, seven killed) closes that gap with `tests/test_lint_inert_stage.py`, the successor fixture the third pass named as missing, added by the same spec's task 1.2
+source: improve-command-from-session, route-commands-without-always-on-descriptions, 2026-08-02, skills-py-sections-comma-split-bug, 2026-08-05, modularizar-specs-knowledge-components; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Mutation-checking a test
+
+<!-- rules -->
 
 Every module `tests/` covers is exercised by `python3 -m unittest discover -s tests`, which
 CLAUDE.md's verification block leans on. A test is the cheapest verification the repo has — and
@@ -84,6 +86,8 @@ under `/tmp`, and got 12 against 20 — pure artefact: `find_surface_root` resol
 something else.
 
 ## The second pass — the pre-refactor components tool, and why it counts as partial
+
+<!-- rationale -->
 
 Run 2026-08-02 for `route-commands-without-always-on-descriptions`, against the rules that spec
 added: the residency predicate `budget` and `lint` both read from, and the set of commands a

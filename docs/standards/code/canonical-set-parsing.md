@@ -7,11 +7,13 @@ tags: [code, parsing, contracts, schema, lockstep, selftest]
 timestamp: 2026-08-27
 audience: both
 authority: current
-source: add-eli5-section-to-specs spec — the branch review found `cq specs new` had silently stopped stamping `## Problem` after `## Overview` was added ahead of it; both halves of this rule are the fix and the assertion that now guards it; the exhaustive-dispatch rule proved by the cut-specs-execute-turns spec (2026-07-31), where admitting `constraint:` let a bare `else` capture it as the task verify command; the production-function rule from the read-by-section-not-by-file branch review (2026-08-01), where `SECTION_CASES` proved `§X` resolution against a resolver written inside `cq specs`'s own selftest while `_match_heading` refused it; the duplication's justification rewritten from installed-copy to self-containment (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec); varrer-nomes-de-comando-legados (2026-08-27) — the retired specs align is no longer named as the sweep vocabulary these two codes do not belong to
+source: add-eli5-section-to-specs, cut-specs-execute-turns, 2026-07-31, read-by-section-not-by-file, 2026-08-01, 2026-08-03; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Reading a canonical set
+
+<!-- rules -->
 
 A **canonical set** is an ordered contract declared in one place and read in many:
 `schema.json`'s `sections` array, its `phases[].entryGate`, the frontmatter record vocabulary.

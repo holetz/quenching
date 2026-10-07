@@ -157,6 +157,14 @@
         "concepts/automation/test-layering.md",
       ] },
     ] },
+    { "Decisions" = [
+      "decisions/index.md",
+      "decisions/0001-spec-backend-measurements.md",
+      "decisions/0002-task-execution-history.md",
+      "decisions/0003-plan-git-record-history.md",
+      "decisions/0004-standards-source-lineage.md",
+      "decisions/0005-glossary-long-forms.md",
+    ] },
     { "Vision" = [
       "vision/index.md",
     ] },

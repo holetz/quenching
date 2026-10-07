@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Mechanical sweeps over prose
 
+<!-- rules -->
+
 A sweep that rewrites one textual form into another across a tree of prose is the cheapest way to
 move hundreds of sites, and this repo runs them: command bodies and shared references are the
 source code, so a naming change is a prose change. The failure mode below is **structural**, not a

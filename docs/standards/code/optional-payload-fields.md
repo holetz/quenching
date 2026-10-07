@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Optional payload fields: `null` means no answer
 
+<!-- rules -->
+
 The `cq specs` contract currently projects no optional body field. The former `## Overview`
 section and its `overview` payload were retired; the former `real_prose_or_none()` helper was
 deleted with them. The ranked table's `Summary` label is supplied by the native spec title, and

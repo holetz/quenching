@@ -7,11 +7,13 @@ tags: [workflows, specs, git, commits, records]
 timestamp: 2026-08-22
 audience: both
 authority: background
-source: abandonar-slug-por-id-nativo (section 4); specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption; the pull-request route and `merge.pr` added by that same plan's branch review at conclude, which found the `## Impact` path declared for this file and written only in plan-lifecycle.md; the declared-integration-branch step added ahead of origin/HEAD by the configurable-branch-strategy plan (task 2.3, 2026-08-04), proved in code by `infer_base_branch`'s `selftest` fixture; the section squash and its narrowing of the task→commit anchor to section granularity by the reduzir-commits-por-secao spec (2026-08-11); the native-ID branch mark and the auto-discover fallback added by abandonar-slug-por-id-nativo (section 4); the `pr` record, the in-place `work == base` pair and the liveness exception it forces added by vincular-spec-a-branch-commits-e-pr at its conclude — this file was never named under that spec's `## Impact`, and the branch review is what found it contradicted, after `cq specs next` was measured ranking every in-place spec as permanently in flight on a base branch that cannot die; the place rule (§Every record is written where it needs to survive) and the branch-deletion counterpart to the worktree rule (§A branch is deleted with `-d`, never `-D`) added by the fix-conclude-abandoned-branch-harvest plan (task 4.1, 2026-08-16) — proved, not merely agreed: `conclude-order-check.sh`'s `abandoned` arm (task 3.1 of that same plan) builds the fixture, deletes the branch with `-D`, and asserts the closing survives; `pr:`/`merge:` ownership moved to `/quenching:git:pr:create`/`/quenching:git:merge` and the host-link conditionality (measured in task 1.1) added by pilar-git-e-especs-agnosticas-ao-git (task 6.4); estender-o-git-cleanup-para-podar-branches-remotas (task 3.1, 2026-08-30)
+source: abandonar-slug-por-id-nativo, vincular-spec-a-branch-commits-e-pr; history in ADR 0003
 maintainer: quenching
 ---
 
 # Plan git record contract
+
+<!-- rules -->
 
 What links a plan's checkboxes to the commits that implemented them, which git facts are recorded
 in the spec, and whose conventions govern the commits themselves. The procedures implementing this
@@ -191,10 +193,7 @@ same admission test — a fact no derivation can reproduce:
 
 **Where the host links the merge back to the branch, both records shed the "mandatory" half of
 their name.** `cq git base --json` reports `isDefault` alongside the resolved base — whether that
-base is the host's own default branch. **Measured for GitHub (task 1.1):** `Closes #<n>` only
-populates `closingIssuesReferences` — the fact a caller can read back — when the PR's base *is*
-that default; on any other base (this repo's own `develop`) the same keyword still cross-references
-the issue but never closes it, so nothing readable exists to fall back on. The rule this forces:
+base is the host's own default branch. `Closes #<n>` only populates `closingIssuesReferences` — the fact a caller can read back — when the PR's base is that default; on any other base nothing readable exists to fall back on ([ADR 0003](../decisions/0003-plan-git-record-history.md) §closingIssuesReferences). The rule this forces:
 
 | `cq git base`'s `isDefault` | `pr:`/`merge:` |
 | --- | --- |
@@ -203,11 +202,7 @@ the issue but never closes it, so nothing readable exists to fall back on. The r
 
 `/quenching:git:pr:create` and `/quenching:git:merge` both consult this fact before deciding
 whether to stamp; `/quenching:specs:conclude` consults it only to decide which of the two to name
-in its own handoff. **The same rule is assumed, not yet measured, for `azure-boards`** — its
-`--work-items` link is a structurally different mechanism (an explicit API link, not keyword
-parsing), so the branch restriction may not apply there at all; task 1.2 remains blocked (no
-authority to create artifacts in a real corporate org from an autonomous run) and is what would
-prove or break the assumption.
+in its own handoff. The same rule is assumed, not yet measured, for `azure-boards` ([ADR 0003](../decisions/0003-plan-git-record-history.md) §azure-boards assumption).
 
 **The record is never the signal.** A human may cut `plan/<id>-<handle>` by hand and stamp nothing, and a
 record outlives the branch it names. Anything asking whether a spec is in flight asks git for a
@@ -220,13 +215,9 @@ repository, always, so a spec built in place would answer *yes, in flight* forev
 question has to be skipped for that pair and the record read instead — the single case where the
 record IS the signal.
 
-MEASURED, and the reason this is written rather than assumed: when in-place work began stamping
-the pair, `cq specs next` still ranked on liveness alone, and every spec built in place rose to the
-top of that ranking with the reason *"you are on this branch"* whenever the session
-stood on the base. The guard the code already carried — *a record whose ref is gone stops
-counting* — could not fire, because nothing was ever going to remove `develop`. The shape
-generalizes past this record: **an expiry condition that the sentinel value can never satisfy is
-not a guard, and it fails silently in the direction of always-true.**
+<!-- rationale -->
+
+The exception was found when every in-place spec ranked first in `cq specs next` ([ADR 0003](../decisions/0003-plan-git-record-history.md) §The in-place liveness exception). An expiry condition the sentinel value can never satisfy is not a guard.
 
 ## The branch also carries a git-native mark, outside any frontmatter record
 

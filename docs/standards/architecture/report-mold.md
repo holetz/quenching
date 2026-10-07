@@ -7,11 +7,13 @@ tags: [architecture, commands, report, output, references, specs]
 timestamp: 2026-08-16
 audience: both
 authority: current
-source: branch holetz/specs-report (2026-08-04); the renderer clause, from the listagem-ranqueada-nativa-no-cq-specs spec (2026-08-16), measured over a front of 147 specs — three renderers of one table, 338,875 bytes cut to 8,455 — measured over the eight /quenching:specs:* bodies before and after; the divergence with commands/knowledge/status.md §4 is recorded below and was deliberately left uncorrected
+source: 2026-08-04, listagem-ranqueada-nativa-no-cq-specs, 2026-08-16; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # A front's report is a mold, owned once
+
+<!-- rules -->
 
 A front has several commands and **one** reader. What that reader sees at the end of every run is
 the most visible product of the whole front, and it is the one part no validator inspects.
@@ -54,6 +56,8 @@ described the report in prose produced six different shapes.
   tail only when there is more than one line.
 
 ## Why one section, and not prose in every body
+
+<!-- rationale -->
 
 An output format is a fact the command body *rewrites*. It is the fan-out that
 [../quality/computed-fact-prose-fanout.md](../quality/computed-fact-prose-fanout.md) describes: it
@@ -111,6 +115,8 @@ why the rule holds even where there is only **one** consumer: the second rendere
 expensive before it is divergent.
 
 ## Where the mold lives, and why
+
+<!-- rationale -->
 
 **The section goes inside a file the bodies already load, not in a file of its own.**
 

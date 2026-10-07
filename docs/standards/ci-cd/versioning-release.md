@@ -7,11 +7,13 @@ tags: [release, versioning, lockstep, plugin, distribution]
 timestamp: 2026-08-15
 audience: both
 authority: current
-source: modularizar-specs-knowledge-components spec, tasks 9.2 and 10.2 — rewritten for the one-package, one-entry-point (`cq`) architecture; the lockstep target dropped from seven artifacts to four once a single `common/version.py` constant answered for every pillar and `cq specs release` (task 10.2) was narrowed to match; the legacy-copy detector this standard used to document (`notice-installed-tool-version-drift` task 4.1) was retired the same spec, task 10.3, once the four scripts it compared against stopped existing to be compared against (moved from CLAUDE.md; plugin-first rewrite 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks; bump moved to release by configurable-branch-strategy task 1.2, 2026-08-04); artifact 4's resolution sentence corrected by the cq-nao-resolve-como-comando-nu spec's branch review (2026-08-15), which found it still asserting "no fallback and no manual rung" after that branch replaced the rule with two doors onto one file and a prohibition on any third
+source: modularizar-specs-knowledge-components, one-entry-point, notice-installed-tool-version-drift, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, configurable-branch-strategy; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Versioning and release — the four-artifact lockstep
+
+<!-- rules -->
 
 A release bumps four source version surfaces in lockstep. The rule is not bookkeeping tidiness:
 Claude, the marketplace and the bundled `cq` identity read different halves of the set, and a
@@ -30,6 +32,8 @@ partial bump makes one of them wrong.
 | 4 | `plugins/quenching/assets/bin/quenching/common/version.py` → `VERSION` | every pillar's own `--version` (`cq specs`, `cq knowledge`, `cq components`) |
 
 ## Why each half matters
+
+<!-- rationale -->
 
 **Artifacts 1–2 are the Claude upgrade trigger.** The `plugin.json` `version` and the `VERSION` file are
 the pair Claude Code uses to decide that an installed plugin is stale and should be replaced. Bump

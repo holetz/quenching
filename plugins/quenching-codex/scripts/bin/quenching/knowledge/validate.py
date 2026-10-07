@@ -12,6 +12,7 @@ import pathlib
 
 from quenching.knowledge.checks import (
     check_concept,
+    check_glossary,
     check_index,
     check_legacy_doc_quadrant,
     check_legacy_documentation_home,
@@ -60,6 +61,8 @@ def _validate_text(path: str, text: str, bundle_root: str) -> list[tuple[str, st
                 "OKF-strict uses `index.md` as the reserved listing — convert this README.md to index.md")]
     elif base.endswith(".md"):
         raw = check_concept(text) + check_resource(text, path, bundle_root)
+        if rel == GLOSSARY_REL:
+            raw += check_glossary(text)
         # `stale-doc` was emitted here until 2026-08-27. RETIRED, NOT DELETED — the same shape
         # `log.md` above carries: the code stays named and explained, and nothing emits it.
         # It compared a doc's `timestamp` against the last commit touching its `resource:`, which

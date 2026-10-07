@@ -7,11 +7,13 @@ tags: [automation, commands, taxonomy, authoring]
 timestamp: 2026-08-27
 audience: both
 authority: current
-source: the skill-authoring + skill-alignment change that first paired a skill with its wrapper (predates collapse-skills-into-commands) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31) + route-commands-without-always-on-descriptions (2026-08-02), which measured the disable-model-invocation claim this doc had asserted unmeasured and added the routed/typed-only admission criterion + the surface-wide description review added to /quenching:components:align (2026-08-02) + alocar-comandos-skills-por-categoria (2026-08-15), which made category/subject the primary classification test ahead of domain-bound/generic + revisar-fluxo-do-develop-custo-e-gates (2026-08-16), which widened the `context: fork` prohibition from "gates a mid-flow confirmation" to "asks the human anything mid-flow", aligning the written rule with the `sk-fork-gate` check that had always graded the `AskUserQuestion` grant itself; the directional-boundary rule added by the orquestrar-specs-em-paralelo branch review (2026-08-16), which found the two new fan-out entries naming their neighbours while no neighbour named them back — a one-directional surface no lint code can see; varrer-nomes-de-comando-legados (2026-08-27) — the standing example of a deliberate unscoped Bash grant is now /quenching:specs:execute, the command lint actually reports it on; sk-unscoped-bash-le-o-corpo (2026-08-27) — the stated reason has a literal marker `lint` can observe, carried as `priced` in the JSON
+source: collapse-skills-into-commands, 2026-07-26, correct-command-citation-form, 2026-07-31, route-commands-without-always-on-descriptions, 2026-08-02; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Command authoring and alignment
+
+<!-- rules -->
 
 The contract for how a command enters and stays in this plugin's automation surface, distilled
 from the skill-authoring + skill-alignment change that first paired a skill with its wrapper.
@@ -161,6 +163,8 @@ owns this class of fact carried no line about it at all. It has now been measure
 Two arms with a control, filesystem-verified, Claude Code 2.1.220 — recorded as row 7 of
 [claude-code-skill-command-mechanics.md](../../external/tools/claude-code-skill-command-mechanics.md).
 The control arm, identical but for the field, was listed and invoked by name successfully.
+
+<!-- rationale -->
 
 Recorded plainly because being right by luck is worth as much as being wrong here: the opposite
 assertion would have been equally easy to write, and

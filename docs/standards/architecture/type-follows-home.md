@@ -13,6 +13,8 @@ maintainer: quenching
 
 # A doc's `type:` is the signature of its home, and renames with it
 
+<!-- rules -->
+
 ## The rule
 
 The canonical tree fixes exactly one `type:` per home — `standards/**` is `standard`,
@@ -23,6 +25,8 @@ spellings of the same fact, not two independent choices — so when a home renam
 holds restamps its `type:` **in the same commit**, never left for later.
 
 ## Why this is worth stating on its own
+
+<!-- rationale -->
 
 Leaving a stale `type:` after a home renames does not just miss a cosmetic update. `type:` is the
 field a grep or a validator reads first — it is the bundle's most greppable signature of what a

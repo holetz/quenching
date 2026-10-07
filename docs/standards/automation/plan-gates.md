@@ -7,7 +7,7 @@ tags: [automation, commands, gates, confirmation, cost, turns]
 timestamp: 2026-08-25
 audience: both
 authority: background
-source: spec revisar-fluxo-do-develop-custo-e-gates, distilled at its conclude (2026-08-16); §When authority replaces the person added on 2026-08-22 by the reform that made the gear (`priority.complexity`) govern the interior of `/quenching:specs:develop` — under the `low` gear the pass stamps `approved` on its own authority, with `by: low-gear` in the record, and that is the first time a go/no-go has left the pass in this repository; the post-merge measurement is still owed, now for both changes — the criterion and the three rejected alternatives come from its `## Design` and its `## Alternatives Considered`, and the measured application is `/quenching:specs:develop`, the first command to run without a plan gate; the cost claim that motivated it (<= 4M for work equivalent to a 9.73M baseline over 100 turns) is still **unmeasured post-merge**, and that measurement is the graduation condition
+source: revisar-fluxo-do-develop-custo-e-gates, 2026-08-16, 2026-08-22; lineage in ADR 0004
 maintainer: quenching
 ---
 

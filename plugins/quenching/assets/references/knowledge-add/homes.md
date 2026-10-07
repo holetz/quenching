@@ -20,6 +20,7 @@ Ask **"what IS this, relative to us?"**:
 | --- | --- | --- | --- | --- |
 | a rule for **how WE build** (proven, or agreed-but-unproven) | `standards/<subject>/` | `standard` | `standard-front.md` | `<subject>/<concept>.md` |
 | **direction** for an area (no deadline) | `vision/` | `vision` | `vision/area.md` | `<area>.md` |
+| the **history** behind a rule (measurement, dated evidence, spec chain) | `decisions/` | `decision` | `concept-front.md` | `NNNN-<slug>.md` |
 | a **how-to / task recipe** (product usage) | `how-to/` | `how-to` | `concept-front.md` | `how-to/<slug>.md` |
 | a **tutorial** (learning-oriented) | `tutorials/` | `tutorial` | `concept-front.md` | `tutorials/<slug>.md` |
 | **an explanation** (site page, the reader's why) | `explanation/` | `explanation` | `concept-front.md` | `<slug>.md` |
