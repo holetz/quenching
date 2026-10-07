@@ -344,7 +344,7 @@
   ],
   "sha256": {
     ".codex-plugin/plugin.json": "0a696ee33b34996d136d4aa2d32fcc35bd34af35efb475b0cabefbafcaf87f34",
-    ".generated-from.json": "f0720f36bb2751a36993486a5c9861e34e54d36df44562b9bc1c7cb59739e0dc",
+    ".generated-from.json": "f859fdde8b479520e1c142ec809da56d5e89b45094efe995d5879aae2c6d4426",
     "README.md": "1a5083d423995a54f56cec77e86080a04fbebd7e58174332a58a48cd32e434e5",
     "VERSION": "e33e70efdb9c35eb184b87ee7abc05ac16a925c9c36e84408999dea33a741fa8",
     "checks/catalog-publication-check.py": "9f4c9b75b524e31bd9420036a5384801ef707ef5708956abba1d6eb62c398f9e",
@@ -560,7 +560,7 @@
     "scripts/bin/quenching/specs/backends/__init__.py": "4a48fcadb75cded02b36aeefe23afcc3c330f28ad0d6a94a0f5939e31ce0801a",
     "scripts/bin/quenching/specs/backends/azure.py": "60ab1585d37c88be94c50edb2d1cc1cc603964140a4a3bc370ef3423424f58f5",
     "scripts/bin/quenching/specs/backends/base.py": "4c5673a9a179c45ce9d305c7e664d65d702039027c5e6dcd8c1a0667ee8e2d69",
-    "scripts/bin/quenching/specs/backends/git.py": "8cb6873f11718fd5e85c0201d230933120762d1f20f98d66077aa45e0bd4eab6",
+    "scripts/bin/quenching/specs/backends/git.py": "8736dbaaad897483519b16fe2ebe7a1d78d240f8070062cd7e0a77176e72b7c1",
     "scripts/bin/quenching/specs/backends/github.py": "ac5cb3ac7a8c5970d924989e2600d04d8c6d7768f5a784314941c377e2c3b70e",
     "scripts/bin/quenching/specs/backends/hybrid.py": "d8dc25aa28f0a2f62ea0f056e391ff3a3e2457150d89a21eeaac04f84812da44",
     "scripts/bin/quenching/specs/backends/memory.py": "6cef420d1ce5d2d651f15361f8a2ca8338705c9ebf46da0d5fc1e8d70afc72e6",

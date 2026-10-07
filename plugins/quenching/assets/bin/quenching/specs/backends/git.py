@@ -218,10 +218,14 @@ class GitBackend(SpecBackend):
             pass
 
     def _tip(self) -> str | None:
-        """The tip a read sees: at most one fetch per process, none while the cache is fresh."""
-        if self._fetched or self._cache_fresh():
-            return self._local_tip()
-        return self._fetch()
+        """The tip a read sees: at most one fetch per process, none while the cache is fresh.
+        Memoized per process; any write clears the memo so the next read sees the new tip."""
+        if getattr(self, "_tip_memo", None) is None:
+            if self._fetched or self._cache_fresh():
+                self._tip_memo = self._local_tip()
+            else:
+                self._tip_memo = self._fetch()
+        return self._tip_memo
 
     # -- the read model -------------------------------------------------------- #
     def _snapshot(self, tip: str | None) -> "_Tree":
@@ -299,6 +303,11 @@ class GitBackend(SpecBackend):
 
     def read_spec(self, spec_id: str | int) -> tuple[dict | None, dict]:
         snapshot = self._snapshot(self._tip())
+        # A second read in one process means a sweep (list --json, validate): load every text in
+        # one batch instead of one `cat-file` per spec.
+        self._reads = getattr(self, "_reads", 0) + 1
+        if self._reads == 2:
+            snapshot.preload()
         spec, err = resolve_one(self.list_specs(), spec_id)
         if err:
             return None, err
@@ -515,6 +524,13 @@ class GitBackend(SpecBackend):
 
     # -- the one write path ---------------------------------------------------- #
     def _store(self, apply, message) -> dict[str, str]:
+        self._tip_memo = None
+        try:
+            return self._store_once(apply, message)
+        finally:
+            self._tip_memo = None
+
+    def _store_once(self, apply, message) -> dict[str, str]:
         """Apply `apply(snapshot) -> (changes, _)` on the tip, commit, push without force.
 
         A rejected push fetches and re-runs `apply` on the new tip, up to `MAX_ATTEMPTS`
