@@ -18,9 +18,11 @@ from quenching.common.dates import today
 from quenching.common.git import _git
 from quenching.specs.backends import open_backend
 from quenching.specs.backends.base import SpecBackend
+from quenching.specs.commands.epic import cmd_next_epic
 from quenching.specs.commands.output import Emitter, display_locator, front_fields, read_one
 from quenching.specs.parse import derive_info, spec_handle
 from quenching.specs.parse.derive import derive_stage
+from quenching.specs.parse.epics import is_epic
 from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.sections import ready_report
 from quenching.specs.parse.tasks import _files_bad_annotation, task_progress
@@ -365,6 +367,12 @@ def cmd_next(args, root: str, out: Emitter) -> int:
 
     With `--front` the question is the other one — WHICH spec — and that is answered by
     `_next_front`."""
+    if getattr(args, "epic", None):
+        if args.front or args.spec:
+            return out.emit_err(args.json, {
+                "code": "sp-epic-conflict", "exit": 2,
+                "message": "--epic is its own question; drop --spec/--front"})
+        return cmd_next_epic(args, root, out)
     if args.front:
         return _next_front(args, root, out)
     if not args.spec:
@@ -395,6 +403,14 @@ def cmd_next(args, root: str, out: Emitter) -> int:
                    "message": f"write ## {want}"
                               + (f" (then {remaining} more)" if remaining else "")
                               + " to reach the ready gate"}
+            out.emit(args.json, obj, obj["message"])
+            return 0
+        if is_epic(info["frontmatter"]):
+            # An epic's tasks are member specs, derived and never executed here: the
+            # orchestrator's entry is the ready set.
+            obj = {"ok": True, "action": "orchestrate", **base,
+                   "message": f"epic — run `cq specs next --epic {info['id']}` for the "
+                              f"member specs ready to run"}
             out.emit(args.json, obj, obj["message"])
             return 0
         openable = [t for t in info["tasks"] if not t["checked"] and not t["blocked"]]

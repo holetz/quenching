@@ -22,6 +22,7 @@ from quenching.common.version import VERSION
 from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.commands.create import cmd_new
 from quenching.specs.commands.doctor import cmd_config, cmd_doctor
+from quenching.specs.commands.epic import cmd_epic
 from quenching.specs.commands.fields import cmd_field, cmd_record, cmd_verification
 from quenching.specs.commands.find import cmd_find
 from quenching.specs.commands.granular import cmd_section, cmd_show
@@ -35,6 +36,7 @@ from quenching.specs.commands.release import cmd_release
 from quenching.specs.commands.task import cmd_discover, cmd_task
 from quenching.specs.commands.validate import cmd_validate
 from quenching.specs.config import find_repo_root
+from quenching.specs.portal import cmd_serve
 from quenching.specs.parse import PHASES
 from quenching.specs.schema import DEFAULT_VERIFICATION, OUTCOMES, VERIFICATION_POLICIES
 
@@ -72,6 +74,10 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--complexity",
                     help="one of low/medium/high/xhigh — written into the new spec's "
                          "`priority.complexity` record")
+    sp.add_argument("--card", type=int, metavar="N",
+                    help="adopt issue / work item N as this spec's card: its text becomes "
+                         "`## Problem` when none is supplied, N becomes the spec's ID and the "
+                         "item is rewritten to the thin card (the branch store only)")
 
     sp = add_json(sub.add_parser("list", help="every spec, by folder and derived stage"))
     sp.add_argument("--phase", choices=list(PHASES),
@@ -79,8 +85,10 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--lean", action="store_true",
                     help="use the provider's native index; omit document-derived fields")
 
-    sp = add_json(sub.add_parser("status", help="one spec's sections, stage, tasks, gates"))
-    sp.add_argument("--spec", required=True)
+    sp = add_json(sub.add_parser("status", help="one spec's sections, stage, tasks, gates — "
+                                                "or one epic's progress with --epic"))
+    sp.add_argument("--spec", help="one spec ID")
+    sp.add_argument("--epic", help="an epic ID: progress per group, blocked items, critical path")
 
     sp = add_json(sub.add_parser("show", help="granular read: ONE task, the map by default, "
                                               "the document only with --full (section "
@@ -188,6 +196,20 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                          "ranking alone")
     sp.add_argument("--front", action="store_true",
                     help="rank every active spec: executing, closest to done, priority, age")
+    sp.add_argument("--epic", help="an epic ID: the member specs ready to run now — "
+                                   "dependencies done, approved or ready, not blocked")
+    sp.add_argument("--limit", type=int, help="with --epic: at most N ready specs")
+
+    sp = sub.add_parser("epic", help="epics: specs whose tasks are member specs")
+    esub = sp.add_subparsers(dest="epic_cmd")
+    ep = add_json(esub.add_parser("add", help="list a spec as an epic item and stamp `epic:` "
+                                              "on it"))
+    ep.add_argument("epic", help="the epic spec ID")
+    ep.add_argument("spec", help="the member spec ID")
+    ep.add_argument("--after", help="comma-separated item labels this one waits for")
+    ep.add_argument("--group", help="the `### N.` group (wave) to list it under; "
+                                    "created when new")
+    ep.add_argument("--label", help="the item label (default: the next S<n>)")
 
     sp = add_json(sub.add_parser("parallel", help="prove a [P] group's files: are disjoint"))
     sp.add_argument("--spec", required=True)
@@ -220,9 +242,16 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
 
     add_json(sub.add_parser("doctor", help="workspace shape; remedies declared"))
 
-    sp = add_json(sub.add_parser("migrate", help="one-way fold to the current layout "
-                                                 "(v1 → v3, and backlog/ + ready/ → plans/)"))
-    sp.add_argument("--dry-run", action="store_true", dest="dry_run")
+    sp = add_json(sub.add_parser("migrate", help="move the specs of a tracker backend onto the "
+                                                 "`quenching` branch (`--to git`); dry run "
+                                                 "unless --write"))
+    sp.add_argument("--to", choices=["git"], help="the destination store")
+    sp.add_argument("--write", action="store_true",
+                    help="commit the batch to the branch (default: report only)")
+    sp.add_argument("--thin-open-cards", action="store_true", dest="thin_open_cards",
+                    help="with --write: rewrite every OPEN source issue / work item to the "
+                         "thin card; closed ones are never touched")
+    sp.add_argument("--dry-run", action="store_true", dest="dry_run", help=argparse.SUPPRESS)
 
     sp = add_json(sub.add_parser("export", help="dump the canonical markdown to disk — "
                                                 "write-only, nothing reads it back"))
@@ -231,6 +260,14 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     grp.add_argument("--all", action="store_true", help="every spec")
     sp.add_argument("--out", default="specs-export",
                     help="destination directory (default: ./specs-export)")
+
+    sp = add_json(sub.add_parser("serve", help="the local spec portal — a browser board over "
+                                                "the same backend, loopback only"))
+    sp.add_argument("--port", type=int, default=0, help="port (default: a free one)")
+    sp.add_argument("--host", default="127.0.0.1", help="loopback address only")
+    sp.add_argument("--read-only", action="store_true", dest="read_only",
+                    help="disable every write route on the server")
+    sp.add_argument("--open", action="store_true", help="open the URL in the browser")
 
     return p, sub
 
@@ -253,12 +290,14 @@ DISPATCH: dict = {
     "parallel": cmd_parallel,
     "find": cmd_find,
     "discover": cmd_discover,
+    "epic": cmd_epic,
     "validate": cmd_validate,
     "config": cmd_config,
     "release": cmd_release,
     "doctor": cmd_doctor,
     "migrate": cmd_migrate,
     "export": cmd_export,
+    "serve": cmd_serve,
 }
 
 

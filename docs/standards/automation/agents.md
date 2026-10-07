@@ -56,3 +56,20 @@ command that owns authoring, under its own confirmation.
 The full pricing doctrine lives once, in
 `plugins/quenching/assets/references/components-command-new/capabilities.md`
 §Subagents; this standard is the repo-side projection of it.
+
+## Plugin-shipped agents
+
+Rules for agents the plugin itself ships in `plugins/quenching/agents/` (as opposed to a target's
+`.claude/agents/`):
+
+- One file per agent, `name` matching the filename, `description` within the command cap.
+- `tools` is the narrowest allowlist: an orchestrator holds no `Edit`/`Write`, a verifier and a
+  scout are read-only, and delegation is limited to the plugin's own `quenching:*` agent types.
+- The shared protocol lives once, in the orchestrator body, which the cache reuses across sessions;
+  never in a scratchpad file a prompt points at.
+- Every worker and the orchestrator forbid `git stash`, `checkout`, `switch` and `reset`, and end
+  in a fixed return report. A worker result is accepted only on a `verifier` PASS.
+- Plugin agents cannot carry hooks, so prohibitions are prose, enforced by the verifier's audit.
+- Pass `model` explicitly when delegating; a declared pin may not survive into a subagent.
+- Models: no `haiku` for agents that write product code. The Codex translation does not carry
+  `agents/`.

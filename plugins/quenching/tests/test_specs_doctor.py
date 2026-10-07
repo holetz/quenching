@@ -80,7 +80,16 @@ class GithubDoctorFindings(unittest.TestCase):
                     mock.patch.object(doctor_mod, "load_config", return_value=cfg), \
                     contextlib.redirect_stdout(buf):
                 code = cmd_doctor(argparse.Namespace(json=True), root, Emitter())
-        return json.loads(buf.getvalue())["findings"], code
+        self.deprecation = [f for f in json.loads(buf.getvalue())["findings"]
+                            if f["code"] == "sp-backend-deprecated"]
+        return [f for f in json.loads(buf.getvalue())["findings"]
+                if f["code"] != "sp-backend-deprecated"], code
+
+    def test_a_tracker_backend_is_flagged_deprecated_with_the_migration_remedy(self):
+        self._findings(_StubBackend(rows=[], open_issues=0))
+        self.assertEqual(1, len(self.deprecation))
+        self.assertEqual("warn", self.deprecation[0]["severity"])
+        self.assertIn("migrate --to git", self.deprecation[0]["remedy"])
 
     def test_zero_specs_with_open_issues_is_a_warn_and_names_the_number(self):
         findings, code = self._findings(_StubBackend(rows=[], open_issues=38))
