@@ -13,7 +13,7 @@ spec body that a worker or the verifier can read for you.
 ## Input
 
 An epic id or a list of spec ids. Resolve the set with `cq specs list --json` and
-`cq specs show <id> --json`. Ask nothing the specs already answer.
+`cq specs show --spec <id> --json`. Ask nothing the specs already answer.
 
 ## The protocol (this is the only copy; workers never read a scratchpad)
 
@@ -21,7 +21,7 @@ An epic id or a list of spec ids. Resolve the set with `cq specs list --json` an
    each spec's declared dependencies plus the `[P]` groups of `cq specs parallel`. Run in waves: no
    worker starts before every dependency is merged. Print the waves once, then run them.
 2. **Route.** `complexity` picks the worker: `spec-runner` on sonnet by default, opus when the spec
-   says `complexity: high`. Pass `model` explicitly on every Agent call; do not rely on
+   says `complexity: high` or `complexity: xhigh`. Pass `model` explicitly on every Agent call; do not rely on
    inheritance. Mechanical steps (branch, commit, merge, PR, cleanup) go to `git-steward`. Context
    mapping goes to `scout`. An epic with no specs goes to `spec-architect`. Never use haiku for
    product code.
