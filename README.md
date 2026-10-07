@@ -21,10 +21,10 @@ The `Sync Codex plugin` workflow runs on pushes and pull requests. It installs t
 toolchain and runs the repository gate; it does not write the generated snapshot in CI. Refresh
 the Codex artifact locally after changing Claude sources.
 
-## Desenvolvimento local
+## Local development
 
-Este checkout já declara o toolchain no `pyproject.toml` e fixa a resolução em `uv.lock`:
-o `cq` publicado requer Python 3.11 ou mais recente.
+This checkout declares its toolchain in `pyproject.toml` and pins resolution in `uv.lock`:
+the published `cq` requires Python 3.11 or newer.
 
 ```bash
 uv sync --all-groups
@@ -35,9 +35,9 @@ python3 plugins/quenching/assets/checks/documentation-site-check.py site --local
 uv run pytest plugins/quenching/tests -q
 ```
 
-O `zensical.toml` raiz é somente a configuração do site de desenvolvimento deste repositório;
-artefatos em `site/` e `.cache/` não entram no Git. O payload que o plugin instala em um projeto
-alvo continua em `plugins/quenching/assets/zensical/`.
+The root `zensical.toml` is only the configuration of this repository's development site;
+artifacts in `site/` and `.cache/` stay out of Git. The payload the plugin installs into a target
+project remains in `plugins/quenching/assets/zensical/`.
 
 ## What it does
 

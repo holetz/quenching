@@ -21,7 +21,7 @@ class KnowledgeAlignmentContract(unittest.TestCase):
             "plugin-package-gap",
             "plan-drift",
             "not-applicable",
-            "### Mapa editorial de publicação",
+            "### Publication map",
             "Semantic resource ambiguity",
         ):
             self.assertIn(marker, align)
