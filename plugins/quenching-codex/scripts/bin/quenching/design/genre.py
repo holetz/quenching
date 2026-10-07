@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
+from quenching.common.io import write_text
 from quenching.design.build import build_drift, compute_build, write_build
 from quenching.design.markdown import parse_document_frontmatter, render_markdown, split_h2
 from quenching.design.model import DesignError, font_asset_paths, read_json
@@ -54,7 +55,7 @@ def new_genre(root: Path, slug: str, name: str, register: str, media: list[str],
         for relative, content in targets.items():
             target = root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(content, encoding="utf-8", newline="\n")
+            write_text(str(target), content)
     generated = write_build(compute_build(root)) if write else []
     return {"ok": True, "mode": "write" if write else "check", "files": sorted(targets),
             "generated": generated, "genre": slug, "media": normalized_media}
@@ -114,7 +115,7 @@ def render_genre(root: Path, slug: str, medium: str, data_path: Path,
         if medium == "pdf":
             _compile_pdf(rendered, target, root)
         else:
-            target.write_text(rendered, encoding="utf-8", newline="\n")
+            write_text(str(target), rendered)
     else:
         _render_external(engine, data, template, medium, root, target)
     return {"ok": True, "genre": slug, "medium": medium,
