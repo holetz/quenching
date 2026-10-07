@@ -4,7 +4,7 @@ okf_version: "0.1"
 
 # Every repository, the same shape
 
-**quenching** is a Claude Code plugin. Point it at a repository and its knowledge, its plans, its
+**quenching** is a Claude Code plugin for teams that build with AI agents. Point it at a repository and its knowledge, its plans, its
 design source, automation, operations and verification each converge onto one canonical, verifiable structure — probed first, planned
 once, changed only on your OK.
 
@@ -25,6 +25,12 @@ before anyone touches a file.
 - **Look it up** — the complete command catalog, release history and local automation registry:
   [this project's reference](project/index.md), the [changelog](project/changelog.md), and the
   [glossary](glossary.md).
+
+## Core and non-core fronts
+
+The **core** is `knowledge`, `specs`, `git` and `components`: these are maintained actively. The
+`design`, `ops`, `proof`, `toolchain`, `delivery` and `security` fronts are **non-core** — human-only
+commands kept under the same names with reduced maintenance (defect fixes, no new features).
 
 ## The problem
 
