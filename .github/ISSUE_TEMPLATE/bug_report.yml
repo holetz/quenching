@@ -1,0 +1,38 @@
+name: Bug report
+description: Something in the quenching plugin does not behave as documented.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Specs are created by the tool (`/quenching:specs:create`). This form opens an ordinary issue;
+        a maintainer converts it into a spec if it is accepted.
+  - type: input
+    id: version
+    attributes:
+      label: Plugin version
+      description: Output of `cq --version`, or the version in `plugins/quenching/VERSION`.
+    validations:
+      required: true
+  - type: input
+    id: command
+    attributes:
+      label: Command or tool
+      description: The command (for example `/quenching:specs:execute`) or `cq` subcommand involved.
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: Include the exact output or error.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce

@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Specs are created by the tool
+    url: https://github.com/holetz/claude-quenching/blob/main/CONTRIBUTING.md
+    about: Issues labeled `spec` are written by /quenching:specs:create, not by hand. Open a bug report or a feature request here instead; maintainers turn accepted ones into specs.

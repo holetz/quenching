@@ -1,7 +1,7 @@
 # quenching (plugin)
 
-An **OKF-centric workflow-study artifact** for the Claude Code surface of a
-repository. It carries one canonical **Open Knowledge Format (OKF v0.1)** bundle
+A team tool for the Claude Code surface of a
+repository: **specs, git, knowledge and components** are its core. It carries one canonical **Open Knowledge Format (OKF v0.1)** bundle
 of `/docs/` and the tools used to inspect it, force an existing base into conformance,
 insert new knowledge, capture terms into a fixed glossary, drain the project's Claude
 Code memory into it, import external sources into it, keep the repo's `CLAUDE.md` a thin pointer over it, and organize
@@ -16,9 +16,11 @@ for Impeccable and editorial media, and a human-arbitrated import path for an Im
 `DESIGN.md`. Impeccable remains optional and owns web craft; quenching owns the source, product
 projection, genres, and non-web adapters.
 
-This is an educational, reproducible study surface rather than a production control or security
-boundary. A disposable target can exercise the workflow, but the documentation makes no claim that
-an assistant cannot write through an available shell or Python interpreter.
+**Core fronts** (maintained actively): `knowledge`, `specs`, `git` and `components`. **Non-core
+fronts** (`design`, `ops`, `proof`, `toolchain`, `delivery`, `security`): human-only commands under
+the same names, with reduced maintenance — defect fixes, no new features. quenching is not a
+security boundary: the documentation makes no claim that an assistant cannot write through an
+available shell or Python interpreter.
 
 All of it sits behind **one interface, repeated on every front**: ONE `align` per front —
 probe-first, so a clean front costs a couple of tool calls — that forces the structure into
@@ -361,7 +363,7 @@ Shared contracts keep gates explicit; missing `gh` or `az` is a named refusal
 
 ## Install
 
-For a disposable study target, the published Claude plugin can be installed from inside Claude
+The published Claude plugin (try it first in a disposable repository) can be installed from inside Claude
 Code by adding the marketplace and installing the plugin:
 
 ```text
