@@ -743,6 +743,23 @@ class GithubCreateType(unittest.TestCase):
         self.assertEqual(ctx.exception.err.get("exit"), 2)
 
 
+class GhCreatePartialFailure(unittest.TestCase):
+    """A create whose later step fails must not hide the issue the POST already made."""
+
+    def test_failure_after_the_post_names_the_created_issue(self):
+        backend = GitHubBackend("owner/repo", os.getcwd(), types={"incidente": "Bug"})
+        backend._write_api = lambda *a, **k: {"number": 77, "html_url": "https://x/77"}
+        boom = BackendRefusal({"code": "sp-gh-api-error", "exit": 2, "message": "gh said 500"})
+        with mock.patch.object(backend, "_set_type", side_effect=boom), \
+                mock.patch.object(backend, "_sync_parts"):
+            with self.assertRaises(BackendRefusal) as ctx:
+                backend.create_spec("plans", "---\nworkItemType: incidente\n---\n"
+                                    "# T\n\n## Problem\n\nx\n")
+        self.assertEqual(ctx.exception.err["issue"], 77)
+        self.assertIn("#77", ctx.exception.err["message"])
+        self.assertIn("do not run `new` again", ctx.exception.err["message"])
+
+
 # --------------------------------------------------------------------------- #
 # the GitHub issue body ceiling
 # --------------------------------------------------------------------------- #
@@ -814,6 +831,36 @@ class GhTransport(unittest.TestCase):
 
         self.assertEqual(result[0], 1)
         self.assertEqual(result[3], 1)
+        sleep.assert_not_called()
+
+    def _server_error(self):
+        return subprocess.CompletedProcess(
+            ["gh", "api"], 1, stdout='{"message":"Server Error"}',
+            stderr="gh: Server Error (HTTP 500)\n")
+
+    def test_idempotent_write_retries_a_500(self):
+        passed = subprocess.CompletedProcess(["gh", "api"], 0, stdout="{}", stderr="")
+        with mock.patch("subprocess.run", side_effect=[self._server_error(), passed]), \
+                mock.patch.object(gh_mod.time, "sleep"):
+            patch = gh_mod._gh_run(os.getcwd(), "api", "-X", "PATCH", "repos/o/r/issues/1",
+                                   "--input", "-", stdin="{}")
+        self.assertEqual(patch[:3], (0, "{}", ""))
+        self.assertEqual(patch[3], 2)
+
+    def test_issue_edit_retries_a_500(self):
+        passed = subprocess.CompletedProcess(["gh"], 0, stdout="", stderr="")
+        with mock.patch("subprocess.run", side_effect=[self._server_error(), passed]), \
+                mock.patch.object(gh_mod.time, "sleep"):
+            result = gh_mod._gh_run(os.getcwd(), "issue", "edit", "1", "--type", "Bug")
+        self.assertEqual(result[3], 2)
+
+    def test_post_is_sent_once_even_on_a_500(self):
+        with mock.patch("subprocess.run", return_value=self._server_error()) as run, \
+                mock.patch.object(gh_mod.time, "sleep") as sleep:
+            result = gh_mod._gh_run(os.getcwd(), "api", "-X", "POST", "repos/o/r/issues",
+                                    "--input", "-", stdin="{}")
+        self.assertEqual(result[3], 1)
+        self.assertEqual(run.call_count, 1)
         sleep.assert_not_called()
 
 

@@ -118,6 +118,24 @@ def _gh_is_read(argv: tuple[str, ...]) -> bool:
     return len(argv) > 1 and argv[1] in ("list", "view")
 
 
+def _gh_is_idempotent(argv: tuple[str, ...]) -> bool:
+    """Whether repeating a `gh` call leaves GitHub in the same state as running it once.
+
+    Reads, plus the whole-value writes this backend makes: `gh api -X PATCH|PUT|DELETE` and
+    `gh issue edit`. A POST is never here: a timeout can fire after GitHub accepted it, and a
+    second attempt would create a second issue or comment."""
+    if _gh_is_read(argv):
+        return True
+    if argv[:1] == ("api",):
+        for i, token in enumerate(argv):
+            if token in ("-X", "--method") and i + 1 < len(argv):
+                return argv[i + 1].upper() in ("PATCH", "PUT", "DELETE")
+            if token.startswith("--method="):
+                return token.split("=", 1)[1].upper() in ("PATCH", "PUT", "DELETE")
+        return False
+    return argv[:2] == ("issue", "edit")
+
+
 def _gh_result(result) -> tuple[int, str, str, int]:
     """Normalize the historical three-field test doubles and the four-field transport result."""
     if len(result) == 4:
@@ -153,10 +171,10 @@ def _gh_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, s
         raise read_only_refusal("gh", argv)
     if not os.path.isdir(cwd):
         return 1, "", f"not a directory: {cwd}"
-    # ONLY READS ARE REPEATED. A timeout can fire after GitHub accepted a POST, and a second
-    # attempt would then create a second issue or comment; a failed write is reported once
-    # and the caller decides what is safe to do next.
-    max_attempts = GH_MAX_ATTEMPTS if reads else 1
+    # ONLY IDEMPOTENT CALLS ARE REPEATED: reads and whole-value PATCH/PUT/DELETE. A timeout can
+    # fire after GitHub accepted a POST, and a second attempt would then create a second issue
+    # or comment; a failed POST is reported once and the caller decides what is safe to do next.
+    max_attempts = GH_MAX_ATTEMPTS if _gh_is_idempotent(argv) else 1
     for attempt in range(1, max_attempts + 1):
         try:
             out = subprocess.run(["gh", *argv], capture_output=True, text=True,
@@ -908,6 +926,21 @@ class GitHubBackend(SpecBackend):
                                 payload)
         number = int((issue or {}).get("number") or 0)
         url = (issue or {}).get("html_url") or f"https://github.com/{self.repo}/issues/{number}"
+        try:
+            return self._finish_create(phase, number, url, fresh, chunks)
+        except BackendRefusal as refusal:
+            # The issue EXISTS. A refusal that hid its number invites a blind retry of `new`,
+            # which duplicates it; name it and say what is left to do.
+            refusal.err.update({
+                "issue": number, "url": url,
+                "message": f"{refusal.err.get('message', 'a step failed')} — issue #{number} "
+                           f"({url}) was ALREADY created; do not run `new` again, finish "
+                           f"that issue instead",
+            })
+            raise
+
+    def _finish_create(self, phase: str, number: int, url: str, fresh: dict,
+                       chunks: list[tuple[str, bool]]) -> str:
         # The abstract `workItemType:` key, projected to GitHub's own Issue Type — through
         # `_set_type` (`gh issue edit --type`), NEVER a `type` field on the create payload
         # above. MEASURED live (2026-08-07, holetz/claude-quenching#898): the REST create
@@ -1000,7 +1033,8 @@ class GitHubBackend(SpecBackend):
                 "code": "sp-gh-parts-missing", "exit": 2, "issue": number,
                 "found": len(chunks), "declared": parts,
                 "message": f"issue #{number} declares {parts} document parts and "
-                           f"{len(chunks)} are present — a continuation comment was deleted; "
+                           f"{len(chunks)} are present — a continuation comment was deleted, or a "
+                           f"multi-part write was interrupted before it finished; "
                            f"nothing was read and nothing was written",
             })
         return hybrid_join(chunks)
