@@ -20,7 +20,7 @@ def cmd_release(args, root: str, out: Emitter) -> int:
     Refuses (exit 2) rather than guessing: a version not shaped X.Y.Z, a repository that is
     not this plugin's own checkout, a lockstep already disagreeing with itself, or a
     version that changes nothing."""
-    new_version = args.version
+    new_version = args.new_version
     if not SEMVER_RE.match(new_version):
         return out.emit_err(args.json, {"code": "sp-release-bad-version", "exit": 2,
                                         "version": new_version,

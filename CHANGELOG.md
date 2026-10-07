@@ -13,6 +13,19 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 6.4.0
+
+specs **left the issue body**. A spec now lives on the git branch `quenching` (`specs/`,
+  `specs/archive/`, `quenching.json`), written by plumbing without a worktree, with the push as the
+  compare-and-swap; the GitHub issue or Azure work item becomes a thin card written only at
+  lifecycle transitions (`cq specs new --card <n>` adopts an existing one). `cq specs migrate --to
+  git` moves a tracker-backed repository; the tracker backends keep working and `doctor` flags them
+  deprecated. Also new: epics (`workItemType: epic`, `status`/`next --epic`), a local portal
+  (`cq specs serve`, `/quenching:specs:board`), plugin agents with `/quenching:specs:orchestrate`,
+  and `AGENTS.md` as the single harness. Non-core fronts (design, ops, proof, toolchain, delivery,
+  security) and human-only leaf commands are now typed-only (`disable-model-invocation`), and every
+  description fits 250 characters.
+
 ## 6.3.0
 
 the ranked front became **native to the tool**. `cq specs next --front --table`
