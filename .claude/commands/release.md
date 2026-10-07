@@ -9,7 +9,7 @@ description: >-
   finishes: the bump and its tag live on the primary branch's tip, on origin. Not for:
   concluding or merging ONE spec into the primary branch → /quenching:specs:conclude.
 argument-hint: [version — optional, skips the proposal and confirms this exact X.Y.Z]
-allowed-tools: Bash(git:*), Bash(python3:*), Read, AskUserQuestion
+allowed-tools: Bash(git:*), Bash(python3:*), Bash(bash:*), Bash(QUENCHING_FUNCTIONAL=1 bash:*), Read, AskUserQuestion
 ---
 
 # /release — publish what the primary branch accumulated
@@ -81,6 +81,13 @@ nobody who installs via the marketplace. **Done when:** the human has confirmed 
 or declined — a decline stops the run with nothing written.
 
 ### 4. Bump on the primary branch, and push
+Before the bump, from the primary branch's checkout, run the surface-load measurement the gate
+keeps opt-in:
+```bash
+( cd <primary checkout from step 1> && QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh )
+```
+Any exit other than **0** — a failed check, an inconclusive exit 2, or no `claude` on PATH — blocks
+the release: report what failed and stop without bumping.
 The bump comes FIRST, on the primary branch's checkout — the tag points at the bump, which is what
 makes the release one atomic fact on the branch that publishes
 ([versioning-release.md](/docs/standards/ci-cd/versioning-release.md) §When the bump happens).
