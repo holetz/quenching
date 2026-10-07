@@ -742,8 +742,19 @@ class AzureBoardsBackend(SpecBackend):
         self._guard_wiql("querying the project's work items", found)
         ids = [int(r.get("id") or (r.get("fields") or {}).get("System.Id") or 0)
                for r in found]
-        rows = [row for row in (self._row_of(item)
-                                for item in self._show_many([i for i in ids if i])) if row]
+        wanted = [i for i in ids if i]
+        items = self._show_many(wanted)
+        missing = sorted(set(wanted) - {int(item.get("id") or 0) for item in items})
+        if missing:
+            raise BackendRefusal({
+                "code": "sp-az-batch-short", "exit": 2, "missing": missing,
+                "action": "reading the queried work items in batch",
+                "message": f"the WIQL query named {len(wanted)} work item(s) but the batch "
+                           f"read returned {len(items)}; missing ids {missing} — the listing "
+                           f"was cut short, so nothing was derived from it",
+                "remedy": "re-run the command — this is a transport fault, not a state",
+            })
+        rows = [row for row in (self._row_of(item) for item in items) if row]
         self._rows = rows
         return rows
 
