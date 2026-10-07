@@ -1,0 +1,70 @@
+{
+  "specs": {
+    "azurePlacement": {
+      "defaultSubject": "plugin"
+    },
+    "subjects": {
+      "knowledge": {
+        "name": "Front /docs/",
+        "description": "Work on the OKF bundle in /docs/ — a standard, a glossary entry, the bundle shape, the `cq knowledge` validator and the /quenching:knowledge:* commands. Choose when the deliverable is written knowledge or the structure that holds it.",
+        "tags": [
+          "front:knowledge"
+        ]
+      },
+      "specs": {
+        "name": "Front de specs",
+        "description": "Work on the specs front — the /quenching:specs:* commands, `cq specs`, a spec's lifecycle (captured through archive) and the external GitHub Issues and Azure Boards backends. Choose when the deliverable changes how a spec is born, built or closed.",
+        "tags": [
+          "front:specs"
+        ]
+      },
+      "components": {
+        "name": "Front .claude/",
+        "description": "Work on the command surface — the /quenching:components:* commands, `cq components`, command bodies, descriptions, hooks and agents. Choose when the deliverable changes what the surface registers, how a command is routed, or what a description promises.",
+        "tags": [
+          "front:components"
+        ]
+      },
+      "plugin": {
+        "name": "Plugin (transversal)",
+        "description": "Work that crosses more than one front, or is external to the three — release and version lockstep, the marketplace, the README, AGENTS.md, and the shared references under assets/references/align/. Choose when no single front owns the deliverable.",
+        "tags": [
+          "front:plugin"
+        ]
+      }
+    },
+    "tagCatalog": {
+      "front:knowledge": "Applied automatically by the `knowledge` subject — do not propose on its own.",
+      "front:specs": "Applied automatically by the `specs` subject — do not propose on its own.",
+      "front:components": "Applied automatically by the `components` subject — do not propose on its own.",
+      "front:plugin": "Applied automatically by the `plugin` subject — do not propose on its own.",
+      "breaking": "The change breaks an already-installed target repository: a renamed or removed command, a configuration key that stops being read, a frontmatter format that changes. Choose when upgrading the plugin requires human action in the target.",
+      "contract": "Changes a written contract that something else cites — a standard in /docs/standards/, a shared reference, the okf-spec. Choose when the text is normative and has citers that must be swept.",
+      "cost": "The deliverable is execution cost: tokens a command body reads, tool calls per sweep, reference prose every consumer pays for. Choose when the success measure is a smaller number.",
+      "measured": "The spec closes only with evidence collected against a live target — a repository, a board, an API — not just reasoning. Choose when the work requires proving, not arguing.",
+      "regression": "Fixes behavior that used to work and stopped working. Choose when an identifiable good earlier state exists, which is the target to restore."
+    },
+    "workItemTypes": {
+      "spec": {
+        "description": "Planned behavior change, with problem, proposal and tasks — the normal case in this repository. Choose when the work produces a new deliverable or deliberately changes an existing one.",
+        "default": true
+      },
+      "defect": {
+        "description": "Something declared that does not behave as declared: a command body that contradicts its reference, a tool that exits 0 where it should refuse, a description that promises what the command does not do. Choose when the target is the distance between what is written and what runs."
+      },
+      "spike": {
+        "description": "Investigation or measurement whose deliverable is an answer, not code — proving whether a mechanism works, measuring a cost, deciding between two shapes. Choose when success is knowing, not having."
+      },
+      "chore": {
+        "description": "Maintenance with no observable behavior change: dedupe, internal rename, tightening prose, moving a file. Choose when a plugin user would notice nothing after the merge."
+      },
+      "epic": {
+        "description": "A program of work that spans several specs: its tasks are member specs, with dependencies and waves, and their state is derived from the members. Choose when the work is too large for one spec and the value is in sequencing the specs, not in building anything in the epic itself."
+      }
+    },
+    "card": {
+      "provider": "github",
+      "at": "capture"
+    }
+  }
+}
