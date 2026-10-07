@@ -345,7 +345,7 @@
   ],
   "sha256": {
     ".codex-plugin/plugin.json": "5fea2138fae6abfa89e2bb5a173af5efb6001565d608c9f5aea1c682bd418591",
-    ".generated-from.json": "c1bcbe9653ee4c5a07c5531c67bb65c05a13b2e1be56a74d570c2d3987a12aad",
+    ".generated-from.json": "94123b3df03c6b037859927eab2f1a04e382801798cacf54bcaf6871a2199e36",
     "README.md": "84eae0f474699d93d584a641b42ec67d2f61d82e823f83d183d85463c3b8b44a",
     "VERSION": "3754366908ac60b46e7aab559e5d23fa7eea0ff51835fb9fd72ba76aab3bcafd",
     "checks/catalog-publication-check.py": "9f4c9b75b524e31bd9420036a5384801ef707ef5708956abba1d6eb62c398f9e",
@@ -372,7 +372,7 @@
     "checks/fixtures/documentation-site-check/sitemap-empty/index.html": "e93e8a7fd211ecd7275b0e2b92114fa65f2cb4807efd6b27c06d8a13be5f1055",
     "checks/fixtures/documentation-site-check/sitemap-empty/sitemap.xml": "8ba4db74f37d5acd140a3a1089115941fa21e8563125be66cc37e373b9afd8a2",
     "checks/fixtures/zensical-capabilities/healthy/index.html": "637d0cf75231a32ebd27397f3c54f39fa9592339876dc11067d834448096758a",
-    "checks/functional-checks.sh": "7c6942057ac751d490b3dd7e66ca7aec1bb97d080ccb022f9cd1c93bb250258e",
+    "checks/functional-checks.sh": "edaf742257511e690aee24676a742dbd9ce0d6f88da6de53f0ab5aa0968f1ef4",
     "checks/zensical-capability-check.py": "e861b2131b71a17f1bf6da4b4d4c4f089d3502faeba9c6a00edae67ca57aa81d",
     "design/brand-pack/.design/assets/README.md": "f6827d00e27cf012189ea93110ca0268950dc6a6226d956578e72bfd425722ac",
     "design/brand-pack/.design/assets/lockup.svg": "ec0f2a721a78f71c46f26bbcb0780805a8b99d0c49cc20327d42d20593e4de15",
