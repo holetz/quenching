@@ -906,6 +906,21 @@ class GhEmptyListing(unittest.TestCase):
                 "deleting a stale continuation comment on #1",
                 "-X", "DELETE", "repos/owner/repo/issues/comments/1"))
 
+    def test_a_listing_with_fewer_open_issues_than_the_count_refuses_as_truncated(self):
+        page = json.dumps([[{"number": 1, "state": "open"}, {"number": 2, "state": "closed"},
+                            {"number": 3, "state": "open", "pull_request": {}}]])
+        with mock.patch.object(gh_mod, "github_cache_forget") as forget, \
+                mock.patch.object(gh_mod, "_git", lambda *a, **k: "git@github.com:o/r.git"):
+            with self.assertRaises(BackendRefusal) as ctx:
+                self._load_returning(page, open_issues=3)
+        self.assertEqual(ctx.exception.err.get("code"), "sp-gh-short-listing")
+        self.assertEqual(ctx.exception.err.get("observed"), 1)
+        forget.assert_called_once()
+
+    def test_a_listing_holding_every_open_issue_does_not_refuse(self):
+        page = json.dumps([[{"number": 1, "state": "open"}, {"number": 2, "state": "open"}]])
+        self.assertEqual(self._load_returning(page, open_issues=2), [])
+
     def test_a_healthy_listing_passes_the_predicate_untouched(self):
         self.assertIsNone(empty_listing_refusal("listing", [[{"number": 1}], [{"number": 2}]]))
 
