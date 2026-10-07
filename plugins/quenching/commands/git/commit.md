@@ -1,10 +1,6 @@
 ---
 description: >-
-  Commit what is already staged under this repo's own commit convention when one is declared, the
-  plugin's default subject grammar otherwise, enforcing hygiene no flag may bypass. Use when the user
-  asks to "commit this", "make a commit", "commit these changes", or "wrap this up in a commit".
-  Not for: staging files → the human or the owning build command; merging or pushing →
-  /quenching:git:merge, /quenching:git:pr:create.
+  Commit what is already staged under the repo's commit convention. Use for "commit this", "make a commit", "wrap this up in a commit". Not for: staging, merging or pushing → /quenching:git:merge.
 argument-hint: [subject]
 allowed-tools: >-
   Bash(git status:*), Bash(git branch --show-current:*), Bash(git diff:*), Bash(git commit:*),

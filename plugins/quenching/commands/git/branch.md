@@ -1,11 +1,6 @@
 ---
 description: >-
-  Take isolation for a piece of work — a worktree, a plain branch, or in place — recommending a
-  worktree by default, stating its cost, and stamping what was taken. Use when the user asks to
-  "isolate this work", "cut a branch for this", "take a worktree before I start", or "set up
-  isolation for this build". Given a spec id it also stamps that spec's `branch:` record and
-  marks the branch's own `quenching-specs:` description line. Not for: pruning branches/worktrees
-  already merged or gone → /quenching:git:cleanup.
+  Take isolation for a piece of work: worktree, plain branch or in place, stamped. Use for "isolate this work", "cut a branch for this", "take a worktree". Not for: pruning → /quenching:git:cleanup.
 argument-hint: [id-or-branch-name]
 allowed-tools: Bash, Read, AskUserQuestion
 ---

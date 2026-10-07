@@ -1,9 +1,7 @@
 ---
 description: >-
-  Read the complete delivery front and report applicability, workflow inventory, pipeline findings
-  and disposition bands without writing. Triggers on "delivery status", "check the delivery
-  surface", or "what is the state of the delivery front". Not for: converging delivery findings →
-  /quenching:delivery:align.
+  Report the delivery front (workflow inventory, pipeline findings), read-only. Use for "delivery status", "check the delivery surface". Not for: converging → /quenching:delivery:align.
+disable-model-invocation: true
 argument-hint: [optional-target-root]
 allowed-tools: Read, Grep, Glob, Bash(python3:*)
 ---

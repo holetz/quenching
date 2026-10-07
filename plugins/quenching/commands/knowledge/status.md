@@ -1,5 +1,6 @@
 ---
-description: Read the whole `docs` front and report where the OKF bundle stands — writes nothing. Triggers on "what's the status of the docs", "how healthy is the knowledge base", "is the bundle conformant". Not for: repairing the bundle → /quenching:knowledge:align; adding one item → /quenching:knowledge:add.
+description: >-
+  Report where the OKF bundle stands in /docs/, read-only. Use for "status of the docs", "is the bundle conformant". Not for: repairs → /quenching:knowledge:align; additions → /quenching:knowledge:add.
 argument-hint: [optional-home-or-path]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*)
 ---

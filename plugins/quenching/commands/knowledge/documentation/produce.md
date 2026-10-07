@@ -1,5 +1,6 @@
 ---
-description: Run the complete documentation pipeline from site setup through sourced pages, review and strict build QA. Triggers on "produce the documentation", "run the documentation pipeline", or "generate the complete docs site". Not for: planning only → /quenching:knowledge:documentation:plan; writing an assigned page set → /quenching:knowledge:documentation:write; reviewing without writes → /quenching:knowledge:documentation:review; site-layer configuration or a standalone build → /quenching:knowledge:documentation:build.
+description: >-
+  Run the complete documentation pipeline: site setup, sourced pages, review, strict build. Use for "produce the documentation", "generate the complete docs site". Not for: one stage → its own command.
 argument-hint: [optional-source-scope] [--desde <git-ref>]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
 ---

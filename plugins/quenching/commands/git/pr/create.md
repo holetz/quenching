@@ -1,11 +1,6 @@
 ---
 description: >-
-  Push the current branch and open a pull request through the repository's provider — GitHub or
-  Azure DevOps — against the resolved base, linking the named issue/work item natively. Use when
-  the user asks to "open a PR", "create a pull request", "push and open a PR", or "submit this
-  for review". Given a spec id it derives title, body and the provider locator from the spec and
-  stamps its write-many `pr:` record. Not for: merging an already-open PR → /quenching:git:merge;
-  resolving PR review comments → /quenching:git:pr:review.
+  Push the branch and open a PR on GitHub or Azure DevOps against the resolved base. Use for "open a PR", "create a pull request", "submit this for review". Not for: merging → /quenching:git:merge.
 argument-hint: [id-or-title] [remote:<name>]
 allowed-tools: Bash(git push:*), Bash(git remote:*), Bash(gh repo view:*), Bash(gh pr create:*), Bash(az repos pr:*), Bash(python3:*), Read, AskUserQuestion
 ---

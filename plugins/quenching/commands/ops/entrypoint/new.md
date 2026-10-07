@@ -1,5 +1,7 @@
 ---
-description: Mint ONE Python entry point under the ops contract, register it in the declared router, and regenerate the operations registry. Use when the user asks to "mint an ops entry point", "create an operations script", or "add a command to the ops router". Not for: repairing an existing entry point → /quenching:ops:align; reading the operations surface → /quenching:ops:status.
+description: >-
+  Mint ONE Python ops entry point, register it in the router and regenerate the registry. Use for "mint an ops entry point", "add a command to the ops router". Not for: repairs → /quenching:ops:align.
+disable-model-invocation: true
 argument-hint: <entry-point-name-or-purpose>
 allowed-tools: Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---

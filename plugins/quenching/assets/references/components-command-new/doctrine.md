@@ -21,6 +21,7 @@ checker cannot drift apart.
 | The `Not for:` boundary is present — *routed commands only* | `lint` | `sk-no-boundary` |
 | The metadata fits Claude Code's cap | `lint` | `sk-metadata-cap` (error) |
 | The description is portable | `lint` | `sk-description-portable` |
+| The description fits the 250-character budget, use case first | `lint` | `sk-description-budget` (warn) |
 | The body stays under the size cap | `lint` | `sk-body-length` |
 | Every numbered step has a criterion | `lint` | `sk-step-criterion` |
 | `allowed-tools` is scoped | `lint` | `sk-unscoped-bash` |

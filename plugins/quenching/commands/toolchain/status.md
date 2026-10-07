@@ -1,9 +1,7 @@
 ---
 description: >-
-  Read the complete toolchain front and report applicability, manifests, locks, language pins,
-  tool configuration and finding bands without writing. Triggers on "toolchain status", "check
-  the toolchain surface", or "what is the state of the toolchain front". Not for: converging
-  findings → /quenching:toolchain:align.
+  Report the toolchain front: manifests, locks, language pins, tool config and findings, read-only. Use for "toolchain status", "check the toolchain surface". Not for: converging → /quenching:toolchain:align.
+disable-model-invocation: true
 argument-hint: [optional-target-root]
 allowed-tools: Read, Grep, Glob, Bash(python3:*)
 ---

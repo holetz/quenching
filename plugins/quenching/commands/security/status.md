@@ -1,9 +1,7 @@
 ---
 description: >-
-  Read the security pillar and report workflow permissions, secret and ignore coverage, advisory
-  dependency configuration and access ownership without writing. Triggers on "security status",
-  "security audit", or "check repository security coverage". Not for: changing permissions,
-  secrets, dependencies or access policy — those remain target-owner decisions.
+  Report workflow permissions, secret and ignore coverage, advisory dependency config and access ownership, read-only. Use for "security status", "security audit". Not for: changing policy.
+disable-model-invocation: true
 argument-hint: [optional-target-root]
 allowed-tools: Read, Grep, Glob, Bash(python3:*)
 ---

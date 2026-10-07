@@ -1,10 +1,7 @@
 ---
 description: >-
-  Publish a local branch to a named remote without opening or changing a pull request. Use when
-  the user asks to "push this branch", "publish the branch", "send these commits to the remote", or
-  "push a checkpoint". It resolves the exact destination, upstream state and commits ahead before
-  one confirmation. Not for: opening or updating a PR → /quenching:git:pr:create; rebasing or
-  resolving an unproven divergence → /quenching:git:sync; merging → /quenching:git:merge.
+  Publish a local branch to a named remote without opening a PR. Use for "push this branch", "push a checkpoint". Not for: PRs → /quenching:git:pr:create; rebasing → /quenching:git:sync.
+disable-model-invocation: true
 argument-hint: [branch|--remote remote branch]
 allowed-tools: Bash(git status:*), Bash(git branch --show-current:*), Bash(git remote:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git log:*), Bash(git reflog:*), Bash(git ls-remote:*), Bash(git push:*), Bash(python3:*), Read, AskUserQuestion
 ---
