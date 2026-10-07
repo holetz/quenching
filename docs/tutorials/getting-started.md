@@ -76,7 +76,7 @@ cq --version
 
 !!! success "You should see"
     ```text
-    6.3.0
+    <the plugin version you installed>
     ```
     One line, the plugin's version. `cq` is the deterministic rail every command drives —
     uniform `--json` output, exit codes `0` ok · `1` findings · `2` refusal.
