@@ -71,7 +71,12 @@ CONFIG_KEYS = ("backend", "worktreeSetup", "sharedPaths", "azureStates",
                "hooks", "profiles",
                "azurePlacement", "azureColumns", "subjects", "tagCatalog",
                "workItemTypes")
-BACKENDS = ("github", "azure-boards")
+BACKENDS = ("github", "azure-boards", "git")
+# The specs-axis keys the `git` store's branch `quenching.json` may declare. With `"backend":
+# "git"`, each one present on the branch replaces the same key from `.agents/quenching.json`;
+# what describes the code tree stays in `.agents/quenching.json`.
+BRANCH_CONFIG_KEYS = ("subjects", "tagCatalog", "workItemTypes", "azurePlacement",
+                      "azureColumns", "azureStates", "artifactLanguage", "card", "cardAt")
 # `azurePlacement`'s recognised sub-keys. Only `areaPath` is required, and its absence is a
 # REFUSAL rather than a default — the same argument `azureStates` already carries, applied to
 # where a spec is born rather than what state it reads as. `open_azure_backend` is where that
@@ -228,6 +233,17 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     backend = obj.get("backend")
     if isinstance(backend, str) and backend.strip() and backend.strip() not in BACKENDS:
         out["unknownBackend"] = backend.strip()
+    if isinstance(backend, str) and backend.strip() == "git":
+        from quenching.specs.backends.git import branch_config   # deferred: git imports parse
+        out["backend"] = "git"
+        branch_values = branch_config(root)
+        for key in BRANCH_CONFIG_KEYS:
+            if key in branch_values:
+                values[key] = branch_values[key]
+        for key in ("artifactLanguage", "card", "cardAt"):
+            value = values.get(key)
+            if isinstance(value, str) and value.strip():
+                out[key] = value.strip()
 
     val = values.get("worktreeSetup")
     if isinstance(val, str) and val.strip():
