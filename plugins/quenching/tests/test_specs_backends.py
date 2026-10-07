@@ -453,6 +453,18 @@ class AzureExternalRoundTrip(unittest.TestCase):
         }])
 
 
+class AzureShortBatch(unittest.TestCase):
+    def test_a_batch_that_returns_fewer_items_than_queried_refuses(self):
+        backend = AzureBoardsBackend("org", "proj", {"plans": "Active", "archive": "Closed"},
+                                     os.getcwd(), discovery_tag="quenching-spec")
+        with mock.patch.object(backend, "_az", return_value=[{"id": 7}, {"id": 8}]), \
+                mock.patch.object(backend, "_show_many", return_value=[{"id": 7}]):
+            with self.assertRaises(BackendRefusal) as ctx:
+                backend._load()
+        self.assertEqual(ctx.exception.err.get("code"), "sp-az-batch-short")
+        self.assertEqual(ctx.exception.err.get("missing"), [8])
+
+
 class PullRequestAdapterFixture(unittest.TestCase):
     """A provider-shaped Azure PR response must keep its two URLs in separate fields."""
 
@@ -743,6 +755,23 @@ class GithubCreateType(unittest.TestCase):
         self.assertEqual(ctx.exception.err.get("exit"), 2)
 
 
+class GhCreatePartialFailure(unittest.TestCase):
+    """A create whose later step fails must not hide the issue the POST already made."""
+
+    def test_failure_after_the_post_names_the_created_issue(self):
+        backend = GitHubBackend("owner/repo", os.getcwd(), types={"incidente": "Bug"})
+        backend._write_api = lambda *a, **k: {"number": 77, "html_url": "https://x/77"}
+        boom = BackendRefusal({"code": "sp-gh-api-error", "exit": 2, "message": "gh said 500"})
+        with mock.patch.object(backend, "_set_type", side_effect=boom), \
+                mock.patch.object(backend, "_sync_parts"):
+            with self.assertRaises(BackendRefusal) as ctx:
+                backend.create_spec("plans", "---\nworkItemType: incidente\n---\n"
+                                    "# T\n\n## Problem\n\nx\n")
+        self.assertEqual(ctx.exception.err["issue"], 77)
+        self.assertIn("#77", ctx.exception.err["message"])
+        self.assertIn("do not run `new` again", ctx.exception.err["message"])
+
+
 # --------------------------------------------------------------------------- #
 # the GitHub issue body ceiling
 # --------------------------------------------------------------------------- #
@@ -816,6 +845,36 @@ class GhTransport(unittest.TestCase):
         self.assertEqual(result[3], 1)
         sleep.assert_not_called()
 
+    def _server_error(self):
+        return subprocess.CompletedProcess(
+            ["gh", "api"], 1, stdout='{"message":"Server Error"}',
+            stderr="gh: Server Error (HTTP 500)\n")
+
+    def test_idempotent_write_retries_a_500(self):
+        passed = subprocess.CompletedProcess(["gh", "api"], 0, stdout="{}", stderr="")
+        with mock.patch("subprocess.run", side_effect=[self._server_error(), passed]), \
+                mock.patch.object(gh_mod.time, "sleep"):
+            patch = gh_mod._gh_run(os.getcwd(), "api", "-X", "PATCH", "repos/o/r/issues/1",
+                                   "--input", "-", stdin="{}")
+        self.assertEqual(patch[:3], (0, "{}", ""))
+        self.assertEqual(patch[3], 2)
+
+    def test_issue_edit_retries_a_500(self):
+        passed = subprocess.CompletedProcess(["gh"], 0, stdout="", stderr="")
+        with mock.patch("subprocess.run", side_effect=[self._server_error(), passed]), \
+                mock.patch.object(gh_mod.time, "sleep"):
+            result = gh_mod._gh_run(os.getcwd(), "issue", "edit", "1", "--type", "Bug")
+        self.assertEqual(result[3], 2)
+
+    def test_post_is_sent_once_even_on_a_500(self):
+        with mock.patch("subprocess.run", return_value=self._server_error()) as run, \
+                mock.patch.object(gh_mod.time, "sleep") as sleep:
+            result = gh_mod._gh_run(os.getcwd(), "api", "-X", "POST", "repos/o/r/issues",
+                                    "--input", "-", stdin="{}")
+        self.assertEqual(result[3], 1)
+        self.assertEqual(run.call_count, 1)
+        sleep.assert_not_called()
+
 
 # --------------------------------------------------------------------------- #
 # a listing that never arrived, told apart from a front that is genuinely empty
@@ -858,6 +917,21 @@ class GhEmptyListing(unittest.TestCase):
             self.assertIsNone(self.backend._api(
                 "deleting a stale continuation comment on #1",
                 "-X", "DELETE", "repos/owner/repo/issues/comments/1"))
+
+    def test_a_listing_with_fewer_open_issues_than_the_count_refuses_as_truncated(self):
+        page = json.dumps([[{"number": 1, "state": "open"}, {"number": 2, "state": "closed"},
+                            {"number": 3, "state": "open", "pull_request": {}}]])
+        with mock.patch.object(gh_mod, "github_cache_forget") as forget, \
+                mock.patch.object(gh_mod, "_git", lambda *a, **k: "git@github.com:o/r.git"):
+            with self.assertRaises(BackendRefusal) as ctx:
+                self._load_returning(page, open_issues=3)
+        self.assertEqual(ctx.exception.err.get("code"), "sp-gh-short-listing")
+        self.assertEqual(ctx.exception.err.get("observed"), 1)
+        forget.assert_called_once()
+
+    def test_a_listing_holding_every_open_issue_does_not_refuse(self):
+        page = json.dumps([[{"number": 1, "state": "open"}, {"number": 2, "state": "open"}]])
+        self.assertEqual(self._load_returning(page, open_issues=2), [])
 
     def test_a_healthy_listing_passes_the_predicate_untouched(self):
         self.assertIsNone(empty_listing_refusal("listing", [[{"number": 1}], [{"number": 2}]]))
