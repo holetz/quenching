@@ -104,7 +104,7 @@ The organizing principle, and the admission test for every frontmatter key:
 Most of those facts are a human's judgment. Two are not, and both declare their own provenance
 inside the value rather than by being quiet about it: `priority.complexity` is computed by `create`
 and re-evaluated by `develop`, and `approved` carries `by:` — `human` for a person's word,
-`low-gear` for the level that authorized the mode. The test did not bend: a level's authority is no
+`low-gear` for the level that authorized the mode, `orchestrator-forced` for a conductor's forced `low`. The test did not bend: a level's authority is no
 more derivable from the sections than a person's word is.
 
 That is why there is no `phase` (the folder), no `ready` flag (the ten gate sections), and no
@@ -146,7 +146,7 @@ record:
 | --- | --- | --- | --- |
 | `priority: {level, criticality, complexity, date}` | `triage` — `complexity` its own `[triage, create, develop]` | no | this spec's rank against every other one — `complexity` is the exception below |
 | `refined: {mode, date}` | `develop` | no | that a real interrogation happened, and in which mode |
-| `approved: {date, by}` | `develop`, or `execute` inline | yes | that this spec may be built, and on whose authority — a human's word (`by: human`) or the `low` level's (`by: low-gear`) |
+| `approved: {date, by}` | `develop`, or `execute` inline | yes | that this spec may be built, and on whose authority — a human's word (`by: human`), the `low` level's (`by: low-gear`), or a conductor's forced `low` under `--autonomous` (`by: orchestrator-forced`) |
 | `branch: {base, work}` | `execute`, or `git:branch` when it hands off there | yes | after a merge, git cannot say what the base was |
 | `pr: {number, url, date}` | `git:pr:create` | no | which pull request carries this spec, before any merge decides its fate — restampable because a PR may be reopened or recreated |
 | `reviewed: {date}` | `conclude` | no | that a human read the whole branch diff |
@@ -193,6 +193,11 @@ is filled. `execute` on an unapproved spec **never refuses**: it asks inline, st
 `approved: {date, by: human}` on a yes, and proceeds — refusing would rebuild the folder hop v3 removed. The
 distinction matters because an agent can satisfy every section itself (`- none — <reason>` counts
 as filled), so section completeness can never stand in for the human OK.
+
+The orchestrator draws the line before any worker starts, because a worker never talks to the
+human: a spec of `medium` or above with no `approved` fails fast as `needs-approval`, with its
+dependents, unless the run is `--autonomous` — in which case `develop` stamps
+`by: orchestrator-forced` on the way to `ready`.
 
 ## When a follow-up becomes a spec
 

@@ -12,7 +12,7 @@ spec body that a worker or the verifier can read for you.
 
 ## Input
 
-An epic id or a list of spec ids. Resolve the set with `cq specs list --json` and
+An epic id or a list of spec ids, plus an optional `autonomous` flag from the conductor. Resolve the set with `cq specs list --json` and
 `cq specs show --spec <id> --json`. Ask nothing the specs already answer.
 
 ## The protocol (this is the only copy; workers never read a scratchpad)
@@ -20,6 +20,12 @@ An epic id or a list of spec ids. Resolve the set with `cq specs list --json` an
 1. **Plan.** Build a DAG from `cq specs next --epic <id>` when an epic was given, otherwise from
    each spec's declared dependencies plus the `[P]` groups of `cq specs parallel`. Run in waves: no
    worker starts before every dependency is merged. Print the waves once, then run them.
+   **Fail fast on approval.** Read `complexity` and `approved` from each spec's `show`. Without
+   `autonomous`, a spec of `medium` or above with no `approved` record never receives a worker: it
+   leaves the DAG with `STATE: blocked`, `NOTE: needs-approval` and `TOKENS: 0`, and every spec
+   that depends on it leaves with it, noted `needs-approval: <id>`. With `autonomous`, pass it on
+   to each `spec-runner` prompt as the word `autonomous`; you still write no record, and the
+   worker's develop stamps `by=orchestrator-forced`.
 2. **Route.** `complexity` picks the worker: `spec-runner` on sonnet by default, opus when the spec
    says `complexity: high` or `complexity: xhigh`. Pass `model` explicitly on every Agent call; do not rely on
    inheritance. Mechanical steps (branch, commit, merge, PR, cleanup) go to `git-steward`. Context

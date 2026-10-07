@@ -19,7 +19,7 @@ from quenching.specs.commands.output import Emitter
 from quenching.specs.commands.fields import parse_field_date, record_field_value_error
 from quenching.specs.commands.validate import validate_spec
 from quenching.specs.parse.fields import FIELD_KEYS, carry_forward_fields, set_frontmatter_record
-from quenching.specs.schema import capture_form
+from quenching.specs.schema import capture_form, load_schema
 
 
 class CarryForwardFields(unittest.TestCase):
@@ -120,6 +120,23 @@ class RecordFieldValueError(unittest.TestCase):
 
     def test_a_field_without_a_levels_block_stays_unrestricted(self):
         self.assertIsNone(record_field_value_error(self.RSPEC, "level", "1"))
+
+
+class ApprovedByLevels(unittest.TestCase):
+    """The real `approved` record admits the three authorities — `human`, `low-gear` and
+    `orchestrator-forced` — and keeps refusing any other `by`."""
+
+    RSPEC = load_schema()["frontmatter"]["records"]["approved"]
+
+    def test_the_forced_stamp_is_admitted_beside_the_other_two(self):
+        for good in ("human", "low-gear", "orchestrator-forced"):
+            with self.subTest(value=good):
+                self.assertIsNone(record_field_value_error(self.RSPEC, "by", good))
+
+    def test_an_unknown_by_is_still_refused(self):
+        for bad in ("orchestrator", "forced", ""):
+            with self.subTest(value=bad):
+                self.assertIsNotNone(record_field_value_error(self.RSPEC, "by", bad))
 
 
 def _spec_doc(complexity: str, slug: str = "alpha") -> str:

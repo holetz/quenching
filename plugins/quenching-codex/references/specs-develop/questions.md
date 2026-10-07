@@ -498,7 +498,8 @@ decide the same thing twice.
 `cq specs record "<id>" approved --set date=<today> --set by=low-gear`. There is no screen, because
 `low` is the level whose whole content is that there is none. The review window is **the spec's URL
 in the backend**, announced before the pass read anything and repeated in its report. The stamp is
-not an inference from the sections and never claims to be one: `by:` is what keeps a level's
+not an inference from the sections and never claims to be one. When the conductor declared `low`
+as forced over a higher level on disk, the stamp is `by=orchestrator-forced` instead. `by:` is what keeps a level's
 authority distinguishable from a human's word, and a reader who wants only human approvals filters
 on it.
 
@@ -604,6 +605,7 @@ unreachable at `low` by construction, since `low` never refines.
 
 **`approved` carries a second field, and it is never omitted.** `by: human` for a person's word on
 the closing screen, `by: low-gear` for the stamp a `low` pass makes on the level's authority
-(§Approval). A record written with no `by:` reads as `human` — that is the only thing that could
+(§Approval), `by: orchestrator-forced` for the stamp a forced `low` pass makes under an
+`--autonomous` conductor. A record written with no `by:` reads as `human` — that is the only thing that could
 have written it before the field existed — so leaving it off a `low-gear` stamp silently claims a
 human the pass never had. The tool cannot require a field on a record; this rule is what does.
