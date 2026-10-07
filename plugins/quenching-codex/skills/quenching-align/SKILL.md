@@ -1,6 +1,6 @@
 ---
 name: quenching-align
-description: "Align the whole repository — /docs/, /.design/, then .agents/, ops, proof, toolchain and delivery — on ONE confirmation, looping until nothing changes. Triggers on \"align the repo\", \"align everything\", \"align and update everything\", \"set up quenching here\", \"converge this repository\", \"run all the aligns\", \"fix both fronts\", or \"fix all fronts\". Not for: aligning one front → its `/quenching:*:align` command; changing product code → the owning spec."
+description: "Align the whole repository (docs, design, .claude, ops, proof, toolchain, delivery) on one confirmation. Use for \"align the repo\", \"align everything\", \"set up quenching here\". Not for: one front → its /quenching:*:align."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/align.md -->
@@ -25,6 +25,13 @@ front named in that cell has completed its inherited authorization.
 | `proof` — verification surface | `quenching-proof-align` | `ops` |
 | `toolchain` — toolchain surface | `quenching-toolchain-align` | `proof` |
 | `delivery` — delivery surface | `quenching-delivery-align` | `toolchain` |
+
+**How a front is run.** `knowledge` and `components` are model-invocable: invoke them through the
+Skill tool. `design`, `ops`, `proof`, `toolchain` and `delivery` are typed-only commands
+(`disable-model-invocation: true`), so the Skill tool refuses them. For those five, Read the
+front's own body at `../../commands/<front>/align.md` and follow it inline,
+substituting this body's expanded plugin root for any `../..` it cites, with the same
+inherited authorization and the same stages; its `cq <front> …` verbs run as written.
 
 The `specs` provider flow has no row because it owns no local tree, while the `security` and `git`
 pillars have no row because they answer live questions without a converging front tree. Their
@@ -96,7 +103,7 @@ write into or depend on it.
 ### Front: `design`
 
 When `/.design/` is absent and neither scope nor portable artifacts signal adoption, report this
-front not applicable. Otherwise invoke `quenching-design-align` with the inherited authorization.
+front not applicable. Otherwise run `quenching-design-align` (read its body) with the inherited authorization.
 Product truth and design standards land in the knowledge bundle; source arbitration and visual taste
 remain human choices. A hard failure establishing valid DTCG stops later fronts.
 
@@ -109,26 +116,26 @@ rule and registry changes belong to the knowledge bundle; its doctrine findings 
 ### Front: `ops`
 
 When the applicability probe finds no operations signal, report `ops` not applicable. Otherwise
-invoke `quenching-ops-align` after `components`, with the inherited authorization. Its inventory
+run `quenching-ops-align` (read its body) after `components`, with the inherited authorization. Its inventory
 and registry feed the proof front's conditional entry-point check.
 
 ### Front: `proof`
 
-When the applicability probe finds no proof signal, report `proof` not applicable. Otherwise invoke
-`quenching-proof-align` after `ops`, with the inherited authorization. It consumes the operations
+When the applicability probe finds no proof signal, report `proof` not applicable. Otherwise run
+`quenching-proof-align` (read its body) after `ops`, with the inherited authorization. It consumes the operations
 inventory when configured and reports its own layer and gate residue; it never runs a target suite.
 
 ### Front: `toolchain`
 
 When the applicability probe finds no toolchain signal, report `toolchain` not applicable.
-Otherwise invoke `quenching-toolchain-align` after `proof`, with the inherited authorization.
+Otherwise run `quenching-toolchain-align` (read its body) after `proof`, with the inherited authorization.
 It consumes the declared manifests, locks, language pins and tool configuration without choosing
 target-owned build policy; its runtime evidence feeds the delivery front.
 
 ### Front: `delivery`
 
 When the applicability probe finds no delivery signal, report `delivery` not applicable. Otherwise
-invoke `quenching-delivery-align` after `toolchain`, with the inherited authorization. It consumes
+run `quenching-delivery-align` (read its body) after `toolchain`, with the inherited authorization. It consumes
 the workflow inventory and reports pipeline reachability while leaving provider, environment,
 promotion, publication and permission policy with the target owner.
 
@@ -151,7 +158,7 @@ writes nothing of its own; each front owns its writes and its report is the acco
 
 - Never run a front before its dependency in the declaration table has completed.
 - Never ask for a second authorization or suppress an interruption the front contract still owns.
-- Never reimplement a front's stages, verifier or repairs here; invoke its align through Skill.
+- Never reimplement a front's stages, verifier or repairs here; run its align: through Skill for `knowledge` and `components`, by reading its body for the typed-only fronts.
 - Never act on residue owned by `quenching-knowledge-add`, `quenching-knowledge-learn`,
   `quenching-knowledge-define`, `quenching-specs-develop`, `quenching-specs-conclude`,
   `quenching-design-genre-new`, or `quenching-components-command-new`.

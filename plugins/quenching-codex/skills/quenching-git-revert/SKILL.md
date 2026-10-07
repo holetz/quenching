@@ -1,6 +1,6 @@
 ---
 name: quenching-git-revert
-description: "Revert one known commit into a new commit while preserving the existing history and task facts. Use when the user asks to \"revert this commit\", \"undo a task safely\", \"back out this change\", or \"reverse a published commit\". It resolves the target, shows its effect and stops on conflict before any recovery choice. Not for: rewriting history or discarding local work; publishing the revert → quenching-git-push; opening a PR → quenching-git-pr-create; changing an unrelated spec record."
+description: "Revert one known commit into a new commit, preserving history. Use for \"revert this commit\", \"undo a task safely\", \"back out this change\". Not for: rewriting history; publishing → quenching-git-push."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/git/revert.md -->

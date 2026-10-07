@@ -1,6 +1,6 @@
 ---
 name: quenching-proof-status
-description: "Read the declared proof front and report layers, fixtures, measured roots, floors, CI evidence, findings and what was not measured without writing. Triggers on \"proof status\", \"check the verification surface\", \"report proof drift\", or \"what is the state of the proof front\". Not for: converging findings → quenching-proof-align; minting a test layer → quenching-proof-layer-new; running the target suite → the target's own test command."
+description: "Report the proof front: layers, fixtures, floors, CI evidence and findings, read-only. Use for \"proof status\", \"check the verification surface\". Not for: converging → quenching-proof-align."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/proof/status.md -->

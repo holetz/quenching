@@ -27,7 +27,6 @@ def cmd_config(args, root: str, out: Emitter) -> int:
     lines = [f"quenching config — {cfg['path']}",
              f"  backend: {cfg['backend']}"
              + (" (default)" if not cfg["present"] else ""),
-             f"  specsBranch: {cfg['specsBranch']}",
              "  worktreeSetup: " + (cfg["worktreeSetup"] or "(none declared)"),
              "  azureStates: " + (", ".join(f"{p}={s}" for p, s in cfg["azureStates"].items())
                                   if cfg["azureStates"] else "(none declared)"),

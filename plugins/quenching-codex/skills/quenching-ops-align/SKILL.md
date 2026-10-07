@@ -1,6 +1,6 @@
 ---
 name: quenching-ops-align
-description: "Converge a target repository's operations surface from its declared root and router, applying mechanical and structural drift under one plan while reporting operational judgement findings. Triggers on \"align the ops front\", \"set up the operations surface\", \"fix operational drift\", or \"converge the ops tree\". Not for: reading the operations state only → quenching-ops-status; minting an entry point or router → quenching-ops-entrypoint-new."
+description: "Converge a repository's operations surface from its declared root and router under one plan. Use for \"align the ops front\", \"fix operational drift\". Not for: read-only → quenching-ops-status."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/ops/align.md -->

@@ -1,6 +1,6 @@
 ---
 name: quenching-delivery-status
-description: "Read the complete delivery front and report applicability, workflow inventory, pipeline findings and disposition bands without writing. Triggers on \"delivery status\", \"check the delivery surface\", or \"what is the state of the delivery front\". Not for: converging delivery findings → quenching-delivery-align."
+description: "Report the delivery front (workflow inventory, pipeline findings), read-only. Use for \"delivery status\", \"check the delivery surface\". Not for: converging → quenching-delivery-align."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/delivery/status.md -->

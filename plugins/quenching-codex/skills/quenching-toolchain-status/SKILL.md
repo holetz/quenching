@@ -1,6 +1,6 @@
 ---
 name: quenching-toolchain-status
-description: "Read the complete toolchain front and report applicability, manifests, locks, language pins, tool configuration and finding bands without writing. Triggers on \"toolchain status\", \"check the toolchain surface\", or \"what is the state of the toolchain front\". Not for: converging findings → quenching-toolchain-align."
+description: "Report the toolchain front: manifests, locks, language pins, tool config and findings, read-only. Use for \"toolchain status\", \"check the toolchain surface\". Not for: converging → quenching-toolchain-align."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/toolchain/status.md -->
