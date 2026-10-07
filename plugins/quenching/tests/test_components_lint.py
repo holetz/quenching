@@ -278,5 +278,25 @@ class FindingShape(unittest.TestCase):
         self.assertNotIn(MARKER, message)
 
 
+class BodySizeBudgetTests(unittest.TestCase):
+    def _codes(self, body: str) -> set[str]:
+        return {f["code"] for f in lint_command(command(body), BASE)}
+
+    def test_a_body_over_the_budget_warns(self):
+        found = [f for f in lint_command(command("x" * 13000), BASE) if f["code"] == "sk-body-size"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["severity"], "warn")
+
+    def test_a_body_under_the_budget_is_silent(self):
+        self.assertNotIn("sk-body-size", self._codes("x" * 1000))
+
+    def test_a_justified_opt_out_line_silences_it(self):
+        body = "<!-- body-size: justified — one atomic procedure -->\n" + "x" * 13000
+        self.assertNotIn("sk-body-size", self._codes(body))
+
+    def test_the_budget_counts_bytes_not_characters(self):
+        self.assertIn("sk-body-size", self._codes("é" * 7000))
+
+
 if __name__ == "__main__":
     unittest.main()

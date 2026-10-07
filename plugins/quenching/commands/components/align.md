@@ -30,10 +30,7 @@ Read [align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/swe
 this skill's doctrine. What follows is specific to `.claude/`:
 
 - **The legacy `openspec-*` surface is not this sweep's.** `.claude/skills/openspec-*/` and
-  `.claude/commands/opsx/` are legacy CLI artifacts a prior `openspec init` left behind — a
-  provider-owned specs front has none. When present, **no command of this plugin removes them**:
-  the specs front's align was retired with the local backend, so clearing a legacy `openspec/`
-  workspace is a human's call. Report them and move on
+  `.claude/commands/opsx/` are left by a prior `openspec init`; clearing them is a human's call
   ([specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md)
   §Finding policy). Inventory them only to **note** them; never classify them onto the axis,
   rename them, or remove them here.
@@ -44,8 +41,7 @@ this skill's doctrine. What follows is specific to `.claude/`:
 - **Codex translation drift is reported, never repaired here.** When this checkout carries the
   generated Codex sibling, `cq components translate --check --json` names every divergent file
   with `ct-translation-drift`. The align report includes those findings and routes the repair to
-  `cq components translate --write`; this sweep does not overwrite a generated surface while
-  aligning the Claude command taxonomy.
+  `cq components translate --write`.
 
 ## Resolving the tool
 
@@ -60,10 +56,8 @@ blast-radius sweep (§3), `mkdir`/`mv` for the renames, `rm` for a
 confirmed legacy tool copy.
 
 **What the tool decides, and what it does not.** `doctor` and `lint` decide everything mechanical
-— a non-empty description on every command, no two resolving to the same `/` path, kebab-case
-segments, the caps, trigger position, the `Not for:` boundary, body length, step criteria,
-unscoped `Bash`. Neither decides the **axis**: naming the one folder a command acts on is a claim
-about what it is *for*, which no parser makes. Classification stays a read.
+(descriptions, `/` paths, kebab-case segments, caps, trigger position, `Not for:`, body length and
+size, step criteria, unscoped `Bash`). Neither decides the **axis**: classification stays a read.
 
 ## Workflow (probe → ONE OK → migrate → audit → re-probe)
 
@@ -86,8 +80,8 @@ plus one `Glob` for the legacy pairs the tool cannot see (below). Branch as
 | anything else exits 1 or 2, or a legacy pair exists | Continue to step 2. |
 
 An **empty** surface (no commands, no skills) also stops. Note whether an OKF bundle exists
-(`/docs/index.md` with `okf_version`) and say so once
-— without one the rule and registry stay out of scope, while the migration still applies.
+(`/docs/index.md` with `okf_version`) and say so once — without one the rule and registry stay out
+of scope.
 
 **Done when:** the three payloads and the glob are in hand, and the run has either stopped,
 committed to a full sweep, or entered §8 directly.
@@ -114,9 +108,8 @@ Derive the canonical path the classification produces and diff it against the it
 path — a mismatch is a relocation candidate, fed into §4's existing renames row like any other,
 never a new plan section or a new confirmation of its own.
 
-**A category whose convention is not readable yields no candidate.** Nothing under
-`.claude/commands/<categoria>/` yet, or the two shapes already mixed, means there is no
-established convention to diverge from — record the item's classification and move on.
+**A category whose convention is not readable yields no candidate** (nothing under
+`.claude/commands/<categoria>/` yet, or the two shapes mixed) — record the classification and move on.
 **Done when:** the inventory table (item · classification · canonical path if it diverges ·
 `sk-*` gap) covers every item in the working set, and no file changed.
 
@@ -126,10 +119,9 @@ Run the shared procedure in
 §4. The blast-radius sweep — two repo scans for the whole set, never two per rename — over every name slated for
 rename or removal: skill names **and** command paths. **A collapse retires a skill name**, so
 every site naming it (a conductor invoking it via the Skill tool, a runbook, a registry row) is a
-hit the same way a rename is. **This front's delta:** a command path appears in
-prose (`/foo:bar` in a README, a runbook, a CI comment) far more often than in code, so a hit
-that is only documentation is workspace-internal, while a hit in a script that *invokes* the
-command is code-coupled.
+hit the same way a rename is. **This front's delta:** a hit that is only
+documentation (`/foo:bar` in a README, runbook or CI comment) is workspace-internal; a hit in a
+script that *invokes* the command is code-coupled.
 **Done when:** each planned rename is marked coupled or free, with its hits.
 
 ### 4. Present ONE consolidated plan → gate
@@ -193,12 +185,10 @@ Keep these evidence types separate:
   positive prescription, and whether shared procedure is **cited rather than restated**
   ([doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md)).
 
-**Collection may be delegated; judgment may not.** On a surface large enough that reading every
-body would bury the conversation, dispatch read-only `Task` collectors — one per slice — that
-report *what each body contains* (which levers its frontmatter carries, what it cites, where its
-numbered steps end) and nothing else. Every verdict above stays with the orchestrator: a
-collector reports text, never a doctrine finding, because "this body has no positive prescription"
-is a claim about behaviour and the same read that makes it must also weigh the fix.
+**Collection may be delegated; judgment may not.** On a surface too large to read whole, dispatch
+read-only `Task` collectors — one per slice — that report *what each body contains* (levers in
+its frontmatter, what it cites, where its numbered steps end) and nothing else; every doctrine
+verdict stays with the orchestrator.
 
 Report each finding as `command · violated rule · one-line evidence · the /quenching:components:command:new invocation
 that opens the edit`, labelled **"reported, not applied"**. Skip every legacy `openspec-*` body —
@@ -215,11 +205,10 @@ Read **frontmatter only**. Judge descriptions against the other descriptions, no
 
 **Which class a description is in decides which verdicts apply.** A typed-only command
 (`disable-model-invocation: true`) has left the routing surface: `lint` reports neither routing code
-against it, nothing routes from its prose, and nothing ever loads it — so there is nothing to buy by
-shortening it and no trigger to demand. Its description keeps all three slots at full length for the
-human picking it out of the `/` menu, who has no routing to fall back on
-(`/docs/standards/automation/skills.md` §The admission criterion). The split is
-read from the frontmatter this stage reads anyway — never guessed.
+against it, so there is nothing to buy by shortening it and no trigger to demand. Its description
+keeps all three slots at full length for the human picking it from the `/` menu
+(`/docs/standards/automation/skills.md` §The admission criterion). The class is read from the
+frontmatter, never guessed.
 
 Judge each description against the three slots and the competitor test in
 [components-command-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md)
@@ -235,8 +224,8 @@ Judge each description against the three slots and the competitor test in
 | a quoted trigger that looks like sediment | **report**, never cut — `/quenching:components:command:eval <command>` decides it on a measured miss |
 | over a cap (`sk-metadata-cap`, `sk-description-portable`) after all of the above | **report** the residue with its code; a cap is not closed by deleting a trigger |
 
-The competitor test runs **against the surface in hand, never from memory**: use the paths in §1's
-`lint` payload and the trigger vocabulary from the descriptions just read.
+The competitor test runs **against the surface in hand**: §1's `lint` paths and the descriptions
+just read.
 
 Present ONE table — command · class · current chars → proposed chars · what changed · the slot that
 earned it — with the description-code count before → after from §1's `lint` payload, the
@@ -257,20 +246,16 @@ cq components lint --json               # the gaps the migration was supposed to
 cq components registry reindex --json   # `changed: false` — the zone now matches disk
 ```
 Every renamed reference site greps clean, and no citation still points into a deleted
-`skills/` tree. `reindex` runs **after** §8, never before: the zone's `Typical trigger` column is
-each description's **first quoted phrase**, so a §8 that adds or moves a trigger moves the zone
-with it, and a zone regenerated ahead of the review is stale the moment the review applies.
+`skills/` tree. `reindex` runs **after** §8: the zone's `Typical trigger` column is each
+description's **first quoted phrase**, which §8 may move.
 
 Then re-run §1's probe and decide by the four outcomes in
 [convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
 §The convergence contract: **progress** → another pass from §2 under the same OK, narrating its
 plan; **converged** → report; **residue** → stop and report; **pass cap reached** → stop and report
-what remains. A second pass here catches the one thing the first can create — a rename that shifted
-the registry or dangled a reference. §7's findings are **not** progress: they are read-only and
-carry forward unchanged, so a pass that only produced them has converged. **Neither is §8's edit**,
-though it does write: the review is idempotent by construction — a description rewritten to the
-three slots proposes nothing on a second reading — so a second pass runs §8 only to confirm it has
-nothing left to say, and never to re-open a table the human already answered.
+what remains. §7's findings are **not** progress: they are read-only and carry forward unchanged.
+**Neither is §8's edit**: a second pass runs §8 only to confirm it has nothing left to say, never
+to re-open a table the human already answered.
 
 In an OKF repo, confirm the registry is indexed, per
 [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md). The migration
@@ -280,8 +265,7 @@ flagged; every surviving `sk-*` finding and every `ct-translation-drift` result,
 apart, each with its `/quenching:components:command:new`; and §8's line — descriptions reviewed, edited,
 declined; the description-code count before → after from `lint`; every waived boundary with the
 competitor set checked (and its accepted `sk-no-boundary`); and every trigger handed to
-`/quenching:components:command:eval`. Say plainly when the front converged in one pass — that is the
-expected outcome here, not a shortfall. **Done when:** `doctor` and `lint` exit 0 or each surviving
+`/quenching:components:command:eval`. **Done when:** `doctor` and `lint` exit 0 or each surviving
 finding is named with its code, the second
 `registry reindex` reports `changed: false`, and the counts, the doctrine findings and §8's line
 are reported.
@@ -299,17 +283,14 @@ are reported.
 - Never inventory before the probe, and never treat §7's read-only findings as progress that
   justifies another pass.
 - Never delete a quoted trigger phrase — not for length, not for looking redundant. A trigger
-  retires on a measured miss, which is `/quenching:components:command:eval`'s; here it is reported with that
-  invocation. Cutting one to fit a cap trades a measurable routing loss for a character count.
+  retires on a measured miss, which is `/quenching:components:command:eval`'s; here it is reported
+  with that invocation.
 - Never write a `Not for:` clause naming a command that fails the competitor test, and never cut
-  one without stating the set that was checked — an invented boundary and a silent waiver are the
-  same error in opposite directions.
-- Never apply §8's edits under §4's OK: that plan was confirmed before a single description had
-  been read.
+  one without stating the set that was checked.
+- Never apply §8's edits under §4's OK.
 - Never delete a command without the human stating it is obsolete; never force an
   unroutable item onto the axis. Deleting a `skills/<name>/` folder whose body has just been
-  moved into its command file is not a deletion in this sense — nothing is lost — but it
-  happens only after the move is in place.
+  moved into its command file is not a deletion in this sense, and happens only after the move.
 - Never write anything but an entry point under `commands/`: a `references/` or `evals/`
   folder moved there would register every file in it as a phantom command.
 - Never leave the GENERATED zone stale, and never write inside its markers by hand — the run
