@@ -9,7 +9,7 @@ description: >-
   finishes: the bump and its tag live on the primary branch's tip, on origin. Not for:
   concluding or merging ONE spec into the primary branch → /quenching:specs:conclude.
 argument-hint: [version — optional, skips the proposal and confirms this exact X.Y.Z]
-allowed-tools: Bash(git:*), Bash(python3:*), Bash(bash:*), Bash(QUENCHING_FUNCTIONAL=1 bash:*), Read, AskUserQuestion
+allowed-tools: Bash(git:*), Bash(python3:*), Bash(QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh:*), Read, AskUserQuestion
 ---
 
 # /release — publish what the primary branch accumulated
