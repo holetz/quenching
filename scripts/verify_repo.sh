@@ -78,4 +78,23 @@ run_check "Zensical strict build" \
 run_check "built-site checks" \
   python3 plugins/quenching/assets/checks/documentation-site-check.py site --local --remote-policy error
 
+# Surface-load checks spawn billed `claude -p` sessions, so they are opt-in: without
+# QUENCHING_FUNCTIONAL=1 the skip is stated and the gate stays deterministic. When asked for, an
+# inconclusive run (exit 2) or a missing `claude` is a measurement that did not happen, so it fails.
+printf '\n==> surface-load checks\n'
+if [ "${QUENCHING_FUNCTIONAL:-}" != "1" ]; then
+  printf 'SKIPPED: set QUENCHING_FUNCTIONAL=1 to measure that the command surface loads (the release runs it).\n'
+elif ! command -v claude >/dev/null 2>&1; then
+  printf 'FAILED: surface-load checks — QUENCHING_FUNCTIONAL=1 but `claude` is not on PATH.\n' >&2
+  exit 1
+else
+  printf '+ bash plugins/quenching/assets/checks/functional-checks.sh\n'
+  functional_rc=0
+  bash plugins/quenching/assets/checks/functional-checks.sh || functional_rc=$?
+  if [ "$functional_rc" -ne 0 ]; then
+    printf 'FAILED: surface-load checks (exit %s; 2 is inconclusive and does not pass when the measurement was requested)\n' "$functional_rc" >&2
+    exit 1
+  fi
+fi
+
 printf '\nRepository verification passed.\n'
