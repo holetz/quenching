@@ -43,6 +43,7 @@ TASKS: <checked>/<total>
 GATE: pass | fail | not-run — <command and exit code>
 PR: <url or ->
 DISCOVERIES: <count> — <one line each, max 5>
+HOOKS: <event> <command> ran|failed|unresolved — one line per declared hook, `-` when none
 GIT AUDIT: stash list <empty|n entries>; status <clean|dirty>; branch <name>
 NOTE: <one line, only if state is not done>
 ```
