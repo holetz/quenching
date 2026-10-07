@@ -25,6 +25,9 @@ report is not evidence: ignore its claims and re-measure.
 7. History: every sha the worker named in `SHAS` satisfies `git merge-base --is-ancestor <sha>
    <branch>`, and `git reflog show <branch>` plus `git reflog show HEAD` (in the worktree) hold no
    `commit (amend)`, `reset`, `rebase`, `checkout` or `switch` entry after the branch was created.
+   The one `reset: moving to HEAD` line that creating the worktree writes in its HEAD
+   reflog before the first commit is the creation itself and is accepted; any other `reset`,
+   including a later `reset: moving to HEAD`, is FAIL.
    A `rebase` is accepted only when the worker's NOTE says `/quenching:git:sync` ran. Quote the
    offending reflog line as evidence. Limit: discarding uncommitted files by path (checkout or restore) touches only
    the tree and leaves no reflog entry, so this check cannot see them. An absent reflog
