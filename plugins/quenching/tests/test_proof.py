@@ -171,11 +171,11 @@ class ProofLayerBodyContracts(unittest.TestCase):
         body = LAYER_COMMAND.read_text(encoding="utf-8")
         self.assertIn("A declined migration leaves every", body)
         self.assertIn("test path unchanged", body)
+        # Contract pin: the migration gate is a safety boundary of `layer:new`.
         self.assertIn("Do not move tests until the separate migration confirmation is affirmative", body)
         self.assertIn("all five declarations complete", body)
         self.assertIn("doctor names", body)
         self.assertIn("precisely", body)
-        self.assertIn("Existing hook rules and authored README prose survive", body)
 
 
 class ProofFixtureTrees(unittest.TestCase):

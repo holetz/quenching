@@ -32,7 +32,11 @@ Per-subject ledger the verify gate reads. A subject is "done" only when every ca
   Code's own plugin upgrade; nothing is deployed to a running environment.
 - `manifest-generation` — **deferred.** Both manifests (`plugin.json`, `marketplace.json`) are
   hand-edited and small; nothing generates them today.
-- `pipeline-stages` — **deferred, not applicable.** The only workflow (`.github/workflows/sync-codex-plugin.yml`) runs the
-  repository gate, `bash scripts/verify_repo.sh`, on every push and pull request; it is a gate, not a
-  build or deploy pipeline. The gate bundles the test suite, `functional-checks.sh`,
-  `conclude-order-check.sh` and `citation-check.sh`, and runs the same way locally.
+- `pipeline-stages` — **present, inline.** `.github/workflows/ci.yml` is the plugin's own pipeline:
+  it runs on pushes to `main` and on pull requests (never on the `quenching` specs-store branch),
+  with one run per ref (`concurrency` cancels superseded runs) and a timeout per job. Jobs: `gate`
+  (Python 3.11 and 3.13 matrix; `scripts/verify_repo.sh`, which measures coverage against
+  `.coverage-floor.json`, then the suite again in randomized order), `lint` (`ruff check`, rules E
+  and F configured in `pyproject.toml`) and `functional` (`functional-checks.sh --selfcheck`, then
+  the full run where exit 2 is reported as inconclusive and neither passes nor fails the job).
+  Actions are pinned by full commit SHA with the tag in a comment.

@@ -16,6 +16,9 @@ dependencies = [
 [dependency-groups]
 dev = [
   "pytest>=8.0",
+  "coverage>=7.0",
+  "pytest-randomly>=3.15",
+  "ruff>=0.6",
 ]
 
 [tool.uv]
@@ -24,6 +27,22 @@ package = false
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers"
+markers = ["quenching: the single declared proof layer (plugins/quenching/tests)"]
 
 [tool.coverage.run]
 source = ["plugins/quenching/assets/bin/quenching"]
+
+[tool.ruff]
+target-version = "py311"
+extend-exclude = ["site", "site-source", "plugins/quenching-codex", "plugins/quenching-specs-reader", ".quenching"]
+
+[tool.ruff.lint]
+select = ["E", "F"]
+# Line length is not gated: the tree has long prose strings and no formatter.
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# The stdlib-only package re-exports shared names and keeps compatibility imports on purpose; the
+# remaining findings are in code a generated copy mirrors, so they are acknowledged, not rewritten.
+"plugins/quenching/assets/bin/quenching/**" = ["F401", "F841", "E741", "F541"]
+"plugins/quenching/assets/bin/quenching/proof/ratchet.py" = ["F401", "F821"]  # unreachable tail after the SQLite reader
