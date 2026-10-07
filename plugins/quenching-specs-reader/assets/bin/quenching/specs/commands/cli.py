@@ -35,6 +35,7 @@ from quenching.specs.commands.release import cmd_release
 from quenching.specs.commands.task import cmd_discover, cmd_task
 from quenching.specs.commands.validate import cmd_validate
 from quenching.specs.config import find_repo_root
+from quenching.specs.portal import cmd_serve
 from quenching.specs.parse import PHASES
 from quenching.specs.schema import DEFAULT_VERIFICATION, OUTCOMES, VERIFICATION_POLICIES
 
@@ -243,6 +244,14 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--out", default="specs-export",
                     help="destination directory (default: ./specs-export)")
 
+    sp = add_json(sub.add_parser("serve", help="the local spec portal — a browser board over "
+                                                "the same backend, loopback only"))
+    sp.add_argument("--port", type=int, default=0, help="port (default: a free one)")
+    sp.add_argument("--host", default="127.0.0.1", help="loopback address only")
+    sp.add_argument("--read-only", action="store_true", dest="read_only",
+                    help="disable every write route on the server")
+    sp.add_argument("--open", action="store_true", help="open the URL in the browser")
+
     return p, sub
 
 
@@ -270,6 +279,7 @@ DISPATCH: dict = {
     "doctor": cmd_doctor,
     "migrate": cmd_migrate,
     "export": cmd_export,
+    "serve": cmd_serve,
 }
 
 

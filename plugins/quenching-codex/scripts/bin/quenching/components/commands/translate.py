@@ -14,7 +14,7 @@ from quenching.common.output import finding, refuse, report_findings
 SOURCE: Path | None = None
 TARGET: Path | None = None
 MANIFEST: Path | None = None
-COPY_DIRS = ("assets/references", "assets/templates", "assets/specs", "assets/knowledge", "assets/checks", "assets/design", "assets/bin")
+COPY_DIRS = ("assets/references", "assets/templates", "assets/specs", "assets/knowledge", "assets/checks", "assets/design", "assets/portal", "assets/bin")
 COPY_FILES = ("bin/cq", "README.md", "VERSION")
 DROP_FRONTMATTER = {"argument-hint", "allowed-tools", "model", "context", "hooks"}
 FORBIDDEN_AFTER_TRANSLATION = ("${CLAUDE_PLUGIN_ROOT}", "${CLAUDE_PROJECT_DIR}", "CLAUDE_PLUGIN_ROOT")
