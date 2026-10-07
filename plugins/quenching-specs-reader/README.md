@@ -1,6 +1,6 @@
 # quenching-specs-reader
 
-A read-only view of another project's provider-owned [quenching](../quenching/README.md) specs.
+A read-only view of another project's [quenching](../quenching/README.md) specs.
 It registers **one** command, `/quenching-specs-reader:read`, for a project that needs to read a
 specs front (an Obsidian vault reading its to-do list, for example) without enabling the full
 `quenching` plugin and its 54 commands.
@@ -26,8 +26,8 @@ permission mode. The `permissions.allow` line is for sessions that never prompt 
 scheduled run): measured on Claude Code 2.1.284, a command's `allowed-tools` did not admit the
 call there, and the entry point is read-only, so allowing it project-wide grants no write.
 
-The provider and repository are derived from that checkout's remote, as for `cq specs`. Reading
-GitHub issues needs an authenticated `gh`; reading Azure Boards needs an authenticated `az`.
+The store and its configuration come from that checkout. A git store is read from a bare mirror of its own, with no write to the target; a deprecated tracker backend is read as for `cq specs`: reading
+GitHub issues needs an authenticated `gh`, Azure Boards an authenticated `az`.
 
 ## Use
 

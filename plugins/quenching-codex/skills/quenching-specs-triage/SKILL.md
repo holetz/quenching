@@ -1,6 +1,6 @@
 ---
 name: quenching-specs-triage
-description: "Rank the provider-owned plans front into ONE ordered list the human confirms. Use for \"triage the specs\", \"prioritize the front\", \"which of these first\". Not for: building → quenching-specs-execute."
+description: "Rank the open specs front into ONE ordered list the human confirms. Use for \"triage the specs\", \"prioritize the front\", \"which of these first\". Not for: building → quenching-specs-execute."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/triage.md -->
@@ -9,10 +9,10 @@ description: "Rank the provider-owned plans front into ONE ordered list the huma
 # quenching-specs-triage — rank the front, once, on one confirmation
 
 **Input**: `$ARGUMENTS` — optionally one ID to limit the sweep; omit to rank everything in
-the provider-owned `plans` phase.
+the open (`plans`) phase.
 
 The prioritization sweep. It reads every spec in
-the provider-owned plans front, proposes ONE ordered list, and — on a single
+the open front, proposes ONE ordered list, and — on a single
 confirmation — writes each spec's `priority` record.
 
 **This is the only command that ranks.** `cq specs next --front` consumes what this writes: with no
@@ -25,7 +25,7 @@ A sweep that could also delete is a sweep nobody can safely re-run.
 
 The layout, the derived stages and the front's on-write check live in
 [specs-develop/spec-driven.md](../../references/specs-develop/spec-driven.md)
-§The provider-owned document §Derived stages. The `cq specs` surface lives in
+§The spec document §Derived stages. The `cq specs` surface lives in
 [specs-surface.md](../../references/specs-develop/specs-surface.md)
 §The `cq specs` tool surface; the report mold, which owns the shape of both the step 2 table and
 the step 6 report, lives in
@@ -74,8 +74,8 @@ close to no supervision) to `xhigh` (a judgment stage joins the plan).
 ## Workflow
 
 ### 1. Read the front directly
-Resolve the provider-owned plans front through `cq specs`; there is no local `/.specs/plans/` source
-to enumerate. A provider refusal → report it and stop; do not offer a local seed. Then:
+Resolve the open front through `cq specs`; there is no local `/.specs/plans/` source
+to enumerate. A store refusal → report it and stop; do not offer a local seed. Then:
 ```bash
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs list --phase plans --json      # every spec in plans/: folder, derived stage, and its records
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs section <id> Problem         # per spec being ranked, for the reason column
@@ -120,10 +120,10 @@ rather than open-ended.
 **Done when:** the human has approved, adjusted, or rejected the whole table.
 
 ### 4. Apply exactly what was approved
-One call per approved spec, run in parallel, and **never an edit to the file.** Against the
-`github` backend each write is one network round-trip, and a front's worth of them in series is
-what blew past a 120s timeout in the measured session — `xargs -P 8`, the same pattern that
-session already improvised on the read side, generalized here to the write:
+One call per approved spec, run in parallel, and **never an edit to the file.** Each write is
+one network round-trip (a push to the specs branch, or a tracker request), and a front's worth of
+them in series can pass a 120s timeout — `xargs -P 8`, the same pattern the read side uses. A write
+that refuses with `sp-git-cas-exhausted` under that contention is re-run alone:
 ```bash
 printf '%s\0' \
   'python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record <id1> priority --set level=<n1> --set criticality=<word1> --set complexity=<word1> --set date=<today>' \
@@ -137,9 +137,8 @@ NUL-delimited so no argument inside a line is ever split. `sh -c '{}'` runs each
 once. The tool merges: a field not named survives, and `id`, `title`, `date`, `verification` and the
 other six records are never in reach of this write. Stamp the record's own `date` on every write —
 it is a different key from the spec's capture `date:`. Editing the frontmatter by hand would do the
-same thing only while the backend is `files` — against a backend whose specs are issues there is no
-file to edit.
-**Done when:** each approved row is recorded through the provider and no unapproved row was touched.
+same thing only while the backend is `files`, which was removed: no backend has a file to edit.
+**Done when:** each approved row is recorded through `cq specs` and no unapproved row was touched.
 
 ### 5. Check
 ```bash

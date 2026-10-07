@@ -1,7 +1,7 @@
 ---
 type: explanation
 title: The operating model
-description: The map the whole plugin fits on — seven local fronts, the provider-owned specs axis, the read-only security and git pillars, and conductor-shaped commands that never reimplement what they conduct.
+description: The map the whole plugin fits on — seven local fronts, the specs axis, the read-only security and git pillars, and conductor-shaped commands that never reimplement what they conduct.
 resource: plugins/quenching/README.md
 tags:
   - explanation
@@ -20,7 +20,7 @@ probes before it plans.** The rest of the plugin's command surface hangs off tha
 sentence.
 
 A repository has seven local surfaces where drift accumulates, and quenching gives each one a
-*front*: a namespace of commands. The provider-owned `specs` axis has no local tree, while
+*front*: a namespace of commands. The `specs` axis has no local tree, while
 `security` and `git` are **pillars** rather than fronts — they answer live questions without
 owning a tree that an align converges.
 
@@ -49,7 +49,7 @@ flowchart TD
 | Node | Namespace | Converges | Deep dive |
 | --- | --- | --- | --- |
 | knowledge front | `/quenching:knowledge:*` | the `/docs/` OKF bundle | [The OKF bundle](okf-bundle.md) |
-| specs axis | `/quenching:specs:*` | provider-owned specs; no local tree | [The spec lifecycle](spec-lifecycle.md) |
+| specs axis | `/quenching:specs:*` | specs on the `quenching` branch; no local tree | [The spec lifecycle](spec-lifecycle.md) |
 | design front | `/quenching:design:*` | the `/.design/` DTCG source and projections | [command catalog](../project/commands.md#the-design-front) |
 | components front | `/quenching:components:*` | the `.claude/` automation surface | [command catalog](../project/commands.md#the-components-front) |
 | ops front | `/quenching:ops:*` | the target repository's operations surface | [command catalog](../project/commands.md#the-ops-front) |
@@ -80,7 +80,7 @@ that owns it**:
 - `/quenching:align` conducts the seven local fronts in dependency order on one OK. Authorization
   nests one level: each front align inherits the OK and never re-asks — while anything touching
   product code, and every irreversible close, still gates on its own.
-- The provider-owned `specs` axis has no conductor: capture, definition, execution and close are
+- The `specs` axis has no conductor: capture, definition, execution and close are
   separate commands, each with its own authorization and verification contract.
 
 The same ownership rule shapes the documentation pipeline:
@@ -100,8 +100,8 @@ predictability is machine-checkable: uniform `--json`, exit codes `0` ok · `1` 
 
 !!! abstract "TL;DR for agents"
     - Map: local fronts `knowledge` · `design` · `components` · `ops` · `proof` · `toolchain` · `delivery`, plus
-      provider-owned `specs`; `security` and `git` are pillars with no align; `/quenching:align` conducts the seven
-      local fronts; the provider-owned specs axis has no conductor.
+      `specs`; `security` and `git` are pillars with no align; `/quenching:align` conducts the seven
+      local fronts; the specs axis has no conductor.
     - Interface: probe (front verifier) → read-only inventory → ONE plan → one OK → apply →
       verify; clean probe ⇒ stop.
     - Ownership: conductors never write; every write belongs to the owning command; product-code

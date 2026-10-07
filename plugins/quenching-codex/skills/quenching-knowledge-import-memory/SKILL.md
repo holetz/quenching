@@ -213,7 +213,7 @@ with this skill's deltas kept inline:
   <name>` and write the memory's content into `## Problem` and nothing else, then `cq specs
   validate --spec <id>` — the ID the create reported — as the self-check per
   [specs-develop/spec-driven.md](../../references/specs-develop/spec-driven.md)
-  §The provider-owned document §The gates and the stage-scoped explicit-none rule
+  §The spec document §The gates and the stage-scoped explicit-none rule
   (`cq knowledge validate` never covers the specs front); carry the memory source in the spec's
   own record rather than creating a bundle log entry.
   **Never stamp an OKF `type:` on it** — a spec is not a concept doc, and never invent a

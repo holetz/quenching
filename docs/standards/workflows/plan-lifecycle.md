@@ -25,10 +25,11 @@ superseded by this one.
 
 ## One active folder
 
-A spec spends its whole pre-archive life in `/.specs/plans/` and moves exactly once, to
-`/.specs/archive/` when it closes. The basename — `<slug>.md`, with the capture date declared as
-`date:` in the frontmatter and never rewritten — and the bare-slug identity rule are unchanged from
-[plan-artifacts.md](plan-artifacts.md) §One spec is one file.
+A spec spends its whole pre-archive life as an open spec (`specs/<id>.md` on the `quenching`
+branch) and moves exactly once, to `specs/archive/<id>.md`, when it closes; the phase is the
+directory, never a frontmatter fact. The capture date is declared as `date:` in the frontmatter and
+never rewritten, and identity is the spec ID ([plan-artifacts.md](plan-artifacts.md) §One spec is
+one document). A card, when configured, closes with the archive.
 
 v3 folded `backlog/` and `ready/` into `plans/` because the split lied twice: `backlog/` held both
 one-line captures and fully designed specs (it was never an inbox, only "not building yet"), and
@@ -114,8 +115,7 @@ excluded on exactly these grounds — the filename's `YYYY-MM-DD-` prefix record
 would have been a second copy. The test says a field earns its place when no derivation reproduces
 it, and the derivation that supported the exclusion was *the basename*. A store with no filenames
 has none, and the native value that looks like a substitute is a different fact: an issue's
-`created_at` is when the issue was made, and a migration stamps them all on one day — measured
-here, 68 of 70 capture dates would have been rewritten to the migration's own afternoon. So `date`
+`created_at` is when the issue was made, not the capture date. So `date`
 is **declared, not derived**, and the basename went back to being the slug alone. The rule did not
 bend; the derivation it relied on stopped existing.
 

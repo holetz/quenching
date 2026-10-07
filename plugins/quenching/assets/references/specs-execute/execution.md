@@ -161,8 +161,8 @@ whole-branch review runs once, and it belongs to `/quenching:specs:conclude`.
 <!-- rules -->
 
 After the self-review passes, **verify, stage the declared files, commit, assert the subject survived,
-then tick the provider task with its subject and commit**. Every task with a diff gets its own commit
-and stays resumable from it. The provider write is deliberately last: an external backend cannot
+then tick the spec task with its subject and commit**. Every task with a diff gets its own commit
+and stays resumable from it. The spec write is deliberately last: the specs store cannot
 travel inside the local commit, and a failed write must leave the commit available for a retry.
 
 Run it as **one chained call**, gate included:
@@ -175,19 +175,19 @@ Run it as **one chained call**, gate included:
 ```
 
 **The `&&` is the ordering:** verify before staging, staging before the delegated commit, the
-commit before the provider tick, and a broken link short-circuits every link after it. When the
+commit before the spec tick, and a broken link short-circuits every link after it. When the
 spec's declared policy says this task is not a gate, the chain simply starts at `git add`.
 
 Stage only the task's declared `files:`, never the whole tree and never an assumed spec file —
 `git add -A` also picks up whatever an editor or a tool wrote while the task ran, which is the same
 contamination §The precondition refuses at the start. The delegated `/quenching:git:commit` owns
 subject resolution and the existing index; execute passes its reported subject and sha to the
-provider write.
+spec write.
 
-If verification, staging or the commit **fails** — a rejecting hook or nothing staged — no provider
+If verification, staging or the commit **fails** — a rejecting hook or nothing staged — no spec
 tick has happened; report the failure and leave the task unchecked. If the commit succeeds but the
-provider tick **fails** — a network error, refusal or timeout — preserve the commit, report the
-recoverable remote-write failure with its subject and sha, and retry the provider write without
+spec tick **fails** — a network error, refusal or timeout — preserve the commit, report the
+recoverable remote-write failure with its subject and sha, and retry the spec write without
 rebuilding or amending the commit.
 
 The **subject line format** is the target repo's to declare. Read
@@ -222,14 +222,14 @@ once in the report, rather than inventing a placeholder.
 
 **A task with no `files:` declared** — the line absent, or written `files: []` — is the same rule one
 level down: it produces no diff of its own, so there is no commit to anchor to and no subject or
-commit sha to record. Its chain ends at the provider tick:
+commit sha to record. Its chain ends at the spec tick:
 
 ```bash
 <the task's verify:> && cq specs task --check <id> --spec "<id>"
 ```
 
 — no `--subject`, no `git add`, no `git commit`. The box still ticks. Where the backend keeps the
-spec in the tree, that tick rides along in the next task's commit; under an external backend it is
+spec in the tree, that tick rides along in the next task's commit; on the specs branch or in a tracker it is
 never a local diff at all. Passing `--subject` here would write a
 `subject:` onto the task line that `git log --grep` can never resolve, which is exactly the
 placeholder the paragraph above refuses.

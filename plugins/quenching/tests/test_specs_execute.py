@@ -49,7 +49,7 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertLess(command.index('Skill("quenching:git:commit", "<id>")'),
                         command.index("cq specs task --check <id>"))
         self.assertIn('--commit "<sha reported by git:commit>"', command)
-        self.assertIn("provider tick **fails**", reference)
+        self.assertIn("spec tick **fails**", reference)
         self.assertIn("preserve the commit", reference)
         self.assertNotIn("<the spec file>", reference)
 

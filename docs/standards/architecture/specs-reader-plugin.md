@@ -15,9 +15,9 @@ maintainer: quenching
 
 <!-- rules -->
 
-A target that needs to read another project's provider-owned specs, and nothing else, enables
+A target that needs to read another project's specs, and nothing else, enables
 `quenching-specs-reader` instead of `quenching`. That target pays for one command description,
-and it has no path to write the tracker.
+and it has no path to write the specs store or a card.
 
 ## Why a plugin and not a profile
 
@@ -59,8 +59,8 @@ code `sp-read-only`.
    `config` pass. `section --write` and `--fold` are refused in every prefix argparse would expand
    to them.
 2. **A runtime write block.** Before dispatch, the tool imports every module of the backends
-   package and replaces each write path (the three write primitives and the provider-private
-   writers) with a refusal. The import has to come first: a class defined after the patch escapes
+   package and replaces each write path (the write primitives, the batch write, the card writers and the
+   tracker-private writers) with a refusal. The import has to come first: a class defined after the patch escapes
    it, and the first test of this block caught exactly that.
 
 <!-- rationale -->
@@ -76,11 +76,13 @@ Claude Code 2.1.284, a `dontAsk` session did not admit the call through the comm
 
 ## Selecting the project to read
 
-`--root <checkout>` wins, then `QUENCHING_SPECS_ROOT`, then the working directory. The provider
-and repository come from that checkout's remote, as they do for `cq specs`. A target that is not a
-repository sets the variable once, in the `env` block of its `.claude/settings.json`. Reading a
-provider without a local checkout is outside this contract: it needs a repository resolution that
-the backend does not have.
+`--root <checkout>` wins, then `QUENCHING_SPECS_ROOT`, then the working directory. The store and
+its configuration come from that checkout. With the git store the reader fetches the `quenching`
+branch into a bare mirror of its own and never touches the target's `.git`; with a deprecated
+tracker backend it reads the tracker, as `cq specs` does. A target that is not a repository sets
+the variable once, in the `env` block of its `.claude/settings.json`. Reading a store without a
+local checkout is outside this contract: it needs a repository resolution that the backend does
+not have.
 
 The entry point is named `cq-specs-read`, not `cq`, because Claude Code puts every enabled
 plugin's `bin/` on `PATH` ([plugin-layout.md](plugin-layout.md)). With both plugins enabled, a

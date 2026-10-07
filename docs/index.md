@@ -34,7 +34,7 @@ commands kept under the same names with reduced maintenance (defect fixes, no ne
 
 ## The problem
 
-A repository that grows with AI agents accumulates drift across its knowledge, provider-owned plans,
+A repository that grows with AI agents accumulates drift across its knowledge, spec plans,
 design, automation, operations and verification surfaces. Knowledge
 scatters across READMEs, wikis and chat threads, so every session re-derives what the last one
 already learned. Plans live in prose nobody can verify, so "done" is an opinion. And the
@@ -54,7 +54,7 @@ writing anything.
 | Surface | What converges | The one align |
 | --- | --- | --- |
 | `/docs/` | a canonical **OKF bundle** — standards, concepts, glossary, and this site | `/quenching:knowledge:align` |
-| Specs | a provider-owned plan cycle on **GitHub issues or Azure Boards** | cycle and status commands |
+| Specs | a plan cycle stored on the **`quenching` branch**, with GitHub or Azure Boards cards | cycle and status commands |
 | `/.design/` | one DTCG source projected to portable Impeccable and editorial media artifacts | `/quenching:design:align` |
 | `.claude/` | one file per entry point, every description audited | `/quenching:components:align` |
 | `ops` | a declared operations root, its entry-point inventory, registry and lifecycle/write policy | `/quenching:ops:align` |
@@ -126,7 +126,7 @@ skills' `references/`.
 
 - Contract: seven local fronts (`knowledge`, `design`, `components`, `ops`, `proof`, `toolchain`,
   `delivery`) plus the
-  provider-owned `specs` flow and a `git` pillar; ONE align per local front, probe-first;
+  `specs` flow and a `git` pillar; ONE align per local front, probe-first;
   `/quenching:align` conducts the seven aligned fronts on one OK.
 - Rails: `cq` CLI — `cq knowledge`, `cq specs`, `cq design`, `cq components`, `cq ops`, `cq proof`, `cq toolchain`, `cq delivery`, `cq git`; uniform `--json`;
   exit codes `0` ok · `1` findings · `2` refusal.

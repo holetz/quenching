@@ -7,8 +7,8 @@ insert new knowledge, capture terms into a fixed glossary, drain the project's C
 Code memory into it, import external sources into it, keep the repo's `CLAUDE.md` a thin pointer over it, and organize
 the repo's own **automation surface** (`.claude/commands/`) under one
 taxonomy — so every repository that adopts the plugin looks the **same**. It also carries the repo's
-**spec-driven plan lifecycle**: the seven `/quenching:specs:*` commands over a provider-owned specs
-front backed by GitHub or Azure Boards, with the OKF bundle as its knowledge substrate, driven end
+**spec-driven plan lifecycle**: the seven `/quenching:specs:*` commands over a specs
+front stored on a git branch with thin GitHub or Azure Boards cards, with the OKF bundle as its knowledge substrate, driven end
 to end by the bundled stdlib `cq specs`.
 
 The **design front** adds one DTCG source at `/.design/tokens.json`, deterministic projections
@@ -30,7 +30,7 @@ plugin.
 ## The seven fronts, the non-converging axes, and the one align per front
 
 The plugin acts on **seven** surfaces of a repository, and the interface is the **same on each**.
-Seven local fronts have an align, the provider-owned specs axis has no local tree to converge,
+Seven local fronts have an align, the specs axis has no local tree to converge,
 and one root command spans the seven aligned fronts. The `security` and `git` axes are
 **pillars** rather than fronts — they converge no tree of their own, so they carry no align at all
 (see [`architecture/align-surface.md`](../../docs/standards/architecture/align-surface.md)
@@ -39,7 +39,7 @@ and one root command spans the seven aligned fronts. The `security` and `git` ax
 | Front / pillar | Namespace | **align** — probe-first, structure + content |
 | --- | --- | --- |
 | `/docs/` — the OKF bundle | `/quenching:knowledge:*` | `/quenching:knowledge:align` |
-| provider-owned specs — GitHub issues or Azure work items | `/quenching:specs:*` | lifecycle and status commands |
+| specs — the `quenching` branch, with GitHub or Azure Boards cards | `/quenching:specs:*` | lifecycle and status commands |
 | `/.design/` — the DTCG design source | `/quenching:design:*` | `/quenching:design:align` |
 | `.claude/` — the automation surface | `/quenching:components:*` | `/quenching:components:align` |
 | target-declared operations root | `/quenching:ops:*` | `/quenching:ops:align` |
@@ -94,7 +94,7 @@ and `commands/**` disagree
 §A hand-written inventory of the surface needs a machine holding its lockstep).
 
 The split is by front and pillar: `/quenching:knowledge:*` acts on the OKF `/docs/` bundle,
-`/quenching:specs:*` on provider-owned issues and work items, `/quenching:design:*` on the DTCG
+`/quenching:specs:*` on the specs branch and its cards, `/quenching:design:*` on the DTCG
 source and its projections, `/quenching:components:*` on the target's `.claude/` automation surface,
 `/quenching:ops:*` on the target's operations surface, `/quenching:proof:*` on the target's verification surface, `/quenching:toolchain:*` on the target's toolchain surface, `/quenching:delivery:*` on the target's delivery surface, and `/quenching:git:*` on a repository's own git facts. Two commands sit at the root. Claude auto-routes to a command by its `description`; typing the command is
 the explicit entry point.
@@ -216,33 +216,32 @@ below.
 
 ## The `specs` flow — the seven `/quenching:specs:*` commands
 
-The plugin's **spec-driven plan cycle** is provider-owned: GitHub issues and Azure Boards work
-items are the system of record, and their body carries the canonical spec. The conceptual model
-(thirteen sections, seven frontmatter records, derived stages) is identical whichever provider is
-chosen — only *where and how* it is serialized differs, which is why every command drives
-`assets/bin/cq specs` (uniform `--json`, strict exit codes `0` ok · `1` findings · `2` refusal)
-rather than a repository path. Azure Boards ships implemented but **without an end-to-end run
-against a real Azure DevOps project** — `doctor`'s `sp-backend-unproved` finding, plus a one-line
-stderr warning on its first write each process, names that gap every time it is selected. Every
+The plugin's **spec-driven plan cycle** keeps each spec as a canonical document on the `quenching`
+branch of the code repository's remote (`"backend": "git"`), with a thin GitHub or Azure Boards
+**card** beside it as the human-facing projection. The conceptual model (thirteen sections, seven
+frontmatter records, derived stages) is identical on every backend, which is why every command
+drives `assets/bin/cq specs` (uniform `--json`, strict exit codes `0` ok · `1` findings · `2`
+refusal) rather than a repository path. The `github` and `azure-boards` backends, which keep the
+document in the tracker item, still work but are deprecated: `cq specs doctor` flags them and
+`cq specs migrate --to git` (a dry run unless `--write`) moves a repository onto the branch. Every
 command on this front reads the `/docs/` bundle as context going in and distils durable
 knowledge back out when a spec closes.
 
-The **unit of work is a spec** — ONE canonical markdown document for its whole lifecycle. It is an
-issue or work item **whose body is the whole document** — no sub-issues, no child work items; a document past
-GitHub's 65,536-character body ceiling (two of this repository's 69 specs) spills into
-continuation comments on its own issue and comes back byte for byte — with no repository specs tree
-required. **Frontmatter records human judgments** (`priority`, `refined`,
-`approved`, `branch`, `reviewed`, `merge`, `outcome`); the provider, git and section state record
+The **unit of work is a spec** — ONE canonical markdown document for its whole lifecycle. It is
+`specs/<id>.md` on the branch (`specs/archive/<id>.md` once closed), written without a checkout and
+pushed with compare-and-swap, so concurrent writes to different specs both land. The card holds a
+title, a summary, `Tasks n/N`, the phase and stage, a link to the file and the `spec:*` labels, is
+rewritten only at lifecycle transitions, and never holds the plan; `card: github | azure-boards |
+none` configures it, and `cq specs new --card <n>` adopts an existing issue. **Frontmatter records human judgments** (`priority`, `refined`,
+`approved`, `branch`, `reviewed`, `merge`, `outcome`); the store, git and section state record
 everything else — `ready` is a *derived* stage, and the OK to build is the
 `approved: {date}` stamp. Four more frontmatter keys — `tags`, `assignee`, `start`, `target` — are
-**state, never records**: each has a faithful native counterpart on at least one backend (issue
-labels/assignees on `github`, `System.Tags`/`System.AssignedTo`/the two scheduling dates on
-`azure-boards`) and is reassembled from it on read rather than kept in the document, so a human's
-edit on the tracker IS the spec's new value. A fifth key, `summary:`, is neither a record nor one
-of those four — one line saying what the spec is, written at capture and refreshed by every
-`/quenching:specs:develop` pass, with no native counterpart anywhere, and it is what
+**state, never records**: first-level frontmatter keys (a deprecated tracker backend stores them
+natively instead). A fifth key, `summary:`, is neither a record nor one of those four — one line
+saying what the spec is, written at capture and refreshed by every
+`/quenching:specs:develop` pass, and it is what
 `cq specs next --front --table` prints as its `Summary` column. `.claude/quenching.json` is where a target declares
-`backend`, the per-backend placement (`azureStates`, `azurePlacement`, `azureColumns`) and the
+`backend`, the `card`, the Azure placement (`azureStates`, `azurePlacement`, `azureColumns`) and the
 project's own `subjects`/`tagCatalog` — the closed sets `/quenching:specs:create` proposes a spec's subject
 and tags from, confirmed by a human, never picked silently. Because a spec writes its durable rule
 **directly into `/docs/standards/`** (honestly `authority`-graded), there is no second store to
@@ -250,8 +249,7 @@ bridge to:
 isolation-while-building is a real git **branch or worktree** (offered inline by `/quenching:specs:execute`
 when it starts from the base branch, recorded as `branch: {base, work}`, each task committed alone
 with its sha on the task line). `cq specs export --spec <slug> | --all` dumps the canonical markdown to disk on demand —
-write-only, nothing reads it back, so it is never a second store — the mitigation `## Risks`
-names for losing access to an external backend.
+write-only, nothing reads it back, so it is never a second store.
 `cq specs serve [--port N] [--host 127.0.0.1] [--read-only] [--open]` starts the local spec portal (loopback only, a per-run token on every call, `Host`/`Origin` validated; writes go through the CLI's own verbs, so CAS and refusals are the CLI's, and a refusal is shown with its code). `/quenching:specs:board` launches it.
 
 | Command | Role |
@@ -265,7 +263,7 @@ names for losing access to an external backend.
 | `/quenching:specs:triage` | Ranks the whole front in ONE confirmed table, writing `priority: {level, criticality, complexity, date}` per spec and nothing else — merging, never clobbering a human's ranking. |
 | `/quenching:specs:board` | Human-only. Starts `cq specs serve` in the background and prints the URL: a local browser portal (board by derived stage, drag-to-rank list, spec detail, search, capture, approve as `by: human`) over the same backend as the CLI. Loopback only, per-run token, `Host`/`Origin` checks, `--read-only` disables writes on the server; `cq-specs-read serve` is always read-only. |
 
-The shared facts live once — the provider-owned document, the thirteen canonical sections, the
+The shared facts live once — the spec document, the thirteen canonical sections, the
 gates, the record vocabulary, and the `cq specs` surface in
 [`specs-develop/spec-driven.md`](assets/references/specs-develop/spec-driven.md),
 the execution mechanics in
@@ -296,11 +294,9 @@ without data gets no `catalog/`):
   external/              # what we consume — tools/ libraries/ regulations/ (type: external)
 ```
 
-Specs live in the configured external provider and are not a second repository tree or part of
-the OKF bundle. `/quenching:specs:create` and `/quenching:specs:triage` operate through `cq specs`,
+Specs live on the `quenching` branch, not in the code tree or the OKF bundle. `/quenching:specs:create` and `/quenching:specs:triage` operate through `cq specs`,
 not through files checked into the target repository. An agreed-but-unproven decision is a
-`standard` with `authority: background` (there is no separate
-`decisions/` home).
+`standard` with `authority: background`; its history lives in `decisions/`.
 
 **OKF-strict rules the plugin enforces:**
 
@@ -392,7 +388,7 @@ reach the shared payload via `${CLAUDE_PLUGIN_ROOT}/assets/...`.
 
 A project that only reads another project's specs (for example, an Obsidian vault using them as
 its to-do list) installs the sibling plugin instead. It registers one command and cannot write
-the tracker:
+the specs store or a card:
 
 ```text
 /plugin install quenching-specs-reader@quenching

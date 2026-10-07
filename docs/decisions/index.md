@@ -19,3 +19,4 @@ evidence, not the rule.
 * [0003 — Plan git record history](0003-plan-git-record-history.md) — the host-link default-branch rule, the in-place liveness exception and the unproven azure-boards assumption
 * [0004 — Frontmatter source lineage](0004-standards-source-lineage.md) — the long `source:` lineage moved out of the standards' frontmatter
 * [0005 — Glossary long forms](0005-glossary-long-forms.md) — the parts of glossary entries removed to keep each to one sentence
+* [0006 — Specs move from tracker bodies to a git store with thin cards](0006-specs-move-to-a-git-store-with-thin-cards.md) — why the plan left the issue body, the measurements and the migration result
