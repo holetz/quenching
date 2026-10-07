@@ -17,7 +17,7 @@ This command is a launcher. The protocol (waves, routing, budgets, acceptance, a
 
 ### 1. Resolve the set
 Resolve `cq` per [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
-§Resolving the tool; branch on the exit code. Confirm each id exists with `cq specs show <id> --json`.
+§Resolving the tool; branch on the exit code. Confirm each id exists with `cq specs show --spec <id> --json`.
 **Done when:** the epic id or the list of spec ids is verified to exist.
 
 ### 2. Launch the orchestrator
