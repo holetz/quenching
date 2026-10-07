@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Ops front
 
+<!-- rules -->
+
 The ops front is the operations surface a target repository converges toward. It gives routine
 work a predictable outer interface while leaving domain logic in the packages that own it. The
 front is both the contract for that surface and the shipped implementation boundary that checks
@@ -156,6 +158,8 @@ that measurement is available, any code firing on more than half the inventory m
 before it is retained as a contract check.
 
 ## Why a front and not a pillar
+
+<!-- rationale -->
 
 The distinction is owned by [`align-surface.md`](align-surface.md), §The aligned-front column and
 §The seventh pillar has no align: a front is a tree this plugin can converge toward and probe, while

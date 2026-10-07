@@ -29,6 +29,7 @@ PUBLISHED_HOMES = (
     "standards",
     "concepts",
     "vision",
+    "decisions",
 )
 EXCLUDED_HOMES = ("catalog", "external")
 ROOT_FILES = ("index.md", "glossary.md")

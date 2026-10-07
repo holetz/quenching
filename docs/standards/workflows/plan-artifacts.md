@@ -7,11 +7,13 @@ tags: [workflows, specs, sections, gates, validation]
 timestamp: 2026-08-22
 audience: both
 authority: current
-source: abandonar-slug-por-id-nativo (sections 1-2); lifecycle claims superseded by the specs-flow-consolidation plan; the `## Overview` section was retired from the active contract after the flow review; the `moment` axis, the `§` addressed `## Impact` bullet and the schema entry in the three-file lockstep by the narrow-the-execute-preamble spec; `date` remains document-owned while the provider ID stays outside it; `verification` became optional; both duplicated constants shown to be selftest-only once nothing installs the tool (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec); §What `## Tasks` does NOT carry added by the obrigacoes-de-merge-nao-nascem-como-task spec (task 1.1), which moved the merge-obligation boundary from the consuming side alone to the side that authors the list
+source: abandonar-slug-por-id-nativo, specs-flow-consolidation, narrow-the-execute-preamble, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, obrigacoes-de-merge-nao-nascem-como-task; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Spec document contract
+
+<!-- rules -->
 
 What a spec must **contain**, which parts a machine checks, and what each gate does and does not
 guarantee. The per-section *authoring* doctrine (what to write under each heading) lives in

@@ -7,11 +7,13 @@ tags: [architecture, okf, validator, reserved-names, deprecation]
 timestamp: 2026-08-10
 audience: both
 authority: current
-source: retire-docs-log spec (task 6.1); §The one time this was deliberately not followed added at the close of the remover-a-capability-quenching-md spec (2026-08-08), which removed that payload's basename from `EXEMPT` outright and accepted the blast radius this standard tabulates — recorded here so a reader of the rule learns of its one measured exception from the rule itself
+source: retire-docs-log, remover-a-capability-quenching-md, 2026-08-08; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Retiring a reserved artifact — drop the checker, keep the reservation
+
+<!-- rules -->
 
 When this repo stops producing a file that its validator treats as a **reserved filename**,
 the artifact is **retired**, never **unreserved**. Retiring removes the checker; the name
@@ -32,6 +34,8 @@ A retired artifact must also stay **out of the concept-doc count** wherever the 
 docs — it is still not authored knowledge, and a retired file is not suddenly content.
 
 ## Why the reservation is load-bearing
+
+<!-- rationale -->
 
 Deleting the checker makes the validator silent about the file. That silence hides what the
 reserved set is actually doing, and makes removing it look like harmless cleanup. It is not:

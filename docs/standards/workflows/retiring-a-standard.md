@@ -7,11 +7,13 @@ tags: [workflows, docs, bundle, retirement]
 timestamp: 2026-08-27
 audience: both
 authority: background
-source: extensible-surface-and-budget-retirement plan, executed at close-out — tasks 2.1–2.3 deleted context-budget.md and re-pointed its citations, the inheriting note in context-discipline.md, and the review that caught the strays (2026-08-06); the missing index row this procedure lists first was itself the one stray the review did not catch
+source: extensible-surface-and-budget-retirement, 2026-08-06; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Retiring a standard — removal, the stamp, and the review as the net
+
+<!-- rules -->
 
 Retiring a bundle standard is **removal, not deprecation**. A doc that survives annotated
 (`deprecated:`, a footnote, some "historical" prose) becomes a ritual nobody acts on: the reader

@@ -28,7 +28,7 @@ from quenching.knowledge.site_source import PUBLISHED_HOMES
 # as the staged source tree: Zensical has no supported exclusion setting, so catalogues and external
 # research must be absent from both the menu and `docs_dir`, not merely omitted from this list.
 HOME_ORDER = ("tutorials", "how-to", "explanation", "project",
-              "standards", "concepts", "vision")
+              "standards", "concepts", "vision", "decisions")
 
 _ATTR_SUFFIX = re.compile(r"\s*\{[^}]*\}\s*$")
 _H1 = re.compile(r"^#\s+(.*?)\s*$", re.MULTILINE)

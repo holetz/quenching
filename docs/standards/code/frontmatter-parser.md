@@ -7,11 +7,13 @@ tags: [code, parsing, yaml, frontmatter, tools]
 timestamp: 2026-08-10
 audience: both
 authority: current
-source: modularizar-specs-knowledge-components spec, task 9.1 — retired with frontmatter-parsing.md (2026-08-10), whose comment rule, canonical case list and anomaly sidecar this file inherits; the three-copy lockstep the retired doc held was itself the premise task 2.1 removed, once nothing installed standalone any more
+source: modularizar-specs-knowledge-components, 2026-08-10; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Frontmatter parsing — the one parser
+
+<!-- rules -->
 
 `common/frontmatter.py` is the **one** parser every pillar reads YAML frontmatter through —
 `specs`, `knowledge` and `components` alike. Three hand-written mini-parsers used to hold this
@@ -132,6 +134,8 @@ returns an empty dict for that exactly as it does for a file with no frontmatter
 function separates the two.
 
 ## Why a sidecar, and two of them
+
+<!-- rationale -->
 
 Folding either signal back into `parse_frontmatter`'s own return — a `(fm, has_block, well_formed)`
 triple, which is what the retired pre-refactor checker returned — would put a three-way unpack at

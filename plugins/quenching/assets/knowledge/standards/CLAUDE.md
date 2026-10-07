@@ -12,7 +12,7 @@ organized in subject subfolders. This is the detail the root pointer cites on de
   [/docs/glossary.md](/docs/glossary.md) (`grep -i '<term>'`) — the repo's
   A–Z lookup, one entry per term with a link to its full doc when one exists.
 - **Boundary:** the contract for how WE build lives here — a proven rule is `authority: current`,
-  an agreed-but-unproven one `authority: background` (no separate decisions home). Direction →
+  an agreed-but-unproven one `authority: background` (its history lives in `decisions/`). Direction →
   `vision/`, external fact → `external/`, our data → `catalog/`.
 - **OKF:** every standard carries `type: standard` + a derived `resource:` (the repo
   scope it governs, from the doc's `file:line` anchors — never invented).

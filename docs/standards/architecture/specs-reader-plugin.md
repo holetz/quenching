@@ -13,11 +13,15 @@ maintainer: quenching
 
 # The specs reader is a generated, read-only sibling plugin
 
+<!-- rules -->
+
 A target that needs to read another project's provider-owned specs, and nothing else, enables
 `quenching-specs-reader` instead of `quenching`. That target pays for one command description,
 and it has no path to write the tracker.
 
 ## Why a plugin and not a profile
+
+<!-- rationale -->
 
 Plugin enablement is the only unit a target can switch on. A profile narrows what `/align`
 conducts, not what the host registers, as [install-profiles.md](install-profiles.md) records from
@@ -58,6 +62,8 @@ code `sp-read-only`.
    package and replaces each write path (the three write primitives and the provider-private
    writers) with a refusal. The import has to come first: a class defined after the patch escapes
    it, and the first test of this block caught exactly that.
+
+<!-- rationale -->
 
 The allowlist keeps the refusal cheap and legible. The runtime block covers a read verb that
 someday grows a side effect. A command body that says "never write" without either layer is a

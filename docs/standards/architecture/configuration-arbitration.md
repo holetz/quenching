@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Configuration arbitration by key
 
+<!-- rules -->
+
 A shared configuration artifact is a file or directory read by more than one front or pillar. Its
 ownership is not the whole file's: each mutable key or semantic section has one arbiter that may
 define, write, or repair it. The declaration travels with the artifact so a stale or duplicated

@@ -7,11 +7,13 @@ tags: [quality, verification, prose, specs, verify]
 timestamp: 2026-08-27
 audience: both
 authority: current
-source: spec observacoes-do-triage-sem-portador-de-acao (distilled at conclude) — measured on task 3.1, whose `verify:` required "qualquer coluna que nomeie um comando" in lowercase and failed because the bullet actually written opened with "Qualquer"; §The negative face added by spec 1003 (2026-08-27), which measured the inverse three times on the same branch — a `verify:` forbidding the string `mkdocs` in three files where the `## Proposal` itself required it to appear
+source: observacoes-do-triage-sem-portador-de-acao, 2026-08-27; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # A `verify:` that greps prose pins the wording it asserts
+
+<!-- rules -->
 
 ## The rule
 

@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Worktree setup contract
 
+<!-- rules -->
+
 A worktree is a fresh checkout: it carries what git tracks and nothing else — no `node_modules/`,
 no `.venv/`, no `.env`, no build output. In a repository with installed dependencies that makes the
 recommended isolation the one that breaks at the first `verify:`. This standard is the one hook
@@ -86,6 +88,8 @@ something already committed to. The invariant that carries it: **the command is 
 having been displayed first.**
 
 ## Why this setting stays in the shared configuration
+
+<!-- rationale -->
 
 The setting belongs in `.claude/quenching.json` because it is a target-repository operation, not a
 provider storage operation. The shared file already carries Azure placement, hooks, profiles, and

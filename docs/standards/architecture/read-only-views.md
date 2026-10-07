@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Read-only views are their own command
 
+<!-- rules -->
+
 Every front has a command that **writes** (its align) and a command that **reads** (its status).
 They are two files, and the reason is a tool grant rather than tidiness.
 
@@ -23,6 +25,8 @@ no `Edit`, and whose `Bash` is scoped to the front's own verifier. It is never a
 `--dry-run` on the command that writes.
 
 ## Why a mode flag cannot carry the guarantee
+
+<!-- rationale -->
 
 `allowed-tools` is granted **per command, not per invocation**. An align holds `Write` and `Edit`
 because aligning is what it does — so a read-only mode inside it would be enforced only by the

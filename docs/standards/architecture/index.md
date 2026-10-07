@@ -6,7 +6,7 @@ a doc in this home.
 
 **Boundary:** the shape of the system (the structural *why*). Code conventions (imports,
 lint, symbols) live in [../code/](../code/index.md). An agreed-but-unproven architectural
-rule sits here as `authority: background` (no separate decisions home). One standard per file
+rule sits here as `authority: background` (its history lives in `decisions/`). One standard per file
 (files, not sub-folders); each carries `type: standard` + a derived `resource:`; add each to
 [../index.md](../index.md).
 

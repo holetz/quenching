@@ -7,11 +7,13 @@ tags: [quality, verification, findings, warnings, unproven, context]
 timestamp: 2026-08-10
 audience: both
 authority: current
-source: configurable-spec-backend plan — the `azure-boards` arm of task 6.3, generalised at conclude from the decision `## Open Decisions` deferred to that task; the example block updated by provar-e-posicionar-o-backend-azure-boards (task 7.2), the first real retirement the mechanism this standard describes has been through
+source: configurable-spec-backend, provar-e-posicionar-o-backend-azure-boards; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Warning about an unproven capability
+
+<!-- rules -->
 
 A capability sometimes ships correct-by-construction and unproven-in-practice: the interface is
 asserted, the refusals are asserted, and it has never once been run against a real target. This

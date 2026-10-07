@@ -21,11 +21,14 @@ PARSE HONESTY (per-doc; WARN — this checker naming its own misread)
 """
 from __future__ import annotations
 
+import re
+
 from quenching.common.frontmatter import frontmatter_anomalies, frontmatter_block, parse_frontmatter
 from quenching.knowledge.schema import (
     LEGACY_HOMES,
     LEGACY_QUADRANTS,
     RECOMMENDED,
+    SOURCE_MAX_WORDS,
     TYPES_WITHOUT_RESOURCE,
     _nonempty,
 )
@@ -58,6 +61,49 @@ def check_concept(text: str) -> list[tuple[str, str, str]]:
         if not _nonempty(fm, key):
             out.append(("WARN", f"missing-{key}",
                         f"recommended field `{key}` is absent (OKF recommends it)"))
+    source = str(fm.get("source", "")).strip()
+    if len(source.split()) > SOURCE_MAX_WORDS:
+        out.append(("WARN", "source-too-long",
+                    f"`source:` is {len(source.split())} words (max {SOURCE_MAX_WORDS}) — keep spec ids "
+                    "and move the lineage into a `decisions/` entry"))
+    return out
+
+
+GLOSSARY_ENTRY_RE = re.compile(r"^- (?:\[)?\*\*(.+?)\*\*")
+GLOSSARY_MAX_WORDS = 70
+
+
+def _glossary_key(term: str) -> str:
+    return re.sub(r"[^a-z0-9 ]", "", term.casefold())
+
+
+def check_glossary(text: str) -> list[tuple[str, str, str]]:
+    """Glossary form: no duplicate term, entries in alphabetical order, one short entry per term.
+    Reads only the `## Terms` section (the core-vocabulary block above it repeats terms by design)."""
+    out: list[tuple[str, str, str]] = []
+    start = text.find("\n## Terms")
+    if start == -1:
+        return out
+    end = text.find("\n## ", start + 4)
+    body = text[start:end if end != -1 else len(text)]
+    entries = re.split(r"\n(?=- )", body)[1:]
+    seen: set[str] = set()
+    prev = ""
+    for entry in entries:
+        m = GLOSSARY_ENTRY_RE.match(entry)
+        if not m:
+            continue
+        term = m.group(1)
+        key = _glossary_key(term)
+        if key in seen:
+            out.append(("WARN", "glossary-duplicate", f"term `{term}` is defined more than once"))
+        seen.add(key)
+        if prev and key < prev:
+            out.append(("WARN", "glossary-order", f"`{term}` is out of alphabetical order"))
+        prev = key
+        if len(entry.split()) > GLOSSARY_MAX_WORDS:
+            out.append(("WARN", "glossary-entry-long",
+                        f"`{term}` is {len(entry.split())} words (max {GLOSSARY_MAX_WORDS}) — one sentence plus a link"))
     return out
 
 

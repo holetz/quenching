@@ -465,5 +465,36 @@ class GeneratedListingChecker(unittest.TestCase):
         self.assertEqual(drift, set())
 
 
+class SourceAndGlossaryLint(unittest.TestCase):
+    ROOT = "---\nokf_version: \"0.1\"\n---\n# Root\n"
+
+    def _doc(self, source):
+        return ("---\ntype: concept\ntitle: T\ndescription: D\nresource: x\n"
+                f"timestamp: 2026-01-01\nsource: {source}\n---\n# T\n")
+
+    def _codes(self, fixture):
+        return [c for _s, _r, c, _m in _validated({"index.md": self.ROOT, **fixture})]
+
+    def test_a_source_over_forty_words_warns(self):
+        self.assertIn("source-too-long", self._codes({"a.md": self._doc(" ".join(["w"] * 41))}))
+
+    def test_a_source_of_forty_words_is_clean(self):
+        self.assertNotIn("source-too-long", self._codes({"a.md": self._doc(" ".join(["w"] * 40))}))
+
+    def test_glossary_duplicates_and_order_warn(self):
+        gl = ("---\ntype: concept\ntitle: G\ndescription: D\nresource: x\ntimestamp: 2026-01-01\n---\n"
+              "# G\n\n## Terms\n\n- **Beta** - b.\n- **Alpha** - a.\n- **Alpha** - a again.\n")
+        codes = self._codes({"glossary.md": gl})
+        self.assertIn("glossary-order", codes)
+        self.assertIn("glossary-duplicate", codes)
+
+    def test_a_sorted_glossary_with_a_core_block_is_clean(self):
+        gl = ("---\ntype: concept\ntitle: G\ndescription: D\nresource: x\ntimestamp: 2026-01-01\n---\n"
+              "# G\n\n## Core vocabulary\n\n- **Zed** - z.\n- **Alpha** - a.\n\n"
+              "## Terms\n\n- **Alpha** - a.\n- **Zed** - z.\n")
+        codes = self._codes({"glossary.md": gl})
+        self.assertFalse([c for c in codes if c.startswith("glossary-")], codes)
+
+
 if __name__ == "__main__":
     unittest.main()

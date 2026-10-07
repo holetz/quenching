@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Agent-choice catalogues
 
+<!-- rules -->
+
 Three keys in `.claude/quenching.json` — `subjects`, `tagCatalog` and `workItemTypes` — look
 unrelated at a glance: one links a spec to a parent Feature, one applies labels, one picks a work
 item's type. They converged on the same shape anyway, and this standard names that shape once
@@ -44,6 +46,8 @@ own description — and it is still the same shape: a key, and prose an agent re
 | `workItemTypes` | a nature of work (`incidente`, `tarefa`) | `azure`, `github`, `default` | `/quenching:specs:create`'s type resolution, `cq specs new --type`, every backend's `create_spec` |
 
 ## Why three arrived at the same answer independently
+
+<!-- rationale -->
 
 `subjects` and `tagCatalog` were designed together, for the same command, so their agreement
 proves less than it looks. `workItemTypes` did not start from either: it was designed to solve one
