@@ -33,7 +33,7 @@ Measured on this repository's `github` backend (2026-08-17): the archived spec
 `revisar-politica-de-assets-checks` (issue #902) carries a `subject:` on task 5.1 that
 `git log --grep` cannot resolve, because the tick was API-only and the commit it names was never
 made. It is **not** backfilled — an archived spec is never rewritten
-([plan-git-record.md](plan-git-record.md) §The subject is the anchor) — and a task-level checker
+([plan-git-record.md](../standards/workflows/plan-git-record.md) §The subject is the anchor) — and a task-level checker
 symmetric to `sp-bad-merge` remains a separate surface, deliberately not built here.
 
 ## Why the Handoff cadence is four events
