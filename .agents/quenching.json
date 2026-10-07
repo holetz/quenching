@@ -3,7 +3,7 @@
   "shared": {
     "hooks": {
       "after_specs_execute_task": [
-        {"command": "/my:security-review", "optional": true}
+        {"command": "/security-review", "optional": true, "condition": "Run only when the task touches sensitive surface: workflows, release, approval stamps, hooks or scripts."}
       ]
     }
   },
