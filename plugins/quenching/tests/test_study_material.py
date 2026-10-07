@@ -1,4 +1,4 @@
-"""Regression checks for the public workflow-study contract."""
+"""Regression checks for the public material contract."""
 
 from __future__ import annotations
 

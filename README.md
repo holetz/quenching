@@ -1,11 +1,17 @@
 # quenching
 
-A workflow-study repository and a packaged **Claude Code plugin** for examining how an
-OKF-shaped knowledge workflow behaves. Its material is educational and reproducible, not a
-production control, security boundary, or adoption guarantee.
+A **Claude Code plugin** for teams that build with AI agents: it keeps a repository's knowledge,
+specs and version-control workflow in one canonical, verifiable shape. It is not a security
+boundary: a command declared read-only does not contain an assistant that has a shell.
 
-This repository contains a **plugin marketplace** and the study's source material. The plugin itself lives in
+This repository contains the **plugin marketplace** and the plugin's source. The plugin itself lives in
 [`plugins/quenching/`](plugins/quenching/).
+
+**Core fronts** — maintained actively, with reliability, adoption and cost as priorities:
+`knowledge`, `specs`, `git` and `components`. **Non-core fronts** — `design`, `ops`, `proof`,
+`toolchain`, `delivery` and `security`: they stay in the plugin under the same names, are
+human-only (`disable-model-invocation: true`) and receive reduced maintenance, meaning defect fixes
+but no new features. Type the command name to use one.
 
 Release history is maintained in the [`CHANGELOG`](CHANGELOG.md).
 
@@ -62,8 +68,7 @@ optional consumer, and `cq design import` is the explicit route for folding its 
 
 ## Install
 
-The paths below are for inspecting the packaged Claude artifact in a disposable study target.
-They document the current workflow; they are not a production adoption recommendation.
+The paths below install the packaged Claude plugin. Try it first in a disposable repository.
 
 This repository publishes from the single **`main`** branch
 ([`docs/standards/git/branching.md`](docs/standards/git/branching.md)). Pull requests merge into

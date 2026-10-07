@@ -20,8 +20,8 @@ CLAUDE_MD = ROOT / "CLAUDE.md"
 RULES_DIR = ROOT / ".claude" / "rules"
 
 REQUIRED_AGENTS = {
-    "Language line": r"(?m)^Language: [A-Za-z]{2,3}(-[A-Za-z0-9]+)* — the contract is /docs/standards/agents/communication\.md\.?$",
-    "Ephemeral writes line": r"(?m)^Ephemeral writes: \.quenching/ — the contract is /docs/standards/agents/ephemeral-writes\.md$",
+    "Language line": r"(?m)^Language: [A-Za-z]{2,3}(-[A-Za-z0-9]+)* — the contract is /docs/standards/agents/[a-z-]+\.md\.?$",
+    "Ephemeral writes line": r"(?m)^Ephemeral writes: \.quenching/ — the contract is /docs/standards/agents/[a-z-]+\.md$",
     "single gate": r"bash scripts/verify_repo\.sh",
     "context: fork safety rule": r"Do not add `context: fork`",
     "haiku safety rule": r"Never downgrade classification or executor sub-agents to `haiku`",
