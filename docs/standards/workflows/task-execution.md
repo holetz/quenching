@@ -287,7 +287,7 @@ returning it to `- [ ]` (`cq specs task --uncheck <id>`) — never merely to ret
 
 <!-- rationale -->
 
-A blocked marker replaced a hidden attempt counter: the reason now sits in the line a human reads ([ADR 0002](../decisions/0002-task-execution-history.md) §Why the marker replaced the counter).
+A blocked marker replaced a hidden attempt counter: the reason now sits in the line a human reads ([ADR 0002](../../decisions/0002-task-execution-history.md) §Why the marker replaced the counter).
 
 ## Review splits by cost into two levels, owned by two commands
 
@@ -391,7 +391,7 @@ spec in the working tree or outside git.
 
 <!-- rationale -->
 
-An archived spec's unresolvable `subject:` is not backfilled ([ADR 0002](../decisions/0002-task-execution-history.md) §Unresolvable subject on an archived spec).
+An archived spec's unresolvable `subject:` is not backfilled ([ADR 0002](../../decisions/0002-task-execution-history.md) §Unresolvable subject on an archived spec).
 
 ## The Handoff refresh cadence is four events
 
@@ -412,7 +412,7 @@ It is refreshed on exactly four events:
 
 <!-- rationale -->
 
-The cadence it replaced was *after each committed task* ([ADR 0002](../decisions/0002-task-execution-history.md) §Why the Handoff cadence is four events).
+The cadence it replaced was *after each committed task* ([ADR 0002](../../decisions/0002-task-execution-history.md) §Why the Handoff cadence is four events).
 
 ### A cadence trigger can never be a judgment
 

@@ -1,6 +1,6 @@
 {
   "source": "plugins/quenching",
-  "source_sha256": "cdd4509f2114e1b8dd99d0e9de8d5d59a395ca858894699807ae2115989e6d29",
+  "source_sha256": "a9850dee81a07b70ab4877403a93c5f9b3904fff6b08c96e62848ec2661ba466",
   "generator": "cq components translate",
   "command_count": 57
 }
