@@ -86,6 +86,17 @@ def cmd_doctor(args, root: str, out: Emitter) -> int:
                                         "project's process template before relying on it, "
                                         "or declare a proven backend: "
                                         f"{', '.join(b for b in BACKENDS if b not in UNPROVED_BACKENDS)}"))
+    # The tracker backends keep working, and their removal is a future major. Said here, where
+    # a human asks what is wrong with the workspace, rather than on every command.
+    if cfg["backend"] in ("github", "azure-boards"):
+        findings.append(_finding("sp-backend-deprecated", "warn",
+                                 f"backend `{cfg['backend']}` is deprecated: the spec lives "
+                                 "in the tracker item, which costs a request per edit; the "
+                                 "`git` store keeps it on branch `quenching` behind a thin "
+                                 "card",
+                                 path=CONFIG_FILE, backend=cfg["backend"],
+                                 remedy="run `cq specs migrate --to git` to preview the move, "
+                                        "then `--write`, then set `backend: git` as it says"))
     # The config moved to `.agents/`, and a repo that upgrades without moving its file is the
     # one shape where every command keeps working while nothing it declared is read — the
     # silence the two findings above exist to prevent, reappearing one directory over. Named

@@ -4,7 +4,7 @@ title: Spec backend interface
 description: Provider-owned GitHub and Azure Boards specs share five document primitives, one native-ID identity and one refusal boundary; external serialisation may use native fields only when it reassembles the canonical document, while locators, lean listings, placement, and the memory fake keep every consumer on the same contract, a direct read by native ID that reuses an in-process listing rather than paying a request per spec
 resource: plugins/quenching/assets/bin/quenching/specs/backends/**, plugins/quenching/assets/bin/quenching/specs/commands/**, plugins/quenching/assets/references/specs-develop/spec-driven.md
 tags: [architecture, specs, backend, interface, serialization]
-timestamp: 2026-08-23
+timestamp: 2026-10-07
 audience: both
 authority: current
 source: abandonar-slug-por-id-nativo (sections 1-2) — the provider ID became the spec identity, exact reads replaced tolerant slug resolution, and the lean listing measurement established the cost boundary beside the existing native-field and memory-fake contract; §A direct read reuses the listing the process already paid for came from the branch review of the same spec, which measured the direct read regressing `list --json` from 4.82 s to 78 s over 157 issues
@@ -548,6 +548,80 @@ have the same date and stage everywhere.
 
 The fake is deliberately **not selectable from configuration**. A store that forgets on exit must
 never be somewhere real work can land.
+
+## The git store
+
+`"backend": "git"` in `.claude/quenching.json` selects the `git` store whatever provider the
+remote URL implies. It keeps the canonical documents on a branch of the code repository's remote,
+and the GitHub and Azure Boards backends keep working unchanged beside it.
+
+- **Layout.** The branch is `quenching`, on remote `origin`. `specs/<id>.md` holds an open spec and
+  `specs/archive/<id>.md` an archived one. Each file is the canonical document, byte for byte, so
+  `derive_info` reads it unchanged. The phase is the directory and never a frontmatter fact, so
+  archiving moves the file without editing its text. `specs/.next-id` is the ID counter and
+  `quenching.json` at the branch root holds the specs-axis configuration under its `specs`
+  namespace. The locator is `quenching:<path>`.
+- **Configuration.** With the git store selected, each specs-axis key the branch declares
+  (`subjects`, `tagCatalog`, `workItemTypes`, `azurePlacement`, `azureColumns`, `azureStates`,
+  `artifactLanguage`, `card`, `cardAt`) replaces the same key from `.claude/quenching.json`.
+  Everything that describes the code tree stays in `.claude/quenching.json`.
+- **Reads never check out.** A process fetches the branch into its remote-tracking ref at most
+  once, and not at all while the per-repository fetch stamp under
+  `${XDG_CACHE_HOME:-~/.cache}/quenching/git/` is fresh. It then reads with `git ls-tree` and one
+  `git cat-file --batch`. A read is therefore as fresh as the last fetch. A reader that must not
+  touch the target's `.git` fetches into a bare mirror of its own and cannot write.
+- **Writes never check out.** A write builds one commit on the tip with a throwaway
+  `GIT_INDEX_FILE` and pushes it without force, so the push is the compare-and-swap. Commit
+  subjects are `[skip ci] specs: <verb> <id>`. The first write to a remote without the branch
+  creates it as an orphan commit.
+- **A rejected push re-applies the same operation, never a merge.** The writer fetches and runs
+  the same operation again on the new tip, for five attempts at most. A document whose blob on the
+  new tip differs from the blob it was read at refuses with `sp-git-stale-write`, and nothing is
+  written. Writes to different specs therefore both land, while two writes to the same spec land
+  once and refuse once. A creation allocates its ID again on each attempt, so concurrent creations
+  never share an ID. When the attempts run out, the writer refuses with `sp-git-cas-exhausted`,
+  never with a silent loss.
+- **Identity.** Without a tracker, the store owns identity: the counter is read and incremented
+  inside the same compare-and-swap as the document. `create_spec(phase, text, spec_id=...)`
+  accepts an ID that a tracker card already allocated, and refuses one the branch already holds.
+- **A batch is one commit.** `write_specs` replaces N documents in a single commit, checking every
+  blob before writing. A triage writes its priorities this way.
+
+### Cards
+
+The card is the thin tracker item beside a git-store spec: a projection a human can read, label
+and discuss under. The spec on the branch stays the source of truth.
+
+- **Configuration.** `card: {"provider": "github" | "azure-boards" | "none", "at": "capture"}`
+  on the branch or in `.claude/quenching.json`. An absent provider is `github` when the remote is
+  GitHub and `none` otherwise.
+- **Identity.** With a provider, the card is created first, in one request, and its native number
+  is the spec ID. `cq specs new --card <n>` adopts an existing issue or work item instead: its
+  text becomes `## Problem` when the spec has none, `<n>` is the ID, and the item is rewritten to
+  the thin card after the spec is written. A tracker backend refuses `--card`.
+- **Body.** A `<!-- quenching-card -->` marker (never the tracker backends' spec marker), the
+  title, the summary or the first paragraph of `## Problem`, `Tasks n/N`, phase and stage, and the
+  location of the spec file on the branch. The `spec:*` labels come from `derive_labels` and
+  `reconcile_label_set`, and the item closes and reopens with the phase.
+- **Written only on lifecycle transitions.** The facts that justify a write are the title, the
+  tags, the derived `spec:*` labels, the board state and the phase. The card layer compares them
+  before and after the spec write, and a plain section edit or a task tick that changes none of
+  them makes no card request. The first tick is a transition, because it moves the stage to
+  `executing`. One transition is one request, and progress and summary ride along without
+  causing a write.
+- **Azure Boards.** Writes use `az boards work-item create|update`, which accept a PAT, and never
+  `az rest`. `azurePlacement` (area, iteration, board column, declared state) is applied at
+  create and at transitions only, so a tick never undoes a move on the board.
+- **A card failure never rolls back the spec.** The spec is written first (the card first only
+  at creation, where there is no spec yet). A failed card write after it raises `sp-card-failed`
+  naming the spec, and the next transition refreshes the card.
+- **Migration.** `cq specs migrate --to git` is a dry run unless `--write`. It writes every spec
+  under its own ID in one commit (open in `specs/`, closed in `specs/archive/`), copies the
+  specs-axis keys into the branch `quenching.json`, and prints the `.claude/quenching.json`
+  change. It then proves that the `git` listing equals the source modulo locator and reports
+  every difference. `--thin-open-cards` rewrites only open items to the thin card; closed ones
+  are never touched. The tracker backends stay supported, and `cq specs doctor` flags them as
+  deprecated.
 
 ## What this standard does not yet cover
 

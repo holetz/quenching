@@ -12,6 +12,7 @@ from __future__ import annotations
 from quenching.common.config import load_config
 from quenching.specs.backends.azure import open_azure_backend
 from quenching.specs.backends.base import SpecBackend
+from quenching.specs.backends.git import open_git_backend
 from quenching.specs.backends.github import open_github_backend
 
 
@@ -36,7 +37,7 @@ def open_backend(root: str) -> tuple[SpecBackend | None, dict]:
     declared = cfg.get("unknownBackend")
     raw_backend = cfg.get("data", {}).get("backend")
     if not declared and isinstance(raw_backend, str) and raw_backend.strip() \
-            and raw_backend.strip() not in ("github", "azure-boards"):
+            and raw_backend.strip() not in ("github", "azure-boards", "git"):
         declared = raw_backend.strip()
     if declared:
         if declared == "files":
@@ -50,7 +51,14 @@ def open_backend(root: str) -> tuple[SpecBackend | None, dict]:
             "message": f"backend '{declared}' is not supported; the backend is selected "
                        "from the repository provider",
         }
-    if name == "github":
+    if isinstance(raw_backend, str) and raw_backend.strip() == "git":
+        # Declared, never derived: the git store follows the code host whatever it is, so it
+        # wins over the provider the remote URL implies.
+        store, err = open_git_backend(root)
+        if err:
+            return None, err
+        backend = store                                     # type: ignore[assignment]
+    elif name == "github":
         gh, err = open_github_backend(root)
         if err:
             return None, err

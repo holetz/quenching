@@ -136,6 +136,7 @@
       { "Workflows" = [
         "standards/workflows/index.md",
         "standards/workflows/agent-choice-catalogues.md",
+        "standards/workflows/epics.md",
         "standards/workflows/plan-artifacts.md",
         "standards/workflows/plan-git-record.md",
         "standards/workflows/plan-lifecycle.md",
