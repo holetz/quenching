@@ -1,6 +1,6 @@
 {
   "name": "quenching-specs-reader",
-  "version": "6.3.0",
+  "version": "6.4.0",
   "description": "Read-only view of another project's provider-owned quenching specs — one command, /quenching-specs-reader:read, for a target that must read a specs front without enabling the full quenching plugin. Generated from plugins/quenching; it never writes the tracker.",
   "author": {
     "name": "Israel Holetz",

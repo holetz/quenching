@@ -1,6 +1,6 @@
 {
   "name": "quenching-codex",
-  "version": "6.3.0",
+  "version": "6.4.0",
   "description": "Codex translation of the quenching plugin with OKF, provider-owned specs, DTCG design tokens, and deterministic front alignment.",
   "author": {
     "name": "Israel Holetz",
