@@ -72,7 +72,8 @@ the two protected classes do not occur there, because the command edits no code 
 irreversible cycle action. What still stops it stops it in either mode — the questions it
 asks at every level but `low`, and the go/no-go that is the origin of an `approved` stamped
 `by: human`. Under the `low` gear that go/no-go does not occur at all: the level authorized the
-mode, the pass stamps `by: low-gear`, and the record says which of the two happened
+mode, the pass stamps `by: low-gear` (or `by: orchestrator-forced` when a conductor forced the
+`low` gear over a higher level), and the record says which of the three happened
 (`/docs/standards/automation/plan-gates.md` §When authority replaces the person states
 the three conditions that make the substitution legitimate).
 

@@ -78,7 +78,10 @@ Collect the open questions whose answer changes the plan: identity or scope, irr
 migrations, breaking changes, autonomy limits. Leave out the ones you can settle with a sound
 default. Ask them in rounds of at most 4 with **AskUserQuestion**, recommendation first, each next
 round shaped by the last. Then present the backlog as ordered waves with dependencies, and ask which
-part to approve: all, some waves, or chosen items. Record each decision and default in the map's
+part to approve: all, some waves, or chosen items. **Ask the epic's autonomy policy** in the same
+rounds, recommendation first: develop the members to `ready` now with the human present (each one
+reaches `approved by=human`), or authorize forced execution (`/quenching:specs:orchestrate
+--autonomous`, each approval stamped `by=orchestrator-forced`). Record each decision and default in the map's
 `README.md` and update the affected candidate files. Ask nothing whose answer would not change what
 you write.
 **Done when:** the human has approved an explicit subset of the backlog, or declined, which ends the
@@ -90,7 +93,8 @@ add. Otherwise:
 
 1. **Epic.** Create it with `cq specs new "<title>" --type epic`. Fill its `## Problem` (the goal),
    `## Proposal`, `## Out of Scope`, `## Risks`, `## Validation` (done criteria per wave) and
-   `## Design` (the recorded decisions) with `cq specs section <id> "<Heading>" --write`.
+   `## Design` (the recorded decisions, **including the autonomy policy chosen in step 5**) with
+   `cq specs section <id> "<Heading>" --write`.
 2. **Members.** For each approved candidate, in wave order:
    - Search the lean listing by title first, so a retry never duplicates.
    - Create it with `cq specs new` with the suggested `--type`, `--subject`, `--tags` and
@@ -105,7 +109,9 @@ dependencies, and `cq specs validate` raises no `sp-epic-*` finding.
 ### 7. Hand off
 Print the epic id, its members per wave, and the next commands:
 - `/quenching:specs:develop <id>` to compose each member to ready;
-- `/quenching:specs:orchestrate <epic>` to build the epic in waves.
+- `/quenching:specs:orchestrate <epic>` to build the epic in waves — with `--autonomous` appended
+  when the policy in the epic's `## Design` is the forced-execution authorization.
 
-Do not start either.
+Do not start either. With the policy "develop with the human present", the first command is the one
+to run before orchestrating.
 **Done when:** the hand-off is printed and the map path is repeated for the record.

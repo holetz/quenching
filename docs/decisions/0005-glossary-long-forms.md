@@ -30,7 +30,7 @@ a *second* function reporting what a parse could not represent faithfully, place
 
 ## Approved record
 
-the `approved: {date, by}` frontmatter entry recording that a spec may be built, and on whose authority: `by: human` is a person's word (the fact the retired `backlog/` → `ready/` `git mv` carried), `by: low-gear` is the `low` level authorizing the mode and the develop pass stamping on it. Absent `by:` reads as `human`; `execute` asks inline and stamps `by: human` rather than refusing an unapproved spec.
+the `approved: {date, by}` frontmatter entry recording that a spec may be built, and on whose authority: `by: human` is a person's word (the fact the retired `backlog/` → `ready/` `git mv` carried), `by: low-gear` is the `low` level authorizing the mode and the develop pass stamping on it, `by: orchestrator-forced` is a conductor running `--autonomous` forcing that gear over a higher level. Absent `by:` reads as `human`; `execute` asks inline and stamps `by: human` rather than refusing an unapproved spec.
 
 ## Batching contract
 

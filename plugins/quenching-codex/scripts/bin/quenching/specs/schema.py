@@ -64,7 +64,7 @@ DEFAULT_SCHEMA: dict = {
                         "writtenBy": "develop", "writeOnce": False,
                         "label": "spec:interrogated"},
             "approved": {"fields": ["date", "by"],
-                         "by": {"levels": ["human", "low-gear"]},
+                         "by": {"levels": ["human", "low-gear", "orchestrator-forced"]},
                          "writtenBy": "develop, or execute inline", "writeOnce": True,
                          "label": "spec:approved"},
             "branch": {"fields": ["base", "work"],
