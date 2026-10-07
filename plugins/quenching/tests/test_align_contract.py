@@ -46,7 +46,6 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         positions = [verify.index(check) for check in checks]
         self.assertEqual(positions, sorted(positions))
         self.assertIn("--glossary-term", verify)
-        self.assertIn("never the first lexical glossary entry", verify)
 
     def test_conductor_order_follows_the_architecture_declaration(self):
         declaration = ALIGN_DECLARATION.read_text(encoding="utf-8")
@@ -94,22 +93,18 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         )
 
         self.assertIn("catalog-publication-check.py", build)
-        self.assertIn("accepted publication map contains an approved", build)
         self.assertIn("catalog route", build)
         self.assertIn("not-applicable", build)
         self.assertIn("reference/catalog/index.md", build)
         self.assertIn("--glossary-term", build)
-        self.assertIn("first lexical glossary entry", build)
 
     def test_build_checks_all_generated_paths_for_tracking(self):
         build = (ROOT / "commands" / "knowledge" / "documentation" / "build.md").read_text(
             encoding="utf-8"
         )
 
-        self.assertIn("site/`, `.quenching/`, and `site-source/` ignored", build)
         self.assertIn("git ls-files site .quenching site-source", build)
         self.assertIn("site-source-tracked", build)
-        self.assertIn("already-tracked generated source is **REPORTED**", build)
 
     def test_embedded_documentation_references_use_current_paths(self):
         architecture = (

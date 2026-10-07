@@ -17,6 +17,16 @@ PLUGIN_ROOT = HERE.parent
 CQ = PLUGIN_ROOT / "assets" / "bin" / "cq"
 FIXTURE_DIR = HERE / "fixtures" / "golden"
 
+def strip_messages(value):
+    """Drop every `message` key, recursively: the human sentence is wording, and the contract a
+    golden freezes is the codes, keys, paths and counts around it."""
+    if isinstance(value, dict):
+        return {key: strip_messages(item) for key, item in value.items() if key != "message"}
+    if isinstance(value, list):
+        return [strip_messages(item) for item in value]
+    return value
+
+
 CASES = {
     "provider-github-config": {
         "remote": "git@github.com:owner/repo.git",

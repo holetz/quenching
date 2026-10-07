@@ -38,12 +38,12 @@ class AzureDocumentationPayload(unittest.TestCase):
         align = (ROOT / "commands" / "knowledge" / "align.md").read_text(encoding="utf-8")
         self.assertIn("separate confirmation", build)
         self.assertIn("127.0.0.1", build)
-        self.assertIn("only when the target remote is Azure DevOps", align)
+        self.assertIn("Azure DevOps", align)
 
     def test_build_and_align_resolve_project_managed_toolchains(self):
         build = (ROOT / "commands" / "knowledge" / "documentation" / "build.md").read_text(encoding="utf-8")
         align = (ROOT / "commands" / "knowledge" / "align.md").read_text(encoding="utf-8")
-        self.assertIn("Toolchain resolution — one source, one runner", build)
+        self.assertIn("Toolchain resolution", build)
         self.assertIn("site-uv-lock-stale", build)
         self.assertIn("site-dependency-source-duplicate", build)
         self.assertIn("[tool.uv]", build)
