@@ -22,3 +22,4 @@ evidence, not the rule.
 * [0006 — Specs move from tracker bodies to a git store with thin cards](0006-specs-move-to-a-git-store-with-thin-cards.md) — why the plan left the issue body, the measurements and the migration result
 * [0007 — Native Claude Code features](0007-native-claude-code-features.md) — adopt, defer or reject per native feature: skill hooks, plugin agents, model pins, plugin eval, plugin data dir, workflows
 * [0008 — Security review of the epic 1145 changes](0008-seguranca-das-mudancas-do-epico-1145.md) — the per-PR verdict on the sensitive changes merged without a working security hook
+* [0009 — Security review of the epic 1163 changes](0009-seguranca-das-mudancas-do-epico-1163.md) — the per-PR verdict on the sensitive changes of epic 1163 and the evidence about the per-task security hook
