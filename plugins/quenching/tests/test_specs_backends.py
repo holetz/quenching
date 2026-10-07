@@ -816,6 +816,36 @@ class GhTransport(unittest.TestCase):
         self.assertEqual(result[3], 1)
         sleep.assert_not_called()
 
+    def _server_error(self):
+        return subprocess.CompletedProcess(
+            ["gh", "api"], 1, stdout='{"message":"Server Error"}',
+            stderr="gh: Server Error (HTTP 500)\n")
+
+    def test_idempotent_write_retries_a_500(self):
+        passed = subprocess.CompletedProcess(["gh", "api"], 0, stdout="{}", stderr="")
+        with mock.patch("subprocess.run", side_effect=[self._server_error(), passed]), \
+                mock.patch.object(gh_mod.time, "sleep"):
+            patch = gh_mod._gh_run(os.getcwd(), "api", "-X", "PATCH", "repos/o/r/issues/1",
+                                   "--input", "-", stdin="{}")
+        self.assertEqual(patch[:3], (0, "{}", ""))
+        self.assertEqual(patch[3], 2)
+
+    def test_issue_edit_retries_a_500(self):
+        passed = subprocess.CompletedProcess(["gh"], 0, stdout="", stderr="")
+        with mock.patch("subprocess.run", side_effect=[self._server_error(), passed]), \
+                mock.patch.object(gh_mod.time, "sleep"):
+            result = gh_mod._gh_run(os.getcwd(), "issue", "edit", "1", "--type", "Bug")
+        self.assertEqual(result[3], 2)
+
+    def test_post_is_sent_once_even_on_a_500(self):
+        with mock.patch("subprocess.run", return_value=self._server_error()) as run, \
+                mock.patch.object(gh_mod.time, "sleep") as sleep:
+            result = gh_mod._gh_run(os.getcwd(), "api", "-X", "POST", "repos/o/r/issues",
+                                    "--input", "-", stdin="{}")
+        self.assertEqual(result[3], 1)
+        self.assertEqual(run.call_count, 1)
+        sleep.assert_not_called()
+
 
 # --------------------------------------------------------------------------- #
 # a listing that never arrived, told apart from a front that is genuinely empty
