@@ -135,11 +135,10 @@ meant. An archived spec has nothing to develop: say so and stop.
 
 **Announce the spec's URL in the backend along with it.** It is the `path` field of the
 `cq specs status --spec <id> --json` payload step 2 takes in this same call, so nothing extra is
-invoked to obtain it — an issue or work-item URL under an external backend, the file's path under
-`files`. The announcement is load-bearing rather than decorative: with the plan narrated instead of
-submitted (step 6), the backend is the window the human watches the pass through and the place a
+invoked to obtain it — the card's URL when one exists, else the spec's file location on the `quenching` branch. The announcement is load-bearing rather than decorative: with the plan narrated instead of
+submitted (step 6), the card or branch is the window the human watches the pass through and the place a
 correction is given, so it is stated before anything is read and repeated in the report (step 8).
-**Done when:** one provider-owned spec is resolved and its backend URL has been announced.
+**Done when:** one spec is resolved and its URL or location has been announced.
 
 ### 2. Read the spec's STATE — not its body
 ```bash

@@ -1,18 +1,19 @@
 # Spec-driven document — lifecycle, identity and gates
 
-**This file is the single owner of the provider document's format** — identity, frontmatter,
+**This file is the single owner of the spec document's format** — identity, frontmatter,
 canonical sections, gates, derived stages, the executor contract and the boundary with the OKF
 bundle. The `cq specs` tool surface and the report shape live in focused references, and every
 `quenching-specs-*` command cites the smallest owner instead of loading this file whole. The OKF
 bridge (what durable knowledge crosses from a spec into `knowledge/` and how) lives with the close-out command
 ([specs-conclude/distill.md](../../references/specs-conclude/distill.md)).
 
-**A spec is provider-owned.** GitHub issues and Azure Boards work items are the source of truth;
-the provider document carries the same thirteen sections, frontmatter records, and derived stages
-throughout its lifecycle. Only *where and how* it is serialized differs, which is why every
-command drives `cq specs` rather than a repository path.
+**A spec is a document on the `quenching` branch** (the git store), with an optional thin tracker
+card (GitHub issue or Azure Boards work item) as its human-facing projection. The document carries
+the same thirteen sections, frontmatter records, and derived stages throughout its lifecycle. The
+`github` and `azure-boards` backends, which keep the document in the tracker item, are deprecated
+but work. Every command drives `cq specs`, never a repository path or the tracker item.
 
-What every provider owes that model — the five primitives, the obligation to reassemble the whole
+What every backend owes that model — the five primitives, the obligation to reassemble the whole
 canonical document on read, and refusal on unsupported selection — is owned by
 `/docs/standards/architecture/spec-backend.md` and never restated here.
 
@@ -80,52 +81,49 @@ row's floor).
 <slug> --json` returns `records`, and `priority.complexity` is inside it — so reading the gear costs
 no call of its own. The execution loop does not consult this field for section boundaries.
 
-## The provider-owned document
+## The spec document
 
 <!-- rules -->
 
-**One spec is ONE canonical provider document for its entire lifecycle.** Phases enrich it; they
-never split it. Its issue or work-item body is the serialized source, and `cq specs` reconstructs
-the complete document on every read. Provider state, not a repository path, carries the lifecycle
-stage and outcome.
+**One spec is ONE canonical document for its entire lifecycle.** Phases enrich it; they never
+split it. `cq specs` reads the complete document on every read. The card is never the source: a
+human's comment on it is discussion, and an edit to its body is overwritten at the next transition.
+The open or archived phase is the document's directory, and the stage and outcome derive from the
+document.
 
 Isolation-while-building is what a **branch or worktree** provides, with real merge, history, and
 reversion (what crosses into `knowledge/`: §Boundary).
 
-The provider owns the locator and lifecycle transition. `promote` updates provider state rather
-than moving anything in the target repository. What does not change is anything a command can
+The store owns the locator and lifecycle transition. `promote` archives the document on the
+`quenching` branch and closes the card; it moves nothing on the code branches. What does not change is anything a command can
 observe through `cq specs`.
 
 <!-- rationale -->
 
-**Why one provider document.** A `backlog/` ↔ `ready/` split bought exactly one fact no derivation
+**Why one document.** A `backlog/` ↔ `ready/` split bought exactly one fact no derivation
 reproduces: *that this spec may be built*. Everything else it implied — that the spec is complete
 enough to build — is computable from the sections themselves, and now is (§Derived stages). That
 authorization is `approved:` in frontmatter, with `by:` naming whose it is, so the fact survived and
 the folder did not.
 
-## Identity: the provider ID and the locator
+## Identity: the spec ID and the locator
 
 <!-- rules -->
 
-**Every spec has a stable `<id>` identity owned by its provider.** On GitHub it is the issue number;
-on Azure it is the work-item ID. The capture date is `date:` in the document, written **once, at
-creation**; provider transitions never change the ID or the date.
+**Every spec has a stable `<id>` identity owned by its store.** With a card it is the card's native
+number (issue number, work-item ID); without one it is the branch's counter. The capture date is
+`date:` in the document, written **once, at creation**; transitions never change the ID or the date.
 
-**Identity is the provider ID, not the locator.** Every command and cross-reference names the
-native ID; `cq specs` resolves that exact ID through the configured provider. The provider URL and
-any exported path locate the document but are not identity, and a title is descriptive data rather
+**Identity is the ID, not the locator.** Every command and cross-reference names the ID; `cq specs`
+resolves that exact ID through the configured store. The file path, card URL and any exported path
+locate the document but are not identity, and a title is descriptive data rather
 than a key. A missing ID is a refusal (exit 2), never a title or fuzzy-match fallback.
 
 <!-- rationale -->
 
-**Why the date is not part of the ID.** A leading date makes a plain listing chronological,
-which is useful only when every spec is a repository file. It stops being payable when the front
-is provider-owned and the locator is not a filename: an external backend would have to mint a
-synthetic basename purely to carry a date, and the one native value that could replace it — an
-issue's `created_at` — is when the ISSUE was made, which a migration sets to the migration's own
-day. Measured on this repository: deriving it that way would have rewritten 68 of 70 capture dates
-to a single afternoon. So the date remains declared in the document, where every backend reads it
+**Why the date is not part of the ID.** A leading date would make the ID a synthetic basename purely to carry a date, and the one native
+value that could replace it — a card's or issue's `created_at` — is when the item was made, not when
+the spec was captured. So the date remains declared in the document, where every backend reads it
 through the one shared derivation, and `next --front` sorts on it rather than on a listing's order.
 
 ## Frontmatter
@@ -177,18 +175,14 @@ first-level frontmatter key with its own deterministic verb (`cq specs tags|assi
 <id> [value]`), not a `{field: value}` record and not owned by one lifecycle command. `tags` is
 also written at capture — `cq specs new --tags` folds a resolved `subjects.<KEY>`'s own fixed tags
 in automatically, so the whole list still lands in ONE write rather than the capture's own tags
-followed by a second, separate `cq specs tags` call. Where a
-backend has a faithful native counterpart — issue labels/assignees on `github`,
-`System.Tags`/`System.AssignedTo`/`Microsoft.VSTS.Scheduling.StartDate`/`TargetDate` on
-`azure-boards` — that counterpart IS the storage: reassembled on every read, never kept in the
-document too, so a human's edit on the tracker is the spec's new value on the next read.
-`start`/`target` have no such counterpart on `github` and stay in the document there, exactly as
-`date:` does everywhere (`docs/standards/architecture/spec-backend.md` §Stored is not
-projected has the full test).
+followed by a second, separate `cq specs tags` call. On the git store all four live in the document's frontmatter; the card shows
+tags and assignee as labels and assignees at transitions. A deprecated tracker backend instead
+stores them natively and reassembles them on read (`docs/standards/architecture/spec-backend.md`
+§Legacy tracker backends).
 
 **`title:` is the one short description a spec carries.** It names the change and is the source
-for the `Summary` column in the ranked table. The title is supplied at capture, stored in the
-provider's native title and retained in the canonical document; it is never inferred from an ID
+for the `Summary` column in the ranked table. The title is supplied at capture, retained in
+the canonical document and projected to the card's title; it is never inferred from an ID
 or replaced with a generated `titleize` fallback. A descriptive title keeps the capture useful
 without a second summary field or a correction verb dedicated to maintaining one.
 
@@ -355,8 +349,8 @@ Checkboxes `- [ ] <id> <text>` grouped under `### N. <Section>` headings, carryi
 `subject:` and `commit:` are written by `task --check --subject <line> --commit <sha>` and record
 the subject and sha of the commit that implements that task. They live on the task line rather
 than as a trailer inside the commit message, which leaves the target repo's message format
-entirely its own. The provider task is checked after the local commit because an external backend
-cannot put its remote mutation inside that commit; the recorded commit facts let a failed remote
+entirely its own. The task is checked after the local commit because the spec lives outside the code
+branch and its write cannot be part of that commit; the recorded commit facts let a failed remote
 write be retried without rebuilding or amending it
 ([execution.md](../../references/specs-execute/execution.md) §The commit).
 A spec built before this change may carry only `subject:` or only `commit:`; both forms are read and

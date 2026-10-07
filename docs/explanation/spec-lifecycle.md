@@ -1,7 +1,7 @@
 ---
 type: explanation
 title: The spec lifecycle
-description: Why the unit of work is one provider-owned document, why ready is computed and never written, and why the merge is always the last action.
+description: Why the unit of work is one document on the specs branch, why ready is computed and never written, and why the merge is always the last action.
 resource: plugins/quenching/README.md
 tags:
   - explanation
@@ -15,18 +15,19 @@ maintainer: Israel Holetz
 
 # The spec lifecycle
 
-A spec here is not a ticket that points at the real plan somewhere else. **The issue's body IS
-the plan** — one canonical markdown document for the whole lifecycle, living on the provider
-your repo declared (GitHub issues or Azure Boards work items), read and written through the
-`cq specs` rail. No repository specs tree, no sub-issues, no delta files: when a document
-outgrows GitHub's 65,536-character body ceiling, it spills into continuation comments on its
-own issue and comes back byte for byte.
+A spec here is not a ticket that points at the real plan somewhere else. **The document on the
+`quenching` branch IS the plan** — one canonical markdown file for the whole lifecycle, read and
+written through the `cq specs` rail, with no specs tree on the code branches, no sub-issues and no
+delta files. The tracker holds a thin **card** (title, summary, progress, link to the file, `spec:*`
+labels) that humans read and discuss under; it is rewritten only at lifecycle transitions and never
+holds the plan. Repositories still on a deprecated tracker backend keep the document in the issue
+body or work-item description.
 
 ## Records versus derived state
 
 The design splits what gets *written* from what gets *computed*, and the split is the whole
 philosophy: **frontmatter records human judgments; everything else is derived** from the
-provider, git, and the document itself.
+store, git, and the document itself.
 
 | Record (written once, by a human decision) | Says |
 | --- | --- |
@@ -41,8 +42,8 @@ provider, git, and the document itself.
 `ready` appears nowhere in that table because nobody writes it: it is a **derived stage**,
 recomputed from the document and its records every time a command looks. A stage you cannot
 hand-edit is a stage that cannot lie. Four more keys — `tags`, `assignee`, `start`, `target` —
-are *state, never records*: each lives natively on the tracker (labels, assignees, scheduling
-dates) and is reassembled on read, so a human's edit on the tracker IS the spec's new value.
+are *state, never records*: first-level frontmatter keys, edited like any other key. On a
+deprecated tracker backend each lives natively on the item and is reassembled on read.
 
 ## The life of one spec
 
@@ -88,11 +89,10 @@ is why the operating model calls the fronts mutually feeding.
 ## TL;DR for agents
 
 !!! abstract "TL;DR for agents"
-    - Unit: ONE provider-owned markdown document per spec; body = whole plan; `cq specs`
-      is the only door (uniform `--json`, exit `0`/`1`/`2`).
+    - Unit: ONE markdown document per spec on the `quenching` branch, with a thin tracker card;
+      `cq specs` is the only door (uniform `--json`, exit `0`/`1`/`2`).
     - Records = human judgments (`priority refined approved branch reviewed merge outcome`);
-      `ready` is derived, never written; `tags/assignee/start/target` reassemble from the
-      tracker on read.
+      `ready` is derived, never written.
     - Order at close: review → distill into `/docs/standards/` → archive → `merge:`
       stamp → merge LAST; nothing lands on base afterwards.
     - Ranked front: `cq specs next --front --table`.

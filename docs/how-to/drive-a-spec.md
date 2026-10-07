@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Drive a spec from idea to merge
-description: Carry one unit of work through the provider-owned lifecycle — capture, refine, build task by task, close with the merge last.
+description: Carry one unit of work through the spec lifecycle — capture, refine, build task by task, close with the merge last.
 resource: plugins/quenching/README.md
 tags:
   - how-to
@@ -15,9 +15,9 @@ maintainer: Israel Holetz
 
 # Drive a spec from idea to merge
 
-*Audience: implementer · Backend: GitHub or Azure Boards*
+*Audience: implementer · Store: the `quenching` branch, with a GitHub or Azure Boards card*
 
-One sentence of intent becomes one canonical document on your issue tracker, and that document
+One sentence of intent becomes one canonical document on the `quenching` branch, and that document
 carries the work to a merged branch — every human judgment recorded in its frontmatter, every
 task one verified commit. This recipe drives a single spec end to end; each stage names the
 command that owns it, and what it writes.
@@ -31,12 +31,12 @@ flowchart LR
 ```
 
 !!! note "Before you start"
-    The specs front is **provider-owned**: GitHub issues or Azure Boards work items are the
-    system of record, declared in `.claude/quenching.json` (`backend`, plus the project's own
-    `subjects`/`tagCatalog`). A missing `gh`/`az` binary or auth is a named refusal (exit 2) on
-    the first operation, never mid-build. Azure Boards ships implemented but without an
-    end-to-end run against a real project — `doctor` names that gap (`sp-backend-unproved`)
-    every time it is selected.
+    The specs live on the `quenching` branch, selected with `"backend": "git"` in
+    `.claude/quenching.json` (the project's own `subjects`/`tagCatalog` may live on the branch).
+    A tracker card is optional (`card`). Missing remote access, or a missing `gh`/`az` binary or
+    auth for the card, is a named refusal (exit 2) on the first operation, never mid-build. The
+    `github` and `azure-boards` backends still work but are deprecated: `doctor` flags them and
+    `cq specs migrate --to git` moves a repository off them.
 
 ## 1. Capture — `/quenching:specs:create`
 
@@ -85,7 +85,7 @@ attach to the merge, and the `merge: {strategy, subject, pr}` stamp. Only then t
 itself, by the route you chose: local, or a pull request. Nothing lands on the base after it.
 
 !!! success "You should end with"
-    - the spec archived on the tracker with `outcome: done`;
+    - the spec archived on the `quenching` branch with `outcome: done`, its card closed;
     - one merged branch whose per-task subjects resolve on the base;
     - any durable rule the work proved, sitting in `/docs/standards/` — not in a wiki.
 
@@ -93,7 +93,7 @@ itself, by the route you chose: local, or a pull request. Nothing lands on the b
 
 There is no batch or queue conductor. Each spec remains its own unit of work: capture or refine it
 with the command that owns that stage, then execute and conclude it independently. Keep the
-provider record, branch and per-task commits for each spec separate so their decisions remain
+spec document, branch and per-task commits for each spec separate so their decisions remain
 traceable.
 
 **Next:** the reasoning behind records-versus-derived-state is in

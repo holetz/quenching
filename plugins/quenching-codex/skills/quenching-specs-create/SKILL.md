@@ -65,8 +65,8 @@ the CLI cannot make for you: `cq specs new`
 
 Take a descriptive title and a one-sentence problem from the input. On the plan-source path, use
 the plan's title or goal ("Add rate limiting to the API" → "Add API rate limiting"). The title is
-the human-readable name sent to the provider; the provider-native ID is assigned when it stores
-the spec.
+the human-readable name stored in the document and shown on the card; the ID is the card's native
+number when a card is configured, else the branch's counter, and is assigned when the spec is stored.
 
 **Done when:** a descriptive title is in hand.
 

@@ -1,7 +1,7 @@
 ---
 type: standard
 title: Plan git record contract
-description: How a provider-owned spec records the git facts that cannot be derived later — per-task commit subjects, branch, pull request and merge records, branch marks for conclude discovery, base inference, merge routes, and safe local and remote branch cleanup
+description: How a spec records the git facts that cannot be derived later — per-task commit subjects, branch, pull request and merge records, branch marks for conclude discovery, base inference, merge routes, and safe local and remote branch cleanup
 resource: plugins/quenching/assets/references/git/**, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-conclude/auto-discover.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/git/merge.md, plugins/quenching/commands/git/pr/create.md
 tags: [workflows, specs, git, commits, records]
 timestamp: 2026-08-22
@@ -95,10 +95,10 @@ existing-index, hook and no-rewrite rules remain unchanged.
 
 ### Legacy commit anchors remain readable
 
-Older provider documents may carry `commit: <sha>` anchors. They remain supported and are never
-backfilled: the sha describes the history that existed when that record was made. A provider write
-after a code commit is not a second code commit because the provider document is outside the code
-branch.
+Older documents may carry `commit: <sha>` anchors. They remain supported and are never
+backfilled: the sha describes the history that existed when that record was made. A spec write
+after a code commit is not a second code commit, because the document lives on the `quenching`
+branch (or in a tracker), outside the code branch.
 
 Older subject records are supported in the same way:
 
@@ -121,7 +121,7 @@ matching survives every hook that merely *adds*, which is nearly all of them. `/
 compares `git log -1 --format=%s` against what it recorded and **reports a mismatch as a finding,
 writing nothing** — correcting it after the commit would restore the ordering this contract removed.
 A commit-anchored link has no equivalent subject mismatch, but a `--commit` write that fails (a
-network error against an external backend, mid-way through recording it) must be **reported, never
+network error or a rejected push to the specs branch, mid-way through recording it) must be **reported, never
 left implicit**: the commit exists either way, and a tick that silently did not land would claim
 proof of nothing.
 
@@ -169,8 +169,8 @@ same admission test — a fact no derivation can reproduce:
   command.
 
   When the PR command receives a spec id, its title and description are a deterministic projection
-  of the provider-owned spec: title, non-empty canonical sections, task counts and available branch
-  facts, followed by the provider-native locator. An absent optional section is omitted, never
+  of the spec: title, non-empty canonical sections, task counts and available branch
+  facts, followed by the spec's locator. An absent optional section is omitted, never
   fabricated. The projection is shown before the one confirmation that still gates push and PR
   creation; free-text PR creation continues to require its own title/body input.
 
@@ -240,7 +240,7 @@ materialize a minimal spec before continuing — never a size threshold. The ful
 the spec itself can honestly hold — a write-once fact this exact spec is the source of. The
 branch's mark answers a different question — *which* spec(s), if any, built this ref — asked by a
 command that does not yet know the ID, so the answer has to live somewhere reachable **before**
-any spec is resolved. Frontmatter lives inside a spec; the provider ID is the key that opens one. The
+any spec is resolved. Frontmatter lives inside a spec; the spec ID is the key that opens one. The
 mark lives on the ref instead, which is the one place a `conclude` without `--spec` can look first.
 
 **Local to the `.git` that wrote it — the same limitation as any git config.** A branch pulled onto

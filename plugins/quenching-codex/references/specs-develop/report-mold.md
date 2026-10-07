@@ -64,12 +64,13 @@ One spec:
 
 ```
 ## 41 — Budget tokens per session
-executing · 5/9 tasks · https://github.com/o/r/issues/41
+executing · 5/9 tasks · quenching:specs/41.md
 ```
 
 **The third field is the locator the tool returned** — the `path` field `cq specs new`, `status`,
-`list`, `next --front` and `section --write` all carry — never a filename the body assembled. Under
-`github` returns an issue URL; `azure-boards` returns the work-item URL.
+`list`, `next --front` and `section --write` all carry — never a filename the body assembled. The git store returns
+`quenching:specs/<id>.md`; a deprecated `github` backend returns the issue URL and `azure-boards`
+the work-item URL. The card's URL is a separate field.
 
 <!-- rationale -->
 
