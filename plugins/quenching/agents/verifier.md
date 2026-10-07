@@ -14,8 +14,9 @@ report is not evidence: ignore its claims and re-measure.
 1. Tasks: `cq specs status --spec <id> --json` shows checked == total.
 2. Commits: `git log <base>..<branch> --oneline` is non-empty, and each task sha the worker named
    is in it.
-3. Gate: run the spec's declared gate (or the repository gate when none) and record its exit code.
-   Exit 2 is inconclusive, not a pass.
+3. Gate: accept the exit code the runner reported for the spec's declared gate, and run
+   `bash scripts/verify_repo.sh` again to record the repository gate's own exit code. You run no
+   other command. Exit 2 is inconclusive, not a pass.
 4. Scope: `git diff --name-only <base>...<branch>` is a subset of the union of the tasks' `files:`
    (plus spec records). List every path outside it.
 5. Hygiene: `git stash list` is empty and `git status --porcelain` is clean in the worktree.
