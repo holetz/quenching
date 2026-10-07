@@ -14,7 +14,6 @@ refusal ladder written here.
 """
 import io
 import json
-import os
 import tempfile
 import unittest
 from contextlib import redirect_stdout

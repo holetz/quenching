@@ -20,7 +20,6 @@ import test_specs_backends as canonical
 from test_specs_git_backend import GitStoreFixture, _sh
 from quenching.specs import cards
 from quenching.specs.backends import azure as az_mod
-from quenching.specs.backends import git as git_mod
 from quenching.specs.backends import github as gh_mod
 from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.backends.git import GitBackend

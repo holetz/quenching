@@ -6,7 +6,6 @@ snapshot of a local workspace that no longer exists.
 from __future__ import annotations
 
 import json
-import pathlib
 import unittest
 
 import capture_golden as cg

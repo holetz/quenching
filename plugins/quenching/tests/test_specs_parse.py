@@ -27,7 +27,7 @@ from quenching.specs.commands import validate as validate_module
 from quenching.specs.commands.cli import DISPATCH, build_parser
 from quenching.specs.commands.output import Emitter
 from quenching.git.conventions import GIT_CONVENTION_KEYS, load_git_conventions
-from quenching.specs.config import infer_base_branch, load_config, resolve_subject
+from quenching.specs.config import infer_base_branch, resolve_subject
 from quenching.specs.parse.derive import derive_info
 from quenching.specs.parse.edit import write_handoff_block
 from quenching.specs.parse.handoff import current_handoff_section, parse_handoff

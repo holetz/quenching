@@ -23,7 +23,6 @@ from quenching.ops.checks import (
     check_unarmed_write,
     check_undocumented,
     check_untyped_exit,
-    inventory_digest,
     run_checks,
 )
 from quenching.ops.cli import _status_payload

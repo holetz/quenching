@@ -1,24 +1,73 @@
-name: Sync Codex plugin
+name: CI
 
+# The repository gate runs once per commit: on pushes to main and on pull requests. A pull request
+# push is covered by the pull_request event alone, and the `quenching` specs-store branch (a
+# data branch, never code) triggers nothing.
 on:
   push:
+    branches: [main]
   pull_request:
+    branches-ignore: [quenching]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  sync:
+  gate:
+    name: Gate (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.13']
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: '3.11'
-      - uses: astral-sh/setup-uv@v6
+          python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true
       - name: Install locked dependencies
         run: uv sync --frozen --all-groups
-      - name: Run repository gate
-        run: bash scripts/verify_repo.sh
+      - name: Run repository gate (unit tests under coverage, floor, doctors, builds)
+        run: uv run bash scripts/verify_repo.sh
+      - name: Proof gate in randomized order
+        run: uv run pytest plugins/quenching/tests -q -p randomly --randomly-seed=${{ github.run_id }}
+
+  lint:
+    name: Ruff
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+      - name: Install locked dependencies
+        run: uv sync --frozen --all-groups
+      - name: Ruff (E, F)
+        run: uv run ruff check .
+
+  functional:
+    name: Functional checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Static guard (selfcheck)
+        run: bash plugins/quenching/assets/checks/functional-checks.sh --selfcheck
+      - name: Surface-load checks (exit 2 is inconclusive, not a pass and not a failure)
+        run: |
+          rc=0
+          bash plugins/quenching/assets/checks/functional-checks.sh || rc=$?
+          case "$rc" in
+            0) echo "functional checks: every measured assertion passed" ;;
+            2) echo "::warning::functional checks inconclusive (exit 2): nothing could be measured on this runner" ;;
+            *) echo "::error::functional checks failed (exit $rc)"; exit "$rc" ;;
+          esac

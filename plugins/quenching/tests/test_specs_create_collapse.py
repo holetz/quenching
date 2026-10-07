@@ -6,7 +6,6 @@ Every refusal below must write nothing at all: a rejected capture leaves no spec
 and not around it."""
 import io
 import json
-import os
 import tempfile
 import unittest
 from contextlib import redirect_stdout
