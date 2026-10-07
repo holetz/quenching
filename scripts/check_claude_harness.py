@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Measure and guard the repository's always-loaded Claude harness.
+"""Validate the repository harness: AGENTS.md is the source, CLAUDE.md imports it.
 
-The Claude system prompt and its runtime registry are deliberately reported as
-unavailable. Source descriptions are an inventory signal, not a measurement
-of the runtime prompt.
+Checks meaning, not size: the import exists, the `Language:` and `Ephemeral writes:` lines exist,
+the single gate and both safety rules are stated, the scoped rules exist with `paths:`, and every
+repository path the harness cites resolves.
 """
 
 from __future__ import annotations
@@ -14,162 +14,77 @@ import re
 import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
+AGENTS_MD = ROOT / "AGENTS.md"
 CLAUDE_MD = ROOT / "CLAUDE.md"
-COMMANDS_DIR = ROOT / "plugins" / "quenching" / "commands"
-BASELINE_BYTES = 8_548
-MAX_BYTES = BASELINE_BYTES // 2
-PROXY_NOTE = (
-    "This size check measures CLAUDE.md only; it does not measure Claude's system prompt."
+RULES_DIR = ROOT / ".claude" / "rules"
+
+REQUIRED_AGENTS = {
+    "Language line": r"(?m)^Language: [A-Za-z]{2,3}(-[A-Za-z0-9]+)* — the contract is /docs/standards/agents/communication\.md\.?$",
+    "Ephemeral writes line": r"(?m)^Ephemeral writes: \.quenching/ — the contract is /docs/standards/agents/ephemeral-writes\.md$",
+    "single gate": r"bash scripts/verify_repo\.sh",
+    "context: fork safety rule": r"Do not add `context: fork`",
+    "haiku safety rule": r"Never downgrade classification or executor sub-agents to `haiku`",
+}
+STALE = ("stale-doc` is advisory", "This size check measures CLAUDE.md only")
+SCOPED_RULES = {
+    "command-fork.md": ("plugins/quenching/commands/**", "context: fork"),
+    "import-memory-models.md": (
+        "plugins/quenching/commands/knowledge/import-memory.md",
+        "haiku",
+    ),
+}
+CITED = re.compile(
+    r"\]\((?!https?:|#)([^)#\s]+)|`((?:plugins|docs|scripts)/[^`\s*]+)`|`(/docs/[^`\s*]+)`"
 )
 
 
-def _utf8_bytes(value: str) -> int:
-    return len(value.encode("utf-8"))
-
-
-def _description(text: str) -> str:
-    """Return the frontmatter description without parsing the whole schema."""
-    parts = text.split("---", 2)
-    if len(parts) < 3:
-        return ""
-    lines = parts[1].splitlines()
-    for index, line in enumerate(lines):
-        match = re.match(r"^description:\s*(.*)$", line)
-        if not match:
-            continue
-        value = match.group(1).strip()
-        if value in {">", ">-", "|", "|-"}:
-            continuation: list[str] = []
-            for next_line in lines[index + 1 :]:
-                if next_line and not next_line[0].isspace():
-                    break
-                continuation.append(next_line.strip())
-            value = " ".join(item for item in continuation if item)
-        return value
-    return ""
-
-
-def _source_descriptions() -> dict[str, int]:
-    count = 0
-    bytes_total = 0
-    if COMMANDS_DIR.is_dir():
-        for path in sorted(COMMANDS_DIR.rglob("*.md")):
-            value = _description(path.read_text(encoding="utf-8"))
-            if value:
-                count += 1
-                bytes_total += _utf8_bytes(value)
-    return {"count": count, "source_bytes": bytes_total}
-
-
-def _section_inventory(text: str) -> list[dict[str, int | str]]:
-    headings = list(re.finditer(r"(?m)^#{1,3} .+$", text))
-    result: list[dict[str, int | str]] = []
-    for index, match in enumerate(headings):
-        end = headings[index + 1].start() if index + 1 < len(headings) else len(text)
-        section = text[match.start() : end]
-        result.append(
-            {
-                "heading": match.group(0).strip(),
-                "bytes": _utf8_bytes(section),
-                "lines": section.count("\n"),
-            }
-        )
-    return result
-
-
-def report() -> dict[str, object]:
-    text = CLAUDE_MD.read_text(encoding="utf-8")
-    descriptions = _source_descriptions()
-    return {
-        "baseline": {"bytes": BASELINE_BYTES, "max_bytes": MAX_BYTES},
-        "claude_md": {
-            "path": "CLAUDE.md",
-            "bytes": CLAUDE_MD.stat().st_size,
-            "lines": len(text.splitlines()),
-            "sections": _section_inventory(text),
-        },
-        "command_descriptions_source": descriptions,
-        "external": {
-            "system_prompt": {
-                "status": "unavailable",
-                "bytes": None,
-                "reason": "provided by the Claude runtime, not this checkout",
-            },
-            "registered_descriptions": {
-                "status": "unavailable",
-                "bytes": None,
-                "reason": "runtime registry size is not derivable from source files",
-                "source_inventory": descriptions,
-            },
-            "active_command_body": {
-                "status": "unavailable",
-                "bytes": None,
-                "reason": "no active command is selected by this static check",
-            },
-        },
-    }
-
-
-def check(data: dict[str, object]) -> list[str]:
-    text = CLAUDE_MD.read_text(encoding="utf-8")
-    claude = data["claude_md"]
-    assert isinstance(claude, dict)
+def check() -> list[str]:
     errors: list[str] = []
-    if claude["bytes"] > MAX_BYTES:
-        errors.append(f"CLAUDE.md is {claude['bytes']} bytes; limit is {MAX_BYTES}")
-    for marker in (
-        "Language: pt-BR — the contract is /docs/standards/agents/communication.md.",
-        "Ephemeral writes: .quenching/ — the contract is /docs/standards/agents/ephemeral-writes.md",
-        "plugins/quenching/README.md",
-        "docs/index.md",
-        "assets/bin/cq",
-        "context: fork",
-        "Never downgrade classification",
-        PROXY_NOTE,
-    ):
-        if marker not in text:
-            errors.append(f"missing required harness marker: {marker}")
-    for path in (
-        ROOT / "docs" / "index.md",
-        ROOT / "docs" / "standards" / "agents" / "communication.md",
-        ROOT / "plugins" / "quenching" / "README.md",
-        ROOT / "plugins" / "quenching" / "assets" / "bin" / "cq",
-    ):
-        if not path.exists():
-            errors.append(f"missing local target: {path.relative_to(ROOT)}")
-    for heading in (
-        "## Where knowledge lives",
-        "## The plugin itself",
-        "### Two rules that must survive any refactor",
-    ):
-        if heading in text:
-            errors.append(f"duplicated operational block remains: {heading}")
-    for component in ("system_prompt", "registered_descriptions", "active_command_body"):
-        external = data["external"]
-        assert isinstance(external, dict)
-        value = external[component]
-        assert isinstance(value, dict)
-        if value["status"] != "unavailable" or value["bytes"] is not None:
-            errors.append(f"external component {component} was presented as measured")
+    if not AGENTS_MD.is_file():
+        return ["AGENTS.md is missing"]
+    agents = AGENTS_MD.read_text(encoding="utf-8")
+    if not CLAUDE_MD.is_file():
+        errors.append("CLAUDE.md is missing")
+    elif not re.search(r"(?m)^@AGENTS\.md\s*$", CLAUDE_MD.read_text(encoding="utf-8")):
+        errors.append("CLAUDE.md does not import @AGENTS.md")
+    for name, pattern in REQUIRED_AGENTS.items():
+        if not re.search(pattern, agents):
+            errors.append(f"AGENTS.md is missing: {name}")
+    for text in STALE:
+        if text in agents:
+            errors.append(f"AGENTS.md carries a stale or proxy statement: {text}")
+    for filename, (path_glob, needle) in SCOPED_RULES.items():
+        rule = RULES_DIR / filename
+        if not rule.is_file():
+            errors.append(f"missing scoped rule: .claude/rules/{filename}")
+            continue
+        body = rule.read_text(encoding="utf-8")
+        if not body.startswith("---\n") or "paths:" not in body.split("---", 2)[1]:
+            errors.append(f".claude/rules/{filename} has no `paths:` frontmatter")
+        if path_glob not in body or needle not in body:
+            errors.append(f".claude/rules/{filename} does not scope `{needle}` to {path_glob}")
+    for match in CITED.finditer(agents):
+        cited = next(group for group in match.groups() if group)
+        target = ROOT / cited.lstrip("/")
+        if not target.exists():
+            errors.append(f"AGENTS.md cites a path that does not exist: {cited}")
     return errors
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    mode = parser.add_mutually_exclusive_group()
-    mode.add_argument("--report", action="store_true")
-    mode.add_argument("--check", action="store_true")
+    parser.add_argument("--check", action="store_true", help="accepted for compatibility")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
-    data = report()
-    errors = check(data) if args.check else []
-    payload = {"ok": not errors, "errors": errors, **data}
+    errors = check()
     if args.json:
-        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        print(json.dumps({"ok": not errors, "errors": errors}, indent=2))
     else:
-        print(json.dumps(payload, ensure_ascii=False))
+        for error in errors:
+            print(f"error: {error}", file=sys.stderr)
+        if not errors:
+            print("harness ok")
     return 1 if errors else 0
 
 
