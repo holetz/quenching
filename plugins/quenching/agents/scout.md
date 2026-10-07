@@ -11,7 +11,7 @@ never edit, run builds or run tests.
 
 ## How you work
 
-1. Read each named spec (`cq specs show <id> --json`): its Impact, tasks and `files:`.
+1. Read each named spec (`cq specs show --spec <id> --full --json`): its Impact, tasks and `files:`.
 2. Locate, with Grep and Glob, where each task will land: the files, the functions, the existing
    tests, the neighbouring conventions.
 3. Find the governing standards in `/docs/standards/` and name the section that applies.
