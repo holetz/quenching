@@ -13,10 +13,12 @@ maintainer: quenching
 
 # Plugin configuration contract
 
+<!-- rules -->
+
 The target repository has one configuration home. It is a plain JSON object whose root carries
 provider-neutral metadata and explicit namespaces for settings owned by a front or shared by more
-than one pillar. The file is configuration, not a second specs store: provider-owned specs remain
-on the selected external provider.
+than one pillar. The file is configuration, not a second specs store: specs remain
+on the `quenching` branch (or, deprecated, in the selected tracker).
 
 ## One configuration home
 
@@ -99,9 +101,11 @@ The provider is derived from the repository's `origin` remote:
 - an Azure DevOps host selects Azure Boards;
 - no recognized remote host is an exit-2 refusal, never a silent switch to another provider.
 
-The root `backend` value is not a second provider selector. Unsupported or retired backend values
-are refused, and a valid provider is still established from the remote. Provider-owned specs are
-read and written only after that selection succeeds.
+The root `backend` value selects the store: `git` for the `quenching` branch, otherwise a
+deprecated tracker backend established from the remote. Unsupported or retired backend values are
+refused. Specs are read and written only after that selection succeeds.
+
+<!-- rationale -->
 
 The `specs` namespace does not name a local specs root, archive, or storage branch.
 The retired `specsBranch` key is no longer read.
@@ -206,6 +210,8 @@ Defaults apply only after the document has passed the envelope boundary. In part
   importing values from `ops` or `proof`;
 - `git` derives its base branch from git facts (`origin/HEAD`, then `init.defaultBranch`, then
   `main`) and does not use a front-owned flat key as a fallback.
+
+<!-- rationale -->
 
 The command result vocabulary remains uniform: `0` means the requested state is valid, `1` means
 the command found reportable drift, and `2` means it refused to guess, migrate, or operate without

@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Recognising a superseded format
 
+<!-- rules -->
+
 **A format change is not finished when the new form is described. It is finished when the old form
 is refused, out loud.** Both halves of that sentence were learned the same afternoon, from two
 recognisers that were individually correct and jointly silent.
@@ -85,6 +87,8 @@ if not m:
         legacy.append(...)      # a SPEC, kept apart — `migrate` reads this and nothing else does
     continue
 ```
+
+<!-- rationale -->
 
 Keeping the stale ones in a bucket the read path never serves is the deliberate part: a
 half-migrated front that half-works is worse than one that says so. The migration reads that bucket;

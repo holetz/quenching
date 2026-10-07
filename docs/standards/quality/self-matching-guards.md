@@ -13,6 +13,8 @@ maintainer: quenching
 
 # A guard that names what it forbids must parse, not match
 
+<!-- rules -->
+
 A structural guard scans code for a construct nobody should write. It also has to *say* what it
 found, and the most useful thing it can say names that construct. Those two facts collide: **the
 guard's own source now contains the pattern it is looking for**, and a substring scan reports the
@@ -39,6 +41,8 @@ finding says: `_resolves_directly` asks for a `Call` node whose function is an a
 are all invisible to it by construction — not by exclusion.
 
 ## Why excluding the checker is the wrong fix
+
+<!-- rationale -->
 
 The tempting repair is to skip the guard's own function, or to split the forbidden string so it
 never appears whole. Both leave the substring scan in place, and both fail the next time somebody

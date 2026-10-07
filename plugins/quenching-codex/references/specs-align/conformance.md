@@ -1,27 +1,30 @@
-# Provider-owned specs conformance
+# Specs store conformance
 
-This reference defines the checks for the specs front after the repository store was retired.
-GitHub issues and Azure Boards work items are the source of truth; `cq specs` is the uniform
-surface that reads and writes them.
+This reference defines the checks for the specs front. The documents on the `quenching` branch are
+the source of truth and tracker cards are their projection; `cq specs` is the uniform surface that
+reads and writes both. The `github` and `azure-boards` backends are deprecated, still work, and
+`cq specs doctor` flags them (`sp-backend-deprecated`).
 
-## Provider configuration
+## Store configuration
 
-The target's `.agents/quenching.json` may refine provider placement and project conventions. The
-provider itself is derived from the repository remote and cannot be silently switched by a
-command. A legacy repository-store value is refused with an actionable finding.
+The target's `.agents/quenching.json` selects the store (`"backend": "git"`) and may refine card
+settings and project conventions; the branch's `quenching.json` holds the specs-axis keys. No
+command silently switches the store. A legacy repository-store value is refused with an actionable
+finding.
 
-Provider-specific configuration is validated before any write:
+Configuration is validated before any write:
 
-- GitHub requires a resolvable repository and the configured issue transport.
-- Azure Boards requires the state mapping and placement needed to create a work item.
-- An unknown provider refuses; it never falls back to another transport.
+- The git store requires a remote that holds, or can receive, the `quenching` branch.
+- A card provider requires a resolvable repository (GitHub) or the placement needed to create a
+  work item (Azure Boards).
+- An unknown backend refuses; it never falls back to another transport.
 
 The configuration details and defaults live in
 [plugin-configuration.md](plugin-configuration.md).
 
 ## Probes
 
-Run the provider checks before reading or changing a spec:
+Run the store checks before reading or changing a spec:
 
 ```bash
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs doctor --json
@@ -29,18 +32,19 @@ python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/qu
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs validate --json
 ```
 
-Exit `0` means the provider and fetched front are conformant. Exit `1` reports findings that a
+Exit `0` means the store and fetched front are conformant. Exit `1` reports findings that a
 human or the owning lifecycle command must resolve. Exit `2` is a refusal: authentication,
-provider selection, or required configuration is missing or invalid.
+store selection, or required configuration is missing or invalid.
 
 ## Lifecycle ownership
 
-`create`, `develop`, `execute`, `status`, `triage`, and `conclude` own the provider lifecycle.
-There is no installer or migration step for a repository specs tree. A complete spec is closed by
-`conclude`, which records the outcome in the provider and distils durable knowledge into the OKF
+`create`, `develop`, `execute`, `status`, `triage`, and `conclude` own the spec lifecycle.
+There is no installer step for the specs branch: the first write creates it, and
+`cq specs migrate --to git` moves a deprecated tracker backend onto it. A complete spec is closed by
+`conclude`, which records the outcome in the spec and distils durable knowledge into the OKF
 bundle.
 
 ## Finding policy
 
-Provider findings name the provider, the missing configuration, and the command that owns the
-repair. The checks must not invent a path, fabricate a phase, or offer a second repository store.
+Findings name the store or card provider, the missing configuration, and the command that owns the
+repair. The checks must not invent a path, fabricate a phase, or offer a second store.

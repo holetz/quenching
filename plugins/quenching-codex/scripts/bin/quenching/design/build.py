@@ -2,14 +2,13 @@
 from __future__ import annotations
 
 import json
-import os
 import pprint
 import re
-import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from quenching.common.io import write_text
 from quenching.design.markdown import parse_document_frontmatter, read_sections, split_h2, yaml_map
 from quenching.design.model import (
     DESIGN_MD_VERSION,
@@ -119,14 +118,7 @@ def write_build(result: BuildResult) -> list[str]:
         if current == content:
             continue
         path.parent.mkdir(parents=True, exist_ok=True)
-        fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
-                handle.write(content)
-            Path(temporary).replace(path)
-        finally:
-            if Path(temporary).exists():
-                Path(temporary).unlink()
+        write_text(str(path), content)
         written.append(relative)
     return written
 

@@ -11,7 +11,7 @@ import tempfile
 import unittest
 from unittest import mock
 
-import _paths  # ruff: ignore[unused-import] — installs assets/bin exactly as the cq entry point does
+import _paths  # noqa: F401 — installs assets/bin exactly as the cq entry point does
 from quenching.design.align import align_plan, align_write
 from quenching.design.build import build_drift, compute_build, write_build
 from quenching.design.doctor import inspect_design

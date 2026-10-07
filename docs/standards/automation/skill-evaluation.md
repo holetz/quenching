@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Skill evaluation
 
+<!-- rules -->
+
 Every rule in [skills.md](skills.md) is a claim about
 how an agent behaves — that triggers in the second sentence get found, that a step with a
 criterion does not end early, that a body under the cap still teaches. `cq components lint` checks

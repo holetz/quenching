@@ -13,6 +13,8 @@ maintainer: quenching
 
 # The bundle root is the fixed `/docs/` convention
 
+<!-- rules -->
+
 The one layout fact every quenching-managed repo shares, and the one that stopped being
 configurable.
 
@@ -31,6 +33,8 @@ validator's `_load_config` reads just that one file — the bundle root is a con
 checker, not a value it loads ([plugin-layout.md](plugin-layout.md)).
 
 ## Why a fixed root, and why it is never a config key
+
+<!-- rationale -->
 
 An LLM executor runs command bodies **literally**: a body that needs the bundle's location either
 cites it as one fixed string or resolves it at runtime from a configuration file. The second path

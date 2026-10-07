@@ -7,11 +7,13 @@ tags: [git, branching, release, workflow, main]
 timestamp: 2026-08-17
 audience: both
 authority: current
-source: rewritten by spec eliminar-branch-de-integracao (2026-08-17) — the two-branch flow (develop integrates, main publishes) ceased to exist: the primary receives every PR and the release is the deliberate local act that publishes it; the transition for anyone coming from the old flow added in the same rewrite
+source: eliminar-branch-de-integracao, 2026-08-17; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Branch flow — PR onto the primary, deliberate release
+
+<!-- rules -->
 
 This repository publishes from **one** long-lived branch. There is no separate integration branch:
 all work enters through a pull request and the release is the only act that publishes.

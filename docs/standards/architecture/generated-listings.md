@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Generated listings — a derived listing only pays for itself when a program can prove it is fresh
 
+<!-- rules -->
+
 A **generated listing** is a file, or a marked zone inside one, that some command rebuilds from
 what a directory holds. It is convenient, and it is always a **second source** of a fact the disk
 already carries. That is not automatically wrong — but it has to be paid for, and this is the price.

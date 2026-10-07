@@ -1,6 +1,7 @@
 """Assemble the delivery applicability and inventory result."""
 from __future__ import annotations
 
+from quenching.common.front import doctor_result, findings_envelope
 from quenching.delivery.checks import run_checks
 from quenching.delivery.inventory import build_inventory
 from quenching.delivery.probe import probe_delivery
@@ -15,15 +16,11 @@ def inspect_delivery(root: str) -> tuple[dict | None, dict]:
     if error:
         return None, error
     findings = [finding.as_dict() for finding in run_checks(inventory)] if inventory else []
-    errors = sum(item["severity"] == "error" for item in findings)
     payload = {
         "root": applicability.root,
         "applicability": applicability.as_dict(),
         "inventory": inventory.as_dict() if inventory is not None else None,
-        "findings": findings,
-        "errors": errors,
-        "warnings": len(findings) - errors,
-        "ok": not findings,
+        **findings_envelope(findings),
     }
     return payload, {}
 
@@ -34,4 +31,4 @@ def doctor(root: str) -> tuple[dict | None, dict, int]:
     if error:
         return None, error, 2
     assert payload is not None
-    return payload, {}, 0 if payload["ok"] else 1
+    return doctor_result(payload)

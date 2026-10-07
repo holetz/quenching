@@ -122,6 +122,117 @@ def _fold_stray(args, backend, info: dict, root: str, out: Emitter) -> int:
     return 0
 
 
+def _canonical_wanted(args, out: Emitter) -> tuple[list[str], int]:
+    """The canonical headings the call names, or ``([], exit_code)`` after a refusal."""
+    if args.moment:
+        wanted = headings_for_moment(args.moment)
+        if not wanted:
+            out.emit(args.json,
+                     {"ok": False, "code": "sp-unknown-moment", "moment": args.moment,
+                      "message": f"no canonical section declares moment '{args.moment}'"},
+                     f"error: no canonical section declares moment '{args.moment}'")
+            return [], 2
+    else:
+        wanted = [h for h in (p.strip() for p in (args.heading or "").split(",")) if h]
+        if not wanted:
+            out.emit(args.json,
+                     {"ok": False, "code": "sp-no-heading",
+                      "message": "give a heading, or --moment, to read"},
+                     "error: give a heading, or --moment, to read")
+            return [], 2
+    headings, stray = [], []
+    for name in wanted:
+        h = _match_heading(name)
+        (headings.append(h) if h else stray.append(name))
+    if stray:
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-stray-heading", "heading": stray[0],
+                  "stray": stray, "canonical": canonical_headings(),
+                  "message": f"not one of the thirteen canonical headings: {', '.join(stray)}"},
+                 f"error: not a canonical heading: {', '.join(stray)}")
+        return [], 2
+    return headings, 0
+
+
+def _read_sections(args, out: Emitter, info: dict, headings: list[str], scope) -> int:
+    # A read COMPOSES `--scope` with a plural request — `--moment build` above all — so the
+    # neighbouring headings come back whole and one call still answers a whole moment. Only
+    # asking for `## Handoff` and then not scoping it is unreadable, which is the refusal.
+    if scope and "Handoff" not in headings:
+        return _refuse_scope(args, out, headings)
+    rows = [{"heading": h, "state": section_state(info["sections"], h),
+             "body": _scoped_handoff(info, scope) if scope and h == "Handoff"
+             else info["sections"].get(h, {}).get("body", "")} for h in headings]
+    absent = [r["heading"] for r in rows if r["state"] == "absent"]
+    if args.json:
+        one = rows[0] if len(rows) == 1 else {}
+        print(json.dumps({"ok": not absent, "id": info["id"],
+                          **one, "sections": rows, "absent": absent, "scope": scope},
+                         indent=2, ensure_ascii=False))
+    else:
+        for r in rows:
+            if r["state"] == "absent":
+                print(f"(## {r['heading']} is absent)")
+            elif len(rows) == 1:
+                print(r["body"].strip())
+            else:
+                print(f"## {r['heading']}\n\n{r['body'].strip()}\n")
+    return 0 if not absent else 1
+
+
+def _splice_stream(args, out: Emitter, info: dict, headings: list[str],
+                   content: str) -> tuple[str, list[dict]] | int:
+    """The text with every streamed section spliced in, or the exit code of a refusal."""
+    # EVERY refusal is settled before the first splice, so a rejected call writes nothing
+    # at all. The old failure mode this replaces was N separate invocations, where the one
+    # that broke left the previous k already on disk.
+    blocks = split_section_stream(content, canonical_headings())
+    unresolved = [i for i, (h, _) in enumerate(blocks, 1) if h is None]
+    if unresolved:
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-stray-heading", "source": "stream",
+                  "unresolvedBlocks": unresolved, "canonical": canonical_headings(),
+                  "message": "the stream carries a `## ` heading that is not one of the "
+                             "thirteen canonical ones, at block(s) "
+                             f"{', '.join(str(i) for i in unresolved)}"},
+                 f"error: non-canonical `## ` heading at stream block(s) "
+                 f"{', '.join(str(i) for i in unresolved)}")
+        return 2
+    carried = [h for h, _ in blocks]
+    if len(set(carried)) != len(carried):
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-write-duplicate-heading", "stream": carried,
+                  "message": "the stream carries the same heading twice — which body "
+                             "wins is not derivable"},
+                 "error: the stream carries the same heading twice")
+        return 2
+    # No blocks under exactly one declared heading is the SINGULAR form: a raw body, no
+    # heading in the stream, written whole — what every caller did before this was plural.
+    # It is the ONE case the set check cannot govern, because the stream declares nothing
+    # for it to be checked against.
+    singular = not blocks and len(headings) == 1
+    if not singular and set(carried) != set(headings):
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-write-set-mismatch", "declared": headings,
+                  "stream": carried,
+                  "message": "the headings declared on the command line and the ones the "
+                             "stream carries are not the same set"},
+                 f"error: declared {', '.join(headings)}; stream carries "
+                 f"{', '.join(carried) or 'none'}")
+        return 2
+    # `upsert_section` splices by the line numbers of the info it was handed, so each
+    # section's write invalidates the next one's offsets — re-derive between them, and
+    # hand the backend the one text they all landed in.
+    new_text, results, cur = info["text"], [], info
+    for heading, body in (blocks or [(headings[0], content)]):
+        block = (f"## {heading}\n\n{body.strip()}\n"
+                 if body.strip() else section_guidance(heading))
+        new_text, action = upsert_section(cur, heading, block)
+        results.append({"heading": heading, "action": action})
+        cur = derive_info(cur, new_text)
+    return new_text, results
+
+
 def cmd_section(args, root: str, out: Emitter) -> int:
     """Deterministic partial read/write of N sections — what makes lean agent context real.
 
@@ -153,58 +264,12 @@ def cmd_section(args, root: str, out: Emitter) -> int:
         return out.emit_err(args.json, err)
     if getattr(args, "fold", None):
         return _fold_stray(args, backend, info, root, out)
-    if args.moment:
-        wanted = headings_for_moment(args.moment)
-        if not wanted:
-            out.emit(args.json,
-                     {"ok": False, "code": "sp-unknown-moment", "moment": args.moment,
-                      "message": f"no canonical section declares moment '{args.moment}'"},
-                     f"error: no canonical section declares moment '{args.moment}'")
-            return 2
-    else:
-        wanted = [h for h in (p.strip() for p in (args.heading or "").split(",")) if h]
-        if not wanted:
-            out.emit(args.json,
-                     {"ok": False, "code": "sp-no-heading",
-                      "message": "give a heading, or --moment, to read"},
-                     "error: give a heading, or --moment, to read")
-            return 2
-    headings, stray = [], []
-    for name in wanted:
-        h = _match_heading(name)
-        (headings.append(h) if h else stray.append(name))
-    if stray:
-        out.emit(args.json,
-                 {"ok": False, "code": "sp-stray-heading", "heading": stray[0],
-                  "stray": stray, "canonical": canonical_headings(),
-                  "message": f"not one of the thirteen canonical headings: {', '.join(stray)}"},
-                 f"error: not a canonical heading: {', '.join(stray)}")
-        return 2
+    headings, code = _canonical_wanted(args, out)
+    if code:
+        return code
     scope = getattr(args, "scope", None)
     if not args.write:
-        # A read COMPOSES `--scope` with a plural request — `--moment build` above all — so the
-        # neighbouring headings come back whole and one call still answers a whole moment. Only
-        # asking for `## Handoff` and then not scoping it is unreadable, which is the refusal.
-        if scope and "Handoff" not in headings:
-            return _refuse_scope(args, out, headings)
-        rows = [{"heading": h, "state": section_state(info["sections"], h),
-                 "body": _scoped_handoff(info, scope) if scope and h == "Handoff"
-                 else info["sections"].get(h, {}).get("body", "")} for h in headings]
-        absent = [r["heading"] for r in rows if r["state"] == "absent"]
-        if args.json:
-            one = rows[0] if len(rows) == 1 else {}
-            print(json.dumps({"ok": not absent, "id": info["id"],
-                              **one, "sections": rows, "absent": absent, "scope": scope},
-                             indent=2, ensure_ascii=False))
-        else:
-            for r in rows:
-                if r["state"] == "absent":
-                    print(f"(## {r['heading']} is absent)")
-                elif len(rows) == 1:
-                    print(r["body"].strip())
-                else:
-                    print(f"## {r['heading']}\n\n{r['body'].strip()}\n")
-        return 0 if not absent else 1
+        return _read_sections(args, out, info, headings, scope)
     if scope and headings != ["Handoff"]:
         # A write under `--scope` replaces ONE block of one section, so it is singular by what it
         # means and not merely by how stdin arrives — a plural request under it has no reading.
@@ -215,53 +280,10 @@ def cmd_section(args, root: str, out: Emitter) -> int:
         new_text, action = write_handoff_block(info, scope, content)
         results = [{"heading": "Handoff", "action": action}]
     else:
-        # EVERY refusal is settled before the first splice, so a rejected call writes nothing
-        # at all. The old failure mode this replaces was N separate invocations, where the one
-        # that broke left the previous k already on disk.
-        blocks = split_section_stream(content, canonical_headings())
-        unresolved = [i for i, (h, _) in enumerate(blocks, 1) if h is None]
-        if unresolved:
-            out.emit(args.json,
-                     {"ok": False, "code": "sp-stray-heading", "source": "stream",
-                      "unresolvedBlocks": unresolved, "canonical": canonical_headings(),
-                      "message": "the stream carries a `## ` heading that is not one of the "
-                                 "thirteen canonical ones, at block(s) "
-                                 f"{', '.join(str(i) for i in unresolved)}"},
-                     f"error: non-canonical `## ` heading at stream block(s) "
-                     f"{', '.join(str(i) for i in unresolved)}")
-            return 2
-        carried = [h for h, _ in blocks]
-        if len(set(carried)) != len(carried):
-            out.emit(args.json,
-                     {"ok": False, "code": "sp-write-duplicate-heading", "stream": carried,
-                      "message": "the stream carries the same heading twice — which body "
-                                 "wins is not derivable"},
-                     "error: the stream carries the same heading twice")
-            return 2
-        # No blocks under exactly one declared heading is the SINGULAR form: a raw body, no
-        # heading in the stream, written whole — what every caller did before this was plural.
-        # It is the ONE case the set check cannot govern, because the stream declares nothing
-        # for it to be checked against.
-        singular = not blocks and len(headings) == 1
-        if not singular and set(carried) != set(headings):
-            out.emit(args.json,
-                     {"ok": False, "code": "sp-write-set-mismatch", "declared": headings,
-                      "stream": carried,
-                      "message": "the headings declared on the command line and the ones the "
-                                 "stream carries are not the same set"},
-                     f"error: declared {', '.join(headings)}; stream carries "
-                     f"{', '.join(carried) or 'none'}")
-            return 2
-        # `upsert_section` splices by the line numbers of the info it was handed, so each
-        # section's write invalidates the next one's offsets — re-derive between them, and
-        # hand the backend the one text they all landed in.
-        new_text, results, cur = info["text"], [], info
-        for heading, body in (blocks or [(headings[0], content)]):
-            block = (f"## {heading}\n\n{body.strip()}\n"
-                     if body.strip() else section_guidance(heading))
-            new_text, action = upsert_section(cur, heading, block)
-            results.append({"heading": heading, "action": action})
-            cur = derive_info(cur, new_text)
+        spliced = _splice_stream(args, out, info, headings, content)
+        if isinstance(spliced, int):
+            return spliced
+        new_text, results = spliced
     backend.write_spec(info, new_text)
     # ONE heading answers in the shape it always answered — `heading` and `action`, flat —
     # so no caller written against the singular write has to learn a second reading of it.

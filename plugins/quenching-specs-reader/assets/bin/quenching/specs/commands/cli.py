@@ -41,17 +41,12 @@ from quenching.specs.parse import PHASES
 from quenching.specs.schema import DEFAULT_VERIFICATION, OUTCOMES, VERIFICATION_POLICIES
 
 
-def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]:
-    p = CQArgumentParser(prog="cq specs",
-                         description="deterministic trail for the specs front")
-    p.add_argument("--root", help="the repository directory (default: current repository)")
-    p.add_argument("--version", action="store_true", help="print the version and exit")
-    sub = p.add_subparsers(dest="cmd")
+def add_json(sp):
+    sp.add_argument("--json", action="store_true", help="machine-readable output")
+    return sp
 
-    def add_json(sp):
-        sp.add_argument("--json", action="store_true", help="machine-readable output")
-        return sp
 
+def _add_new(sub) -> None:
     sp = add_json(sub.add_parser("new", help="capture a spec into plans/"))
     sp.add_argument("name")
     sp.add_argument("--title")
@@ -79,6 +74,8 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                          "`## Problem` when none is supplied, N becomes the spec's ID and the "
                          "item is rewritten to the thin card (the branch store only)")
 
+
+def _add_read(sub) -> None:
     sp = add_json(sub.add_parser("list", help="every spec, by folder and derived stage"))
     sp.add_argument("--phase", choices=list(PHASES),
                     help="cut the listing to one phase (default: every phase)")
@@ -100,6 +97,8 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                     help="the WHOLE document — never the default, because every caller "
                          "that did not need it pays for it in context on every later turn")
 
+
+def _add_section_and_fields(sub) -> None:
     sp = add_json(sub.add_parser("section", help="read or write N sections in ONE call"))
     sp.add_argument("spec")
     sp.add_argument("heading", nargs="?",
@@ -149,6 +148,8 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
         sp.add_argument("value", nargs="?", help=value_help)
         sp.set_defaults(field=field)
 
+
+def _add_record_promote_task(sub) -> None:
     sp = add_json(sub.add_parser("record", help="read or merge ONE frontmatter record"))
     sp.add_argument("spec")
     sp.add_argument("name", help="one of the declared records")
@@ -181,6 +182,8 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                                      "the commit exists (goes with --check; additive to "
                                      "--subject, not a replacement for it)")
 
+
+def _add_next_and_epic(sub) -> None:
     sp = add_json(sub.add_parser("next", help="THE single next action, or --front for the "
                                               "ranked candidate list"))
     sp.add_argument("--spec", help="one spec's next action")
@@ -211,6 +214,8 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                                     "created when new")
     ep.add_argument("--label", help="the item label (default: the next S<n>)")
 
+
+def _add_inspection(sub) -> None:
     sp = add_json(sub.add_parser("parallel", help="prove a [P] group's files: are disjoint"))
     sp.add_argument("--spec", required=True)
 
@@ -242,6 +247,8 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
 
     add_json(sub.add_parser("doctor", help="workspace shape; remedies declared"))
 
+
+def _add_migrate_export_serve(sub) -> None:
     sp = add_json(sub.add_parser("migrate", help="move the specs of a tracker backend onto the "
                                                  "`quenching` branch (`--to git`); dry run "
                                                  "unless --write"))
@@ -269,6 +276,21 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                     help="disable every write route on the server")
     sp.add_argument("--open", action="store_true", help="open the URL in the browser")
 
+
+def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]:
+    p = CQArgumentParser(prog="cq specs",
+                         description="deterministic trail for the specs front")
+    p.add_argument("--root", help="the repository directory (default: current repository)")
+    p.add_argument("--version", action="store_true", help="print the version and exit")
+    sub = p.add_subparsers(dest="cmd")
+
+    _add_new(sub)
+    _add_read(sub)
+    _add_section_and_fields(sub)
+    _add_record_promote_task(sub)
+    _add_next_and_epic(sub)
+    _add_inspection(sub)
+    _add_migrate_export_serve(sub)
     return p, sub
 
 

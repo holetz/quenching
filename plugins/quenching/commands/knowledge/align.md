@@ -10,9 +10,8 @@ allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash, Write, Edit, Task, Skill, Ask
 **Input**: `$ARGUMENTS` (optionally a `/docs/` path or a scope; omit to align the whole bundle).
 
 The **`docs` front's one entry point**. It installs and enforces a single canonical OKF v0.1
-bundle so every repo that adopts this plugin looks the same — **and** it pulls in the durable
-content sitting outside the bundle (project memory, a fat harness) and backfills the glossary,
-looping until a pass changes nothing.
+bundle, pulls in the durable content outside it (project memory, a fat harness) and backfills the
+glossary, looping until a pass changes nothing.
 
 The payload (skeleton, molds, validator) lives at `${CLAUDE_PLUGIN_ROOT}/assets/`; the contract at
 `${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/`:
@@ -34,26 +33,24 @@ Read [align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/swe
 §1. Probe before the inventory §2. Convergence, not accommodation §3. Force with ONE confirmation §4. The blast-radius sweep §5. MERGE, never clobber; never delete on a guess §6. Align conformance; report the cycle §7. Citing a command — three forms, one condition each §8. End honest.
 What follows is specific to `/docs/`:
 
-**Why `Bash` is unrestricted here.** This front probes and updates the target's fixed bundle,
-harness, memory store, Git refs and optional site layer; those commands have no safe common prefix
-to enumerate in `allowed-tools`, and each write remains gated by the workflow below.
+**Why `Bash` is unrestricted here.** This front probes and updates the target's bundle, harness,
+memory store, Git refs and site layer, which share no prefix to enumerate in `allowed-tools`; each
+write stays gated by the workflow below.
 
-- **This is the one front with a real loop.** `/docs/` has two out-of-band stores that feed it and a
-  glossary derived from everything in it, so one pass genuinely creates work for the next: a fact
-  the harness MOVEs in is a term the glossary must then index. The loop ends at a **fixpoint** —
-  a pass that changed nothing with the validator clean — never after a fixed count, bounded by a
-  pass cap and a no-progress guard
+- **This is the one front with a real loop**: a fact the harness MOVEs in is a term the glossary
+  must then index. The loop ends at a **fixpoint** — a pass that changed nothing with the validator
+  clean — bounded by a pass cap and a no-progress guard
   ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md) §The convergence contract).
 - **Conduct the content stages, never reimplement them.** Steps 6–7 **invoke**
   `/quenching:knowledge:import-memory`, `/quenching:components:harness:align` and `/quenching:knowledge:glossary-backfill` through the `Skill` tool
-  under their registry names (`quenching:knowledge:import-memory`, …). Each runs under its own doctrine
-  and its own code-coupled confirmations. If a stage's behaviour must change, change that command.
-- **The expensive stage is offered, never assumed.** The glossary sweep reads the whole bundle, and
-  no cheap signal proves it has work — so it is gated on a free proxy and **offered** with its cost
-  (sweep-doctrine §Probe before the inventory). Everything else this command does is probed.
-- **Per-item commands are stage tools, not stages.** `/quenching:knowledge:add`, `/quenching:knowledge:learn`, `/quenching:knowledge:define`
-  each act on ONE item a human states, and a loop pass has no fresh human input — so they are never
-  stages. They are what the stages already delegate to. A content gap only they can close is
+  under their registry names (`quenching:knowledge:import-memory`, …); each runs under its own
+  doctrine and code-coupled confirmations.
+- **The expensive stage is offered, never assumed.** The glossary sweep reads the whole bundle and
+  has no cheap signal, so it is gated on a free proxy and **offered** with its cost
+  (sweep-doctrine §Probe before the inventory).
+- **Per-item commands are stage tools, not stages.** `/quenching:knowledge:add`,
+  `/quenching:knowledge:learn` and `/quenching:knowledge:define` each act on ONE item a human
+  states, and a loop pass has no fresh human input. A content gap only they can close is
   **surfaced** in the report, never fabricated.
 - **Completeness of what fits, evidence-gated.** A repo without data gets no `catalog/`; a
   standard is generated only with observed `file:line` evidence; the rest is a recorded
@@ -63,21 +60,19 @@ to enumerate in `allowed-tools`, and each write remains gated by the workflow be
   disagreement with the accepted publication map is `plan-drift`; and a disabled publication or
   capability is `not-applicable`. The final report names the evidence, owner and closing command
   for every residual class.
-- **Folders over prefix-clusters.** When sibling files share a subject prefix
-  (`nomenclatura-classes.md`, `nomenclatura-funcoes.md`, `nomenclatura-modulos.md`, …), that
-  prefix **is** the subject and the repetition is the "filename repeats the folder" smell →
-  promote the cluster into a subfolder (canonical English), strip the prefix, generate the
-  folder's `index.md` (`code/symbol-naming/{classes,functions,modules,…}.md`). Keep flat files
-  when a folder adds ceremony without aiding disclosure (a lone file, an incoherent prefix, two
-  short siblings on an axis unlikely to grow). Favor the folder when it earns its keep, not by reflex.
+- **Folders over prefix-clusters.** Sibling files sharing a subject prefix
+  (`nomenclatura-classes.md`, `nomenclatura-funcoes.md`, …) are promoted into a subfolder
+  (canonical English), prefix stripped, with a generated `index.md`
+  (`code/symbol-naming/{classes,functions,modules,…}.md`). Keep flat files when a folder adds
+  ceremony without aiding disclosure (a lone file, an incoherent prefix, two short siblings).
 - **English canonical surface — structure + frontmatter; content may be local.** Folder names
   **and concept-doc file slugs**, frontmatter keys, enum values, and the `type` vocabulary are
   canonical English, cross-repo greppable (`nomenclatura-variaveis.md` → `naming/variables.md`,
-  `validacao-desenvolvimento.md` → `development-validation.md`). Frontmatter stays English; the
-  **body prose MAY follow the repo's language** — only the content, never the surface.
+  `validacao-desenvolvimento.md` → `development-validation.md`). The **body prose MAY follow the
+  repo's language** — only the content, never the surface.
   **Exception — identifier-derived names are verbatim, never translated:** a catalog
   `<schema>`/`<table>` slug mirrors the real object, `external/repositories/<repo>` the real
-  repo — anglicizing them would sever the greppable tie to the asset.
+  repo.
 
 ## Workflow (probe → ONE OK → pass → re-probe → loop)
 
@@ -104,21 +99,19 @@ Branch as sweep-doctrine §Probe before the inventory prescribes:
 install case, and step 4 scaffolds it.
 **Done when:** the three signals are in hand and the run has either stopped or committed to a pass.
 
-Before the inventory, run a **preflight** against the checkout and the plugin payload whenever
-the requested pass can use them. Confirm that the source checkout contains the code, bundles and
-services named by the findings, that the installed plugin contains the translation and design
-payloads it claims to provide, and that every checker has an applicable publication or capability
-row. A missing source is a `source-gap`; a missing installed payload is a `plugin-package-gap`.
-Neither is repaired by inventing a file, asset, route or resource: report the evidence and the
-command or package operation that can close it. A checker whose publication is disabled by the
-accepted map or capability register is `not-applicable`, not a failed run.
+Before the inventory, run a **preflight** whenever the pass can use them: the source checkout
+contains the code, bundles and services the findings name, the installed plugin contains the
+translation and design payloads it claims, and every checker has an applicable publication or
+capability row. A missing source is a `source-gap`; a missing installed payload is a
+`plugin-package-gap`; neither is repaired by inventing a file, asset, route or resource — report
+the evidence and the closing command. A checker whose publication the accepted map or capability
+register disables is `not-applicable`.
 
-The preflight also reads the accepted `.quenching/documentation/plan.md` when a site layer exists.
-Its `### Publication map` is the authority for homes, routes and derived pages. A
-disagreement between that map and `nav` or `site-source/` is `plan-drift`; regenerate the plan or
-the owned projection through the documentation planning/build command rather than hand-editing a
-large generated artifact. Semantic resource ambiguity remains a human-pending `source-gap` until
-the source or owner supplies evidence.
+When a site layer exists the preflight also reads the accepted `.quenching/documentation/plan.md`;
+its `### Publication map` is the authority for homes, routes and derived pages. A disagreement
+between that map and `nav` or `site-source/` is `plan-drift`, closed by regenerating through the
+documentation planning/build command. Semantic resource ambiguity stays a human-pending
+`source-gap`.
 
 ### 2. Inventory + map → the alignment plan (read-only)
 When `$ARGUMENTS` names a home or subtree, keep the fixed-root probe whole-bundle but restrict this
@@ -158,8 +151,7 @@ the plan — enumerate:
   - **(g)** **which content stages will run this pass** — memory (dir non-empty), harness (fat),
     each with its count. A stage the probe found empty is skipped, not run to confirm it is empty.
 
-On a later pass, re-derive only what the previous pass could have changed; never re-inventory a
-converged half of the bundle.
+On a later pass, re-derive only what the previous pass could have changed.
 **Done when:** one plan enumerates (a)–(g), with a per-item destination and a scope per rename.
 
 ### 3. Present the full plan → gate on ONE OK
@@ -226,20 +218,16 @@ bundle, never write the line into a nested harness file — only the root one is
 session start, which is the whole reason this form was chosen — and on a repo that already declares
 one, read it and move on rather than asking again.
 
-**The documentation site.** The whole bundle is the knowledge source, but Zensical receives a
-bounded generated sibling: its 0.0.57 release builds every Markdown below `docs_dir` and does not
-support `exclude_docs`, `draft_docs` or `not_in_nav`. The staged source keeps high-volume data and
-external research out of the build. This applies to any bundle, so first inspect the
-target root's `pyproject.toml`, `uv.lock` and `requirements.txt`, then preserve the dependency
-manager already in use. When the project declares uv (`uv.lock` exists or `pyproject.toml` has a
-`[tool.uv]` table), add `zensical>=0.0.57` to its development group with `uv add --dev` when it is
-absent, refresh `uv.lock` with `uv lock`, and install with `uv sync`; **do not** create a parallel
-`requirements.txt`. A `pyproject.toml` owned by another manager stays with that manager and its
-own run command; the plugin never guesses a Poetry/PDM group or overwrites its lock. When no
-`pyproject.toml` exists, merge/copy the payload's pinned `requirements.txt`. A `uv.lock` is
-authoritative: use `uv sync --locked` for verification and report a stale lock rather than silently
-falling back to a second dependency file. If the selected manager is unavailable, report the
-missing toolchain and leave the project files untouched.
+**The documentation site.** Zensical builds every Markdown below `docs_dir`, so it receives a
+bounded generated sibling of the bundle that keeps high-volume data and external research out. First
+inspect the target root's `pyproject.toml`, `uv.lock` and `requirements.txt` and preserve the
+dependency manager in use. When the project declares uv (`uv.lock` exists or `pyproject.toml` has a
+`[tool.uv]` table), add `zensical>=0.0.57` with `uv add --dev` when absent, refresh with `uv lock`,
+install with `uv sync` and create no `requirements.txt`. A `pyproject.toml` owned by another manager
+stays with it. When no `pyproject.toml` exists, merge/copy the payload's pinned
+`requirements.txt`. A `uv.lock` is authoritative: verify with `uv sync --locked` and report a stale
+lock. If the selected manager is unavailable, report the missing toolchain and leave the project
+files untouched.
 
 Offer to copy from `${CLAUDE_PLUGIN_ROOT}/assets/zensical/`: `zensical.toml.tmpl` → the repo
 **root** as `zensical.toml` **only if absent** (never clobber a customized one — show a diff and
@@ -247,17 +235,14 @@ let the user merge), filling `site_name`/`site_description`; `quenching.css` →
 `assets/stylesheets/quenching.css`, the path `extra_css` names; on
 request, `ci-github-pages.yml` → `.github/workflows/docs.yml` (opt-in, platform-specific), or
 `azure-pipelines-docs.yml` → `azure-pipelines-docs.yml` only when the target remote is Azure DevOps.
-The Azure payload publishes a `documentation-site` artifact and never deploys remotely. The nav
-ships inside the config, so it needs no separate install. The first install also stages the
-bounded source with `cq knowledge site-source docs site-source --write`; `catalog/` and
-`external/` are deliberately absent from that tree. Later staging and verification belong to
-`quenching:knowledge:documentation:build`.
+The first install also stages the bounded source with
+`cq knowledge site-source docs site-source --write`; `catalog/` and `external/` are absent from
+that tree.
 
-This is the **first install only**. The site layer's owner is `/quenching:knowledge:documentation:build`: every
-later update, dependency sync, nav regeneration, config merge, and build verification is **its**
-job. If the install is anything more than stamping absent files — a customized config to merge, a
-`docs_dir` pointing elsewhere, a nav no longer matching the tree, or a stale `uv.lock` — hand off
-to that command instead of resolving it here.
+This is the **first install only**; every later update, dependency sync, nav regeneration, config
+merge and build verification is `/quenching:knowledge:documentation:build`'s. Anything beyond
+stamping absent files — a customized config to merge, a `docs_dir` pointing elsewhere, a stale nav
+or `uv.lock` — hands off to that command.
 **Done when:** the two offers have been made once and answered, or the pass is >1 and this step
 was skipped.
 
@@ -272,9 +257,9 @@ is [sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctr
    memory once its doc lands and passes conformance.
 2. `quenching:components:harness:align` — thin `CLAUDE.md`/`AGENTS.md`, MOVEing durable knowledge into homes.
 
-The order and the reason for it are
+The order is
 [knowledge-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/cycle.md) §The stage
-pipeline's, not this body's. When **both** have work this pass, follow its §Parallel prep —
+pipeline's. When **both** have work this pass, follow its §Parallel prep —
 harness's read-only discovery runs in a background `Task` agent while the drain executes inline.
 **Writes to `/docs/` are one stage at a time, always.**
 
@@ -317,18 +302,13 @@ stop and report each `error-corrigible`, `source-gap`, `plugin-package-gap`, `pl
 `not-applicable` finding; **pass cap reached** → stop and report what remains. The guards there
 (pass cap, no-progress, never-widen-scope) apply unchanged.
 
-Re-probing rather than re-inventorying is what keeps a second pass cheap — and it is the same three
-signals, so a stage that emptied itself this pass is simply absent from the next.
 **Done when:** the run has converged, hit residue, or hit the cap — and which one is recorded.
 
 ### 9. Report
 Summarize the whole run: N passes, what each stage did across all of them, the final validator
 state, and — explicitly — what was **deliberately not closed**, each with its classification,
-evidence, owner and closing command. Use `source-gap` for absent or ambiguous source evidence,
-`plugin-package-gap` for an incomplete installed payload, `plan-drift` for editorial-map
-disagreement, and `not-applicable` for disabled checks; do not call any of these converged.
+evidence, owner and closing command. Do not call any of these converged.
 
-**The report is the record.** The sweep leaves no trace of itself in the bundle.
 **Done when:** the report states the final convergence outcome and names any residue with its owning
 command, or explicitly states that no residue remains.
 
@@ -351,9 +331,9 @@ command, or explicitly states that no residue remains.
   `/docs/` concurrently.
 - Never author content to close a gap that needs human input — **surface** it with its per-item
   command, never fabricate a standard, a concept, or a term.
-- **Corrija automaticamente todo resíduo determinístico e seguro.** Para cada resíduo restante,
-  classifique-o como erro corrigível, bloqueio do ambiente, lacuna de fonte ou teste não aplicável.
-  Não aceite convergência enquanto o plano editorial, a navegação, a projeção `site-source` e os
-  checkers discordarem sobre as casas publicadas.
+- **Fix every deterministic, safe residue automatically.** Classify each remaining residue as
+  `error-corrigible`, `source-gap`, `plugin-package-gap`, `plan-drift` or `not-applicable`. Never
+  accept convergence while the editorial plan, the navigation, the `site-source` projection and the
+  checkers disagree about the published homes.
 - Never loop past the pass cap, never re-run a no-progress pass, and never treat validator exit 0
   alone as converged.

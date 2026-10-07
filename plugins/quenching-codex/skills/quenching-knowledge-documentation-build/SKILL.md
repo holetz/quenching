@@ -11,20 +11,18 @@ description: "Create or update the Zensical site layer with extensions, CSS, nav
 **Input**: `$ARGUMENTS` (optionally a bundle home to focus the nav check on, or the path of an existing `zensical.toml`; omit to inventory the whole site layer).
 
 Makes the OKF bundle [`/docs/`](../../knowledge/index.md) feed a bounded
-**Zensical site** and keeps that rendering honest as it grows. The whole bundle remains the
-knowledge source; `site-source/` is the generated publication input. The home is a plain
-Markdown tree; everything generator-specific lives in a thin **site layer** around it — the
-`zensical.toml` plus exactly one dependency source at the repo **root**, outside the bundle. This
-skill owns that layer end to end: it installs it when absent, merges it forward when present,
-resolves the existing Python toolchain, keeps the `nav` in step with the folder tree, stamps the
-static `assets/stylesheets/quenching.css` asset, and verifies the site actually builds. The payload it stamps from is
-[`../../assets/zensical/`](../../assets/zensical/README.md); the home's own
-boundaries and the `documentation` type live with `quenching-knowledge-align`
-([knowledge-align/taxonomy.md](../../references/knowledge-align/taxonomy.md)) and
-`quenching-knowledge-add` ([knowledge-add/homes.md](../../references/knowledge-add/homes.md)).
+**Zensical site**. The bundle is the knowledge source; `site-source/` is the generated publication
+input; everything generator-specific lives in a thin **site layer** at the repo **root**, outside
+the bundle — the `zensical.toml` plus exactly one dependency source. This skill installs that
+layer when absent, merges it forward when present, resolves the toolchain, keeps `nav` in step
+with the folder tree, stamps `assets/stylesheets/quenching.css` and verifies the site builds. The
+payload is [`../../assets/zensical/`](../../assets/zensical/README.md);
+home boundaries and the `documentation` type live in
+[knowledge-align/taxonomy.md](../../references/knowledge-align/taxonomy.md) and
+[knowledge-add/homes.md](../../references/knowledge-add/homes.md).
 
-`quenching-knowledge-align` step 7 offers the **first** install of this layer as part of scaffolding the
-bundle; every install, update, and re-verification after that is **this** skill.
+`quenching-knowledge-align` step 7 offers the **first** install; every later install, update and
+re-verification is **this** skill.
 
 ## Doctrine
 
@@ -32,22 +30,17 @@ bundle; every install, update, and re-verification after that is **this** skill.
   inside it, this skill owns exactly one file — the CSS asset. The OKF markdown stays
   **generator-neutral** — never add generator-specific syntax, a nav entry inside a page, or
   generator frontmatter to a concept doc.
-- **The confirmed Publication map is the publication boundary.** Zensical 0.0.57
-  builds every Markdown below `docs_dir` and does not support `exclude_docs`, `draft_docs` or
-  `not_in_nav`. Therefore `docs_dir = "site-source"` and the command stages only the shared
+- **The confirmed Publication map is the publication boundary.** Zensical builds every
+  Markdown below `docs_dir` and has no `exclude_docs`, `draft_docs` or `not_in_nav`. So
+  `docs_dir = "site-source"` and the command stages only the shared
   publication allow-list with `cq knowledge site-source docs site-source --write`; it never points
   at the complete bundle. Raw `catalog/` and `external/` homes are excluded from that tree even
   when they remain useful knowledge sources. A home marked `publish` or `publish derived` is
   exposed only when its content is in the allow-list or is curated into an allowlisted page;
-  `do not publish` creates no nav entry, staged file or published link. The map, not a home's name,
-  decides editorial intent, while the staging boundary enforces the generator's file semantics.
-  A missing or stale derived route is reported to the planning or writing stage; this site-layer
+  `do not publish` creates no nav entry, staged file or published link. A missing or stale derived route is reported to the planning or writing stage; this site-layer
   command never invents or rewrites Markdown.
-- **The nav is GENERATED, not maintained.** Zensical runs no plugins, so nothing derives the
-  sidebar from a sidecar file: without `nav`, it falls back to the folder tree — alphabetical,
-  which is not a Diátaxis reading order. `cq knowledge nav --write` generates the allowlisted list
-  from the bundle in reading order and is idempotent to the byte, so `--check` is a diff rather than an
-  opinion. A **title a human wrote survives regeneration untouched**; a missing one is derived
+- **The nav is GENERATED, not maintained.** `cq knowledge nav --write` generates the allowlisted
+  list in reading order, idempotent to the byte, so `--check` is a diff. A **title a human wrote survives regeneration untouched**; a missing one is derived
   from the section's `index.md` H1.
 - **MERGE, never clobber.** A `zensical.toml` a human has customized is authoritative: add only the
   **missing required keys** (`docs_dir`, `navigation.indexes`, the nav entry), show the edit as a
@@ -70,52 +63,39 @@ bundle; every install, update, and re-verification after that is **this** skill.
 - **The whole bundle is the knowledge inventory, not the generator input.** Inventory every `docs` home —
   `tutorials/`, `how-to/`, `explanation/`, `project/`, `standards/`, `concepts/`, `external/`,
   `catalog/`, `vision/` and the root glossary — and compare coverage **document by document** in the
-  staged tree. Raw `catalog/` and `external/` files are explicitly excluded from this Zensical
-  denominator; they remain inventoried as knowledge. Coverage is not the number of pages the plan
-  happened to select, and it is not a per-home tick.
+  staged tree, never per home or by the pages the plan selected. Raw `catalog/` and `external/`
+  files are inventoried as knowledge but excluded from this denominator.
 - **Catalogues are outside this Zensical site.** Keep raw `catalog/` files out of `site-source/`
-  and `nav`. If their information is needed by readers, curate only the approved facts into an
-  allowlisted reader-facing page with source lineage; do not flatten the catalogue into routes.
+  and `nav`; a reader-facing page may curate only approved facts, with source lineage.
 - **Delivery payloads are opt-in and host-specific.** Detect an Azure DevOps remote from its URL,
   offer `azure-pipelines-docs.yml` as a separate confirmation, and preserve any existing pipeline.
-  The payload only publishes the strict `site/` directory as `documentation-site`; it is not a
-  remote deployment.
+  The payload only publishes the strict `site/` directory as `documentation-site`.
 - **Capability register is the allow-list.** Read the accepted plan's capability register and the
   [Zensical capability catalog](../../references/knowledge-documentation/zensical-capabilities.md)
   §Capability catalog §Agent contract before changing `zensical.toml` or requirements. For each
   `enabled` row, prove its prerequisite and merge only its missing keys/dependency; `disabled` rows
   produce no configuration or install action.
-- **A legacy `mkdocs.yml` is read, never converted behind the human's back.** Zensical reads
-  `mkdocs.yml` natively and says it always will, so a target that has one still builds and nothing
-  is urgent. What silently stopped working there is its whole `plugins:` list, which is why any
-  `.pages` sidecar in the home no longer shapes anything. Report both facts, offer the conversion
-  as its **own** confirmation item, and never stamp a second config beside a live one.
+- **A legacy `mkdocs.yml` is read, never converted behind the human's back.** It still builds;
+  its `plugins:` list is inert, so a `.pages` sidecar shapes nothing. Report both facts, offer the
+  conversion as its **own** confirmation item, and never stamp a second config beside a live one.
 - **Report page-level drift; never fix it here.** A section with no `index.md`, a page with no
   frontmatter, an absolute `/docs/<other-home>/…` link that cannot resolve in a site rooted at
   another home — each is **reported** with the command that closes it (`quenching-knowledge-align`,
-  `quenching-knowledge-add`), never repaired by this skill. Writing and repairing pages belongs to the skills
-  that own them; this one would be guessing.
+  `quenching-knowledge-add`), never repaired by this skill.
 - **The build is verification, not a deliverable.** `zensical build --strict` reads the generated
-  bounded `site-source/` input and writes to the configured `site_dir`, which is gitignored — that
-  is what `site-source-tracked` and `site-artifacts-tracked` guarantee. The `.quenching/` working
-  state is gitignored as well, under `site-scratch-tracked`.
-  Where `site/` is **tracked**, overwriting it would be destructive: verify instead with a
-  throwaway config written **at the repo root** (`-f`), its `site_dir` a gitignored path **inside**
-  the repo, and delete both after. Neither end is optional: a Zensical config resolves its paths
-  relative to the **config file**, so a config parked elsewhere makes `docs_dir` resolve outside the
-  repo and the build exits `Error: Docs directory does not exist`; and a `site_dir` outside the
-  project root aborts with `Error: site_dir must be within project root`, which `build` has no
-  `--site-dir` to override. Never run `zensical serve`.
-- **Never claim a build that did not run.** If the toolchain is absent, say so plainly, print the
+  bounded `site-source/` input and writes to the gitignored `site_dir`
+  (`site-source-tracked`, `site-artifacts-tracked`, `site-scratch-tracked`).
+  Where `site/` is **tracked**, verify with a throwaway config written **at the repo root**
+  (`-f`), its `site_dir` a gitignored path **inside** the repo, and delete both after (Zensical
+  resolves paths relative to the config file, and `site_dir` must be within the project root).
+- **Never claim a build that did not run.** If the toolchain is absent, say so, print the
   selected install/build pair (`uv sync` + `uv run zensical build --clean --strict`, or
   `pip install -r requirements.txt` + `zensical build --clean --strict`), and report the run as
-  *unverified*. When a `pyproject.toml` exists but `uv` is unavailable, do not install a parallel
-  `requirements.txt` as a workaround.
+  *unverified*.
 
 **Why `Bash` is unrestricted here.** `Bash` is unrestricted because this command runs the target
-repository's own toolchain (`zensical`, `python -m zensical`, `uv`, and package installation),
-which cannot be enumerated by the plugin; the body records the reason and keeps the built site out
-of git.
+repository's own toolchain (`zensical`, `python -m zensical`, `uv`, package installation), which
+the plugin cannot enumerate.
 - **Plan first, execute on one confirmation.** One read-only inventory → ONE table of findings
   and fixes → one OK → apply → verify. The `docs_dir` item, the legacy-config conversion and the
   opt-in CI workflow each gate on their own.
@@ -205,8 +185,8 @@ Collect, without writing anything:
 - root `zensical.toml` — parse it: `docs_dir`, `site_name`, `site_description`, `nav`,
   `site_url`, `repo_url`, `edit_uri_template`, theme language/identity, `theme.features`,
   `markdown_extensions`, `extra_css`; note every key a human added. Also read `git remote get-url
-  origin` and the selected delivery destination when the plan records one. A root
-  `mkdocs.yml`/`mkdocs.yaml` is inventoried the same way and is `site-config-legacy`.
+  origin` and the plan's delivery destination. A root `mkdocs.yml`/`mkdocs.yaml` is inventoried
+  the same way and is `site-config-legacy`.
 - the dependency source and manager pinning the docs toolchain (`pyproject.toml` + `uv.lock`,
   `requirements.txt`, or another target-owned manifest); record which one wins and whether a
   duplicate source exists.
@@ -243,14 +223,12 @@ a file:line or the parsed key — never a suspicion. **Done when:** every site f
 and a disposition.
 
 For `catalog/` and `external/`, record the source count and confirm they are absent from
-`site-source/` and `nav`; do not parse or render the raw detail set during a site build. If a
-reader-facing page curates facts from either home, verify its source lineage in the page ledger.
+`site-source/` and `nav`; never parse or render the raw detail set. A reader-facing page that
+curates their facts is verified for source lineage in the page ledger.
 
 Run `catalog-publication-check.py` only when the accepted publication map contains an approved
-catalog route. When `catalog/` is intentionally outside the bounded site, classify that checker as
-`not-applicable`, keep the raw files out of `site-source/` and `nav`, and do not create a fake
-`reference/catalog/index.md` merely to satisfy it. The capability register is the same allow-list:
-disabled rows do not add configuration, dependencies or checker arguments.
+catalog route; otherwise classify it `not-applicable` and create no `reference/catalog/index.md`.
+Disabled capability rows add no configuration, dependencies or checker arguments.
 
 ### 4. Derive the values you will write
 `site_name` from the repo (directory name, `package.json` `name`, or the root `README.md` H1) and
@@ -300,30 +278,27 @@ When the map makes the glossary mandatory, run the same checker with
 --glossary-term <term explicitly evidenced by the accepted map>`; run
 `cq knowledge project docs --check`, `cq knowledge nav docs --check` and
 `cq knowledge site-source docs site-source --check` beside it. For a local-only build
-whose config has no `site_url`, add `--local`; this accepts a relative or empty local sitemap but
-still checks malformed XML and page/assets integrity. Never infer public delivery from a local run.
-Read the Zensical output: every
+whose config has no `site_url`, add `--local` (a relative or empty sitemap passes; XML and
+page/asset integrity are still checked). Read the Zensical output: every
 warning is either a site-layer finding you fix now (a nav entry, a feature, an extension) or a
 page-level one you **report**. Where `site/` is tracked, run it against the throwaway root config
-instead (Doctrine), and delete that config afterwards. Inspect the rendered HTML for the title,
+(Doctrine) and delete it afterwards. Inspect the rendered HTML for the title,
 `class="mermaid"`, `class="q-badge"`, the connected CSS and the `prefers-reduced-motion` guard. If
 no browser is available, use the static checks in
 [knowledge-documentation/validation.md](../../references/knowledge-documentation/validation.md)
 §Static rendered checks §Required rendered effects and state
 that pixel-level dark/light/mobile QA was not run. If the toolchain is absent, report `unverified`
-and print the two commands. Never run `zensical serve`; never commit a built site. **Done when:**
+and print the two commands. **Done when:**
 the build and rendered QA are real or explicitly unverified/static-only. Where the glossary is
 mandatory, the projection check and rendered `<abbr>` check must both be green; otherwise the
 pipeline fails rather than counting only the pages the plan selected.
 
-The `--glossary-term` value is mandatory for this QA mode and must be a known term that the
-published pages render as an abbreviation (for example `SCD2` when the source and map evidence
-it). Never omit it and let the checker select the first lexical glossary entry: that proxy can be
-unrenderable and would produce a false publication defect. If no compatible term is evidenced,
-report the QA as a source gap instead of choosing one by position.
+The `--glossary-term` value is mandatory for this QA mode and must be a term the published pages
+render as an abbreviation (for example `SCD2` when the source and map evidence it). Never let the
+checker pick the first lexical entry; with no compatible term evidenced, report a source gap.
 
 If the human separately confirms a local preview after the strict build, start a loopback-only,
-ephemeral server from `site/`, report its URL and PID, and stop it when the preview window ends:
+ephemeral server from `site/`, report its URL and PID, and stop it when the preview ends:
 
 ```bash
 python3 -m http.server 0 --bind 127.0.0.1 --directory site & preview_pid=$!
@@ -332,8 +307,7 @@ echo "Preview: http://127.0.0.1:<allocated-port>/ (PID ${preview_pid})"
 kill "${preview_pid}"
 ```
 
-Preview is never a substitute for strict build, never binds a public interface, and never survives
-the run without an explicit stop report.
+Preview never substitutes for the strict build and never binds a public interface.
 
 ### 8. Report
 Report: findings **fixed** / **reported** (each with its command), whether the build ran

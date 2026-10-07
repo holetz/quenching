@@ -5,13 +5,11 @@ The transport fixtures are strict and offline. They record every native request 
 both the canonical observations and the provider-specific wire shape remain covered.
 """
 
-import argparse
 import contextlib
 import io
 import json
 import os
 import pathlib
-import socket
 import subprocess
 import sys
 import tempfile
@@ -38,19 +36,13 @@ from quenching.specs.backends.hybrid import (GH_BODY_MAX, GH_PART_MAX, HYBRID_TI
                                              hybrid_split, hybrid_title_join, hybrid_title_split,
                                              hybrid_unwrap, hybrid_unwrap_part, hybrid_wrap,
                                              hybrid_wrap_part)
-from quenching.specs.commands.doctor import cmd_doctor
-from quenching.specs.commands.next import _candidate
-from quenching.specs.commands.output import Emitter
-from quenching.specs.commands.validate import merge_record_finding, validate_spec
 from quenching.specs import backends as backends_mod
 from quenching.specs import config as config_mod
-from quenching.specs.parse import FIELD_KEYS, PHASES, derive_info, derive_labels
+from quenching.specs.parse import derive_info
 from quenching.specs.parse.edit import upsert_section
-from quenching.specs.parse.fields import (legacy_marker_fold, set_frontmatter_key,
-                                          set_frontmatter_record)
-from quenching.specs.parse.records import spec_records
-from quenching.specs.parse.tasks import parse_tasks, task_progress
-from quenching.specs.schema import capture_form, load_schema
+from quenching.specs.parse.fields import (legacy_marker_fold, set_frontmatter_key)
+from quenching.specs.parse.tasks import parse_tasks
+from quenching.specs.schema import capture_form
 
 
 def _case_doc(title: str = "Alpha") -> str:

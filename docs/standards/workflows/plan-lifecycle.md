@@ -7,11 +7,13 @@ tags: [workflows, specs, lifecycle, stages, frontmatter, records, discoveries]
 timestamp: 2026-08-25
 audience: both
 authority: current
-source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review; `date` moved from derived-from-the-basename to declared by evaluate-spec-creation-flow (task 5.6), after an external backend left the derivation with nothing to derive from; `branch`'s owner moved from the retired isolation command to `execute`, and `merge` gained `pr`, by the rework-specs-isolate-flow plan (task 3.4); the follow-up parking rule from the stop-develop-offering-follow-up-specs plan (task 2.1); the records-narration line corrected from "built" to "isolated" by labels-historico-spec-issue (task 7.1), which had read `branch` as narrating the derived `executing` stage it does not write; `complexity`'s own writers (`[triage, create, develop]`) and its exit from the frontmatter admission test by the fluxo-rapido-para-problemas-simplorios plan (task 1.5); the `pr` record, the third append and the isolation narration corrected for the in-place `work == base` pair by vincular-spec-a-branch-commits-e-pr at its conclude — the third append argued against both clauses of the test above, as this section demands, rather than assumed from the two that preceded it; the parking row's edit de-qualified from "confirmed" to "consolidated" by revisar-fluxo-do-develop-custo-e-gates at its branch review (2026-08-16), which removed `/quenching:specs:develop`'s plan gate while leaving the one-edit-per-bank mechanic the row actually depends on; the criterion `complexity` measures — how much a human needs to be part of the process, never size or scope — by redefinir-o-que-complexity-mede-e-configurar-o-limiar-do-fan-out (2026-08-16); `pr:`/`merge:` ownership moved off `conclude` onto `git:pr:create`/`git:merge`, the append-only table split by writer and run, the records-narration reordered, and `## Outcome`'s narrowed assertion documented, by pilar-git-e-specs-agnosticas-ao-git (task 6.5)
+source: specs-flow-consolidation, move-conclude-merge-last, retire-docs-log, derived-from-the-basename, evaluate-spec-creation-flow, rework-specs-isolate-flow; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Plan lifecycle contract
+
+<!-- rules -->
 
 Where a spec lives over its life, which of its states are computed, and which facts are recorded
 because nothing can compute them. This is the v3 lifecycle — one active folder, stages derived,
@@ -23,10 +25,11 @@ superseded by this one.
 
 ## One active folder
 
-A spec spends its whole pre-archive life in `/.specs/plans/` and moves exactly once, to
-`/.specs/archive/` when it closes. The basename — `<slug>.md`, with the capture date declared as
-`date:` in the frontmatter and never rewritten — and the bare-slug identity rule are unchanged from
-[plan-artifacts.md](plan-artifacts.md) §One spec is one file.
+A spec spends its whole pre-archive life as an open spec (`specs/<id>.md` on the `quenching`
+branch) and moves exactly once, to `specs/archive/<id>.md`, when it closes; the phase is the
+directory, never a frontmatter fact. The capture date is declared as `date:` in the frontmatter and
+never rewritten, and identity is the spec ID ([plan-artifacts.md](plan-artifacts.md) §One spec is
+one document). A card, when configured, closes with the archive.
 
 v3 folded `backlog/` and `ready/` into `plans/` because the split lied twice: `backlog/` held both
 one-line captures and fully designed specs (it was never an inbox, only "not building yet"), and
@@ -50,6 +53,8 @@ those are decided yet. The merge itself, and any PR, are facts of the git host f
 whether an archived `done` spec actually reached the base reads git, the same way `cq specs next
 --front` already reads git rather than a record to answer "is this spec in flight" — `## Outcome`
 was never the place that question was answered from.
+
+<!-- rationale -->
 
 This is a deliberate narrowing from what `## Outcome` used to assert, and the trade it makes is
 named in [plan-git-record.md](plan-git-record.md) §What `conclude` hands off: nothing is lost,
@@ -110,8 +115,7 @@ excluded on exactly these grounds — the filename's `YYYY-MM-DD-` prefix record
 would have been a second copy. The test says a field earns its place when no derivation reproduces
 it, and the derivation that supported the exclusion was *the basename*. A store with no filenames
 has none, and the native value that looks like a substitute is a different fact: an issue's
-`created_at` is when the issue was made, and a migration stamps them all on one day — measured
-here, 68 of 70 capture dates would have been rewritten to the migration's own afternoon. So `date`
+`created_at` is when the issue was made, not the capture date. So `date`
 is **declared, not derived**, and the basename went back to being the slug alone. The rule did not
 bend; the derivation it relied on stopped existing.
 
@@ -148,6 +152,8 @@ record:
 | `reviewed: {date}` | `conclude` | no | that a human read the whole branch diff |
 | `merge: {strategy, subject, pr}` | `git:merge` | yes | the strategy was a choice; the subject names the merge it produced; `pr` names the pull request when one came first, unwritable before it exists |
 | `outcome: done \| abandoned` | `conclude` | yes | the verdict on whether the work completed |
+
+<!-- rationale -->
 
 Read top to bottom, the table order is the order the table's own writers touch a spec still open —
 ranked, interrogated, approved, isolated (or explicitly not), reviewed, closed — but `pr:` and

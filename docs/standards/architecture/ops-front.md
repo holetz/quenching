@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Ops front
 
+<!-- rules -->
+
 The ops front is the operations surface a target repository converges toward. It gives routine
 work a predictable outer interface while leaving domain logic in the packages that own it. The
 front is both the contract for that surface and the shipped implementation boundary that checks
@@ -79,6 +81,10 @@ the optional `registry` path overrides the default `<opsRoot>/README.md` locatio
 reads all three through the shared configuration loader and refuses with `op-config-missing` when
 either required declaration is absent. It never guesses `scripts/` or chooses among multiple
 router files.
+
+This repository does not adopt the ops front: it declares neither key, so `cq ops doctor` exits `2`
+with `op-config-missing`. That is the expected, inconclusive answer, not a defect; `scripts/verify_repo.sh`
+reports it as such and fails only on any other ops outcome.
 
 Root-level `opsRoot`, `router`, or `registry` keys are legacy flat declarations. A configuration
 that contains any of them, alone or alongside `ops`, is refused with `sp-config-unscoped` and exit
@@ -156,6 +162,8 @@ that measurement is available, any code firing on more than half the inventory m
 before it is retained as a contract check.
 
 ## Why a front and not a pillar
+
+<!-- rationale -->
 
 The distinction is owned by [`align-surface.md`](align-surface.md), §The aligned-front column and
 §The seventh pillar has no align: a front is a tree this plugin can converge toward and probe, while

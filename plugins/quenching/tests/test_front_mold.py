@@ -63,7 +63,6 @@ class FrontMoldContract(unittest.TestCase):
                 self.assertIn(term, route)
 
         self.assertIn("This file is the canonical host", self.document)
-        self.assertIn("must not introduce a competing binding rule", self.document)
         self.assertIn("plugins/quenching/assets/references/front-align/mold.md", self.document)
 
     def test_front_specific_deltas_and_bands_are_explicit(self):

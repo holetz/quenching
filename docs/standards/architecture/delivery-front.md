@@ -95,7 +95,7 @@ into a target delivery contract:
 
 | Evidence | Boundary it demonstrates |
 | --- | --- |
-| `.github/workflows/sync-codex-plugin.yml` | A workflow tree exposes triggers, jobs and permissions; delivery owns its shape, while permission meaning remains with the security pillar. |
+| `.github/workflows/ci.yml` | A workflow tree exposes triggers, jobs and permissions; delivery owns its shape, while permission meaning remains with the security pillar. |
 | `plugins/quenching/assets/bin/quenching/proof/` | The bundled proof front owns test-layer, CI-evidence and gate semantics; delivery may invoke that evidence but does not claim it. |
 | `plugins/quenching/assets/bin/quenching/ops/` | The bundled ops front owns router, entry-point and deploy semantics; delivery may name a reachable `deploy` entry point without absorbing its lifecycle. |
 | `docs/standards/architecture/toolchain-front.md` | Runtime and tool declarations remain toolchain-owned even when a workflow consumes them. |

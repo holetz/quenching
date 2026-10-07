@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Session evidence
 
+<!-- rules -->
+
 A command body is normally revised from taste alone — nobody reads back the session the command
 actually drove. This standard is the contract for the one tool that does:
 `plugins/quenching/assets/bin/quenching/session/` (driven by `/quenching:components:command:retro`,
@@ -51,6 +53,8 @@ Reporting every command's counts as exact off this pointer alone over-credits a 
 with its conductor's own later work — concretely, `/specs:isolate` was once credited with 5
 `AskUserQuestion` calls that were `/quenching:specs:develop`'s own composition questions (recorded in
 `improve-command-from-session`'s `## Discoveries`, session 94120e96).
+
+<!-- rationale -->
 
 There is no end marker in the transcript that would let a tool fix this by construction —
 inventing one manufactures findings instead of reporting them. `close_attribution`

@@ -7,11 +7,13 @@ tags: [architecture, plugin, commands, layout, claude-code]
 timestamp: 2026-08-27
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the pasted-payload bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed; the invocation rule amended by modularizar-specs-knowledge-components task 9.6 once `cq` became one entry serving both a hook event and every command body, the case the by-invocation rule had not anticipated; §A plugin body cites the target's bundle only where the align installs it — the sibling rule for the opposite direction, added by the marchas-do-orquestrador-vivem-no-plugin spec (2026-08-11) once the gears contract moved out of `/docs/standards/` and the 23-line `## Impact` sweep showed the mold rule had never covered an ordinary command or reference body citing a fixed `/docs/` path; the form-is-not-the-rule paragraph added by that spec's branch review (2026-08-11), which found five relative-form citations left standing in the payload the absolute-form sweep had just declared clean, two of them in files the same sweep had already edited; §A contract a command reads at runtime is a reference, not a standard distilled from that spec's `## Design` §1 at conclude (2026-08-11) — the criterion that overrode the shrunken-standard precedent of skills.md and plan-artifacts.md, which nothing had written down; §A mold cites nothing it does not also install gained the form-is-not-the-rule clause at alocar-comandos-skills-por-categoria's branch review (2026-08-15), which found that spec's axis rewrite had reached the standard and both command bodies but not `skills-standard.md`, the mold that installs the same rule into a target repo — every gate green over it; §`bin/` is the second tree added by the cq-nao-resolve-como-comando-nu spec (2026-08-15), which measured the PATH injection — two `<pluginRoot>/bin` entries in one session's PATH, one per enabled plugin, neither directory existing — and with it the execute-bit and self-location-from-`__file__` rules that a tree the host *executes* needs and an entry-point tree does not; it also rehomed the outside-both-trees paragraph, which the same branch's merge of develop had deleted along with the retired `hooks/hooks.json` tree it was written for; the declare-the-split rule added by the orquestrar-specs-em-paralelo branch review (2026-08-16), which found the criterion silent about authoring time — that spec's `## Impact` declared a bundle standard and a plugin reference for one contract, and each task wrote its artifact whole, with both validators green; the site-layer row renamed `mkdocs/` → `zensical/` by spec 1003 (2026-08-27), which replaced the generator and, in the same cell, corrected `docs/` to the `knowledge/` the subtree has been called since the home rename
+source: collapse-skills-into-commands, 2026-07-26, self-contained-mold, verify-allowed-tools-enforcement, 2026-07-28, collapse-remaining-language-clause-restatements; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Plugin layout — what may live under `commands/`
+
+<!-- rules -->
 
 ## The surface translator ships under `assets/`
 
@@ -25,6 +27,8 @@ The root `scripts/sync_codex_plugin.py` is only a compatibility launcher for mai
 automation and CI invoke `assets/bin/cq components translate`; placing the implementation in
 `scripts/` would make that entry point unavailable to an installed plugin and turn its advertised
 translation capability into a checkout-only accident.
+
+<!-- rationale -->
 
 The rule the collapse to one file per entry point created, and that nothing previously stated.
 
@@ -258,6 +262,8 @@ repo a rule it will then refuse to follow there**, because that installed copy i
 target's own `/docs/` makes governing. Whoever edits a standard the plugin also ships as a
 mold owns both halves; `grep -rl` the rule's own words across `assets/templates/**` before
 declaring the change complete.
+
+<!-- rationale -->
 
 The alocar-comandos-skills-por-categoria spec (2026-08-15) rewrote the command classification axis
 across `automation/skills.md` and both consuming command bodies, and left

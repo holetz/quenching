@@ -7,7 +7,7 @@ tags: [github, gh-cli, rest-api, issue-types, closing-keywords, pagination, tool
 timestamp: 2026-08-17
 audience: both
 authority: background
-source: 'suportar-tipo-workitem-azure-por-tags spec (tasks 3.3, 3.4) — measured against holetz/claude-quenching#898, a personal-account repository, with `gh` as installed on 2026-08-07; pilar-git-e-specs-agnosticas-ao-git spec (task 1.1) — measured against holetz/claude-quenching PRs #925 and #926 and issue #816, on 2026-08-16; falha-de-leitura-do-backend-vira-front-vazio spec (task 4.2) — measured against holetz/claude-quenching and holetz/nixos with `gh 2.97.0 (2026-07-31)`, on 2026-08-17'
+source: suportar-tipo-workitem-azure-por-tags, 2026-08-07, pilar-git-e-specs-agnosticas-ao-git, 2026-08-16, falha-de-leitura-do-backend-vira-front-vazio, 2026-07-31; lineage in ADR 0004
 maintainer: quenching
 ---
 

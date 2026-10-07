@@ -30,5 +30,24 @@
         "git"
       ]
     }
+  },
+  "proof": {
+    "proofRoot": "plugins",
+    "layers": {
+      "quenching": {
+        "reach": "tree",
+        "required": true
+      }
+    },
+    "measuredRoots": [
+      "plugins/quenching/assets/bin/quenching"
+    ],
+    "proofExclusions": [
+      "scripts",
+      "experiments",
+      "site",
+      "site-source"
+    ],
+    "ratchetPath": ".coverage-floor.json"
   }
 }

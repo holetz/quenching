@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Extension points contract
 
+<!-- rules -->
+
 An extension point is a place in a command's flow where the repository that installed this plugin
 can declare its own work. The declaration lives in configuration, and the body that announces it
 stays dumb. Three parts make the contract, and each has one owner: the config holds the
@@ -85,6 +87,8 @@ only one the contract allows there.
 | `prompt` | the instruction whoever executes the hook must follow — what the announcement prints alongside the name and the command |
 
 ## Why config and not a command
+
+<!-- rationale -->
 
 A declared hook costs nothing in always-on context: it is configuration, and configuration is not
 a command. A command is an entry point — a file under `commands/` that Claude Code registers and

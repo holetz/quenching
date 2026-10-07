@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Security pillar
 
+<!-- rules -->
+
 `security` is a read-only pillar. It answers live questions about a target repository's security
 posture while the authoritative artifacts remain owned by their respective fronts or by the
 target owner. It does not own a canonical tree that this plugin can converge.
@@ -30,6 +32,8 @@ a secure value.
 | Do ignore rules cover the secret classes the repository exposes? | Repository ignore patterns and the secret-bearing paths they cover | The target owns secret policy; the pillar never adds or edits an ignore rule. |
 | Is advisory dependency configuration present? | Dependency-advisory or update configuration and the manifests it names | `toolchain` owns dependency declarations; the pillar only reports advisory coverage. |
 | Who may touch the relevant security surface? | Access-ownership declarations such as CODEOWNERS or an equivalent provider artifact | The provider and target owner own access policy; the pillar does not grant or revoke access. |
+
+<!-- rationale -->
 
 The route may report `not-measured` when a target provider has no comparable static source. It must
 preserve the distinction between a source that is absent, a source that cannot be read, and a

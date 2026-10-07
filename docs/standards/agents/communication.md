@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Agent communication
 
+<!-- rules -->
+
 How an agent communicates here, in two halves: the **language** it writes in, which each repo
 declares for itself, and the **conduct** it owes whoever is reading, which no repo overrides.
 
@@ -147,6 +149,8 @@ is the band none of the three above occupies, and keeping to it is the single fa
 half has.
 
 ## Why conduct is not declared
+
+<!-- rationale -->
 
 The test is which of the two facts actually varies.
 
