@@ -20,3 +20,4 @@ evidence, not the rule.
 * [0004 — Frontmatter source lineage](0004-standards-source-lineage.md) — the long `source:` lineage moved out of the standards' frontmatter
 * [0005 — Glossary long forms](0005-glossary-long-forms.md) — the parts of glossary entries removed to keep each to one sentence
 * [0006 — Specs move from tracker bodies to a git store with thin cards](0006-specs-move-to-a-git-store-with-thin-cards.md) — why the plan left the issue body, the measurements and the migration result
+* [0007 — Native Claude Code features](0007-native-claude-code-features.md) — adopt, defer or reject per native feature: skill hooks, plugin agents, model pins, plugin eval, plugin data dir, workflows

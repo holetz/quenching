@@ -157,9 +157,6 @@
         "concepts/automation/test-layering.md",
       ] },
     ] },
-    { "Vision" = [
-      "vision/index.md",
-    ] },
     { "Decisions" = [
       "decisions/index.md",
       "decisions/0001-spec-backend-measurements.md",
@@ -168,6 +165,10 @@
       "decisions/0004-standards-source-lineage.md",
       "decisions/0005-glossary-long-forms.md",
       "decisions/0006-specs-move-to-a-git-store-with-thin-cards.md",
+      "decisions/0007-native-claude-code-features.md",
+    ] },
+    { "Vision" = [
+      "vision/index.md",
     ] },
     "glossary.md",
   ]
