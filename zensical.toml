@@ -167,6 +167,7 @@
       "decisions/0006-specs-move-to-a-git-store-with-thin-cards.md",
       "decisions/0007-native-claude-code-features.md",
       "decisions/0008-seguranca-das-mudancas-do-epico-1145.md",
+      "decisions/0009-seguranca-das-mudancas-do-epico-1163.md",
     ] },
     { "Vision" = [
       "vision/index.md",
