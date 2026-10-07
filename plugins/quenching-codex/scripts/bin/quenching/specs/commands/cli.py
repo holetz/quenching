@@ -72,6 +72,10 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--complexity",
                     help="one of low/medium/high/xhigh — written into the new spec's "
                          "`priority.complexity` record")
+    sp.add_argument("--card", type=int, metavar="N",
+                    help="adopt issue / work item N as this spec's card: its text becomes "
+                         "`## Problem` when none is supplied, N becomes the spec's ID and the "
+                         "item is rewritten to the thin card (the branch store only)")
 
     sp = add_json(sub.add_parser("list", help="every spec, by folder and derived stage"))
     sp.add_argument("--phase", choices=list(PHASES),
@@ -220,9 +224,16 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
 
     add_json(sub.add_parser("doctor", help="workspace shape; remedies declared"))
 
-    sp = add_json(sub.add_parser("migrate", help="one-way fold to the current layout "
-                                                 "(v1 → v3, and backlog/ + ready/ → plans/)"))
-    sp.add_argument("--dry-run", action="store_true", dest="dry_run")
+    sp = add_json(sub.add_parser("migrate", help="move the specs of a tracker backend onto the "
+                                                 "`quenching` branch (`--to git`); dry run "
+                                                 "unless --write"))
+    sp.add_argument("--to", choices=["git"], help="the destination store")
+    sp.add_argument("--write", action="store_true",
+                    help="commit the batch to the branch (default: report only)")
+    sp.add_argument("--thin-open-cards", action="store_true", dest="thin_open_cards",
+                    help="with --write: rewrite every OPEN source issue / work item to the "
+                         "thin card; closed ones are never touched")
+    sp.add_argument("--dry-run", action="store_true", dest="dry_run", help=argparse.SUPPRESS)
 
     sp = add_json(sub.add_parser("export", help="dump the canonical markdown to disk — "
                                                 "write-only, nothing reads it back"))
