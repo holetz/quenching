@@ -62,10 +62,11 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertIn("condition", command)
         self.assertIn("enabled: false", command)
         self.assertIn("An optional hook failure is reported", command)
-        self.assertEqual(
-            config["shared"]["hooks"]["after_specs_execute_task"],
-            [{"command": "/my:security-review", "optional": True}],
-        )
+        hooks = config["shared"]["hooks"]["after_specs_execute_task"]
+        self.assertEqual([h["command"] for h in hooks], ["/security-review"])
+        self.assertTrue(hooks[0]["optional"])
+        self.assertTrue(hooks[0]["condition"])
+        self.assertIn("unresolved", command)
 
     def test_low_gear_chains_conclude_to_the_provider_pr_skill(self):
         conclude = CONCLUDE.read_text(encoding="utf-8")
