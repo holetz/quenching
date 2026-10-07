@@ -31,3 +31,9 @@ site-source/
 !plugins/quenching/assets/checks/fixtures/documentation-site-check/glossary/site/**
 !plugins/quenching-codex/checks/fixtures/documentation-site-check/glossary/site/
 !plugins/quenching-codex/checks/fixtures/documentation-site-check/glossary/site/**
+
+# Secrets an agent or a developer may create locally (keep the template trackable)
+.env*
+!.env.example
+*.pem
+*.key
