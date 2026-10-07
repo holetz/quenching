@@ -7,11 +7,13 @@ tags: [quality, sweeps, documentation, specs, impact]
 timestamp: 2026-08-27
 audience: both
 authority: current
-source: enxugar-create-e-eliminar-o-rung-hooks plan (2026-08-03) — five misses on one branch withdrawing the installed-tool contract: three caught during execution and recorded as `## Discoveries`, two more only at the branch review, one of them in a file `## Impact` had named and half-covered; measured a second time by the remover-a-capability-quenching-md spec (2026-08-08), where a literal grep for the artefact's own name missed four sites that called it "the operator manual"
+source: enxugar-create-e-eliminar-o-rung-hooks, 2026-08-03, remover-a-capability-quenching-md, 2026-08-08; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # A withdrawn contract's prose residue
+
+<!-- rules -->
 
 The sibling case to [computed-fact-prose-fanout.md](computed-fact-prose-fanout.md), and the harder
 one. There, a tool computes a fact and prose restates it, so the fact has a **canonical spelling**

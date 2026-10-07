@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Translation drift is a finding
 
+<!-- rules -->
+
 `cq components translate --check --json` exits 0 when the generated Codex surface matches its
 Claude source. Each divergent path is a `ct-translation-drift` finding with severity `error`; the
 command exits 1 after producing that complete payload. Exit 1 means the check ran and found a

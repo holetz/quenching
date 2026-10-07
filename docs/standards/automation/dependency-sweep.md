@@ -7,11 +7,13 @@ tags: [automation, dependency-sweep, subagent, specs-develop]
 timestamp: 2026-08-25
 audience: both
 authority: background
-source: spec varredura-de-dependencias-antes-do-banco-shape — the comparison between /plan (2.99M tokens over 27 Explore calls, six findings) and /quenching:specs:develop (20 files touched) that motivated inserting the sweep before the pass asks; re-anchored at the pass's open when compose and refine replaced the ladder of banks (compor-e-refinar, 2026-08-25)
+source: varredura-de-dependencias-antes-do-banco-shape, compor-e-refinar, 2026-08-25; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Dependency sweep
+
+<!-- rules -->
 
 With no cross-file dependency data on the table, `/quenching:specs:develop`'s refine asks the right
 question and has nothing to answer it with — that was the signal that motivated this contract. The

@@ -7,11 +7,13 @@ tags: [quality, verification, citations, automation]
 timestamp: 2026-08-27
 audience: both
 authority: current
-source: revisar-politica-de-assets-checks spec (task 1.1); references-citam-standards-fora-do-esqueleto spec (task 1.2, half 3); citation-check-dedup-esconde-citadores-repetidos spec (task 2.1, a granularidade do relatório de half 2); the second real use case for half 3 and the widened trigger set, by varredura-de-dependencias-antes-do-banco-shape at its branch review (2026-08-18), on four links to a standard that spec had just minted; varrer-caminhos-citados-que-nao-resolvem (2026-08-27) — half 2 stopped resolving the two shipped trees half 3 owns against this checkout, and the split between the halves is now written down
+source: revisar-politica-de-assets-checks, references-citam-standards-fora-do-esqueleto, citation-check-dedup-esconde-citadores-repetidos, varredura-de-dependencias-antes-do-banco-shape, 2026-08-18, varrer-caminhos-citados-que-nao-resolvem; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # Citation verification
+
+<!-- rules -->
 
 What it takes to claim a citation resolves. The sibling
 [surface-verification.md](surface-verification.md) covers whether a changed command **loads**;
@@ -21,6 +23,8 @@ the implementation, in three halves: two about a rename inside this checkout, an
 prose this repository ships into other people's.
 
 ## The two halves, and why the cheap one is the trap
+
+<!-- rationale -->
 
 A rename has two halves. Half 1 measures that the **old** name died — no tracked file still
 matches the retired script, namespace or command. Half 2 measures that the **new** name was
@@ -108,6 +112,8 @@ problem.
 Both spellings of the same promise are one claim: rooted at the repo (`/docs/...`) and written
 relative to the citing file (`../../../../docs/...`) normalize to the same tail before the
 skeleton is consulted.
+
+<!-- rationale -->
 
 Half 3 carries its own arming proof, in the shape halves 1 and 2 each have: extracting **zero**
 links is exit **2**, "nothing could be measured", never a pass — an empty corpus is how a sweep

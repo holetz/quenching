@@ -7,11 +7,13 @@ tags: [architecture, bundle, okf, migration, convention]
 timestamp: 2026-08-13
 audience: both
 authority: background
-source: renomear-docs-para-knowledge spec (task 4.2, 2026-08-13) — the detection side is proven by `test_knowledge.py`'s `LegacyRootDetector`/`LegacyHomeDetector`/`LegacyDocQuadrantDetector`/`LegacyGlossaryDetector` fixtures; the end-to-end resolution through `/quenching:knowledge:align` against a discard bundle in the old layout is proven at `/quenching:specs:conclude`'s pre-merge `## Validation` gate, which is what promotes this doc to `authority: current`
+source: renomear-docs-para-knowledge, 2026-08-13, end-to-end; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # A declared root migrates by structural detection, never by `okf_version`
+
+<!-- rules -->
 
 [bundle-root.md](bundle-root.md) fixes two roots — `/docs/` and `/.specs/` — and states
 neither ever moves via configuration. This standard is the other half: the **one route** by

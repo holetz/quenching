@@ -7,11 +7,13 @@ tags: [code, projections, guards, contract-change, silent-failure]
 timestamp: 2026-08-23
 audience: both
 authority: current
-source: abandonar-slug-por-id-nativo (issue 989), branch review — `hybrid_title_split` still required `slug` as the frontmatter's first key after the contract dropped it, so every newly captured spec fell to the store-it-whole fallback and the native title mapping stopped applying, with no test red and nothing printed
+source: abandonar-slug-por-id-nativo, store-it-whole; lineage in ADR 0004
 maintainer: quenching
 ---
 
 # A conditional projection's guard fails loudly, or it does not fail at all
+
+<!-- rules -->
 
 A **projection** splits a value out of a document so a native surface can hold it — the issue title
 carrying a spec's `title:`, rather than the body carrying it twice. A projection that cannot prove

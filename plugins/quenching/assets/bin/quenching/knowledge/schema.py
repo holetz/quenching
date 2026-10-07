@@ -43,6 +43,8 @@ GLOSSARY_REL = "glossary.md"
 # Codex translation keeps the other harness pointer exempt as well.
 CLAUDE_HARNESS = "CLAUDE" + ".md"
 EXEMPT = (CLAUDE_HARNESS, "AGENTS.md")
+# `source:` is a one-line lineage; longer history belongs in a `decisions/` entry.
+SOURCE_MAX_WORDS = 40
 RECOMMENDED = ("title", "description", "resource", "timestamp")
 # Types for which `resource` is deliberately absent, so its WARN would be permanent noise.
 # A `task` is parked work — nothing is built yet to point at (the backlog task mold omits
@@ -84,6 +86,7 @@ LEGACY_ROOT_NAMES = (".docs", ".knowledge")
 CONCEPT_DOC_CODES = (
     "no-frontmatter", "broken-frontmatter", "missing-type", "okf-frontmatter-unparsed",
     "index-has-type", "index-has-frontmatter",
+    "source-too-long",
     "missing-title", "missing-description", "missing-resource", "missing-timestamp",
 )
 LEGACY_HOMES = {"knowledge": "concepts", "reference": "external"}

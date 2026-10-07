@@ -7,7 +7,7 @@ tags: [quality, schema, records, documentation, sweeps]
 timestamp: 2026-08-27
 audience: both
 authority: current
-source: rework-specs-isolate-flow plan (2026-08-03), from two independent measurements on one branch — `merge:` gained one field, `pr`, and four prose sites still spelled the record as `{strategy, subject}` in four homes; the same branch retired one command, and ten sites across four files still counted twenty-six. Every checker green in both cases; the `description` instance and its two listing consumers added by revisar-fluxo-do-develop-custo-e-gates at its branch review (2026-08-16), measured on that spec's own task 1.1 — `automation/context-discipline.md` went from two ways to three and both copies still read two; narrowed for the retired-command case by the descontinuar-comando-specs-continue spec (2026-08-16), where `citation-check.sh` half 2 went green→red across three files the branch never opened and the declared gate saw nothing
+source: rework-specs-isolate-flow, 2026-08-03, revisar-fluxo-do-develop-custo-e-gates, 2026-08-16, descontinuar-comando-specs-continue; lineage in ADR 0004
 maintainer: quenching
 ---
 

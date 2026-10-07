@@ -107,7 +107,7 @@ destinations by [standards/agents/ephemeral-writes.md](standards/agents/ephemera
 
 ### Boundaries (memorable summary)
 
-- `standards/` = "how **WE** do it (current/active)"; an agreed-but-unproven rule sits here as `authority: background` (no separate decisions home).
+- `standards/` = "how **WE** do it (current/active)"; an agreed-but-unproven rule sits here as `authority: background` (its history lives in `decisions/`).
 - `concepts/` = "generic **understanding** we hold" (concepts/explanations; non-binding).
 - `external/` = "facts about what **WE CONSUME** (external, background)".
 - `catalog/` = "our **data** / domain".

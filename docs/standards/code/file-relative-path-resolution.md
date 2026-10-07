@@ -13,6 +13,8 @@ maintainer: quenching
 
 # A `__file__`-relative path encodes a depth, and packaging changes it
 
+<!-- rules -->
+
 `os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "x")` is not a path. It is a
 **path plus an assumption about where this file sits**, and the assumption is the part no reader
 sees. Move the file one directory deeper and the expression still evaluates, still returns a
@@ -24,6 +26,8 @@ a package is otherwise a mechanical operation: imports change, behaviour does no
 if something downstream happens to be looking.
 
 ## The two instances, and why they matter more together than apart
+
+<!-- rationale -->
 
 Both were found cutting the same four scripts into one package. They break the same rule and
 present as **opposite symptoms**, which is why neither one teaches the lesson alone.

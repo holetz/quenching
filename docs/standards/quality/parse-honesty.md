@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Parse honesty
 
+<!-- rules -->
+
 **A verifier that misreports its own parse failure is worse than one that refuses.** When a tool
 cannot faithfully read its input, the finding it emits must name the *misread*, not the
 *consequence* — because the consequence looks exactly like an ordinary content defect, and the
@@ -74,6 +76,8 @@ The sidecar also keeps the honest property that the parser is still allowed to g
 it strips the comment — and the sidecar is what makes the guess visible.
 
 ## Severity: warn, and why not error
+
+<!-- rationale -->
 
 **These findings are warnings.** The tool is reporting a suspicion it cannot resolve, not a
 violation it has proved:

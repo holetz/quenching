@@ -7,11 +7,13 @@ tags: [architecture, specs, backend, interface, serialization]
 timestamp: 2026-10-07
 audience: both
 authority: current
-source: abandonar-slug-por-id-nativo (sections 1-2) — the provider ID became the spec identity, exact reads replaced tolerant slug resolution, and the lean listing measurement established the cost boundary beside the existing native-field and memory-fake contract; §A direct read reuses the listing the process already paid for came from the branch review of the same spec, which measured the direct read regressing `list --json` from 4.82 s to 78 s over 157 issues
+source: abandonar-slug-por-id-nativo; history in ADR 0001
 maintainer: quenching
 ---
 
 # Spec backend interface
+
+<!-- rules -->
 
 Where a repository's specs live is provider-owned — GitHub issues or Azure Boards work items. This
 standard is the interface that keeps the conceptual model, the thirteen sections, the frontmatter
@@ -87,16 +89,11 @@ This is also why the store, rather than the shared layer, is the owner of identi
 derives stages and document state from the canonical text; it never manufactures an alternate key or
 asks a full listing to discover a document whose native ID was already supplied.
 
-The measurement made the boundary concrete on 2026-08-22, against 154 GitHub spec issues:
-
-- `cq specs status --spec X` cost **3.81 s** when it downloaded the tracker to find a spec; a direct
-  provider-ID read costs **0.39 s / 7.7 KB**.
-- `cq specs list --json` cost **4.82 s / 5.25 MB**, with 4.2 MB of bodies against 10 KB of titles —
-  **420:1** bytes transported over bytes useful to the listing.
-- `cq specs list --lean --json` returned the same verified set of 154 specs in **1.59 s / 70 KB**.
-  GitHub filters the discovery marker server-side; Azure Boards has the equivalent WIQL filter on
-  its discovery tag. The full listing remains authoritative because the lean index is eventually
-  consistent and document-derived fields are not available in it.
+The boundary was measured on 154 GitHub spec issues ([ADR 0001](../decisions/0001-spec-backend-measurements.md) §Identity cost): a direct
+provider-ID read is about ten times cheaper than finding the spec by listing, and a lean listing
+about three times cheaper than the full one. GitHub filters the discovery marker server-side; Azure
+Boards has the equivalent WIQL filter on its discovery tag. The full listing remains authoritative
+because the lean index is eventually consistent and document-derived fields are not available in it.
 
 ## A direct read reuses the listing the process already paid for
 
@@ -171,18 +168,9 @@ back. So the canonical document is now stored **without** its `title:` key and w
 `# <TITLE>` heading, both reassembled on read from the native title — one native mapping that
 earns its cost, at no extra call, because the write was already being made.
 
-The price of putting it where it was not free, measured on this repository on 2026-08-03,
-mid-migration:
-
-- **68 spec issues against 689 task sub-issues.** 91% of the tracker's volume was the projection;
-  43 specs were open, and 332 sub-issues with them.
-- **The full listing every specs command pays was 8 pages, 4.4 MB and 8.4 seconds.** Collapsed, it
-  is one page.
-- **`write_spec` on a ten-task spec spent twelve round trips where one now does** — one PATCH on
-  the parent, one GET of the sub-issues, one PATCH per task. A newly created task cost three of its
-  own (POST, POST to link it as a child, PATCH to close it when the box was already ticked).
-- **`read_spec` paid one GET of sub-issues per spec read.** A one-part spec now costs nothing
-  beyond the listing, which already carries every body.
+The price of the sub-issue projection was measured at migration: 91% of the tracker's volume was
+the projection, and `write_spec` on a ten-task spec spent twelve round trips where one now does
+([ADR 0001](../decisions/0001-spec-backend-measurements.md) §Task projection cost).
 
 On both external providers the **whole canonical document is the issue body / the work item
 description**, and there are no sub-issues and no child work items.
@@ -212,11 +200,8 @@ argued:
 - **The title passes.** An issue's title and a spec's `title:` are the same fact — one line naming
   the spec — so storing it once, natively, removes a duplicate.
 - **The capture date fails.** An issue's `created_at` is when the ISSUE was created, not when the
-  spec was captured. On this repository, on 2026-08-03, issue #776 carried `created_at
-  2026-08-03T03:32:51Z` for a spec captured on **2026-07-25**: the numbers jump from 7 to 776
-  because a migration created ~769 issues in one afternoon. Deriving the date natively would have
-  rewritten **68 of 70** capture dates to the migration's own day, destroying the one thing the
-  field records.
+  spec was captured; deriving it natively rewrote the capture date of 68 of 70 specs to the migration's
+  own day ([ADR 0001](../decisions/0001-spec-backend-measurements.md) §created_at is not the capture date).
 
 So the date is **not** projected. It is `date:` in the canonical frontmatter, in every backend, and
 that is not duplicated truth precisely because no store holds an honest copy of it to duplicate.
@@ -289,13 +274,9 @@ of what gets reassembled.
   nothing cached, and runs again on every `write_spec`.
 - **It costs zero calls beyond the write already being made.** GitHub's label set rides
   inside the SAME `PATCH` `_store` already sends; Azure's `System.Tags` rides inside the
-  SAME `--fields` update `_update` already sends. MEASURED live, 2026-08-05, against this
-  repository's own issue #877: a write that changes no record and no stage costs exactly
-  the one `PATCH` it always did. The first cut did not — it compared the desired label set
-  against the issue's current one as ORDERED lists, and GitHub returns a listing's labels
-  alphabetically, never in the schema's own order, so a same-set reorder read as a change
-  on every write and cost an extra `GET` fixing colors that were already right. Comparing
-  the two as sets was the fix.
+  SAME `--fields` update `_update` already sends. A write that changes no record and no stage costs
+  exactly the one `PATCH` it always did, so label sets are compared as sets, never as ordered
+  lists — GitHub returns them alphabetically ([ADR 0001](../decisions/0001-spec-backend-measurements.md) §Label rendering cost).
 - **It is discardable without loss.** Deleting a `spec:` label deletes nothing the document
   does not already say; the next write recreates it. Deleting every `spec:` label in the
   repository loses zero information — the claim `labels-historico-spec-issue`'s own
@@ -338,12 +319,9 @@ have exactly one honest answer, so asking is safer than being told twice — and
 cached rather than duplicated (§Granular reading).
 
 **And it must cost nothing extra: every reaffirmed field travels in the SAME request the write
-was already making, never a round trip of its own.** That sentence was written as a description
-and was false for a year — measured on `azure-boards`, one section edit spent nine `az` calls and
-8,5s, of which four writes went to the same work item: the document, then the parent, then the
-board column, then the tags. The cost was never the reaffirmation. It was spending one process per
-field, on a CLI whose startup is the floor (0,45s for `az rest` against 0,9s for `az boards
-work-item update`, measured on the same org).
+was already making, never a round trip of its own.** The cost was never the
+reaffirmation; it was spending one process per field on a CLI whose startup is the floor
+([ADR 0001](../decisions/0001-spec-backend-measurements.md) §One request per write).
 
 An external tracker pays **per request, not per byte**, so the rule is: assemble one body, send it
 once. Two consequences follow, and both are load-bearing rather than incidental:

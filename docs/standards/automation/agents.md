@@ -13,6 +13,8 @@ maintainer: quenching
 
 # Subagent authoring
 
+<!-- rules -->
+
 A **subagent** is a delegation: work runs in a fresh context and only its result returns.
 One definition per file at `.claude/agents/<name>.md`, minted by `/quenching:components:agent:new` under
 one plan → one OK, inventoried (report-only) by `/quenching:components:align`.
