@@ -1,6 +1,8 @@
 """Static C3 findings over the delivery workflow inventory."""
 from __future__ import annotations
 
+import re
+
 from quenching.common.front import register_checks
 from quenching.delivery.model import DeliveryInventory, Finding, Workflow
 
@@ -23,6 +25,23 @@ def _finding(code: str, message: str, path: str, *, severity: str | None = None)
     band = _BANDS[code]
     return Finding(code, severity or ("warning" if band == "Judgement" else "error"), message,
                    path=path, band=band)
+
+
+_RUNTIME_COMMANDS = frozenset({
+    "python", "python3", "pip", "pip3", "uv", "uvx", "pytest", "poetry", "ruff", "mypy",
+    "node", "npm", "npx", "yarn", "pnpm", "bun", "ruby", "bundle", "gem", "java", "mvn",
+    "gradle", "go", "cargo", "rustc", "dotnet",
+})
+
+
+def _needs_runtime(commands: tuple[str, ...]) -> bool:
+    """True when a command's first word is a language runtime or its package tool."""
+    for command in commands:
+        for part in re.split(r"&&|\|\||;|\|", command):
+            words = [word for word in part.split() if not re.match(r"^\w+=", word)]
+            if words and words[0].rsplit("/", 1)[-1] in _RUNTIME_COMMANDS:
+                return True
+    return False
 
 
 def _reachable(workflow: Workflow) -> set[str]:
@@ -73,7 +92,7 @@ def _workflow_findings(workflow: Workflow) -> list[Finding]:
                 f"job `{job.name}` runs commands without checkout provenance",
                 workflow.path,
             ))
-        if job.active and job.commands and not job.setup:
+        if job.active and _needs_runtime(job.commands) and not job.setup:
             findings.append(_finding(
                 "delivery-setup-missing",
                 f"job `{job.name}` runs commands without setup provenance",
@@ -88,14 +107,21 @@ def _workflow_findings(workflow: Workflow) -> list[Finding]:
                 workflow.path,
             ))
 
-    runtime_values: dict[str, set[str]] = {}
+    scalar_values: dict[str, set[str]] = {}
+    matrix_values: dict[str, set[str]] = {}
     for job in workflow.job_details:
         for declaration in job.runtimes:
             language, _, value = declaration.partition(":")
-            runtime_values.setdefault(language, set()).add(value)
-    for language, values in sorted(runtime_values.items()):
-        if len(values) > 1:
-            rendered = ", ".join(f"{language}={value}" for value in sorted(values))
+            if value.startswith("matrix:"):
+                matrix_values.setdefault(language, set()).add(value[len("matrix:"):])
+            else:
+                scalar_values.setdefault(language, set()).add(value)
+    for language, values in sorted(scalar_values.items()):
+        # A matrix axis is deliberate multi-version coverage; a scalar disagrees only with
+        # another scalar or with a version the matrix does not cover.
+        covered = matrix_values.get(language, set())
+        if len(values) > 1 or (covered and not values <= covered):
+            rendered = ", ".join(f"{language}={value}" for value in sorted(values | covered))
             findings.append(_finding(
                 "delivery-runtime-drift",
                 f"workflow runtime declarations disagree: {rendered}",
