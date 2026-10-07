@@ -17,10 +17,8 @@ policy, reviewing its diff, committing it alone, and recording the spec task aft
 **This command stops at the last commit.** Reviewing the whole branch, writing the `/docs/` the work
 revealed, merging, and archiving belong to `/quenching:specs:conclude`.
 
-**Why `Bash` is unrestricted here.** Execution invokes the spec's target-declared verification,
-`cq specs` operations and Git commands; their prefixes and arguments are resolved from
-the live spec and cannot be safely enumerated in metadata. The commit itself is delegated to
-`/quenching:git:commit`, whose command owns subject resolution and commits the existing index.
+`Bash` is unrestricted: the verification, `cq specs` and Git commands are resolved from the live
+spec. The commit itself is delegated to `/quenching:git:commit`, which commits the existing index.
 
 ## Resolving the tool
 
@@ -45,8 +43,8 @@ cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/executi
   --sections "§The precondition"
 ```
 
-The rest of this step is read in **one call** — the tree, the isolation ref, the spec's own state
-(step 3 reads it anyway, so it is read here once), and the environment probe below:
+The rest of this step is read in **one call** — the tree, the isolation ref, the spec's own state,
+and the environment probe below:
 
 ```bash
 git status --porcelain
@@ -69,16 +67,13 @@ A record naming something else costs one more `git branch --list "<work>"` to kn
 alive. Two outcomes end the question here:
 
 - **This checkout is on the work ref** (`git branch --show-current` equals it) → the spec **is**
-  isolated. Go straight to the loop and offer nothing; asking again buys nothing and costs the
-  turns it takes.
+  isolated. Go straight to the loop and offer nothing.
 - **The ref is alive but held elsewhere** — a `git worktree list` entry, or a checkout this one is
   not on — → it is being built somewhere else, and starting here would fork the work. Name where,
   and stop.
 
-**A ref that merely exists is not isolation.** Standing on the base with the work ref sitting
-unclaimed one branch over, a short-circuit on its *existence* would send the loop to build and
-commit onto the base itself — the exact outcome the offer exists to prevent, reached by skipping
-it. Anything short of being **on** the ref falls through to the branches below.
+**A ref that merely exists is not isolation.** Anything short of being **on** the ref falls through
+to the branches below.
 
 **Resolve the base branch next**, stopping at the first that answers: the spec's own `branch.base`
 record, when one already exists; else `git symbolic-ref refs/remotes/origin/HEAD` (already read
@@ -93,27 +88,24 @@ checkout. Show the inference on the same line as the confirmation, before stampi
 cq specs record "<id>" branch --set base=<resolved base> --set work=<current branch>
 ```
 
-Never derive `base` from `git merge-base` or `--fork-point` here: both answer a commit, not a
-branch name, and a commit ancestral to three branches identifies none of them.
+Never derive `base` from `git merge-base` or `--fork-point`; they answer a commit, not a branch
+name.
 
 **On the base with the work ref alive and unclaimed → offer to take it, never to cut a second
 one.** Two forms, worktree first as always: `git worktree add ../<repo>-<id> <work ref>` beside
 this checkout, or `git checkout <work ref>` in it. **Nothing is stamped** — a `branch` record, where
-one exists, is write-once and already true, and a ref cut by hand with no record is the case
-`base` cannot honestly be inferred for from here. Declining leaves the run on the base; say plainly
-that the commits will land there.
+one exists, is write-once and already true. Declining leaves the run on the base; say plainly that
+the commits will land there.
 
-**On the base branch, with nothing to check out → hand off to `/quenching:git:branch`.** The offer's
-shape — worktree leading, unconditionally, with its cost stated in the same block as the ask;
-`worktreeSetup` run and reported; the `branch:` record and the branch's own `quenching-specs:`
-marking stamped — belongs to that command now, cited rather than copied a second time:
+**On the base branch, with nothing to check out → hand off to `/quenching:git:branch`**, which owns
+the offer (worktree leading with its cost stated, `worktreeSetup`, the `branch:` record and the
+branch's `quenching-specs:` marking):
 
 ```
 Skill("quenching:git:branch", "<id>")
 ```
 
-It runs its own **AskUserQuestion**, still mid-flow and still gated — invoking it here is not
-`context: fork`, so nothing about this loop skips a confirmation by delegating it. When it returns,
+It runs its own **AskUserQuestion**; it is a `Skill` call, never `context: fork`. When it returns,
 re-read the state it left:
 
 ```bash
@@ -124,18 +116,13 @@ cq specs status --spec "<id>" --json
 equal to `base`; continue the loop from the returned worktree checkout when Worktree was chosen,
 never from the base checkout. No record at all → the
 git command it ran failed (a name already taken, a dirty path, a locked worktree) and nothing was
-stamped — report it verbatim and stop; building onto the base with nothing recorded is exactly the
-outcome the offer exists to prevent.
-
-Recommend isolation before building, and never impose it — that recommendation is `/quenching:git:branch`'s
-to make, not restated here.
+stamped — report it verbatim and stop.
 
 Not a git repo → stop before writing: this command's task/commit contract requires Git. Never force
 isolation, never `git init` on the human's behalf, and never rewrite history.
 
-**2b. Probe the environment before writing any code.** A hook wired in `.claude/settings.json`
-whose script no longer exists on disk fails *every* commit this loop makes — probe once, in the
-same call as the reads above, per [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+**2b. Probe the environment before writing any code** — a hook wired in `.claude/settings.json`
+whose script is gone fails every commit. Probe once, in the same call as the reads above, per [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
 §The hook probe. Anything other than `none` → report it before the first task, name the hook and
 the missing path, and let the human decide; never `--no-verify` past it. Silent when nothing wired.
 
@@ -152,19 +139,16 @@ cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-dr
 
 The `cq specs status --json` payload is **already in hand** from step 2 — do not read it again.
 From it: the derived stage, the section states, task progress, the blocked tasks, the recorded
-subjects, and **`verification`** — the spec's declared policy, which decides when the suite runs so
-this command never has to. Whether a task goes to an executor sub-agent stays the two conditions
+subjects, and **`verification`** — the spec's declared policy, which decides when the suite runs.
+Whether a task goes to an executor sub-agent stays the two conditions
 of [execution-delegation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-delegation.md)
 §Delegating an executor, at every level.
 
 - **`approved` unset** → ask for it inline, in one question showing what the spec commits to, and
   on a yes stamp it `--set by=human` (`cq specs record "<id>" approved --set date=<today> --set
-  by=human`) — never by editing
-  the frontmatter. **Never refuse over it** — refusing would rebuild the folder hop this front
-  removed. A no ends the run cleanly.
+  by=human`). **Never refuse over it.** A no ends the run cleanly.
 - **`next` reports `write_section`** → the ready gate is not met. Name the missing or malformed
-  sections and route to `/quenching:specs:develop <id>`, then stop. The gate refuses nothing itself; the
-  tool simply has no task to hand out until it is closed.
+  sections and route to `/quenching:specs:develop <id>`, then stop.
 - **Every task already `- [x]`** → say so and offer to chain into `/quenching:specs:conclude` (step 7).
 - **`[!]` blocked tasks** → name them and their reasons up front. They were tried and stopped, not
   skipped.
@@ -183,15 +167,11 @@ cq specs section "<id>" --moment build --scope current --json
 
 Branch on the payload, never the exit code. `sections[].state`, already read once in step 2, is
 the same fact this call's own `absent` list repeats: a section not yet `filled` — `## Handoff`
-empty on a spec's first build is the ordinary case, not a finding — is read as empty. No second
-call, and no heading enumerated here to know which one that was.
+empty on a spec's first build is the ordinary case, not a finding — is read as empty.
 
-`--scope current` cuts **only** `## Handoff`, and the other five sections arrive whole — which is
-what keeps this one call. What comes back under that heading is the evergreen global block plus
-the `### N.` of the section the next actionable task sits in; a section already closed is never
-handed over, so its record cannot enter this context at all. The payload says so with
-`"scope": "current"`, never by leaving the caller to compare sizes. Drop the flag only to audit
-the whole history of the block.
+`--scope current` cuts **only** `## Handoff`, and the other five sections arrive whole: the
+evergreen global block plus the `### N.` of the section the next actionable task sits in, flagged
+`"scope": "current"` in the payload. Drop the flag only to audit the whole history of the block.
 The path comes from what `status` resolved; never assume filenames. `## Impact` names the
 `/docs/standards/` paths and the code this spec expects to touch.
 
@@ -206,15 +186,12 @@ contradicts one is surfaced (step 5), never silently resolved. No bundle → ski
 A declared bullet may carry a `§`address beside its path — `/docs/standards/automation/skills.md
 §Invocation and permission are authored decisions §The admission criterion`. With one, read
 exactly those sections (`cq components read <path> --sections "§A" --sections "§B"`); with none,
-read the file whole, exactly as today. The default never changes: reading less is an assertion the
-spec's own author wrote, never an economy the executor takes on its own.
+read the file whole. Reading less is the spec author's assertion, never the executor's economy.
 
-**No mechanical net for a contract nobody declared — deliberately.** Deciding a standard governs a
-task is reading, not parsing, so nothing scans the folder to net one
+**Nothing scans the folder for a contract nobody declared**
 ([execution-tooling.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-tooling.md)
-§Tooling asides has the failure modes this avoids). What covers the gap is one line at the
-moment it shows up — `cq specs discover` records it while building, and `/quenching:specs:develop`
-repairs `## Impact`.
+§Tooling asides). The gap costs one line when it shows up — `cq specs discover` records it while
+building, and `/quenching:specs:develop` repairs `## Impact`.
 **Done when:** the spec's sections and the declared binding standards are read.
 
 ### 5. Implement tasks — loop until done or blocked
@@ -232,8 +209,7 @@ a. **Show what is being worked on** — the ID, its declared `files:` and its `v
 b. **Write the code**, minimal and scoped to the declared files. A task that declares `files:` and
    writes nothing under `/docs/` **may** go to an executor sub-agent under
    [execution-delegation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-delegation.md)
-   §Delegating an executor — which also explains why this is **not** `context: fork` and leaves
-   that rule untouched; when it is, load the rules that bound it before dispatching:
+   §Delegating an executor; when it is, load the rules that bound it before dispatching:
 
    ```bash
    cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-delegation.md \
@@ -299,8 +275,7 @@ e. **Then verify, stage, delegate the commit and confirm the spec task as ONE ch
    §The verification policy); otherwise the chain starts at `git add`. A task with
    **no `files:` declared** — the line absent, or `files: []` — has no diff to commit, so its
    chain *ends* at the tick, run without `--subject` or `--commit`, and with neither `git add` nor
-   delegate `git:commit`; a subject recorded there would point at a commit that was never made. A
-   `branch:` record also gets the branch marked, per the rule loaded in 5d.
+   delegate `git:commit`. A `branch:` record also gets the branch marked, per the rule loaded in 5d.
 
 f. **Read the chain's tail, and act on which link broke** — per §The commit, already loaded in
    5d: `verify:`/staging failed → nothing ticked, nothing committed; fix and retry, or block it
@@ -358,23 +333,17 @@ cq specs section "<id>" Handoff --write --scope current  # the block of the open
 ```
 
 Everything a resumed run *can* derive — which tasks are done, which commit carried each — is
-already in `git log` and in the `subjects` `status` returns, so the Handoff is not the resumption
-trail and must not be rewritten as one. The global block plus the current section's block are sent
-with every task, so keep both small — a section's block, once its last task commits, is never
-targeted again: `--scope current` always resolves to whichever section still has open work, so
-closing costs nothing extra and adds no event of its own.
+already in `git log` and in the `subjects` `status` returns; the Handoff is not the resumption
+trail. The global block plus the current section's block are sent with every task, so keep both
+small. `--scope current` always resolves to whichever section still has open work.
 
-**Not after every committed task, and not on a judgment call either** — both were tried and both
-failed; [execution-cadence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-cadence.md) §The
-Handoff cadence has the measurement. Each trigger above is a moment this body *just finished doing
-something*, never one where it appraises something.
+**Not after every committed task, and not on a judgment call either** —
+[execution-cadence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-cadence.md) §The
+Handoff cadence.
 
 **The section-boundary offer (step 5h) adds no fifth event and writes no new state.** Accepted, it is a
 pause and a last commit, which are already two of the four above; declined, nothing happened worth
-recording. The trail this step already maintains — `## Handoff` plus `git log` plus the `subjects`
-`status` returns — **is** what makes a fresh session resume from that boundary, and it is exactly
-why stopping there is nearly free. An offer that required writing something extra would be moving
-cost rather than cutting it.
+recording.
 **Done when:** the global block and the current section's `## Handoff` block describe the tree as
 it stands after the run's last commit.
 
@@ -427,25 +396,21 @@ Task 3/7 — 3.2 <task title>
 
 Every way a build ships a lie with a green checkbox is enumerated in
 [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The commit, and
-each is absolute. The three whose failure is **silent and permanent**, so they are worth having in
-front of you before the loop starts:
+each is absolute. The three whose failure is **silent and permanent**:
 
 - **Never edit the `verify:` command, the test, or the assertion** so it stops failing — and never
   disable, skip, `xfail` or delete a test. Change the code, or report the task blocked.
-- **Never amend or rewrite an earlier task's commit**, and never force-push. A rewritten history
-  makes every earlier record a lie at once.
+- **Never amend or rewrite an earlier task's commit**, and never force-push.
 - **Never tick a checkbox for work that was not verified.** The spec task is ticked only after
-  the task was verified, self-reviewed and committed; its remote record cannot travel inside the
-  local commit. If nothing could verify it, say so in the report rather than implying the task was
-  proved.
+  the task was verified, self-reviewed and committed. If nothing could verify it, say so in the
+  report rather than implying the task was proved.
 
 ## Invariants to never violate
 
 - Require a clean tree before the first code change; **isolated means this checkout is ON the work
   ref**, never that the ref exists somewhere — and where it is not, offer to take a live ref inline
   or hand off to `/quenching:git:branch` to cut one, recommending isolation either way and never
-  imposing it. Checking the right thing is what keeps the offer from being asked twice *and* from
-  being skipped onto the base.
+  imposing it.
 - Drive off `cq specs status` / `next` / `task` and their exit codes. Never assume a path, never
   choose the next task by reading `## Tasks`, and never hand-edit a `- [ ]` / `- [x]` character.
 - Verify per the spec's **declared** policy. Never decide mid-build when to test, and never ask the
@@ -458,7 +423,8 @@ front of you before the loop starts:
   anchor repair is part of a section close.
 - Never refuse over a missing `approved`; ask inline and stamp it with `cq specs record`, never by
   editing the frontmatter.
-- Stamp `branch:` once the work ref is resolved, taken or declined (`work` then equals `base`) — never over an existing record, through `cq specs record`, never the frontmatter.
+- Stamp `branch:` once the work ref is resolved, taken or declined (`work` then equals `base`) —
+  never over an existing record, through `cq specs record`, never the frontmatter.
 - Write **only** the `/docs/` a task explicitly names. Emergent findings are one `cq specs discover`
   line — never an unrequested standard, and never a loose code comment.
 - Delegate an executor only under
@@ -466,8 +432,7 @@ front of you before the loop starts:
   §Delegating an executor (declares `files:`, touches no `/docs/`, pinned to the session model —
   **never `haiku`**), and run two tasks in parallel only when `cq specs parallel` reports the `[P]`
   group eligible.
-- Never review the whole branch, merge, or archive from here — that is `/quenching:specs:conclude`, and
-  splitting it is what makes a half-finished build resumable.
+- Never review the whole branch, merge, or archive from here — that is `/quenching:specs:conclude`.
 - Keep changes minimal and scoped to each task; pause on errors, blockers, or unclear requirements
   rather than guessing.
 - **Route other durable learning to its OKF home**: an insight worth keeping beyond this spec goes

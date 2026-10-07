@@ -154,6 +154,8 @@ is still restated inline; run `cq knowledge validate` over `/docs/` → 0 errors
 - Never give a harness file frontmatter or a `type` (okf-spec's strict-7 rule — they are exempt).
 - Never drop or paraphrase the root file's language declaration line — it is KEEP by rule (step 3),
   and nothing downstream would report its loss.
+- Never drop or paraphrase the root file's `Ephemeral writes:` declaration line — it is KEEP by rule
+  (step 3), exactly as the language line is.
 - Never skip the single up-front plan + confirmation; a product-code edit confirms on its own. A
   cycle-authorized run (convergence.md §The cycle-authorization contract) replaces the batch gate with narration — never the
   product-code item's own OK — and a pre-collected table is delta-rechecked before any write.

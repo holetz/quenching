@@ -332,9 +332,9 @@ command, or explicitly states that no residue remains.
   `/docs/` concurrently.
 - Never author content to close a gap that needs human input — **surface** it with its per-item
   command, never fabricate a standard, a concept, or a term.
-- **Corrija automaticamente todo resíduo determinístico e seguro.** Para cada resíduo restante,
-  classifique-o como erro corrigível, bloqueio do ambiente, lacuna de fonte ou teste não aplicável.
-  Não aceite convergência enquanto o plano editorial, a navegação, a projeção `site-source` e os
-  checkers discordarem sobre as casas publicadas.
+- **Fix every deterministic, safe residue automatically.** Classify each remaining residue as
+  `error-corrigible`, `source-gap`, `plugin-package-gap`, `plan-drift` or `not-applicable`. Never
+  accept convergence while the editorial plan, the navigation, the `site-source` projection and the
+  checkers disagree about the published homes.
 - Never loop past the pass cap, never re-run a no-progress pass, and never treat validator exit 0
   alone as converged.
