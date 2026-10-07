@@ -33,7 +33,7 @@ store, git, and the document itself.
 | --- | --- |
 | `priority: {level, criticality, complexity, date}` | how the front ranked it |
 | `refined:` | a develop pass argued with it |
-| `approved: {date}` | the OK to build — the gate `execute` checks |
+| `approved: {date, by}` | the OK to build and whose word it is (`human`, `low-gear`, `orchestrator-forced`) — the gate `execute` checks |
 | `branch: {base, work}` | where isolation lives |
 | `reviewed:` | the whole-branch review happened |
 | `merge: {strategy, subject, pr}` | how it went home |
