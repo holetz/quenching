@@ -59,6 +59,15 @@ class TheReaderSurface(unittest.TestCase):
         manifest = json.loads((READER / ".claude-plugin" / "plugin.json").read_text())
         self.assertEqual(version, manifest["version"])
 
+    def test_it_carries_only_the_slice_specs_imports(self):
+        package = READER / "assets" / "bin" / "quenching"
+        self.assertEqual(["common", "specs"], sorted(p.name for p in package.iterdir()))
+        import re
+        for path in package.rglob("*.py"):
+            for pillar in re.findall(r"^\s*(?:from|import) quenching\.(\w+)", path.read_text(),
+                                    re.M):
+                self.assertIn(pillar, ("common", "specs"), path)
+
 
 class TheAllowlist(unittest.TestCase):
     def test_help_answers(self):
