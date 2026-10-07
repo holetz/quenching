@@ -60,7 +60,9 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 - **The stage says where composing starts; the gear says whether refining runs.** `cq specs status
   --spec <id> --json` returns both. Never infer the stage by reading the headings, never ask the
   human which mode they want, and **never ask which gear to run in** — the answers are on disk. A
-  conductor that moved the level on its own plan declares the moved level in the invocation.
+  conductor that moved the level on its own plan declares the moved level in the invocation. A
+  conductor running `--autonomous` declares `low` as **forced** on a spec whose level on disk is
+  higher; the gear is still `low`, and only the stamp at step 8 differs.
 - **The gear never shortens a stage that runs.** No checklist shrinks at a low level — the same
   axes, lenses and gate symptoms are worked either way, and what changes is who answers them.
   Everything about *how* a stage runs is owned by
@@ -348,7 +350,9 @@ Otherwise close, and how it closes is the gear's — §Approval owns the screen'
 - **`low`** — no screen. With `ready` now **proved** by step 7's payload and `approved` unset, stamp
   it here: `cq specs record <id> approved --set date=<today> --set by=low-gear`. **`by:` is never
   omitted** — a record with no `by:` reads as `human`, so leaving it off silently claims a human
-  this pass never had.
+  this pass never had. When the conductor declared `low` as **forced** (the invocation says
+  `autonomous`) and the on-disk level is above `low`, stamp `--set by=orchestrator-forced`
+  instead. That is the only path that writes this value, and only after step 7 proved `ready`.
 - **`medium` · `high` · `xhigh`** — ONE closing screen that **recommends** rather than defaulting to
   approve. Judge what the pass produced against §Refine's three signals and lead with the move they
   argue for, marked "(Recommended)", carrying the signal in its own text: approve, refine (a raise
@@ -379,7 +383,7 @@ blocks:
    to the close's recommendation**; the gear and what it changed about who answered; how many
    questions were asked and answered, and how many answers the pass gave from evidence with an
    assumption named; **what refine overturned**, if anything; **an `approved` stamped
-   `by: low-gear` on its own line**; the sections edited; the records stamped; the routed offers and
+   `by: low-gear` or `by: orchestrator-forced` on its own line**; the sections edited; the records stamped; the routed offers and
    whether each was taken; the stage before and after, and whether it landed where the pass expected.
 2. **Parked into `## Discoveries`** — optional, and every line **quoted**.
 
@@ -452,7 +456,8 @@ block, and is never asked as a question mid-pass.
   really ran — drafting from evidence counts, a pass that ran neither compose nor refine does not.
   `approved` is stamped only with a truthful `by:`: `human` when a person answered the closing
   screen, `low-gear` when the level authorized the mode and this pass stamped on that authority
-  after `ready` was proved.
+  after `ready` was proved, `orchestrator-forced` when a conductor declared `low` as forced over a
+  higher level on disk and this pass stamped after `ready` was proved. No other path writes it.
 - **Never restamp `complexity` beyond what the close authorizes**: a fall always needs a human, and
   a level a pass did not move is the latest word on it, not a value to re-propose.
 - Never gate on refinement. A spec may always be built unrefined; `sp-unrefined` is a warning by

@@ -25,7 +25,7 @@ command that owns it, and what it writes.
 ```mermaid
 flowchart LR
     A[create] -->|"summary: + sections"| B[develop]
-    B -->|"approved: {date}"| C[execute]
+    B -->|"approved: {date, by}"| C[execute]
     C -->|"one task = one commit"| D[conclude]
     D -->|"merge is the LAST action"| E([merged])
 ```
@@ -51,7 +51,8 @@ Two operations in one pass, both derived: **compose** takes the spec to a closed
 sections, and **refine** argues with it — questions grouped by dependency, each with an inline
 recommendation. The pass ends at the approval close, recommending approve, refine, or refine
 with the premortem, against the spec's own signals. The OK to build is a stamp you can point
-to: `approved: {date}` in the spec's frontmatter.
+to: `approved: {date, by}` in the spec's frontmatter, where `by` is `human`, `low-gear` or
+`orchestrator-forced`.
 
 ??? note "Where does 'ready' live?"
     Nowhere — and that is the point. `ready` is a **derived** stage, computed from the document
