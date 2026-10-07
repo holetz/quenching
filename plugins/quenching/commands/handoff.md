@@ -1,14 +1,14 @@
 ---
 description: >-
-  Compacta a conversa atual em um documento de handoff para outro agente continuar o trabalho. Use
-  quando o usuário pedir para "gerar um handoff", "compactar a conversa num handoff", "preparar
-  handoff para a próxima sessão" ou "resumir esta sessão para outro agente continuar". Not for:
-  executar a implementação → o comando dono do trabalho.
+  Compact the current conversation into a handoff document another agent can continue from. Use
+  when the user asks to "generate a handoff", "compact the conversation into a handoff", "prepare a
+  handoff for the next session" or "summarize this session so another agent can continue". Not for:
+  carrying out the implementation → the command that owns the work.
 argument-hint: "What will the next session be used for?"
 allowed-tools: Bash(mktemp:*), Read, Write, AskUserQuestion
 ---
 
-**Input**: `$ARGUMENTS` (o foco da próxima sessão).
+**Input**: `$ARGUMENTS` (the focus of the next session).
 
 ## Workflow
 

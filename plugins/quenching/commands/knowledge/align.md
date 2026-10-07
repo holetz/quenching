@@ -114,7 +114,7 @@ command or package operation that can close it. A checker whose publication is d
 accepted map or capability register is `not-applicable`, not a failed run.
 
 The preflight also reads the accepted `.quenching/documentation/plan.md` when a site layer exists.
-Its `### Mapa editorial de publicação` is the authority for homes, routes and derived pages. A
+Its `### Publication map` is the authority for homes, routes and derived pages. A
 disagreement between that map and `nav` or `site-source/` is `plan-drift`; regenerate the plan or
 the owned projection through the documentation planning/build command rather than hand-editing a
 large generated artifact. Semantic resource ambiguity remains a human-pending `source-gap` until

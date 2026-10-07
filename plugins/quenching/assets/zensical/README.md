@@ -62,10 +62,10 @@ when a local preview is explicitly requested.
 editorial de publicação** decides the allowlisted site surface. Raw `catalog/` and `external/`
 homes remain knowledge sources but are absent from `site-source/`, routes and nav; curate any
 reader-facing use into an allowlisted page with provenance. Links use the mapped route — never an
-internal `/docs/<home>/…` path. A `não publicar` home has no staged file, route or nav entry.
+internal `/docs/<home>/…` path. A `do not publish` home has no staged file, route or nav entry.
 
 The glossary route is `glossary.md` in the bounded source. When the canonical root `glossary.md`
-has content, it is published by default unless the accepted map explicitly says `não publicar`.
+has content, it is published by default unless the accepted map explicitly says `do not publish`.
 The write stage runs `cq knowledge project --write`, which derives the abbreviation snippet and
 records the source SHA-256; `cq knowledge site-source --write` stages both without creating a
 second editable glossary. The template's `abbr` and

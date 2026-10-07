@@ -47,8 +47,8 @@ the Diagnosis contract is filled and every uncertain claim is a `source gap:`.
 
 Fill the exact templates in `architecture.md`: three end-to-end journeys, an intent-based nav and
 source→destination map, a visual plan, an agent-readability plan and an execution plan listing
-extensions, risk and validation. Then produce the **Mapa editorial de publicação**: one decision
-per home — `publicar`, `publicar derivado` or `não publicar` — with motive, audience and route.
+extensions, risk and validation. Then produce the **Publication map**: one decision
+per home — `publish`, `publish derived` or `do not publish` — with motive, audience and route.
 Treat a missing basis as `source gap:`, never as a default exclusion; the fixed Zensical boundary
 still keeps raw `catalog/` and `external/` outside `site-source/`. **Done when:** all seven
 contract headings exist in order and no placeholder is silently guessed.
@@ -56,13 +56,13 @@ contract headings exist in order and no placeholder is silently guessed.
 The root `glossary.md` is staged into `site-source/` and publishes as `glossary.md` there. The
 plan still records the generated abbreviation snippet the site layer consumes, its source
 hash/provenance, and the known term used by rendered QA; it never assigns authors a second
-editable term list. Raw `catalog/` and `external/` homes are always `não publicar` to this
+editable term list. Raw `catalog/` and `external/` homes are always `do not publish` to this
 Zensical site; inventory them by metadata and source counts, without loading their full bodies
 merely to plan the site. Facts needed by readers must be curated into an allowlisted reader-facing
 page with lineage.
 
 The publication map is a closed coverage contract **at document granularity**. Every publishable
-`.md` is either published or carries its own explicit `não publicar` row with a reason — a home-level
+`.md` is either published or carries its own explicit `do not publish` row with a reason — a home-level
 row cannot stand in for the documents inside it. The denominator for coverage is every publishable
 document, not the map's row count and not the pages selected for this pass. Every derived route must state its source and
 transformation, and every internal `/docs/` link in the published projection must resolve

@@ -44,11 +44,11 @@ into an abort. A warning is either fixed in the site layer or reported to the pa
 
 ## Editorial publication map
 
-Read the accepted `### Mapa editorial de publicação` before judging navigation or links. Inventory
-all `/docs/` homes and use every `publicar`/`publicar derivado` row represented in the bounded
+Read the accepted `### Publication map` before judging navigation or links. Inventory
+all `/docs/` homes and use every `publish`/`publish derived` row represented in the bounded
 allow-list as the mandatory coverage denominator. Raw `catalog/` and `external/` homes are always
-`não publicar` to this Zensical site and must be absent from `site-source/`. For every other such row, prove that its declared route is built under `site/` and
-is non-empty; for every `não publicar` row, prove that no matching nav entry, published route or
+`do not publish` to this Zensical site and must be absent from `site-source/`. For every other such row, prove that its declared route is built under `site/` and
+is non-empty; for every `do not publish` row, prove that no matching nav entry, published route or
 link exists. A
 curated route under `documentation/` is valid; pointing `docs_dir` at the complete bundle is not a
 substitute, because Zensical would process excluded homes even when they are absent from `nav`.
@@ -71,7 +71,7 @@ anchors, sitemap URLs, orphan pages and remote resources:
 python3 <plugin>/assets/checks/documentation-site-check.py site
 ```
 
-When the canonical glossary exists and the map does not explicitly say `não publicar`, first
+When the canonical glossary exists and the map does not explicitly say `do not publish`, first
 verify the deterministic source projection and then pass the same contract to the rendered check:
 
 ```bash
