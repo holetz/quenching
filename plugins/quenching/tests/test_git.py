@@ -1535,6 +1535,12 @@ class WorktreeRetire(RepoCase):
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertFalse(os.path.exists(self.wt))
 
+    def test_a_local_base_behind_still_retires_a_published_branch(self):
+        self._merge_through_gh()
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertNotIn("plan/1-x", self._heads())
+
     def test_primary_mismatch_and_option_shaped_names_are_refused(self):
         self._merge_through_gh()
         cases = ((self.repo, "plan/1-x"), (self.wt, "main"), (self.wt, "bad..name"),
