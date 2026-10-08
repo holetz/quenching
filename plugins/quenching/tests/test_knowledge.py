@@ -583,6 +583,27 @@ class RegenerateListing(unittest.TestCase):
             self.assertEqual(before.split("<!-- BEGIN")[0], after.split("<!-- BEGIN")[0])
             self.assertFalse(regenerate_listing(tmp, write=True)["changed"])
 
+    def test_the_listing_verb_checks_then_writes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._bundle(tmp, {f"docs_x/{k}": v for k, v in STALE_ZONE.items()})
+            def run(*argv):
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out):
+                    return knowledge_cli.main(["--root", tmp, "listing", "docs_x", *argv]), out.getvalue()
+            self.assertEqual(run("--check")[0], 1)
+            self.assertEqual(run("--write")[0], 0)
+            code, out = run("--json")
+            self.assertEqual(code, 0)
+            self.assertTrue(json.loads(out)["ok"])
+
+    def test_the_listing_verb_refuses_a_bundle_with_no_zone(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._bundle(tmp, {"docs_y/standards/index.md": "# Standards\n"})
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                self.assertEqual(knowledge_cli.main(["--root", tmp, "listing", "docs_y"]), 2)
+
+
     def test_a_listing_without_a_zone_is_refused_not_invented(self):
         from quenching.knowledge.structure import regenerate_listing
         with tempfile.TemporaryDirectory() as tmp:
