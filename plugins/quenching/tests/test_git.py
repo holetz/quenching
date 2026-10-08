@@ -340,6 +340,42 @@ class Audit(RepoCase):
         self.assertFalse(os.path.exists(marker))
         self.assertIn(" M b.txt", payload["status"])
 
+    def test_log_does_not_run_a_configured_gpg_program(self):
+        marker = os.path.join(self.tmp, "PWNED_gpg")
+        prog = os.path.join(self.tmp, "evilgpg.sh")
+        pathlib.Path(prog).write_text(f"#!/bin/sh\ntouch {marker}\ncat\n", encoding="utf-8")
+        os.chmod(prog, 0o755)
+        tree = subprocess.run(["git", "rev-parse", "HEAD^{tree}"], cwd=self.wt, check=True,
+                              capture_output=True, text=True).stdout.strip()
+        raw = (f"tree {tree}\nparent {self.sha}\nauthor T <t@e> 1 +0000\ncommitter T <t@e> 1 +0000\n"
+               "gpgsig -----BEGIN PGP SIGNATURE-----\n \n x\n -----END PGP SIGNATURE-----\n\nsigned\n")
+        signed = subprocess.run(["git", "hash-object", "-t", "commit", "-w", "--stdin"], cwd=self.wt,
+                                input=raw, check=True, capture_output=True, text=True).stdout.strip()
+        _run(self.wt, "update-ref", "refs/heads/spec/1", signed)
+        _run(self.repo, "config", "gpg.program", prog)
+        _run(self.repo, "config", "log.showSignature", "true")
+        payload = _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main",
+                           "--branch", "spec/1")
+        self.assertFalse(os.path.exists(marker))
+        self.assertEqual(len(payload["commits"]), 2)
+
+    def test_status_does_not_descend_into_a_submodule_filter(self):
+        marker = os.path.join(self.tmp, "PWNED_subfilter")
+        sub = _init_repo(os.path.join(self.tmp, "subsrc"))
+        _run(self.wt, "-c", "protocol.file.allow=always", "submodule", "add", "-q", sub, "sm")
+        _run(self.wt, "commit", "-q", "-m", "sub")
+        smdir = os.path.join(self.wt, "sm")
+        pathlib.Path(smdir, ".gitattributes").write_text("*.txt filter=evil\n", encoding="utf-8")
+        pathlib.Path(smdir, "a.txt").write_text("x\n", encoding="utf-8")
+        _run(smdir, "config", "user.email", "test@example.com")
+        _run(smdir, "config", "user.name", "Test")
+        _run(smdir, "add", ".gitattributes", "a.txt")
+        _run(smdir, "commit", "-q", "-m", "inner")
+        _run(smdir, "config", "filter.evil.clean", f"touch {marker}; cat")
+        pathlib.Path(smdir, "a.txt").write_text("y\n", encoding="utf-8")
+        _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main", "--branch", "spec/1")
+        self.assertFalse(os.path.exists(marker))
+
     def test_unregistered_worktree_is_refused(self):
         other = _init_repo(os.path.join(self.tmp, "other"))
         proc = self._audit("--worktree", other, "--base", "main", "--branch", "main")
