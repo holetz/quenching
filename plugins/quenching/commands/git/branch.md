@@ -2,7 +2,7 @@
 description: >-
   Take isolation for a piece of work: worktree, plain branch or in place, stamped. Use for "isolate this work", "cut a branch for this", "take a worktree". Not for: pruning → /quenching:git:cleanup.
 argument-hint: [id-or-branch-name]
-allowed-tools: Bash(cq:*), Bash, Read, AskUserQuestion
+allowed-tools: Bash(cq git:*), Bash(cq specs config:*), Bash(cq specs status:*), Bash(cq components read:*), Read, AskUserQuestion
 ---
 
 # /quenching:git:branch — take isolation before writing code
@@ -16,10 +16,7 @@ the default names, `worktreeSetup`, and the two records a taken isolation leaves
 [git/isolation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/isolation.md), cited below rather
 than restated; this command is its standalone entry point for a caller with no build loop of its own.
 
-**Why `Bash` is unrestricted here.** `allowed-tools` grants bare `Bash` because step 4 runs a target-declared `worktreeSetup` — an
-arbitrary command this file cannot scope in advance — beside `git checkout` (the **Branch** form)
-and the `cq` verbs. Every git step the `git-steward` runs here is a `cq git` verb with a fixed
-argv (`state`, `worktree add`, `specs`), so the steward needs no `Bash(git …)` grant.
+**Grants.** `allowed-tools` holds only the `cq` verbs the `git-steward` also holds: a skill's grant widens the `tools:` of the subagent that runs it, so a wider one here would reopen what the steward's `tools:` closes. A `worktreeSetup`, `git checkout -b` and the `cq specs record` stamps go through the normal permission prompt.
 
 ## Workflow
 
