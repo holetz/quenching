@@ -14,8 +14,12 @@ report is not evidence: ignore its claims and re-measure.
 Checks 2 to 5 and 7 read ONE payload, measured inside the spec's worktree with a fixed argv:
 
 ```bash
-cq git audit --worktree <wt> --base <base> --branch <branch> --sha <sha> [--sha <sha>…] --gate --json
+cq git audit --worktree <wt> --base origin/<base> --branch <branch> --sha <sha> [--sha <sha>…] --gate --json
 ```
+
+`--base` is `origin/<base>` wherever `origin` exists, the ref a worktree is cut from and a PR merged
+through `gh` moves; a local `<base>` reads stale there and would charge a dependency's files to this
+spec. With no `origin` (NO-REMOTE) it is the local `<base>`. Use the base the prompt names.
 
 Run it from the base checkout; it refuses (exit 2) a path the repository does not register as a
 worktree and any ref that does not resolve to a commit. Your only shell grants are this verb,

@@ -350,6 +350,40 @@ class Audit(RepoCase):
         self.assertFalse(marker.exists())
 
 
+    def test_base_origin_excludes_a_dependency_merged_through_the_remote(self):
+        remote = os.path.join(self.tmp, "origin.git")
+        _run(self.tmp, "init", "-q", "--bare", "-b", "main", remote)
+        _run(self.repo, "remote", "add", "origin", remote)
+        _run(self.repo, "push", "-q", "origin", "main")
+        other = os.path.join(self.tmp, "other")
+        _run(self.tmp, "clone", "-q", remote, other)
+        _run(other, "config", "user.email", "test@example.com")
+        _run(other, "config", "user.name", "Test")
+        pathlib.Path(other, "dep.txt").write_text("a\n", encoding="utf-8")
+        _run(other, "add", "dep.txt")
+        _run(other, "commit", "-q", "-m", "dep merged by gh")
+        _run(other, "push", "-q", "origin", "main")
+        _run(self.repo, "fetch", "-q", "origin")
+        wt = os.path.join(self.tmp, "wt-c")
+        _run(self.repo, "worktree", "add", "-q", "-b", "spec/c", wt, "origin/main")
+        _run(wt, "config", "user.email", "test@example.com")
+        _run(wt, "config", "user.name", "Test")
+        pathlib.Path(wt, "c.txt").write_text("c\n", encoding="utf-8")
+        _run(wt, "add", "c.txt")
+        _run(wt, "commit", "-q", "-m", "task c")
+        stale = _cq_json(self.repo, "audit", "--worktree", wt, "--base", "main", "--branch", "spec/c")
+        fresh = _cq_json(self.repo, "audit", "--worktree", wt, "--base", "origin/main",
+                         "--branch", "spec/c")
+        self.assertEqual(stale["changed"], ["c.txt", "dep.txt"])
+        self.assertEqual(fresh["changed"], ["c.txt"])
+
+    def test_bodies_name_origin_base(self):
+        for rel in ("agents/verifier.md", "agents/orchestrator.md", "commands/specs/conclude.md"):
+            text = (PLUGIN_ROOT / rel).read_text(encoding="utf-8")
+            self.assertIn("origin/<base>", text, rel)
+        verifier = (PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8")
+        self.assertIn("--base origin/<base>", verifier)
+
 
 class VerifierGrants(unittest.TestCase):
     """The read-only `verifier` holds no grant whose `*` sits mid-pattern, and no raw `git` or
