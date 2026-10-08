@@ -1520,6 +1520,21 @@ class WorktreeRetire(RepoCase):
         self.assertTrue(os.path.isdir(self.wt))
         self.assertIn("plan/1-x", self._heads())
 
+    def test_an_ignored_file_stands_unless_discarded(self):
+        self._merge_through_gh()
+        info = os.path.join(self.repo, ".git", "info", "exclude")
+        os.makedirs(os.path.dirname(info), exist_ok=True)
+        pathlib.Path(info).write_text("handoff.md\n", encoding="utf-8")
+        pathlib.Path(self.wt, "handoff.md").write_text("keep\n", encoding="utf-8")
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        self.assertIn("handoff.md", json.loads(proc.stdout)["ignored"])
+        self.assertTrue(os.path.isdir(self.wt))
+        self.assertIn("plan/1-x", self._heads())
+        proc = self._retire("--discard-ignored")
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertFalse(os.path.exists(self.wt))
+
     def test_primary_mismatch_and_option_shaped_names_are_refused(self):
         self._merge_through_gh()
         cases = ((self.repo, "plan/1-x"), (self.wt, "main"), (self.wt, "bad..name"),

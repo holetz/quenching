@@ -187,6 +187,14 @@ def _registered_worktrees(cwd: str) -> list[tuple[str, str | None]]:
     return found
 
 
+def _ignored_files(path: str) -> list[str]:
+    """Ignored entries the worktree holds that are not symlinks: the shared paths `worktree link`
+    materialises are symlinks into a store and survive the removal, anything else is deleted."""
+    code, out, _err = _git_run(path, *SAFE, "status", "--porcelain", "--ignored=matching")
+    entries = [line[3:] for line in (out.splitlines() if code == 0 else []) if line.startswith("!! ")]
+    return [e for e in entries if not os.path.islink(os.path.join(path, e.rstrip("/")))]
+
+
 def _retire(args) -> int:
     """Remove a merged spec's worktree and delete its branch with `branch -d`, never `-D`.
 
@@ -194,7 +202,8 @@ def _retire(args) -> int:
     when the remote does not exist), because a PR merged through `gh` moves the remote base. Every
     refusal (exit 2) happens before a write. The worktree goes first, since git will not delete a
     branch checked out in one; `worktree remove` runs without `--force`, so a dirty worktree
-    stands. If `branch -d` then refuses (the local base is behind), the branch stands, exit 1."""
+    stands. A worktree holding ignored files that are not symlinks stands too (exit 1, `ignored`
+    lists them) unless `--discard-ignored` is passed. If `branch -d` then refuses (the local base is behind), the branch stands, exit 1."""
     cwd = os.getcwd()
     missing = [f"--{k}" for k in ("path", "branch", "base") if not getattr(args, k)]
     if missing:
@@ -243,6 +252,12 @@ def _retire(args) -> int:
                       args.json)
     payload = {"ok": False, "path": path, "branch": args.branch, "base": target,
                "worktreeRemoved": False, "branchDeleted": False}
+    ignored = [] if args.discard_ignored else _ignored_files(path)
+    if ignored:
+        payload.update(ignored=ignored, message=f"the worktree holds ignored files that removal "
+                       f"would delete: {', '.join(ignored)}; pass --discard-ignored to remove anyway")
+        emit(args.json, payload, f"worktree {path} kept: {payload['message']}")
+        return FINDINGS
     code, _out, err = _git_run(cwd, *SAFE, "worktree", "remove", "--", path)
     if code != 0:
         payload["message"] = err.strip()
