@@ -40,7 +40,9 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    at most 1,500 characters: the spec id, the worktree path, the model, the return format and the
    no-stash sentence below. A worker that reaches its limit writes a handoff note and returns
    `STATE: continue`.
-4. **Accept** a spec only when the `verifier` returns PASS for it. A worker's own report is a
+4. **Accept** a spec only when the `verifier` returns PASS for it, check 8 (conclusion: `phase archive`
+   and an `Outcome`) included. A spec the `conclude` did not archive is never `done` and its PR
+   is never handed to `git-steward` for the merge step. A worker's own report is a
    claim, not evidence. FAIL means one re-spawn of the worker with the verifier's evidence and the
    handoff note; a second FAIL escalates to the human with both reports.
 5. **Retry and idempotency.** Retry a failed `cq` write with backoff. Before any create, search by
