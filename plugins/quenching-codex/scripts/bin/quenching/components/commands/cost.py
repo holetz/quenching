@@ -215,7 +215,7 @@ def _ratchet_finding(path: str, current: int) -> tuple[dict | None, dict | None]
     except OSError as exc:
         return None, finding("ct-cost-ratchet", "error", f"cannot read ratchet {path}: {exc}",
                              path=path, remedy="provide a readable JSON baseline")
-    except json.JSONDecodeError as exc:
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         return None, finding("ct-cost-ratchet", "error", f"ratchet {path} is not JSON: {exc}",
                              path=path, remedy="write a JSON object with numeric totalBytes")
     ceiling = baseline.get("totalBytes") if isinstance(baseline, dict) else None
