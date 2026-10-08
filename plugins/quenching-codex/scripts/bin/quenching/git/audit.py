@@ -177,60 +177,111 @@ def _split_entries(value: str) -> list[str]:
     return [e.strip("'\"") for e in out if e]
 
 
-def _frontmatter(text: str, keys: tuple[str, ...]) -> set[str] | None:
-    """The entries of `keys` in a leading frontmatter block, inline or as a block list; `None` when
-    there is no frontmatter or none of `keys` appears in it."""
+KNOWN_KEYS = GRANT_KEYS + DENY_KEYS
+TOP_KEY = re.compile(r"^([A-Za-z_-]+):(?:\s+(.*))?$")
+LIST_ITEM = re.compile(r"^\s*-\s+")
+
+
+def _block(text: str | None) -> tuple[dict[str, list[str]], bool] | None:
+    """The leading frontmatter block as `{key: [its lines]}` plus whether every line was
+    recognized; `None` when there is no block. A top-level `key:` opens a key, the indented and
+    `- item` lines after it belong to it, blank and `#` lines are skipped. Any other top-level line
+    (a quoted key, a line with no `key:`), a repeated key, or a known key whose value is inline AND
+    continued on the next line is not recognized: the audit computes only what it reads whole."""
+    if text is None:
+        return None
     lines = text.splitlines()
     if not lines or lines[0].strip() != "---":
         return None
+    keys: dict[str, list[str]] = {}
+    ok, cur = True, None
+    for line in lines[1:]:
+        if line.strip() == "---":
+            break
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        m = TOP_KEY.match(line)
+        if m:
+            cur = m.group(1)
+            if cur in keys:
+                ok = False
+            keys[cur] = [line]
+        elif cur is not None and (line[:1] in (" ", "\t") or LIST_ITEM.match(line)):
+            keys[cur].append(line)
+        else:
+            ok = False
+    for body in filter(None, map(keys.get, KNOWN_KEYS)):
+        inline = (TOP_KEY.match(body[0]).group(2) or "").strip()
+        if body[1:] and (inline or not all(LIST_ITEM.match(ln) for ln in body[1:])):
+            ok = False
+    return keys, ok
+
+
+def _entries(keys: dict[str, list[str]], wanted: tuple[str, ...]) -> set[str] | None:
+    """The entries of `wanted` in a recognized block, inline or as a block list; `None` when none
+    of `wanted` appears."""
     found: set[str] | None = None
-    i = 1
-    while i < len(lines) and lines[i].strip() != "---":
-        m = re.match(r"^([A-Za-z_-]+):\s*(.*)$", lines[i])
-        if m and m.group(1) in keys:
-            found = found or set()
-            value = m.group(2).strip()
-            if value.startswith("[") and value.endswith("]"):
-                value = value[1:-1]
-            found.update(_split_entries(value))
-            while i + 1 < len(lines) and re.match(r"^\s+-\s+|^-\s+", lines[i + 1]):
-                i += 1
-                found.update(_split_entries(re.sub(r"^\s*-\s+", "", lines[i])))
-        i += 1
+    for key in wanted:
+        if key not in keys:
+            continue
+        found = found or set()
+        head, *items = keys[key]
+        value = (TOP_KEY.match(head).group(2) or "").strip()
+        if value.startswith("[") and value.endswith("]"):
+            value = value[1:-1]
+        found.update(_split_entries(value))
+        for item in items:
+            found.update(_split_entries(LIST_ITEM.sub("", item)))
     return found
 
 
-def _grant_entries(text: str | None, agent: bool) -> set[str]:
+def _grant_entries(text: str | None, parsed: tuple[dict[str, list[str]], bool] | None,
+                   agent: bool) -> set[str]:
     """What `tools:` / `allowed-tools:` grant. An agent whose frontmatter has no `tools:` holds
     every tool, read as `*`; an absent file grants nothing."""
     if text is None:
         return set()
-    found = _frontmatter(text, GRANT_KEYS)
+    found = _entries(parsed[0], GRANT_KEYS) if parsed else None
     if found is None:
         return {"*"} if agent else set()
     return found
 
 
+def _unknown_keys(old: dict[str, list[str]], new: dict[str, list[str]]) -> list[str]:
+    """Every key outside the known ones that the branch adds, removes or changes."""
+    return sorted(k for k in set(old) | set(new)
+                  if k not in KNOWN_KEYS and old.get(k) != new.get(k))
+
+
 def _deny_entries(path: str, text: str | None) -> set[str]:
     """The deny rules of a file: `permissions.deny` of a settings JSON, `disallowedTools` of a
-    frontmatter. Raises ValueError on a settings file that is not a JSON object."""
+    frontmatter. Raises ValueError on a settings file that is not a JSON object, whose
+    `permissions` is not an object or whose `deny` is not a list."""
     if text is None:
         return set()
     if SETTINGS.search(path):
         data = json.loads(text)
         if not isinstance(data, dict):
             raise ValueError("not a JSON object")
-        deny = (data.get("permissions") or {}).get("deny") or []
+        permissions = data.get("permissions", {})
+        if not isinstance(permissions, dict):
+            raise ValueError("permissions is not an object")
+        deny = permissions.get("deny", [])
+        if not isinstance(deny, list):
+            raise ValueError("permissions.deny is not a list")
         return {str(e) for e in deny}
-    return _frontmatter(text, DENY_KEYS) or set()
+    parsed = _block(text)
+    return (_entries(parsed[0], DENY_KEYS) if parsed else None) or set()
 
 
 def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, str],
             errors: list[dict]) -> list[dict]:
     """Every entry the branch ADDS to the grant surface against its merge-base with `base`:
     `tools:`/`allowed-tools:` of an agent, command or skill (an agent with no `tools:` is `*`), a
-    deny rule removed (`kind: deny`), and the added lines of a hook or CI workflow. Narrowing and
-    unchanged never appear."""
+    deny rule removed (`kind: deny`), and the added lines of a hook or CI workflow. What it does not
+    understand fails closed as `kind: unknown`: any other frontmatter key added, removed or changed
+    (its name), a changed block it cannot read whole (`(unparsed frontmatter)`), and a sensitive
+    file deleted (`(deleted)`). Narrowing and unchanged never appear."""
     code, out, err = _git_run(cwd, *SAFE, "merge-base", base, tip, env=env)
     if code != 0 or not out.strip():
         errors.append(_error(("merge-base", base), code, err or "no common ancestor"))
@@ -248,14 +299,25 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
             continue
         new = show(tip, path)
         if new is None:
-            continue          # deleted at the tip: nothing was added
+            found.append({"path": path, "kind": "unknown", "added": ["(deleted)"]})
+            continue
         old = show(fork, path)
+        unparsed = False
         if frontmatter:
             agent = bool(AGENT.search(path))
-            added = sorted(_grant_entries(new, agent) - _grant_entries(old, agent))
-            if added:
-                found.append({"path": path, "kind": "tools", "added": added})
-        if frontmatter or SETTINGS.search(path):
+            old_fm, new_fm = _block(old), _block(new)
+            (old_keys, old_ok), (new_keys, new_ok) = old_fm or ({}, True), new_fm or ({}, True)
+            if old_keys != new_keys and not (old_ok and new_ok):
+                unparsed = True
+                found.append({"path": path, "kind": "unknown", "added": ["(unparsed frontmatter)"]})
+            else:
+                added = sorted(_grant_entries(new, new_fm, agent) - _grant_entries(old, old_fm, agent))
+                if added:
+                    found.append({"path": path, "kind": "tools", "added": added})
+                unknown = _unknown_keys(old_keys, new_keys)
+                if unknown:
+                    found.append({"path": path, "kind": "unknown", "added": unknown})
+        if (frontmatter and not unparsed) or SETTINGS.search(path):
             try:
                 removed = sorted(_deny_entries(path, old) - _deny_entries(path, new))
             except ValueError as exc:
