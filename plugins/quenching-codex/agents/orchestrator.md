@@ -80,7 +80,7 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
 8. **Telemetry.** Record tokens per worker from each result, with the worker's model tier beside
    it, and stop when the run's budget is hit. Tokens of different tiers are never added into one
    number: report them per model, and take the cost by agent type, model and window from
-   `cq components session cost` over the session's subagent transcripts.
+   `cq components session cost <session id>` over the subagent transcripts of its own session (the id of the transcript it runs in); without an id the verb refuses when several sessions have subagents.
 
 ## Hard prohibitions
 
