@@ -41,7 +41,7 @@ GH_TIMEOUT_S = 120
 def _gh(*argv: str, stdin: str | None = None) -> tuple[int, str, str]:
     try:
         done = subprocess.run(["gh", *argv], capture_output=True, text=True, input=stdin or "",
-                              timeout=GH_TIMEOUT_S)
+                              timeout=GH_TIMEOUT_S, env={**os.environ, "LC_ALL": "C", "LANG": "C"})
     except (OSError, subprocess.SubprocessError) as e:
         return 127, "", str(e)
     return done.returncode, done.stdout, done.stderr
