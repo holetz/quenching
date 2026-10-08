@@ -583,6 +583,45 @@ class RegenerateListing(unittest.TestCase):
             self.assertEqual(before.split("<!-- BEGIN")[0], after.split("<!-- BEGIN")[0])
             self.assertFalse(regenerate_listing(tmp, write=True)["changed"])
 
+    def test_a_pipe_in_a_description_converges(self):
+        from quenching.knowledge.structure import regenerate_listing
+        fixture = _generated_fixture(("imports.md", "exports.md"), "How we import")
+        fixture["standards/code/imports.md"] = _standard("Imports", "Read | write paths")
+        with tempfile.TemporaryDirectory() as tmp:
+            self._bundle(tmp, fixture)
+            for _ in range(3):
+                regenerate_listing(tmp, write=True)
+            self.assertFalse(regenerate_listing(tmp, write=True)["changed"])
+            text = pathlib.Path(tmp, "standards", "index.md").read_text(encoding="utf-8")
+            self.assertEqual(text.count("[imports.md]"), 2)   # the mold comment + one row
+            self.assertEqual(self._codes(tmp), set())
+
+    def test_an_anchored_row_is_kept_not_recreated(self):
+        from quenching.knowledge.structure import regenerate_listing
+        fixture = _generated_fixture(("imports.md", "exports.md"), "How we import")
+        fixture["standards/index.md"] = fixture["standards/index.md"].replace(
+            "(code/imports.md)", "(code/imports.md#rules)")
+        with tempfile.TemporaryDirectory() as tmp:
+            self._bundle(tmp, fixture)
+            report = regenerate_listing(tmp, write=True)
+            self.assertEqual((report["removed"], report["added"]), ([], []))
+            self.assertFalse(report["changed"])
+
+    def test_an_emptied_subfolder_keeps_one_heading(self):
+        from quenching.knowledge.structure import regenerate_listing
+        fixture = _generated_fixture(("imports.md",), "How we import")
+        fixture["standards/code/index.md"] = "# code/\n\n- [renamed.md](renamed.md)\n"
+        del fixture["standards/code/exports.md"]
+        del fixture["standards/code/imports.md"]
+        fixture["standards/code/renamed.md"] = _standard("Renamed", "A renamed doc")
+        with tempfile.TemporaryDirectory() as tmp:
+            self._bundle(tmp, fixture)
+            regenerate_listing(tmp, write=True)
+            text = pathlib.Path(tmp, "standards", "index.md").read_text(encoding="utf-8")
+            self.assertEqual(text.count("### code/"), 1)
+            self.assertFalse(regenerate_listing(tmp, write=True)["changed"])
+            self.assertEqual(self._codes(tmp), set())
+
     def test_the_listing_verb_checks_then_writes(self):
         with tempfile.TemporaryDirectory() as tmp:
             self._bundle(tmp, {f"docs_x/{k}": v for k, v in STALE_ZONE.items()})
