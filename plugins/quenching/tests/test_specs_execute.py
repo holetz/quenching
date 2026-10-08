@@ -79,6 +79,8 @@ class TaskExecutionContractTests(unittest.TestCase):
 
         self.assertIn('Skill("quenching:git:pr:create", "<id>")', conclude)
         self.assertIn("`low` chains the provider handoff", conclude)
+        self.assertNotIn('"<id> autonomous")', conclude)
+        self.assertIn("do not invoke it", conclude)
         self.assertIn('Skill("quenching:git:pr:create", "<id>")', scale)
         self.assertIn("The other levels retain", scale)
 

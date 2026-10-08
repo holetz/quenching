@@ -9,14 +9,14 @@ model: opus
 # /quenching:specs:conclude — review, archive, distil — and hand off
 
 **Input**: `$ARGUMENTS` — the spec id, and optionally its outcome. A conductor launched with
-`--autonomous` adds the word `autonomous`; the `low` handoff forwards it to `pr:create`.
+`--autonomous` adds the word `autonomous`; the run then stops at the named PR handoff, which the `git-steward` performs.
 
 Closes ONE spec out, short of the merge itself. Four things happen, in this order, and each is a
 separate decision: the whole branch is **reviewed**, the `/docs/` the work *revealed* is
 **written**, the spec is **archived and distilled** into the OKF bundle, and the pre-merge gate is
 **proven green** — then the run **stops**, naming `/quenching:git:pr:create` or
 `/quenching:git:merge` as the human's own next command — except that `low` gear chains directly
-to `/quenching:git:pr:create` through `Skill` after the green gate.
+to `/quenching:git:pr:create` through `Skill` after the green gate, unless the input carried `autonomous`.
 
 **Done work ends on the work branch; abandoned close-out writes land in the checkout holding the
 base.**
@@ -239,12 +239,14 @@ read the complexity from the status payload already in hand. **`low` chains the 
 now:**
 
 ```text
-Skill("quenching:git:pr:create", "<id>")                # no autonomous
-Skill("quenching:git:pr:create", "<id> autonomous")     # input carried the word autonomous
+Skill("quenching:git:pr:create", "<id>")
 ```
 
-Invoke it with the spec id, plus `autonomous` only when this run's input carried it; `/quenching:git:pr:create` owns its own confirmation, push and PR
-record. Do not offer a second handoff or invoke `/quenching:git:merge` on the low path. **For
+Invoke it with the spec id; `/quenching:git:pr:create` owns its own confirmation, push and PR
+record. Do not offer a second handoff or invoke `/quenching:git:merge` on the low path.
+**When this run's input carried `autonomous`, do not invoke it:** the orchestrator hands push and PR
+to the `git-steward` after the verifier accepts the spec. Name the handoff (`/quenching:git:pr:create
+<id> autonomous`) in the report and stop. **For
 `medium`, `high` and `xhigh`, name the handoff and stop:**
 
 Use the provider configuration already read in step 1 to name the next command: recommend
