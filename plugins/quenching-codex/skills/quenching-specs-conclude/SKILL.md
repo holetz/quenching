@@ -8,7 +8,8 @@ description: "Close ONE spec out: review the branch, write knowledge, archive, p
 
 # quenching-specs-conclude — review, archive, distil — and hand off
 
-**Input**: `$ARGUMENTS` — the spec id, and optionally its outcome.
+**Input**: `$ARGUMENTS` — the spec id, and optionally its outcome. A conductor launched with
+`--autonomous` adds the word `autonomous`; the `low` handoff forwards it to `pr:create`.
 
 Closes ONE spec out, short of the merge itself. Four things happen, in this order, and each is a
 separate decision: the whole branch is **reviewed**, the `/docs/` the work *revealed* is
@@ -238,10 +239,11 @@ read the complexity from the status payload already in hand. **`low` chains the 
 now:**
 
 ```text
-Skill("quenching:git:pr:create", "<id>")
+Skill("quenching:git:pr:create", "<id>")                # no autonomous
+Skill("quenching:git:pr:create", "<id> autonomous")     # input carried the word autonomous
 ```
 
-Invoke it with the spec id; `quenching-git-pr-create` owns its own confirmation, push and PR
+Invoke it with the spec id, plus `autonomous` only when this run's input carried it; `quenching-git-pr-create` owns its own confirmation, push and PR
 record. Do not offer a second handoff or invoke `quenching-git-merge` on the low path. **For
 `medium`, `high` and `xhigh`, name the handoff and stop:**
 
