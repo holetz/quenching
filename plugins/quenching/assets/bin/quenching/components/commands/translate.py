@@ -467,6 +467,15 @@ def command_to_skill(command: Path, adaptation: dict) -> str:
     return header + transform_codex_markdown(transform_platform(raw[end + len("\n---\n"):], adaptation))
 
 
+def skill_policy(command: Path) -> bytes | None:
+    """Codex's `agents/openai.yaml` that keeps a `disable-model-invocation` command human-only."""
+    raw = command.read_text(encoding="utf-8")
+    end = raw.find("\n---\n", 4) if raw.startswith("---\n") else -1
+    flagged = any(line.strip().lower() == "disable-model-invocation: true"
+                  for line in raw[4:end].splitlines()) if end > 0 else False
+    return b"policy:\n  allow_implicit_invocation: false\n" if flagged else None
+
+
 def generated_tree() -> dict[str, bytes]:
     adaptation, output = read_adaptation(), {}
     if not plugin_translation():
@@ -474,6 +483,8 @@ def generated_tree() -> dict[str, bytes]:
         for command in sorted(commands.rglob("*.md")):
             relative = command.relative_to(commands).with_suffix("")
             output[str(Path("skills") / relative / "SKILL.md")] = command_to_skill(command, adaptation).encode()
+            if (policy := skill_policy(command)) is not None:
+                output[str(Path("skills") / relative / "agents" / "openai.yaml")] = policy
         references = claude_surface() / "references"
         if references.is_dir():
             for reference in sorted(path for path in references.rglob("*") if path.is_file()):
@@ -506,6 +517,8 @@ def generated_tree() -> dict[str, bytes]:
                       "brandColor": "#0F766E", "screenshots": []}}, indent=2, ensure_ascii=False).encode() + b"\n"
     for command in sorted((source() / "commands").rglob("*.md")):
         output[str(Path("skills") / skill_name(command) / "SKILL.md")] = command_to_skill(command, adaptation).encode()
+        if (policy := skill_policy(command)) is not None:
+            output[str(Path("skills") / skill_name(command) / "agents" / "openai.yaml")] = policy
     for rel in COPY_FILES:
         destination = Path("scripts/cq") if rel == "bin/cq" else Path(rel)
         content = transform_platform((source() / rel).read_text(encoding="utf-8"), adaptation)

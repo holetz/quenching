@@ -280,6 +280,18 @@ class RepositorySurfaceTranslation(unittest.TestCase):
             self.assertEqual(translate.cmd_translate(args, str(self.root)), 2)
         self.assertIn("Claude side is authoritative", output.getvalue())
 
+    def test_human_only_commands_get_a_codex_policy_that_blocks_implicit_invocation(self):
+        commands = self.root / ".claude" / "commands" / "git"
+        commands.mkdir(parents=True)
+        (commands / "cleanup.md").write_text(
+            "---\ndescription: Prune.\ndisable-model-invocation: true\n---\n\nBody.\n", encoding="utf-8")
+        translate.configure(str(self.root), str(self.root))
+        tree = translate.generated_tree()
+
+        self.assertEqual(tree["skills/git/cleanup/agents/openai.yaml"],
+                         b"policy:\n  allow_implicit_invocation: false\n")
+        self.assertNotIn("skills/specs/status/agents/openai.yaml", tree)
+
     def test_package_translation_keeps_both_harness_names_exempt(self):
         source = translate.payload_root()
         translate.configure(str(source), str(self.root / "quenching-codex"))
