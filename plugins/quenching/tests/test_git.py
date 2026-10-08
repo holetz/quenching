@@ -375,6 +375,21 @@ class Audit(RepoCase):
         payload = _cq_json(self.repo, *self._reflog_args())
         self.assertEqual(len([x for x in payload["reflog"]["branch"] if x.startswith("(no reflog message)")]), 2)
 
+    def test_rewrites_judge_the_graph_not_the_message(self):
+        self._commit_more()
+        clean = _cq_json(self.repo, *self._reflog_args())["rewrites"]
+        self.assertEqual(clean, {"branch": [], "head": []})
+        _run(self.wt, "update-ref", "-m", "commit: tidy", "refs/heads/spec/1", "HEAD~1")
+        forged = _cq_json(self.repo, *self._reflog_args())["rewrites"]
+        self.assertEqual(len(forged["branch"]), 1)
+        self.assertTrue(forged["branch"][0].startswith("commit: tidy"))
+
+    def test_rewrites_see_an_update_ref_without_a_message(self):
+        self._commit_more()
+        _run(self.wt, "update-ref", "refs/heads/spec/1", "HEAD~1")
+        rewrites = _cq_json(self.repo, *self._reflog_args())["rewrites"]
+        self.assertTrue(rewrites["branch"][0].startswith("(no reflog message)"))
+
     def test_expired_reflog_is_an_error_not_a_clean_audit(self):
         _run(self.wt, "reflog", "expire", "--expire=now", "--all")
         payload = _cq_json(self.repo, *self._reflog_args())
