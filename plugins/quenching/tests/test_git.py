@@ -2189,6 +2189,15 @@ class PullRequestVerbs(RepoCase):
             self.assertEqual(json.loads(proc.stdout)["code"], "git-pr-azure-at-prefix")
         self.assertEqual(self._calls(), [])
 
+    def test_azure_create_refuses_an_at_prefixed_head_or_base(self):
+        self._azure_origin()
+        for base, head in (("main", "@notes.txt"), ("@notes.txt", "plan/1-x")):
+            proc = _cq(self.repo, "pr", "create", "--base", base, "--head", head,
+                       "--title", "t", "--body", "b", env=self.env)
+            self.assertEqual(proc.returncode, 2, (base, head, proc.stdout))
+            self.assertEqual(json.loads(proc.stdout)["code"], "git-pr-azure-at-prefix")
+        self.assertEqual(self._calls(), [])
+
     def test_azure_create_stamps_the_web_url_never_the_api_url(self):
         from quenching.git import pull
         seen = []
