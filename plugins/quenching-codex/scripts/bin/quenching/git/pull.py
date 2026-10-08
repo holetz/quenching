@@ -20,7 +20,7 @@ import time
 from quenching.common.output import FINDINGS, OK, emit, refuse
 from quenching.git.audit import _branch_ok
 
-PR_URL = re.compile(r"^https://[A-Za-z0-9.-]+/[\w.-]+/[\w.-]+/pull/(\d+)$")
+PR_URL = re.compile(r"https://[A-Za-z0-9.-]+/[\w.-]+/[\w.-]+/pull/(\d+)")
 GREEN = {"pass", "skipping"}
 RED = {"fail", "cancel"}
 POLL_S = 20
@@ -57,7 +57,7 @@ def _checks(url: str) -> tuple[str, list[dict], str]:
 
 
 def _merge(args) -> int:
-    match = PR_URL.match(args.url or "")
+    match = PR_URL.fullmatch(args.url or "")
     if not match:
         return refuse({"code": "git-pr-url-invalid",
                        "message": f"not a pull-request URL: {args.url}"}, args.json)
@@ -103,12 +103,12 @@ def _create(args) -> int:
     code, out, err = _gh("pr", "create", f"--base={args.base}", f"--head={args.head}",
                          f"--title={args.title}", "--body-file=-", stdin=args.body)
     lines = [line.strip() for line in out.splitlines() if line.strip()]
-    url = next((line for line in reversed(lines) if PR_URL.match(line)), None)
+    url = next((line for line in reversed(lines) if PR_URL.fullmatch(line)), None)
     if code != 0 or url is None:
         emit(args.json, {"ok": False, "reason": "create-refused",
                          "message": (err or out).strip()}, f"PR not created: {(err or out).strip()}")
         return FINDINGS
-    number = int(PR_URL.match(url).group(1))
+    number = int(PR_URL.fullmatch(url).group(1))
     emit(args.json, {"ok": True, "url": url, "number": number, "base": args.base,
                      "head": args.head}, f"PR #{number}: {url}")
     return OK

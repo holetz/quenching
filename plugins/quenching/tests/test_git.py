@@ -1299,7 +1299,7 @@ class PullRequestVerbs(RepoCase):
         self.assertEqual(self._merge_calls(), [])
 
     def test_option_shaped_url_and_out_of_range_wait_are_refused(self):
-        for argv in (("--url=-d",), ("--url", f"{self.URL} --squash"),
+        for argv in (("--url=-d",), ("--url", f"{self.URL} --squash"), ("--url", f"{self.URL}\n"),
                      ("--url", self.URL, "--wait", "600")):
             proc = _cq(self.repo, "pr", "merge", *argv, env=self.env)
             self.assertEqual(proc.returncode, 2, (argv, proc.stdout))

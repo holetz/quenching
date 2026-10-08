@@ -538,7 +538,7 @@
     "scripts/bin/quenching/git/conventions.py": "db61245dcf96d49f80e646eff9fe55034fba586f172b07c89c35ecf497c7d088",
     "scripts/bin/quenching/git/pr.py": "747e5dbffa41d6226a9a056693d0796a6a385969852424d3732ca4d7a904b5fd",
     "scripts/bin/quenching/git/prune.py": "5592afcf965802e29180e994fed295d432a66e94d740a350d797083af811af34",
-    "scripts/bin/quenching/git/pull.py": "e1f7d8047f0c218f87613ece0fc49c72ee5aac6f89e0fde007373ac2dcc16263",
+    "scripts/bin/quenching/git/pull.py": "6b3f77be68685167bfd1e484409447a3ef51fa2084e0430a09d16bf3bde55b0e",
     "scripts/bin/quenching/git/push.py": "68d003aaba3752a2e5fa5c251bdfe6f275126723f54fe95c02362c972dbce081",
     "scripts/bin/quenching/git/slugs.py": "f1dfd616a496462d75d2f94bd3478d6664bddf9e596c93297475f55b5a6a4fc2",
     "scripts/bin/quenching/git/stale.py": "47cd29535c0693cc4fa4179f3dbb7751bb4de2f84af823f7c79d823c7547e67a",
