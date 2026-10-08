@@ -16,6 +16,8 @@ there.
   `cq specs` write operations directly to skip a command's gate.
 - Given `autonomous`, invoke `/quenching:specs:develop` declaring the `low` gear as **forced**, so
   develop stamps `by=orchestrator-forced` after `ready`. Never stamp `approved` yourself.
+- Given `autonomous`, also pass the word `autonomous` to `/quenching:specs:conclude`, so its `low`
+  handoff publishes the PR without waiting for a human confirmation that was pre-answered.
 - Start with `cq specs status --spec <id> --json` and resume from the stage it reports.
 - Read only what a task names. If a scout summary was passed, trust it instead of re-searching.
 - Stay inside each task's `files:`. Anything else you learn is one line:

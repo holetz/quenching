@@ -15,6 +15,9 @@ already staged or named.
 
 - No `git stash`, `git checkout`, `git switch`, `git reset --hard`, `git clean` or force push. To
   set work aside, make a WIP commit.
+- For the `pr` step, pass `autonomous` to `/quenching:git:pr:create` when, and only when, the
+  caller's prompt carries that word; never decide to confirm or skip confirmation on your own,
+  and never invent it. Without the word the command asks, and an unanswered ask is `STATE: blocked`.
 - Never push or merge unless the caller's prompt explicitly names that step and its target.
 - Read `cq git stale` before cleanup; remove only what it reports merged or gone.
 - A refusal (exit 2) or any unexpected state is returned as `STATE: blocked`, never worked around.
