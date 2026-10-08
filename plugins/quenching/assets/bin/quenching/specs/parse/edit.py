@@ -101,6 +101,36 @@ def split_section_stream(text: str, candidates: list[str]) -> list[tuple[str | N
     return [(h, "\n".join(b).strip("\n")) for h, b in zip(heads, bodies)]
 
 
+def whole_body(content: str, heading: str) -> tuple[str, str | None]:
+    """A body this command splices whole under `## <heading>`, checked for the one thing that
+    makes the splice write a second section: an unfenced `## ` line of its own.
+
+    A FIRST line that is the section's own heading is the form the read prints, so it is
+    dropped rather than refused — writing back what was read must round-trip. Any other
+    unfenced `## ` line comes back as the refusal; the same fence rule `parse_sections`
+    holds keeps a quoted `## Design` inside a code block legal. Returns (body, offending line)."""
+    lines = content.splitlines()
+    first = next((i for i, ln in enumerate(lines) if ln.strip()), None)
+    if first is not None:
+        h = HEADING_RE.match(lines[first])
+        if h and len(h.group(1)) == 2 and h.group(2).strip().lower() == heading.lower():
+            lines = lines[first + 1:]
+    fence: str | None = None
+    for line in lines:
+        m = FENCE_RE.match(line)
+        if m:
+            mark = m.group(1)
+            if fence is None:
+                fence = mark[0] * len(mark)
+            elif mark[0] == fence[0] and len(mark) >= len(fence):
+                fence = None
+        elif fence is None:
+            h = HEADING_RE.match(line)
+            if h and len(h.group(1)) == 2:
+                return content, line.strip()
+    return "\n".join(lines), None
+
+
 def fold_stray_heading(info: dict, stray: str,
                        schema: dict | None = None) -> tuple[str, str | None]:
     """Demote one stray `## X` to `### X` **in place**, so its whole body becomes part of the
