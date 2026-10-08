@@ -316,6 +316,16 @@ class CqCallsAgainstTheParsers(unittest.TestCase):
         self.assertEqual(found[0]["line"], 1)
         self.assertIn("--spec", found[0]["message"])
 
+    def test_show_and_parallel_without_an_id_are_flag_findings(self):
+        for call in ("cq specs show --task 1.1", "cq specs parallel --json"):
+            found = _cq_call_findings(f"```bash\n{call}\n```\n", self.WHERE)
+            self.assertEqual([f["code"] for f in found], ["sk-cq-flag"], call)
+            self.assertIn("--spec", found[0]["message"])
+
+    def test_show_and_parallel_with_an_id_are_clean(self):
+        body = "```bash\ncq specs show 12 --task 1.1\ncq specs parallel --spec 12\ncq specs status\n```\n"
+        self.assertEqual(self._codes(body), [])
+
     def test_an_unknown_flag_is_a_flag_finding(self):
         self.assertEqual(self._codes("`cq specs show --spec <id> --nope`"), ["sk-cq-flag"])
 
