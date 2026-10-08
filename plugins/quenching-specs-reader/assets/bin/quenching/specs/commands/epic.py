@@ -17,7 +17,7 @@ from quenching.specs.parse.epics import (derive_epic, epic_ref, group_titles, is
                                          next_label, parse_items, pr_number, render_item)
 from quenching.specs.parse.fields import scalar_break, set_frontmatter_key
 from quenching.specs.parse.sections import parse_sections
-from quenching.specs.parse.text import HEADING_RE, mask_comments
+from quenching.specs.parse.text import HEADING_RE, mask_comments, split_lines
 
 LABEL_RE = re.compile(r"^[A-Za-z0-9][\w.-]*$")
 GROUP_NUMBER_RE = re.compile(r"^\d+\.\s*")
@@ -99,7 +99,7 @@ def insert_item(info: dict, line: str, group: str | None) -> str:
     if sec is None:
         body = "## Tasks\n\n" + (f"### {_group_heading(group, 1)}\n" if group else "") + line + "\n"
         return upsert_section(info, "Tasks", body)[0]
-    lines = text.splitlines(keepends=True)
+    lines = split_lines(text, keepends=True)
     base = sec["lineno"] + 1
     end = base + len(sec["lines"])
     while end > base and not lines[end - 1].strip():
