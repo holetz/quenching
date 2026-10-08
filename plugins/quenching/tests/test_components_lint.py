@@ -364,6 +364,12 @@ class AgentGrantGap(unittest.TestCase):
                                                self.WHERE), [])
         self.assertEqual(_agent_grant_findings(body, "Bash, Read", self.WHERE), [])
 
+    def test_a_line_that_says_the_agent_does_not_run_the_verb_is_clean(self):
+        for body in ("The steward does not run `cq specs record`.",
+                     "It skips the command's `cq specs record` stamp.",
+                     "It cannot call `cq specs record`."):
+            self.assertEqual(_agent_grant_findings(body, "Read", self.WHERE), [], body)
+
     def test_lint_agents_reads_the_agents_folder(self):
         with tempfile.TemporaryDirectory() as root:
             agents = pathlib.Path(root, "agents")
