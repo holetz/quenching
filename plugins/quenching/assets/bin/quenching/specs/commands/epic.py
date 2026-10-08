@@ -15,7 +15,7 @@ from quenching.specs.commands.output import Emitter, front_fields
 from quenching.specs.parse.edit import upsert_section
 from quenching.specs.parse.epics import (derive_epic, epic_ref, group_titles, is_epic,
                                          next_label, parse_items, pr_number, render_item)
-from quenching.specs.parse.fields import set_frontmatter_key
+from quenching.specs.parse.fields import scalar_break, set_frontmatter_key
 from quenching.specs.parse.sections import parse_sections
 from quenching.specs.parse.text import HEADING_RE, mask_comments
 
@@ -129,6 +129,12 @@ def cmd_epic(args, root: str, out: Emitter) -> int:
     `epic:` divergence `validate` names, with `epic add` itself as the remedy."""
     if getattr(args, "epic_cmd", None) != "add":
         return _refuse(out, args, "sp-no-command", "choose an epic command: add")
+    # The group becomes a `### N.` heading line: a break would forge the lines after it.
+    bad = scalar_break(args.group or "")
+    if bad:
+        return _refuse(out, args, "sp-bad-scalar",
+                       f"--group is one line with no control character — got {bad}",
+                       field="group", char=bad)
     backend, err = open_backend(root)
     if err:
         return out.emit_err(args.json, err)
