@@ -2,11 +2,20 @@
 
 The reader splits the block with `str.splitlines`, which breaks on more than `\\n`. Each vector
 that writes a scalar has its own test here."""
+import io
+import json
 import unittest
+from contextlib import redirect_stdout
+from types import SimpleNamespace
+from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 
+from test_specs_create_collapse import _Workspace
 from quenching.common.frontmatter import parse_frontmatter
+from quenching.specs.commands import fields as fields_module
+from quenching.specs.commands.fields import cmd_field, cmd_record, cmd_title
+from quenching.specs.commands.output import Emitter
 from quenching.specs.parse.fields import (SCALAR_LINE_BREAKS, scalar_break, set_frontmatter_key,
                                           set_frontmatter_record, set_frontmatter_title)
 
@@ -80,6 +89,77 @@ class TheTitleSetter(unittest.TestCase):
     def test_it_raises_on_a_break(self):
         with self.assertRaises(ValueError):
             set_frontmatter_title(DOC, f"Retitled\r{FORGE}")
+
+
+class TheVerbs(_Workspace):
+    """One test per verb that takes a scalar from its caller: each refuses with exit 2 and
+    leaves the stored document exactly as it was."""
+
+    def setUp(self):
+        super().setUp()
+        patch = mock.patch.object(fields_module, "open_backend",
+                                  lambda _root: (self.backend, {}))
+        patch.start()
+        self.addCleanup(patch.stop)
+        code, obj = self.run_new(title="plain", stdin="## Problem\n\nP.\n")
+        self.assertEqual(code, 0, obj)
+        self.spec = max(self.backend.docs)
+        self.before = self.read_back(self.spec)["text"]
+
+    def call(self, fn, **kw):
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            code = fn(SimpleNamespace(json=True, spec=str(self.spec), **kw), self.root, Emitter())
+        return code, json.loads(buf.getvalue())
+
+    def assert_refused(self, result, code_name):
+        code, obj = result
+        self.assertEqual((code, obj["ok"], obj["code"]), (2, False, code_name), obj)
+        self.assertEqual(self.read_back(self.spec)["text"], self.before)
+        self.assertNotIn("approved", self.read_back(self.spec)["frontmatter"])
+
+    def test_new_refuses_a_title_with_any_break(self):
+        for c in [*SCALAR_LINE_BREAKS, "\x00"]:
+            with self.subTest(char=hex(ord(c))):
+                count = len(self.backend.docs)
+                code, obj = self.run_new(title=f"Add retry{c}{FORGE}{c}x",
+                                         stdin="## Problem\n\nP.\n")
+                self.assertEqual((code, obj["code"]), (2, "sp-bad-title"), obj)
+                self.assertEqual(len(self.backend.docs), count)
+
+    def test_new_refuses_the_positional_name_as_title(self):
+        code, obj = self.run_new(name=f"y\n{FORGE}", stdin="## Problem\n\nP.\n")
+        self.assertEqual((code, obj["code"]), (2, "sp-bad-title"), obj)
+
+    def test_new_refuses_a_tag_with_a_break_json_leaves_raw(self):
+        for c in ("\x85", "\u2028", "\n"):
+            with self.subTest(char=hex(ord(c))):
+                code, obj = self.run_new(tags=f"a,b{c}{FORGE}", stdin="## Problem\n\nP.\n")
+                self.assertEqual((code, obj["code"]), (2, "sp-bad-scalar"), obj)
+
+    def test_title_refuses_a_carriage_return_and_every_break(self):
+        for c in SCALAR_LINE_BREAKS:
+            with self.subTest(char=hex(ord(c))):
+                self.assert_refused(self.call(cmd_title, title=f"Retitled{c}{FORGE}{c}x"),
+                                    "sp-bad-title")
+
+    def test_assignee_refuses_a_break(self):
+        self.assert_refused(self.call(cmd_field, field="assignee", value=f"me\n{FORGE}"),
+                            "sp-bad-scalar")
+
+    def test_tags_refuses_a_break_json_leaves_raw(self):
+        self.assert_refused(self.call(cmd_field, field="tags", value=f"a\u2028{FORGE}"),
+                            "sp-bad-scalar")
+
+    def test_record_refuses_a_break_in_a_value(self):
+        self.assert_refused(self.call(cmd_record, name="branch",
+                                      set=[f"base=main\r{FORGE}"]), "sp-bad-scalar")
+
+    def test_a_clean_title_still_writes(self):
+        code, obj = self.call(cmd_title, title="Retitled\twith a tab: ok")
+        self.assertEqual(code, 0, obj)
+        self.assertEqual(self.read_back(self.spec)["frontmatter"]["title"],
+                         "Retitled\twith a tab: ok")
 
 
 if __name__ == "__main__":
