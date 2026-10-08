@@ -91,7 +91,7 @@ command the human is confirming. The deletion offer defaults to preserve the bra
 ```bash
 git push -u <remote> <branch>
 # github
-gh pr create --base <base> --title "<title>" --body "<body>"
+gh pr create --base <base> --head <branch> --title "<title>" --body "<body>"
 # azure-boards
 az repos pr create --detect true --source-branch <branch> --target-branch <base> \
   --title "<title>" --description "<body>" [--delete-source-branch true] [--work-items <n>] \
@@ -102,7 +102,7 @@ to `id`, `webUrl` and `apiUrl` before reporting it: show `webUrl` as **Link para
 `apiUrl` as **API URL**. For Azure, `webUrl` is
 `repository.webUrl/pullrequest/pullRequestId`, while the response's `url` remains `apiUrl`; never
 show a URL containing `/_apis/` as the Link para revisão. The target branch is explicit
-on both routes: `--base` for GitHub and `--target-branch` for Azure; neither may be omitted. Read
+on both routes: `--base` for GitHub and `--target-branch` for Azure; neither may be omitted. The source is explicit too: `--head <branch>` on GitHub, so the PR leaves the branch resolved in step 1 and never the one the cwd happens to hold; run from a worktree, `git -C <worktree>` carries the push. Read
 the created PR's `id`, `webUrl` and `apiUrl` from the normalized JSON/CLI result. **Done when:**
 the PR exists, or the
 push/create failed and its error is reported verbatim.
