@@ -1,6 +1,5 @@
 """`cost` counts requests (one per message.id), groups by agentType and model, and never
 sums across models."""
-import argparse
 import contextlib
 import io
 import json
