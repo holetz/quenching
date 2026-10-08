@@ -193,7 +193,8 @@ plan was rejected and nothing was written.
   a freshly folded cluster, and a catalog schema dir all get a front door). Each listing links
   its real children (no `dir-no-index`, no `index-broken-link`, no `index-orphan` left behind);
   strip stray frontmatter; for `standards/index.md` rebuild only the
-  `<!-- BEGIN/END GENERATED -->` zone from disk.
+  `<!-- BEGIN/END GENERATED -->` zone with `cq knowledge listing --write`, then confirm it with
+  `cq knowledge listing --check`.
 - **Write** `okf_version: "0.1"` into the root `/docs/index.md` frontmatter.
 - **Never create a `log.md`, and never touch one that is already there.**
 
