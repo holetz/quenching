@@ -71,10 +71,13 @@ def pr_number(member: dict) -> str | None:
     return n or None
 
 
-def member_state(member: dict | None, pr_state: str | None = None) -> str:
+def member_state(member: dict | None, pr_state: str | None = None,
+                 looked_up: bool = False) -> str:
     """`missing`, `done`, `unmerged` (archived `done` whose PR is explicitly not `MERGED`),
-    `dropped` (archived without `done`), `blocked` or `open`. `pr_state` is the member's PR
-    state when the caller could read it; absent or unknown keeps `done`."""
+    `unverified` (archived `done` with a `pr:` record whose state the caller tried and failed to
+    read), `dropped` (archived without `done`), `blocked` or `open`. `pr_state` is the member's
+    PR state when the caller could read it; `looked_up` says the caller tried at all. A caller
+    that never looked keeps `done`; one that looked and got nothing never claims a delivery."""
     if member is None:
         return "missing"
     if member["phase"] == "archive":
@@ -82,6 +85,8 @@ def member_state(member: dict | None, pr_state: str | None = None) -> str:
             return "dropped"
         if pr_number(member) and pr_state and pr_state.upper() != "MERGED":
             return "unmerged"
+        if pr_number(member) and looked_up and not pr_state:
+            return "unverified"
         return "done"
     return "blocked" if task_progress(member["tasks"])[1] else "open"
 
@@ -120,13 +125,15 @@ def derive_epic(info: dict, members: dict[str, dict | None],
                 pr_state: dict[str, str] | None = None) -> dict:
     """The epic's whole derived state. `members` maps a member id string to its `info`, or `None`.
     `pr_state` maps a member id to its PR's state (`MERGED`, `OPEN`, `CLOSED`); the derivation
-    stays pure, the caller does the lookup."""
+    stays pure, the caller does the lookup. `None` means no lookup was made; a dict (even empty)
+    means it was, and a member with a `pr:` record absent from it is `unverified`."""
     items = parse_items(info)
     by_label = {i["label"]: i for i in items}
     for i in items:
         m = members.get(str(i["spec"])) if i["spec"] else None
         i["member"] = m
-        i["memberState"] = member_state(m, (pr_state or {}).get(str(i["spec"]))) \
+        i["memberState"] = member_state(m, (pr_state or {}).get(str(i["spec"])),
+                                       looked_up=pr_state is not None) \
             if i["spec"] else "missing"
         i["prState"] = (pr_state or {}).get(str(i["spec"]))
     for i in items:
