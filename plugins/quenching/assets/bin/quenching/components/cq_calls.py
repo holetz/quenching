@@ -7,8 +7,9 @@ keeping a second copy of the CLI: the pillar table is read from `assets/bin/cq` 
 own `build_parser()` is the source of truth for its verbs, its required options and its flags.
 
 WHAT COUNTS AS A CALL. A line inside a fence, or a span between backticks, whose first word (after an
-optional `python3`, a `path/to/` prefix, or a `X=$(` opener) is the binary. A line carrying a
-negation (`never`, `do not`, `nunca`, `não`) is prose about NOT calling it and is skipped whole. A
+optional `python3`, a `path/to/` prefix, or a `X=$(` opener) is the binary. A negation (`never`,
+`do not`, `nunca`, `não`, `without`, `skips`) only counts when it precedes the span in the same
+clause — no `.`, `;` or `:` between the two; a loose one elsewhere on the line hides nothing. A
 placeholder (`<id>`, `"<title>"`, `…`, `$VAR`) counts as a value, and the number of positionals is
 never checked, because prose abbreviates them.
 
@@ -29,6 +30,7 @@ import shlex
 from typing import NamedTuple
 
 NEGATION_RE = re.compile(r"\b(?:never|do not|don't|does not|doesn't|cannot|can't|skips?|without|nunca|não|nao)\b", re.IGNORECASE)
+_CLAUSE_END_RE = re.compile(r"[.;:]")
 _SPLIT_RE = re.compile(r"\s*(?:&&|\|\||;|\s\|\s)\s*")
 _INLINE_RE = re.compile(r"`([^`\n]+)`")
 _BIN_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -99,6 +101,12 @@ def _calls_in(text: str, lineno: int, binaries: tuple[str, ...], inline: bool) -
     return out
 
 
+def _negated(line: str, start: int) -> bool:
+    """True when a negation word precedes the span at `start` in its own clause."""
+    before = _INLINE_RE.sub(" ", line[:start])
+    return bool(NEGATION_RE.search(_CLAUSE_END_RE.split(before)[-1]))
+
+
 def extract_calls(body: str, binaries: tuple[str, ...] = ("cq",)) -> list[Call]:
     """Every call to `binaries` the body tells the reader to run, with its body line number."""
     out: list[Call] = []
@@ -114,7 +122,7 @@ def extract_calls(body: str, binaries: tuple[str, ...] = ("cq",)) -> list[Call]:
             lineno, stripped = pending[0], pending[1] + " " + stripped
             line = stripped
             pending = None
-        if not stripped or NEGATION_RE.search(line):
+        if not stripped:
             continue
         if fenced:
             if stripped.endswith("\\"):
@@ -122,8 +130,9 @@ def extract_calls(body: str, binaries: tuple[str, ...] = ("cq",)) -> list[Call]:
             elif not stripped.startswith("#"):
                 out.extend(_calls_in(stripped, lineno, binaries, False))
             continue
-        for span in _INLINE_RE.findall(line):
-            out.extend(_calls_in(span, lineno, binaries, True))
+        for found in _INLINE_RE.finditer(line):
+            if not _negated(line, found.start()):
+                out.extend(_calls_in(found.group(1), lineno, binaries, True))
     return out
 
 
