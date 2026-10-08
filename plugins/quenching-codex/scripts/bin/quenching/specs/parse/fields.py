@@ -14,6 +14,41 @@ from quenching.common.frontmatter import parse_frontmatter
 LEGACY_DATED_FILE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$")
 
 
+# Every character `str.splitlines` breaks on — the split `parse_frontmatter` reads the block
+# with. A scalar carrying one is read back as two lines, the second a key of its own: a title
+# could stamp `approved:` (spec 1340).
+SCALAR_LINE_BREAKS = frozenset("\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029")
+
+
+def scalar_break(value: str) -> str | None:
+    """The first character no frontmatter scalar may carry, as `U+XXXX`, or None.
+
+    A line break is what forges a key; the other C0/C1 controls are refused beside it, since no
+    title, tag or record value has a use for one. The tab is the one control a value keeps."""
+    for c in value:
+        if c in SCALAR_LINE_BREAKS or (c != "\t" and (c < " " or "\x7f" <= c <= "\x9f")):
+            return f"U+{ord(c):04X}"
+    return None
+
+
+def _refuse_line_break(value: str) -> None:
+    if any(c in SCALAR_LINE_BREAKS for c in value):
+        raise ValueError(f"a frontmatter value may not carry a line break: {value!r}")
+
+
+def _top_level_key(line: str) -> str | None:
+    if line[:1] in (" ", "\t") or ":" not in line:
+        return None
+    return line.split(":", 1)[0].strip()
+
+
+def _continuation_end(lines: list[str], i: int, close: int) -> int:
+    end = i + 1
+    while end < close and lines[end][:1] in (" ", "\t") and lines[end].strip():
+        end += 1
+    return end
+
+
 def set_frontmatter_key(text: str, key: str, value: str,
                         after: str | None = None) -> str:
     """Set one top-level frontmatter key, preserving every other line as authored.
@@ -22,11 +57,16 @@ def set_frontmatter_key(text: str, key: str, value: str,
     reorder their keys — a promote is a move, and the outcome stamp is the ONLY content it
     is allowed to write.
 
+    Only a top-level line is the key — an indented `date:` belongs to a record — and its
+    indented continuation (a `>-` scalar, a block list) is replaced with it, never orphaned.
+    A value carrying a line break raises: it would forge a key of its own.
+
     `after` places a key that does not exist yet directly below a named one, instead of at
     the end of the block. It exists for `date`, which the marker fold inserts into documents
     written before the field did: appended, it would land under `verification` and every
     migrated spec would read in a different order from every freshly captured one, for no
     reason a reader could see. An absent `after` key falls back to the end."""
+    _refuse_line_break(value)
     lines = text.splitlines(keepends=True)
     if not lines or lines[0].strip() != "---":
         return f"---\n{key}: {value}\n---\n\n" + text
@@ -34,14 +74,14 @@ def set_frontmatter_key(text: str, key: str, value: str,
     if close is None:
         return text
     for i in range(1, close):
-        if lines[i].split(":", 1)[0].strip() == key:
-            lines[i] = f"{key}: {value}\n"
-            return "".join(lines)
+        if _top_level_key(lines[i]) == key:
+            return "".join(lines[:i] + [f"{key}: {value}\n"]
+                           + lines[_continuation_end(lines, i, close):])
     at = close
     if after:
         for i in range(1, close):
-            if lines[i].split(":", 1)[0].strip() == after:
-                at = i + 1
+            if _top_level_key(lines[i]) == after:
+                at = _continuation_end(lines, i, close)
                 break
     lines.insert(at, f"{key}: {value}\n")
     return "".join(lines)
@@ -71,18 +111,22 @@ def yaml_title_scalar(text: str) -> str:
 
 
 def set_frontmatter_title(text: str, title: str) -> str:
-    """Set `title:` in the first key's place and drop every later `title:` line of the block."""
+    """Set `title:` in the first key's place and drop every later top-level `title:` of the
+    block, each with its continuation lines."""
     out = set_frontmatter_key(text, "title", yaml_title_scalar(title))
     lines = out.splitlines(keepends=True)
     close = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), len(lines))
     seen = False
     kept = []
-    for i, line in enumerate(lines):
-        if 0 < i < close and line.split(":", 1)[0].strip() == "title" and not line[:1].isspace():
+    i = 0
+    while i < len(lines):
+        if 0 < i < close and _top_level_key(lines[i]) == "title":
             if seen:
+                i = _continuation_end(lines, i, close)
                 continue
             seen = True
-        kept.append(line)
+        kept.append(lines[i])
+        i += 1
     return "".join(kept)
 
 
@@ -159,9 +203,10 @@ def _render_record(key: str, rec: dict) -> list[str]:
 def set_frontmatter_record(text: str, key: str, rec: dict) -> str:
     """Replace ONE record, its continuation lines included, preserving every other line.
 
-    `set_frontmatter_key` cannot do this: a record already written in block form occupies
-    lines the single-line replacement would leave orphaned below the new value, where they
-    would parse as a second record's fields."""
+    `set_frontmatter_key` writes one scalar line; a record is rendered here in flow or block
+    form, and a block record already written occupies continuation lines this replaces with it."""
+    for v in rec.values():
+        _refuse_line_break(str(v))
     new_lines = _render_record(key, rec)
     lines = text.splitlines(keepends=True)
     if not lines or lines[0].strip() != "---":
@@ -170,14 +215,8 @@ def set_frontmatter_record(text: str, key: str, rec: dict) -> str:
     if close is None:
         return text
     for i in range(1, close):
-        if lines[i][:1] in (" ", "\t") or ":" not in lines[i]:
-            continue
-        if lines[i].split(":", 1)[0].strip() != key:
-            continue
-        end = i + 1
-        while end < close and lines[end][:1] in (" ", "\t") and lines[end].strip():
-            end += 1
-        return "".join(lines[:i] + new_lines + lines[end:])
+        if _top_level_key(lines[i]) == key:
+            return "".join(lines[:i] + new_lines + lines[_continuation_end(lines, i, close):])
     return "".join(lines[:close] + new_lines + lines[close:])
 
 
