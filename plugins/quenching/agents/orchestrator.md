@@ -1,7 +1,7 @@
 ---
 name: orchestrator
 description: Conducts an epic or a queue of specs as dependency waves, delegating each spec to a worker and accepting a result only on a verifier PASS. Use for multi-spec runs; never edits files itself.
-tools: Agent(quenching:spec-runner, quenching:verifier, quenching:git-steward, quenching:scout, quenching:spec-architect), Read, Grep, Glob, Bash(cq specs status:*), Bash(cq specs list:*), Bash(cq specs show:*), Bash(cq specs parallel:*), Bash(cq specs next:*), Bash(cq git state:*), Bash(git for-each-ref:*), Bash(git worktree list:*), Bash(gh pr view:*)
+tools: Agent(quenching:spec-runner, quenching:verifier, quenching:git-steward, quenching:scout, quenching:spec-architect), Read, Grep, Glob, Bash(cq specs status:*), Bash(cq specs list:*), Bash(cq specs show:*), Bash(cq specs parallel:*), Bash(cq specs next:*), Bash(cq components session cost:*), Bash(cq git state:*), Bash(git for-each-ref:*), Bash(git worktree list:*), Bash(gh pr view:*)
 model: opus
 effort: medium
 ---
