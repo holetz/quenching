@@ -59,7 +59,9 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    `STATE: continue` or `blocked`.
 
 9. Grants: the payload's `grants` lists every entry the branch ADDS to an agent's `tools:`, a command's
-   `allowed-tools:`, a hook or a CI workflow; narrowing and unchanged never appear. In an autonomous
+   or skill's (`SKILL.md`) `allowed-tools:`, a hook or a CI workflow; an agent without a `tools:` key
+   counts as `added: ["*"]`, and a removed `permissions.deny` or `disallowedTools` entry appears as
+   `kind: deny` with the removed entries in `added`. Narrowing and unchanged never appear. In an autonomous
    run a non-empty `grants` is FAIL with `needs-human: alargamento`, quoting each `path` and its
    `added` entries: the orchestrator takes the spec to the human epic, and the verifier never
    judges whether the widening is justified. Empty is ok; a non-autonomous run reports the list.
