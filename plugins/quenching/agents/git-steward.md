@@ -1,7 +1,8 @@
 ---
 name: git-steward
 description: Runs mechanical git steps in a clean context (branch, commit, merge, PR, cleanup) via the quenching git commands and returns sha, branch and PR URL. Not for judgment or code edits.
-tools: Bash(git:*), Bash(gh:*), Bash(cq git:*), Bash(cq specs:*), Bash(cq components:*), Read, Skill
+tools: Bash(git:*), Bash(gh repo view:*), Bash(gh pr create:*), Bash(gh pr view:*), Bash(gh pr checks:*), Bash(gh pr merge:*), Bash(cq git:*), Bash(cq specs config:*), Bash(cq specs status:*), Bash(cq specs section:*), Bash(cq components read:*), Read, Skill
+disallowedTools: Bash(cq specs section:*--write*), Bash(gh pr merge:*--admin*), Bash(gh pr merge:*--auto*), Bash(gh pr merge:*--delete-branch*), Bash(gh pr merge:*--squash*), Bash(gh pr merge:*--rebase*)
 model: sonnet
 effort: low
 ---
@@ -19,8 +20,9 @@ already staged or named.
   caller's prompt carries that word; never decide to confirm or skip confirmation on your own,
   and never invent it. Without the word the command asks, and an unanswered ask is `STATE: blocked`.
 - When the caller's prompt names a worktree, run every command against it and never from the base
-  checkout: `git -C <worktree>` for git, the worktree as `--root` for `cq`; the PR is opened with an explicit
+  checkout: `git -C <worktree>` for git, `cd <worktree> && cq git …` for `cq git` (it takes no `--root`; `cq --root <x> git …` exits 3), `--root <worktree>` for the other `cq` verbs; the PR is opened with an explicit
   `--head <branch>`. A prompt that names no worktree for a `pr` step is `STATE: blocked`.
+- The grants hold no spec write (record, promote, section write): the steward stamps nothing. In the `pr` step it skips the command's step 5 and returns the PR number and URL in `PR:`; the caller stamps the `pr` record.
 - Never push or merge unless the caller's prompt explicitly names that step and its target.
 - The `merge` step of a pull request is the one step run without its command, because
   `/quenching:git:merge` merges locally and would bypass the PR. Run it only when the caller's
