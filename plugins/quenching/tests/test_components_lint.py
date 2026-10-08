@@ -388,6 +388,25 @@ class AgentGrantGap(unittest.TestCase):
             found = _agent_grant_findings(body, "Read", self.WHERE)
             self.assertEqual([f["code"] for f in found], ["sk-agent-grant-gap"], body)
 
+    def test_an_option_before_the_verb_falls_outside_the_grant(self):
+        for tools, body in (("Bash(cq specs show:*)", "`cq --root <wt> specs show --spec 1 --full`"),
+                            ("Bash(cq specs show:*)", "`cq specs --root <wt> show --spec 1`"),
+                            ("Bash(git status:*)", "`git -C <wt> status --porcelain`")):
+            found = _agent_grant_findings(body, tools, self.WHERE)
+            self.assertEqual([f["code"] for f in found], ["sk-agent-grant-gap"], body)
+            self.assertIn("option before its verb", found[0]["message"], body)
+
+    def test_an_option_after_the_verb_stays_inside_the_grant(self):
+        for tools, body in (("Bash(cq specs show:*)", "`cq specs show --spec 1 --full`"),
+                            ("Bash(git status:*)", "`git status --porcelain`")):
+            self.assertEqual(_agent_grant_findings(body, tools, self.WHERE), [], body)
+
+    def test_a_missing_grant_and_a_displaced_option_on_one_verb_are_both_reported(self):
+        body = "`cq --root <wt> specs show --spec 1` and `cq specs show --spec 2`"
+        self.assertEqual(len(_agent_grant_findings(body, "Bash(cq specs show:*)", self.WHERE)), 1)
+        body = "`cq --root <wt> specs show --spec 1` and `cq specs record 1 pr`"
+        self.assertEqual(len(_agent_grant_findings(body, "Bash(cq specs show:*)", self.WHERE)), 2)
+
     def test_lint_agents_reads_the_agents_folder(self):
         with tempfile.TemporaryDirectory() as root:
             agents = pathlib.Path(root, "agents")

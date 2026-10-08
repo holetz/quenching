@@ -262,11 +262,17 @@ def _cq_call_findings(body: str, where: dict) -> list[dict]:
 
 
 def _granted_words(binary: str, args: list[str]) -> list[str]:
-    """The call's words without its options — what a `Bash(<prefix>:*)` grant is matched against."""
-    args = list(args)
-    while args and args[0].startswith("-"):
-        args = args[2:] if args[0] in ("--root", "-C") else args[1:]
-    return [binary, *[a for a in args if not a.startswith("-")]]
+    """The call's words without its options — the grant a missing one would need, never what the
+    harness matches: that is the call as written."""
+    words, skip = [binary], False
+    for arg in args:
+        if skip:
+            skip = False
+        elif arg in ("--root", "-C"):
+            skip = True
+        elif not arg.startswith("-"):
+            words.append(arg)
+    return words
 
 
 def _agent_grant_findings(body: str, tools: str, where: dict) -> list[dict]:
@@ -281,13 +287,22 @@ def _agent_grant_findings(body: str, tools: str, where: dict) -> list[dict]:
             continue
         words = _granted_words(call.binary, call.args)
         form = " ".join(words[:3 if call.binary == "cq" else 2])
-        if form in flagged or _grant_covers(" ".join(words), prefixes):
+        if _grant_covers(call.text, prefixes):
             continue
-        flagged.add(form)
-        remedy = f"add `Bash({form}:*)` to tools or remove the call"
-        out.append(finding("sk-agent-grant-gap", "error",
-                           f"`{form}` at body line {call.line} is called without a matching "
-                           "scoped Bash grant — " + remedy,
+        displaced = _grant_covers(" ".join(words), prefixes)
+        if (form, displaced) in flagged:
+            continue
+        flagged.add((form, displaced))
+        if displaced:
+            remedy = (f"put the option after the verb, or `cd` first: `{form}` is granted, but the "
+                      "harness matches the prefix literally")
+            detail = (f"`{call.text}` at body line {call.line} puts an option before its verb, "
+                      f"outside `Bash({form}:*)` — " + remedy)
+        else:
+            remedy = f"add `Bash({form}:*)` to tools or remove the call"
+            detail = (f"`{form}` at body line {call.line} is called without a matching "
+                      "scoped Bash grant — " + remedy)
+        out.append(finding("sk-agent-grant-gap", "error", detail,
                            tool=form, invocation=call.text, line=call.line, remedy=remedy,
                            **where))
     return out
