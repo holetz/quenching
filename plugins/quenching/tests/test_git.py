@@ -417,6 +417,19 @@ class Audit(RepoCase):
         self.assertEqual(self._grants(), [{"path": skill, "kind": "tools", "added": ["Bash"]},
                                           {"path": skill, "kind": "unknown", "added": ["name"]}])
 
+    def test_grants_read_a_frontmatter_behind_a_bom(self):
+        agent = "plugins/p/agents/a.md"
+        self._commit_file(agent, "\ufeff---\ntools: Bash\n---\nbody\n", "bom")
+        self.assertEqual(self._grants(), [{"path": agent, "kind": "tools", "added": ["Bash"]}])
+
+    def test_grants_split_the_frontmatter_on_lf_only(self):
+        skill, agent = ".claude/skills/s/SKILL.md", "plugins/p/agents/a.md"
+        self._commit_file(skill, "---\nallowed-tools: Read # , Bash(rm -rf:*)\n---\n", "skill")
+        self._commit_file(agent, "---\ntools: Read\f# , Bash\n---\n", "agent")
+        got = {g["path"]: g["added"] for g in self._grants() if g["kind"] == "tools"}
+        self.assertIn("Bash(rm -rf:*)", got[skill])
+        self.assertIn("Bash", got[agent])
+
     def test_grants_read_a_nested_agent_and_any_extension_case(self):
         nested, upper, skill = (".claude/agents/sub/evil.md", ".claude/commands/evil.MD",
                                 ".claude/skills/s/skill.md")
