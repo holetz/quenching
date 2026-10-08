@@ -310,6 +310,11 @@ def _create(args) -> int:
             return refuse(bad, args.json)
     if args.body == "-":
         args.body = sys.stdin.read()
+    if provider == "azure-boards" and (args.title.startswith("@") or args.body.startswith("@")):
+        return refuse({"code": "git-pr-azure-at-prefix",
+                       "message": "az reads a --title/--description starting with `@` as a "
+                                  "local file; rewrite it so it does not begin with `@`"},
+                      args.json)
     opened = _open_azure(args) if provider == "azure-boards" else _open_github(args)
     if isinstance(opened, str):
         emit(args.json, {"ok": False, "provider": provider, "reason": "create-refused",
