@@ -93,7 +93,7 @@ command the human is confirming. The deletion offer defaults to preserve the bra
 ```bash
 cq git push --branch <branch> --remote <remote> --json
 # github
-cq git pr create --base <base> --head <branch> --title "<title>" --body "<body>" --json
+cq git pr create --base <base> --head <branch> --title "<title>" --body "<body>" [--spec <id>] --json
 # azure-boards
 az repos pr create --detect true --source-branch <branch> --target-branch <base> \
   --title "<title>" --description "<body>" [--delete-source-branch true] [--work-items <n>] \
@@ -106,7 +106,8 @@ to `id`, `webUrl` and `apiUrl` before reporting it: show `webUrl` as **Link para
 show a URL containing `/_apis/` as the Link para revisão. The target branch is explicit
 on both routes: `--base` for GitHub and `--target-branch` for Azure; neither may be omitted. The source is explicit too: `--head <branch>` on GitHub, so the PR leaves the branch resolved in step 1 and never the one the cwd happens to hold; run from a worktree, `cd <worktree> && cq git push --branch <branch> …` carries the push. `cq git push` publishes
 `refs/heads/<branch>` under its own name with upstream and never forces; `cq git pr create`
-returns the PR's `number` and `url`. Read
+returns the PR's `number` and `url`, and with `--spec <id>` stamps the spec's `pr` record with them
+(step 5), reporting it as `pr` in its payload; exit 1 with `reason: stamp-failed` means the PR exists and the record does not. Read
 the created PR's `id`, `webUrl` and `apiUrl` from the normalized JSON/CLI result. **Done when:**
 the PR exists, or the
 push/create failed and its error is reported verbatim.
@@ -118,6 +119,8 @@ records pass. A target that carries `standards/workflows/plan-git-record.md` sta
 §Three frontmatter records.
 
 ### 5. Stamp, with an ID
+On `github` the verb of step 4 already stamped it: pass `--spec "<id>"` there and skip this step. On
+`azure-boards` (no `cq git` verb):
 ```bash
 cq specs record "<id>" pr --set number=<provider-pr-id> --set url=<webUrl> --set date=<today>
 ```

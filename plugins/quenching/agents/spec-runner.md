@@ -25,7 +25,6 @@ there.
   `/quenching:specs:conclude` only when execute left every task checked. Open or blocked tasks
   return `STATE: blocked` with `NOTE: needs-human:`; never `--force`, never `abandoned` on your own.
 - **Execute and conclude are two spawns.** Without the word `conclude`, run develop and execute only: when execute leaves every task checked and the gate green, do not invoke `/quenching:specs:conclude`; return `STATE: continue` with `NOTE: execute-done: <n>/<n> tasks; conclude pending`. Given the word `conclude`, skip develop and execute (already done) and run only `/quenching:specs:conclude`, resuming from the stage `cq specs status` reports. A `continue` for budget carries no `execute-done:` in its NOTE.
-- Given the word `stamp-pr` with a PR number and url, skip develop, execute and conclude: run `cq specs record "<id>" pr --set number=<n> --set url=<url> --set date=<today>` (write-many; retry with backoff) and return `STATE: done` with `PR: <url>`. This is the one route that stamps the `pr` record in an orchestrated run, after the steward returned.
 - Start with `cq specs status --spec <id> --json` and resume from the stage it reports.
 - Read only what a task names.
 - Stay inside each task's `files:`. Anything else you learn is one line:
