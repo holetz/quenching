@@ -1335,3 +1335,46 @@ class PullRequestVerbs(RepoCase):
             proc = _cq(self.repo, "pr", "create", *argv, "--title", "t", env=self.env)
             self.assertEqual(proc.returncode, 2, (argv, proc.stdout))
         self.assertEqual(self._calls(), [])
+
+
+class StewardGrants(unittest.TestCase):
+    """The `git-steward` acts through `cq git` verbs: no grant of its `tools:` admits the commands
+    reproduced against the 1279 blocklist on 2026-10-08."""
+
+    REPRODUCED = ("cq specs section 1292 Outcome --w", "cq specs section 1292 Outcome --write",
+                  "gh pr merge https://github.com/o/r/pull/1 -d",
+                  "gh pr merge https://github.com/o/r/pull/1 -s",
+                  "gh pr merge https://github.com/o/r/pull/1 -r",
+                  "git -c alias.x='!touch /tmp/pwn' x", "git stash", "git reset --hard",
+                  "git push --force origin main", "git branch -D main",
+                  "gh pr create --base main --head x --title t --body b")
+
+    @classmethod
+    def setUpClass(cls):
+        text = (PLUGIN_ROOT / "agents" / "git-steward.md").read_text(encoding="utf-8")
+        line = next(line for line in text.splitlines() if line.startswith("tools:"))
+        cls.grants = re.findall(r"Bash\(([^)]*)\)", line)
+
+    @staticmethod
+    def _admits(grant: str, command: str) -> bool:
+        if grant.endswith(":*"):
+            prefix = grant[:-2]
+            return command == prefix or command.startswith(prefix + " ")
+        return command == grant
+
+    def test_no_grant_admits_a_reproduced_command(self):
+        for command in self.REPRODUCED:
+            for grant in self.grants:
+                self.assertFalse(self._admits(grant, command), (grant, command))
+
+    def test_grants_are_plain_prefixes_with_no_raw_git_or_gh_write(self):
+        self.assertIn("cq git:*", self.grants)
+        for grant in self.grants:
+            self.assertNotIn("*", grant.removesuffix(":*"), grant)
+            self.assertFalse(grant.startswith(("git ", "git:", "bash", "gh pr merge",
+                                               "gh pr create", "cq specs section")), grant)
+
+    def test_the_verbs_it_relies_on_exist(self):
+        from quenching.git import DISPATCH
+        for verb in ("state", "worktree", "commit", "specs", "push", "pr", "stale", "prune"):
+            self.assertIn(verb, DISPATCH)
