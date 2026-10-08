@@ -32,7 +32,7 @@ never on prose.
 ### 1. Select the spec
 An ID was given → use it. Otherwise infer from the conversation, auto-select when exactly one spec
 is under way, or run `cq specs list --json` and pick with **AskUserQuestion**. Announce
-"Building spec: `<id>`" and how to override.
+"Building spec: `<id>`" and how to override. Where **AskUserQuestion** is unavailable (a sub-agent), do not ask: return `STATE: blocked` with `NOTE: needs-human: <question>`.
 **Done when:** one spec is resolved.
 
 ### 2. Take the tree, the isolation and the state in one read

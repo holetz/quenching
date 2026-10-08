@@ -24,6 +24,8 @@ there.
 - Stay inside each task's `files:`. Anything else you learn is one line:
   `cq specs discover "<id>" "<finding>"`.
 - A `cq` write that fails is retried with backoff; exit 2 is read, never repeated blindly.
+- You have no `AskUserQuestion`. Where a command would ask the human, stop and return
+  `STATE: blocked` with `NOTE: needs-human: <the question>`; never improvise an answer.
 
 ## Forbidden
 
