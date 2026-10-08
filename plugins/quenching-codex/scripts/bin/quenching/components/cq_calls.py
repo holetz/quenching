@@ -28,7 +28,7 @@ import re
 import shlex
 from typing import NamedTuple
 
-NEGATION_RE = re.compile(r"\b(?:never|do not|don't|nunca|não|nao)\b", re.IGNORECASE)
+NEGATION_RE = re.compile(r"\b(?:never|do not|don't|does not|doesn't|cannot|can't|skips?|without|nunca|não|nao)\b", re.IGNORECASE)
 _SPLIT_RE = re.compile(r"\s*(?:&&|\|\||;|\s\|\s)\s*")
 _INLINE_RE = re.compile(r"`([^`\n]+)`")
 _BIN_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
