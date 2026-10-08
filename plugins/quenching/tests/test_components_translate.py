@@ -201,6 +201,26 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("ct-manifest-conflicted", out.getvalue())
 
+    def test_check_reports_a_manifest_that_lost_an_entry(self):
+        translate.configure(str(self.root), str(self.root))
+        translate.write_tree(translate.generated_tree())
+        manifest = self.root / ".agents" / ".generated-files.json"
+        args = argparse.Namespace(check=True, write=False, diff=False, source=str(self.root),
+                                  target=str(self.root), json=True)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(translate.cmd_translate(args, str(self.root)), 0)
+        document = json.loads(manifest.read_text(encoding="utf-8"))
+        lost = document["files"].pop(0)
+        document["sha256"].pop(lost)
+        manifest.write_text(json.dumps(document), encoding="utf-8")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(translate.cmd_translate(args, str(self.root)), 1)
+        self.assertIn("ct-manifest-drift", out.getvalue())
+        manifest.unlink()
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(translate.cmd_translate(args, str(self.root)), 0)
+
     def test_coexisting_surfaces_are_clean_after_generation(self):
         translate.configure(str(self.root), str(self.root))
         translate.write_tree(translate.generated_tree())
