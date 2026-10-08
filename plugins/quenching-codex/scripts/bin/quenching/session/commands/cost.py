@@ -13,7 +13,7 @@ import json
 from pathlib import Path
 
 from quenching.common.output import FINDINGS, OK, refuse
-from quenching.session.transcript import resolve_transcript
+from quenching.session.transcript import resolve_project_dir, resolve_transcript
 
 UNKNOWN = "unknown"
 
@@ -25,6 +25,15 @@ def subagents_dir(arg: str | None) -> tuple[Path | None, str]:
         if p.is_dir():
             sub = p / "subagents"
             return (sub if sub.is_dir() else p), "explicit directory"
+    if not arg:
+        project, _ = resolve_project_dir(Path.cwd().resolve())
+        if project is not None:
+            live = sorted(f.stem for f in project.glob("*.jsonl") if (f.with_suffix("") / "subagents").is_dir())
+            if len(live) > 1:
+                return None, ("several sessions have subagents here, pass the session id of the one to "
+                              "cost: " + ", ".join(live))
+            if len(live) == 1:
+                return project / live[0] / "subagents", "the only session with subagents in the project dir"
     path, how = resolve_transcript(arg, Path.cwd().resolve())
     if path is None:
         return None, how
@@ -34,9 +43,10 @@ def subagents_dir(arg: str | None) -> tuple[Path | None, str]:
 def _agent_type(transcript: Path) -> str:
     meta = transcript.with_name(transcript.stem + ".meta.json")
     try:
-        return json.loads(meta.read_text(encoding="utf-8")).get("agentType") or UNKNOWN
+        kind = json.loads(meta.read_text(encoding="utf-8")).get("agentType")
     except (OSError, ValueError, AttributeError):
         return UNKNOWN
+    return kind if isinstance(kind, str) and kind else UNKNOWN
 
 
 def _requests(transcript: Path, anomalies: list) -> dict:
@@ -51,6 +61,9 @@ def _requests(transcript: Path, anomalies: list) -> dict:
             except ValueError:
                 anomalies.append({"file": transcript.name, "line": n, "message": "unparsable record"})
                 continue
+            if not isinstance(rec, dict):
+                anomalies.append({"file": transcript.name, "line": n, "message": "record is not a JSON object"})
+                continue
             msg = rec.get("message") if rec.get("type") == "assistant" else None
             usage = msg.get("usage") if isinstance(msg, dict) else None
             if not isinstance(usage, dict):
@@ -60,7 +73,8 @@ def _requests(transcript: Path, anomalies: list) -> dict:
                 continue
             prev = seen.get(key)
             if prev is None or (usage.get("output_tokens") or 0) >= (prev[1].get("output_tokens") or 0):
-                seen[key] = (msg.get("model") or UNKNOWN, usage)
+                model = msg.get("model")
+                seen[key] = (model if isinstance(model, str) and model else UNKNOWN, usage)
     return seen
 
 
@@ -100,7 +114,8 @@ def aggregate(directory: Path) -> dict:
 def cmd_cost(args) -> int:
     directory, how = subagents_dir(args.transcript)
     if directory is None:
-        return refuse({"code": "se-no-transcript", "message": how}, args.json)
+        code = "se-ambiguous-session" if how.startswith("several sessions") else "se-no-transcript"
+        return refuse({"code": code, "message": how}, args.json)
     if not directory.is_dir():
         return refuse({"code": "se-no-subagents", "message": f"no subagents directory at {directory}"},
                       args.json)
