@@ -389,10 +389,6 @@ class ProofFixtureTrees(unittest.TestCase):
                         self.assertEqual(0, main(["--root", str(root), command, "--json"]))
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class MeasuredRootNormalisation(unittest.TestCase):
     @staticmethod
     def _payload(name, covered, statements, total=55.0):
@@ -415,3 +411,13 @@ class MeasuredRootNormalisation(unittest.TestCase):
             self._payload("other/a.py", 1, 10), [{"relative": ".claude/hooks"}])
         self.assertEqual(result, {})
         self.assertEqual(finding["code"], "pf-coverage-no-measured-root")
+
+    def test_repository_root_dot_matches_every_file(self):
+        result, finding = measured_percentages(
+            self._payload("pkg/a.py", 1, 2), [{"relative": "."}])
+        self.assertEqual(finding, {})
+        self.assertAlmostEqual(result["."], 50.0)
+
+
+if __name__ == "__main__":
+    unittest.main()
