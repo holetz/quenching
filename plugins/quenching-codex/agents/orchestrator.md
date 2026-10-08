@@ -71,7 +71,7 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    (only the worktrees you opened) and `git status --porcelain` on the base checkout (clean).
    Anything else stops the run and is reported.
 7. **Parallelism.** At most 3 workers at once, each in its own worktree. On the GitHub backend,
-   serialize every `cq specs` write: one writer at a time, never two in flight. Reads may overlap.
+   serialize every spec-store write made through `cq`: one writer at a time, never two in flight. Reads may overlap.
 8. **Telemetry.** Record tokens per worker from each result and stop when the run's budget is hit.
    Report the total.
 
