@@ -638,12 +638,30 @@ def previous_files(manifest: Path, destination: Path) -> set[str] | None:
         raise ValueError(f"{manifest.name} is unreadable or has no `files`: {exc!r}") from exc
     if not isinstance(files, (list, dict)):
         raise ValueError(f"{manifest.name} `files` must be a list or an object")
+    contain(files, destination, manifest.name)
+    return set(files)
+
+
+def contain(files, destination: Path, origin: str) -> None:
+    """Refuse any path that would resolve outside the destination, before the caller touches one."""
     root = destination.resolve()
     for rel in files:
         if not isinstance(rel, str) or not rel or Path(rel).is_absolute() \
                 or not (destination / rel).resolve().is_relative_to(root):
-            raise ValueError(f"{manifest.name} names a path outside the destination: {rel!r}")
-    return set(files)
+            raise ValueError(f"{origin} names a path outside the destination: {rel!r}")
+
+
+def manifest_conflicted() -> bool:
+    """True when the versioned manifest exists but is not JSON (merge conflict markers)."""
+    destination = target() if plugin_translation() else codex_surface()
+    manifest = destination / ".generated-files.json"
+    try:
+        json.loads(manifest.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return False
+    except (ValueError, OSError):
+        return True
+    return False
 
 
 def write_tree(tree: dict[str, bytes]) -> None:
@@ -653,6 +671,7 @@ def write_tree(tree: dict[str, bytes]) -> None:
     previous = previous_files(generated_manifest, destination)
     if previous is None:
         previous = owned_files()
+    contain(previous | set(tree), destination, "the destination")
     stale = [destination / rel for rel in sorted(previous - set(tree))]
     for path in stale:
         if path.is_file() or path.is_symlink():
@@ -701,6 +720,10 @@ def cmd_translate(args, root: str) -> int:
     findings = [finding("ct-translation-drift", "error",
                         "generated translation differs from the Claude surface", path=path)
                 for path in payload["changed"]]
+    if not args.write and manifest_conflicted():
+        findings.append(finding("ct-manifest-conflicted", "error",
+                                ".generated-files.json is not valid JSON (merge conflict markers?); "
+                                "regenerate it with `translate --write`", path=".generated-files.json"))
     return report_findings(args.json, f"components translate — {payload['count']} changed file(s)",
                            payload, findings, "path")
 
