@@ -1283,6 +1283,32 @@ class Inert(RepoCase):
         self.assertIn("audit-ref-invalid", proc.stdout)
         self.assertFalse(marker.exists())
 
+    def test_audit_scope_keeps_the_origin_of_a_rename(self):
+        _run(self.wt, "mv", "a.txt", "moved.txt")
+        _run(self.wt, "-c", "user.email=t@e", "-c", "user.name=T", "commit", "-q", "-m", "mv")
+        payload = _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main",
+                           "--branch", "spec/1")
+        self.assertEqual(sorted(payload["changed"]), ["a.txt", "moved.txt"])
+
+    def test_run_without_env_keeps_the_lazy_fetch_off(self):
+        from quenching.git import audit
+        with mock.patch.object(audit, "_git_run", return_value=(0, "", "")) as run:
+            audit._run(self.repo, "rev-parse", "HEAD")
+        env = run.call_args.kwargs["env"]
+        self.assertEqual(env["GIT_NO_LAZY_FETCH"], "1")
+        self.assertEqual(env["GIT_ALLOW_PROTOCOL"], "")
+
+    def test_inert_env_reports_an_unreadable_filter_config(self):
+        from quenching.git import audit
+        errors: list[dict] = []
+        with mock.patch.object(audit, "_run", return_value=(128, "")):
+            audit._inert_env(self.repo, errors)
+        self.assertEqual(len(errors), 1)
+        self.assertEqual(errors[0]["code"], 128)
+        quiet: list[dict] = []
+        audit._inert_env(self.repo, quiet)   # exit 1 (no filter key) is a fact, not an error
+        self.assertEqual(quiet, [])
+
 
 class FailClosed(RepoCase):
     """`cq git audit` and `cq git state` never read a failed git call as an empty fact: each failure
