@@ -9,7 +9,8 @@ allowed-tools: Bash(cq:*), Bash(git push:*), Bash(git remote:*), Bash(gh repo vi
 
 **Input**: `$ARGUMENTS` — a spec id (derives title, body and the provider's issue/work-item
 link), or free text to use as the PR title. Append `remote:<name>` to select a remote; omitted
-→ `origin`. Omitted title → ask.
+→ `origin`. Omitted title → ask. The word `autonomous` is the human's pre-answer to step 4's
+confirmation, given by a conductor launched with `--autonomous`: see step 4.
 
 Opens the PR and **stops there** — merging is `/quenching:git:merge`'s, on its own confirmation.
 The route follows `cq specs config --json`: `github` uses `gh`, `azure-boards` uses `az repos`; an
@@ -76,6 +77,12 @@ the source branch after the PR is completed and merged. Preserving the source br
 **Done when:** the provider-native link and branch-deletion effects are stated before publication.
 
 ### 4. Push and open, on one confirmation
+**With `autonomous` in the input**, the confirmation is already given: state the remote (`origin`
+unless `remote:<name>` was passed), the branch and the title (the spec's title, verbatim), skip the
+**AskUserQuestion**, and run the commands below. The token covers exactly those three and nothing
+else: never add `--delete-source-branch true`, and an absent title or a missing spec id is still
+asked, never invented. Without the token, the confirmation below stands.
+
 Show the remote, the branch name it pushes under, and the title/body, and ask with
 **AskUserQuestion**:
 For Azure, show the work item id, whether the separate source-branch deletion offer was accepted
@@ -129,7 +136,7 @@ are named.
   it removes the source branch after completion, and include it only when the human confirms that
   exact deletion.
 - Never push or open a PR without the human's confirmation on the exact remote, branch and title
-  shown.
+  shown — the `autonomous` input word is that confirmation, pre-given, and only for those three.
 - Never claim a provider-native issue/work-item link closes or transitions anything beyond the
   host CLI's documented effect; report the provider and the selected base plainly instead.
 - Never install `docs/standards/git/**` into the target, and never write `gitConventions` into its
