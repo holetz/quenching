@@ -456,5 +456,19 @@ class AgentGrantGap(unittest.TestCase):
                          [("sk-agent-disallowed-bash", "agent:a")])
 
 
+    def test_skill_without_unrestricted_bash_is_an_error(self):
+        with tempfile.TemporaryDirectory() as root:
+            agents = pathlib.Path(root, "agents")
+            agents.mkdir()
+            for name, tools in (("a", "Bash(echo:*), Read, Skill"), ("b", "Read, Skill(x)"),
+                                ("c", "Bash, Read, Skill"), ("d", "Bash(echo:*), Read")):
+                (agents / f"{name}.md").write_text(f"---\nname: {name}\ntools: {tools}\n---\nBody.\n",
+                                                   encoding="utf-8")
+            found = lint_agents(root, root)
+        self.assertEqual([(f["code"], f["command"], f["tool"]) for f in found],
+                         [("sk-agent-skill-widens", "agent:a", "Skill"),
+                          ("sk-agent-skill-widens", "agent:b", "Skill(x)")])
+
+
 if __name__ == "__main__":
     unittest.main()
