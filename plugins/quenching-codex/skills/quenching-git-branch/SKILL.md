@@ -73,7 +73,12 @@ reported verbatim and nothing is stamped. On **Worktree**, immediately after `gi
 run `cq git worktree link --json` with cwd inside the new worktree. A link failure is reported
 verbatim and does not undo the worktree; stop this flow before running `worktreeSetup`. When the
 link succeeds, run a declared `worktreeSetup` once with cwd inside the new worktree; a failing
-setup does not undo the worktree — report both facts separately. Then, only with an ID from step 2:
+setup does not undo the worktree — report both facts separately. **A worktree outside the project
+directory is not the shell's cwd:** the harness may return the cwd to the base checkout after every
+command, so from here on each command carries the worktree explicitly — `cd <worktree> && …` in
+the same call, `git -C <worktree>`, `cq --root <worktree>` — or a cwd-dependent tool (`cq` without
+`--root`, `git diff`, tests) reads the base checkout and reports green over a tree that did not
+change. Then, only with an ID from step 2:
 ```bash
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record "<id>" branch --set base=<base> --set work=<branch>
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git specs <branch> --add "<id>" --json
