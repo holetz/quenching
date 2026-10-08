@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-08-31
 audience: both
 authority: current
-source: plugins/quenching/README.md §The seven fronts, the non-converging axes, and the one align per front, §The 57 commands; docs/standards/architecture/align-surface.md §Conductor order and dependency edges
+source: plugins/quenching/README.md §The seven fronts, the non-converging axes, and the one align per front, §The 58 commands; docs/standards/architecture/align-surface.md §Conductor order and dependency edges
 maintainer: Israel Holetz
 ---
 
