@@ -31,24 +31,25 @@ def git(cwd, *args):
 
 
 class TaskExecutionContractTests(unittest.TestCase):
-    def test_execute_delegates_commit_and_does_not_duplicate_subject_resolution(self):
+    def test_execute_commits_through_the_deterministic_verb(self):
         command = COMMAND.read_text(encoding="utf-8")
         commit = (ROOT / "plugins/quenching/commands/git/commit.md").read_text(encoding="utf-8")
 
-        self.assertIn('Skill("quenching:git:commit", "<spec-id>")', command)
+        self.assertIn('cq git commit --subject "<subject>"', command)
+        self.assertNotIn('Skill("quenching:git:commit"', command)
         self.assertIn("single commit boundary", commit)
         self.assertNotIn("git commit -m", command)
         self.assertNotIn('--subject "plan/<id>-<handle>', command)
 
-    def test_external_backend_records_task_after_the_delegated_commit(self):
+    def test_external_backend_records_task_after_the_commit(self):
         command = COMMAND.read_text(encoding="utf-8")
         reference = REFERENCE.read_text(encoding="utf-8")
 
         self.assertLess(command.index("git add <the task's declared files>"),
-                        command.index('Skill("quenching:git:commit", "<spec-id>")'))
-        self.assertLess(command.index('Skill("quenching:git:commit", "<spec-id>")'),
+                        command.index('cq git commit --subject "<subject>"'))
+        self.assertLess(command.index('cq git commit --subject "<subject>"'),
                         command.index("cq specs task --check <task-id>"))
-        self.assertIn('--commit "<sha reported by git:commit>"', command)
+        self.assertIn('--commit "<sha reported by cq git commit>"', command)
         self.assertIn("spec tick **fails**", reference)
         self.assertIn("preserve the commit", reference)
         self.assertNotIn("<the spec file>", reference)
