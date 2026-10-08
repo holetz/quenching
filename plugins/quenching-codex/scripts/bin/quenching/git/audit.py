@@ -28,7 +28,9 @@ NO_FETCH = {"GIT_NO_LAZY_FETCH": "1", "GIT_ALLOW_PROTOCOL": ""}
 
 
 def _run(cwd: str, *argv: str, env: dict[str, str] | None = None) -> tuple[int, str]:
-    code, out, _err = _git_run(cwd, *SAFE, *argv, env=env)
+    """One read. With no `env` the lazy fetch is still off: a caller that forgot to pass the inert
+    environment (`cq git worktree`, `push`, through `_commit`) never reaches a transport."""
+    code, out, _err = _git_run(cwd, *SAFE, *argv, env=env or {**os.environ, **NO_FETCH})
     return code, out
 
 
@@ -116,7 +118,7 @@ def _branch_ok(cwd: str, branch: str) -> bool:
     return _run(cwd, "check-ref-format", "--branch", branch)[0] == 0
 
 
-def _inert_env(cwd: str) -> dict[str, str]:
+def _inert_env(cwd: str, errors: list[dict] | None = None) -> dict[str, str]:
     """The environment every read of this verb runs under: the lazy fetch off, and every
     `filter.<x>` driver the repository config declares blanked as a `GIT_CONFIG_COUNT` pair, so the
     status cannot run one against the branch's `.gitattributes` whatever `<x>` contains.
@@ -125,6 +127,8 @@ def _inert_env(cwd: str) -> dict[str, str]:
     env = {**os.environ, **NO_FETCH}
     code, out = _run(cwd, "config", "-z", "--name-only", "--get-regexp",
                      r"^filter\..*\.(clean|smudge|process)$", env=env)   # 1: no such key, a fact
+    if code not in (0, 1) and errors is not None:   # the filter list is unknown, not empty
+        errors.append(_error(("config", "--get-regexp"), code, "filter config unreadable: the drivers could not be blanked"))
     try:
         n = int(env.get("GIT_CONFIG_COUNT", "0"))
     except ValueError:
@@ -149,8 +153,8 @@ def cmd_audit(args) -> int:
     if not _branch_ok(worktree, args.branch):
         return refuse({"code": "audit-ref-invalid", "message": f"not a branch name: {args.branch}"},
                       args.json)
-    env = _inert_env(worktree)
     errors: list[dict] = []
+    env = _inert_env(worktree, errors)
     resolved = {}
     for label, ref in [("base", args.base), ("branch", f"refs/heads/{args.branch}"),
                        *(("sha", s) for s in args.sha)]:
@@ -177,7 +181,7 @@ def cmd_audit(args) -> int:
                          errors=errors),
         "stash": _lines(worktree, "stash", "list", env=env, errors=errors),
         "commits": _lines(worktree, "log", "--oneline", f"{base}..{tip}", env=env, errors=errors),
-        "changed": _lines(worktree, "diff", "--name-only", f"{base}...{tip}", env=env, errors=errors),
+        "changed": _lines(worktree, "diff", "--name-only", "--no-renames", f"{base}...{tip}", env=env, errors=errors),
         "ancestry": ancestry,
         "reflog": {"branch": _reflog(worktree, f"refs/heads/{args.branch}", env, errors),
                    "head": _reflog(worktree, "HEAD", env, errors)},

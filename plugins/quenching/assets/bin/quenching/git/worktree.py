@@ -13,6 +13,7 @@ from quenching.common.git import _git, _git_run
 from quenching.common.config import load_config, namespace
 from quenching.common.output import FINDINGS, emit, refuse
 from quenching.git.audit import SAFE, _branch_ok, _commit, _run
+from quenching.git.push import remote_probe
 
 def _repo_root(cwd: str) -> str:
     return _git(cwd, "rev-parse", "--show-toplevel").strip()
@@ -135,7 +136,10 @@ def _add(args) -> int:
     if _commit(cwd, f"refs/heads/{args.branch}") is not None:
         return refuse({"code": "git-worktree-branch-exists",
                        "message": f"the branch already exists: {args.branch}"}, args.json)
-    has_remote = _run(cwd, "remote", "get-url", "--", args.remote)[0] == 0
+    has_remote = remote_probe(cwd, args.remote)
+    if has_remote is None:
+        return refuse({"code": "git-worktree-remote-unreadable",
+                       "message": f"git could not read the remote: {args.remote}"}, args.json)
     if has_remote:
         code, _out, err = _git_run(cwd, *SAFE, "fetch", "--no-recurse-submodules", "--",
                                    args.remote, f"refs/heads/{args.base}")
@@ -234,7 +238,11 @@ def _retire(args) -> int:
         return refuse({"code": "git-worktree-retire-mismatch",
                        "message": f"{args.path} holds {registered_branch or 'a detached HEAD'}, "
                                   f"not {args.branch}"}, args.json)
-    if _run(cwd, "remote", "get-url", "--", args.remote)[0] == 0:
+    has_remote = remote_probe(cwd, args.remote)
+    if has_remote is None:
+        return refuse({"code": "git-worktree-remote-unreadable",
+                       "message": f"git could not read the remote: {args.remote}"}, args.json)
+    if has_remote:
         code, _out, err = _git_run(cwd, *SAFE, "fetch", "--no-recurse-submodules", "--",
                                    args.remote, f"refs/heads/{args.base}")
         if code != 0:
