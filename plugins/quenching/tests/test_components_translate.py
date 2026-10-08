@@ -133,14 +133,25 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         command = self.root / ".claude" / "commands" / "specs" / "status.md"
         command.write_text(COMMAND + "\nSource edit.\n", encoding="utf-8")
         tree = translate.generated_tree()
-        self.assertEqual(translate.reconciliation(translate.differences(tree), translate.source_digest()),
+        self.assertEqual(translate.reconciliation(tree),
                          "source-changed")
         translate.write_tree(tree)
         skill = self.root / ".agents" / "skills" / "specs" / "status" / "SKILL.md"
         skill.write_text(skill.read_text(encoding="utf-8") + "\nCodex body edit.\n", encoding="utf-8")
         tree = translate.generated_tree()
-        self.assertEqual(translate.reconciliation(translate.differences(tree), translate.source_digest()),
+        self.assertEqual(translate.reconciliation(tree),
                          "target-changed")
+
+    def test_generated_from_is_stable_across_source_edits(self):
+        translate.configure(str(self.root), str(self.root))
+        translate.write_tree(translate.generated_tree())
+        marker = self.root / ".agents" / ".generated-from.json"
+        before = marker.read_bytes()
+        self.assertNotIn(b"source_sha256", before)
+        command = self.root / ".claude" / "commands" / "specs" / "status.md"
+        command.write_text(COMMAND + "\nSource edit.\n", encoding="utf-8")
+        translate.write_tree(translate.generated_tree())
+        self.assertEqual(marker.read_bytes(), before)
 
     def test_reverse_write_propagates_body_and_refuses_frontmatter(self):
         translate.configure(str(self.root), str(self.root))

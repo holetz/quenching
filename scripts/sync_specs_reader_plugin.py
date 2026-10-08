@@ -18,7 +18,6 @@ The generated set is `assets/**`, `VERSION`, `.claude-plugin/plugin.json` and
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import sys
 from pathlib import Path
@@ -56,13 +55,11 @@ def source_files() -> list[Path]:
 def generated_tree() -> dict[str, tuple[bytes, int]]:
     """Every generated path, relative to TARGET, with its bytes and its mode."""
     tree: dict[str, tuple[bytes, int]] = {}
-    digest = hashlib.sha256()
     for path in source_files():
         rel = path.relative_to(SOURCE).as_posix()
         data = path.read_bytes()
         mode = EXECUTABLE if path.stat().st_mode & 0o111 else REGULAR
         tree[rel] = (data, mode)
-        digest.update(rel.encode() + b"\0" + data + b"\0")
     version = (SOURCE / "VERSION").read_text(encoding="utf-8").strip()
     source_manifest = json.loads((SOURCE / ".claude-plugin/plugin.json").read_text(encoding="utf-8"))
     manifest = {
@@ -78,7 +75,6 @@ def generated_tree() -> dict[str, tuple[bytes, int]]:
         (json.dumps(manifest, indent=2, ensure_ascii=False) + "\n").encode(), REGULAR)
     record = {
         "source": "plugins/quenching",
-        "source_sha256": digest.hexdigest(),
         "generator": "scripts/sync_specs_reader_plugin.py",
         "copied": list(COPY_DIRS),
     }
