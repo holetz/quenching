@@ -54,6 +54,7 @@ def add_spec(sp, required: bool):
     """`--spec <id>` stays; the id is also accepted positionally, as `section` and `promote` take it."""
     sp.add_argument("spec_id", nargs="?", metavar="ID", help="the spec id (same as --spec)")
     sp.add_argument("--spec", help="one spec ID" if not required else "the spec ID")
+    sp.set_defaults(id_required=required)  # read by the cq-call lint, which sees no `required=True`
     return sp
 
 
