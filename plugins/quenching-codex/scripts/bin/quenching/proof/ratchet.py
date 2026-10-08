@@ -186,7 +186,8 @@ def measured_percentages(payload: dict[str, Any], roots: list[dict]) -> tuple[di
     result: dict[str, float] = {}
     for root in roots:
         declared = root["relative"]
-        prefix = _normalise(declared).rstrip("/") + "/"
+        root_name = _normalise(declared).rstrip("/")
+        prefix = "" if root_name in ("", ".") else root_name + "/"
         matching: list[dict[str, Any]] = []
         for name, entry in files.items():
             if not isinstance(name, str) or not _normalise(name).startswith(prefix):

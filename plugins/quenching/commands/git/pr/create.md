@@ -59,8 +59,8 @@ those names; a `Tasks` summary using the status counts (`checked`/`total`); and 
 branch facts when present, in that order.
 Omit an absent or empty optional section — never replace it with invented prose.
 
-The status `path` is the provider locator. On `github`, its trailing number is an issue `<n>` and
-append exactly `Closes #<n>` to the generated body. On `azure-boards`, its trailing number is a
+The status `path` is the provider locator. On `github`, the spec id is the issue `<n>`: take it from
+the status `id`, never from `path`, and append exactly `Closes #<n>` to the generated body. On `azure-boards`, its trailing number is a
 work item `<n>` and pass it as `--work-items <n>` to Azure; do not invent a `Closes #<n>` sentence.
 Free text → that text is the title; ask for a body and, when applicable, whether an issue/work item
 should be linked. **Done when:** the title, body, provider-native link (or its absence), and base
