@@ -158,6 +158,37 @@ class Scenarios:
         _, got = run(read_cmd.cmd_status, b, epic=EPIC_ID, spec=None)
         self.assertEqual(["dropped"], [x["status"] for x in got["blocked"]])
 
+    def archive_with_pr(self, spec_id, state):
+        b = self.backend
+        info, _ = b.read_spec(spec_id)
+        text = set_frontmatter_key(info["text"], "pr", "{number: 77, url: u, date: 2026-10-07}")
+        b.write_spec(info, text)
+        archive(b, spec_id)
+        return {str(spec_id): state} if state else {}
+
+    def status_with(self, states):
+        with mock.patch.object(epic_cmd, "pr_states", return_value=states):
+            return run(read_cmd.cmd_status, self.backend, epic=EPIC_ID, spec=None)[1]
+
+    def test_an_archived_member_whose_pr_is_open_is_unmerged_and_holds_its_dependents(self):
+        self.diamond()
+        states = self.archive_with_pr(2, "OPEN")
+        got = self.status_with(states)
+        by = {i["label"]: i["status"] for i in got["items"]}
+        self.assertEqual(("unmerged", "waiting"), (by["S1"], by["S2"]))
+        self.assertEqual(0, got["progress"]["done"])
+        self.assertEqual(["PR #77 is OPEN"], got["blocked"][0]["reasons"])
+        self.assertEqual("S1", got["criticalPath"][0])
+
+    def test_a_merged_pr_or_an_unknown_one_or_no_pr_keeps_the_member_done(self):
+        b = self.diamond()
+        merged = self.archive_with_pr(2, "MERGED")      # S1: merged
+        self.archive_with_pr(3, None)                   # S2: `pr:` but the lookup failed
+        archive(b, 4)                                   # S3: no `pr:` record at all
+        got = self.status_with({**merged, "4": "OPEN"})
+        self.assertEqual(["done", "done", "done"],
+                         [i["status"] for i in got["items"][:3]])
+
     def test_a_member_that_is_not_ready_is_not_offered(self):
         b = self.backend
         b.create_spec("plans", epic_doc())
