@@ -537,7 +537,7 @@
     "scripts/bin/quenching/components/commands/read.py": "a0dd7e9c409dda70939e3c1d502da0154bfb02c81d92d09e038c75926567964f",
     "scripts/bin/quenching/components/commands/registry.py": "b1aece1a797267ff0005237e33bafe7a9e53ef18dc98b6c495528e67eda9d312",
     "scripts/bin/quenching/components/commands/translate.py": "6dcac7934652b3367773b8a5d6bb24ee77aa5059f1c55360fdfa0087146acf68",
-    "scripts/bin/quenching/components/cq_calls.py": "8a1c216dbba6643872cce58dd9bde83cc92271efc9b23ab39f999de211bf42bb",
+    "scripts/bin/quenching/components/cq_calls.py": "0355c7439d2050ae1b3ed0874a51916657279672bafcfc05a8797f70a782e629",
     "scripts/bin/quenching/components/hooks.py": "7f0e840b70c5878b2f63d5d461cbe2551b9915dd0a9ab32ef6bab8b8c900a473",
     "scripts/bin/quenching/components/sections.py": "8343fba43a2922960e0fc41c12590c3b075dff0f13a557c6b07d607aac18ae1d",
     "scripts/bin/quenching/components/surface.py": "a3be01857b0f589a9ca026c7cddbf52032b1269854eeb1ca44819d006cce1a9a",

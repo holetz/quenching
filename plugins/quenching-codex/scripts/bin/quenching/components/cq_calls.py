@@ -8,9 +8,9 @@ own `build_parser()` is the source of truth for its verbs, its required options 
 
 WHAT COUNTS AS A CALL. A line inside a fence, or a span between backticks, whose first word (after an
 optional `python3`, a `path/to/` prefix, or a `X=$(` opener) is the binary. A negation (`never`,
-`do not`, `nunca`, `não`, `without`, `skips`) only counts when it precedes the span in the same
+`do not`, `nunca`, `não`, `without`, `skips`, `no` right before the span) only counts when it precedes the span in the same
 clause — no sentence-ending `.`, `;`, `:` or `,` between the two — and within four words of it
-("never `cq …`", "no `cq …` grant"); a loose one elsewhere in the sentence hides nothing. `e.g.`,
+("never `cq …`", "no `cq …` grant"); a loose one elsewhere in the sentence hides nothing, `no` before another noun ("no reviewer answered `cq …`") negates nothing, and "never skip `cq …`" is a double negation that requires the call. `e.g.`,
 `i.e.` and decimals do not end a clause; a negation closing the previous prose line still counts, and
 so does one over a list of spans ("never `a`, `b` or `c`"). A placeholder (`<id>`, `"<title>"`, `…`, `$VAR`) counts as a value, and the number of positionals is
 never checked, because prose abbreviates them.
@@ -31,10 +31,12 @@ import re
 import shlex
 from typing import NamedTuple
 
-NEGATION_RE = re.compile(r"\b(?:never|do not|don't|does not|doesn't|cannot|can't|skips?|without|no|nunca|não|nao)\b", re.IGNORECASE)
+NEGATION_RE = re.compile(r"\b(?:never|do not|don't|does not|doesn't|cannot|can't|skips?|without|nunca|não|nao)\b", re.IGNORECASE)
 _CLAUSE_END_RE = re.compile(r"[;:,]|\.(?=\s|$)")
 _ABBREV_RE = re.compile(r",?\s*\b(?:e\.g\.|i\.e\.)(?=\s|,|$),?", re.IGNORECASE)
 _LISTED_RE = re.compile(r"`[^`\n]+`(?:\s*,)?(?:\s+(?:or|and|nor|ou|e)\b)?")  # one item of a negated list
+_DOUBLE_NEG_RE = re.compile(r"\b(?:never|do not|don't|does not|doesn't|cannot|can't|not|without|nunca|não|nao)\s+skip\w*\b", re.IGNORECASE)
+_NO_RE = re.compile(r"\bno(?:\s+(?:longer|more))?\s*$", re.IGNORECASE)  # `no` negates only as the word right before the span
 _NEGATION_REACH = 4  # words between a negation and the span it negates
 _SPLIT_RE = re.compile(r"\s*(?:&&|\|\||;|\s\|\s)\s*")
 _INLINE_RE = re.compile(r"`([^`\n]+)`")
@@ -111,7 +113,8 @@ def _negated(line: str, start: int, carried: str = "") -> bool:
     in its own clause; `carried` is the previous prose line, for a sentence the source wrapped."""
     before = _LISTED_RE.sub(" ", (carried + " " if carried else "") + line[:start])
     clause = _CLAUSE_END_RE.split(_ABBREV_RE.sub(" ", before))[-1]
-    return bool(NEGATION_RE.search(" ".join(clause.split()[-_NEGATION_REACH:])))
+    window = " ".join(_DOUBLE_NEG_RE.sub(" ", clause).split()[-_NEGATION_REACH:])  # "never skip" requires the call
+    return bool(NEGATION_RE.search(window) or _NO_RE.search(window))
 
 
 def extract_calls(body: str, binaries: tuple[str, ...] = ("cq",)) -> list[Call]:
