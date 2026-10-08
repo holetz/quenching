@@ -26,9 +26,15 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    leaves the DAG with `STATE: blocked`, `NOTE: needs-approval` and `TOKENS: 0`, and every spec
    that depends on it leaves with it, noted `needs-approval: <id>`. With `autonomous`, pass it on
    to each `spec-runner` prompt as the word `autonomous`; you still write no record, and the
-   worker's develop stamps `by=orchestrator-forced`. A `git-steward` prompt for the `pr` step
-   carries the word `autonomous` too, whenever the run did, and never otherwise.
+   worker's develop stamps `by=orchestrator-forced`. A `git-steward` prompt for the `branch` and `pr`
+   steps carries the word `autonomous` too, whenever the run did, and never otherwise.
    **Schedule every ready spec.** A spec with no unmerged dependency and a free slot gets a worker.
+   **Isolate before the worker.** Each spec first goes to `git-steward` for the `branch` step: its
+   prompt names the spec id and the step `branch`, plus `autonomous` when the run carried it. The
+   `WORKTREE:` it returns is the worktree the `spec-runner` prompt names. The step runs only once
+   every dependency is merged, and under `autonomous` it cuts from `origin/<base>`, so the
+   dependent carries the dependency's code. A steward `blocked` on it never receives a worker:
+   the spec leaves with `STATE: blocked`, the steward's NOTE and `TOKENS: 0`.
    Before closing each wave, compare the set you scheduled with the set the DAG resolved as ready,
    and name any spec that is in the second set only; a spec left out is scheduled in the next
    wave or reported, never dropped in silence.
