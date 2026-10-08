@@ -362,6 +362,9 @@ class CqCallsAgainstTheParsers(unittest.TestCase):
         for line in ("we no more run `cq specs bogus`", "it will no more call `cq specs bogus`"):
             self.assertEqual(self._codes(line), [], line)
 
+    def test_no_more_than_is_a_limit_and_requires_the_call(self):
+        self.assertEqual(self._codes("Run no more than one `cq specs bogus` per task."), ["sk-cq-unknown-verb"])
+
     def test_a_bare_skip_still_negates(self):
         self.assertEqual(self._codes("the runner skips `cq specs bogus`"), [])
 
@@ -454,6 +457,20 @@ class AgentGrantGap(unittest.TestCase):
             found = lint_agents(root, root)
         self.assertEqual([(f["code"], f["command"]) for f in found],
                          [("sk-agent-disallowed-bash", "agent:a")])
+
+    def test_disallowed_tools_in_yaml_list_forms_is_an_error(self):
+        forms = {"block": "disallowedTools:\n  - Write\n  - Bash(x:*)\n",
+                 "flow": "disallowedTools: [Write, Bash(x:*)]\n",
+                 "scalar": "disallowedTools: Write, Bash(x:*)\n"}
+        with tempfile.TemporaryDirectory() as root:
+            agents = pathlib.Path(root, "agents")
+            agents.mkdir()
+            for name, line in forms.items():
+                (agents / f"{name}.md").write_text(
+                    f"---\nname: {name}\ntools: Bash(echo:*)\n{line}---\nBody.\n", encoding="utf-8")
+            found = lint_agents(root, root)
+        self.assertEqual(sorted((f["code"], f["command"]) for f in found),
+                         [("sk-agent-disallowed-bash", f"agent:{n}") for n in ("block", "flow", "scalar")])
 
 
     def test_skill_without_unrestricted_bash_is_an_error(self):
