@@ -15,7 +15,7 @@ from quenching.specs.config import (azure_workitemtype_retirement, load_config,
                                     resolve_subject, resolve_type_key)
 from quenching.specs.parse import derive_info
 from quenching.specs.parse.edit import split_section_stream, upsert_section
-from quenching.specs.parse.fields import set_frontmatter_record
+from quenching.specs.parse.fields import set_frontmatter_record, yaml_title_scalar
 from quenching.specs.parse.sections import section_state
 from quenching.specs.schema import (DEFAULT_VERIFICATION, canonical_headings, capture_form,
                                     load_schema, section_guidance)
@@ -111,6 +111,7 @@ def cmd_new(args, root: str, out: Emitter) -> int:
     policy = args.verification or DEFAULT_VERIFICATION
     title = args.title or args.name
     body = (capture_form(schema=schema)
+            .replace("title: <TITLE>", f"title: {yaml_title_scalar(title)}")
             .replace("<TITLE>", title)
             .replace("<DATE>", today())
             .replace("<VERIFICATION>", policy))
