@@ -203,6 +203,47 @@ def _ignored_files(path: str) -> list[str] | None:
     return [e for e in entries if not os.path.islink(os.path.join(path, e.rstrip("/")))]
 
 
+def _regenerable_paths(config: dict) -> list[str]:
+    values = namespace(config, "shared").get("regenerablePaths")
+    if not isinstance(values, list):
+        return []
+    return [os.path.normpath(v.strip()) for v in values if isinstance(v, str) and v.strip()
+            and not os.path.isabs(v.strip()) and ".." not in v.strip().split("/")]
+
+
+def _is_regenerable(entry: str, declared: list[str]) -> bool:
+    """A declared entry without a slash names a component at any depth; one with a slash names a
+    path from the repo root, itself or anything under it."""
+    parts = os.path.normpath(entry.rstrip("/")).split(os.sep)
+    for rule in declared:
+        if os.sep in rule:
+            width = len(rule.split(os.sep))
+            if os.sep.join(parts[:width]) == rule:
+                return True
+        elif rule in parts:
+            return True
+    return False
+
+
+def _undeclared(path: str, entries: list[str], declared: list[str]) -> list[str]:
+    """The ignored entries no declaration covers; git reports a wholly ignored directory as one
+    entry, so a directory that merely contains a declared path is opened to its files."""
+    left = []
+    for entry in entries:
+        if _is_regenerable(entry, declared):
+            continue
+        if entry.endswith("/"):
+            files = [os.path.relpath(os.path.join(root, name), path)
+                     for root, _dirs, names in os.walk(os.path.join(path, entry))
+                     for name in names]
+            left += [f for f in files if not _is_regenerable(f, declared)]
+            if not files:
+                left.append(entry)
+        else:
+            left.append(entry)
+    return left
+
+
 def _retire(args) -> int:
     """Remove a merged spec's worktree and delete its branch with `branch -d`, never `-D`.
 
@@ -211,7 +252,7 @@ def _retire(args) -> int:
     refusal (exit 2) happens before a write. The worktree goes first, since git will not delete a
     branch checked out in one; `worktree remove` runs without `--force`, so a dirty worktree
     stands. A worktree holding ignored files that are not symlinks stands too (exit 1, `ignored`
-    lists them) unless `--discard-ignored` is passed. `branch -d` compares the branch with its upstream when one is configured, so a published branch is
+    lists them) unless `shared.regenerablePaths` declares them regenerable or `--discard-ignored` is passed. `branch -d` compares the branch with its upstream when one is configured, so a published branch is
     deleted even while the local base is behind; with no upstream it compares with the checked-out
     HEAD and refuses when the local base is behind: the branch stands, exit 1."""
     cwd = os.getcwd()
@@ -267,6 +308,9 @@ def _retire(args) -> int:
     payload = {"ok": False, "path": path, "branch": args.branch, "base": target,
                "worktreeRemoved": False, "branchDeleted": False}
     ignored = [] if args.discard_ignored else _ignored_files(path)
+    if ignored:
+        declared = _regenerable_paths(load_config(_repo_root(cwd)))
+        ignored = _undeclared(path, ignored, declared)
     if ignored is None:
         return refuse({"code": "git-worktree-retire-status-failed",
                        "message": f"git status failed in {path}; nothing was removed"}, args.json)

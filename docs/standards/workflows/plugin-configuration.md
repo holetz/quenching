@@ -4,10 +4,10 @@ title: Plugin configuration contract
 description: "`.claude/quenching.json` is the plugin's single configuration home; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles, proposal catalogues and the `git` pillar's per-artifact writing directives remain explicit target settings"
 resource: .claude/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/specs/config.py, plugins/quenching/assets/bin/quenching/ops/**, plugins/quenching/assets/bin/quenching/proof/**, plugins/quenching/assets/bin/quenching/git/base.py, plugins/quenching/assets/bin/quenching/git/conventions.py
 tags: [workflows, specs, configuration, provider, plugin]
-timestamp: 2026-09-01
+timestamp: 2026-10-08
 audience: both
 authority: current
-source: spec 1065 (task 3.1) — the namespaced envelope and migration refusal are implemented and covered by the source test matrix; extended by spec 1075 (2026-09-01) with `shared.gitConventions`, the `git` pillar's per-artifact writing directives
+source: spec 1065 (task 3.1) — the namespaced envelope and migration refusal are implemented and covered by the source test matrix; extended by spec 1075 (2026-09-01) with `shared.gitConventions`, the `git` pillar's per-artifact writing directives; extended by spec 1405 (2026-10-08) with `shared.regenerablePaths`
 maintainer: quenching
 ---
 
@@ -47,6 +47,7 @@ The root-level envelope is deliberately small:
   "shared": {
     "worktreeSetup": "./scripts/wt-setup.sh",
     "sharedPaths": [".cache"],
+    "regenerablePaths": ["__pycache__", ".quenching/coverage"],
     "hooks": {
       "after_specs_execute_task": [
         {"command": "/my:security-review", "optional": true}
@@ -78,12 +79,17 @@ The root-level envelope is deliberately small:
 }
 ```
 
+`shared.regenerablePaths` lists the ignored paths the repo regenerates on its own. `cq git worktree
+retire` discards them without `--discard-ignored` and still stands on any other ignored file, such as
+a `.env`. An entry without a slash matches that name at any depth; an entry with a slash matches that
+path from the repo root, itself or anything under it. An absent key declares nothing.
+
 Ownership follows the meaning of the key, not the module that happens to read it:
 
 | Namespace | Owned declarations | Boundary |
 | --- | --- | --- |
 | root | `backend` | legacy/provider metadata only; provider selection comes from `origin` |
-| `shared` | `worktreeSetup`, `sharedPaths`, `hooks`, `profiles`, `gitConventions` | settings used by more than one local surface or by isolation |
+| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions` | settings used by more than one local surface or by isolation |
 | `specs` | Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes` | provider-owned plan lifecycle and proposal conventions |
 | `ops` | `opsRoot`, `router`, `registry` | operations inventory, router and generated registry |
 | `proof` | `proofRoot`, `layers`, `measuredRoots`, `proofExclusions`, `ratchetPath` | verification inventory, layers and coverage evidence |
