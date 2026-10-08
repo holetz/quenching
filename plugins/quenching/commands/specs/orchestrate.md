@@ -1,6 +1,6 @@
 ---
 description: >-
-  Run an epic or a list of specs through the orchestrator agent. Use for "orchestrate this epic", "run these specs in waves". Not for: ONE spec → /quenching:specs:execute; ranking → /quenching:specs:triage.
+  Run an epic or a list of specs through the orchestrator agent. Use for "orchestrate this epic", "run these specs in waves". Not for: ONE spec → /quenching:specs:execute; ranking → /quenching:specs:triage; rounds → /quenching:specs:autopilot.
 argument-hint: [epic-id | spec-id ...] [--autonomous]
 allowed-tools: Bash(cq:*), Read, Agent, Task
 ---

@@ -1,6 +1,6 @@
 ---
 name: quenching-specs-improve
-description: "Map a repository's genuinely relevant improvement opportunities, settle the owner's decisions, and turn the approved plan into an epic. Use for \"map what to improve\", \"improvement plan\". Not for: ONE spec → quenching-specs-create."
+description: "Map a repository's relevant improvement opportunities, settle the owner's decisions, turn the plan into an epic. Use for \"map what to improve\", \"improvement plan\". Not for: ONE spec → quenching-specs-create; rounds → quenching-specs-autopilot."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/improve.md -->
