@@ -9,8 +9,10 @@ own `build_parser()` is the source of truth for its verbs, its required options 
 WHAT COUNTS AS A CALL. A line inside a fence, or a span between backticks, whose first word (after an
 optional `python3`, a `path/to/` prefix, or a `X=$(` opener) is the binary. A negation (`never`,
 `do not`, `nunca`, `não`, `without`, `skips`) only counts when it precedes the span in the same
-clause — no `.`, `;` or `:` between the two; a loose one elsewhere on the line hides nothing. A
-placeholder (`<id>`, `"<title>"`, `…`, `$VAR`) counts as a value, and the number of positionals is
+clause — no sentence-ending `.`, `;`, `:` or `,` between the two — and within four words of it
+("never `cq …`", "no `cq …` grant"); a loose one elsewhere in the sentence hides nothing. `e.g.`,
+`i.e.` and decimals do not end a clause; a negation closing the previous prose line still counts, and
+so does one over a list of spans ("never `a`, `b` or `c`"). A placeholder (`<id>`, `"<title>"`, `…`, `$VAR`) counts as a value, and the number of positionals is
 never checked, because prose abbreviates them.
 
 THE GLOBAL OPTION BEFORE THE PILLAR IS READ. `cq --root "$TARGET_ROOT" proof doctor` is the form a
@@ -29,8 +31,11 @@ import re
 import shlex
 from typing import NamedTuple
 
-NEGATION_RE = re.compile(r"\b(?:never|do not|don't|does not|doesn't|cannot|can't|skips?|without|nunca|não|nao)\b", re.IGNORECASE)
-_CLAUSE_END_RE = re.compile(r"[.;:]")
+NEGATION_RE = re.compile(r"\b(?:never|do not|don't|does not|doesn't|cannot|can't|skips?|without|no|nunca|não|nao)\b", re.IGNORECASE)
+_CLAUSE_END_RE = re.compile(r"[;:,]|\.(?=\s|$)")
+_ABBREV_RE = re.compile(r",?\s*\b(?:e\.g\.|i\.e\.)(?=\s|,|$),?", re.IGNORECASE)
+_LISTED_RE = re.compile(r"`[^`\n]+`(?:\s*,)?(?:\s+(?:or|and|nor|ou|e)\b)?")  # one item of a negated list
+_NEGATION_REACH = 4  # words between a negation and the span it negates
 _SPLIT_RE = re.compile(r"\s*(?:&&|\|\||;|\s\|\s)\s*")
 _INLINE_RE = re.compile(r"`([^`\n]+)`")
 _BIN_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -101,10 +106,12 @@ def _calls_in(text: str, lineno: int, binaries: tuple[str, ...], inline: bool) -
     return out
 
 
-def _negated(line: str, start: int) -> bool:
-    """True when a negation word precedes the span at `start` in its own clause."""
-    before = _INLINE_RE.sub(" ", line[:start])
-    return bool(NEGATION_RE.search(_CLAUSE_END_RE.split(before)[-1]))
+def _negated(line: str, start: int, carried: str = "") -> bool:
+    """True when a negation word sits within `_NEGATION_REACH` words before the span at `start`,
+    in its own clause; `carried` is the previous prose line, for a sentence the source wrapped."""
+    before = _LISTED_RE.sub(" ", (carried + " " if carried else "") + line[:start])
+    clause = _CLAUSE_END_RE.split(_ABBREV_RE.sub(" ", before))[-1]
+    return bool(NEGATION_RE.search(" ".join(clause.split()[-_NEGATION_REACH:])))
 
 
 def extract_calls(body: str, binaries: tuple[str, ...] = ("cq",)) -> list[Call]:
@@ -112,17 +119,20 @@ def extract_calls(body: str, binaries: tuple[str, ...] = ("cq",)) -> list[Call]:
     out: list[Call] = []
     fenced = False
     pending: tuple[int, str] | None = None
+    carried = ""
     for lineno, line in enumerate(body.splitlines(), 1):
         stripped = line.strip()
         if stripped.startswith(("```", "~~~")):
             fenced = not fenced
             pending = None
+            carried = ""
             continue
         if fenced and pending:
             lineno, stripped = pending[0], pending[1] + " " + stripped
             line = stripped
             pending = None
         if not stripped:
+            carried = ""
             continue
         if fenced:
             if stripped.endswith("\\"):
@@ -131,8 +141,9 @@ def extract_calls(body: str, binaries: tuple[str, ...] = ("cq",)) -> list[Call]:
                 out.extend(_calls_in(stripped, lineno, binaries, False))
             continue
         for found in _INLINE_RE.finditer(line):
-            if not _negated(line, found.start()):
+            if not _negated(line, found.start(), carried):
                 out.extend(_calls_in(found.group(1), lineno, binaries, True))
+        carried = stripped
     return out
 
 
