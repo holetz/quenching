@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from quenching.specs.parse.handoff import (current_handoff_section, parse_handoff,
                                            task_section_title)
+from quenching.specs.parse.sections import section_spans
 from quenching.specs.parse.tasks import parse_tasks
 from quenching.specs.parse.text import FENCE_RE, HEADING_RE, body_after_frontmatter
 from quenching.specs.schema import canonical_headings, section_guidance
@@ -101,6 +102,25 @@ def split_section_stream(text: str, candidates: list[str]) -> list[tuple[str | N
     return [(h, "\n".join(b).strip("\n")) for h, b in zip(heads, bodies)]
 
 
+def nested_heading(text: str) -> str | None:
+    """The first unfenced `## ` line of a text, or None — the line that, spliced into a document,
+    would open a section the writer never named. Same fence rule `parse_sections` holds."""
+    fence: str | None = None
+    for line in text.splitlines():
+        m = FENCE_RE.match(line)
+        if m:
+            mark = m.group(1)
+            if fence is None:
+                fence = mark[0] * len(mark)
+            elif mark[0] == fence[0] and len(mark) >= len(fence):
+                fence = None
+        elif fence is None:
+            h = HEADING_RE.match(line)
+            if h and len(h.group(1)) == 2:
+                return line.strip()
+    return None
+
+
 def whole_body(content: str, heading: str) -> tuple[str, str | None]:
     """A body this command splices whole under `## <heading>`, checked for the one thing that
     makes the splice write a second section: an unfenced `## ` line of its own.
@@ -115,19 +135,9 @@ def whole_body(content: str, heading: str) -> tuple[str, str | None]:
         h = HEADING_RE.match(lines[first])
         if h and len(h.group(1)) == 2 and h.group(2).strip().lower() == heading.lower():
             lines = lines[first + 1:]
-    fence: str | None = None
-    for line in lines:
-        m = FENCE_RE.match(line)
-        if m:
-            mark = m.group(1)
-            if fence is None:
-                fence = mark[0] * len(mark)
-            elif mark[0] == fence[0] and len(mark) >= len(fence):
-                fence = None
-        elif fence is None:
-            h = HEADING_RE.match(line)
-            if h and len(h.group(1)) == 2:
-                return content, line.strip()
+    bad = nested_heading("\n".join(lines))
+    if bad:
+        return content, bad
     return "\n".join(lines), None
 
 
@@ -181,6 +191,13 @@ def upsert_section(info: dict, heading: str, block: str) -> tuple[str, str]:
         sec = info["sections"][heading]
         start = sec["lineno"] + fm_offset
         end = start + 1 + len(sec["lines"])
+        # A repeated heading is a defect `parse_sections` hides (it keeps the FIRST); the
+        # rewrite is the repair, so the later copies of the same heading go with it.
+        drop = [(a + fm_offset, b + fm_offset)
+                for h, a, b in section_spans(body_after_frontmatter(text))
+                if h == heading and a + fm_offset > start]
+        for a, b in sorted(drop, reverse=True):
+            lines[a:b] = []
         return "".join(lines[:start]) + block + "".join(lines[end:]), "replaced"
     idx = _canonical_index(heading)
     following = [sec["lineno"] + fm_offset for h, sec in info["sections"].items()
