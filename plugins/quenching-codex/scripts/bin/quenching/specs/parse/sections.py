@@ -7,7 +7,7 @@ from __future__ import annotations
 import re
 
 from quenching.specs.parse.text import (BULLET_RE, FENCE_RE, HEADING_RE, PLACEHOLDER_RE,
-                                        STANDARD_PATH_RE, SUBHEADING_RE, has_real_content,
+                                        STANDARD_PATH_RE, SUBHEADING_RE, has_real_content, split_lines,
                                         strip_comments)
 from quenching.specs.schema import canonical_headings, load_schema, phase_spec
 
@@ -29,7 +29,7 @@ def parse_sections(text: str) -> dict[str, dict]:
     current: str | None = None
     buf: list[str] = []
     start = 0
-    lines = text.splitlines()
+    lines = split_lines(text)
     fence: str | None = None
 
     def flush() -> None:
@@ -72,7 +72,7 @@ def section_spans(text: str) -> list[tuple[str, int, int]]:
     heading is invisible to it. Same fence rule."""
     spans: list[list] = []
     fence: str | None = None
-    lines = text.splitlines()
+    lines = split_lines(text)
     for lineno, line in enumerate(lines):
         fm = FENCE_RE.match(line)
         if fm:
