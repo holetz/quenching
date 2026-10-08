@@ -1638,6 +1638,54 @@ class PullRequestVerbs(RepoCase):
         self.assertEqual(self._calls(), [])
 
 
+def _grants(path: pathlib.Path, key: str) -> set:
+    """The comma-separated grants of a frontmatter key; a comma inside parentheses never separates."""
+    head = path.read_text(encoding="utf-8").split("---", 2)[1]
+    match = re.search(rf"^{key}:\s*(?:>-\s*\n)?((?:.*\n)(?:[ \t]+.*\n)*)", head, re.M)
+    joined = " ".join(match.group(1).split()) if match else ""
+    return {g.strip() for g in re.split(r",\s*(?![^()]*\))", joined) if g.strip()}
+
+
+class StewardSkillSubset(unittest.TestCase):
+    """Whatever the steward runs through `Skill` carries its own `allowed-tools`, which amplifies the
+    agent's grant: each command it runs must hold nothing its `tools:` does not (spec 1339)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.agent = PLUGIN_ROOT / "agents" / "git-steward.md"
+        cls.tools = _grants(cls.agent, "tools")
+        text = " ".join(cls.agent.read_text(encoding="utf-8").split("## Rules")[0].split())
+        names = re.findall(r"`(/quenching:git:[a-z:]+|:[a-z]+(?::[a-z]+)?)`", text)
+        cls.named = [n.removeprefix("/quenching:git:").removeprefix(":").replace(":", "/") for n in names]
+
+    def _extra(self, command: str) -> list:
+        path = PLUGIN_ROOT / "commands" / "git" / f"{command}.md"
+        return sorted(_grants(path, "allowed-tools") - self.tools)
+
+    def test_the_steward_names_the_commands_it_runs(self):
+        self.assertEqual(self.named, ["branch", "commit", "pr/create"])
+
+    def test_branch_holds_nothing_outside_the_steward_tools(self):
+        self.assertEqual(self._extra("branch"), [])
+
+    def test_commit_holds_nothing_outside_the_steward_tools(self):
+        self.assertEqual(self._extra("commit"), [])
+
+    def test_pr_create_holds_nothing_outside_the_steward_tools(self):
+        self.assertEqual(self._extra("pr/create"), [])
+
+    def test_every_named_command_is_a_subset(self):
+        for command in self.named:
+            self.assertEqual(self._extra(command), [], command)
+
+    def test_merge_is_not_run_by_the_steward(self):
+        # `git:merge` grants cq:*, python3:* and raw git; the steward merges a PR through `cq git pr merge`.
+        self.assertNotIn("merge", self.named)
+        self.assertTrue(self._extra("merge"))
+        self.assertNotIn("Bash(python3:*)", self.tools)
+        self.assertNotIn("Bash(cq:*)", self.tools)
+
+
 class StewardGrants(unittest.TestCase):
     """The `git-steward` acts through `cq git` verbs: no grant of its `tools:` admits the commands
     reproduced against the 1279 blocklist on 2026-10-08."""
