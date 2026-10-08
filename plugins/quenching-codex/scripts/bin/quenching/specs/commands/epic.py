@@ -38,18 +38,26 @@ def _pr_target(member: dict) -> str:
 def pr_states(members: dict, root: str | None = None, timeout: int = 15) -> dict[str, str]:
     """`member id -> PR state` for every archived member carrying a `pr:` record, read with
     `gh pr view` from `root` (the repository `--root` names, not the process cwd). A lookup that
-    fails is left out, and the derivation then marks it `unverified`."""
+    fails, or whose `headRefName` is not the member's recorded `branch.work`, is left out, and the
+    derivation then marks it `unverified`. A member with no `branch.work` has nothing to contradict."""
     out: dict[str, str] = {}
     for sid, m in members.items():
         if not m or m["phase"] != "archive" or not pr_number(m):
             continue
         try:
-            r = subprocess.run(["gh", "pr", "view", _pr_target(m), "--json", "state", "-q", ".state"],
+            r = subprocess.run(["gh", "pr", "view", _pr_target(m), "--json", "state,headRefName"],
                                capture_output=True, text=True, timeout=timeout, cwd=root)
-        except (OSError, subprocess.SubprocessError):
+            got = json.loads(r.stdout) if r.returncode == 0 else {}
+        except (OSError, subprocess.SubprocessError, ValueError):
             continue
-        if r.returncode == 0 and r.stdout.strip():
-            out[str(sid)] = r.stdout.strip()
+        state = str(got.get("state") or "").strip() if isinstance(got, dict) else ""
+        if not state:
+            continue
+        rec = m["frontmatter"].get("branch")
+        work = str(rec.get("work", "")).strip() if isinstance(rec, dict) else ""
+        if work and got.get("headRefName") != work:
+            continue
+        out[str(sid)] = state
     return out
 
 
