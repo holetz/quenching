@@ -117,7 +117,8 @@ equal to `base`; continue the loop from the returned worktree checkout when Work
 never from the base checkout — and carry that path on every command of the loop (`cd <worktree> &&
 …` in the same call, `git -C <worktree>`, `cq --root <worktree>`), because the harness may return
 the shell cwd to the base checkout after each command and a cwd-dependent command would then
-measure or write the wrong tree. No record at all → the
+measure or write the wrong tree. **`cq git …` takes no `--root`** (it exits `git declares no
+--root`): run it as `cd <worktree> && cq git …`, in the same call as the `git add` it commits. No record at all → the
 git command it ran failed (a name already taken, a dirty path, a locked worktree) and nothing was
 stamped — report it verbatim and stop.
 
