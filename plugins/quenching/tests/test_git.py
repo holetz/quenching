@@ -289,6 +289,66 @@ class Stale(RepoCase):
                            "reasons": ["merged"]}])
 
 
+class Audit(RepoCase):
+    """`cq git audit` — the verifier's facts read with a fixed argv inside a registered worktree."""
+
+    def setUp(self):
+        super().setUp()
+        self.wt = os.path.join(self.tmp, "wt")
+        _run(self.repo, "worktree", "add", "-q", "-b", "spec/1", self.wt)
+        _run(self.wt, "config", "user.email", "test@example.com")
+        _run(self.wt, "config", "user.name", "Test")
+        pathlib.Path(self.wt, "b.txt").write_text("b\n", encoding="utf-8")
+        _run(self.wt, "add", "b.txt")
+        _run(self.wt, "commit", "-q", "-m", "task")
+        self.sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.wt, check=True,
+                                  capture_output=True, text=True).stdout.strip()
+
+    def _audit(self, *argv: str) -> subprocess.CompletedProcess:
+        return subprocess.run([sys.executable, CQ, "git", "audit", *argv, "--json"],
+                              cwd=self.repo, capture_output=True, text=True)
+
+    def test_reports_the_worktree_facts(self):
+        pathlib.Path(self.wt, "loose.txt").write_text("x\n", encoding="utf-8")
+        payload = _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main",
+                           "--branch", "spec/1", "--sha", self.sha)
+        self.assertEqual(payload["changed"], ["b.txt"])
+        self.assertEqual(len(payload["commits"]), 1)
+        self.assertEqual(payload["status"], ["?? loose.txt"])
+        self.assertEqual(payload["stash"], [])
+        self.assertEqual(payload["ancestry"], {self.sha: True})
+        self.assertTrue(payload["reflog"]["head"])
+        self.assertNotIn("gate", payload)
+
+    def test_gate_absent_is_reported_not_run(self):
+        payload = _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main",
+                           "--branch", "spec/1", "--gate")
+        self.assertEqual(payload["gate"], {"exit": None, "reason": "absent"})
+
+    def test_unregistered_worktree_is_refused(self):
+        other = _init_repo(os.path.join(self.tmp, "other"))
+        proc = self._audit("--worktree", other, "--base", "main", "--branch", "main")
+        self.assertEqual(proc.returncode, 2)
+        self.assertIn("audit-worktree-unregistered", proc.stdout)
+
+    def test_option_shaped_refs_are_refused_and_write_nothing(self):
+        target = pathlib.Path(self.tmp, "outside")
+        target.write_text("keep\n", encoding="utf-8")
+        for argv in ((f"--base=--output={target}", "--branch", "spec/1"),
+                     ("--base", "main", "--branch=-D"),
+                     ("--base", "main", "--branch", "spec/1", f"--sha=--output={target}")):
+            proc = self._audit("--worktree", self.wt, *argv)
+            self.assertEqual(proc.returncode, 2, argv)
+            self.assertIn("audit-ref-invalid", proc.stdout)
+        self.assertEqual(target.read_text(encoding="utf-8"), "keep\n")
+
+    def test_repository_fsmonitor_config_runs_nothing(self):
+        marker = pathlib.Path(self.tmp, "pwn")
+        _run(self.repo, "config", "core.fsmonitor", f"touch {marker}")
+        _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main", "--branch", "spec/1")
+        self.assertFalse(marker.exists())
+
+
 class Worktree(RepoCase):
     def setUp(self):
         super().setUp()
