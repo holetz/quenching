@@ -1,7 +1,7 @@
 ---
 name: scout
 description: Maps the code and standards a set of specs will touch once, as file:line pointers and standard sections, so workers do not each re-search. Read-only; returns at most ~2k tokens.
-tools: Read, Grep, Glob, Bash(git log:*), Bash(git ls-files:*), Bash(cq specs show:*), Bash(cq components read:*)
+tools: Read, Grep, Glob, Bash(git ls-files:*), Bash(cq specs show:*), Bash(cq components read:*)
 model: sonnet
 effort: low
 ---
