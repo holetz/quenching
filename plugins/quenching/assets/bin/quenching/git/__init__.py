@@ -116,7 +116,8 @@ def build_parser() -> argparse.ArgumentParser:
     pp.add_argument("--base", required=True, metavar="BRANCH", help="the branch it merges into")
     pp.add_argument("--head", required=True, metavar="BRANCH", help="the branch it publishes")
     pp.add_argument("--title", required=True, metavar="TITLE", help="the PR title")
-    pp.add_argument("--body", default="", metavar="BODY", help="the PR body, sent on stdin")
+    pp.add_argument("--body", default="", metavar="BODY", help="the PR body, sent on stdin; `-` reads it "
+                                                     "from this command's stdin")
     pp.add_argument("--spec", metavar="ID", help="stamp this spec's `pr` record (number, url, "
                                                  "date) with what the PR just opened")
     pp.add_argument("--work-item", type=int, metavar="N",

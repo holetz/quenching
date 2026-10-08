@@ -1816,6 +1816,14 @@ class PullRequestVerbs(RepoCase):
                                         "--body-file=-"])
         self.assertEqual(call["stdin"], "Closes #1")
 
+    def test_create_with_body_dash_sends_this_commands_stdin_never_a_dash(self):
+        proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/1-x",
+                   "--title", "t", "--body", "-", stdin="## Problem\n\nlido do stdin\n",
+                   env=self.env)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        (call,) = self._calls()
+        self.assertEqual(call["stdin"], "## Problem\n\nlido do stdin\n")
+
     def _store_spec(self) -> tuple[str, list]:
         # A fixture `git` store (branch `quenching` over a local bare origin).
         origin = os.path.join(self.tmp, "origin.git")
