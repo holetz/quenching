@@ -7,8 +7,9 @@ A wildcard grant such as `Bash(git -C * status:*)` admits any git command that m
 module, refs are resolved to commits before use, and the repository's own config cannot run a
 command during the read: the `filter.<x>` drivers it declares are blanked before `status` through
 `GIT_CONFIG_COUNT`, which carries a key containing `=` that `-c key=value` would split, and `status`
-does not descend into submodules (their own config is not ours to blank); `log.showSignature` is
-forced off so `gpg.program` never runs; and a partial clone's lazy fetch is off
+does not descend into submodules (their own config is not ours to blank); every diff and show
+read carries `--no-ext-diff --no-textconv`, so neither `diff.external` nor a `diff.<x>.textconv`
+driver runs; `log.showSignature` is forced off so `gpg.program` never runs; and a partial clone's lazy fetch is off
 (`GIT_NO_LAZY_FETCH`, and `GIT_ALLOW_PROTOCOL` empty refuses every transport), so a missing blob
 or an absent `--sha` never runs `core.sshCommand` or any other transport the config names.
 `rewrites` and `reflog` are evidence of what the worker did not erase, not proof against a worker with
@@ -52,7 +53,7 @@ def _lines(cwd: str, *argv: str, env: dict[str, str] | None = None,
 
 def _paths(cwd: str, rng: str, env: dict[str, str], errors: list[dict]) -> list[str]:
     """The paths a range changes, read with `-z` so a non-ASCII path arrives raw, never quoted."""
-    code, out, err = _git_run(cwd, *SAFE, "diff", "--name-only", "-z", "--no-renames", rng, env=env)
+    code, out, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "--name-only", "-z", "--no-renames", rng, env=env)
     if code != 0:
         errors.append(_error(("diff", "--name-only"), code, err))
         return []
@@ -293,7 +294,7 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
     fork = out.strip()
 
     def show(rev: str, path: str) -> str | None:
-        code, text, _e = _git_run(cwd, *SAFE, "show", f"{rev}:{path}", env=env)
+        code, text, _e = _git_run(cwd, *SAFE, "show", "--no-textconv", f"{rev}:{path}", env=env)
         return text if code == 0 else None
 
     found = []
@@ -334,8 +335,8 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
                 if removed:
                     found.append({"path": path, "kind": kind, "added": removed})
         if surface:
-            code, out, err = _git_run(cwd, *SAFE, "diff", "-U0", "--no-renames", f"{base}...{tip}",
-                                      "--", path, env=env)
+            code, out, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "-U0",
+                                      "--no-renames", f"{base}...{tip}", "--", path, env=env)
             if code != 0:
                 errors.append(_error(("diff", "-U0"), code, err))
                 continue
