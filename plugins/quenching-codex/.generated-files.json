@@ -506,7 +506,7 @@
     "scripts/bin/quenching/components/commands/lint.py": "d89dcb56ccf02520679d8851bb4d0dcfcff25107ccbac1bdaf0e4986402efd87",
     "scripts/bin/quenching/components/commands/read.py": "a0dd7e9c409dda70939e3c1d502da0154bfb02c81d92d09e038c75926567964f",
     "scripts/bin/quenching/components/commands/registry.py": "b1aece1a797267ff0005237e33bafe7a9e53ef18dc98b6c495528e67eda9d312",
-    "scripts/bin/quenching/components/commands/translate.py": "58e3df17a757a95dd5766df3fe88d739f1cf9a1de8dcf70481eea63333c44076",
+    "scripts/bin/quenching/components/commands/translate.py": "22973468b193cb6f297fcf531334bb6b55c1dd4bc46e2a2355f3f4b43f6b8828",
     "scripts/bin/quenching/components/cq_calls.py": "25153b86dd21515dc021c284dcadc4f2b88a1101f19252c2e55b66cc23aa3e9c",
     "scripts/bin/quenching/components/hooks.py": "7f0e840b70c5878b2f63d5d461cbe2551b9915dd0a9ab32ef6bab8b8c900a473",
     "scripts/bin/quenching/components/sections.py": "8343fba43a2922960e0fc41c12590c3b075dff0f13a557c6b07d607aac18ae1d",
