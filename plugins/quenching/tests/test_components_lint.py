@@ -354,6 +354,14 @@ class CqCallsAgainstTheParsers(unittest.TestCase):
         for line in ("there is no `cq specs bogus` grant", "it is no longer `cq specs bogus`"):
             self.assertEqual(self._codes(line), [], line)
 
+    def test_no_longer_before_a_verb_negates(self):
+        for line in ("Do that, no longer call `cq specs bogus` here", "we no longer run `cq specs bogus`"):
+            self.assertEqual(self._codes(line), [], line)
+
+    def test_no_more_before_a_verb_negates(self):
+        for line in ("we no more run `cq specs bogus`", "it will no more call `cq specs bogus`"):
+            self.assertEqual(self._codes(line), [], line)
+
     def test_a_bare_skip_still_negates(self):
         self.assertEqual(self._codes("the runner skips `cq specs bogus`"), [])
 
