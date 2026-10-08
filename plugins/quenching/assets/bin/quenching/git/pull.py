@@ -308,6 +308,8 @@ def _create(args) -> int:
         bad = _spec_vs_head(args.spec, args.head)
         if bad:
             return refuse(bad, args.json)
+    if args.body == "-":
+        args.body = sys.stdin.read()
     opened = _open_azure(args) if provider == "azure-boards" else _open_github(args)
     if isinstance(opened, str):
         emit(args.json, {"ok": False, "provider": provider, "reason": "create-refused",
