@@ -15,7 +15,8 @@ from quenching.specs.config import (azure_workitemtype_retirement, load_config,
                                     resolve_subject, resolve_type_key)
 from quenching.specs.parse import derive_info
 from quenching.specs.parse.edit import split_section_stream, upsert_section
-from quenching.specs.parse.fields import set_frontmatter_record, yaml_title_scalar
+from quenching.specs.parse.fields import (scalar_break, set_frontmatter_record,
+                                          yaml_title_scalar)
 from quenching.specs.parse.sections import section_state
 from quenching.specs.schema import (DEFAULT_VERIFICATION, canonical_headings, capture_form,
                                     load_schema, section_guidance)
@@ -41,6 +42,20 @@ def cmd_new(args, root: str, out: Emitter) -> int:
     heading set on the command line — the stream IS the declaration, so a stream that never
     opens on a canonical heading has no single implied heading to fall back on and refuses
     instead."""
+    bad = scalar_break(args.title or args.name)
+    if bad:
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-bad-title", "char": bad,
+                  "message": f"a title is one line with no control character — got {bad}"},
+                 f"error: a title is one line with no control character — got {bad}")
+        return 2
+    bad = scalar_break(args.tags or "")
+    if bad:
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-bad-scalar", "field": "tags", "char": bad,
+                  "message": f"a tag carries no line break or control character — got {bad}"},
+                 f"error: a tag carries no line break or control character — got {bad}")
+        return 2
     backend, err = open_backend(root)
     if err:
         return out.emit_err(args.json, err)
