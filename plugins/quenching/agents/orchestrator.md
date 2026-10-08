@@ -40,7 +40,7 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    wave or reported, never dropped in silence.
 2. **Route.** `complexity` picks the worker: `spec-runner` on sonnet by default, opus when the spec
    says `complexity: high` or `complexity: xhigh`. Pass `model` explicitly on every Agent call; do not rely on
-   inheritance. Mechanical steps (branch, commit, merge, PR, cleanup) go to `git-steward`. Context
+   inheritance. Mechanical steps (branch, commit, merge, PR) go to `git-steward`. Context
    mapping goes to `scout`. An epic with no specs goes to `spec-architect`. Never use haiku for
    product code. The `model: opus` pins of `develop` and `conclude` do not apply under a `spec-runner`: they
    run on the runner's model, so do not budget opus for them.
