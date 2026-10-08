@@ -109,7 +109,7 @@ def build_parser() -> argparse.ArgumentParser:
                     help="the remote the report reads (default: origin)")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
-    sp = sub.add_parser("pr", help="the GitHub pull-request writes, with a fixed argv")
+    sp = sub.add_parser("pr", help="the pull-request writes, with a fixed argv")
     pr = sp.add_subparsers(dest="action", required=True)
     pp = pr.add_parser("create", help="open a PR from --head into --base; prints its number "
                                       "and URL")
@@ -119,6 +119,15 @@ def build_parser() -> argparse.ArgumentParser:
     pp.add_argument("--body", default="", metavar="BODY", help="the PR body, sent on stdin")
     pp.add_argument("--spec", metavar="ID", help="stamp this spec's `pr` record (number, url, "
                                                  "date) with what the PR just opened")
+    pp.add_argument("--work-item", type=int, metavar="N",
+                    help="Azure only: link this work item to the PR")
+    pp.add_argument("--transition-work-items", action="store_true",
+                    help="Azure only: transition the linked work items when the PR completes")
+    pp.add_argument("--delete-source-branch", action="store_true",
+                    help="Azure only: delete the source branch when the PR completes")
+    pp.add_argument("--json", action="store_true", help="machine-readable output")
+    pp = pr.add_parser("probe", help="read-only: is there an authenticated PR route for the "
+                                     "configured provider?")
     pp.add_argument("--json", action="store_true", help="machine-readable output")
     pp = pr.add_parser("record", help="stamp a spec's `pr` record with a PR opened elsewhere "
                                       "(the Azure route); checks --spec owns --head")

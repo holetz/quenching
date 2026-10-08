@@ -16,8 +16,9 @@ confirmation, given by a conductor launched with `--autonomous`: see step 4.
 Opens the PR and **stops there** — merging is `quenching-git-merge`'s, on its own confirmation,
 except in an `autonomous` orchestrated run, where the `git-steward`'s `merge` step merges the PR
 of a spec the next wave depends on.
-The route follows `cq specs config --json`: `github` uses `gh`, `azure-boards` uses `az repos`; an
-unknown or unauthenticated provider has no route here and stops plainly, rather than being treated
+The route follows `cq specs config --json`, and both go through `cq git pr` verbs with a fixed argv:
+`github` runs `gh` underneath, `azure-boards` runs `az repos` with no `--auto-complete` and no
+`--bypass-policy`; an unknown or unauthenticated provider has no route here and stops plainly, rather than being treated
 as a GitHub repository.
 
 ## Workflow
@@ -30,12 +31,11 @@ python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/qu
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git conventions --json   # `config.prTitle`, `config.prBody`
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git state --json   # `remotes`: every remote and its URL
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git base --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git pr probe --json   # the provider's read-only probe: exit 0 route, exit 1 `reason`
 ```
-After reading the config, run only the matching provider probe, after confirming the selected remote's host
-matches it:
-`github` → `gh repo view`; `azure-boards` → `az repos pr list --status all --top 1 --detect
-true`. A missing/mismatched origin, `NO-ROUTE`, or an unauthenticated host CLI → say plainly there
-is no PR route here and stop.
+Confirm the selected remote's host matches the configured provider. A missing/mismatched origin,
+`NO-ROUTE`, or a probe exiting 1 (`no-route`, `unauthenticated`) → say plainly there is no PR route
+here and stop.
 `cq git base --json` supplies the base and `isDefault`. **Done when:** the provider route, the base
 branch, and which layer governs `prTitle` and `prBody` are all resolved.
 
@@ -64,7 +64,7 @@ Omit an absent or empty optional section — never replace it with invented pros
 
 The status `path` is the provider locator. On `github`, the spec id is the issue `<n>`: take it from
 the status `id`, never from `path`, and append exactly `Closes #<n>` to the generated body. On `azure-boards`, its trailing number is a
-work item `<n>` and pass it as `--work-items <n>` to Azure; do not invent a `Closes #<n>` sentence.
+work item `<n>` and pass it as `--work-item <n>` to `cq git pr create`; do not invent a `Closes #<n>` sentence.
 Free text → that text is the title; ask for a body and, when applicable, whether an issue/work item
 should be linked. **Done when:** the title, body, provider-native link (or its absence), and base
 are fixed.
@@ -73,9 +73,9 @@ are fixed.
 For `github`, **measured**: `Closes #<n>` populates `closingIssuesReferences` only when the PR's
 base **is** the repository's own default branch; otherwise it cross-references the issue but does
 not close it on merge. State that case from `isDefault`. For `azure-boards`, state that the native
-`--work-items <n>` association will be attached to the PR; `--transition-work-items true`, when
+`--work-item <n>` association will be attached to the PR; `--transition-work-items`, when
 chosen, asks Azure to transition linked work items when the PR is completed; and
-`--delete-source-branch true`, when the separate deletion offer is accepted, asks Azure to delete
+`--delete-source-branch`, when the separate deletion offer is accepted, asks Azure to delete
 the source branch after the PR is completed and merged. Preserving the source branch is the default.
 **Done when:** the provider-native link and branch-deletion effects are stated before publication.
 
@@ -83,29 +83,26 @@ the source branch after the PR is completed and merged. Preserving the source br
 **With `autonomous` in the input**, the confirmation is already given: state the remote (`origin`
 unless `remote:<name>` was passed), the branch and the title (the spec's title, verbatim), skip the
 question, and run the commands below. The token covers exactly those three and nothing
-else: never add `--delete-source-branch true`, and an absent title or a missing spec id is still
+else: never add `--delete-source-branch`, and an absent title or a missing spec id is still
 asked, never invented. Without the token, the confirmation below stands.
 
 Show the remote, the branch name it pushes under, and the title/body, and ask with
 **AskUserQuestion**:
 For Azure, show the work item id, whether the separate source-branch deletion offer was accepted
-(`--delete-source-branch true`), and whether `--transition-work-items true` is included in the
+(`--delete-source-branch`), and whether `--transition-work-items` is included in the
 command the human is confirming. The deletion offer defaults to preserve the branch.
 ```bash
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git push --branch <branch> --remote <remote> --json
-# github
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git pr create --base <base> --head <branch> --title "<title>" --body "<body>" [--spec <id>] --json
-# azure-boards
-az repos pr create --detect true --source-branch <branch> --target-branch <base> \
-  --title "<title>" --description "<body>" [--delete-source-branch true] [--work-items <n>] \
-  [--transition-work-items true] --output json
+# azure-boards only, appended to the same call:
+#   [--work-item <n>] [--transition-work-items] [--delete-source-branch]
 ```
-The host-specific command is selected from the configured provider. Normalize the create response
-to `id`, `webUrl` and `apiUrl` before reporting it: show `webUrl` as **Link para revisão** and
+The verb selects the host from the configured provider and refuses the Azure-only flags on GitHub.
+Its payload carries `number`, `url` (the `webUrl`) and, on Azure, `apiUrl`: show `webUrl` as **Link para revisão** and
 `apiUrl` as **API URL**. For Azure, `webUrl` is
 `repository.webUrl/pullrequest/pullRequestId`, while the response's `url` remains `apiUrl`; never
 show a URL containing `/_apis/` as the Link para revisão. The target branch is explicit
-on both routes: `--base` for GitHub and `--target-branch` for Azure; neither may be omitted. The source is explicit too: `--head <branch>` on GitHub, so the PR leaves the branch resolved in step 1 and never the one the cwd happens to hold; run from a worktree, `cd <worktree> && cq git push --branch <branch> …` carries the push. `cq git push` publishes
+on both routes: `--base`, which may not be omitted. The source is explicit too: `--head <branch>`, so the PR leaves the branch resolved in step 1 and never the one the cwd happens to hold; run from a worktree, `cd <worktree> && cq git push --branch <branch> …` carries the push. `cq git push` publishes
 `refs/heads/<branch>` under its own name with upstream and never forces; `cq git pr create`
 returns the PR's `number` and `url`, and with `--spec <id>` stamps the spec's `pr` record with them
 (step 5), reporting it as `pr` in its payload; exit 1 with `reason: stamp-failed` means the PR exists and the record does not. Read
@@ -120,15 +117,12 @@ records pass. A target that carries `standards/workflows/plan-git-record.md` sta
 §Three frontmatter records.
 
 ### 5. Stamp, with an ID
-On `github` the verb of step 4 already stamped it: pass `--spec "<id>"` there and skip this step. The
-verb checks `--spec` (it exists, and owns `--head`) before the PR is created, so a wrong id opens
-nothing. On `azure-boards`:
-```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git pr record --spec "<id>" --head "<branch>" --number <provider-pr-id> --url <webUrl> --json
-```
-The verb runs the same check and writes the record through `cq specs record`'s function, so the
-orchestrated steward, which holds no spec write, stamps it too; exit 1 with `reason: stamp-failed`
-means the PR exists and the record does not.
+On both providers the verb of step 4 already stamped it: pass `--spec "<id>"` there and skip this
+step. The verb checks `--spec` (it exists, and owns `--head`) before the PR is created, so a wrong id
+opens nothing, and it writes the record through `cq specs record`'s function, so the orchestrated
+steward, which holds no spec write, stamps it too; exit 1 with `reason: stamp-failed` means the PR
+exists and the record does not. A PR opened outside the verb is stamped with
+`cq git pr record --spec "<id>" --head "<branch>" --number <provider-pr-id> --url <webUrl> --json`.
 `pr:` is **write-many** — a later PR on the same spec is a new fact.
 No ID → nothing to stamp; report the PR number and URL only. **Done when:** the record is stamped
 (with an ID) or the report carries the PR's own facts (without one).
@@ -143,8 +137,8 @@ are named.
 - Never route an Azure repository through `gh`, or a GitHub repository through `az`.
 - Publish to the selected remote (`origin` when omitted); never silently substitute another
   remote or treat a branch name as one.
-- Never omit `--base` on `cq git pr create` or `--target-branch` on `az repos pr create`.
-- Never pass `--delete-source-branch true` by default. Offer it as a separate choice, explain that
+- Never omit `--base` on `cq git pr create`, and never open the PR with a raw `gh` or `az` call.
+- Never pass `--delete-source-branch` by default. Offer it as a separate choice, explain that
   it removes the source branch after completion, and include it only when the human confirms that
   exact deletion.
 - Never push or open a PR without the human's confirmation on the exact remote, branch and title
