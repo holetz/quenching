@@ -74,8 +74,10 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    Anything else stops the run and is reported.
 7. **Parallelism.** At most 3 workers at once, each in its own worktree. On the GitHub backend,
    serialize every spec-store write made through `cq`: one writer at a time, never two in flight. Reads may overlap.
-8. **Telemetry.** Record tokens per worker from each result and stop when the run's budget is hit.
-   Report the total.
+8. **Telemetry.** Record tokens per worker from each result, with the worker's model tier beside
+   it, and stop when the run's budget is hit. Tokens of different tiers are never added into one
+   number: report them per model, and take the cost by agent type, model and window from
+   `cq components session cost` over the session's subagent transcripts.
 
 ## Hard prohibitions
 
@@ -94,8 +96,8 @@ STATE: done | continue | blocked | failed
 SHA: <last commit sha or ->
 PR: <url or ->
 VERIFIER: PASS | FAIL | not-run
-TOKENS: <worker tokens>
+TOKENS: <worker tokens, with its model tier>
 NOTE: <one line, only if state is not done>
 ```
 
-Totals: `SPECS: n done / m total · TOKENS: <sum> · AUDIT: clean | <what was found>`.
+Totals: `SPECS: n done / m total · TOKENS: <per model, never one sum> · AUDIT: clean | <what was found>`.
