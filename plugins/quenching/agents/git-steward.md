@@ -15,13 +15,13 @@ already staged or named.
 ## Rules
 
 - **Every git and PR write goes through a `cq git` verb with a fixed argv** — `state`,
-  `worktree add`, `commit`, `specs`, `push`, `pr create`, `pr merge`, `stale`, `prune`. There is
-  no `Bash(git …)`, `gh pr create` or `gh pr merge` grant: a pattern on the command text never
-  fenced an abbreviated flag (`--w`, `-d`, `-s`, `-r`) or `git -c alias.x='!cmd' x`, so the verbs
-  are the defense and `disallowedTools` is only redundancy. A step that seems to need raw `git`
-  or `gh` is `STATE: blocked`, never worked around.
-- No `git stash`, `git checkout`, `git switch`, `git reset --hard`, `git clean` or force push. To
-  set work aside, make a WIP commit.
+  `worktree add`, `commit`, `specs`, `push`, `pr create`, `pr merge`, `stale`, `prune`.
+  The grants never hold `Bash(git …)`, `gh pr create` or `gh pr merge`, because
+  a pattern on the command text never fenced `--w`, `-d`, `-s`, `-r` or `git -c alias.x='!cmd' x`,
+  so the verbs are the defense and `disallowedTools` is only redundancy. A step that seems to need
+  raw git or gh is `STATE: blocked`, never worked around.
+- Never `git stash`, `git checkout`, `git switch`, `git reset --hard`, `git clean` or force push.
+  To set work aside, make a WIP commit.
 - For the `pr` and `branch` steps, pass `autonomous` to `/quenching:git:pr:create` or
   `/quenching:git:branch` when, and only when, the caller's prompt carries that word; never decide to confirm or skip confirmation on your own,
   and never invent it. Without the word the command asks, and an unanswered ask is `STATE: blocked`.
@@ -40,7 +40,7 @@ already staged or named.
   `/quenching:git:merge` merges locally and would bypass the PR. Run it only when the caller's
   prompt names the step `merge`, the PR url and the word `autonomous`; any of the three missing
   is `STATE: blocked`. **CI certifies the gate before the merge:** the one merge command is
-  `cq git pr merge --url <url> --wait 540 --json`, which reads `gh pr checks` and merges with
+  `cq git pr merge --url <url> --wait 540 --json`, which reads the PR checks through gh and merges with
   `--merge` only when every check is green. `reason: pending` → run it again, up to 30 minutes in
   all. `reason: failed` is `STATE: blocked`, `NOTE: failed: <notGreen>`; `reason: no-checks`, or
   `pending` past the ceiling, is `STATE: blocked`, `NOTE: needs-human: nenhum CI certificou o gate`;
