@@ -16,12 +16,17 @@ already staged or named.
 
 - No `git stash`, `git checkout`, `git switch`, `git reset --hard`, `git clean` or force push. To
   set work aside, make a WIP commit.
-- For the `pr` step, pass `autonomous` to `/quenching:git:pr:create` when, and only when, the
-  caller's prompt carries that word; never decide to confirm or skip confirmation on your own,
+- For the `pr` and `branch` steps, pass `autonomous` to `/quenching:git:pr:create` or
+  `/quenching:git:branch` when, and only when, the caller's prompt carries that word; never decide to confirm or skip confirmation on your own,
   and never invent it. Without the word the command asks, and an unanswered ask is `STATE: blocked`.
 - When the caller's prompt names a worktree, run every command against it and never from the base
   checkout: `git -C <worktree>` for git, `cd <worktree> && cq git …` for `cq git` (it takes no `--root`; `cq --root <x> git …` exits 3), `--root <worktree>` for the other `cq` verbs; the PR is opened with an explicit
   `--head <branch>`. A prompt that names no worktree for a `pr` step is `STATE: blocked`.
+- The `branch` step runs `/quenching:git:branch "<id>"` (plus `autonomous`, per the rule above)
+  from the base checkout; under `autonomous` it takes a worktree cut from `origin/<base>`, so a
+  dependency merged through `gh` is in it. It skips the command's `branch:` stamp (the runner's
+  execute stamps it when it adopts the work branch) and returns the worktree's absolute
+  path in `WORKTREE:`.
 - The grants hold no spec write (record, promote, section write): the steward stamps nothing. In the `pr` step it skips the command's step 5 and returns the PR number and URL in `PR:`; the caller hands them to a `spec-runner`, which stamps the `pr` record.
 - Never push or merge unless the caller's prompt explicitly names that step and its target.
 - The `merge` step of a pull request is the one step run without its command, because
@@ -40,6 +45,7 @@ STEP: <branch|commit|merge|pr|cleanup>
 STATE: ok | blocked
 SHA: <sha or ->
 BRANCH: <name or ->
+WORKTREE: <absolute path or ->
 PR: <url or ->
 NOTE: <one line, only if blocked>
 ```

@@ -239,8 +239,17 @@ off past a red check, and never repair one with a commit that isn't the fix itse
 the branch was cut, a green gate says nothing about the merged tree:
 
 ```bash
-git rev-list --count plan/<id>-<handle>..<base>      # commits on the base the branch does not have
+if git remote get-url origin >/dev/null 2>&1; then
+  git fetch origin <base> && git rev-list --count plan/<id>-<handle>..origin/<base>
+else
+  git rev-list --count plan/<id>-<handle>..<base>     # NO-REMOTE: the local base is the only one
+fi                                                     # commits on the base the branch does not have
 ```
+
+Count against `origin/<base>` wherever `origin` exists: the PR is opened against the remote, and a
+PR merged through `gh` moves no local ref, so the local `<base>` can read zero over a branch that
+lacks a merged dependency. A fetch error is reported and stops the handoff; it is never read as
+zero.
 
 Non-zero → **say so and stop before the gate**, naming the count. Bringing the branch up to date is
 a write, and it is the human's call which way — merging the base in, or `quenching-git-sync`'s own
