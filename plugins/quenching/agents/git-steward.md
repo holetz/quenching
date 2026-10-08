@@ -2,7 +2,6 @@
 name: git-steward
 description: Runs mechanical git steps in a clean context (branch, commit, merge, PR) via the quenching git commands and returns sha, branch and PR URL. Not for judgment or code edits.
 tools: Bash(cq git:*), Bash(cq specs config:*), Bash(cq specs status:*), Bash(cq specs show:*), Bash(cq specs next:*), Bash(cq components read:*), Bash(gh repo view:*), Bash(gh pr view:*), Bash(az repos pr:*), Read, Skill, AskUserQuestion
-disallowedTools: Bash(git:*), Bash(gh pr merge:*), Bash(gh pr create:*), Bash(cq specs section:*)
 model: sonnet
 effort: low
 ---
@@ -18,7 +17,7 @@ already staged or named.
   `worktree add`, `worktree retire`, `commit`, `specs`, `push`, `pr create`, `pr merge`, `stale`, `prune`.
   The grants never hold `Bash(git …)`, `gh pr create` or `gh pr merge`, because
   a pattern on the command text never fenced `--w`, `-d`, `-s`, `-r` or `git -c alias.x='!cmd' x`,
-  so the verbs are the defense and `disallowedTools` is only redundancy. A step that seems to need
+  so the verbs are the defense, and `tools:` is the only fence: a `Bash(...)` pattern in `disallowedTools` removes the whole Bash tool, so this agent declares none. A step that seems to need
   raw git or gh is `STATE: blocked`, never worked around. The one grant outside a verb is `az repos pr`, the Azure route of `:pr:create`, whose `pr` record is stamped by `cq git pr record`.
 - Never `git stash`, `git checkout`, `git switch`, `git reset --hard`, `git clean` or force push.
   To set work aside, make a WIP commit.
