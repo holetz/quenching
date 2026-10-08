@@ -183,11 +183,12 @@ def _stamp(spec: str, number: int, url: str) -> dict:
     return {"ok": True, "value": quiet.seen.get("value")}
 
 
-def _spec_vs_head(spec: str, head: str) -> dict | None:
+def _spec_vs_head(spec: str, head: str, *, by_name: bool = True) -> dict | None:
     """Refuse BEFORE any PR exists: the spec must exist and own `head`.
 
     The spec owns the branch its `branch.work` record names; before that record exists, the
-    branch name must carry the spec's id (`plan/<id>-<slug>`). `None` means the pair is fine."""
+    branch name must carry the spec's id (`plan/<id>-<slug>`) unless `by_name` is off, as in
+    `worktree add`, where the convention need not carry the id. `None` means the pair is fine."""
     quiet = _Quiet()
     backend, err = open_backend(find_repo_root(os.getcwd()))
     info, err2 = (None, err) if err else read_one(backend, spec, quiet)
@@ -199,8 +200,10 @@ def _spec_vs_head(spec: str, head: str) -> dict | None:
     sid = str(info["id"])
     if work:
         owned = work == head
-    else:
+    elif by_name:
         owned = re.match(rf"(?:.+/)?{re.escape(sid)}-", head) is not None
+    else:
+        owned = True
     if not owned:
         return {"code": "git-pr-spec-head-mismatch",
                 "message": f"spec {sid} does not own branch {head}"
