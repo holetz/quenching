@@ -698,9 +698,10 @@ class PullRequestPayload(unittest.TestCase):
     def test_pr_create_selects_a_named_remote_and_defaults_to_origin(self):
         command = self.command.lower()
         self.assertIn("remote:<name>", command)
-        self.assertIn("git remote -v", command)
-        self.assertIn("git remote get-url <remote>", command)
-        self.assertIn("git push -u <remote> <branch>", command)
+        self.assertIn("cq git state --json", command)
+        self.assertIn("cq git push --branch <branch> --remote <remote>", command)
+        self.assertIn("cq git pr create --base <base> --head <branch>", command)
+        self.assertNotIn("git push -u", command)
         self.assertIn("origin", command)
 
     def test_missing_optional_sections_are_omitted_not_fabricated(self):
@@ -890,6 +891,7 @@ class PullRequestPayload(unittest.TestCase):
         cleanup = CLEANUP_COMMAND.read_text(encoding="utf-8").lower()
         self.assertIn("remoteBranches".lower(), cleanup)
         self.assertIn("git push <remote> --delete", cleanup)
+        self.assertIn("cq git prune --remote-branch <branch> --remote <remote>", cleanup)
         self.assertIn("remote:<name>", cleanup)
         self.assertIn("--remote <remote>", cleanup)
         self.assertIn("local selection", cleanup)

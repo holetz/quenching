@@ -5,8 +5,7 @@ disable-model-invocation: true
 argument-hint: [remote:<name>]
 allowed-tools: >-
   Bash(cq:*),
-  Bash(python3:*), Bash(git branch:*), Bash(git push:*), Bash(git worktree:*),
-  Read, AskUserQuestion
+  Bash(python3:*), Read, AskUserQuestion
 ---
 
 # /quenching:git:cleanup — prune what `cq git stale` already found
@@ -33,25 +32,26 @@ its reason(s), and every orphan worktree with its path and branch. Show each `un
 finding with its path, branch and size as information, but do not include it in the prune choices.
 Ask once with **AskUserQuestion** (multi-select) which local branches and live worktrees to prune —
 defaulting to none pre-selected, never to "all". Show the exact local actions in those choices:
-`git branch -d <branch>` or `git worktree remove <path>`. **Done when:** the local selection is
+`git branch -d <branch>` or `git worktree remove <path>`, which `cq git prune` runs. **Done when:** the local selection is
 settled.
 
-For any remote branch in the fresh `remoteBranches` list, show its exact destructive action `git
-push <remote> --delete <branch>` and ask separately with **AskUserQuestion**. A remote branch is never
+For any remote branch in the fresh `remoteBranches` list, show its exact destructive action
+`git push <remote> --delete <branch>`, which `cq git prune --remote-branch` runs, and ask separately with **AskUserQuestion**. A remote branch is never
 included in the local confirmation. **Done when:** the remote selection is settled and every selected
 item has one explicit action.
 
 ### 3. Delete the chosen branches
 ```bash
-git branch -d <branch>
+cq git prune --branch <branch> --json
 ```
-Refused (`error: the branch '<branch>' is not fully merged`) → report why and leave it standing;
+The verb re-reads the stale report and acts only on a branch it still lists (exit 2 otherwise);
+git refusing (`error: the branch '<branch>' is not fully merged`, exit 1) → report why and leave it standing;
 this command never escalates to `-D`. **Done when:** every chosen branch is deleted, or its refusal
 is reported.
 
 ### 4. Remove the chosen worktrees
 ```bash
-git worktree remove <path>
+cq git prune --worktree <path> --json
 ```
 Worktree removal is **never --force**. A refusal (modified or untracked files inside) is reported with git's own
 message, and that worktree is left standing. **Done when:** every chosen worktree is
@@ -59,7 +59,7 @@ removed, or its refusal is reported.
 
 ### 5. Delete the chosen remote branches
 ```bash
-git push <remote> --delete <branch>
+cq git prune --remote-branch <branch> --remote <remote> --json
 ```
 Run this only for a selected item from the fresh `remoteBranches` list, after the separate remote
 confirmation. The command is an external write: report its exact remote/branch and its output. A
