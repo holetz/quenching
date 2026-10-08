@@ -53,7 +53,7 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    is never handed to `git-steward` for the merge step. **Publish after PASS.** A
    spec the verifier accepted, with no PR yet, goes to `git-steward` for the `pr` step: its prompt
    names the spec id, the worktree, the push of its branch and the PR against the base, plus the word
-   `autonomous` when the run carried it. Its PR url is the spec's `PR:`. **Stamp the PR.** The steward stamps nothing and you hold no record grant: pass the PR number and url to a `spec-runner` prompt carrying the word `stamp-pr`, which stamps the `pr` record and returns. **Merge what a wave
+   `autonomous` when the run carried it. Its PR url is the spec's `PR:`. The steward's `cq git pr create --spec` stamps the `pr` record itself; no worker is spawned for it. **Merge what a wave
    waits on.** A published spec that a spec still in the DAG depends on goes to `git-steward` for
    the `merge` step, and only when the run carried `autonomous`: its prompt names the spec id, the
    step `merge`, the PR url and the word `autonomous`. A spec no pending spec depends on is never

@@ -114,6 +114,8 @@ def build_parser() -> argparse.ArgumentParser:
     pp.add_argument("--head", required=True, metavar="BRANCH", help="the branch it publishes")
     pp.add_argument("--title", required=True, metavar="TITLE", help="the PR title")
     pp.add_argument("--body", default="", metavar="BODY", help="the PR body, sent on stdin")
+    pp.add_argument("--spec", metavar="ID", help="stamp this spec's `pr` record (number, url, "
+                                                 "date) with what the PR just opened")
     pp.add_argument("--json", action="store_true", help="machine-readable output")
     pp = pr.add_parser("merge", help="merge with --merge, only when every check is green")
     pp.add_argument("--url", required=True, metavar="URL", help="the PR's URL")
