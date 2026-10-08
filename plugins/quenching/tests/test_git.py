@@ -1222,6 +1222,127 @@ class Inert(RepoCase):
         self.assertFalse(marker.exists())
 
 
+class FailClosed(RepoCase):
+    """`cq git audit` and `cq git state` never read a failed git call as an empty fact: each failure
+    is an entry of `errors` with `complete: false` — one test per vector (a corrupt index, a git
+    that times out or is missing, a failing log/diff/stash/reflog read, a failing ancestry)."""
+
+    def setUp(self):
+        super().setUp()
+        self.wt = os.path.join(self.tmp, "wt")
+        _run(self.repo, "worktree", "add", "-q", "-b", "spec/1", self.wt)
+        self.audit_args = ("audit", "--worktree", self.wt, "--base", "main", "--branch", "spec/1")
+
+    def _corrupt_index(self, checkout: str) -> None:
+        idx = subprocess.run(["git", "rev-parse", "--git-path", "index"], cwd=checkout,
+                             capture_output=True, text=True, check=True).stdout.strip()
+        pathlib.Path(checkout, idx).write_bytes(b"garbage")
+
+    def _fail(self, verb: str, failing: str, code: int = 128, err: str = "boom") -> dict:
+        """The verb run in-process with every git call whose argv carries `failing` answering
+        `code`/`err`: the failure modes (timeout and no git are 127) a real repo cannot be made to give."""
+        from quenching.git import audit as audit_mod, state as state_mod
+        real = audit_mod._git_run
+
+        def fake(cwd, *argv, **kw):
+            if failing in argv:
+                return code, "", err
+            return real(cwd, *argv, **kw)
+
+        out = io.StringIO()
+        cwd = os.getcwd()
+        os.chdir(self.repo)
+        try:
+            with mock.patch.object(audit_mod, "_git_run", fake), contextlib.redirect_stdout(out):
+                if verb == "audit":
+                    rc = audit_mod.cmd_audit(SimpleNamespace(
+                        worktree=self.wt, branch="spec/1", base="main", sha=[], json=True))
+                else:
+                    rc = state_mod.cmd_state(SimpleNamespace(json=True))
+        finally:
+            os.chdir(cwd)
+        self.assertEqual(rc, 0)
+        return json.loads(out.getvalue())
+
+    def _reads(self, payload: dict) -> list[str]:
+        return [e["read"].split()[0] for e in payload["errors"]]
+
+    def test_audit_corrupt_index_is_an_error_not_a_clean_status(self):
+        self._corrupt_index(self.wt)
+        payload = _cq_json(self.repo, *self.audit_args)
+        self.assertFalse(payload["complete"])
+        self.assertIn("status", self._reads(payload))
+        self.assertTrue(all(e["code"] != 0 for e in payload["errors"]))
+
+    def test_state_corrupt_index_is_an_error_not_a_clean_status(self):
+        self._corrupt_index(self.repo)
+        payload = _cq_json(self.repo, "state")
+        self.assertFalse(payload["complete"])
+        self.assertIn("status", self._reads(payload))
+
+    def test_a_healthy_repository_reports_complete(self):
+        payload = _cq_json(self.repo, *self.audit_args)
+        self.assertEqual((payload["errors"], payload["complete"]), ([], True))
+        state = _cq_json(self.repo, "state")
+        self.assertEqual((state["errors"], state["complete"]), ([], True))
+
+    def test_audit_timeout_or_missing_git_is_an_error(self):
+        payload = self._fail("audit", "status", code=127, err="timed out after 60s")
+        self.assertFalse(payload["complete"])
+        self.assertEqual(payload["errors"][0]["code"], 127)
+        self.assertIn("timed out", payload["errors"][0]["message"])
+
+    def test_state_timeout_or_missing_git_is_an_error(self):
+        payload = self._fail("state", "status", code=127, err="timed out after 60s")
+        self.assertFalse(payload["complete"])
+        self.assertIn("status", self._reads(payload))
+
+    def test_audit_every_other_read_fails_closed(self):
+        for failing, read in (("stash", "stash"), ("log", "log"), ("diff", "diff"),
+                              ("reflog", "reflog")):
+            with self.subTest(read=read):
+                payload = self._fail("audit", failing)
+                self.assertFalse(payload["complete"])
+                self.assertIn(read, self._reads(payload))
+
+    def test_state_every_other_read_fails_closed(self):
+        for failing, read in (("stash", "stash"), ("diff", "diff"), ("branch", "branch"),
+                              ("remote", "remote")):
+            with self.subTest(read=read):
+                payload = self._fail("state", failing)
+                self.assertFalse(payload["complete"])
+                self.assertIn(read, self._reads(payload))
+
+    def test_audit_ancestry_error_is_not_a_plain_false(self):
+        sha = _sha(self.repo, "main")
+        ok = _cq_json(self.repo, *self.audit_args, "--sha", sha)
+        self.assertEqual((ok["ancestry"][sha], ok["complete"]), (True, True))
+        payload = self._fail_ancestry(sha, code=128)
+        self.assertFalse(payload["complete"])
+        self.assertIn("merge-base", self._reads(payload))
+        # exit 1 is git's honest "not an ancestor": a fact, not an error
+        no = self._fail_ancestry(sha, code=1)
+        self.assertEqual((no["ancestry"][sha], no["complete"]), (False, True))
+
+    def _fail_ancestry(self, sha: str, code: int) -> dict:
+        from quenching.git import audit as audit_mod
+        real = audit_mod._git_run
+
+        def fake(cwd, *argv, **kw):
+            return (code, "", "boom") if "--is-ancestor" in argv else real(cwd, *argv, **kw)
+
+        out = io.StringIO()
+        cwd = os.getcwd()
+        os.chdir(self.repo)
+        try:
+            with mock.patch.object(audit_mod, "_git_run", fake), contextlib.redirect_stdout(out):
+                audit_mod.cmd_audit(SimpleNamespace(worktree=self.wt, branch="spec/1", base="main",
+                                                    sha=[sha], json=True))
+        finally:
+            os.chdir(cwd)
+        return json.loads(out.getvalue())
+
+
 class WorktreeAdd(RepoCase):
     """`cq git worktree add` — the `branch` step's cut, from the fetched remote base."""
 
