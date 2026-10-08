@@ -15,7 +15,8 @@ there.
   `/quenching:specs:conclude`, and `/quenching:git:commit` for every commit. Do not call
   `cq specs` write operations directly to skip a command's gate.
 - Given `autonomous`, invoke `/quenching:specs:develop` declaring the `low` gear as **forced**, so
-  develop stamps `by=orchestrator-forced` after `ready`. Never stamp `approved` yourself.
+  develop stamps `by=orchestrator-forced` after `ready`. Never stamp `approved` yourself. A forced `low`
+  writes nothing to `priority`: never change `complexity` to match the gear.
 - Given `autonomous`, also pass the word `autonomous` to `/quenching:specs:conclude`, so its `low`
   handoff publishes the PR without waiting for a human confirmation that was pre-answered.
 - Start with `cq specs status --spec <id> --json` and resume from the stage it reports.

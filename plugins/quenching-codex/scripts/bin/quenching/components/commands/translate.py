@@ -613,17 +613,34 @@ def propagate_bodies_from_codex(tree: dict[str, bytes]) -> None:
                            encoding="utf-8")
 
 
+def previous_files(manifest: Path, destination: Path) -> set[str]:
+    """Read the paths a previous run owned, refusing any that would leave the destination.
+
+    The manifest is versioned and mergeable, so every entry is untrusted input: all are checked
+    before the caller deletes the first.
+    """
+    if not manifest.exists():
+        return set()
+    try:
+        files = json.loads(manifest.read_text(encoding="utf-8"))["files"]
+    except (ValueError, KeyError, TypeError) as exc:
+        raise ValueError(f"{manifest.name} is unreadable or has no `files`: {exc!r}") from exc
+    if not isinstance(files, (list, dict)):
+        raise ValueError(f"{manifest.name} `files` must be a list or an object")
+    root = destination.resolve()
+    for rel in files:
+        if not isinstance(rel, str) or not rel or Path(rel).is_absolute() \
+                or not (destination / rel).resolve().is_relative_to(root):
+            raise ValueError(f"{manifest.name} names a path outside the destination: {rel!r}")
+    return set(files)
+
+
 def write_tree(tree: dict[str, bytes]) -> None:
     destination = target() if plugin_translation() else codex_surface()
     destination.mkdir(parents=True, exist_ok=True)
     generated_manifest = destination / ".generated-files.json"
-    if generated_manifest.exists():
-        previous = json.loads(generated_manifest.read_text(encoding="utf-8"))["files"]
-        old = set(previous if isinstance(previous, list) else previous.keys())
-    else:
-        old = set()
-    for rel in old - set(tree):
-        path = destination / rel
+    stale = [destination / rel for rel in sorted(previous_files(generated_manifest, destination) - set(tree))]
+    for path in stale:
         if path.exists():
             path.unlink()
     for rel, content in tree.items():
@@ -661,7 +678,10 @@ def cmd_translate(args, root: str) -> int:
             except ValueError as exc:
                 return refuse({"code": "ct-reverse-refused", "message": str(exc)}, args.json)
             tree = generated_tree()
-        write_tree(tree)
+        try:
+            write_tree(tree)
+        except ValueError as exc:
+            return refuse({"code": "ct-translation-refused", "message": str(exc)}, args.json)
         payload["changed"] = []
         payload["count"] = 0
     findings = [finding("ct-translation-drift", "error",

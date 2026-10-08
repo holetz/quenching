@@ -62,7 +62,9 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
   human which mode they want, and **never ask which gear to run in** — the answers are on disk. A
   conductor that moved the level on its own plan declares the moved level in the invocation. A
   conductor running `--autonomous` declares `low` as **forced** on a spec whose level on disk is
-  higher; the gear is still `low`, and only the stamp at step 8 differs.
+  higher; the gear is still `low`, and only the stamp at step 8 differs. A forced `low` writes
+  nothing to `priority`: it names the execution gear, never a level, so `complexity` on disk stays
+  what it was.
 - **The gear never shortens a stage that runs.** No checklist shrinks at a low level — the same
   axes, lenses and gate symptoms are worked either way, and what changes is who answers them.
   Everything about *how* a stage runs is owned by
@@ -458,6 +460,8 @@ block, and is never asked as a question mid-pass.
   screen, `low-gear` when the level authorized the mode and this pass stamped on that authority
   after `ready` was proved, `orchestrator-forced` when a conductor declared `low` as forced over a
   higher level on disk and this pass stamped after `ready` was proved. No other path writes it.
+- **A forced `low` writes nothing to `priority`.** The only record it adds is `approved` with
+  `by: orchestrator-forced`; the level on disk is never lowered to match the gear it was run at.
 - **Never restamp `complexity` beyond what the close authorizes**: a fall always needs a human, and
   a level a pass did not move is the latest word on it, not a value to re-propose.
 - Never gate on refinement. A spec may always be built unrefined; `sp-unrefined` is a warning by
