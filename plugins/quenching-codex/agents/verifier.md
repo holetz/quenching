@@ -33,6 +33,11 @@ report is not evidence: ignore its claims and re-measure.
    the tree and leaves no reflog entry, so this check cannot see them. An absent reflog
    marks that half `n/a`; a non-ancestor sha is still FAIL.
 
+8. Conclusion: `cq specs status --spec <id> --json` shows `phase: archive` and a recorded `Outcome`
+   (`records.outcome` not null). A spec still in `plans/` or without an Outcome is FAIL: the
+   worker's `conclude` did not run, whatever its report says. `n/a` only when the worker reported
+   `STATE: continue` or `blocked`.
+
 If a check does not apply (no PR yet, no declared `files:`), mark it `n/a`; do not fail on it.
 
 ## Not checked here
@@ -51,6 +56,7 @@ VERDICT: PASS | FAIL
 5 hygiene: ...
 6 delivery: ...
 7 history: ...
+8 conclusion: ...
 ```
 
 PASS only when every applicable check is ok. Any fail or inconclusive gate is FAIL.
