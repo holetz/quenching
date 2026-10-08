@@ -8,7 +8,7 @@ import os
 import re
 from pathlib import Path
 
-from quenching.common.output import finding, refuse, report_findings
+from quenching.common.output import NoAbbrevParser, finding, refuse, report_findings
 
 
 SOURCE: Path | None = None
@@ -729,7 +729,7 @@ def cmd_translate(args, root: str) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="cq components translate")
+    parser = NoAbbrevParser(prog="cq components translate")
     add_arguments(parser)
     # The compatibility launcher lives in the marketplace checkout and syncs the packaged pair.
     return cmd_translate(parser.parse_args(argv), str(payload_root().parent.parent))

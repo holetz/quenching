@@ -12,7 +12,7 @@ import os
 from dataclasses import dataclass
 from typing import Any, Callable, Iterable
 
-from quenching.common.output import FINDINGS, OK, REFUSAL
+from quenching.common.output import FINDINGS, OK, REFUSAL, NoAbbrevParser
 
 
 @dataclass(frozen=True)
@@ -153,7 +153,7 @@ def build_parser(prog: str, description: str,
                  commands: Iterable[str | tuple[str, str]] = ("doctor", "status")) \
         -> argparse.ArgumentParser:
     """Build the common route parser; front adapters add only their extra verbs and flags."""
-    parser = argparse.ArgumentParser(prog=prog, description=description)
+    parser = NoAbbrevParser(prog=prog, description=description)
     parser.add_argument("--root", help="repository root (default: current directory)")
     sub = parser.add_subparsers(dest="cmd")
     for command in commands:

@@ -40,7 +40,7 @@ import sys
 from pathlib import Path
 
 from quenching.common.frontmatter import parse_frontmatter
-from quenching.common.output import FINDINGS, OK, REFUSAL, emit
+from quenching.common.output import FINDINGS, OK, REFUSAL, NoAbbrevParser, emit
 from quenching.common.version import VERSION
 from quenching.knowledge.config import _load_config, _project_dir
 from quenching.knowledge.render import _render_activity, _render_text, _split
@@ -214,7 +214,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     `main` routes through its own REMAINDER parser and each `run_*` builds its verb parser from
     the same `_declare_*` functions, so the two cannot drift."""
-    parser = argparse.ArgumentParser(
+    parser = NoAbbrevParser(
         prog="cq knowledge",
         description="the OKF bundle — validate and stage documentation surfaces",
     )
@@ -227,7 +227,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _knowledge_args(argv: list[str], prog: str) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog=prog)
+    parser = NoAbbrevParser(prog=prog)
     _declare_surface(parser)
     return parser.parse_args(argv)
 
@@ -252,7 +252,7 @@ def _run_status(argv: list[str]) -> int:
 
 
 def run_cli(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(
+    parser = NoAbbrevParser(
         prog="cq knowledge validate",
         description="validate the OKF bundle without writing it",
     )
@@ -297,7 +297,7 @@ def run_project(argv: list[str]) -> int:
     canonical glossary is staged as `glossary.md` in `site-source`, and no second editable copy
     exists.
     """
-    parser = argparse.ArgumentParser(prog="cq knowledge project")
+    parser = NoAbbrevParser(prog="cq knowledge project")
     _declare_project(parser)
     args = parser.parse_args(argv)
 
@@ -331,7 +331,7 @@ def run_listing(argv: list[str]) -> int:
 
     `--check` (the default) writes nothing and exits `FINDINGS` while the zone is stale; a bundle
     whose listing carries no zone is a `REFUSAL` — the verb never invents one."""
-    parser = argparse.ArgumentParser(prog="cq knowledge listing")
+    parser = NoAbbrevParser(prog="cq knowledge listing")
     _declare_listing(parser)
     args = parser.parse_args(argv)
 
@@ -360,7 +360,7 @@ def run_nav(argv: list[str]) -> int:
 
     `--check` is the gate `site-nav-stale` reads: it is a byte comparison, because the generator
     is idempotent by construction. Anything it would change is a diff, never a judgement call."""
-    parser = argparse.ArgumentParser(prog="cq knowledge nav")
+    parser = NoAbbrevParser(prog="cq knowledge nav")
     _declare_nav(parser)
     args = parser.parse_args(argv)
 
@@ -406,7 +406,7 @@ def run_nav(argv: list[str]) -> int:
 
 def run_site_source(argv: list[str]) -> int:
     """Stage or verify the small, explicit source tree used by Zensical."""
-    parser = argparse.ArgumentParser(prog="cq knowledge site-source")
+    parser = NoAbbrevParser(prog="cq knowledge site-source")
     _declare_site_source(parser)
     args = parser.parse_args(argv)
     bundle = _rooted(args.root, args.bundle)
@@ -454,7 +454,7 @@ def main(argv: list[str]) -> int:
     a move. A bundle root that is not a directory is still a `no-bundle` ERROR finding
     exiting `FINDINGS`, exactly as it always did. The `REFUSAL` below is the ROUTER's, on a
     word that names no verb, and it can only be reached before any bundle is read."""
-    parser = argparse.ArgumentParser(
+    parser = NoAbbrevParser(
         prog="cq knowledge",
         description="the OKF bundle — validate and stage documentation surfaces",
     )

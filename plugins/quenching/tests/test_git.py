@@ -8,6 +8,8 @@ agnosticas-ao-git`, task 3.5, wrote every case from the four subcommands' own co
 """
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import os
 import pathlib
@@ -696,9 +698,10 @@ class PullRequestPayload(unittest.TestCase):
     def test_pr_create_selects_a_named_remote_and_defaults_to_origin(self):
         command = self.command.lower()
         self.assertIn("remote:<name>", command)
-        self.assertIn("git remote -v", command)
-        self.assertIn("git remote get-url <remote>", command)
-        self.assertIn("git push -u <remote> <branch>", command)
+        self.assertIn("cq git state --json", command)
+        self.assertIn("cq git push --branch <branch> --remote <remote>", command)
+        self.assertIn("cq git pr create --base <base> --head <branch>", command)
+        self.assertNotIn("git push -u", command)
         self.assertIn("origin", command)
 
     def test_missing_optional_sections_are_omitted_not_fabricated(self):
@@ -888,6 +891,7 @@ class PullRequestPayload(unittest.TestCase):
         cleanup = CLEANUP_COMMAND.read_text(encoding="utf-8").lower()
         self.assertIn("remoteBranches".lower(), cleanup)
         self.assertIn("git push <remote> --delete", cleanup)
+        self.assertIn("cq git prune --remote-branch <branch> --remote <remote>", cleanup)
         self.assertIn("remote:<name>", cleanup)
         self.assertIn("--remote <remote>", cleanup)
         self.assertIn("local selection", cleanup)
@@ -1037,3 +1041,340 @@ class IncrementalCommitContract(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def _cq(cwd: str, *argv: str, stdin: str | None = None,
+        env: dict | None = None) -> subprocess.CompletedProcess:
+    return subprocess.run([sys.executable, CQ, "git", *argv, "--json"], cwd=cwd, input=stdin,
+                          capture_output=True, text=True, env=env)
+
+
+def _sha(cwd: str, ref: str = "HEAD") -> str:
+    return subprocess.run(["git", "rev-parse", ref], cwd=cwd, check=True, capture_output=True,
+                          text=True).stdout.strip()
+
+
+class State(RepoCase):
+    """`cq git state` — what the bodies read before acting, with no `Bash(git …)` grant."""
+
+    def test_reports_branch_status_staged_and_remotes(self):
+        _run(self.repo, "remote", "add", "origin", "https://example.invalid/o/r.git")
+        pathlib.Path(self.repo, "new.txt").write_text("n\n", encoding="utf-8")
+        pathlib.Path(self.repo, "staged.txt").write_text("s\n", encoding="utf-8")
+        _run(self.repo, "add", "staged.txt")
+        payload = _cq_json(self.repo, "state")
+        self.assertEqual(payload["branch"], "main")
+        self.assertIn("?? new.txt", payload["status"])
+        self.assertEqual(payload["staged"], ["staged.txt"])
+        self.assertEqual(payload["remotes"], {"origin": "https://example.invalid/o/r.git"})
+
+    def test_repository_config_runs_nothing(self):
+        marker = pathlib.Path(self.tmp, "pwn")
+        _run(self.repo, "config", "core.fsmonitor", f"touch {marker}")
+        pathlib.Path(self.repo, ".gitattributes").write_text("*.txt filter=evil\n", encoding="utf-8")
+        _run(self.repo, "config", "filter.evil.clean", f"touch {marker}; cat")
+        pathlib.Path(self.repo, "a.txt").write_text("changed\n", encoding="utf-8")
+        _cq_json(self.repo, "state")
+        self.assertFalse(marker.exists())
+
+
+class WorktreeAdd(RepoCase):
+    """`cq git worktree add` — the `branch` step's cut, from the fetched remote base."""
+
+    def setUp(self):
+        super().setUp()
+        self.remote = os.path.join(self.tmp, "origin.git")
+        _run(self.tmp, "init", "-q", "--bare", "-b", "main", self.remote)
+        _run(self.repo, "remote", "add", "origin", self.remote)
+        _run(self.repo, "push", "-q", "origin", "main")
+        other = os.path.join(self.tmp, "other")
+        _run(self.tmp, "clone", "-q", self.remote, other)
+        _run(other, "config", "user.email", "test@example.com")
+        _run(other, "config", "user.name", "Test")
+        pathlib.Path(other, "dep.txt").write_text("d\n", encoding="utf-8")
+        _run(other, "add", "dep.txt")
+        _run(other, "commit", "-q", "-m", "dependency merged through gh")
+        _run(other, "push", "-q", "origin", "main")
+        self.remote_tip = _sha(other)
+        self.path = os.path.join(self.tmp, "wt")
+
+    def test_cuts_from_the_fetched_remote_base_with_no_upstream(self):
+        payload = _cq_json(self.repo, "worktree", "add", "--path", self.path,
+                           "--branch", "plan/1-x", "--base", "main")
+        self.assertTrue(payload["fromRemote"])
+        self.assertEqual(payload["startSha"], self.remote_tip)
+        self.assertEqual(_sha(self.path), self.remote_tip)
+        upstream = subprocess.run(["git", "rev-parse", "--abbrev-ref", "plan/1-x@{upstream}"],
+                                  cwd=self.path, capture_output=True, text=True)
+        self.assertNotEqual(upstream.returncode, 0)
+
+    def test_without_the_remote_falls_back_to_the_local_base_and_says_so(self):
+        _run(self.repo, "remote", "remove", "origin")
+        payload = _cq_json(self.repo, "worktree", "add", "--path", self.path,
+                           "--branch", "plan/1-x", "--base", "main")
+        self.assertFalse(payload["fromRemote"])
+        self.assertEqual(payload["startSha"], _sha(self.repo, "main"))
+
+    def test_links_the_declared_shared_paths_in_the_new_worktree(self):
+        config = pathlib.Path(self.repo, ".claude", "quenching.json")
+        config.parent.mkdir()
+        config.write_text(json.dumps({"shared": {"sharedPaths": ["shared"]}}) + "\n",
+                          encoding="utf-8")
+        pathlib.Path(self.repo, ".gitignore").write_text("/shared\n", encoding="utf-8")
+        _run(self.repo, "add", ".claude/quenching.json", ".gitignore")
+        _run(self.repo, "commit", "-q", "-m", "declare shared path")
+        _run(self.repo, "push", "-q", "origin", "main:main", "--force")
+        payload = _cq_json(self.repo, "worktree", "add", "--path", self.path,
+                           "--branch", "plan/1-x", "--base", "main")
+        self.assertEqual([p["state"] for p in payload["paths"]], ["created"])
+        self.assertTrue(os.path.islink(os.path.join(self.path, "shared")))
+
+    def test_option_shaped_names_and_taken_targets_are_refused_and_create_nothing(self):
+        cases = (("--branch=-D", "--base", "main", "--path", self.path),
+                 ("--branch", "plan/1-x", "--base=--output=/tmp/x", "--path", self.path),
+                 ("--branch", "plan/1-x", "--base", "main", "--remote=--upload-pack=touch",
+                  "--path", self.path),
+                 ("--branch", "main", "--base", "main", "--path", self.path),
+                 ("--branch", "plan/1-x", "--base", "main", "--path", self.repo))
+        for argv in cases:
+            proc = _cq(self.repo, "worktree", "add", *argv)
+            self.assertEqual(proc.returncode, 2, (argv, proc.stdout))
+        self.assertFalse(os.path.exists(self.path))
+        branches = subprocess.run(["git", "branch", "--list", "plan/*"], cwd=self.repo,
+                                  capture_output=True, text=True).stdout
+        self.assertEqual(branches.strip(), "")
+
+    def test_repository_hooks_and_fsmonitor_run_nothing(self):
+        marker = pathlib.Path(self.tmp, "pwn")
+        hooks = pathlib.Path(self.repo, ".git", "hooks", "post-checkout")
+        hooks.write_text(f"#!/bin/sh\ntouch {marker}\n", encoding="utf-8")
+        hooks.chmod(0o755)
+        _run(self.repo, "config", "core.fsmonitor", f"touch {marker}")
+        _cq_json(self.repo, "worktree", "add", "--path", self.path, "--branch", "plan/1-x",
+                 "--base", "main")
+        self.assertFalse(marker.exists())
+
+
+class PushVerb(RepoCase):
+    """`cq git push` — one local branch to one configured remote, never forced."""
+
+    def setUp(self):
+        super().setUp()
+        self.remote = os.path.join(self.tmp, "origin.git")
+        _run(self.tmp, "init", "-q", "--bare", "-b", "main", self.remote)
+        _run(self.repo, "remote", "add", "origin", self.remote)
+        _run(self.repo, "push", "-q", "origin", "main")
+        _run(self.repo, "checkout", "-q", "-b", "plan/1-x")
+        pathlib.Path(self.repo, "b.txt").write_text("b\n", encoding="utf-8")
+        _run(self.repo, "add", "b.txt")
+        _run(self.repo, "commit", "-q", "-m", "task")
+
+    def test_pushes_under_its_own_name_and_sets_upstream(self):
+        payload = _cq_json(self.repo, "push", "--branch", "plan/1-x")
+        self.assertEqual(payload["sha"], _sha(self.repo))
+        self.assertEqual(_sha(self.remote, "refs/heads/plan/1-x"), _sha(self.repo))
+        upstream = subprocess.run(["git", "rev-parse", "--abbrev-ref", "plan/1-x@{upstream}"],
+                                  cwd=self.repo, capture_output=True, text=True).stdout.strip()
+        self.assertEqual(upstream, "origin/plan/1-x")
+
+    def test_a_rewritten_branch_is_refused_not_forced(self):
+        _cq_json(self.repo, "push", "--branch", "plan/1-x")
+        before = _sha(self.remote, "refs/heads/plan/1-x")
+        _run(self.repo, "commit", "-q", "--amend", "-m", "rewritten")
+        proc = _cq(self.repo, "push", "--branch", "plan/1-x")
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        self.assertEqual(_sha(self.remote, "refs/heads/plan/1-x"), before)
+
+    def test_option_shaped_or_unknown_names_are_refused(self):
+        for argv in (("--branch=--force",), ("--branch", "+plan/1-x"),
+                     ("--branch", "nope"), ("--branch", "plan/1-x", "--remote=--mirror"),
+                     ("--branch", "plan/1-x", "--remote", "elsewhere")):
+            proc = _cq(self.repo, "push", *argv)
+            self.assertEqual(proc.returncode, 2, (argv, proc.stdout))
+        heads = subprocess.run(["git", "for-each-ref", "refs/heads"], cwd=self.remote,
+                               capture_output=True, text=True).stdout
+        self.assertNotIn("plan/1-x", heads)
+
+
+class PruneVerb(RepoCase):
+    """`cq git prune` — acts only on what a fresh `cq git stale` reports, never by force."""
+
+    def setUp(self):
+        super().setUp()
+        _run(self.repo, "branch", "merged")
+        _run(self.repo, "checkout", "-q", "-b", "unmerged")
+        pathlib.Path(self.repo, "u.txt").write_text("u\n", encoding="utf-8")
+        _run(self.repo, "add", "u.txt")
+        _run(self.repo, "commit", "-q", "-m", "unmerged work")
+        _run(self.repo, "checkout", "-q", "main")
+
+    def _branches(self) -> str:
+        return subprocess.run(["git", "branch", "--list"], cwd=self.repo, capture_output=True,
+                              text=True).stdout
+
+    def test_a_reported_merged_branch_is_deleted(self):
+        _cq_json(self.repo, "prune", "--branch", "merged")
+        self.assertNotIn("merged", self._branches().replace("unmerged", ""))
+
+    def test_an_unreported_branch_is_refused_and_stands(self):
+        for argv in (("--branch", "unmerged"), ("--branch", "main"), ("--branch=-D",),
+                     ("--worktree", self.repo), ("--remote-branch", "main")):
+            proc = _cq(self.repo, "prune", *argv)
+            self.assertEqual(proc.returncode, 2, (argv, proc.stdout))
+        self.assertIn("unmerged", self._branches())
+
+    def test_a_reported_remote_branch_is_deleted_on_that_remote_only(self):
+        remote = os.path.join(self.tmp, "origin.git")
+        _run(self.tmp, "init", "-q", "--bare", "-b", "main", remote)
+        _run(self.repo, "remote", "add", "origin", remote)
+        _run(self.repo, "push", "-q", "origin", "main", "merged", "unmerged")
+        _run(self.repo, "fetch", "-q", "origin")
+        refused = _cq(self.repo, "prune", "--remote-branch", "unmerged")
+        self.assertEqual(refused.returncode, 2)
+        _cq_json(self.repo, "prune", "--remote-branch", "merged")
+        heads = subprocess.run(["git", "for-each-ref", "--format=%(refname)", "refs/heads"],
+                               cwd=remote, capture_output=True, text=True).stdout.split()
+        self.assertEqual(sorted(heads), ["refs/heads/main", "refs/heads/unmerged"])
+
+
+FAKE_GH = """#!/usr/bin/env python3
+import json, os, sys
+log = os.environ["FAKE_GH_LOG"]
+with open(log, "a", encoding="utf-8") as f:
+    f.write(json.dumps({"argv": sys.argv[1:], "stdin": "" if sys.stdin.isatty() else sys.stdin.read()}) + "\\n")
+if sys.argv[1:3] == ["pr", "checks"]:
+    sys.stdout.write(os.environ.get("FAKE_GH_CHECKS", "[]"))
+    sys.stderr.write(os.environ.get("FAKE_GH_CHECKS_ERR", ""))
+    sys.exit(int(os.environ.get("FAKE_GH_CHECKS_RC", "0")))
+if sys.argv[1:3] == ["pr", "create"]:
+    print("https://github.com/o/r/pull/42")
+sys.exit(0)
+"""
+
+
+class PullRequestVerbs(RepoCase):
+    """`cq git pr create|merge` — the steward's PR writes, through a fake `gh` on PATH."""
+
+    URL = "https://github.com/o/r/pull/42"
+
+    def setUp(self):
+        super().setUp()
+        bindir = pathlib.Path(self.tmp, "bin")
+        bindir.mkdir()
+        gh = bindir / "gh"
+        gh.write_text(FAKE_GH, encoding="utf-8")
+        gh.chmod(0o755)
+        self.log = pathlib.Path(self.tmp, "gh.log")
+        self.env = {**os.environ, "PATH": f"{bindir}{os.pathsep}{os.environ['PATH']}",
+                    "FAKE_GH_LOG": str(self.log)}
+
+    def _calls(self) -> list[dict]:
+        if not self.log.exists():
+            return []
+        return [json.loads(line) for line in self.log.read_text(encoding="utf-8").splitlines()]
+
+    def _merge(self, checks: str, rc: str = "0", err: str = "") -> subprocess.CompletedProcess:
+        env = {**self.env, "FAKE_GH_CHECKS": checks, "FAKE_GH_CHECKS_RC": rc,
+               "FAKE_GH_CHECKS_ERR": err}
+        return _cq(self.repo, "pr", "merge", "--url", self.URL, env=env)
+
+    def _merge_calls(self) -> list[list[str]]:
+        return [c["argv"] for c in self._calls() if c["argv"][:2] == ["pr", "merge"]]
+
+    def test_all_green_merges_with_merge_only(self):
+        proc = self._merge('[{"name":"gate","bucket":"pass"},{"name":"x","bucket":"skipping"}]')
+        self.assertEqual(proc.returncode, 0, proc.stdout)
+        self.assertEqual(self._merge_calls(), [["pr", "merge", self.URL, "--merge"]])
+
+    def test_red_pending_or_absent_checks_never_merge(self):
+        cases = (('[{"name":"gate","bucket":"fail"}]', "1", "", "failed"),
+                 ('[{"name":"gate","bucket":"pending"}]', "8", "", "pending"),
+                 ('[{"name":"gate"}]', "0", "", "pending"),
+                 ("", "1", "no checks reported on the 'x' branch", "no-checks"),
+                 ("not json", "1", "boom", "checks-unreadable"))
+        for checks, rc, err, reason in cases:
+            proc = self._merge(checks, rc, err)
+            self.assertEqual(proc.returncode, 1, (checks, proc.stdout))
+            self.assertEqual(json.loads(proc.stdout)["reason"], reason)
+        self.assertEqual(self._merge_calls(), [])
+
+    def test_option_shaped_url_and_out_of_range_wait_are_refused(self):
+        for argv in (("--url=-d",), ("--url", f"{self.URL} --squash"), ("--url", f"{self.URL}\n"),
+                     ("--url", self.URL, "--wait", "600")):
+            proc = _cq(self.repo, "pr", "merge", *argv, env=self.env)
+            self.assertEqual(proc.returncode, 2, (argv, proc.stdout))
+        self.assertEqual(self._calls(), [])
+
+    def test_pending_is_re_read_until_green_within_the_wait(self):
+        from quenching.git import pull
+        answers = iter([("pending", [{"name": "gate", "bucket": "pending"}], ""),
+                        ("green", [{"name": "gate", "bucket": "pass"}], "")])
+        with mock.patch.object(pull, "_checks", side_effect=lambda url: next(answers)), \
+                mock.patch.object(pull, "_gh", return_value=(0, "", "")) as gh, \
+                mock.patch.object(pull.time, "sleep") as sleep, \
+                contextlib.redirect_stdout(io.StringIO()):
+            code = pull.cmd_pr(SimpleNamespace(action="merge", url=self.URL, wait=60, json=True))
+        self.assertEqual(code, 0)
+        sleep.assert_called_once_with(pull.POLL_S)
+        gh.assert_called_once_with("pr", "merge", self.URL, "--merge")
+
+    def test_create_names_base_and_head_and_sends_the_body_on_stdin(self):
+        payload = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/1-x",
+                      "--title", "-a title that looks like a flag", "--body", "Closes #1",
+                      env=self.env)
+        self.assertEqual(payload.returncode, 0, payload.stderr)
+        self.assertEqual(json.loads(payload.stdout)["number"], 42)
+        (call,) = self._calls()
+        self.assertEqual(call["argv"], ["pr", "create", "--base=main", "--head=plan/1-x",
+                                        "--title=-a title that looks like a flag",
+                                        "--body-file=-"])
+        self.assertEqual(call["stdin"], "Closes #1")
+
+    def test_create_refuses_option_shaped_branches(self):
+        for argv in (("--base=-d", "--head", "plan/1-x"), ("--base", "main", "--head=--web")):
+            proc = _cq(self.repo, "pr", "create", *argv, "--title", "t", env=self.env)
+            self.assertEqual(proc.returncode, 2, (argv, proc.stdout))
+        self.assertEqual(self._calls(), [])
+
+
+class StewardGrants(unittest.TestCase):
+    """The `git-steward` acts through `cq git` verbs: no grant of its `tools:` admits the commands
+    reproduced against the 1279 blocklist on 2026-10-08."""
+
+    REPRODUCED = ("cq specs section 1292 Outcome --w", "cq specs section 1292 Outcome --write",
+                  "gh pr merge https://github.com/o/r/pull/1 -d",
+                  "gh pr merge https://github.com/o/r/pull/1 -s",
+                  "gh pr merge https://github.com/o/r/pull/1 -r",
+                  "git -c alias.x='!touch /tmp/pwn' x", "git stash", "git reset --hard",
+                  "git push --force origin main", "git branch -D main",
+                  "gh pr create --base main --head x --title t --body b")
+
+    @classmethod
+    def setUpClass(cls):
+        text = (PLUGIN_ROOT / "agents" / "git-steward.md").read_text(encoding="utf-8")
+        line = next(line for line in text.splitlines() if line.startswith("tools:"))
+        cls.grants = re.findall(r"Bash\(([^)]*)\)", line)
+
+    @staticmethod
+    def _admits(grant: str, command: str) -> bool:
+        if grant.endswith(":*"):
+            prefix = grant[:-2]
+            return command == prefix or command.startswith(prefix + " ")
+        return command == grant
+
+    def test_no_grant_admits_a_reproduced_command(self):
+        for command in self.REPRODUCED:
+            for grant in self.grants:
+                self.assertFalse(self._admits(grant, command), (grant, command))
+
+    def test_grants_are_plain_prefixes_with_no_raw_git_or_gh_write(self):
+        self.assertIn("cq git:*", self.grants)
+        for grant in self.grants:
+            self.assertNotIn("*", grant.removesuffix(":*"), grant)
+            self.assertFalse(grant.startswith(("git ", "git:", "bash", "gh pr merge",
+                                               "gh pr create", "cq specs section")), grant)
+
+    def test_the_verbs_it_relies_on_exist(self):
+        from quenching.git import DISPATCH
+        for verb in ("state", "worktree", "commit", "specs", "push", "pr", "stale", "prune"):
+            self.assertIn(verb, DISPATCH)

@@ -145,10 +145,9 @@ def _directory_size(path: str) -> int | None:
     return size
 
 
-def cmd_stale(args) -> int:
-    cwd = os.getcwd()
+def stale_report(cwd: str, remote: str = "origin") -> dict:
+    """The report `cq git stale` prints, and the one `cq git prune` re-reads before it acts."""
     base, _is_default = resolve_base(cwd)
-    remote = getattr(args, "remote", None) or "origin"
     current = _git(cwd, "branch", "--show-current").strip()
     # `base` is permanent by convention, not "safe to delete just because its tip is an
     # ancestor of base". `current` is excluded because you cannot delete the branch you are
@@ -163,8 +162,16 @@ def cmd_stale(args) -> int:
         reasons.setdefault(b, set()).add("gone")
     branches = [{"branch": b, "reasons": sorted(r)} for b, r in sorted(reasons.items())]
     remote_branches = _merged_remote_branches(cwd, base, protected, remote)
-    worktrees = _orphan_worktrees(cwd)
-    unregistered_worktrees = _unregistered_worktrees(cwd)
+    return {"ok": True, "base": base, "remote": remote, "staleBranches": branches,
+            "remoteBranches": remote_branches, "orphanWorktrees": _orphan_worktrees(cwd),
+            UNREGISTERED_WORKTREES_KEY: _unregistered_worktrees(cwd)}
+
+
+def cmd_stale(args) -> int:
+    report = stale_report(os.getcwd(), getattr(args, "remote", None) or "origin")
+    base, branches = report["base"], report["staleBranches"]
+    remote_branches, worktrees = report["remoteBranches"], report["orphanWorktrees"]
+    unregistered_worktrees = report[UNREGISTERED_WORKTREES_KEY]
 
     lines = [f"base: {base}"]
     lines.append("stale branches:" if branches else "stale branches: none")
@@ -184,9 +191,5 @@ def cmd_stale(args) -> int:
         size = f"{w['size']} bytes" if w["size"] is not None else "size unavailable"
         lines.append(f"  {w['path']} ({branch}, {size})")
 
-    emit(args.json, {"ok": True, "base": base, "remote": remote,
-                     "staleBranches": branches,
-                     "remoteBranches": remote_branches, "orphanWorktrees": worktrees,
-                     UNREGISTERED_WORKTREES_KEY: unregistered_worktrees},
-         "\n".join(lines))
+    emit(args.json, report, "\n".join(lines))
     return 0

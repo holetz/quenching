@@ -288,3 +288,42 @@ class FrontFields(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NoAbbreviation(unittest.TestCase):
+    """A long option matches whole: `--w` never reads as `--write`, so a grant or a block on the
+    command text sees the flag that actually runs."""
+
+    BIN = pathlib.Path(__file__).resolve().parents[1] / "assets" / "bin"
+
+    @staticmethod
+    def _walk(parser):
+        import argparse
+        yield parser
+        for action in parser._actions:
+            if isinstance(action, argparse._SubParsersAction):
+                for child in action.choices.values():
+                    yield from NoAbbreviation._walk(child)
+
+    def test_every_pillar_parser_and_subparser_refuses_abbreviation(self):
+        from quenching.components.cq_calls import _pillar_modules, _pillar_parser
+        pillars, top = _pillar_modules()
+        self.assertFalse(top.allow_abbrev)
+        for name in pillars:
+            for parser in self._walk(_pillar_parser(name)):
+                self.assertFalse(parser.allow_abbrev, parser.prog)
+
+    def test_no_parser_is_built_from_the_abbreviating_base(self):
+        for path in (self.BIN / "quenching").rglob("*.py"):
+            self.assertNotIn("argparse.ArgumentParser(", path.read_text(encoding="utf-8"),
+                             str(path))
+
+    def test_abbreviated_write_is_a_usage_error_and_writes_nothing(self):
+        import subprocess
+        with tempfile.TemporaryDirectory() as tmp:
+            proc = subprocess.run([sys.executable, str(self.BIN / "cq"), "--root", tmp, "specs",
+                                   "section", "1", "Outcome", "--w"],
+                                  input="## Outcome\n\nx\n", capture_output=True, text=True)
+            self.assertEqual(proc.returncode, USAGE, proc.stderr)
+            self.assertIn("--w", proc.stderr)
+            self.assertEqual(os.listdir(tmp), [])
