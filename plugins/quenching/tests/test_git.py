@@ -827,7 +827,7 @@ class PullRequestPayload(unittest.TestCase):
     def test_provider_locator_fixture_keeps_github_and_azure_native(self):
         github = "append exactly `Closes #<n>` to the generated body"
         self.assertIn("take it from the status id, never from path", _normalise_prose(self.payload_step))
-        azure = "pass it as `--work-items <n>` to Azure"
+        azure = "pass it as `--work-item <n>` to `cq git pr create`"
         self.assertIn(github, self.payload_step)
         self.assertIn(azure, self.payload_step)
         self.assertIn("do not invent a `Closes #<n>` sentence", self.payload_step)
@@ -842,7 +842,7 @@ class PullRequestPayload(unittest.TestCase):
         reference = MERGE_REFERENCE.read_text(encoding="utf-8").lower()
         combined = f"{command}\n{reference}"
         self.assertIn("separate source-branch deletion offer", combined)
-        self.assertIn("[--delete-source-branch true]", command)
+        self.assertIn("[--delete-source-branch]", command)
         self.assertIn("squash", reference)
 
     def test_status_command_routes_both_providers_and_normalizes_the_snapshot(self):
@@ -2075,7 +2075,9 @@ class StewardGrants(unittest.TestCase):
                   "gh pr merge https://github.com/o/r/pull/1 -r",
                   "git -c alias.x='!touch /tmp/pwn' x", "git stash", "git reset --hard",
                   "git push --force origin main", "git branch -D main",
-                  "gh pr create --base main --head x --title t --body b")
+                  "gh pr create --base main --head x --title t --body b",
+                  "az repos pr update --id 7 --status completed --bypass-policy true",
+                  "az repos pr create --auto-complete --bypass-policy true")
 
     @classmethod
     def setUpClass(cls):
