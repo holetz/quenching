@@ -36,6 +36,7 @@ writer of the bytes between its delimiters; authored prose outside them remains 
 | --- | --- | --- | --- |
 | Operations registry | `cq ops registry --write` / `--check` | `<!-- quenching-ops-registry-start -->` / `<!-- quenching-ops-registry-end -->` | `<!-- quenching-ops-registry-sha256 <64 lowercase hexadecimal digits> -->` |
 | Proof layer README | `cq proof readme --write` / `--check` | `<!-- quenching-proof-readme-start -->` / `<!-- quenching-proof-readme-end -->` | `<!-- quenching-proof-readme-sha256 <64 lowercase hexadecimal digits> -->` |
+| Standards index | `cq knowledge listing --write` / `--check` | `<!-- BEGIN GENERATED -->` / `<!-- END GENERATED -->` in `standards/index.md` | no hash marker: freshness is the `generated-listing-missing` / `generated-listing-drift` findings |
 
 ## The decision criterion, applied before writing any code
 
