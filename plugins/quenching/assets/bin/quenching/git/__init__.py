@@ -19,6 +19,8 @@ from quenching.git.audit import cmd_audit
 from quenching.git.base import cmd_base
 from quenching.git.commit import cmd_commit
 from quenching.git.conventions import cmd_conventions
+from quenching.git.prune import cmd_prune
+from quenching.git.push import cmd_push
 from quenching.git.slugs import cmd_specs
 from quenching.git.stale import cmd_stale
 from quenching.git.state import cmd_state
@@ -26,7 +28,8 @@ from quenching.git.worktree import cmd_worktree
 
 DISPATCH = {"base": cmd_base, "specs": cmd_specs, "stale": cmd_stale,
             "conventions": cmd_conventions, "worktree": cmd_worktree,
-            "commit": cmd_commit, "audit": cmd_audit, "state": cmd_state}
+            "commit": cmd_commit, "audit": cmd_audit, "state": cmd_state,
+            "push": cmd_push, "prune": cmd_prune}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -78,6 +81,24 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp = sub.add_parser("state", help="the checkout's branch, porcelain status, staged paths and "
                                        "remotes — read with a fixed argv")
+    sp.add_argument("--json", action="store_true", help="machine-readable output")
+
+    sp = sub.add_parser("push", help="push one local branch to one remote under its own name, "
+                                      "with upstream — never force")
+    sp.add_argument("--branch", required=True, metavar="BRANCH", help="the local branch to push")
+    sp.add_argument("--remote", default="origin", metavar="REMOTE",
+                    help="a configured remote (default: origin)")
+    sp.add_argument("--json", action="store_true", help="machine-readable output")
+
+    sp = sub.add_parser("prune", help="delete one item `cq git stale` reports — `branch -d`, "
+                                       "`worktree remove`, or a reported remote branch")
+    target = sp.add_mutually_exclusive_group(required=True)
+    target.add_argument("--branch", metavar="BRANCH", help="a reported stale local branch")
+    target.add_argument("--worktree", metavar="PATH", help="a reported orphan worktree")
+    target.add_argument("--remote-branch", metavar="BRANCH",
+                        help="a branch reported under remoteBranches for --remote")
+    sp.add_argument("--remote", default="origin", metavar="REMOTE",
+                    help="the remote the report reads (default: origin)")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("audit", help="the verifier's facts inside one registered worktree — "
