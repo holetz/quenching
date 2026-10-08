@@ -6,7 +6,8 @@ fake, the git store and the tracker backends.
 
 An epic item reads `- [ ] S2 Title — spec: #1202 — after: S1,S3`. The `### N.` headings above
 the items are its groups (waves). The item's state is DERIVED from the member document: done when
-the member is archived with `outcome: done`, blocked when one of its tasks is `[!]`. The box
+the member is archived with `outcome: done` (and, when its PR is known, merged: `unmerged`
+otherwise), blocked when one of its tasks is `[!]`. The box
 written in the epic is never read as state, which is why `task` refuses epic items."""
 from __future__ import annotations
 
@@ -63,13 +64,25 @@ def parse_items(info: dict) -> list[dict]:
     return items
 
 
-def member_state(member: dict | None) -> str:
-    """`missing`, `done`, `dropped` (archived without `done`), `blocked` or `open`."""
+def pr_number(member: dict) -> str | None:
+    """The PR number a member's `pr:` record carries, or `None` when it has none."""
+    rec = member["frontmatter"].get("pr")
+    n = str(rec.get("number", "")).strip() if isinstance(rec, dict) else ""
+    return n or None
+
+
+def member_state(member: dict | None, pr_state: str | None = None) -> str:
+    """`missing`, `done`, `unmerged` (archived `done` whose PR is explicitly not `MERGED`),
+    `dropped` (archived without `done`), `blocked` or `open`. `pr_state` is the member's PR
+    state when the caller could read it; absent or unknown keeps `done`."""
     if member is None:
         return "missing"
     if member["phase"] == "archive":
-        return "done" if str(member["frontmatter"].get("outcome", "")).strip() == "done" \
-            else "dropped"
+        if str(member["frontmatter"].get("outcome", "")).strip() != "done":
+            return "dropped"
+        if pr_number(member) and pr_state and pr_state.upper() != "MERGED":
+            return "unmerged"
+        return "done"
     return "blocked" if task_progress(member["tasks"])[1] else "open"
 
 
@@ -103,14 +116,19 @@ def find_cycle(items: list[dict]) -> list[str] | None:
     return None
 
 
-def derive_epic(info: dict, members: dict[str, dict | None]) -> dict:
-    """The epic's whole derived state. `members` maps a member id string to its `info`, or `None`."""
+def derive_epic(info: dict, members: dict[str, dict | None],
+                pr_state: dict[str, str] | None = None) -> dict:
+    """The epic's whole derived state. `members` maps a member id string to its `info`, or `None`.
+    `pr_state` maps a member id to its PR's state (`MERGED`, `OPEN`, `CLOSED`); the derivation
+    stays pure, the caller does the lookup."""
     items = parse_items(info)
     by_label = {i["label"]: i for i in items}
     for i in items:
         m = members.get(str(i["spec"])) if i["spec"] else None
         i["member"] = m
-        i["memberState"] = member_state(m) if i["spec"] else "missing"
+        i["memberState"] = member_state(m, (pr_state or {}).get(str(i["spec"]))) \
+            if i["spec"] else "missing"
+        i["prState"] = (pr_state or {}).get(str(i["spec"]))
     for i in items:
         m, st = i["member"], i["memberState"]
         waiting = [d for d in i["after"]

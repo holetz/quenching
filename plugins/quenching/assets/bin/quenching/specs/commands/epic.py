@@ -8,12 +8,13 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, front_fields
 from quenching.specs.parse.edit import upsert_section
 from quenching.specs.parse.epics import (derive_epic, epic_ref, group_titles, is_epic,
-                                         next_label, parse_items, render_item)
+                                         next_label, parse_items, pr_number, render_item)
 from quenching.specs.parse.fields import set_frontmatter_key
 from quenching.specs.parse.sections import parse_sections
 from quenching.specs.parse.text import HEADING_RE, mask_comments
@@ -24,6 +25,23 @@ GROUP_NUMBER_RE = re.compile(r"^\d+\.\s*")
 
 def _refuse(out: Emitter, args, code: str, message: str, **extra) -> int:
     return out.emit_err(args.json, {"code": code, "exit": 2, "message": message, **extra})
+
+
+def pr_states(members: dict, timeout: int = 15) -> dict[str, str]:
+    """`member id -> PR state` for every archived member carrying a `pr:` record, read with
+    `gh pr view`. A lookup that fails is left out, and the derivation then keeps `done`."""
+    out: dict[str, str] = {}
+    for sid, m in members.items():
+        if not m or m["phase"] != "archive" or not pr_number(m):
+            continue
+        try:
+            r = subprocess.run(["gh", "pr", "view", pr_number(m), "--json", "state", "-q", ".state"],
+                               capture_output=True, text=True, timeout=timeout)
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if r.returncode == 0 and r.stdout.strip():
+            out[str(sid)] = r.stdout.strip()
+    return out
 
 
 def load_epic(backend, epic_id, args, out: Emitter):
@@ -38,7 +56,8 @@ def load_epic(backend, epic_id, args, out: Emitter):
                                    f"spec {epic_id} is not a `workItemType: epic` spec",
                                    id=epic_id)
     ids = [i["spec"] for i in parse_items(info) if i["spec"]]
-    return info, derive_epic(info, backend.read_specs(ids)), None
+    members = backend.read_specs(ids)
+    return info, derive_epic(info, members, pr_states(members)), None
 
 
 def _find_group(titles: list[str], wanted: str) -> int | None:
@@ -170,7 +189,11 @@ def cmd_epic_status(args, root: str, out: Emitter) -> int:
     done = sum(1 for i in items if i["status"] == "done")
     blocked = [{**_row(i), "reasons": [t["reason"] or t["text"] for t in i["member"]["tasks"]
                                        if t["blocked"]] if i["member"] else []}
-               for i in items if i["status"] in ("blocked", "dropped", "missing")]
+               for i in items if i["status"] in ("blocked", "dropped", "missing", "unmerged")]
+    for b, i in zip(blocked, [i for i in items if i["status"] in
+                              ("blocked", "dropped", "missing", "unmerged")]):
+        if i["status"] == "unmerged":
+            b["reasons"] = [f"PR #{pr_number(i['member'])} is {i['prState']}"]
     obj = {"ok": True, **front_fields(root), "id": info["id"],
            "title": info["frontmatter"].get("title", ""), "phase": info["phase"],
            "progress": {"done": done, "total": len(items), "blocked": len(blocked),

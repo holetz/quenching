@@ -37,7 +37,8 @@ An item's state is computed from the member document on every read and written n
 
 | Member | Item |
 | --- | --- |
-| archived with `outcome: done` | `done` |
+| archived with `outcome: done`, no `pr:` record or its PR `MERGED` (or the PR state unreadable) | `done` |
+| archived with `outcome: done`, a `pr:` record and its PR explicitly not `MERGED` | `unmerged` — never satisfies a dependency, stays on the critical path and in `blocked` |
 | archived with any other outcome | `dropped` — never satisfies a dependency |
 | open, a task is `[!]` | `blocked` |
 | open, an `after` item is not `done` | `waiting` |
