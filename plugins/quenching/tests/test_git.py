@@ -1512,6 +1512,32 @@ class PullRequestVerbs(RepoCase):
         self.assertTrue(sets[2].startswith("date="))
         self.assertEqual(json.loads(out.getvalue())["pr"], {"ok": True, "value": {"number": 42}})
 
+    def test_create_with_spec_writes_the_pr_record_a_real_store_reads_back(self):
+        # No mock of cmd_record: a fixture `git` store (branch `quenching` over a local bare
+        # origin), a fake `gh` on PATH, and the record read back through `cq specs record`.
+        origin = os.path.join(self.tmp, "origin.git")
+        subprocess.run(["git", "init", "-q", "--bare", origin], check=True)
+        _run(self.repo, "remote", "add", "origin", origin)
+        os.makedirs(os.path.join(self.repo, ".claude"))
+        pathlib.Path(self.repo, ".claude", "quenching.json").write_text(
+            '{"backend": "git"}', encoding="utf-8")
+        specs = [sys.executable, CQ, "specs", "--root", self.repo]
+        made = subprocess.run([*specs, "new", "fixture", "--json"], cwd=self.repo,
+                              capture_output=True, text=True, env=self.env,
+                              stdin=subprocess.DEVNULL, timeout=60)
+        self.assertEqual(made.returncode, 0, made.stdout + made.stderr)
+        spec = str(json.loads(made.stdout)["id"])
+        proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/1-x",
+                   "--title", "t", "--body", "Closes #1", "--spec", spec, env=self.env)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertTrue(json.loads(proc.stdout)["pr"]["ok"], proc.stdout)
+        read = subprocess.run([*specs, "record", spec, "pr", "--json"], cwd=self.repo,
+                              capture_output=True, text=True, env=self.env,
+                              stdin=subprocess.DEVNULL, timeout=60)
+        self.assertEqual(read.returncode, 0, read.stdout + read.stderr)
+        value = json.loads(read.stdout)["value"]
+        self.assertEqual((str(value["number"]), value["url"]), ("42", self.URL))
+
     def test_a_refused_stamp_keeps_the_pr_facts_and_exits_1(self):
         from quenching.git import pull
 
