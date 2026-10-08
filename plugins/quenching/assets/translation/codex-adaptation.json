@@ -1,5 +1,7 @@
 {
   "replacements": {
+    "Start the `quenching:orchestrator` agent with a prompt of at most 1,500 characters:": "Codex ships no plugin sub-agents, so follow `../../agents/orchestrator.md` in this session instead: ignore its `tools:` allow-list, keep its prohibitions (no git stash, checkout, reset, rebase or commit amend; edit no file yourself), and take as its input, in at most 1,500 characters:",
+    "Run the `quenching:scout` agent per area, at most 3 at a time,": "Run the scout protocol of `../../agents/scout.md` per area (read-only; in this session, or in a Codex sub-agent where one is available), at most 3 at a time,",
     "Claude Code": "Codex",
     "${CLAUDE_PLUGIN_ROOT}/assets/references/": "../../references/",
     "${CLAUDE_PLUGIN_ROOT}/assets/templates/": "../../templates/",
@@ -22,7 +24,8 @@
     "COMMANDS_DIR = \"commands\"": "COMMANDS_DIR = \"skills\"",
     "CLAUDE_DIR = \".claude\"": "CLAUDE_DIR = \".agents\"",
     "PLUGIN_MANIFEST = os.path.join(\".claude-plugin\", \"plugin.json\")": "PLUGIN_MANIFEST = os.path.join(\".codex-plugin\", \"plugin.json\")",
-    "REFERENCES_DIR = os.path.join(\"assets\", \"references\")": "REFERENCES_DIR = \"references\""
+    "REFERENCES_DIR = os.path.join(\"assets\", \"references\")": "REFERENCES_DIR = \"references\"",
+    "plugins/quenching/agents/": "../../agents/"
   },
   "dropped_frontmatter": [
     "argument-hint",
