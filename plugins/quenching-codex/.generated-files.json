@@ -545,7 +545,7 @@
     "scripts/bin/quenching/knowledge/schema.py": "2c503e5def28e513212baedcd62250a7441690afe6d190087c0d4eadd5cdd900",
     "scripts/bin/quenching/knowledge/site_source.py": "9b895aeb93dbf57156f07284bec6d9642ed20760d627f3ff0551e7e2b60e4108",
     "scripts/bin/quenching/knowledge/stale.py": "e57f6a8de903e3e3a71df320d414e53ca220d50f169b6aeee261871aed2a1d8b",
-    "scripts/bin/quenching/knowledge/structure.py": "5ce6ec392b4b9f21a5847355092b474e2c506720a616bac578989e0e66a54979",
+    "scripts/bin/quenching/knowledge/structure.py": "6bc444a5b5dceaa2d30f1c68b350e366b6ffeb19e9009156b4526c3fb0a8bb49",
     "scripts/bin/quenching/knowledge/validate.py": "aca8bacc3424d812af74cb201bb2163f9ad045034101b6dbfc40d92ed0b67957",
     "scripts/bin/quenching/ops/checks.py": "dcf4604f5068f384e5fae9c56e0fb29c2885430d43ea764232dc8646ac46da39",
     "scripts/bin/quenching/ops/cli.py": "40f69506d22e29aedd2c1a0c9d89c5b62bd6a4b71ff7e8e7bce3b1b6c12df149",
