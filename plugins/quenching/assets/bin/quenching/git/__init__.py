@@ -114,7 +114,8 @@ def build_parser() -> argparse.ArgumentParser:
     pp = pr.add_parser("merge", help="merge with --merge, only when every check is green")
     pp.add_argument("--url", required=True, metavar="URL", help="the PR's URL")
     pp.add_argument("--wait", type=int, default=0, metavar="SECONDS",
-                    help="re-read pending checks every 20s for up to this long (max 540)")
+                    help="re-read pending checks every 20s for up to this long (max 540); "
+                         "progress goes to stderr — keep it under the caller's Bash timeout")
     pp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("audit", help="the verifier's facts inside one registered worktree — "
