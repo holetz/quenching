@@ -6,7 +6,6 @@ never drifts from the script it guards. A marker that disappears fails the test 
 it pass empty.
 """
 
-import os
 import pathlib
 import shutil
 import subprocess
