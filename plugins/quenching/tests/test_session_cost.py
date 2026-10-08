@@ -3,9 +3,12 @@ sums across models."""
 import contextlib
 import io
 import json
+import os
+import shutil
 import pathlib
 import tempfile
 import unittest
+from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.session.commands.cli import build_parser
@@ -80,6 +83,71 @@ class CostTests(unittest.TestCase):
         code, out = run("--json", str(self.sub))
         self.assertEqual(code, 1)
         self.assertEqual(len(json.loads(out)["anomalies"]), 1)
+
+    def test_non_object_line_is_a_finding_per_vector(self):
+        for vector in ("[1, 2]", '"text"', "42", "null", "true"):
+            with self.subTest(vector=vector):
+                with (self.sub / "agent-b.jsonl").open("a") as fh:
+                    fh.write(vector + "\n")
+                code, out = run("--json", str(self.sub))
+                self.assertEqual(code, 1)
+                data = json.loads(out)
+                self.assertEqual(data["anomalies"][-1]["message"], "record is not a JSON object")
+                write(self.sub / "agent-b.jsonl", [rec("m3", "sonnet", 5, cr=7)])
+
+    def test_non_string_agent_type_and_model_do_not_crash(self):
+        (self.sub / "agent-b.meta.json").write_text('{"agentType":7}')
+        (self.sub / "agent-a.meta.json").write_text("[1]")
+        write(self.sub / "agent-c.jsonl", [rec("m4", ["x"], 1)])
+        code, out = run("--json", str(self.sub))
+        self.assertEqual(code, 0)
+        self.assertEqual({g["agentType"] for g in json.loads(out)["groups"]}, {"unknown"})
+
+
+class SessionChoiceTests(unittest.TestCase):
+    """Without an argument the verb never picks between sessions by mtime in silence."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        base = pathlib.Path(self.tmp.name)
+        self.cwd = base / "work"
+        self.cwd.mkdir()
+        self.proj = base / "root" / str(self.cwd).replace("/", "-").replace(".", "-")
+        self.proj.mkdir(parents=True)
+        for sid, out in (("sessA", 3), ("sessB", 9)):
+            (self.proj / f"{sid}.jsonl").write_text("{}\n")
+            sub = self.proj / sid / "subagents"
+            sub.mkdir(parents=True)
+            write(sub / "agent-1.jsonl", [rec(sid, "opus", out)])
+        self.env = mock.patch.dict(os.environ, {"QUENCHING_TRANSCRIPTS_ROOT": str(base / "root")})
+        self.env.start()
+        self.old = os.getcwd()
+        os.chdir(self.cwd)
+
+    def tearDown(self):
+        os.chdir(self.old)
+        self.env.stop()
+        self.tmp.cleanup()
+
+    def test_two_sessions_refuse_and_name_them(self):
+        code, out = run("--json")
+        self.assertEqual(code, 2)
+        data = json.loads(out)
+        self.assertEqual(data["code"], "se-ambiguous-session")
+        self.assertIn("sessA", data["message"])
+        self.assertIn("sessB", data["message"])
+
+    def test_session_id_picks_that_session(self):
+        for sid, out in (("sessA", 3), ("sessB", 9)):
+            code, text = run("--json", sid)
+            self.assertEqual(code, 0)
+            self.assertEqual(json.loads(text)["groups"][0]["output"], out)
+
+    def test_single_session_still_resolves(self):
+        shutil.rmtree(self.proj / "sessB" / "subagents")
+        code, text = run("--json")
+        self.assertEqual(code, 0)
+        self.assertEqual(json.loads(text)["groups"][0]["output"], 3)
 
 
 if __name__ == "__main__":
