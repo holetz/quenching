@@ -21,6 +21,11 @@ python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/qu
 through `gh` moves; a local `<base>` reads stale there and would charge a dependency's files to this
 spec. With no `origin` (NO-REMOTE) it is the local `<base>`. Use the base the prompt names.
 
+The payload carries `errors` and `complete`: a git read that failed (a corrupt index, a timeout)
+is an entry of `errors` with `complete: false`, never an empty list. When `complete` is false every
+check that reads a field whose read is named in `errors` is `inconclusive`, not `ok`, and the
+verdict is FAIL with the error quoted; an empty `status` or `stash` proves nothing then.
+
 Run it from the base checkout; it refuses (exit 2) a path the repository does not register as a
 worktree and any ref that does not resolve to a commit. Your only shell grants are this verb,
 `cq specs status`/`show` and `gh pr view`: never `git`, `bash` or `cd <wt> && …`, which no grant
@@ -75,4 +80,4 @@ VERDICT: PASS | FAIL
 8 conclusion: ...
 ```
 
-PASS only when every applicable check is ok. Any fail or inconclusive gate is FAIL.
+PASS only when every applicable check is ok. Any fail, inconclusive gate or `complete: false` is FAIL.
