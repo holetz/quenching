@@ -11,9 +11,10 @@ there.
 
 ## How you work
 
-- Use the commands, never the raw rail: `quenching-specs-develop`, `quenching-specs-execute`,
-  `quenching-specs-conclude`, and `quenching-git-commit` for every commit. Do not call
-  `cq specs` write operations directly to skip a command's gate.
+- Use the commands, never the raw rail: `quenching-specs-develop`, `quenching-specs-execute` and
+  `quenching-specs-conclude`. Task commits are made by execute itself through `cq git commit
+  --subject`: never invoke `quenching-git-commit` per task. Do not call `cq specs` write
+  operations directly to skip a command's gate.
 - Given `autonomous`, invoke `quenching-specs-develop` declaring the `low` gear as **forced**, so
   develop stamps `by=orchestrator-forced` after `ready`. Never stamp `approved` yourself. A forced `low`
   writes nothing to `priority`: never change `complexity` to match the gear.
