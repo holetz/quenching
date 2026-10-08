@@ -370,6 +370,13 @@ class AgentGrantGap(unittest.TestCase):
                      "It cannot call `cq specs record`."):
             self.assertEqual(_agent_grant_findings(body, "Read", self.WHERE), [], body)
 
+    def test_a_real_call_on_a_line_with_a_loose_negation_is_still_a_gap(self):
+        for body in ("It runs `cq specs record 1 branch` without asking.",
+                     "It skips the check. Then run `cq specs record 1 branch`.",
+                     "Never mind: run `cq specs record 1 branch`."):
+            found = _agent_grant_findings(body, "Read", self.WHERE)
+            self.assertEqual([f["code"] for f in found], ["sk-agent-grant-gap"], body)
+
     def test_lint_agents_reads_the_agents_folder(self):
         with tempfile.TemporaryDirectory() as root:
             agents = pathlib.Path(root, "agents")
