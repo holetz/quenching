@@ -4,7 +4,7 @@ title: Subagent authoring
 description: When work becomes a subagent, the definition contract for .claude/agents/, and how the surface is inventoried
 resource: plugins/quenching/commands/components/agent/new.md, plugins/quenching/commands/components/align.md, plugins/quenching/assets/bin/quenching/components/**
 tags: [automation, agents, delegation]
-timestamp: 2026-08-10
+timestamp: 2026-10-08
 audience: both
 authority: background
 source: skill-front capability research (2026-07-27) — hookify/plugin-dev/agent-sdk-dev + official docs; instrument-and-extend-skill-front plan §6
@@ -37,6 +37,10 @@ and a command may invoke an agent as one step.
 - **`tools` is scoped** to the narrowest set — read-only (`Read, Grep, Glob`) for a
   verifier; omitting the field grants everything, which is a choice a reader must be able to
   see was made.
+- **`Skill` in a fenced `tools:` is a hole.** A skill's `allowed-tools` widen the agent that runs
+  it, and `Skill(<name>)` restricts nothing (measured, Claude Code 2.1.294), so an agent without
+  unrestricted `Bash` never holds `Skill`: it `Read`s the command body and follows it with its own
+  grants. `cq components lint` reports the breach as `sk-agent-skill-widens` (spec 1365).
 - **`model`/`effort` pins** are cache-safe here (the agent owns its context) but follow the
   same policy as everywhere: mechanical extraction may run cheap; judgment — anything that
   gates a deletion, ranks, or authors — inherits the session's.
