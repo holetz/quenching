@@ -435,6 +435,18 @@ class AzureTitleAtSign(unittest.TestCase):
                 self.assertEqual(ctx.exception.err.get("exit"), 2)
                 run.assert_not_called()
 
+    def test_the_joined_title_form_is_refused_too(self):
+        with mock.patch("subprocess.run") as run:
+            with self.assertRaises(BackendRefusal) as ctx:
+                _az_run(".", "boards", "work-item", "create", "--title=@x")
+            self.assertEqual(ctx.exception.err.get("code"), "sp-az-bad-title")
+            run.assert_not_called()
+
+    def test_an_embedded_equals_at_in_a_joined_title_is_not_refused(self):
+        with mock.patch("subprocess.run", side_effect=FileNotFoundError):
+            _az_run(".", "boards", "work-item", "create",
+                    "--title=Suportar --description=@README.md")
+
     def test_an_at_sign_elsewhere_is_not_refused(self):
         with mock.patch("subprocess.run", side_effect=FileNotFoundError):
             _az_run(".", "boards", "work-item", "create", "--title", "a @b")
