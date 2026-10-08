@@ -193,7 +193,6 @@ class Stale(RepoCase):
         _run(self.repo, "add", "remote-feature.txt")
         _run(self.repo, "commit", "-q", "-m", "remote feature")
         _run(self.repo, "push", "-q", "-u", remote, "remote-feature")
-        _run(self.repo, "checkout", "-q", "main")
         _run(self.repo, "merge", "-q", "--ff-only", "remote-feature")
         _run(self.repo, "push", "-q", remote, "main")
         return remote_repo
@@ -342,6 +341,47 @@ class Audit(RepoCase):
         pathlib.Path(self.wt, "c.txt").write_text("c\n", encoding="utf-8")
         _run(self.wt, "add", "c.txt")
         _run(self.wt, "commit", "-q", "-m", "task 2")
+
+    def _commit_file(self, rel: str, text: str, msg: str):
+        full = pathlib.Path(self.wt, rel)
+        full.parent.mkdir(parents=True, exist_ok=True)
+        full.write_text(text, encoding="utf-8")
+        _run(self.wt, "add", rel)
+        _run(self.wt, "commit", "-q", "-m", msg)
+
+    def _grants(self):
+        return _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main",
+                        "--branch", "spec/1")["grants"]
+
+    def test_grants_reports_added_entries_and_never_a_narrowing(self):
+        agent = "plugins/p/agents/a.md"
+        self.assertEqual(self._grants(), [])
+        self._commit_file(agent, "---\nname: a\ntools: Read, Bash(cq x:*)\n---\nbody\n", "agent")
+        self.assertEqual(self._grants(), [{"path": agent, "kind": "tools",
+                                           "added": ["Bash(cq x:*)", "Read"]}])
+
+    def test_grants_widening_over_a_base_that_has_the_file(self):
+        agent = "plugins/p/agents/a.md"
+        full = pathlib.Path(self.repo, agent)
+        full.parent.mkdir(parents=True, exist_ok=True)
+        full.write_text("---\nname: a\ntools: Read, Bash(cq x:*)\n---\n", encoding="utf-8")
+        _run(self.repo, "add", agent)
+        _run(self.repo, "commit", "-q", "-m", "base agent")
+        _run(self.wt, "merge", "-q", "main")
+        self._commit_file(agent, "---\nname: a\ntools: Read, Bash(cq x:*), Bash(az repos pr:*)\n---\n", "widen")
+        self.assertEqual(self._grants()[0]["added"], ["Bash(az repos pr:*)"])
+        self._commit_file(agent, "---\nname: a\ntools: Read\n---\n", "narrow")
+        self.assertEqual(self._grants(), [])
+
+    def test_grants_reads_allowed_tools_block_list_and_ci_lines(self):
+        cmd = "plugins/p/commands/c.md"
+        self._commit_file(cmd, "---\nallowed-tools:\n  - Bash\n  - Read\n---\n", "cmd")
+        wf = ".github/workflows/x.yml"
+        self._commit_file(wf, "on: push\njobs: {}\n", "ci")
+        got = {g["path"]: g for g in self._grants()}
+        self.assertEqual(got[cmd]["added"], ["Bash", "Read"])
+        self.assertEqual(got[wf]["kind"], "surface")
+        self.assertIn("on: push", got[wf]["added"])
 
     def test_reflog_keeps_a_branch_rewind_by_update_ref_without_a_message(self):
         self._commit_more()
@@ -657,7 +697,6 @@ class LifecycleBehavior(RepoCase):
         old_remote_tip = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
                                          check=True, capture_output=True, text=True).stdout.strip()
 
-        _run(self.repo, "checkout", "-q", "main")
         pathlib.Path(self.repo, "base.txt").write_text("base\n", encoding="utf-8")
         _run(self.repo, "add", "base.txt")
         _run(self.repo, "commit", "-q", "-m", "base advances")
@@ -1662,7 +1701,6 @@ class PruneVerb(RepoCase):
         pathlib.Path(self.repo, "u.txt").write_text("u\n", encoding="utf-8")
         _run(self.repo, "add", "u.txt")
         _run(self.repo, "commit", "-q", "-m", "unmerged work")
-        _run(self.repo, "checkout", "-q", "main")
 
     def _branches(self) -> str:
         return subprocess.run(["git", "branch", "--list"], cwd=self.repo, capture_output=True,
