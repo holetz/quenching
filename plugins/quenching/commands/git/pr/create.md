@@ -2,7 +2,7 @@
 description: >-
   Push the branch and open a PR on GitHub or Azure DevOps against the resolved base. Use for "open a PR", "create a pull request", "submit this for review". Not for: merging → /quenching:git:merge.
 argument-hint: [id-or-title] [remote:<name>]
-allowed-tools: Bash(cq git:*), Bash(cq specs config:*), Bash(cq specs status:*), Bash(cq specs show:*), Bash(cq components read:*), Bash(gh repo view:*), Read, AskUserQuestion
+allowed-tools: Bash(cq git:*), Bash(cq specs config:*), Bash(cq specs status:*), Bash(cq specs show:*), Bash(cq components read:*), Bash(gh repo view:*), Bash(az repos pr:*), Read, AskUserQuestion
 ---
 
 # /quenching:git:pr:create — push and open the pull request
