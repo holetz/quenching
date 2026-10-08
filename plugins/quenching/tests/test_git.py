@@ -623,6 +623,11 @@ class OrchestratorGrants(unittest.TestCase):
         self.assertNotIn("git status:*", grants)
         self.assertNotIn("git stash list:*", grants)
 
+    def test_the_verifier_prompt_carries_the_gate_exit_the_worker_reported(self):
+        text = " ".join((PLUGIN_ROOT / "agents" / "orchestrator.md").read_text(encoding="utf-8").split())
+        self.assertIn("the exit the worker reported on its `GATE:` line as a claim", text)
+        self.assertIn("`sem relato` when it reported none", text)
+
 
 class Worktree(RepoCase):
     def setUp(self):
