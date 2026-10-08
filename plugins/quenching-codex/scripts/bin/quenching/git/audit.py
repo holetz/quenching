@@ -59,6 +59,8 @@ def _reflog(cwd: str, ref: str, env: dict[str, str] | None = None,
     so a rewrite made silently is still seen. The oldest entry is the ref's creation and stays."""
     entries = [(line.split(" ", 1) + [""])[:2]
                for line in _lines(cwd, "reflog", "show", "--format=%H %gs", ref, env=env, errors=errors)]
+    if not entries and errors is not None:   # a live ref always has its creation entry: none means expired or never logged
+        errors.append(_error(("reflog", "show", ref), 0, "reflog empty or expired: the ref's history is unknown, not clean"))
     kept = []
     for i, (sha, subject) in enumerate(entries):
         older = entries[i + 1][0] if i + 1 < len(entries) else None
