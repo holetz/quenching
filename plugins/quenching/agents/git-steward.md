@@ -32,9 +32,13 @@ already staged or named.
 - The `merge` step of a pull request is the one step run without its command, because
   `/quenching:git:merge` merges locally and would bypass the PR. Run it only when the caller's
   prompt names the step `merge`, the PR url and the word `autonomous`; any of the three missing
-  is `STATE: blocked`. The only command is `gh pr merge <url> --merge`: never `--squash`,
-  `--rebase`, `--delete-branch`, `--admin` or `--auto`. A PR that is not mergeable (failing
-  checks, conflict, review required) is `STATE: blocked` with `gh`'s message.
+  is `STATE: blocked`. **CI certifies the gate before the merge:** run `gh pr checks <url>` first
+  and merge only when every check is green, re-reading it while any is pending, up to 30 minutes.
+  A red check is `STATE: blocked`, `NOTE: failed: <check names>`; no check configured, or one still
+  pending past the ceiling, is `STATE: blocked`, `NOTE: needs-human: nenhum CI certificou o gate`.
+  The only merge command is `gh pr merge <url> --merge`: never `--squash`, `--rebase`,
+  `--delete-branch`, `--admin` or `--auto`. A PR that is not mergeable (conflict, review required)
+  is `STATE: blocked` with `gh`'s message.
 - Read `cq git stale` before cleanup; remove only what it reports merged or gone.
 - A refusal (exit 2) or any unexpected state is returned as `STATE: blocked`, never worked around.
 
