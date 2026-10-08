@@ -342,3 +342,84 @@ class TheScopedRead(_Workspace):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NoWriteOpensASecondSection(_Workspace):
+    """1343 — a `## Handoff` emptied by a write, one test per vector.
+
+    The 1315 was archived with `## Handoff\\n\\n## Handoff\\n\\n<text>`: a body spliced whole under
+    its own heading carried that heading again, `parse_sections` keeps the FIRST of a repeated
+    heading, and the first was empty."""
+
+    spec_text = HANDOFF_SPEC
+
+    def assert_one_handoff(self, text):
+        self.assertEqual(text.count("\n## Handoff\n"), 1, text)
+        self.assertEqual(self.state("Handoff"), "filled")
+
+    def read_spec_text(self):
+        return self.backend.read_spec(1)[0]["text"]
+
+    def test_a_scoped_write_drops_the_bodys_own_heading(self):
+        code, obj = self.run_section(heading="Handoff", write=True, scope="current",
+                                     stdin="## Handoff\n\nTask 1.1 committed.\n")
+        self.assertEqual(code, 0, obj)
+        self.assert_one_handoff(self.read_spec_text())
+
+    def test_a_global_scoped_write_drops_the_bodys_own_heading(self):
+        code, obj = self.run_section(heading="Handoff", write=True, scope="global",
+                                     stdin="## Handoff\n\nNovo evergreen.\n")
+        self.assertEqual(code, 0, obj)
+        self.assert_one_handoff(self.read_spec_text())
+
+    def test_a_scoped_write_refuses_a_foreign_heading(self):
+        before = self.read_spec_text()
+        code, obj = self.run_section(heading="Handoff", write=True, scope="current",
+                                     stdin="texto\n\n## Handoff\n\nmais\n")
+        self.assertEqual((code, obj["code"]), (2, "sp-write-nested-heading"))
+        self.assertEqual(self.read_spec_text(), before)
+
+    def test_a_raw_singular_write_with_prose_first_refuses(self):
+        before = self.read_spec_text()
+        code, obj = self.run_section(heading="Handoff", write=True,
+                                     stdin="resumo\n\n## Handoff\n\nTask 1.1.\n")
+        self.assertEqual((code, obj["code"]), (2, "sp-write-nested-heading"))
+        self.assertEqual(self.read_spec_text(), before)
+
+    def test_a_raw_write_opening_on_a_non_canonical_heading_refuses(self):
+        code, obj = self.run_section(heading="Handoff", write=True,
+                                     stdin="## Nao Canonico\n\nX\n")
+        self.assertEqual((code, obj["code"]), (2, "sp-write-nested-heading"))
+
+    def test_a_fenced_heading_in_a_scoped_body_is_content(self):
+        code, obj = self.run_section(heading="Handoff", write=True, scope="global",
+                                     stdin="Veja:\n```\n## Design\n```\n")
+        self.assertEqual(code, 0, obj)
+        self.assertIn("## Design\n```", self.read_spec_text())
+
+    def test_a_stream_naming_handoff_twice_refuses(self):
+        code, obj = self.run_section(heading="Handoff", write=True,
+                                     stdin="## Handoff\n\nA\n\n## Handoff\n\nB\n")
+        self.assertEqual((code, obj["code"]), (2, "sp-write-duplicate-heading"))
+
+
+class ArchiveRefusesAnyEmptySection(_Workspace):
+    spec_text = HANDOFF_SPEC
+
+    """1343 — the archive gate used to list only the entry gate's sections, so an empty
+    `## Handoff` (not in it) went through."""
+
+    def test_promote_refuses_an_empty_handoff(self):
+        from quenching.specs.commands import promote as promote_module
+        head, tail = HANDOFF_SPEC.split("## Handoff\n", 1)
+        text = head + "## Handoff\n\n## Tasks" + tail.split("## Tasks", 1)[1]
+        self.write_spec(text)
+        self.assertEqual(self.state("Handoff"), "empty")
+        args = _Args(to="archive", outcome="abandoned", force=False, dry_run=False)
+        buf = io.StringIO()
+        with mock.patch.object(promote_module, "open_backend",
+                               lambda _r: (self.backend, {})), redirect_stdout(buf):
+            code = promote_module.cmd_promote(args, self.root, Emitter())
+        obj = json.loads(buf.getvalue())
+        self.assertEqual((code, obj["code"]), (2, "sp-gate-unmet"))
+        self.assertIn("Handoff", obj["malformed"])
