@@ -90,6 +90,18 @@ class ComponentsCost(unittest.TestCase):
         self.assertEqual(status, 1)
         self.assertEqual(json.loads(output.getvalue())["findings"][0]["code"], "ct-cost-regression")
 
+    def test_non_utf8_ratchet_baseline_is_a_structured_finding(self):
+        root, _ = surface()
+        (root / "commands" / "front" / "verb.md").write_text(
+            "---\ndescription: do it\n---\n\nBody.\n", encoding="utf-8")
+        baseline = pathlib.Path(tempfile.mkdtemp()) / "cost.json"
+        baseline.write_bytes(b"\xff\xfe")
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            status = cmd_cost(SimpleNamespace(path=None, ratchet=str(baseline), json=True), str(root))
+        self.assertEqual(status, 1)
+        self.assertEqual(json.loads(output.getvalue())["findings"][0]["code"], "ct-cost-ratchet")
+
 
 if __name__ == "__main__":
     unittest.main()
