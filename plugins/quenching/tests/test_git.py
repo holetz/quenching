@@ -1668,6 +1668,8 @@ if sys.argv[1:4] == ["repos", "pr", "create"]:
     print(json.dumps({"pullRequestId": 7,
                       "url": "https://dev.azure.com/o/p/_apis/git/repositories/r/pullRequests/7",
                       "repository": {"webUrl": "https://dev.azure.com/o/p/_git/r"}}))
+if sys.argv[1:4] == ["repos", "pr", "show"]:
+    sys.stdout.write(os.environ.get("FAKE_AZ_SHOW", ""))
 if sys.argv[1:4] == ["repos", "pr", "list"]:
     if os.environ.get("FAKE_AZ_LIST_RC", "0") != "0":
         sys.stderr.write("Please run 'az login' to setup account.\\n")
@@ -1891,15 +1893,65 @@ class PullRequestVerbs(RepoCase):
         self.assertEqual(self._calls(), [])
         self.assertNotEqual(self._read_pr(specs, spec).returncode, 0)
 
-    def test_record_stamps_the_azure_pr_through_the_same_function(self):
+    def _record_with_view(self, spec, view, head=None):
+        env = {**self.env, "FAKE_GH_VIEW": view}
+        return _cq(self.repo, "pr", "record", "--spec", spec, "--head", head or f"plan/{spec}-x",
+                   "--number", "42", "--url", self.URL, "--json", env=env)
+
+    def test_record_stamps_a_pr_whose_real_head_is_the_declared_one(self):
         spec, specs = self._store_spec()
-        url = "https://dev.azure.com/o/p/_git/r/pullrequest/7"
-        proc = _cq(self.repo, "pr", "record", "--spec", spec, "--head", f"plan/{spec}-x",
-                   "--number", "7", "--url", url, "--json", env=self.env)
+        proc = self._record_with_view(
+            spec, json.dumps({"number": 42, "headRefName": f"plan/{spec}-x"}))
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
-        self.assertEqual(self._calls(), [])
+        (call,) = self._calls()
+        self.assertEqual(call["argv"], ["pr", "view", self.URL, "--json", "headRefName,number"])
         value = json.loads(self._read_pr(specs, spec).stdout)["value"]
-        self.assertEqual((str(value["number"]), value["url"]), ("7", url))
+        self.assertEqual((str(value["number"]), value["url"]), ("42", self.URL))
+
+    def test_record_refuses_a_pr_whose_real_head_is_another_branch(self):
+        spec, specs = self._store_spec()
+        for view in ({"number": 42, "headRefName": f"plan/{spec}-other"},
+                     {"number": 41, "headRefName": f"plan/{spec}-x"}):
+            proc = self._record_with_view(spec, json.dumps(view))
+            self.assertEqual(proc.returncode, 2, (view, proc.stdout))
+            self.assertEqual(json.loads(proc.stdout)["code"], "git-pr-record-head-mismatch")
+        self.assertNotEqual(self._read_pr(specs, spec).returncode, 0)
+
+    def test_record_with_an_unreadable_pr_exits_1_and_writes_nothing(self):
+        spec, specs = self._store_spec()
+        proc = self._record_with_view(spec, "")
+        self.assertEqual(proc.returncode, 1, proc.stdout + proc.stderr)
+        self.assertEqual(json.loads(proc.stdout)["reason"], "head-unreadable")
+        self.assertNotEqual(self._read_pr(specs, spec).returncode, 0)
+
+    def test_record_reads_the_azure_head_and_stamps_through_the_same_function(self):
+        from quenching.git import pull
+        seen = []
+
+        def record(ns, root, out):
+            seen.append(list(ns.set))
+            out.emit(True, {"ok": True, "value": {"number": 7}}, "")
+            return 0
+        show = json.dumps({"pullRequestId": 7, "sourceRefName": "refs/heads/plan/1-x"})
+        args = SimpleNamespace(action="record", spec="1", head="plan/1-x", number=7,
+                               url=self.AZURE_WEB, json=True)
+        with mock.patch.object(pull, "_provider", return_value="azure-boards"), \
+                mock.patch.object(pull, "_az", return_value=(0, show, "")) as az, \
+                mock.patch.object(pull, "cmd_record", side_effect=record), \
+                mock.patch.object(pull, "_spec_vs_head", return_value=None), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            code = pull.cmd_pr(args)
+        self.assertEqual(code, 0, out.getvalue())
+        az.assert_called_once_with("repos", "pr", "show", "--id=7", "--detect=true",
+                                   "--output=json")
+        self.assertEqual(seen[0][:2], ["number=7", f"url={self.AZURE_WEB}"])
+        with mock.patch.object(pull, "_provider", return_value="azure-boards"), \
+                mock.patch.object(pull, "_az", return_value=(0, show.replace("1-x", "2-y"), "")), \
+                mock.patch.object(pull, "cmd_record", side_effect=record), \
+                mock.patch.object(pull, "_spec_vs_head", return_value=None), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            code = pull.cmd_pr(args)
+        self.assertEqual((code, len(seen)), (2, 1), out.getvalue())
 
     def test_record_refuses_a_wrong_spec_head_or_api_url_and_writes_nothing(self):
         spec, specs = self._store_spec()
