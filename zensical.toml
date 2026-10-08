@@ -169,6 +169,7 @@
       "decisions/0008-seguranca-das-mudancas-do-epico-1145.md",
       "decisions/0009-seguranca-das-mudancas-do-epico-1163.md",
       "decisions/0010-custo-de-delegar-o-commit-ao-git-commit.md",
+      "decisions/0011-seguranca-das-mudancas-dos-epicos-1192-e-1197.md",
     ] },
     { "Vision" = [
       "vision/index.md",

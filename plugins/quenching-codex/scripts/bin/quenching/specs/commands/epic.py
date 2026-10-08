@@ -27,16 +27,25 @@ def _refuse(out: Emitter, args, code: str, message: str, **extra) -> int:
     return out.emit_err(args.json, {"code": code, "exit": 2, "message": message, **extra})
 
 
-def pr_states(members: dict, timeout: int = 15) -> dict[str, str]:
+def _pr_target(member: dict) -> str:
+    """What `gh pr view` is given: the recorded `pr.url` when it is a URL (it names the repository
+    itself), else the bare number, which `gh` resolves against the working directory."""
+    rec = member["frontmatter"].get("pr")
+    url = str(rec.get("url", "")).strip() if isinstance(rec, dict) else ""
+    return url if url.startswith(("http://", "https://")) else pr_number(member)
+
+
+def pr_states(members: dict, root: str | None = None, timeout: int = 15) -> dict[str, str]:
     """`member id -> PR state` for every archived member carrying a `pr:` record, read with
-    `gh pr view`. A lookup that fails is left out, and the derivation then marks it `unverified`."""
+    `gh pr view` from `root` (the repository `--root` names, not the process cwd). A lookup that
+    fails is left out, and the derivation then marks it `unverified`."""
     out: dict[str, str] = {}
     for sid, m in members.items():
         if not m or m["phase"] != "archive" or not pr_number(m):
             continue
         try:
-            r = subprocess.run(["gh", "pr", "view", pr_number(m), "--json", "state", "-q", ".state"],
-                               capture_output=True, text=True, timeout=timeout)
+            r = subprocess.run(["gh", "pr", "view", _pr_target(m), "--json", "state", "-q", ".state"],
+                               capture_output=True, text=True, timeout=timeout, cwd=root)
         except (OSError, subprocess.SubprocessError):
             continue
         if r.returncode == 0 and r.stdout.strip():
@@ -44,7 +53,7 @@ def pr_states(members: dict, timeout: int = 15) -> dict[str, str]:
     return out
 
 
-def load_epic(backend, epic_id, args, out: Emitter):
+def load_epic(backend, epic_id, args, out: Emitter, root: str | None = None):
     """`(info, derived, None)` for a readable epic, or `(None, None, exit_code)` after a refusal."""
     got = backend.read_specs([epic_id])
     info = got.get(str(epic_id))
@@ -57,7 +66,7 @@ def load_epic(backend, epic_id, args, out: Emitter):
                                    id=epic_id)
     ids = [i["spec"] for i in parse_items(info) if i["spec"]]
     members = backend.read_specs(ids)
-    return info, derive_epic(info, members, pr_states(members)), None
+    return info, derive_epic(info, members, pr_states(members, root)), None
 
 
 def _find_group(titles: list[str], wanted: str) -> int | None:
@@ -121,7 +130,7 @@ def cmd_epic(args, root: str, out: Emitter) -> int:
     epic_id, spec_id = str(args.epic), str(args.spec)
     if epic_id == spec_id:
         return _refuse(out, args, "sp-epic-self", "an epic cannot be its own member")
-    epic, _, code = load_epic(backend, epic_id, args, out)
+    epic, _, code = load_epic(backend, epic_id, args, out, root)
     if code is not None:
         return code
     member = backend.read_specs([spec_id]).get(spec_id)
@@ -182,7 +191,7 @@ def cmd_epic_status(args, root: str, out: Emitter) -> int:
     backend, err = open_backend(root)
     if err:
         return out.emit_err(args.json, err)
-    info, d, code = load_epic(backend, args.epic, args, out)
+    info, d, code = load_epic(backend, args.epic, args, out, root)
     if code is not None:
         return code
     items = d["items"]
@@ -231,7 +240,7 @@ def cmd_next_epic(args, root: str, out: Emitter) -> int:
     backend, err = open_backend(root)
     if err:
         return out.emit_err(args.json, err)
-    info, d, code = load_epic(backend, args.epic, args, out)
+    info, d, code = load_epic(backend, args.epic, args, out, root)
     if code is not None:
         return code
     order = {i["label"]: n for n, i in enumerate(d["items"])}

@@ -203,9 +203,11 @@ def render_item(label: str, title: str, spec_id: str, after: list[str]) -> str:
     return line + (f" — after: {','.join(after)}" if after else "")
 
 
-def open_items(info: dict, members: dict[str, dict | None]) -> list[dict]:
-    """Items that keep an epic from being archived as `done`."""
-    return [i for i in derive_epic(info, members)["items"] if i["status"] != "done"]
+def open_items(info: dict, members: dict[str, dict | None],
+               pr_state: dict[str, str] | None = None) -> list[dict]:
+    """Items that keep an epic from being archived as `done`. With `pr_state` (the caller's PR
+    lookup) a member whose PR is not merged, or could not be read, stays open."""
+    return [i for i in derive_epic(info, members, pr_state)["items"] if i["status"] != "done"]
 
 
 def epic_findings(info: dict, members: dict[str, dict | None]) -> list[dict]:
