@@ -18,6 +18,7 @@ from quenching.design.build import build_drift, compute_build, write_build
 from quenching.design.markdown import parse_document_frontmatter, render_markdown, split_h2
 from quenching.design.model import DesignError, font_asset_paths, read_json
 
+SUBPROCESS_TIMEOUT_S = 60
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 FIELD_RE = re.compile(r"^- `([A-Za-z][A-Za-z0-9_-]*)` — (required|optional)(?: (list|scalar))?\s*(.*)$")
 REPEAT_BLOCK_RE = re.compile(
@@ -362,7 +363,10 @@ def _render_external(engine: str, data: dict[str, Any], template: str, medium: s
             command,
             input=json.dumps(request, ensure_ascii=False).encode("utf-8"),
             capture_output=True,
+            timeout=SUBPROCESS_TIMEOUT_S,
         )
+    except subprocess.TimeoutExpired as exc:
+        raise DesignError(f"external engine timed out after {SUBPROCESS_TIMEOUT_S}s") from exc
     except OSError as exc:
         raise DesignError(f"external engine could not start: {exc}") from exc
     if run.returncode:
@@ -427,8 +431,13 @@ def _compile_pdf(source: str, target: Path, root: Path) -> None:
         command = [compiler, "compile", temporary, str(target), "--root", str(root)]
         for path in sorted(font_paths):
             command.extend(["--font-path", str(path)])
-        run = subprocess.run(command,
-                             capture_output=True, text=True)
+        try:
+            run = subprocess.run(command, capture_output=True, text=True,
+                                 timeout=SUBPROCESS_TIMEOUT_S)
+        except subprocess.TimeoutExpired as exc:
+            raise DesignError(f"typst compile timed out after {SUBPROCESS_TIMEOUT_S}s") from exc
+        except OSError as exc:
+            raise DesignError(f"typst could not start: {exc}") from exc
         if run.returncode:
             raise DesignError(f"typst compile failed: {(run.stderr or run.stdout).strip()}")
     finally:
