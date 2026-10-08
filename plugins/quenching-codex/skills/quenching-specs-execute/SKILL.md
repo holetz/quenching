@@ -289,13 +289,10 @@ f. **Read the chain's tail, and act on which link broke** — per §The commit, 
 
 g. **Run and report the declared hook for this event, and move on.** Once the spec task has
    committed and been confirmed, `after_specs_execute_task` has fired. For every hook the config
-   read returned, report the event, command, prompt, `optional` flag and any declared `condition`,
-   **Before invoking, make `refs/remotes/origin/HEAD` resolve** — a hook such as `/security-review`
-   diffs against it, and a clone made by `git init` plus `remote add` has none. When the probe of
-   step 2 found it absent, run `git remote set-head origin -a`, and when that cannot reach the
-   remote, `git remote set-head origin <the base resolved in step 2>`; a failure of both is reported
-   and the hook is still invoked. Present already → nothing runs. Then invoke the declared command
-   as a `Skill` with the task and commit context:
+   read returned, report the event, command, prompt, `optional` flag and any declared `condition`.
+   **Never write `refs/remotes/origin/HEAD`** — it lives in the shared `.git`, outside this
+   worktree, and nothing here writes it. The hook gets the base by name instead.
+   Invoke the declared command as a `Skill` with the task and commit context:
 
    ```text
    after_specs_execute_task — hook: /security-review — optional: true
@@ -309,8 +306,8 @@ g. **Run and report the declared hook for this event, and move on.** Once the sp
    so a hook such as `/security-review` diffs the base and finds nothing. Resolve
    `git rev-parse --show-toplevel` from the checkout this run commits in and pass, with the task
    and commit context, `work checkout: <toplevel>` and `review: git -C <toplevel> diff
-   origin/HEAD...HEAD`, with the instruction to review that diff rather than the session's own
-   checkout. The hook declaration is still passed untouched; only the target is added.
+   origin/<base>...HEAD`, where `<base>` is the base resolved in step 2,
+   with the instruction to review that diff rather than the session's own checkout. The hook declaration is still passed untouched; only the target is added.
 
    `enabled: false` was filtered during the config read and is never announced or invoked;
    absence of `enabled` means enabled. The executor never evaluates `condition`: it reports the
