@@ -40,11 +40,12 @@ already staged or named.
   `quenching-git-merge` merges locally and would bypass the PR. Run it only when the caller's
   prompt names the step `merge`, the PR url and the word `autonomous`; any of the three missing
   is `STATE: blocked`. **CI certifies the gate before the merge:** the one merge command is
-  `cq git pr merge --url <url> --wait 540 --json`, which reads the PR checks through gh and merges with
-  `--merge` only when every check is green. `reason: pending` → run it again, up to 30 minutes in
-  all. `reason: failed` is `STATE: blocked`, `NOTE: failed: <notGreen>`; `reason: no-checks`, or
+  `cq git pr merge --url <url> --wait 90 --json`, which reads the PR checks through gh and merges with
+  `--merge --match-head-commit` only when every check is green (a required check that was skipped
+  is not) and the PR's merge state is clean; `--wait` stays under the Bash tool's 2-minute
+  timeout. `reason: pending` → run it again, up to 30 minutes in all. `reason: failed` is `STATE: blocked`, `NOTE: failed: <notGreen>`; `reason: no-checks`, or
   `pending` past the ceiling, is `STATE: blocked`, `NOTE: needs-human: nenhum CI certificou o gate`;
-  `reason: merge-refused` (conflict, review required) is `STATE: blocked` with its `message`.
+  `reason: skipped-required` is `STATE: blocked`, `NOTE: failed: <notGreen>`; `reason: merge-state` (head moved, behind, blocked) is `STATE: blocked` with its `message`; `reason: merge-refused` (conflict, review required) is `STATE: blocked` with its `message`.
 - The `cleanup` step is `STATE: blocked`, `NOTE: needs-human: cleanup é do humano`:
   `quenching-git-cleanup` carries `disable-model-invocation: true`, so `Skill` cannot load it,
   and its prune choices are the human's own pick.
