@@ -1222,6 +1222,70 @@ class WorktreeAdd(RepoCase):
         self.assertFalse(marker.exists())
 
 
+class WorktreeRetire(RepoCase):
+    """`cq git worktree retire` — a merged spec's worktree and branch go, nothing else does."""
+
+    def setUp(self):
+        super().setUp()
+        self.remote = os.path.join(self.tmp, "origin.git")
+        _run(self.tmp, "init", "-q", "--bare", "-b", "main", self.remote)
+        _run(self.repo, "remote", "add", "origin", self.remote)
+        _run(self.repo, "push", "-q", "origin", "main")
+        self.wt = os.path.join(self.tmp, "wt")
+        _run(self.repo, "worktree", "add", "-q", "-b", "plan/1-x", self.wt)
+        pathlib.Path(self.wt, "w.txt").write_text("w\n", encoding="utf-8")
+        _run(self.wt, "add", "w.txt")
+        _run(self.wt, "commit", "-q", "-m", "task")
+        _run(self.wt, "push", "-q", "-u", "origin", "plan/1-x")
+
+    def _merge_through_gh(self):
+        other = os.path.join(self.tmp, "other")
+        _run(self.tmp, "clone", "-q", self.remote, other)
+        _run(other, "config", "user.email", "test@example.com")
+        _run(other, "config", "user.name", "Test")
+        _run(other, "merge", "-q", "--no-ff", "-m", "merge", "origin/plan/1-x")
+        _run(other, "push", "-q", "origin", "main")
+
+    def _retire(self, *extra, path=None, branch="plan/1-x"):
+        return _cq(self.repo, "worktree", "retire", "--path", path or self.wt, "--branch",
+                   branch, "--base", "main", "--json", *extra)
+
+    def _heads(self) -> str:
+        return subprocess.run(["git", "branch", "--list"], cwd=self.repo, capture_output=True,
+                              text=True).stdout
+
+    def test_a_merged_spec_loses_its_worktree_and_its_branch(self):
+        self._merge_through_gh()
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertFalse(os.path.exists(self.wt))
+        self.assertNotIn("plan/1-x", self._heads())
+
+    def test_an_unmerged_branch_is_refused_and_nothing_is_removed(self):
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 2, proc.stdout)
+        self.assertTrue(os.path.isdir(self.wt))
+        self.assertIn("plan/1-x", self._heads())
+
+    def test_a_dirty_worktree_stands(self):
+        self._merge_through_gh()
+        pathlib.Path(self.wt, "w.txt").write_text("dirty\n", encoding="utf-8")
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        self.assertTrue(os.path.isdir(self.wt))
+        self.assertIn("plan/1-x", self._heads())
+
+    def test_primary_mismatch_and_option_shaped_names_are_refused(self):
+        self._merge_through_gh()
+        cases = ((self.repo, "plan/1-x"), (self.wt, "main"), (self.wt, "bad..name"),
+                 (os.path.join(self.tmp, "nowhere"), "plan/1-x"))
+        for path, branch in cases:
+            proc = self._retire(path=path, branch=branch)
+            self.assertEqual(proc.returncode, 2, (path, branch, proc.stdout))
+        self.assertTrue(os.path.isdir(self.wt))
+        self.assertIn("plan/1-x", self._heads())
+
+
 class PushVerb(RepoCase):
     """`cq git push` — one local branch to one configured remote, never forced."""
 
@@ -1473,3 +1537,12 @@ class StewardGrants(unittest.TestCase):
         from quenching.git import DISPATCH
         for verb in ("state", "worktree", "commit", "specs", "push", "pr", "stale", "prune"):
             self.assertIn(verb, DISPATCH)
+
+    def test_the_cleanup_step_runs_retire_and_the_orchestrator_routes_it(self):
+        agents = PLUGIN_ROOT / "agents"
+        steward = " ".join((agents / "git-steward.md").read_text(encoding="utf-8").split())
+        orchestrator = " ".join((agents / "orchestrator.md").read_text(encoding="utf-8").split())
+        self.assertIn("cq git worktree retire --path", steward)
+        self.assertIn("`branch -d`", steward)
+        self.assertNotIn("cleanup (always blocked)", steward)
+        self.assertIn("the step `cleanup`", orchestrator)

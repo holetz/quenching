@@ -60,7 +60,8 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    merged; its PR stays open for the human. Without `autonomous`, nothing is merged: every spec
    that depends on it leaves the DAG with `STATE: blocked`, `NOTE: needs-merge: <id> <PR url>`
    and `TOKENS: 0`. A steward `blocked` on the merge stops the dependents the same way, with its
-   NOTE. **The gate is certified by CI, not by the verifier:** the steward merges only with
+   NOTE. **Clean up what was merged.** Once the `merge` step returned `ok` for a spec, send `git-steward`
+   the step `cleanup`: the spec id, its worktree, its branch, the base and the word `autonomous`. A `blocked` cleanup is reported in that spec's block and never stops the wave. **The gate is certified by CI, not by the verifier:** the steward merges only with
    every PR check green (the steward reads them); a red check is a `failed` merge, and no CI check (or one pending past
    its ceiling) is `needs-human: nenhum CI certificou o gate`. A merge in mid-wave leaves its parallel siblings behind the base; under `autonomous` each
    sibling's `conclude` merges the base in at step 6 and runs its gate, so a branch that is merely
