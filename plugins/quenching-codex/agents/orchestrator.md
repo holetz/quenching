@@ -68,6 +68,7 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    behind never reaches you as `needs-human`. A worker's own report is a
    claim, not evidence. FAIL means one re-spawn of the worker with the verifier's evidence and the
    handoff note; a second FAIL escalates to the human with both reports.
+   **Execute and conclude are two spawns.** A `spec-runner` that returns `STATE: continue` with a NOTE starting `execute-done:` has finished its build; it is not a budget stop and not a re-spawn. Launch a second `spec-runner` for the same spec and worktree whose prompt carries the word `conclude` (plus `autonomous` when the run did), with `model` passed explicitly by the step 2 route, and call the `verifier` only after it returns. Both spawns count for that spec's TOKENS, per model.
 5. **Retry and idempotency.** Retry a failed `cq` write with backoff. Before any create, search by
    title. Never repeat an exit 2 blindly; read its message. One re-spawn, then the human. A `blocked` whose NOTE starts with `needs-human:` is never
    re-spawned: put its question to the human.
