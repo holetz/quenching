@@ -289,6 +289,21 @@ class Scenarios:
         self.assertEqual((2, "sp-open-tasks"), (code, got.get("code")))
         self.assertEqual(4, got["open"])
 
+    def test_an_epic_is_not_archived_as_done_while_a_member_pr_is_not_merged(self):
+        b = self.diamond()
+        for n in (3, 4, 5):
+            archive(b, n)
+        states = self.archive_with_pr(2, "OPEN")
+        epic_body = ("## Problem\n\nx\n\n## Proposal\n\nx\n\n## Out of Scope\n\n- none — x\n"
+                     "## Validation\n\nx\n\n## Design\n\nx\n\n## Outcome\n\nx\n")
+        info, _ = b.read_spec(EPIC_ID)
+        b.write_spec(info, info["text"] + epic_body)
+        kw = dict(spec=EPIC_ID, to=None, outcome="done", force=False, dry_run=True)
+        with mock.patch.object(promote_cmd, "pr_states", return_value=states):
+            code, got = run(promote_cmd.cmd_promote, b, **kw)
+        self.assertEqual((2, "sp-open-tasks"), (code, got.get("code")))
+        self.assertEqual("unmerged", got["openTasks"][0]["state"])
+
 
 class MemoryEpics(Scenarios, unittest.TestCase):
     def setUp(self):
@@ -353,3 +368,29 @@ class PureDerivation(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PrStatesTarget(unittest.TestCase):
+    def member(self, rec):
+        return {"phase": "archive", "frontmatter": {"pr": rec}}
+
+    def call(self, rec, root):
+        seen = {}
+
+        def fake(cmd, **kw):
+            seen.update(cmd=cmd, **kw)
+            return mock.Mock(returncode=0, stdout="MERGED\n")
+        with mock.patch.object(epic_cmd.subprocess, "run", side_effect=fake):
+            got = epic_cmd.pr_states({"7": self.member(rec)}, root)
+        return got, seen
+
+    def test_the_lookup_runs_from_the_named_root(self):
+        got, seen = self.call({"number": 5, "url": "u"}, "/some/repo")
+        self.assertEqual({"7": "MERGED"}, got)
+        self.assertEqual("/some/repo", seen["cwd"])
+        self.assertEqual("5", seen["cmd"][3])
+
+    def test_a_recorded_url_names_the_repository_itself(self):
+        url = "https://github.com/o/r/pull/5"
+        _, seen = self.call({"number": 5, "url": url}, "/some/repo")
+        self.assertEqual(url, seen["cmd"][3])
