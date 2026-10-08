@@ -114,7 +114,10 @@ python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/qu
 
 `branch.work` now set → the chosen form was taken, or **In place** was chosen and stamped `work`
 equal to `base`; continue the loop from the returned worktree checkout when Worktree was chosen,
-never from the base checkout. No record at all → the
+never from the base checkout — and carry that path on every command of the loop (`cd <worktree> &&
+…` in the same call, `git -C <worktree>`, `cq --root <worktree>`), because the harness may return
+the shell cwd to the base checkout after each command and a cwd-dependent command would then
+measure or write the wrong tree. No record at all → the
 git command it ran failed (a name already taken, a dirty path, a locked worktree) and nothing was
 stamped — report it verbatim and stop.
 
