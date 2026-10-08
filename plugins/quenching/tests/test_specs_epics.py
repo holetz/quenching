@@ -290,7 +290,7 @@ class Scenarios:
 
     def test_an_epic_archives_as_done_only_when_every_member_is(self):
         b = self.diamond()
-        epic_body = ("## Problem\n\nx\n\n## Proposal\n\nx\n\n## Out of Scope\n\n- none — x\n"
+        epic_body = ("## Proposal\n\nx\n\n## Out of Scope\n\n- none — x\n"
                      "## Validation\n\nx\n\n## Design\n\nx\n\n## Outcome\n\nx\n")
         info, _ = b.read_spec(EPIC_ID)
         b.write_spec(info, info["text"] + epic_body)
@@ -304,7 +304,7 @@ class Scenarios:
         for n in (3, 4, 5):
             archive(b, n)
         states = self.archive_with_pr(2, "OPEN")
-        epic_body = ("## Problem\n\nx\n\n## Proposal\n\nx\n\n## Out of Scope\n\n- none — x\n"
+        epic_body = ("## Proposal\n\nx\n\n## Out of Scope\n\n- none — x\n"
                      "## Validation\n\nx\n\n## Design\n\nx\n\n## Outcome\n\nx\n")
         info, _ = b.read_spec(EPIC_ID)
         b.write_spec(info, info["text"] + epic_body)

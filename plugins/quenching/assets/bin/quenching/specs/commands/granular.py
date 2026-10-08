@@ -15,7 +15,8 @@ from quenching.specs.commands.task import _find_task
 from quenching.specs.parse import derive_info
 from quenching.specs.parse.edit import (_match_heading, fold_stray_heading,
                                         resolve_heading_name, split_section_stream,
-                                        upsert_section, write_handoff_block)
+                                        upsert_section, whole_body,
+                                        write_handoff_block)
 from quenching.specs.parse.handoff import current_handoff_section, parse_handoff
 from quenching.specs.parse.sections import section_state, stray_headings
 from quenching.specs.parse.text import body_after_frontmatter
@@ -180,6 +181,14 @@ def _read_sections(args, out: Emitter, info: dict, headings: list[str], scope) -
     return 0 if not absent else 1
 
 
+def _refuse_nested_heading(args, out: Emitter, heading: str, line: str) -> int:
+    msg = (f"the body carries `{line}` — written under `## {heading}` it would open a second "
+           "top-level section; demote it to `###` or drop it")
+    out.emit(args.json, {"ok": False, "code": "sp-write-nested-heading", "heading": heading,
+                         "line": line, "message": msg}, f"error: {msg}")
+    return 2
+
+
 def _splice_stream(args, out: Emitter, info: dict, headings: list[str],
                    content: str) -> tuple[str, list[dict]] | int:
     """The text with every streamed section spliced in, or the exit code of a refusal."""
@@ -276,6 +285,13 @@ def cmd_section(args, root: str, out: Emitter) -> int:
         return _refuse_scope(args, out, headings)
 
     content = sys.stdin.read() if not sys.stdin.isatty() else ""
+    if scope or (len(headings) == 1
+                 and not split_section_stream(content, canonical_headings())):
+        # A body written whole (scoped, or the raw singular form) is spliced under `## <heading>`
+        # by this command, so a `## ` line of its own would open a SECOND top-level section.
+        content, refusal = whole_body(content, headings[0])
+        if refusal:
+            return _refuse_nested_heading(args, out, headings[0], refusal)
     if scope:
         new_text, action = write_handoff_block(info, scope, content)
         results = [{"heading": "Handoff", "action": action}]

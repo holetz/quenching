@@ -9,8 +9,9 @@ from quenching.specs.parse import PHASES
 from quenching.specs.commands.epic import pr_states
 from quenching.specs.parse.epics import is_epic, open_items, parse_items
 from quenching.specs.parse.fields import set_frontmatter_key
-from quenching.specs.parse.sections import gate_report
-from quenching.specs.schema import OUTCOMES
+from quenching.specs.parse.text import body_after_frontmatter
+from quenching.specs.parse.sections import duplicate_headings, gate_report, section_state
+from quenching.specs.schema import OUTCOMES, canonical_headings
 
 
 def cmd_promote(args, root: str, out: Emitter) -> int:
@@ -52,6 +53,26 @@ def cmd_promote(args, root: str, out: Emitter) -> int:
         return 2
 
     gates = gate_report(info, dest)
+    # A present-but-empty section is malformed in ANY phase (`validate` reports it as an error
+    # everywhere), so the entry gate's own list is not the whole of it: an archived spec must not
+    # carry a heading that is neither an answer nor a not-yet, whichever section it is.
+    for h in canonical_headings():
+        if section_state(info["sections"], h) == "empty" and h not in gates["malformed"]:
+            gates["malformed"].append(h)
+            gates["ok"] = False
+    # A heading written twice is read as its FIRST copy only, so the gate cannot vouch for the
+    # second; `--force` does not reach it either (it only waives open tasks, below).
+    dups = duplicate_headings(body_after_frontmatter(info["text"]))
+    if dups:
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-duplicate-heading", "id": info["id"],
+                  "duplicates": dups,
+                  "message": f"cannot promote '{info['id']}' to {dest}/ — "
+                             f"{', '.join('## ' + h for h in dups)} appears more than once; "
+                             "rewrite each with `cq specs section` (the rewrite drops the copies)"},
+                 f"refused: cannot promote '{info['id']}' to {dest}/ — duplicate heading "
+                 f"{', '.join('## ' + h for h in dups)}")
+        return 2
     if not gates["ok"]:
         obj = {"ok": False, "code": "sp-gate-unmet", "id": info["id"],
                "from": info["phase"], "to": dest,
