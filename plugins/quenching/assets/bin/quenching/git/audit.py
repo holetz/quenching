@@ -14,7 +14,9 @@ driver runs; `log.showSignature` is forced off so `gpg.program` never runs; and 
 or an absent `--sha` never runs `core.sshCommand` or any other transport the config names.
 `rewrites` and `reflog` are evidence of what the worker did not erase, not proof against a worker with
 `Bash`: `git reflog delete` or `expire` removes the entries and the payload then reads empty with
-`complete: true`. A REPORT only, exit 0 on any facts, and a read that failed is
+`complete: true`. The audit, like check 9 of the verifier, catches the widening a worker that follows the
+protocol makes by mistake; it is not a sandbox against one who evades it on purpose (a worker with
+free `Bash` writes outside any diff anyway). A REPORT only, exit 0 on any facts, and a read that failed is
 an entry of the payload's `errors` (`complete: false`), never an empty list; judging them is the verifier's. Nothing here executes the
 audited branch's code: the gate is certified by CI before the merge, never by this verb."""
 from __future__ import annotations
@@ -182,6 +184,7 @@ def _split_entries(value: str) -> list[str]:
 
 
 KNOWN_KEYS = GRANT_KEYS + DENY_KEYS
+INERT_KEYS = ("name", "description", "argument-hint")   # grant, deny and change nothing: never `unknown`
 TOP_KEY = re.compile(r"^([A-Za-z_-]+):(?:\s+(.*))?$")
 LIST_ITEM = re.compile(r"^\s*-\s+")
 
@@ -255,9 +258,9 @@ def _grant_entries(text: str | None, parsed: tuple | None, agent: bool) -> set[s
 
 
 def _unknown_keys(old: dict[str, list[str]], new: dict[str, list[str]]) -> list[str]:
-    """Every key outside the known ones that the branch adds, removes or changes."""
+    """Every key outside the known and the inert ones that the branch adds, removes or changes."""
     return sorted(k for k in set(old) | set(new)
-                  if k not in KNOWN_KEYS and old.get(k) != new.get(k))
+                  if k not in KNOWN_KEYS + INERT_KEYS and old.get(k) != new.get(k))
 
 
 def _deny_entries(path: str, text: str | None, key: str = "deny") -> set[str]:
