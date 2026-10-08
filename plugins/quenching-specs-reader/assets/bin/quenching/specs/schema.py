@@ -436,7 +436,7 @@ def capture_form(template_text: str | None = None, schema: dict | None = None) -
     cosmetic: the explicit-none rule makes `- none — <reason>` count as filled, so a spec
     born with thirteen headings would derive as `designed` and pass every promote gate
     without anyone having thought anything."""
-    from quenching.specs.parse.text import HEADING_RE      # deferred: see the module docstring
+    from quenching.specs.parse.text import HEADING_RE, split_lines      # deferred: see the module docstring
     text = template_text if template_text is not None else load_template()
     gate = phase_spec("plans", schema).get("entryGate", [])
     if not gate:
@@ -457,9 +457,9 @@ def capture_form(template_text: str | None = None, schema: dict | None = None) -
 def section_guidance(heading: str, template_text: str | None = None) -> str:
     """One heading's block from the template — the heading line plus its guidance comment,
     used by `section --write` when it creates a heading that does not exist yet."""
-    from quenching.specs.parse.text import HEADING_RE      # deferred: see the module docstring
+    from quenching.specs.parse.text import HEADING_RE, split_lines      # deferred: see the module docstring
     text = template_text if template_text is not None else load_template()
-    lines = text.splitlines()
+    lines = split_lines(text)
     want = heading.strip().lower()
     start = None
     for i, line in enumerate(lines):

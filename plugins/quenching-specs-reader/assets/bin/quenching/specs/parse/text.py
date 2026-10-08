@@ -15,6 +15,18 @@ SUBHEADING_RE = re.compile(r"^\s*(?:#{1,6}\s+|\*\*\S)")
 STANDARD_PATH_RE = re.compile(r"/docs/standards/[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*\.md")
 
 
+def split_lines(text: str, keepends: bool = False) -> list[str]:
+    """Split on `\\n` only, as `str.splitlines` would for a text with no other separator.
+
+    `str.splitlines` also breaks on U+2028/U+2029/U+0085/VT/FF/FS-RS, so a task line carrying one
+    was read as two lines and lost its `files:`/`verify:` (spec 1392). A `\\r\\n` ends a line
+    too; a lone `\\r` does not."""
+    lines = re.findall(r"[^\n]*\n|[^\n]+", text)
+    if keepends:
+        return lines
+    return [ln[:-1].removesuffix("\r") if ln.endswith("\n") else ln for ln in lines]
+
+
 def strip_comments(text: str) -> str:
     return re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
 
@@ -47,7 +59,7 @@ def has_real_content(text: str) -> bool:
     `- none — <reason>` DOES count: an explicit null is an answer, and the whole
     explicit-none rule depends on this returning True for it."""
     body = strip_comments(text)
-    for line in body.splitlines():
+    for line in split_lines(body):
         s = line.strip()
         if not s or s.startswith("#"):
             continue
