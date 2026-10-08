@@ -788,6 +788,52 @@ class PullRequestPayload(unittest.TestCase):
         self.assertIn("never --force", cleanup)
 
 
+class CommitVerb(RepoCase):
+    def _commit(self, *argv):
+        return subprocess.run([sys.executable, CQ, "git", "commit", *argv, "--json"],
+                              cwd=self.repo, capture_output=True, text=True)
+
+    def _head(self):
+        return subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
+                              capture_output=True, text=True).stdout.strip()
+
+    def _stage(self, name="b.txt"):
+        with open(os.path.join(self.repo, name), "w", encoding="utf-8") as f:
+            f.write("b\n")
+        _run(self.repo, "add", name)
+
+    def test_commits_the_staged_index_and_reports_the_recorded_subject(self):
+        self._stage()
+        proc = self._commit("--subject", "plan/1-x: 1.1 Do it")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        out = json.loads(proc.stdout)
+        self.assertEqual(out["sha"], self._head())
+        self.assertEqual(out["subject"], "plan/1-x: 1.1 Do it")
+        self.assertTrue(out["subjectMatches"])
+
+    def test_refuses_an_empty_index_and_a_blank_subject(self):
+        before = self._head()
+        self.assertEqual(self._commit("--subject", "s").returncode, 2)
+        self._stage()
+        self.assertEqual(self._commit("--subject", "   ").returncode, 2)
+        self.assertEqual(self._head(), before)
+
+    def test_never_stages_on_the_callers_behalf(self):
+        with open(os.path.join(self.repo, "a.txt"), "a", encoding="utf-8") as f:
+            f.write("changed\n")
+        self.assertEqual(self._commit("--subject", "s").returncode, 2)
+
+    def test_hooks_run_and_a_failing_hook_leaves_head_unchanged(self):
+        hook = os.path.join(self.repo, ".git", "hooks", "pre-commit")
+        with open(hook, "w", encoding="utf-8") as f:
+            f.write("#!/bin/sh\nexit 1\n")
+        os.chmod(hook, 0o755)
+        before = self._head()
+        self._stage()
+        self.assertEqual(self._commit("--subject", "s").returncode, 1)
+        self.assertEqual(self._head(), before)
+
+
 class CommitSubjectContract(unittest.TestCase):
     def test_omitted_subject_derives_or_refuses_without_a_question(self):
         command = COMMIT_COMMAND.read_text(encoding="utf-8").lower()
