@@ -167,8 +167,18 @@ class Scenarios:
         return {str(spec_id): state} if state else {}
 
     def status_with(self, states):
-        with mock.patch.object(epic_cmd, "pr_states", return_value=states):
-            return run(read_cmd.cmd_status, self.backend, epic=EPIC_ID, spec=None)[1]
+        spy = mock.Mock(return_value=states)
+        with mock.patch.object(epic_cmd, "pr_states", spy):
+            got = run(read_cmd.cmd_status, self.backend, epic=EPIC_ID, spec=None)[1]
+        self.assert_asked_from_the_root(spy)
+        return got
+
+    def assert_asked_from_the_root(self, spy):
+        """The PR lookup must carry `--root`, or it reads the cwd's repository instead."""
+        spy.assert_called()
+        for call in spy.call_args_list:
+            self.assertEqual(tempfile.gettempdir(), call.args[1] if len(call.args) > 1
+                             else call.kwargs.get("root"))
 
     def test_an_archived_member_whose_pr_is_open_is_unmerged_and_holds_its_dependents(self):
         self.diamond()
@@ -299,8 +309,10 @@ class Scenarios:
         info, _ = b.read_spec(EPIC_ID)
         b.write_spec(info, info["text"] + epic_body)
         kw = dict(spec=EPIC_ID, to=None, outcome="done", force=False, dry_run=True)
-        with mock.patch.object(promote_cmd, "pr_states", return_value=states):
+        spy = mock.Mock(return_value=states)
+        with mock.patch.object(promote_cmd, "pr_states", spy):
             code, got = run(promote_cmd.cmd_promote, b, **kw)
+        self.assert_asked_from_the_root(spy)
         self.assertEqual((2, "sp-open-tasks"), (code, got.get("code")))
         self.assertEqual("unmerged", got["openTasks"][0]["state"])
 
@@ -366,10 +378,6 @@ class PureDerivation(unittest.TestCase):
         self.assertIn("sp-epic-manual-tick", {f["code"] for f in report["findings"]})
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class PrStatesTarget(unittest.TestCase):
     def member(self, rec):
         return {"phase": "archive", "frontmatter": {"pr": rec}}
@@ -394,3 +402,7 @@ class PrStatesTarget(unittest.TestCase):
         url = "https://github.com/o/r/pull/5"
         _, seen = self.call({"number": 5, "url": url}, "/some/repo")
         self.assertEqual(url, seen["cmd"][3])
+
+
+if __name__ == "__main__":
+    unittest.main()
