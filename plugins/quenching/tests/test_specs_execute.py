@@ -106,6 +106,19 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertIn("pass `--outcome done` to `/quenching:specs:conclude` only when execute left every task checked", runner)
         self.assertIn("never `--force`, never `abandoned` on your own", runner)
 
+    def test_conclude_runs_in_its_own_spawn(self):
+        runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
+        orchestrator = " ".join(
+            (ROOT / "plugins/quenching/agents/orchestrator.md").read_text(encoding="utf-8").split())
+
+        self.assertIn("`NOTE: execute-done:", runner)
+        self.assertIn("Given the word `conclude`, skip develop and execute", runner)
+        self.assertIn("A `continue` for budget carries no `execute-done:`", runner)
+        self.assertIn("NOTE starting `execute-done:`", orchestrator)
+        self.assertIn("whose prompt carries the word `conclude`", orchestrator)
+        self.assertIn("with `model` passed explicitly", orchestrator)
+        self.assertIn("call the `verifier` only after it returns", orchestrator)
+
     def test_explicit_subject_commits_only_staged_files(self):
         with tempfile.TemporaryDirectory() as directory:
             git(directory, "init", "-q", "-b", "main")
