@@ -1566,6 +1566,22 @@ class PullRequestVerbs(RepoCase):
                                         "--body-file=-"])
         self.assertEqual(call["stdin"], "Closes #1")
 
+    def _store_spec(self) -> tuple[str, list]:
+        # A fixture `git` store (branch `quenching` over a local bare origin).
+        origin = os.path.join(self.tmp, "origin.git")
+        subprocess.run(["git", "init", "-q", "--bare", origin], check=True)
+        _run(self.repo, "remote", "add", "origin", origin)
+        os.makedirs(os.path.join(self.repo, ".claude"))
+        pathlib.Path(self.repo, ".claude", "quenching.json").write_text(
+            '{"backend": "git"}', encoding="utf-8")
+        specs = [sys.executable, CQ, "specs", "--root", self.repo]
+        made = subprocess.run([*specs, "new", "fixture", "--json"], cwd=self.repo,
+                              capture_output=True, text=True, env=self.env,
+                              stdin=subprocess.DEVNULL, timeout=60)
+        self.assertEqual(made.returncode, 0, made.stdout + made.stderr)
+        spec = str(json.loads(made.stdout)["id"])
+        return spec, specs
+
     def test_create_with_spec_stamps_the_pr_record_through_cmd_record(self):
         from quenching.git import pull
         seen = []
@@ -1579,6 +1595,7 @@ class PullRequestVerbs(RepoCase):
         with mock.patch.object(pull, "_gh",
                                return_value=(0, self.URL + "\n", "")), \
                 mock.patch.object(pull, "cmd_record", side_effect=record), \
+                mock.patch.object(pull, "_spec_vs_head", return_value=None), \
                 mock.patch.object(pull, "_branch_ok", return_value=True), \
                 contextlib.redirect_stdout(io.StringIO()) as out:
             code = pull.cmd_pr(SimpleNamespace(action="create", **vars(args)))
@@ -1590,20 +1607,8 @@ class PullRequestVerbs(RepoCase):
         self.assertEqual(json.loads(out.getvalue())["pr"], {"ok": True, "value": {"number": 42}})
 
     def test_create_with_spec_writes_the_pr_record_a_real_store_reads_back(self):
-        # No mock of cmd_record: a fixture `git` store (branch `quenching` over a local bare
-        # origin), a fake `gh` on PATH, and the record read back through `cq specs record`.
-        origin = os.path.join(self.tmp, "origin.git")
-        subprocess.run(["git", "init", "-q", "--bare", origin], check=True)
-        _run(self.repo, "remote", "add", "origin", origin)
-        os.makedirs(os.path.join(self.repo, ".claude"))
-        pathlib.Path(self.repo, ".claude", "quenching.json").write_text(
-            '{"backend": "git"}', encoding="utf-8")
-        specs = [sys.executable, CQ, "specs", "--root", self.repo]
-        made = subprocess.run([*specs, "new", "fixture", "--json"], cwd=self.repo,
-                              capture_output=True, text=True, env=self.env,
-                              stdin=subprocess.DEVNULL, timeout=60)
-        self.assertEqual(made.returncode, 0, made.stdout + made.stderr)
-        spec = str(json.loads(made.stdout)["id"])
+        # No mock of cmd_record: a real store, a fake `gh` on PATH, the record read back.
+        spec, specs = self._store_spec()
         proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/1-x",
                    "--title", "t", "--body", "Closes #1", "--spec", spec, env=self.env)
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
@@ -1615,6 +1620,57 @@ class PullRequestVerbs(RepoCase):
         value = json.loads(read.stdout)["value"]
         self.assertEqual((str(value["number"]), value["url"]), ("42", self.URL))
 
+    def _read_pr(self, specs, spec):
+        return subprocess.run([*specs, "record", spec, "pr", "--json"], cwd=self.repo,
+                              capture_output=True, text=True, env=self.env,
+                              stdin=subprocess.DEVNULL, timeout=60)
+
+    def test_create_with_an_unknown_spec_opens_no_pr(self):
+        spec, specs = self._store_spec()
+        proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/999-x",
+                   "--title", "t", "--spec", "999", "--json", env=self.env)
+        self.assertEqual(proc.returncode, 2, proc.stdout + proc.stderr)
+        self.assertEqual(json.loads(proc.stdout)["code"], "git-pr-spec-unknown")
+        self.assertEqual(self._calls(), [])
+
+    def test_create_with_a_spec_that_does_not_own_the_head_opens_no_pr(self):
+        spec, specs = self._store_spec()
+        other = f"plan/{int(spec) + 1}-other"
+        proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", other,
+                   "--title", "t", "--spec", spec, "--json", env=self.env)
+        self.assertEqual(proc.returncode, 2, proc.stdout + proc.stderr)
+        self.assertEqual(json.loads(proc.stdout)["code"], "git-pr-spec-head-mismatch")
+        self.assertEqual(self._calls(), [])
+        self.assertNotEqual(self._read_pr(specs, spec).returncode, 0)
+
+    def test_record_stamps_the_azure_pr_through_the_same_function(self):
+        spec, specs = self._store_spec()
+        url = "https://dev.azure.com/o/p/_git/r/pullrequest/7"
+        proc = _cq(self.repo, "pr", "record", "--spec", spec, "--head", f"plan/{spec}-x",
+                   "--number", "7", "--url", url, "--json", env=self.env)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertEqual(self._calls(), [])
+        value = json.loads(self._read_pr(specs, spec).stdout)["value"]
+        self.assertEqual((str(value["number"]), value["url"]), ("7", url))
+
+    def test_record_refuses_a_wrong_spec_head_or_api_url_and_writes_nothing(self):
+        spec, specs = self._store_spec()
+        good = "https://dev.azure.com/o/p/_git/r/pullrequest/7"
+        for argv, code in (
+                (("--spec", "999", "--head", "plan/999-x", "--number", "7", "--url", good),
+                 "git-pr-spec-unknown"),
+                (("--spec", spec, "--head", f"plan/{int(spec) + 1}-x", "--number", "7",
+                  "--url", good), "git-pr-spec-head-mismatch"),
+                (("--spec", spec, "--head", f"plan/{spec}-x", "--number", "7",
+                  "--url", "https://dev.azure.com/o/_apis/git/pullRequests/7"),
+                 "git-pr-record-invalid"),
+                (("--spec", spec, "--head", f"plan/{spec}-x", "--number", "0", "--url", good),
+                 "git-pr-record-invalid")):
+            proc = _cq(self.repo, "pr", "record", *argv, "--json", env=self.env)
+            self.assertEqual(proc.returncode, 2, (argv, proc.stdout))
+            self.assertEqual(json.loads(proc.stdout)["code"], code)
+        self.assertNotEqual(self._read_pr(specs, spec).returncode, 0)
+
     def test_a_refused_stamp_keeps_the_pr_facts_and_exits_1(self):
         from quenching.git import pull
 
@@ -1623,6 +1679,7 @@ class PullRequestVerbs(RepoCase):
             return 2
         with mock.patch.object(pull, "_gh", return_value=(0, self.URL + "\n", "")), \
                 mock.patch.object(pull, "cmd_record", side_effect=record), \
+                mock.patch.object(pull, "_spec_vs_head", return_value=None), \
                 mock.patch.object(pull, "_branch_ok", return_value=True), \
                 contextlib.redirect_stdout(io.StringIO()) as out:
             code = pull.cmd_pr(SimpleNamespace(action="create", base="main", head="x", title="t",
