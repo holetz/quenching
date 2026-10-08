@@ -104,6 +104,21 @@ class TheCollapsedCapture(_Workspace):
             cmd_new(_Args(json=False), self.root, Emitter())
         self.assertIn(f"id: {max(self.backend.docs)}", buf.getvalue())
 
+    def _human(self, stdin):
+        buf, stream = io.StringIO(), io.StringIO(stdin)
+        stream.isatty = lambda: not stdin
+        with mock.patch("sys.stdin", stream), redirect_stdout(buf):
+            cmd_new(_Args(json=False), self.root, Emitter())
+        return buf.getvalue()
+
+    def test_a_problem_carried_on_stdin_is_not_told_to_be_written(self):
+        out = self._human("## Problem\n\nx\n")
+        self.assertNotIn("write ## Problem", out)
+        self.assertIn("validate", out)
+
+    def test_a_bare_capture_is_still_told_to_write_the_problem(self):
+        self.assertIn("write ## Problem", self._human(""))
+
     def test_the_subject_s_fixed_tags_are_folded_into_an_explicit_tags_list(self):
         # No declared `subjects` in this bare workspace, so nothing to fold in here beyond
         # what was typed — this proves `--tags` alone still lands as the whole list, exactly
