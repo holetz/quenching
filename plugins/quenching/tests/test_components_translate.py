@@ -146,6 +146,29 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn("ct-translation-refused", out.getvalue())
 
+    def test_damaged_manifest_never_raises_a_traceback(self):
+        for payload in ({"files": [], "sha256": ["x"]}, {"files": [], "sha256": "x"}):
+            with self.subTest(payload=payload):
+                self._manifest(payload)
+                self.assertEqual(translate.reconciliation(translate.generated_tree()), "untracked")
+
+    def test_directory_entry_in_manifest_is_skipped_not_fatal(self):
+        self._manifest({"files": ["skills"]})
+        translate.write_tree(translate.generated_tree())
+        self.assertTrue((self.root / ".agents" / "skills").is_dir())
+        self.assertEqual(translate.differences(translate.generated_tree()), [])
+
+    def test_manifest_with_conflict_markers_is_regenerated(self):
+        self._manifest({})
+        manifest = self.root / ".agents" / ".generated-files.json"
+        manifest.write_text("<<<<<<< HEAD\n{}\n=======\n{}\n>>>>>>> main\n", encoding="utf-8")
+        stale = self.root / ".agents" / "skills" / "gone" / "SKILL.md"
+        stale.parent.mkdir(parents=True)
+        stale.write_text("old", encoding="utf-8")
+        translate.write_tree(translate.generated_tree())
+        self.assertFalse(stale.exists())
+        self.assertIn("files", json.loads(manifest.read_text(encoding="utf-8")))
+
     def test_coexisting_surfaces_are_clean_after_generation(self):
         translate.configure(str(self.root), str(self.root))
         translate.write_tree(translate.generated_tree())
