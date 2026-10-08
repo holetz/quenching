@@ -80,7 +80,7 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
 8. **Telemetry.** Record tokens per worker from each result, with the worker's model tier beside
    it, and stop when the run's budget is hit. Tokens of different tiers are never added into one
    number: report them per model, and take the cost by agent type, model and window from
-   `cq components session cost <session id>` over the subagent transcripts of its own session (the id of the transcript it runs in); without an id the verb refuses when several sessions have subagents.
+   `cq components session cost "$CLAUDE_CODE_SESSION_ID"` over the subagent transcripts of its session (the harness exposes the session id to a subagent's Bash in that variable). Never guess an id: an empty variable or a refusal from the verb means the cost is reported as `not measured`, and the conductor reads it from its own session.
 
 ## Hard prohibitions
 
