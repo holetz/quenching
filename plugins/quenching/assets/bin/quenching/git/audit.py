@@ -7,8 +7,9 @@ A wildcard grant such as `Bash(git -C * status:*)` admits any git command that m
 module, refs are resolved to commits before use, and the repository's own config cannot run a
 command during the read: the `filter.<x>` drivers it declares are blanked before `status` through
 `GIT_CONFIG_COUNT`, which carries a key containing `=` that `-c key=value` would split, and `status`
-does not descend into submodules (their own config is not ours to blank); `log.showSignature` is
-forced off so `gpg.program` never runs; and a partial clone's lazy fetch is off
+does not descend into submodules (their own config is not ours to blank); every diff and show
+read carries `--no-ext-diff --no-textconv`, so neither `diff.external` nor a `diff.<x>.textconv`
+driver runs; `log.showSignature` is forced off so `gpg.program` never runs; and a partial clone's lazy fetch is off
 (`GIT_NO_LAZY_FETCH`, and `GIT_ALLOW_PROTOCOL` empty refuses every transport), so a missing blob
 or an absent `--sha` never runs `core.sshCommand` or any other transport the config names.
 `rewrites` and `reflog` are evidence of what the worker did not erase, not proof against a worker with
@@ -52,7 +53,7 @@ def _lines(cwd: str, *argv: str, env: dict[str, str] | None = None,
 
 def _paths(cwd: str, rng: str, env: dict[str, str], errors: list[dict]) -> list[str]:
     """The paths a range changes, read with `-z` so a non-ASCII path arrives raw, never quoted."""
-    code, out, err = _git_run(cwd, *SAFE, "diff", "--name-only", "-z", "--no-renames", rng, env=env)
+    code, out, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "--name-only", "-z", "--no-renames", rng, env=env)
     if code != 0:
         errors.append(_error(("diff", "--name-only"), code, err))
         return []
@@ -155,10 +156,12 @@ def _inert_env(cwd: str, errors: list[dict] | None = None) -> dict[str, str]:
     return env
 
 
-FRONTMATTER_GRANT = re.compile(r"(^|/)(agents/[^/]+|commands/.+)\.md$|(^|/)skills/.+/SKILL\.md$")
-AGENT = re.compile(r"(^|/)agents/[^/]+\.md$")
+FRONTMATTER_GRANT = re.compile(r"(^|/)(agents|commands)/.+\.md$|(^|/)skills/.+/skill\.md$", re.I)
+AGENT = re.compile(r"(^|/)agents/.+\.md$", re.I)
+SYMLINK = "120000"
 SETTINGS = re.compile(r"^\.claude/settings[^/]*\.json$")
-SURFACE = re.compile(r"^\.github/workflows/|^\.claude/settings[^/]*\.json$|(^|/)hooks/")
+SURFACE = re.compile(r"^\.github/workflows/|^\.claude/settings[^/]*\.json$|(^|/)hooks/"
+                     r"|(^|/)\.claude-plugin/[^/]+\.json$|(^|/)\.(mcp|lsp)\.json$")
 GRANT_KEYS = ("tools", "allowed-tools")
 DENY_KEYS = ("disallowedTools",)
 DOCS = re.compile(r"^docs/")
@@ -282,22 +285,34 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
             errors: list[dict]) -> list[dict]:
     """Every entry the branch ADDS to the grant surface against its merge-base with `base`:
     `tools:`/`allowed-tools:` of an agent, command or skill (an agent with no `tools:` is `*`), a
-    deny rule removed (`kind: deny`), and the added lines of a hook or CI workflow. What it does not
+    deny rule removed (`kind: deny`), and the added lines of a hook, a CI workflow, a
+    `.claude-plugin/*.json` manifest or a `.mcp.json`/`.lsp.json` server config. What it does not
     understand fails closed as `kind: unknown`: any other frontmatter key added, removed or changed
     (its name), a changed block it cannot read whole (`(unparsed frontmatter)`), and a sensitive
-    file deleted (`(deleted)`). Narrowing and unchanged never appear."""
+    file deleted (`(deleted)`), and every symlink the branch adds or repoints, at any path
+    (`(symlink)`), its target never read. Narrowing and unchanged never appear."""
     code, out, err = _git_run(cwd, *SAFE, "merge-base", base, tip, env=env)
     if code != 0 or not out.strip():
         errors.append(_error(("merge-base", base), code, err or "no common ancestor"))
         return []
     fork = out.strip()
+    code, out, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "--raw", "-z",
+                              "--no-renames", f"{fork}..{tip}", env=env)
+    if code != 0:
+        errors.append(_error(("diff", "--raw"), code, err))
+    fields = out.split("\0") if code == 0 else []
+    symlinks = {fields[i + 1] for i in range(0, len(fields) - 1, 2)
+                if fields[i].split(" ")[1:2] == [SYMLINK]}
 
     def show(rev: str, path: str) -> str | None:
-        code, text, _e = _git_run(cwd, *SAFE, "show", f"{rev}:{path}", env=env)
+        code, text, _e = _git_run(cwd, *SAFE, "show", "--no-textconv", f"{rev}:{path}", env=env)
         return text if code == 0 else None
 
     found = []
     for path in changed:
+        if path in symlinks:   # its target is never read: a link into the tree or a directory fails closed
+            found.append({"path": path, "kind": "unknown", "added": ["(symlink)"]})
+            continue
         frontmatter = FRONTMATTER_GRANT.search(path) and not DOCS.match(path)
         surface = SURFACE.search(path)
         if not (frontmatter or surface):
@@ -334,8 +349,8 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
                 if removed:
                     found.append({"path": path, "kind": kind, "added": removed})
         if surface:
-            code, out, err = _git_run(cwd, *SAFE, "diff", "-U0", "--no-renames", f"{base}...{tip}",
-                                      "--", path, env=env)
+            code, out, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "-U0",
+                                      "--no-renames", f"{base}...{tip}", "--", path, env=env)
             if code != 0:
                 errors.append(_error(("diff", "-U0"), code, err))
                 continue
