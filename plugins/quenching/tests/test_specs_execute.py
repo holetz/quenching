@@ -17,6 +17,7 @@ COMMAND = ROOT / "plugins/quenching/commands/specs/execute.md"
 REFERENCE = ROOT / "plugins/quenching/assets/references/specs-execute/execution.md"
 CONCLUDE = ROOT / "plugins/quenching/commands/specs/conclude.md"
 SCALE = ROOT / "plugins/quenching/assets/references/specs-develop/spec-driven.md"
+RUNNER = ROOT / "plugins/quenching/agents/spec-runner.md"
 
 
 def git(cwd, *args):
@@ -84,6 +85,25 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertIn("do not invoke it", conclude)
         self.assertIn('Skill("quenching:git:pr:create", "<id>")', scale)
         self.assertIn("The other levels retain", scale)
+
+    def test_autonomous_conclude_answers_every_question_without_inferring_the_outcome(self):
+        conclude = " ".join(CONCLUDE.read_text(encoding="utf-8").split())
+        runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
+
+        self.assertIn("## Under `autonomous`", conclude)
+        for row in (
+            "| Step 1 — the outcome | taken **only** from the input's `--outcome`",
+            "| Step 3 — the emergent `/docs/` plan |",
+            "| Step 4 — the `## Outcome` draft | written unconfirmed",
+            "| Step 5 — the distillation plan |",
+            "| Step 5 — the release obligations |",
+            "| Step 6 — branch behind its base, or an inconclusive check | `needs-human`",
+            "| Step 6 — the abandoned branch-delete offer | keep",
+        ):
+            self.assertIn(row, conclude)
+        self.assertIn("`autonomous` never supplies an outcome", conclude)
+        self.assertIn("pass `--outcome done` to `/quenching:specs:conclude` only when execute left every task checked", runner)
+        self.assertIn("never `--force`, never `abandoned` on your own", runner)
 
     def test_explicit_subject_commits_only_staged_files(self):
         with tempfile.TemporaryDirectory() as directory:
