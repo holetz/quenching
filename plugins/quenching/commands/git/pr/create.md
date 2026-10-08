@@ -2,7 +2,7 @@
 description: >-
   Push the branch and open a PR on GitHub or Azure DevOps against the resolved base. Use for "open a PR", "create a pull request", "submit this for review". Not for: merging → /quenching:git:merge.
 argument-hint: [id-or-title] [remote:<name>]
-allowed-tools: Bash(cq:*), Bash(git push:*), Bash(git remote:*), Bash(gh repo view:*), Bash(gh pr create:*), Bash(az repos pr:*), Bash(python3:*), Read, AskUserQuestion
+allowed-tools: Bash(cq:*), Bash(gh repo view:*), Bash(az repos pr:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
 # /quenching:git:pr:create — push and open the pull request
@@ -27,8 +27,7 @@ cq specs config --json
 cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
   --sections "§The declared-directive layer"
 cq git conventions --json   # `config.prTitle`, `config.prBody`
-git remote -v
-git remote get-url <remote>
+cq git state --json   # `remotes`: every remote and its URL
 cq git base --json
 ```
 After reading the config, run only the matching provider probe, after confirming the selected remote's host
@@ -47,7 +46,8 @@ cq specs section "<id>" \
   "Problem,Proposal,Impact,Validation,Tasks" --json
 ```
 The status payload supplies the spec `title`, `path`, `branch` facts and task counts. The section
-payload supplies the text.
+payload supplies the text. A caller without the `cq specs section` grant (the `git-steward`) reads
+the same sections through `cq specs show --spec "<id>" --full`, a verb with no write flag.
 
 §The declared-directive layer's table governs each of the two artifacts independently:
 `config.prTitle` and `config.prBody` from step 1 where declared, else the target's docs, else the
@@ -91,9 +91,9 @@ For Azure, show the work item id, whether the separate source-branch deletion of
 (`--delete-source-branch true`), and whether `--transition-work-items true` is included in the
 command the human is confirming. The deletion offer defaults to preserve the branch.
 ```bash
-git push -u <remote> <branch>
+cq git push --branch <branch> --remote <remote> --json
 # github
-gh pr create --base <base> --head <branch> --title "<title>" --body "<body>"
+cq git pr create --base <base> --head <branch> --title "<title>" --body "<body>" --json
 # azure-boards
 az repos pr create --detect true --source-branch <branch> --target-branch <base> \
   --title "<title>" --description "<body>" [--delete-source-branch true] [--work-items <n>] \
@@ -104,7 +104,9 @@ to `id`, `webUrl` and `apiUrl` before reporting it: show `webUrl` as **Link para
 `apiUrl` as **API URL**. For Azure, `webUrl` is
 `repository.webUrl/pullrequest/pullRequestId`, while the response's `url` remains `apiUrl`; never
 show a URL containing `/_apis/` as the Link para revisão. The target branch is explicit
-on both routes: `--base` for GitHub and `--target-branch` for Azure; neither may be omitted. The source is explicit too: `--head <branch>` on GitHub, so the PR leaves the branch resolved in step 1 and never the one the cwd happens to hold; run from a worktree, `git -C <worktree>` carries the push. Read
+on both routes: `--base` for GitHub and `--target-branch` for Azure; neither may be omitted. The source is explicit too: `--head <branch>` on GitHub, so the PR leaves the branch resolved in step 1 and never the one the cwd happens to hold; run from a worktree, `cd <worktree> && cq git push --branch <branch> …` carries the push. `cq git push` publishes
+`refs/heads/<branch>` under its own name with upstream and never forces; `cq git pr create`
+returns the PR's `number` and `url`. Read
 the created PR's `id`, `webUrl` and `apiUrl` from the normalized JSON/CLI result. **Done when:**
 the PR exists, or the
 push/create failed and its error is reported verbatim.
@@ -133,7 +135,7 @@ are named.
 - Never route an Azure repository through `gh`, or a GitHub repository through `az`.
 - Publish to the selected remote (`origin` when omitted); never silently substitute another
   remote or treat a branch name as one.
-- Never omit `--base` on `gh pr create` or `--target-branch` on `az repos pr create`.
+- Never omit `--base` on `cq git pr create` or `--target-branch` on `az repos pr create`.
 - Never pass `--delete-source-branch true` by default. Offer it as a separate choice, explain that
   it removes the source branch after completion, and include it only when the human confirms that
   exact deletion.

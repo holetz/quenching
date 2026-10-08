@@ -17,8 +17,9 @@ the default names, `worktreeSetup`, and the two records a taken isolation leaves
 than restated; this command is its standalone entry point for a caller with no build loop of its own.
 
 **Why `Bash` is unrestricted here.** `allowed-tools` grants bare `Bash` because step 4 runs a target-declared `worktreeSetup` — an
-arbitrary command this file cannot scope in advance — beside `git worktree`/`git checkout`,
-`cq specs record` and `cq git specs`, which share no one prefix to scope to instead.
+arbitrary command this file cannot scope in advance — beside `git checkout` (the **Branch** form)
+and the `cq` verbs. Every git step the `git-steward` runs here is a `cq git` verb with a fixed
+argv (`state`, `worktree add`, `specs`), so the steward needs no `Bash(git …)` grant.
 
 ## Workflow
 
@@ -30,12 +31,11 @@ cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/isolation.md \
 cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
   --sections "§The declared-directive layer" --sections "§The read-if-present rule"
 cq git conventions --json   # `config.branchName`, or absent
-git status --porcelain
-git branch --show-current
+cq git state --json           # `branch`, `status` (porcelain), `staged`, `remotes`
 cq git base --json
 cq specs config --json        # `worktreeSetup`, `sharedPaths`, or their empty values — exit 0 either way
 ```
-`git status --porcelain` non-empty → refuse, name the offending paths, and stop; isolating a dirty
+`status` non-empty → refuse, name the offending paths, and stop; isolating a dirty
 tree carries whatever was already sitting there into the first commit on the new ref, silently.
 **Done when:** the rules are loaded, the tree is confirmed clean, and the base branch is resolved.
 
@@ -58,7 +58,7 @@ kebab-case name derived from `$ARGUMENTS` or asked for without one — the workt
 `worktreeSetup` non-null — the setup command **verbatim**; `sharedPaths` non-empty — the declared
 paths **verbatim**. Then ask with **AskUserQuestion**:
 
-- **Worktree** *(default, recommended)* — `git worktree add ../<repo>-<name> -b <branch>`.
+- **Worktree** *(default, recommended)* — `cq git worktree add --path ../<repo>-<name> --branch <branch> --base <base>`.
 - **Branch** — `git checkout -b <branch>`, work continues in this checkout.
 - **In place** — declines isolation; nothing is created.
 
@@ -75,21 +75,18 @@ the chosen form.
 
 ### 4. Take it, run the setup, and stamp
 Run the one command for the chosen form; a failure (name taken, dirty path, locked worktree) is
-reported verbatim and nothing is stamped. **Under `autonomous`, the cut starts from the remote
-base**, because a PR merged through `gh` moves no local ref and the local `<base>` may miss the
-dependency the run waited on:
+reported verbatim and nothing is stamped. **The Worktree cut starts from the remote base**, because
+a PR merged through `gh` moves no local ref and the local `<base>` may miss the dependency the run
+waited on:
 ```bash
-if git remote get-url origin >/dev/null 2>&1; then
-  git fetch origin <base> && git worktree add <path> -b <branch> --no-track origin/<base>
-else
-  echo "NO-REMOTE"   # then: git worktree add <path> -b <branch> <base>
-fi
+cq git worktree add --path <path> --branch <branch> --base <base> --json
 ```
-`--no-track` keeps `origin/<base>` from becoming the branch's upstream, so a push without an
-explicit destination never targets the base. A fetch error is reported and stops the run; only a
-missing `origin` falls back to the local `<base>`, and the report says so. On **Worktree**, immediately after `git worktree add`,
-run `cq git worktree link --json` with cwd inside the new worktree. A link failure is reported
-verbatim and does not undo the worktree; stop this flow before running `worktreeSetup`. When the
+The verb fetches `origin <base>`, cuts `<branch>` from the fetched tip resolved to a commit — so
+the branch has no upstream and a push without an explicit destination never targets the base —
+and links the declared shared paths inside the new worktree. A fetch error is exit 2 and stops the
+run; only a missing `origin` falls back to the local `<base>` (`fromRemote: false`, the
+`NO-REMOTE` line), and the report says so. A link failure is exit 1 with `linkRefusal`: it does not
+undo the worktree, and it stops this flow before running `worktreeSetup`. When the
 link succeeds, run a declared `worktreeSetup` once with cwd inside the new worktree; a failing
 setup does not undo the worktree — report both facts separately. **A worktree outside the project
 directory is not the shell's cwd:** the harness may return the cwd to the base checkout after every

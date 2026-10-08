@@ -3,9 +3,7 @@ description: >-
   Commit what is already staged under the repo's commit convention. Use for "commit this", "make a commit", "wrap this up in a commit". Not for: staging, merging or pushing → /quenching:git:merge.
 argument-hint: [subject]
 allowed-tools: >-
-  Bash(cq:*),
-  Bash(git status:*), Bash(git branch --show-current:*), Bash(git diff:*), Bash(git commit:*),
-  Bash(git log:*), Bash(python3:*), Read
+  Bash(cq:*), Bash(python3:*), Read
 hooks:
   PreToolUse:
     - matcher: Bash
@@ -34,7 +32,7 @@ never a guess at which files belong together.
 cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
   --sections "§The declared-directive layer" --sections "§The read-if-present rule"
 cq git conventions --json
-git diff --cached --name-only
+cq git state --json   # `staged` is the index, `branch` the current branch
 ```
 One `cq git conventions` call answers both declared layers: `config.commitSubject` is the target's
 directive for this artifact, `governs`/`declared` the docs layer. Nothing staged → refuse: name that
@@ -53,8 +51,7 @@ cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md --secti
 title allows; an explicit subject always wins. When it is omitted, resolve the current branch and
 its `quenching-specs:` mark:
 ```bash
-git branch --show-current
-cq git specs <current-branch> --json
+cq git specs <current-branch> --json   # <current-branch>: `branch` from step 1's `cq git state`
 cq specs next --spec <spec-id> --json
 ```
 If that produces exactly one spec and one actionable task, derive the subject with the governing
@@ -67,8 +64,10 @@ the refusal is reported.
 
 ### 3. Commit
 ```bash
-git commit -m "<subject>" && git log -1 --format=%s
+cq git commit --subject "<subject>" --json
 ```
+The verb reports the `sha`, the `subject` git recorded and `subjectMatches`; exit 1 is git refusing
+the commit (a hook, an identity) with HEAD unchanged, exit 2 a blank subject or an empty index.
 Execute immediately after the staged-diff and hygiene checks; a resolvable omitted subject does
 not add a confirmation question. The command commits the existing index only — it never stages
 files, amends history, or bypasses hooks.
