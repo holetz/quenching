@@ -362,6 +362,9 @@ class CqCallsAgainstTheParsers(unittest.TestCase):
         for line in ("we no more run `cq specs bogus`", "it will no more call `cq specs bogus`"):
             self.assertEqual(self._codes(line), [], line)
 
+    def test_no_more_than_is_a_limit_and_requires_the_call(self):
+        self.assertEqual(self._codes("Run no more than one `cq specs bogus` per task."), ["sk-cq-unknown-verb"])
+
     def test_a_bare_skip_still_negates(self):
         self.assertEqual(self._codes("the runner skips `cq specs bogus`"), [])
 
