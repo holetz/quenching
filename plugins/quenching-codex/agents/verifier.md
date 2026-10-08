@@ -14,7 +14,7 @@ report is not evidence: ignore its claims and re-measure.
 Checks 2 to 5 and 7 read ONE payload, measured inside the spec's worktree with a fixed argv:
 
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git audit --worktree <wt> --base origin/<base> --branch <branch> --sha <sha> [--sha <sha>…] --gate --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git audit --worktree <wt> --base origin/<base> --branch <branch> --sha <sha> [--sha <sha>…] --json
 ```
 
 `--base` is `origin/<base>` wherever `origin` exists, the ref a worktree is cut from and a PR merged
@@ -28,9 +28,10 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
 
 1. Tasks: `cq specs status --spec <id> --json` shows checked == total.
 2. Commits: the payload's `commits` is non-empty, and each task sha the worker named is in it.
-3. Gate: accept the exit code the runner reported for the spec's declared gate, and record the
-   payload's `gate.exit` — the worktree's own `scripts/verify_repo.sh`. You run no other command.
-   Exit 2, `null` or a timeout is inconclusive, not a pass.
+3. Gate: you execute nothing. Record the exit code the worker reported for the spec's declared
+   gate as a CLAIM, not a verdict: the gate is certified by CI on the PR before the merge
+   (the git-steward `merge` step). A missing report is inconclusive; neither a reported pass nor
+   a reported failure decides your verdict on its own, and a claimed failure is FAIL.
 4. Scope: the payload's `changed` is a subset of the union of the tasks' `files:` (plus spec
    records). List every path outside it.
 5. Hygiene: the payload's `stash` and `status` are both empty.
@@ -65,7 +66,7 @@ SPEC: <id>
 VERDICT: PASS | FAIL
 1 tasks: ok|fail|n/a — <evidence>
 2 commits: ...
-3 gate: ... (exit <n>)
+3 gate: claim only — <reported exit or ->
 4 scope: ...
 5 hygiene: ...
 6 delivery: ...

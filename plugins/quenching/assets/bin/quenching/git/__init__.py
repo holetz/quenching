@@ -69,15 +69,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp = sub.add_parser("audit", help="the verifier's facts inside one registered worktree — "
                                        "status, stash, commits, scope, ancestry, reflog; "
-                                       "`--gate` also runs its scripts/verify_repo.sh")
+                                       "runs no code of the audited branch")
     sp.add_argument("--worktree", required=True, metavar="PATH",
                     help="a worktree this repository registers")
     sp.add_argument("--base", required=True, metavar="REF", help="the base the branch merges into")
     sp.add_argument("--branch", required=True, metavar="BRANCH", help="the spec's work branch")
     sp.add_argument("--sha", action="append", default=[], metavar="SHA",
                     help="a sha the worker reported; repeat for each")
-    sp.add_argument("--gate", action="store_true",
-                    help="run the worktree's scripts/verify_repo.sh and report its exit code")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     return p
