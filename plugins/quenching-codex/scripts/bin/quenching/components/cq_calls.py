@@ -168,6 +168,7 @@ def _check(parser: argparse.ArgumentParser, tokens: list[str], call: Call,
     sub = _subparsers(parser)
     seen: set[int] = set()
     valued = False
+    positional = False
     index = 0
     while index < len(tokens):
         token = tokens[index]
@@ -190,12 +191,17 @@ def _check(parser: argparse.ArgumentParser, tokens: list[str], call: Call,
                                 f"`{token}` is not a verb of `{path}` (known: {known})")]
             return _check(sub.choices[token], tokens[index + 1:], call, f"{path} {token}")
         else:
-            valued = True
+            valued = positional = True
         index += 1
     if sub is not None or (call.inline and not valued):
         return []  # a span naming the verb and its flags cites it; it hands over no values
     missing = [a.option_strings[0] for a in parser._actions
                if a.option_strings and a.required and id(a) not in seen]
+    # The spec id is optional to argparse (positional or `--spec`) and enforced after parsing,
+    # so a verb that needs it says so through the `id_required` default `add_spec` sets.
+    if parser.get_default("id_required") and not positional and not any(
+            "--spec" in a.option_strings and id(a) in seen for a in parser._actions):
+        missing.append("--spec")
     return [CqIssue(call.line, "flag", call.text,
                     f"`{path}` requires {', '.join(f'`{m}`' for m in missing)}")] if missing else []
 
