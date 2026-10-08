@@ -25,7 +25,7 @@ def cmd_state(args) -> int:
         "ok": True,
         "root": top.strip(),
         "branch": "".join(_lines(cwd, "branch", "--show-current")) or None,
-        "status": _lines(cwd, *_filter_overrides(cwd), "status", "--porcelain"),
+        "status": _lines(cwd, *_filter_overrides(cwd), "status", "--porcelain", "--ignore-submodules=all"),
         "staged": _lines(cwd, "diff", "--cached", "--name-only"),
         "remotes": remotes,
     }
