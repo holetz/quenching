@@ -193,6 +193,7 @@ class Stale(RepoCase):
         _run(self.repo, "add", "remote-feature.txt")
         _run(self.repo, "commit", "-q", "-m", "remote feature")
         _run(self.repo, "push", "-q", "-u", remote, "remote-feature")
+        _run(self.repo, "checkout", "-q", "main")
         _run(self.repo, "merge", "-q", "--ff-only", "remote-feature")
         _run(self.repo, "push", "-q", remote, "main")
         return remote_repo
@@ -697,6 +698,7 @@ class LifecycleBehavior(RepoCase):
         old_remote_tip = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
                                          check=True, capture_output=True, text=True).stdout.strip()
 
+        _run(self.repo, "checkout", "-q", "main")
         pathlib.Path(self.repo, "base.txt").write_text("base\n", encoding="utf-8")
         _run(self.repo, "add", "base.txt")
         _run(self.repo, "commit", "-q", "-m", "base advances")
@@ -1701,6 +1703,7 @@ class PruneVerb(RepoCase):
         pathlib.Path(self.repo, "u.txt").write_text("u\n", encoding="utf-8")
         _run(self.repo, "add", "u.txt")
         _run(self.repo, "commit", "-q", "-m", "unmerged work")
+        _run(self.repo, "checkout", "-q", "main")
 
     def _branches(self) -> str:
         return subprocess.run(["git", "branch", "--list"], cwd=self.repo, capture_output=True,
