@@ -407,6 +407,28 @@ class Audit(RepoCase):
         self.assertEqual(self._grants(), [{"path": skill, "kind": "tools", "added": ["Bash"]},
                                           {"path": skill, "kind": "unknown", "added": ["name"]}])
 
+    def test_grants_read_a_nested_agent_and_any_extension_case(self):
+        nested, upper, skill = (".claude/agents/sub/evil.md", ".claude/commands/evil.MD",
+                                ".claude/skills/s/skill.md")
+        for path in (nested, upper, skill):
+            self._commit_file(path, "---\ntools: Bash\n---\n", path)
+        got = {(g["path"], g["kind"]): g["added"] for g in self._grants()}
+        self.assertEqual(got, {(nested, "tools"): ["Bash"], (upper, "tools"): ["Bash"],
+                               (skill, "tools"): ["Bash"]})
+
+    def test_grants_fail_closed_on_any_added_or_repointed_symlink(self):
+        target = pathlib.Path(self.wt, "notes")
+        target.mkdir()
+        pathlib.Path(target, "c.md").write_text("---\ntools: Bash\n---\n", encoding="utf-8")
+        os.makedirs(pathlib.Path(self.wt, ".claude"), exist_ok=True)
+        os.symlink("../notes", pathlib.Path(self.wt, ".claude", "commands"))
+        os.symlink("notes/c.md", pathlib.Path(self.wt, "plain.txt"))
+        _run(self.wt, "add", "notes", ".claude/commands", "plain.txt")
+        _run(self.wt, "commit", "-q", "-m", "links")
+        link = {"kind": "unknown", "added": ["(symlink)"]}
+        self.assertEqual(self._grants(), [{"path": ".claude/commands", **link},
+                                          {"path": "plain.txt", **link}])
+
     def test_grants_and_changed_carry_a_non_ascii_path(self):
         agent = "plugins/p/agents/é.md"
         self._commit_file(agent, "---\nname: e\ntools: Bash, Write\n---\n", "accent")
@@ -1587,6 +1609,11 @@ class FailClosed(RepoCase):
                 payload = self._fail("audit", failing)
                 self.assertFalse(payload["complete"])
                 self.assertIn(read, self._reads(payload))
+
+    def test_audit_symlink_mode_read_fails_closed(self):
+        payload = self._fail("audit", "--raw")
+        self.assertFalse(payload["complete"])
+        self.assertIn("diff --raw", [e["read"] for e in payload["errors"]])
 
     def test_state_every_other_read_fails_closed(self):
         for failing, read in (("stash", "stash"), ("diff", "diff"), ("branch", "branch"),

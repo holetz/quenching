@@ -156,8 +156,9 @@ def _inert_env(cwd: str, errors: list[dict] | None = None) -> dict[str, str]:
     return env
 
 
-FRONTMATTER_GRANT = re.compile(r"(^|/)(agents/[^/]+|commands/.+)\.md$|(^|/)skills/.+/SKILL\.md$")
-AGENT = re.compile(r"(^|/)agents/[^/]+\.md$")
+FRONTMATTER_GRANT = re.compile(r"(^|/)(agents|commands)/.+\.md$|(^|/)skills/.+/skill\.md$", re.I)
+AGENT = re.compile(r"(^|/)agents/.+\.md$", re.I)
+SYMLINK = "120000"
 SETTINGS = re.compile(r"^\.claude/settings[^/]*\.json$")
 SURFACE = re.compile(r"^\.github/workflows/|^\.claude/settings[^/]*\.json$|(^|/)hooks/")
 GRANT_KEYS = ("tools", "allowed-tools")
@@ -286,12 +287,20 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
     deny rule removed (`kind: deny`), and the added lines of a hook or CI workflow. What it does not
     understand fails closed as `kind: unknown`: any other frontmatter key added, removed or changed
     (its name), a changed block it cannot read whole (`(unparsed frontmatter)`), and a sensitive
-    file deleted (`(deleted)`). Narrowing and unchanged never appear."""
+    file deleted (`(deleted)`), and every symlink the branch adds or repoints, at any path
+    (`(symlink)`), its target never read. Narrowing and unchanged never appear."""
     code, out, err = _git_run(cwd, *SAFE, "merge-base", base, tip, env=env)
     if code != 0 or not out.strip():
         errors.append(_error(("merge-base", base), code, err or "no common ancestor"))
         return []
     fork = out.strip()
+    code, out, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "--raw", "-z",
+                              "--no-renames", f"{fork}..{tip}", env=env)
+    if code != 0:
+        errors.append(_error(("diff", "--raw"), code, err))
+    fields = out.split("\0") if code == 0 else []
+    symlinks = {fields[i + 1] for i in range(0, len(fields) - 1, 2)
+                if fields[i].split(" ")[1:2] == [SYMLINK]}
 
     def show(rev: str, path: str) -> str | None:
         code, text, _e = _git_run(cwd, *SAFE, "show", "--no-textconv", f"{rev}:{path}", env=env)
@@ -299,6 +308,9 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
 
     found = []
     for path in changed:
+        if path in symlinks:   # its target is never read: a link into the tree or a directory fails closed
+            found.append({"path": path, "kind": "unknown", "added": ["(symlink)"]})
+            continue
         frontmatter = FRONTMATTER_GRANT.search(path) and not DOCS.match(path)
         surface = SURFACE.search(path)
         if not (frontmatter or surface):
