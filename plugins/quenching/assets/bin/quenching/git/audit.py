@@ -5,7 +5,9 @@ A wildcard grant such as `Bash(git -C * status:*)` admits any git command that m
 `status` — `branch -D`, `clean -fdx`, `-c core.fsmonitor=<cmd>` — and `git log:*` admits
 `--output=<file>`. Here the agent names a worktree and refs; every git invocation is built in this
 module, refs are resolved to commits before use, and the repository's own config cannot run a
-command during the read: the `filter.<x>` drivers it declares are blanked before `status`. A
+command during the read: the `filter.<x>` drivers it declares are blanked before `status`, which
+does not descend into submodules (their own config is not ours to blank), and `log.showSignature`
+is forced off so `gpg.program` never runs. A
 REPORT only, exit 0 on any facts; judging them is the verifier's. Nothing here executes the
 audited branch's code: the gate is certified by CI before the merge, never by this verb."""
 from __future__ import annotations
@@ -16,7 +18,8 @@ from quenching.common.git import _git_run
 from quenching.common.output import emit, refuse
 
 FILTER_KEY = re.compile(r"^filter\.(.+)\.(clean|smudge|process)$")
-SAFE = ("--no-optional-locks", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null")
+SAFE = ("--no-optional-locks", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null",
+        "-c", "log.showSignature=false")
 
 
 def _run(cwd: str, *argv: str) -> tuple[int, str]:
@@ -92,7 +95,7 @@ def cmd_audit(args) -> int:
         "worktree": worktree,
         "base": {"ref": args.base, "sha": base},
         "branch": {"ref": args.branch, "sha": tip},
-        "status": _lines(worktree, *_filter_overrides(worktree), "status", "--porcelain"),
+        "status": _lines(worktree, *_filter_overrides(worktree), "status", "--porcelain", "--ignore-submodules=all"),
         "stash": _lines(worktree, "stash", "list"),
         "commits": _lines(worktree, "log", "--oneline", f"{base}..{tip}"),
         "changed": _lines(worktree, "diff", "--name-only", f"{base}...{tip}"),
