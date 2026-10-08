@@ -384,6 +384,55 @@ class Audit(RepoCase):
         self.assertEqual(got[wf]["kind"], "surface")
         self.assertIn("on: push", got[wf]["added"])
 
+    def _commit_on_main(self, rel: str, text: str):
+        full = pathlib.Path(self.repo, rel)
+        full.parent.mkdir(parents=True, exist_ok=True)
+        full.write_text(text, encoding="utf-8")
+        _run(self.repo, "add", rel)
+        _run(self.repo, "commit", "-q", "-m", f"main {rel}")
+
+    def test_grants_agent_without_tools_grants_everything(self):
+        new, old = "plugins/p/agents/b.md", "plugins/p/agents/a.md"
+        self._commit_on_main(old, "---\nname: a\ntools: Read\n---\n")
+        _run(self.wt, "merge", "-q", "main")
+        self._commit_file(new, "---\nname: b\n---\nbody\n", "new agent")
+        self._commit_file(old, "---\nname: a\n---\n", "drop tools")
+        got = {g["path"]: g["added"] for g in self._grants()}
+        self.assertEqual(got, {new: ["*"], old: ["*"]})
+
+    def test_grants_reads_skill_allowed_tools(self):
+        skill = ".claude/skills/s/SKILL.md"
+        self._commit_file(skill, "---\nname: s\nallowed-tools: Bash\n---\n", "skill")
+        self.assertEqual(self._grants(), [{"path": skill, "kind": "tools", "added": ["Bash"]}])
+
+    def test_grants_and_changed_carry_a_non_ascii_path(self):
+        agent = "plugins/p/agents/é.md"
+        self._commit_file(agent, "---\nname: e\ntools: Bash, Write\n---\n", "accent")
+        payload = _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main",
+                           "--branch", "spec/1")
+        self.assertIn(agent, payload["changed"])
+        self.assertEqual(payload["grants"], [{"path": agent, "kind": "tools",
+                                              "added": ["Bash", "Write"]}])
+
+    def test_grants_report_a_removed_deny(self):
+        settings, agent = ".claude/settings.json", "plugins/p/agents/a.md"
+        self._commit_on_main(settings, '{"permissions": {"deny": ["Bash(rm:*)"]}}\n')
+        self._commit_on_main(agent, "---\nname: a\ntools: Read\ndisallowedTools: Write\n---\n")
+        _run(self.wt, "merge", "-q", "main")
+        self._commit_file(settings, '{"permissions": {"deny": []}}\n', "empty deny")
+        self._commit_file(agent, "---\nname: a\ntools: Read\n---\n", "drop disallowed")
+        got = {(g["path"], g["kind"]): g["added"] for g in self._grants()}
+        self.assertEqual(got[(settings, "deny")], ["Bash(rm:*)"])
+        self.assertEqual(got[(agent, "deny")], ["Write"])
+
+    def test_grants_ignore_a_narrowing_on_the_base_after_the_cut(self):
+        agent = "plugins/p/agents/a.md"
+        self._commit_on_main(agent, "---\nname: a\ntools: Read, Skill\n---\nbody\n")
+        _run(self.wt, "merge", "-q", "main")
+        self._commit_file(agent, "---\nname: a\ntools: Read, Skill\n---\nnew body\n", "body")
+        self._commit_on_main(agent, "---\nname: a\ntools: Read\n---\nbody\n")
+        self.assertEqual(self._grants(), [])
+
     def test_reflog_keeps_a_branch_rewind_by_update_ref_without_a_message(self):
         self._commit_more()
         _run(self.wt, "update-ref", "refs/heads/spec/1", "HEAD~1")

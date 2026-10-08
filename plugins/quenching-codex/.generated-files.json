@@ -557,7 +557,7 @@
     "scripts/bin/quenching/design/markdown.py": "fe65c5fee7173906019bc1b06a7d15aa4fcabdb78c1f69622e16daecb112640a",
     "scripts/bin/quenching/design/model.py": "c5eadfaabaad3e3959cd77e7d58fd19b007ecac8ff2ed026f73e774efe4bcb42",
     "scripts/bin/quenching/git/__init__.py": "bdbef5a460772c9c531447bddff6a96224c9f6e42777a1c6980914dd324dc0f6",
-    "scripts/bin/quenching/git/audit.py": "ff1ce702dc0fe26fa513ff60f616df44fcbfa287b60c6db81dea6b318d52b72e",
+    "scripts/bin/quenching/git/audit.py": "ce13e6233d3b6b134915092abd9b732e613beb451c3891ff591db7dc20a94a54",
     "scripts/bin/quenching/git/base.py": "85ffbf2b45d22e1f48f68bd5bf9b97ccfac0a246cf7f2c74ad808582842607f2",
     "scripts/bin/quenching/git/commit.py": "786397217e527f6f33a7bc27baed0dae1cde23be3d9505cb7a69d7ebf93eced7",
     "scripts/bin/quenching/git/conventions.py": "db61245dcf96d49f80e646eff9fe55034fba586f172b07c89c35ecf497c7d088",
