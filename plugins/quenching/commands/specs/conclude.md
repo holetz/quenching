@@ -42,7 +42,7 @@ never on prose.
 
 - **The outcome is stated, never inferred.** `done` and `abandoned` are opposite claims about the
   same file, and nothing — not task progress, not staleness, not a sweep — may decide which was
-  meant. If the human has not said, ask.
+  meant. If the human has not said, ask — under `autonomous`, refuse instead (§Under `autonomous`).
 - **Concluding as `done` refuses to lie.** Open `- [ ]` boxes with `--outcome done` is exit 2 with
   the list. `--force` exists for the case where the human knows why — the work was descoped, or
   proven elsewhere — and says so.
@@ -83,6 +83,27 @@ if it is already set and reality disagrees, that is a **finding to report**, nev
 overwrite. `merge` and `pr` are read only to answer the "already merged" row above, and for
 `abandoned` from the base checkout (Doctrine).
 
+## Under `autonomous`
+
+A run whose input carries `autonomous` has no human and no **AskUserQuestion**: it asks nothing.
+Every point where this command would ask takes the one answer below — the narrowest that lets the
+step run — and nothing outside this table is granted. A case the table sends to `needs-human`
+stops the run with `STATE: blocked` and `NOTE: needs-human: <the question>`.
+
+| Where it would ask | The answer under `autonomous` |
+| --- | --- |
+| Step 1 — the outcome | taken **only** from the input's `--outcome`; absent → `needs-human`. `autonomous` never supplies an outcome |
+| Step 1 — which spec (several marked ids, or no marking) | `needs-human` |
+| Step 1 — open tasks under `done` | `needs-human`; never `--force`, never a switch to `abandoned` |
+| Step 3 — the emergent `/docs/` plan | `done`: the narrated plan is applied on the work branch, unconfirmed — the PR is its human review. `abandoned`: declined; the candidates are named in the report |
+| Step 4 — the `## Outcome` draft | written unconfirmed; an exit 2 from `promote` → `needs-human` with the refusal quoted, never `--force` |
+| Step 5 — the distillation plan | as step 3: applied on the work branch for `done`, declined and named for `abandoned` |
+| Step 5 — the release obligations | `done`: applied on the work branch as narrated, the standard quoted in the report |
+| Step 6 — branch behind its base, or an inconclusive check | `needs-human`, the count or the check named; never a merge or rebase |
+| Step 6 — the abandoned branch-delete offer | keep, recorded in the report |
+
+A red gate is `STATE: failed`, never a question. The PR handoff is named and not invoked (step 6).
+
 ## Workflow
 
 ### 1. Resolve the spec, the outcome, and what already happened
@@ -96,7 +117,9 @@ asks whether to materialize a minimal spec — accepted, its new id is used from
 like a marked one. **Declined, headless completion — closing with no spec file at all — is not
 built**: say so, record it with `cq specs discover`, and fall back to `cq specs list --json` and
 ask. Establish the outcome — **ask if it was not stated**, via
-**AskUserQuestion**: *done* (it shipped) or *abandoned* (it will not be built). Where **AskUserQuestion** is unavailable (a sub-agent), do not ask: return `STATE: blocked` with `NOTE: needs-human: <question>`.
+**AskUserQuestion**: *done* (it shipped) or *abandoned* (it will not be built). Under `autonomous`,
+every question of this run is answered by §Under `autonomous`; elsewhere, where **AskUserQuestion**
+is unavailable (a sub-agent), do not ask: return `STATE: blocked` with `NOTE: needs-human: <question>`.
 ```bash
 cq specs status --spec "<id>" --json
 ```
@@ -139,7 +162,8 @@ Decide what crosses with the table in
 §What crosses, what stays; write each through the insert procedure in
 [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)
 §The frontmatter stamp §Updating `index.md` §Enriching the glossary §Self-check, stamping
-`authority` honestly. Present them as ONE plan and take one confirmation.
+`authority` honestly. Present them as ONE plan and take one confirmation (under `autonomous`,
+§Under `autonomous` answers it).
 
 These land on the branch, in their own commit — or, for `abandoned`, the base checkout (Doctrine).
 A `## Discoveries` line that gets a doc is resolved in place. No OKF bundle → skip silently.
@@ -147,7 +171,7 @@ A `## Discoveries` line that gets a doc is resolved in place. No OKF bundle → 
 no bundle.
 
 ### 4. Write `## Outcome` and archive
-`## Outcome` is the archive gate — the spec cannot move without it. Draft it, confirm it, write it:
+`## Outcome` is the archive gate — the spec cannot move without it. Draft it, confirm it (under `autonomous`, §Under `autonomous`), write it:
 ```bash
 cq specs section "<id>" Outcome --write     # body on stdin
 cq specs promote "<id>" --to archive --outcome done|abandoned [--force]
@@ -177,7 +201,7 @@ This is the last writing step, and everything it writes lands on the **work bran
   `authority: background`. Never mint a decision the spec *would* have made. Most abandonments
   distil nothing, and that is the correct result.
 
-One plan, one OK. Every write goes through
+One plan, one OK (under `autonomous`, §Under `autonomous` gives it). Every write goes through
 [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)
 §The frontmatter stamp §Updating `index.md` §Enriching the glossary §Self-check. No bundle → skip
 silently, landing per Doctrine: the work branch for `done`, the base checkout for `abandoned`.
@@ -192,7 +216,7 @@ only correct moment for it: the whole branch is written, so what the release *is
 
 Nothing is invented. A repo whose standards attach nothing to a merge gets nothing, silently, and
 so does a repo with no bundle. What a standard *does* require is presented as ONE plan with the
-standard quoted, taken on one confirmation, and committed on the branch. A requirement the diff
+standard quoted, taken on one confirmation (or §Under `autonomous`), and committed on the branch. A requirement the diff
 already satisfies is reported as already done, never redone.
 
 For `abandoned`, **no release obligation is settled** — a version nobody adopted is a claim the
@@ -224,8 +248,8 @@ rebase, which carries the recorded task subjects through the rewrite. Never do i
 never run the gate over a branch you know is behind.
 
 **An inconclusive result is not a green one.** A check that cannot tell "this failed" from "this
-could not be measured" has returned no verdict — say which it was, and ask, rather than merging on
-it. Where the repo keeps `/docs/standards/quality/surface-verification.md`, its §The five
+could not be measured" has returned no verdict — say which it was, and ask (§Under `autonomous`:
+`needs-human`), rather than merging on it. Where the repo keeps `/docs/standards/quality/surface-verification.md`, its §The five
 preconditions a check must satisfy is where that distinction is defined for the command surface.
 
 **Run the scope the diff justifies.** A check with a `--only`-style selector gets the subset this
@@ -258,8 +282,8 @@ follow the branch-disposal path below.
 For `abandoned`, there is nothing to hand off toward — do not remove any worktree; frame and make
 the branch-delete offer per
 [specs-conclude/abandoned.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/abandoned.md)
-§The branch-delete offer, informed rather than defensive, default **keep**, and record the choice
-and fate in the report.
+§The branch-delete offer, informed rather than defensive, default **keep** (taken unasked under
+`autonomous`), and record the choice and fate in the report.
 **Done when:** the gate ran green on the branch and the handoff was named, or the run recorded why
 nothing could be handed off — a red gate, or (abandoned) the branch's own fate decided instead.
 
@@ -293,7 +317,8 @@ reported.
 
 ## Invariants to never violate
 
-- Never infer the outcome. `done` and `abandoned` are the human's word, always.
+- Never infer the outcome. `done` and `abandoned` are the human's word, always — under `autonomous`,
+  the explicit `--outcome` the caller passed, and nothing else (§Under `autonomous`).
 - Never treat staleness as evidence of abandonment.
 - Never pass `--force` unprompted — a refusal is information, not an obstacle.
 - Never hand off an abandoned spec's branch toward a merge — offer to keep or delete it instead.
