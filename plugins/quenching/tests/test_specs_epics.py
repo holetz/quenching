@@ -180,14 +180,21 @@ class Scenarios:
         self.assertEqual(["PR #77 is OPEN"], got["blocked"][0]["reasons"])
         self.assertEqual("S1", got["criticalPath"][0])
 
-    def test_a_merged_pr_or_an_unknown_one_or_no_pr_keeps_the_member_done(self):
+    def test_a_merged_pr_or_no_pr_keeps_the_member_done(self):
         b = self.diamond()
         merged = self.archive_with_pr(2, "MERGED")      # S1: merged
-        self.archive_with_pr(3, None)                   # S2: `pr:` but the lookup failed
-        archive(b, 4)                                   # S3: no `pr:` record at all
-        got = self.status_with({**merged, "4": "OPEN"})
-        self.assertEqual(["done", "done", "done"],
-                         [i["status"] for i in got["items"][:3]])
+        archive(b, 3)                                   # S2: no `pr:` record at all
+        got = self.status_with(merged)
+        self.assertEqual(["done", "done"], [i["status"] for i in got["items"][:2]])
+
+    def test_an_unreadable_pr_is_unverified_and_holds_its_dependents(self):
+        self.diamond()
+        states = self.archive_with_pr(2, None)          # `pr:` present, the lookup failed
+        got = self.status_with(states)
+        by = {i["label"]: i["status"] for i in got["items"]}
+        self.assertEqual(("unverified", "waiting"), (by["S1"], by["S2"]))
+        self.assertEqual(0, got["progress"]["done"])
+        self.assertEqual(["PR #77 state could not be read"], got["blocked"][0]["reasons"])
 
     def test_a_member_that_is_not_ready_is_not_offered(self):
         b = self.backend
