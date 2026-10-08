@@ -22,7 +22,7 @@ already staged or named.
 - When the caller's prompt names a worktree, run every command against it and never from the base
   checkout: `git -C <worktree>` for git, `cd <worktree> && cq git …` for `cq git` (it takes no `--root`; `cq --root <x> git …` exits 3), `--root <worktree>` for the other `cq` verbs; the PR is opened with an explicit
   `--head <branch>`. A prompt that names no worktree for a `pr` step is `STATE: blocked`.
-- The grants hold no spec write (record, promote, section write): the steward stamps nothing. In the `pr` step it skips the command's step 5 and returns the PR number and URL in `PR:`; the caller stamps the `pr` record.
+- The grants hold no spec write (record, promote, section write): the steward stamps nothing. In the `pr` step it skips the command's step 5 and returns the PR number and URL in `PR:`; the caller hands them to a `spec-runner`, which stamps the `pr` record.
 - Never push or merge unless the caller's prompt explicitly names that step and its target.
 - The `merge` step of a pull request is the one step run without its command, because
   `quenching-git-merge` merges locally and would bypass the PR. Run it only when the caller's
