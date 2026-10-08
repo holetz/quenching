@@ -189,13 +189,15 @@ LIST_ITEM = re.compile(r"^\s*-\s+")
 def _block(text: str | None) -> tuple[dict[str, list[str]], bool, tuple[str, ...]] | None:
     """The leading frontmatter block as `{key: [its lines]}`, whether every line was recognized,
     and the block's raw lines (an unrecognized line is in no key, so only these show it changed);
-    `None` when there is no block. A top-level `key:` opens a key, the indented and
+    `None` when there is no block. A leading BOM is dropped and lines split on `\\n` only, as the
+    Claude Code reads them (`str.splitlines` also breaks on FF/VT/U+2028, hiding a grant behind a
+    fake comment line). A top-level `key:` opens a key, the indented and
     `- item` lines after it belong to it, blank and `#` lines are skipped. Any other top-level line
     (a quoted key, a line with no `key:`), a repeated key, or a known key whose value is inline AND
     continued on the next line is not recognized: the audit computes only what it reads whole."""
     if text is None:
         return None
-    lines = text.splitlines()
+    lines = [ln.removesuffix("\r") for ln in text.removeprefix("\ufeff").split("\n")]
     if not lines or lines[0].strip() != "---":
         return None
     keys: dict[str, list[str]] = {}
