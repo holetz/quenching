@@ -15,6 +15,7 @@ import sys
 
 from quenching.common.output import REFUSAL
 from quenching.common.version import VERSION
+from quenching.git.audit import cmd_audit
 from quenching.git.base import cmd_base
 from quenching.git.commit import cmd_commit
 from quenching.git.conventions import cmd_conventions
@@ -24,7 +25,7 @@ from quenching.git.worktree import cmd_worktree
 
 DISPATCH = {"base": cmd_base, "specs": cmd_specs, "stale": cmd_stale,
             "conventions": cmd_conventions, "worktree": cmd_worktree,
-            "commit": cmd_commit}
+            "commit": cmd_commit, "audit": cmd_audit}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -64,6 +65,19 @@ def build_parser() -> argparse.ArgumentParser:
                                         "never stages, amends or skips hooks")
     sp.add_argument("--subject", required=True, metavar="SUBJECT",
                     help="the commit subject, resolved by the caller")
+    sp.add_argument("--json", action="store_true", help="machine-readable output")
+
+    sp = sub.add_parser("audit", help="the verifier's facts inside one registered worktree — "
+                                       "status, stash, commits, scope, ancestry, reflog; "
+                                       "`--gate` also runs its scripts/verify_repo.sh")
+    sp.add_argument("--worktree", required=True, metavar="PATH",
+                    help="a worktree this repository registers")
+    sp.add_argument("--base", required=True, metavar="REF", help="the base the branch merges into")
+    sp.add_argument("--branch", required=True, metavar="BRANCH", help="the spec's work branch")
+    sp.add_argument("--sha", action="append", default=[], metavar="SHA",
+                    help="a sha the worker reported; repeat for each")
+    sp.add_argument("--gate", action="store_true",
+                    help="run the worktree's scripts/verify_repo.sh and report its exit code")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     return p
