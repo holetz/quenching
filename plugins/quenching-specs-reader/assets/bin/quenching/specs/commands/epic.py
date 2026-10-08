@@ -29,7 +29,7 @@ def _refuse(out: Emitter, args, code: str, message: str, **extra) -> int:
 
 def pr_states(members: dict, timeout: int = 15) -> dict[str, str]:
     """`member id -> PR state` for every archived member carrying a `pr:` record, read with
-    `gh pr view`. A lookup that fails is left out, and the derivation then keeps `done`."""
+    `gh pr view`. A lookup that fails is left out, and the derivation then marks it `unverified`."""
     out: dict[str, str] = {}
     for sid, m in members.items():
         if not m or m["phase"] != "archive" or not pr_number(m):
@@ -189,11 +189,13 @@ def cmd_epic_status(args, root: str, out: Emitter) -> int:
     done = sum(1 for i in items if i["status"] == "done")
     blocked = [{**_row(i), "reasons": [t["reason"] or t["text"] for t in i["member"]["tasks"]
                                        if t["blocked"]] if i["member"] else []}
-               for i in items if i["status"] in ("blocked", "dropped", "missing", "unmerged")]
+               for i in items if i["status"] in ("blocked", "dropped", "missing", "unmerged", "unverified")]
     for b, i in zip(blocked, [i for i in items if i["status"] in
-                              ("blocked", "dropped", "missing", "unmerged")]):
+                              ("blocked", "dropped", "missing", "unmerged", "unverified")]):
         if i["status"] == "unmerged":
             b["reasons"] = [f"PR #{pr_number(i['member'])} is {i['prState']}"]
+        elif i["status"] == "unverified":
+            b["reasons"] = [f"PR #{pr_number(i['member'])} state could not be read"]
     obj = {"ok": True, **front_fields(root), "id": info["id"],
            "title": info["frontmatter"].get("title", ""), "phase": info["phase"],
            "progress": {"done": done, "total": len(items), "blocked": len(blocked),
