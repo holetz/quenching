@@ -592,7 +592,7 @@
     "scripts/bin/quenching/specs/commands/granular.py": "54ca08ea46945f0ad26b545f6c743283e67ef536f6ffc97f3825227a729b480d",
     "scripts/bin/quenching/specs/commands/migrate.py": "22e981fbe8d011d4f6d1c108a8bdc205eb3b45ee1f41246dddfd7a8c3467194a",
     "scripts/bin/quenching/specs/commands/next.py": "c848ad81939bd9eac9ea2a0bd08ba67cd296ddd19786f3832791c6a74aa04b85",
-    "scripts/bin/quenching/specs/commands/output.py": "f0798b677f9419a1e9f4c42af16159fba4903074427f801732d071987d287990",
+    "scripts/bin/quenching/specs/commands/output.py": "989f1e3773a0f61b7e8f0096fe3dfe9e116d76bf8704d0969d74796d264da662",
     "scripts/bin/quenching/specs/commands/parallel.py": "d43116a012a3879fb47eb55d99432d0f8485cf12edd190f7e952c082a0106a06",
     "scripts/bin/quenching/specs/commands/promote.py": "6744bb775308c23d5207dd98d8efb107ea65cbabc06fb73e85c9f0196e4ff8ef",
     "scripts/bin/quenching/specs/commands/read.py": "e4694d9d73fd2052da2a1450773eb9548dfac60dd94a60842bbd4575ffb58ebb",

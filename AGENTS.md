@@ -17,7 +17,8 @@ bash scripts/verify_repo.sh
 
 The gate is zero errors. Surface-load checks live at
 `plugins/quenching/assets/checks/functional-checks.sh`; exit 2 is inconclusive, not green. The spec
-backend is GitHub, so there is no local `/.specs/` workspace.
+store is the git branch `quenching` (`cq specs config` prints `backend: git`), so there is no local
+`/.specs/` workspace and the GitHub issues are a pre-migration copy `cq` does not read.
 
 ## Safety that must stay visible
 
