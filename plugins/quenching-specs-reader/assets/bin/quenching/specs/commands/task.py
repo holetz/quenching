@@ -13,6 +13,7 @@ from quenching.specs.parse.derive import derive_info
 from quenching.specs.parse.edit import upsert_section
 from quenching.specs.parse.edit import nested_heading
 from quenching.specs.parse.epics import is_epic
+from quenching.specs.parse.fields import scalar_break
 from quenching.specs.parse.tasks import (BLOCKED_REASON_RE, CHECKBOX_RE, COMMIT_SHA_RE,
                                          SUBJECT_RE)
 
@@ -24,9 +25,10 @@ def _find_task(tasks: list[dict], ident: str) -> dict | None:
     return None
 
 
-def _refuse(args, out: Emitter, code: str, message: str, text: str, **extra) -> int:
+def _refuse(args, out: Emitter, code: str, message: str, text: str, status: int = 1,
+            **extra) -> int:
     out.emit(args.json, {"ok": False, "code": code, **extra, "message": message}, text)
-    return 1
+    return status
 
 
 def _flag_refusal(args, out: Emitter) -> int | None:
@@ -39,10 +41,12 @@ def _flag_refusal(args, out: Emitter) -> int | None:
                        "--subject records the commit that implements a task, so it goes "
                        "with --check",
                        "error: --subject goes with --check")
-    if args.subject is not None and not SUBJECT_RE.match(args.subject.strip()):
+    # `SUBJECT_RE` alone lets a trailing `\n` and every break other than `\r`/`\n` through.
+    if args.subject is not None and (not SUBJECT_RE.match(args.subject.strip())
+                                     or scalar_break(args.subject)):
         return _refuse(args, out, "sp-bad-subject",
                        "a commit subject must be one non-empty line",
-                       "error: a commit subject must be one non-empty line",
+                       "error: a commit subject must be one non-empty line", status=2,
                        subject=args.subject)
     # --commit is the sha form of the SAME anchor, meant to be called AFTER the commit that
     # implements the task already exists — the CLI never invents or looks up a sha, it only
@@ -66,6 +70,13 @@ def _flag_refusal(args, out: Emitter) -> int | None:
         return _refuse(args, out, "sp-write-nested-heading",
                        f"--reason carries `{bad}` — it would open a second top-level section",
                        f"error: --reason carries `{bad}` — demote it to `###` or drop it")
+    # The reason is one line on all three routes: a break would forge the lines after it.
+    bad = scalar_break(args.reason or "")
+    if bad:
+        return _refuse(args, out, "sp-bad-scalar",
+                       f"--reason is one line with no control character — got {bad}",
+                       f"error: --reason is one line with no control character — got {bad}",
+                       status=2, field="reason", char=bad)
     if args.block and not args.reason:
         return _refuse(args, out, "sp-no-reason", "--block requires --reason",
                        "error: --block requires --reason (a blocked task without a reason is "

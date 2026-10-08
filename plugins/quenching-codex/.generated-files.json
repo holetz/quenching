@@ -631,7 +631,7 @@
     "scripts/bin/quenching/specs/commands/promote.py": "dedec666818e7bfa5010b016dd8a23df7bc609649a95d9b37e1a44e449d72b20",
     "scripts/bin/quenching/specs/commands/read.py": "e4694d9d73fd2052da2a1450773eb9548dfac60dd94a60842bbd4575ffb58ebb",
     "scripts/bin/quenching/specs/commands/release.py": "c72ef68857f5431b3ca1c6310064c2a1ff7856cae1a9b7c1d9b00471d040d5ac",
-    "scripts/bin/quenching/specs/commands/task.py": "f2299b7dc18281847c9bed68ad2f636e78bd0c93ccc3eb7f419dc7cdc5f4d0c7",
+    "scripts/bin/quenching/specs/commands/task.py": "6838da8bb3e3a2fdd850bfd97338ff1531c70fca8649ccac9bf7e2d4f629401d",
     "scripts/bin/quenching/specs/commands/validate.py": "375695a3a0e30b710e73268b6c900fba6ef95b957607a03829c48f76ff7b1916",
     "scripts/bin/quenching/specs/config.py": "655bdc90179886f9e13038a2a9387e3494aa712a17f7dd537f12ce74765bf31a",
     "scripts/bin/quenching/specs/parse/__init__.py": "26c420fca154b9dedd3ff506a754d8aa4e8fd23013c8ba0c59bd90a5a8f26356",
