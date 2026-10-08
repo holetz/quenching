@@ -50,6 +50,23 @@ def validate_cq_resolution(root: Path) -> None:
                 check("cq() {" in block and "scripts/cq" in block, path)
 
 
+AGENT_PATH = re.compile(r"(?:plugins/quenching(?:-codex)?/|\.\./\.\./)agents/([a-z][a-z0-9-]*)\.md")
+AGENT_NAME = re.compile(r"(?<![A-Za-z0-9_/.-])quenching:([a-z][a-z0-9-]*)(?![A-Za-z0-9:-])")
+
+
+def validate_agent_citations(root: Path) -> None:
+    """A skill may not cite an agent the Codex tree does not carry.
+
+    `translate --check` compares bytes against the source, so a faithful translation of a
+    dangling citation is in sync by construction; only the generated tree can say it dangles.
+    """
+    for skill in sorted((root / "skills").glob("*/SKILL.md")):
+        text = skill.read_text(encoding="utf-8")
+        for name in sorted(set(AGENT_PATH.findall(text)) | set(AGENT_NAME.findall(text))):
+            check((root / "agents" / f"{name}.md").is_file(),
+                  f"{skill}: cites agent `{name}` but {root / 'agents' / (name + '.md')} does not exist")
+
+
 def main(path: str = "plugins/quenching-codex") -> int:
     root = Path(path)
     manifest = json.loads((root / ".codex-plugin/plugin.json").read_text(encoding="utf-8"))
@@ -69,6 +86,7 @@ def main(path: str = "plugins/quenching-codex") -> int:
         check(re.search(r"^description: .+", front, re.MULTILINE), skill)
         check("[TODO:" not in text, skill)
     validate_cq_resolution(root)
+    validate_agent_citations(root)
     print(f"validated {root} ({len(skills)} skills)")
     return 0
 
