@@ -486,6 +486,19 @@ class AgentGrantGap(unittest.TestCase):
                          [("sk-agent-skill-widens", "agent:a", "Skill"),
                           ("sk-agent-skill-widens", "agent:b", "Skill(x)")])
 
+    def test_skill_in_a_yaml_list_is_an_error(self):
+        with tempfile.TemporaryDirectory() as root:
+            agents = pathlib.Path(root, "agents")
+            agents.mkdir()
+            for name, tools in (("inline", "Read, Skill"), ("block", "\n  - Read\n  - Skill"),
+                                ("flow", "[Read, Skill]"), ("bash", "\n  - Bash\n  - Skill")):
+                (agents / f"{name}.md").write_text(f"---\nname: {name}\ntools: {tools}\n---\nBody.\n",
+                                                   encoding="utf-8")
+            found = lint_agents(root, root)
+        self.assertEqual(sorted((f["command"], f["tool"]) for f in found
+                                if f["code"] == "sk-agent-skill-widens"),
+                         [("agent:block", "Skill"), ("agent:flow", "Skill"), ("agent:inline", "Skill")])
+
 
 if __name__ == "__main__":
     unittest.main()
