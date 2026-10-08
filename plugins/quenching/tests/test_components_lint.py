@@ -341,6 +341,30 @@ class CqCallsAgainstTheParsers(unittest.TestCase):
     def test_a_negated_line_is_ignored(self):
         self.assertEqual(self._codes("never run `cq specs bogus`"), [])
 
+    def test_no_before_another_noun_negates_nothing(self):
+        self.assertEqual(self._codes("When no reviewer answered `cq specs bogus` it stamps."), ["sk-cq-unknown-verb"])
+
+    def test_never_skip_is_a_double_negation_that_requires_the_call(self):
+        self.assertEqual(self._codes("Never skip `cq specs bogus` once done."), ["sk-cq-unknown-verb"])
+
+    def test_do_not_skip_is_a_double_negation_that_requires_the_call(self):
+        self.assertEqual(self._codes("Do not skip `cq specs bogus` once done."), ["sk-cq-unknown-verb"])
+
+    def test_no_right_before_the_span_still_negates(self):
+        for line in ("there is no `cq specs bogus` grant", "it is no longer `cq specs bogus`"):
+            self.assertEqual(self._codes(line), [], line)
+
+    def test_no_longer_before_a_verb_negates(self):
+        for line in ("Do that, no longer call `cq specs bogus` here", "we no longer run `cq specs bogus`"):
+            self.assertEqual(self._codes(line), [], line)
+
+    def test_no_more_before_a_verb_negates(self):
+        for line in ("we no more run `cq specs bogus`", "it will no more call `cq specs bogus`"):
+            self.assertEqual(self._codes(line), [], line)
+
+    def test_a_bare_skip_still_negates(self):
+        self.assertEqual(self._codes("the runner skips `cq specs bogus`"), [])
+
     def test_a_span_that_only_names_the_verb_cites_it(self):
         self.assertEqual(self._codes("the tick is `cq specs task --check`"), [])
 
