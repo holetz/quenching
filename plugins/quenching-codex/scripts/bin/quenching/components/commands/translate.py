@@ -529,7 +529,7 @@ def generated_tree() -> dict[str, bytes]:
     return output
 
 
-def differences(tree: dict[str, bytes]) -> list[str]:
+def owned_files() -> set[str]:
     destination = target() if plugin_translation() else codex_surface()
     actual = {str(path.relative_to(destination)) for path in destination.rglob("*") if path.is_file() and path.name != ".generated-files.json" and "__pycache__" not in path.parts and path.suffix != ".pyc"} if destination.exists() else set()
     if not plugin_translation():
@@ -537,6 +537,12 @@ def differences(tree: dict[str, bytes]) -> list[str]:
         # `.claude/`. Only the translated harness, skills, and their local references are owned.
         actual = {rel for rel in actual if rel in {"AGENTS.md", ".generated-from.json"}
                   or rel.startswith(("skills/", "references/"))}
+    return actual
+
+
+def differences(tree: dict[str, bytes]) -> list[str]:
+    destination = target() if plugin_translation() else codex_surface()
+    actual = owned_files()
     return [rel for rel in sorted(set(tree) | actual) if rel not in tree or not (destination / rel).exists() or (destination / rel).read_bytes() != tree[rel]]
 
 
@@ -552,7 +558,7 @@ def reconciliation(tree: dict[str, bytes]) -> str:
         hashes = json.loads(generated.read_text(encoding="utf-8")).get("sha256", {})
     except (OSError, ValueError, AttributeError):
         hashes = {}
-    if not hashes:
+    if not isinstance(hashes, dict) or not hashes:
         return "untracked"
     target_changed = any(not (destination / rel).is_file()
                          or hashes.get(rel) != hashlib.sha256((destination / rel).read_bytes()).hexdigest()
@@ -613,17 +619,22 @@ def propagate_bodies_from_codex(tree: dict[str, bytes]) -> None:
                            encoding="utf-8")
 
 
-def previous_files(manifest: Path, destination: Path) -> set[str]:
+def previous_files(manifest: Path, destination: Path) -> set[str] | None:
     """Read the paths a previous run owned, refusing any that would leave the destination.
 
     The manifest is versioned and mergeable, so every entry is untrusted input: all are checked
-    before the caller deletes the first.
+    before the caller deletes the first. A manifest that is not JSON at all (merge conflict
+    markers) returns None: the caller recovers by regenerating it.
     """
     if not manifest.exists():
         return set()
     try:
-        files = json.loads(manifest.read_text(encoding="utf-8"))["files"]
-    except (ValueError, KeyError, TypeError) as exc:
+        document = json.loads(manifest.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    try:
+        files = document["files"]
+    except (KeyError, TypeError) as exc:
         raise ValueError(f"{manifest.name} is unreadable or has no `files`: {exc!r}") from exc
     if not isinstance(files, (list, dict)):
         raise ValueError(f"{manifest.name} `files` must be a list or an object")
@@ -639,9 +650,12 @@ def write_tree(tree: dict[str, bytes]) -> None:
     destination = target() if plugin_translation() else codex_surface()
     destination.mkdir(parents=True, exist_ok=True)
     generated_manifest = destination / ".generated-files.json"
-    stale = [destination / rel for rel in sorted(previous_files(generated_manifest, destination) - set(tree))]
+    previous = previous_files(generated_manifest, destination)
+    if previous is None:
+        previous = owned_files()
+    stale = [destination / rel for rel in sorted(previous - set(tree))]
     for path in stale:
-        if path.exists():
+        if path.is_file() or path.is_symlink():
             path.unlink()
     for rel, content in tree.items():
         path = destination / rel
