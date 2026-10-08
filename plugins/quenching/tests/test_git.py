@@ -1797,6 +1797,18 @@ class WorktreeRetire(RepoCase):
         self.assertEqual(json.loads(proc.stdout)["ignored"], [".env"])
         self.assertTrue(os.path.isdir(self.wt))
 
+    def test_a_trailing_slash_entry_is_anchored_at_the_root(self):
+        self._merge_through_gh()
+        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
+            "secrets/\n", encoding="utf-8")
+        target = pathlib.Path(self.wt, "secrets", "data", "creds.env")
+        target.parent.mkdir(parents=True)
+        target.write_text("secret\n", encoding="utf-8")
+        self._declare_regenerable("data/")
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        self.assertTrue(target.exists())
+
     def test_a_local_base_behind_still_retires_a_published_branch(self):
         self._merge_through_gh()
         proc = self._retire()
