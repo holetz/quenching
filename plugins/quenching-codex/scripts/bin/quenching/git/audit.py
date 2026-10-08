@@ -32,6 +32,16 @@ def _lines(cwd: str, *argv: str) -> list[str]:
     return [line for line in out.splitlines() if line] if code == 0 else []
 
 
+def _reflog(cwd: str, ref: str) -> list[str]:
+    """The reflog subjects of `ref`, newest first, minus the `reset` entries that moved nothing:
+    a reset whose sha equals the next older entry's rewrote no history (`git merge --abort` logs
+    `reset: moving to HEAD`). A reset that moved the ref stays, so the verifier still sees it."""
+    entries = [line.split(" ", 1) + [""] for line in _lines(cwd, "reflog", "show", "--format=%H %gs", ref)]
+    return [e[1] for i, e in enumerate(entries)
+            if e[1] and not (e[1].startswith("reset:") and i + 1 < len(entries)
+                             and entries[i + 1][0] == e[0])]
+
+
 def _registered(cwd: str, path: str) -> bool:
     code, out = _run(cwd, "worktree", "list", "--porcelain")
     if code != 0:
@@ -101,9 +111,8 @@ def cmd_audit(args) -> int:
         "changed": _lines(worktree, "diff", "--name-only", f"{base}...{tip}"),
         "ancestry": {s: _run(worktree, "merge-base", "--is-ancestor", resolved[s], tip)[0] == 0
                      for s in args.sha},
-        "reflog": {"branch": _lines(worktree, "reflog", "show", "--format=%gs",
-                                    f"refs/heads/{args.branch}"),
-                   "head": _lines(worktree, "reflog", "show", "--format=%gs", "HEAD")},
+        "reflog": {"branch": _reflog(worktree, f"refs/heads/{args.branch}"),
+                   "head": _reflog(worktree, "HEAD")},
     }
 
     lines = [f"worktree: {worktree}", f"branch: {args.branch} ({tip[:12]}) over {args.base}",

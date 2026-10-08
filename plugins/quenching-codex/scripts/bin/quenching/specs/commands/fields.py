@@ -11,7 +11,8 @@ import json
 
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, read_one
-from quenching.specs.parse.fields import set_frontmatter_key, set_frontmatter_record
+from quenching.specs.parse.fields import (set_frontmatter_key, set_frontmatter_record,
+                                          set_frontmatter_title)
 from quenching.specs.parse.records import record_keys
 from quenching.specs.schema import (DEFAULT_VERIFICATION, MERGE_NO_PR_STRATEGIES,
                                     VERIFICATION_POLICIES, load_schema)
@@ -62,6 +63,37 @@ def cmd_verification(args, root: str, out: Emitter) -> int:
               "previous": declared or None},
              f"{info['id']} — verification: {policy}"
              + (f"  (was {declared})" if declared and declared != policy else ""))
+    return 0
+
+
+def cmd_title(args, root: str, out: Emitter) -> int:
+    """Read ONE spec's `title`, or set it — quoted when the text needs it, through the backend.
+
+    The repair path for a `title` an older `new` stamped unquoted: a ` #` read as a comment
+    erased it, and nothing else writes the key. The write keeps the first `title:` line's place
+    and drops later ones, which is what a corrupted file carries."""
+    backend, err = open_backend(root)
+    if err:
+        return out.emit_err(args.json, err)
+    info, err = read_one(backend, args.spec, out)
+    if err:
+        return out.emit_err(args.json, err)
+    current = str(info["frontmatter"].get("title") or "")
+    if args.title is None:
+        out.emit(args.json, {"ok": True, "id": info["id"], "title": current or None},
+                 f"{info['id']} — title: {current or '(none)'}")
+        return 0
+    title = args.title.strip()
+    if not title or "\n" in title:
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-bad-title", "id": info["id"],
+                  "message": "a title is one non-empty line"},
+                 "error: a title is one non-empty line")
+        return 2
+    backend.write_spec(info, set_frontmatter_title(info["text"], title))
+    out.emit(args.json,
+             {"ok": True, "id": info["id"], "title": title, "previous": current or None},
+             f"{info['id']} — title: {title}")
     return 0
 
 
