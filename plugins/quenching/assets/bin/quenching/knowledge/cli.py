@@ -51,6 +51,7 @@ from quenching.knowledge.projection import (
 )
 from quenching.knowledge.site_source import site_source_findings, stage_site_source
 from quenching.knowledge.stale import resource_activity
+from quenching.knowledge.structure import regenerate_listing
 from quenching.knowledge.validate import _build_corpus, validate_tree
 
 
@@ -172,6 +173,16 @@ def _declare_project(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--json", action="store_true")
 
 
+def _declare_listing(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("bundle", nargs="?", default="docs")
+    parser.add_argument("--root", default=".", help="repository root (default: current directory)")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--write", action="store_true",
+                      help="rewrite the rows of the GENERATED zone of standards/index.md")
+    mode.add_argument("--check", action="store_true", help="check without writing (the default)")
+    parser.add_argument("--json", action="store_true")
+
+
 def _declare_nav(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("bundle", nargs="?", default="docs")
     parser.add_argument("--root", default=".", help="repository root (default: current directory)")
@@ -195,7 +206,7 @@ def _declare_site_source(parser: argparse.ArgumentParser) -> None:
 
 _VERB_DECLARERS = {"validate": _declare_validate, "doctor": _declare_surface,
                    "status": _declare_surface, "project": _declare_project,
-                   "nav": _declare_nav, "site-source": _declare_site_source}
+                   "listing": _declare_listing, "nav": _declare_nav, "site-source": _declare_site_source}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -315,6 +326,35 @@ def run_project(argv: list[str]) -> int:
     return FINDINGS if errors else OK
 
 
+def run_listing(argv: list[str]) -> int:
+    """Rebuild the GENERATED zone of `standards/index.md` from disk, or prove it is current.
+
+    `--check` (the default) writes nothing and exits `FINDINGS` while the zone is stale; a bundle
+    whose listing carries no zone is a `REFUSAL` — the verb never invents one."""
+    parser = argparse.ArgumentParser(prog="cq knowledge listing")
+    _declare_listing(parser)
+    args = parser.parse_args(argv)
+
+    bundle = _rooted(args.root, args.bundle)
+    try:
+        report = regenerate_listing(bundle, write=args.write)
+    except ValueError as exc:
+        message = str(exc)
+        print(json.dumps({"ok": False, "code": "listing-no-zone", "message": message})
+              if args.json else f"error: {message}", file=None if args.json else sys.stderr)
+        return REFUSAL
+    stale = report["changed"] and not args.write
+    payload = dict(report, mode="write" if args.write else "check", ok=not stale)
+    if args.json:
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+    elif args.write:
+        print(f"knowledge listing — {'rewrote' if report['changed'] else 'already current:'} "
+              f"{report['path']}")
+    else:
+        print(f"knowledge listing — {'STALE' if stale else 'current'}: {report['path']}")
+    return FINDINGS if stale else OK
+
+
 def run_nav(argv: list[str]) -> int:
     """Generate the site `nav` from the bundle tree, or prove the one on disk is current.
 
@@ -420,7 +460,7 @@ def main(argv: list[str]) -> int:
     )
     parser.add_argument("--root", help="repository root (default: current directory)")
     parser.add_argument("--version", action="version", version=f"cq knowledge {VERSION}")
-    parser.add_argument("verb", nargs="?", choices=("validate", "doctor", "status", "project", "nav", "site-source"),
+    parser.add_argument("verb", nargs="?", choices=("validate", "doctor", "status", "project", "listing", "nav", "site-source"),
                         help="the knowledge operation")
     parser.add_argument("rest", nargs=argparse.REMAINDER,
                         help="the operation's bundle and options")
@@ -432,6 +472,6 @@ def main(argv: list[str]) -> int:
     if args.root:
         rest = ["--root", args.root] + rest
     dispatch = {"validate": run_cli, "doctor": _run_doctor, "status": _run_status,
-                "project": run_project,
+                "project": run_project, "listing": run_listing,
                 "nav": run_nav, "site-source": run_site_source}
     return dispatch[args.verb](rest)
