@@ -355,7 +355,7 @@
     ".generated-from.json": "9ad53f2d66958249c4032a964320031cb2399efc204a4349c6eff14a2017b996",
     "README.md": "288a58c5959e6587df889d8534f6b8c08d6a9d6ce7b09379e78429be0218f9c6",
     "VERSION": "3754366908ac60b46e7aab559e5d23fa7eea0ff51835fb9fd72ba76aab3bcafd",
-    "agents/git-steward.md": "8e03b291b1eebee2059d3d1d205712ac4d78033f34b5cb7ec7876583c0f5a881",
+    "agents/git-steward.md": "dd5d4cc984d22fd01df9ac9cdccab90855f74daef67ea2c7b4db222a838817f2",
     "agents/orchestrator.md": "201006472af5c70c40d58ed741541c08ef25c961b1e34dd63a6c3d8a79ac8428",
     "agents/scout.md": "f80b562d127fa9bcbe468f257b27c4c1c7cf8597ecf2d0df974c0d19f4271742",
     "agents/spec-architect.md": "1f1cdd6a61bd8aaab5c32fa717c11f54624d13e7cfeb9575729adf310a9db749",
