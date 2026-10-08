@@ -53,11 +53,11 @@ GENERATED_ROW_RE = re.compile(r"^\|[^|\n]*\[[^\]]*\]\(([^)\n]+)\)[^|\n]*\|" + _C
 
 
 def _escape_cell(text: str) -> str:
-    return text.replace("|", "\\|")
+    return re.sub(r"([\\|])", r"\\\1", text)
 
 
 def _unescape_cell(text: str) -> str:
-    return text.replace("\\|", "|")
+    return re.sub(r"\\(.)", r"\1", text)
 
 
 def _strip_noise(text: str) -> str:
