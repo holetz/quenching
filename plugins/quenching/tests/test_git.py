@@ -329,10 +329,10 @@ class Audit(RepoCase):
         args = ("audit", "--worktree", self.wt, "--base", "main", "--branch", "spec/1",
                 "--sha", self.sha)
         payload = _cq_json(self.repo, *args)
-        self.assertFalse([l for l in payload["reflog"]["head"] if l.startswith("reset")])
+        self.assertFalse([x for x in payload["reflog"]["head"] if x.startswith("reset")])
         _run(self.wt, "reset", "-q", "--hard", "HEAD~1")  # a real rewrite
         payload = _cq_json(self.repo, *args)
-        self.assertTrue([l for l in payload["reflog"]["head"] if l.startswith("reset")])
+        self.assertTrue([x for x in payload["reflog"]["head"] if x.startswith("reset")])
 
     def test_gate_flag_is_gone(self):
         proc = self._audit("--worktree", self.wt, "--base", "main", "--branch", "spec/1", "--gate")
