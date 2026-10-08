@@ -119,5 +119,6 @@ Neither → the next round starts at step 1.
 ### 8. Final report
 Print: per epic, the merged specs with their PRs; the human epic and its members; every decision
 this session took as the delegated owner; specs in flight at the deadline, as `continue` with their
-state; second stalls; and the tokens the run spent.
+state; second stalls; and the tokens the run spent per model and agent type, read with
+`cq components session cost` and never summed across tiers.
 **Done when:** the report is printed.
