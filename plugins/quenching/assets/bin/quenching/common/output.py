@@ -30,7 +30,19 @@ import sys
 OK, FINDINGS, REFUSAL, USAGE = 0, 1, 2, 3
 
 
-class CQArgumentParser(argparse.ArgumentParser):
+class NoAbbrevParser(argparse.ArgumentParser):
+    """Every `cq` parser: a long option is matched whole, never by a prefix.
+
+    With `allow_abbrev` on, `--w` reads as `--write`, so a grant or a block that matches the
+    command text never sees the flag that runs. `add_subparsers` builds each subparser with
+    `type(self)`, so the default reaches the whole tree from its root."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("allow_abbrev", False)
+        super().__init__(*args, **kwargs)
+
+
+class CQArgumentParser(NoAbbrevParser):
     """The parser shared by entry points that own the CQ usage contract.
 
     ``argparse`` uses exit 2 for malformed syntax, but CQ reserves 2 for a deliberate refusal
