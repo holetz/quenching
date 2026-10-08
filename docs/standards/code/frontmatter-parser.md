@@ -4,7 +4,7 @@ title: Frontmatter parsing — the one parser
 description: The YAML subset `common/frontmatter.py` reads — the comment rule (a `#` opens a comment only at the start of a value or after whitespace, and never inside a quoted scalar), the canonical case list its tests hold it to, the anomaly sidecar, and why the union it now reads is wider than any of the three parsers it replaced
 resource: plugins/quenching/assets/bin/quenching/common/frontmatter.py
 tags: [code, parsing, yaml, frontmatter, tools]
-timestamp: 2026-08-10
+timestamp: 2026-10-08
 audience: both
 authority: current
 source: modularizar-specs-knowledge-components, 2026-08-10; lineage in ADR 0004
@@ -80,6 +80,17 @@ written. This is what lets `cq specs new` and `cq specs title` quote a title tha
 `: ` or a leading YAML indicator and get the same text back — plain when nothing needs quoting,
 single quotes when there is no `'`, double quotes when there is a `'` but no `"` or `\`, and
 single quotes with `'` doubled for the rest. `tests/test_specs_title.py` holds the round trip.
+
+**No scalar a writer stamps carries a line break.** The parser splits the block with
+`str.splitlines`, which breaks on `\n \r \v \f \x1c \x1d \x1e \x85 \u2028 \u2029` — so a value
+carrying any of them is read back as two lines, the second a top-level key of its own: a title
+could stamp `approved:`. `specs/parse/fields.py` holds the set (`SCALAR_LINE_BREAKS`), and
+`set_frontmatter_key` and `set_frontmatter_record` raise on a value that carries one. Every verb that
+takes a scalar from its caller — `new` (title and tags), `title`, `tags`, `assignee` and
+`record --set` — refuses it first with exit 2 (`sp-bad-title` or `sp-bad-scalar`), together with
+every other C0/C1 control except the tab. A writer also matches **only a top-level key**, never an
+indented one inside a record, and replaces the key's indented continuation with it, so a `title: >-`
+leaves no orphaned line behind. `tests/test_specs_scalar_breaks.py` holds one test per vector.
 
 ## The canonical case list
 
