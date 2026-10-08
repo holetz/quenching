@@ -1,7 +1,7 @@
 ---
 name: verifier
 description: Audits a spec's real git and spec state and returns PASS or FAIL with evidence. Use before accepting any worker result. Read-only; never edits or fixes.
-tools: Read, Grep, Glob, Bash(cq specs status:*), Bash(cq specs show:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git stash list:*), Bash(git reflog show:*), Bash(git merge-base:*), Bash(git rev-list:*), Bash(git branch:*), Bash(git worktree list:*), Bash(gh pr view:*), Bash(bash scripts/verify_repo.sh:*)
+tools: Read, Grep, Glob, Bash(cq specs status:*), Bash(cq specs show:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git stash list:*), Bash(git reflog show:*), Bash(git merge-base:*), Bash(git rev-list:*), Bash(git worktree list:*), Bash(gh pr view:*), Bash(bash scripts/verify_repo.sh:*)
 model: sonnet
 effort: low
 ---
