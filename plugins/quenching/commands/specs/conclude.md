@@ -263,6 +263,8 @@ nothing could be handed off — a red gate, or (abandoned) the branch's own fate
 
 ### 7. Report
 
+**When this run's input carried `autonomous`, skip the read below and the mold with it** — a conductor presents the report, not this run; return the content in the fixed shape the caller specified. Otherwise:
+
 ```bash
 cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/report-mold.md \
   --sections "§The report mold" --rules-only
