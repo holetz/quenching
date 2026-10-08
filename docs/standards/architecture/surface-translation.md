@@ -30,8 +30,10 @@ local citations, and maps the root `CLAUDE.md` harness to `.agents/AGENTS.md` wh
 The translator owns only those generated artifacts. Existing Codex configuration, including
 `.agents/plugins/marketplace.json`, stays in place and is excluded from translation-drift checks.
 
-The generated `.agents/.generated-from.json` and `.generated-files.json` record the source digest
-and generated set. A check compares the deterministic result to that set without changing either
+The generated `.agents/.generated-from.json` and `.generated-files.json` record the generated set
+and one sha256 per generated file. They deliberately carry no aggregate source digest: it changed
+on every unrelated edit and made every parallel PR conflict on one line. Freshness is a byte
+comparison, not a stamp. A check compares the deterministic result to that set without changing either
 surface.
 
 ## What never translates
