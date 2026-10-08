@@ -129,8 +129,8 @@ def build_parser() -> argparse.ArgumentParser:
     pp = pr.add_parser("probe", help="read-only: is there an authenticated PR route for the "
                                      "configured provider?")
     pp.add_argument("--json", action="store_true", help="machine-readable output")
-    pp = pr.add_parser("record", help="stamp a spec's `pr` record with a PR opened elsewhere "
-                                      "(the Azure route); checks --spec owns --head")
+    pp = pr.add_parser("record", help="stamp a spec's `pr` record with a PR opened elsewhere"
+                                      "; checks --spec owns --head")
     pp.add_argument("--spec", required=True, metavar="ID", help="the spec whose record is stamped")
     pp.add_argument("--head", required=True, metavar="BRANCH", help="the branch the PR publishes")
     pp.add_argument("--number", required=True, type=int, metavar="N", help="the PR's id")

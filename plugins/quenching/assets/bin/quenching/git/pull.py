@@ -209,7 +209,7 @@ def _spec_vs_head(spec: str, head: str) -> dict | None:
 
 
 def _record(args) -> int:
-    """`pr record`: the Azure route stamps the `pr` record through the same function."""
+    """`pr record`: stamps the `pr` record of a PR opened outside `pr create`."""
     number, url = args.number, args.url
     if number < 1 or not url.startswith("https://") or "/_apis/" in url:
         return refuse({"code": "git-pr-record-invalid",
