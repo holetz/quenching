@@ -1755,10 +1755,23 @@ class WorktreeAdd(RepoCase):
         value = json.loads(read.stdout)["value"]
         self.assertEqual((value["base"], value["work"]), ("main", branch))
 
+    def test_with_spec_accepts_a_convention_branch_that_does_not_start_with_the_id(self):
+        spec, _specs = self._store_spec()
+        payload = _cq_json(self.repo, "worktree", "add", "--path", self.path,
+                           "--branch", "feat/PROJ-77-fixture", "--base", "main",
+                           "--spec", spec)
+        self.assertTrue(payload["branchRecord"]["ok"], payload)
+        self.assertTrue(os.path.isdir(self.path))
+
     def test_with_an_unknown_spec_or_one_that_does_not_own_the_branch_cuts_nothing(self):
         spec, _specs = self._store_spec()
+        _cq_specs = [sys.executable, CQ, "specs", "--root", self.repo]
+        subprocess.run([*_cq_specs, "record", spec, "branch", "--set", "base=main",
+                        "--set", f"work=plan/{spec}-owned"], cwd=self.repo,
+                       capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=60,
+                       check=True)
         for given, branch, code in (("999", "plan/999-x", "git-worktree-spec-unknown"),
-                                    (spec, f"plan/{int(spec) + 1}-x",
+                                    (spec, f"plan/{spec}-other",
                                      "git-worktree-spec-head-mismatch")):
             proc = _cq(self.repo, "worktree", "add", "--path", self.path, "--branch", branch,
                        "--base", "main", "--spec", given)
