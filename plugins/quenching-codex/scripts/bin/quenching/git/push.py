@@ -15,9 +15,17 @@ from quenching.common.output import FINDINGS, OK, emit, refuse
 from quenching.git.audit import SAFE, _branch_ok, _commit, _run
 
 
+def remote_probe(cwd: str, remote: str) -> bool | None:
+    """Whether `remote` is configured: True (exit 0), False (exit 2, git's "no such remote" — a
+    fact) or None (any other exit: git could not answer, which is neither yes nor no)."""
+    if not remote or remote.startswith("-"):
+        return False
+    code = _run(cwd, "remote", "get-url", "--", remote)[0]
+    return True if code == 0 else False if code == 2 else None
+
+
 def remote_ok(cwd: str, remote: str) -> bool:
-    return bool(remote) and not remote.startswith("-") \
-        and _run(cwd, "remote", "get-url", "--", remote)[0] == 0
+    return remote_probe(cwd, remote) is True
 
 
 def cmd_push(args) -> int:
@@ -29,6 +37,9 @@ def cmd_push(args) -> int:
     if sha is None:
         return refuse({"code": "git-push-ref-invalid",
                        "message": f"no local branch named {args.branch}"}, args.json)
+    if remote_probe(cwd, args.remote) is None:
+        return refuse({"code": "git-push-remote-unreadable",
+                       "message": f"git could not read the remote: {args.remote}"}, args.json)
     if not remote_ok(cwd, args.remote):
         return refuse({"code": "git-push-remote-unknown",
                        "message": f"not a configured remote: {args.remote}"}, args.json)

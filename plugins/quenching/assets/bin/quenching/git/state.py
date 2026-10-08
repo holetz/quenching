@@ -8,22 +8,24 @@ from __future__ import annotations
 import os
 
 from quenching.common.output import emit, refuse
-from quenching.git.audit import _inert_env, _lines, _run
+from quenching.git.audit import _error, _inert_env, _lines, _run
 
 
 def cmd_state(args) -> int:
     cwd = os.getcwd()
-    env = _inert_env(cwd)
+    errors: list[dict] = []
+    env = _inert_env(cwd, errors)
     code, top = _run(cwd, "rev-parse", "--show-toplevel", env=env)
     if code != 0:
         return refuse({"code": "git-state-not-repository",
                        "message": "the current directory is not inside a git repository"},
                       args.json)
-    errors: list[dict] = []
     remotes = {}
     for name in _lines(cwd, "remote", env=env, errors=errors):
         code, url = _run(cwd, "remote", "get-url", "--", name, env=env)
         remotes[name] = url.strip() if code == 0 else None
+        if code != 0:
+            errors.append(_error(("remote", "get-url"), code, f"remote {name} url unreadable"))
     payload = {
         "ok": True,
         "root": top.strip(),

@@ -1633,6 +1633,24 @@ class PushVerb(RepoCase):
                                capture_output=True, text=True).stdout
         self.assertNotIn("plan/1-x", heads)
 
+    def test_remote_probe_tells_no_such_remote_from_a_git_failure(self):
+        from quenching.git import push
+        self.assertIs(push.remote_probe(self.repo, "origin"), True)
+        self.assertIs(push.remote_probe(self.repo, "nowhere"), False)
+        with mock.patch.object(push, "_run", return_value=(128, "")):
+            self.assertIsNone(push.remote_probe(self.repo, "origin"))
+
+    def test_a_remote_git_cannot_read_is_refused_not_read_as_unknown(self):
+        from quenching.git import push
+        args = SimpleNamespace(branch="plan/1-x", remote="origin", json=True)
+        out = io.StringIO()
+        with mock.patch.object(push, "_run", side_effect=lambda cwd, *a, **k: (128, "")
+                               if a[:2] == ("remote", "get-url") else (0, "")), \
+                mock.patch("os.getcwd", return_value=self.repo), contextlib.redirect_stdout(out):
+            code = push.cmd_push(args)
+        self.assertEqual(code, 2)
+        self.assertIn("git-push-remote-unreadable", out.getvalue())
+
 
 class PruneVerb(RepoCase):
     """`cq git prune` — acts only on what a fresh `cq git stale` reports, never by force."""
