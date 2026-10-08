@@ -1,5 +1,5 @@
 """`cq git state` — the checkout facts the git commands read before they act: the current branch,
-the porcelain status, the staged paths and the remotes. One fixed argv, run with `audit.SAFE` and
+the porcelain status, the staged paths, the stash entries and the remotes. One fixed argv, run with `audit.SAFE` and
 the repository's `filter.<x>` drivers blanked, so a caller needs no `Bash(git …)` grant to read
 them. A REPORT only, exit 0 on any facts."""
 from __future__ import annotations
@@ -27,10 +27,12 @@ def cmd_state(args) -> int:
         "branch": "".join(_lines(cwd, "branch", "--show-current")) or None,
         "status": _lines(cwd, *_filter_overrides(cwd), "status", "--porcelain"),
         "staged": _lines(cwd, "diff", "--cached", "--name-only"),
+        "stash": _lines(cwd, "stash", "list"),
         "remotes": remotes,
     }
     human = [f"branch: {payload['branch'] or '(detached)'}",
              f"status: {len(payload['status'])} entries", f"staged: {len(payload['staged'])} path(s)",
+             f"stash: {len(payload['stash'])} entries",
              *(f"remote {n}: {u}" for n, u in remotes.items())]
     emit(args.json, payload, "\n".join(human))
     return 0
