@@ -160,7 +160,8 @@ FRONTMATTER_GRANT = re.compile(r"(^|/)(agents|commands)/.+\.md$|(^|/)skills/.+/s
 AGENT = re.compile(r"(^|/)agents/.+\.md$", re.I)
 SYMLINK = "120000"
 SETTINGS = re.compile(r"^\.claude/settings[^/]*\.json$")
-SURFACE = re.compile(r"^\.github/workflows/|^\.claude/settings[^/]*\.json$|(^|/)hooks/")
+SURFACE = re.compile(r"^\.github/workflows/|^\.claude/settings[^/]*\.json$|(^|/)hooks/"
+                     r"|(^|/)\.claude-plugin/[^/]+\.json$|(^|/)\.(mcp|lsp)\.json$")
 GRANT_KEYS = ("tools", "allowed-tools")
 DENY_KEYS = ("disallowedTools",)
 DOCS = re.compile(r"^docs/")
@@ -284,7 +285,8 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
             errors: list[dict]) -> list[dict]:
     """Every entry the branch ADDS to the grant surface against its merge-base with `base`:
     `tools:`/`allowed-tools:` of an agent, command or skill (an agent with no `tools:` is `*`), a
-    deny rule removed (`kind: deny`), and the added lines of a hook or CI workflow. What it does not
+    deny rule removed (`kind: deny`), and the added lines of a hook, a CI workflow, a
+    `.claude-plugin/*.json` manifest or a `.mcp.json`/`.lsp.json` server config. What it does not
     understand fails closed as `kind: unknown`: any other frontmatter key added, removed or changed
     (its name), a changed block it cannot read whole (`(unparsed frontmatter)`), and a sensitive
     file deleted (`(deleted)`), and every symlink the branch adds or repoints, at any path

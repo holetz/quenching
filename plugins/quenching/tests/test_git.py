@@ -385,6 +385,16 @@ class Audit(RepoCase):
         self.assertEqual(got[wf]["kind"], "surface")
         self.assertIn("on: push", got[wf]["added"])
 
+    def test_grants_reads_plugin_manifest_and_server_config_lines(self):
+        paths = ("plugins/p/.claude-plugin/plugin.json", ".claude-plugin/marketplace.json",
+                 "plugins/p/.mcp.json", ".lsp.json")
+        for path in paths:
+            self._commit_file(path, '{"x": "%s"}\n' % path, path)
+        got = {g["path"]: g for g in self._grants()}
+        for path in paths:
+            self.assertEqual((got[path]["kind"], got[path]["added"]),
+                             ("surface", ['{"x": "%s"}' % path]))
+
     def _commit_on_main(self, rel: str, text: str):
         full = pathlib.Path(self.repo, rel)
         full.parent.mkdir(parents=True, exist_ok=True)
