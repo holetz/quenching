@@ -308,6 +308,19 @@ def _agent_grant_findings(body: str, tools: str, where: dict) -> list[dict]:
     return out
 
 
+def _agent_disallowed_bash_findings(disallowed: str, where: dict) -> list[dict]:
+    """A `Bash(...)` pattern in an agent's `disallowedTools` removes the whole Bash tool
+    (measured, Claude Code 2.1.294), so the agent's scoped `tools:` grants silently vanish."""
+    out = []
+    for tool in _split_tools(disallowed):
+        if tool.startswith("Bash("):
+            remedy = "drop it: fence Bash through the scoped grants of `tools:`"
+            out.append(finding("sk-agent-disallowed-bash", "error",
+                               f"`disallowedTools: {tool}` removes the whole Bash tool from the "
+                               "agent — " + remedy, tool=tool, remedy=remedy, **where))
+    return out
+
+
 def lint_agents(root: str, base: str) -> list[dict]:
     out: list[dict] = []
     for filename, fm in agent_definitions(root):
@@ -315,6 +328,7 @@ def lint_agents(root: str, base: str) -> list[dict]:
         body = body_after_frontmatter(read_text(path) or "")
         where = {"command": f"agent:{filename[:-3]}", "path": rel(path, base)}
         out.extend(_cq_call_findings(body, where))
+        out.extend(_agent_disallowed_bash_findings(str(fm.get("disallowedTools", "")), where))
         if "tools" in fm:
             out.extend(_agent_grant_findings(body, str(fm["tools"]), where))
     return out
