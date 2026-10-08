@@ -12,7 +12,7 @@ description: "Run an epic or a list of specs through the orchestrator agent. Use
 `cq specs list --json` and ask which with **AskUserQuestion**.
 
 This command is a launcher. The protocol (waves, routing, budgets, acceptance, audit) lives in the
-`orchestrator` agent definition, `plugins/quenching/agents/orchestrator.md`; do not restate it.
+`orchestrator` agent definition, `../../agents/orchestrator.md`; do not restate it.
 
 ## Workflow
 
@@ -39,7 +39,7 @@ human → go to step 3. Otherwise ask once with **AskUserQuestion**, naming the 
 `--autonomous` already given → skip the question. **Done when:** the set to launch is fixed.
 
 ### 3. Launch the orchestrator
-Start the `quenching:orchestrator` agent with a prompt of at most 1,500 characters: the epic id or
+Codex ships no plugin sub-agents, so follow `../../agents/orchestrator.md` in this session instead: ignore its `tools:` allow-list, keep its prohibitions (no git stash, checkout, reset, rebase or commit amend; edit no file yourself), and take as its input, in at most 1,500 characters: the epic id or
 the spec ids, the base branch, and the word `autonomous` when it was forced. Pass nothing else; it
 carries its own protocol, and without `autonomous` it blocks a spec that still needs approval.
 **Done when:** the orchestrator has returned its fixed report.
