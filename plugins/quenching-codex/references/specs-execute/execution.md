@@ -170,8 +170,8 @@ Run it as **one chained call**, gate included:
 ```bash
 <the task's verify:> \
   && git add <the task's files> \
-  && Skill("quenching:git:commit", "<id>") \
-  && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <id> --spec "<id>" --subject "<subject reported by git:commit>" --commit "<sha reported by git:commit>"
+  && Skill("quenching:git:commit", "<spec-id>") \
+  && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <task-id> --spec "<spec-id>" --subject "<subject reported by git:commit>" --commit "<sha reported by git:commit>"
 ```
 
 **The `&&` is the ordering:** verify before staging, staging before the delegated commit, the
@@ -225,7 +225,7 @@ level down: it produces no diff of its own, so there is no commit to anchor to a
 commit sha to record. Its chain ends at the spec tick:
 
 ```bash
-<the task's verify:> && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <id> --spec "<id>"
+<the task's verify:> && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <task-id> --spec "<spec-id>"
 ```
 
 — no `--subject`, no `git add`, no `git commit`. The box still ticks. Where the backend keeps the

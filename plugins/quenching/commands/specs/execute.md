@@ -263,8 +263,8 @@ e. **Then verify, stage, delegate the commit and confirm the spec task as ONE ch
    ```bash
    <the task's verify:> \
      && git add <the task's declared files> \
-     && Skill("quenching:git:commit", "<id>") \
-     && cq specs task --check <id> --spec "<id>" --subject "<subject reported by git:commit>" --commit "<sha reported by git:commit>"
+     && Skill("quenching:git:commit", "<spec-id>") \
+     && cq specs task --check <task-id> --spec "<spec-id>" --subject "<subject reported by git:commit>" --commit "<sha reported by git:commit>"
    ```
 
    **The ordering remains explicit:** verify precedes staging, staging precedes the delegated
