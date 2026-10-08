@@ -1739,6 +1739,38 @@ class WorktreeRetire(RepoCase):
         self.assertTrue(os.path.exists(os.path.join(self.wt, ".env")))
         self.assertIn(".env", proc.stdout)
 
+    def _declare_regenerable(self, *paths):
+        config = pathlib.Path(self.repo, ".claude", "quenching.json")
+        config.parent.mkdir(exist_ok=True)
+        config.write_text(json.dumps({"shared": {"regenerablePaths": list(paths)}}) + "\n",
+                          encoding="utf-8")
+
+    def test_a_declared_regenerable_ignored_path_is_discarded_on_its_own(self):
+        self._merge_through_gh()
+        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
+            "__pycache__/\n.quenching/\n", encoding="utf-8")
+        for rel in ("deep/__pycache__/m.pyc", ".quenching/coverage/c.json"):
+            target = pathlib.Path(self.wt, rel)
+            target.parent.mkdir(parents=True)
+            target.write_text("x\n", encoding="utf-8")
+        self._declare_regenerable("__pycache__", ".quenching/coverage")
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertFalse(os.path.exists(self.wt))
+
+    def test_an_undeclared_ignored_file_still_stands_beside_declared_ones(self):
+        self._merge_through_gh()
+        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
+            ".cache/\n.env\n", encoding="utf-8")
+        os.makedirs(os.path.join(self.wt, ".cache"))
+        pathlib.Path(self.wt, ".cache", "c").write_text("x\n", encoding="utf-8")
+        pathlib.Path(self.wt, ".env").write_text("secret\n", encoding="utf-8")
+        self._declare_regenerable(".cache")
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        self.assertEqual(json.loads(proc.stdout)["ignored"], [".env"])
+        self.assertTrue(os.path.isdir(self.wt))
+
     def test_a_local_base_behind_still_retires_a_published_branch(self):
         self._merge_through_gh()
         proc = self._retire()
