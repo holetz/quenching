@@ -72,7 +72,7 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
 5. **Retry and idempotency.** Retry a failed `cq` write with backoff. Before any create, search by
    title. Never repeat an exit 2 blindly; read its message. One re-spawn, then the human. A `blocked` whose NOTE starts with `needs-human:` is never
    re-spawned: put its question to the human.
-6. **Audit per wave.** After each wave run `cd <base checkout> && cq git state --json` (its `stash` must be empty and its `status` clean)
+6. **Audit per wave.** After each wave run `cd <base checkout> && cq git state --json` (its `stash` must be empty, its `status` clean and `complete` true: a non-empty `errors` is an unknown, not a clean tree)
    and `git worktree list` (only the worktrees you opened).
    Anything else stops the run and is reported.
 7. **Parallelism.** At most 3 workers at once, each in its own worktree. On the GitHub backend,
