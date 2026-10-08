@@ -208,8 +208,25 @@ def _spec_vs_head(spec: str, head: str) -> dict | None:
     return None
 
 
+def _real_head(number: int, url: str) -> tuple[int, str] | str:
+    """The PR's own `(number, head branch)` as the provider reports it, or gh's/az's message."""
+    if _provider() == "azure-boards":
+        code, out, err = _az("repos", "pr", "show", f"--id={number}", "--detect=true",
+                             "--output=json")
+        keys = ("pullRequestId", "sourceRefName")
+    else:
+        code, out, err = _gh("pr", "view", url, "--json", "headRefName,number")
+        keys = ("number", "headRefName")
+    try:
+        data = json.loads(out)
+        return int(data[keys[0]]), str(data[keys[1]]).removeprefix("refs/heads/")
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+        return (err or out).strip() or "the provider returned no pull request"
+
+
 def _record(args) -> int:
-    """`pr record`: stamps the `pr` record of a PR opened outside `pr create`."""
+    """`pr record`: stamps the `pr` record of a PR opened outside `pr create`, once the PR the
+    provider reports under `--number`/`--url` publishes `--head`."""
     number, url = args.number, args.url
     if number < 1 or not url.startswith("https://") or "/_apis/" in url:
         return refuse({"code": "git-pr-record-invalid",
@@ -218,6 +235,16 @@ def _record(args) -> int:
     bad = _spec_vs_head(args.spec, args.head)
     if bad:
         return refuse(bad, args.json)
+    real = _real_head(number, url)
+    if isinstance(real, str):
+        emit(args.json, {"ok": False, "number": number, "url": url, "head": args.head,
+                         "reason": "head-unreadable", "message": real},
+             f"`pr` record not stamped: head unreadable: {real}")
+        return FINDINGS
+    if real != (number, args.head):
+        return refuse({"code": "git-pr-record-head-mismatch",
+                       "message": f"PR #{real[0]} publishes {real[1]}, not #{number} "
+                                  f"{args.head}"}, args.json)
     stamp = _stamp(args.spec, number, url)
     payload = {"ok": stamp["ok"], "number": number, "url": url, "head": args.head, "pr": stamp}
     if not stamp["ok"]:
@@ -281,6 +308,8 @@ def _create(args) -> int:
         bad = _spec_vs_head(args.spec, args.head)
         if bad:
             return refuse(bad, args.json)
+    if args.body == "-":
+        args.body = sys.stdin.read()
     opened = _open_azure(args) if provider == "azure-boards" else _open_github(args)
     if isinstance(opened, str):
         emit(args.json, {"ok": False, "provider": provider, "reason": "create-refused",
