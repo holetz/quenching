@@ -23,7 +23,8 @@ def _git(cwd: str, *argv: str) -> str:
         return ""
 
 
-def _git_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, str]:
+def _git_run(cwd: str, *argv: str, stdin: str | None = None,
+             env: dict[str, str] | None = None) -> tuple[int, str, str]:
     """Exit code, stdout AND stderr of one git command — the two halves `_git` throws away.
 
     A SIBLING of `_git`, never a change to it: every existing caller reads `""` as "this repo
@@ -41,7 +42,7 @@ def _git_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, 
     try:
         out = subprocess.run(["git", *argv], capture_output=True, text=True,
                              timeout=COMMAND_TIMEOUT_S,
-                             cwd=cwd, input=stdin)
+                             cwd=cwd, input=stdin, env=env)
         return out.returncode, out.stdout, out.stderr
     except (OSError, ValueError, subprocess.SubprocessError) as e:   # noqa: BLE001
         return 127, "", str(e)

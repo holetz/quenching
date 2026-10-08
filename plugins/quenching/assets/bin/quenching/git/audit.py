@@ -5,9 +5,12 @@ A wildcard grant such as `Bash(git -C * status:*)` admits any git command that m
 `status` — `branch -D`, `clean -fdx`, `-c core.fsmonitor=<cmd>` — and `git log:*` admits
 `--output=<file>`. Here the agent names a worktree and refs; every git invocation is built in this
 module, refs are resolved to commits before use, and the repository's own config cannot run a
-command during the read: the `filter.<x>` drivers it declares are blanked before `status`, which
-does not descend into submodules (their own config is not ours to blank), and `log.showSignature`
-is forced off so `gpg.program` never runs. A
+command during the read: the `filter.<x>` drivers it declares are blanked before `status` through
+`GIT_CONFIG_COUNT`, which carries a key containing `=` that `-c key=value` would split, and `status`
+does not descend into submodules (their own config is not ours to blank); `log.showSignature` is
+forced off so `gpg.program` never runs; and a partial clone's lazy fetch is off
+(`GIT_NO_LAZY_FETCH`, and `GIT_ALLOW_PROTOCOL` empty refuses every transport), so a missing blob
+or an absent `--sha` never runs `core.sshCommand` or any other transport the config names. A
 REPORT only, exit 0 on any facts; judging them is the verifier's. Nothing here executes the
 audited branch's code: the gate is certified by CI before the merge, never by this verb."""
 from __future__ import annotations
@@ -17,26 +20,27 @@ import re
 from quenching.common.git import _git_run
 from quenching.common.output import emit, refuse
 
-FILTER_KEY = re.compile(r"^filter\.(.+)\.(clean|smudge|process)$")
+FILTER_KEY = re.compile(r"^filter\.(.+)\.(clean|smudge|process)$", re.S)
 SAFE = ("--no-optional-locks", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null",
         "-c", "log.showSignature=false")
+NO_FETCH = {"GIT_NO_LAZY_FETCH": "1", "GIT_ALLOW_PROTOCOL": ""}
 
 
-def _run(cwd: str, *argv: str) -> tuple[int, str]:
-    code, out, _err = _git_run(cwd, *SAFE, *argv)
+def _run(cwd: str, *argv: str, env: dict[str, str] | None = None) -> tuple[int, str]:
+    code, out, _err = _git_run(cwd, *SAFE, *argv, env=env)
     return code, out
 
 
-def _lines(cwd: str, *argv: str) -> list[str]:
-    code, out = _run(cwd, *argv)
+def _lines(cwd: str, *argv: str, env: dict[str, str] | None = None) -> list[str]:
+    code, out = _run(cwd, *argv, env=env)
     return [line for line in out.splitlines() if line] if code == 0 else []
 
 
-def _reflog(cwd: str, ref: str) -> list[str]:
+def _reflog(cwd: str, ref: str, env: dict[str, str] | None = None) -> list[str]:
     """The reflog subjects of `ref`, newest first, minus the `reset` entries that moved nothing:
     a reset whose sha equals the next older entry's rewrote no history (`git merge --abort` logs
     `reset: moving to HEAD`). A reset that moved the ref stays, so the verifier still sees it."""
-    entries = [line.split(" ", 1) + [""] for line in _lines(cwd, "reflog", "show", "--format=%H %gs", ref)]
+    entries = [line.split(" ", 1) + [""] for line in _lines(cwd, "reflog", "show", "--format=%H %gs", ref, env=env)]
     return [e[1] for i, e in enumerate(entries)
             if e[1] and not (e[1].startswith("reset:") and i + 1 < len(entries)
                              and entries[i + 1][0] == e[0])]
@@ -51,10 +55,11 @@ def _registered(cwd: str, path: str) -> bool:
                for line in out.splitlines() if line.startswith("worktree "))
 
 
-def _commit(cwd: str, ref: str) -> str | None:
+def _commit(cwd: str, ref: str, env: dict[str, str] | None = None) -> str | None:
     if not ref or ref.startswith("-"):
         return None
-    code, out = _run(cwd, "rev-parse", "--verify", "--quiet", "--end-of-options", f"{ref}^{{commit}}")
+    code, out = _run(cwd, "rev-parse", "--verify", "--quiet", "--end-of-options", f"{ref}^{{commit}}",
+                     env=env)
     return out.strip() if code == 0 and out.strip() else None
 
 
@@ -64,20 +69,27 @@ def _branch_ok(cwd: str, branch: str) -> bool:
     return _run(cwd, "check-ref-format", "--branch", branch)[0] == 0
 
 
-def _filter_overrides(cwd: str) -> list[str]:
-    """`-c` pairs that blank every `filter.<x>` driver the repository config declares, so the
-    status cannot run one against the branch's `.gitattributes`. `required` is cleared too: a
-    required filter with no command would die instead of being skipped."""
-    code, out = _run(cwd, "config", "--name-only", "--get-regexp", r"^filter\..*\.(clean|smudge|process)$")
-    argv: list[str] = []
-    if code != 0:
-        return argv
-    for key in out.splitlines():
-        m = FILTER_KEY.match(key.strip())
+def _inert_env(cwd: str) -> dict[str, str]:
+    """The environment every read of this verb runs under: the lazy fetch off, and every
+    `filter.<x>` driver the repository config declares blanked as a `GIT_CONFIG_COUNT` pair, so the
+    status cannot run one against the branch's `.gitattributes` whatever `<x>` contains.
+    `required` is cleared too: a required filter with no command would die instead of being
+    skipped. The pairs are appended after any the caller already passes."""
+    env = {**os.environ, **NO_FETCH}
+    code, out = _run(cwd, "config", "-z", "--name-only", "--get-regexp",
+                     r"^filter\..*\.(clean|smudge|process)$", env=env)
+    try:
+        n = int(env.get("GIT_CONFIG_COUNT", "0"))
+    except ValueError:
+        n = 0
+    for key in out.split("\0") if code == 0 else []:
+        m = FILTER_KEY.match(key)
         if m:
-            argv += ["-c", f"filter.{m.group(1)}.{m.group(2)}=",
-                     "-c", f"filter.{m.group(1)}.required=false"]
-    return argv
+            for k, v in ((key, ""), (f"filter.{m.group(1)}.required", "false")):
+                env[f"GIT_CONFIG_KEY_{n}"], env[f"GIT_CONFIG_VALUE_{n}"] = k, v
+                n += 1
+    env["GIT_CONFIG_COUNT"] = str(n)
+    return env
 
 
 def cmd_audit(args) -> int:
@@ -90,10 +102,11 @@ def cmd_audit(args) -> int:
     if not _branch_ok(worktree, args.branch):
         return refuse({"code": "audit-ref-invalid", "message": f"not a branch name: {args.branch}"},
                       args.json)
+    env = _inert_env(worktree)
     resolved = {}
     for label, ref in [("base", args.base), ("branch", f"refs/heads/{args.branch}"),
                        *(("sha", s) for s in args.sha)]:
-        sha = _commit(worktree, ref)
+        sha = _commit(worktree, ref, env)
         if sha is None:
             return refuse({"code": "audit-ref-invalid",
                            "message": f"{label} does not resolve to a commit: {ref}"}, args.json)
@@ -105,14 +118,14 @@ def cmd_audit(args) -> int:
         "worktree": worktree,
         "base": {"ref": args.base, "sha": base},
         "branch": {"ref": args.branch, "sha": tip},
-        "status": _lines(worktree, *_filter_overrides(worktree), "status", "--porcelain", "--ignore-submodules=all"),
-        "stash": _lines(worktree, "stash", "list"),
-        "commits": _lines(worktree, "log", "--oneline", f"{base}..{tip}"),
-        "changed": _lines(worktree, "diff", "--name-only", f"{base}...{tip}"),
-        "ancestry": {s: _run(worktree, "merge-base", "--is-ancestor", resolved[s], tip)[0] == 0
+        "status": _lines(worktree, "status", "--porcelain", "--ignore-submodules=all", env=env),
+        "stash": _lines(worktree, "stash", "list", env=env),
+        "commits": _lines(worktree, "log", "--oneline", f"{base}..{tip}", env=env),
+        "changed": _lines(worktree, "diff", "--name-only", f"{base}...{tip}", env=env),
+        "ancestry": {s: _run(worktree, "merge-base", "--is-ancestor", resolved[s], tip, env=env)[0] == 0
                      for s in args.sha},
-        "reflog": {"branch": _reflog(worktree, f"refs/heads/{args.branch}"),
-                   "head": _reflog(worktree, "HEAD")},
+        "reflog": {"branch": _reflog(worktree, f"refs/heads/{args.branch}", env),
+                   "head": _reflog(worktree, "HEAD", env)},
     }
 
     lines = [f"worktree: {worktree}", f"branch: {args.branch} ({tip[:12]}) over {args.base}",
