@@ -20,6 +20,7 @@ from quenching.git.base import cmd_base
 from quenching.git.commit import cmd_commit
 from quenching.git.conventions import cmd_conventions
 from quenching.git.prune import cmd_prune
+from quenching.git.pull import cmd_pr
 from quenching.git.push import cmd_push
 from quenching.git.slugs import cmd_specs
 from quenching.git.stale import cmd_stale
@@ -29,7 +30,7 @@ from quenching.git.worktree import cmd_worktree
 DISPATCH = {"base": cmd_base, "specs": cmd_specs, "stale": cmd_stale,
             "conventions": cmd_conventions, "worktree": cmd_worktree,
             "commit": cmd_commit, "audit": cmd_audit, "state": cmd_state,
-            "push": cmd_push, "prune": cmd_prune}
+            "push": cmd_push, "prune": cmd_prune, "pr": cmd_pr}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -100,6 +101,21 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--remote", default="origin", metavar="REMOTE",
                     help="the remote the report reads (default: origin)")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
+
+    sp = sub.add_parser("pr", help="the GitHub pull-request writes, with a fixed argv")
+    pr = sp.add_subparsers(dest="action", required=True)
+    pp = pr.add_parser("create", help="open a PR from --head into --base; prints its number "
+                                      "and URL")
+    pp.add_argument("--base", required=True, metavar="BRANCH", help="the branch it merges into")
+    pp.add_argument("--head", required=True, metavar="BRANCH", help="the branch it publishes")
+    pp.add_argument("--title", required=True, metavar="TITLE", help="the PR title")
+    pp.add_argument("--body", default="", metavar="BODY", help="the PR body, sent on stdin")
+    pp.add_argument("--json", action="store_true", help="machine-readable output")
+    pp = pr.add_parser("merge", help="merge with --merge, only when every check is green")
+    pp.add_argument("--url", required=True, metavar="URL", help="the PR's URL")
+    pp.add_argument("--wait", type=int, default=0, metavar="SECONDS",
+                    help="re-read pending checks every 20s for up to this long (max 540)")
+    pp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("audit", help="the verifier's facts inside one registered worktree — "
                                        "status, stash, commits, scope, ancestry, reflog; "
