@@ -203,9 +203,8 @@ def _render_record(key: str, rec: dict) -> list[str]:
 def set_frontmatter_record(text: str, key: str, rec: dict) -> str:
     """Replace ONE record, its continuation lines included, preserving every other line.
 
-    `set_frontmatter_key` cannot do this: a record already written in block form occupies
-    lines the single-line replacement would leave orphaned below the new value, where they
-    would parse as a second record's fields."""
+    `set_frontmatter_key` writes one scalar line; a record is rendered here in flow or block
+    form, and a block record already written occupies continuation lines this replaces with it."""
     for v in rec.values():
         _refuse_line_break(str(v))
     new_lines = _render_record(key, rec)
