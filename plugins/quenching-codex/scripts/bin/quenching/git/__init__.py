@@ -16,13 +16,15 @@ import sys
 from quenching.common.output import REFUSAL
 from quenching.common.version import VERSION
 from quenching.git.base import cmd_base
+from quenching.git.commit import cmd_commit
 from quenching.git.conventions import cmd_conventions
 from quenching.git.slugs import cmd_specs
 from quenching.git.stale import cmd_stale
 from quenching.git.worktree import cmd_worktree
 
 DISPATCH = {"base": cmd_base, "specs": cmd_specs, "stale": cmd_stale,
-            "conventions": cmd_conventions, "worktree": cmd_worktree}
+            "conventions": cmd_conventions, "worktree": cmd_worktree,
+            "commit": cmd_commit}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -56,6 +58,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp = sub.add_parser("worktree", help="materialise declared shared paths in this checkout")
     sp.add_argument("action", choices=("link",), help="link each declared shared path")
+    sp.add_argument("--json", action="store_true", help="machine-readable output")
+
+    sp = sub.add_parser("commit", help="commit the existing index with the given subject — "
+                                        "never stages, amends or skips hooks")
+    sp.add_argument("--subject", required=True, metavar="SUBJECT",
+                    help="the commit subject, resolved by the caller")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     return p
