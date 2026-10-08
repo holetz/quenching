@@ -161,6 +161,7 @@ SETTINGS = re.compile(r"^\.agents/settings[^/]*\.json$")
 SURFACE = re.compile(r"^\.github/workflows/|^\.agents/settings[^/]*\.json$|(^|/)hooks/")
 GRANT_KEYS = ("tools", "allowed-tools")
 DENY_KEYS = ("disallowedTools",)
+DOCS = re.compile(r"^docs/")
 
 
 def _split_entries(value: str) -> list[str]:
@@ -254,10 +255,10 @@ def _unknown_keys(old: dict[str, list[str]], new: dict[str, list[str]]) -> list[
                   if k not in KNOWN_KEYS and old.get(k) != new.get(k))
 
 
-def _deny_entries(path: str, text: str | None) -> set[str]:
-    """The deny rules of a file: `permissions.deny` of a settings JSON, `disallowedTools` of a
-    frontmatter. Raises ValueError on a settings file that is not a JSON object, whose
-    `permissions` is not an object or whose `deny` is not a list."""
+def _deny_entries(path: str, text: str | None, key: str = "deny") -> set[str]:
+    """The rules of a file: `permissions.<key>` (`deny` or `ask`) of a settings JSON,
+    `disallowedTools` of a frontmatter (deny only). Raises ValueError on a settings file that is
+    not a JSON object, whose `permissions` is not an object or whose `<key>` is not a list."""
     if text is None:
         return set()
     if SETTINGS.search(path):
@@ -267,10 +268,12 @@ def _deny_entries(path: str, text: str | None) -> set[str]:
         permissions = data.get("permissions", {})
         if not isinstance(permissions, dict):
             raise ValueError("permissions is not an object")
-        deny = permissions.get("deny", [])
-        if not isinstance(deny, list):
-            raise ValueError("permissions.deny is not a list")
-        return {str(e) for e in deny}
+        rules = permissions.get(key, [])
+        if not isinstance(rules, list):
+            raise ValueError(f"permissions.{key} is not a list")
+        return {str(e) for e in rules}
+    if key != "deny":
+        return set()
     parsed = _block(text)
     return (_entries(parsed[0], DENY_KEYS) if parsed else None) or set()
 
@@ -295,7 +298,8 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
 
     found = []
     for path in changed:
-        frontmatter, surface = FRONTMATTER_GRANT.search(path), SURFACE.search(path)
+        frontmatter = FRONTMATTER_GRANT.search(path) and not DOCS.match(path)
+        surface = SURFACE.search(path)
         if not (frontmatter or surface):
             continue
         new = show(tip, path)
@@ -313,20 +317,22 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
                 unparsed = True
                 found.append({"path": path, "kind": "unknown", "added": ["(unparsed frontmatter)"]})
             else:
-                added = sorted(_grant_entries(new, new_fm, agent) - _grant_entries(old, old_fm, agent))
+                old_grants = _grant_entries(old, old_fm, agent)
+                added = [] if "*" in old_grants else sorted(_grant_entries(new, new_fm, agent) - old_grants)
                 if added:
                     found.append({"path": path, "kind": "tools", "added": added})
                 unknown = _unknown_keys(old_keys, new_keys)
                 if unknown:
                     found.append({"path": path, "kind": "unknown", "added": unknown})
         if (frontmatter and not unparsed) or SETTINGS.search(path):
-            try:
-                removed = sorted(_deny_entries(path, old) - _deny_entries(path, new))
-            except ValueError as exc:
-                errors.append(_error(("show", path), 0, f"settings unreadable: {exc}"))
-                removed = []
-            if removed:
-                found.append({"path": path, "kind": "deny", "added": removed})
+            for kind in ("deny", "ask"):
+                try:
+                    removed = sorted(_deny_entries(path, old, kind) - _deny_entries(path, new, kind))
+                except ValueError as exc:
+                    errors.append(_error(("show", path), 0, f"settings unreadable: {exc}"))
+                    removed = []
+                if removed:
+                    found.append({"path": path, "kind": kind, "added": removed})
         if surface:
             code, out, err = _git_run(cwd, *SAFE, "diff", "-U0", "--no-renames", f"{base}...{tip}",
                                       "--", path, env=env)
