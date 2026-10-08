@@ -1489,6 +1489,45 @@ class PullRequestVerbs(RepoCase):
                                         "--body-file=-"])
         self.assertEqual(call["stdin"], "Closes #1")
 
+    def test_create_with_spec_stamps_the_pr_record_through_cmd_record(self):
+        from quenching.git import pull
+        seen = []
+
+        def record(ns, root, out):
+            seen.append((ns.spec, ns.name, list(ns.set)))
+            out.emit(True, {"ok": True, "value": {"number": 42}}, "")
+            return 0
+        args = SimpleNamespace(base="main", head="plan/1-x", title="t", body="Closes #1",
+                               spec="1", json=True)
+        with mock.patch.object(pull, "_gh",
+                               return_value=(0, self.URL + "\n", "")), \
+                mock.patch.object(pull, "cmd_record", side_effect=record), \
+                mock.patch.object(pull, "_branch_ok", return_value=True), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            code = pull.cmd_pr(SimpleNamespace(action="create", **vars(args)))
+        self.assertEqual(code, 0)
+        (spec, name, sets), = seen
+        self.assertEqual((spec, name), ("1", "pr"))
+        self.assertEqual(sets[:2], ["number=42", f"url={self.URL}"])
+        self.assertTrue(sets[2].startswith("date="))
+        self.assertEqual(json.loads(out.getvalue())["pr"], {"ok": True, "value": {"number": 42}})
+
+    def test_a_refused_stamp_keeps_the_pr_facts_and_exits_1(self):
+        from quenching.git import pull
+
+        def record(ns, root, out):
+            out.emit(True, {"ok": False, "message": "refused"}, "")
+            return 2
+        with mock.patch.object(pull, "_gh", return_value=(0, self.URL + "\n", "")), \
+                mock.patch.object(pull, "cmd_record", side_effect=record), \
+                mock.patch.object(pull, "_branch_ok", return_value=True), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            code = pull.cmd_pr(SimpleNamespace(action="create", base="main", head="x", title="t",
+                                               body="", spec="1", json=True))
+        payload = json.loads(out.getvalue())
+        self.assertEqual((code, payload["number"], payload["reason"], payload["message"]),
+                         (1, 42, "stamp-failed", "refused"))
+
     def test_create_refuses_option_shaped_branches(self):
         for argv in (("--base=-d", "--head", "plan/1-x"), ("--base", "main", "--head=--web")):
             proc = _cq(self.repo, "pr", "create", *argv, "--title", "t", env=self.env)

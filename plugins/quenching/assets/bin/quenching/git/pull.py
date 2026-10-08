@@ -13,15 +13,20 @@ Exit 0 done · 1 findings (`gh` refused, or a check red, pending or absent — `
 which) · 2 refusal (a malformed name or URL)."""
 from __future__ import annotations
 
+import datetime
 import json
 import os
 import re
 import subprocess
 import sys
 import time
+from types import SimpleNamespace
 
 from quenching.common.output import FINDINGS, OK, emit, refuse
 from quenching.git.audit import _branch_ok
+from quenching.specs.commands.fields import cmd_record
+from quenching.specs.commands.output import Emitter
+from quenching.specs.config import find_repo_root
 
 PR_URL = re.compile(r"https://[A-Za-z0-9.-]+/[\w.-]+/[\w.-]+/pull/(\d+)")
 GREEN = {"pass", "skipping"}
@@ -131,6 +136,30 @@ def _merge(args) -> int:
     return OK
 
 
+class _Quiet(Emitter):
+    """Collects what `cmd_record` would print, so the verb emits ONE document."""
+
+    def __init__(self) -> None:
+        self.seen: dict = {}
+
+    def emit(self, as_json: bool, obj: dict, human: str) -> None:
+        self.seen = obj
+
+
+def _stamp(spec: str, number: int, url: str) -> dict:
+    """Merge the `pr` record through the same function `cq specs record` runs."""
+    quiet = _Quiet()
+    ns = SimpleNamespace(spec=spec, name="pr", json=True, set=[
+        f"number={number}", f"url={url}", f"date={datetime.date.today().isoformat()}"])
+    try:
+        code = cmd_record(ns, find_repo_root(os.getcwd()), quiet)
+    except Exception as e:  # the PR exists already: a stamp that blew up is reported, not raised
+        return {"ok": False, "message": str(e)}
+    if code != 0:
+        return {"ok": False, "message": quiet.seen.get("message", f"record exited {code}")}
+    return {"ok": True, "value": quiet.seen.get("value")}
+
+
 def _create(args) -> int:
     cwd = os.getcwd()
     for label, value in (("base", args.base), ("head", args.head)):
@@ -149,8 +178,15 @@ def _create(args) -> int:
                          "message": (err or out).strip()}, f"PR not created: {(err or out).strip()}")
         return FINDINGS
     number = int(PR_URL.fullmatch(url).group(1))
-    emit(args.json, {"ok": True, "url": url, "number": number, "base": args.base,
-                     "head": args.head}, f"PR #{number}: {url}")
+    payload = {"ok": True, "url": url, "number": number, "base": args.base, "head": args.head}
+    if args.spec:
+        payload["pr"] = stamp = _stamp(args.spec, number, url)
+        if not stamp["ok"]:
+            payload.update(ok=False, reason="stamp-failed", message=stamp["message"])
+            emit(args.json, payload, f"PR #{number}: {url} opened; `pr` record not stamped: "
+                                     f"{stamp['message']}")
+            return FINDINGS
+    emit(args.json, payload, f"PR #{number}: {url}")
     return OK
 
 
