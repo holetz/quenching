@@ -169,6 +169,38 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         self.assertFalse(stale.exists())
         self.assertIn("files", json.loads(manifest.read_text(encoding="utf-8")))
 
+    CONFLICT = "<<<<<<< HEAD\n{}\n=======\n{}\n>>>>>>> main\n"
+
+    def test_conflicted_manifest_recovery_still_refuses_paths_outside_the_destination(self):
+        translate.configure(str(self.root), str(self.root))
+        translate.write_tree(translate.generated_tree())
+        outside = self.root.parent / f"{self.root.name}-elsewhere"
+        self.addCleanup(lambda: __import__("shutil").rmtree(outside, ignore_errors=True))
+        __import__("shutil").copytree(self.root / ".agents" / "skills", outside)
+        __import__("shutil").rmtree(self.root / ".agents" / "skills")
+        (self.root / ".agents" / "skills").symlink_to(outside)
+        (self.root / ".claude" / "commands" / "specs" / "status.md").write_text(
+            COMMAND + "\nSource edit.\n", encoding="utf-8")
+        (self.root / ".agents" / ".generated-files.json").write_text(self.CONFLICT, encoding="utf-8")
+        with self.assertRaises(ValueError):
+            translate.write_tree(translate.generated_tree())
+        self.assertNotIn("Source edit.", (outside / "specs" / "status" / "SKILL.md").read_text(encoding="utf-8"))
+
+    def test_check_reports_a_conflicted_manifest(self):
+        translate.configure(str(self.root), str(self.root))
+        translate.write_tree(translate.generated_tree())
+        manifest = self.root / ".agents" / ".generated-files.json"
+        args = argparse.Namespace(check=True, write=False, diff=False, source=str(self.root),
+                                  target=str(self.root), json=True)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(translate.cmd_translate(args, str(self.root)), 0)
+        manifest.write_text(self.CONFLICT, encoding="utf-8")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = translate.cmd_translate(args, str(self.root))
+        self.assertEqual(code, 1)
+        self.assertIn("ct-manifest-conflicted", out.getvalue())
+
     def test_coexisting_surfaces_are_clean_after_generation(self):
         translate.configure(str(self.root), str(self.root))
         translate.write_tree(translate.generated_tree())
