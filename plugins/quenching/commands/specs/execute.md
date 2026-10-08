@@ -18,7 +18,7 @@ policy, reviewing its diff, committing it alone, and recording the spec task aft
 revealed, merging, and archiving belong to `/quenching:specs:conclude`.
 
 `Bash` is unrestricted: the verification, `cq specs` and Git commands are resolved from the live
-spec. The commit itself is delegated to `/quenching:git:commit`, which commits the existing index.
+spec. The commit itself is one `cq git commit` call, which commits the existing index.
 
 ## Resolving the tool
 
@@ -253,21 +253,22 @@ d. **On the first pass through 5d–5e, load the rules the chain runs under — 
    dead code — and fix what it finds, on the written diff, *before* the chain below, so what the
    chain commits is already the reviewed version.
 
-e. **Then verify, stage, delegate the commit and confirm the spec task as ONE chained operation.**
-   The subject belongs to `/quenching:git:commit`, under the declared-directive layer's table and
-   its [commit.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md) contract
-   §Commit messages §The subject is the anchor. Execute stages
-   only the task's declared files, passes the existing index and resolved task context to that
-   command, then sends its reported subject and sha to `cq specs task --check`:
+e. **Then verify, stage, commit and confirm the spec task as ONE chained operation.**
+   The subject is the one the declared-directive layer's table and
+   [commit.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md) §Commit messages
+   §The subject is the anchor name, resolved from what 5d already loaded — never reload
+   `/quenching:git:commit` per task. Execute stages only the task's declared files, commits that
+   index with `cq git commit --subject`, which never stages, amends or skips hooks, then sends the
+   subject and sha it reports to `cq specs task --check`:
 
    ```bash
    <the task's verify:> \
      && git add <the task's declared files> \
-     && Skill("quenching:git:commit", "<spec-id>") \
-     && cq specs task --check <task-id> --spec "<spec-id>" --subject "<subject reported by git:commit>" --commit "<sha reported by git:commit>"
+     && cq git commit --subject "<subject>" --json \
+     && cq specs task --check <task-id> --spec "<spec-id>" --subject "<subject reported by cq git commit>" --commit "<sha reported by cq git commit>"
    ```
 
-   **The ordering remains explicit:** verify precedes staging, staging precedes the delegated
+   **The ordering remains explicit:** verify precedes staging, staging precedes the
    commit, and the spec tick follows the commit. Any failure stops the operation. A commit that
    already succeeded is preserved when the spec write fails; report its sha and retry
    `cq specs task --check` without rebuilding or amending it. Run `verify:` only
@@ -275,7 +276,7 @@ e. **Then verify, stage, delegate the commit and confirm the spec task as ONE ch
    §The verification policy); otherwise the chain starts at `git add`. A task with
    **no `files:` declared** — the line absent, or `files: []` — has no diff to commit, so its
    chain *ends* at the tick, run without `--subject` or `--commit`, and with neither `git add` nor
-   delegate `git:commit`. A `branch:` record also gets the branch marked, per the rule loaded in 5d.
+   run `cq git commit`. A `branch:` record also gets the branch marked, per the rule loaded in 5d.
 
 f. **Read the chain's tail, and act on which link broke** — per §The commit, already loaded in
    5d: `verify:`/staging failed → nothing ticked, nothing committed; fix and retry, or block it

@@ -170,19 +170,18 @@ Run it as **one chained call**, gate included:
 ```bash
 <the task's verify:> \
   && git add <the task's files> \
-  && Skill("quenching:git:commit", "<spec-id>") \
-  && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <task-id> --spec "<spec-id>" --subject "<subject reported by git:commit>" --commit "<sha reported by git:commit>"
+  && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git commit --subject "<subject>" --json \
+  && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <task-id> --spec "<spec-id>" --subject "<subject reported by python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git commit>" --commit "<sha reported by python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git commit>"
 ```
 
-**The `&&` is the ordering:** verify before staging, staging before the delegated commit, the
+**The `&&` is the ordering:** verify before staging, staging before the commit, the
 commit before the spec tick, and a broken link short-circuits every link after it. When the
 spec's declared policy says this task is not a gate, the chain simply starts at `git add`.
 
 Stage only the task's declared `files:`, never the whole tree and never an assumed spec file —
 `git add -A` also picks up whatever an editor or a tool wrote while the task ran, which is the same
-contamination §The precondition refuses at the start. The delegated `quenching-git-commit` owns
-subject resolution and the existing index; execute passes its reported subject and sha to the
-spec write.
+contamination §The precondition refuses at the start. `cq git commit` commits the existing index and never stages; execute resolves the subject from the
+conventions it already loaded and passes the subject and sha the verb reports to the spec write.
 
 If verification, staging or the commit **fails** — a rejecting hook or nothing staged — no spec
 tick has happened; report the failure and leave the task unchecked. If the commit succeeds but the
