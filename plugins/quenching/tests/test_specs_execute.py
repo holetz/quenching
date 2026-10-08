@@ -35,7 +35,7 @@ class TaskExecutionContractTests(unittest.TestCase):
         command = COMMAND.read_text(encoding="utf-8")
         commit = (ROOT / "plugins/quenching/commands/git/commit.md").read_text(encoding="utf-8")
 
-        self.assertIn('Skill("quenching:git:commit", "<id>")', command)
+        self.assertIn('Skill("quenching:git:commit", "<spec-id>")', command)
         self.assertIn("single commit boundary", commit)
         self.assertNotIn("git commit -m", command)
         self.assertNotIn('--subject "plan/<id>-<handle>', command)
@@ -45,9 +45,9 @@ class TaskExecutionContractTests(unittest.TestCase):
         reference = REFERENCE.read_text(encoding="utf-8")
 
         self.assertLess(command.index("git add <the task's declared files>"),
-                        command.index('Skill("quenching:git:commit", "<id>")'))
-        self.assertLess(command.index('Skill("quenching:git:commit", "<id>")'),
-                        command.index("cq specs task --check <id>"))
+                        command.index('Skill("quenching:git:commit", "<spec-id>")'))
+        self.assertLess(command.index('Skill("quenching:git:commit", "<spec-id>")'),
+                        command.index("cq specs task --check <task-id>"))
         self.assertIn('--commit "<sha reported by git:commit>"', command)
         self.assertIn("spec tick **fails**", reference)
         self.assertIn("preserve the commit", reference)
