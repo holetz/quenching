@@ -26,7 +26,7 @@ there.
   return `STATE: blocked` with `NOTE: needs-human:`; never `--force`, never `abandoned` on your own.
 - Given the word `stamp-pr` with a PR number and url, skip develop, execute and conclude: run `cq specs record "<id>" pr --set number=<n> --set url=<url> --set date=<today>` (write-many; retry with backoff) and return `STATE: done` with `PR: <url>`. This is the one route that stamps the `pr` record in an orchestrated run, after the steward returned.
 - Start with `cq specs status --spec <id> --json` and resume from the stage it reports.
-- Read only what a task names. If a scout summary was passed, trust it instead of re-searching.
+- Read only what a task names.
 - Stay inside each task's `files:`. Anything else you learn is one line:
   `cq specs discover "<id>" "<finding>"`.
 - A `cq` write that fails is retried with backoff; exit 2 is read, never repeated blindly.
