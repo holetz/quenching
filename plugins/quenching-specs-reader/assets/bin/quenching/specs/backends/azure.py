@@ -182,6 +182,14 @@ def _az_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, s
 
     60s and not git's 30, matching `_gh_run`: this is a round trip to dev.azure.com."""
     import subprocess
+    # `az` expands a value opening with `@` into the CONTENT of that file, so a title like
+    # `@/etc/hostname` would publish a local file as the work item's title.
+    title = next((argv[i + 1] for i, a in enumerate(argv[:-1]) if a == "--title"), "")
+    if title.startswith("@"):
+        raise BackendRefusal({
+            "code": "sp-az-bad-title", "exit": 2,
+            "message": "a title opening with `@` is read by `az` as a file path; "
+                       f"start it with another character — got {title[:40]!r}"})
     reads = _az_is_read(argv)
     if not reads and transport_read_only():
         raise read_only_refusal("az", argv)
