@@ -11,8 +11,8 @@ import json
 
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, read_one
-from quenching.specs.parse.fields import (set_frontmatter_key, set_frontmatter_record,
-                                          set_frontmatter_title)
+from quenching.specs.parse.fields import (scalar_break, set_frontmatter_key,
+                                          set_frontmatter_record, set_frontmatter_title)
 from quenching.specs.parse.records import record_keys
 from quenching.specs.schema import (DEFAULT_VERIFICATION, MERGE_NO_PR_STRATEGIES,
                                     VERIFICATION_POLICIES, load_schema)
@@ -84,11 +84,14 @@ def cmd_title(args, root: str, out: Emitter) -> int:
                  f"{info['id']} — title: {current or '(none)'}")
         return 0
     title = args.title.strip()
-    if not title or "\n" in title:
+    bad = scalar_break(title)
+    if not title or bad:
+        message = ("a title is one non-empty line with no control character"
+                   + (f" — got {bad}" if bad else ""))
         out.emit(args.json,
-                 {"ok": False, "code": "sp-bad-title", "id": info["id"],
-                  "message": "a title is one non-empty line"},
-                 "error: a title is one non-empty line")
+                 {"ok": False, "code": "sp-bad-title", "id": info["id"], "char": bad,
+                  "message": message},
+                 f"error: {message}")
         return 2
     backend.write_spec(info, set_frontmatter_title(info["text"], title))
     out.emit(args.json,
@@ -147,6 +150,13 @@ def cmd_field(args, root: str, out: Emitter) -> int:
                  f"{info['id']} — {key}: {current if current else '(none)'}")
         return 0
 
+    bad = scalar_break(args.value)
+    if bad:
+        message = f"`{key}:` carries no line break or control character — got {bad}"
+        out.emit(args.json, {"ok": False, "code": "sp-bad-scalar", "field": key, "char": bad,
+                             "message": message},
+                 f"error: {message}")
+        return 2
     if key == "tags":
         items = [t.strip() for t in args.value.split(",") if t.strip()]
         rendered = "[" + ", ".join(json.dumps(t, ensure_ascii=False) for t in items) + "]"
@@ -241,6 +251,14 @@ def cmd_record(args, root: str, out: Emitter) -> int:
                       "message": f"expected `field=value` with field one of "
                              f"{', '.join(fields)} — got '{pair}'"},
                      f"error: expected `field=value` for `{args.name}:` — got '{pair}'")
+            return 2
+        bad = scalar_break(v)
+        if bad:
+            message = f"`{args.name}.{k}` carries no line break or control character — got {bad}"
+            out.emit(args.json,
+                     {"ok": False, "code": "sp-bad-scalar", "record": args.name, "field": k,
+                      "char": bad, "message": message},
+                     f"refused: {message}")
             return 2
         err = record_field_value_error(rspec, k, v)
         if err:
