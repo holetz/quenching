@@ -70,6 +70,29 @@ def _reflog(cwd: str, ref: str, env: dict[str, str] | None = None,
     return kept
 
 
+def _rewrites(cwd: str, ref: str, env: dict[str, str] | None = None,
+              errors: list[dict] | None = None) -> list[str]:
+    """The reflog moves of `ref` that are not fast-forwards: the older sha is not an ancestor of the
+    newer one. The verdict is the graph's, so a rewrite made with no message or a forged one
+    (`update-ref -m "commit: tidy"`) is still listed. The oldest entry is the creation and has no
+    older sha, so it is never one. Each item reads `<subject or (no reflog message)> <old>..<new>`."""
+    entries = [(line.split(" ", 1) + [""])[:2]
+               for line in _lines(cwd, "reflog", "show", "--format=%H %gs", ref, env=env)]
+    found = []
+    for i, (sha, subject) in enumerate(entries[:-1]):
+        older = entries[i + 1][0]
+        if older == sha:
+            continue
+        code, _out, err = _git_run(cwd, *SAFE, "merge-base", "--is-ancestor", older, sha, env=env)
+        if code > 1:
+            if errors is not None:
+                errors.append(_error(("merge-base", "--is-ancestor"), code, err))
+            continue
+        if code == 1:
+            found.append(f"{subject or '(no reflog message)'} {older[:12]}..{sha[:12]}")
+    return found
+
+
 def _registered(cwd: str, path: str) -> bool:
     code, out = _run(cwd, "worktree", "list", "--porcelain")
     if code != 0:
@@ -158,6 +181,8 @@ def cmd_audit(args) -> int:
         "ancestry": ancestry,
         "reflog": {"branch": _reflog(worktree, f"refs/heads/{args.branch}", env, errors),
                    "head": _reflog(worktree, "HEAD", env, errors)},
+        "rewrites": {"branch": _rewrites(worktree, f"refs/heads/{args.branch}", env, errors),
+                     "head": _rewrites(worktree, "HEAD", env, errors)},
     }
     payload["errors"] = errors
     payload["complete"] = not errors

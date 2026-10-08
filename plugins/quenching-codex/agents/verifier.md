@@ -43,16 +43,15 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
 6. Delivery: when the worker reported a PR, `gh pr view <n>` exists and targets the base.
 
 7. History: every sha the worker named in `SHAS` is `true` under the payload's `ancestry`, and
-   `reflog.branch` plus `reflog.head` hold no `commit (amend)`, `reset`, `rebase`, `checkout` or
-   `switch` entry after the branch was created.
-   The one `reset: moving to HEAD` line that creating the worktree writes in its HEAD
-   reflog before the first commit is the creation itself and is accepted; any other `reset` is FAIL.
-   The payload already omits a `reset` that left the ref on the same sha (what an aborted merge
-   logs), so a `reset` still listed moved the history.
-   A `rebase` is accepted only when the worker's NOTE says `quenching-git-sync` ran. Quote the
-   offending reflog line as evidence. Limit: discarding uncommitted files by path (checkout or restore) touches only
-   the tree and leaves no reflog entry, so this check cannot see them. An empty reflog list
-   marks that half `n/a`; a `false` ancestry is still FAIL.
+   `rewrites.branch` plus `rewrites.head` are empty. A rewrite is a reflog move that is not a
+   fast-forward, decided by the audit from the commit graph and never from the entry's message, so
+   a ref moved by hand with no message, or with a forged one, is listed like any other.
+   The creation of the branch and of the worktree is the oldest reflog entry and is never listed.
+   A listed `rebase` is accepted only when the worker's NOTE says `quenching-git-sync` ran; any
+   other listed entry is FAIL. Quote the offending item as evidence. Limit: discarding
+   uncommitted files by path (checkout or restore) touches only the tree and leaves no reflog
+   entry, so this check cannot see them. An empty `reflog` list marks that half `n/a`; a `false`
+   ancestry is still FAIL.
 
 8. Conclusion: `cq specs status --spec <id> --json` shows `phase: archive` and a recorded `Outcome`
    (`records.outcome` not null). A spec still in `plans/` or without an Outcome is FAIL: the
