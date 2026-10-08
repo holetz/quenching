@@ -499,6 +499,15 @@ class AgentGrantGap(unittest.TestCase):
                                 if f["code"] == "sk-agent-skill-widens"),
                          [("agent:block", "Skill"), ("agent:flow", "Skill"), ("agent:inline", "Skill")])
 
+    def test_skill_after_a_comma_continuation_is_an_error(self):
+        with tempfile.TemporaryDirectory() as root:
+            agents = pathlib.Path(root, "agents")
+            agents.mkdir()
+            (agents / "cont.md").write_text("---\nname: cont\ntools: Read,\n  Skill\n---\nBody.\n",
+                                            encoding="utf-8")
+            found = lint_agents(root, root)
+        self.assertEqual([(f["code"], f["tool"]) for f in found], [("sk-agent-skill-widens", "Skill")])
+
 
 if __name__ == "__main__":
     unittest.main()

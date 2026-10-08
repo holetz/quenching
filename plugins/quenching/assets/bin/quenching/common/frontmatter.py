@@ -229,6 +229,11 @@ def parse_frontmatter(text: str) -> dict:
             fm[key], j = _read_block_scalar(body, j + 1, block.group(1))
             continue
         val = _split_comment(val)[0]
+        while (val.endswith(",") and j + 1 < len(body) and body[j + 1][:1] in (" ", "\t")
+               and body[j + 1].strip()):
+            # A comma-separated scalar continued on the indented line below it.
+            j += 1
+            val = f"{val} {_split_comment(body[j].strip())[0]}"
         if val == "":
             # A block list first: `- name: x` is a list item, not a record key, and testing the
             # record form first would read one as the other.
