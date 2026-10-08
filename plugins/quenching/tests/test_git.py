@@ -359,8 +359,7 @@ class Audit(RepoCase):
         self.assertEqual(self._grants(), [])
         self._commit_file(agent, "---\nname: a\ntools: Read, Bash(cq x:*)\n---\nbody\n", "agent")
         self.assertEqual(self._grants(), [{"path": agent, "kind": "tools",
-                                           "added": ["Bash(cq x:*)", "Read"]},
-                                          {"path": agent, "kind": "unknown", "added": ["name"]}])
+                                           "added": ["Bash(cq x:*)", "Read"]}])
 
     def test_grants_widening_over_a_base_that_has_the_file(self):
         agent = "plugins/p/agents/a.md"
@@ -409,13 +408,12 @@ class Audit(RepoCase):
         self._commit_file(new, "---\nname: b\n---\nbody\n", "new agent")
         self._commit_file(old, "---\nname: a\n---\n", "drop tools")
         got = {(g["path"], g["kind"]): g["added"] for g in self._grants()}
-        self.assertEqual(got, {(new, "tools"): ["*"], (new, "unknown"): ["name"], (old, "tools"): ["*"]})
+        self.assertEqual(got, {(new, "tools"): ["*"], (old, "tools"): ["*"]})
 
     def test_grants_reads_skill_allowed_tools(self):
         skill = ".claude/skills/s/SKILL.md"
         self._commit_file(skill, "---\nname: s\nallowed-tools: Bash\n---\n", "skill")
-        self.assertEqual(self._grants(), [{"path": skill, "kind": "tools", "added": ["Bash"]},
-                                          {"path": skill, "kind": "unknown", "added": ["name"]}])
+        self.assertEqual(self._grants(), [{"path": skill, "kind": "tools", "added": ["Bash"]}])
 
     def test_grants_read_a_frontmatter_behind_a_bom(self):
         agent = "plugins/p/agents/a.md"
@@ -429,6 +427,13 @@ class Audit(RepoCase):
         got = {g["path"]: g["added"] for g in self._grants() if g["kind"] == "tools"}
         self.assertIn("Bash(rm -rf:*)", got[skill])
         self.assertIn("Bash", got[agent])
+
+    def test_grants_exempt_the_inert_keys_and_keep_the_rest_unknown(self):
+        agent = "plugins/p/agents/a.md"
+        self._commit_file(agent, "---\nname: a\ndescription: d\nargument-hint: x\ntools: Read\n"
+                                 "model: haiku\n---\n", "keys")
+        self.assertEqual(self._grants(), [{"path": agent, "kind": "tools", "added": ["Read"]},
+                                          {"path": agent, "kind": "unknown", "added": ["model"]}])
 
     def test_grants_read_a_nested_agent_and_any_extension_case(self):
         nested, upper, skill = (".claude/agents/sub/evil.md", ".claude/commands/evil.MD",
@@ -459,8 +464,7 @@ class Audit(RepoCase):
                            "--branch", "spec/1")
         self.assertIn(agent, payload["changed"])
         self.assertEqual(payload["grants"], [{"path": agent, "kind": "tools",
-                                              "added": ["Bash", "Write"]},
-                                             {"path": agent, "kind": "unknown", "added": ["name"]}])
+                                              "added": ["Bash", "Write"]}])
 
     def test_grants_report_a_removed_deny(self):
         settings, agent = ".claude/settings.json", "plugins/p/agents/a.md"
