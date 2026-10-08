@@ -44,7 +44,8 @@ tree carries whatever was already sitting there into the first commit on the new
 Already stamped → report it (`base`, `work`) and **stop**; a second isolation for an already-isolated
 spec is a no-op, not a re-offer. No record → continue to the offer below, carrying the ID through
 to step 4. `$ARGUMENTS` naming no spec (or empty) → continue with no ID; nothing gets stamped in
-step 4, only the branch or worktree itself. **Done when:** the ID (or its absence) and any
+step 4, only the branch or worktree itself. The word `autonomous` beside the ID is a conductor's
+pre-answer to step 3's ask, given by a run launched with `--autonomous`: see step 3. **Done when:** the ID (or its absence) and any
 existing `branch:` record are resolved.
 
 ### 3. Offer isolation, worktree leading — only from the base
@@ -61,14 +62,32 @@ paths **verbatim**. Then ask with **AskUserQuestion**:
 - **Branch** — `git checkout -b <branch>`, work continues in this checkout.
 - **In place** — declines isolation; nothing is created.
 
+**With `autonomous` in the input**, ask nothing: the form is **Worktree**, the one this step
+recommends, and nothing else is granted. A non-null `worktreeSetup` is **not run**, because its
+consent is the verbatim display this ask carries and no human sees it; step 5 reports
+`setup: skipped (autonomous)`. Step 4 cuts the worktree from the remote base, never the local one.
+
 Worktree leads when the current checkout is the base. Its
 cost (no installed dependencies, no `.env`, no venv) is stated in the same block as the ask, which
 **is** the consent for the setup command shown beside it. **Done when:** the human has chosen one of
-the three, or the run stops on a git error from the chosen form.
+the three (under `autonomous`, Worktree was taken unasked), or the run stops on a git error from
+the chosen form.
 
 ### 4. Take it, run the setup, and stamp
 Run the one command for the chosen form; a failure (name taken, dirty path, locked worktree) is
-reported verbatim and nothing is stamped. On **Worktree**, immediately after `git worktree add`,
+reported verbatim and nothing is stamped. **Under `autonomous`, the cut starts from the remote
+base**, because a PR merged through `gh` moves no local ref and the local `<base>` may miss the
+dependency the run waited on:
+```bash
+if git remote get-url origin >/dev/null 2>&1; then
+  git fetch origin <base> && git worktree add <path> -b <branch> --no-track origin/<base>
+else
+  echo "NO-REMOTE"   # then: git worktree add <path> -b <branch> <base>
+fi
+```
+`--no-track` keeps `origin/<base>` from becoming the branch's upstream, so a push without an
+explicit destination never targets the base. A fetch error is reported and stops the run; only a
+missing `origin` falls back to the local `<base>`, and the report says so. On **Worktree**, immediately after `git worktree add`,
 run `cq git worktree link --json` with cwd inside the new worktree. A link failure is reported
 verbatim and does not undo the worktree; stop this flow before running `worktreeSetup`. When the
 link succeeds, run a declared `worktreeSetup` once with cwd inside the new worktree; a failing
@@ -97,7 +116,8 @@ names every fact step 4 produced.
 ## Invariants
 
 - Never isolate over a dirty tree — refuse and name the paths.
-- Recommend Worktree; never impose it, and never choose it by sniffing the target repo.
+- Recommend Worktree; never impose it, and never choose it by sniffing the target repo — only the
+  `autonomous` input word takes it unasked.
 - Stamp `branch:` only once per id — a record already present is read, never overwritten.
 - Never install `docs/standards/git/**` into the target, and never write `gitConventions` into its
   `.claude/quenching.json`; a repo's own conventions are read, never written, by this command.
