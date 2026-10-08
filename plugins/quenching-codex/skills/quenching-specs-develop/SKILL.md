@@ -114,6 +114,7 @@ that carries content stays: the pass and its stop conditions (step 3), the conso
 genuinely the human's, the recommendation and the reasoning behind it go in the **AskUserQuestion**
 payload — the recommended option first and marked "(Recommended)", the reasoning in its description
 — so the human answers in one word and no turn was spent setting the question up.
+Where **AskUserQuestion** is unavailable (a sub-agent), do not ask: return `STATE: blocked` with `NOTE: needs-human: <question>`.
 **This contract stops at the edge of how questions are grouped.**
 [questions.md](../../references/specs-develop/questions.md) §The four shared
 mechanics §1 is the only authority there: a question travels with the ones whose answers cannot
