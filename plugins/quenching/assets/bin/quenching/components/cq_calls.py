@@ -36,7 +36,7 @@ _CLAUSE_END_RE = re.compile(r"[;:,]|\.(?=\s|$)")
 _ABBREV_RE = re.compile(r",?\s*\b(?:e\.g\.|i\.e\.)(?=\s|,|$),?", re.IGNORECASE)
 _LISTED_RE = re.compile(r"`[^`\n]+`(?:\s*,)?(?:\s+(?:or|and|nor|ou|e)\b)?")  # one item of a negated list
 _DOUBLE_NEG_RE = re.compile(r"\b(?:never|do not|don't|does not|doesn't|cannot|can't|not|without|nunca|não|nao)\s+skip\w*\b", re.IGNORECASE)
-_NO_RE = re.compile(r"\bno(?:\s+(?:longer|more))?\s*$", re.IGNORECASE)  # `no` negates only as the word right before the span
+_NO_RE = re.compile(r"\bno\s*$|\bno\s+(?:longer|more)\b", re.IGNORECASE)  # bare `no` negates only right before the span; `no longer|more` negates the verb after it
 _NEGATION_REACH = 4  # words between a negation and the span it negates
 _SPLIT_RE = re.compile(r"\s*(?:&&|\|\||;|\s\|\s)\s*")
 _INLINE_RE = re.compile(r"`([^`\n]+)`")
