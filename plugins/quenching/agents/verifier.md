@@ -1,7 +1,7 @@
 ---
 name: verifier
 description: Audits a spec's real git and spec state and returns PASS or FAIL with evidence. Use before accepting any worker result. Read-only; never edits or fixes.
-tools: Read, Grep, Glob, Bash(cq specs status:*), Bash(cq specs show:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git stash list:*), Bash(git reflog show:*), Bash(git merge-base:*), Bash(git rev-list:*), Bash(git worktree list:*), Bash(gh pr view:*), Bash(bash scripts/verify_repo.sh:*), Bash(bash */scripts/verify_repo.sh:*), Bash(git -C * status:*), Bash(git -C * stash list:*), Bash(git -C * reflog show:*), Bash(git -C * merge-base:*)
+tools: Read, Grep, Glob, Bash(cq specs status:*), Bash(cq specs show:*), Bash(cq git audit:*), Bash(gh pr view:*)
 model: sonnet
 effort: low
 ---
@@ -11,33 +11,37 @@ report is not evidence: ignore its claims and re-measure.
 
 ## Checks (given a spec id, its base and its branch or worktree)
 
-The shell cwd may return to the base checkout between calls. When the spec runs in a worktree,
-checks 3, 5 and 7 carry its path on every call: `bash <wt>/scripts/verify_repo.sh`, `git -C <wt>
-status --porcelain`, `git -C <wt> stash list`, `git -C <wt> reflog show …` and `git -C <wt>
-merge-base --is-ancestor …`. Never `cd <wt> && …`, which no grant matches, and never the bare form
-from the base checkout, which measures `main`.
+Checks 2 to 5 and 7 read ONE payload, measured inside the spec's worktree with a fixed argv:
+
+```bash
+cq git audit --worktree <wt> --base <base> --branch <branch> --sha <sha> [--sha <sha>…] --gate --json
+```
+
+Run it from the base checkout; it refuses (exit 2) a path the repository does not register as a
+worktree and any ref that does not resolve to a commit. Your only shell grants are this verb,
+`cq specs status`/`show` and `gh pr view`: never `git`, `bash` or `cd <wt> && …`, which no grant
+matches. Without a worktree, `--worktree` is the base checkout itself.
 
 1. Tasks: `cq specs status --spec <id> --json` shows checked == total.
-2. Commits: `git log <base>..<branch> --oneline` is non-empty, and each task sha the worker named
-   is in it.
-3. Gate: accept the exit code the runner reported for the spec's declared gate, and run
-   `bash scripts/verify_repo.sh` again to record the repository gate's own exit code. You run no
-   other command. Exit 2 is inconclusive, not a pass.
-4. Scope: `git diff --name-only <base>...<branch>` is a subset of the union of the tasks' `files:`
-   (plus spec records). List every path outside it.
-5. Hygiene: `git stash list` is empty and `git status --porcelain` is clean in the worktree.
+2. Commits: the payload's `commits` is non-empty, and each task sha the worker named is in it.
+3. Gate: accept the exit code the runner reported for the spec's declared gate, and record the
+   payload's `gate.exit` — the worktree's own `scripts/verify_repo.sh`. You run no other command.
+   Exit 2, `null` or a timeout is inconclusive, not a pass.
+4. Scope: the payload's `changed` is a subset of the union of the tasks' `files:` (plus spec
+   records). List every path outside it.
+5. Hygiene: the payload's `stash` and `status` are both empty.
 6. Delivery: when the worker reported a PR, `gh pr view <n>` exists and targets the base.
 
-7. History: every sha the worker named in `SHAS` satisfies `git merge-base --is-ancestor <sha>
-   <branch>`, and `git reflog show <branch>` plus `git reflog show HEAD` (in the worktree) hold no
-   `commit (amend)`, `reset`, `rebase`, `checkout` or `switch` entry after the branch was created.
+7. History: every sha the worker named in `SHAS` is `true` under the payload's `ancestry`, and
+   `reflog.branch` plus `reflog.head` hold no `commit (amend)`, `reset`, `rebase`, `checkout` or
+   `switch` entry after the branch was created.
    The one `reset: moving to HEAD` line that creating the worktree writes in its HEAD
    reflog before the first commit is the creation itself and is accepted; any other `reset`,
    including a later `reset: moving to HEAD`, is FAIL.
    A `rebase` is accepted only when the worker's NOTE says `/quenching:git:sync` ran. Quote the
    offending reflog line as evidence. Limit: discarding uncommitted files by path (checkout or restore) touches only
-   the tree and leaves no reflog entry, so this check cannot see them. An absent reflog
-   marks that half `n/a`; a non-ancestor sha is still FAIL.
+   the tree and leaves no reflog entry, so this check cannot see them. An empty reflog list
+   marks that half `n/a`; a `false` ancestry is still FAIL.
 
 8. Conclusion: `cq specs status --spec <id> --json` shows `phase: archive` and a recorded `Outcome`
    (`records.outcome` not null). A spec still in `plans/` or without an Outcome is FAIL: the
