@@ -2180,6 +2180,15 @@ class PullRequestVerbs(RepoCase):
                           "--merge-commit-message"):
             self.assertFalse(any(a.startswith(forbidden) for a in call["argv"]), forbidden)
 
+    def test_azure_create_refuses_an_at_prefixed_title_or_body(self):
+        self._azure_origin()
+        for title, body, stdin in (("@/x", "b", None), ("t", "@/x", None), ("t", "-", "@/x")):
+            proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/1-x",
+                       "--title", title, "--body", body, stdin=stdin, env=self.env)
+            self.assertEqual(proc.returncode, 2, (title, body, proc.stdout))
+            self.assertEqual(json.loads(proc.stdout)["code"], "git-pr-azure-at-prefix")
+        self.assertEqual(self._calls(), [])
+
     def test_azure_create_stamps_the_web_url_never_the_api_url(self):
         from quenching.git import pull
         seen = []
