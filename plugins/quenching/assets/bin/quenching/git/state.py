@@ -30,7 +30,7 @@ def cmd_state(args) -> int:
         "ok": True,
         "root": top.strip(),
         "branch": "".join(_lines(cwd, "branch", "--show-current", env=env, errors=errors)) or None,
-        "status": _lines(cwd, "status", "--porcelain", "--ignore-submodules=all", env=env, errors=errors),
+        "status": _lines(cwd, "status", "--porcelain", "--untracked-files=normal", "--ignore-submodules=all", env=env, errors=errors),
         "staged": _lines(cwd, "diff", "--cached", "--name-only", env=env, errors=errors),
         "stash": _lines(cwd, "stash", "list", env=env, errors=errors),
         "remotes": remotes,
