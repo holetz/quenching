@@ -421,18 +421,29 @@ class InsertItemGroupNumbering(unittest.TestCase):
 
 
 class PrStatesTarget(unittest.TestCase):
-    def member(self, rec):
-        return {"phase": "archive", "frontmatter": {"pr": rec}}
+    def member(self, rec, work=None):
+        fm = {"pr": rec}
+        if work:
+            fm["branch"] = {"base": "main", "work": work}
+        return {"phase": "archive", "frontmatter": fm}
 
-    def call(self, rec, root):
+    def call(self, rec, root, work=None, head="plan/7-x"):
         seen = {}
 
         def fake(cmd, **kw):
             seen.update(cmd=cmd, **kw)
-            return mock.Mock(returncode=0, stdout="MERGED\n")
+            return mock.Mock(returncode=0, stdout=json.dumps({"state": "MERGED", "headRefName": head}))
         with mock.patch.object(epic_cmd.subprocess, "run", side_effect=fake):
-            got = epic_cmd.pr_states({"7": self.member(rec)}, root)
+            got = epic_cmd.pr_states({"7": self.member(rec, work)}, root)
         return got, seen
+
+    def test_a_head_other_than_the_members_branch_is_left_out(self):
+        got, _ = self.call({"number": 5, "url": "u"}, "/r", work="plan/7-x", head="plan/9-y")
+        self.assertEqual({}, got)
+
+    def test_a_head_equal_to_the_members_branch_is_kept(self):
+        got, _ = self.call({"number": 5, "url": "u"}, "/r", work="plan/7-x", head="plan/7-x")
+        self.assertEqual({"7": "MERGED"}, got)
 
     def test_the_lookup_runs_from_the_named_root(self):
         got, seen = self.call({"number": 5, "url": "u"}, "/some/repo")
