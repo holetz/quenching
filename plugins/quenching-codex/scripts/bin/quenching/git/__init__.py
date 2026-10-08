@@ -76,6 +76,9 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--remote", default="origin", metavar="REMOTE",
                     help="add/retire: the remote whose base is fetched (default: origin); a remote "
                          "that does not exist falls back to the local base")
+    sp.add_argument("--spec", metavar="ID",
+                    help="add: stamp this spec's `branch` record (base, work) once the worktree "
+                         "is cut; refused before any write when the spec does not own --branch")
     sp.add_argument("--discard-ignored", action="store_true",
                     help="retire: remove the worktree even though it holds ignored files "
                          "that are not symlinks")
