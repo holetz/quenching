@@ -346,7 +346,10 @@ def lint_agents(root: str, base: str) -> list[dict]:
         body = body_after_frontmatter(read_text(path) or "")
         where = {"command": f"agent:{filename[:-3]}", "path": rel(path, base)}
         out.extend(_cq_call_findings(body, where))
-        out.extend(_agent_disallowed_bash_findings(str(fm.get("disallowedTools", "")), where))
+        disallowed = fm.get("disallowedTools", "")
+        if isinstance(disallowed, list):
+            disallowed = ", ".join(str(item) for item in disallowed)
+        out.extend(_agent_disallowed_bash_findings(str(disallowed), where))
         if "tools" in fm:
             out.extend(_agent_skill_findings(str(fm["tools"]), where))
             out.extend(_agent_grant_findings(body, str(fm["tools"]), where))
