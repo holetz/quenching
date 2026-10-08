@@ -55,6 +55,7 @@ import argparse
 
 from quenching.common.output import OK, NoAbbrevParser
 from quenching.common.version import VERSION
+from quenching.session.commands.cost import cmd_cost
 from quenching.session.commands.digest import cmd_digest
 from quenching.session.commands.read import cmd_list
 
@@ -77,12 +78,20 @@ def add_subcommands(sub: argparse._SubParsersAction) -> argparse._SubParsersActi
     dg.add_argument("--cap", type=int, default=20, metavar="N",
                     help="at most N items per evidence list (default: 20)")
     dg.set_defaults(func=cmd_digest)
+
+    co = sub.add_parser("cost", help="what a session's subagents spent, per agent type, model and window")
+    co.add_argument("transcript", nargs="?",
+                    help="path to a .jsonl transcript, a session id, or a subagents/ directory; "
+                         "default: the most recent session for this cwd")
+    co.add_argument("--json", action="store_true", help="machine-readable output")
+    co.set_defaults(func=cmd_cost)
     return sub
 
 
 DISPATCH: dict = {
     "list": cmd_list,
     "digest": cmd_digest,
+    "cost": cmd_cost,
 }
 
 
