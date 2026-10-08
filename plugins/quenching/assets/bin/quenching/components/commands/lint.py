@@ -351,8 +351,11 @@ def lint_agents(root: str, base: str) -> list[dict]:
             disallowed = ", ".join(str(item) for item in disallowed)
         out.extend(_agent_disallowed_bash_findings(str(disallowed), where))
         if "tools" in fm:
-            out.extend(_agent_skill_findings(str(fm["tools"]), where))
-            out.extend(_agent_grant_findings(body, str(fm["tools"]), where))
+            tools = fm["tools"]
+            if isinstance(tools, list):
+                tools = ", ".join(str(item) for item in tools)
+            out.extend(_agent_skill_findings(str(tools), where))
+            out.extend(_agent_grant_findings(body, str(tools), where))
     return out
 
 
