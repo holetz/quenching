@@ -6,6 +6,7 @@ import pathlib
 import shlex
 import shutil
 import stat
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -15,7 +16,7 @@ import _paths  # noqa: F401 — installs assets/bin exactly as the cq entry poin
 from quenching.design.align import align_plan, align_write
 from quenching.design.build import build_drift, compute_build, write_build
 from quenching.design.doctor import inspect_design
-from quenching.design.genre import new_genre, render_genre
+from quenching.design.genre import _compile_pdf, new_genre, render_genre
 from quenching.design.importer import import_design
 from quenching.design.markdown import render_markdown
 from quenching.design.model import (
@@ -533,6 +534,29 @@ components:
         )
         with self.assertRaisesRegex(DesignError, "empty output"):
             render_genre(self.root, "external-empty", "html", data)
+
+    def test_genre_external_engine_timeout_is_a_design_error(self):
+        sleeper = self.root / "sleeper-engine.py"
+        sleeper.write_text("import time\ntime.sleep(30)\n", encoding="utf-8")
+        data = self.root / "external-timeout.json"
+        data.write_text(json.dumps({"title": "External"}), encoding="utf-8")
+        new_genre(
+            self.root, "external-timeout", "External timeout", "read", ["html"],
+            ["title:required:Title"],
+            engine=f"{shlex.quote(sys.executable)} {shlex.quote(str(sleeper))}",
+        )
+        with mock.patch("quenching.design.genre.SUBPROCESS_TIMEOUT_S", 1):
+            with self.assertRaisesRegex(DesignError, "timed out"):
+                render_genre(self.root, "external-timeout", "html", data)
+
+    def test_typst_compile_timeout_and_oserror_are_design_errors(self):
+        target = self.root / "out.pdf"
+        for raised, message in ((subprocess.TimeoutExpired("typst", 1), "timed out"),
+                                (OSError("boom"), "could not start")):
+            with mock.patch("quenching.design.genre.shutil.which", return_value="/x/typst"), \
+                    mock.patch("quenching.design.genre.subprocess.run", side_effect=raised):
+                with self.assertRaisesRegex(DesignError, message):
+                    _compile_pdf("= x\n", target, self.root)
 
     def test_doctor_measures_color_pairs_with_declared_wcag_policy(self):
         path = self.root / ".design" / "tokens.json"
