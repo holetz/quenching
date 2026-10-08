@@ -11,7 +11,8 @@ does not descend into submodules (their own config is not ours to blank); `log.s
 forced off so `gpg.program` never runs; and a partial clone's lazy fetch is off
 (`GIT_NO_LAZY_FETCH`, and `GIT_ALLOW_PROTOCOL` empty refuses every transport), so a missing blob
 or an absent `--sha` never runs `core.sshCommand` or any other transport the config names. A
-REPORT only, exit 0 on any facts; judging them is the verifier's. Nothing here executes the
+REPORT only, exit 0 on any facts, and a read that failed is
+an entry of the payload's `errors` (`complete: false`), never an empty list; judging them is the verifier's. Nothing here executes the
 audited branch's code: the gate is certified by CI before the merge, never by this verb."""
 from __future__ import annotations
 
@@ -31,16 +32,30 @@ def _run(cwd: str, *argv: str, env: dict[str, str] | None = None) -> tuple[int, 
     return code, out
 
 
-def _lines(cwd: str, *argv: str, env: dict[str, str] | None = None) -> list[str]:
-    code, out = _run(cwd, *argv, env=env)
-    return [line for line in out.splitlines() if line] if code == 0 else []
+def _lines(cwd: str, *argv: str, env: dict[str, str] | None = None,
+           errors: list[dict] | None = None) -> list[str]:
+    """The non-empty stdout lines of one read. A read that FAILS (non-zero exit, a timeout, no git)
+    is not an empty list: it is appended to `errors` as `{read, code, message}` so the payload says
+    the fact is unknown. Without `errors` the caller opted out of that and gets `[]`."""
+    code, out, err = _git_run(cwd, *SAFE, *argv, env=env)
+    if code != 0:
+        if errors is not None:
+            errors.append(_error(argv, code, err))
+        return []
+    return [line for line in out.splitlines() if line]
 
 
-def _reflog(cwd: str, ref: str, env: dict[str, str] | None = None) -> list[str]:
+def _error(argv: tuple[str, ...], code: int, err: str) -> dict:
+    lines = [line for line in (err or "").strip().splitlines() if line.strip()]
+    return {"read": " ".join(argv[:2]), "code": code, "message": lines[0] if lines else ""}
+
+
+def _reflog(cwd: str, ref: str, env: dict[str, str] | None = None,
+            errors: list[dict] | None = None) -> list[str]:
     """The reflog subjects of `ref`, newest first, minus the `reset` entries that moved nothing:
     a reset whose sha equals the next older entry's rewrote no history (`git merge --abort` logs
     `reset: moving to HEAD`). A reset that moved the ref stays, so the verifier still sees it."""
-    entries = [line.split(" ", 1) + [""] for line in _lines(cwd, "reflog", "show", "--format=%H %gs", ref, env=env)]
+    entries = [line.split(" ", 1) + [""] for line in _lines(cwd, "reflog", "show", "--format=%H %gs", ref, env=env, errors=errors)]
     return [e[1] for i, e in enumerate(entries)
             if e[1] and not (e[1].startswith("reset:") and i + 1 < len(entries)
                              and entries[i + 1][0] == e[0])]
@@ -77,7 +92,7 @@ def _inert_env(cwd: str) -> dict[str, str]:
     skipped. The pairs are appended after any the caller already passes."""
     env = {**os.environ, **NO_FETCH}
     code, out = _run(cwd, "config", "-z", "--name-only", "--get-regexp",
-                     r"^filter\..*\.(clean|smudge|process)$", env=env)
+                     r"^filter\..*\.(clean|smudge|process)$", env=env)   # 1: no such key, a fact
     try:
         n = int(env.get("GIT_CONFIG_COUNT", "0"))
     except ValueError:
@@ -103,6 +118,7 @@ def cmd_audit(args) -> int:
         return refuse({"code": "audit-ref-invalid", "message": f"not a branch name: {args.branch}"},
                       args.json)
     env = _inert_env(worktree)
+    errors: list[dict] = []
     resolved = {}
     for label, ref in [("base", args.base), ("branch", f"refs/heads/{args.branch}"),
                        *(("sha", s) for s in args.sha)]:
@@ -113,24 +129,34 @@ def cmd_audit(args) -> int:
         resolved[ref] = sha
     base, tip = resolved[args.base], resolved[f"refs/heads/{args.branch}"]
 
+    ancestry = {}
+    for sha in args.sha:
+        code, _out, err = _git_run(worktree, *SAFE, "merge-base", "--is-ancestor", resolved[sha], tip,
+                                   env=env)
+        if code > 1:                      # 1 is the answer "no"; anything above it is git failing
+            errors.append(_error(("merge-base", "--is-ancestor"), code, err))
+        ancestry[sha] = code == 0
     payload = {
         "ok": True,
         "worktree": worktree,
         "base": {"ref": args.base, "sha": base},
         "branch": {"ref": args.branch, "sha": tip},
-        "status": _lines(worktree, "status", "--porcelain", "--ignore-submodules=all", env=env),
-        "stash": _lines(worktree, "stash", "list", env=env),
-        "commits": _lines(worktree, "log", "--oneline", f"{base}..{tip}", env=env),
-        "changed": _lines(worktree, "diff", "--name-only", f"{base}...{tip}", env=env),
-        "ancestry": {s: _run(worktree, "merge-base", "--is-ancestor", resolved[s], tip, env=env)[0] == 0
-                     for s in args.sha},
-        "reflog": {"branch": _reflog(worktree, f"refs/heads/{args.branch}", env),
-                   "head": _reflog(worktree, "HEAD", env)},
+        "status": _lines(worktree, "status", "--porcelain", "--ignore-submodules=all", env=env,
+                         errors=errors),
+        "stash": _lines(worktree, "stash", "list", env=env, errors=errors),
+        "commits": _lines(worktree, "log", "--oneline", f"{base}..{tip}", env=env, errors=errors),
+        "changed": _lines(worktree, "diff", "--name-only", f"{base}...{tip}", env=env, errors=errors),
+        "ancestry": ancestry,
+        "reflog": {"branch": _reflog(worktree, f"refs/heads/{args.branch}", env, errors),
+                   "head": _reflog(worktree, "HEAD", env, errors)},
     }
+    payload["errors"] = errors
+    payload["complete"] = not errors
 
     lines = [f"worktree: {worktree}", f"branch: {args.branch} ({tip[:12]}) over {args.base}",
              f"commits: {len(payload['commits'])}", f"changed: {len(payload['changed'])} path(s)",
              f"status: {len(payload['status'])} entries", f"stash: {len(payload['stash'])} entries"]
+    lines += [f"ERROR {e['read']} (exit {e['code']}): {e['message']}" for e in errors]
     lines += [f"ancestor {s}: {'yes' if ok else 'NO'}" for s, ok in payload["ancestry"].items()]
     emit(args.json, payload, "\n".join(lines))
     return 0
