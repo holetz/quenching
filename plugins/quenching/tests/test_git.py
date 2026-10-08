@@ -1037,3 +1037,115 @@ class IncrementalCommitContract(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def _cq(cwd: str, *argv: str, stdin: str | None = None,
+        env: dict | None = None) -> subprocess.CompletedProcess:
+    return subprocess.run([sys.executable, CQ, "git", *argv, "--json"], cwd=cwd, input=stdin,
+                          capture_output=True, text=True, env=env)
+
+
+def _sha(cwd: str, ref: str = "HEAD") -> str:
+    return subprocess.run(["git", "rev-parse", ref], cwd=cwd, check=True, capture_output=True,
+                          text=True).stdout.strip()
+
+
+class State(RepoCase):
+    """`cq git state` — what the bodies read before acting, with no `Bash(git …)` grant."""
+
+    def test_reports_branch_status_staged_and_remotes(self):
+        _run(self.repo, "remote", "add", "origin", "https://example.invalid/o/r.git")
+        pathlib.Path(self.repo, "new.txt").write_text("n\n", encoding="utf-8")
+        pathlib.Path(self.repo, "staged.txt").write_text("s\n", encoding="utf-8")
+        _run(self.repo, "add", "staged.txt")
+        payload = _cq_json(self.repo, "state")
+        self.assertEqual(payload["branch"], "main")
+        self.assertIn("?? new.txt", payload["status"])
+        self.assertEqual(payload["staged"], ["staged.txt"])
+        self.assertEqual(payload["remotes"], {"origin": "https://example.invalid/o/r.git"})
+
+    def test_repository_config_runs_nothing(self):
+        marker = pathlib.Path(self.tmp, "pwn")
+        _run(self.repo, "config", "core.fsmonitor", f"touch {marker}")
+        pathlib.Path(self.repo, ".gitattributes").write_text("*.txt filter=evil\n", encoding="utf-8")
+        _run(self.repo, "config", "filter.evil.clean", f"touch {marker}; cat")
+        pathlib.Path(self.repo, "a.txt").write_text("changed\n", encoding="utf-8")
+        _cq_json(self.repo, "state")
+        self.assertFalse(marker.exists())
+
+
+class WorktreeAdd(RepoCase):
+    """`cq git worktree add` — the `branch` step's cut, from the fetched remote base."""
+
+    def setUp(self):
+        super().setUp()
+        self.remote = os.path.join(self.tmp, "origin.git")
+        _run(self.tmp, "init", "-q", "--bare", "-b", "main", self.remote)
+        _run(self.repo, "remote", "add", "origin", self.remote)
+        _run(self.repo, "push", "-q", "origin", "main")
+        other = os.path.join(self.tmp, "other")
+        _run(self.tmp, "clone", "-q", self.remote, other)
+        _run(other, "config", "user.email", "test@example.com")
+        _run(other, "config", "user.name", "Test")
+        pathlib.Path(other, "dep.txt").write_text("d\n", encoding="utf-8")
+        _run(other, "add", "dep.txt")
+        _run(other, "commit", "-q", "-m", "dependency merged through gh")
+        _run(other, "push", "-q", "origin", "main")
+        self.remote_tip = _sha(other)
+        self.path = os.path.join(self.tmp, "wt")
+
+    def test_cuts_from_the_fetched_remote_base_with_no_upstream(self):
+        payload = _cq_json(self.repo, "worktree", "add", "--path", self.path,
+                           "--branch", "plan/1-x", "--base", "main")
+        self.assertTrue(payload["fromRemote"])
+        self.assertEqual(payload["startSha"], self.remote_tip)
+        self.assertEqual(_sha(self.path), self.remote_tip)
+        upstream = subprocess.run(["git", "rev-parse", "--abbrev-ref", "plan/1-x@{upstream}"],
+                                  cwd=self.path, capture_output=True, text=True)
+        self.assertNotEqual(upstream.returncode, 0)
+
+    def test_without_the_remote_falls_back_to_the_local_base_and_says_so(self):
+        _run(self.repo, "remote", "remove", "origin")
+        payload = _cq_json(self.repo, "worktree", "add", "--path", self.path,
+                           "--branch", "plan/1-x", "--base", "main")
+        self.assertFalse(payload["fromRemote"])
+        self.assertEqual(payload["startSha"], _sha(self.repo, "main"))
+
+    def test_links_the_declared_shared_paths_in_the_new_worktree(self):
+        config = pathlib.Path(self.repo, ".claude", "quenching.json")
+        config.parent.mkdir()
+        config.write_text(json.dumps({"shared": {"sharedPaths": ["shared"]}}) + "\n",
+                          encoding="utf-8")
+        pathlib.Path(self.repo, ".gitignore").write_text("/shared\n", encoding="utf-8")
+        _run(self.repo, "add", ".claude/quenching.json", ".gitignore")
+        _run(self.repo, "commit", "-q", "-m", "declare shared path")
+        _run(self.repo, "push", "-q", "origin", "main:main", "--force")
+        payload = _cq_json(self.repo, "worktree", "add", "--path", self.path,
+                           "--branch", "plan/1-x", "--base", "main")
+        self.assertEqual([p["state"] for p in payload["paths"]], ["created"])
+        self.assertTrue(os.path.islink(os.path.join(self.path, "shared")))
+
+    def test_option_shaped_names_and_taken_targets_are_refused_and_create_nothing(self):
+        cases = (("--branch=-D", "--base", "main", "--path", self.path),
+                 ("--branch", "plan/1-x", "--base=--output=/tmp/x", "--path", self.path),
+                 ("--branch", "plan/1-x", "--base", "main", "--remote=--upload-pack=touch",
+                  "--path", self.path),
+                 ("--branch", "main", "--base", "main", "--path", self.path),
+                 ("--branch", "plan/1-x", "--base", "main", "--path", self.repo))
+        for argv in cases:
+            proc = _cq(self.repo, "worktree", "add", *argv)
+            self.assertEqual(proc.returncode, 2, (argv, proc.stdout))
+        self.assertFalse(os.path.exists(self.path))
+        branches = subprocess.run(["git", "branch", "--list", "plan/*"], cwd=self.repo,
+                                  capture_output=True, text=True).stdout
+        self.assertEqual(branches.strip(), "")
+
+    def test_repository_hooks_and_fsmonitor_run_nothing(self):
+        marker = pathlib.Path(self.tmp, "pwn")
+        hooks = pathlib.Path(self.repo, ".git", "hooks", "post-checkout")
+        hooks.write_text(f"#!/bin/sh\ntouch {marker}\n", encoding="utf-8")
+        hooks.chmod(0o755)
+        _run(self.repo, "config", "core.fsmonitor", f"touch {marker}")
+        _cq_json(self.repo, "worktree", "add", "--path", self.path, "--branch", "plan/1-x",
+                 "--base", "main")
+        self.assertFalse(marker.exists())
