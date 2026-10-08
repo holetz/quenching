@@ -310,7 +310,7 @@ class CqCallsAgainstTheParsers(unittest.TestCase):
         return [f["code"] for f in _cq_call_findings(body, self.WHERE)]
 
     def test_a_missing_required_option_is_a_flag_finding(self):
-        found = _cq_call_findings("run `cq specs show <id>` first", self.WHERE)
+        found = _cq_call_findings("run `cq specs task --check 1.1` first", self.WHERE)
         self.assertEqual([f["code"] for f in found], ["sk-cq-flag"])
         self.assertEqual(found[0]["severity"], "error")
         self.assertEqual(found[0]["line"], 1)
@@ -359,8 +359,8 @@ class AgentGrantGap(unittest.TestCase):
             agents = pathlib.Path(root, "agents")
             agents.mkdir()
             (agents / "a.md").write_text(
-                "---\nname: a\ntools: Read, Bash(cq specs show:*)\n---\n"
-                "Run `cq specs show <id>` then `cq specs record 1 branch`.\n", encoding="utf-8")
+                "---\nname: a\ntools: Read, Bash(cq specs task:*)\n---\n"
+                "Run `cq specs task --check 1.1` then `cq specs record 1 branch`.\n", encoding="utf-8")
             codes = sorted(f["code"] for f in lint_agents(root, root))
         self.assertEqual(codes, ["sk-agent-grant-gap", "sk-cq-flag"])
 
