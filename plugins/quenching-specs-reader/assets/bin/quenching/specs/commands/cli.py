@@ -46,6 +46,17 @@ def add_json(sp):
     return sp
 
 
+# Verbs that take the spec id as a positional as well as `--spec`; True = the id is required.
+SPEC_POSITIONAL = {"status": False, "show": True, "parallel": True}
+
+
+def add_spec(sp, required: bool):
+    """`--spec <id>` stays; the id is also accepted positionally, as `section` and `promote` take it."""
+    sp.add_argument("spec_id", nargs="?", metavar="ID", help="the spec id (same as --spec)")
+    sp.add_argument("--spec", help="one spec ID" if not required else "the spec ID")
+    return sp
+
+
 def _add_new(sub) -> None:
     sp = add_json(sub.add_parser("new", help="capture a spec into plans/"))
     sp.add_argument("name")
@@ -84,13 +95,13 @@ def _add_read(sub) -> None:
 
     sp = add_json(sub.add_parser("status", help="one spec's sections, stage, tasks, gates — "
                                                 "or one epic's progress with --epic"))
-    sp.add_argument("--spec", help="one spec ID")
+    add_spec(sp, False)
     sp.add_argument("--epic", help="an epic ID: progress per group, blocked items, critical path")
 
     sp = add_json(sub.add_parser("show", help="granular read: ONE task, the map by default, "
                                               "the document only with --full (section "
                                               "bodies are `section`'s)"))
-    sp.add_argument("--spec", required=True)
+    add_spec(sp, True)
     sp.add_argument("--task", action="append", metavar="ID",
                     help="one task's line and metadata, by id or index; repeatable")
     sp.add_argument("--full", action="store_true",
@@ -217,7 +228,7 @@ def _add_next_and_epic(sub) -> None:
 
 def _add_inspection(sub) -> None:
     sp = add_json(sub.add_parser("parallel", help="prove a [P] group's files: are disjoint"))
-    sp.add_argument("--spec", required=True)
+    add_spec(sp, True)
 
     sp = add_json(sub.add_parser("find", help="resolve a branch, a commit, or a PR back to "
                                               "the spec that owns it"))
@@ -348,6 +359,14 @@ def main(argv: list[str]) -> int:
                         "choose a specs command"}, False)
     if not hasattr(args, "json"):
         args.json = False
+    if args.cmd in SPEC_POSITIONAL:
+        pos = getattr(args, "spec_id", None)
+        if pos and args.spec and str(pos) != str(args.spec):
+            parser.error(f"{args.cmd}: the id was given twice and differs "
+                         f"(positional {pos}, --spec {args.spec})")
+        args.spec = args.spec or pos
+        if SPEC_POSITIONAL[args.cmd] and not args.spec:
+            parser.error(f"{args.cmd}: the spec id is required: pass <id> or --spec <id>")
     root = find_repo_root(os.path.abspath(args.root or os.getcwd()))
     # One command, one resolution — held by the emitter's lifetime. It is built here, handed to
     # the verb, and dropped when the call returns, so a process that dispatches more than once
