@@ -10,8 +10,10 @@ command during the read: the `filter.<x>` drivers it declares are blanked before
 does not descend into submodules (their own config is not ours to blank); `log.showSignature` is
 forced off so `gpg.program` never runs; and a partial clone's lazy fetch is off
 (`GIT_NO_LAZY_FETCH`, and `GIT_ALLOW_PROTOCOL` empty refuses every transport), so a missing blob
-or an absent `--sha` never runs `core.sshCommand` or any other transport the config names. A
-REPORT only, exit 0 on any facts, and a read that failed is
+or an absent `--sha` never runs `core.sshCommand` or any other transport the config names.
+`rewrites` and `reflog` are evidence of what the worker did not erase, not proof against a worker with
+`Bash`: `git reflog delete` or `expire` removes the entries and the payload then reads empty with
+`complete: true`. A REPORT only, exit 0 on any facts, and a read that failed is
 an entry of the payload's `errors` (`complete: false`), never an empty list; judging them is the verifier's. Nothing here executes the
 audited branch's code: the gate is certified by CI before the merge, never by this verb."""
 from __future__ import annotations
