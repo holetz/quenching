@@ -52,13 +52,22 @@ def _error(argv: tuple[str, ...], code: int, err: str) -> dict:
 
 def _reflog(cwd: str, ref: str, env: dict[str, str] | None = None,
             errors: list[dict] | None = None) -> list[str]:
-    """The reflog subjects of `ref`, newest first, minus the `reset` entries that moved nothing:
-    a reset whose sha equals the next older entry's rewrote no history (`git merge --abort` logs
-    `reset: moving to HEAD`). A reset that moved the ref stays, so the verifier still sees it."""
-    entries = [line.split(" ", 1) + [""] for line in _lines(cwd, "reflog", "show", "--format=%H %gs", ref, env=env, errors=errors)]
-    return [e[1] for i, e in enumerate(entries)
-            if e[1] and not (e[1].startswith("reset:") and i + 1 < len(entries)
-                             and entries[i + 1][0] == e[0])]
+    """The reflog entries of `ref` that MOVED it, newest first. The check judges movement, not
+    message: an entry whose sha equals the next older entry's moved nothing and is dropped whatever
+    it says (`git merge --abort` logs `reset: moving to HEAD`); every other entry stays, and one
+    with an empty message (`git update-ref` without `-m`) reads `(no reflog message) <old>..<new>`,
+    so a rewrite made silently is still seen. The oldest entry is the ref's creation and stays."""
+    entries = [(line.split(" ", 1) + [""])[:2]
+               for line in _lines(cwd, "reflog", "show", "--format=%H %gs", ref, env=env, errors=errors)]
+    if not entries and errors is not None:   # a live ref always has its creation entry: none means expired or never logged
+        errors.append(_error(("reflog", "show", ref), 0, "reflog empty or expired: the ref's history is unknown, not clean"))
+    kept = []
+    for i, (sha, subject) in enumerate(entries):
+        older = entries[i + 1][0] if i + 1 < len(entries) else None
+        if older == sha:
+            continue
+        kept.append(subject or f"(no reflog message) {(older or '')[:12]}..{sha[:12]}")
+    return kept
 
 
 def _registered(cwd: str, path: str) -> bool:

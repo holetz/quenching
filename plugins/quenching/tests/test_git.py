@@ -334,6 +334,53 @@ class Audit(RepoCase):
         payload = _cq_json(self.repo, *args)
         self.assertTrue([x for x in payload["reflog"]["head"] if x.startswith("reset")])
 
+    def _reflog_args(self):
+        return ("audit", "--worktree", self.wt, "--base", "main", "--branch", "spec/1",
+                "--sha", self.sha)
+
+    def _commit_more(self):
+        pathlib.Path(self.wt, "c.txt").write_text("c\n", encoding="utf-8")
+        _run(self.wt, "add", "c.txt")
+        _run(self.wt, "commit", "-q", "-m", "task 2")
+
+    def test_reflog_keeps_a_branch_rewind_by_update_ref_without_a_message(self):
+        self._commit_more()
+        _run(self.wt, "update-ref", "refs/heads/spec/1", "HEAD~1")
+        payload = _cq_json(self.repo, *self._reflog_args())
+        self.assertTrue([x for x in payload["reflog"]["branch"] if x.startswith("(no reflog message)")])
+
+    def test_reflog_keeps_a_head_rewind_by_update_ref_without_a_message(self):
+        self._commit_more()
+        _run(self.wt, "update-ref", "HEAD", "HEAD~1")
+        payload = _cq_json(self.repo, *self._reflog_args())
+        self.assertTrue([x for x in payload["reflog"]["head"] if x.startswith("(no reflog message)")])
+
+    def test_reflog_drops_an_update_ref_that_moved_nothing(self):
+        before = _cq_json(self.repo, *self._reflog_args())["reflog"]
+        _run(self.wt, "update-ref", "refs/heads/spec/1", "HEAD")
+        _run(self.wt, "update-ref", "-m", "noop", "refs/heads/spec/1", "HEAD")
+        self.assertEqual(_cq_json(self.repo, *self._reflog_args())["reflog"], before)
+
+    def test_reflog_keeps_a_rewind_that_carries_a_message(self):
+        self._commit_more()
+        _run(self.wt, "update-ref", "-m", "rewind", "refs/heads/spec/1", "HEAD~1")
+        payload = _cq_json(self.repo, *self._reflog_args())
+        self.assertIn("rewind", payload["reflog"]["branch"])
+
+    def test_reflog_keeps_both_moves_of_an_a_b_a_rewrite(self):
+        self._commit_more()
+        a = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.wt, capture_output=True, text=True, check=True).stdout.strip()
+        _run(self.wt, "update-ref", "refs/heads/spec/1", "HEAD~1")
+        _run(self.wt, "update-ref", "refs/heads/spec/1", a)
+        payload = _cq_json(self.repo, *self._reflog_args())
+        self.assertEqual(len([x for x in payload["reflog"]["branch"] if x.startswith("(no reflog message)")]), 2)
+
+    def test_expired_reflog_is_an_error_not_a_clean_audit(self):
+        _run(self.wt, "reflog", "expire", "--expire=now", "--all")
+        payload = _cq_json(self.repo, *self._reflog_args())
+        self.assertFalse(payload["complete"])
+        self.assertTrue([e for e in payload["errors"] if "reflog" in e["read"]])
+
     def test_gate_flag_is_gone(self):
         proc = self._audit("--worktree", self.wt, "--base", "main", "--branch", "spec/1", "--gate")
         self.assertNotEqual(proc.returncode, 0)
