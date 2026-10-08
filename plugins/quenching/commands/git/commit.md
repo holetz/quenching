@@ -2,8 +2,7 @@
 description: >-
   Commit what is already staged under the repo's commit convention. Use for "commit this", "make a commit", "wrap this up in a commit". Not for: staging, merging or pushing → /quenching:git:merge.
 argument-hint: [subject]
-allowed-tools: >-
-  Bash(cq:*), Bash(python3:*), Read
+allowed-tools: Bash(cq git:*), Bash(cq specs next:*), Bash(cq components read:*), Read
 hooks:
   PreToolUse:
     - matcher: Bash
