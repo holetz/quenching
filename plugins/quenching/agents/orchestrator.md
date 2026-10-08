@@ -61,7 +61,9 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    and `TOKENS: 0`. A steward `blocked` on the merge stops the dependents the same way, with its
    NOTE. **The gate is certified by CI, not by the verifier:** the steward merges only with
    every PR check green (the steward reads them); a red check is a `failed` merge, and no CI check (or one pending past
-   its ceiling) is `needs-human: nenhum CI certificou o gate`. A worker's own report is a
+   its ceiling) is `needs-human: nenhum CI certificou o gate`. A merge in mid-wave leaves its parallel siblings behind the base; under `autonomous` each
+   sibling's `conclude` merges the base in at step 6 and runs its gate, so a branch that is merely
+   behind never reaches you as `needs-human`. A worker's own report is a
    claim, not evidence. FAIL means one re-spawn of the worker with the verifier's evidence and the
    handoff note; a second FAIL escalates to the human with both reports.
 5. **Retry and idempotency.** Retry a failed `cq` write with backoff. Before any create, search by
