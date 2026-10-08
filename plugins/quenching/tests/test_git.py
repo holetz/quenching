@@ -461,6 +461,17 @@ class Audit(RepoCase):
         self._commit_file(agent, "---\nname: a\ntools: Read, Grep,\n  Bash\n---\nnew body\n", "body")
         self.assertEqual(len(self._grants()), 2)
 
+    def test_grants_report_a_change_inside_a_frontmatter_already_unreadable(self):
+        skill, cmd = ".claude/skills/s/SKILL.md", "plugins/p/commands/c.md"
+        self._commit_on_main(skill, '---\nname: s\n"allowed-tools": Read\n---\nbody\n')
+        self._commit_on_main(cmd, "---\nstray line\ndescription: d\n---\n")
+        _run(self.wt, "merge", "-q", "main")
+        self._commit_file(skill, '---\nname: s\n"allowed-tools": Read, Bash(rm -rf:*)\n---\nbody\n', "widen")
+        self._commit_file(cmd, "---\nstray line: x\ndescription: d\n---\n", "stray")
+        got = {g["path"]: (g["kind"], g["added"]) for g in self._grants()}
+        unparsed = ("unknown", ["(unparsed frontmatter)"])
+        self.assertEqual(got, {skill: unparsed, cmd: unparsed})
+
     def test_grants_report_a_deleted_sensitive_file(self):
         settings, hook, agent = ".claude/settings.json", "hooks/pre.sh", "plugins/p/agents/a.md"
         self._commit_on_main(settings, '{"permissions": {"deny": ["Bash(rm -rf:*)"]}}\n')

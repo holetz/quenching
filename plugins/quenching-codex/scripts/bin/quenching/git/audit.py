@@ -182,9 +182,10 @@ TOP_KEY = re.compile(r"^([A-Za-z_-]+):(?:\s+(.*))?$")
 LIST_ITEM = re.compile(r"^\s*-\s+")
 
 
-def _block(text: str | None) -> tuple[dict[str, list[str]], bool] | None:
-    """The leading frontmatter block as `{key: [its lines]}` plus whether every line was
-    recognized; `None` when there is no block. A top-level `key:` opens a key, the indented and
+def _block(text: str | None) -> tuple[dict[str, list[str]], bool, tuple[str, ...]] | None:
+    """The leading frontmatter block as `{key: [its lines]}`, whether every line was recognized,
+    and the block's raw lines (an unrecognized line is in no key, so only these show it changed);
+    `None` when there is no block. A top-level `key:` opens a key, the indented and
     `- item` lines after it belong to it, blank and `#` lines are skipped. Any other top-level line
     (a quoted key, a line with no `key:`), a repeated key, or a known key whose value is inline AND
     continued on the next line is not recognized: the audit computes only what it reads whole."""
@@ -194,10 +195,11 @@ def _block(text: str | None) -> tuple[dict[str, list[str]], bool] | None:
     if not lines or lines[0].strip() != "---":
         return None
     keys: dict[str, list[str]] = {}
-    ok, cur = True, None
+    ok, cur, raw = True, None, []
     for line in lines[1:]:
         if line.strip() == "---":
             break
+        raw.append(line)
         if not line.strip() or line.lstrip().startswith("#"):
             continue
         m = TOP_KEY.match(line)
@@ -214,7 +216,7 @@ def _block(text: str | None) -> tuple[dict[str, list[str]], bool] | None:
         inline = (TOP_KEY.match(body[0]).group(2) or "").strip()
         if body[1:] and (inline or not all(LIST_ITEM.match(ln) for ln in body[1:])):
             ok = False
-    return keys, ok
+    return keys, ok, tuple(raw)
 
 
 def _entries(keys: dict[str, list[str]], wanted: tuple[str, ...]) -> set[str] | None:
@@ -235,8 +237,7 @@ def _entries(keys: dict[str, list[str]], wanted: tuple[str, ...]) -> set[str] | 
     return found
 
 
-def _grant_entries(text: str | None, parsed: tuple[dict[str, list[str]], bool] | None,
-                   agent: bool) -> set[str]:
+def _grant_entries(text: str | None, parsed: tuple | None, agent: bool) -> set[str]:
     """What `tools:` / `allowed-tools:` grant. An agent whose frontmatter has no `tools:` holds
     every tool, read as `*`; an absent file grants nothing."""
     if text is None:
@@ -306,8 +307,9 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
         if frontmatter:
             agent = bool(AGENT.search(path))
             old_fm, new_fm = _block(old), _block(new)
-            (old_keys, old_ok), (new_keys, new_ok) = old_fm or ({}, True), new_fm or ({}, True)
-            if old_keys != new_keys and not (old_ok and new_ok):
+            (old_keys, old_ok, old_raw), (new_keys, new_ok, new_raw) = (
+                old_fm or ({}, True, ()), new_fm or ({}, True, ()))
+            if old_raw != new_raw and not (old_ok and new_ok):
                 unparsed = True
                 found.append({"path": path, "kind": "unknown", "added": ["(unparsed frontmatter)"]})
             else:
