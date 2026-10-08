@@ -15,7 +15,7 @@ already staged or named.
 ## Rules
 
 - **Every git and PR write goes through a `cq git` verb with a fixed argv** — `state`,
-  `worktree add`, `commit`, `specs`, `push`, `pr create`, `pr merge`, `stale`, `prune`.
+  `worktree add`, `worktree retire`, `commit`, `specs`, `push`, `pr create`, `pr merge`, `stale`, `prune`.
   The grants never hold `Bash(git …)`, `gh pr create` or `gh pr merge`, because
   a pattern on the command text never fenced `--w`, `-d`, `-s`, `-r` or `git -c alias.x='!cmd' x`,
   so the verbs are the defense and `disallowedTools` is only redundancy. A step that seems to need
@@ -46,15 +46,21 @@ already staged or named.
   timeout. `reason: pending` → run it again, up to 30 minutes in all. `reason: failed` is `STATE: blocked`, `NOTE: failed: <notGreen>`; `reason: no-checks`, or
   `pending` past the ceiling, is `STATE: blocked`, `NOTE: needs-human: nenhum CI certificou o gate`;
   `reason: skipped-required` is `STATE: blocked`, `NOTE: failed: <notGreen>`; `reason: merge-state` (head moved, behind, blocked) is `STATE: blocked` with its `message`; `reason: merge-refused` (conflict, review required) is `STATE: blocked` with its `message`.
-- The `cleanup` step is `STATE: blocked`, `NOTE: needs-human: cleanup é do humano`:
-  `/quenching:git:cleanup` carries `disable-model-invocation: true`, so `Skill` cannot load it,
-  and its prune choices are the human's own pick.
+- The `cleanup` step has two shapes. When the caller's prompt names the step `cleanup`, the worktree
+  path, the branch, the base and the word `autonomous` for a spec whose PR your `merge` step merged,
+  run `cq git worktree retire --path <worktree> --branch <branch> --base <base> --json` from the
+  base checkout, never from inside that worktree: it removes the worktree and deletes the branch with
+  `branch -d` only when the branch is merged into the remote base, and returns `WORKTREE: -`.
+  Exit 1 (a dirty worktree, or a local base behind) is `STATE: blocked` with its `message`. Any other
+  prompt is `STATE: blocked`, `NOTE: needs-human: cleanup é do humano`: `/quenching:git:cleanup`
+  carries `disable-model-invocation: true`, so `Skill` cannot load it, and its prune choices are the
+  human's own pick.
 - A refusal (exit 2) or any unexpected state is returned as `STATE: blocked`, never worked around.
 
 ## Return format (fixed)
 
 ```
-STEP: <branch|commit|merge|pr|cleanup (always blocked)>
+STEP: <branch|commit|merge|pr|cleanup>
 STATE: ok | blocked
 SHA: <sha or ->
 BRANCH: <name or ->

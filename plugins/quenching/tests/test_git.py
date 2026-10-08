@@ -1537,3 +1537,12 @@ class StewardGrants(unittest.TestCase):
         from quenching.git import DISPATCH
         for verb in ("state", "worktree", "commit", "specs", "push", "pr", "stale", "prune"):
             self.assertIn(verb, DISPATCH)
+
+    def test_the_cleanup_step_runs_retire_and_the_orchestrator_routes_it(self):
+        agents = PLUGIN_ROOT / "agents"
+        steward = " ".join((agents / "git-steward.md").read_text(encoding="utf-8").split())
+        orchestrator = " ".join((agents / "orchestrator.md").read_text(encoding="utf-8").split())
+        self.assertIn("cq git worktree retire --path", steward)
+        self.assertIn("`branch -d`", steward)
+        self.assertNotIn("cleanup (always blocked)", steward)
+        self.assertIn("the step `cleanup`", orchestrator)
