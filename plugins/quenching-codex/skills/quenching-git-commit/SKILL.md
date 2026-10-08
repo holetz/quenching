@@ -25,7 +25,7 @@ never a guess at which files belong together.
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/conventions.md \
   --sections "§The declared-directive layer" --sections "§The read-if-present rule"
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git conventions --json
-git diff --cached --name-only
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git state --json   # `staged` is the index, `branch` the current branch
 ```
 One `cq git conventions` call answers both declared layers: `config.commitSubject` is the target's
 directive for this artifact, `governs`/`declared` the docs layer. Nothing staged → refuse: name that
@@ -44,8 +44,7 @@ python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/qu
 title allows; an explicit subject always wins. When it is omitted, resolve the current branch and
 its `quenching-specs:` mark:
 ```bash
-git branch --show-current
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git specs <current-branch> --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git specs <current-branch> --json   # <current-branch>: `branch` from step 1's `python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git state`
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs next --spec <spec-id> --json
 ```
 If that produces exactly one spec and one actionable task, derive the subject with the governing
@@ -58,8 +57,10 @@ the refusal is reported.
 
 ### 3. Commit
 ```bash
-git commit -m "<subject>" && git log -1 --format=%s
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git commit --subject "<subject>" --json
 ```
+The verb reports the `sha`, the `subject` git recorded and `subjectMatches`; exit 1 is git refusing
+the commit (a hook, an identity) with HEAD unchanged, exit 2 a blank subject or an empty index.
 Execute immediately after the staged-diff and hygiene checks; a resolvable omitted subject does
 not add a confirmation question. The command commits the existing index only — it never stages
 files, amends history, or bypasses hooks.
