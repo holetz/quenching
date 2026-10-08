@@ -5,19 +5,17 @@ A wildcard grant such as `Bash(git -C * status:*)` admits any git command that m
 `status` — `branch -D`, `clean -fdx`, `-c core.fsmonitor=<cmd>` — and `git log:*` admits
 `--output=<file>`. Here the agent names a worktree and refs; every git invocation is built in this
 module, refs are resolved to commits before use, and the repository's own config cannot run a
-command during the read. A REPORT only, exit 0 on any facts; judging them is the verifier's.
-
-`--gate` is the one execution: the worktree's own `scripts/verify_repo.sh`, argv fixed."""
+command during the read: the `filter.<x>` drivers it declares are blanked before `status`. A
+REPORT only, exit 0 on any facts; judging them is the verifier's. Nothing here executes the
+audited branch's code: the gate is certified by CI before the merge, never by this verb."""
 from __future__ import annotations
 
 import os
-import subprocess
-
+import re
 from quenching.common.git import _git_run
 from quenching.common.output import emit, refuse
 
-GATE_SCRIPT = os.path.join("scripts", "verify_repo.sh")
-GATE_TIMEOUT_S = 1800
+FILTER_KEY = re.compile(r"^filter\.(.+)\.(clean|smudge|process)$")
 SAFE = ("--no-optional-locks", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null")
 
 
@@ -53,16 +51,20 @@ def _branch_ok(cwd: str, branch: str) -> bool:
     return _run(cwd, "check-ref-format", "--branch", branch)[0] == 0
 
 
-def _gate(worktree: str) -> dict:
-    if not os.path.isfile(os.path.join(worktree, GATE_SCRIPT)):
-        return {"exit": None, "reason": "absent"}
-    try:
-        done = subprocess.run(["bash", GATE_SCRIPT], cwd=worktree, capture_output=True,
-                              text=True, timeout=GATE_TIMEOUT_S)
-    except subprocess.TimeoutExpired:
-        return {"exit": None, "reason": "timeout"}
-    tail = (done.stdout + done.stderr).splitlines()[-20:]
-    return {"exit": done.returncode, "tail": tail}
+def _filter_overrides(cwd: str) -> list[str]:
+    """`-c` pairs that blank every `filter.<x>` driver the repository config declares, so the
+    status cannot run one against the branch's `.gitattributes`. `required` is cleared too: a
+    required filter with no command would die instead of being skipped."""
+    code, out = _run(cwd, "config", "--name-only", "--get-regexp", r"^filter\..*\.(clean|smudge|process)$")
+    argv: list[str] = []
+    if code != 0:
+        return argv
+    for key in out.splitlines():
+        m = FILTER_KEY.match(key.strip())
+        if m:
+            argv += ["-c", f"filter.{m.group(1)}.{m.group(2)}=",
+                     "-c", f"filter.{m.group(1)}.required=false"]
+    return argv
 
 
 def cmd_audit(args) -> int:
@@ -90,7 +92,7 @@ def cmd_audit(args) -> int:
         "worktree": worktree,
         "base": {"ref": args.base, "sha": base},
         "branch": {"ref": args.branch, "sha": tip},
-        "status": _lines(worktree, "status", "--porcelain"),
+        "status": _lines(worktree, *_filter_overrides(worktree), "status", "--porcelain"),
         "stash": _lines(worktree, "stash", "list"),
         "commits": _lines(worktree, "log", "--oneline", f"{base}..{tip}"),
         "changed": _lines(worktree, "diff", "--name-only", f"{base}...{tip}"),
@@ -100,14 +102,10 @@ def cmd_audit(args) -> int:
                                     f"refs/heads/{args.branch}"),
                    "head": _lines(worktree, "reflog", "show", "--format=%gs", "HEAD")},
     }
-    if args.gate:
-        payload["gate"] = _gate(worktree)
 
     lines = [f"worktree: {worktree}", f"branch: {args.branch} ({tip[:12]}) over {args.base}",
              f"commits: {len(payload['commits'])}", f"changed: {len(payload['changed'])} path(s)",
              f"status: {len(payload['status'])} entries", f"stash: {len(payload['stash'])} entries"]
     lines += [f"ancestor {s}: {'yes' if ok else 'NO'}" for s, ok in payload["ancestry"].items()]
-    if args.gate:
-        lines.append(f"gate exit: {payload['gate']['exit']}")
     emit(args.json, payload, "\n".join(lines))
     return 0
