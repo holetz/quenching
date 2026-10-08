@@ -25,7 +25,12 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    leaves the DAG with `STATE: blocked`, `NOTE: needs-approval` and `TOKENS: 0`, and every spec
    that depends on it leaves with it, noted `needs-approval: <id>`. With `autonomous`, pass it on
    to each `spec-runner` prompt as the word `autonomous`; you still write no record, and the
-   worker's develop stamps `by=orchestrator-forced`.
+   worker's develop stamps `by=orchestrator-forced`. A `git-steward` prompt for the `pr` step
+   carries the word `autonomous` too, whenever the run did, and never otherwise.
+   **Schedule every ready spec.** A spec with no unmerged dependency and a free slot gets a worker.
+   Before closing each wave, compare the set you scheduled with the set the DAG resolved as ready,
+   and name any spec that is in the second set only; a spec left out is scheduled in the next
+   wave or reported, never dropped in silence.
 2. **Route.** `complexity` picks the worker: `spec-runner` on sonnet by default, opus when the spec
    says `complexity: high` or `complexity: xhigh`. Pass `model` explicitly on every Agent call; do not rely on
    inheritance. Mechanical steps (branch, commit, merge, PR, cleanup) go to `git-steward`. Context
