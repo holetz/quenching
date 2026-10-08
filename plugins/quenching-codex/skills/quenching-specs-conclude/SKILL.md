@@ -99,7 +99,8 @@ stops the run with `STATE: blocked` and `NOTE: needs-human: <the question>`.
 | Step 4 — the `## Outcome` draft | written unconfirmed; an exit 2 from `promote` → `needs-human` with the refusal quoted, never `--force` |
 | Step 5 — the distillation plan | as step 3: applied on the work branch for `done`, declined and named for `abandoned` |
 | Step 5 — the release obligations | `done`: applied on the work branch as narrated, the standard quoted in the report |
-| Step 6 — branch behind its base, or an inconclusive check | `needs-human`, the count or the check named; never a merge or rebase |
+| Step 6 — branch behind its base | the base merged in (`git merge --no-edit origin/<base>`, never a rebase), then the gate; a conflict outside the generated mirrors → `git merge --abort` and `needs-human` with the paths |
+| Step 6 — an inconclusive check | `needs-human`, the check named |
 | Step 6 — the abandoned branch-delete offer | keep, recorded in the report |
 
 A red gate is `STATE: failed`, never a question. The PR handoff is named and not invoked (step 6).
@@ -258,6 +259,15 @@ a write, and it is the human's call which way — merging the base in, or `quenc
 rebase, which carries the recorded task subjects through the rewrite. Never do it unasked, and
 never run the gate over a branch you know is behind.
 
+**Under `autonomous` the answer is given, and it is the merge.** A sibling spec merged mid-wave is
+the ordinary way to be behind, and a `needs-human` there is never relaunched. Run
+`git merge --no-edit origin/<base>` — a merge, never a rebase, so the task shas stay ancestors and
+the verifier's check 7 accepts them — and then the gate over the merged tree. A conflict only in
+generated files (`plugins/quenching-codex/**`, `plugins/quenching-specs-reader/**`) is mechanical:
+take the base's side (`git show :3:<path> > <path>`, `git add <path>`), conclude the merge, then
+`cq components translate --write` and `--check`. A conflict in any other path →
+`git merge --abort` and `needs-human` naming the paths.
+
 **An inconclusive result is not a green one.** A check that cannot tell "this failed" from "this
 could not be measured" has returned no verdict — say which it was, and ask (§Under `autonomous`:
 `needs-human`), rather than merging on it. Where the repo keeps `/docs/standards/quality/surface-verification.md`, its §The five
@@ -339,9 +349,10 @@ reported.
 - **Never hand off past a red `## Validation` gate**, and never count an inconclusive check as a
   green one.
 - **Never run the gate over a branch that is behind its base.** Report the count and stop; bringing
-  it up to date is a write, and which way is the human's call.
+  it up to date is a write, and which way is the human's call. Under `autonomous` the call is made:
+  the base is merged in (step 6), never rebased.
 - **This command's own commits end at step 5.** Nothing it does writes to the branch after the gate
-  in step 6 — the merge, the PR, and whatever they each commit belong entirely to
+  in step 6, except the base merge `autonomous` runs before that gate — the merge, the PR, and whatever they each commit belong entirely to
   `quenching-git-merge` and `quenching-git-pr-create`, run separately, on the human's own word.
 - Never overwrite the `writeOnce` `outcome` record to make reality fit — report the disagreement
   instead, and never edit the frontmatter to get past `cq specs record`'s refusal.

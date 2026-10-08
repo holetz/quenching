@@ -97,7 +97,8 @@ class TaskExecutionContractTests(unittest.TestCase):
             "| Step 4 — the `## Outcome` draft | written unconfirmed",
             "| Step 5 — the distillation plan |",
             "| Step 5 — the release obligations |",
-            "| Step 6 — branch behind its base, or an inconclusive check | `needs-human`",
+            "| Step 6 — branch behind its base | the base merged in",
+            "| Step 6 — an inconclusive check | `needs-human`",
             "| Step 6 — the abandoned branch-delete offer | keep",
         ):
             self.assertIn(row, conclude)
