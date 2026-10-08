@@ -357,6 +357,8 @@ it stands after the run's last commit.
 
 ### 7. Report, and hand off
 
+**When this run's input carried `autonomous`, skip the read below and the mold with it** — a conductor presents the report, not this run; return the content in the fixed shape the caller specified. Otherwise:
+
 ```bash
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/report-mold.md \
   --sections "§The report mold" --rules-only
