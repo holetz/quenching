@@ -8,7 +8,7 @@ from quenching.specs.parse.handoff import (current_handoff_section, parse_handof
                                            task_section_title)
 from quenching.specs.parse.sections import section_spans
 from quenching.specs.parse.tasks import parse_tasks
-from quenching.specs.parse.text import FENCE_RE, HEADING_RE, body_after_frontmatter
+from quenching.specs.parse.text import FENCE_RE, HEADING_RE, body_after_frontmatter, split_lines
 from quenching.specs.schema import canonical_headings, section_guidance
 
 
@@ -80,7 +80,7 @@ def split_section_stream(text: str, candidates: list[str]) -> list[tuple[str | N
     bodies: list[list[str]] = []
     buf: list[str] = []
     fence: str | None = None
-    for line in text.splitlines():
+    for line in split_lines(text):
         m = FENCE_RE.match(line)
         if m:
             mark = m.group(1)
@@ -106,7 +106,7 @@ def nested_heading(text: str) -> str | None:
     """The first unfenced `## ` line of a text, or None — the line that, spliced into a document,
     would open a section the writer never named. Same fence rule `parse_sections` holds."""
     fence: str | None = None
-    for line in text.splitlines():
+    for line in split_lines(text):
         m = FENCE_RE.match(line)
         if m:
             mark = m.group(1)
@@ -129,7 +129,7 @@ def whole_body(content: str, heading: str) -> tuple[str, str | None]:
     dropped rather than refused — writing back what was read must round-trip. Any other
     unfenced `## ` line comes back as the refusal; the same fence rule `parse_sections`
     holds keeps a quoted `## Design` inside a code block legal. Returns (body, offending line)."""
-    lines = content.splitlines()
+    lines = split_lines(content)
     first = next((i for i, ln in enumerate(lines) if ln.strip()), None)
     if first is not None:
         h = HEADING_RE.match(lines[first])
@@ -169,9 +169,9 @@ def fold_stray_heading(info: dict, stray: str,
                    if s["lineno"] < sec["lineno"] and h in canon)
     if not above:
         return info["text"], None
-    lines = info["text"].splitlines(keepends=True)
+    lines = split_lines(info["text"], keepends=True)
     # sections were parsed from the body, so the heading's line number needs the frontmatter back
-    fm_offset = len(lines) - len(body_after_frontmatter(info["text"]).splitlines(keepends=True))
+    fm_offset = len(lines) - len(split_lines(body_after_frontmatter(info["text"]), keepends=True))
     at = sec["lineno"] + fm_offset
     lines[at] = "#" + lines[at]
     return "".join(lines), above[-1][1]
@@ -184,9 +184,9 @@ def upsert_section(info: dict, heading: str, block: str) -> tuple[str, str]:
     happened to be: a spec whose `## Tasks` was written before its `## Proposal` still
     reads in contract order, so a human and the parser see the same document."""
     text = info["text"]
-    lines = text.splitlines(keepends=True)
+    lines = split_lines(text, keepends=True)
     # sections were parsed from the body, so their line numbers need the frontmatter back
-    fm_offset = len(lines) - len(body_after_frontmatter(text).splitlines(keepends=True))
+    fm_offset = len(lines) - len(split_lines(body_after_frontmatter(text), keepends=True))
     if heading in info["sections"]:
         sec = info["sections"][heading]
         start = sec["lineno"] + fm_offset
