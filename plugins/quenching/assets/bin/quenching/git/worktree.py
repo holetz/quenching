@@ -203,7 +203,9 @@ def _retire(args) -> int:
     refusal (exit 2) happens before a write. The worktree goes first, since git will not delete a
     branch checked out in one; `worktree remove` runs without `--force`, so a dirty worktree
     stands. A worktree holding ignored files that are not symlinks stands too (exit 1, `ignored`
-    lists them) unless `--discard-ignored` is passed. If `branch -d` then refuses (the local base is behind), the branch stands, exit 1."""
+    lists them) unless `--discard-ignored` is passed. `branch -d` compares the branch with its upstream when one is configured, so a published branch is
+    deleted even while the local base is behind; with no upstream it compares with the checked-out
+    HEAD and refuses when the local base is behind: the branch stands, exit 1."""
     cwd = os.getcwd()
     missing = [f"--{k}" for k in ("path", "branch", "base") if not getattr(args, k)]
     if missing:

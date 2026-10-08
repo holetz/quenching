@@ -568,7 +568,7 @@
     "scripts/bin/quenching/git/slugs.py": "f1dfd616a496462d75d2f94bd3478d6664bddf9e596c93297475f55b5a6a4fc2",
     "scripts/bin/quenching/git/stale.py": "47cd29535c0693cc4fa4179f3dbb7751bb4de2f84af823f7c79d823c7547e67a",
     "scripts/bin/quenching/git/state.py": "bead06e1a9fe792c6c139624cf765501567c809a428fce4e31755bc945b4fa71",
-    "scripts/bin/quenching/git/worktree.py": "deb01e8697eae1c79aae1f301377446fa5ae3f8ad7642ecca4abb21410e5a911",
+    "scripts/bin/quenching/git/worktree.py": "8b2a8b76644171355a083ae8c68f83e84d708b254d06b883a6502dd42b93674b",
     "scripts/bin/quenching/knowledge/checks.py": "17da418188620b21b873a5d452735c2c621f408723bb366c2abea8c12cd47da9",
     "scripts/bin/quenching/knowledge/cli.py": "ce743ff6fa31d8a9fc046c999dbe32d10209e0111c9ac6609f35cfa14b61c091",
     "scripts/bin/quenching/knowledge/config.py": "602e8fc63cce607a79ab5f388ab37496e370bb4db74b71a6f2639d4baf9d951c",
