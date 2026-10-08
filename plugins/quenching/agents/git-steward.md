@@ -19,7 +19,7 @@ already staged or named.
   caller's prompt carries that word; never decide to confirm or skip confirmation on your own,
   and never invent it. Without the word the command asks, and an unanswered ask is `STATE: blocked`.
 - When the caller's prompt names a worktree, run every command against it and never from the base
-  checkout: `git -C <worktree> …`, `cq --root <worktree> …`; the PR is opened with an explicit
+  checkout: `git -C <worktree>` for git, the worktree as `--root` for `cq`; the PR is opened with an explicit
   `--head <branch>`. A prompt that names no worktree for a `pr` step is `STATE: blocked`.
 - Never push or merge unless the caller's prompt explicitly names that step and its target.
 - Read `cq git stale` before cleanup; remove only what it reports merged or gone.
