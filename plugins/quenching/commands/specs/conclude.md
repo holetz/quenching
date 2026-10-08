@@ -96,7 +96,7 @@ asks whether to materialize a minimal spec — accepted, its new id is used from
 like a marked one. **Declined, headless completion — closing with no spec file at all — is not
 built**: say so, record it with `cq specs discover`, and fall back to `cq specs list --json` and
 ask. Establish the outcome — **ask if it was not stated**, via
-**AskUserQuestion**: *done* (it shipped) or *abandoned* (it will not be built).
+**AskUserQuestion**: *done* (it shipped) or *abandoned* (it will not be built). Where **AskUserQuestion** is unavailable (a sub-agent), do not ask: return `STATE: blocked` with `NOTE: needs-human: <question>`.
 ```bash
 cq specs status --spec "<id>" --json
 ```
