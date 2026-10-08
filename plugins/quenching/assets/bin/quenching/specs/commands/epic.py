@@ -78,13 +78,18 @@ def _find_group(titles: list[str], wanted: str) -> int | None:
     return None
 
 
+def _group_heading(group: str, number: int) -> str:
+    """A group label that already opens with "N." is used as is; any other gets `number`."""
+    return group if GROUP_NUMBER_RE.match(group) else f"{number}. {group}"
+
+
 def insert_item(info: dict, line: str, group: str | None) -> str:
     """The epic's document with `line` added under `## Tasks` — after the last item of `group`
     (a new `### N.` heading when the group is new), else after the last item overall."""
     text = info["text"]
     sec = parse_sections(mask_comments(text)).get("Tasks")
     if sec is None:
-        body = "## Tasks\n\n" + (f"### 1. {group}\n" if group else "") + line + "\n"
+        body = "## Tasks\n\n" + (f"### {_group_heading(group, 1)}\n" if group else "") + line + "\n"
         return upsert_section(info, "Tasks", body)[0]
     lines = text.splitlines(keepends=True)
     base = sec["lineno"] + 1
@@ -99,7 +104,7 @@ def insert_item(info: dict, line: str, group: str | None) -> str:
     else:
         n = _find_group(titles, group)
         if n is None:
-            heading = group if GROUP_NUMBER_RE.match(group) else f"{len(titles) + 1}. {group}"
+            heading = _group_heading(group, len(titles) + 1)
             add = [] if not lines[end - 1].strip() else ["\n"]
             add += [f"### {heading}\n", line + "\n"]
         else:

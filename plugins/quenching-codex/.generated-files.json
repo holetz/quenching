@@ -620,7 +620,7 @@
     "scripts/bin/quenching/specs/commands/cli.py": "7c49d4d9847fb692402f03f94b31f8a64689ecd3d9339ba2e871c7df9ff9dc42",
     "scripts/bin/quenching/specs/commands/create.py": "a70a83b681aa0fd3ace7115a716cf1281ace51673fba4f375186753d755c1aba",
     "scripts/bin/quenching/specs/commands/doctor.py": "2bc985cae14bc3665c3dbeb4fe56f7f9452f2a6735b3679f081ed5c7597fca75",
-    "scripts/bin/quenching/specs/commands/epic.py": "8f6a55453e5a72501b394d59e892b7b9cc04173560fcc0e8e528be9ee303f45a",
+    "scripts/bin/quenching/specs/commands/epic.py": "49d7761d2f01dbbf868f16b6134965bdbff63875e1954ac6415688bef03281c3",
     "scripts/bin/quenching/specs/commands/fields.py": "807d0a02d89112eafd1e7351c73b9be3d5ea7ef2e8ae370e1520f37251402813",
     "scripts/bin/quenching/specs/commands/find.py": "3b930b6ab48d50d5e0fe6eaa61df112bb66929d7596821859e008d571acd6d56",
     "scripts/bin/quenching/specs/commands/granular.py": "5c040850d8e766a275bdced1ad76ed6a6415de46548a19970e2d6cf448e105a9",
