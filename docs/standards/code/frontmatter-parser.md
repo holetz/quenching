@@ -92,6 +92,11 @@ every other C0/C1 control except the tab. A writer also matches **only a top-lev
 indented one inside a record, and replaces the key's indented continuation with it, so a `title: >-`
 leaves no orphaned line behind. `tests/test_specs_scalar_breaks.py` holds one test per vector.
 
+The same refusal guards caller text that lands on **one line of the body**, where a break would
+forge the sections after it: `epic add --group` (a `### N.` heading) and `task --reason`
+(`sp-bad-scalar`, exit 2, with `field:`), and `task --subject` (`sp-bad-subject`, exit 2).
+`tests/test_specs_line_inputs.py` holds one test per verb.
+
 ## The canonical case list
 
 `tests/test_frontmatter.py` — `CANONICAL_CASES` — holds the parser to all twelve, unchanged from
