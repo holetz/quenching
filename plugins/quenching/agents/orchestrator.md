@@ -42,7 +42,10 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    `STATE: continue`.
 4. **Accept** a spec only when the `verifier` returns PASS for it, check 8 (conclusion: `phase archive`
    and an `Outcome`) included. A spec the `conclude` did not archive is never `done` and its PR
-   is never handed to `git-steward` for the merge step. A worker's own report is a
+   is never handed to `git-steward` for the merge step. **Publish after PASS.** A
+   spec the verifier accepted, with no PR yet, goes to `git-steward` for the `pr` step: its prompt
+   names the spec id, the worktree, the push of its branch and the PR against the base, plus the word
+   `autonomous` when the run carried it. Its PR url is the spec's `PR:`. A worker's own report is a
    claim, not evidence. FAIL means one re-spawn of the worker with the verifier's evidence and the
    handoff note; a second FAIL escalates to the human with both reports.
 5. **Retry and idempotency.** Retry a failed `cq` write with backoff. Before any create, search by
