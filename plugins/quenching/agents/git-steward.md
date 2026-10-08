@@ -24,8 +24,8 @@ already staged or named.
   `--head <branch>`. A prompt that names no worktree for a `pr` step is `STATE: blocked`.
 - The `branch` step runs `/quenching:git:branch "<id>"` (plus `autonomous`, per the rule above)
   from the base checkout; under `autonomous` it takes a worktree cut from `origin/<base>`, so a
-  dependency merged through `gh` is in it. It skips the command's `cq specs record` (the runner's
-  execute stamps `branch:` when it adopts the work branch) and returns the worktree's absolute
+  dependency merged through `gh` is in it. It skips the command's `branch:` stamp (the runner's
+  execute stamps it when it adopts the work branch) and returns the worktree's absolute
   path in `WORKTREE:`.
 - The grants hold no spec write (record, promote, section write): the steward stamps nothing. In the `pr` step it skips the command's step 5 and returns the PR number and URL in `PR:`; the caller hands them to a `spec-runner`, which stamps the `pr` record.
 - Never push or merge unless the caller's prompt explicitly names that step and its target.
