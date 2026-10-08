@@ -191,11 +191,15 @@ def _registered_worktrees(cwd: str) -> list[tuple[str, str | None]]:
     return found
 
 
-def _ignored_files(path: str) -> list[str]:
+def _ignored_files(path: str) -> list[str] | None:
     """Ignored entries the worktree holds that are not symlinks: the shared paths `worktree link`
-    materialises are symlinks into a store and survive the removal, anything else is deleted."""
-    code, out, _err = _git_run(path, *SAFE, "status", "--porcelain", "--ignored=matching")
-    entries = [line[3:] for line in (out.splitlines() if code == 0 else []) if line.startswith("!! ")]
+    materialises are symlinks into a store and survive the removal, anything else is deleted.
+    None when `git status` fails: the caller refuses, an unread worktree is not an empty one."""
+    code, out, _err = _git_run(path, *SAFE, "status", "--porcelain", "--untracked-files=normal",
+                               "--ignored=matching")
+    if code != 0:
+        return None
+    entries = [line[3:] for line in out.splitlines() if line.startswith("!! ")]
     return [e for e in entries if not os.path.islink(os.path.join(path, e.rstrip("/")))]
 
 
@@ -263,6 +267,9 @@ def _retire(args) -> int:
     payload = {"ok": False, "path": path, "branch": args.branch, "base": target,
                "worktreeRemoved": False, "branchDeleted": False}
     ignored = [] if args.discard_ignored else _ignored_files(path)
+    if ignored is None:
+        return refuse({"code": "git-worktree-retire-status-failed",
+                       "message": f"git status failed in {path}; nothing was removed"}, args.json)
     if ignored:
         payload.update(ignored=ignored, message=f"the worktree holds ignored files that removal "
                        f"would delete: {', '.join(ignored)}; pass --discard-ignored to remove anyway")

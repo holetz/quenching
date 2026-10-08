@@ -1666,6 +1666,18 @@ class WorktreeRetire(RepoCase):
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertFalse(os.path.exists(self.wt))
 
+    def test_an_ignored_file_stands_under_show_untracked_files_no(self):
+        self._merge_through_gh()
+        info = os.path.join(self.repo, ".git", "info", "exclude")
+        os.makedirs(os.path.dirname(info), exist_ok=True)
+        pathlib.Path(info).write_text(".env\n", encoding="utf-8")
+        pathlib.Path(self.wt, ".env").write_text("secret\n", encoding="utf-8")
+        _run(self.repo, "config", "status.showUntrackedFiles", "no")
+        proc = self._retire()
+        self.assertNotEqual(proc.returncode, 0, proc.stdout)
+        self.assertTrue(os.path.exists(os.path.join(self.wt, ".env")))
+        self.assertIn(".env", proc.stdout)
+
     def test_a_local_base_behind_still_retires_a_published_branch(self):
         self._merge_through_gh()
         proc = self._retire()
