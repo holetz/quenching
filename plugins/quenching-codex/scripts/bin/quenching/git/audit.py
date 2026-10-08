@@ -16,6 +16,7 @@ an entry of the payload's `errors` (`complete: false`), never an empty list; jud
 audited branch's code: the gate is certified by CI before the merge, never by this verb."""
 from __future__ import annotations
 
+import json
 import os
 import re
 from quenching.common.git import _git_run
@@ -45,6 +46,15 @@ def _lines(cwd: str, *argv: str, env: dict[str, str] | None = None,
             errors.append(_error(argv, code, err))
         return []
     return [line for line in out.splitlines() if line]
+
+
+def _paths(cwd: str, rng: str, env: dict[str, str], errors: list[dict]) -> list[str]:
+    """The paths a range changes, read with `-z` so a non-ASCII path arrives raw, never quoted."""
+    code, out, err = _git_run(cwd, *SAFE, "diff", "--name-only", "-z", "--no-renames", rng, env=env)
+    if code != 0:
+        errors.append(_error(("diff", "--name-only"), code, err))
+        return []
+    return [p for p in out.split("\0") if p]
 
 
 def _error(argv: tuple[str, ...], code: int, err: str) -> dict:
@@ -143,9 +153,12 @@ def _inert_env(cwd: str, errors: list[dict] | None = None) -> dict[str, str]:
     return env
 
 
-AGENT_OR_COMMAND = re.compile(r"(^|/)(agents/[^/]+|commands/.+)\.md$")
+FRONTMATTER_GRANT = re.compile(r"(^|/)(agents/[^/]+|commands/.+)\.md$|(^|/)skills/.+/SKILL\.md$")
+AGENT = re.compile(r"(^|/)agents/[^/]+\.md$")
+SETTINGS = re.compile(r"^\.agents/settings[^/]*\.json$")
 SURFACE = re.compile(r"^\.github/workflows/|^\.agents/settings[^/]*\.json$|(^|/)hooks/")
 GRANT_KEYS = ("tools", "allowed-tools")
+DENY_KEYS = ("disallowedTools",)
 
 
 def _split_entries(value: str) -> list[str]:
@@ -162,17 +175,18 @@ def _split_entries(value: str) -> list[str]:
     return [e.strip("'\"") for e in out if e]
 
 
-def _grant_entries(text: str) -> set[str]:
-    """The entries of `tools:` / `allowed-tools:` in a leading frontmatter block, inline or as a
-    block list. `disallowedTools` is another key and never read: narrowing is not widening."""
+def _frontmatter(text: str, keys: tuple[str, ...]) -> set[str] | None:
+    """The entries of `keys` in a leading frontmatter block, inline or as a block list; `None` when
+    there is no frontmatter or none of `keys` appears in it."""
     lines = text.splitlines()
     if not lines or lines[0].strip() != "---":
-        return set()
-    found: set[str] = set()
+        return None
+    found: set[str] | None = None
     i = 1
     while i < len(lines) and lines[i].strip() != "---":
         m = re.match(r"^([A-Za-z_-]+):\s*(.*)$", lines[i])
-        if m and m.group(1) in GRANT_KEYS:
+        if m and m.group(1) in keys:
+            found = found or set()
             value = m.group(2).strip()
             if value.startswith("[") and value.endswith("]"):
                 value = value[1:-1]
@@ -184,21 +198,70 @@ def _grant_entries(text: str) -> set[str]:
     return found
 
 
+def _grant_entries(text: str | None, agent: bool) -> set[str]:
+    """What `tools:` / `allowed-tools:` grant. An agent whose frontmatter has no `tools:` holds
+    every tool, read as `*`; an absent file grants nothing."""
+    if text is None:
+        return set()
+    found = _frontmatter(text, GRANT_KEYS)
+    if found is None:
+        return {"*"} if agent else set()
+    return found
+
+
+def _deny_entries(path: str, text: str | None) -> set[str]:
+    """The deny rules of a file: `permissions.deny` of a settings JSON, `disallowedTools` of a
+    frontmatter. Raises ValueError on a settings file that is not a JSON object."""
+    if text is None:
+        return set()
+    if SETTINGS.search(path):
+        data = json.loads(text)
+        if not isinstance(data, dict):
+            raise ValueError("not a JSON object")
+        deny = (data.get("permissions") or {}).get("deny") or []
+        return {str(e) for e in deny}
+    return _frontmatter(text, DENY_KEYS) or set()
+
+
 def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, str],
             errors: list[dict]) -> list[dict]:
-    """Every entry the branch ADDS to the grant surface: `tools:`/`allowed-tools:` of an agent or
-    command, and the added lines of a hook or CI workflow. Narrowing and unchanged never appear."""
+    """Every entry the branch ADDS to the grant surface against its merge-base with `base`:
+    `tools:`/`allowed-tools:` of an agent, command or skill (an agent with no `tools:` is `*`), a
+    deny rule removed (`kind: deny`), and the added lines of a hook or CI workflow. Narrowing and
+    unchanged never appear."""
+    code, out, err = _git_run(cwd, *SAFE, "merge-base", base, tip, env=env)
+    if code != 0 or not out.strip():
+        errors.append(_error(("merge-base", base), code, err or "no common ancestor"))
+        return []
+    fork = out.strip()
+
+    def show(rev: str, path: str) -> str | None:
+        code, text, _e = _git_run(cwd, *SAFE, "show", f"{rev}:{path}", env=env)
+        return text if code == 0 else None
+
     found = []
     for path in changed:
-        if AGENT_OR_COMMAND.search(path):
-            code, old, _e = _git_run(cwd, *SAFE, "show", f"{base}:{path}", env=env)
-            code2, new, err = _git_run(cwd, *SAFE, "show", f"{tip}:{path}", env=env)
-            if code2 != 0:
-                continue          # deleted at the tip: nothing was added
-            added = sorted(_grant_entries(new) - (_grant_entries(old) if code == 0 else set()))
+        frontmatter, surface = FRONTMATTER_GRANT.search(path), SURFACE.search(path)
+        if not (frontmatter or surface):
+            continue
+        new = show(tip, path)
+        if new is None:
+            continue          # deleted at the tip: nothing was added
+        old = show(fork, path)
+        if frontmatter:
+            agent = bool(AGENT.search(path))
+            added = sorted(_grant_entries(new, agent) - _grant_entries(old, agent))
             if added:
                 found.append({"path": path, "kind": "tools", "added": added})
-        elif SURFACE.search(path):
+        if frontmatter or SETTINGS.search(path):
+            try:
+                removed = sorted(_deny_entries(path, old) - _deny_entries(path, new))
+            except ValueError as exc:
+                errors.append(_error(("show", path), 0, f"settings unreadable: {exc}"))
+                removed = []
+            if removed:
+                found.append({"path": path, "kind": "deny", "added": removed})
+        if surface:
             code, out, err = _git_run(cwd, *SAFE, "diff", "-U0", "--no-renames", f"{base}...{tip}",
                                       "--", path, env=env)
             if code != 0:
@@ -249,7 +312,7 @@ def cmd_audit(args) -> int:
                          errors=errors),
         "stash": _lines(worktree, "stash", "list", env=env, errors=errors),
         "commits": _lines(worktree, "log", "--oneline", f"{base}..{tip}", env=env, errors=errors),
-        "changed": _lines(worktree, "diff", "--name-only", "--no-renames", f"{base}...{tip}", env=env, errors=errors),
+        "changed": _paths(worktree, f"{base}...{tip}", env, errors),
         "ancestry": ancestry,
         "grants": [],
         "reflog": {"branch": _reflog(worktree, f"refs/heads/{args.branch}", env, errors),
