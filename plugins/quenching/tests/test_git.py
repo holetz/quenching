@@ -367,6 +367,20 @@ class Audit(RepoCase):
         payload = _cq_json(self.repo, *self._reflog_args())
         self.assertIn("rewind", payload["reflog"]["branch"])
 
+    def test_reflog_keeps_both_moves_of_an_a_b_a_rewrite(self):
+        self._commit_more()
+        a = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.wt, capture_output=True, text=True, check=True).stdout.strip()
+        _run(self.wt, "update-ref", "refs/heads/spec/1", "HEAD~1")
+        _run(self.wt, "update-ref", "refs/heads/spec/1", a)
+        payload = _cq_json(self.repo, *self._reflog_args())
+        self.assertEqual(len([x for x in payload["reflog"]["branch"] if x.startswith("(no reflog message)")]), 2)
+
+    def test_expired_reflog_is_an_error_not_a_clean_audit(self):
+        _run(self.wt, "reflog", "expire", "--expire=now", "--all")
+        payload = _cq_json(self.repo, *self._reflog_args())
+        self.assertFalse(payload["complete"])
+        self.assertTrue([e for e in payload["errors"] if "reflog" in e["read"]])
+
     def test_gate_flag_is_gone(self):
         proc = self._audit("--worktree", self.wt, "--base", "main", "--branch", "spec/1", "--gate")
         self.assertNotEqual(proc.returncode, 0)
