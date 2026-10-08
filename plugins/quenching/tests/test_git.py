@@ -827,7 +827,7 @@ class PullRequestPayload(unittest.TestCase):
     def test_provider_locator_fixture_keeps_github_and_azure_native(self):
         github = "append exactly `Closes #<n>` to the generated body"
         self.assertIn("take it from the status id, never from path", _normalise_prose(self.payload_step))
-        azure = "pass it as `--work-items <n>` to Azure"
+        azure = "pass it as `--work-item <n>` to `cq git pr create`"
         self.assertIn(github, self.payload_step)
         self.assertIn(azure, self.payload_step)
         self.assertIn("do not invent a `Closes #<n>` sentence", self.payload_step)
@@ -842,7 +842,7 @@ class PullRequestPayload(unittest.TestCase):
         reference = MERGE_REFERENCE.read_text(encoding="utf-8").lower()
         combined = f"{command}\n{reference}"
         self.assertIn("separate source-branch deletion offer", combined)
-        self.assertIn("[--delete-source-branch true]", command)
+        self.assertIn("[--delete-source-branch]", command)
         self.assertIn("squash", reference)
 
     def test_status_command_routes_both_providers_and_normalizes_the_snapshot(self):
@@ -1658,6 +1658,24 @@ if sys.argv[1:3] == ["pr", "create"]:
 sys.exit(0)
 """
 
+NO_AZURE_FLAGS = {"work_item": None, "transition_work_items": False, "delete_source_branch": False}
+
+FAKE_AZ = """#!/usr/bin/env python3
+import json, os, sys
+with open(os.environ["FAKE_GH_LOG"], "a", encoding="utf-8") as f:
+    f.write(json.dumps({"tool": "az", "argv": sys.argv[1:], "stdin": ""}) + "\\n")
+if sys.argv[1:4] == ["repos", "pr", "create"]:
+    print(json.dumps({"pullRequestId": 7,
+                      "url": "https://dev.azure.com/o/p/_apis/git/repositories/r/pullRequests/7",
+                      "repository": {"webUrl": "https://dev.azure.com/o/p/_git/r"}}))
+if sys.argv[1:4] == ["repos", "pr", "list"]:
+    if os.environ.get("FAKE_AZ_LIST_RC", "0") != "0":
+        sys.stderr.write("Please run 'az login' to setup account.\\n")
+        sys.exit(int(os.environ["FAKE_AZ_LIST_RC"]))
+    print("[]")
+sys.exit(0)
+"""
+
 
 class PullRequestVerbs(RepoCase):
     """`cq git pr create|merge` — the steward's PR writes, through a fake `gh` on PATH."""
@@ -1671,6 +1689,9 @@ class PullRequestVerbs(RepoCase):
         gh = bindir / "gh"
         gh.write_text(FAKE_GH, encoding="utf-8")
         gh.chmod(0o755)
+        az = bindir / "az"
+        az.write_text(FAKE_AZ, encoding="utf-8")
+        az.chmod(0o755)
         self.log = pathlib.Path(self.tmp, "gh.log")
         self.env = {**os.environ, "PATH": f"{bindir}{os.pathsep}{os.environ['PATH']}",
                     "FAKE_GH_LOG": str(self.log)}
@@ -1818,7 +1839,7 @@ class PullRequestVerbs(RepoCase):
             out.emit(True, {"ok": True, "value": {"number": 42}}, "")
             return 0
         args = SimpleNamespace(base="main", head="plan/1-x", title="t", body="Closes #1",
-                               spec="1", json=True)
+                               spec="1", json=True, **NO_AZURE_FLAGS)
         with mock.patch.object(pull, "_gh",
                                return_value=(0, self.URL + "\n", "")), \
                 mock.patch.object(pull, "cmd_record", side_effect=record), \
@@ -1910,10 +1931,80 @@ class PullRequestVerbs(RepoCase):
                 mock.patch.object(pull, "_branch_ok", return_value=True), \
                 contextlib.redirect_stdout(io.StringIO()) as out:
             code = pull.cmd_pr(SimpleNamespace(action="create", base="main", head="x", title="t",
-                                               body="", spec="1", json=True))
+                                               body="", spec="1", json=True, **NO_AZURE_FLAGS))
         payload = json.loads(out.getvalue())
         self.assertEqual((code, payload["number"], payload["reason"], payload["message"]),
                          (1, 42, "stamp-failed", "refused"))
+
+    AZURE_WEB = "https://dev.azure.com/o/p/_git/r/pullrequest/7"
+
+    def _azure_origin(self):
+        _run(self.repo, "remote", "add", "origin", "https://dev.azure.com/o/p/_git/r")
+
+    def test_azure_create_has_a_fixed_argv_with_no_completion_or_bypass(self):
+        self._azure_origin()
+        proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/1-x",
+                   "--title", "t", "--body", "corpo", "--work-item", "5",
+                   "--transition-work-items", "--json", env=self.env)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        payload = json.loads(proc.stdout)
+        self.assertEqual((payload["provider"], payload["number"], payload["url"]),
+                         ("azure-boards", 7, self.AZURE_WEB))
+        (call,) = self._calls()
+        self.assertEqual(call["argv"], ["repos", "pr", "create", "--detect=true",
+                                        "--source-branch=plan/1-x", "--target-branch=main",
+                                        "--title=t", "--description=corpo", "--work-items=5",
+                                        "--transition-work-items=true", "--output=json"])
+        for forbidden in ("--bypass-policy", "--auto-complete", "--squash",
+                          "--merge-commit-message"):
+            self.assertFalse(any(a.startswith(forbidden) for a in call["argv"]), forbidden)
+
+    def test_azure_create_stamps_the_web_url_never_the_api_url(self):
+        from quenching.git import pull
+        seen = []
+
+        def record(ns, root, out):
+            seen.append(list(ns.set))
+            out.emit(True, {"ok": True, "value": {"number": 7}}, "")
+            return 0
+        az_out = json.dumps({"pullRequestId": 7,
+                             "url": "https://dev.azure.com/o/p/_apis/git/pullRequests/7",
+                             "repository": {"webUrl": "https://dev.azure.com/o/p/_git/r"}})
+        with mock.patch.object(pull, "_provider", return_value="azure-boards"), \
+                mock.patch.object(pull, "_az", return_value=(0, az_out, "")), \
+                mock.patch.object(pull, "cmd_record", side_effect=record), \
+                mock.patch.object(pull, "_spec_vs_head", return_value=None), \
+                mock.patch.object(pull, "_branch_ok", return_value=True), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            code = pull.cmd_pr(SimpleNamespace(action="create", base="main", head="plan/1-x",
+                                               title="t", body="", spec="1", json=True,
+                                               **NO_AZURE_FLAGS))
+        self.assertEqual(code, 0, out.getvalue())
+        (sets,) = seen
+        self.assertEqual(sets[:2], ["number=7", f"url={self.AZURE_WEB}"])
+
+    def test_azure_only_flags_are_refused_on_github(self):
+        proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/1-x",
+                   "--title", "t", "--delete-source-branch", "--json", env=self.env)
+        self.assertEqual(proc.returncode, 2, proc.stdout)
+        self.assertEqual(json.loads(proc.stdout)["code"], "git-pr-flag-provider")
+        self.assertEqual(self._calls(), [])
+
+    def test_probe_reads_the_provider_route_and_writes_nothing(self):
+        _run(self.repo, "remote", "add", "origin", "https://github.com/o/r.git")
+        proc = _cq(self.repo, "pr", "probe", "--json", env=self.env)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertEqual([c["argv"] for c in self._calls()],
+                         [["repo", "view", "--json", "nameWithOwner"]])
+        _run(self.repo, "remote", "set-url", "origin", "https://dev.azure.com/o/p/_git/r")
+        proc = _cq(self.repo, "pr", "probe", "--json", env=self.env)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertEqual(self._calls()[-1]["argv"],
+                         ["repos", "pr", "list", "--status=all", "--top=1", "--detect=true",
+                          "--output=json"])
+        proc = _cq(self.repo, "pr", "probe", "--json", env={**self.env, "FAKE_AZ_LIST_RC": "1"})
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        self.assertEqual(json.loads(proc.stdout)["reason"], "unauthenticated")
 
     def test_create_refuses_option_shaped_branches(self):
         for argv in (("--base=-d", "--head", "plan/1-x"), ("--base", "main", "--head=--web")):
@@ -1984,7 +2075,9 @@ class StewardGrants(unittest.TestCase):
                   "gh pr merge https://github.com/o/r/pull/1 -r",
                   "git -c alias.x='!touch /tmp/pwn' x", "git stash", "git reset --hard",
                   "git push --force origin main", "git branch -D main",
-                  "gh pr create --base main --head x --title t --body b")
+                  "gh pr create --base main --head x --title t --body b",
+                  "az repos pr update --id 7 --status completed --bypass-policy true",
+                  "az repos pr create --auto-complete --bypass-policy true")
 
     @classmethod
     def setUpClass(cls):
