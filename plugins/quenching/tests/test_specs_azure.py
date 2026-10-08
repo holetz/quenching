@@ -9,6 +9,7 @@ translation is the assertion, not the data.
 import os
 import tempfile
 import unittest
+from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.specs.backends.azure import (
@@ -16,6 +17,7 @@ from quenching.specs.backends.azure import (
     AZ_MISSING,
     AZ_SPEC_TYPE,
     AzureBoardsBackend,
+    _az_run,
     az_refusal,
     azure_artifact_url,
     azure_comparable_fields,
@@ -417,6 +419,25 @@ class AzureDescriptionCeiling(unittest.TestCase):
                                         "value": "x" * (AZ_DESCRIPTION_MAX + 1)}])
         self.assertEqual(ctx.exception.err.get("code"), "sp-az-description-too-large")
         self.assertEqual(ctx.exception.err.get("exit"), 2)
+
+
+class AzureTitleAtSign(unittest.TestCase):
+    """`az` reads `@file` as the file's content for any value: a title opening with `@`
+    would publish a local file as the work item's title. Refused before `az` runs."""
+
+    def test_a_title_opening_with_at_refuses_before_az_runs(self):
+        for argv in (("boards", "work-item", "create", "--title", "@/etc/hostname"),
+                     ("boards", "work-item", "update", "--id", "1", "--title", "@x")):
+            with self.subTest(argv=argv), mock.patch("subprocess.run") as run:
+                with self.assertRaises(BackendRefusal) as ctx:
+                    _az_run(".", *argv)
+                self.assertEqual(ctx.exception.err.get("code"), "sp-az-bad-title")
+                self.assertEqual(ctx.exception.err.get("exit"), 2)
+                run.assert_not_called()
+
+    def test_an_at_sign_elsewhere_is_not_refused(self):
+        with mock.patch("subprocess.run", side_effect=FileNotFoundError):
+            _az_run(".", "boards", "work-item", "create", "--title", "a @b")
 
 
 class AzureNativeFieldsRead(unittest.TestCase):

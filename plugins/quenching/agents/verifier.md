@@ -72,6 +72,8 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    run a non-empty `grants` is FAIL with `needs-human: alargamento`, quoting each `path` and its
    `added` entries: the orchestrator takes the spec to the human epic, and the verifier never
    judges whether the widening is justified. Empty is ok; a non-autonomous run reports the list.
+   The limit is declared: `grants` catches the widening a worker that follows the protocol makes by mistake;
+   it is no sandbox against one who circumvents it on purpose (a worker with free `Bash` writes outside the diff anyway).
 
 If a check does not apply (no PR yet, no declared `files:`), mark it `n/a`; do not fail on it.
 
