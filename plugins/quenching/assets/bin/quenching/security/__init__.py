@@ -5,13 +5,13 @@ import argparse
 import os
 
 from quenching.common.front import resolve_root
-from quenching.common.output import emit, refuse
+from quenching.common.output import NoAbbrevParser, emit, refuse
 from quenching.common.version import VERSION
 from quenching.security.probe import build_report
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser = NoAbbrevParser(
         prog="cq security",
         description="report live security questions without changing the repository",
     )

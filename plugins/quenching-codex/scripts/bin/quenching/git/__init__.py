@@ -13,7 +13,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from quenching.common.output import REFUSAL
+from quenching.common.output import REFUSAL, NoAbbrevParser
 from quenching.common.version import VERSION
 from quenching.git.audit import cmd_audit
 from quenching.git.base import cmd_base
@@ -29,7 +29,7 @@ DISPATCH = {"base": cmd_base, "specs": cmd_specs, "stale": cmd_stale,
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(
+    p = NoAbbrevParser(
         prog="cq git", description="a repository's git facts — deterministic, nothing to validate")
     p.add_argument("--version", action="store_true", help="print the version and exit")
     sub = p.add_subparsers(dest="cmd")

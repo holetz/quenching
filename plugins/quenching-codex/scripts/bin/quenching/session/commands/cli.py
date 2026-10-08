@@ -53,7 +53,7 @@ from __future__ import annotations
 
 import argparse
 
-from quenching.common.output import OK
+from quenching.common.output import OK, NoAbbrevParser
 from quenching.common.version import VERSION
 from quenching.session.commands.digest import cmd_digest
 from quenching.session.commands.read import cmd_list
@@ -87,7 +87,7 @@ DISPATCH: dict = {
 
 
 def build_parser(prog: str = "cq components session") -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog=prog,
+    p = NoAbbrevParser(prog=prog,
                                 description="read a Codex session transcript as evidence")
     p.add_argument("--version", action="store_true", help="print the version and exit")
     sub = p.add_subparsers(dest="cmd")
