@@ -105,7 +105,9 @@ branch's `quenching-specs:` marking):
 Skill("quenching:git:branch", "<id>")
 ```
 
-It runs its own **AskUserQuestion**; it is a `Skill` call, never `context: fork`. When it returns,
+**When this run's input carried `autonomous`, pass it on** — `Skill("quenching:git:branch", "<id> autonomous")`
+— so the command takes the worktree unasked, from the remote base, instead of stopping the run on
+its question. Otherwise it runs its own **AskUserQuestion**; it is a `Skill` call, never `context: fork`. When it returns,
 re-read the state it left:
 
 ```bash
