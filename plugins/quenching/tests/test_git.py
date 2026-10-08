@@ -321,10 +321,22 @@ class Audit(RepoCase):
         self.assertTrue(payload["reflog"]["head"])
         self.assertNotIn("gate", payload)
 
-    def test_gate_absent_is_reported_not_run(self):
+    def test_gate_flag_is_gone(self):
+        proc = self._audit("--worktree", self.wt, "--base", "main", "--branch", "spec/1", "--gate")
+        self.assertNotEqual(proc.returncode, 0)
+
+    def test_status_does_not_run_a_configured_filter(self):
+        marker = os.path.join(self.tmp, "PWNED_status")
+        pathlib.Path(self.wt, ".gitattributes").write_text("*.txt filter=evil\n", encoding="utf-8")
+        _run(self.wt, "add", ".gitattributes")
+        _run(self.wt, "commit", "-q", "-m", "attrs")
+        _run(self.repo, "config", "filter.evil.clean", f"touch {marker}; cat")
+        _run(self.repo, "config", "filter.evil.required", "true")
+        pathlib.Path(self.wt, "b.txt").write_text("changed\n", encoding="utf-8")
         payload = _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main",
-                           "--branch", "spec/1", "--gate")
-        self.assertEqual(payload["gate"], {"exit": None, "reason": "absent"})
+                           "--branch", "spec/1")
+        self.assertFalse(os.path.exists(marker))
+        self.assertIn(" M b.txt", payload["status"])
 
     def test_unregistered_worktree_is_refused(self):
         other = _init_repo(os.path.join(self.tmp, "other"))
