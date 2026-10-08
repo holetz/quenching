@@ -1931,8 +1931,9 @@ def _grants(path: pathlib.Path, key: str) -> set:
 
 
 class StewardSkillSubset(unittest.TestCase):
-    """Whatever the steward runs through `Skill` carries its own `allowed-tools`, which amplifies the
-    agent's grant: each command it runs must hold nothing its `tools:` does not (spec 1339)."""
+    """The steward follows each command body with its own `tools:`, never through `Skill`, whose
+    target's `allowed-tools` would amplify the agent's grant: it holds no `Skill`, and each command it
+    follows must hold nothing its `tools:` does not (specs 1339, 1365)."""
 
     @classmethod
     def setUpClass(cls):
@@ -1945,6 +1946,9 @@ class StewardSkillSubset(unittest.TestCase):
     def _extra(self, command: str) -> list:
         path = PLUGIN_ROOT / "commands" / "git" / f"{command}.md"
         return sorted(_grants(path, "allowed-tools") - self.tools)
+
+    def test_the_steward_holds_no_skill(self):
+        self.assertEqual(sorted(g for g in self.tools if g.startswith("Skill")), [])
 
     def test_the_steward_names_the_commands_it_runs(self):
         self.assertEqual(self.named, ["branch", "commit", "pr/create"])
