@@ -428,6 +428,22 @@ class Audit(RepoCase):
         self.assertEqual(got[(settings, "deny")], ["Bash(rm:*)"])
         self.assertEqual(got[(agent, "deny")], ["Write"])
 
+    def test_grants_report_a_removed_ask_entry(self):
+        settings = ".claude/settings.json"
+        self._commit_on_main(settings, '{"permissions": {"ask": ["Bash(git push:*)", "Bash(rm:*)"]}}\n')
+        _run(self.wt, "merge", "-q", "main")
+        self._commit_file(settings, '{"permissions": {"ask": ["Bash(rm:*)", "Bash(ls:*)"]}}\n', "ask")
+        asks = [g for g in self._grants() if g["kind"] == "ask"]
+        self.assertEqual(asks, [{"path": settings, "kind": "ask", "added": ["Bash(git push:*)"]}])
+
+    def test_grants_ignore_a_new_doc_under_agents_and_a_narrowing_from_everything(self):
+        doc, agent = "docs/standards/agents/x.md", "plugins/p/agents/a.md"
+        self._commit_on_main(agent, "---\nname: a\n---\nbody\n")
+        _run(self.wt, "merge", "-q", "main")
+        self._commit_file(doc, "# x\n", "doc")
+        self._commit_file(agent, "---\nname: a\ntools: Read\n---\nbody\n", "narrow")
+        self.assertEqual(self._grants(), [])
+
     def test_grants_ignore_a_narrowing_on_the_base_after_the_cut(self):
         agent = "plugins/p/agents/a.md"
         self._commit_on_main(agent, "---\nname: a\ntools: Read, Skill\n---\nbody\n")
