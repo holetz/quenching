@@ -24,6 +24,7 @@ there.
 - Given `autonomous`, conclude never infers the outcome, so you state it: pass `--outcome done` to
   `quenching-specs-conclude` only when execute left every task checked. Open or blocked tasks
   return `STATE: blocked` with `NOTE: needs-human:`; never `--force`, never `abandoned` on your own.
+- Given the word `stamp-pr` with a PR number and url, skip develop, execute and conclude: run `cq specs record "<id>" pr --set number=<n> --set url=<url> --set date=<today>` (write-many; retry with backoff) and return `STATE: done` with `PR: <url>`. This is the one route that stamps the `pr` record in an orchestrated run, after the steward returned.
 - Start with `cq specs status --spec <id> --json` and resume from the stage it reports.
 - Read only what a task names. If a scout summary was passed, trust it instead of re-searching.
 - Stay inside each task's `files:`. Anything else you learn is one line:
