@@ -300,6 +300,14 @@ g. **Run and report the declared hook for this event, and move on.** Once the sp
    Skill("<declared hook command>", "<declared prompt plus task and commit context>")
    ```
 
+   **Name the work checkout and the diff in that context.** A hook runs in the session's working
+   directory, which the harness may return to the base checkout while this run builds in a worktree,
+   so a hook such as `/security-review` diffs the base and finds nothing. Resolve
+   `git rev-parse --show-toplevel` from the checkout this run commits in and pass, with the task
+   and commit context, `work checkout: <toplevel>` and `review: git -C <toplevel> diff
+   origin/HEAD...HEAD`, with the instruction to review that diff rather than the session's own
+   checkout. The hook declaration is still passed untouched; only the target is added.
+
    `enabled: false` was filtered during the config read and is never announced or invoked;
    absence of `enabled` means enabled. The executor never evaluates `condition`: it reports the
    declaration and passes it as context to the hook. An optional hook failure is reported and the
