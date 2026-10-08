@@ -323,6 +323,17 @@ class Audit(RepoCase):
         self.assertTrue(payload["reflog"]["head"])
         self.assertNotIn("gate", payload)
 
+    def test_reflog_drops_a_reset_that_moved_nothing_and_keeps_a_real_one(self):
+        pathlib.Path(self.wt, "b.txt").write_text("changed\n", encoding="utf-8")
+        _run(self.wt, "reset", "-q", "--hard", "HEAD")  # moves nothing, like `git merge --abort`
+        args = ("audit", "--worktree", self.wt, "--base", "main", "--branch", "spec/1",
+                "--sha", self.sha)
+        payload = _cq_json(self.repo, *args)
+        self.assertFalse([l for l in payload["reflog"]["head"] if l.startswith("reset")])
+        _run(self.wt, "reset", "-q", "--hard", "HEAD~1")  # a real rewrite
+        payload = _cq_json(self.repo, *args)
+        self.assertTrue([l for l in payload["reflog"]["head"] if l.startswith("reset")])
+
     def test_gate_flag_is_gone(self):
         proc = self._audit("--worktree", self.wt, "--base", "main", "--branch", "spec/1", "--gate")
         self.assertNotEqual(proc.returncode, 0)
