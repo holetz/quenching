@@ -111,6 +111,41 @@ class RepositorySurfaceTranslation(unittest.TestCase):
                          {"backend": "github"})
         self.assertFalse((self.root / ".agents" / "quenching.json").exists())
 
+    def _manifest(self, payload):
+        translate.configure(str(self.root), str(self.root))
+        (self.root / ".agents" / ".generated-files.json").unlink(missing_ok=True)
+        translate.write_tree(translate.generated_tree())
+        (self.root / ".agents" / ".generated-files.json").write_text(json.dumps(payload), encoding="utf-8")
+
+    def test_manifest_paths_that_escape_the_destination_delete_nothing(self):
+        victim = self.root / "victim.txt"
+        victim.write_text("keep", encoding="utf-8")
+        outside = self.root.parent / f"{self.root.name}-outside"
+        outside.mkdir()
+        (outside / "target.txt").write_text("keep", encoding="utf-8")
+        (self.root / ".agents").mkdir()
+        (self.root / ".agents" / "link").symlink_to(outside)
+        self.addCleanup(lambda: [p.unlink() for p in outside.iterdir()] and outside.rmdir() or None)
+        for rel in ("../victim.txt", str(victim), "link/target.txt"):
+            with self.subTest(rel=rel):
+                self._manifest({"files": [rel]})
+                with self.assertRaises(ValueError):
+                    translate.write_tree(translate.generated_tree())
+                self.assertTrue(victim.is_file())
+                self.assertTrue((outside / "target.txt").is_file())
+
+    def test_manifest_without_files_is_a_structured_refusal(self):
+        self._manifest({})
+        with self.assertRaises(ValueError):
+            translate.write_tree(translate.generated_tree())
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = translate.cmd_translate(argparse.Namespace(
+                check=False, write=True, diff=False, source=str(self.root), target=str(self.root), json=True),
+                str(self.root))
+        self.assertEqual(code, 2)
+        self.assertIn("ct-translation-refused", out.getvalue())
+
     def test_coexisting_surfaces_are_clean_after_generation(self):
         translate.configure(str(self.root), str(self.root))
         translate.write_tree(translate.generated_tree())
