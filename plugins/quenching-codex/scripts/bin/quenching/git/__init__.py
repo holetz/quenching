@@ -19,13 +19,18 @@ from quenching.git.audit import cmd_audit
 from quenching.git.base import cmd_base
 from quenching.git.commit import cmd_commit
 from quenching.git.conventions import cmd_conventions
+from quenching.git.prune import cmd_prune
+from quenching.git.pull import cmd_pr
+from quenching.git.push import cmd_push
 from quenching.git.slugs import cmd_specs
 from quenching.git.stale import cmd_stale
+from quenching.git.state import cmd_state
 from quenching.git.worktree import cmd_worktree
 
 DISPATCH = {"base": cmd_base, "specs": cmd_specs, "stale": cmd_stale,
             "conventions": cmd_conventions, "worktree": cmd_worktree,
-            "commit": cmd_commit, "audit": cmd_audit}
+            "commit": cmd_commit, "audit": cmd_audit, "state": cmd_state,
+            "push": cmd_push, "prune": cmd_prune, "pr": cmd_pr}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -57,8 +62,16 @@ def build_parser() -> argparse.ArgumentParser:
                                              "plugin's defaults govern")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
-    sp = sub.add_parser("worktree", help="materialise declared shared paths in this checkout")
-    sp.add_argument("action", choices=("link",), help="link each declared shared path")
+    sp = sub.add_parser("worktree", help="materialise declared shared paths in this checkout, or "
+                                          "cut a branch from the remote base into a new worktree")
+    sp.add_argument("action", choices=("link", "add"),
+                    help="link: link each declared shared path; add: fetch, cut and link")
+    sp.add_argument("--path", metavar="PATH", help="add: the new worktree's directory")
+    sp.add_argument("--branch", metavar="BRANCH", help="add: the branch to create")
+    sp.add_argument("--base", metavar="BASE", help="add: the base branch to cut from")
+    sp.add_argument("--remote", default="origin", metavar="REMOTE",
+                    help="add: the remote whose base is fetched (default: origin); a remote that "
+                         "does not exist falls back to the local base")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("commit", help="commit the existing index with the given subject — "
@@ -66,6 +79,43 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--subject", required=True, metavar="SUBJECT",
                     help="the commit subject, resolved by the caller")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
+
+    sp = sub.add_parser("state", help="the checkout's branch, porcelain status, staged paths and "
+                                       "remotes — read with a fixed argv")
+    sp.add_argument("--json", action="store_true", help="machine-readable output")
+
+    sp = sub.add_parser("push", help="push one local branch to one remote under its own name, "
+                                      "with upstream — never force")
+    sp.add_argument("--branch", required=True, metavar="BRANCH", help="the local branch to push")
+    sp.add_argument("--remote", default="origin", metavar="REMOTE",
+                    help="a configured remote (default: origin)")
+    sp.add_argument("--json", action="store_true", help="machine-readable output")
+
+    sp = sub.add_parser("prune", help="delete one item `cq git stale` reports — `branch -d`, "
+                                       "`worktree remove`, or a reported remote branch")
+    target = sp.add_mutually_exclusive_group(required=True)
+    target.add_argument("--branch", metavar="BRANCH", help="a reported stale local branch")
+    target.add_argument("--worktree", metavar="PATH", help="a reported orphan worktree")
+    target.add_argument("--remote-branch", metavar="BRANCH",
+                        help="a branch reported under remoteBranches for --remote")
+    sp.add_argument("--remote", default="origin", metavar="REMOTE",
+                    help="the remote the report reads (default: origin)")
+    sp.add_argument("--json", action="store_true", help="machine-readable output")
+
+    sp = sub.add_parser("pr", help="the GitHub pull-request writes, with a fixed argv")
+    pr = sp.add_subparsers(dest="action", required=True)
+    pp = pr.add_parser("create", help="open a PR from --head into --base; prints its number "
+                                      "and URL")
+    pp.add_argument("--base", required=True, metavar="BRANCH", help="the branch it merges into")
+    pp.add_argument("--head", required=True, metavar="BRANCH", help="the branch it publishes")
+    pp.add_argument("--title", required=True, metavar="TITLE", help="the PR title")
+    pp.add_argument("--body", default="", metavar="BODY", help="the PR body, sent on stdin")
+    pp.add_argument("--json", action="store_true", help="machine-readable output")
+    pp = pr.add_parser("merge", help="merge with --merge, only when every check is green")
+    pp.add_argument("--url", required=True, metavar="URL", help="the PR's URL")
+    pp.add_argument("--wait", type=int, default=0, metavar="SECONDS",
+                    help="re-read pending checks every 20s for up to this long (max 540)")
+    pp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("audit", help="the verifier's facts inside one registered worktree — "
                                        "status, stash, commits, scope, ancestry, reflog; "

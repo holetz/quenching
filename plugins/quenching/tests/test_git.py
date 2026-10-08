@@ -8,6 +8,8 @@ agnosticas-ao-git`, task 3.5, wrote every case from the four subcommands' own co
 """
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import os
 import pathlib
@@ -1231,3 +1233,103 @@ class PruneVerb(RepoCase):
         heads = subprocess.run(["git", "for-each-ref", "--format=%(refname)", "refs/heads"],
                                cwd=remote, capture_output=True, text=True).stdout.split()
         self.assertEqual(sorted(heads), ["refs/heads/main", "refs/heads/unmerged"])
+
+
+FAKE_GH = """#!/usr/bin/env python3
+import json, os, sys
+log = os.environ["FAKE_GH_LOG"]
+with open(log, "a", encoding="utf-8") as f:
+    f.write(json.dumps({"argv": sys.argv[1:], "stdin": "" if sys.stdin.isatty() else sys.stdin.read()}) + "\\n")
+if sys.argv[1:3] == ["pr", "checks"]:
+    sys.stdout.write(os.environ.get("FAKE_GH_CHECKS", "[]"))
+    sys.stderr.write(os.environ.get("FAKE_GH_CHECKS_ERR", ""))
+    sys.exit(int(os.environ.get("FAKE_GH_CHECKS_RC", "0")))
+if sys.argv[1:3] == ["pr", "create"]:
+    print("https://github.com/o/r/pull/42")
+sys.exit(0)
+"""
+
+
+class PullRequestVerbs(RepoCase):
+    """`cq git pr create|merge` — the steward's PR writes, through a fake `gh` on PATH."""
+
+    URL = "https://github.com/o/r/pull/42"
+
+    def setUp(self):
+        super().setUp()
+        bindir = pathlib.Path(self.tmp, "bin")
+        bindir.mkdir()
+        gh = bindir / "gh"
+        gh.write_text(FAKE_GH, encoding="utf-8")
+        gh.chmod(0o755)
+        self.log = pathlib.Path(self.tmp, "gh.log")
+        self.env = {**os.environ, "PATH": f"{bindir}{os.pathsep}{os.environ['PATH']}",
+                    "FAKE_GH_LOG": str(self.log)}
+
+    def _calls(self) -> list[dict]:
+        if not self.log.exists():
+            return []
+        return [json.loads(line) for line in self.log.read_text(encoding="utf-8").splitlines()]
+
+    def _merge(self, checks: str, rc: str = "0", err: str = "") -> subprocess.CompletedProcess:
+        env = {**self.env, "FAKE_GH_CHECKS": checks, "FAKE_GH_CHECKS_RC": rc,
+               "FAKE_GH_CHECKS_ERR": err}
+        return _cq(self.repo, "pr", "merge", "--url", self.URL, env=env)
+
+    def _merge_calls(self) -> list[list[str]]:
+        return [c["argv"] for c in self._calls() if c["argv"][:2] == ["pr", "merge"]]
+
+    def test_all_green_merges_with_merge_only(self):
+        proc = self._merge('[{"name":"gate","bucket":"pass"},{"name":"x","bucket":"skipping"}]')
+        self.assertEqual(proc.returncode, 0, proc.stdout)
+        self.assertEqual(self._merge_calls(), [["pr", "merge", self.URL, "--merge"]])
+
+    def test_red_pending_or_absent_checks_never_merge(self):
+        cases = (('[{"name":"gate","bucket":"fail"}]', "1", "", "failed"),
+                 ('[{"name":"gate","bucket":"pending"}]', "8", "", "pending"),
+                 ('[{"name":"gate"}]', "0", "", "pending"),
+                 ("", "1", "no checks reported on the 'x' branch", "no-checks"),
+                 ("not json", "1", "boom", "checks-unreadable"))
+        for checks, rc, err, reason in cases:
+            proc = self._merge(checks, rc, err)
+            self.assertEqual(proc.returncode, 1, (checks, proc.stdout))
+            self.assertEqual(json.loads(proc.stdout)["reason"], reason)
+        self.assertEqual(self._merge_calls(), [])
+
+    def test_option_shaped_url_and_out_of_range_wait_are_refused(self):
+        for argv in (("--url=-d",), ("--url", f"{self.URL} --squash"),
+                     ("--url", self.URL, "--wait", "600")):
+            proc = _cq(self.repo, "pr", "merge", *argv, env=self.env)
+            self.assertEqual(proc.returncode, 2, (argv, proc.stdout))
+        self.assertEqual(self._calls(), [])
+
+    def test_pending_is_re_read_until_green_within_the_wait(self):
+        from quenching.git import pull
+        answers = iter([("pending", [{"name": "gate", "bucket": "pending"}], ""),
+                        ("green", [{"name": "gate", "bucket": "pass"}], "")])
+        with mock.patch.object(pull, "_checks", side_effect=lambda url: next(answers)), \
+                mock.patch.object(pull, "_gh", return_value=(0, "", "")) as gh, \
+                mock.patch.object(pull.time, "sleep") as sleep, \
+                contextlib.redirect_stdout(io.StringIO()):
+            code = pull.cmd_pr(SimpleNamespace(action="merge", url=self.URL, wait=60, json=True))
+        self.assertEqual(code, 0)
+        sleep.assert_called_once_with(pull.POLL_S)
+        gh.assert_called_once_with("pr", "merge", self.URL, "--merge")
+
+    def test_create_names_base_and_head_and_sends_the_body_on_stdin(self):
+        payload = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/1-x",
+                      "--title", "-a title that looks like a flag", "--body", "Closes #1",
+                      env=self.env)
+        self.assertEqual(payload.returncode, 0, payload.stderr)
+        self.assertEqual(json.loads(payload.stdout)["number"], 42)
+        (call,) = self._calls()
+        self.assertEqual(call["argv"], ["pr", "create", "--base=main", "--head=plan/1-x",
+                                        "--title=-a title that looks like a flag",
+                                        "--body-file=-"])
+        self.assertEqual(call["stdin"], "Closes #1")
+
+    def test_create_refuses_option_shaped_branches(self):
+        for argv in (("--base=-d", "--head", "plan/1-x"), ("--base", "main", "--head=--web")):
+            proc = _cq(self.repo, "pr", "create", *argv, "--title", "t", env=self.env)
+            self.assertEqual(proc.returncode, 2, (argv, proc.stdout))
+        self.assertEqual(self._calls(), [])
