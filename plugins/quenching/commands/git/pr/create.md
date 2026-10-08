@@ -79,7 +79,7 @@ the source branch after the PR is completed and merged. Preserving the source br
 ### 4. Push and open, on one confirmation
 **With `autonomous` in the input**, the confirmation is already given: state the remote (`origin`
 unless `remote:<name>` was passed), the branch and the title (the spec's title, verbatim), skip the
-**AskUserQuestion**, and run the commands below. The token covers exactly those three and nothing
+question, and run the commands below. The token covers exactly those three and nothing
 else: never add `--delete-source-branch true`, and an absent title or a missing spec id is still
 asked, never invented. Without the token, the confirmation below stands.
 
