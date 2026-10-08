@@ -20,7 +20,7 @@ reviewer). The orchestrator's protocol (waves, workers, verifier, acceptance) li
 `../../agents/orchestrator.md`; do not restate it.
 
 **Why `Bash` is unrestricted here.** Step 1 and step 7 run the gate the target's root harness
-declares (`AGENTS.md`/`AGENTS.md` § Operating), whose command no fixed grant can name. No other
+declares in its operating section (`AGENTS.md` or `AGENTS.md`), whose command no fixed grant can name. No other
 non-`cq`, non-`git` command is run.
 
 ## Invariants
