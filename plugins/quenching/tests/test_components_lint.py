@@ -441,6 +441,20 @@ class AgentGrantGap(unittest.TestCase):
             codes = sorted(f["code"] for f in lint_agents(root, root))
         self.assertEqual(codes, ["sk-agent-grant-gap", "sk-cq-flag"])
 
+    def test_a_bash_pattern_in_disallowed_tools_is_an_error(self):
+        with tempfile.TemporaryDirectory() as root:
+            agents = pathlib.Path(root, "agents")
+            agents.mkdir()
+            (agents / "a.md").write_text(
+                "---\nname: a\ntools: Bash(echo:*), Read\ndisallowedTools: Bash(x:*), Write\n---\nBody.\n",
+                encoding="utf-8")
+            (agents / "b.md").write_text(
+                "---\nname: b\ntools: Bash(echo:*)\ndisallowedTools: Write\n---\nBody.\n",
+                encoding="utf-8")
+            found = lint_agents(root, root)
+        self.assertEqual([(f["code"], f["command"]) for f in found],
+                         [("sk-agent-disallowed-bash", "agent:a")])
+
 
 if __name__ == "__main__":
     unittest.main()
