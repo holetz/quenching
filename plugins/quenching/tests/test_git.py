@@ -1617,10 +1617,14 @@ FAKE_GH = """#!/usr/bin/env python3
 import json, os, sys
 log = os.environ["FAKE_GH_LOG"]
 with open(log, "a", encoding="utf-8") as f:
-    f.write(json.dumps({"argv": sys.argv[1:], "stdin": "" if sys.stdin.isatty() else sys.stdin.read()}) + "\\n")
+    f.write(json.dumps({"argv": sys.argv[1:], "lc_all": os.environ.get("LC_ALL"), "lang": os.environ.get("LANG"), "stdin": "" if sys.stdin.isatty() else sys.stdin.read()}) + "\\n")
 if sys.argv[1:3] == ["pr", "checks"] and "--required" in sys.argv:
-    sys.stdout.write(os.environ.get("FAKE_GH_REQUIRED", "[]"))
-    sys.exit(0)
+    if "FAKE_GH_REQUIRED" in os.environ:
+        sys.stdout.write(os.environ["FAKE_GH_REQUIRED"])
+        sys.stderr.write(os.environ.get("FAKE_GH_REQUIRED_ERR", ""))
+        sys.exit(int(os.environ.get("FAKE_GH_REQUIRED_RC", "0")))
+    sys.stderr.write("no required checks reported on the 'x' branch\\n")
+    sys.exit(1)
 if sys.argv[1:3] == ["pr", "checks"]:
     sys.stdout.write(os.environ.get("FAKE_GH_CHECKS", "[]"))
     sys.stderr.write(os.environ.get("FAKE_GH_CHECKS_ERR", ""))
@@ -1677,6 +1681,40 @@ class PullRequestVerbs(RepoCase):
         payload = json.loads(proc.stdout)
         self.assertEqual((payload["reason"], payload["notGreen"]), ("skipped-required", ["x"]))
         self.assertEqual(self._merge_calls(), [])
+
+    def test_a_skipping_check_is_not_required_when_gh_reports_no_required_checks(self):
+        # gh 2.101: `--required` exits 1 with this message when nothing is required
+        checks = '[{"name":"gate","bucket":"pass"},{"name":"x","bucket":"skipping"}]'
+        proc = self._merge(checks)
+        self.assertEqual(proc.returncode, 0, proc.stdout)
+        self.assertEqual(len(self._merge_calls()), 1)
+
+    def test_gh_runs_with_the_c_locale_so_the_no_required_checks_message_matches(self):
+        checks = '[{"name":"gate","bucket":"pass"},{"name":"x","bucket":"skipping"}]'
+        self._merge(checks, LC_ALL="pt_BR.UTF-8", LANG="pt_BR.UTF-8")
+        calls = self._calls()
+        self.assertTrue(calls)
+        self.assertEqual({(c["lc_all"], c["lang"]) for c in calls}, {("C", "C")})
+
+    def test_an_empty_required_list_exiting_0_does_not_block_a_skipping_check(self):
+        checks = '[{"name":"gate","bucket":"pass"},{"name":"x","bucket":"skipping"}]'
+        proc = self._merge(checks, FAKE_GH_REQUIRED="[]")
+        self.assertEqual(proc.returncode, 0, proc.stdout)
+
+    def test_an_unreadable_required_list_counts_every_skipping_check_as_required(self):
+        checks = '[{"name":"gate","bucket":"pass"},{"name":"x","bucket":"skipping"}]'
+        proc = self._merge(checks, FAKE_GH_REQUIRED="", FAKE_GH_REQUIRED_RC="1",
+                           FAKE_GH_REQUIRED_ERR="HTTP 401: bad credentials")
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        payload = json.loads(proc.stdout)
+        self.assertEqual((payload["reason"], payload["notGreen"]), ("skipped-required", ["x"]))
+        self.assertEqual(self._merge_calls(), [])
+
+    def test_a_required_skipping_check_listed_with_exit_8_is_not_green(self):
+        checks = '[{"name":"gate","bucket":"pass"},{"name":"x","bucket":"skipping"}]'
+        proc = self._merge(checks, FAKE_GH_REQUIRED='[{"name":"x"}]', FAKE_GH_REQUIRED_RC="8")
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        self.assertEqual(json.loads(proc.stdout)["reason"], "skipped-required")
 
     def test_a_moved_or_unclean_pull_request_is_not_merged(self):
         checks = '[{"name":"gate","bucket":"pass"}]'

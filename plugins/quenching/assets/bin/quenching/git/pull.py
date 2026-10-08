@@ -41,7 +41,7 @@ GH_TIMEOUT_S = 120
 def _gh(*argv: str, stdin: str | None = None) -> tuple[int, str, str]:
     try:
         done = subprocess.run(["gh", *argv], capture_output=True, text=True, input=stdin or "",
-                              timeout=GH_TIMEOUT_S)
+                              timeout=GH_TIMEOUT_S, env={**os.environ, "LC_ALL": "C", "LANG": "C"})
     except (OSError, subprocess.SubprocessError) as e:
         return 127, "", str(e)
     return done.returncode, done.stdout, done.stderr
@@ -74,7 +74,9 @@ def _required_skipped(url: str, checks: list[dict]) -> set[str]:
     """Names of the `skipping` checks the gate requires; when gh cannot list the required
     checks, every skipping check counts as required."""
     skipping = {c.get("name") for c in checks if c.get("bucket") == "skipping"}
-    code, out, _ = _gh("pr", "checks", url, "--required", "--json", "name")
+    code, out, err = _gh("pr", "checks", url, "--required", "--json", "name")
+    if code == 1 and "no required checks reported" in err.lower():
+        return set()
     try:
         required = ({c.get("name") for c in json.loads(out)}
                     if code in (0, 8) and out.strip() else None)
