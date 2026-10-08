@@ -24,3 +24,4 @@ evidence, not the rule.
 * [0008 — Security review of the epic 1145 changes](0008-seguranca-das-mudancas-do-epico-1145.md) — the per-PR verdict on the sensitive changes merged without a working security hook
 * [0009 — Security review of the epic 1163 changes](0009-seguranca-das-mudancas-do-epico-1163.md) — the per-PR verdict on the sensitive changes of epic 1163 and the evidence about the per-task security hook
 * [0010 — Cost of delegating each commit to git:commit](0010-custo-de-delegar-o-commit-ao-git-commit.md) — the measured per-task cost of the Skill delegation in execute, the options compared and the recommended one
+* [0011 — Security review of the epic 1192 and 1197 changes](0011-seguranca-das-mudancas-dos-epicos-1192-e-1197.md) — the per-PR verdict on the sensitive changes of epics 1192 and 1197, with the two defects captured as specs
