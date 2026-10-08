@@ -76,6 +76,9 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--remote", default="origin", metavar="REMOTE",
                     help="add/retire: the remote whose base is fetched (default: origin); a remote "
                          "that does not exist falls back to the local base")
+    sp.add_argument("--discard-ignored", action="store_true",
+                    help="retire: remove the worktree even though it holds ignored files "
+                         "that are not symlinks")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("commit", help="commit the existing index with the given subject — "
