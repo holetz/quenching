@@ -1280,6 +1280,11 @@ class State(RepoCase):
         self.assertEqual(payload["staged"], ["staged.txt"])
         self.assertEqual(payload["remotes"], {"origin": "https://example.invalid/o/r.git"})
 
+    def test_status_lists_untracked_files_despite_show_untracked_files_no(self):
+        _run(self.repo, "config", "status.showUntrackedFiles", "no")
+        pathlib.Path(self.repo, "new.txt").write_text("n\n", encoding="utf-8")
+        self.assertIn("?? new.txt", _cq_json(self.repo, "state")["status"])
+
     def test_reports_stash_entries(self):
         self.assertEqual(_cq_json(self.repo, "state")["stash"], [])
         pathlib.Path(self.repo, "a.txt").write_text("changed\n", encoding="utf-8")
