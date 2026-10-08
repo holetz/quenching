@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -348,6 +349,20 @@ class Audit(RepoCase):
         _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main", "--branch", "spec/1")
         self.assertFalse(marker.exists())
 
+
+
+class VerifierGrants(unittest.TestCase):
+    """The read-only `verifier` holds no grant whose `*` sits mid-pattern, and no raw `git` or
+    `bash` grant: those admitted `branch -D`, `clean -fdx`, `--output=<file>` and arbitrary code."""
+
+    def test_no_wildcard_mid_pattern_and_no_raw_git_or_bash(self):
+        text = (PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8")
+        tools = next(line for line in text.splitlines() if line.startswith("tools:"))
+        grants = re.findall(r"Bash\(([^)]*)\)", tools)
+        self.assertIn("cq git audit:*", grants)
+        for grant in grants:
+            self.assertNotIn("*", grant.removesuffix(":*"), grant)
+            self.assertFalse(grant.startswith(("git ", "bash ")), grant)
 
 class Worktree(RepoCase):
     def setUp(self):
