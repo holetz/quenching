@@ -1,15 +1,18 @@
-"""`cq git pr create` and `cq git pr merge` — the GitHub pull-request writes, with a fixed argv.
+"""`cq git pr create|probe|record|merge` — the pull-request writes, with a fixed argv.
 
-The `git-steward` holds no `gh pr create`/`gh pr merge` grant: a pattern on the command text
-never fenced `-d`, `-s`, `-r` or an alias. Here every `gh` argv is built in this module. `create`
-names `--base` and `--head` explicitly and sends the body on stdin; `merge` reads `gh pr checks`
+The `git-steward` holds no `gh pr create`/`gh pr merge` grant and no `az repos pr` grant: a
+pattern on the command text never fenced `-d`, `-s`, `-r`, an alias, or Azure's
+`--bypass-policy`/`--auto-complete`. Here every `gh` and `az` argv is built in this module, and
+the route is the `provider` `cq specs config --json` prints. `create` names the base and the head
+explicitly — on GitHub the body goes on stdin; on Azure it opens the PR with no completion
+option at all, so no policy is bypassed and nothing completes on its own. `probe` reads the
+provider's route and writes nothing. `merge` (GitHub only) reads `gh pr checks`
 first and merges only with every check green — a `skipping` check the gate requires is not
 green — and the PR's `mergeStateStatus` clean, pinning the head it read with
 `--match-head-commit`, always with `--merge` — never `--squash`,
-`--rebase`, `--delete-branch`, `--admin` or `--auto`. The Azure route stays in the
-`/quenching:git:pr:create` body.
+`--rebase`, `--delete-branch`, `--admin` or `--auto`.
 
-Exit 0 done · 1 findings (`gh` refused, or a check red, pending or absent — `reason` names
+Exit 0 done · 1 findings (`gh`/`az` refused, or a check red, pending or absent — `reason` names
 which) · 2 refusal (a malformed name or URL)."""
 from __future__ import annotations
 
@@ -27,7 +30,8 @@ from quenching.git.audit import _branch_ok
 from quenching.specs.commands.fields import cmd_record
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, read_one
-from quenching.specs.config import find_repo_root
+from quenching.git.pr import normalize_azure_pull_request
+from quenching.specs.config import find_repo_root, load_config
 
 PR_URL = re.compile(r"https://[A-Za-z0-9.-]+/[\w.-]+/[\w.-]+/pull/(\d+)")
 GREEN = {"pass", "skipping"}
@@ -38,13 +42,29 @@ WAIT_MAX_S = 540
 GH_TIMEOUT_S = 120
 
 
-def _gh(*argv: str, stdin: str | None = None) -> tuple[int, str, str]:
+def _tool(tool: str, *argv: str, stdin: str | None = None) -> tuple[int, str, str]:
     try:
-        done = subprocess.run(["gh", *argv], capture_output=True, text=True, input=stdin or "",
+        done = subprocess.run([tool, *argv], capture_output=True, text=True, input=stdin or "",
                               timeout=GH_TIMEOUT_S, env={**os.environ, "LC_ALL": "C", "LANG": "C"})
     except (OSError, subprocess.SubprocessError) as e:
         return 127, "", str(e)
     return done.returncode, done.stdout, done.stderr
+
+
+def _gh(*argv: str, stdin: str | None = None) -> tuple[int, str, str]:
+    return _tool("gh", *argv, stdin=stdin)
+
+
+def _az(*argv: str) -> tuple[int, str, str]:
+    return _tool("az", *argv)
+
+
+def _provider() -> str | None:
+    """`github`, `azure-boards`, or None when the origin names neither host."""
+    try:
+        return load_config(find_repo_root(os.getcwd())).get("provider")
+    except Exception:  # an unreadable config routes nowhere new: create keeps the GitHub route
+        return None
 
 
 def _checks(url: str) -> tuple[str, list[dict], str]:
@@ -207,6 +227,38 @@ def _record(args) -> int:
     return OK if stamp["ok"] else FINDINGS
 
 
+def _open_github(args) -> tuple[int, str, dict] | str:
+    code, out, err = _gh("pr", "create", f"--base={args.base}", f"--head={args.head}",
+                         f"--title={args.title}", "--body-file=-", stdin=args.body)
+    lines = [line.strip() for line in out.splitlines() if line.strip()]
+    url = next((line for line in reversed(lines) if PR_URL.fullmatch(line)), None)
+    if code != 0 or url is None:
+        return (err or out).strip()
+    return int(PR_URL.fullmatch(url).group(1)), url, {}
+
+
+def _open_azure(args) -> tuple[int, str, dict] | str:
+    """`az repos pr create` with no `--auto-complete`, `--bypass-policy` or merge option."""
+    argv = ["repos", "pr", "create", "--detect=true", f"--source-branch={args.head}",
+            f"--target-branch={args.base}", f"--title={args.title}"]
+    if args.body:
+        argv.append(f"--description={args.body}")
+    if args.work_item:
+        argv.append(f"--work-items={args.work_item}")
+    if args.transition_work_items:
+        argv.append("--transition-work-items=true")
+    if args.delete_source_branch:
+        argv.append("--delete-source-branch=true")
+    code, out, err = _az(*argv, "--output=json")
+    try:
+        pr = normalize_azure_pull_request(json.loads(out)) if code == 0 else None
+    except (json.JSONDecodeError, AttributeError):
+        pr = None
+    if not pr or not pr["webUrl"] or not str(pr["id"]).isdigit():
+        return (err or out).strip() or "az returned no pull request"
+    return int(pr["id"]), pr["webUrl"], {"apiUrl": pr["apiUrl"]}
+
+
 def _create(args) -> int:
     cwd = os.getcwd()
     for label, value in (("base", args.base), ("head", args.head)):
@@ -216,20 +268,27 @@ def _create(args) -> int:
     if not args.title.strip():
         return refuse({"code": "git-pr-title-blank", "message": "--title may not be blank"},
                       args.json)
+    provider = "azure-boards" if _provider() == "azure-boards" else "github"
+    azure_only = args.work_item or args.transition_work_items or args.delete_source_branch
+    if provider == "github" and azure_only:
+        return refuse({"code": "git-pr-flag-provider",
+                       "message": "--work-item, --transition-work-items and "
+                                  "--delete-source-branch are Azure-only"}, args.json)
+    if args.work_item is not None and args.work_item < 1:
+        return refuse({"code": "git-pr-work-item-invalid",
+                       "message": "--work-item must be positive"}, args.json)
     if args.spec:
         bad = _spec_vs_head(args.spec, args.head)
         if bad:
             return refuse(bad, args.json)
-    code, out, err = _gh("pr", "create", f"--base={args.base}", f"--head={args.head}",
-                         f"--title={args.title}", "--body-file=-", stdin=args.body)
-    lines = [line.strip() for line in out.splitlines() if line.strip()]
-    url = next((line for line in reversed(lines) if PR_URL.fullmatch(line)), None)
-    if code != 0 or url is None:
-        emit(args.json, {"ok": False, "reason": "create-refused",
-                         "message": (err or out).strip()}, f"PR not created: {(err or out).strip()}")
+    opened = _open_azure(args) if provider == "azure-boards" else _open_github(args)
+    if isinstance(opened, str):
+        emit(args.json, {"ok": False, "provider": provider, "reason": "create-refused",
+                         "message": opened}, f"PR not created: {opened}")
         return FINDINGS
-    number = int(PR_URL.fullmatch(url).group(1))
-    payload = {"ok": True, "url": url, "number": number, "base": args.base, "head": args.head}
+    number, url, extra = opened
+    payload = {"ok": True, "provider": provider, "url": url, "number": number,
+               "base": args.base, "head": args.head, **extra}
     if args.spec:
         payload["pr"] = stamp = _stamp(args.spec, number, url)
         if not stamp["ok"]:
@@ -241,7 +300,31 @@ def _create(args) -> int:
     return OK
 
 
+def _probe(args) -> int:
+    """Read-only: does this checkout have an authenticated PR route on its provider?"""
+    provider = _provider()
+    if provider == "azure-boards":
+        code, out, err = _az("repos", "pr", "list", "--status=all", "--top=1", "--detect=true",
+                             "--output=json")
+    elif provider == "github":
+        code, out, err = _gh("repo", "view", "--json", "nameWithOwner")
+    else:
+        code, out, err = 1, "", "origin names neither github nor azure-boards"
+    payload = {"ok": code == 0, "provider": provider}
+    if code != 0:
+        message = (err or out).strip()
+        lowered = message.lower()
+        payload.update(reason="unauthenticated" if provider and ("login" in lowered
+                       or "auth" in lowered) else "no-route", message=message)
+        emit(args.json, payload, f"no PR route: {payload['reason']} {message}".rstrip())
+        return FINDINGS
+    emit(args.json, payload, f"PR route: {provider}")
+    return OK
+
+
 def cmd_pr(args) -> int:
     if args.action == "record":
         return _record(args)
+    if args.action == "probe":
+        return _probe(args)
     return _merge(args) if args.action == "merge" else _create(args)
