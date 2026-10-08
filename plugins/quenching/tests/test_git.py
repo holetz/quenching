@@ -1145,6 +1145,83 @@ class State(RepoCase):
         self.assertFalse(marker.exists())
 
 
+class Inert(RepoCase):
+    """`cq git audit` and `cq git state` run no program the repository config names — one test per
+    vector: a `filter.<x>` whose `<x>` carries `=` (which `-c key=value` cannot blank), and the
+    partial clone's lazy fetch, which runs `core.sshCommand` from the `diff` and from `rev-parse`."""
+
+    def setUp(self):
+        super().setUp()
+        self.wt = os.path.join(self.tmp, "wt")
+        _run(self.repo, "worktree", "add", "-q", "-b", "spec/1", self.wt)
+
+    def _evil(self, tag: str, tail: str = "cat") -> pathlib.Path:
+        marker = pathlib.Path(self.tmp, f"PWNED_{tag}")
+        prog = pathlib.Path(self.tmp, f"evil_{tag}.sh")
+        prog.write_text(f"#!/bin/sh\ntouch {marker}\n{tail}\n", encoding="utf-8")
+        prog.chmod(0o755)
+        return prog
+
+    def _equals_filter(self, checkout: str, tag: str) -> pathlib.Path:
+        prog = self._evil(tag)
+        pathlib.Path(checkout, ".gitattributes").write_text("*.txt filter=a=b\n", encoding="utf-8")
+        _run(checkout, "add", ".gitattributes")
+        _run(checkout, "-c", "user.email=t@e", "-c", "user.name=T", "commit", "-q", "-m", "attrs")
+        _run(self.repo, "config", "filter.a=b.clean", str(prog))
+        os.utime(os.path.join(checkout, "a.txt"), (978307200, 978307200))  # same bytes, stale stat: status must hash
+        return pathlib.Path(self.tmp, f"PWNED_{tag}")
+
+    def _partial_clone(self) -> pathlib.Path:
+        """A rename on `spec/1` whose base blob is gone from a promisor repository: the rename
+        detection, or any lookup of an absent object, would fetch it through `core.sshCommand`."""
+        pathlib.Path(self.repo, "big").write_text("".join(f"{i}\n" for i in range(200)),
+                                                  encoding="utf-8")
+        _run(self.repo, "add", "big")
+        _run(self.repo, "commit", "-q", "-m", "big")
+        _run(self.wt, "merge", "-q", "--ff-only", "main")
+        _run(self.wt, "mv", "big", "big2")
+        with open(os.path.join(self.wt, "big2"), "a", encoding="utf-8") as f:
+            f.write("extra\n")
+        _run(self.wt, "add", "big2")
+        _run(self.wt, "-c", "user.email=t@e", "-c", "user.name=T", "commit", "-q", "-m", "rename")
+        blob = _sha(self.repo, "main:big")
+        prog = self._evil("lazy", "exit 1")
+        for key, value in (("core.repositoryformatversion", "1"),
+                           ("extensions.partialClone", "origin"),
+                           ("remote.origin.url", "ssh://nohost.invalid/x"),
+                           ("remote.origin.promisor", "true"),
+                           ("core.sshCommand", str(prog))):
+            _run(self.repo, "config", key, value)
+        os.remove(os.path.join(self.repo, ".git", "objects", blob[:2], blob[2:]))
+        return pathlib.Path(self.tmp, "PWNED_lazy")
+
+    def test_audit_blanks_a_filter_whose_name_carries_equals(self):
+        marker = self._equals_filter(self.wt, "audit_eq")
+        payload = _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main",
+                           "--branch", "spec/1")
+        self.assertFalse(marker.exists())
+        self.assertEqual(payload["status"], [])
+
+    def test_state_blanks_a_filter_whose_name_carries_equals(self):
+        marker = self._equals_filter(self.repo, "state_eq")
+        payload = _cq_json(self.repo, "state")
+        self.assertFalse(marker.exists())
+        self.assertEqual(payload["status"], [])
+
+    def test_audit_diff_does_not_lazy_fetch_through_core_sshcommand(self):
+        marker = self._partial_clone()
+        _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main", "--branch", "spec/1")
+        self.assertFalse(marker.exists())
+
+    def test_audit_sha_resolution_does_not_lazy_fetch_through_core_sshcommand(self):
+        marker = self._partial_clone()
+        proc = _cq(self.repo, "audit", "--worktree", self.wt, "--base", "main", "--branch",
+                   "spec/1", "--sha", "1234567890123456789012345678901234567890")
+        self.assertEqual(proc.returncode, 2, proc.stdout)
+        self.assertIn("audit-ref-invalid", proc.stdout)
+        self.assertFalse(marker.exists())
+
+
 class WorktreeAdd(RepoCase):
     """`cq git worktree add` — the `branch` step's cut, from the fetched remote base."""
 
