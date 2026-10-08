@@ -264,8 +264,12 @@ the ordinary way to be behind, and a `needs-human` there is never relaunched. Ru
 `git merge --no-edit origin/<base>` — a merge, never a rebase, so the task shas stay ancestors and
 the verifier's check 7 accepts them — and then the gate over the merged tree. A conflict only in
 generated files (`plugins/quenching-codex/**`, `plugins/quenching-specs-reader/**`) is mechanical:
-take the base's side (`git show :3:<path> > <path>`, `git add <path>`), conclude the merge, then
-`cq components translate --write` and `--check`. A conflict in any other path →
+take the base's side (`git show :3:<path> > <path>`, `git add <path>`), then **regenerate before
+concluding the merge** — `cq components translate --write` and
+`python3 scripts/sync_specs_reader_plugin.py --write` — `git add` what they rewrote, and conclude
+the merge. A manifest taken from the base alone loses the branch's entries. Then
+`cq components translate --check` and `python3 scripts/sync_specs_reader_plugin.py --check`, both
+exit 0. A conflict in any other path →
 `git merge --abort` and `needs-human` naming the paths.
 
 **An inconclusive result is not a green one.** A check that cannot tell "this failed" from "this
