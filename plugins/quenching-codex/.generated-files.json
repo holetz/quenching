@@ -561,7 +561,7 @@
     "scripts/bin/quenching/proof/doctor.py": "a2a70b68d90f97f350ebeb7fc66d483dee28acb577a8c1438d5732b43c60b496",
     "scripts/bin/quenching/proof/inventory.py": "fd68449b8cffda1850d6f37705042a3625fed488ec84a44a2a04c367c2af46c2",
     "scripts/bin/quenching/proof/model.py": "b25b05ae70bd5c682ef7778e2f62c0a9098cf8eecef9e2ae2eef966e3f8e77a9",
-    "scripts/bin/quenching/proof/ratchet.py": "9621e4fb3e0d706a3895064e48244c6bcf8ed76ecd45a7b12608e68381fd0190",
+    "scripts/bin/quenching/proof/ratchet.py": "39ec9e3d21947117efb82af0c26e48119378e25bebd9d7d17dfb52caae858a59",
     "scripts/bin/quenching/proof/readme.py": "86ae85542d6a4fe3d2585cb1bdf9706e3442ce567c69a1af67131502bae76d59",
     "scripts/bin/quenching/security/__init__.py": "cc8c71e46b02c23c53c98f1e3b5066d03ac58c7c4f29d6f6840eb9d6e5028077",
     "scripts/bin/quenching/security/model.py": "5c2e839a1b80384c97d115a24cab934530c3e08d5ca01a7d86a305a84eb6ea6e",
