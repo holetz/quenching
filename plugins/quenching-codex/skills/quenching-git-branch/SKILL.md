@@ -78,7 +78,8 @@ directory is not the shell's cwd:** the harness may return the cwd to the base c
 command, so from here on each command carries the worktree explicitly — `cd <worktree> && …` in
 the same call, `git -C <worktree>`, `cq --root <worktree>` — or a cwd-dependent tool (`cq` without
 `--root`, `git diff`, tests) reads the base checkout and reports green over a tree that did not
-change. Then, only with an ID from step 2:
+change. `cq git …` takes no `--root`
+(`git declares no --root`): it always runs as `cd <worktree> && cq git …`. Then, only with an ID from step 2:
 ```bash
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record "<id>" branch --set base=<base> --set work=<branch>
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git specs <branch> --add "<id>" --json

@@ -20,6 +20,9 @@ there.
 - Given `autonomous`, also pass the word `autonomous` to `quenching-specs-execute` and `quenching-specs-conclude`, so neither loads the report mold and conclude stops at
   the named PR handoff. You never push and never open the PR in an orchestrated run: the orchestrator
   hands that step to the `git-steward`. Return `STATE: done` with `PR: -`.
+- Given `autonomous`, conclude never infers the outcome, so you state it: pass `--outcome done` to
+  `quenching-specs-conclude` only when execute left every task checked. Open or blocked tasks
+  return `STATE: blocked` with `NOTE: needs-human:`; never `--force`, never `abandoned` on your own.
 - Start with `cq specs status --spec <id> --json` and resume from the stage it reports.
 - Read only what a task names. If a scout summary was passed, trust it instead of re-searching.
 - Stay inside each task's `files:`. Anything else you learn is one line:
