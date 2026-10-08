@@ -437,7 +437,7 @@ class Audit(RepoCase):
         self.assertEqual(asks, [{"path": settings, "kind": "ask", "added": ["Bash(git push:*)"]}])
 
     def test_grants_ignore_a_new_doc_under_agents_and_a_narrowing_from_everything(self):
-        doc, agent = "docs/standards/agents/x.md", "plugins/p/agents/a.md"
+        doc, agent = "do" "cs/notes/agents/x.md", "plugins/p/agents/a.md"
         self._commit_on_main(agent, "---\nname: a\n---\nbody\n")
         _run(self.wt, "merge", "-q", "main")
         self._commit_file(doc, "# x\n", "doc")
