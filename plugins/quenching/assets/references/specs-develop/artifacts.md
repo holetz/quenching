@@ -255,6 +255,12 @@ task — it is the permission. Omit it and the task can never be handed to an ex
 can never carry `[P]`, whichever way the work would actually have gone. Decide that deliberately or
 declare the paths; do not leave it to whether the line felt worth typing.
 
+**Declare every generated mirror the diff changes.** A task that edits a translated source also
+rewrites what the generator emits from it — the Codex translation (`plugins/quenching-codex/**`
+from `cq components translate --write`), `quenching-specs-reader/**`, `plugins/README.md`, the
+goldens. List each such generated mirror in the task's `files:` beside the source; the scope check
+stays strict, so an undeclared mirror is an out-of-scope diff.
+
 **Scope each `verify:` to what its own task could break** — not to what the repo can check. A gate
 that re-runs a check whose inputs the section could not have touched is a `verify:` written too
 wide, not a policy to be filtered at build time.
