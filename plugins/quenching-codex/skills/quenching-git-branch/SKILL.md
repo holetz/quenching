@@ -17,7 +17,7 @@ the default names, `worktreeSetup`, and the two records a taken isolation leaves
 [git/isolation.md](../../references/git/isolation.md), cited below rather
 than restated; this command is its standalone entry point for a caller with no build loop of its own.
 
-**Grants.** `allowed-tools` holds only the `cq` verbs the `git-steward` also holds: a skill's grant widens the `tools:` of the subagent that runs it, so a wider one here would reopen what the steward's `tools:` closes. A `worktreeSetup`, `git checkout -b` and the `cq specs record` stamps go through the normal permission prompt.
+**Grants.** `allowed-tools` holds only the `cq` verbs the `git-steward` also holds: the steward follows this body with its own `tools:` (it holds no `Skill`), so a call outside them here would leave its `branch` step blocked. A `worktreeSetup`, `git checkout -b` and the `cq specs record` stamps go through the normal permission prompt.
 
 ## Workflow
 
