@@ -1731,6 +1731,41 @@ class WorktreeAdd(RepoCase):
         self.assertEqual([p["state"] for p in payload["paths"]], ["created"])
         self.assertTrue(os.path.islink(os.path.join(self.path, "shared")))
 
+    def _store_spec(self) -> tuple[str, list]:
+        os.makedirs(os.path.join(self.repo, ".claude"), exist_ok=True)
+        pathlib.Path(self.repo, ".claude", "quenching.json").write_text(
+            '{"backend": "git"}', encoding="utf-8")
+        specs = [sys.executable, CQ, "specs", "--root", self.repo]
+        made = subprocess.run([*specs, "new", "fixture", "--json"], cwd=self.repo,
+                              capture_output=True, text=True, stdin=subprocess.DEVNULL,
+                              timeout=60)
+        self.assertEqual(made.returncode, 0, made.stdout + made.stderr)
+        return str(json.loads(made.stdout)["id"]), specs
+
+    def test_with_spec_stamps_the_branch_record_a_real_store_reads_back(self):
+        spec, specs = self._store_spec()
+        branch = f"plan/{spec}-x"
+        payload = _cq_json(self.repo, "worktree", "add", "--path", self.path,
+                           "--branch", branch, "--base", "main", "--spec", spec)
+        self.assertTrue(payload["branchRecord"]["ok"], payload)
+        read = subprocess.run([*specs, "record", spec, "branch", "--json"], cwd=self.repo,
+                              capture_output=True, text=True, stdin=subprocess.DEVNULL,
+                              timeout=60)
+        self.assertEqual(read.returncode, 0, read.stdout + read.stderr)
+        value = json.loads(read.stdout)["value"]
+        self.assertEqual((value["base"], value["work"]), ("main", branch))
+
+    def test_with_an_unknown_spec_or_one_that_does_not_own_the_branch_cuts_nothing(self):
+        spec, _specs = self._store_spec()
+        for given, branch, code in (("999", "plan/999-x", "git-worktree-spec-unknown"),
+                                    (spec, f"plan/{int(spec) + 1}-x",
+                                     "git-worktree-spec-head-mismatch")):
+            proc = _cq(self.repo, "worktree", "add", "--path", self.path, "--branch", branch,
+                       "--base", "main", "--spec", given)
+            self.assertEqual(proc.returncode, 2, proc.stdout + proc.stderr)
+            self.assertEqual(json.loads(proc.stdout)["code"], code)
+            self.assertFalse(os.path.exists(self.path))
+
     def test_option_shaped_names_and_taken_targets_are_refused_and_create_nothing(self):
         cases = (("--branch=-D", "--base", "main", "--path", self.path),
                  ("--branch", "plan/1-x", "--base=--output=/tmp/x", "--path", self.path),

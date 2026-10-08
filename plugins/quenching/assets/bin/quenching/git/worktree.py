@@ -8,12 +8,16 @@ relative ``.git`` and would create a different sibling store depending on the ca
 from __future__ import annotations
 
 import os
+from types import SimpleNamespace
 
 from quenching.common.git import _git, _git_run
 from quenching.common.config import load_config, namespace
 from quenching.common.output import FINDINGS, emit, refuse
 from quenching.git.audit import SAFE, _branch_ok, _commit, _run
 from quenching.git.push import remote_probe
+from quenching.git.pull import _Quiet, _spec_vs_head
+from quenching.specs.commands.fields import cmd_record
+from quenching.specs.config import find_repo_root
 
 def _repo_root(cwd: str) -> str:
     return _git(cwd, "rev-parse", "--show-toplevel").strip()
@@ -114,6 +118,20 @@ def _link_lines(results: list[dict]) -> list[str]:
     return human
 
 
+def _stamp_branch(spec: str, base: str, work: str) -> dict:
+    """Merge the spec's `branch` record through the same function `cq specs record` runs."""
+    quiet = _Quiet()
+    ns = SimpleNamespace(spec=spec, name="branch", json=True,
+                         set=[f"base={base}", f"work={work}"])
+    try:
+        code = cmd_record(ns, find_repo_root(os.getcwd()), quiet)
+    except Exception as e:  # the worktree exists already: a stamp that blew up is reported
+        return {"ok": False, "message": str(e)}
+    if code != 0:
+        return {"ok": False, "message": quiet.seen.get("message", f"record exited {code}")}
+    return {"ok": True, "value": quiet.seen.get("value")}
+
+
 def _add(args) -> int:
     """Cut `--branch` from `<remote>/<base>` into a new worktree at `--path`, then link it.
 
@@ -133,6 +151,11 @@ def _add(args) -> int:
         if not value or value.startswith("-") or not _branch_ok(cwd, value):
             return refuse({"code": "git-worktree-ref-invalid",
                            "message": f"{label} is not a usable name: {value}"}, args.json)
+    if args.spec:
+        bad = _spec_vs_head(args.spec, args.branch)
+        if bad:
+            return refuse({**bad, "code": bad["code"].replace("git-pr-", "git-worktree-")},
+                          args.json)
     if _commit(cwd, f"refs/heads/{args.branch}") is not None:
         return refuse({"code": "git-worktree-branch-exists",
                        "message": f"the branch already exists: {args.branch}"}, args.json)
@@ -161,18 +184,24 @@ def _add(args) -> int:
         return refuse({"code": "git-worktree-add-failed",
                        "message": f"git worktree add failed: {err.strip()}"}, args.json)
     results, refusal = _link(path)
-    payload = {"ok": refusal is None, "path": path, "branch": args.branch, "base": args.base,
+    stamp = _stamp_branch(args.spec, args.base, args.branch) if args.spec else None
+    payload = {"ok": refusal is None and (stamp is None or stamp["ok"]), "path": path, "branch": args.branch, "base": args.base,
                "start": f"{args.remote}/{args.base}" if has_remote else args.base,
                "fromRemote": has_remote, "startSha": sha, "paths": results or [],
                "linkRefusal": refusal}
+    if stamp:
+        payload["branchRecord"] = stamp
     human = [f"worktree: {path}", f"branch: {args.branch} from {payload['start']} ({sha[:12]})"]
     if not has_remote:
         human.append(f"NO-REMOTE: {args.remote} is not configured; cut from the local {args.base}")
     human += _link_lines(results or [])
     if refusal:
         human.append(f"link refused: {refusal.get('message')}")
+    if stamp:
+        human.append(f"`branch` record stamped for spec {args.spec}" if stamp["ok"]
+                     else f"`branch` record not stamped: {stamp['message']}")
     emit(args.json, payload, "\n".join(human))
-    return 0 if refusal is None else FINDINGS
+    return 0 if payload["ok"] else FINDINGS
 
 
 def _registered_worktrees(cwd: str) -> list[tuple[str, str | None]]:
