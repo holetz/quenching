@@ -117,6 +117,13 @@ def build_parser() -> argparse.ArgumentParser:
     pp.add_argument("--spec", metavar="ID", help="stamp this spec's `pr` record (number, url, "
                                                  "date) with what the PR just opened")
     pp.add_argument("--json", action="store_true", help="machine-readable output")
+    pp = pr.add_parser("record", help="stamp a spec's `pr` record with a PR opened elsewhere "
+                                      "(the Azure route); checks --spec owns --head")
+    pp.add_argument("--spec", required=True, metavar="ID", help="the spec whose record is stamped")
+    pp.add_argument("--head", required=True, metavar="BRANCH", help="the branch the PR publishes")
+    pp.add_argument("--number", required=True, type=int, metavar="N", help="the PR's id")
+    pp.add_argument("--url", required=True, metavar="URL", help="the PR's webUrl")
+    pp.add_argument("--json", action="store_true", help="machine-readable output")
     pp = pr.add_parser("merge", help="merge with --merge, only when every check is green")
     pp.add_argument("--url", required=True, metavar="URL", help="the PR's URL")
     pp.add_argument("--wait", type=int, default=0, metavar="SECONDS",
