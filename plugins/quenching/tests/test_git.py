@@ -412,6 +412,19 @@ class VerifierGrants(unittest.TestCase):
             self.assertNotIn("*", grant.removesuffix(":*"), grant)
             self.assertFalse(grant.startswith(("git ", "bash ")), grant)
 
+class OrchestratorGrants(unittest.TestCase):
+    """The `orchestrator` reads the wave audit through `cq git state`, never a raw `git status`
+    or `git stash list` grant: those admit the config's filter drivers and `--output`."""
+
+    def test_no_raw_status_or_stash_grant(self):
+        text = (PLUGIN_ROOT / "agents" / "orchestrator.md").read_text(encoding="utf-8")
+        tools = next(line for line in text.splitlines() if line.startswith("tools:"))
+        grants = re.findall(r"Bash\(([^)]*)\)", tools)
+        self.assertIn("cq git state:*", grants)
+        self.assertNotIn("git status:*", grants)
+        self.assertNotIn("git stash list:*", grants)
+
+
 class Worktree(RepoCase):
     def setUp(self):
         super().setUp()
@@ -1067,6 +1080,13 @@ class State(RepoCase):
         self.assertIn("?? new.txt", payload["status"])
         self.assertEqual(payload["staged"], ["staged.txt"])
         self.assertEqual(payload["remotes"], {"origin": "https://example.invalid/o/r.git"})
+
+    def test_reports_stash_entries(self):
+        self.assertEqual(_cq_json(self.repo, "state")["stash"], [])
+        pathlib.Path(self.repo, "a.txt").write_text("changed\n", encoding="utf-8")
+        _run(self.repo, "add", "a.txt")
+        _run(self.repo, "stash", "push", "-q")
+        self.assertEqual(len(_cq_json(self.repo, "state")["stash"]), 1)
 
     def test_repository_config_runs_nothing(self):
         marker = pathlib.Path(self.tmp, "pwn")

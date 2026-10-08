@@ -80,8 +80,8 @@ def build_parser() -> argparse.ArgumentParser:
                     help="the commit subject, resolved by the caller")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
-    sp = sub.add_parser("state", help="the checkout's branch, porcelain status, staged paths and "
-                                       "remotes — read with a fixed argv")
+    sp = sub.add_parser("state", help="the checkout's branch, porcelain status, staged paths, stash "
+                                       "entries and remotes — read with a fixed argv")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("push", help="push one local branch to one remote under its own name, "
