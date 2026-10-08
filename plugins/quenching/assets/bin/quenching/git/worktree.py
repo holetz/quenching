@@ -171,9 +171,99 @@ def _add(args) -> int:
     return 0 if refusal is None else FINDINGS
 
 
+def _registered_worktrees(cwd: str) -> list[tuple[str, str | None]]:
+    """(path, branch) of every worktree git registers, the primary checkout first."""
+    code, out, _err = _git_run(cwd, *SAFE, "worktree", "list", "--porcelain")
+    found: list[tuple[str, str | None]] = []
+    path = branch = None
+    for line in (out.splitlines() if code == 0 else []) + [""]:
+        if line.startswith("worktree "):
+            path = line[len("worktree "):]
+        elif line.startswith("branch "):
+            branch = line[len("branch "):].removeprefix("refs/heads/")
+        elif not line and path is not None:
+            found.append((path, branch))
+            path = branch = None
+    return found
+
+
+def _retire(args) -> int:
+    """Remove a merged spec's worktree and delete its branch with `branch -d`, never `-D`.
+
+    Merged means the branch tip is an ancestor of `<remote>/<base>` (fetched here; the local base
+    when the remote does not exist), because a PR merged through `gh` moves the remote base. Every
+    refusal (exit 2) happens before a write. The worktree goes first, since git will not delete a
+    branch checked out in one; `worktree remove` runs without `--force`, so a dirty worktree
+    stands. If `branch -d` then refuses (the local base is behind), the branch stands, exit 1."""
+    cwd = os.getcwd()
+    missing = [f"--{k}" for k in ("path", "branch", "base") if not getattr(args, k)]
+    if missing:
+        return refuse({"code": "git-worktree-retire-args",
+                       "message": f"`worktree retire` needs {', '.join(missing)}"}, args.json)
+    for label, value in (("branch", args.branch), ("base", args.base), ("remote", args.remote)):
+        if not value or value.startswith("-") or not _branch_ok(cwd, value):
+            return refuse({"code": "git-worktree-ref-invalid",
+                           "message": f"{label} is not a usable name: {value}"}, args.json)
+    if args.branch == args.base:
+        return refuse({"code": "git-worktree-retire-base",
+                       "message": f"the branch is the base: {args.branch}"}, args.json)
+    registered = _registered_worktrees(cwd)
+    want = os.path.realpath(args.path)
+    match = [(p, b) for p, b in registered if os.path.realpath(p) == want]
+    if not match:
+        return refuse({"code": "git-worktree-retire-unregistered",
+                       "message": f"not a worktree this repository registers: {args.path}"},
+                      args.json)
+    path, registered_branch = match[0]
+    if want in (os.path.realpath(registered[0][0]), os.path.realpath(_repo_root(cwd))):
+        return refuse({"code": "git-worktree-retire-primary",
+                       "message": "the primary checkout, or the one this runs in, is never retired"},
+                      args.json)
+    if registered_branch != args.branch:
+        return refuse({"code": "git-worktree-retire-mismatch",
+                       "message": f"{args.path} holds {registered_branch or 'a detached HEAD'}, "
+                                  f"not {args.branch}"}, args.json)
+    if _run(cwd, "remote", "get-url", "--", args.remote)[0] == 0:
+        code, _out, err = _git_run(cwd, *SAFE, "fetch", "--no-recurse-submodules", "--",
+                                   args.remote, f"refs/heads/{args.base}")
+        if code != 0:
+            return refuse({"code": "git-worktree-fetch-failed",
+                           "message": f"git fetch {args.remote} {args.base} failed: {err.strip()}"},
+                          args.json)
+        target, base_sha = f"{args.remote}/{args.base}", _commit(cwd, "FETCH_HEAD")
+    else:
+        target, base_sha = args.base, _commit(cwd, f"refs/heads/{args.base}")
+    tip = _commit(cwd, f"refs/heads/{args.branch}")
+    if base_sha is None or tip is None:
+        return refuse({"code": "git-worktree-ref-invalid",
+                       "message": "the base or the branch does not resolve to a commit"}, args.json)
+    if _run(cwd, "merge-base", "--is-ancestor", tip, base_sha)[0] != 0:
+        return refuse({"code": "git-worktree-retire-not-merged",
+                       "message": f"{args.branch} is not merged into {target}; nothing was removed"},
+                      args.json)
+    payload = {"ok": False, "path": path, "branch": args.branch, "base": target,
+               "worktreeRemoved": False, "branchDeleted": False}
+    code, _out, err = _git_run(cwd, *SAFE, "worktree", "remove", "--", path)
+    if code != 0:
+        payload["message"] = err.strip()
+        emit(args.json, payload, f"worktree {path} refused: {err.strip()}")
+        return FINDINGS
+    payload["worktreeRemoved"] = True
+    code, _out, err = _git_run(cwd, *SAFE, "branch", "-d", "--", args.branch)
+    if code != 0:
+        payload["message"] = err.strip()
+        emit(args.json, payload, f"worktree removed; branch {args.branch} stands: {err.strip()}")
+        return FINDINGS
+    payload.update(ok=True, branchDeleted=True)
+    emit(args.json, payload, f"retired {path} and branch {args.branch}")
+    return 0
+
+
 def cmd_worktree(args) -> int:
     if args.action == "add":
         return _add(args)
+    if args.action == "retire":
+        return _retire(args)
     repo = _repo_root(os.getcwd())
     if not repo:
         return refuse({"code": "git-worktree-not-repository",

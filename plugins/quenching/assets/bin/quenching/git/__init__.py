@@ -64,14 +64,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp = sub.add_parser("worktree", help="materialise declared shared paths in this checkout, or "
                                           "cut a branch from the remote base into a new worktree")
-    sp.add_argument("action", choices=("link", "add"),
-                    help="link: link each declared shared path; add: fetch, cut and link")
-    sp.add_argument("--path", metavar="PATH", help="add: the new worktree's directory")
-    sp.add_argument("--branch", metavar="BRANCH", help="add: the branch to create")
-    sp.add_argument("--base", metavar="BASE", help="add: the base branch to cut from")
+    sp.add_argument("action", choices=("link", "add", "retire"),
+                    help="link: link each declared shared path; add: fetch, cut and link; "
+                         "retire: remove a merged spec's worktree and `branch -d` its branch")
+    sp.add_argument("--path", metavar="PATH", help="add: the new worktree's directory; "
+                                                    "retire: the worktree to remove")
+    sp.add_argument("--branch", metavar="BRANCH", help="add: the branch to create; "
+                                                        "retire: the branch it holds")
+    sp.add_argument("--base", metavar="BASE", help="add: the base branch to cut from; "
+                                                    "retire: the base it must be merged into")
     sp.add_argument("--remote", default="origin", metavar="REMOTE",
-                    help="add: the remote whose base is fetched (default: origin); a remote that "
-                         "does not exist falls back to the local base")
+                    help="add/retire: the remote whose base is fetched (default: origin); a remote "
+                         "that does not exist falls back to the local base")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("commit", help="commit the existing index with the given subject — "
