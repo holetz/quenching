@@ -119,11 +119,15 @@ records pass. A target that carries `standards/workflows/plan-git-record.md` sta
 §Three frontmatter records.
 
 ### 5. Stamp, with an ID
-On `github` the verb of step 4 already stamped it: pass `--spec "<id>"` there and skip this step. On
-`azure-boards` (no `cq git` verb):
+On `github` the verb of step 4 already stamped it: pass `--spec "<id>"` there and skip this step. The
+verb checks `--spec` (it exists, and owns `--head`) before the PR is created, so a wrong id opens
+nothing. On `azure-boards`:
 ```bash
-cq specs record "<id>" pr --set number=<provider-pr-id> --set url=<webUrl> --set date=<today>
+cq git pr record --spec "<id>" --head "<branch>" --number <provider-pr-id> --url <webUrl> --json
 ```
+The verb runs the same check and writes the record through `cq specs record`'s function, so the
+orchestrated steward, which holds no spec write, stamps it too; exit 1 with `reason: stamp-failed`
+means the PR exists and the record does not.
 `pr:` is **write-many** — a later PR on the same spec is a new fact.
 No ID → nothing to stamp; report the PR number and URL only. **Done when:** the record is stamped
 (with an ID) or the report carries the PR's own facts (without one).
