@@ -63,8 +63,9 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertIn("condition", command)
         self.assertIn("enabled: false", command)
         self.assertIn("An optional hook failure is reported", command)
-        self.assertIn("git remote set-head origin -a", command)
-        self.assertIn("make `refs/remotes/origin/HEAD` resolve", command)
+        self.assertNotIn("set-head origin", command)
+        self.assertIn("Never write `refs/remotes/origin/HEAD`", command)
+        self.assertIn("origin/<base>...HEAD", command)
         self.assertIn("Name the work checkout and the diff in that context", command)
         self.assertIn("git -C <toplevel> diff", command)
         hooks = config["shared"]["hooks"]["after_specs_execute_task"]
