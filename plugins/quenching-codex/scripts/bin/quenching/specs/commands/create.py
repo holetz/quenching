@@ -171,11 +171,17 @@ def cmd_new(args, root: str, out: Emitter) -> int:
     id_match = re.search(r"(\d+)(?:\.md)?/?(?:[?#].*)?$", path or "")
     spec_id = int(id_match.group(1)) if id_match else None
     id_note = f"  id: {spec_id}" if spec_id is not None else ""
+    # The hint follows the document that was actually written: a `## Problem` that arrived on
+    # stdin (or by `--card`) is already there, so only a bare capture is told to write one.
+    wrote = section_state(derive_info({"phase": "plans"}, body)["sections"], "Problem") == "filled"
+    target = f"--spec {spec_id}" if spec_id is not None else "--spec <id>"
+    next_step = (f"cq specs validate {target}" if wrote
+                 else "write ## Problem, then continue with the provider-native spec ID")
     out.emit(args.json,
              {"ok": True, "id": spec_id, "title": title, "verification": policy,
               "workItemType": type_key,
               "phase": "plans", "stage": "captured",
               "path": display_locator(path, root)},
              f"created '{title}'  (verification: {policy}){id_note}\n"
-             "next: write ## Problem, then continue with the provider-native spec ID")
+             f"next: {next_step}")
     return 0
