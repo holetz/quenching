@@ -253,7 +253,7 @@ and tags from, confirmed by a human, never picked silently. Because a spec write
 bridge to:
 isolation-while-building is a real git **branch or worktree** (offered inline by `quenching-specs-execute`
 when it starts from the base branch, recorded as `branch: {base, work}`, each task committed alone
-with its sha on the task line; step 5g makes `origin/HEAD` resolve and aims a declared security-review hook at the work checkout's `origin/HEAD...HEAD` diff, so the review sees the worktree and not the base). `cq specs export --spec <slug> | --all` dumps the canonical markdown to disk on demand —
+with its sha on the task line; step 5g never writes `origin/HEAD` and aims a declared security-review hook at the work checkout's `origin/<base>...HEAD` diff, so the review sees the worktree and not the base). `cq specs export --spec <slug> | --all` dumps the canonical markdown to disk on demand —
 write-only, nothing reads it back, so it is never a second store.
 `cq specs serve [--port N] [--host 127.0.0.1] [--read-only] [--open]` starts the local spec portal (loopback only, a per-run token on every call, `Host`/`Origin` validated; writes go through the CLI's own verbs, so CAS and refusals are the CLI's, and a refusal is shown with its code). `quenching-specs-board` launches it.
 
