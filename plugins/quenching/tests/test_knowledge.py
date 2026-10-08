@@ -530,5 +530,66 @@ class SourceAndGlossaryLint(unittest.TestCase):
         self.assertFalse([c for c in codes if c.startswith("glossary-")], codes)
 
 
+class RegenerateListing(unittest.TestCase):
+    """`regenerate_listing` repairs exactly what `validate` reports, and nothing else."""
+
+    @staticmethod
+    def _bundle(tmp: str, fixture: dict) -> None:
+        for relpath, text in fixture.items():
+            path = os.path.join(tmp, *relpath.split("/"))
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            pathlib.Path(path).write_text(text, encoding="utf-8")
+
+    @staticmethod
+    def _codes(tmp: str) -> set:
+        return {c for _s, _r, c, _m in validate_tree(tmp) if c.startswith("generated-listing")}
+
+    def test_stale_and_missing_rows_are_repaired_and_validate_goes_quiet(self):
+        from quenching.knowledge.structure import regenerate_listing
+        fixture = dict(STALE_ZONE)
+        fixture["standards/code/index.md"] += "- [new.md](new.md)\n"
+        fixture["standards/code/new.md"] = _standard("New", "A new doc")
+        fixture["standards/fresh/new2.md"] = _standard("New2", "In a new subfolder")
+        fixture["standards/code/gone.md"] = _standard("Gone", "Soon removed")
+        with tempfile.TemporaryDirectory() as tmp:
+            self._bundle(tmp, fixture)
+            listing = os.path.join(tmp, "standards", "index.md")
+            pathlib.Path(listing).write_text(
+                pathlib.Path(listing).read_text(encoding="utf-8").replace(
+                    "\n\n<!-- END GENERATED", "\n| [gone.md](code/gone.md) | Soon removed |\n\n<!-- END GENERATED"),
+                encoding="utf-8")
+            os.remove(os.path.join(tmp, "standards", "code", "gone.md"))
+            self.assertTrue(self._codes(tmp))
+            dry = regenerate_listing(tmp)
+            self.assertTrue(dry["changed"] and not dry["written"])
+            self.assertTrue(self._codes(tmp), "a dry run must not write")
+            report = regenerate_listing(tmp, write=True)
+            self.assertEqual(report["updated"], ["code/imports.md"])
+            self.assertEqual(sorted(report["added"]), ["code/exports.md", "code/new.md", "fresh/new2.md"])
+            self.assertEqual(report["removed"], ["code/gone.md"])
+            self.assertEqual(self._codes(tmp), set())
+            text = pathlib.Path(listing).read_text(encoding="utf-8")
+            self.assertIn("### fresh/", text)
+            self.assertTrue(text.startswith("# Standards\n\n## Current docs"))
+
+    def test_second_run_is_a_no_op_and_prose_outside_the_zone_is_untouched(self):
+        from quenching.knowledge.structure import regenerate_listing
+        with tempfile.TemporaryDirectory() as tmp:
+            self._bundle(tmp, STALE_ZONE)
+            listing = os.path.join(tmp, "standards", "index.md")
+            before = pathlib.Path(listing).read_text(encoding="utf-8")
+            regenerate_listing(tmp, write=True)
+            after = pathlib.Path(listing).read_text(encoding="utf-8")
+            self.assertEqual(before.split("<!-- BEGIN")[0], after.split("<!-- BEGIN")[0])
+            self.assertFalse(regenerate_listing(tmp, write=True)["changed"])
+
+    def test_a_listing_without_a_zone_is_refused_not_invented(self):
+        from quenching.knowledge.structure import regenerate_listing
+        with tempfile.TemporaryDirectory() as tmp:
+            self._bundle(tmp, {"standards/index.md": "# Standards\n"})
+            with self.assertRaises(ValueError):
+                regenerate_listing(tmp, write=True)
+
+
 if __name__ == "__main__":
     unittest.main()
