@@ -664,6 +664,24 @@ def manifest_conflicted() -> bool:
     return False
 
 
+def manifest_document(tree: dict[str, bytes]) -> dict:
+    return {"files": sorted(tree), "sha256": {rel: hashlib.sha256(content).hexdigest()
+                                              for rel, content in sorted(tree.items())}}
+
+
+def manifest_drifted(tree: dict[str, bytes]) -> bool:
+    """True when a readable versioned manifest differs from the one `--write` would produce.
+
+    A missing manifest is `untracked` and an unreadable one is `manifest_conflicted`; neither is drift.
+    """
+    destination = target() if plugin_translation() else codex_surface()
+    try:
+        recorded = json.loads((destination / ".generated-files.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    return recorded != manifest_document(tree)
+
+
 def write_tree(tree: dict[str, bytes]) -> None:
     destination = target() if plugin_translation() else codex_surface()
     destination.mkdir(parents=True, exist_ok=True)
@@ -680,9 +698,7 @@ def write_tree(tree: dict[str, bytes]) -> None:
         path = destination / rel
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(content)
-    generated_manifest.write_text(json.dumps({"files": sorted(tree), "sha256": {
-        rel: hashlib.sha256(content).hexdigest() for rel, content in sorted(tree.items())}}, indent=2) + "\n",
-                                  encoding="utf-8")
+    generated_manifest.write_text(json.dumps(manifest_document(tree), indent=2) + "\n", encoding="utf-8")
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -723,6 +739,10 @@ def cmd_translate(args, root: str) -> int:
     if not args.write and manifest_conflicted():
         findings.append(finding("ct-manifest-conflicted", "error",
                                 ".generated-files.json is not valid JSON (merge conflict markers?); "
+                                "regenerate it with `translate --write`", path=".generated-files.json"))
+    if not args.write and manifest_drifted(tree):
+        findings.append(finding("ct-manifest-drift", "error",
+                                ".generated-files.json differs from the generated set (an entry lost in a merge?); "
                                 "regenerate it with `translate --write`", path=".generated-files.json"))
     return report_findings(args.json, f"components translate — {payload['count']} changed file(s)",
                            payload, findings, "path")
