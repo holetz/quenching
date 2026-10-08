@@ -77,9 +77,11 @@ reported verbatim and nothing is stamped. **The Worktree cut starts from the rem
 a PR merged through `gh` moves no local ref and the local `<base>` may miss the dependency the run
 waited on:
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git worktree add --path <path> --branch <branch> --base <base> --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git worktree add --path <path> --branch <branch> --base <base> [--spec "<id>"] --json
 ```
-The verb fetches `origin <base>`, cuts `<branch>` from the fetched tip resolved to a commit — so
+With an ID from step 2, pass `--spec`: the verb refuses (exit 2, nothing cut) a spec that does not
+exist or does not own `<branch>`, and after the cut stamps the `branch:` record itself
+(`branchRecord` in the payload; a failed stamp is exit 1 and leaves the worktree). The verb fetches `origin <base>`, cuts `<branch>` from the fetched tip resolved to a commit — so
 the branch has no upstream and a push without an explicit destination never targets the base —
 and links the declared shared paths inside the new worktree. A fetch error is exit 2 and stops the
 run; only a missing `origin` falls back to the local `<base>` (`fromRemote: false`, the
@@ -92,9 +94,10 @@ command, so from here on each command carries the worktree explicitly — `cd <w
 the same call, `git -C <worktree>`, `cq --root <worktree>` — or a cwd-dependent tool (`cq` without
 `--root`, `git diff`, tests) reads the base checkout and reports green over a tree that did not
 change. `cq git …` takes no `--root`
-(`git declares no --root`): it always runs as `cd <worktree> && cq git …`. Then, only with an ID from step 2:
+(`git declares no --root`): it always runs as `cd <worktree> && cq git …`. Then, only with an ID from step 2
+(the Worktree form already stamped `branch:` through `--spec`; **Branch** form stamps it by hand):
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record "<id>" branch --set base=<base> --set work=<branch>
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record "<id>" branch --set base=<base> --set work=<branch>   # Branch form only
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git specs <branch> --add "<id>" --json
 ```
 **In place** stamps `work` equal to `base` instead of skipping the record — §Recording the isolation
