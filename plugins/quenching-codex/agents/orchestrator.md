@@ -44,7 +44,8 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    claim, not evidence. FAIL means one re-spawn of the worker with the verifier's evidence and the
    handoff note; a second FAIL escalates to the human with both reports.
 5. **Retry and idempotency.** Retry a failed `cq` write with backoff. Before any create, search by
-   title. Never repeat an exit 2 blindly; read its message. One re-spawn, then the human.
+   title. Never repeat an exit 2 blindly; read its message. One re-spawn, then the human. A `blocked` whose NOTE starts with `needs-human:` is never
+   re-spawned: put its question to the human.
 6. **Audit per wave.** After each wave run `git stash list` (must be empty), `git worktree list`
    (only the worktrees you opened) and `git status --porcelain` on the base checkout (clean).
    Anything else stops the run and is reported.

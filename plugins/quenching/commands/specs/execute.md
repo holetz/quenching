@@ -32,7 +32,7 @@ never on prose.
 ### 1. Select the spec
 An ID was given → use it. Otherwise infer from the conversation, auto-select when exactly one spec
 is under way, or run `cq specs list --json` and pick with **AskUserQuestion**. Announce
-"Building spec: `<id>`" and how to override.
+"Building spec: `<id>`" and how to override. Where **AskUserQuestion** is unavailable (a sub-agent), do not ask: return `STATE: blocked` with `NOTE: needs-human: <question>`.
 **Done when:** one spec is resolved.
 
 ### 2. Take the tree, the isolation and the state in one read
@@ -356,6 +356,8 @@ recording.
 it stands after the run's last commit.
 
 ### 7. Report, and hand off
+
+**When this run's input carried `autonomous`, skip the read below and the mold with it** — a conductor presents the report, not this run; return the content in the fixed shape the caller specified. Otherwise:
 
 ```bash
 cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/report-mold.md \

@@ -96,7 +96,7 @@ asks whether to materialize a minimal spec — accepted, its new id is used from
 like a marked one. **Declined, headless completion — closing with no spec file at all — is not
 built**: say so, record it with `cq specs discover`, and fall back to `cq specs list --json` and
 ask. Establish the outcome — **ask if it was not stated**, via
-**AskUserQuestion**: *done* (it shipped) or *abandoned* (it will not be built).
+**AskUserQuestion**: *done* (it shipped) or *abandoned* (it will not be built). Where **AskUserQuestion** is unavailable (a sub-agent), do not ask: return `STATE: blocked` with `NOTE: needs-human: <question>`.
 ```bash
 cq specs status --spec "<id>" --json
 ```
@@ -262,6 +262,8 @@ and fate in the report.
 nothing could be handed off — a red gate, or (abandoned) the branch's own fate decided instead.
 
 ### 7. Report
+
+**When this run's input carried `autonomous`, skip the read below and the mold with it** — a conductor presents the report, not this run; return the content in the fixed shape the caller specified. Otherwise:
 
 ```bash
 cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/report-mold.md \
