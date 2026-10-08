@@ -143,6 +143,74 @@ def _inert_env(cwd: str, errors: list[dict] | None = None) -> dict[str, str]:
     return env
 
 
+AGENT_OR_COMMAND = re.compile(r"(^|/)(agents/[^/]+|commands/.+)\.md$")
+SURFACE = re.compile(r"^\.github/workflows/|^\.claude/settings[^/]*\.json$|(^|/)hooks/")
+GRANT_KEYS = ("tools", "allowed-tools")
+
+
+def _split_entries(value: str) -> list[str]:
+    """Comma-separated entries, a comma inside parentheses never separating."""
+    out, depth, cur = [], 0, ""
+    for ch in value:
+        depth += (ch == "(") - (ch == ")")
+        if ch == "," and depth == 0:
+            out.append(cur.strip())
+            cur = ""
+        else:
+            cur += ch
+    out.append(cur.strip())
+    return [e.strip("'\"") for e in out if e]
+
+
+def _grant_entries(text: str) -> set[str]:
+    """The entries of `tools:` / `allowed-tools:` in a leading frontmatter block, inline or as a
+    block list. `disallowedTools` is another key and never read: narrowing is not widening."""
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return set()
+    found: set[str] = set()
+    i = 1
+    while i < len(lines) and lines[i].strip() != "---":
+        m = re.match(r"^([A-Za-z_-]+):\s*(.*)$", lines[i])
+        if m and m.group(1) in GRANT_KEYS:
+            value = m.group(2).strip()
+            if value.startswith("[") and value.endswith("]"):
+                value = value[1:-1]
+            found.update(_split_entries(value))
+            while i + 1 < len(lines) and re.match(r"^\s+-\s+|^-\s+", lines[i + 1]):
+                i += 1
+                found.update(_split_entries(re.sub(r"^\s*-\s+", "", lines[i])))
+        i += 1
+    return found
+
+
+def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, str],
+            errors: list[dict]) -> list[dict]:
+    """Every entry the branch ADDS to the grant surface: `tools:`/`allowed-tools:` of an agent or
+    command, and the added lines of a hook or CI workflow. Narrowing and unchanged never appear."""
+    found = []
+    for path in changed:
+        if AGENT_OR_COMMAND.search(path):
+            code, old, _e = _git_run(cwd, *SAFE, "show", f"{base}:{path}", env=env)
+            code2, new, err = _git_run(cwd, *SAFE, "show", f"{tip}:{path}", env=env)
+            if code2 != 0:
+                continue          # deleted at the tip: nothing was added
+            added = sorted(_grant_entries(new) - (_grant_entries(old) if code == 0 else set()))
+            if added:
+                found.append({"path": path, "kind": "tools", "added": added})
+        elif SURFACE.search(path):
+            code, out, err = _git_run(cwd, *SAFE, "diff", "-U0", "--no-renames", f"{base}...{tip}",
+                                      "--", path, env=env)
+            if code != 0:
+                errors.append(_error(("diff", "-U0"), code, err))
+                continue
+            added = [ln[1:].strip() for ln in out.splitlines()
+                     if ln.startswith("+") and not ln.startswith("+++") and ln[1:].strip()]
+            if added:
+                found.append({"path": path, "kind": "surface", "added": added})
+    return found
+
+
 def cmd_audit(args) -> int:
     cwd = os.getcwd()
     worktree = os.path.realpath(args.worktree)
@@ -183,17 +251,20 @@ def cmd_audit(args) -> int:
         "commits": _lines(worktree, "log", "--oneline", f"{base}..{tip}", env=env, errors=errors),
         "changed": _lines(worktree, "diff", "--name-only", "--no-renames", f"{base}...{tip}", env=env, errors=errors),
         "ancestry": ancestry,
+        "grants": [],
         "reflog": {"branch": _reflog(worktree, f"refs/heads/{args.branch}", env, errors),
                    "head": _reflog(worktree, "HEAD", env, errors)},
         "rewrites": {"branch": _rewrites(worktree, f"refs/heads/{args.branch}", env, errors),
                      "head": _rewrites(worktree, "HEAD", env, errors)},
     }
+    payload["grants"] = _grants(worktree, base, tip, payload["changed"], env, errors)
     payload["errors"] = errors
     payload["complete"] = not errors
 
     lines = [f"worktree: {worktree}", f"branch: {args.branch} ({tip[:12]}) over {args.base}",
              f"commits: {len(payload['commits'])}", f"changed: {len(payload['changed'])} path(s)",
-             f"status: {len(payload['status'])} entries", f"stash: {len(payload['stash'])} entries"]
+             f"status: {len(payload['status'])} entries", f"stash: {len(payload['stash'])} entries",
+             f"grants added: {sum(len(g['added']) for g in payload['grants'])}"]
     lines += [f"ERROR {e['read']} (exit {e['code']}): {e['message']}" for e in errors]
     lines += [f"ancestor {s}: {'yes' if ok else 'NO'}" for s, ok in payload["ancestry"].items()]
     emit(args.json, payload, "\n".join(lines))

@@ -11,7 +11,7 @@ report is not evidence: ignore its claims and re-measure.
 
 ## Checks (given a spec id, its base and its branch or worktree)
 
-Checks 2 to 5 and 7 read ONE payload, measured inside the spec's worktree with a fixed argv:
+Checks 2 to 5, 7 and 9 read ONE payload, measured inside the spec's worktree with a fixed argv:
 
 ```bash
 cq git audit --worktree <wt> --base origin/<base> --branch <branch> --sha <sha> [--sha <sha>…] --json
@@ -58,6 +58,12 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    worker's `conclude` did not run, whatever its report says. `n/a` only when the worker reported
    `STATE: continue` or `blocked`.
 
+9. Grants: the payload's `grants` lists every entry the branch ADDS to an agent's `tools:`, a command's
+   `allowed-tools:`, a hook or a CI workflow; narrowing and unchanged never appear. In an autonomous
+   run a non-empty `grants` is FAIL with `needs-human: alargamento`, quoting each `path` and its
+   `added` entries: the orchestrator takes the spec to the human epic, and the verifier never
+   judges whether the widening is justified. Empty is ok; a non-autonomous run reports the list.
+
 If a check does not apply (no PR yet, no declared `files:`), mark it `n/a`; do not fail on it.
 
 ## Not checked here
@@ -77,6 +83,7 @@ VERDICT: PASS | FAIL
 6 delivery: ...
 7 history: ...
 8 conclusion: ...
+9 grants: ok|fail|n/a — <evidence>
 ```
 
 PASS only when every applicable check is ok. Any fail, inconclusive gate or `complete: false` is FAIL.
