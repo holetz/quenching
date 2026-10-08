@@ -152,7 +152,7 @@ def _add(args) -> int:
             return refuse({"code": "git-worktree-ref-invalid",
                            "message": f"{label} is not a usable name: {value}"}, args.json)
     if args.spec:
-        bad = _spec_vs_head(args.spec, args.branch)
+        bad = _spec_vs_head(args.spec, args.branch, by_name=False)
         if bad:
             return refuse({**bad, "code": bad["code"].replace("git-pr-", "git-worktree-")},
                           args.json)
