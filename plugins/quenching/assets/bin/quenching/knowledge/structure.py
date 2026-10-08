@@ -46,8 +46,18 @@ GENERATED_ZONE_RE = re.compile(
 # The **closing** pipe is optional because GFM makes it optional, and this bundle's own zone already
 # holds a row written without one — requiring it dropped that row from the parse and reported the
 # doc it lists as unlisted, which is the false positive a membership check can least afford.
-GENERATED_ROW_RE = re.compile(r"^\|[^|\n]*\[[^\]]*\]\(([^)\n]+)\)[^|\n]*\|([^|\n]*)\|?\s*$",
+# The cell reads an escaped pipe (`\|`) as part of itself, so a description holding `|` round-trips.
+_CELL = r"((?:\\.|[^|\n\\])*)"
+GENERATED_ROW_RE = re.compile(r"^\|[^|\n]*\[[^\]]*\]\(([^)\n]+)\)[^|\n]*\|" + _CELL + r"\|?\s*$",
                               re.MULTILINE)
+
+
+def _escape_cell(text: str) -> str:
+    return text.replace("|", "\\|")
+
+
+def _unescape_cell(text: str) -> str:
+    return text.replace("\\|", "|")
 
 
 def _strip_noise(text: str) -> str:
@@ -265,7 +275,7 @@ def validate_generated_listing(bundle_root: str, corpus: dict) -> list[tuple[str
         described = _squash_ws(str(parse_frontmatter(doc).get("description") or ""))
         if not described:
             continue          # no `description:` to compare against — `missing-description`'s
-        if _squash_ws(cell) != described:
+        if _squash_ws(_unescape_cell(cell)) != described:
             rel = os.path.relpath(ap, root).replace(os.sep, "/")
             findings.append(("WARN", GENERATED_LISTING_REL, "generated-listing-drift",
                              f"the row for `{rel}` no longer matches that doc's frontmatter "
@@ -273,7 +283,7 @@ def validate_generated_listing(bundle_root: str, corpus: dict) -> list[tuple[str
     return findings
 
 
-_ROW_CELL_RE = re.compile(r"^(\|[^|\n]*\[[^\]]*\]\(([^)\n]+)\)[^|\n]*\|)([^|\n]*)\|?\s*$")
+_ROW_CELL_RE = re.compile(r"^(\|[^|\n]*\[[^\]]*\]\(([^)\n]+)\)[^|\n]*\|)" + _CELL + r"\|?\s*$")
 
 
 def _listed_docs(subject_root: str, root: str) -> dict[str, str]:
@@ -323,15 +333,18 @@ def regenerate_listing(bundle_root: str, write: bool = False) -> dict:
         m = _ROW_CELL_RE.match(line)
         if m is None:
             out.append(line)
+            if line.startswith("|"):
+                last_row[heading] = len(out) - 1
             continue
-        target = os.path.normpath(os.path.join(subject_root, m.group(2).strip()))
+        res = _resolve_link(m.group(2).strip(), subject_root, root)
+        target = os.path.normpath(res[0]) if res and res[1] == "md" else ""
         if target not in docs:
             removed.append(m.group(2).strip())
             continue
         seen.add(target)
         desc = docs[target]
-        if desc and _squash_ws(m.group(3)) != desc:
-            line = f"{m.group(1)} {desc} |"
+        if desc and _squash_ws(_unescape_cell(m.group(3))) != desc:
+            line = f"{m.group(1)} {_escape_cell(desc)} |"
             updated.append(m.group(2).strip())
         out.append(line)
         last_row[heading] = len(out) - 1
@@ -342,7 +355,7 @@ def regenerate_listing(bundle_root: str, write: bool = False) -> dict:
             continue
         rel = os.path.relpath(target, subject_root).replace(os.sep, "/")
         sub = rel.rsplit("/", 1)[0] + "/" if "/" in rel else "./"
-        row = f"| [{os.path.basename(rel)}]({rel}) | {docs[target]} |"
+        row = f"| [{os.path.basename(rel)}]({rel}) | {_escape_cell(docs[target])} |"
         if sub in last_row:
             idx = last_row[sub] + 1
             out.insert(idx, row)

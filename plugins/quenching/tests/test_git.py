@@ -595,6 +595,7 @@ class PullRequestPayload(unittest.TestCase):
 
     def test_provider_locator_fixture_keeps_github_and_azure_native(self):
         github = "append exactly `Closes #<n>` to the generated body"
+        self.assertIn("take it from the status id, never from path", _normalise_prose(self.payload_step))
         azure = "pass it as `--work-items <n>` to Azure"
         self.assertIn(github, self.payload_step)
         self.assertIn(azure, self.payload_step)
