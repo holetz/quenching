@@ -700,6 +700,11 @@ class OrchestratorGrants(unittest.TestCase):
         self.assertNotIn("git status:*", grants)
         self.assertNotIn("git stash list:*", grants)
 
+    def test_the_verifier_prompt_carries_the_gate_exit_the_worker_reported(self):
+        text = " ".join((PLUGIN_ROOT / "agents" / "orchestrator.md").read_text(encoding="utf-8").split())
+        self.assertIn("the exit the worker reported on its `GATE:` line as a claim", text)
+        self.assertIn("`sem relato` when it reported none", text)
+
 
 class Worktree(RepoCase):
     def setUp(self):
@@ -1356,6 +1361,11 @@ class State(RepoCase):
         self.assertIn("?? new.txt", payload["status"])
         self.assertEqual(payload["staged"], ["staged.txt"])
         self.assertEqual(payload["remotes"], {"origin": "https://example.invalid/o/r.git"})
+
+    def test_status_lists_untracked_files_despite_show_untracked_files_no(self):
+        _run(self.repo, "config", "status.showUntrackedFiles", "no")
+        pathlib.Path(self.repo, "new.txt").write_text("n\n", encoding="utf-8")
+        self.assertIn("?? new.txt", _cq_json(self.repo, "state")["status"])
 
     def test_reports_stash_entries(self):
         self.assertEqual(_cq_json(self.repo, "state")["stash"], [])
