@@ -73,6 +73,14 @@ C#.
 it, the parser cannot know where the scalar ends, so it keeps the value verbatim and reports the
 anomaly rather than guessing a comment boundary.
 
+**A quoted scalar is read back as its writer wrote it.** The reader strips the surrounding pair and
+undoes the only escapes a writer needs: `''` inside single quotes, and a backslash before `"` or
+`\` inside double quotes. Every other backslash stays, so a double-quoted Windows path is read as
+written. This is what lets `cq specs new` and `cq specs title` quote a title that carries ` #`,
+`: ` or a leading YAML indicator and get the same text back — plain when nothing needs quoting,
+single quotes when there is no `'`, double quotes when there is a `'` but no `"` or `\`, and
+single quotes with `'` doubled for the rest. `tests/test_specs_title.py` holds the round trip.
+
 ## The canonical case list
 
 `tests/test_frontmatter.py` — `CANONICAL_CASES` — holds the parser to all twelve, unchanged from

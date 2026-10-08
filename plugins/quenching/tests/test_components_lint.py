@@ -377,6 +377,17 @@ class AgentGrantGap(unittest.TestCase):
             found = _agent_grant_findings(body, "Read", self.WHERE)
             self.assertEqual([f["code"] for f in found], ["sk-agent-grant-gap"], body)
 
+    def test_negation_is_adjacent_wrapped_lines_and_abbreviations_included(self):
+        for body in ("The steward never\n`cq specs record`s anything.",
+                     "Never run task 3.1's `cq specs record` yourself.",
+                     "Never stamp a record, e.g. `cq specs record 1 pr`.",
+                     "It holds no `cq specs record` grant."):
+            self.assertEqual(_agent_grant_findings(body, "Read", self.WHERE), [], body)
+        for body in ("Without a PR yet, open it with `gh pr create --base main`.",
+                     "When the store cannot answer, retry `cq specs record 1 pr`."):
+            found = _agent_grant_findings(body, "Read", self.WHERE)
+            self.assertEqual([f["code"] for f in found], ["sk-agent-grant-gap"], body)
+
     def test_lint_agents_reads_the_agents_folder(self):
         with tempfile.TemporaryDirectory() as root:
             agents = pathlib.Path(root, "agents")
