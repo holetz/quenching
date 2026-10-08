@@ -66,6 +66,44 @@ def parse_sections(text: str) -> dict[str, dict]:
     return out
 
 
+def section_spans(text: str) -> list[tuple[str, int, int]]:
+    """Every level-2 block of a document as `(heading, first line, one past the last)`, in order
+    and REPEATS INCLUDED — `parse_sections` keys by heading and keeps the first, so a repeated
+    heading is invisible to it. Same fence rule."""
+    spans: list[list] = []
+    fence: str | None = None
+    lines = text.splitlines()
+    for lineno, line in enumerate(lines):
+        fm = FENCE_RE.match(line)
+        if fm:
+            mark = fm.group(1)
+            if fence is None:
+                fence = mark[0] * len(mark)
+            elif mark[0] == fence[0] and len(mark) >= len(fence):
+                fence = None
+            continue
+        if fence is not None:
+            continue
+        m = HEADING_RE.match(line)
+        if m and len(m.group(1)) == 2:
+            if spans:
+                spans[-1][2] = lineno
+            spans.append([m.group(2).strip(), lineno, len(lines)])
+    return [(h, a, b) for h, a, b in spans]
+
+
+def duplicate_headings(text: str, schema: dict | None = None) -> list[str]:
+    """The canonical headings a document carries MORE THAN ONCE (first-seen order)."""
+    canon = set(canonical_headings(schema))
+    seen: set[str] = set()
+    dup: list[str] = []
+    for h, _, _ in section_spans(text):
+        if h in canon and h in seen and h not in dup:
+            dup.append(h)
+        seen.add(h)
+    return dup
+
+
 def section_state(sections: dict, heading: str) -> str:
     """`absent` · `empty` (present but malformed) · `filled`."""
     if heading not in sections:

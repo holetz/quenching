@@ -11,6 +11,7 @@ from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, read_one
 from quenching.specs.parse.derive import derive_info
 from quenching.specs.parse.edit import upsert_section
+from quenching.specs.parse.edit import nested_heading
 from quenching.specs.parse.epics import is_epic
 from quenching.specs.parse.tasks import (BLOCKED_REASON_RE, CHECKBOX_RE, COMMIT_SHA_RE,
                                          SUBJECT_RE)
@@ -58,6 +59,13 @@ def _flag_refusal(args, out: Emitter) -> int | None:
                        "--commit takes a git sha (hex, 7-40 characters), not free text",
                        "error: --commit takes a git sha (hex, 7-40 characters), not free text",
                        commit=args.commit)
+    # A reason is spliced into `## Outcome` / `## Discoveries` / the task line: a `## ` line of its
+    # own would open a second top-level section there.
+    bad = nested_heading(args.reason or "")
+    if bad:
+        return _refuse(args, out, "sp-write-nested-heading",
+                       f"--reason carries `{bad}` — it would open a second top-level section",
+                       f"error: --reason carries `{bad}` — demote it to `###` or drop it")
     if args.block and not args.reason:
         return _refuse(args, out, "sp-no-reason", "--block requires --reason",
                        "error: --block requires --reason (a blocked task without a reason is "
@@ -245,6 +253,12 @@ def cmd_discover(args, root: str, out: Emitter) -> int:
     info, err = read_one(backend, args.spec, out)
     if err:
         return out.emit_err(args.json, err)
+    bad = nested_heading(args.text)
+    if bad:
+        msg = f"the finding carries `{bad}` — it would open a second top-level section"
+        out.emit(args.json, {"ok": False, "code": "sp-write-nested-heading", "line": bad,
+                             "message": msg}, f"error: {msg}")
+        return 2
     entry = f"- {args.text.strip()}"
     sec = info["sections"].get("Discoveries")
     if sec and sec["filled"]:
