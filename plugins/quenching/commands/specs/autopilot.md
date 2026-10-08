@@ -101,7 +101,8 @@ the report with its note, never retried in this round.
 After every epic that changed code, start one read-only opus agent over the epic's merges
 (`git log --merges <round start>..main`). It reports only findings it **reproduced** — a command,
 its output, the `path:line` — never style. When the epic touched a grant, a hook or anything that
-executes, it runs a security review of the same range too. Each finding becomes a loose spec
+executes, it runs a security review of the same range too. That review hunts the widening a worker
+makes by mistake, never deliberate evasion of the audit (symlink, BOM, line separators, a diff driver in `.git/config`): the audit is no sandbox. Each finding becomes a loose spec
 (`cq specs new`, then its `## Problem` with the reproduction), queued for the next round.
 **Done when:** the review returned and each reproduced finding is a spec.
 
