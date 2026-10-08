@@ -12,7 +12,8 @@ from quenching.specs.commands.output import Emitter, front_fields, read_one
 from quenching.specs.parse import PHASES
 from quenching.specs.parse.epics import (claim_findings, epic_findings, epic_ref, is_epic,
                                          parse_items)
-from quenching.specs.parse.sections import (gate_report, parse_impact_standards, ready_report,
+from quenching.specs.parse.text import body_after_frontmatter
+from quenching.specs.parse.sections import (duplicate_headings, gate_report, parse_impact_standards, ready_report,
                                             section_state, stray_headings)
 from quenching.specs.parse.tasks import _files_bad_annotation
 from quenching.specs.schema import (MERGE_ANCHORLESS_STRATEGIES, MERGE_NO_PR_STRATEGIES,
@@ -113,6 +114,14 @@ def validate_spec(backend: SpecBackend, s: dict,
                                 f"{where}: `## {h}` is present but empty — neither an answer "
                                 f"nor a not-yet", spec=spec_id, path=where, heading=h,
                                 remedy="fill it, or write `- none — <reason>`"))
+    # A canonical heading written twice: `parse_sections` keeps the FIRST, so an empty first copy
+    # reads as the section while the real text sits under the second — the 1315 shape.
+    for h in duplicate_headings(body_after_frontmatter(text)):
+        out.append(_finding("sp-duplicate-heading", "error",
+                            f"{where}: `## {h}` appears more than once — the parser reads only "
+                            f"the first", spec=spec_id, path=where, heading=h,
+                            remedy=f"cq specs section {spec_id} \"{h}\" --write  (the rewrite "
+                                   "drops the later copies)"))
     # `Handoff` is warned on by the derived ready gate: a spec that is buildable but has
     # no executor context is incomplete for the next command.
     ready = ready_report({"sections": sections}, schema) if s["phase"] == "plans" else None
