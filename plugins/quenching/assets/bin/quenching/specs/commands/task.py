@@ -13,7 +13,7 @@ from quenching.specs.parse.derive import derive_info
 from quenching.specs.parse.edit import upsert_section
 from quenching.specs.parse.edit import nested_heading
 from quenching.specs.parse.epics import is_epic
-from quenching.specs.parse.fields import scalar_break
+from quenching.specs.parse.fields import SCALAR_LINE_BREAKS, scalar_break
 from quenching.specs.parse.tasks import (BLOCKED_REASON_RE, CHECKBOX_RE, COMMIT_SHA_RE,
                                          SUBJECT_RE)
 
@@ -269,6 +269,11 @@ def cmd_discover(args, root: str, out: Emitter) -> int:
         msg = f"the finding carries `{bad}` — it would open a second top-level section"
         out.emit(args.json, {"ok": False, "code": "sp-write-nested-heading", "line": bad,
                              "message": msg}, f"error: {msg}")
+        return 2
+    if any(c in SCALAR_LINE_BREAKS for c in args.text.strip()):
+        msg = "the finding carries a line break — one discovery is one line"
+        out.emit(args.json, {"ok": False, "code": "sp-discover-multiline", "message": msg},
+                 f"error: {msg}")
         return 2
     entry = f"- {args.text.strip()}"
     sec = info["sections"].get("Discoveries")
