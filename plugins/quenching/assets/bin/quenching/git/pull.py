@@ -25,7 +25,8 @@ from types import SimpleNamespace
 from quenching.common.output import FINDINGS, OK, emit, refuse
 from quenching.git.audit import _branch_ok
 from quenching.specs.commands.fields import cmd_record
-from quenching.specs.commands.output import Emitter
+from quenching.specs.backends import open_backend
+from quenching.specs.commands.output import Emitter, read_one
 from quenching.specs.config import find_repo_root
 
 PR_URL = re.compile(r"https://[A-Za-z0-9.-]+/[\w.-]+/[\w.-]+/pull/(\d+)")
@@ -160,6 +161,50 @@ def _stamp(spec: str, number: int, url: str) -> dict:
     return {"ok": True, "value": quiet.seen.get("value")}
 
 
+def _spec_vs_head(spec: str, head: str) -> dict | None:
+    """Refuse BEFORE any PR exists: the spec must exist and own `head`.
+
+    The spec owns the branch its `branch.work` record names; before that record exists, the
+    branch name must carry the spec's id (`plan/<id>-<slug>`). `None` means the pair is fine."""
+    quiet = _Quiet()
+    backend, err = open_backend(find_repo_root(os.getcwd()))
+    info, err2 = (None, err) if err else read_one(backend, spec, quiet)
+    if err2 or not info:
+        return {"code": "git-pr-spec-unknown",
+                "message": f"--spec {spec} does not resolve: "
+                           f"{(err2 or {}).get('message', 'no such spec')}"}
+    work = ((info.get("frontmatter") or {}).get("branch") or {}).get("work")
+    sid = str(info["id"])
+    if work:
+        owned = work == head
+    else:
+        owned = re.match(rf"(?:.+/)?{re.escape(sid)}-", head) is not None
+    if not owned:
+        return {"code": "git-pr-spec-head-mismatch",
+                "message": f"spec {sid} does not own branch {head}"
+                           + (f" (its branch record is {work})" if work else "")}
+    return None
+
+
+def _record(args) -> int:
+    """`pr record`: the Azure route stamps the `pr` record through the same function."""
+    number, url = args.number, args.url
+    if number < 1 or not url.startswith("https://") or "/_apis/" in url:
+        return refuse({"code": "git-pr-record-invalid",
+                       "message": "--number must be positive and --url the PR's https webUrl "
+                                  "(never an /_apis/ URL)"}, args.json)
+    bad = _spec_vs_head(args.spec, args.head)
+    if bad:
+        return refuse(bad, args.json)
+    stamp = _stamp(args.spec, number, url)
+    payload = {"ok": stamp["ok"], "number": number, "url": url, "head": args.head, "pr": stamp}
+    if not stamp["ok"]:
+        payload.update(reason="stamp-failed", message=stamp["message"])
+    emit(args.json, payload, f"pr record stamped: #{number} {url}" if stamp["ok"]
+         else f"`pr` record not stamped: {stamp['message']}")
+    return OK if stamp["ok"] else FINDINGS
+
+
 def _create(args) -> int:
     cwd = os.getcwd()
     for label, value in (("base", args.base), ("head", args.head)):
@@ -169,6 +214,10 @@ def _create(args) -> int:
     if not args.title.strip():
         return refuse({"code": "git-pr-title-blank", "message": "--title may not be blank"},
                       args.json)
+    if args.spec:
+        bad = _spec_vs_head(args.spec, args.head)
+        if bad:
+            return refuse(bad, args.json)
     code, out, err = _gh("pr", "create", f"--base={args.base}", f"--head={args.head}",
                          f"--title={args.title}", "--body-file=-", stdin=args.body)
     lines = [line.strip() for line in out.splitlines() if line.strip()]
@@ -191,4 +240,6 @@ def _create(args) -> int:
 
 
 def cmd_pr(args) -> int:
+    if args.action == "record":
+        return _record(args)
     return _merge(args) if args.action == "merge" else _create(args)

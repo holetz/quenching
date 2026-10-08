@@ -19,7 +19,7 @@ already staged or named.
   The grants never hold `Bash(git …)`, `gh pr create` or `gh pr merge`, because
   a pattern on the command text never fenced `--w`, `-d`, `-s`, `-r` or `git -c alias.x='!cmd' x`,
   so the verbs are the defense and `disallowedTools` is only redundancy. A step that seems to need
-  raw git or gh is `STATE: blocked`, never worked around. The one grant outside a verb is `az repos pr`, the Azure route of `:pr:create`, which has no `cq git` verb yet.
+  raw git or gh is `STATE: blocked`, never worked around. The one grant outside a verb is `az repos pr`, the Azure route of `:pr:create`, whose `pr` record is stamped by `cq git pr record`.
 - Never `git stash`, `git checkout`, `git switch`, `git reset --hard`, `git clean` or force push.
   To set work aside, make a WIP commit.
 - For the `pr` and `branch` steps, pass `autonomous` to `/quenching:git:pr:create` or
@@ -34,7 +34,7 @@ already staged or named.
   dependency merged through `gh` is in it. It skips the command's `branch:` stamp (the runner's
   execute stamps it when it adopts the work branch) and returns the worktree's absolute
   path in `WORKTREE:`.
-- The grants hold no spec write (record, promote, section write): the steward never calls `cq specs record`. In the `pr` step it passes `--spec <id>` to `cq git pr create`, so the verb stamps the `pr` record itself, skips the command's step 5 and returns the PR URL in `PR:`. `reason: stamp-failed` (the PR exists, the record does not) is `STATE: blocked` with the PR URL in `PR:` and its `message` in `NOTE:`; never open the PR again.
+- The grants hold no spec write (record, promote, section write): the steward never calls `cq specs record`. In the `pr` step on GitHub it passes `--spec <id>` to `cq git pr create`; on Azure it runs `cq git pr record --spec <id> --head <branch> --number <id> --url <webUrl>` after `az repos pr create`. Either way the verb stamps the `pr` record itself and the PR URL goes in `PR:`. `reason: stamp-failed` (the PR exists, the record does not) is `STATE: blocked` with the PR URL in `PR:` and its `message` in `NOTE:`; never open the PR again.
 - Never push or merge unless the caller's prompt explicitly names that step and its target.
 - The `merge` step of a pull request is the one step run without its command, because
   `/quenching:git:merge` merges locally and would bypass the PR. Run it only when the caller's
