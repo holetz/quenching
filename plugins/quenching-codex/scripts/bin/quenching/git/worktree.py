@@ -207,18 +207,20 @@ def _regenerable_paths(config: dict) -> list[str]:
     values = namespace(config, "shared").get("regenerablePaths")
     if not isinstance(values, list):
         return []
-    return [os.path.normpath(v.strip()) for v in values if isinstance(v, str) and v.strip()
+    return [os.path.normpath(v.strip()) + ("/" if v.strip().endswith("/") else "")
+            for v in values if isinstance(v, str) and v.strip()
             and not os.path.isabs(v.strip()) and ".." not in v.strip().split("/")]
 
 
 def _is_regenerable(entry: str, declared: list[str]) -> bool:
-    """A declared entry without a slash names a component at any depth; one with a slash names a
-    path from the repo root, itself or anything under it."""
+    """A declared entry without a slash names a component at any depth; one with a slash, inner
+    or trailing, names a path from the repo root, itself or anything under it."""
     parts = os.path.normpath(entry.rstrip("/")).split(os.sep)
     for rule in declared:
         if os.sep in rule:
-            width = len(rule.split(os.sep))
-            if os.sep.join(parts[:width]) == rule:
+            anchored = rule.rstrip(os.sep)
+            width = len(anchored.split(os.sep))
+            if os.sep.join(parts[:width]) == anchored:
                 return True
         elif rule in parts:
             return True
