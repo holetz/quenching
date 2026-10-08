@@ -114,6 +114,7 @@ that carries content stays: the pass and its stop conditions (step 3), the conso
 genuinely the human's, the recommendation and the reasoning behind it go in the **AskUserQuestion**
 payload — the recommended option first and marked "(Recommended)", the reasoning in its description
 — so the human answers in one word and no turn was spent setting the question up.
+Where **AskUserQuestion** is unavailable (a sub-agent), do not ask: return `STATE: blocked` with `NOTE: needs-human: <question>`.
 **This contract stops at the edge of how questions are grouped.**
 [questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared
 mechanics §1 is the only authority there: a question travels with the ones whose answers cannot
@@ -371,6 +372,8 @@ sub-agent under a conductor, present nothing: return the screen's content and le
 present it — a sub-agent never talks to the human, at any gear.
 
 Then report:
+
+**When this run's input carried `autonomous`, skip the read below and the mold with it** — a conductor presents the report, not this run; return the content in the fixed shape the caller specified. Otherwise:
 
 ```bash
 cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/report-mold.md \

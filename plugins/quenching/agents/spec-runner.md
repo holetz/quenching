@@ -17,13 +17,15 @@ there.
 - Given `autonomous`, invoke `/quenching:specs:develop` declaring the `low` gear as **forced**, so
   develop stamps `by=orchestrator-forced` after `ready`. Never stamp `approved` yourself. A forced `low`
   writes nothing to `priority`: never change `complexity` to match the gear.
-- Given `autonomous`, also pass the word `autonomous` to `/quenching:specs:conclude`, so its `low`
+- Given `autonomous`, also pass the word `autonomous` to `/quenching:specs:execute` and `/quenching:specs:conclude`, so neither loads the report mold and conclude's `low`
   handoff publishes the PR without waiting for a human confirmation that was pre-answered.
 - Start with `cq specs status --spec <id> --json` and resume from the stage it reports.
 - Read only what a task names. If a scout summary was passed, trust it instead of re-searching.
 - Stay inside each task's `files:`. Anything else you learn is one line:
   `cq specs discover "<id>" "<finding>"`.
 - A `cq` write that fails is retried with backoff; exit 2 is read, never repeated blindly.
+- You have no `AskUserQuestion`. Where a command would ask the human, stop and return
+  `STATE: blocked` with `NOTE: needs-human: <the question>`; never improvise an answer.
 
 ## Forbidden
 
