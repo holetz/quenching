@@ -580,6 +580,24 @@ class Audit(RepoCase):
         self.assertFalse(os.path.exists(marker))
         self.assertIn(" M b.txt", payload["status"])
 
+    def test_diff_does_not_run_a_configured_external_diff_or_textconv(self):
+        marker = os.path.join(self.tmp, "PWNED_diff")
+        prog = os.path.join(self.tmp, "evildiff.sh")
+        pathlib.Path(prog).write_text(f"#!/bin/sh\ntouch {marker}\necho 'on: push'\n", encoding="utf-8")
+        os.chmod(prog, 0o755)
+        wf = ".github/workflows/ci.yml"
+        self._commit_on_main(wf, "on: push\n")
+        _run(self.wt, "merge", "-q", "main")
+        pathlib.Path(self.wt, ".gitattributes").write_text("*.yml diff=evil\n", encoding="utf-8")
+        self._commit_file(wf, "on: push\njobs: {}\n", "ci")
+        for key, value in (("diff.external", prog), ("diff.evil.textconv", prog)):
+            _run(self.repo, "config", key, value)
+            got = {g["path"]: g for g in self._grants()}
+            _run(self.repo, "config", "--unset", key)
+            self.assertFalse(os.path.exists(marker), key)
+            self.assertEqual(got[wf]["kind"], "surface", key)
+            self.assertIn("jobs: {}", got[wf]["added"], key)
+
     def test_log_does_not_run_a_configured_gpg_program(self):
         marker = os.path.join(self.tmp, "PWNED_gpg")
         prog = os.path.join(self.tmp, "evilgpg.sh")
