@@ -378,6 +378,48 @@ class PureDerivation(unittest.TestCase):
         self.assertIn("sp-epic-manual-tick", {f["code"] for f in report["findings"]})
 
 
+class InsertItemGroupNumbering(unittest.TestCase):
+    """One test per vector of `insert_item` naming a new group: the number is added once."""
+    LINE = "- [ ] S1 Member — spec: #2"
+
+    def info(self, body):
+        b = MemoryBackend()
+        b.create_spec("plans", epic_doc(body))
+        return b.read_spec(EPIC_ID)[0]
+
+    def heads(self, info, group):
+        text = epic_cmd.insert_item(info, self.LINE, group)
+        return [h for h in text.splitlines() if h.startswith("### ")], text
+
+    def test_absent_tasks_a_bare_label_is_numbered(self):
+        heads, text = self.heads(self.info("## Problem\n\nThe program.\n"), "Onda 1 — x")
+        self.assertEqual(["### 1. Onda 1 — x"], heads)
+        self.assertIn(self.LINE, text)
+
+    def test_absent_tasks_a_label_with_its_number_is_used_as_is(self):
+        heads, _ = self.heads(self.info("## Problem\n\nThe program.\n"), "1. Onda 1 — x")
+        self.assertEqual(["### 1. Onda 1 — x"], heads)
+
+    def test_empty_tasks_a_bare_label_is_numbered(self):
+        self.assertEqual(["### 1. Onda 1"], self.heads(self.info(
+            "## Problem\n\nThe program.\n\n## Tasks\n\n"), "Onda 1")[0])
+
+    def test_empty_tasks_a_label_with_its_number_is_used_as_is(self):
+        self.assertEqual(["### 1. Onda 1"], self.heads(self.info(
+            "## Problem\n\nThe program.\n\n## Tasks\n\n"), "1. Onda 1")[0])
+
+    def test_no_group_writes_no_heading(self):
+        for body in ("## Problem\n\nThe program.\n", "## Problem\n\nX.\n\n## Tasks\n\n"):
+            heads, text = self.heads(self.info(body), None)
+            self.assertEqual([], heads)
+            self.assertIn(self.LINE, text)
+
+    def test_a_new_group_after_existing_ones_gets_the_next_number_once(self):
+        body = "## Problem\n\nX.\n\n## Tasks\n\n### 1. A\n- [ ] S0 Old — spec: #3\n"
+        self.assertEqual(["### 1. A", "### 2. B"], self.heads(self.info(body), "B")[0])
+        self.assertEqual(["### 1. A", "### 2. B"], self.heads(self.info(body), "2. B")[0])
+
+
 class PrStatesTarget(unittest.TestCase):
     def member(self, rec):
         return {"phase": "archive", "frontmatter": {"pr": rec}}
