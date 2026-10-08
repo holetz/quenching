@@ -1149,3 +1149,85 @@ class WorktreeAdd(RepoCase):
         _cq_json(self.repo, "worktree", "add", "--path", self.path, "--branch", "plan/1-x",
                  "--base", "main")
         self.assertFalse(marker.exists())
+
+
+class PushVerb(RepoCase):
+    """`cq git push` — one local branch to one configured remote, never forced."""
+
+    def setUp(self):
+        super().setUp()
+        self.remote = os.path.join(self.tmp, "origin.git")
+        _run(self.tmp, "init", "-q", "--bare", "-b", "main", self.remote)
+        _run(self.repo, "remote", "add", "origin", self.remote)
+        _run(self.repo, "push", "-q", "origin", "main")
+        _run(self.repo, "checkout", "-q", "-b", "plan/1-x")
+        pathlib.Path(self.repo, "b.txt").write_text("b\n", encoding="utf-8")
+        _run(self.repo, "add", "b.txt")
+        _run(self.repo, "commit", "-q", "-m", "task")
+
+    def test_pushes_under_its_own_name_and_sets_upstream(self):
+        payload = _cq_json(self.repo, "push", "--branch", "plan/1-x")
+        self.assertEqual(payload["sha"], _sha(self.repo))
+        self.assertEqual(_sha(self.remote, "refs/heads/plan/1-x"), _sha(self.repo))
+        upstream = subprocess.run(["git", "rev-parse", "--abbrev-ref", "plan/1-x@{upstream}"],
+                                  cwd=self.repo, capture_output=True, text=True).stdout.strip()
+        self.assertEqual(upstream, "origin/plan/1-x")
+
+    def test_a_rewritten_branch_is_refused_not_forced(self):
+        _cq_json(self.repo, "push", "--branch", "plan/1-x")
+        before = _sha(self.remote, "refs/heads/plan/1-x")
+        _run(self.repo, "commit", "-q", "--amend", "-m", "rewritten")
+        proc = _cq(self.repo, "push", "--branch", "plan/1-x")
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        self.assertEqual(_sha(self.remote, "refs/heads/plan/1-x"), before)
+
+    def test_option_shaped_or_unknown_names_are_refused(self):
+        for argv in (("--branch=--force",), ("--branch", "+plan/1-x"),
+                     ("--branch", "nope"), ("--branch", "plan/1-x", "--remote=--mirror"),
+                     ("--branch", "plan/1-x", "--remote", "elsewhere")):
+            proc = _cq(self.repo, "push", *argv)
+            self.assertEqual(proc.returncode, 2, (argv, proc.stdout))
+        heads = subprocess.run(["git", "for-each-ref", "refs/heads"], cwd=self.remote,
+                               capture_output=True, text=True).stdout
+        self.assertNotIn("plan/1-x", heads)
+
+
+class PruneVerb(RepoCase):
+    """`cq git prune` — acts only on what a fresh `cq git stale` reports, never by force."""
+
+    def setUp(self):
+        super().setUp()
+        _run(self.repo, "branch", "merged")
+        _run(self.repo, "checkout", "-q", "-b", "unmerged")
+        pathlib.Path(self.repo, "u.txt").write_text("u\n", encoding="utf-8")
+        _run(self.repo, "add", "u.txt")
+        _run(self.repo, "commit", "-q", "-m", "unmerged work")
+        _run(self.repo, "checkout", "-q", "main")
+
+    def _branches(self) -> str:
+        return subprocess.run(["git", "branch", "--list"], cwd=self.repo, capture_output=True,
+                              text=True).stdout
+
+    def test_a_reported_merged_branch_is_deleted(self):
+        _cq_json(self.repo, "prune", "--branch", "merged")
+        self.assertNotIn("merged", self._branches().replace("unmerged", ""))
+
+    def test_an_unreported_branch_is_refused_and_stands(self):
+        for argv in (("--branch", "unmerged"), ("--branch", "main"), ("--branch=-D",),
+                     ("--worktree", self.repo), ("--remote-branch", "main")):
+            proc = _cq(self.repo, "prune", *argv)
+            self.assertEqual(proc.returncode, 2, (argv, proc.stdout))
+        self.assertIn("unmerged", self._branches())
+
+    def test_a_reported_remote_branch_is_deleted_on_that_remote_only(self):
+        remote = os.path.join(self.tmp, "origin.git")
+        _run(self.tmp, "init", "-q", "--bare", "-b", "main", remote)
+        _run(self.repo, "remote", "add", "origin", remote)
+        _run(self.repo, "push", "-q", "origin", "main", "merged", "unmerged")
+        _run(self.repo, "fetch", "-q", "origin")
+        refused = _cq(self.repo, "prune", "--remote-branch", "unmerged")
+        self.assertEqual(refused.returncode, 2)
+        _cq_json(self.repo, "prune", "--remote-branch", "merged")
+        heads = subprocess.run(["git", "for-each-ref", "--format=%(refname)", "refs/heads"],
+                               cwd=remote, capture_output=True, text=True).stdout.split()
+        self.assertEqual(sorted(heads), ["refs/heads/main", "refs/heads/unmerged"])
