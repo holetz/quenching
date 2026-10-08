@@ -68,14 +68,20 @@ def _frontmatter_body(text: str) -> list[str] | None:
 
 
 def _unquote(val: str) -> str:
-    """Strip ONE matching pair of surrounding quotes.
+    """Strip ONE matching pair of surrounding quotes, undoing the only escapes a writer needs.
+
+    `''` inside single quotes and a backslash before `"` or `\\` inside double quotes; any other
+    backslash stays, so a Windows path in double quotes is read as written.
 
     A lone opening quote is kept verbatim — the same answer the canonical `unterminated-quote` row
     demands from the scalar path, which is why every value in this module unquotes through here
     rather than through a `strip("'\\"")` that would eat it."""
     val = val.strip()
     if len(val) >= 2 and val[0] == val[-1] and val[0] in ("'", '"'):
-        return val[1:-1]
+        inner = val[1:-1]
+        if val[0] == "'":
+            return inner.replace("''", "'")
+        return re.sub(r'\\(["\\])', r"\1", inner)
     return val
 
 

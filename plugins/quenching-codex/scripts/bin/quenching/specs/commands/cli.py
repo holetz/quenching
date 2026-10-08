@@ -23,7 +23,7 @@ from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.commands.create import cmd_new
 from quenching.specs.commands.doctor import cmd_config, cmd_doctor
 from quenching.specs.commands.epic import cmd_epic
-from quenching.specs.commands.fields import cmd_field, cmd_record, cmd_verification
+from quenching.specs.commands.fields import cmd_field, cmd_record, cmd_title, cmd_verification
 from quenching.specs.commands.find import cmd_find
 from quenching.specs.commands.granular import cmd_section, cmd_show
 from quenching.specs.commands.migrate import cmd_migrate
@@ -147,6 +147,11 @@ def _add_section_and_fields(sub) -> None:
     # declared set like every other refusal here.
     sp.add_argument("policy", nargs="?",
                     help="omit to read; one of " + ", ".join(VERIFICATION_POLICIES))
+
+    sp = add_json(sub.add_parser("title",
+                                 help="read or repair ONE spec's `title`, quoted when it needs it"))
+    sp.add_argument("spec")
+    sp.add_argument("title", nargs="?", help="omit to read; the new title to set")
 
     for field, value_help in (
         ("tags", "omit to read; a comma-separated list to SET (replaces, never appends)"),
@@ -313,6 +318,7 @@ DISPATCH: dict = {
     "show": cmd_show,
     "section": cmd_section,
     "verification": cmd_verification,
+    "title": cmd_title,
     "tags": cmd_field,
     "assignee": cmd_field,
     "start": cmd_field,
