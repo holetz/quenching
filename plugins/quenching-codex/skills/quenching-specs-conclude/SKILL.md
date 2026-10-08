@@ -135,9 +135,11 @@ can choose between finishing them, forcing, or switching to `abandoned`.
 
 ### 2. Review the whole branch diff
 ```bash
-git diff <base>...HEAD          # <base> is the branch record's `base`
+git diff origin/<base>...HEAD   # <base> is the branch record's `base`; NO-REMOTE: git diff <base>...HEAD
 ```
-This reads the whole change for **coherence**, beyond execute's per-task self-review — two tasks that solved the same problem differently, an abstraction that wanted
+Against `origin/<base>` because a PR merged through `gh` moves no local ref (step 6 fetches it); the
+three-dot form keeps the diff to this spec even when the remote base advanced after the cut. This reads
+the whole change for **coherence**, beyond execute's per-task self-review — two tasks that solved the same problem differently, an abstraction that wanted
 extracting once the third caller appeared, a `## Impact` path nothing ever wrote, a standard the
 diff contradicts.
 
