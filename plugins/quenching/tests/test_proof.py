@@ -15,7 +15,7 @@ from quenching.proof.ci import discover_ci
 from quenching.proof.checks import conditional_status, run_checks
 from quenching.proof.inventory import build_inventory
 from quenching.proof.model import Fixture, Layer, ProofInventory, TestModule
-from quenching.proof.ratchet import evaluate
+from quenching.proof.ratchet import evaluate, measured_percentages
 from quenching.proof.readme import render_readme_document, write_readme
 
 HERE = Path(__file__).resolve().parent
@@ -391,3 +391,27 @@ class ProofFixtureTrees(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MeasuredRootNormalisation(unittest.TestCase):
+    @staticmethod
+    def _payload(name, covered, statements, total=55.0):
+        return {"files": {name: {"covered_lines": covered, "num_statements": statements}},
+                "totals": {"percent_covered": total}}
+
+    def test_dot_root_returns_its_own_percentage_not_the_total(self):
+        result, finding = measured_percentages(
+            self._payload(".claude/hooks/a.py", 1, 10), [{"relative": ".claude/hooks"}])
+        self.assertEqual(finding, {})
+        self.assertAlmostEqual(result[".claude/hooks"], 10.0)
+
+    def test_dot_slash_prefix_matches_on_both_sides(self):
+        for name, root in (("./x/a.py", "x"), ("x/a.py", "./x")):
+            result, _ = measured_percentages(self._payload(name, 1, 4), [{"relative": root}])
+            self.assertAlmostEqual(result[root], 25.0)
+
+    def test_files_without_a_match_never_fall_back_to_the_total(self):
+        result, finding = measured_percentages(
+            self._payload("other/a.py", 1, 10), [{"relative": ".claude/hooks"}])
+        self.assertEqual(result, {})
+        self.assertEqual(finding["code"], "pf-coverage-no-measured-root")

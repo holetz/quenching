@@ -154,7 +154,7 @@ def read_coverage(config: dict, artifact: str | None = None) -> tuple[dict | Non
 
 
 def _normalise(path: str) -> str:
-    return path.replace("\\", "/").lstrip("./")
+    return path.replace("\\", "/").removeprefix("./")
 
 
 def _percent(summary: dict[str, Any]) -> float | None:
@@ -186,7 +186,7 @@ def measured_percentages(payload: dict[str, Any], roots: list[dict]) -> tuple[di
     result: dict[str, float] = {}
     for root in roots:
         declared = root["relative"]
-        prefix = declared.rstrip("/") + "/"
+        prefix = _normalise(declared).rstrip("/") + "/"
         matching: list[dict[str, Any]] = []
         for name, entry in files.items():
             if not isinstance(name, str) or not _normalise(name).startswith(prefix):
@@ -200,7 +200,7 @@ def measured_percentages(payload: dict[str, Any], roots: list[dict]) -> tuple[di
             if statements:
                 result[declared] = covered * 100 / statements
                 continue
-        total = _percent(totals) if len(roots) == 1 else None
+        total = _percent(totals) if len(roots) == 1 and not files else None
         if total is not None:
             result[declared] = total
     if not result:
