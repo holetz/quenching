@@ -14,6 +14,7 @@ from quenching.specs.parse.edit import upsert_section
 from quenching.specs.parse.edit import nested_heading
 from quenching.specs.parse.epics import is_epic
 from quenching.specs.parse.fields import SCALAR_LINE_BREAKS, scalar_break
+from quenching.specs.parse.text import split_lines
 from quenching.specs.parse.tasks import (BLOCKED_REASON_RE, CHECKBOX_RE, COMMIT_SHA_RE,
                                          SUBJECT_RE)
 
@@ -215,7 +216,7 @@ def cmd_task(args, root: str, out: Emitter) -> int:
         return _refuse(args, out, "sp-unknown-task", f"no task '{ident}' in {info['id']}",
                        f"error: no task '{ident}' in {info['id']}", task=ident)
 
-    lines = info["text"].splitlines(keepends=True)
+    lines = split_lines(info["text"], keepends=True)
     m = CHECKBOX_RE.match(lines[t["lineno"]].rstrip("\n"))
     if not m:
         return _refuse(args, out, "sp-line-drift",

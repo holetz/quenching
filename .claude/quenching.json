@@ -30,7 +30,16 @@
         "security",
         "git"
       ]
-    }
+    },
+    "regenerablePaths": [
+      ".venv",
+      ".cache",
+      ".ruff_cache",
+      "__pycache__",
+      "site",
+      "site-source",
+      ".quenching/coverage"
+    ]
   },
   "proof": {
     "proofRoot": "plugins",
