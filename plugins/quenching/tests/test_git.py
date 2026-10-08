@@ -340,6 +340,42 @@ class Audit(RepoCase):
         self.assertFalse(os.path.exists(marker))
         self.assertIn(" M b.txt", payload["status"])
 
+    def test_log_does_not_run_a_configured_gpg_program(self):
+        marker = os.path.join(self.tmp, "PWNED_gpg")
+        prog = os.path.join(self.tmp, "evilgpg.sh")
+        pathlib.Path(prog).write_text(f"#!/bin/sh\ntouch {marker}\ncat\n", encoding="utf-8")
+        os.chmod(prog, 0o755)
+        tree = subprocess.run(["git", "rev-parse", "HEAD^{tree}"], cwd=self.wt, check=True,
+                              capture_output=True, text=True).stdout.strip()
+        raw = (f"tree {tree}\nparent {self.sha}\nauthor T <t@e> 1 +0000\ncommitter T <t@e> 1 +0000\n"
+               "gpgsig -----BEGIN PGP SIGNATURE-----\n \n x\n -----END PGP SIGNATURE-----\n\nsigned\n")
+        signed = subprocess.run(["git", "hash-object", "-t", "commit", "-w", "--stdin"], cwd=self.wt,
+                                input=raw, check=True, capture_output=True, text=True).stdout.strip()
+        _run(self.wt, "update-ref", "refs/heads/spec/1", signed)
+        _run(self.repo, "config", "gpg.program", prog)
+        _run(self.repo, "config", "log.showSignature", "true")
+        payload = _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main",
+                           "--branch", "spec/1")
+        self.assertFalse(os.path.exists(marker))
+        self.assertEqual(len(payload["commits"]), 2)
+
+    def test_status_does_not_descend_into_a_submodule_filter(self):
+        marker = os.path.join(self.tmp, "PWNED_subfilter")
+        sub = _init_repo(os.path.join(self.tmp, "subsrc"))
+        _run(self.wt, "-c", "protocol.file.allow=always", "submodule", "add", "-q", sub, "sm")
+        _run(self.wt, "commit", "-q", "-m", "sub")
+        smdir = os.path.join(self.wt, "sm")
+        pathlib.Path(smdir, ".gitattributes").write_text("*.txt filter=evil\n", encoding="utf-8")
+        pathlib.Path(smdir, "a.txt").write_text("x\n", encoding="utf-8")
+        _run(smdir, "config", "user.email", "test@example.com")
+        _run(smdir, "config", "user.name", "Test")
+        _run(smdir, "add", ".gitattributes", "a.txt")
+        _run(smdir, "commit", "-q", "-m", "inner")
+        _run(smdir, "config", "filter.evil.clean", f"touch {marker}; cat")
+        pathlib.Path(smdir, "a.txt").write_text("y\n", encoding="utf-8")
+        _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main", "--branch", "spec/1")
+        self.assertFalse(os.path.exists(marker))
+
     def test_unregistered_worktree_is_refused(self):
         other = _init_repo(os.path.join(self.tmp, "other"))
         proc = self._audit("--worktree", other, "--base", "main", "--branch", "main")
@@ -1262,10 +1298,16 @@ import json, os, sys
 log = os.environ["FAKE_GH_LOG"]
 with open(log, "a", encoding="utf-8") as f:
     f.write(json.dumps({"argv": sys.argv[1:], "stdin": "" if sys.stdin.isatty() else sys.stdin.read()}) + "\\n")
+if sys.argv[1:3] == ["pr", "checks"] and "--required" in sys.argv:
+    sys.stdout.write(os.environ.get("FAKE_GH_REQUIRED", "[]"))
+    sys.exit(0)
 if sys.argv[1:3] == ["pr", "checks"]:
     sys.stdout.write(os.environ.get("FAKE_GH_CHECKS", "[]"))
     sys.stderr.write(os.environ.get("FAKE_GH_CHECKS_ERR", ""))
     sys.exit(int(os.environ.get("FAKE_GH_CHECKS_RC", "0")))
+if sys.argv[1:3] == ["pr", "view"]:
+    sys.stdout.write(os.environ.get("FAKE_GH_VIEW", '{"headRefOid":"abc123","mergeStateStatus":"CLEAN"}'))
+    sys.exit(0)
 if sys.argv[1:3] == ["pr", "create"]:
     print("https://github.com/o/r/pull/42")
 sys.exit(0)
@@ -1293,9 +1335,10 @@ class PullRequestVerbs(RepoCase):
             return []
         return [json.loads(line) for line in self.log.read_text(encoding="utf-8").splitlines()]
 
-    def _merge(self, checks: str, rc: str = "0", err: str = "") -> subprocess.CompletedProcess:
+    def _merge(self, checks: str, rc: str = "0", err: str = "",
+               **extra: str) -> subprocess.CompletedProcess:
         env = {**self.env, "FAKE_GH_CHECKS": checks, "FAKE_GH_CHECKS_RC": rc,
-               "FAKE_GH_CHECKS_ERR": err}
+               "FAKE_GH_CHECKS_ERR": err, **extra}
         return _cq(self.repo, "pr", "merge", "--url", self.URL, env=env)
 
     def _merge_calls(self) -> list[list[str]]:
@@ -1304,7 +1347,25 @@ class PullRequestVerbs(RepoCase):
     def test_all_green_merges_with_merge_only(self):
         proc = self._merge('[{"name":"gate","bucket":"pass"},{"name":"x","bucket":"skipping"}]')
         self.assertEqual(proc.returncode, 0, proc.stdout)
-        self.assertEqual(self._merge_calls(), [["pr", "merge", self.URL, "--merge"]])
+        self.assertEqual(self._merge_calls(),
+                         [["pr", "merge", self.URL, "--merge", "--match-head-commit=abc123"]])
+
+    def test_a_required_skipping_check_is_not_green(self):
+        checks = '[{"name":"gate","bucket":"pass"},{"name":"x","bucket":"skipping"}]'
+        proc = self._merge(checks, FAKE_GH_REQUIRED='[{"name":"x"}]')
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        payload = json.loads(proc.stdout)
+        self.assertEqual((payload["reason"], payload["notGreen"]), ("skipped-required", ["x"]))
+        self.assertEqual(self._merge_calls(), [])
+
+    def test_a_moved_or_unclean_pull_request_is_not_merged(self):
+        checks = '[{"name":"gate","bucket":"pass"}]'
+        for view in ('{"headRefOid":"abc123","mergeStateStatus":"BEHIND"}',
+                     '{"headRefOid":"abc123","mergeStateStatus":"BLOCKED"}', "not json"):
+            proc = self._merge(checks, FAKE_GH_VIEW=view)
+            self.assertEqual(proc.returncode, 1, (view, proc.stdout))
+            self.assertEqual(json.loads(proc.stdout)["reason"], "merge-state")
+        self.assertEqual(self._merge_calls(), [])
 
     def test_red_pending_or_absent_checks_never_merge(self):
         cases = (('[{"name":"gate","bucket":"fail"}]', "1", "", "failed"),
@@ -1331,12 +1392,15 @@ class PullRequestVerbs(RepoCase):
                         ("green", [{"name": "gate", "bucket": "pass"}], "")])
         with mock.patch.object(pull, "_checks", side_effect=lambda url: next(answers)), \
                 mock.patch.object(pull, "_gh", return_value=(0, "", "")) as gh, \
+                mock.patch.object(pull, "_view", return_value=("abc", "CLEAN")), \
+                contextlib.redirect_stderr(io.StringIO()) as err, \
                 mock.patch.object(pull.time, "sleep") as sleep, \
                 contextlib.redirect_stdout(io.StringIO()):
             code = pull.cmd_pr(SimpleNamespace(action="merge", url=self.URL, wait=60, json=True))
         self.assertEqual(code, 0)
+        self.assertIn("pending", err.getvalue())
+        gh.assert_called_with("pr", "merge", self.URL, "--merge", "--match-head-commit=abc")
         sleep.assert_called_once_with(pull.POLL_S)
-        gh.assert_called_once_with("pr", "merge", self.URL, "--merge")
 
     def test_create_names_base_and_head_and_sends_the_body_on_stdin(self):
         payload = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/1-x",
