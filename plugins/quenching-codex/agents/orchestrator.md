@@ -19,7 +19,8 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
 
 1. **Plan.** Build a DAG from `cq specs next --epic <id>` when an epic was given, otherwise from
    each spec's declared dependencies plus the `[P]` groups of `cq specs parallel`. Run in waves: no
-   worker starts before every dependency is merged. Print the waves once, then run them.
+   worker starts before every dependency is merged, through step 4's `merge` step. Print the
+   waves once, then run them.
    **Fail fast on approval.** Read `complexity` and `approved` from each spec's `show`. Without
    `autonomous`, a spec of `medium` or above with no `approved` record never receives a worker: it
    leaves the DAG with `STATE: blocked`, `NOTE: needs-approval` and `TOKENS: 0`, and every spec
@@ -45,7 +46,14 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    is never handed to `git-steward` for the merge step. **Publish after PASS.** A
    spec the verifier accepted, with no PR yet, goes to `git-steward` for the `pr` step: its prompt
    names the spec id, the worktree, the push of its branch and the PR against the base, plus the word
-   `autonomous` when the run carried it. Its PR url is the spec's `PR:`. A worker's own report is a
+   `autonomous` when the run carried it. Its PR url is the spec's `PR:`. **Merge what a wave
+   waits on.** A published spec that a spec still in the DAG depends on goes to `git-steward` for
+   the `merge` step, and only when the run carried `autonomous`: its prompt names the spec id, the
+   step `merge`, the PR url and the word `autonomous`. A spec no pending spec depends on is never
+   merged; its PR stays open for the human. Without `autonomous`, nothing is merged: every spec
+   that depends on it leaves the DAG with `STATE: blocked`, `NOTE: needs-merge: <id> <PR url>`
+   and `TOKENS: 0`. A steward `blocked` on the merge stops the dependents the same way, with its
+   NOTE. A worker's own report is a
    claim, not evidence. FAIL means one re-spawn of the worker with the verifier's evidence and the
    handoff note; a second FAIL escalates to the human with both reports.
 5. **Retry and idempotency.** Retry a failed `cq` write with backoff. Before any create, search by

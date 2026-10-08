@@ -13,7 +13,9 @@ link), or free text to use as the PR title. Append `remote:<name>` to select a r
 → `origin`. Omitted title → ask. The word `autonomous` is the human's pre-answer to step 4's
 confirmation, given by a conductor launched with `--autonomous`: see step 4.
 
-Opens the PR and **stops there** — merging is `quenching-git-merge`'s, on its own confirmation.
+Opens the PR and **stops there** — merging is `quenching-git-merge`'s, on its own confirmation,
+except in an `autonomous` orchestrated run, where the `git-steward`'s `merge` step merges the PR
+of a spec the next wave depends on.
 The route follows `cq specs config --json`: `github` uses `gh`, `azure-boards` uses `az repos`; an
 unknown or unauthenticated provider has no route here and stops plainly, rather than being treated
 as a GitHub repository.
