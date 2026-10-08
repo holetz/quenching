@@ -74,7 +74,9 @@ def _required_skipped(url: str, checks: list[dict]) -> set[str]:
     """Names of the `skipping` checks the gate requires; when gh cannot list the required
     checks, every skipping check counts as required."""
     skipping = {c.get("name") for c in checks if c.get("bucket") == "skipping"}
-    code, out, _ = _gh("pr", "checks", url, "--required", "--json", "name")
+    code, out, err = _gh("pr", "checks", url, "--required", "--json", "name")
+    if code == 1 and "no required checks reported" in err.lower():
+        return set()
     try:
         required = ({c.get("name") for c in json.loads(out)}
                     if code in (0, 8) and out.strip() else None)
