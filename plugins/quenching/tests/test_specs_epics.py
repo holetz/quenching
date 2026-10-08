@@ -171,7 +171,7 @@ class Scenarios:
             return run(read_cmd.cmd_status, self.backend, epic=EPIC_ID, spec=None)[1]
 
     def test_an_archived_member_whose_pr_is_open_is_unmerged_and_holds_its_dependents(self):
-        b = self.diamond()
+        self.diamond()
         states = self.archive_with_pr(2, "OPEN")
         got = self.status_with(states)
         by = {i["label"]: i["status"] for i in got["items"]}
