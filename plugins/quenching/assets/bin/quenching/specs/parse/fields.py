@@ -47,6 +47,45 @@ def set_frontmatter_key(text: str, key: str, value: str,
     return "".join(lines)
 
 
+_PLAIN_BAD_START = set("-?:,[]{}#&*!|>'\"%@`")
+
+
+def yaml_title_scalar(text: str) -> str:
+    """`text` as a frontmatter scalar `parse_frontmatter` reads back unchanged.
+
+    Plain when a YAML reader would return it as written — the shape `new` has always stamped,
+    which the hybrid backend's title projection matches byte for byte. Quoted otherwise: a
+    ` #` opens a comment, `: ` a mapping, a leading indicator a node, and a title with any of
+    them was read back truncated or lost."""
+    plain = (text == text.strip() and text != ""
+             and text[0] not in _PLAIN_BAD_START
+             and " #" not in text and "\t#" not in text
+             and ": " not in text and not text.endswith(":"))
+    if plain:
+        return text
+    if "'" not in text:
+        return f"'{text}'"
+    if '"' not in text and "\\" not in text:
+        return f'"{text}"'
+    return "'" + text.replace("'", "''") + "'"
+
+
+def set_frontmatter_title(text: str, title: str) -> str:
+    """Set `title:` in the first key's place and drop every later `title:` line of the block."""
+    out = set_frontmatter_key(text, "title", yaml_title_scalar(title))
+    lines = out.splitlines(keepends=True)
+    close = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), len(lines))
+    seen = False
+    kept = []
+    for i, line in enumerate(lines):
+        if 0 < i < close and line.split(":", 1)[0].strip() == "title" and not line[:1].isspace():
+            if seen:
+                continue
+            seen = True
+        kept.append(line)
+    return "".join(kept)
+
+
 def strip_frontmatter_keys(text: str, keys: tuple[str, ...]) -> str:
     """`text` with each of `keys`' own frontmatter line removed — the WRITE half of
     `## Design` §Stored is not projected for `tags`/`assignee`/`start`/`target`: the
