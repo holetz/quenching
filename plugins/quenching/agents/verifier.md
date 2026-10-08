@@ -42,7 +42,7 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    `switch` entry after the branch was created.
    The one `reset: moving to HEAD` line that creating the worktree writes in its HEAD
    reflog before the first commit is the creation itself and is accepted; any other `reset` is FAIL.
-   The payload already omits a `reset` that left the ref on the same sha (what `git merge --abort`
+   The payload already omits a `reset` that left the ref on the same sha (what an aborted merge
    logs), so a `reset` still listed moved the history.
    A `rebase` is accepted only when the worker's NOTE says `/quenching:git:sync` ran. Quote the
    offending reflog line as evidence. Limit: discarding uncommitted files by path (checkout or restore) touches only
