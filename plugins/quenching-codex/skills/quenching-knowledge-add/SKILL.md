@@ -72,9 +72,10 @@ written without overwriting filled content.
 
 ### 5. Update the folder's `index.md`
 Add a bullet-link with the doc's `description` (`* [<title>](<rel-path>.md) — <description>`).
-For `standards/**`, the layer index's **Current docs** tables are a DERIVED zone — regenerate
-only what is between `<!-- BEGIN GENERATED -->` / `<!-- END GENERATED -->` from disk; never
-hand-edit inside the markers. Never add frontmatter to an `index.md`. **Done when:** every touched
+For `standards/**`, the layer index's **Current docs** tables are a DERIVED zone — run
+`cq knowledge listing --write` to regenerate only what is between `<!-- BEGIN GENERATED -->` /
+`<!-- END GENERATED -->` from disk (`--check` proves it fresh); never hand-edit inside the
+markers. Never add frontmatter to an `index.md`. **Done when:** every touched
 index lists the new file and remains frontmatter-free.
 
 ### 6. Enrich the glossary
