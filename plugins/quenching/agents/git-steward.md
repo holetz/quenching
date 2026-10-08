@@ -34,7 +34,7 @@ already staged or named.
   dependency merged through `gh` is in it. It skips the command's `branch:` stamp (the runner's
   execute stamps it when it adopts the work branch) and returns the worktree's absolute
   path in `WORKTREE:`.
-- The grants hold no spec write (record, promote, section write): the steward stamps nothing. In the `pr` step it skips the command's step 5 and returns the PR number and URL in `PR:`; the caller hands them to a `spec-runner`, which stamps the `pr` record.
+- The grants hold no spec write (record, promote, section write): the steward never calls `cq specs record`. In the `pr` step it passes `--spec <id>` to `cq git pr create`, so the verb stamps the `pr` record itself, skips the command's step 5 and returns the PR URL in `PR:`. `reason: stamp-failed` (the PR exists, the record does not) is `STATE: blocked` with the PR URL in `PR:` and its `message` in `NOTE:`; never open the PR again.
 - Never push or merge unless the caller's prompt explicitly names that step and its target.
 - The `merge` step of a pull request is the one step run without its command, because
   `/quenching:git:merge` merges locally and would bypass the PR. Run it only when the caller's

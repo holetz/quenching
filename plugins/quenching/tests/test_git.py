@@ -1489,6 +1489,71 @@ class PullRequestVerbs(RepoCase):
                                         "--body-file=-"])
         self.assertEqual(call["stdin"], "Closes #1")
 
+    def test_create_with_spec_stamps_the_pr_record_through_cmd_record(self):
+        from quenching.git import pull
+        seen = []
+
+        def record(ns, root, out):
+            seen.append((ns.spec, ns.name, list(ns.set)))
+            out.emit(True, {"ok": True, "value": {"number": 42}}, "")
+            return 0
+        args = SimpleNamespace(base="main", head="plan/1-x", title="t", body="Closes #1",
+                               spec="1", json=True)
+        with mock.patch.object(pull, "_gh",
+                               return_value=(0, self.URL + "\n", "")), \
+                mock.patch.object(pull, "cmd_record", side_effect=record), \
+                mock.patch.object(pull, "_branch_ok", return_value=True), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            code = pull.cmd_pr(SimpleNamespace(action="create", **vars(args)))
+        self.assertEqual(code, 0)
+        (spec, name, sets), = seen
+        self.assertEqual((spec, name), ("1", "pr"))
+        self.assertEqual(sets[:2], ["number=42", f"url={self.URL}"])
+        self.assertTrue(sets[2].startswith("date="))
+        self.assertEqual(json.loads(out.getvalue())["pr"], {"ok": True, "value": {"number": 42}})
+
+    def test_create_with_spec_writes_the_pr_record_a_real_store_reads_back(self):
+        # No mock of cmd_record: a fixture `git` store (branch `quenching` over a local bare
+        # origin), a fake `gh` on PATH, and the record read back through `cq specs record`.
+        origin = os.path.join(self.tmp, "origin.git")
+        subprocess.run(["git", "init", "-q", "--bare", origin], check=True)
+        _run(self.repo, "remote", "add", "origin", origin)
+        os.makedirs(os.path.join(self.repo, ".claude"))
+        pathlib.Path(self.repo, ".claude", "quenching.json").write_text(
+            '{"backend": "git"}', encoding="utf-8")
+        specs = [sys.executable, CQ, "specs", "--root", self.repo]
+        made = subprocess.run([*specs, "new", "fixture", "--json"], cwd=self.repo,
+                              capture_output=True, text=True, env=self.env,
+                              stdin=subprocess.DEVNULL, timeout=60)
+        self.assertEqual(made.returncode, 0, made.stdout + made.stderr)
+        spec = str(json.loads(made.stdout)["id"])
+        proc = _cq(self.repo, "pr", "create", "--base", "main", "--head", "plan/1-x",
+                   "--title", "t", "--body", "Closes #1", "--spec", spec, env=self.env)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertTrue(json.loads(proc.stdout)["pr"]["ok"], proc.stdout)
+        read = subprocess.run([*specs, "record", spec, "pr", "--json"], cwd=self.repo,
+                              capture_output=True, text=True, env=self.env,
+                              stdin=subprocess.DEVNULL, timeout=60)
+        self.assertEqual(read.returncode, 0, read.stdout + read.stderr)
+        value = json.loads(read.stdout)["value"]
+        self.assertEqual((str(value["number"]), value["url"]), ("42", self.URL))
+
+    def test_a_refused_stamp_keeps_the_pr_facts_and_exits_1(self):
+        from quenching.git import pull
+
+        def record(ns, root, out):
+            out.emit(True, {"ok": False, "message": "refused"}, "")
+            return 2
+        with mock.patch.object(pull, "_gh", return_value=(0, self.URL + "\n", "")), \
+                mock.patch.object(pull, "cmd_record", side_effect=record), \
+                mock.patch.object(pull, "_branch_ok", return_value=True), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            code = pull.cmd_pr(SimpleNamespace(action="create", base="main", head="x", title="t",
+                                               body="", spec="1", json=True))
+        payload = json.loads(out.getvalue())
+        self.assertEqual((code, payload["number"], payload["reason"], payload["message"]),
+                         (1, 42, "stamp-failed", "refused"))
+
     def test_create_refuses_option_shaped_branches(self):
         for argv in (("--base=-d", "--head", "plan/1-x"), ("--base", "main", "--head=--web")):
             proc = _cq(self.repo, "pr", "create", *argv, "--title", "t", env=self.env)
