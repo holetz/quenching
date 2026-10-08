@@ -321,6 +321,24 @@ def _agent_disallowed_bash_findings(disallowed: str, where: dict) -> list[dict]:
     return out
 
 
+def _agent_skill_findings(tools: str, where: dict) -> list[dict]:
+    """`Skill` reaches every model-invocable skill, whose `allowed-tools` widen the agent that runs
+    it, and `Skill(<name>)` in `tools:` restricts nothing (measured, Codex 2.1.294): an agent
+    without unrestricted `Bash` holds a fence that `Skill` breaks (spec 1365)."""
+    granted = _split_tools(tools)
+    if "Bash" in granted:
+        return []
+    out = []
+    for tool in granted:
+        if tool == "Skill" or tool.startswith("Skill("):
+            remedy = "drop it: read the command body and follow it with the agent's own `tools:`"
+            out.append(finding("sk-agent-skill-widens", "error",
+                               f"`tools: {tool}` lets any skill's `allowed-tools` widen the "
+                               "agent's fenced grant — " + remedy, tool=tool, remedy=remedy,
+                               **where))
+    return out
+
+
 def lint_agents(root: str, base: str) -> list[dict]:
     out: list[dict] = []
     for filename, fm in agent_definitions(root):
@@ -330,6 +348,7 @@ def lint_agents(root: str, base: str) -> list[dict]:
         out.extend(_cq_call_findings(body, where))
         out.extend(_agent_disallowed_bash_findings(str(fm.get("disallowedTools", "")), where))
         if "tools" in fm:
+            out.extend(_agent_skill_findings(str(fm["tools"]), where))
             out.extend(_agent_grant_findings(body, str(fm["tools"]), where))
     return out
 
