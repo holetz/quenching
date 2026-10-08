@@ -1,7 +1,7 @@
 """The specs pillar's output layer and its single resolution entry point."""
 from __future__ import annotations
 
-from quenching.common.config import load_config
+from quenching.specs.config import load_config
 from quenching.common.output import emit as _emit
 from quenching.specs.backends.base import SpecBackend
 
@@ -21,8 +21,11 @@ def front_fields(root: str) -> dict:
     `null` rather than the empty string, and rather than the declared path: an empty string
     makes every consumer invent its own vacuity test, and the declared path is the lie itself.
     `None` is the one value nobody can mistake for a directory."""
+    # The specs loader, not the common one: only it reads the `git` store from the config.
+    # `backend` is the store opened (`git` for the branch store); `provider` is only the host
+    # the remote points at, so it is the fallback, never the answer.
     cfg = load_config(root)
-    return {"backend": cfg.get("provider") or cfg.get("backend"), "root": None}
+    return {"backend": cfg.get("backend") or cfg.get("provider"), "root": None}
 
 
 def display_locator(locator: str, root: str) -> str:

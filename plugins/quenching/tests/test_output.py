@@ -257,5 +257,34 @@ class TopDoctor(unittest.TestCase):
         self.assertEqual("", err.getvalue())
 
 
+class FrontFields(unittest.TestCase):
+    """The payload names the backend opened, not the host provider (spec 1297)."""
+
+    def _fields(self, cfg):
+        from quenching.specs.commands.output import front_fields
+        with mock.patch("quenching.specs.commands.output.load_config", return_value=cfg):
+            return front_fields("/unused")
+
+    def test_git_store_is_not_labelled_with_the_host_provider(self):
+        self.assertEqual({"backend": "git", "root": None},
+                         self._fields({"backend": "git", "provider": "github"}))
+
+    def test_external_store_keeps_its_name(self):
+        self.assertEqual("github", self._fields({"backend": "github", "provider": "github"})["backend"])
+
+    def test_falls_back_to_provider_when_backend_is_absent(self):
+        self.assertEqual("github", self._fields({"provider": "github"})["backend"])
+
+    def test_reads_the_git_store_from_the_real_config(self):
+        from quenching.specs.commands.output import front_fields
+        with tempfile.TemporaryDirectory() as raw:
+            os.makedirs(os.path.join(raw, ".claude"))
+            with open(os.path.join(raw, ".claude", "quenching.json"), "w", encoding="utf-8") as fh:
+                json.dump({"backend": "git"}, fh)
+            with mock.patch("quenching.specs.config.detect_provider",
+                            return_value=("github", "github.com")):
+                self.assertEqual("git", front_fields(raw)["backend"])
+
+
 if __name__ == "__main__":
     unittest.main()
