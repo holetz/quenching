@@ -256,7 +256,7 @@ def validate_generated_listing(bundle_root: str, corpus: dict) -> list[tuple[str
             rel = os.path.relpath(ap, root).replace(os.sep, "/")
             findings.append(("WARN", GENERATED_LISTING_REL, "generated-listing-missing",
                              f"`{rel}` is on disk but no row inside the GENERATED zone links it "
-                             "(regenerate the zone)"))
+                             "(run `cq knowledge listing --write`)"))
 
     for ap, cell in sorted(listed.items()):
         doc = corpus.get(ap)
@@ -269,5 +269,96 @@ def validate_generated_listing(bundle_root: str, corpus: dict) -> list[tuple[str
             rel = os.path.relpath(ap, root).replace(os.sep, "/")
             findings.append(("WARN", GENERATED_LISTING_REL, "generated-listing-drift",
                              f"the row for `{rel}` no longer matches that doc's frontmatter "
-                             "`description` (regenerate the zone)"))
+                             "`description` (run `cq knowledge listing --write`)"))
     return findings
+
+
+_ROW_CELL_RE = re.compile(r"^(\|[^|\n]*\[[^\]]*\]\(([^)\n]+)\)[^|\n]*\|)([^|\n]*)\|?\s*$")
+
+
+def _listed_docs(subject_root: str, root: str) -> dict[str, str]:
+    """Every doc the zone is owed a row for -> its squashed frontmatter `description`."""
+    docs: dict[str, str] = {}
+    for dirpath, _dirs, files in os.walk(subject_root):
+        for fn in files:
+            if not fn.endswith(".md") or fn in RESERVED or fn in EXEMPT or fn == "README.md":
+                continue
+            ap = os.path.join(dirpath, fn)
+            with open(ap, encoding="utf-8") as fh:
+                docs[os.path.normpath(ap)] = _squash_ws(
+                    str(parse_frontmatter(fh.read()).get("description") or ""))
+    return docs
+
+
+def regenerate_listing(bundle_root: str, write: bool = False) -> dict:
+    """Rebuild the rows of the GENERATED zone of `standards/index.md` from the docs on disk.
+
+    Existing rows keep their order and subfolder headings: a stale description is rewritten, a row
+    whose doc is gone is dropped, a doc no row links is appended to its `### <subfolder>/` table
+    (the section is created when absent). Prose outside the zone is never touched. Raises
+    `ValueError` when the listing or its zone is absent — a zone is never invented.
+    """
+    root = os.path.abspath(bundle_root)
+    listing = os.path.join(root, *GENERATED_LISTING_REL.split("/"))
+    if not os.path.isfile(listing):
+        raise ValueError(f"{GENERATED_LISTING_REL} is absent")
+    with open(listing, encoding="utf-8") as fh:
+        text = fh.read()
+    zone = GENERATED_ZONE_RE.search(text)
+    if zone is None:
+        raise ValueError(f"{GENERATED_LISTING_REL} carries no BEGIN/END GENERATED zone")
+
+    subject_root = os.path.dirname(listing)
+    docs = _listed_docs(subject_root, root)
+    lines = zone.group("zone").split("\n")
+    out: list[str] = []
+    seen: set[str] = set()
+    last_row: dict[str, int] = {}          # heading -> index in `out` of its last row
+    heading = ""
+    updated: list[str] = []
+    removed: list[str] = []
+    for line in lines:
+        if line.startswith("### "):
+            heading = line[4:].strip()
+        m = _ROW_CELL_RE.match(line)
+        if m is None:
+            out.append(line)
+            continue
+        target = os.path.normpath(os.path.join(subject_root, m.group(2).strip()))
+        if target not in docs:
+            removed.append(m.group(2).strip())
+            continue
+        seen.add(target)
+        desc = docs[target]
+        if desc and _squash_ws(m.group(3)) != desc:
+            line = f"{m.group(1)} {desc} |"
+            updated.append(m.group(2).strip())
+        out.append(line)
+        last_row[heading] = len(out) - 1
+
+    added: list[str] = []
+    for target in sorted(docs):
+        if target in seen:
+            continue
+        rel = os.path.relpath(target, subject_root).replace(os.sep, "/")
+        sub = rel.rsplit("/", 1)[0] + "/" if "/" in rel else "./"
+        row = f"| [{os.path.basename(rel)}]({rel}) | {docs[target]} |"
+        if sub in last_row:
+            idx = last_row[sub] + 1
+            out.insert(idx, row)
+            last_row = {h: (i + 1 if i >= idx else i) for h, i in last_row.items()}
+            last_row[sub] = idx
+        else:
+            while out and out[-1].strip() == "":
+                out.pop()
+            out += ["", f"### {sub}", "", "| Doc | Covers |", "| --- | --- |", row, ""]
+            last_row[sub] = len(out) - 2
+        added.append(rel)
+
+    new_text = text[:zone.start("zone")] + "\n".join(out) + text[zone.end("zone"):]
+    changed = new_text != text
+    if write and changed:
+        with open(listing, "w", encoding="utf-8") as fh:
+            fh.write(new_text)
+    return {"path": GENERATED_LISTING_REL, "changed": changed, "written": bool(write and changed),
+            "added": added, "updated": updated, "removed": removed}
