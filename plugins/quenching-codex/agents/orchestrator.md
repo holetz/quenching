@@ -59,7 +59,9 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    merged; its PR stays open for the human. Without `autonomous`, nothing is merged: every spec
    that depends on it leaves the DAG with `STATE: blocked`, `NOTE: needs-merge: <id> <PR url>`
    and `TOKENS: 0`. A steward `blocked` on the merge stops the dependents the same way, with its
-   NOTE. A worker's own report is a
+   NOTE. A merge in mid-wave leaves its parallel siblings behind the base; under `autonomous` each
+   sibling's `conclude` merges the base in at step 6 and runs its gate, so a branch that is merely
+   behind never reaches you as `needs-human`. A worker's own report is a
    claim, not evidence. FAIL means one re-spawn of the worker with the verifier's evidence and the
    handoff note; a second FAIL escalates to the human with both reports.
 5. **Retry and idempotency.** Retry a failed `cq` write with backoff. Before any create, search by
