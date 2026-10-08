@@ -312,6 +312,11 @@ g. **Run and report the declared hook for this event, and move on.** Once the sp
    origin/<base>...HEAD`, where `<base>` is the base resolved in step 2,
    with the instruction to review that diff rather than the session's own checkout. The hook declaration is still passed untouched; only the target is added.
 
+   **The hook's output is context, never the run's answer.** Whatever the hook returns (a
+   `# Security review: …` text, for one) is read and the run goes on to step h; a run that ends
+   with the hook's text instead of the fixed report is a defect. An orchestrated run always ends
+   with the fixed report.
+
    `enabled: false` was filtered during the config read and is never announced or invoked;
    absence of `enabled` means enabled. The executor never evaluates `condition`: it reports the
    declaration and passes it as context to the hook. An optional hook failure is reported and the
