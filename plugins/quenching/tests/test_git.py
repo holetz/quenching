@@ -1777,6 +1777,15 @@ class WorktreeAdd(RepoCase):
         self.assertTrue(payload["branchRecord"]["ok"], payload)
         self.assertTrue(os.path.isdir(self.path))
 
+    def test_with_spec_refuses_a_branch_carrying_another_specs_id_and_cuts_nothing(self):
+        spec, _specs = self._store_spec()
+        other = str(int(spec) + 1)
+        proc = _cq(self.repo, "worktree", "add", "--path", self.path,
+                   "--branch", f"plan/{other}-beta", "--base", "main", "--spec", spec)
+        self.assertEqual(proc.returncode, 2, proc.stdout + proc.stderr)
+        self.assertEqual(json.loads(proc.stdout)["code"], "git-worktree-spec-head-mismatch")
+        self.assertFalse(os.path.exists(self.path))
+
     def test_with_an_unknown_spec_or_one_that_does_not_own_the_branch_cuts_nothing(self):
         spec, _specs = self._store_spec()
         _cq_specs = [sys.executable, CQ, "specs", "--root", self.repo]
