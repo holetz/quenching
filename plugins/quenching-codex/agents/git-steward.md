@@ -37,8 +37,7 @@ your `tools:` does not grant is `STATE: blocked`, never worked around.
   --full`: `cq specs section` carries `--write`, so it is not granted. A prompt that names no worktree for a `pr` step is `STATE: blocked`.
 - The `branch` step runs `quenching-git-branch "<id>"` (plus `autonomous`, per the rule above)
   from the base checkout; under `autonomous` it takes a worktree cut from `origin/<base>`, so a
-  dependency merged through `gh` is in it. It skips the command's `branch:` stamp (the runner's
-  execute stamps it when it adopts the work branch) and returns the worktree's absolute
+  dependency merged through `gh` is in it. The command's `cq git worktree add --spec <id>` stamps the `branch:` record itself; the step returns the worktree's absolute
   path in `WORKTREE:`.
 - The grants hold no spec write (record, promote, section write): the steward never calls `cq specs record`. In the `pr` step it passes `--spec <id>` to `cq git pr create`, on GitHub and on Azure alike, and the verb stamps the `pr` record itself and the PR URL goes in `PR:`. `reason: stamp-failed` (the PR exists, the record does not) is `STATE: blocked` with the PR URL in `PR:` and its `message` in `NOTE:`; never open the PR again.
 - Never push or merge unless the caller's prompt explicitly names that step and its target.
