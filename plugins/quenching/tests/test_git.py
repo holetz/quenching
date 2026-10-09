@@ -764,6 +764,11 @@ class VerifierGrants(unittest.TestCase):
             self.assertNotIn("*", grant.removesuffix(":*"), grant)
             self.assertFalse(grant.startswith(("git ", "bash ")), grant)
 
+    def test_check_9_cites_the_surfaces_the_grants_audit_covers(self):
+        text = " ".join((PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8").split())
+        for surface in (".claude-plugin/*.json", ".mcp.json", ".lsp.json", "(symlink)"):
+            self.assertIn(surface, text)
+
 class OrchestratorGrants(unittest.TestCase):
     """The `orchestrator` reads the wave audit through `cq git state`, never a raw `git status`
     or `git stash list` grant: those admit the config's filter drivers and `--output`."""
