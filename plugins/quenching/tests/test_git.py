@@ -453,6 +453,32 @@ class Audit(RepoCase):
         self._commit_file(agent, "---\nname: a\ntools: Bash\n---\nbody\n", "agent")
         self.assertEqual(self._grants(), [{"path": agent, "kind": "tools", "added": ["Bash"]}])
 
+    def test_grants_read_agents_and_commands_under_any_plugin_root_a_manifest_declares(self):
+        for root in ("external_plugins/rev", "plugins/group/inner", "tools/my-plugin"):
+            self._commit_file(f"{root}/.claude-plugin/plugin.json", '{"name": "x"}\n', root)
+        reviewer, inner = "external_plugins/rev/agents/reviewer.md", "plugins/group/inner/agents/inner.md"
+        deploy, standard = "tools/my-plugin/commands/deploy.md", "tools/my-plugin/standards/agents/s.md"
+        for path in (reviewer, inner):
+            self._commit_file(path, "---\nname: r\n---\nbody\n", path)
+        self._commit_file(deploy, "---\nallowed-tools: Bash\n---\nbody\n", deploy)
+        self._commit_file(standard, "---\ntitle: x\ntype: standard\n---\nbody\n", standard)
+        got = {(g["path"], g["kind"]): g["added"] for g in self._grants() if g["kind"] == "tools"}
+        self.assertEqual(got, {(reviewer, "tools"): ["*"], (inner, "tools"): ["*"],
+                               (deploy, "tools"): ["Bash"]})
+
+    def test_grants_read_a_marketplace_source_and_the_component_paths_a_manifest_names(self):
+        self._commit_file(".claude-plugin/marketplace.json",
+                          '{"name": "m", "metadata": {"pluginRoot": "./vendor"}, "plugins": ['
+                          '{"name": "a", "source": "./a", "commands": ["./extra/run.md"]}]}\n', "market")
+        self._commit_file("tools/q/.claude-plugin/plugin.json",
+                          '{"name": "q", "agents": "./custom/reviewer.md", "skills": ["./more"]}\n', "q")
+        agent, extra, custom, skill = ("vendor/a/agents/x.md", "vendor/a/extra/run.md",
+                                       "tools/q/custom/reviewer.md", "tools/q/more/s/SKILL.md")
+        for path in (agent, extra, custom, skill):
+            self._commit_file(path, "---\ntools: Bash\n---\n", path)
+        got = {g["path"]: g["added"] for g in self._grants() if g["kind"] == "tools"}
+        self.assertEqual(got, {agent: ["Bash"], extra: ["Bash"], custom: ["Bash"], skill: ["Bash"]})
+
     def test_grants_fail_closed_on_any_added_or_repointed_symlink(self):
         target = pathlib.Path(self.wt, "notes")
         target.mkdir()
