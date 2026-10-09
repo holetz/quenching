@@ -413,7 +413,8 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
     `_plugin_roots` derives. What it does not
     understand fails closed as `kind: unknown`: any other frontmatter key added, removed or changed
     (its name), a line removed or rewritten in any of those surfaces — settings, hook, CI workflow,
-    manifest or server config (`(removed or rewritten lines)`), a changed block it cannot read whole (`(unparsed frontmatter)`), and a sensitive
+    manifest or server config (`(removed or rewritten lines)`), a surface path changed with no
+    `+`/`-` line read (`(no line read)`), a changed block it cannot read whole (`(unparsed frontmatter)`), and a sensitive
     file deleted (`(deleted)`), and every symlink the branch adds or repoints, at any path
     (`(symlink)`), its target never read. Unchanged never appears, nor a narrowing that removes no surface line."""
     code, out, err = _git_run(cwd, *SAFE, "merge-base", base, tip, env=env)
@@ -477,16 +478,20 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
                 if removed:
                     found.append({"path": path, "kind": kind, "added": removed})
         if surface:
-            code, out, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "-U0",
-                                      "--no-renames", f"{base}...{tip}", "--", path, env=env)
+            # `--text`: a `-diff`/`binary` attribute (the base's or the branch's) would print no line
+            code, out, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "--text",
+                                      "-U0", "--no-renames", f"{base}...{tip}", "--", path, env=env)
             if code != 0:
                 errors.append(_error(("diff", "-U0"), code, err))
                 continue
-            added = [ln[1:].strip() for ln in out.splitlines()
-                     if ln.startswith("+") and not ln.startswith("+++") and ln[1:].strip()]
-            if any(ln.startswith("-") and not ln.startswith(("--- a/", "--- /dev/null"))
-                   for ln in out.splitlines()):
+            plus = [ln for ln in out.splitlines() if ln.startswith("+") and not ln.startswith("+++")]
+            added = [ln[1:].strip() for ln in plus if ln[1:].strip()]
+            removed = any(ln.startswith("-") and not ln.startswith(("--- a/", "--- /dev/null"))
+                          for ln in out.splitlines())
+            if removed:
                 found.append({"path": path, "kind": "unknown", "added": ["(removed or rewritten lines)"]})
+            elif not plus:   # changed, yet no line read: a mode flip, an empty file, a diff with no lines
+                found.append({"path": path, "kind": "unknown", "added": ["(no line read)"]})
             if added:
                 found.append({"path": path, "kind": "surface", "added": added})
     return found
