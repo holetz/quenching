@@ -158,8 +158,9 @@ def _inert_env(cwd: str, errors: list[dict] | None = None) -> dict[str, str]:
     return env
 
 
-FRONTMATTER_GRANT = re.compile(r"(^|/)(agents|commands)/.+\.md$|(^|/)skills/.+/skill\.md$", re.I)
-AGENT = re.compile(r"(^|/)agents/.+\.md$", re.I)
+LOADED_ROOT = r"^(?:(?:.*/)?\.claude/|(?:.*/)?plugins/[^/]+/)?"   # where Claude Code loads agents, commands and skills from
+FRONTMATTER_GRANT = re.compile(LOADED_ROOT + r"(?:(?:agents|commands)/.+\.md|skills/.+/skill\.md)$", re.I)
+AGENT = re.compile(LOADED_ROOT + r"agents/.+\.md$", re.I)
 SYMLINK = "120000"
 SETTINGS = re.compile(r"^\.claude/settings[^/]*\.json$")
 SURFACE = re.compile(r"^\.github/workflows/|^\.claude/settings[^/]*\.json$|(^|/)hooks/"
