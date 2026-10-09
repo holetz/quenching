@@ -428,6 +428,17 @@ class Audit(RepoCase):
         self._commit_file(skill, "---\nname: s\nallowed-tools: Bash\n---\n", "skill")
         self.assertEqual(self._grants(), [{"path": skill, "kind": "tools", "added": ["Bash"]}])
 
+    def test_grants_codex_mirror_reads_the_claude_and_agents_roots(self):
+        mirror = str(PLUGIN_ROOT.parent / "quenching-codex" / "scripts" / "bin" / "cq")
+        paths = (".claude/agents/a.md", ".claude/commands/c.md", ".claude/skills/s/SKILL.md",
+                 ".agents/skills/t/SKILL.md")
+        for rel in paths:
+            self._commit_file(rel, "---\nname: x\ntools: Bash\n---\n", rel)
+        out = subprocess.run([sys.executable, mirror, "git", "audit", "--worktree", self.wt,
+                              "--base", "main", "--branch", "spec/1", "--json"],
+                             cwd=self.repo, capture_output=True, text=True, check=True).stdout
+        self.assertEqual(sorted(g["path"] for g in json.loads(out)["grants"]), sorted(paths))
+
     def test_grants_read_a_frontmatter_behind_a_bom(self):
         agent = "plugins/p/agents/a.md"
         self._commit_file(agent, "\ufeff---\ntools: Bash\n---\nbody\n", "bom")
