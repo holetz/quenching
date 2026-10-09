@@ -288,6 +288,12 @@ KNOWN_KEYS = GRANT_KEYS + DENY_KEYS
 INERT_KEYS = ("name", "description", "argument-hint")   # grant, deny and change nothing: never `unknown`
 TOP_KEY = re.compile(r"^([A-Za-z_-]+):(?:\s+(.*))?$")
 LIST_ITEM = re.compile(r"^\s*-\s+")
+SCALAR_HEAD = re.compile(r"^[>|][+-]?[0-9]?\s*$")   # a folded (`>-`) or literal (`|`) scalar indicator
+
+
+def _scalar(body: list[str]) -> bool:
+    """Whether a key's value is a folded/literal scalar: the indicator alone on the key's line."""
+    return bool(SCALAR_HEAD.match((TOP_KEY.match(body[0]).group(2) or "").strip()))
 
 
 def _block(text: str | None) -> tuple[dict[str, list[str]], bool, tuple[str, ...]] | None:
@@ -311,6 +317,8 @@ def _block(text: str | None) -> tuple[dict[str, list[str]], bool, tuple[str, ...
             break
         raw.append(line)
         if not line.strip() or line.lstrip().startswith("#"):
+            if line.lstrip().startswith("#") and cur in keys and _scalar(keys[cur]):
+                ok = False   # inside a scalar a `#` line is content, which this reader would skip
             continue
         m = TOP_KEY.match(line)
         if m:
@@ -324,7 +332,10 @@ def _block(text: str | None) -> tuple[dict[str, list[str]], bool, tuple[str, ...
             ok = False
     for body in filter(None, map(keys.get, KNOWN_KEYS)):
         inline = (TOP_KEY.match(body[0]).group(2) or "").strip()
-        if body[1:] and (inline or not all(LIST_ITEM.match(ln) for ln in body[1:])):
+        if _scalar(body):
+            if not body[1:] or any(LIST_ITEM.match(ln) for ln in body[1:]):
+                ok = False
+        elif body[1:] and (inline or not all(LIST_ITEM.match(ln) for ln in body[1:])):
             ok = False
     return keys, ok, tuple(raw)
 
@@ -339,6 +350,9 @@ def _entries(keys: dict[str, list[str]], wanted: tuple[str, ...]) -> set[str] | 
         found = found or set()
         head, *items = keys[key]
         value = (TOP_KEY.match(head).group(2) or "").strip()
+        if _scalar(keys[key]):
+            found.update(_split_entries(" ".join(i.strip() for i in items)))
+            continue
         if value.startswith("[") and value.endswith("]"):
             value = value[1:-1]
         found.update(_split_entries(value))
