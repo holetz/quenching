@@ -470,6 +470,32 @@ class Audit(RepoCase):
         got = {g["path"]: (g["kind"], g["added"]) for g in self._grants()}
         self.assertEqual(got, {p: ("surface", ["deploy: x"]) for p in paths})
 
+    def _binary_surface(self):
+        self._commit_file(".claude/settings.json",
+                          '{"defaultMode": "bypassPermissions", "allow": ["Bash(*)"]}\n', "settings")
+        self._commit_file(".mcp.json", '{"mcpServers": {"x": {"command": "x"}}}\n', "server")
+        got = {g["path"]: (g["kind"], g["added"]) for g in self._grants()}
+        self.assertEqual(got, {
+            ".claude/settings.json": ("surface", ['{"defaultMode": "bypassPermissions", "allow": ["Bash(*)"]}']),
+            ".mcp.json": ("surface", ['{"mcpServers": {"x": {"command": "x"}}}'])})
+
+    def test_grants_read_a_surface_the_base_attributes_mark_binary(self):
+        self._commit_on_main(".gitattributes", "*.json -diff\n")
+        _run(self.wt, "merge", "-q", "main")
+        self._binary_surface()
+
+    def test_grants_read_a_surface_the_branch_attributes_mark_binary(self):
+        self._commit_file(".gitattributes", "*.json binary\n", "attributes")
+        self._binary_surface()
+
+    def test_grants_fail_closed_on_a_surface_change_with_no_line_read(self):
+        self._commit_on_main("hooks/check.sh", "echo ok\n")
+        _run(self.wt, "merge", "-q", "main")
+        _run(self.wt, "update-index", "--chmod=+x", "hooks/check.sh")
+        _run(self.wt, "commit", "-q", "-m", "mode only")
+        self.assertEqual(self._grants(), [{"path": "hooks/check.sh", "kind": "unknown",
+                                           "added": ["(no line read)"]}])
+
     def _commit_on_main(self, rel: str, text: str):
         full = pathlib.Path(self.repo, rel)
         full.parent.mkdir(parents=True, exist_ok=True)
