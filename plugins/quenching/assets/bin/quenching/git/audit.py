@@ -166,12 +166,16 @@ def _inert_env(cwd: str, errors: list[dict] | None = None) -> dict[str, str]:
 LOADED_ROOT = r"^(?:(?:.*/)?(?:\.claude|\.agents)/|(?:.*/)?plugins/[^/]+/)?"   # where the host loads agents, commands and skills from
 FRONTMATTER_GRANT = re.compile(LOADED_ROOT + r"(?:(?:agents|commands)/.+\.md|skills/.+/skill\.md)$", re.I)
 AGENT = re.compile(LOADED_ROOT + r"agents/.+\.md$", re.I)
-MANIFEST = re.compile(r"(?:^|/)\.claude-plugin/(plugin|marketplace)\.json$")
+MANIFEST = re.compile(r"(?:^|/)\.(?:claude|codex)-plugin/(plugin|marketplace)\.json$")
 COMPONENT_KEYS = ("agents", "commands", "skills")
+SURFACE_KEYS = ("hooks", "mcpServers", "lspServers")   # a path a manifest declares here is surface
 SYMLINK = "120000"
-SETTINGS = re.compile(r"^\.claude/settings[^/]*\.json$")
-SURFACE = re.compile(r"^\.github/workflows/|^\.claude/settings[^/]*\.json$|(^|/)hooks/"
-                     r"|(^|/)\.claude-plugin/[^/]+\.json$|(^|/)\.(mcp|lsp)\.json$")
+SETTINGS_AT = r"(?:^|/)(?:\.claude|\.agents)/settings[^/]*\.json$"   # an alternation, never the literal: the Codex translation rewrites it
+SETTINGS = re.compile(SETTINGS_AT)
+SURFACE = re.compile(r"^\.github/workflows/|" + SETTINGS_AT + r"|(^|/)hooks/"
+                     r"|(^|/)\.(?:claude|codex)-plugin/[^/]+\.json$|(^|/)\.(mcp|lsp)\.json$"
+                     r"|(^|/)(?:\.gitlab-ci|azure-pipelines|bitbucket-pipelines)\.ya?ml$"
+                     r"|(^|/)\.(?:circleci|buildkite)/")
 GRANT_KEYS = ("tools", "allowed-tools")
 DENY_KEYS = ("disallowedTools",)
 DOCS = re.compile(r"^docs/")
@@ -193,13 +197,17 @@ def _declared(base: str, value) -> list[str]:
 
 def _plugin_components(root: str, manifest) -> list[tuple[str, str]]:
     """`(kind, prefix)` for one plugin root: its default `agents/`, `commands/`, `skills/` and every
-    component path its manifest entry declares (a `.md` path is one file, anything else a folder)."""
+    component path its manifest entry declares (a `.md` path is one file, anything else a folder),
+    plus `("surface", path)` for every path it declares under `SURFACE_KEYS` (the path itself and
+    anything under it)."""
     prefix = f"{root}/" if root else ""
     found = [(kind, prefix + kind + "/") for kind in COMPONENT_KEYS]
     if isinstance(manifest, dict):
         for kind in COMPONENT_KEYS:
             for path in _declared(root, manifest.get(kind)):
                 found.append((kind, path if path.lower().endswith(".md") else (f"{path}/" if path else "")))
+        for key in SURFACE_KEYS:
+            found += [("surface", path) for path in _declared(root, manifest.get(key)) if path]
     return found
 
 
@@ -245,6 +253,8 @@ def _component(path: str, roots: list[tuple[str, str]]) -> tuple[bool, bool]:
     `.md`, or a skill's `SKILL.md`, case-insensitively."""
     low, frontmatter, agent = path.lower(), False, False
     for kind, prefix in roots:
+        if kind == "surface":
+            continue
         pre = prefix.lower()
         if pre.endswith(".md"):
             hit = low == pre
@@ -381,9 +391,12 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
             errors: list[dict]) -> list[dict]:
     """Every entry the branch ADDS to the grant surface against its merge-base with `base`:
     `tools:`/`allowed-tools:` of an agent, command or skill (an agent with no `tools:` is `*`), a
-    deny rule removed (`kind: deny`), and the added lines of a hook, a CI workflow, a
-    `.claude-plugin/*.json` manifest or a `.mcp.json`/`.lsp.json` server config. The agents, commands
-    and skills are the ones under `LOADED_ROOT` or a root `_plugin_roots` derives. What it does not
+    deny rule removed (`kind: deny`), and the added lines of a settings file under `.claude/` or
+    `.agents/` at any depth, a hook, a CI workflow (GitHub, GitLab, Azure Pipelines, Bitbucket,
+    CircleCI, Buildkite), a `.claude-plugin/*.json` or `.codex-plugin/*.json` manifest, a
+    `.mcp.json`/`.lsp.json` server config, or a path a manifest declares under `hooks`, `mcpServers`
+    or `lspServers`. The agents, commands and skills are the ones under `LOADED_ROOT` or a root
+    `_plugin_roots` derives. What it does not
     understand fails closed as `kind: unknown`: any other frontmatter key added, removed or changed
     (its name), a line removed or rewritten in any of those surfaces — settings, hook, CI workflow,
     manifest or server config (`(removed or rewritten lines)`), a changed block it cannot read whole (`(unparsed frontmatter)`), and a sensitive
@@ -414,7 +427,8 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
             continue
         by_root, agent_by_root = _component(path, roots)
         frontmatter = (FRONTMATTER_GRANT.search(path) or by_root) and not DOCS.match(path)
-        surface = SURFACE.search(path)
+        surface = SURFACE.search(path) or any(
+            kind == "surface" and (path == p or path.startswith(p + "/")) for kind, p in roots)
         if not (frontmatter or surface):
             continue
         new = show(tip, path)
