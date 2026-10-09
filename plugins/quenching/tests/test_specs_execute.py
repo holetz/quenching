@@ -75,6 +75,13 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertTrue(hooks[0]["condition"])
         self.assertIn("unresolved", command)
 
+    def test_execute_skips_the_hook_when_the_build_runs_in_a_worktree(self):
+        command = " ".join(COMMAND.read_text(encoding="utf-8").split())
+
+        self.assertIn("skipped: worktree", command)
+        self.assertIn("git rev-parse --git-common-dir", command)
+        self.assertIn("never invoked", command)
+
     def test_low_gear_chains_conclude_to_the_provider_pr_skill(self):
         conclude = CONCLUDE.read_text(encoding="utf-8")
         scale = SCALE.read_text(encoding="utf-8")
