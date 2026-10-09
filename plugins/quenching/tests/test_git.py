@@ -975,7 +975,9 @@ class VerifierGrants(unittest.TestCase):
         for surface in (".claude-plugin/*.json", ".codex-plugin/*.json", ".mcp.json", ".lsp.json",
                         "(symlink)", "at any depth", "`hooks`, `mcpServers` or `lspServers`",
                         ".gitlab-ci.yml", "azure-pipelines.yml", "bitbucket-pipelines.yml",
-                        ".circleci/", ".buildkite/"):
+                        ".circleci/", ".buildkite/", ".github/actions/", "(no line read)",
+                        "GitLab `include`/`local:`", "Azure `template:`", "GitHub `uses: ./`",
+                        "transitively"):
             self.assertIn(surface, text)
 
 class OrchestratorGrants(unittest.TestCase):
