@@ -382,9 +382,24 @@ LIST_ITEM = re.compile(r"^\s*-\s+")
 SCALAR_HEAD = re.compile(r"^[>|][+-]?[0-9]?\s*$")   # a folded (`>-`) or literal (`|`) scalar indicator
 
 
+PLAIN_BREAK = re.compile(r": |:$| #")   # inside a plain scalar these end it or start a comment/mapping
+
+
+def _plain(body: list[str]) -> bool:
+    """Whether a key's value is a plain scalar continued on the next lines (YAML folds them with a
+    space): text inline, no flow list or quote, and every continuation an indented line that
+    carries no `: ` or ` #`."""
+    inline = (TOP_KEY.match(body[0]).group(2) or "").strip()
+    return bool(inline and body[1:] and inline[0] not in "[\"'>|&*!%@`{"
+                and not PLAIN_BREAK.search(inline)
+                and all(ln[:1] in (" ", "\t") and not LIST_ITEM.match(ln) and not PLAIN_BREAK.search(ln)
+                        for ln in body[1:]))
+
+
 def _scalar(body: list[str]) -> bool:
-    """Whether a key's value is a folded/literal scalar: the indicator alone on the key's line."""
-    return bool(SCALAR_HEAD.match((TOP_KEY.match(body[0]).group(2) or "").strip()))
+    """Whether a key's value is a folded/literal scalar (the indicator alone on the key's line) or
+    a plain scalar continued on the following lines."""
+    return bool(SCALAR_HEAD.match((TOP_KEY.match(body[0]).group(2) or "").strip())) or _plain(body)
 
 
 def _block(text: str | None) -> tuple[dict[str, list[str]], bool, tuple[str, ...]] | None:
@@ -424,7 +439,7 @@ def _block(text: str | None) -> tuple[dict[str, list[str]], bool, tuple[str, ...
     for body in filter(None, map(keys.get, KNOWN_KEYS)):
         inline = (TOP_KEY.match(body[0]).group(2) or "").strip()
         if _scalar(body):
-            if not body[1:] or any(LIST_ITEM.match(ln) for ln in body[1:]):
+            if (not body[1:] and not _plain(body)) or any(LIST_ITEM.match(ln) for ln in body[1:]):
                 ok = False
         elif body[1:] and (inline or not all(LIST_ITEM.match(ln) for ln in body[1:])):
             ok = False
@@ -442,7 +457,8 @@ def _entries(keys: dict[str, list[str]], wanted: tuple[str, ...]) -> set[str] | 
         head, *items = keys[key]
         value = (TOP_KEY.match(head).group(2) or "").strip()
         if _scalar(keys[key]):
-            found.update(_split_entries(" ".join(i.strip() for i in items)))
+            found.update(_split_entries(" ".join(([value] if _plain(keys[key]) else [])
+                                                 + [i.strip() for i in items])))
             continue
         if value.startswith("[") and value.endswith("]"):
             value = value[1:-1]
