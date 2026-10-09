@@ -188,7 +188,8 @@ def _spec_vs_head(spec: str, head: str, *, by_name: bool = True) -> dict | None:
 
     The spec owns the branch its `branch.work` record names; before that record exists, the
     branch name must carry the spec's id (`plan/<id>-<slug>`) unless `by_name` is off, as in
-    `worktree add`, where the convention need not carry the id. `None` means the pair is fine."""
+    `worktree add`, where the convention need not carry the id but a name carrying ANOTHER spec's
+    id is still refused. `None` means the pair is fine."""
     quiet = _Quiet()
     backend, err = open_backend(find_repo_root(os.getcwd()))
     info, err2 = (None, err) if err else read_one(backend, spec, quiet)
@@ -203,7 +204,8 @@ def _spec_vs_head(spec: str, head: str, *, by_name: bool = True) -> dict | None:
     elif by_name:
         owned = re.match(rf"(?:.+/)?{re.escape(sid)}-", head) is not None
     else:
-        owned = True
+        other = re.match(r"(?:.+/)?(\d+)-", head)
+        owned = other is None or other.group(1) == sid
     if not owned:
         return {"code": "git-pr-spec-head-mismatch",
                 "message": f"spec {sid} does not own branch {head}"
