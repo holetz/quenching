@@ -635,6 +635,18 @@ class Audit(RepoCase):
         self.assertEqual(self._grants(), [{"path": agent, "kind": "unknown", "added": ["permissionMode"]},
                                           {"path": cmd, "kind": "unknown", "added": ["hooks"]}])
 
+    def test_grants_read_a_folded_scalar_so_a_description_edit_is_not_unknown(self):
+        cmd = "plugins/p/commands/c.md"
+        head = "---\ndescription: >-\n  %s\nallowed-tools: >-\n  Bash(cq:*),\n  Read\n---\nbody\n"
+        self._commit_on_main(cmd, head % "old")
+        _run(self.wt, "merge", "-q", "main")
+        self._commit_file(cmd, head % "new", "desc")
+        self.assertEqual(self._grants(), [])
+        self._commit_file(cmd, (head % "new").replace("  Read\n", "  Read, Bash(rm:*)\n"), "widen")
+        self.assertEqual(self._grants(), [{"path": cmd, "kind": "tools", "added": ["Bash(rm:*)"]}])
+        self._commit_file(cmd, (head % "new").replace("  Read\n", "  # Bash(rm:*)\n  Read\n"), "hash")
+        self.assertEqual([g["kind"] for g in self._grants()], ["unknown"])
+
     def test_grants_report_a_frontmatter_it_cannot_read_whole(self):
         agent, skill = "plugins/p/agents/a.md", ".claude/skills/s/SKILL.md"
         self._commit_on_main(agent, "---\nname: a\ntools: Read, Grep\n---\nbody\n")
