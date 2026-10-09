@@ -22,7 +22,8 @@ An agent, command or skill is read under `.agents/`, under `plugins/<one segment
 plugin root the base or the tip declares (a `.claude-plugin/plugin.json`, a relative `source` of a
 `.claude-plugin/marketplace.json`, and the component paths either names), never by an `agents/` at
 any depth, so an OKF standard filed under `standards/agents/` is no grant. A file a CI root of the
-base or the tip includes (GitLab `include`, Azure `template:`, GitHub `uses: ./`), transitively, is
+base or the tip includes (GitLab `include`, top level or under a job's `trigger:`, Azure `template:`,
+`@self` included, GitHub `uses: ./`, where `./` is the whole repository), transitively, is
 surface like the root itself. Nothing here executes the
 audited branch's code: the gate is certified by CI before the merge, never by this verb."""
 from __future__ import annotations
@@ -177,7 +178,7 @@ SETTINGS_AT = r"(?:^|/)(?:\.claude|\.agents)/settings[^/]*\.json$"   # an altern
 SETTINGS = re.compile(SETTINGS_AT)
 SURFACE = re.compile(r"^\.github/(?:workflows|actions)/|" + SETTINGS_AT + r"|(^|/)hooks/"
                      r"|(^|/)\.(?:claude|codex)-plugin/[^/]+\.json$|(^|/)\.(mcp|lsp)\.json$"
-                     r"|(^|/)(?:\.gitlab-ci|azure-pipelines|bitbucket-pipelines)\.ya?ml$"
+                     r"|(^|/)(?:\.gitlab-ci|azure-pipelines[^/]*|bitbucket-pipelines)\.ya?ml$"
                      r"|(^|/)\.(?:circleci|buildkite)/")
 GRANT_KEYS = ("tools", "allowed-tools")
 DENY_KEYS = ("disallowedTools",)
@@ -251,10 +252,11 @@ def _plugin_roots(cwd: str, revs: tuple[str, ...], env: dict[str, str],
     return found
 
 
-CI_ROOT = re.compile(r"(?:^|/)(?P<gitlab>\.gitlab-ci\.ya?ml)$|(?:^|/)(?P<azure>azure-pipelines\.ya?ml)$"
+CI_ROOT = re.compile(r"(?:^|/)(?P<gitlab>\.gitlab-ci\.ya?ml)$|(?:^|/)(?P<azure>azure-pipelines[^/]*\.ya?ml)$"
                      r"|^(?P<github>\.github/(?:workflows|actions)/)")
 CI_KEY = re.compile(r"^\s*(?:-\s+)?(local|template|uses):\s*(.+)$")
-GITLAB_INCLUDE = re.compile(r"^include:\s*(.*)$")
+GITLAB_INCLUDE = re.compile(r"^\s*include:\s*(.*)$")
+TRIGGER = re.compile(r"^\s*trigger:\s*(?:#.*)?$")
 MAPPING = re.compile(r"^[\w-]+:(?:\s|$)")
 CI_READS = 256   # files read per revision: a cycle or a huge tree stops here, as an `errors` entry
 
@@ -264,32 +266,55 @@ def _ci_value(value: str) -> str:
     return re.sub(r"\s+#.*$", "", value.strip()).strip().strip("'\"")
 
 
+def _under(path: str, ref: str) -> bool:
+    """Whether `path` is `ref`, lies under it, or matches it as a glob; `.` is the whole repository."""
+    return ref == "." or path == ref or path.startswith(ref + "/") or fnmatch.fnmatchcase(path, ref)
+
+
 def _ci_refs(kind: str, path: str, text: str) -> list[str]:
-    """The repository paths one CI file of `kind` includes, read by line: GitLab `include:` (a
-    string, a list of strings, `local:`; `remote:`/`project:` leave the repository), Azure
-    `template:` (relative to the file, `/…` to the root, `…@repo` another repository) and GitHub
-    `uses: ./…`. A path may be a glob (GitLab) or a folder (GitHub)."""
-    found, in_include = [], False
+    """The repository paths one CI file of `kind` includes, read by line: GitLab `include:` at the
+    top level or under a job's `trigger:` (a string, a list of strings, `local:`; only the list's
+    first level is a path, never what `rules:`/`exists:`/`inputs:` nest under an item;
+    `remote:`/`project:` leave the repository), Azure `template:` (relative to the file, `/…` to the
+    root, `…@self` this repository, `…@repo` another one) and GitHub `uses: ./…` (`./` the whole
+    repository). A path may be a glob (GitLab) or a folder (GitHub)."""
+    found = []
+    block = item = trigger = None   # indents: the open `include:`, its first list item, the last bare `trigger:`
     for line in text.split("\n"):
-        if line[:1] not in ("", " ", "\t", "-", "#"):
-            m = GITLAB_INCLUDE.match(line) if kind == "gitlab" else None
-            in_include = bool(m)
-            inline = _ci_value(m.group(1)) if m else ""
+        body = line.strip()
+        if not body or body.startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip(" \t"))
+        if block is not None and (indent < block or indent == block and not body.startswith("-")):
+            block = item = None
+        if trigger is not None and indent <= trigger:
+            trigger = None
+        m = GITLAB_INCLUDE.match(line) if kind == "gitlab" else None
+        if m and (indent == 0 or trigger is not None):
+            block, item = indent, None
+            inline = _ci_value(m.group(1))
             if inline.startswith("[") and inline.endswith("]"):
                 found += [_ci_value(v) for v in inline[1:-1].split(",")]
             elif inline and not MAPPING.match(inline):
                 found.append(inline)
             continue
+        if kind == "gitlab" and TRIGGER.match(line):
+            trigger = indent
+            continue
         m = CI_KEY.match(line)
         key, value = (m.group(1), _ci_value(m.group(2))) if m else (None, "")
+        if kind == "gitlab" and block is not None and body.startswith("- ") and item is None:
+            item = indent
         if kind == "gitlab" and key == "local":
             found.append(value)
-        elif kind == "gitlab" and in_include and line.lstrip().startswith("- "):
-            item = _ci_value(line.lstrip()[2:])
-            if item and not MAPPING.match(item):
-                found.append(item)
-        elif kind == "azure" and key == "template" and "@" not in value and value:
-            found.append(value if value.startswith("/") else posixpath.join(posixpath.dirname(path), value))
+        elif kind == "gitlab" and block is not None and body.startswith("- ") and indent == item:
+            entry = _ci_value(body[2:])
+            if entry and not MAPPING.match(entry):
+                found.append(entry)
+        elif kind == "azure" and key == "template" and value:
+            value = value[:-len("@self")] if value.endswith("@self") else value
+            if value and "@" not in value:
+                found.append(value if value.startswith("/") else posixpath.join(posixpath.dirname(path), value))
         elif kind == "github" and key == "uses" and value.startswith("./"):
             found.append(value)
     out = []
@@ -303,8 +328,9 @@ def _ci_refs(kind: str, path: str, text: str) -> list[str]:
 def _ci_includes(cwd: str, revs: tuple[str, ...], env: dict[str, str],
                  errors: list[dict]) -> list[tuple[str, str]]:
     """`("surface", path)` for every file a CI root of the base or the tip includes, transitively
-    (an included YAML file is read in turn, as the kind of the root that reached it). A path is the
-    file, a folder (anything under it) or a glob. A tree that cannot be listed, a file that cannot
+    (an included YAML file is read in turn, as the kind of the root that reached it; of a folder a
+    GitHub `uses:` names, only its `action.yml`/`action.yaml`). A path is the file, a folder
+    (anything under it), a glob, or `.` (the whole repository). A tree that cannot be listed, a file that cannot
     be read, or more than `CI_READS` files is an `errors` entry: the inclusions are unknown."""
     found: list[tuple[str, str]] = []
     for rev in revs:
@@ -331,7 +357,11 @@ def _ci_includes(cwd: str, revs: tuple[str, ...], env: dict[str, str],
                 continue
             for ref in _ci_refs(kind, path, text):
                 found.append(("surface", ref))
-                hits = [p for p in tree if p == ref or p.startswith(ref + "/") or fnmatch.fnmatchcase(p, ref)]
+                hits = [p for p in tree if _under(p, ref)]
+                if kind == "github":
+                    folder = "" if ref == "." else ref
+                    hits = [p for p in hits if p == ref or p in (posixpath.join(folder, "action.yml"),
+                                                                  posixpath.join(folder, "action.yaml"))]
                 for hit in hits:
                     if hit not in seen:
                         seen.add(hit)
@@ -550,9 +580,7 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
             continue
         by_root, agent_by_root = _component(path, roots)
         frontmatter = (FRONTMATTER_GRANT.search(path) or by_root) and not DOCS.match(path)
-        surface = SURFACE.search(path) or any(
-            kind == "surface" and (path == p or path.startswith(p + "/") or fnmatch.fnmatchcase(path, p))
-            for kind, p in roots)
+        surface = SURFACE.search(path) or any(kind == "surface" and _under(path, p) for kind, p in roots)
         if not (frontmatter or surface):
             continue
         new = show(tip, path)

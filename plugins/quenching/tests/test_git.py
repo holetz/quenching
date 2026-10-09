@@ -520,6 +520,46 @@ class Audit(RepoCase):
         self.assertEqual(sorted(got), [".github/workflows/ci.yml", "tools/act/action.yml",
                                        "tools/act/run.sh", "tools/inner/action.yaml"])
 
+    def test_grants_read_a_gitlab_child_pipeline_trigger_include(self):
+        got = self._ci_surface({
+            ".gitlab-ci.yml": "deploy-child:\n  trigger:\n    include: ci/child.yml\n"
+                              "list-child:\n  trigger:\n    include:\n      - local: ci/list.yml\n"
+                              "      - ci/plain.yml\n    strategy: depend\n",
+            "ci/child.yml": "job: x\n",
+            "ci/list.yml": "job: x\n",
+            "ci/plain.yml": "job: x\n",
+            "ci/other.yml": "job: x\n"})
+        self.assertEqual(sorted(got), [".gitlab-ci.yml", "ci/child.yml", "ci/list.yml", "ci/plain.yml"])
+
+    def test_grants_take_only_the_first_level_of_a_gitlab_include_as_a_path(self):
+        got = self._ci_surface({
+            ".gitlab-ci.yml": "include:\n  - local: ci/backend.yml\n    rules:\n      - changes:\n"
+                              "          - backend/**/*\n  - local: ci/src.yml\n    rules:\n"
+                              "      - exists:\n          - src\n  - local: ci/in.yml\n    inputs:\n"
+                              "      stages:\n        - test\n",
+            "ci/backend.yml": "job: x\n",
+            "ci/src.yml": "job: x\n",
+            "ci/in.yml": "job: x\n",
+            "backend/app/main.py": "print()\n",
+            "src/a.py": "print()\n",
+            "test": "x\n"})
+        self.assertEqual(sorted(got), [".gitlab-ci.yml", "ci/backend.yml", "ci/in.yml", "ci/src.yml"])
+
+    def test_grants_read_an_azure_pipelines_file_with_a_suffix_and_its_self_templates(self):
+        got = self._ci_surface({
+            "azure-pipelines-docs.yml": "extends:\n  template: templates/main.yml@self\n",
+            "templates/main.yml": "steps:\n- template: other.yml@tools\n",
+            "templates/other.yml": "steps: []\n"})
+        self.assertEqual(sorted(got), ["azure-pipelines-docs.yml", "templates/main.yml"])
+
+    def test_grants_take_a_github_uses_of_the_root_as_the_whole_repository(self):
+        got = self._ci_surface({
+            ".github/workflows/ci.yml": "jobs:\n  a:\n    steps:\n      - uses: ./\n",
+            "action.yml": "runs:\n  steps:\n    - uses: ./tools/inner\n",
+            "src/index.js": "x\n"})
+        self.assertLessEqual({".github/workflows/ci.yml", "action.yml", "src/index.js"}, set(got))
+        self.assertEqual({kind for kind, _added in got.values()}, {"surface"})
+
     def test_grants_read_an_include_the_branch_adds(self):
         self._commit_file("ci/new.yml", "job: x\n", "included")
         self._commit_file(".gitlab-ci.yml", "include: ci/new.yml\n", "root")
@@ -986,9 +1026,11 @@ class VerifierGrants(unittest.TestCase):
         text = " ".join((PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8").split())
         for surface in (".claude-plugin/*.json", ".codex-plugin/*.json", ".mcp.json", ".lsp.json",
                         "(symlink)", "at any depth", "`hooks`, `mcpServers` or `lspServers`",
-                        ".gitlab-ci.yml", "azure-pipelines.yml", "bitbucket-pipelines.yml",
+                        ".gitlab-ci.yml", "azure-pipelines*.yml", "bitbucket-pipelines.yml",
                         ".circleci/", ".buildkite/", ".github/actions/", "(no line read)",
-                        "GitLab `include`/`local:`", "Azure `template:`", "GitHub `uses: ./`",
+                        "GitLab `include`/`local:`", "`trigger: include:`", "only the list's first level a path",
+                        "Azure `template:`", "`@self` included", "GitHub `uses: ./`",
+                        "`./` the whole repository",
                         "transitively"):
             self.assertIn(surface, text)
 
