@@ -185,6 +185,7 @@ def _az_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, s
     # `az` expands a value opening with `@` into the CONTENT of that file, so a title like
     # `@/etc/hostname` would publish a local file as the work item's title.
     title = next((argv[i + 1] for i, a in enumerate(argv[:-1]) if a == "--title"), "")
+    title = next((a[len("--title="):] for a in argv if a.startswith("--title=")), title)
     if title.startswith("@"):
         raise BackendRefusal({
             "code": "sp-az-bad-title", "exit": 2,
@@ -1145,7 +1146,7 @@ class AzureBoardsBackend(SpecBackend):
         type_name = resolve_work_item_type({"workItemTypes": self.types},
                                            fresh["frontmatter"].get("workItemType"))
         argv = ["work-item", "create", "--project", self.project,
-               "--type", type_name, "--title", title]
+               "--type", type_name, f"--title={title}"]
         if self.area_path:
             argv += ["--area", self.area_path]
         if self.iteration_path:

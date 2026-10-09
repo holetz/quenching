@@ -346,13 +346,13 @@ class AzureRemoteFixture:
     def __call__(self, cwd: str, *argv: str, stdin: str | None = None):
         del stdin
         if argv[:3] == ("boards", "work-item", "create"):
-            if "--project" not in argv or "--type" not in argv or "--title" not in argv:
+            if "--project" not in argv or "--type" not in argv or not any(a.startswith("--title=") for a in argv):
                 raise AssertionError(f"unexpected Azure create request: {argv!r}")
             if "--state" in argv or "--fields" in argv \
                     or argv[argv.index("--org") + 1] != "org":
                 raise AssertionError(f"Azure create bypassed the PATCH placement: {argv!r}")
             project = argv[argv.index("--project") + 1]
-            title = argv[argv.index("--title") + 1]
+            title = next(a for a in argv if a.startswith("--title="))[len("--title="):]
             item_id = 201
             self.items[item_id] = {"id": item_id, "fields": {
                 "System.Id": item_id, "System.Title": title, "System.State": "New",
