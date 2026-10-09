@@ -407,6 +407,20 @@ class Audit(RepoCase):
         self.assertEqual(self._grants(), [{"path": path, "kind": "unknown",
                                            "added": ["(removed or rewritten lines)"]}])
 
+    def test_grants_flag_lines_removed_from_settings_and_hooks_as_unknown(self):
+        settings, hooks = ".claude/settings.json", "plugins/p/hooks/hooks.json"
+        guard = '{"matcher": "Bash", "hooks": [{"type": "command", "command": "guard.sh"}]}'
+        self._commit_on_main(settings, '{\n  "sandbox": {"enabled": true},\n  "defaultMode": "plan",\n'
+                                       '  "hooks": {"PreToolUse": [\n    ' + guard + '\n  ]}\n}\n')
+        self._commit_on_main(hooks, '{"hooks": {"PreToolUse": [\n  ' + guard + '\n]}}\n')
+        _run(self.wt, "merge", "-q", "main")
+        self.assertEqual(self._grants(), [])
+        self._commit_file(settings, '{\n  "hooks": {"PreToolUse": [\n  ]}\n}\n', "drop sandbox and guard")
+        self._commit_file(hooks, '{"hooks": {"PreToolUse": [\n]}}\n', "drop plugin guard")
+        removed = ("unknown", ["(removed or rewritten lines)"])
+        got = {g["path"]: (g["kind"], g["added"]) for g in self._grants()}
+        self.assertEqual(got, {settings: removed, hooks: removed})
+
     def _commit_on_main(self, rel: str, text: str):
         full = pathlib.Path(self.repo, rel)
         full.parent.mkdir(parents=True, exist_ok=True)
