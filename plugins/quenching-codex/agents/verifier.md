@@ -66,10 +66,11 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    or skill's (`SKILL.md`) `allowed-tools:`, a hook or a CI workflow; an agent without a `tools:` key
    counts as `added: ["*"]`, and a removed `permissions.deny` or `disallowedTools` entry appears as
    `kind: deny` with the removed entries in `added`. What the audit does not understand fails closed
-   as `kind: unknown`: a changed `.claude-plugin/*.json` manifest, `.mcp.json` or `.lsp.json`, any symlink the
+   as `kind: unknown`: a line removed or rewritten in a settings file, hook, CI workflow, `.claude-plugin/*.json` manifest,
+   `.mcp.json` or `.lsp.json` (`(removed or rewritten lines)`), any symlink the
    branch adds or repoints at any path (`(symlink)`, its target never read), any other frontmatter key added, removed or changed (its name in `added`), a
    changed frontmatter it cannot read whole (`(unparsed frontmatter)`), and a deleted settings file,
-   hook, workflow, agent, command or skill (`(deleted)`). Narrowing and unchanged never appear. In an autonomous
+   hook, workflow, agent, command or skill (`(deleted)`). Unchanged never appears, nor a narrowing that removes no surface line. In an autonomous
    run a non-empty `grants` is FAIL with `needs-human: alargamento`, quoting each `path` and its
    `added` entries: the orchestrator takes the spec to the human epic, and the verifier never
    judges whether the widening is justified. Empty is ok; a non-autonomous run reports the list.
