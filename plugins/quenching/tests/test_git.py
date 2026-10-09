@@ -470,6 +470,61 @@ class Audit(RepoCase):
         got = {g["path"]: (g["kind"], g["added"]) for g in self._grants()}
         self.assertEqual(got, {p: ("surface", ["deploy: x"]) for p in paths})
 
+    def test_grants_read_a_local_github_action(self):
+        path = ".github/actions/setup/action.yml"
+        self._commit_file(path, "runs: x\n", "action")
+        self.assertEqual(self._grants(), [{"path": path, "kind": "surface", "added": ["runs: x"]}])
+
+    def _ci_surface(self, files: dict[str, str]) -> dict[str, tuple[str, list[str]]]:
+        """Commit `files` on main, then change every one of them on the branch."""
+        for rel, text in files.items():
+            self._commit_on_main(rel, text)
+        _run(self.wt, "merge", "-q", "main")
+        for rel in files:
+            self._commit_file(rel, pathlib.Path(self.wt, rel).read_text(encoding="utf-8") + "x: y\n", rel)
+        return {g["path"]: (g["kind"], g["added"]) for g in self._grants()}
+
+    def test_grants_read_the_files_a_gitlab_root_includes(self):
+        got = self._ci_surface({
+            ".gitlab-ci.yml": "include:\n  - 'ci/a.yml'\n  - local: /ci/b.yml\n"
+                              "  - ci/glob/*.yml\n  - remote: https://x/y.yml\nstages: [t]\n",
+            "ci/a.yml": "include: ci/deep.yml\n",
+            "ci/b.yml": "job: x\n",
+            "ci/deep.yml": "include:\n  local: ci/deeper.yml\n",
+            "ci/deeper.yml": "job: x\n",
+            "ci/glob/g.yml": "job: x\n",
+            "ci/other.yml": "job: x\n"})
+        self.assertEqual(sorted(got), [".gitlab-ci.yml", "ci/a.yml", "ci/b.yml", "ci/deep.yml",
+                                       "ci/deeper.yml", "ci/glob/g.yml"])
+
+    def test_grants_read_the_templates_an_azure_root_includes(self):
+        got = self._ci_surface({
+            "azure-pipelines.yml": "steps:\n- template: templates/build.yml\n"
+                                   "- template: other.yml@tools\n",
+            "templates/build.yml": "steps:\n  - template: steps.yml  # relative\n"
+                                   "  - template: /root.yml\n",
+            "templates/steps.yml": "steps: []\n",
+            "root.yml": "steps: []\n",
+            "other.yml": "steps: []\n"})
+        self.assertEqual(sorted(got), ["azure-pipelines.yml", "root.yml", "templates/build.yml",
+                                       "templates/steps.yml"])
+
+    def test_grants_read_what_a_github_workflow_uses_locally(self):
+        got = self._ci_surface({
+            ".github/workflows/ci.yml": "jobs:\n  a:\n    steps:\n      - uses: ./tools/act\n"
+                                        "      - uses: actions/checkout@v4\n",
+            "tools/act/action.yml": "runs:\n  steps:\n    - uses: './tools/inner'\n",
+            "tools/act/run.sh": "echo\n",
+            "tools/inner/action.yaml": "runs: x\n",
+            "tools/other.sh": "echo\n"})
+        self.assertEqual(sorted(got), [".github/workflows/ci.yml", "tools/act/action.yml",
+                                       "tools/act/run.sh", "tools/inner/action.yaml"])
+
+    def test_grants_read_an_include_the_branch_adds(self):
+        self._commit_file("ci/new.yml", "job: x\n", "included")
+        self._commit_file(".gitlab-ci.yml", "include: ci/new.yml\n", "root")
+        self.assertEqual(sorted(g["path"] for g in self._grants()), [".gitlab-ci.yml", "ci/new.yml"])
+
     def _binary_surface(self):
         self._commit_file(".claude/settings.json",
                           '{"defaultMode": "bypassPermissions", "allow": ["Bash(*)"]}\n', "settings")
