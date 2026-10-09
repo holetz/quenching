@@ -65,9 +65,10 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
 9. Grants: the payload's `grants` lists every entry the branch ADDS to an agent's `tools:`, a command's
    or skill's (`SKILL.md`) `allowed-tools:`, and the added lines of the surface: a settings file under
    `.agents/` at any depth, a hook, a CI workflow (`.github/workflows/`, `.gitlab-ci.yml`,
-   `azure-pipelines.yml`, `bitbucket-pipelines.yml`, `.circleci/`, `.buildkite/`), a local action
+   `azure-pipelines*.yml`, `bitbucket-pipelines.yml`, `.circleci/`, `.buildkite/`), a local action
    under `.github/actions/`, any file a CI root of the base or the branch includes, transitively
-   (GitLab `include`/`local:`, Azure `template:`, GitHub `uses: ./`), a
+   (GitLab `include`/`local:`, top level or under a job's `trigger: include:`, only the list's first
+   level a path; Azure `template:`, `@self` included; GitHub `uses: ./`, `./` the whole repository), a
    `.claude-plugin/*.json` or `.codex-plugin/*.json` manifest, `.mcp.json`, `.lsp.json`, and any path
    a manifest declares under `hooks`, `mcpServers` or `lspServers`; an agent without a `tools:` key
    counts as `added: ["*"]`, and a removed `permissions.deny` or `disallowedTools` entry appears as
