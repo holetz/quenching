@@ -728,17 +728,29 @@ class Audit(RepoCase):
         self._commit_file(cmd, (head % "new").replace("  Read\n", "  # Bash(rm:*)\n  Read\n"), "hash")
         self.assertEqual([g["kind"] for g in self._grants()], ["unknown"])
 
+    def test_grants_read_a_plain_scalar_continued_on_the_next_lines(self):
+        cmd = "plugins/p/commands/c.md"
+        head = "---\ndescription: %s\nallowed-tools: Read, Grep,\n  Bash(cq:*),\n  Task\n---\nbody\n"
+        self._commit_on_main(cmd, head % "old")
+        _run(self.wt, "merge", "-q", "main")
+        self._commit_file(cmd, head % "new", "desc")
+        self.assertEqual(self._grants(), [])
+        self._commit_file(cmd, (head % "new").replace("  Task\n", "  Task, Bash(rm:*)\n"), "widen")
+        self.assertEqual(self._grants(), [{"path": cmd, "kind": "tools", "added": ["Bash(rm:*)"]}])
+        self._commit_file(cmd, (head % "new").replace("  Task\n", "  Task # Bash(rm:*)\n"), "hash")
+        self.assertEqual([g["kind"] for g in self._grants()], ["unknown"])
+
     def test_grants_report_a_frontmatter_it_cannot_read_whole(self):
         agent, skill = "plugins/p/agents/a.md", ".claude/skills/s/SKILL.md"
         self._commit_on_main(agent, "---\nname: a\ntools: Read, Grep\n---\nbody\n")
         self._commit_on_main(skill, "---\nname: s\nallowed-tools: Read\n---\nbody\n")
         _run(self.wt, "merge", "-q", "main")
-        self._commit_file(agent, "---\nname: a\ntools: Read, Grep,\n  Bash\n---\nbody\n", "cont")
+        self._commit_file(agent, "---\nname: a\ntools: [Read, Grep,\n  Bash]\n---\nbody\n", "cont")
         self._commit_file(skill, '---\nname: s\n"allowed-tools": Read, Bash(rm -rf:*)\n---\nbody\n', "quoted")
         unparsed = ("unknown", ["(unparsed frontmatter)"])
         got = {g["path"]: (g["kind"], g["added"]) for g in self._grants()}
         self.assertEqual(got, {agent: unparsed, skill: unparsed})
-        self._commit_file(agent, "---\nname: a\ntools: Read, Grep,\n  Bash\n---\nnew body\n", "body")
+        self._commit_file(agent, "---\nname: a\ntools: [Read, Grep,\n  Bash]\n---\nnew body\n", "body")
         self.assertEqual(len(self._grants()), 2)
 
     def test_grants_report_a_change_inside_a_frontmatter_already_unreadable(self):
