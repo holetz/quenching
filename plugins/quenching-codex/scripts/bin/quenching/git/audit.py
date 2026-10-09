@@ -21,10 +21,13 @@ an entry of the payload's `errors` (`complete: false`), never an empty list; jud
 An agent, command or skill is read under `.agents/`, under `plugins/<one segment>/`, and under every
 plugin root the base or the tip declares (a `.claude-plugin/plugin.json`, a relative `source` of a
 `.claude-plugin/marketplace.json`, and the component paths either names), never by an `agents/` at
-any depth, so an OKF standard filed under `standards/agents/` is no grant. Nothing here executes the
+any depth, so an OKF standard filed under `standards/agents/` is no grant. A file a CI root of the
+base or the tip includes (GitLab `include`, Azure `template:`, GitHub `uses: ./`), transitively, is
+surface like the root itself. Nothing here executes the
 audited branch's code: the gate is certified by CI before the merge, never by this verb."""
 from __future__ import annotations
 
+import fnmatch
 import json
 import os
 import posixpath
@@ -172,7 +175,7 @@ SURFACE_KEYS = ("hooks", "mcpServers", "lspServers")   # a path a manifest decla
 SYMLINK = "120000"
 SETTINGS_AT = r"(?:^|/)(?:\.claude|\.agents)/settings[^/]*\.json$"   # an alternation, never the literal: the Codex translation rewrites it
 SETTINGS = re.compile(SETTINGS_AT)
-SURFACE = re.compile(r"^\.github/workflows/|" + SETTINGS_AT + r"|(^|/)hooks/"
+SURFACE = re.compile(r"^\.github/(?:workflows|actions)/|" + SETTINGS_AT + r"|(^|/)hooks/"
                      r"|(^|/)\.(?:claude|codex)-plugin/[^/]+\.json$|(^|/)\.(mcp|lsp)\.json$"
                      r"|(^|/)(?:\.gitlab-ci|azure-pipelines|bitbucket-pipelines)\.ya?ml$"
                      r"|(^|/)\.(?:circleci|buildkite)/")
@@ -245,6 +248,94 @@ def _plugin_roots(cwd: str, revs: tuple[str, ...], env: dict[str, str],
                 source = entry.get("source") if isinstance(entry, dict) else None
                 for root in _declared(prefix[0], source) if isinstance(source, str) else []:
                     found += _plugin_components(root, entry)
+    return found
+
+
+CI_ROOT = re.compile(r"(?:^|/)(?P<gitlab>\.gitlab-ci\.ya?ml)$|(?:^|/)(?P<azure>azure-pipelines\.ya?ml)$"
+                     r"|^(?P<github>\.github/(?:workflows|actions)/)")
+CI_KEY = re.compile(r"^\s*(?:-\s+)?(local|template|uses):\s*(.+)$")
+GITLAB_INCLUDE = re.compile(r"^include:\s*(.*)$")
+MAPPING = re.compile(r"^[\w-]+:(?:\s|$)")
+CI_READS = 256   # files read per revision: a cycle or a huge tree stops here, as an `errors` entry
+
+
+def _ci_value(value: str) -> str:
+    """A YAML scalar of one line, without its trailing comment and its quotes."""
+    return re.sub(r"\s+#.*$", "", value.strip()).strip().strip("'\"")
+
+
+def _ci_refs(kind: str, path: str, text: str) -> list[str]:
+    """The repository paths one CI file of `kind` includes, read by line: GitLab `include:` (a
+    string, a list of strings, `local:`; `remote:`/`project:` leave the repository), Azure
+    `template:` (relative to the file, `/…` to the root, `…@repo` another repository) and GitHub
+    `uses: ./…`. A path may be a glob (GitLab) or a folder (GitHub)."""
+    found, in_include = [], False
+    for line in text.split("\n"):
+        if line[:1] not in ("", " ", "\t", "-", "#"):
+            m = GITLAB_INCLUDE.match(line) if kind == "gitlab" else None
+            in_include = bool(m)
+            inline = _ci_value(m.group(1)) if m else ""
+            if inline.startswith("[") and inline.endswith("]"):
+                found += [_ci_value(v) for v in inline[1:-1].split(",")]
+            elif inline and not MAPPING.match(inline):
+                found.append(inline)
+            continue
+        m = CI_KEY.match(line)
+        key, value = (m.group(1), _ci_value(m.group(2))) if m else (None, "")
+        if kind == "gitlab" and key == "local":
+            found.append(value)
+        elif kind == "gitlab" and in_include and line.lstrip().startswith("- "):
+            item = _ci_value(line.lstrip()[2:])
+            if item and not MAPPING.match(item):
+                found.append(item)
+        elif kind == "azure" and key == "template" and "@" not in value and value:
+            found.append(value if value.startswith("/") else posixpath.join(posixpath.dirname(path), value))
+        elif kind == "github" and key == "uses" and value.startswith("./"):
+            found.append(value)
+    out = []
+    for ref in found:
+        ref = posixpath.normpath(ref.lstrip("/")) if ref.strip("/") else ""
+        if ref and ref != ".." and not ref.startswith("../"):
+            out.append(ref)
+    return out
+
+
+def _ci_includes(cwd: str, revs: tuple[str, ...], env: dict[str, str],
+                 errors: list[dict]) -> list[tuple[str, str]]:
+    """`("surface", path)` for every file a CI root of the base or the tip includes, transitively
+    (an included YAML file is read in turn, as the kind of the root that reached it). A path is the
+    file, a folder (anything under it) or a glob. A tree that cannot be listed, a file that cannot
+    be read, or more than `CI_READS` files is an `errors` entry: the inclusions are unknown."""
+    found: list[tuple[str, str]] = []
+    for rev in revs:
+        code, out, err = _git_run(cwd, *SAFE, "ls-tree", "-r", "--name-only", "-z", rev, env=env)
+        if code != 0:
+            errors.append(_error(("ls-tree", rev), code, err))
+            continue
+        tree = [p for p in out.split("\0") if p]
+        queue = [(p, next(k for k, v in m.groupdict().items() if v))
+                 for p in tree for m in [CI_ROOT.search(p)] if m]
+        seen = {p for p, _k in queue}
+        reads = 0
+        while queue:
+            path, kind = queue.pop()
+            if not path.endswith((".yml", ".yaml")):
+                continue
+            reads += 1
+            if reads > CI_READS:
+                errors.append(_error(("show", rev), 0, f"more than {CI_READS} CI files: the inclusions are unknown"))
+                break
+            code, text, err = _git_run(cwd, *SAFE, "show", "--no-textconv", f"{rev}:{path}", env=env)
+            if code != 0:
+                errors.append(_error(("show", path), code, err))
+                continue
+            for ref in _ci_refs(kind, path, text):
+                found.append(("surface", ref))
+                hits = [p for p in tree if p == ref or p.startswith(ref + "/") or fnmatch.fnmatchcase(p, ref)]
+                for hit in hits:
+                    if hit not in seen:
+                        seen.add(hit)
+                        queue.append((hit, kind))
     return found
 
 
@@ -407,13 +498,15 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
     `tools:`/`allowed-tools:` of an agent, command or skill (an agent with no `tools:` is `*`), a
     deny rule removed (`kind: deny`), and the added lines of a settings file under `.agents/` or
     `.agents/` at any depth, a hook, a CI workflow (GitHub, GitLab, Azure Pipelines, Bitbucket,
-    CircleCI, Buildkite), a `.claude-plugin/*.json` or `.codex-plugin/*.json` manifest, a
+    CircleCI, Buildkite), a local GitHub action under `.github/actions/`, a file a CI root includes
+    (`_ci_includes`), a `.claude-plugin/*.json` or `.codex-plugin/*.json` manifest, a
     `.mcp.json`/`.lsp.json` server config, or a path a manifest declares under `hooks`, `mcpServers`
     or `lspServers`. The agents, commands and skills are the ones under `LOADED_ROOT` or a root
     `_plugin_roots` derives. What it does not
     understand fails closed as `kind: unknown`: any other frontmatter key added, removed or changed
     (its name), a line removed or rewritten in any of those surfaces — settings, hook, CI workflow,
-    manifest or server config (`(removed or rewritten lines)`), a changed block it cannot read whole (`(unparsed frontmatter)`), and a sensitive
+    manifest or server config (`(removed or rewritten lines)`), a surface path changed with no
+    `+`/`-` line read (`(no line read)`), a changed block it cannot read whole (`(unparsed frontmatter)`), and a sensitive
     file deleted (`(deleted)`), and every symlink the branch adds or repoints, at any path
     (`(symlink)`), its target never read. Unchanged never appears, nor a narrowing that removes no surface line."""
     code, out, err = _git_run(cwd, *SAFE, "merge-base", base, tip, env=env)
@@ -433,7 +526,7 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
         code, text, _e = _git_run(cwd, *SAFE, "show", "--no-textconv", f"{rev}:{path}", env=env)
         return text if code == 0 else None
 
-    roots = _plugin_roots(cwd, (fork, tip), env, errors)
+    roots = _plugin_roots(cwd, (fork, tip), env, errors) + _ci_includes(cwd, (fork, tip), env, errors)
     found = []
     for path in changed:
         if path in symlinks:   # its target is never read: a link into the tree or a directory fails closed
@@ -442,7 +535,8 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
         by_root, agent_by_root = _component(path, roots)
         frontmatter = (FRONTMATTER_GRANT.search(path) or by_root) and not DOCS.match(path)
         surface = SURFACE.search(path) or any(
-            kind == "surface" and (path == p or path.startswith(p + "/")) for kind, p in roots)
+            kind == "surface" and (path == p or path.startswith(p + "/") or fnmatch.fnmatchcase(path, p))
+            for kind, p in roots)
         if not (frontmatter or surface):
             continue
         new = show(tip, path)
@@ -477,16 +571,20 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
                 if removed:
                     found.append({"path": path, "kind": kind, "added": removed})
         if surface:
-            code, out, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "-U0",
-                                      "--no-renames", f"{base}...{tip}", "--", path, env=env)
+            # `--text`: a `-diff`/`binary` attribute (the base's or the branch's) would print no line
+            code, out, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "--text",
+                                      "-U0", "--no-renames", f"{base}...{tip}", "--", path, env=env)
             if code != 0:
                 errors.append(_error(("diff", "-U0"), code, err))
                 continue
-            added = [ln[1:].strip() for ln in out.splitlines()
-                     if ln.startswith("+") and not ln.startswith("+++") and ln[1:].strip()]
-            if any(ln.startswith("-") and not ln.startswith(("--- a/", "--- /dev/null"))
-                   for ln in out.splitlines()):
+            plus = [ln for ln in out.splitlines() if ln.startswith("+") and not ln.startswith("+++")]
+            added = [ln[1:].strip() for ln in plus if ln[1:].strip()]
+            removed = any(ln.startswith("-") and not ln.startswith(("--- a/", "--- /dev/null"))
+                          for ln in out.splitlines())
+            if removed:
                 found.append({"path": path, "kind": "unknown", "added": ["(removed or rewritten lines)"]})
+            elif not plus:   # changed, yet no line read: a mode flip, an empty file, a diff with no lines
+                found.append({"path": path, "kind": "unknown", "added": ["(no line read)"]})
             if added:
                 found.append({"path": path, "kind": "surface", "added": added})
     return found
