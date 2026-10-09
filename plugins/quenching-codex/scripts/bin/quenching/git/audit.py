@@ -174,6 +174,7 @@ SURFACE = re.compile(r"^\.github/workflows/|^\.agents/settings[^/]*\.json$|(^|/)
                      r"|(^|/)\.claude-plugin/[^/]+\.json$|(^|/)\.(mcp|lsp)\.json$")
 GRANT_KEYS = ("tools", "allowed-tools")
 DENY_KEYS = ("disallowedTools",)
+MANIFEST_LIKE = re.compile(r"(?:^|/)\.claude-plugin/[^/]+\.json$|(?:^|/)\.(?:mcp|lsp)\.json$")
 DOCS = re.compile(r"^docs/")
 
 
@@ -385,7 +386,8 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
     `.claude-plugin/*.json` manifest or a `.mcp.json`/`.lsp.json` server config. The agents, commands
     and skills are the ones under `LOADED_ROOT` or a root `_plugin_roots` derives. What it does not
     understand fails closed as `kind: unknown`: any other frontmatter key added, removed or changed
-    (its name), a changed block it cannot read whole (`(unparsed frontmatter)`), and a sensitive
+    (its name), a line removed or rewritten in a `.claude-plugin/*.json` manifest, `.mcp.json` or `.lsp.json`
+    (`(removed or rewritten lines)`), a changed block it cannot read whole (`(unparsed frontmatter)`), and a sensitive
     file deleted (`(deleted)`), and every symlink the branch adds or repoints, at any path
     (`(symlink)`), its target never read. Narrowing and unchanged never appear."""
     code, out, err = _git_run(cwd, *SAFE, "merge-base", base, tip, env=env)
@@ -455,6 +457,9 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
                 continue
             added = [ln[1:].strip() for ln in out.splitlines()
                      if ln.startswith("+") and not ln.startswith("+++") and ln[1:].strip()]
+            if MANIFEST_LIKE.search(path) and any(ln.startswith("-") and not ln.startswith(("--- a/", "--- /dev/null"))
+                                                  for ln in out.splitlines()):
+                found.append({"path": path, "kind": "unknown", "added": ["(removed or rewritten lines)"]})
             if added:
                 found.append({"path": path, "kind": "surface", "added": added})
     return found
