@@ -879,7 +879,10 @@ class VerifierGrants(unittest.TestCase):
 
     def test_check_9_cites_the_surfaces_the_grants_audit_covers(self):
         text = " ".join((PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8").split())
-        for surface in (".claude-plugin/*.json", ".mcp.json", ".lsp.json", "(symlink)"):
+        for surface in (".claude-plugin/*.json", ".codex-plugin/*.json", ".mcp.json", ".lsp.json",
+                        "(symlink)", "at any depth", "`hooks`, `mcpServers` or `lspServers`",
+                        ".gitlab-ci.yml", "azure-pipelines.yml", "bitbucket-pipelines.yml",
+                        ".circleci/", ".buildkite/"):
             self.assertIn(surface, text)
 
 class OrchestratorGrants(unittest.TestCase):
