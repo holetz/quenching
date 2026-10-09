@@ -1026,9 +1026,11 @@ class VerifierGrants(unittest.TestCase):
         text = " ".join((PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8").split())
         for surface in (".claude-plugin/*.json", ".codex-plugin/*.json", ".mcp.json", ".lsp.json",
                         "(symlink)", "at any depth", "`hooks`, `mcpServers` or `lspServers`",
-                        ".gitlab-ci.yml", "azure-pipelines.yml", "bitbucket-pipelines.yml",
+                        ".gitlab-ci.yml", "azure-pipelines*.yml", "bitbucket-pipelines.yml",
                         ".circleci/", ".buildkite/", ".github/actions/", "(no line read)",
-                        "GitLab `include`/`local:`", "Azure `template:`", "GitHub `uses: ./`",
+                        "GitLab `include`/`local:`", "`trigger: include:`", "only the list's first level a path",
+                        "Azure `template:`", "`@self` included", "GitHub `uses: ./`",
+                        "`./` the whole repository",
                         "transitively"):
             self.assertIn(surface, text)
 
