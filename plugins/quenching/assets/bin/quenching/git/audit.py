@@ -163,7 +163,7 @@ def _inert_env(cwd: str, errors: list[dict] | None = None) -> dict[str, str]:
     return env
 
 
-LOADED_ROOT = r"^(?:(?:.*/)?\.claude/|(?:.*/)?plugins/[^/]+/)?"   # where Claude Code loads agents, commands and skills from
+LOADED_ROOT = r"^(?:(?:.*/)?(?:\.claude|\.agents)/|(?:.*/)?plugins/[^/]+/)?"   # where the host loads agents, commands and skills from
 FRONTMATTER_GRANT = re.compile(LOADED_ROOT + r"(?:(?:agents|commands)/.+\.md|skills/.+/skill\.md)$", re.I)
 AGENT = re.compile(LOADED_ROOT + r"agents/.+\.md$", re.I)
 MANIFEST = re.compile(r"(?:^|/)\.claude-plugin/(plugin|marketplace)\.json$")
