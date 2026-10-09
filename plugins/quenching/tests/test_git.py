@@ -394,6 +394,19 @@ class Audit(RepoCase):
             self.assertEqual((got[path]["kind"], got[path]["added"]),
                              ("surface", ['{"x": "%s"}' % path]))
 
+    def test_grants_flags_a_line_removed_from_a_server_config_as_unknown(self):
+        path = "plugins/p/.mcp.json"
+        full = pathlib.Path(self.repo, path)
+        full.parent.mkdir(parents=True, exist_ok=True)
+        full.write_text('{\n  "args": [\n    "--read-only",\n    "x"\n  ]\n}\n', encoding="utf-8")
+        _run(self.repo, "add", path)
+        _run(self.repo, "commit", "-q", "-m", "base mcp")
+        _run(self.wt, "merge", "-q", "main")
+        self.assertEqual(self._grants(), [])
+        self._commit_file(path, '{\n  "args": [\n    "x"\n  ]\n}\n', "drop read-only")
+        self.assertEqual(self._grants(), [{"path": path, "kind": "unknown",
+                                           "added": ["(removed or rewritten lines)"]}])
+
     def _commit_on_main(self, rel: str, text: str):
         full = pathlib.Path(self.repo, rel)
         full.parent.mkdir(parents=True, exist_ok=True)
