@@ -63,11 +63,14 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    `STATE: continue` or `blocked`.
 
 9. Grants: the payload's `grants` lists every entry the branch ADDS to an agent's `tools:`, a command's
-   or skill's (`SKILL.md`) `allowed-tools:`, a hook or a CI workflow; an agent without a `tools:` key
+   or skill's (`SKILL.md`) `allowed-tools:`, and the added lines of the surface: a settings file under
+   `.claude/` at any depth, a hook, a CI workflow (`.github/workflows/`, `.gitlab-ci.yml`,
+   `azure-pipelines.yml`, `bitbucket-pipelines.yml`, `.circleci/`, `.buildkite/`), a
+   `.claude-plugin/*.json` or `.codex-plugin/*.json` manifest, `.mcp.json`, `.lsp.json`, and any path
+   a manifest declares under `hooks`, `mcpServers` or `lspServers`; an agent without a `tools:` key
    counts as `added: ["*"]`, and a removed `permissions.deny` or `disallowedTools` entry appears as
    `kind: deny` with the removed entries in `added`. What the audit does not understand fails closed
-   as `kind: unknown`: a line removed or rewritten in a settings file, hook, CI workflow, `.claude-plugin/*.json` manifest,
-   `.mcp.json` or `.lsp.json` (`(removed or rewritten lines)`), any symlink the
+   as `kind: unknown`: a line removed or rewritten in any of that surface (`(removed or rewritten lines)`), any symlink the
    branch adds or repoints at any path (`(symlink)`, its target never read), any other frontmatter key added, removed or changed (its name in `added`), a
    changed frontmatter it cannot read whole (`(unparsed frontmatter)`), and a deleted settings file,
    hook, workflow, agent, command or skill (`(deleted)`). Unchanged never appears, nor a narrowing that removes no surface line. In an autonomous

@@ -421,6 +421,55 @@ class Audit(RepoCase):
         got = {g["path"]: (g["kind"], g["added"]) for g in self._grants()}
         self.assertEqual(got, {settings: removed, hooks: removed})
 
+    def _mirror_grants(self):
+        mirror = str(PLUGIN_ROOT.parent / "quenching-codex" / "scripts" / "bin" / "cq")
+        out = subprocess.run([sys.executable, mirror, "git", "audit", "--worktree", self.wt,
+                              "--base", "main", "--branch", "spec/1", "--json"],
+                             cwd=self.repo, capture_output=True, text=True, check=True).stdout
+        return json.loads(out)["grants"]
+
+    def test_grants_read_settings_at_any_depth_in_the_source_and_the_codex_mirror(self):
+        paths = ("packages/app/.claude/settings.json", ".claude/settings.json",
+                 ".agents/settings.local.json")
+        for path in paths:
+            self._commit_on_main(path, '{"permissions": {"deny": ["Bash(rm:*)"]}}\n')
+        _run(self.wt, "merge", "-q", "main")
+        for path in paths:
+            self._commit_file(path, '{"permissions": {"allow": ["Bash(*)"], '
+                                    '"defaultMode": "bypassPermissions"}}\n', path)
+        for grants in (self._grants(), self._mirror_grants()):
+            got = {(g["path"], g["kind"]): g["added"] for g in grants}
+            for path in paths:
+                self.assertEqual(got[(path, "deny")], ["Bash(rm:*)"])
+                self.assertEqual(got[(path, "unknown")], ["(removed or rewritten lines)"])
+                self.assertIn("bypassPermissions", got[(path, "surface")][0])
+
+    def test_grants_read_a_codex_plugin_manifest_in_the_source_and_the_codex_mirror(self):
+        path = "plugins/x/.codex-plugin/plugin.json"
+        self._commit_file(path, '{"mcpServers": {"s": {"command": "x"}}}\n', "codex mcp")
+        for grants in (self._grants(), self._mirror_grants()):
+            self.assertEqual([(g["path"], g["kind"]) for g in grants], [(path, "surface")])
+
+    def test_grants_read_the_hooks_and_servers_a_plugin_manifest_declares(self):
+        self._commit_on_main("tools/p/.claude-plugin/plugin.json",
+                             '{"name": "p", "hooks": "./config/hooks.json", '
+                             '"mcpServers": "./config/servers.json", "lspServers": ["./lsp"]}\n')
+        _run(self.wt, "merge", "-q", "main")
+        declared = ("tools/p/config/hooks.json", "tools/p/config/servers.json", "tools/p/lsp/go.json")
+        for path in declared:
+            self._commit_file(path, '{"x": "%s"}\n' % path, path)
+        self._commit_file("tools/p/config/other.json", "{}\n", "not declared")
+        got = {g["path"]: (g["kind"], g["added"]) for g in self._grants()}
+        self.assertEqual(got, {p: ("surface", ['{"x": "%s"}' % p]) for p in declared})
+
+    def test_grants_read_ci_outside_github(self):
+        paths = (".gitlab-ci.yml", "azure-pipelines.yml", "ci/azure-pipelines.yaml",
+                 "bitbucket-pipelines.yml", ".circleci/config.yml", ".buildkite/pipeline.yml")
+        for path in paths:
+            self._commit_file(path, "deploy: x\n", path)
+        got = {g["path"]: (g["kind"], g["added"]) for g in self._grants()}
+        self.assertEqual(got, {p: ("surface", ["deploy: x"]) for p in paths})
+
     def _commit_on_main(self, rel: str, text: str):
         full = pathlib.Path(self.repo, rel)
         full.parent.mkdir(parents=True, exist_ok=True)
@@ -830,7 +879,10 @@ class VerifierGrants(unittest.TestCase):
 
     def test_check_9_cites_the_surfaces_the_grants_audit_covers(self):
         text = " ".join((PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8").split())
-        for surface in (".claude-plugin/*.json", ".mcp.json", ".lsp.json", "(symlink)"):
+        for surface in (".claude-plugin/*.json", ".codex-plugin/*.json", ".mcp.json", ".lsp.json",
+                        "(symlink)", "at any depth", "`hooks`, `mcpServers` or `lspServers`",
+                        ".gitlab-ci.yml", "azure-pipelines.yml", "bitbucket-pipelines.yml",
+                        ".circleci/", ".buildkite/"):
             self.assertIn(surface, text)
 
 class OrchestratorGrants(unittest.TestCase):
