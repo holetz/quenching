@@ -444,6 +444,15 @@ class Audit(RepoCase):
         self.assertEqual(got, {(nested, "tools"): ["Bash"], (upper, "tools"): ["Bash"],
                                (skill, "tools"): ["Bash"]})
 
+    def test_grants_ignore_an_okf_standard_in_an_agents_folder_inside_a_plugin(self):
+        standard = "plugins/p/assets/knowledge/standards/agents/new-standard.md"
+        mirror = "plugins/p-codex/knowledge/standards/agents/communication.md"
+        agent = "plugins/p/agents/a.md"
+        for path in (standard, mirror):
+            self._commit_file(path, "---\ntitle: x\ntype: standard\ntimestamp: 1\n---\nbody\n", path)
+        self._commit_file(agent, "---\nname: a\ntools: Bash\n---\nbody\n", "agent")
+        self.assertEqual(self._grants(), [{"path": agent, "kind": "tools", "added": ["Bash"]}])
+
     def test_grants_fail_closed_on_any_added_or_repointed_symlink(self):
         target = pathlib.Path(self.wt, "notes")
         target.mkdir()
