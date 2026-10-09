@@ -17,12 +17,17 @@ or an absent `--sha` never runs `core.sshCommand` or any other transport the con
 `complete: true`. The audit, like check 9 of the verifier, catches the widening a worker that follows the
 protocol makes by mistake; it is not a sandbox against one who evades it on purpose (a worker with
 free `Bash` writes outside any diff anyway). A REPORT only, exit 0 on any facts, and a read that failed is
-an entry of the payload's `errors` (`complete: false`), never an empty list; judging them is the verifier's. Nothing here executes the
+an entry of the payload's `errors` (`complete: false`), never an empty list; judging them is the verifier's.
+An agent, command or skill is read under `.agents/`, under `plugins/<one segment>/`, and under every
+plugin root the base or the tip declares (a `.claude-plugin/plugin.json`, a relative `source` of a
+`.claude-plugin/marketplace.json`, and the component paths either names), never by an `agents/` at
+any depth, so an OKF standard filed under `standards/agents/` is no grant. Nothing here executes the
 audited branch's code: the gate is certified by CI before the merge, never by this verb."""
 from __future__ import annotations
 
 import json
 import os
+import posixpath
 import re
 from quenching.common.git import _git_run
 from quenching.common.output import emit, refuse
@@ -161,6 +166,8 @@ def _inert_env(cwd: str, errors: list[dict] | None = None) -> dict[str, str]:
 LOADED_ROOT = r"^(?:(?:.*/)?\.agents/|(?:.*/)?plugins/[^/]+/)?"   # where Codex loads agents, commands and skills from
 FRONTMATTER_GRANT = re.compile(LOADED_ROOT + r"(?:(?:agents|commands)/.+\.md|skills/.+/skill\.md)$", re.I)
 AGENT = re.compile(LOADED_ROOT + r"agents/.+\.md$", re.I)
+MANIFEST = re.compile(r"(?:^|/)\.claude-plugin/(plugin|marketplace)\.json$")
+COMPONENT_KEYS = ("agents", "commands", "skills")
 SYMLINK = "120000"
 SETTINGS = re.compile(r"^\.agents/settings[^/]*\.json$")
 SURFACE = re.compile(r"^\.github/workflows/|^\.agents/settings[^/]*\.json$|(^|/)hooks/"
@@ -168,6 +175,89 @@ SURFACE = re.compile(r"^\.github/workflows/|^\.agents/settings[^/]*\.json$|(^|/)
 GRANT_KEYS = ("tools", "allowed-tools")
 DENY_KEYS = ("disallowedTools",)
 DOCS = re.compile(r"^docs/")
+
+
+def _declared(base: str, value) -> list[str]:
+    """The relative paths a manifest field names (a string or a list of strings), joined to `base`
+    and normalized; one that leaves the repository is dropped."""
+    items = [value] if isinstance(value, str) else value if isinstance(value, list) else []
+    out = []
+    for item in items:
+        if not isinstance(item, str) or not item.strip() or item.startswith("/"):
+            continue
+        path = posixpath.normpath(posixpath.join(base, item))
+        if path != ".." and not path.startswith("../"):
+            out.append("" if path == "." else path)
+    return out
+
+
+def _plugin_components(root: str, manifest) -> list[tuple[str, str]]:
+    """`(kind, prefix)` for one plugin root: its default `agents/`, `commands/`, `skills/` and every
+    component path its manifest entry declares (a `.md` path is one file, anything else a folder)."""
+    prefix = f"{root}/" if root else ""
+    found = [(kind, prefix + kind + "/") for kind in COMPONENT_KEYS]
+    if isinstance(manifest, dict):
+        for kind in COMPONENT_KEYS:
+            for path in _declared(root, manifest.get(kind)):
+                found.append((kind, path if path.lower().endswith(".md") else (f"{path}/" if path else "")))
+    return found
+
+
+def _plugin_roots(cwd: str, revs: tuple[str, ...], env: dict[str, str],
+                  errors: list[dict]) -> list[tuple[str, str]]:
+    """Every `(kind, prefix)` a plugin of the base or the tip loads agents, commands and skills from,
+    whatever the path's shape: a folder holding `.claude-plugin/plugin.json` is a root even when its
+    JSON does not parse (only the declared component paths are lost then), and so is every relative
+    `source` of a `.claude-plugin/marketplace.json` (under `metadata.pluginRoot` when set). A tree
+    that cannot be listed is an `errors` entry: the roots are unknown, never empty."""
+    found: list[tuple[str, str]] = []
+    for rev in revs:
+        code, out, err = _git_run(cwd, *SAFE, "ls-tree", "-r", "--name-only", "-z", rev, env=env)
+        if code != 0:
+            errors.append(_error(("ls-tree", rev), code, err))
+            continue
+        for path in out.split("\0"):
+            m = MANIFEST.search(path)
+            if not m:
+                continue
+            here = posixpath.dirname(posixpath.dirname(path))
+            code, text, _e = _git_run(cwd, *SAFE, "show", "--no-textconv", f"{rev}:{path}", env=env)
+            try:
+                data = json.loads(text) if code == 0 else None
+            except ValueError:
+                data = None
+            if m.group(1) == "plugin":
+                found += _plugin_components(here, data)
+                continue
+            if not isinstance(data, dict) or not isinstance(data.get("plugins"), list):
+                continue
+            meta = data.get("metadata")
+            prefix = (_declared(here, meta.get("pluginRoot")) if isinstance(meta, dict) else []) or [here]
+            for entry in data["plugins"]:
+                source = entry.get("source") if isinstance(entry, dict) else None
+                for root in _declared(prefix[0], source) if isinstance(source, str) else []:
+                    found += _plugin_components(root, entry)
+    return found
+
+
+def _component(path: str, roots: list[tuple[str, str]]) -> tuple[bool, bool]:
+    """`(grant-bearing frontmatter, agent)` for a path under one of `roots`: an agent or command
+    `.md`, or a skill's `SKILL.md`, case-insensitively."""
+    low, frontmatter, agent = path.lower(), False, False
+    for kind, prefix in roots:
+        pre = prefix.lower()
+        if pre.endswith(".md"):
+            hit = low == pre
+        elif not low.startswith(pre):
+            continue
+        elif kind == "skills":
+            rel = low[len(pre):]
+            hit = rel == "skill.md" or rel.endswith("/skill.md")
+        else:
+            hit = low.endswith(".md")
+        frontmatter = frontmatter or hit
+        agent = agent or (hit and kind == "agents")
+    return frontmatter, agent
 
 
 def _split_entries(value: str) -> list[str]:
@@ -292,7 +382,8 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
     """Every entry the branch ADDS to the grant surface against its merge-base with `base`:
     `tools:`/`allowed-tools:` of an agent, command or skill (an agent with no `tools:` is `*`), a
     deny rule removed (`kind: deny`), and the added lines of a hook, a CI workflow, a
-    `.claude-plugin/*.json` manifest or a `.mcp.json`/`.lsp.json` server config. What it does not
+    `.claude-plugin/*.json` manifest or a `.mcp.json`/`.lsp.json` server config. The agents, commands
+    and skills are the ones under `LOADED_ROOT` or a root `_plugin_roots` derives. What it does not
     understand fails closed as `kind: unknown`: any other frontmatter key added, removed or changed
     (its name), a changed block it cannot read whole (`(unparsed frontmatter)`), and a sensitive
     file deleted (`(deleted)`), and every symlink the branch adds or repoints, at any path
@@ -314,12 +405,14 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
         code, text, _e = _git_run(cwd, *SAFE, "show", "--no-textconv", f"{rev}:{path}", env=env)
         return text if code == 0 else None
 
+    roots = _plugin_roots(cwd, (fork, tip), env, errors)
     found = []
     for path in changed:
         if path in symlinks:   # its target is never read: a link into the tree or a directory fails closed
             found.append({"path": path, "kind": "unknown", "added": ["(symlink)"]})
             continue
-        frontmatter = FRONTMATTER_GRANT.search(path) and not DOCS.match(path)
+        by_root, agent_by_root = _component(path, roots)
+        frontmatter = (FRONTMATTER_GRANT.search(path) or by_root) and not DOCS.match(path)
         surface = SURFACE.search(path)
         if not (frontmatter or surface):
             continue
@@ -330,7 +423,7 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
         old = show(fork, path)
         unparsed = False
         if frontmatter:
-            agent = bool(AGENT.search(path))
+            agent = bool(AGENT.search(path)) or agent_by_root
             old_fm, new_fm = _block(old), _block(new)
             (old_keys, old_ok, old_raw), (new_keys, new_ok, new_raw) = (
                 old_fm or ({}, True, ()), new_fm or ({}, True, ()))
