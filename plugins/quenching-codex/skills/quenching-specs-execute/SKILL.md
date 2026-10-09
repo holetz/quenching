@@ -295,6 +295,13 @@ g. **Run and report the declared hook for this event, and move on.** Once the sp
    read returned, report the event, command, prompt, `optional` flag and any declared `condition`.
    **Never write `refs/remotes/origin/HEAD`** — it lives in the shared `.git`, outside this
    worktree, and nothing here writes it. The hook gets the base by name instead.
+   **In a worktree the hook is never invoked.** When `git rev-parse --git-dir` and
+   `git rev-parse --git-common-dir` differ in the checkout this run commits in, the build runs in a
+   linked worktree and the session's hook would review the base checkout with an empty diff, then
+   end the turn with the review text. Report each declared hook as above, classify it
+   `skipped: worktree` — not a failure, no pause, optional or not — and go to step h; the security
+   review of an orchestrated build is the epic's own. Outside a worktree, continue:
+
    Invoke the declared command as a `Skill` with the task and commit context:
 
    ```text
@@ -323,7 +330,7 @@ g. **Run and report the declared hook for this event, and move on.** Once the sp
    run continues; a non-optional hook failure is reported and pauses the run. Neither failure
    undoes the spec tick or rebuilds the already successful commit. **Classify every hook that
    was invoked as `ran`, `failed` (the command resolved and its run failed) or `unresolved` (no such
-   command exists), and carry the classification to the report** — an orchestrated run returns it
+   command exists), and every hook not invoked in a worktree as `skipped: worktree`; carry the classification to the report** — an orchestrated run returns it
    as the spec-runner's `HOOKS:` line, so an optional hook that never resolved is never lost. A hook
    absent from config is silent.
 
