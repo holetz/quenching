@@ -3,7 +3,7 @@ type: project
 title: Repository layout
 description: What sits where in this checkout — the marketplace root, the plugin payload and its asset families, the generated specs-reader sibling, and which command owns each surface
 resource: plugins/**, scripts/**, docs/**
-tags: [repository, layout, plugin, marketplace, codex]
+tags: [repository, layout, plugin, marketplace]
 timestamp: 2026-10-11
 audience: both
 authority: current
