@@ -303,8 +303,8 @@ def _ci_refs(kind: str, path: str, text: str) -> list[str]:
             continue
         m = CI_KEY.match(line)
         key, value = (m.group(1), _ci_value(m.group(2))) if m else (None, "")
-        if kind == "gitlab" and block is not None and body.startswith("- ") and item is None:
-            item = indent
+        if kind == "gitlab" and block is not None and item is None:
+            item = indent if body.startswith("- ") else -1   # a map's first line: no list, only `local:`
         if kind == "gitlab" and key == "local":
             found.append(value)
         elif kind == "gitlab" and block is not None and body.startswith("- ") and indent == item:
