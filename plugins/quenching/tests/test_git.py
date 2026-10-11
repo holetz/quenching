@@ -2878,7 +2878,27 @@ class StewardGrants(unittest.TestCase):
                 self.assertFalse(self._admits(grant, command), (grant, command))
 
     def test_grants_are_plain_prefixes_with_no_raw_git_or_gh_write(self):
-        self.assertIn("cq git:*", self.grants)
+        self.assertNotIn("cq git:*", self.grants)
+        self.assertEqual([g for g in self.grants if g.startswith("cq git ")], [
+            "cq git base:*", "cq git commit:*", "cq git conventions:*", "cq git specs:*",
+            "cq git state:*", "cq git push:*", "cq git pr create:*", "cq git pr probe:*",
+            "cq git pr merge:*", "cq git pr record:*", "cq git worktree add:*",
+            "cq git worktree retire:*"])
+        for unused in ("stale", "prune", "audit"):
+            for grant in self.grants:
+                self.assertFalse(self._admits(grant, f"cq git {unused}"), (grant, unused))
+
+    def test_every_cq_git_verb_a_followed_body_calls_is_granted(self):
+        root = PLUGIN_ROOT
+        bodies = [root / "agents" / "git-steward.md"] + [
+            root / "commands" / "git" / f"{c}.md" for c in ("branch", "commit", "pr/create")]
+        for body in bodies:
+            text = body.read_text(encoding="utf-8").split("\n---\n", 1)[-1]
+            for verb in set(re.findall(r"`?cq git ((?:pr|worktree) [a-z]+|[a-z]+)", text)):
+                if verb in ("pr", "worktree", "takes", "declares", "verb", "verbs"):
+                    continue  # prose ("cq git takes no --root"), not a call
+                self.assertTrue(any(self._admits(g, f"cq git {verb}") for g in self.grants),
+                                (body.name, verb))
         for grant in self.grants:
             self.assertNotIn("*", grant.removesuffix(":*"), grant)
             self.assertFalse(grant.startswith(("git ", "git:", "bash", "gh pr merge",
