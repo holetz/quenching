@@ -79,8 +79,14 @@ class TaskExecutionContractTests(unittest.TestCase):
         command = " ".join(COMMAND.read_text(encoding="utf-8").split())
 
         self.assertIn("skipped: worktree", command)
-        self.assertIn("git rev-parse --git-common-dir", command)
+        self.assertIn("git rev-parse --path-format=absolute --git-dir", command)
+        self.assertIn("git rev-parse --path-format=absolute --git-common-dir", command)
         self.assertIn("never invoked", command)
+
+    def test_runner_hooks_line_accepts_the_worktree_skip(self):
+        runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
+
+        self.assertIn("ran|failed|unresolved|skipped: worktree", runner)
 
     def test_low_gear_chains_conclude_to_the_provider_pr_skill(self):
         conclude = CONCLUDE.read_text(encoding="utf-8")
