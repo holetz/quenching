@@ -125,8 +125,10 @@ the subagent must be handed so much context that the handoff costs what the isol
 (what it does **and when to invoke it** — the description is always-on context, the same
 cost discipline as a command's), `tools` scoped to the narrowest set, and `model`/`effort`
 under the pinning rules above (an agent's pin is cache-safe — it has its own context). Two
-fields default safe and are opened deliberately: `spawned-agents` (an agent that can spawn
-agents can run away — name what it may spawn), and `skills` (a preloaded skill's **full
+fields default safe and are opened deliberately: spawning (a subagent spawns subagents of its
+own only when `Agent` is in its `tools`, within the depth limit; a type list in parentheses is
+ignored in a subagent definition and honoured only for `claude --agent` — an agent that can
+spawn agents can run away, so leave `Agent` out unless the job needs it), and `skills` (a preloaded skill's **full
 body** persists for the agent's whole run — preload only what every run reads). `memory:` (scope `user`, `project` or `local`)
 only when the agent genuinely learns across sessions; its memory file is a recurring cost on
 every run.
