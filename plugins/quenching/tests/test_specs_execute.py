@@ -57,7 +57,7 @@ class TaskExecutionContractTests(unittest.TestCase):
 
     def test_execute_runs_enabled_hooks_and_reports_optional_failures(self):
         command = COMMAND.read_text(encoding="utf-8")
-        config = json.loads((ROOT / ".agents" / "quenching.json").read_text(encoding="utf-8"))
+        config = json.loads((ROOT / ".claude" / "quenching.json").read_text(encoding="utf-8"))
 
         self.assertIn('Skill("<declared hook command>",', command)
         self.assertIn("optional: true", command)
