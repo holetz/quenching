@@ -178,7 +178,8 @@ SETTINGS_AT = r"(?:^|/)(?:\.claude|\.agents)/settings[^/]*\.json$"   # an altern
 SETTINGS = re.compile(SETTINGS_AT)
 SURFACE = re.compile(r"^\.github/(?:workflows|actions)/|" + SETTINGS_AT + r"|(^|/)hooks/"
                      r"|(^|/)\.(?:claude|codex)-plugin/[^/]+\.json$|(^|/)\.(mcp|lsp)\.json$"
-                     r"|(^|/)(?:\.gitlab-ci|azure-pipelines[^/]*|bitbucket-pipelines)\.ya?ml$"
+                     r"|(^|/)(?:\.gitlab-ci|bitbucket-pipelines)\.ya?ml$"
+                     r"|^(?!plugins/[^/]+/assets/)(?:.*/)?azure-pipelines[^/]*\.ya?ml$"   # a template the plugin distributes is not this repo's CI
                      r"|(^|/)\.(?:circleci|buildkite)/")
 GRANT_KEYS = ("tools", "allowed-tools")
 DENY_KEYS = ("disallowedTools",)
@@ -252,7 +253,7 @@ def _plugin_roots(cwd: str, revs: tuple[str, ...], env: dict[str, str],
     return found
 
 
-CI_ROOT = re.compile(r"(?:^|/)(?P<gitlab>\.gitlab-ci\.ya?ml)$|(?:^|/)(?P<azure>azure-pipelines[^/]*\.ya?ml)$"
+CI_ROOT = re.compile(r"(?:^|/)(?P<gitlab>\.gitlab-ci\.ya?ml)$|^(?!plugins/[^/]+/assets/)(?:.*/)?(?P<azure>azure-pipelines[^/]*\.ya?ml)$"
                      r"|^(?P<github>\.github/(?:workflows|actions)/)")
 CI_KEY = re.compile(r"^\s*(?:-\s+)?(local|template|uses):\s*(.+)$")
 GITLAB_INCLUDE = re.compile(r"^\s*include:\s*(.*)$")
