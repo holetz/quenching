@@ -32,7 +32,9 @@ scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
   `authority: current`. Never invent a `resource:` — derive it from the source (a glob set of
   what the doc governs, or the URL) — and never invent a `source_uri:` either: it is the unit's
   real URI, or it is absent. How each doc records where it came from is sources.md's to state,
-  cited at the top of this file and deliberately not repeated here.
+  cited at the top of this file and deliberately not repeated here. Never assert a global
+  absence ("nothing in the repo does X") without the search that proves it, cited in the plan;
+  with no such search the unit does not make the claim.
 - **MERGE, never clobber.** A unit that maps to an existing doc/term is an **enrich** target —
   fill missing keys, sharpen the body — never overwrite a filled field or a filled body.
 - **Never ingest transient / secret / PII.** Skip credentials, tokens, personal data, and
@@ -56,13 +58,14 @@ Then **dedup** exactly as [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/k
 `source_uri` before resemblance**. What this step owes step 3 is the verdict that ordering
 produces: every unit leaves here labelled **new**, **already imported** (an exact URI hit — the
 doc it hit is the MERGE target), or **resembles an existing doc** (a judgement, not a match),
-carrying the URI or the term that decided it. For a large source, fan **one `Task` sub-agent per source
+or **contradicts an existing doc** (also a judgement: the unit asserts the opposite of a bundle
+doc, with the passage from each side), carrying the URI or the term that decided it. For a large source, fan **one `Task` sub-agent per source
 slice** out to return **compact unit candidates** (home / `type` / path / one-line + source
 anchor + its `source_uri`), never full bodies; the orchestrator merges and judges. Extraction sub-agents may run
 on a **cheap model/effort** — enrich **deletes nothing**, so a misclassification only misfiles
 a doc (correctable), unlike `/quenching:knowledge:import-memory` (see the model policy in
   [README.md §model-policy](${CLAUDE_PLUGIN_ROOT}/README.md#model-policy)). **Done when:** every unit
-  has a new/imported/resemblance verdict with its source anchor.
+  has a new/imported/resemblance/contradicts verdict with its source anchor.
 
 ### 3. Present ONE ingestion plan → gate on ONE OK
 Show the **complete** plan: every doc to **mint** or **enrich** with its home, `type`, path,
@@ -75,6 +78,10 @@ the matching `source_uri:` and the doc it hit; or **resembles an existing doc**,
 title, slug or term that matched and the doc it matched. The last is the only one the human is
 really being asked to check — an exact URI match needs no trust and a resemblance does, and
 rendering the two identically is how a wrong MERGE hides inside a batch OK.
+
+A **contradicts** unit is never a MERGE and never overwrites: it is its **own** separate item,
+showing both passages, and enters only on the human's explicit choice; without one it goes to the
+residue.
 
 A single OK executes the whole batch. A
 minted/edited doc whose change reaches the target's **product code** is its **own**
@@ -102,8 +109,11 @@ Self-check every touched file against homes.md §Self-check /
 [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md),
 then run `cq knowledge validate /docs` over the
 bundle: **zero errors**, and the structural WARNs (`dir-no-index` / `index-broken-link` /
-`index-orphan`) cleared. Report residue — units deferred, sources left unfetched, MERGE
-targets skipped. **Done when:** validation has run and deferred work is named.
+`index-orphan`) cleared. Close the report with a **Residue** block — units deferred, sources left unfetched, MERGE
+targets skipped, contradictions without a decision — one line per item, each with what resuming
+it needs (the seed list of a fresh run). Offer it to the human as a `/quenching:specs:create`
+capture; never create the spec unasked, never write the residue into the repo.
+**Done when:** validation has run and the Residue block is reported.
 
 ## Invariants to never violate
 - **Never add `context: fork`.** This is a sweep skill: it gates on a mid-flow plan → OK,
