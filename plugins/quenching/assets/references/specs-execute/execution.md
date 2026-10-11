@@ -136,6 +136,12 @@ Two rules bound the loop:
 
 **`--block` requires `--reason`** (the tool refuses without one).
 
+**A regression test's RED is measured in a base worktree, never with `git stash`.** To prove a
+test fails without the fix, add a worktree of the base (`git worktree add <path> <base>`), copy the
+test in, and `git apply -R` the production diff there; the stash, checkout or reset it replaces
+would erase other agents' work in the shared checkout. Record the result as one evidence line in
+the task's report: `RED: <test> fails without <fix> (git apply -R, base worktree)`.
+
 A human resumes a blocked task by fixing the cause and un-blocking it —
 `cq specs task --spec <id> --uncheck <id>` returns it to `- [ ]` — after changing something,
 never merely to try the same approach again.
