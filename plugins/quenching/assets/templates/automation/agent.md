@@ -12,8 +12,6 @@ tools: <the NARROWEST set the work needs — Read, Grep, Glob for a verifier; ad
 #   own context. Judgment — classification gating a deletion, ranking, authoring — never
 #   downgrades.>
 # effort: <low for mechanical collection; omit to inherit.>
-# spawned-agents: <name what this agent may spawn, or omit the capability — an agent that can
-#   spawn agents can run away.>
 # skills: <preload ONLY a skill every run reads — the FULL body persists for the agent's
 #   whole execution.>
 # memory: <true only when the agent genuinely learns across sessions; its memory file is a
