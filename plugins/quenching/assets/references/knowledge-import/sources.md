@@ -108,8 +108,12 @@ the reading was, and that costs a sentence in the body rather than a second key 
    2. **Approximate, by concept.** No hit → `Grep` the bundle by title, slug, and any
       repo-specific term. A doc found this way covers the same concept from a *different* origin,
       or from none at all, so calling it the same concept is a judgement — present it as one.
+   3. **Contradiction, by concept.** A doc found in (2) whose content the unit asserts the
+      opposite of is a **contradicts** verdict, a judgement like (2). It blocks the MERGE: the
+      unit is never fused into that doc and never overwrites it. It is its own plan item showing
+      both passages, entering only on the human's choice, else going to the residue.
 
-   Either way the unit is a **MERGE** target — enrich that doc (fill missing keys, add detail,
+   Otherwise, either way the unit is a **MERGE** target — enrich that doc (fill missing keys, add detail,
    add the source link), never a second doc for the same concept. Record every MERGE-vs-mint
    decision in the plan, **and which of the two lookups produced it**.
 3. **Glossary.** A term the source defines that the glossary already lists is a MERGE into the
