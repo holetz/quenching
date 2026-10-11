@@ -455,11 +455,11 @@ class PayloadResolution(unittest.TestCase):
 
 
 class ConcludeGeneratedConflictRecipeTest(unittest.TestCase):
-    def test_recipe_regenerates_both_generators_before_concluding_the_merge(self):
+    def test_recipe_regenerates_the_specs_reader_before_concluding_the_merge(self):
         text = (Path(__file__).resolve().parents[1] / "commands" / "specs" / "conclude.md").read_text(encoding="utf-8")
         text = " ".join(text.split())
+        self.assertNotIn("plugins/quenching-codex", text)
         for needle in ("regenerate before concluding the merge",
-                       "cq components translate --write",
                        "python3 scripts/sync_specs_reader_plugin.py --write",
                        "python3 scripts/sync_specs_reader_plugin.py --check"):
             self.assertIn(needle, text)
