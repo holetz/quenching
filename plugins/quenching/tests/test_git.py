@@ -552,11 +552,14 @@ class Audit(RepoCase):
         self.assertEqual(sorted(got), ["azure-pipelines-docs.yml", "templates/main.yml"])
 
     def test_grants_ignore_an_azure_template_the_plugin_distributes_but_keep_a_real_root(self):
-        tpl = "plugins/p/assets/zensical/azure-pipelines-docs.yml"
+        tpl = "plugins/quenching/assets/zensical/azure-pipelines-docs.yml"
         self._commit_file(tpl, "steps: []\n", "template")
         self.assertEqual(self._grants(), [])
+        self._commit_file("plugins/foo/assets/deep/x/azure-pipelines-prod.yaml", "steps: []\n", "other")
+        self.assertEqual([g["path"] for g in self._grants()], ["plugins/foo/assets/deep/x/azure-pipelines-prod.yaml"])
         self._commit_file("azure-pipelines.yml", "steps: []\n", "root")
-        self.assertEqual([g["path"] for g in self._grants()], ["azure-pipelines.yml"])
+        self.assertEqual(sorted(g["path"] for g in self._grants()),
+                         ["azure-pipelines.yml", "plugins/foo/assets/deep/x/azure-pipelines-prod.yaml"])
 
     def test_grants_take_a_github_uses_of_the_root_as_the_whole_repository(self):
         got = self._ci_surface({
