@@ -146,6 +146,29 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn("ct-translation-refused", out.getvalue())
 
+    def test_check_without_a_codex_surface_reports_no_drift(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = translate.cmd_translate(argparse.Namespace(
+                check=True, write=False, diff=False, source=str(self.root), target=str(self.root), json=True),
+                str(self.root))
+        payload = json.loads(out.getvalue())
+        self.assertEqual(code, 0)
+        self.assertEqual(payload["reconciliation"], "absent")
+        self.assertEqual(payload["changed"], [])
+        self.assertNotIn("ct-translation-drift", out.getvalue())
+        self.assertFalse((self.root / ".agents").exists())
+
+    def test_check_with_an_unmanifested_codex_surface_still_reports_drift(self):
+        (self.root / ".agents").mkdir()
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = translate.cmd_translate(argparse.Namespace(
+                check=True, write=False, diff=False, source=str(self.root), target=str(self.root), json=True),
+                str(self.root))
+        self.assertEqual(code, 1)
+        self.assertIn("ct-translation-drift", out.getvalue())
+
     def test_damaged_manifest_never_raises_a_traceback(self):
         for payload in ({"files": [], "sha256": ["x"]}, {"files": [], "sha256": "x"}):
             with self.subTest(payload=payload):
