@@ -1021,6 +1021,13 @@ class VerifierGrants(unittest.TestCase):
                         "transitively"):
             self.assertIn(surface, text)
 
+class VerifierScopeCheck(unittest.TestCase):
+    def test_check_4_names_where_the_tasks_files_are_read(self):
+        text = " ".join((PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8").split())
+        self.assertIn("cq specs show --spec <id> --task <t> --json", text)
+        self.assertIn("carries no `files:`", text)
+
+
 class OrchestratorGrants(unittest.TestCase):
     """The `orchestrator` reads the wave audit through `cq git state`, never a raw `git status`
     or `git stash list` grant: those admit the config's filter drivers and `--output`."""
