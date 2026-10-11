@@ -61,9 +61,9 @@ overwritten. **Done when:** the path is fixed, collision-free or resolved as an 
 
 ### 4. Draft from the mold
 Fill `automation/agent.md`: a description carrying the work **and the timing** ("after X is
-modified", "when asked to audit Y") within the caps; `tools` at the narrowest set;
+modified", "when asked to audit Y") within the caps; `tools` at the narrowest set (spawning is controlled by `Agent` in `tools`);
 `model`/`effort` per the pinning rules (mechanical extraction may run cheap — judgment never
-downgrades; a pin here is cache-safe); `spawned-agents`, `skills`, `memory` only with a
+downgrades; a pin here is cache-safe); `skills`, `memory` only with a
 stated reason. The body is a **system prompt in second person**. Inspection work takes the
 verifier shape: numbered check areas, a "not checked here" list, if-present guards, a fixed
 report format — and it never edits. **Done when:** the draft passes
