@@ -428,12 +428,20 @@ class PayloadResolution(unittest.TestCase):
         self.assertEqual(translate.claude_surface(), self.root / ".claude")
         self.assertEqual(translate.codex_surface(), self.root / ".agents")
 
-    def test_bare_invocation_inside_the_marketplace_translates_the_packaged_pair(self):
+    def test_bare_invocation_inside_a_marketplace_with_the_sibling_translates_the_packaged_pair(self):
+        payload = self.root / "plugins" / "quenching"
+        payload.mkdir(parents=True)
+        (self.root / "plugins" / "quenching-codex").mkdir()
+        self.assertEqual(translate._default_pair(payload, str(self.root / ".claude")),
+                         (payload, self.root / "plugins" / "quenching-codex"))
+
+    def test_bare_invocation_inside_the_marketplace_without_the_sibling_translates_the_repository(self):
         payload = translate.payload_root()
-        translate.configure(None, None, str(payload.parent.parent))
-        self.assertEqual(translate.source(), payload)
-        self.assertEqual(translate.target(), payload.parent / "quenching-codex")
-        self.assertTrue(translate.plugin_translation())
+        repository = payload.parent.parent
+        translate.configure(None, None, str(repository))
+        self.assertEqual(translate.source(), repository)
+        self.assertEqual(translate.target(), repository)
+        self.assertFalse(translate.plugin_translation())
 
     def test_the_adaptation_map_is_the_payloads_whatever_the_pair(self):
         expected = translate.payload_root() / "assets" / "translation" / "codex-adaptation.json"

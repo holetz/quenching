@@ -22,13 +22,11 @@ from quenching.common.io import read_text, write_text
 # four are relative to the REPO root, and this verb only makes sense run from the
 # plugin's own checkout — a target repository that merely has this plugin installed
 # carries none of them.
-# The generated siblings (Codex, specs-reader) and EVERY marketplace entry move too: a
+# The generated specs-reader sibling and EVERY marketplace entry move too: a
 # "jsonall" artifact carries one `"version"` per plugin entry and each is rewritten.
 RELEASE_ARTIFACTS = (
     ("plugins/quenching/VERSION", "plain"),
     ("plugins/quenching/.claude-plugin/plugin.json", "json"),
-    ("plugins/quenching-codex/VERSION", "plain"),
-    ("plugins/quenching-codex/.codex-plugin/plugin.json", "json"),
     ("plugins/quenching-specs-reader/VERSION", "plain"),
     ("plugins/quenching-specs-reader/.claude-plugin/plugin.json", "json"),
     (".claude-plugin/marketplace.json", "jsonall"),

@@ -66,10 +66,6 @@ run_check "harness (AGENTS.md / CLAUDE.md)" \
   python3 scripts/check_claude_harness.py
 run_check "docs bundle" \
   python3 plugins/quenching/assets/bin/cq knowledge validate docs
-run_check "Claude/Codex translation" \
-  python3 plugins/quenching/assets/bin/cq --root . components translate --check --json
-run_check "Codex artifact lockstep" \
-  python3 scripts/validate_codex_plugin.py
 run_check "specs reader lockstep" \
   python3 scripts/sync_specs_reader_plugin.py --check
 run_check "citation checks" \

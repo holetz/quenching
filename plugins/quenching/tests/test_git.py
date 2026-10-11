@@ -421,14 +421,7 @@ class Audit(RepoCase):
         got = {g["path"]: (g["kind"], g["added"]) for g in self._grants()}
         self.assertEqual(got, {settings: removed, hooks: removed})
 
-    def _mirror_grants(self):
-        mirror = str(PLUGIN_ROOT.parent / "quenching-codex" / "scripts" / "bin" / "cq")
-        out = subprocess.run([sys.executable, mirror, "git", "audit", "--worktree", self.wt,
-                              "--base", "main", "--branch", "spec/1", "--json"],
-                             cwd=self.repo, capture_output=True, text=True, check=True).stdout
-        return json.loads(out)["grants"]
-
-    def test_grants_read_settings_at_any_depth_in_the_source_and_the_codex_mirror(self):
+    def test_grants_read_settings_at_any_depth_including_the_agents_root(self):
         paths = ("packages/app/.claude/settings.json", ".claude/settings.json",
                  ".agents/settings.local.json")
         for path in paths:
@@ -437,18 +430,16 @@ class Audit(RepoCase):
         for path in paths:
             self._commit_file(path, '{"permissions": {"allow": ["Bash(*)"], '
                                     '"defaultMode": "bypassPermissions"}}\n', path)
-        for grants in (self._grants(), self._mirror_grants()):
-            got = {(g["path"], g["kind"]): g["added"] for g in grants}
-            for path in paths:
-                self.assertEqual(got[(path, "deny")], ["Bash(rm:*)"])
-                self.assertEqual(got[(path, "unknown")], ["(removed or rewritten lines)"])
-                self.assertIn("bypassPermissions", got[(path, "surface")][0])
+        got = {(g["path"], g["kind"]): g["added"] for g in self._grants()}
+        for path in paths:
+            self.assertEqual(got[(path, "deny")], ["Bash(rm:*)"])
+            self.assertEqual(got[(path, "unknown")], ["(removed or rewritten lines)"])
+            self.assertIn("bypassPermissions", got[(path, "surface")][0])
 
-    def test_grants_read_a_codex_plugin_manifest_in_the_source_and_the_codex_mirror(self):
+    def test_grants_read_a_codex_plugin_manifest(self):
         path = "plugins/x/.codex-plugin/plugin.json"
         self._commit_file(path, '{"mcpServers": {"s": {"command": "x"}}}\n', "codex mcp")
-        for grants in (self._grants(), self._mirror_grants()):
-            self.assertEqual([(g["path"], g["kind"]) for g in grants], [(path, "surface")])
+        self.assertEqual([(g["path"], g["kind"]) for g in self._grants()], [(path, "surface")])
 
     def test_grants_read_the_hooks_and_servers_a_plugin_manifest_declares(self):
         self._commit_on_main("tools/p/.claude-plugin/plugin.json",
@@ -612,16 +603,12 @@ class Audit(RepoCase):
         self._commit_file(skill, "---\nname: s\nallowed-tools: Bash\n---\n", "skill")
         self.assertEqual(self._grants(), [{"path": skill, "kind": "tools", "added": ["Bash"]}])
 
-    def test_grants_codex_mirror_reads_the_claude_and_agents_roots(self):
-        mirror = str(PLUGIN_ROOT.parent / "quenching-codex" / "scripts" / "bin" / "cq")
+    def test_grants_read_the_claude_and_agents_roots(self):
         paths = (".claude/agents/a.md", ".claude/commands/c.md", ".claude/skills/s/SKILL.md",
                  ".agents/skills/t/SKILL.md")
         for rel in paths:
             self._commit_file(rel, "---\nname: x\ntools: Bash\n---\n", rel)
-        out = subprocess.run([sys.executable, mirror, "git", "audit", "--worktree", self.wt,
-                              "--base", "main", "--branch", "spec/1", "--json"],
-                             cwd=self.repo, capture_output=True, text=True, check=True).stdout
-        self.assertEqual(sorted(g["path"] for g in json.loads(out)["grants"]), sorted(paths))
+        self.assertEqual(sorted(g["path"] for g in self._grants()), sorted(paths))
 
     def test_grants_read_a_frontmatter_behind_a_bom(self):
         agent = "plugins/p/agents/a.md"
