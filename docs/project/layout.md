@@ -1,10 +1,10 @@
 ---
 type: project
 title: Repository layout
-description: What sits where in this checkout — the marketplace root, the plugin payload and its asset families, the generated Codex mirror, and which command owns each surface
+description: What sits where in this checkout — the marketplace root, the plugin payload and its asset families, the generated specs-reader sibling, and which command owns each surface
 resource: plugins/**, scripts/**, docs/**
 tags: [repository, layout, plugin, marketplace, codex]
-timestamp: 2026-08-29
+timestamp: 2026-10-11
 audience: both
 authority: current
 source: derived from the checkout itself on 2026-08-29 (`ls` over each directory named below); the ownership column restates each command's own declared write boundary
@@ -24,17 +24,16 @@ of a behaviour and editing a generated copy of it.
 | --- | --- | --- |
 | `docs/` | this OKF bundle — the knowledge tree **and** the source of this site | `/quenching:knowledge:*` |
 | `plugins/quenching/` | the plugin payload that gets installed | the owning spec |
-| `plugins/quenching-codex/` | **generated** mirror of the payload for Codex | `cq components translate` |
+| `plugins/quenching-specs-reader/` | **generated** read-only sibling of the payload | `scripts/sync_specs_reader_plugin.py` |
 | `.claude/` | this repository's own local command surface | `/quenching:components:*` |
-| `.agents/` | **generated** mirror of `.claude/` for Codex | `cq components translate` |
 | `scripts/` | thin launchers CI calls | the owning spec |
 | `zensical.toml` | the site layer — outside the bundle, on purpose | `/quenching:knowledge:documentation:build` |
 | `CLAUDE.md`, `AGENTS.md` | harness pointers, kept thin over this bundle | `/quenching:components:harness:align` |
 
-Two of those rows are the trap: `plugins/quenching-codex/` and `.agents/` are **regenerated
-wholesale**. Editing them by hand produces a change that survives until the next translate and
-then vanishes without a diff to explain it. Both carry a `.generated-from.json` naming their
-source.
+`plugins/quenching-specs-reader/` is the trap: it is **regenerated wholesale**, so editing it by
+hand produces a change that survives until the next sync and then vanishes without a diff to
+explain it. The generated Codex mirrors (`plugins/quenching-codex/`, `.agents/`) were retired on
+2026-10-11; `cq components translate` still generates one on demand.
 
 ## Inside the plugin payload
 
