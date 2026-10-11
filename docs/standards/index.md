@@ -58,7 +58,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 | [configuration-arbitration.md](architecture/configuration-arbitration.md) | A shared configuration artifact has one writer for each semantic key, separate reader metadata, and no arbiter row for a read-only pillar, with a generated declaration first applied to pyproject.toml |
 | [delivery-front.md](architecture/delivery-front.md) | The target repository's delivery surface — bounded pipeline shape, release reachability and ownership boundaries across workflow, proof, ops, toolchain and security |
 | [design-front.md](architecture/design-front.md) | The single DTCG source, its portable and editorial projections, explicit arbitration with Impeccable, and the boundary between web and non-web drift |
-| [front-mold.md](architecture/front-mold.md) | The one binding minimum for a local front declaration, route, align/status surface, disposition bands and Codex projection, with measured domain-specific deltas |
+| [front-mold.md](architecture/front-mold.md) | The one binding minimum for a local front declaration, route, align/status surface, disposition bands, with measured domain-specific deltas |
 | [generated-listings.md](architecture/generated-listings.md) | A listing regenerated from disk is a second source of a fact something else already derives, so it earns its keep only where nothing else derives that fact and a checker can decide freshness; the decision criterion is whether a command already answers the same question on demand, the /docs/ bundle index.md files are the counterexample that bounds the rule, and a convergence condition may name only what a checker decides |
 | [align-surface.md](architecture/align-surface.md) | The aligned-front column — one align per local front carrying its content stages, the `security` and `git` pillars declared outside the conductor, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, the rule that no sweep records itself, and the conductor categories sharing the cycle-authorization contract — `/align` conducts the seven local fronts (`knowledge`, `design`, `components`, `ops`, `proof`, `toolchain`, `delivery`); none reimplements what it conducts |
 | [install-profiles.md](architecture/install-profiles.md) | A profile declares which of the seven local fronts a repository asks the root align to conduct; provider-owned specs and the security and git pillars remain available axes, and the profile does not alter command files or host invocation behavior |
@@ -96,7 +96,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 
 | Doc | Covers |
 | --- | --- |
-| [versioning-release.md](ci-cd/versioning-release.md) | The four source version surfaces that cq specs release bumps together, with the generated Codex sibling refreshed from the same source version |
+| [versioning-release.md](ci-cd/versioning-release.md) | The four source version surfaces that cq specs release bumps together, with the generated specs-reader sibling refreshed from the same source version |
 
 ### code/
 

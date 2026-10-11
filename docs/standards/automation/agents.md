@@ -77,5 +77,4 @@ Rules for agents the plugin itself ships in `plugins/quenching/agents/` (as oppo
   in a fixed return report. A worker result is accepted only on a `verifier` PASS.
 - Plugin agents cannot carry hooks, so prohibitions are prose, enforced by the verifier's audit.
 - Pass `model` explicitly when delegating; a declared pin may not survive into a subagent.
-- Models: no `haiku` for agents that write product code. The Codex translation does not carry
-  `agents/`.
+- Models: no `haiku` for agents that write product code.
