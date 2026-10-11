@@ -90,6 +90,13 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertIn("git rev-parse --path-format=absolute --git-common-dir", command)
         self.assertIn("never invoked", command)
 
+    def test_resume_reruns_the_last_checked_verify_before_any_code(self):
+        command = " ".join(COMMAND.read_text(encoding="utf-8").split())
+
+        self.assertIn("On a resume, re-run the last checked task's `verify:`", command)
+        self.assertIn("Red → **stop**", command)
+        self.assertIn("Nothing checked yet → run nothing", command)
+
     def test_runner_hooks_line_accepts_the_worktree_skip(self):
         runner = " ".join(RUNNER.read_text(encoding="utf-8").split())
 

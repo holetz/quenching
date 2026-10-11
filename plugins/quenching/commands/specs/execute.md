@@ -132,8 +132,16 @@ whose script is gone fails every commit. Probe once, in the same call as the rea
 §The hook probe. Anything other than `none` → report it before the first task, name the hook and
 the missing path, and let the human decide; never `--no-verify` past it. Silent when nothing wired.
 
+**2c. On a resume, re-run the last checked task's `verify:` before any code.** A resume is a
+`status` with at least one task checked. Take the last checked task and run its `verify:` (the
+`## Validation` command when it has none) from its declared `cwd:`, in the same checkout the run
+builds in. Green → go on to step 3. Red → **stop**: report the task, the command and its output,
+write nothing and fix nothing; the regression belongs to the task that caused it, not to the
+conclude gate. Nothing checked yet → run nothing.
+
 **Done when:** the tree is clean, isolation has been taken,
-found already held, or declined, and any unresolved hook has been reported.
+found already held, or declined, and any unresolved hook has been reported, and a resume's last checked task still
+verifies.
 
 ### 3. Settle the approval, off the state step 2 already read
 **Load the stage ladder first** — what the derived stage names and means:
