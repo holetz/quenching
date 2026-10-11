@@ -1,7 +1,7 @@
 ---
 type: standard
 title: Front mold
-description: The one binding minimum for a local front declaration, route, align/status surface, disposition bands and Codex projection, with measured domain-specific deltas
+description: The one binding minimum for a local front declaration, route, align/status surface, disposition bands, with measured domain-specific deltas
 resource: docs/standards/architecture/{design-front.md,ops-front.md,proof-front.md,toolchain-front.md,delivery-front.md,security-pillar.md}, plugins/quenching/commands/{design,ops,proof,toolchain,delivery,security}/**
 tags: [architecture, front, mold, design, ops, proof, toolchain, delivery, security]
 timestamp: 2026-08-31
@@ -27,8 +27,7 @@ This file is the canonical host for the mold. The architecture standards for des
 toolchain and delivery cite it for the shared minimum; the security pillar cites it for the
 read-only route and reporting floor. The executor-facing
 `plugins/quenching/assets/references/front-align/mold.md` is a projection for command readers and
-must not introduce a competing binding rule. Its Codex copy mirrors the source projection after
-the source and projection are generated.
+must not introduce a competing binding rule.
 
 The host is an architecture standard because the rule governs how a front is shaped across target
 repositories, not how one command prints a report. A front-specific reference may explain the
@@ -46,7 +45,7 @@ does not invent a default when the value is absent.
 | Align body | probe before inventory, applicability classification, one plan/authorization, bounded ownership-safe writes, the same closing verifier and a residual report | source arbitration, registry repair, layer/floor treatment and other domain decisions |
 | Status body | read-only payload, explicit missing/refused/not-applicable states, stable finding codes and bands, and the owner/command that closes actionable residue | authoritative evidence rows and front-specific findings |
 | Disposition bands | mechanical, structural and judgement mapping; evidence; closure command; and the person or mechanism allowed to decide | codes, severity, structural repairs and judgement owner |
-| Translation | canonical source command/reference and a Codex surface that mirrors its contract | language, harness spelling and generated path |
+| Translation | none in this repository: the Codex mirror was retired on 2026-10-11 | none |
 
 The mold is a minimum, not a cloned template. A front-specific field belongs in the front's own
 contract when another citer may not legitimately write it. Optionality alone does not make a field
@@ -96,7 +95,7 @@ judgement command in a report is a hand-off, not an invocation by the align or s
 
 ## Measured baseline and footprint
 
-Both measurements below were taken on 2026-08-31 from tracked UTF-8 files. A front footprint means
+Both measurements below are historical (the Codex columns count the mirror retired on 2026-10-11); they were taken on 2026-08-31 from tracked UTF-8 files. A front footprint means
 its architecture declaration, `align` and `status` command bodies, all front-specific source
 references, the two Codex align/status skills, all Codex front references, and its test module plus
 golden fixtures. The three creation commands are deliberate front deltas, so they are excluded
