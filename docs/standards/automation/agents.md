@@ -44,7 +44,7 @@ and a command may invoke an agent as one step.
 - **`model`/`effort` pins** are cache-safe here (the agent owns its context) but follow the
   same policy as everywhere: mechanical extraction may run cheap; judgment — anything that
   gates a deletion, ranks, or authors — inherits the session's.
-- **`spawned-agents`, `skills`, `memory`** are opened deliberately, never defaulted into: a
+- **`skills`, `memory`** are opened deliberately, never defaulted into: a
   preloaded skill's full body persists for the whole run, and agent memory is a recurring
   per-run cost.
 - **The body is a system prompt, in second person** ("You are…") — a command body is
