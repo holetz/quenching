@@ -4,7 +4,7 @@ title: Citation verification
 description: How citation-check.sh proves a citation resolves against the base it claims — half 1 that the old name died and half 2 that the new name was born, blind and with no allowlist, and half 3 that the prose the plugin SHIPS promises only what the published skeleton delivers, since a command body and a reference are read inside a target checkout where our standards do not exist — the three scope rules read from the script's own header (the instrument does not measure itself, .specs/ is out of scope, golden/eval fixtures are frozen data), the spelling rule half 3 rests on (a markdown link promises a destination, a bare inline-code path names a doc the target may not have), that it runs manually and is documented rather than gated automatically (Open Decision 2, with a second real use case as the trigger to revisit), and why the "every red is a harness defect" precedent stays scoped to functional-checks.sh alone until citation-check.sh earns its own evidence (Open Decision 3, opportunistic)
 resource: plugins/quenching/assets/checks/citation-check.sh
 tags: [quality, verification, citations, automation]
-timestamp: 2026-08-27
+timestamp: 2026-10-11
 audience: both
 authority: current
 source: revisar-politica-de-assets-checks, references-citam-standards-fora-do-esqueleto, citation-check-dedup-esconde-citadores-repetidos, varredura-de-dependencias-antes-do-banco-shape, 2026-08-18, varrer-caminhos-citados-que-nao-resolvem; lineage in ADR 0004
@@ -132,14 +132,8 @@ the boundary between them is decided by **which repository a path is a claim abo
 **So half 2 must NOT resolve those two trees' own links against this checkout**, and until
 2026-08-27 it did — reporting as broken the prose that describes another repository correctly, in
 the very trees half 3 was written for. The `SHIPPED` list it skips now names all five shipped
-trees plus the translated sibling, and nothing is uncovered by the move: half 3 measures exactly
+trees plus the generated specs reader, and nothing is uncovered by the move: half 3 measures exactly
 those trees against the base that matters.
-
-**The translated sibling is shipped prose too.** `plugins/quenching-codex/**` is the same content
-in another platform's spelling — generated, never hand-edited. Measured before it was added to the
-list: four findings, every one a path correct THERE and unresolvable here. One of them was a
-sentence *saying a path does not exist*, read as a claim that it does — the sharpest reminder
-available that a path in prose is not always a citation.
 
 ## Who runs it, and when
 

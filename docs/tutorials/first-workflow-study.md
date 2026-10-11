@@ -7,7 +7,7 @@ tags:
   - tutorial
   - experiment
   - reproducibility
-timestamp: 2026-09-05
+timestamp: 2026-10-11
 audience: human
 authority: current
 source: experiments/first-workflow/README.md and experiments/first-workflow/run.sh
@@ -61,8 +61,7 @@ last check; the repository checkout remains untouched.
 The workflow has two separate rails: a read-only observation/check rail and an explicit write rail.
 That separation is useful evidence for reproducible documentation workflows. It is not a claim
 about every action a model could take in a shell with Python available. For the host-specific
-Codex loading model, see the [official skills documentation](https://learn.chatgpt.com/docs/build-skills)
-and the generated `plugins/quenching-codex/README.md` in the repository checkout.
+Codex loading model, see the [official skills documentation](https://learn.chatgpt.com/docs/build-skills).
 
 For the fixture's exact files, checkpoints, and cleanup contract, read
 `experiments/first-workflow/README.md` from the repository checkout.
