@@ -38,7 +38,9 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    (the git-steward `merge` step). A missing report is inconclusive; neither a reported pass nor
    a reported failure decides your verdict on its own, and a claimed failure is FAIL.
 4. Scope: the payload's `changed` is a subset of the union of the tasks' `files:` (plus spec
-   records). List every path outside it.
+   records). The `tasks` list of `cq specs show --spec <id> --json` carries no `files:`: read it
+   per task with `cq specs show --spec <id> --task <t> --json` (`--task` repeats). List every
+   path outside it.
 5. Hygiene: the payload's `stash` and `status` are both empty.
 6. Delivery: when the worker reported a PR, `gh pr view <n>` exists and targets the base.
 
