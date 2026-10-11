@@ -543,7 +543,7 @@ def generated_tree() -> dict[str, bytes]:
 
 
 def owned_files() -> set[str]:
-    destination = target() if plugin_translation() else codex_surface()
+    destination = generated_destination()
     actual = {str(path.relative_to(destination)) for path in destination.rglob("*") if path.is_file() and path.name != ".generated-files.json" and "__pycache__" not in path.parts and path.suffix != ".pyc"} if destination.exists() else set()
     if not plugin_translation():
         # A repository's Codex marketplace and other configuration are not generated from
@@ -554,9 +554,14 @@ def owned_files() -> set[str]:
 
 
 def differences(tree: dict[str, bytes]) -> list[str]:
-    destination = target() if plugin_translation() else codex_surface()
+    destination = generated_destination()
     actual = owned_files()
     return [rel for rel in sorted(set(tree) | actual) if rel not in tree or not (destination / rel).exists() or (destination / rel).read_bytes() != tree[rel]]
+
+
+def generated_destination() -> Path:
+    """The directory the translation writes: the generated plugin, or the repo's `.agents`."""
+    return target() if plugin_translation() else codex_surface()
 
 
 def reconciliation(tree: dict[str, bytes]) -> str:
@@ -565,7 +570,7 @@ def reconciliation(tree: dict[str, bytes]) -> str:
     No aggregate source digest is versioned: it changed on every unrelated edit and conflicted
     in every parallel PR. The per-file map in `.generated-files.json` carries the same signal.
     """
-    destination = target() if plugin_translation() else codex_surface()
+    destination = generated_destination()
     generated = destination / ".generated-files.json"
     try:
         hashes = json.loads(generated.read_text(encoding="utf-8")).get("sha256", {})
@@ -609,7 +614,7 @@ def propagate_bodies_from_codex(tree: dict[str, bytes]) -> None:
     Frontmatter and path changes are intentionally refused: the forward map drops information,
     so only the source side can author that structure.
     """
-    destination = target() if plugin_translation() else codex_surface()
+    destination = generated_destination()
     for rel in differences(tree):
         if not rel.startswith("skills/") or not rel.endswith("/SKILL.md") or rel not in tree:
             raise ValueError(f"Codex structural change at {rel}; the Claude side is authoritative")
@@ -666,7 +671,7 @@ def contain(files, destination: Path, origin: str) -> None:
 
 def manifest_conflicted() -> bool:
     """True when the versioned manifest exists but is not JSON (merge conflict markers)."""
-    destination = target() if plugin_translation() else codex_surface()
+    destination = generated_destination()
     manifest = destination / ".generated-files.json"
     try:
         json.loads(manifest.read_text(encoding="utf-8"))
@@ -687,7 +692,7 @@ def manifest_drifted(tree: dict[str, bytes]) -> bool:
 
     A missing manifest is `untracked` and an unreadable one is `manifest_conflicted`; neither is drift.
     """
-    destination = target() if plugin_translation() else codex_surface()
+    destination = generated_destination()
     try:
         recorded = json.loads((destination / ".generated-files.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -696,7 +701,7 @@ def manifest_drifted(tree: dict[str, bytes]) -> bool:
 
 
 def write_tree(tree: dict[str, bytes]) -> None:
-    destination = target() if plugin_translation() else codex_surface()
+    destination = generated_destination()
     destination.mkdir(parents=True, exist_ok=True)
     generated_manifest = destination / ".generated-files.json"
     previous = previous_files(generated_manifest, destination)
@@ -730,6 +735,11 @@ def cmd_translate(args, root: str) -> int:
         tree = generated_tree()
     except ValueError as exc:
         return refuse({"code": "ct-translation-refused", "message": str(exc)}, args.json)
+    if args.check and not generated_destination().exists():
+        # No Codex surface at all is an opted-out repository, not a drifted one: `--write` creates it.
+        payload = {"changed": [], "count": 0, "source_sha256": source_digest(), "reconciliation": "absent"}
+        return report_findings(args.json, "components translate — no Codex surface to check",
+                               payload, [], "path")
     changed, digest = differences(tree), source_digest()
     payload = {"changed": changed, "count": len(changed), "source_sha256": digest,
                "reconciliation": reconciliation(tree)}

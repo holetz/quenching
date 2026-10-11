@@ -146,6 +146,29 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn("ct-translation-refused", out.getvalue())
 
+    def test_check_without_a_codex_surface_reports_no_drift(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = translate.cmd_translate(argparse.Namespace(
+                check=True, write=False, diff=False, source=str(self.root), target=str(self.root), json=True),
+                str(self.root))
+        payload = json.loads(out.getvalue())
+        self.assertEqual(code, 0)
+        self.assertEqual(payload["reconciliation"], "absent")
+        self.assertEqual(payload["changed"], [])
+        self.assertNotIn("ct-translation-drift", out.getvalue())
+        self.assertFalse((self.root / ".agents").exists())
+
+    def test_check_with_an_unmanifested_codex_surface_still_reports_drift(self):
+        (self.root / ".agents").mkdir()
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = translate.cmd_translate(argparse.Namespace(
+                check=True, write=False, diff=False, source=str(self.root), target=str(self.root), json=True),
+                str(self.root))
+        self.assertEqual(code, 1)
+        self.assertIn("ct-translation-drift", out.getvalue())
+
     def test_damaged_manifest_never_raises_a_traceback(self):
         for payload in ({"files": [], "sha256": ["x"]}, {"files": [], "sha256": "x"}):
             with self.subTest(payload=payload):
@@ -405,12 +428,20 @@ class PayloadResolution(unittest.TestCase):
         self.assertEqual(translate.claude_surface(), self.root / ".claude")
         self.assertEqual(translate.codex_surface(), self.root / ".agents")
 
-    def test_bare_invocation_inside_the_marketplace_translates_the_packaged_pair(self):
+    def test_bare_invocation_inside_a_marketplace_with_the_sibling_translates_the_packaged_pair(self):
+        payload = self.root / "plugins" / "quenching"
+        payload.mkdir(parents=True)
+        (self.root / "plugins" / "quenching-codex").mkdir()
+        self.assertEqual(translate._default_pair(payload, str(self.root / ".claude")),
+                         (payload, self.root / "plugins" / "quenching-codex"))
+
+    def test_bare_invocation_inside_the_marketplace_without_the_sibling_translates_the_repository(self):
         payload = translate.payload_root()
-        translate.configure(None, None, str(payload.parent.parent))
-        self.assertEqual(translate.source(), payload)
-        self.assertEqual(translate.target(), payload.parent / "quenching-codex")
-        self.assertTrue(translate.plugin_translation())
+        repository = payload.parent.parent
+        translate.configure(None, None, str(repository))
+        self.assertEqual(translate.source(), repository)
+        self.assertEqual(translate.target(), repository)
+        self.assertFalse(translate.plugin_translation())
 
     def test_the_adaptation_map_is_the_payloads_whatever_the_pair(self):
         expected = translate.payload_root() / "assets" / "translation" / "codex-adaptation.json"
@@ -424,11 +455,11 @@ class PayloadResolution(unittest.TestCase):
 
 
 class ConcludeGeneratedConflictRecipeTest(unittest.TestCase):
-    def test_recipe_regenerates_both_generators_before_concluding_the_merge(self):
+    def test_recipe_regenerates_the_specs_reader_before_concluding_the_merge(self):
         text = (Path(__file__).resolve().parents[1] / "commands" / "specs" / "conclude.md").read_text(encoding="utf-8")
         text = " ".join(text.split())
+        self.assertNotIn("plugins/quenching-codex", text)
         for needle in ("regenerate before concluding the merge",
-                       "cq components translate --write",
                        "python3 scripts/sync_specs_reader_plugin.py --write",
                        "python3 scripts/sync_specs_reader_plugin.py --check"):
             self.assertIn(needle, text)

@@ -1,10 +1,10 @@
 ---
 type: standard
 title: Versioning and release — the four-artifact lockstep
-description: The four source version surfaces that cq specs release bumps together, with the generated Codex sibling refreshed from the same source version
+description: The four source version surfaces that cq specs release bumps together, with the generated specs-reader sibling refreshed from the same source version
 resource: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py
 tags: [release, versioning, lockstep, plugin, distribution]
-timestamp: 2026-08-15
+timestamp: 2026-10-11
 audience: both
 authority: current
 source: modularizar-specs-knowledge-components, one-entry-point, notice-installed-tool-version-drift, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, configurable-branch-strategy; lineage in ADR 0004
@@ -55,14 +55,13 @@ forced, back when each pillar shipped as its own script
 internal imports has no such constraint: `common/version.py` is read by every pillar's `--version`,
 not duplicated by it.
 
-The two generated siblings are bumped in the same operation. `cq specs release` also moves
-`plugins/quenching-codex/VERSION`, `plugins/quenching-codex/.codex-plugin/plugin.json`,
+The generated sibling is bumped in the same operation. `cq specs release` also moves
 `plugins/quenching-specs-reader/VERSION` and its `.claude-plugin/plugin.json`, and it rewrites the
 `version` of **every** plugin entry in `.claude-plugin/marketplace.json`, never only the first. A
-marketplace entry with no `version` is refused. Afterwards `cq components translate --write` and
-`sync_specs_reader_plugin.py --write` regenerate the copied assets, and the translation and Codex
-artifact gates prove them. `test_specs_release.py` asserts that every one of these versions is
-equal. The manifests carry no hard-coded command counts, since they drift on the next command change.
+marketplace entry with no `version` is refused. Afterwards `sync_specs_reader_plugin.py --write`
+regenerates the copied assets, and the specs reader lockstep gate proves them. The generated Codex
+sibling (`plugins/quenching-codex/`) was retired on 2026-10-11 and is no longer a release artifact.
+`test_specs_release.py` asserts that every one of these versions is equal. The manifests carry no hard-coded command counts, since they drift on the next command change.
 
 ## When the bump happens — once, at the release, on the primary branch
 
