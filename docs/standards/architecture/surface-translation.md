@@ -15,7 +15,9 @@ maintainer: quenching
 
 <!-- rules -->
 
-A repository may expose `.claude/` and `.agents/` at the same time. They are paired surfaces,
+This marketplace repository retired its own generated Codex mirror (`plugins/quenching-codex/`,
+`.agents/`) on 2026-10-11 and no longer publishes or checks one; the translator remains a capability
+for target repositories. A repository may expose `.claude/` and `.agents/` at the same time. They are paired surfaces,
 not alternatives: Claude remains the authoritative source for configuration and the translator
 generates the Codex representation deterministically.
 
