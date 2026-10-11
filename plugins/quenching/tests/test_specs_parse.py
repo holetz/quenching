@@ -289,6 +289,9 @@ FILES_PARSE_CASES = [
     ("a single plain path is untouched",
      "## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n      files: src/a.ts\n",
      ["src/a.ts"]),
+    ("a metadata line written as a bullet (`  - files:`) reads like the bare form",
+     "## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n  - files: src/a.ts, b.ts (new)\n  - verify: true\n",
+     ["src/a.ts", "b.ts (new)"]),
 ]
 
 FILES_ANNOTATION_CASES = [
@@ -317,6 +320,10 @@ class FilesParsing(unittest.TestCase):
                 got = parse_tasks(text)
                 files = got[0]["files"] if got else []
                 self.assertEqual(files, want, why)
+
+    def test_a_bullet_metadata_line_keeps_verify_too(self):
+        got = parse_tasks("## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n  - files: a.ts\n  - verify: make t\n")
+        self.assertEqual(got[0]["verify"], "make t")
 
     def test_annotation_refusal_matches_the_reserved_new_marker_exactly(self):
         for entry, want_bad, why in FILES_ANNOTATION_CASES:
