@@ -256,8 +256,7 @@ can never carry `[P]`, whichever way the work would actually have gone. Decide t
 declare the paths; do not leave it to whether the line felt worth typing.
 
 **Declare every generated mirror the diff changes.** A task that edits a translated source also
-rewrites what the generator emits from it — the Codex translation (`plugins/quenching-codex/**`
-from `cq components translate --write`), `quenching-specs-reader/**`, `plugins/README.md`, the
+rewrites what the generator emits from it — `quenching-specs-reader/**`, `plugins/README.md`, the
 goldens. List each such generated mirror in the task's `files:` beside the source; the scope check
 stays strict, so an undeclared mirror is an out-of-scope diff.
 

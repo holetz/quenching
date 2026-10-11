@@ -15,17 +15,13 @@ but no new features. Type the command name to use one.
 
 Release history is maintained in the [`CHANGELOG`](CHANGELOG.md).
 
-The Codex sibling lives in [`plugins/quenching-codex/`](plugins/quenching-codex/). Claude remains
-the only editable source; refresh the Codex snapshot locally with:
-
-```bash
-python3 scripts/sync_codex_plugin.py --write
-python3 scripts/sync_codex_plugin.py --check
-```
+The generated Codex sibling (`plugins/quenching-codex/`) was retired on 2026-10-11; this
+repository no longer publishes or checks it. The translator stays: a repository that wants a Codex
+surface generates one with `cq components translate --write` (or the compatibility launcher
+`python3 scripts/sync_codex_plugin.py --write`).
 
 The `CI` workflow (`.github/workflows/ci.yml`) runs on pushes to `main` and on pull requests. It installs the locked
-toolchain, runs the repository gate on Python 3.11 and 3.13, lints with ruff and reports the functional checks (exit 2 is inconclusive); it does not write the generated snapshot in CI. Refresh
-the Codex artifact locally after changing Claude sources.
+toolchain, runs the repository gate on Python 3.11 and 3.13, lints with ruff and reports the functional checks (exit 2 is inconclusive).
 
 ## Local development
 
