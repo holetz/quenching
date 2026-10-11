@@ -11,7 +11,7 @@ carries `type: standard` + a derived `resource:`; add each to [../index.md](../i
 ## Current docs
 
 * [versioning-release.md](versioning-release.md) — The four source version surfaces that
-  `cq specs release` bumps together, with the generated Codex sibling refreshed from the same source version
+  `cq specs release` bumps together, with the generated specs-reader sibling refreshed from the same source version
 
 ## Candidate sub-standards
 
