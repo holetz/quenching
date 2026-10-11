@@ -536,6 +536,14 @@ class Audit(RepoCase):
             "test": "x\n"})
         self.assertEqual(sorted(got), [".gitlab-ci.yml", "ci/backend.yml", "ci/in.yml", "ci/src.yml"])
 
+    def test_grants_ignore_nested_input_values_of_a_gitlab_trigger_include_map(self):
+        got = self._ci_surface({
+            ".gitlab-ci.yml": "child:\n  trigger:\n    include:\n      local: ci/a.yml\n"
+                              "      inputs:\n        envs:\n          - test\n",
+            "ci/a.yml": "job: x\n",
+            "test/run.py": "print(2)\n"})
+        self.assertEqual(sorted(got), [".gitlab-ci.yml", "ci/a.yml"])
+
     def test_grants_read_an_azure_pipelines_file_with_a_suffix_and_its_self_templates(self):
         got = self._ci_surface({
             "azure-pipelines-docs.yml": "extends:\n  template: templates/main.yml@self\n",
