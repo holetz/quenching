@@ -13,6 +13,8 @@ bloat wearing a feature's name.
 
 ## The cost model — where each byte lands
 
+**Fonte:** <https://code.claude.com/docs/en/skills>, <https://code.claude.com/docs/en/sub-agents>, <https://code.claude.com/docs/en/hooks>. A página oficial não declara versão para o modelo de custo; Conferido em 2026-10-11 contra Claude Code 2.1.296.
+
 <!-- rules -->
 Five places a capability's cost can land, from most expensive to least:
 
@@ -36,6 +38,8 @@ iteration that touches nothing it validates.
 
 ## The default profile
 
+**Fonte:** <https://code.claude.com/docs/en/skills>. Campos de frontmatter de skill conforme a tabela de referência da página; sem versão declarada; Conferido em 2026-10-11 contra Claude Code 2.1.296.
+
 A minted command starts with **all levers off**:
 
 - no `context: fork`, no `agent`, no `background`;
@@ -50,6 +54,8 @@ into the plan (§The profile is part of the plan). "It might help" is not a reas
 "step 3 greps the whole repo and only the summary matters" is.
 
 ## `context: fork` — isolation, priced
+
+**Fonte:** <https://code.claude.com/docs/en/skills>, <https://code.claude.com/docs/en/sub-agents>. Fork em segundo plano por padrão e `background: false` exigem Claude Code v2.1.218 ou superior (declarado na página de skills); Explore e Plan pulam o CLAUDE.md (página de sub-agents). Conferido em 2026-10-11 contra Claude Code 2.1.296.
 
 **What it does.** The command runs in a forked context: a fresh subagent whose prompt is the
 command body, with **no conversation history**, its own cache, and — by default — background
@@ -84,6 +90,8 @@ main conversation pays one invocation line and one result instead of the whole t
 
 ## Model and effort — pin only what is mechanical
 
+**Fonte:** <https://code.claude.com/docs/en/skills>, <https://code.claude.com/docs/en/sub-agents>. `effort` e `model` no frontmatter conforme a página de skills; sem versão declarada; Conferido em 2026-10-11 contra Claude Code 2.1.296.
+
 **`effort: low`** fits work that is genuinely mechanical — a single-field edit, a capture
 with zero interrogation, a fixed-vocabulary classification the plan gate re-checks. Judgment
 — ranking, classification that gates a deletion, plan authoring, anything a human confirms
@@ -104,6 +112,8 @@ inline pin against the session it interrupts, not against the single call it mak
 
 ## Subagents — when delegation pays
 
+**Fonte:** <https://code.claude.com/docs/en/sub-agents>. `omitClaudeMd` exige v2.1.271 ou superior (declarado na página). Sem versão declarada para os demais campos; Conferido em 2026-10-11 contra Claude Code 2.1.296.
+
 **The test:** the returned summary is much smaller than the work that produced it. A
 repo-wide grep sweep, a many-file audit, a documentation read that ends in one table —
 delegation converts a long trail into one result message, and parallel slices multiply that.
@@ -117,7 +127,7 @@ cost discipline as a command's), `tools` scoped to the narrowest set, and `model
 under the pinning rules above (an agent's pin is cache-safe — it has its own context). Two
 fields default safe and are opened deliberately: `spawned-agents` (an agent that can spawn
 agents can run away — name what it may spawn), and `skills` (a preloaded skill's **full
-body** persists for the agent's whole run — preload only what every run reads). `memory: true`
+body** persists for the agent's whole run — preload only what every run reads). `memory:` (scope `user`, `project` or `local`)
 only when the agent genuinely learns across sessions; its memory file is a recurring cost on
 every run.
 
@@ -132,6 +142,8 @@ owns authoring, under its own confirmation — the same authoring boundary every
 this plugin holds.
 
 ## Hooks — the scope ladder and the handler ladder
+
+**Fonte:** <https://code.claude.com/docs/en/hooks>, <https://code.claude.com/docs/en/skills>. `timeout` (padrão 600 s para `command`) e `stop_hook_active` conforme a página de hooks; sem versão declarada; Conferido em 2026-10-11 contra Claude Code 2.1.296.
 
 <!-- rules -->
 A hook is the only capability that charges **other people's operations**: it fires on events
@@ -207,6 +219,8 @@ and it does so where nobody wired it.
 
 ## Invocation-surface controls — what each costs
 
+**Fonte:** <https://code.claude.com/docs/en/skills>. `disable-model-invocation`, `user-invocable` e `paths` conforme a tabela de frontmatter; sem versão declarada; Conferido em 2026-10-11 contra Claude Code 2.1.296.
+
 The invocation/permission decision table lives in `docs/standards/automation/skills.md`. The
 price of each control:
 
@@ -223,6 +237,8 @@ price of each control:
   unaffected.
 
 ## Dynamic context — pay at render, not in turns
+
+**Fonte:** <https://code.claude.com/docs/en/skills>. Injeção `` !`comando` `` e `${CLAUDE_SKILL_DIR}` conforme a seção de contexto dinâmico; sem versão declarada; Conferido em 2026-10-11 contra Claude Code 2.1.296.
 
 A `` !`command` `` line in a command body runs **at render time**, before the model reads the
 body, and its output lands inline. Used well, it converts turns into text: a workflow whose
