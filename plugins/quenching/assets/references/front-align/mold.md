@@ -21,7 +21,7 @@ Every local front carries the same outer shape:
 | `cq` route | normalized front entry point, `--help`, `--json`, exits `0`/`1`/`2`, explicit refusal, `doctor` and `status` | inventory, registry, build, render, readme, ratchet and other extra verbs |
 | Align | probe, applicability, one plan/authorization, bounded writes, closing verifier and residual report | domain arbitration and repair decisions |
 | Status | read-only payload, missing/refused/not-applicable states, stable finding codes/bands and closing owner | authoritative evidence rows |
-| Translation | source remains canonical and the Codex surface mirrors it | platform spelling and generated path |
+| Translation | none in this repository: the Codex mirror was retired on 2026-10-11 | none |
 
 Do not turn this table into a generic runtime module or a second configuration schema. If a field is
 owned by only one front, it remains in that front's contract.
@@ -68,5 +68,4 @@ The mold does not erase domain meaning:
   configuration and access ownership, with no converging tree and no exposed values.
 
 Read the binding architecture standard for the measured footprint, host decision and full delta
-contract. This projection is updated only when that host changes, then translated to the Codex
-surface; it never becomes an independent source of truth.
+contract. This projection is updated only when that host changes; it never becomes an independent source of truth.
