@@ -295,8 +295,9 @@ g. **Run and report the declared hook for this event, and move on.** Once the sp
    read returned, report the event, command, prompt, `optional` flag and any declared `condition`.
    **Never write `refs/remotes/origin/HEAD`** — it lives in the shared `.git`, outside this
    worktree, and nothing here writes it. The hook gets the base by name instead.
-   **In a worktree the hook is never invoked.** When `git rev-parse --git-dir` and
-   `git rev-parse --git-common-dir` differ in the checkout this run commits in, the build runs in a
+   **In a worktree the hook is never invoked.** When `git rev-parse --path-format=absolute --git-dir`
+   and `git rev-parse --path-format=absolute --git-common-dir` differ in the checkout this run
+   commits in (absolute, so a subdirectory of the main checkout compares equal), the build runs in a
    linked worktree and the session's hook would review the base checkout with an empty diff, then
    end the turn with the review text. Report each declared hook as above, classify it
    `skipped: worktree` — not a failure, no pause, optional or not — and go to step h; the security
