@@ -16,8 +16,10 @@ CHECKBOX_RE = re.compile(r"^(\s*)-\s\[( |x|X|!)\]\s+(.*)$")
 CHECKBOX_LOOSE_RE = re.compile(r"^\s*-\s*\[.*?\]")   # looks like a checkbox (malformed detection)
 TASK_ID_RE = re.compile(r"^(\d+(?:\.\d+)*)\b")
 TASK_META_KEYS = ("files", "pattern", "cwd", "verify", "constraint", "subject", "commit")
-TASK_META_RE = re.compile(rf"^\s+({'|'.join(TASK_META_KEYS)})\s*:\s*(.+?)\s*$",
+TASK_META_RE = re.compile(rf"^\s+(?:-\s+)?({'|'.join(TASK_META_KEYS)})\s*:\s*(.+?)\s*$",
                           re.IGNORECASE)
+# An optional `- ` bullet before the key is the same line: a `  - files:` that the parser
+# dropped turned the verifier's scope check into a silent `n/a`.
 # `constraint:` is INERT by design: the grammar admits it and `next` hands it through, but no
 # command reads it. Its only consumer would be an executor sub-agent briefing itself, and the
 # decision to dispatch one belongs to another spec — so the field lands first and the decision
