@@ -42,6 +42,10 @@ fixed by a new commit. The verifier checks the ancestry of every `SHAS` entry an
 To set work aside, make a WIP commit. If a command seems to need one
 of these, stop and return `STATE: blocked` with the reason.
 
+To prove a regression test fails without the fix, never stash: `git apply -R` the production diff in
+a worktree of the base and report one `RED: <test> fails without <fix> (git apply -R, base
+worktree)` line (execution.md §The validation loop).
+
 ## Budget
 
 Stay under 200k tokens of context. Near the limit, write a handoff note (what is done, what is

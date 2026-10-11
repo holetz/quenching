@@ -42,6 +42,13 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertNotIn("git commit -m", command)
         self.assertNotIn('--subject "plan/<id>-<handle>', command)
 
+    def test_red_is_measured_in_a_base_worktree_without_stash(self):
+        for text in (REFERENCE.read_text(encoding="utf-8"), RUNNER.read_text(encoding="utf-8")):
+            flat = " ".join(text.split())
+            self.assertIn("git apply -R", flat)
+            self.assertIn("RED: <test> fails without <fix>", flat)
+            self.assertIn("worktree of the base", flat.replace("base worktree", "worktree of the base"))
+
     def test_external_backend_records_task_after_the_commit(self):
         command = COMMAND.read_text(encoding="utf-8")
         reference = REFERENCE.read_text(encoding="utf-8")
