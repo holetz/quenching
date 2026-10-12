@@ -88,6 +88,12 @@ def add_subcommands(sub: argparse._SubParsersAction) -> argparse._SubParsersActi
                        help="count only agents launched, directly or not, by this agent (parentAgentId)")
     scope.add_argument("--nested", action="store_true",
                        help="count only agents that have a parentAgentId (launched by a subagent)")
+    scope.add_argument("--latest-orchestrator", action="store_true",
+                       help="count only the descendants of the most recently started orchestrator "
+                            "(they run one at a time): the window is resolved here, no clock needed")
+    co.add_argument("--since", metavar="ISO8601",
+                    help="count only requests at or after this instant (an orchestrator's own window "
+                         "when several share the session)")
     co.add_argument("--json", action="store_true", help="machine-readable output")
     co.set_defaults(func=cmd_cost)
     return sub
