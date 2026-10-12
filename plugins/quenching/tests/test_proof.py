@@ -511,6 +511,22 @@ class PytestDiscoveryAndSurfaces(unittest.TestCase):
         inventory = self._inventory(files)
         self.assertEqual(("lib", "src"), inventory.source_surfaces)
 
+    def test_tests_under_a_vendor_folder_are_still_scanned(self):
+        inventory = self._inventory({
+            "pytest.ini": "[pytest]\n",
+            "tests/vendor/test_w.py": "def test_w(): pass\n"})
+        self.assertIn("vendor/test_w.py", [item.path for item in inventory.test_modules])
+
+    def test_a_nested_build_folder_is_still_a_surface(self):
+        inventory = self._inventory({"lib/build/core.py": "X = 1\n"})
+        self.assertIn("lib", inventory.source_surfaces)
+
+    def test_setup_cfg_tool_pytest_is_read(self):
+        inventory = self._inventory({
+            "setup.cfg": "[tool:pytest]\naddopts = --strict-markers\n"})
+        self.assertEqual("setup.cfg", inventory.gate.path)
+        self.assertTrue(inventory.gate.strict_markers)
+
 
 if __name__ == "__main__":
     unittest.main()

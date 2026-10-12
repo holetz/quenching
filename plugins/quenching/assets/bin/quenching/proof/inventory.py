@@ -26,10 +26,13 @@ from quenching.proof.model import (
 )
 
 
+# pytest's default `norecursedirs` (plus tool caches): the test walk skips these at any depth.
 _SKIP_DIRS = frozenset({
     ".git", ".mypy_cache", ".pytest_cache", ".ruff_cache", "__pycache__",
-    ".tox", ".venv", "venv", "node_modules", "vendor", "build", "dist", ".eggs",
+    ".tox", ".venv", "venv", "node_modules", "build", "dist", ".eggs",
 })
+# Dependency folders pytest does not skip: never a top-level surface, but not skipped deeper.
+_SURFACE_SKIP_TOP = _SKIP_DIRS | {"vendor"}
 _TEST_RE = re.compile(r"(?:^test_.*\.py$|^.*_test\.py$)")
 _PYTEST_FIXTURE = re.compile(r"(?:^|\.)fixture$")
 
@@ -135,13 +138,13 @@ def _gate_from_toml(data: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _gate_from_ini(path: Path) -> dict[str, Any]:
+def _gate_from_ini(path: Path, section_name: str = "pytest") -> dict[str, Any]:
     parser = configparser.ConfigParser()
     try:
         parser.read(path, encoding="utf-8")
     except (OSError, UnicodeError, configparser.Error):
         return {}
-    section = "pytest" if parser.has_section("pytest") else None
+    section = section_name if parser.has_section(section_name) else None
     if not section:
         return {"unconfigured": True}
     return {
@@ -180,7 +183,7 @@ def _gate(repo_root: str, ratchet_path: str) -> GateConfig:
     pyproject = root / "pyproject.toml"
     data = _toml(pyproject) if pyproject.is_file() else {}
     from_toml = _gate_from_toml(data) if data else {}
-    for name in ("pytest.ini", "pyproject.toml", "tox.ini"):
+    for name in ("pytest.ini", "pyproject.toml", "tox.ini", "setup.cfg"):
         candidate = root / name
         if not candidate.is_file():
             continue
@@ -189,8 +192,9 @@ def _gate(repo_root: str, ratchet_path: str) -> GateConfig:
                 continue
             found = from_toml
         else:
-            found = _gate_from_ini(candidate)
-            if name == "tox.ini" and found.get("unconfigured"):
+            found = _gate_from_ini(
+                candidate, "tool:pytest" if name == "setup.cfg" else "pytest")
+            if name in ("tox.ini", "setup.cfg") and found.get("unconfigured"):
                 continue
         raw, path = found, _rel(str(candidate), repo_root)
         break
@@ -229,11 +233,11 @@ def _source_surfaces(repo_root: str, proof_root: str) -> tuple[str, ...]:
     proof_name = Path(proof_root).name
     for child in sorted(root.iterdir()):
         if (not child.is_dir() or child.name.startswith(".") or child.name == proof_name
-                or child.name in _SKIP_DIRS):
+                or child.name in _SURFACE_SKIP_TOP):
             continue
         found = False
         for directory, dirnames, filenames in os.walk(child):
-            dirnames[:] = sorted(name for name in dirnames if name not in _SKIP_DIRS)
+            dirnames[:] = sorted(dirnames)
             if any(Path(name).suffix.lower() in suffixes for name in filenames):
                 found = True
                 break
