@@ -226,7 +226,7 @@ a command carrying `disable-model-invocation: true`, reached only by a human typ
 
 ## Version lockstep
 
-the four version strings a release must bump together, split into two halves read by two independent consumers: the `plugin.json` `version` + `VERSION` pair Claude Code compares to decide an upgrade fires, and the one shared `VERSION` constant every pillar's `--version` reads. Since nothing installs a tool any more, **no automated check asserts the four agree** — the whole lockstep is discipline, read back by hand at conclude. Distinct from the **Canonical case list**, which is the lockstep unit for the parser's *behaviour* rather than a version string.
+the four version strings a release must bump together, split into two halves read by two independent consumers: the `plugin.json` `version` + `VERSION` pair Claude Code compares to decide an upgrade fires, and the one shared `VERSION` constant every pillar's `--version` reads. Since nothing installs a tool any more, **no automated check asserts the four agree** — the whole lockstep is discipline, read back by hand at conclude. *(Note, 2026-10-11: superseded in part — `test_specs_release.py` now asserts the versions agree, and the artifact list is `RELEASE_ARTIFACTS` in `release.py`, see [versioning-release.md](../standards/ci-cd/versioning-release.md).)* Distinct from the **Canonical case list**, which is the lockstep unit for the parser's *behaviour* rather than a version string.
 
 ## Worktree setup
 

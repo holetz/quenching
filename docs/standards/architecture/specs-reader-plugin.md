@@ -44,11 +44,11 @@ in `scripts/verify_repo.sh`. The editable source of the package stays `plugins/q
 made in the copy is overwritten, and a fix made in the source that nobody regenerates fails the
 gate.
 
-**The version is derived, never bumped.** The release verb moves four artifacts of the main
-plugin, and its marketplace pattern replaces only the first `"version"`. The reader's
-`plugin.json` and `VERSION` are therefore generated from `plugins/quenching/VERSION`, and the
-reader's marketplace entry carries no `version`. After a release, the reader's `--check` fails
-until `--write` runs, which is the intended signal.
+**The version is derived, never bumped.** The release verb moves every artifact in `RELEASE_ARTIFACTS`
+(`release.py`), and rewrites the `version` of every marketplace entry, not only the first
+([versioning-release.md](../ci-cd/versioning-release.md)). The reader's `plugin.json` and `VERSION`
+are also generated from `plugins/quenching/VERSION`, so after a release the reader's `--check`
+fails until `--write` runs, which is the intended signal.
 
 ## Read-only is a property of the code
 

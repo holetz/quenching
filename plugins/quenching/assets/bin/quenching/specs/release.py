@@ -15,15 +15,16 @@ from quenching.common.io import read_text, write_text
 # --------------------------------------------------------------------------- #
 # release — the mechanical half of /docs/standards/ci-cd/versioning-release.md
 # --------------------------------------------------------------------------- #
-# Four artifacts, down from the seven the pre-refactor scripts carried: each of the
-# four self-contained tools declared its own `VERSION` constant, and folding them into
-# one package folded those four declarations into the single one `common/version.py`
-# now carries — the package's every module imports it rather than repeating it. All
-# four are relative to the REPO root, and this verb only makes sense run from the
-# plugin's own checkout — a target repository that merely has this plugin installed
-# carries none of them.
-# The generated specs-reader sibling and EVERY marketplace entry move too: a
-# "jsonall" artifact carries one `"version"` per plugin entry and each is rewritten.
+# The tuple below is the one list of artifacts: the main plugin's `VERSION` and
+# `plugin.json`, the generated specs-reader sibling's pair, the HUD's `plugin.json`, the
+# marketplace and `common/version.py`. The four self-contained tools once declared their
+# own `VERSION` constant; folding them into one package folded those declarations into
+# the single one `common/version.py` carries, which every module imports. All paths are
+# relative to the REPO root, and this verb only makes sense run from the plugin's own
+# checkout — a target repository that merely has this plugin installed carries none of
+# them.
+# EVERY marketplace entry moves: a "jsonall" artifact carries one `"version"` per plugin
+# entry and each is rewritten.
 RELEASE_ARTIFACTS = (
     ("plugins/quenching/VERSION", "plain"),
     ("plugins/quenching/.claude-plugin/plugin.json", "json"),

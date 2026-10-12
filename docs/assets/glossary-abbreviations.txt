@@ -1,5 +1,5 @@
 <!-- GENERATED FILE — do not edit; source: /docs/glossary.md -->
-<!-- source_sha256: 9a2a2c094d7616451ce9c4b1624cc88f85132f430bed6cba6e84c66eef7f5b80 -->
+<!-- source_sha256: 0b6d21cfb7c09c82e3bc02f527f7809d8ea2d65d0329fd0bc6c61e40ccd9eb18 -->
 
 <!-- explicit glossary abbr fallback: [P] marker -->
 *[Advisory finding]: a WARN the commands' verify gate does not treat as blocking, reported so a human can look and never so a run stops.
@@ -14,8 +14,8 @@
 *[anchorless strategy]: a merge strategy that produces no merge commit — fast-forward and rebase — so the Merge record has nothing to name and carries an explicit none instead of a fabricated pointer.
 *[Anomaly sidecar]: a second function reporting what a parse could not represent faithfully, placed beside the parser rather than folded into its return.
 *[anomaly sidecar]: a second function reporting what a parse could not represent faithfully, placed beside the parser rather than folded into its return.
-*[Approved record]: the approved: {date, by} frontmatter entry recording that a spec may be built, and on whose authority: by: human is a person's word (the fact the retired backlog/ → ready/ git mv carried), by: low-gear is the low level authorizing the mode and the develop pass stamping on it.
-*[approved record]: the approved: {date, by} frontmatter entry recording that a spec may be built, and on whose authority: by: human is a person's word (the fact the retired backlog/ → ready/ git mv carried), by: low-gear is the low level authorizing the mode and the develop pass stamping on it.
+*[Approved record]: the approved: {date, by} entry saying a spec may be built and on whose authority: human, low-gear (the low level) or orchestrator-forced (--autonomous forcing low); an absent by: reads as human.
+*[approved record]: the approved: {date, by} entry saying a spec may be built and on whose authority: human, low-gear (the low level) or orchestrator-forced (--autonomous forcing low); an absent by: reads as human.
 *[Authority]: the frontmatter field saying how binding a doc is: current (proven) or background (agreed but unproven).
 *[authority]: the frontmatter field saying how binding a doc is: current (proven) or background (agreed but unproven).
 *[Batching contract]: a named block in a command body naming which of its consecutive tool calls are ONE call, so the batching rule is checkable against the body instead of re-judged every run.
@@ -181,8 +181,8 @@
 *[typed-only command]: a command carrying disable-model-invocation: true, reached only by a human typing it; its description leaves every session's context.
 *[Verification policy]: the per-spec declaration (per-task, per-section, end-of-plan) written at creation that decides when a task's verify: command runs, so execution never guesses and never asks mid-task.
 *[verification policy]: the per-spec declaration (per-task, per-section, end-of-plan) written at creation that decides when a task's verify: command runs, so execution never guesses and never asks mid-task.
-*[Version lockstep]: the four version strings a release must bump together, split into two halves read by two independent consumers: the plugin.json version + VERSION pair Claude Code compares to decide an upgrade fires, and the one shared VERSION constant every pillar's --version reads.
-*[version lockstep]: the four version strings a release must bump together, split into two halves read by two independent consumers: the plugin.json version + VERSION pair Claude Code compares to decide an upgrade fires, and the one shared VERSION constant every pillar's --version reads.
+*[Version lockstep]: the version strings a release must bump together (the list is RELEASEARTIFACTS in release.py), split into two halves read by two independent consumers: the plugin.json version + VERSION pair Claude Code compares to decide an upgrade fires, and the one shared VERSION constant every pillar's --version reads.
+*[version lockstep]: the version strings a release must bump together (the list is RELEASEARTIFACTS in release.py), split into two halves read by two independent consumers: the plugin.json version + VERSION pair Claude Code compares to decide an upgrade fires, and the one shared VERSION constant every pillar's --version reads.
 *[Withdrawn contract residue]: the prose still asserting a contract a change removed, and the sibling of Prose fan-out (computed-fact-prose-fanout.md) for the case where nothing computes the fact: with no value to spell out, each site wrote the rule in its own words, so no grep finds the set.
 *[withdrawn contract residue]: the prose still asserting a contract a change removed, and the sibling of Prose fan-out (computed-fact-prose-fanout.md) for the case where nothing computes the fact: with no value to spell out, each site wrote the rule in its own words, so no grep finds the set.
 *[Worktree setup]: the single key worktreeSetup in .claude/quenching.json, holding a command /quenching:specs:execute runs once inside a newly created worktree so a repo with installed dependencies gets a usable tree rather than one that breaks at the first verify:.

@@ -55,7 +55,7 @@ is the stray that that spec's own review let through. It is not a proof of repea
 
 ## What retirement is not
 
-- **It is not a version bump.** The four-artifact lockstep is the release's act
+- **It is not a version bump.** The version lockstep is the release's act
   ([versioning-release.md](../ci-cd/versioning-release.md) — the bump happens on the primary branch,
   at the release, never at the conclude and never as a task). Retiring a standard does not touch
   VERSION.
