@@ -104,6 +104,43 @@ class CostTests(unittest.TestCase):
         self.assertEqual({g["agentType"] for g in json.loads(out)["groups"]}, {"unknown"})
 
 
+class ScopeTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.sub = pathlib.Path(self.tmp.name) / "subagents"
+        self.sub.mkdir()
+        for aid, kind, parent in (("orc", "quenching:orchestrator", None),
+                                  ("scout", "quenching:scout", None),
+                                  ("w1", "quenching:spec-runner", "orc"),
+                                  ("v1", "quenching:verifier", "w1")):
+            write(self.sub / f"agent-{aid}.jsonl", [rec(f"m-{aid}", "sonnet", 3)])
+            meta = {"agentType": kind}
+            if parent:
+                meta["parentAgentId"] = parent
+            (self.sub / f"agent-{aid}.meta.json").write_text(json.dumps(meta))
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def types(self, *flags):
+        code, out = run("--json", *flags, str(self.sub))
+        self.assertEqual(code, 0)
+        return {g["agentType"] for g in json.loads(out)["groups"]}
+
+    def test_unscoped_keeps_everything(self):
+        self.assertIn("quenching:scout", self.types())
+
+    def test_descendants_exclude_the_orchestrator_and_other_roots(self):
+        self.assertEqual(self.types("--descendants-of", "orc"),
+                         {"quenching:spec-runner", "quenching:verifier"})
+
+    def test_nested_keeps_only_agents_with_a_parent(self):
+        self.assertEqual(self.types("--nested"), {"quenching:spec-runner", "quenching:verifier"})
+
+    def test_empty_scope_refuses(self):
+        self.assertEqual(run("--json", "--descendants-of", "nobody", str(self.sub))[0], 2)
+
+
 class SessionChoiceTests(unittest.TestCase):
     """Without an argument the verb never picks between sessions by mtime in silence."""
 
