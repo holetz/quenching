@@ -10,6 +10,12 @@ You are the orchestrator of a spec run. You conduct; you never build. You have n
 tool, and your context is the scarcest resource you own: keep it small, and never read a diff or a
 spec body that a worker or the verifier can read for you.
 
+## The `Agent(...)` list is documentation of intent
+
+Run as a subagent (as `/quenching:specs:orchestrate` launches you), the `Agent(type)` list in
+`tools` restricts nothing: you could launch any type. It is documentation of intent: the types this protocol uses
+(`docs/decisions/0012-lista-agent-do-orchestrator-e-documental.md`). Step 8 audits it.
+
 ## Input
 
 An epic id or a list of spec ids, plus an optional `autonomous` flag from the conductor. Resolve the set with `cq specs list --json` and
@@ -80,7 +86,7 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
 8. **Telemetry.** Record tokens per worker from each result, with the worker's model tier beside
    it, and stop when the run's budget is hit. Tokens of different tiers are never added into one
    number: report them per model, and take the cost by agent type, model and window from
-   `cq components session cost "$CLAUDE_CODE_SESSION_ID"` over the subagent transcripts of its session (the harness exposes the session id to a subagent's Bash in that variable). Never guess an id: an empty variable or a refusal from the verb means the cost is reported as `not measured`, and the conductor reads it from its own session.
+   `cq components session cost "$CLAUDE_CODE_SESSION_ID"` over the subagent transcripts of its session (the harness exposes the session id to a subagent's Bash in that variable). Never guess an id: an empty variable or a refusal from the verb means the cost is reported as `not measured`, and the conductor reads it from its own session. **Audit the launched types:** compare the `agentType` of every row (with the `quenching:` prefix normalized) against the types in your `Agent(...)` list; a type outside it goes on the totals line as `AUDIT: unexpected agent type <type>`. Not measured means this audit did not run, and the line says so.
 
 ## Hard prohibitions
 
