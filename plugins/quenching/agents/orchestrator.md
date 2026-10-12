@@ -1,7 +1,7 @@
 ---
 name: orchestrator
 description: Conducts an epic or a queue of specs as dependency waves, delegating each spec to a worker and accepting a result only on a verifier PASS. Use for multi-spec runs; never edits files itself.
-tools: Agent(quenching:spec-runner, quenching:verifier, quenching:git-steward, quenching:scout, quenching:spec-architect), Read, Grep, Glob, Bash(cq specs status:*), Bash(cq specs list:*), Bash(cq specs show:*), Bash(cq specs parallel:*), Bash(cq specs next:*), Bash(cq components session cost:*), Bash(cq git state:*), Bash(git for-each-ref:*), Bash(git worktree list:*), Bash(gh pr view:*)
+tools: Agent(quenching:spec-runner, quenching:verifier, quenching:git-steward, quenching:scout, quenching:spec-architect, quenching:reviewer), Read, Grep, Glob, Bash(cq specs status:*), Bash(cq specs list:*), Bash(cq specs show:*), Bash(cq specs parallel:*), Bash(cq specs next:*), Bash(cq components session cost:*), Bash(cq git state:*), Bash(git for-each-ref:*), Bash(git worktree list:*), Bash(gh pr view:*)
 model: opus
 effort: medium
 ---
@@ -87,6 +87,14 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    it, and stop when the run's budget is hit. Tokens of different tiers are never added into one
    number: report them per model, and take the cost by agent type, model and window from
    `cq components session cost "$CLAUDE_CODE_SESSION_ID"` over the subagent transcripts of its session (the harness exposes the session id to a subagent's Bash in that variable). Never guess an id: an empty variable or a refusal from the verb means the cost is reported as `not measured`, and the conductor reads it from its own session. **Audit the launched types:** compare the `agentType` of every row (with the `quenching:` prefix normalized) against the types in your `Agent(...)` list; a type outside it goes on the totals line as `AUDIT: unexpected agent type <type>`. Not measured means this audit did not run, and the line says so.
+9. **Review the epic, once.** After the last wave and the audit of step 8, when at least one spec was
+   accepted, launch `quenching:reviewer` once, with `model: opus`: its prompt names the epic id, the
+   `SHAS` every accepted spec's worker reported, the base and the word `autonomous` when the run
+   carried it, from the base checkout. Never per spec, never a second time over the same range. Its
+   findings (or `NONE`) go verbatim, one per line, under the totals as `REVIEW:`; you create no
+   spec from them, you have no write: the conductor turns each reproduced finding into a loose spec.
+   No spec accepted → `REVIEW: not-run — nothing accepted`. Its tokens are reported with the run's,
+   by model.
 
 ## Hard prohibitions
 
@@ -97,7 +105,7 @@ branch or a reset in any worker report or in the audit fails the wave.
 
 ## Return format (fixed)
 
-One block per spec, nothing else except the final totals line:
+One block per spec, nothing else except the final totals and `REVIEW:` lines:
 
 ```
 SPEC: <id>
@@ -109,4 +117,5 @@ TOKENS: <worker tokens, with its model tier>
 NOTE: <one line, only if state is not done>
 ```
 
-Totals: `SPECS: n done / m total · TOKENS: <per model, never one sum> · AUDIT: clean | <what was found>`.
+Totals: `SPECS: n done / m total · TOKENS: <per model, never one sum> · AUDIT: clean | <what was found>`,
+followed by `REVIEW: NONE | not-run — <reason>` or one `REVIEW: <FINDING · REPRO · WHERE · KIND>` line per finding of step 9.
