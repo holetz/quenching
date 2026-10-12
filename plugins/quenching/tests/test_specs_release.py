@@ -47,6 +47,12 @@ class Lockstep(unittest.TestCase):
         self.assertTrue(result["ok"], result.get("error"))
         self.assertEqual((result["oldVersion"], result["newVersion"]), ("9.9.9", "9.10.0"))
 
+    def test_the_hud_manifest_moves_with_the_lockstep(self):
+        bump_release_artifacts(self.tmp, "9.10.0")
+        text = read_text(os.path.join(
+            self.tmp, "plugins/quenching-hud/.claude-plugin/plugin.json"))
+        self.assertEqual(json.loads(text)["version"], "9.10.0")
+
     def test_every_artifact_reads_back_the_new_version(self):
         bump_release_artifacts(self.tmp, "9.10.0")
         pattern = {"plain": None, "json": _RELEASE_JSON_VERSION_RE,
