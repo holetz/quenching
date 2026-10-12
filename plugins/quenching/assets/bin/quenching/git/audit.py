@@ -642,7 +642,8 @@ TEST_NAME = re.compile(r"(^|/)test_[^/]*$|_test\.[^/]+$|\.(test|spec)\.[^/]+$")
 ASSERT = re.compile(r"\bassert\w*\b|\bexpect\s*\(")
 GATE_PATH = re.compile(r"^scripts/verify_repo\.sh$|^plugins/quenching/assets/checks/")
 CODE_EXT = re.compile(r"\.(py|sh|js|jsx|ts|tsx|rb|go|rs|java|kt|cs)$")
-TEST_DIR = re.compile(r"(^|/)(tests?|__tests__)/")
+TEST_DIRECT = re.compile(r"(^|/)(tests?|__tests__)/[^/]+$")
+DISCOVER = re.compile(r"unittest\s+discover\s+-s\s+(\S+)(?:\s+-p\s+(\S+))?")
 TRIVIAL = re.compile(r"\bassert\s+True\s*$|\bexpect\s*\(\s*true\s*\)")
 SUPPRESSION = re.compile(r"noqa|type:\s*ignore|\bskip(If|Unless|Test)?\b|\bxfail\b|\bxit\s*\(|\bxdescribe\s*\(")
 
@@ -677,7 +678,18 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
         return text if c == 0 else ""
 
     pairs = list(zip(fields[0::2], fields[1::2]))
-    added = [p for s_, p in pairs if s_.startswith("A") and TEST_DIR.search(p)]   # where the gate discovers
+    disc = DISCOVER.search(show(tip, "scripts/verify_repo.sh"))
+    root = disc.group(1).rstrip("/") if disc else None
+    pattern = disc.group(2) if disc and disc.group(2) else "test*.py"
+
+    def discovered(path: str) -> bool:
+        """Where the gate finds a test: its `unittest discover -s <root> -p <pattern>`, read from
+        `scripts/verify_repo.sh` at the tip, for a `.py` file; else a file directly under a tests dir."""
+        if root is not None and path.endswith(".py"):
+            return (posixpath.dirname(path) or ".") == posixpath.normpath(root) and fnmatch.fnmatch(posixpath.basename(path), pattern)
+        return bool(TEST_DIRECT.search(path)) and bool(TEST_NAME.search(path))
+
+    added = [p for s_, p in pairs if s_.startswith("A") and discovered(p)]
 
     def is_test(path: str) -> bool:
         if TEST_NAME.search(path):
@@ -687,10 +699,18 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
     gone = [p for s_, p in pairs if s_.startswith("D") and is_test(p)]
     had = {p: _asserts(show(base, p)) for p in gone}
     kept_n = {a: _asserts(show(tip, a)) for a in added}
+
+    def base_name(path: str) -> str:
+        return path.rsplit("/", 1)[-1]
+
+    def candidates(g: str) -> list[str]:
+        same = [a for a in added if base_name(a) == base_name(g)]
+        return same or added                      # a same-name target is the only one that may absolve
+
     owner: dict[str, str] = {}                    # a target absolves ONE deletion: a one-to-one matching
 
     def place(g: str, seen: set[str]) -> bool:
-        for a in added:
+        for a in candidates(g):
             if kept_n[a] >= had[g] and a not in seen:
                 seen.add(a)
                 if a not in owner or place(owner[a], seen):
@@ -708,11 +728,10 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
         if deleted and test:                      # a move reads D plus A under --no-renames
             if path in paired:
                 continue                          # a target under tests/ keeps its asserts
-            name = path.rsplit("/", 1)[-1]
-            dests = [a for a in added if a not in owner and a.rsplit("/", 1)[-1] == name]
+            dests = [a for a in added if a not in owner and base_name(a) == base_name(path)]
             if dests:
                 found.append({"path": dests[0], "severity": "fail", "kind": "test-lost-asserts",
-                              "detail": "no assert left"})
+                              "detail": f"{kept_n[dests[0]]} of {had[path]} asserts kept"})
                 continue
         if deleted and (test or gate):
             found.append({"path": path, "severity": "fail",
