@@ -40,7 +40,7 @@ explain it. The generated Codex mirrors (`plugins/quenching-codex/`, `.agents/`)
 
 ```
 plugins/quenching/
-  VERSION               one of four artifacts kept in version lockstep
+  VERSION               one of the artifacts kept in version lockstep
   commands/             one file per entry point — the executable prose
   assets/
     bin/                the `cq` CLI (`quenching.knowledge`, `.specs`, `.components`, `.ops`, `.proof`, `.git`)
