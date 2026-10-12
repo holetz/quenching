@@ -433,6 +433,31 @@ class Audit(RepoCase):
         got = {(e["kind"]) for e in self._lowered()}
         self.assertEqual(got, {"test-deleted"})
 
+    def test_lowered_fails_a_test_moved_out_of_the_discovered_directory(self):
+        for dest in ("plugins/q/attic/test_m.py", "elsewhere/test_m.py"):
+            with self.subTest(dest=dest):
+                self.setUp()
+                got = self._lowered_after({"plugins/q/tests/test_m.py": "def t():\n    assert 1\n",
+                                           "src/a.py": "x = 1\n"},
+                                          "plugins/q/tests/test_m.py",
+                                          {dest: "def t():\n    assert 1\n", "src/a.py": "x = 2\n"})
+                self.assertEqual(got, {("plugins/q/tests/test_m.py", "fail", "test-deleted")})
+                self.tearDown()
+
+    def test_lowered_ignores_a_test_renamed_inside_tests_with_the_same_content(self):
+        got = self._lowered_after({"tests/test_m.py": "def t():\n    assert 1\n"},
+                                  "tests/test_m.py", {"tests/test_n.py": "def t():\n    assert 1\n"})
+        self.assertEqual(got, set())
+
+    def test_lowered_pairs_moves_one_to_one_not_greedily(self):
+        self._commit_file("tests/a/test_x.py", "def t():\n    assert 1\n", "a")
+        self._commit_file("tests/b/test_x.py", "def t():\n    assert 1\n    assert 2\n    assert 3\n", "b")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        _run(self.wt, "rm", "-q", "tests/a/test_x.py", "tests/b/test_x.py")
+        self._commit_file("tests/c/test_x.py", "def t():\n    assert 1\n    assert 2\n    assert 3\n", "c")
+        self._commit_file("tests/d/test_x.py", "def t():\n    assert 1\n", "d")
+        self.assertEqual(self._lowered(), [])
+
     def test_lowered_fails_a_moved_test_that_kept_fewer_asserts(self):
         got = self._lowered_after({"tests/test_m.py": "def t():\n    assert 1\n    assert 2\n"
                                                      "    assert 3\n    assert 4\n",
