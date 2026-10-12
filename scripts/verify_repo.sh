@@ -77,6 +77,16 @@ run_check "Zensical strict build" \
 run_check "built-site checks" \
   python3 plugins/quenching/assets/checks/documentation-site-check.py site --local --remote-policy error
 
+# The quenching-hud mod is validated by the host's own validator. Without `claude` the skip is
+# stated loudly, as with `coverage`: a local gate must not demand an install, but the release has it.
+printf '\n==> quenching-hud plugin\n'
+if command -v claude >/dev/null 2>&1; then
+  run_check "quenching-hud plugin" \
+    claude plugin validate plugins/quenching-hud
+else
+  printf 'SKIPPED: `claude` is not on PATH; plugins/quenching-hud was not validated.\n'
+fi
+
 # Surface-load checks spawn billed `claude -p` sessions, so they are opt-in: without
 # QUENCHING_FUNCTIONAL=1 the skip is stated and the gate stays deterministic. When asked for, an
 # inconclusive run (exit 2) or a missing `claude` is a measurement that did not happen, so it fails.
