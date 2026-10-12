@@ -466,5 +466,51 @@ class MeasuredRootNormalisation(unittest.TestCase):
         self.assertAlmostEqual(result["."], 50.0)
 
 
+class PytestDiscoveryAndSurfaces(unittest.TestCase):
+    def _inventory(self, files):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / ".claude").mkdir()
+            (root / ".claude" / "quenching.json").write_text(json.dumps({"proof": {
+                "proofRoot": "tests",
+                "layers": {"unit": {"reach": "nothing", "budget": 2, "required": True}},
+                "measuredRoots": ["src"]}}), encoding="utf-8")
+            (root / "tests" / "unit").mkdir(parents=True)
+            (root / "tests" / "unit" / "test_a.py").write_text(
+                "def test_a(): pass\n", encoding="utf-8")
+            for relative, text in files.items():
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(text, encoding="utf-8")
+            inventory, err = build_inventory(str(root))
+            self.assertEqual({}, err)
+            assert inventory is not None
+            return inventory
+
+    def test_pytest_ini_wins_over_a_pyproject_without_ini_options(self):
+        inventory = self._inventory({
+            "pyproject.toml": "[project]\nname = 'x'\n",
+            "pytest.ini": "[pytest]\naddopts = --strict-markers --maxfail=1\n",
+            "src/a.py": "X = 1\n"})
+        self.assertEqual("pytest.ini", inventory.gate.path)
+        self.assertTrue(inventory.gate.strict_markers)
+        self.assertIn("--maxfail=1", inventory.gate.addopts)
+
+    def test_pyproject_with_ini_options_is_used_when_no_pytest_ini(self):
+        inventory = self._inventory({
+            "pyproject.toml": "[tool.pytest.ini_options]\naddopts = '--strict-markers'\n"})
+        self.assertEqual("pyproject.toml", inventory.gate.path)
+        self.assertTrue(inventory.gate.strict_markers)
+
+    def test_dependency_and_build_directories_are_not_surfaces(self):
+        files = {"src/a.py": "X = 1\n"}
+        for name in ("node_modules", "vendor", "build", "dist", ".eggs"):
+            files[f"{name}/x/index.js"] = "x\n"
+        files["lib/node_modules/y.js"] = "y\n"
+        files["lib/z.py"] = "Z = 1\n"
+        inventory = self._inventory(files)
+        self.assertEqual(("lib", "src"), inventory.source_surfaces)
+
+
 if __name__ == "__main__":
     unittest.main()
