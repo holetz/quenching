@@ -20,6 +20,7 @@ import sys
 from quenching.common.output import CQArgumentParser, OK, refuse
 from quenching.common.version import VERSION
 from quenching.specs.backends.base import BackendRefusal
+from quenching.specs.parse.fields import UnclosedFence
 from quenching.specs.commands.create import cmd_new
 from quenching.specs.commands.doctor import cmd_config, cmd_doctor
 from quenching.specs.commands.epic import cmd_epic
@@ -394,3 +395,6 @@ def main(argv: list[str]) -> int:
         # a legible refusal and never a traceback — so the failure is raised where it
         # happens, carrying the message already built, and converted exactly once here.
         return out.emit_err(args.json, e.err)
+    except UnclosedFence as e:
+        return out.emit_err(args.json, {"ok": False, "code": "sp-unclosed-fence", "exit": 2,
+                                        "key": e.key, "message": str(e)})

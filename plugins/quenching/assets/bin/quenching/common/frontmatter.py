@@ -121,6 +121,52 @@ def _quote_end(val: str) -> int | None:
     return None
 
 
+def _list_elements(inner: str) -> list[str]:
+    """The elements of an inline list's inside, split on the commas outside quotes. A quote
+    opens only at an element's first position, as in `_quote_end`; an unterminated one keeps the
+    rest of the text as one element."""
+    out: list[str] = []
+    rest = inner
+    while True:
+        lead = len(rest) - len(rest.lstrip())
+        end = _quote_end(rest[lead:])
+        scan_from = lead + end if end else lead
+        if end is None:
+            out.append(rest)
+            return out
+        comma = rest.find(",", scan_from)
+        if comma < 0:
+            out.append(rest)
+            return out
+        out.append(rest[:comma])
+        rest = rest[comma + 1:]
+
+
+def _split_list_comment(val: str) -> tuple[str, str]:
+    """`_split_comment` for a value opening `[`: the quote rule applies to each element, so a
+    ` #` inside `"sprint #3"` stays in the value."""
+    pos = 1
+    while pos <= len(val):
+        lead = pos
+        while lead < len(val) and val[lead] in " \t":
+            lead += 1
+        end = _quote_end(val[lead:])
+        if end is None:
+            return val, ""
+        i = lead + end
+        while i < len(val) and val[i] not in ",]":
+            if val[i] == "#" and val[i - 1] in " \t":
+                return val[:i].rstrip(), val[i:]
+            i += 1
+        if i >= len(val) or val[i] == "]":
+            for j in range(i + 1, len(val)):
+                if val[j] == "#" and val[j - 1] in " \t":
+                    return val[:j].rstrip(), val[j:]
+            return val, ""
+        pos = i + 1
+    return val, ""
+
+
 def _split_comment(val: str) -> tuple[str, str]:
     """Split a scalar into (value, comment).
 
@@ -131,6 +177,8 @@ def _split_comment(val: str) -> tuple[str, str]:
 
     An unterminated quote strips nothing: the scalar's extent is unknowable, so the value is kept
     verbatim and `frontmatter_anomalies` reports it rather than the parser guessing a boundary."""
+    if val.startswith("["):
+        return _split_list_comment(val)
     start = _quote_end(val)
     if start is None:
         return val, ""
@@ -251,7 +299,7 @@ def parse_frontmatter(text: str) -> dict:
             j += 1
             continue
         if val.startswith("[") and val.endswith("]"):
-            fm[key] = [_unquote(x) for x in val[1:-1].split(",") if x.strip()]
+            fm[key] = [_unquote(x) for x in _list_elements(val[1:-1]) if x.strip()]
         elif val.startswith("{") and val.endswith("}"):
             # Flow splits on commas, so a record value that contains one — or is long enough to
             # wrap — can only be written as the indented form above.
