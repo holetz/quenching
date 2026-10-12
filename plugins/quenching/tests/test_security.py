@@ -66,7 +66,7 @@ class SecurityQuestions(unittest.TestCase):
             )
 
     def test_secret_ignore_coverage_normalizes_globs(self):
-        for entry in (".env*", "**/.env", "*.env", ".env/", "/.env"):
+        for entry in (".env*", "**/.env", "*.env", "/.env"):
             with self.subTest(entry=entry), tempfile.TemporaryDirectory() as raw:
                 root = pathlib.Path(raw)
                 (root / ".gitignore").write_text(
@@ -74,6 +74,27 @@ class SecurityQuestions(unittest.TestCase):
                 result = secret_ignore_coverage(root).as_dict()
                 self.assertEqual("present", result["state"])
                 self.assertIn("environment-files", result["details"]["patterns"])
+
+    def test_secret_ignore_coverage_follows_git_semantics(self):
+        rest = "*.pem\nservice-secret.json\n"
+        cases = {
+            "directory-only": (".env/\n" + rest, "missing"),
+            "env-glob-dir": ("**/.env/\n" + rest, "missing"),
+            "example-only": (".env.example\n" + rest, "missing"),
+            "env-local": (".env.local\n" + rest, "missing"),
+            "env-dot-star": (".env.*\n" + rest, "missing"),
+            "negated": (".env\n!.env\n" + rest, "missing"),
+            "negated-later-glob": (".env*\n!.env\n" + rest, "missing"),
+            "plain": (".env\n" + rest, "present"),
+        }
+        for name, (text, state) in cases.items():
+            with self.subTest(case=name), tempfile.TemporaryDirectory() as raw:
+                root = pathlib.Path(raw)
+                (root / ".gitignore").write_text(text, encoding="utf-8")
+                result = secret_ignore_coverage(root).as_dict()
+                self.assertEqual(state, result["state"])
+                if state == "missing":
+                    self.assertIn("environment-files", result["details"]["uncovered"])
 
     def test_secret_ignore_coverage_partial_is_missing(self):
         with tempfile.TemporaryDirectory() as raw:
