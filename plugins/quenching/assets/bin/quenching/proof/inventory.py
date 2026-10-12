@@ -33,6 +33,8 @@ _SKIP_DIRS = frozenset({
 })
 # Dependency folders pytest does not skip: never a top-level surface, but not skipped deeper.
 _SURFACE_SKIP_TOP = _SKIP_DIRS | {"vendor"}
+# Environments and caches are never source, however deep: the surface walk prunes them at any depth.
+_ENV_DIRS = frozenset({".venv", "venv", ".tox", "__pycache__", "node_modules"})
 _TEST_RE = re.compile(r"(?:^test_.*\.py$|^.*_test\.py$)")
 _PYTEST_FIXTURE = re.compile(r"(?:^|\.)fixture$")
 
@@ -139,7 +141,7 @@ def _gate_from_toml(data: dict[str, Any]) -> dict[str, Any]:
 
 
 def _gate_from_ini(path: Path, section_name: str = "pytest") -> dict[str, Any]:
-    parser = configparser.ConfigParser()
+    parser = configparser.ConfigParser(interpolation=None)
     try:
         parser.read(path, encoding="utf-8")
     except (OSError, UnicodeError, configparser.Error):
@@ -183,7 +185,7 @@ def _gate(repo_root: str, ratchet_path: str) -> GateConfig:
     pyproject = root / "pyproject.toml"
     data = _toml(pyproject) if pyproject.is_file() else {}
     from_toml = _gate_from_toml(data) if data else {}
-    for name in ("pytest.ini", "pyproject.toml", "tox.ini", "setup.cfg"):
+    for name in ("pytest.ini", ".pytest.ini", "pyproject.toml", "tox.ini", "setup.cfg"):
         candidate = root / name
         if not candidate.is_file():
             continue
@@ -237,7 +239,7 @@ def _source_surfaces(repo_root: str, proof_root: str) -> tuple[str, ...]:
             continue
         found = False
         for directory, dirnames, filenames in os.walk(child):
-            dirnames[:] = sorted(dirnames)
+            dirnames[:] = sorted(name for name in dirnames if name not in _ENV_DIRS)
             if any(Path(name).suffix.lower() in suffixes for name in filenames):
                 found = True
                 break
