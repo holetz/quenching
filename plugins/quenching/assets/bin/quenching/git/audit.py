@@ -665,15 +665,23 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
         return text if c == 0 else ""
 
     pairs = list(zip(fields[0::2], fields[1::2]))
-    added_names = {p.rsplit("/", 1)[-1] for s_, p in pairs if s_.startswith("A")}
+    added = [p for s_, p in pairs if s_.startswith("A")]
     for status, path in pairs:
         gate = bool(GATE_PATH.search(path))
         deleted = status.startswith("D")
         test = bool(TEST_NAME.search(path))
         if not test and TEST_PATH.search(path):   # under a tests dir: a test only if it asserted
             test = bool(ASSERT.search(show(base, path)))
-        if deleted and test and path.rsplit("/", 1)[-1] in added_names:
-            continue                              # moved or renamed (--no-renames reads D plus A)
+        if deleted and test:                      # a move reads D plus A under --no-renames
+            name = path.rsplit("/", 1)[-1]
+            dests = [a for a in added if a.rsplit("/", 1)[-1] == name and TEST_PATH.search(a)]
+            had = ASSERT.search(show(base, path))
+            if any(not had or ASSERT.search(show(tip, a)) for a in dests):
+                continue                          # the target is a test and keeps its asserts
+            if dests:
+                found.append({"path": dests[0], "severity": "fail", "kind": "test-lost-asserts",
+                              "detail": "no assert left"})
+                continue
         if deleted and (test or gate):
             found.append({"path": path, "severity": "fail",
                           "kind": "test-deleted" if test else "gate-shrunk", "detail": "(deleted)"})
