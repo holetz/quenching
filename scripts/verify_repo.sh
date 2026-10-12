@@ -83,7 +83,8 @@ if command -v claude >/dev/null 2>&1; then
   run_check "quenching-hud plugin" \
     claude plugin validate plugins/quenching-hud
 else
-  printf '\n==> quenching-hud plugin\nSKIPPED: `claude` is not on PATH; plugins/quenching-hud was not validated.\n'
+  printf '\n==> quenching-hud plugin\n'
+  printf 'SKIPPED: `claude` is not on PATH; plugins/quenching-hud was not validated.\n'
 fi
 
 # Surface-load checks spawn billed `claude -p` sessions, so they are opt-in: without
