@@ -129,6 +129,23 @@ def insert_item(info: dict, line: str, group: str | None) -> str:
     return "".join(lines)
 
 
+def _without_item(old: dict, spec_id: str, args, out: Emitter):
+    """`(text, None)`: `old` without the item that lists `spec_id` (`text` is `None` when it lists
+    none), or `(None, exit_code)` when another item waits on that item."""
+    items = parse_items(old)
+    mine = next((i for i in items if i["spec"] == spec_id), None)
+    if mine is None:
+        return None, None
+    waiting = [i["label"] for i in items if i is not mine and mine["label"] in i["after"]]
+    if waiting:
+        return None, _refuse(out, args, "sp-epic-move-dependents",
+                             f"{', '.join(waiting)} in epic {old['id']} wait on {mine['label']} — "
+                             "resolve the dependency before moving it", waiting=waiting)
+    lines = split_lines(old["text"], keepends=True)
+    del lines[mine["lineno"]:mine["blockEndLineno"]]
+    return "".join(lines), None
+
+
 def cmd_epic(args, root: str, out: Emitter) -> int:
     """`epic add <epic> <spec>` — list a spec as an epic item AND stamp `epic:` on the spec.
 
@@ -159,9 +176,17 @@ def cmd_epic(args, root: str, out: Emitter) -> int:
         return _refuse(out, args, "sp-epic-nested",
                        f"spec {spec_id} is itself an epic — an epic has one level only")
     current = epic_ref(member["frontmatter"])
+    old_epic, old_text = None, None
     if current and current != epic_id:
-        return _refuse(out, args, "sp-epic-member-taken",
-                       f"spec {spec_id} already belongs to epic {current}", epic=current)
+        if not getattr(args, "move", False):
+            return _refuse(out, args, "sp-epic-member-taken",
+                           f"spec {spec_id} already belongs to epic {current} "
+                           "(--move takes it out of that epic)", epic=current)
+        old_epic = backend.read_specs([current]).get(current)
+        if old_epic is not None:
+            old_text, code = _without_item(old_epic, spec_id, args, out)
+            if code is not None:
+                return code
     items = parse_items(epic)
     existing = next((i for i in items if i["spec"] == spec_id), None)
     new_epic, label = None, None
@@ -182,6 +207,8 @@ def cmd_epic(args, root: str, out: Emitter) -> int:
         title = str(member["frontmatter"].get("title") or "").strip() or f"Spec {spec_id}"
         new_epic = insert_item(epic, render_item(label, title, spec_id, after), args.group)
     batch = []
+    if old_text is not None:
+        batch.append((old_epic, old_text))
     if new_epic is not None:
         batch.append((epic, new_epic))
     if current != epic_id:
