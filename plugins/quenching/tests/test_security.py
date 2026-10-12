@@ -4,10 +4,14 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import os
 import pathlib
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 try:
     import _paths  # noqa: F401 — must precede the `quenching` import
@@ -95,6 +99,33 @@ class SecurityQuestions(unittest.TestCase):
                 self.assertEqual(state, result["state"])
                 if state == "missing":
                     self.assertIn("environment-files", result["details"]["uncovered"])
+
+    def test_secret_ignore_coverage_ignores_inherited_git_environment(self):
+        with tempfile.TemporaryDirectory() as raw:
+            other = pathlib.Path(raw, "other")
+            subprocess.run(["git", "init", "-q", str(other)], check=True)
+            hooks = other / ".git" / "hooks"
+            shutil.rmtree(hooks)
+            hooks.mkdir()
+            (other / ".git" / "info").mkdir(exist_ok=True)
+            (other / ".git" / "info" / "exclude").write_text(".env\n", encoding="utf-8")
+            root = pathlib.Path(raw, "target")
+            root.mkdir()
+            (root / ".gitignore").write_text("*.pem\nservice-secret.json\n", encoding="utf-8")
+            with mock.patch.dict(os.environ, {"GIT_DIR": str(other / ".git")}):
+                result = secret_ignore_coverage(root).as_dict()
+            self.assertEqual("missing", result["state"])
+            self.assertIn("environment-files", result["details"]["uncovered"])
+            self.assertEqual([], list(hooks.iterdir()))
+
+    def test_secret_ignore_coverage_counts_literal_names_with_a_path(self):
+        rails = "/.env*\n/config/master.key\n/config/credentials/*.key\n"
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            (root / ".gitignore").write_text(rails, encoding="utf-8")
+            result = secret_ignore_coverage(root).as_dict()
+            self.assertNotIn("private-keys", result["details"].get("uncovered", []))
+            self.assertIn("private-keys", result["details"]["patterns"])
 
     def test_secret_ignore_coverage_partial_is_missing(self):
         with tempfile.TemporaryDirectory() as raw:
