@@ -379,6 +379,41 @@ class Audit(RepoCase):
         _run(self.wt, "commit", "-q", "-m", "move and drop")
         self.assertEqual(self._lowered(), [])
 
+    def _lowered_after(self, files, drop, add):
+        for rel, text in files.items():
+            self._commit_file(rel, text, "add")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        _run(self.wt, "rm", "-q", drop)
+        for rel, text in add.items():
+            full = pathlib.Path(self.wt, rel)
+            full.parent.mkdir(parents=True, exist_ok=True)
+            full.write_text(text, encoding="utf-8")
+            _run(self.wt, "add", rel)
+        _run(self.wt, "commit", "-q", "-m", "change")
+        return {(e["path"], e["severity"], e["kind"]) for e in self._lowered()}
+
+    def test_lowered_fails_a_deleted_test_when_an_unrelated_same_name_file_is_added(self):
+        got = self._lowered_after({"tests/test_a.py": "def test_a():\n    assert 1\n"},
+                                  "tests/test_a.py", {"examples/test_a.py": "x = 1\n"})
+        self.assertEqual(got, {("tests/test_a.py", "fail", "test-deleted")})
+
+    def test_lowered_fails_a_deleted_test_when_the_same_name_target_is_not_a_test(self):
+        got = self._lowered_after({"tests/checks.py": "def t():\n    assert 1\n"},
+                                  "tests/checks.py", {"src/checks.py": "x = 1\n"})
+        self.assertEqual(got, {("tests/checks.py", "fail", "test-deleted")})
+
+    def test_lowered_fails_a_moved_test_that_lost_its_asserts(self):
+        got = self._lowered_after({"tests/test_m.py": "def test_m():\n    assert 1\n"},
+                                  "tests/test_m.py",
+                                  {"tests/unit/test_m.py": "def test_m():\n    pass\n"})
+        self.assertEqual(got, {("tests/unit/test_m.py", "fail", "test-lost-asserts")})
+
+    def test_lowered_ignores_a_moved_test_that_keeps_its_asserts(self):
+        got = self._lowered_after({"tests/test_m.py": "def test_m():\n    assert 1\n"},
+                                  "tests/test_m.py",
+                                  {"tests/unit/test_m.py": "def test_m():\n    assert 2\n"})
+        self.assertEqual(got, set())
+
     def test_lowered_reads_a_removed_gate_line_that_starts_with_dashes(self):
         self._commit_file("scripts/verify_repo.sh", "# gate\n--strict\nrun one\n", "gate")
         _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
