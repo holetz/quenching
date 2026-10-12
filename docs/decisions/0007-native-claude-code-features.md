@@ -61,6 +61,8 @@ The sub-agents page lists `model`, `effort` (low, medium, high, xhigh, max), `to
 page documents the `Agent(type)` allowlist and the scoped `plugin:agent` identifier, so the scoped
 form is the correct one. No file needed fixing.
 
+> Superseded in part by [0012](0012-lista-agent-do-orchestrator-e-documental.md): in a subagent the `Agent(type)` list restricts nothing; it is documentation of intent.
+
 ## `model:` pins versus `effort:` — keep the pins, amend the standard
 
 `docs/standards/automation/skills.md` already calls a pin "an authored, priced decision", yet read
