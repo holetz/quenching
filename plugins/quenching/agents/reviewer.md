@@ -29,8 +29,8 @@ else:
 
 **These grants are prefixes, not a sandbox.** Never pass `--output`, `--no-index`, `--ext-diff`
 or `--textconv`, never redirect output (`>`, `>>`, `tee`), and never write a file; tests and the
-gate execute the code under review. After you return, the caller audits `git status` and
-`git stash list`; anything you left behind is reported against you.
+gate execute the code under review. After you return, the caller audits the working tree and the
+stash list; anything you left behind is reported against you.
 
 A commit that is not in the checkout's tree (an open PR, not yet merged) is still readable through
 `git show`: its objects live in the shared repository. Reproduce it only when the checkout carries
