@@ -1,7 +1,7 @@
 ---
 type: standard
-title: Versioning and release — the four-artifact lockstep
-description: The four source version surfaces that cq specs release bumps together, with the generated specs-reader sibling refreshed from the same source version
+title: Versioning and release — the version lockstep
+description: The source version surfaces that cq specs release bumps together, with the generated specs-reader sibling and the HUD manifest moved to the same version
 resource: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py
 tags: [release, versioning, lockstep, plugin, distribution]
 timestamp: 2026-10-11
@@ -11,16 +11,16 @@ source: modularizar-specs-knowledge-components, one-entry-point, notice-installe
 maintainer: quenching
 ---
 
-# Versioning and release — the four-artifact lockstep
+# Versioning and release — the version lockstep
 
 <!-- rules -->
 
-A release bumps four source version surfaces in lockstep. The rule is not bookkeeping tidiness:
+A release bumps the version surfaces in lockstep. The rule is not bookkeeping tidiness:
 Claude, the marketplace and the bundled `cq` identity read different halves of the set, and a
 partial bump makes one of them wrong.
 
 `cq specs release <version>` — the tool this section's *Verifying* block names — requires a matching
-`## <version>` entry in `CHANGELOG.md`, then moves the four surfaces in one release operation.
+`## <version>` entry in `CHANGELOG.md`, then moves every surface in one release operation.
 
 ## The published set
 
@@ -56,7 +56,7 @@ internal imports has no such constraint: `common/version.py` is read by every pi
 not duplicated by it.
 
 The generated sibling is bumped in the same operation. `cq specs release` also moves
-`plugins/quenching-specs-reader/VERSION` and its `.claude-plugin/plugin.json`, and it rewrites the
+`plugins/quenching-specs-reader/VERSION`, its `.claude-plugin/plugin.json` and the HUD's `plugins/quenching-hud/.claude-plugin/plugin.json`, and it rewrites the
 `version` of **every** plugin entry in `.claude-plugin/marketplace.json`, never only the first. A
 marketplace entry with no `version` is refused. Afterwards `sync_specs_reader_plugin.py --write`
 regenerates the copied assets, and the specs reader lockstep gate proves them. The generated Codex
@@ -65,7 +65,7 @@ sibling (`plugins/quenching-codex/`) was retired on 2026-10-11 and is no longer 
 
 ## When the bump happens — once, at the release, on the primary branch
 
-The four move **once per release, on the primary branch, as the deliberate act that publishes
+The surfaces move **once per release, on the primary branch, as the deliberate act that publishes
 it** — see [branching.md](../git/branching.md). A version bump is never a task in a
 spec's `## Tasks`, `/quenching:specs:execute` never makes one, and `/quenching:specs:conclude` no longer makes one
 either: a spec's own conclude merges into the primary branch with the lockstep untouched, and the
