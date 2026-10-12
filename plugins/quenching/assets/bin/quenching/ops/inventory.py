@@ -113,16 +113,37 @@ def _registry_lifecycle(root: str, registry_path: str | None = None) -> dict[str
     except (OSError, UnicodeDecodeError):
         return {}
     out: dict[str, str] = {}
+    column: int | None = None
+    in_zone = False
     for line in text.splitlines():
-        state = next((candidate for candidate in ("active", "archived")
-                      if re.search(rf"(?<![A-Za-z]){candidate}(?![A-Za-z])", line)), None)
-        if not state:
+        if "quenching-ops-registry-start" in line:
+            in_zone = True
+        elif "quenching-ops-registry-end" in line:
+            in_zone = False
             continue
-        for match in re.finditer(r"`([^`]+)`", line):
+        if line.lstrip().startswith("|"):
+            cells = [cell.strip() for cell in re.split(r"(?<!\\)\|", line.strip().strip("|"))]
+            lowered = [cell.lower() for cell in cells]
+            if "lifecycle" in lowered:
+                column = lowered.index("lifecycle")
+                continue
+            if column is None or column >= len(cells):
+                continue
+            state = cells[column].lower()
+            if state not in ("active", "archived"):
+                continue
+            match = re.search(r"`([^`]+)`", cells[0])
+        elif in_zone:
+            continue
+        else:
+            declared = re.fullmatch(r"\s*`([^`]+)`\s*[—–-]+\s*(active|archived)\s*", line)
+            if not declared:
+                continue
+            match, state = declared, declared.group(2)
+        if match:
             candidate = match.group(1).replace("\\", "/").lstrip("./")
             if candidate.endswith((".py", ".sh", ".bash", ".cmd", ".bat", ".ps1")):
                 out[candidate] = state
-                break
     return out
 
 

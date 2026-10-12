@@ -28,7 +28,7 @@ from quenching.ops.checks import (
 )
 from quenching.ops.cli import _status_payload
 from quenching.ops.doctor import doctor, inspect_ops
-from quenching.ops.inventory import build_inventory
+from quenching.ops.inventory import _registry_lifecycle, build_inventory
 from quenching.ops.model import EntryPoint, Inventory, Router
 from quenching.ops.registry import (
     REGISTRY_END,
@@ -323,6 +323,34 @@ class RegistryStale(unittest.TestCase):
             end = updated.index(REGISTRY_END) + len(REGISTRY_END)
             self.assertEqual(updated[:start], prefix)
             self.assertEqual(updated[end:], suffix)
+
+    def test_purpose_word_does_not_invent_a_lifecycle(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            (root / "prune.py").write_text("def main():\n    return 0\n", encoding="utf-8")
+            inventory = Inventory(
+                str(root),
+                Router("pyproject.toml", "python-console-script", True),
+                (EntryPoint("prune.py", "prune", "/prune", "Delete active sessions"),),
+            )
+            path = root / "registry.md"
+            write_registry(path, inventory)
+            self.assertEqual(_registry_lifecycle(str(root), str(path)), {})
+            self.assertFalse(write_registry(path, inventory))
+
+    def test_lifecycle_is_read_from_its_column_only(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            path = root / "registry.md"
+            path.write_text(
+                "| Entry point | Purpose | Invocation | Lifecycle | Writes | Flags |\n"
+                "| --- | --- | --- | --- | --- | --- |\n"
+                "| `a.py` | Keep active and archived | `/a` | archived | no | — |\n"
+                "| `b.py` | Plain | `/b` | active | no | — |\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(_registry_lifecycle(str(root), str(path)),
+                             {"a.py": "archived", "b.py": "active"})
 
     def test_stale_check_delegates_to_registry_generator(self):
         with tempfile.TemporaryDirectory() as raw:
