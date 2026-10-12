@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 
+from quenching.common.config import load_config
 from quenching.common.io import write_text
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.epic import cmd_epic_status
@@ -120,14 +121,26 @@ def cmd_status(args, root: str, out: Emitter) -> int:
     if not args.spec:
         return out.emit_err(args.json, {"code": "sp-no-target", "exit": 2,
                                         "message": "pass --spec <id>, or --epic <id>"})
+    no_fetch = getattr(args, "no_fetch", False)
+    if no_fetch:
+        # Decided from the local config alone: opening a github backend resolves the repo through
+        # the API and writes its cache, and `--no-fetch` promises neither.
+        cfg = load_config(root)
+        declared_git = cfg.get("data", {}).get("backend") == "git"
+        if not declared_git and not cfg.get("unknownBackend") \
+                and cfg.get("provider") in ("github", "azure-boards"):
+            return out.emit_err(args.json, {
+                "code": "sp-no-local-read", "exit": 2,
+                "message": f"--no-fetch needs the git store; the '{cfg['provider']}' backend has no "
+                           "local copy to read, so it would have to use the network"})
     backend, err = open_backend(root)
     if err:
         return out.emit_err(args.json, err)
-    if getattr(args, "no_fetch", False) and backend.name != "git":
+    if no_fetch and not backend.has_local_ref():
         return out.emit_err(args.json, {
-            "code": "sp-no-local-read", "exit": 2,
-            "message": f"--no-fetch needs the git store; the '{backend.name}' backend has no "
-                       "local copy to read, so it would have to use the network"})
+            "code": "sp-no-local-ref", "exit": 2,
+            "message": f"--no-fetch reads the local ref '{backend.tracking_ref}', which does not exist "
+                       "here; run a command without --no-fetch once to fetch the store"})
     info, err = read_one(backend, args.spec, out)
     if err:
         return out.emit_err(args.json, err)
