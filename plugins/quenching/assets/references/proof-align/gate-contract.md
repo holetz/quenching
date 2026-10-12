@@ -74,6 +74,18 @@ The gate contract owns these codes and no other reference defines them:
 | `pf-order-unproven` | Test order independence has not been exercised with observable evidence. | `error` | structural* |
 | `pf-no-ci` | CI does not invoke the same proof contract. | `error` | judgement |
 | `pf-untested-entrypoint` | An active operations entry point lacks test or not-applicable evidence. | `error` | judgement |
+| `pf-coverage-missing` | `cq proof ratchet` found no coverage artifact; the target's gate has not produced one. | refusal (exit 2) | refusal |
+| `pf-coverage-invalid` | The coverage artifact exists but cannot be read. | refusal (exit 2) | refusal |
+| `pf-coverage-no-measured-root` | The coverage artifact measures none of the declared measured roots. | refusal (exit 2) | refusal |
+| `pf-floor-invalid` | The floor file exists but is malformed. | refusal (exit 2) | refusal |
+| `pf-floor-regressed` | A measured root's coverage fell below its recorded floor. | `error` | judgement |
+| `pf-floor-unmeasured` | A root has a recorded floor but the coverage artifact did not measure it. | `error` | judgement |
+
+`pf-floor-regressed` and `pf-floor-unmeasured` go to the human: lowering a floor or dropping a root
+is the owner's decision, never a repair. The four refusals stop the ratchet before it compares anything;
+the closing command is the target's own gate producing a valid artifact or the owner fixing the floor
+file. Either blocking finding or any refusal leaves the floor file unwritten, so `--raise` never
+raised anything.
 
 `pf-untested-entrypoint` is not a universal demand for tests around every script in every
 repository. Its applicability is established by the operations-front declaration, and the
