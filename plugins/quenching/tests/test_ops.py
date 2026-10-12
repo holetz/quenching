@@ -352,8 +352,24 @@ class RegistryStale(unittest.TestCase):
             "| Entry | Purpose | Lifecycle |\n| --- | --- | --- |\n"
             "| `run.py` | Run | active sessions |\n"
         )
-        self.assertEqual(self._lifecycle_of(table), {})
+        self.assertEqual(self._lifecycle_of(table), {"run.py": "active"})
         self.assertEqual(self._lifecycle_of("`run.py` \u2014 active sessions\n"), {})
+
+    def test_styled_and_cased_forms_are_read(self):
+        cases = {
+            "| Entry | Purpose | Lifecycle |\n| --- | --- | --- |\n| `run.py` | R | `active` |\n": {"run.py": "active"},
+            "| Entry | Purpose | Lifecycle |\n| --- | --- | --- |\n| `a.py` | R | archived 2026-08-30 |\n": {"a.py": "archived"},
+            "| Entry | Purpose | Lifecycle |\n| --- | --- | --- |\n| `a.py` | R | archived since 2026-08-30 |\n": {"a.py": "archived"},
+            "| Entry | Purpose | Lifecycle |\n| --- | --- | --- |\n| `a.py` | R | **archived** |\n": {"a.py": "archived"},
+            "| Purpose | Entry | Lifecycle |\n| --- | --- | --- |\n| R | `a.py` | Active |\n": {"a.py": "active"},
+            "`old.py` \u2014 Archived (2026-08-30)\n": {"old.py": "archived"},
+            "- `run.py` \u2014 Active\n": {"run.py": "active"},
+            "- `run.py` \u2014 `active`\n": {"run.py": "active"},
+            "`a.py` \u2014 **archived** 2026-08-30\n": {"a.py": "archived"},
+        }
+        for text, expected in cases.items():
+            with self.subTest(text=text):
+                self.assertEqual(self._lifecycle_of(text), expected)
 
     def test_column_index_does_not_leak_into_a_headerless_table(self):
         text = (
