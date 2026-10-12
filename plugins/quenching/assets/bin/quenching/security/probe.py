@@ -118,7 +118,8 @@ def _secret_class(pattern: str) -> str | None:
 
 def _ignored_names(text: str, names: list[str]) -> set[str] | None:
     """Ask git itself which names the ignore text hides; None when git cannot answer."""
-    env = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"}
+    env = {**{k: v for k, v in os.environ.items() if not k.startswith("GIT_")},
+           "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"}
     try:
         with tempfile.TemporaryDirectory() as raw:
             subprocess.run(["git", "init", "-q", raw], check=True, env=env,
@@ -161,7 +162,7 @@ def secret_ignore_coverage(root: Path) -> QuestionResult:
             candidates.setdefault(category, []).append(pattern)
     names = sorted({name for samples in _SECRET_SAMPLES.values() for name in samples}
                    | {p.lstrip("/") for ps in candidates.values() for p in ps
-                      if not re.search(r"[*?\[]|/$", p) and "/" not in p.strip("/")})
+                      if not re.search(r"[*?\[]|/$", p)})
     ignored = _ignored_names(text, names)
     if ignored is None:
         return QuestionResult(
