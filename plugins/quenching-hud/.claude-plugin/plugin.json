@@ -1,0 +1,11 @@
+{
+  "name": "quenching-hud",
+  "version": "6.4.0",
+  "description": "Read-only band above the prompt: the worktree's active spec, its stage and its task progress, read through cq specs status.",
+  "author": {
+    "name": "Israel Holetz",
+    "email": "holetz@gmail.com"
+  },
+  "license": "MIT",
+  "types": "./types/index.d.ts"
+}
