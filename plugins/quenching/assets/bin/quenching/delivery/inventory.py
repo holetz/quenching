@@ -279,25 +279,50 @@ def _job(lines: list[str], name: str, kind: str) -> Job:
     )
 
 
-def _triggers(lines: list[str], kind: str) -> tuple[str, ...]:
+def _trigger_names(lines: list[str], kind: str) -> list[str]:
     block = _block(lines, "on") or _block(lines, "trigger")
     if not block and kind == "gitlab-ci":
         block = _block(lines, "workflow") or _block(lines, "rules")
     if not block:
-        return ()
+        return []
     first = _TOP_LEVEL.match(block[0])
     inline = _strip_comment(first.group(2) or "") if first else ""
     if inline and inline not in {"{}", "null"}:
         if inline.startswith("[") and inline.endswith("]"):
-            names = [item.strip(" '\"") for item in inline[1:-1].split(",") if item.strip()]
-        else:
-            names = [inline.strip(" '\"")]
-    else:
-        names = [match.group(1) for line in block[1:] if (match := _CHILD.match(line))]
-        if not names and kind != "gitlab-ci":
-            names = [_strip_comment(match.group(1)).strip("'\"") for line in block[1:]
-                     if (match := _LIST.match(line))]
-    return tuple(sorted(name for name in names if name.lower() != "none"))
+            return [item.strip(" '\"") for item in inline[1:-1].split(",") if item.strip()]
+        return [inline.strip(" '\"")]
+    names = [match.group(1) for line in block[1:] if (match := _CHILD.match(line))]
+    if not names and kind != "gitlab-ci":
+        names = [_strip_comment(match.group(1)).strip("'\"") for line in block[1:]
+                 if (match := _LIST.match(line))]
+    return names
+
+
+def _azure_extra_triggers(lines: list[str]) -> list[str]:
+    names = []
+    pr = _block(lines, "pr")
+    if pr:
+        first = _TOP_LEVEL.match(pr[0])
+        inline = _strip_comment(first.group(2) or "") if first else ""
+        body = [line for line in pr[1:] if _strip_comment(line)]
+        items = [_strip_comment(m.group(1)).strip("'\"") for line in body
+                 if (m := _LIST.match(line))]
+        if inline:
+            if inline.lower() != "none" and inline not in {"{}", "null"}:
+                names.append("pr")
+        elif body and not (items and all(item.lower() == "none" for item in items)
+                           and len(items) == len(body)):
+            names.append("pr")
+    if _block(lines, "schedules"):
+        names.append("schedules")
+    return names
+
+
+def _triggers(lines: list[str], kind: str) -> tuple[str, ...]:
+    names = _trigger_names(lines, kind)
+    if kind == "azure-pipelines":
+        names += _azure_extra_triggers(lines)
+    return tuple(sorted(set(name for name in names if name.lower() != "none")))
 
 
 def _workflow(root: Path, relative: str, provider: str, kind: str) -> Workflow:
