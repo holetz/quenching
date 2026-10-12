@@ -289,11 +289,15 @@ def _triggers(lines: list[str], kind: str) -> tuple[str, ...]:
     inline = _strip_comment(first.group(2) or "") if first else ""
     if inline and inline not in {"{}", "null"}:
         if inline.startswith("[") and inline.endswith("]"):
-            return tuple(sorted(item.strip(" '\"") for item in inline[1:-1].split(",")
-                                if item.strip()))
-        return (inline.strip(" '\""),)
-    return tuple(sorted(match.group(1) for line in block[1:]
-                         if (match := _CHILD.match(line))))
+            names = [item.strip(" '\"") for item in inline[1:-1].split(",") if item.strip()]
+        else:
+            names = [inline.strip(" '\"")]
+    else:
+        names = [match.group(1) for line in block[1:] if (match := _CHILD.match(line))]
+        if not names and kind != "gitlab-ci":
+            names = [_strip_comment(match.group(1)).strip("'\"") for line in block[1:]
+                     if (match := _LIST.match(line))]
+    return tuple(sorted(name for name in names if name.lower() != "none"))
 
 
 def _workflow(root: Path, relative: str, provider: str, kind: str) -> Workflow:

@@ -112,6 +112,12 @@ def _has_lock(inventory: ToolchainInventory, ecosystem: str) -> bool:
                          else {"Cargo.lock"}))
 
 
+def _is_exact_pin(ecosystem: object, spec: str) -> bool:
+    if re.fullmatch(r"\s*(?:==|=)\s*\d+(?:\.\d+){1,2}\s*", spec):
+        return True
+    return ecosystem == "node" and re.fullmatch(r"\s*\d+\.\d+\.\d+\s*", spec) is not None
+
+
 def check_tool_unpinned(inventory: ToolchainInventory) -> list[Finding]:
     findings = []
     for artifact in inventory.manifests:
@@ -120,7 +126,7 @@ def check_tool_unpinned(inventory: ToolchainInventory) -> list[Finding]:
         if not isinstance(specs, dict) or not specs or _has_lock(inventory, ecosystem):
             continue
         unpinned = [name for name, spec in specs.items()
-                    if not re.fullmatch(r"\s*(?:==|=)\s*\d+(?:\.\d+){1,2}\s*", str(spec))]
+                    if not _is_exact_pin(ecosystem, str(spec))]
         if unpinned:
             findings.append(_finding("tc-tool-unpinned",
                                      f"development tools lack exact pins: {', '.join(sorted(unpinned))}",
