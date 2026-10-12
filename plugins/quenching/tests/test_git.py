@@ -444,6 +444,17 @@ class Audit(RepoCase):
                 self.assertEqual(got, {("plugins/q/tests/test_m.py", "fail", "test-deleted")})
                 self.tearDown()
 
+    def test_lowered_ignores_a_js_or_ts_test_move_when_the_repo_has_no_gate(self):
+        body = "it('x', () => { expect(1).toBe(1); });\n"
+        for src, dest in (("src/a.test.js", "tests/a.test.js"),
+                          ("__tests__/a.test.ts", "src/__tests__/a.test.ts")):
+            with self.subTest(src=src):
+                self.setUp()
+                got = self._lowered_after({src: body, "src/k.js": "x = 1\n"}, src,
+                                          {dest: body, "src/k.js": "x = 2\n"})
+                self.assertEqual(got, set())
+                self.tearDown()
+
     def test_lowered_ignores_a_test_renamed_inside_tests_with_the_same_content(self):
         got = self._lowered_after({"tests/test_m.py": "def t():\n    assert 1\n"},
                                   "tests/test_m.py", {"tests/test_n.py": "def t():\n    assert 1\n"})
