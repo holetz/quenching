@@ -17,13 +17,13 @@ Ela se atualiza em `session.start` e a cada `turn.complete`.
 Só dois comandos, por argv fixo e sem shell, e o id vem de dígitos do nome do branch:
 
 - `git branch --show-current`
-- `cq specs status --spec <id> --json`
+- `cq specs status --spec <id> --no-fetch --json`
 
-O plugin não escreve em spec nem em branch e não registra comando, botão nem hook de ferramenta. Mas `cq specs status` não é
-livre de efeitos: no backend git, quando o cache passa de 30s, ele faz `fetch` de `origin` (rede e ssh, timeout de 120s) e
-grava `refs/remotes/origin/quenching` no `.git` compartilhado com as worktrees, mais um cache em
-`$XDG_CACHE_HOME/quenching/git/`. Sem `.claude/quenching.json`, o backend padrão (github) consulta a API do GitHub. Isso
-ocorre em `session.start` e a cada `turn.complete`, em qualquer branch `plan/<id>-`.
+O plugin não escreve em spec nem em branch e não registra comando, botão nem hook de ferramenta. `--no-fetch` faz o
+`cq specs status` ler só o ref local `refs/remotes/origin/quenching` que já existe: sem `fetch`, sem rede, sem ssh, sem
+escrita de ref e sem cache. A faixa mostra o estado da última vez que outro comando `cq` buscou `origin`, então pode estar
+defasada. Sem esse ref, ou num backend que não é o git (github, azure), o comando recusa e a faixa some, sem chamar a API
+do GitHub.
 
 ## Pré-requisito
 
