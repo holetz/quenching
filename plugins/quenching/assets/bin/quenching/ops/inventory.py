@@ -105,6 +105,9 @@ def _lifecycle(relative: str, registry: dict[str, str]) -> str | None:
     return None
 
 
+_STATE_REASON = r"(active|archived)(?:\s*(?:[(:,;\u2014\u2013-].*)?)"
+
+
 def _registry_lifecycle(root: str, registry_path: str | None = None) -> dict[str, str]:
     """Read lifecycle declarations without imposing a registry format on a missing registry."""
     path = registry_path or os.path.join(root, "registry.md")
@@ -115,13 +118,18 @@ def _registry_lifecycle(root: str, registry_path: str | None = None) -> dict[str
     out: dict[str, str] = {}
     column: int | None = None
     in_zone = False
+    in_table = False
     for line in text.splitlines():
         if "quenching-ops-registry-start" in line:
             in_zone = True
         elif "quenching-ops-registry-end" in line:
             in_zone = False
             continue
-        if line.lstrip().startswith("|"):
+        is_row = line.lstrip().startswith("|")
+        if is_row and not in_table:
+            column = None
+        in_table = is_row
+        if is_row:
             cells = [cell.strip() for cell in re.split(r"(?<!\\)\|", line.strip().strip("|"))]
             lowered = [cell.lower() for cell in cells]
             if "lifecycle" in lowered:
@@ -129,14 +137,17 @@ def _registry_lifecycle(root: str, registry_path: str | None = None) -> dict[str
                 continue
             if column is None or column >= len(cells):
                 continue
-            state = cells[column].lower()
-            if state not in ("active", "archived"):
+            cell = re.fullmatch(_STATE_REASON, cells[column].lower())
+            if not cell:
                 continue
+            state = cell.group(1)
             match = re.search(r"`([^`]+)`", cells[0])
         elif in_zone:
             continue
         else:
-            declared = re.fullmatch(r"\s*`([^`]+)`\s*[—–-]+\s*(active|archived)\s*", line)
+            declared = re.fullmatch(
+                r"\s*(?:[-*+]\s+)?`([^`]+)`\s*[—–-]+\s*" + _STATE_REASON + r"\s*", line
+            )
             if not declared:
                 continue
             match, state = declared, declared.group(2)
