@@ -86,6 +86,35 @@ def scoped(transcripts: list, descendants_of: str | None, nested: bool) -> list:
     return [tr for tr in transcripts if inside(_agent_id(tr))]
 
 
+def _started(transcript: Path) -> tuple:
+    """When an agent began: its earliest record timestamp (file mtime breaks a tie or fills a gap)."""
+    first = None
+    try:
+        with transcript.open(encoding="utf-8", errors="replace") as fh:
+            for line in fh:
+                try:
+                    rec = json.loads(line)
+                except ValueError:
+                    continue
+                when = parse_instant(rec.get("timestamp")) if isinstance(rec, dict) else None
+                if when is not None and (first is None or when < first):
+                    first = when
+    except OSError:
+        pass
+    floor = datetime.min.replace(tzinfo=timezone.utc)
+    try:
+        mtime = transcript.stat().st_mtime
+    except OSError:
+        mtime = 0.0
+    return (first or floor, mtime)
+
+
+def latest_orchestrator(transcripts: list) -> str | None:
+    """The agent id of the most recently started `orchestrator` (orchestrators run one at a time)."""
+    found = [tr for tr in transcripts if _agent_type(tr).removeprefix("quenching:") == "orchestrator"]
+    return _agent_id(max(found, key=_started)) if found else None
+
+
 def parse_instant(value) -> datetime | None:
     """An ISO-8601 instant as an aware datetime (`Z` accepted; naive reads as UTC), else None."""
     if not isinstance(value, str) or not value:
@@ -133,9 +162,13 @@ def _n(usage: dict, key: str) -> int:
 
 
 def aggregate(directory: Path, descendants_of: str | None = None, nested: bool = False,
-              since: datetime | None = None) -> dict:
+              since: datetime | None = None, latest: bool = False) -> dict:
     anomalies: list = []
     groups: dict = {}
+    if latest:
+        descendants_of = latest_orchestrator(sorted(directory.glob("agent-*.jsonl")))
+        if descendants_of is None:
+            return {"groups": [], "byModel": [], "anomalies": [], "noOrchestrator": True}
     for tr in scoped(sorted(directory.glob("agent-*.jsonl")), descendants_of, nested):
         agent = _agent_type(tr)
         for model, usage, when, line in _requests(tr, anomalies).values():
@@ -182,7 +215,11 @@ def cmd_cost(args) -> int:
         if since is None:
             return refuse({"code": "se-bad-since",
                            "message": f"--since is not an ISO-8601 instant: {args.since}"}, args.json)
-    out = aggregate(directory, getattr(args, "descendants_of", None), getattr(args, "nested", False), since)
+    out = aggregate(directory, getattr(args, "descendants_of", None), getattr(args, "nested", False), since,
+                    getattr(args, "latest_orchestrator", False))
+    if out.get("noOrchestrator"):
+        return refuse({"code": "se-no-orchestrator",
+                       "message": f"--latest-orchestrator: no orchestrator agent under {directory}"}, args.json)
     if not out["groups"]:
         return refuse({"code": "se-no-requests",
                        "message": f"no subagent request with usage under {directory}"}, args.json)
