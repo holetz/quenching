@@ -3,7 +3,8 @@
 The report is re-read here, at delete time, so a name the caller passes is acted on only when
 the fresh report still lists it under the matching class. The deletes are the safe forms only —
 `branch -d`, `worktree remove`, `push --delete` of a reported remote branch leased on the sha
-the report read (a tip that moved since is refused) — never `-D`, a plain `--force` or a
+the report read (a tip that moved since is refused; a branch already gone from the remote only loses its
+tracking ref) — never `-D`, a plain `--force` or a
 refspec the caller wrote. Runs with `audit.SAFE`.
 
 Exit 0 deleted · 1 git refused (not fully merged, dirty worktree) and the item stands ·
@@ -54,11 +55,21 @@ def cmd_prune(args) -> int:
         return refuse({"code": "git-prune-no-lease",
                        "message": f"no tracking ref to lease for {args.remote}/{target}"},
                       args.json)
-    code, _out, err = _git_run(cwd, *SAFE, *argv)
+    code, out, err = _git_run(cwd, *SAFE, *argv)
     payload = {"ok": code == 0, "kind": kind, "target": target, "remote": args.remote}
+    if code != 0 and kind == "remote-branch":
+        gone, _o, _e = _git_run(cwd, *SAFE, "ls-remote", "--exit-code", "--heads",
+                                args.remote, f"refs/heads/{target}")
+        if gone == 2:
+            code, _o, err = _git_run(cwd, *SAFE, "branch", "-dr", f"{args.remote}/{target}")
+            if code == 0:
+                payload.update(ok=True, message="already gone on the remote; tracking ref removed")
+                emit(args.json, payload, f"pruned {kind} {target} (already gone on the remote)")
+                return OK
     if code != 0:
-        payload["message"] = err.strip()
-        emit(args.json, payload, f"{kind} {target} refused: {err.strip()}")
+        reason = "\n".join(x for x in (out.strip(), err.strip()) if x)
+        payload["message"] = reason
+        emit(args.json, payload, f"{kind} {target} refused: {reason}")
         return FINDINGS
     emit(args.json, payload, f"pruned {kind} {target}")
     return OK
