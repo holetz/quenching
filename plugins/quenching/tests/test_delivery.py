@@ -152,6 +152,31 @@ class DeliveryResults(unittest.TestCase):
         self.assertTrue(all(item["band"] == "Structural"
                             for item in payload["findings"]))
 
+    def test_list_form_triggers_are_triggers(self):
+        github, _ = self._run({
+            ".github/workflows/ci.yml": (
+                "name: CI\non:\n  - push\njobs:\n  test:\n    runs-on: ubuntu-latest\n"
+                "    steps:\n      - run: echo ok\n"
+            ),
+        })
+        azure, _ = self._run({
+            "azure-pipelines.yml": "trigger:\n- main\nsteps:\n- script: echo ok\n",
+        })
+        self.assertEqual(["push"], github["inventory"]["workflows"][0]["triggers"])
+        self.assertEqual(["main"], azure["inventory"]["workflows"][0]["triggers"])
+        for payload in (github, azure):
+            self.assertNotIn("delivery-trigger-unreachable",
+                             {item["code"] for item in payload["findings"]})
+
+    def test_trigger_none_is_no_trigger(self):
+        for body in ("trigger: none\n", "trigger:\n- none\n"):
+            payload, _ = self._run({
+                "azure-pipelines.yml": body + "steps:\n- script: echo ok\n",
+            })
+            self.assertEqual([], payload["inventory"]["workflows"][0]["triggers"])
+            self.assertIn("delivery-trigger-unreachable",
+                          {item["code"] for item in payload["findings"]})
+
     def test_matrix_setup_uv_and_bash_only_jobs_raise_no_false_errors(self):
         payload, code = self._run({
             ".github/workflows/ci.yml": (
