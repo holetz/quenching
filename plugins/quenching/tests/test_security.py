@@ -65,6 +65,25 @@ class SecurityQuestions(unittest.TestCase):
                 set(result["details"]["patterns"]),
             )
 
+    def test_secret_ignore_coverage_normalizes_globs(self):
+        for entry in (".env*", "**/.env", "*.env", ".env/", "/.env"):
+            with self.subTest(entry=entry), tempfile.TemporaryDirectory() as raw:
+                root = pathlib.Path(raw)
+                (root / ".gitignore").write_text(
+                    f"{entry}\n*.pem\nservice-secret.json\n", encoding="utf-8")
+                result = secret_ignore_coverage(root).as_dict()
+                self.assertEqual("present", result["state"])
+                self.assertIn("environment-files", result["details"]["patterns"])
+
+    def test_secret_ignore_coverage_partial_is_missing(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            (root / ".gitignore").write_text(".env\n", encoding="utf-8")
+            result = secret_ignore_coverage(root).as_dict()
+            self.assertEqual("missing", result["state"])
+            self.assertEqual(
+                ["credential-files", "private-keys"], result["details"]["uncovered"])
+
     def test_advisory_and_access_questions_find_known_files(self):
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
