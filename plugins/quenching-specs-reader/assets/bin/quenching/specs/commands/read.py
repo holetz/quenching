@@ -123,6 +123,11 @@ def cmd_status(args, root: str, out: Emitter) -> int:
     backend, err = open_backend(root)
     if err:
         return out.emit_err(args.json, err)
+    if getattr(args, "no_fetch", False) and backend.name != "git":
+        return out.emit_err(args.json, {
+            "code": "sp-no-local-read", "exit": 2,
+            "message": f"--no-fetch needs the git store; the '{backend.name}' backend has no "
+                       "local copy to read, so it would have to use the network"})
     info, err = read_one(backend, args.spec, out)
     if err:
         return out.emit_err(args.json, err)

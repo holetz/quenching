@@ -98,6 +98,9 @@ def _add_read(sub) -> None:
                                                 "or one epic's progress with --epic"))
     add_spec(sp, False)
     sp.add_argument("--epic", help="an epic ID: progress per group, blocked items, critical path")
+    sp.add_argument("--no-fetch", action="store_true",
+                    help="read the local remote-tracking ref already present; never fetch "
+                         "(git store only — other backends refuse)")
 
     sp = add_json(sub.add_parser("show", help="granular read: ONE task, the map by default, "
                                               "the document only with --full (section "
@@ -376,6 +379,8 @@ def main(argv: list[str]) -> int:
         args.spec = args.spec or pos
         if SPEC_POSITIONAL[args.cmd] and not args.spec:
             parser.error(f"{args.cmd}: the spec id is required: pass <id> or --spec <id>")
+    if getattr(args, "no_fetch", False):
+        os.environ["QUENCHING_SPECS_NO_FETCH"] = "1"        # before the config load shares the backend
     root = find_repo_root(os.path.abspath(args.root or os.getcwd()))
     # One command, one resolution — held by the emitter's lifetime. It is built here, handed to
     # the verb, and dropped when the call returns, so a process that dispatches more than once
