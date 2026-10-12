@@ -25,6 +25,7 @@ of a behaviour and editing a generated copy of it.
 | `docs/` | this OKF bundle — the knowledge tree **and** the source of this site | `/quenching:knowledge:*` |
 | `plugins/quenching/` | the plugin payload that gets installed | the owning spec |
 | `plugins/quenching-specs-reader/` | **generated** read-only sibling of the payload | `scripts/sync_specs_reader_plugin.py` |
+| `plugins/quenching-hud/` | read-only band above the prompt (active spec, stage, task progress); **hand-written**, validated by the gate with `claude plugin validate` | the owning spec |
 | `.claude/` | this repository's own local command surface | `/quenching:components:*` |
 | `scripts/` | thin launchers CI calls | the owning spec |
 | `zensical.toml` | the site layer — outside the bundle, on purpose | `/quenching:knowledge:documentation:build` |
