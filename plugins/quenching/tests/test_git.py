@@ -354,6 +354,43 @@ class Audit(RepoCase):
         return _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main",
                         "--branch", "spec/1")["grants"]
 
+    def _lowered(self):
+        return _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main",
+                        "--branch", "spec/1")["lowered"]
+
+    def test_lowered_fails_a_deleted_test_and_a_test_that_lost_its_asserts(self):
+        self._commit_file("tests/test_a.py", "def test_a():\n    assert 1\n", "add")
+        self._commit_file("tests/test_b.py", "def test_b():\n    assert 1\n", "add")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        self._commit_file("tests/test_b.py", "def test_b():\n    pass\n", "weaken")
+        _run(self.wt, "rm", "-q", "tests/test_a.py")
+        _run(self.wt, "commit", "-q", "-m", "drop")
+        got = {(e["path"], e["severity"], e["kind"]) for e in self._lowered()}
+        self.assertEqual(got, {("tests/test_a.py", "fail", "test-deleted"),
+                               ("tests/test_b.py", "fail", "test-lost-asserts")})
+
+    def test_lowered_fails_a_shrunk_gate_and_ignores_growth(self):
+        self._commit_file("scripts/verify_repo.sh", "# gate\nrun one\nrun two\n", "gate")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        self._commit_file("scripts/verify_repo.sh", "# gate\nrun one\nrun two\nrun three\n", "grow")
+        self.assertEqual(self._lowered(), [])
+        self._commit_file("scripts/verify_repo.sh", "# gate\nrun one\nrun three\n", "shrink")
+        got = self._lowered()
+        self.assertEqual([(e["severity"], e["kind"], e["detail"]) for e in got],
+                         [("fail", "gate-shrunk", ["run two"])])
+
+    def test_lowered_only_warns_for_added_suppressions(self):
+        self._commit_file("tests/test_c.py", "import unittest\n\n@unittest.skip('x')\n"
+                          "def test_c():\n    assert 1  # noqa\n", "skip")
+        got = self._lowered()
+        self.assertEqual([(e["severity"], e["kind"]) for e in got], [("warn", "suppression-added")])
+
+    def test_lowered_is_empty_for_an_assert_preserving_edit(self):
+        self._commit_file("tests/test_d.py", "def test_d():\n    assert 1\n", "add")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        self._commit_file("tests/test_d.py", "def test_d():\n    assert 2\n", "edit")
+        self.assertEqual(self._lowered(), [])
+
     def test_grants_reports_added_entries_and_never_a_narrowing(self):
         agent = "plugins/p/agents/a.md"
         self.assertEqual(self._grants(), [])
