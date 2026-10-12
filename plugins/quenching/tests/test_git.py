@@ -467,6 +467,50 @@ class Audit(RepoCase):
                 self.assertEqual(got, {("tests/test_a.py", "fail", "test-deleted")})
                 self.tearDown()
 
+    def test_lowered_fails_a_test_renamed_to_a_name_the_gate_does_not_run(self):
+        for dest in ("tests/test_a.py.bak", "tests/test_a.py.disabled", "tests/test_a.txt", "attic/tests/test_a.md"):
+            with self.subTest(dest=dest):
+                self.setUp()
+                got = self._lowered_after({"tests/test_a.py": "def t():\n    assert 1\n"},
+                                          "tests/test_a.py", {dest: "def t():\n    assert 1\n"})
+                self.assertEqual(got, {("tests/test_a.py", "fail", "test-deleted")})
+                self.tearDown()
+
+    def test_lowered_reads_the_discover_command_past_quotes_and_comments(self):
+        gates = ("python3 -m unittest discover -s tests -p 'test_*.py'\n",
+                 'python3 -m unittest discover -s "tests"\n',
+                 'cd x\npython3 -m unittest discover -s "$ROOT"\n',
+                 "# was: python3 -m unittest discover -s old\npython3 -m unittest discover -s tests\n",
+                 "python3 -m unittest discover -v -s tests\n",
+                 "python3 -m unittest discover --start-directory tests\n",
+                 "python3 -m unittest discover tests\n")
+        for gate in gates:
+            with self.subTest(gate=gate):
+                self.setUp()
+                self._commit_file("scripts/verify_repo.sh", gate, "gate")
+                root = gate.count("$ROOT")
+                src = "def t():\n    assert 1\n"
+                a, b = ("test_a.py", "test_b.py") if root else ("tests/test_a.py", "tests/test_b.py")
+                got = self._lowered_after({a: src}, a, {b: src})
+                self.assertEqual(got, set())
+                self.tearDown()
+
+    def test_lowered_declares_an_unrecognised_discover_command_as_inconclusive(self):
+        src = "def t():\n    assert 1\n"
+        for gate in ("python3 -m pytest tests\n", 'python3 -m unittest discover -s "$OTHER"\n'):
+            with self.subTest(gate=gate):
+                self.setUp()
+                self._commit_file("scripts/verify_repo.sh", gate, "gate")
+                got = self._lowered_after({"tests/test_a.py": src}, "tests/test_a.py", {"tests/test_b.py": src})
+                self.assertEqual(got, {("scripts/verify_repo.sh", "warn", "discover-unrecognized")})
+                self.tearDown()
+
+    def test_lowered_fails_a_move_to_a_folder_the_quoted_discover_does_not_reach(self):
+        self._commit_file("scripts/verify_repo.sh", "python3 -m unittest discover -s tests -p 'test_*.py'\n", "gate")
+        got = self._lowered_after({"tests/test_a.py": "def t():\n    assert 1\n"},
+                                  "tests/test_a.py", {"attic/tests/test_a.py": "def t():\n    assert 1\n"})
+        self.assertEqual(got, {("tests/test_a.py", "fail", "test-deleted")})
+
     def test_lowered_reads_the_discovery_root_from_the_gate_script(self):
         gate = "python3 -m unittest discover -s lib/tests\n"
         for dest, want in (("lib/tests/test_a.py", set()),
