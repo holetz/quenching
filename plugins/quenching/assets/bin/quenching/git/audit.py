@@ -33,6 +33,7 @@ import json
 import os
 import posixpath
 import re
+import shlex
 from quenching.common.git import _git_run
 from quenching.common.output import emit, refuse
 
@@ -643,9 +644,57 @@ ASSERT = re.compile(r"\bassert\w*\b|\bexpect\s*\(")
 GATE_PATH = re.compile(r"^scripts/verify_repo\.sh$|^plugins/quenching/assets/checks/")
 CODE_EXT = re.compile(r"\.(py|sh|js|jsx|ts|tsx|rb|go|rs|java|kt|cs)$")
 TEST_DIRECT = re.compile(r"(^|/)(tests?|__tests__)/[^/]+$")
-DISCOVER = re.compile(r"unittest\s+discover\s+-s\s+(\S+)(?:\s+-p\s+(\S+))?")
+DISCOVER_WORD = re.compile(r"\b(discover|pytest|nosetests?|tox)\b")
 TRIVIAL = re.compile(r"\bassert\s+True\s*$|\bexpect\s*\(\s*true\s*\)")
 SUPPRESSION = re.compile(r"noqa|type:\s*ignore|\bskip(If|Unless|Test)?\b|\bxfail\b|\bxit\s*\(|\bxdescribe\s*\(")
+
+
+def _read_discover(script: str) -> tuple[str, str] | None | bool:
+    """The `(root, pattern)` of the first `unittest discover` in a gate script, comments and quotes
+    ignored (`-s`/`--start-directory`/positional, `-p`/`--pattern`, defaults `.` and `test*.py`).
+    `None`: the script names no test runner. `False`: it names one this reader does not recognise
+    (pytest, an unexpanded variable, unbalanced quotes) -- inconclusive, never guessed."""
+    named = False
+    for line in script.replace("\\\n", " ").splitlines():
+        try:
+            tokens = shlex.split(line, comments=True)
+        except ValueError:
+            if DISCOVER_WORD.search(line.split("#", 1)[0]):
+                named = True
+            continue
+        if not tokens:
+            continue
+        if "discover" in tokens and tokens[tokens.index("discover") - 1:tokens.index("discover")] == ["unittest"]:
+            rest = tokens[tokens.index("discover") + 1:]
+            root, pattern, i = None, "test*.py", 0
+            while i < len(rest):
+                t = rest[i]
+                if t in ("-s", "--start-directory", "-p", "--pattern", "-t", "--top-level-directory") and i + 1 < len(rest):
+                    if t in ("-s", "--start-directory"):
+                        root = rest[i + 1]
+                    elif t in ("-p", "--pattern"):
+                        pattern = rest[i + 1]
+                    i += 2
+                    continue
+                if t.startswith("--start-directory="):
+                    root = t.split("=", 1)[1]
+                elif t.startswith("--pattern="):
+                    pattern = t.split("=", 1)[1]
+                elif t.startswith("-"):
+                    if t in ("-s", "--start-directory", "-p", "--pattern"):
+                        return False
+                elif root is None:
+                    root = t
+                i += 1
+            root = "." if root is None else root
+            if root in ("$ROOT", "${ROOT}", "$PWD", "${PWD}"):
+                root = "."
+            if "$" in root or "$" in pattern or "`" in root or "`" in pattern:
+                return False
+            return root, pattern
+        if any(DISCOVER_WORD.fullmatch(t) for t in tokens):
+            named = True
+    return False if named else None
 
 
 def _asserts(text: str) -> int:
@@ -678,14 +727,17 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
         return text if c == 0 else ""
 
     pairs = list(zip(fields[0::2], fields[1::2]))
-    disc = DISCOVER.search(show(tip, "scripts/verify_repo.sh"))
-    root = disc.group(1).rstrip("/") if disc else None
-    pattern = disc.group(2) if disc and disc.group(2) else "test*.py"
+    disc = _read_discover(show(tip, "scripts/verify_repo.sh"))
+    root, pattern = disc if disc else (None, "test*.py")
+    inconclusive = disc is False
 
     def discovered(path: str) -> bool:
-        """Where the gate finds a test: its `unittest discover -s <root> -p <pattern>`, read from
-        `scripts/verify_repo.sh` at the tip, for a `.py` file; else a file directly under a tests dir."""
-        if root is not None and path.endswith(".py"):
+        """Where the gate finds a test: a `.py` file the `unittest discover -s <root> -p <pattern>` of
+        `scripts/verify_repo.sh` at the tip reaches; with no recognised command, a `.py` file directly
+        under a tests dir (and the result is declared inconclusive)."""
+        if not path.endswith(".py"):
+            return False
+        if root is not None:
             return (posixpath.dirname(path) or ".") == posixpath.normpath(root) and fnmatch.fnmatch(posixpath.basename(path), pattern)
         return bool(TEST_DIRECT.search(path)) and bool(TEST_NAME.search(path))
 
@@ -721,6 +773,10 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
     for g in gone:
         place(g, set())
     paired = set(owner.values())
+    if inconclusive and paired:
+        found.append({"path": "scripts/verify_repo.sh", "severity": "warn", "kind": "discover-unrecognized",
+                      "detail": "the test-discovery command was not recognised; a moved test was judged "
+                                "by folder name, not by what the gate runs"})
     for status, path in pairs:
         gate = bool(GATE_PATH.search(path))
         deleted = status.startswith("D")
