@@ -42,6 +42,7 @@ FETCH_TTL_S = 30
 MAX_ATTEMPTS = 5
 CACHE_VERSION = 1
 GIT_TIMEOUT_S = 120
+NO_FETCH_ENV = "QUENCHING_SPECS_NO_FETCH"
 
 # A push the remote turned down because someone else moved the branch first — the one failure
 # that is retried. Anything else (auth, network, a protected branch) refuses at once.
@@ -218,10 +219,12 @@ class GitBackend(SpecBackend):
             pass
 
     def _tip(self) -> str | None:
-        """The tip a read sees: at most one fetch per process, none while the cache is fresh.
+        """The tip a read sees: at most one fetch per process, none while the cache is fresh
+        and none at all under `QUENCHING_SPECS_NO_FETCH` (the local ref as it stands).
         Memoized per process; any write clears the memo so the next read sees the new tip."""
         if getattr(self, "_tip_memo", None) is None:
-            if self._fetched or self._cache_fresh():
+            if self._fetched or os.environ.get(NO_FETCH_ENV, "") not in ("", "0") \
+                    or self._cache_fresh():
                 self._tip_memo = self._local_tip()
             else:
                 self._tip_memo = self._fetch()

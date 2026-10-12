@@ -1,7 +1,7 @@
 {
   "name": "quenching-hud",
   "version": "6.4.0",
-  "description": "Band above the prompt: the worktree's active spec, its stage and its task progress, read through cq specs status. Writes no spec or branch, but cq specs status may fetch origin (updating refs/remotes/origin/quenching and a cache) or call the GitHub API.",
+  "description": "Band above the prompt: the worktree's active spec, its stage and its task progress, read through cq specs status --no-fetch. Writes no spec or branch and never fetches: it reads the local refs/remotes/origin/quenching, so the band can lag the remote.",
   "author": {
     "name": "Israel Holetz",
     "email": "holetz@gmail.com"
