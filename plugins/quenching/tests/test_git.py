@@ -2593,6 +2593,27 @@ class PruneVerb(RepoCase):
                                cwd=remote, capture_output=True, text=True).stdout.split()
         self.assertEqual(sorted(heads), ["refs/heads/main", "refs/heads/unmerged"])
 
+    def test_a_remote_branch_moved_since_the_fetch_is_refused_and_stands(self):
+        remote = os.path.join(self.tmp, "origin.git")
+        _run(self.tmp, "init", "-q", "--bare", "-b", "main", remote)
+        _run(self.repo, "remote", "add", "origin", remote)
+        _run(self.repo, "push", "-q", "origin", "main", "merged")
+        _run(self.repo, "fetch", "-q", "origin")
+        other = os.path.join(self.tmp, "other")
+        _run(self.tmp, "clone", "-q", remote, other)
+        _run(other, "config", "user.email", "o@example.com")
+        _run(other, "config", "user.name", "o")
+        _run(other, "checkout", "-q", "merged")
+        pathlib.Path(other, "new.txt").write_text("new\n", encoding="utf-8")
+        _run(other, "add", "new.txt")
+        _run(other, "commit", "-q", "-m", "collaborator work")
+        _run(other, "push", "-q", "origin", "merged")
+        moved = _cq(self.repo, "prune", "--remote-branch", "merged")
+        self.assertEqual(moved.returncode, 1, moved.stdout)
+        heads = subprocess.run(["git", "for-each-ref", "--format=%(refname)", "refs/heads"],
+                               cwd=remote, capture_output=True, text=True).stdout.split()
+        self.assertIn("refs/heads/merged", heads)
+
 
 FAKE_GH = """#!/usr/bin/env python3
 import json, os, sys
