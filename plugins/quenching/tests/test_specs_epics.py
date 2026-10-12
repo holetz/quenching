@@ -234,6 +234,32 @@ class Scenarios:
         self.assertEqual("sp-epic-not-an-epic", self._refusal(b, member=6, epic_id=2))
         self.assertEqual("sp-unknown-id", self._refusal(b, member=99))
 
+    def second_epic(self, b):
+        b.create_spec("plans", epic_doc())          # id 7
+        return 7
+
+    def test_move_takes_a_member_out_of_its_epic(self):
+        b = self.diamond()
+        other = self.second_epic(b)
+        code, got = run(epic_cmd.cmd_epic, b, epic_cmd="add", epic=other, spec=5, after=None,
+                        group=None, label=None, move=True)
+        self.assertEqual(0, code, got)
+        self.assertEqual("7", str(b.read_spec(5)[0]["frontmatter"]["epic"]))
+        self.assertEqual(["S1", "S2", "S3"], [i["label"] for i in parse_items(b.read_spec(EPIC_ID)[0])])
+        self.assertEqual([5], [int(i["spec"]) for i in parse_items(b.read_spec(other)[0])])
+
+    def test_move_is_refused_without_the_flag_and_when_others_wait_on_it(self):
+        b = self.diamond()
+        other = self.second_epic(b)
+        kw = dict(epic_cmd="add", epic=other, after=None, group=None, label=None)
+        code, got = run(epic_cmd.cmd_epic, b, spec=5, move=False, **kw)
+        self.assertEqual((2, "sp-epic-member-taken"), (code, got["code"]))
+        before = b.read_spec(EPIC_ID)[0]["text"]
+        code, got = run(epic_cmd.cmd_epic, b, spec=2, move=True, **kw)
+        self.assertEqual((2, "sp-epic-move-dependents"), (code, got["code"]))
+        self.assertEqual(before, b.read_spec(EPIC_ID)[0]["text"])
+        self.assertEqual("1", str(b.read_spec(2)[0]["frontmatter"]["epic"]))
+
     def _refusal(self, b, member, epic_id=EPIC_ID, **kw):
         kw.setdefault("after", None)
         kw.setdefault("group", None)
