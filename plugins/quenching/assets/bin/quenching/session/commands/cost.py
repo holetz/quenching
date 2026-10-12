@@ -49,6 +49,42 @@ def _agent_type(transcript: Path) -> str:
     return kind if isinstance(kind, str) and kind else UNKNOWN
 
 
+def _meta(transcript: Path) -> dict:
+    meta = transcript.with_name(transcript.stem + ".meta.json")
+    try:
+        data = json.loads(meta.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _agent_id(transcript: Path) -> str:
+    return transcript.stem.removeprefix("agent-")
+
+
+def scoped(transcripts: list, descendants_of: str | None, nested: bool) -> list:
+    """The transcripts inside the scope: children of `descendants_of` (transitively), or every
+    agent that has a `parentAgentId`. No scope keeps them all."""
+    if not descendants_of and not nested:
+        return transcripts
+    parent = {}
+    for tr in transcripts:
+        pid = _meta(tr).get("parentAgentId")
+        parent[_agent_id(tr)] = pid if isinstance(pid, str) and pid else None
+    if nested:
+        return [tr for tr in transcripts if parent[_agent_id(tr)]]
+
+    def inside(agent: str) -> bool:
+        seen = set()
+        while agent in parent and agent not in seen:
+            seen.add(agent)
+            agent = parent[agent]
+            if agent == descendants_of:
+                return True
+        return False
+    return [tr for tr in transcripts if inside(_agent_id(tr))]
+
+
 def _requests(transcript: Path, anomalies: list) -> dict:
     """message.id -> (model, usage) with the usage of the largest `output_tokens` seen."""
     seen: dict = {}
@@ -83,10 +119,10 @@ def _n(usage: dict, key: str) -> int:
     return v if isinstance(v, int) else 0
 
 
-def aggregate(directory: Path) -> dict:
+def aggregate(directory: Path, descendants_of: str | None = None, nested: bool = False) -> dict:
     anomalies: list = []
     groups: dict = {}
-    for tr in sorted(directory.glob("agent-*.jsonl")):
+    for tr in scoped(sorted(directory.glob("agent-*.jsonl")), descendants_of, nested):
         agent = _agent_type(tr)
         for model, usage in _requests(tr, anomalies).values():
             g = groups.setdefault((agent, model), {
@@ -119,7 +155,7 @@ def cmd_cost(args) -> int:
     if not directory.is_dir():
         return refuse({"code": "se-no-subagents", "message": f"no subagents directory at {directory}"},
                       args.json)
-    out = aggregate(directory)
+    out = aggregate(directory, getattr(args, "descendants_of", None), getattr(args, "nested", False))
     if not out["groups"]:
         return refuse({"code": "se-no-requests",
                        "message": f"no subagent request with usage under {directory}"}, args.json)
