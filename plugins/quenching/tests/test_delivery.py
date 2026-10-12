@@ -177,6 +177,40 @@ class DeliveryResults(unittest.TestCase):
             self.assertIn("delivery-trigger-unreachable",
                           {item["code"] for item in payload["findings"]})
 
+    def test_azure_pr_and_schedules_are_triggers_with_trigger_none(self):
+        bodies = {
+            "pr": "trigger: none\npr:\n- main\n",
+            "pr-branches": "trigger: none\npr:\n  branches:\n    include:\n    - main\n",
+            "schedules": "trigger: none\nschedules:\n- cron: '0 0 * * *'\n  branches:\n    include: [main]\n",
+        }
+        for name, body in bodies.items():
+            payload, _ = self._run({
+                "azure-pipelines.yml": body + "steps:\n- script: echo ok\n",
+            })
+            self.assertNotEqual([], payload["inventory"]["workflows"][0]["triggers"], name)
+            self.assertNotIn("delivery-trigger-unreachable",
+                             {item["code"] for item in payload["findings"]}, name)
+
+    def test_azure_pr_none_stays_without_trigger(self):
+        for body in ("trigger: none\npr: none\n", "trigger: none\npr:\n- none\n"):
+            payload, _ = self._run({
+                "azure-pipelines.yml": body + "steps:\n- script: echo ok\n",
+            })
+            self.assertEqual([], payload["inventory"]["workflows"][0]["triggers"])
+            self.assertIn("delivery-trigger-unreachable",
+                          {item["code"] for item in payload["findings"]})
+
+    def test_github_schedule_in_on_is_a_trigger(self):
+        for on in ("on:\n  schedule:\n    - cron: '0 0 * * *'\n", "on: schedule\n"):
+            payload, _ = self._run({
+                ".github/workflows/nightly.yml": (
+                    "name: N\n" + on + "jobs:\n  t:\n    runs-on: ubuntu-latest\n"
+                    "    steps:\n      - run: echo ok\n"),
+            })
+            self.assertEqual(["schedule"], payload["inventory"]["workflows"][0]["triggers"])
+            self.assertNotIn("delivery-trigger-unreachable",
+                             {item["code"] for item in payload["findings"]})
+
     def test_matrix_setup_uv_and_bash_only_jobs_raise_no_false_errors(self):
         payload, code = self._run({
             ".github/workflows/ci.yml": (
