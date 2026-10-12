@@ -643,6 +643,7 @@ TEST_NAME = re.compile(r"(^|/)test_[^/]*$|_test\.[^/]+$|\.(test|spec)\.[^/]+$")
 ASSERT = re.compile(r"\bassert\w*\b|\bexpect\s*\(")
 GATE_PATH = re.compile(r"^scripts/verify_repo\.sh$|^plugins/quenching/assets/checks/")
 CODE_EXT = re.compile(r"\.(py|sh|js|jsx|ts|tsx|rb|go|rs|java|kt|cs)$")
+CODE_EXT = re.compile(r"\.(py|[cm]?[jt]sx?|go|rb|java|kt|rs|php|cs|swift|scala|sh)$")
 TEST_DIRECT = re.compile(r"(^|/)(tests?|__tests__)/[^/]+$")
 DISCOVER_WORD = re.compile(r"\b(discover|pytest|nosetests?|tox)\b")
 TRIVIAL = re.compile(r"\bassert\s+True\s*$|\bexpect\s*\(\s*true\s*\)")
@@ -733,13 +734,13 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
 
     def discovered(path: str) -> bool:
         """Where the gate finds a test: a `.py` file the `unittest discover -s <root> -p <pattern>` of
-        `scripts/verify_repo.sh` at the tip reaches; with no recognised command, a `.py` file directly
+        `scripts/verify_repo.sh` at the tip reaches; with no recognised command (or no gate), a test file of any language directly
         under a tests dir (and the result is declared inconclusive)."""
-        if not path.endswith(".py"):
-            return False
         if root is not None:
+            if not path.endswith(".py"):
+                return False
             return (posixpath.dirname(path) or ".") == posixpath.normpath(root) and fnmatch.fnmatch(posixpath.basename(path), pattern)
-        return bool(TEST_DIRECT.search(path)) and bool(TEST_NAME.search(path))
+        return bool(TEST_DIRECT.search(path)) and bool(TEST_NAME.search(path)) and bool(CODE_EXT.search(path))
 
     added = [p for s_, p in pairs if s_.startswith("A") and discovered(p)]
 
