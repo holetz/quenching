@@ -369,6 +369,23 @@ class Audit(RepoCase):
         self.assertEqual(got, {("tests/test_a.py", "fail", "test-deleted"),
                                ("tests/test_b.py", "fail", "test-lost-asserts")})
 
+    def test_lowered_ignores_a_moved_test_and_a_deleted_non_test_under_tests(self):
+        self._commit_file("tests/test_m.py", "def test_m():\n    assert 1\n", "add")
+        self._commit_file("tests/fixtures/old.json", "{}\n", "fixture")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        pathlib.Path(self.wt, "tests/unit").mkdir()
+        _run(self.wt, "mv", "tests/test_m.py", "tests/unit/test_m.py")
+        _run(self.wt, "rm", "-q", "tests/fixtures/old.json")
+        _run(self.wt, "commit", "-q", "-m", "move and drop")
+        self.assertEqual(self._lowered(), [])
+
+    def test_lowered_reads_a_removed_gate_line_that_starts_with_dashes(self):
+        self._commit_file("scripts/verify_repo.sh", "# gate\n--strict\nrun one\n", "gate")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        self._commit_file("scripts/verify_repo.sh", "# gate\nrun one\n", "shrink")
+        got = self._lowered()
+        self.assertEqual([(e["kind"], e["detail"]) for e in got], [("gate-shrunk", ["--strict"])])
+
     def test_lowered_fails_a_shrunk_gate_and_ignores_growth(self):
         self._commit_file("scripts/verify_repo.sh", "# gate\nrun one\nrun two\n", "gate")
         _run(self.repo, "merge", "-q", "--ff-only", "spec/1")

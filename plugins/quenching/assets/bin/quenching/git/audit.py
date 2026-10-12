@@ -638,6 +638,7 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
 
 
 TEST_PATH = re.compile(r"(^|/)(tests?|__tests__)/|(^|/)test_[^/]*$|_test\.[^/]+$|\.(test|spec)\.[^/]+$")
+TEST_NAME = re.compile(r"(^|/)test_[^/]*$|_test\.[^/]+$|\.(test|spec)\.[^/]+$")
 ASSERT = re.compile(r"\bassert\w*\b|\bexpect\s*\(")
 GATE_PATH = re.compile(r"^scripts/verify_repo\.sh$|^plugins/quenching/assets/checks/")
 CODE_EXT = re.compile(r"\.(py|sh|js|jsx|ts|tsx|rb|go|rs|java|kt|cs)$")
@@ -663,9 +664,16 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
         c, text, _e = _git_run(cwd, *SAFE, "show", "--no-textconv", f"{rev}:{path}", env=env)
         return text if c == 0 else ""
 
-    for status, path in zip(fields[0::2], fields[1::2]):
-        test, gate = bool(TEST_PATH.search(path)), bool(GATE_PATH.search(path))
+    pairs = list(zip(fields[0::2], fields[1::2]))
+    added_names = {p.rsplit("/", 1)[-1] for s_, p in pairs if s_.startswith("A")}
+    for status, path in pairs:
+        gate = bool(GATE_PATH.search(path))
         deleted = status.startswith("D")
+        test = bool(TEST_NAME.search(path))
+        if not test and TEST_PATH.search(path):   # under a tests dir: a test only if it asserted
+            test = bool(ASSERT.search(show(base, path)))
+        if deleted and test and path.rsplit("/", 1)[-1] in added_names:
+            continue                              # moved or renamed (--no-renames reads D plus A)
         if deleted and (test or gate):
             found.append({"path": path, "severity": "fail",
                           "kind": "test-deleted" if test else "gate-shrunk", "detail": "(deleted)"})
@@ -678,8 +686,9 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
             errors.append(_error(("diff", "-U0"), code, err))
             continue
         rows = diff.splitlines()
-        plus = [r[1:].strip() for r in rows if r.startswith("+") and not r.startswith("+++")]
-        minus = [r[1:].strip() for r in rows if r.startswith("-") and not r.startswith("---")]
+        body = rows[next((i for i, r in enumerate(rows) if r.startswith("@@")), len(rows)):]
+        plus = [r[1:].strip() for r in body if r.startswith("+")]
+        minus = [r[1:].strip() for r in body if r.startswith("-")]
         if test and ASSERT.search(show(base, path)) and not ASSERT.search(show(tip, path)):
             found.append({"path": path, "severity": "fail", "kind": "test-lost-asserts",
                           "detail": "no assert left"})
