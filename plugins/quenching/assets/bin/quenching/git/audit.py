@@ -677,24 +677,39 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
         return text if c == 0 else ""
 
     pairs = list(zip(fields[0::2], fields[1::2]))
-    added = [p for s_, p in pairs if s_.startswith("A")]
-    taken: set[str] = set()                       # a target absolves ONE deletion
+    added = [p for s_, p in pairs if s_.startswith("A") and TEST_DIR.search(p)]   # where the gate discovers
+
+    def is_test(path: str) -> bool:
+        if TEST_NAME.search(path):
+            return True
+        return bool(TEST_PATH.search(path)) and bool(ASSERT.search(show(base, path)))
+
+    gone = [p for s_, p in pairs if s_.startswith("D") and is_test(p)]
+    had = {p: _asserts(show(base, p)) for p in gone}
+    kept_n = {a: _asserts(show(tip, a)) for a in added}
+    owner: dict[str, str] = {}                    # a target absolves ONE deletion: a one-to-one matching
+
+    def place(g: str, seen: set[str]) -> bool:
+        for a in added:
+            if kept_n[a] >= had[g] and a not in seen:
+                seen.add(a)
+                if a not in owner or place(owner[a], seen):
+                    owner[a] = g
+                    return True
+        return False
+
+    for g in gone:
+        place(g, set())
+    paired = set(owner.values())
     for status, path in pairs:
         gate = bool(GATE_PATH.search(path))
         deleted = status.startswith("D")
-        test = bool(TEST_NAME.search(path))
-        if not test and TEST_PATH.search(path):   # under a tests dir: a test only if it asserted
-            test = bool(ASSERT.search(show(base, path)))
+        test = path in gone if deleted else is_test(path)
         if deleted and test:                      # a move reads D plus A under --no-renames
+            if path in paired:
+                continue                          # a target under tests/ keeps its asserts
             name = path.rsplit("/", 1)[-1]
-            dests = [a for a in added if a not in taken and a.rsplit("/", 1)[-1] == name
-                     and TEST_PATH.search(a)]
-            had = _asserts(show(base, path))
-            kept = next((a for a in dests if _asserts(show(tip, a)) >= had), None)
-            if kept:
-                taken.add(kept)
-                continue                          # the target is a test and keeps its asserts
-            dests = [a for a in dests if TEST_DIR.search(a)]   # elsewhere it is no move of this test
+            dests = [a for a in added if a not in owner and a.rsplit("/", 1)[-1] == name]
             if dests:
                 found.append({"path": dests[0], "severity": "fail", "kind": "test-lost-asserts",
                               "detail": "no assert left"})
