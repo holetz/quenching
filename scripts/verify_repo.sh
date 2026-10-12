@@ -79,12 +79,11 @@ run_check "built-site checks" \
 
 # The quenching-hud mod is validated by the host's own validator. Without `claude` the skip is
 # stated loudly, as with `coverage`: a local gate must not demand an install, but the release has it.
-printf '\n==> quenching-hud plugin\n'
 if command -v claude >/dev/null 2>&1; then
   run_check "quenching-hud plugin" \
     claude plugin validate plugins/quenching-hud
 else
-  printf 'SKIPPED: `claude` is not on PATH; plugins/quenching-hud was not validated.\n'
+  printf '\n==> quenching-hud plugin\nSKIPPED: `claude` is not on PATH; plugins/quenching-hud was not validated.\n'
 fi
 
 # Surface-load checks spawn billed `claude -p` sessions, so they are opt-in: without
