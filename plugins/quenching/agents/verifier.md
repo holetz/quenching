@@ -93,7 +93,8 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    `needs-human: régua rebaixada`, quoting each `path` and `detail`. When the spec's own `## Problem` or
    `## Proposal` declares that removal as its objective, the FAIL quotes that declaration for the
    conductor; it never dispenses the FAIL by itself. `severity: warn` entries (`suppression-added`: a new
-   `noqa`, `type: ignore`, `skip`, `skipIf`, `skipUnless`, `xfail`) are listed in the evidence and never
+   `noqa`, `type: ignore`, `skip`, `skipIf`, `skipUnless`, `xfail`; `discover-unrecognized`: the gate's test-discovery command was not recognised, so a moved
+   test was judged by folder name) are listed in the evidence and never
    block. Empty is ok. A weakened task `verify:` is not read here: the spec store is not in the diff.
 
 If a check does not apply (no PR yet, no declared `files:`), mark it `n/a`; do not fail on it.
