@@ -51,6 +51,24 @@
         "read-only",
         "obsidian"
       ]
+    },
+    {
+      "name": "quenching-hud",
+      "source": "./plugins/quenching-hud",
+      "description": "Read-only band above the prompt: the worktree's active quenching spec, its stage and task progress, read through cq specs status. Runs only git branch --show-current and cq specs status; writes nothing.",
+      "version": "6.4.0",
+      "author": {
+        "name": "Israel Holetz",
+        "email": "holetz@gmail.com"
+      },
+      "license": "MIT",
+      "category": "productivity",
+      "keywords": [
+        "claude-code",
+        "spec-driven",
+        "hud",
+        "read-only"
+      ]
     }
   ]
 }
