@@ -169,6 +169,18 @@ class WindowTests(unittest.TestCase):
     def test_nested_alone_counts_every_orchestrators_descendants(self):
         self.assertEqual(self.requests(), 2)
 
+    def test_latest_orchestrator_resolves_the_window_alone(self):
+        code, out = run("--json", "--latest-orchestrator", str(self.sub))
+        self.assertEqual(code, 0)
+        data = json.loads(out)
+        self.assertEqual(sum(g["requests"] for g in data["groups"]), 1)
+        self.assertEqual({g["agentType"] for g in data["groups"]}, {"quenching:spec-runner"})
+
+    def test_latest_orchestrator_refuses_without_one(self):
+        for f in self.sub.glob("agent-orc*"):
+            f.unlink()
+        self.assertEqual(run("--json", "--latest-orchestrator", str(self.sub))[0], 2)
+
     def test_since_keeps_only_the_window(self):
         self.assertEqual(self.requests("--since", "2026-10-12T03:00:00Z"), 1)
 
