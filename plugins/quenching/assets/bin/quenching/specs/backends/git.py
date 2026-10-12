@@ -200,6 +200,9 @@ class GitBackend(SpecBackend):
                                  f"{self.tracking_ref}^{{commit}}")
         return (out.decode().strip() or None) if code == 0 else None
 
+    def has_local_ref(self) -> bool:
+        return self._local_tip() is not None
+
     def _cache_fresh(self) -> bool:
         try:
             with open(self._cache_file, encoding="utf-8") as handle:
