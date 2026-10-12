@@ -527,6 +527,27 @@ class PytestDiscoveryAndSurfaces(unittest.TestCase):
         self.assertEqual("setup.cfg", inventory.gate.path)
         self.assertTrue(inventory.gate.strict_markers)
 
+    def test_a_nested_virtualenv_is_not_a_surface(self):
+        inventory = self._inventory({
+            "src/a.py": "X = 1\n",
+            "docs/index.md": "# docs\n",
+            "/".join(("docs", ".venv", "lib", "pkg", "mod.py")): "X = 1\n"})
+        self.assertEqual(("src",), inventory.source_surfaces)
+
+    def test_a_percent_in_markers_does_not_crash_the_gate_read(self):
+        inventory = self._inventory({
+            "setup.cfg": ("[tool:pytest]\naddopts = --strict-markers\n"
+                          "markers =\n    unit: u (runs in <1% of time)\n")})
+        self.assertEqual("setup.cfg", inventory.gate.path)
+        self.assertTrue(inventory.gate.strict_markers)
+
+    def test_dot_pytest_ini_wins_over_setup_cfg(self):
+        inventory = self._inventory({
+            ".pytest.ini": "[pytest]\naddopts = --strict-markers\n",
+            "setup.cfg": "[tool:pytest]\naddopts = -ra\n"})
+        self.assertEqual(".pytest.ini", inventory.gate.path)
+        self.assertTrue(inventory.gate.strict_markers)
+
 
 if __name__ == "__main__":
     unittest.main()
