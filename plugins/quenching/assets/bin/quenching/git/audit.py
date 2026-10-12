@@ -642,7 +642,19 @@ TEST_NAME = re.compile(r"(^|/)test_[^/]*$|_test\.[^/]+$|\.(test|spec)\.[^/]+$")
 ASSERT = re.compile(r"\bassert\w*\b|\bexpect\s*\(")
 GATE_PATH = re.compile(r"^scripts/verify_repo\.sh$|^plugins/quenching/assets/checks/")
 CODE_EXT = re.compile(r"\.(py|sh|js|jsx|ts|tsx|rb|go|rs|java|kt|cs)$")
+TEST_DIR = re.compile(r"(^|/)(tests?|__tests__)/")
+TRIVIAL = re.compile(r"\bassert\s+True\s*$|\bexpect\s*\(\s*true\s*\)")
 SUPPRESSION = re.compile(r"noqa|type:\s*ignore|\bskip(If|Unless|Test)?\b|\bxfail\b|\bxit\s*\(|\bxdescribe\s*\(")
+
+
+def _asserts(text: str) -> int:
+    """Real assertions in `text`: a match outside a comment, and not `assert True`/`expect(true)`."""
+    n = 0
+    for line in text.splitlines():
+        code = "" if re.match(r"\s*(#|//|\*|/\*)", line) else re.sub(r"\s#.*$", "", line)
+        if ASSERT.search(code) and not TRIVIAL.search(code):
+            n += 1
+    return n
 
 
 def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[dict]) -> list[dict]:
@@ -666,6 +678,7 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
 
     pairs = list(zip(fields[0::2], fields[1::2]))
     added = [p for s_, p in pairs if s_.startswith("A")]
+    taken: set[str] = set()                       # a target absolves ONE deletion
     for status, path in pairs:
         gate = bool(GATE_PATH.search(path))
         deleted = status.startswith("D")
@@ -674,10 +687,14 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
             test = bool(ASSERT.search(show(base, path)))
         if deleted and test:                      # a move reads D plus A under --no-renames
             name = path.rsplit("/", 1)[-1]
-            dests = [a for a in added if a.rsplit("/", 1)[-1] == name and TEST_PATH.search(a)]
-            had = ASSERT.search(show(base, path))
-            if any(not had or ASSERT.search(show(tip, a)) for a in dests):
+            dests = [a for a in added if a not in taken and a.rsplit("/", 1)[-1] == name
+                     and TEST_PATH.search(a)]
+            had = _asserts(show(base, path))
+            kept = next((a for a in dests if _asserts(show(tip, a)) >= had), None)
+            if kept:
+                taken.add(kept)
                 continue                          # the target is a test and keeps its asserts
+            dests = [a for a in dests if TEST_DIR.search(a)]   # elsewhere it is no move of this test
             if dests:
                 found.append({"path": dests[0], "severity": "fail", "kind": "test-lost-asserts",
                               "detail": "no assert left"})
@@ -697,7 +714,7 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
         body = rows[next((i for i, r in enumerate(rows) if r.startswith("@@")), len(rows)):]
         plus = [r[1:].strip() for r in body if r.startswith("+")]
         minus = [r[1:].strip() for r in body if r.startswith("-")]
-        if test and ASSERT.search(show(base, path)) and not ASSERT.search(show(tip, path)):
+        if test and _asserts(show(base, path)) and not _asserts(show(tip, path)):
             found.append({"path": path, "severity": "fail", "kind": "test-lost-asserts",
                           "detail": "no assert left"})
         if gate:
@@ -705,10 +722,10 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
             if lost:
                 found.append({"path": path, "severity": "fail", "kind": "gate-shrunk", "detail": lost})
         if CODE_EXT.search(path):
-            added = [m for m in plus if SUPPRESSION.search(m)]
-            if added:
+            muted = [m for m in plus if SUPPRESSION.search(m)]
+            if muted:
                 found.append({"path": path, "severity": "warn", "kind": "suppression-added",
-                              "detail": added})
+                              "detail": muted})
     return found
 
 
