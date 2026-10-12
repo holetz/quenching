@@ -90,9 +90,15 @@ def workflow_permissions(root: Path) -> QuestionResult:
     )
 
 
+_SECRET_CLASSES = ("environment-files", "private-keys", "credential-files")
+
+
 def _secret_class(pattern: str) -> str | None:
     value = pattern.lower().lstrip("/")
-    if value == ".env" or value.startswith(".env."):
+    while value.startswith("**/"):
+        value = value[3:].lstrip("/")
+    value = value.rstrip("/")
+    if value in (".env", ".env*", "*.env") or value.startswith(".env."):
         return "environment-files"
     if any(value.endswith(suffix) for suffix in (".pem", ".key", ".p12", ".pfx")) \
             or value.startswith("id_rsa"):
@@ -122,13 +128,19 @@ def secret_ignore_coverage(root: Path) -> QuestionResult:
         category = _secret_class(pattern)
         if category:
             coverage.setdefault(category, []).append(pattern)
-    state = "present" if coverage else "missing"
+    uncovered = sorted(set(_SECRET_CLASSES) - set(coverage))
+    state = "missing" if uncovered else "present"
+    details: dict[str, object] = {}
+    if coverage:
+        details["patterns"] = coverage
+    if uncovered:
+        details["uncovered"] = uncovered
     return QuestionResult(
         "secret-ignore-coverage",
         "Do ignore rules cover the secret classes the repository exposes?",
         state,
         ({"path": ".gitignore", "classes": sorted(coverage)},),
-        {"patterns": coverage} if coverage else {},
+        details,
     )
 
 
