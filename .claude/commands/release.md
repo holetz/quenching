@@ -1,7 +1,7 @@
 ---
 description: >-
   Publish what the primary branch accumulated as a deliberate release — the plugin's
-  four-artifact version lockstep, the git tag, and the push to origin. Use when the user
+  version lockstep, the git tag, and the push to origin. Use when the user
   asks to "publish a release", "cut a release", "release this", "is it time to release",
   or "publish the plugin". Judges patch/minor/major from what actually accumulated and
   asks for confirmation before touching anything; when the primary branch carries exactly
@@ -20,9 +20,9 @@ from what accumulated and confirms it with you).
 This repository publishes from a single long-lived branch —
 [docs/standards/git/branching.md](/docs/standards/git/branching.md): every spec lands on the
 primary branch (`main`) through a reviewed pull request, and the release is the one deliberate act
-that moves the plugin's four version-carrying artifacts
+that moves the plugin's version-carrying artifacts (including the HUD's `plugins/quenching-hud/.claude-plugin/plugin.json`)
 ([docs/standards/ci-cd/versioning-release.md](/docs/standards/ci-cd/versioning-release.md))
-and creates a tag. This command is that deliberate act. The mechanical half — the four-artifact
+and creates a tag. This command is that deliberate act. The mechanical half — the artifact
 bump, the commit, the tag — is `plugins/quenching/assets/bin/cq specs release <version>`, already
 implemented and self-tested; this command judges *whether* and *what*, gets it confirmed, and
 publishes the result.
@@ -74,7 +74,7 @@ policy**: this is human judgment the command conducts, per
 [versioning-release.md](/docs/standards/ci-cd/versioning-release.md)'s own boundary. If
 `$ARGUMENTS` already named an exact version, skip the proposal and confirm that one instead.
 
-Present ONE plan and wait for it: the proposed version, "bump the four version artifacts and tag
+Present ONE plan and wait for it: the proposed version, "bump the version artifacts and tag
 `<version>` on the primary branch", and "push the primary branch and the tag `<version>` to origin" —
 the push is part of this same plan, not a second confirmation, because an unpushed release reaches
 nobody who installs via the marketplace. **Done when:** the human has confirmed one exact `X.Y.Z`,
@@ -97,7 +97,7 @@ refuses (exit 2, `sp-release-wrong-branch`) any checkout not on the primary bran
 ( cd <primary checkout from step 1> && python3 plugins/quenching/assets/bin/cq specs release <version> --json )
 git -C <primary checkout from step 1> push origin <primary-branch> <version>
 ```
-Exit **0** on `cq specs release` → the four artifacts moved, the bump commit landed on the primary
+Exit **0** on `cq specs release` → the artifacts moved, the bump commit landed on the primary
 branch, the tag points at it. Exit **2** → nothing was bumped; report the refusal's `message`
 plainly — this is recoverable (fix what it names, typically a lockstep already drifted or a checkout
 on the wrong branch, then re-run this same `cq specs release <version>` command by hand from the
@@ -113,7 +113,7 @@ The first must exit 0 — the tag's commit (the bump) is contained in the primar
 is the tip the release published. `^{commit}` is required because the tag is annotated — bare
 `rev-parse <version>` yields the tag object, never the commit. The JSON `commit` from step 4 must
 also match `git -C <primary checkout> rev-parse <version>^{commit}`.
-Report the old and new version, the four artifacts that moved (from step 4's JSON `artifacts`),
+Report the old and new version, the artifacts that moved (from step 4's JSON `artifacts`),
 the tag, and that both are on origin.
 **Done when:** the ancestry check passes, the JSON `commit` matches the tag's commit, and the
 report names what changed — or names the mismatch as a finding rather than claiming success.
