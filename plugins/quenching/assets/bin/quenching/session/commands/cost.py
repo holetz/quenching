@@ -10,6 +10,7 @@ and the payload has no grand total."""
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 from quenching.common.output import FINDINGS, OK, refuse
@@ -85,8 +86,19 @@ def scoped(transcripts: list, descendants_of: str | None, nested: bool) -> list:
     return [tr for tr in transcripts if inside(_agent_id(tr))]
 
 
+def parse_instant(value) -> datetime | None:
+    """An ISO-8601 instant as an aware datetime (`Z` accepted; naive reads as UTC), else None."""
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        when = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return when if when.tzinfo else when.replace(tzinfo=timezone.utc)
+
+
 def _requests(transcript: Path, anomalies: list) -> dict:
-    """message.id -> (model, usage) with the usage of the largest `output_tokens` seen."""
+    """message.id -> (model, usage, timestamp, line) with the usage of the largest `output_tokens` seen."""
     seen: dict = {}
     with transcript.open(encoding="utf-8", errors="replace") as fh:
         for n, line in enumerate(fh, 1):
@@ -110,7 +122,8 @@ def _requests(transcript: Path, anomalies: list) -> dict:
             prev = seen.get(key)
             if prev is None or (usage.get("output_tokens") or 0) >= (prev[1].get("output_tokens") or 0):
                 model = msg.get("model")
-                seen[key] = (model if isinstance(model, str) and model else UNKNOWN, usage)
+                seen[key] = (model if isinstance(model, str) and model else UNKNOWN, usage,
+                             parse_instant(rec.get("timestamp")), n)
     return seen
 
 
@@ -119,12 +132,20 @@ def _n(usage: dict, key: str) -> int:
     return v if isinstance(v, int) else 0
 
 
-def aggregate(directory: Path, descendants_of: str | None = None, nested: bool = False) -> dict:
+def aggregate(directory: Path, descendants_of: str | None = None, nested: bool = False,
+              since: datetime | None = None) -> dict:
     anomalies: list = []
     groups: dict = {}
     for tr in scoped(sorted(directory.glob("agent-*.jsonl")), descendants_of, nested):
         agent = _agent_type(tr)
-        for model, usage in _requests(tr, anomalies).values():
+        for model, usage, when, line in _requests(tr, anomalies).values():
+            if since is not None:
+                if when is None:
+                    anomalies.append({"file": tr.name, "line": line,
+                                      "message": "request has no parsable timestamp, not counted under --since"})
+                    continue
+                if when < since:
+                    continue
             g = groups.setdefault((agent, model), {
                 "agentType": agent, "model": model, "requests": 0, "input": 0,
                 "cacheRead": 0, "cacheWrite": 0, "output": 0, "maxWindow": 0})
@@ -155,7 +176,13 @@ def cmd_cost(args) -> int:
     if not directory.is_dir():
         return refuse({"code": "se-no-subagents", "message": f"no subagents directory at {directory}"},
                       args.json)
-    out = aggregate(directory, getattr(args, "descendants_of", None), getattr(args, "nested", False))
+    since = None
+    if getattr(args, "since", None):
+        since = parse_instant(args.since)
+        if since is None:
+            return refuse({"code": "se-bad-since",
+                           "message": f"--since is not an ISO-8601 instant: {args.since}"}, args.json)
+    out = aggregate(directory, getattr(args, "descendants_of", None), getattr(args, "nested", False), since)
     if not out["groups"]:
         return refuse({"code": "se-no-requests",
                        "message": f"no subagent request with usage under {directory}"}, args.json)
