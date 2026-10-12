@@ -205,6 +205,16 @@ class Reading(GitStoreFixture):
         with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
             self.assertEqual([1], [r["id"] for r in GitBackend(a_path).list_specs()])
 
+    def test_no_fetch_reads_the_local_ref_even_when_the_cache_expired(self):
+        a_path = self.clone("a")
+        GitBackend(a_path).list_specs()
+        GitBackend(self.clone("b")).create_spec("plans", canonical._case_doc())
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0), \
+                mock.patch.dict(os.environ, {git_mod.NO_FETCH_ENV: "1"}):
+            self.assertEqual([], GitBackend(a_path).list_specs())
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
+            self.assertEqual([1], [r["id"] for r in GitBackend(a_path).list_specs()])
+
     def test_a_read_only_mirror_never_touches_the_target_and_refuses_writes(self):
         target = self.clone("target")    # before the branch exists: no tracking ref yet
         GitBackend(self.clone("writer")).create_spec("plans", canonical._case_doc())
