@@ -637,6 +637,64 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
     return found
 
 
+TEST_PATH = re.compile(r"(^|/)(tests?|__tests__)/|(^|/)test_[^/]*$|_test\.[^/]+$|\.(test|spec)\.[^/]+$")
+ASSERT = re.compile(r"\bassert\w*\b|\bexpect\s*\(")
+GATE_PATH = re.compile(r"^scripts/verify_repo\.sh$|^plugins/quenching/assets/checks/")
+CODE_EXT = re.compile(r"\.(py|sh|js|jsx|ts|tsx|rb|go|rs|java|kt|cs)$")
+SUPPRESSION = re.compile(r"noqa|type:\s*ignore|\bskip(If|Unless|Test)?\b|\bxfail\b|\bxit\s*\(|\bxdescribe\s*\(")
+
+
+def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[dict]) -> list[dict]:
+    """The ways the branch lowers the bar a gate measures, read from `base...tip`, never judged for
+    justification. `severity: fail` — a test file deleted, a test file left with no assert it had at
+    the base, a gate file (`scripts/verify_repo.sh`, `plugins/quenching/assets/checks/**`) deleted or
+    with a removed non-comment line that no added line of that file repeats; `severity: warn` — a
+    `noqa`, `type: ignore`, `skip`, `skipIf`, `skipUnless` or `xfail` added to a code file. A reworded
+    gate step reads as shrunk: the conductor settles it."""
+    code, out, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "--name-status",
+                              "-z", "--no-renames", f"{base}...{tip}", env=env)
+    if code != 0:
+        errors.append(_error(("diff", "--name-status"), code, err))
+        return []
+    fields = [f for f in out.split("\0") if f]
+    found = []
+
+    def show(rev: str, path: str) -> str:
+        c, text, _e = _git_run(cwd, *SAFE, "show", "--no-textconv", f"{rev}:{path}", env=env)
+        return text if c == 0 else ""
+
+    for status, path in zip(fields[0::2], fields[1::2]):
+        test, gate = bool(TEST_PATH.search(path)), bool(GATE_PATH.search(path))
+        deleted = status.startswith("D")
+        if deleted and (test or gate):
+            found.append({"path": path, "severity": "fail",
+                          "kind": "test-deleted" if test else "gate-shrunk", "detail": "(deleted)"})
+            continue
+        if deleted:
+            continue
+        code, diff, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "--text",
+                                   "-U0", "--no-renames", f"{base}...{tip}", "--", path, env=env)
+        if code != 0:
+            errors.append(_error(("diff", "-U0"), code, err))
+            continue
+        rows = diff.splitlines()
+        plus = [r[1:].strip() for r in rows if r.startswith("+") and not r.startswith("+++")]
+        minus = [r[1:].strip() for r in rows if r.startswith("-") and not r.startswith("---")]
+        if test and ASSERT.search(show(base, path)) and not ASSERT.search(show(tip, path)):
+            found.append({"path": path, "severity": "fail", "kind": "test-lost-asserts",
+                          "detail": "no assert left"})
+        if gate:
+            lost = [m for m in minus if m and not m.startswith("#") and m not in plus]
+            if lost:
+                found.append({"path": path, "severity": "fail", "kind": "gate-shrunk", "detail": lost})
+        if CODE_EXT.search(path):
+            added = [m for m in plus if SUPPRESSION.search(m)]
+            if added:
+                found.append({"path": path, "severity": "warn", "kind": "suppression-added",
+                              "detail": added})
+    return found
+
+
 def cmd_audit(args) -> int:
     cwd = os.getcwd()
     worktree = os.path.realpath(args.worktree)
@@ -684,13 +742,15 @@ def cmd_audit(args) -> int:
                      "head": _rewrites(worktree, "HEAD", env, errors)},
     }
     payload["grants"] = _grants(worktree, base, tip, payload["changed"], env, errors)
+    payload["lowered"] = _lowered(worktree, base, tip, env, errors)
     payload["errors"] = errors
     payload["complete"] = not errors
 
     lines = [f"worktree: {worktree}", f"branch: {args.branch} ({tip[:12]}) over {args.base}",
              f"commits: {len(payload['commits'])}", f"changed: {len(payload['changed'])} path(s)",
              f"status: {len(payload['status'])} entries", f"stash: {len(payload['stash'])} entries",
-             f"grants added: {sum(len(g['added']) for g in payload['grants'])}"]
+             f"grants added: {sum(len(g['added']) for g in payload['grants'])}",
+             f"lowered: {len(payload['lowered'])} entr(ies)"]
     lines += [f"ERROR {e['read']} (exit {e['code']}): {e['message']}" for e in errors]
     lines += [f"ancestor {s}: {'yes' if ok else 'NO'}" for s, ok in payload["ancestry"].items()]
     emit(args.json, payload, "\n".join(lines))
