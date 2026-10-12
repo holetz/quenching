@@ -286,11 +286,16 @@ def selftest() -> int:
         glossary_snippet=glossary_root / "docs" / "assets" / "glossary-abbreviations.txt",
         require_glossary=True,
     )
+    with tempfile.TemporaryDirectory() as temp:
+        empty = Path(temp)
+        assert main([str(empty), "--local"]) == 2
+        (empty / "index.html").write_text("<p>x</p>")
+        assert main([str(empty), "--local"]) == 0
     print("documentation-site-check selftest: OK")
     return 0
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("site", nargs="?", type=Path)
     parser.add_argument("--selftest", action="store_true")
@@ -302,7 +307,7 @@ def main() -> int:
     parser.add_argument("--glossary-route", default="glossary.md")
     parser.add_argument("--glossary-snippet", type=Path)
     parser.add_argument("--glossary-term")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.selftest:
         return selftest()
     if not args.site or not args.site.is_dir():
@@ -317,7 +322,12 @@ def main() -> int:
         policy = "warning" if finding.code == "site-remote-resource" and args.remote_policy == "warn" else "error"
         print(f"{policy}: {finding.code}: {finding.path}: {finding.detail}")
     blocking = [f for f in findings if f.code != "site-remote-resource" or args.remote_policy == "error"]
-    return 1 if blocking else 0
+    if blocking:
+        return 1
+    if not pages(args.site):
+        print(f"inconclusive: no page was parsed under {args.site}; nothing was measured (aborted build?)")
+        return 2
+    return 0
 
 
 if __name__ == "__main__":
