@@ -2,8 +2,9 @@
 
 The report is re-read here, at delete time, so a name the caller passes is acted on only when
 the fresh report still lists it under the matching class. The deletes are the safe forms only —
-`branch -d`, `worktree remove`, `push --delete` of a reported remote branch — never `-D`,
-`--force` or a refspec the caller wrote. Runs with `audit.SAFE`.
+`branch -d`, `worktree remove`, `push --delete` of a reported remote branch leased on the sha
+the report read (a tip that moved since is refused) — never `-D`, a plain `--force` or a
+refspec the caller wrote. Runs with `audit.SAFE`.
 
 Exit 0 deleted · 1 git refused (not fully merged, dirty worktree) and the item stands ·
 2 refusal: not in the report."""
@@ -11,7 +12,7 @@ from __future__ import annotations
 
 import os
 
-from quenching.common.git import _git_run
+from quenching.common.git import _git, _git_run
 from quenching.common.output import FINDINGS, OK, emit, refuse
 from quenching.git.audit import SAFE
 from quenching.git.push import remote_ok
@@ -40,10 +41,18 @@ def cmd_prune(args) -> int:
         kind, target = "remote-branch", args.remote_branch
         listed = any(b["branch"] == target and b["remote"] == args.remote
                      for b in report["remoteBranches"])
-        argv = ("push", "--delete", "--porcelain", "--", args.remote, f"refs/heads/{target}")
+        seen = _git(cwd, "rev-parse", "--verify", "--quiet",
+                    f"refs/remotes/{args.remote}/{target}").strip()
+        argv = ("push", "--delete", "--porcelain",
+                f"--force-with-lease=refs/heads/{target}:{seen}",
+                "--", args.remote, f"refs/heads/{target}")
     if not listed:
         return refuse({"code": "git-prune-not-reported",
                        "message": f"`cq git stale` does not report the {kind} {target}"},
+                      args.json)
+    if kind == "remote-branch" and not seen:
+        return refuse({"code": "git-prune-no-lease",
+                       "message": f"no tracking ref to lease for {args.remote}/{target}"},
                       args.json)
     code, _out, err = _git_run(cwd, *SAFE, *argv)
     payload = {"ok": code == 0, "kind": kind, "target": target, "remote": args.remote}
