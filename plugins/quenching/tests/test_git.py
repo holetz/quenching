@@ -414,6 +414,45 @@ class Audit(RepoCase):
                                   {"tests/unit/test_m.py": "def test_m():\n    assert 2\n"})
         self.assertEqual(got, set())
 
+    def test_lowered_keeps_a_moved_test_clean_when_an_earlier_code_file_changes(self):
+        got = self._lowered_after({"tests/test_m.py": "def test_m():\n    assert 1\n",
+                                   "src/a.py": "x = 1\n"},
+                                  "tests/test_m.py",
+                                  {"tests/unit/test_m.py": "def test_m():\n    assert 2\n",
+                                   "src/a.py": "x = 2\n"})
+        self.assertEqual(got, set())
+
+    def test_lowered_fails_the_second_deletion_sharing_one_target(self):
+        self._commit_file("src/a.py", "x = 1\n", "code")
+        self._commit_file("tests/a/test_x.py", "def t():\n    assert 1\n", "a")
+        self._commit_file("tests/b/test_x.py", "def t():\n    assert 1\n", "b")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        _run(self.wt, "rm", "-q", "tests/a/test_x.py", "tests/b/test_x.py")
+        self._commit_file("src/a.py", "x = 2\n", "edit")
+        self._commit_file("tests/c/test_x.py", "def t():\n    assert 1\n", "c")
+        got = {(e["kind"]) for e in self._lowered()}
+        self.assertEqual(got, {"test-deleted"})
+
+    def test_lowered_fails_a_moved_test_that_kept_fewer_asserts(self):
+        got = self._lowered_after({"tests/test_m.py": "def t():\n    assert 1\n    assert 2\n"
+                                                     "    assert 3\n    assert 4\n",
+                                   "src/a.py": "x = 1\n"},
+                                  "tests/test_m.py",
+                                  {"tests/unit/test_m.py": "def t():\n    assert 1\n",
+                                   "src/a.py": "x = 2\n"})
+        self.assertEqual(got, {("tests/unit/test_m.py", "fail", "test-lost-asserts")})
+
+    def test_lowered_fails_a_moved_test_whose_assert_is_a_comment_or_trivial(self):
+        for body in ("def t():\n    pass  # assert nothing\n", "def t():\n    assert True\n"):
+            with self.subTest(body=body):
+                self.setUp()
+                got = self._lowered_after({"tests/test_m.py": "def t():\n    assert 1\n",
+                                           "src/a.py": "x = 1\n"},
+                                          "tests/test_m.py",
+                                          {"tests/unit/test_m.py": body, "src/a.py": "x = 2\n"})
+                self.assertEqual(got, {("tests/unit/test_m.py", "fail", "test-lost-asserts")})
+                self.tearDown()
+
     def test_lowered_reads_a_removed_gate_line_that_starts_with_dashes(self):
         self._commit_file("scripts/verify_repo.sh", "# gate\n--strict\nrun one\n", "gate")
         _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
