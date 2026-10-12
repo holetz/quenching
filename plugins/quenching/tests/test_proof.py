@@ -67,6 +67,53 @@ class TheCoverageRatchet(unittest.TestCase):
                     self.assertFalse(payload["ok"])
                 previous = current
 
+    def test_raise_then_check_on_the_same_artifact_passes_when_rounding_goes_up(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            floor = root / ".coverage-floor.json"
+            config = {
+                "repoRoot": str(root),
+                "proofRoot": str(root / "tests"),
+                "ratchetPath": str(floor),
+                "measuredRoots": [{"relative": "src"}],
+            }
+            (root / "coverage.json").write_text(json.dumps({
+                "files": {"src/a.py": {"covered_lines": 2, "num_statements": 3}},
+                "totals": {"percent_covered": 66.6666666},
+            }), encoding="utf-8")
+            floor.write_text(json.dumps({"version": 1, "floors": {"src": 0}}),
+                             encoding="utf-8")
+            _, raise_code = evaluate(config, mode="raise")
+            self.assertEqual(0, raise_code)
+            self.assertEqual(66.666667, json.loads(
+                floor.read_text(encoding="utf-8"))["floors"]["src"])
+            checked, check_code = evaluate(config, mode="check")
+            self.assertEqual(0, check_code, checked["findings"])
+            self.assertTrue(checked["ok"])
+
+    def test_a_root_with_a_floor_and_no_measurement_is_an_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            floor = root / ".coverage-floor.json"
+            config = {
+                "repoRoot": str(root),
+                "proofRoot": str(root / "tests"),
+                "ratchetPath": str(floor),
+                "measuredRoots": [{"relative": "src"}, {"relative": "lib"}],
+            }
+            (root / "coverage.json").write_text(json.dumps({
+                "files": {"src/a.py": {"covered_lines": 9, "num_statements": 10}},
+                "totals": {"percent_covered": 90.0},
+            }), encoding="utf-8")
+            floor.write_text(json.dumps({"version": 1, "floors": {"src": 90, "lib": 90}}),
+                             encoding="utf-8")
+            for mode in ("check", "raise"):
+                payload, code = evaluate(config, mode=mode)
+                self.assertEqual(1, code, mode)
+                self.assertFalse(payload["ok"])
+                self.assertIn(("pf-floor-unmeasured", "lib"),
+                              [(f["code"], f["root"]) for f in payload["findings"]])
+
     def test_coverage_py_nested_summaries_preserve_independent_root_floors(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
