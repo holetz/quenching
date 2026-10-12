@@ -324,6 +324,45 @@ class RegistryStale(unittest.TestCase):
             self.assertEqual(updated[:start], prefix)
             self.assertEqual(updated[end:], suffix)
 
+    def _lifecycle_of(self, text):
+        with tempfile.TemporaryDirectory() as raw:
+            path = pathlib.Path(raw) / "registry.md"
+            path.write_text(text, encoding="utf-8")
+            return _registry_lifecycle(raw, str(path))
+
+    def test_archived_with_reason_is_read_in_cell_and_declaration(self):
+        table = (
+            "| Entry | Purpose | Lifecycle |\n| --- | --- | --- |\n"
+            "| `prune.py` | Prune | archived (2026-08-30, replaced by run) |\n"
+            "| `run.py` | Run | active - main job |\n"
+        )
+        self.assertEqual(self._lifecycle_of(table), {"prune.py": "archived", "run.py": "active"})
+        declared = (
+            "`prune.py` \u2014 archived (2026-08-30, replaced by run)\n"
+            "- `run.py` \u2014 active\n"
+            "* `old.sh` \u2014 archived: superseded\n"
+        )
+        self.assertEqual(
+            self._lifecycle_of(declared),
+            {"prune.py": "archived", "run.py": "active", "old.sh": "archived"},
+        )
+
+    def test_state_word_followed_by_prose_is_not_a_lifecycle(self):
+        table = (
+            "| Entry | Purpose | Lifecycle |\n| --- | --- | --- |\n"
+            "| `run.py` | Run | active sessions |\n"
+        )
+        self.assertEqual(self._lifecycle_of(table), {})
+        self.assertEqual(self._lifecycle_of("`run.py` \u2014 active sessions\n"), {})
+
+    def test_column_index_does_not_leak_into_a_headerless_table(self):
+        text = (
+            "| Entry | Purpose | Lifecycle |\n| --- | --- | --- |\n"
+            "| `a.py` | A | active |\n\n"
+            "| `b.py` | B | archived |\n"
+        )
+        self.assertEqual(self._lifecycle_of(text), {"a.py": "active"})
+
     def test_purpose_word_does_not_invent_a_lifecycle(self):
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
