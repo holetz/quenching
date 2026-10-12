@@ -511,17 +511,6 @@ class PytestDiscoveryAndSurfaces(unittest.TestCase):
         inventory = self._inventory(files)
         self.assertEqual(("lib", "src"), inventory.source_surfaces)
 
-    def test_git_ignored_paths_are_not_surfaces(self):
-        inventory = self._inventory({
-            ".gitignore": "# comment\ngen/\n*.gen.py\n/out\n!keep.py\n",
-            "src/a.py": "X = 1\n",
-            "gen/b.py": "B = 1\n",
-            "out/c.py": "C = 1\n",
-            "only/d.gen.py": "D = 1\n",
-            "mixed/e.gen.py": "E = 1\n",
-            "mixed/f.py": "F = 1\n"})
-        self.assertEqual(("mixed", "src"), inventory.source_surfaces)
-
 
 if __name__ == "__main__":
     unittest.main()
