@@ -99,6 +99,12 @@ scope is unchanged and the target has produced the artifact the ratchet reads:
 cq --root "$TARGET_ROOT" proof ratchet --raise --json
 ```
 
+When `--raise` exits non-zero (`pf-floor-regressed`, `pf-floor-unmeasured`, or a refusal such as
+`pf-coverage-missing`, `pf-coverage-invalid`, `pf-coverage-no-measured-root`, `pf-floor-invalid`), the
+floor was not raised: report the code, the root and the message as judgement or refusal residue per
+the gate contract, never call the floor raised, and never edit the floor file or the measured roots to
+make it pass.
+
 Never create a layer, choose a measured surface, install CI, classify an empty layer as required,
 arm or waive an operations entry point, or run a target test suite. If the floor is deferred, do
 not call the ratchet; state the reason in the report.
