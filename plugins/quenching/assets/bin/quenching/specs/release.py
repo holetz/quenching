@@ -29,6 +29,7 @@ RELEASE_ARTIFACTS = (
     ("plugins/quenching/.claude-plugin/plugin.json", "json"),
     ("plugins/quenching-specs-reader/VERSION", "plain"),
     ("plugins/quenching-specs-reader/.claude-plugin/plugin.json", "json"),
+    ("plugins/quenching-hud/.claude-plugin/plugin.json", "json"),
     (".claude-plugin/marketplace.json", "jsonall"),
     ("plugins/quenching/assets/bin/quenching/common/version.py", "py"),
 )
