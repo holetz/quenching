@@ -105,7 +105,14 @@ def _lifecycle(relative: str, registry: dict[str, str]) -> str | None:
     return None
 
 
-_STATE_REASON = r"(active|archived)(?:\s*(?:[(:,;\u2014\u2013-].*)?)"
+_STATE_REASON = r"(active|archived)(?:\s*(?:[(:,;\u2014\u2013-].*|\d.*|since\b.*)?)"
+_STATE_CELL = r"(active|archived)\b.*"
+_SCRIPT_SUFFIXES = (".py", ".sh", ".bash", ".cmd", ".bat", ".ps1")
+
+
+def _plain(text: str) -> str:
+    """Drop code-span and emphasis marks and case so a state reads the same in any styling."""
+    return re.sub(r"[`*_]", "", text).strip().lower()
 
 
 def _registry_lifecycle(root: str, registry_path: str | None = None) -> dict[str, str]:
@@ -137,23 +144,30 @@ def _registry_lifecycle(root: str, registry_path: str | None = None) -> dict[str
                 continue
             if column is None or column >= len(cells):
                 continue
-            cell = re.fullmatch(_STATE_REASON, cells[column].lower())
+            cell = re.fullmatch(_STATE_CELL, _plain(cells[column]))
             if not cell:
                 continue
             state = cell.group(1)
-            match = re.search(r"`([^`]+)`", cells[0])
+            match = next(
+                (m for c in cells for m in re.finditer(r"`([^`]+)`", c)
+                 if m.group(1).replace("\\", "/").endswith(_SCRIPT_SUFFIXES)),
+                None,
+            )
         elif in_zone:
             continue
         else:
             declared = re.fullmatch(
-                r"\s*(?:[-*+]\s+)?`([^`]+)`\s*[—–-]+\s*" + _STATE_REASON + r"\s*", line
+                r"\s*(?:[-*+]\s+)?`([^`]+)`\s*[—–-]+\s*(.*)", line
             )
             if not declared:
                 continue
-            match, state = declared, declared.group(2)
+            tail = re.fullmatch(_STATE_REASON, _plain(declared.group(2)))
+            if not tail:
+                continue
+            match, state = declared, tail.group(1)
         if match:
             candidate = match.group(1).replace("\\", "/").lstrip("./")
-            if candidate.endswith((".py", ".sh", ".bash", ".cmd", ".bat", ".ps1")):
+            if candidate.endswith(_SCRIPT_SUFFIXES):
                 out[candidate] = state
     return out
 
