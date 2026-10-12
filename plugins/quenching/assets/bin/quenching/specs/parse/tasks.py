@@ -16,10 +16,12 @@ CHECKBOX_RE = re.compile(r"^(\s*)-\s\[( |x|X|!)\]\s+(.*)$")
 CHECKBOX_LOOSE_RE = re.compile(r"^\s*-\s*\[.*?\]")   # looks like a checkbox (malformed detection)
 TASK_ID_RE = re.compile(r"^(\d+(?:\.\d+)*)\b")
 TASK_META_KEYS = ("files", "pattern", "cwd", "verify", "constraint", "subject", "commit")
-TASK_META_RE = re.compile(rf"^\s+(?:-\s+)?({'|'.join(TASK_META_KEYS)})\s*:\s*(.+?)\s*$",
+TASK_META_RE = re.compile(rf"^\s+(-\s+)?({'|'.join(TASK_META_KEYS)})\s*:\s*(.+?)\s*$",
                           re.IGNORECASE)
 # An optional `- ` bullet before the key is the same line: a `  - files:` that the parser
-# dropped turned the verifier's scope check into a silent `n/a`.
+# dropped turned the verifier's scope check into a silent `n/a`. The bullet form is the
+# lowercase key only and never overrides a bare line of the same key: `  - Verify: by hand`
+# is prose, and must not replace the real `verify:`.
 # `constraint:` is INERT by design: the grammar admits it and `next` hands it through, but no
 # command reads it. Its only consumer would be an executor sub-agent briefing itself, and the
 # decision to dispatch one belongs to another spec — so the field lands first and the decision
@@ -118,6 +120,7 @@ def parse_tasks(text: str) -> list[dict]:
         pattern = cwd = verify = subject = commit = None
         subject_off = commit_off = last_meta_off = None
         meta_indent = None
+        bare_keys: set[str] = set()
         block_end = i + 1
         for off, cont in enumerate(lines[i + 1:], start=i + 1):
             # the task's block ends at a blank line, a non-indented line, or another
@@ -129,7 +132,12 @@ def parse_tasks(text: str) -> list[dict]:
             mm = TASK_META_RE.match(cont)
             if not mm:
                 continue
-            key, val = mm.group(1).lower(), mm.group(2).strip()
+            bullet, raw_key = mm.group(1), mm.group(2)
+            key, val = raw_key.lower(), mm.group(3).strip()
+            if bullet and (raw_key != key or key in bare_keys):
+                continue
+            if not bullet:
+                bare_keys.add(key)
             if meta_indent is None:
                 meta_indent = cont[:len(cont) - len(cont.lstrip())]
             last_meta_off = off
