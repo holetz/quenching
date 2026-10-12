@@ -373,8 +373,8 @@ class Audit(RepoCase):
         self._commit_file("tests/test_m.py", "def test_m():\n    assert 1\n", "add")
         self._commit_file("tests/fixtures/old.json", "{}\n", "fixture")
         _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
-        pathlib.Path(self.wt, "tests/unit").mkdir()
-        _run(self.wt, "mv", "tests/test_m.py", "tests/unit/test_m.py")
+        pathlib.Path(self.wt, "pkg/tests").mkdir(parents=True)
+        _run(self.wt, "mv", "tests/test_m.py", "pkg/tests/test_m.py")
         _run(self.wt, "rm", "-q", "tests/fixtures/old.json")
         _run(self.wt, "commit", "-q", "-m", "move and drop")
         self.assertEqual(self._lowered(), [])
@@ -405,31 +405,31 @@ class Audit(RepoCase):
     def test_lowered_fails_a_moved_test_that_lost_its_asserts(self):
         got = self._lowered_after({"tests/test_m.py": "def test_m():\n    assert 1\n"},
                                   "tests/test_m.py",
-                                  {"tests/unit/test_m.py": "def test_m():\n    pass\n"})
-        self.assertEqual(got, {("tests/unit/test_m.py", "fail", "test-lost-asserts")})
+                                  {"pkg/tests/test_m.py": "def test_m():\n    pass\n"})
+        self.assertEqual(got, {("pkg/tests/test_m.py", "fail", "test-lost-asserts")})
 
     def test_lowered_ignores_a_moved_test_that_keeps_its_asserts(self):
         got = self._lowered_after({"tests/test_m.py": "def test_m():\n    assert 1\n"},
                                   "tests/test_m.py",
-                                  {"tests/unit/test_m.py": "def test_m():\n    assert 2\n"})
+                                  {"pkg/tests/test_m.py": "def test_m():\n    assert 2\n"})
         self.assertEqual(got, set())
 
     def test_lowered_keeps_a_moved_test_clean_when_an_earlier_code_file_changes(self):
         got = self._lowered_after({"tests/test_m.py": "def test_m():\n    assert 1\n",
                                    "src/a.py": "x = 1\n"},
                                   "tests/test_m.py",
-                                  {"tests/unit/test_m.py": "def test_m():\n    assert 2\n",
+                                  {"pkg/tests/test_m.py": "def test_m():\n    assert 2\n",
                                    "src/a.py": "x = 2\n"})
         self.assertEqual(got, set())
 
     def test_lowered_fails_the_second_deletion_sharing_one_target(self):
         self._commit_file("src/a.py", "x = 1\n", "code")
-        self._commit_file("tests/a/test_x.py", "def t():\n    assert 1\n", "a")
-        self._commit_file("tests/b/test_x.py", "def t():\n    assert 1\n", "b")
+        self._commit_file("a/tests/test_x.py", "def t():\n    assert 1\n", "a")
+        self._commit_file("b/tests/test_x.py", "def t():\n    assert 1\n", "b")
         _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
-        _run(self.wt, "rm", "-q", "tests/a/test_x.py", "tests/b/test_x.py")
+        _run(self.wt, "rm", "-q", "a/tests/test_x.py", "b/tests/test_x.py")
         self._commit_file("src/a.py", "x = 2\n", "edit")
-        self._commit_file("tests/c/test_x.py", "def t():\n    assert 1\n", "c")
+        self._commit_file("c/tests/test_x.py", "def t():\n    assert 1\n", "c")
         got = {(e["kind"]) for e in self._lowered()}
         self.assertEqual(got, {"test-deleted"})
 
@@ -450,22 +450,62 @@ class Audit(RepoCase):
         self.assertEqual(got, set())
 
     def test_lowered_pairs_moves_one_to_one_not_greedily(self):
-        self._commit_file("tests/a/test_x.py", "def t():\n    assert 1\n", "a")
-        self._commit_file("tests/b/test_x.py", "def t():\n    assert 1\n    assert 2\n    assert 3\n", "b")
+        self._commit_file("a/tests/test_x.py", "def t():\n    assert 1\n", "a")
+        self._commit_file("b/tests/test_x.py", "def t():\n    assert 1\n    assert 2\n    assert 3\n", "b")
         _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
-        _run(self.wt, "rm", "-q", "tests/a/test_x.py", "tests/b/test_x.py")
-        self._commit_file("tests/c/test_x.py", "def t():\n    assert 1\n    assert 2\n    assert 3\n", "c")
-        self._commit_file("tests/d/test_x.py", "def t():\n    assert 1\n", "d")
+        _run(self.wt, "rm", "-q", "a/tests/test_x.py", "b/tests/test_x.py")
+        self._commit_file("c/tests/test_x.py", "def t():\n    assert 1\n    assert 2\n    assert 3\n", "c")
+        self._commit_file("d/tests/test_x.py", "def t():\n    assert 1\n", "d")
         self.assertEqual(self._lowered(), [])
+
+    def test_lowered_fails_a_test_moved_where_the_gate_does_not_discover(self):
+        for dest in ("attic/tests/sub/test_a.py", "attic/test/a_cases.py", "tests/fixtures/a.txt"):
+            with self.subTest(dest=dest):
+                self.setUp()
+                got = self._lowered_after({"tests/test_a.py": "def t():\n    assert 1\n"},
+                                          "tests/test_a.py", {dest: "def t():\n    assert 1\n"})
+                self.assertEqual(got, {("tests/test_a.py", "fail", "test-deleted")})
+                self.tearDown()
+
+    def test_lowered_reads_the_discovery_root_from_the_gate_script(self):
+        gate = "python3 -m unittest discover -s lib/tests\n"
+        for dest, want in (("lib/tests/test_a.py", set()),
+                           ("lib/tests/sub/test_a.py", {("lib/tests/test_a.py", "fail", "test-deleted")}),
+                           ("lib/tests/a_cases.py", {("lib/tests/test_a.py", "fail", "test-deleted")})):
+            with self.subTest(dest=dest):
+                self.setUp()
+                self._commit_file("scripts/verify_repo.sh", gate, "gate")
+                got = self._lowered_after({"lib/tests/test_b.py": "def t():\n    assert 1\n",
+                                           "lib/tests/test_a.py": "def t():\n    assert 1\n"},
+                                          "lib/tests/test_a.py",
+                                          {dest: "def t():\n    assert 1\n"} if dest != "lib/tests/test_a.py"
+                                          else {"lib/tests/test_n.py": "def t():\n    assert 1\n"})
+                self.assertEqual(got, want if dest != "lib/tests/test_a.py" else set())
+                self.tearDown()
+
+    def test_lowered_hollowed_same_name_move_is_not_absolved_by_another_new_test(self):
+        got = self._lowered_after({"a/tests/test_a.py": "def t():\n    assert 1\n    assert 2\n    assert 3\n",
+                                   "src/a.py": "x = 1\n"},
+                                  "a/tests/test_a.py",
+                                  {"b/tests/test_a.py": "def t():\n    pass\n",
+                                   "b/tests/test_new.py": "def t():\n    assert 1\n    assert 2\n    assert 3\n"})
+        self.assertEqual(got, {("b/tests/test_a.py", "fail", "test-lost-asserts")})
+
+    def test_lowered_detail_says_how_many_asserts_were_kept(self):
+        self._commit_file("a/tests/test_a.py", "def t():\n    assert 1\n    assert 2\n    assert 3\n", "a")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        _run(self.wt, "rm", "-q", "a/tests/test_a.py")
+        self._commit_file("b/tests/test_a.py", "def t():\n    assert 1\n    assert 2\n", "b")
+        self.assertEqual([e["detail"] for e in self._lowered()], ["2 of 3 asserts kept"])
 
     def test_lowered_fails_a_moved_test_that_kept_fewer_asserts(self):
         got = self._lowered_after({"tests/test_m.py": "def t():\n    assert 1\n    assert 2\n"
                                                      "    assert 3\n    assert 4\n",
                                    "src/a.py": "x = 1\n"},
                                   "tests/test_m.py",
-                                  {"tests/unit/test_m.py": "def t():\n    assert 1\n",
+                                  {"pkg/tests/test_m.py": "def t():\n    assert 1\n",
                                    "src/a.py": "x = 2\n"})
-        self.assertEqual(got, {("tests/unit/test_m.py", "fail", "test-lost-asserts")})
+        self.assertEqual(got, {("pkg/tests/test_m.py", "fail", "test-lost-asserts")})
 
     def test_lowered_fails_a_moved_test_whose_assert_is_a_comment_or_trivial(self):
         for body in ("def t():\n    pass  # assert nothing\n", "def t():\n    assert True\n"):
@@ -474,8 +514,8 @@ class Audit(RepoCase):
                 got = self._lowered_after({"tests/test_m.py": "def t():\n    assert 1\n",
                                            "src/a.py": "x = 1\n"},
                                           "tests/test_m.py",
-                                          {"tests/unit/test_m.py": body, "src/a.py": "x = 2\n"})
-                self.assertEqual(got, {("tests/unit/test_m.py", "fail", "test-lost-asserts")})
+                                          {"pkg/tests/test_m.py": body, "src/a.py": "x = 2\n"})
+                self.assertEqual(got, {("pkg/tests/test_m.py", "fail", "test-lost-asserts")})
                 self.tearDown()
 
     def test_lowered_reads_a_removed_gate_line_that_starts_with_dashes(self):
