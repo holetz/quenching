@@ -93,6 +93,33 @@ class ToolchainResults(unittest.TestCase):
                           "tc-key-unarbitered"}, codes)
         self.assertTrue(all(item["band"] == "Structural" for item in payload["findings"]))
 
+    def test_exact_pinned_python_dev_dependency_is_not_unpinned(self):
+        payload, _ = self._run({
+            "pyproject.toml": (
+                "[project]\nname = 'demo'\n[tool.uv]\npackage = false\n"
+                "[dependency-groups]\ndev = ['pytest==8.0.0', 'httpx[cli]==0.27.0']\n"),
+        })
+        self.assertNotIn("tc-tool-unpinned", {item["code"] for item in payload["findings"]})
+
+    def test_loose_python_dev_dependency_stays_unpinned_by_name(self):
+        payload, _ = self._run({
+            "pyproject.toml": (
+                "[project]\nname = 'demo'\n[tool.uv]\npackage = false\n"
+                "[dependency-groups]\ndev = ['pytest==8.0.0', 'ruff>=1.0']\n"),
+        })
+        messages = [item["message"] for item in payload["findings"]
+                    if item["code"] == "tc-tool-unpinned"]
+        self.assertEqual(1, len(messages))
+        self.assertTrue(messages[0].endswith("exact pins: ruff"), messages[0])
+
+    def test_npm_bare_exact_dev_dependency_is_pinned_but_ranges_are_not(self):
+        pinned, _ = self._run({
+            "package.json": '{"name":"demo","devDependencies":{"eslint":"8.0.0"}}\n'})
+        self.assertNotIn("tc-tool-unpinned", {item["code"] for item in pinned["findings"]})
+        ranged, _ = self._run({
+            "package.json": '{"name":"demo","devDependencies":{"eslint":"^8.0.0"}}\n'})
+        self.assertIn("tc-tool-unpinned", {item["code"] for item in ranged["findings"]})
+
     def test_judgement_boundary_has_no_initial_tc_code(self):
         payload, code = self._run({
             "package.json": '{"name":"demo","version":"1.0.0"}\n',
