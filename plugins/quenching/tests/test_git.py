@@ -2613,6 +2613,22 @@ class PruneVerb(RepoCase):
         heads = subprocess.run(["git", "for-each-ref", "--format=%(refname)", "refs/heads"],
                                cwd=remote, capture_output=True, text=True).stdout.split()
         self.assertIn("refs/heads/merged", heads)
+        self.assertIn("stale info", moved.stdout)
+
+    def test_a_remote_branch_already_gone_is_pruned_with_its_tracking_ref(self):
+        remote = os.path.join(self.tmp, "origin.git")
+        _run(self.tmp, "init", "-q", "--bare", "-b", "main", remote)
+        _run(self.repo, "remote", "add", "origin", remote)
+        _run(self.repo, "push", "-q", "origin", "main", "merged")
+        _run(self.repo, "fetch", "-q", "origin")
+        _run(remote, "branch", "-q", "-D", "merged")
+        payload = _cq_json(self.repo, "prune", "--remote-branch", "merged")
+        self.assertTrue(payload["ok"])
+        self.assertIn("already gone", payload.get("message", ""))
+        tracking = subprocess.run(["git", "for-each-ref", "--format=%(refname)",
+                                   "refs/remotes/origin/merged"], cwd=self.repo,
+                                  capture_output=True, text=True).stdout.strip()
+        self.assertEqual(tracking, "")
 
 
 FAKE_GH = """#!/usr/bin/env python3
