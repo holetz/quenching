@@ -25,7 +25,7 @@ target repo to hold, so nothing installs it.
 
 Two consequences follow, and both are deliberate:
 
-  * It is **outside the six-artifact lockstep** of `/docs/standards/ci-cd/versioning-release.md`.
+  * It is **outside the seven-artifact lockstep** of `/docs/standards/ci-cd/versioning-release.md`.
     That lockstep exists because an align must decide whether an installed copy is stale;
     with no installed copy there is no such decision. `VERSION` below tracks the plugin for
     a legible `--version`, and no align compares it against anything.
@@ -83,6 +83,11 @@ def add_subcommands(sub: argparse._SubParsersAction) -> argparse._SubParsersActi
     co.add_argument("transcript", nargs="?",
                     help="path to a .jsonl transcript, a session id, or a subagents/ directory; "
                          "default: the most recent session for this cwd")
+    scope = co.add_mutually_exclusive_group()
+    scope.add_argument("--descendants-of", metavar="AGENT_ID",
+                       help="count only agents launched, directly or not, by this agent (parentAgentId)")
+    scope.add_argument("--nested", action="store_true",
+                       help="count only agents that have a parentAgentId (launched by a subagent)")
     co.add_argument("--json", action="store_true", help="machine-readable output")
     co.set_defaults(func=cmd_cost)
     return sub
