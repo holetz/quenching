@@ -338,6 +338,37 @@ class RegistryStale(unittest.TestCase):
             self.assertEqual(_registry_lifecycle(str(root), str(path)), {})
             self.assertFalse(write_registry(path, inventory))
 
+    def test_write_then_check_with_active_in_purpose_is_not_stale(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            scripts = root / "scripts"
+            scripts.mkdir()
+            (root / ".claude").mkdir()
+            (root / ".claude" / "quenching.json").write_text(
+                json.dumps({"ops": {"opsRoot": "scripts", "router": "pyproject.toml"}}),
+                encoding="utf-8",
+            )
+            (root / "pyproject.toml").write_text(
+                "[project.scripts]\nprune = 'prune:main'\n", encoding="utf-8"
+            )
+            (scripts / "prune.py").write_text(
+                '"""Delete active sessions."""\n\n'
+                "def main():\n"
+                "    return 0\n",
+                encoding="utf-8",
+            )
+            registry_path = scripts / "README.md"
+            first, err = build_inventory(str(root))
+            self.assertEqual(err, {})
+            assert first is not None
+            write_registry(registry_path, first)
+            self.assertIn("Delete active sessions.", registry_path.read_text(encoding="utf-8"))
+            second, err = build_inventory(str(root))
+            self.assertEqual(err, {})
+            assert second is not None
+            self.assertFalse(write_registry(registry_path, second))
+            self.assertEqual(check_registry_stale(second), [])
+
     def test_lifecycle_is_read_from_its_column_only(self):
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
