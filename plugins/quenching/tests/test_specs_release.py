@@ -1,10 +1,10 @@
 """The version lockstep — `bump_release_artifacts` proved against a disposable tree standing
-in for the four real artifacts and its changelog gate, never the plugin's own, so this runs
+in for the real artifacts (`RELEASE_ARTIFACTS`) and its changelog gate, never the plugin's own, so this runs
 safely on every test run without ever bumping a real version.
 
 Migrated from the pre-refactor specs script's `release_lockstep_failures`. Both directions
-matter: four agreeing values all move together, and one already-drifted value refuses before
-any of the four is touched — kept as two separate cases below rather than folded into one, so
+matter: agreeing values all move together, and one already-drifted value refuses before
+any artifact is touched — kept as two separate cases below rather than folded into one, so
 a failure names which direction broke.
 """
 import json
