@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import ast
 import configparser
+import fnmatch
 import os
 import re
 import shlex
@@ -216,25 +217,77 @@ def _gate(repo_root: str, ratchet_path: str) -> GateConfig:
     )
 
 
+def _git_ignore_rules(root: Path) -> tuple[tuple[bool, bool, bool, str], ...]:
+    """Read the root `.gitignore` and `.git/info/exclude` as (negated, dir_only, anchored, glob).
+
+    A pure-Python reader: the proof front asks no subprocess (git included) which paths are ignored.
+    """
+    rules: list[tuple[bool, bool, bool, str]] = []
+    for relative in (".git/info/exclude", ".gitignore"):
+        try:
+            lines = _read(root / relative).splitlines()
+        except (OSError, UnicodeDecodeError):
+            continue
+        for line in lines:
+            line = line.rstrip("\n")
+            if not line.strip() or line.startswith("#"):
+                continue
+            line = line.rstrip(" ") if not line.endswith("\\ ") else line
+            negated = line.startswith("!")
+            if negated:
+                line = line[1:]
+            dir_only = line.endswith("/")
+            line = line.rstrip("/")
+            anchored = "/" in line
+            line = line.lstrip("/")
+            if line:
+                rules.append((negated, dir_only, anchored, line))
+    return tuple(rules)
+
+
+def _git_ignored(relative: str, is_dir: bool,
+                 rules: tuple[tuple[bool, bool, bool, str], ...]) -> bool:
+    """True when the last matching rule ignores this root-relative POSIX path."""
+    ignored = False
+    name = relative.rsplit("/", 1)[-1]
+    for negated, dir_only, anchored, glob in rules:
+        if dir_only and not is_dir:
+            continue
+        if anchored:
+            hit = fnmatch.fnmatchcase(relative, glob.replace("**/", "*/").replace("/**", "/*"))
+            if not hit and "**/" in glob:
+                hit = fnmatch.fnmatchcase(relative, glob.replace("**/", ""))
+        else:
+            hit = fnmatch.fnmatchcase(name, glob)
+        if hit:
+            ignored = not negated
+    return ignored
+
+
 def _source_surfaces(repo_root: str, proof_root: str) -> tuple[str, ...]:
     """Find top-level directories that contain source-like files, excluding the proof root.
 
-    Dependency and build directories are never a surface. The front stays static, so it asks no
-    subprocess (git included) which files are tracked.
+    Dependency and build directories, and paths the root `.gitignore` ignores, are never a surface.
+    The front stays static, so it asks no subprocess (git included) which files are tracked.
     """
     suffixes = {".c", ".cpp", ".go", ".java", ".js", ".py", ".rs", ".scala", ".sh",
                 ".sql", ".ts", ".tsx"}
     result: list[str] = []
     root = Path(repo_root)
     proof_name = Path(proof_root).name
+    rules = _git_ignore_rules(root)
     for child in sorted(root.iterdir()):
         if (not child.is_dir() or child.name.startswith(".") or child.name == proof_name
-                or child.name in _SKIP_DIRS):
+                or child.name in _SKIP_DIRS or _git_ignored(child.name, True, rules)):
             continue
         found = False
         for directory, dirnames, filenames in os.walk(child):
-            dirnames[:] = sorted(name for name in dirnames if name not in _SKIP_DIRS)
-            if any(Path(name).suffix.lower() in suffixes for name in filenames):
+            here = Path(directory).relative_to(root).as_posix()
+            dirnames[:] = sorted(
+                name for name in dirnames
+                if name not in _SKIP_DIRS and not _git_ignored(f"{here}/{name}", True, rules))
+            if any(Path(name).suffix.lower() in suffixes
+                   and not _git_ignored(f"{here}/{name}", False, rules) for name in filenames):
                 found = True
                 break
         if found:
