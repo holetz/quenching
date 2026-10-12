@@ -230,6 +230,8 @@ def _add_next_and_epic(sub) -> None:
     ep.add_argument("--group", help="the `### N.` group (wave) to list it under; "
                                     "created when new")
     ep.add_argument("--label", help="the item label (default: the next S<n>)")
+    ep.add_argument("--move", action="store_true",
+                    help="take a spec that belongs to another epic out of it first")
 
 
 def _add_inspection(sub) -> None:
