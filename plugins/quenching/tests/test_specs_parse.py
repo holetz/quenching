@@ -325,6 +325,20 @@ class FilesParsing(unittest.TestCase):
         got = parse_tasks("## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n  - files: a.ts\n  - verify: make t\n")
         self.assertEqual(got[0]["verify"], "make t")
 
+    def test_a_bare_line_wins_over_a_prose_bullet_of_the_same_key(self):
+        for order in ("bare-first", "bullet-first"):
+            bare = "      verify: make t\n      files: a.ts\n"
+            bul = "  - Verify: run it by hand\n  - Files: also touch the linter\n"
+            body = bare + bul if order == "bare-first" else bul + bare
+            got = parse_tasks("## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n" + body)
+            with self.subTest(order=order):
+                self.assertEqual(got[0]["verify"], "make t")
+                self.assertEqual(got[0]["files"], ["a.ts"])
+
+    def test_a_lowercase_bullet_does_not_override_a_bare_line(self):
+        got = parse_tasks("## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n      verify: make t\n  - verify: other\n")
+        self.assertEqual(got[0]["verify"], "make t")
+
     def test_annotation_refusal_matches_the_reserved_new_marker_exactly(self):
         for entry, want_bad, why in FILES_ANNOTATION_CASES:
             with self.subTest(entry=entry):
