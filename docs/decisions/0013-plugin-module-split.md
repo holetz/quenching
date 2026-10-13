@@ -304,3 +304,123 @@ for path_entry in os.environ.get("PATH", "").split(os.pathsep):
 
 if __name__=='__main__':main()
 ```
+
+
+## Matrix
+
+The completed measurements are preserved below; task 2.2 is not complete. A `not proved` cell
+is a failed acceptance gate for decision-making, not an observed behavioral regression. No
+inconclusive check is promoted to pass. Repository verification is a separate repository-wide
+check of the durable ADR and unchanged product; it is not the native prototype surface proof.
+
+| Form | Arrangement | Authored cost axis | Binary axis | Install payload / visible commands | Citation axis | Routing axis | Functional surface gate | Overall |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| A | specs | pass: 3226 chars | pass: 1 cq | 2,869,338 bytes / 22 commands | pass: 145 citation reads | not required by D4 | not run on subsets | subset process assertions pass |
+| A | specs-align | pass: 7539 chars | pass: 1 cq | 4,239,597 bytes / 44 commands | pass: 338 citation reads | not required by D4 | not run on subsets | subset process assertions pass |
+| A | minus-design | pass: 7539 chars | pass: 1 cq | 8,386,867 bytes / 55 commands | pass: 661 citation reads | not required by D4 | not run on subsets | subset process assertions pass |
+| A | all | pass: 7539 chars | pass: 1 cq | 9,301,297 bytes / 58 commands | pass: 724 citation reads | pass: 39/39 | inconclusive: 2 pass, 6 unmeasured | not proved |
+| B | specs | not built | not measured | not measured | fail: native dependency does not supply the cited own-root file | not run | not run | not proved |
+| B | specs-align | not built | not measured | not measured | fail: native dependency does not supply the cited own-root file | not run | not run | not proved |
+| B | minus-design | not built | not measured | not measured | fail: native dependency does not supply the cited own-root file | not run | not run | not proved |
+| B | all | not built | not measured | not measured | fail: native dependency does not supply the cited own-root file | not run | not run | not proved |
+| C | specs | pass: 3094 chars | pass: 1 cq | 3,417,816 bytes / 22 commands | pass: 157 citation reads | not required by D4 | not run on subsets | subset process assertions pass |
+| C | specs-align | pass: 7257 chars | pass: 1 cq | 3,632,411 bytes / 44 commands | pass: 282 citation reads | not required by D4 | not run on subsets | subset process assertions pass |
+| C | minus-design | pass: 7257 chars | pass: 1 cq | 3,694,013 bytes / 55 commands | pass: 325 citation reads | not required by D4 | not run on subsets | subset process assertions pass |
+| C | all | pass: 7257 chars | pass: 1 cq | 3,706,715 bytes / 58 commands | pass: 332 citation reads | pass: 39/39 | pass: 8/8; exit 0 | pass against baseline |
+
+The native resident description axis is measured from initial native `skill_listing` attachments:
+C/baseline all = 31 descriptions and 6,402 characters; A/all = 31 and 6,654. The 252-character
+increase is **3.9362699%**, below the relative limit 6,402 × 1.05 = 6,722.1. A also passes the
+independent approved authored ceiling: 7,539 ≤ 7,624. These are two different measures, both
+passing; neither is substituted for the other.
+
+For subsets, intersecting the native all-loaded listing with each fresh session's observed
+registry projects A/specs to 12 descriptions / 2,540 characters, and C/specs to 12 / 2,438;
+all other arrangements retain 31 descriptions and their all-loaded character totals. Those
+subset figures are projections from the observed listing and registry, not fresh subset
+`skill_listing` snapshots; the authored subset counts are directly measured.
+
+Static cells are produced by the embedded generator. Process cells come from seven fresh
+arrangement sessions. Each executed this Python check through Bash, with `roots` set to that
+arrangement's absolute plugin roots. It asserts on process exit codes and actual file reads:
+
+```python
+import pathlib, os, re, subprocess, json
+# roots = [absolute paths of the enabled prototype plugins]
+paths = [str(pathlib.Path(p) / "cq") for p in os.environ["PATH"].split(os.pathsep)
+         if (pathlib.Path(p) / "cq").is_file()]
+assert len(set(paths)) == 1, paths
+calls = {}
+for argv in [["cq", "--version"], ["cq", "components", "--help"], ["cq", "specs", "--help"]]:
+    result = subprocess.run(argv, capture_output=True, text=True)
+    calls[" ".join(argv)] = result.returncode
+    assert result.returncode == 0, (argv, result.stderr)
+references = 0
+for root in map(pathlib.Path, roots):
+    for folder in ["commands", "agents", "assets/references"]:
+        for path in (root / folder).rglob("*.md"):
+            for target in re.findall(r"\$\{CLAUDE_PLUGIN_ROOT\}/(assets/references/[a-zA-Z0-9_./-]+\.md)",
+                                     path.read_text()):
+                assert (root / target).read_bytes(), (path, target)
+                references += 1
+print(json.dumps({"cq_matches": paths, "calls": calls, "citations_read": references}))
+```
+
+The single binary in A is the specs module's shim, returning version `6.4.0`. All tested
+`--help` calls exit 0. Local comparison of all 448 source files to C/all confirms byte equality
+(excluding generated `__pycache__`), so baseline observations supply its all-loaded row.
+All thirteen A routing/load probes pass their three repetitions, with expected ids transformed
+by the generator's namespace map. The optional-front Bash assertions match the same verbs as
+baseline. There are no observed routing regressions under the spec's baseline-three-pass rule.
+
+The A functional harness is a disposable copy of the original harness. Changes are limited to
+its plugin-directory root, equivalent renamed expected ids, and retained captures; assertions,
+prompts, turn limits, and anchoring are preserved. Its recorded return code is **0**, but its
+output is **2 passed, 0 failed, 6 inconclusive**. The knowledge reference checks observed their
+reads; ops, proof, and the root conductor produced no tool evidence after the account rate limit.
+The terminal rate refusal also reached the knowledge session after its initial valid read.
+This partly measured return code is not a green functional gate.
+
+| Benefit comparison against C | Measured result | What it establishes |
+| --- | --- | --- |
+| A, specs only | 2,869,338 vs 3,417,816 bytes: 548,478 fewer, or 16.0476164% | Actual code/reference absence yields an installation benefit the front-hiding C prototype does not supply |
+| A, all modules | 9,301,297 vs 3,706,715 bytes | Generated support duplication is substantial; the prototype does not claim an all-loaded size benefit |
+| A, everything except design | 8,386,867 vs 3,694,013 bytes | Removing design saves 914,430 bytes from A's own full install, but A is still larger than C in this arrangement |
+| B, pure native dependencies | Citation axis failed before prototype generation | No measured installation benefit; a future locator is unproved |
+| C | Same exposed fronts with one plugin; assets and code remain installed | It supplies visibility control, preserving names and avoiding duplicated payload |
+
+## Verdict
+
+**Needs human / pending; neither go nor no-go is earned.** A has a measured installation benefit,
+passes both description-cost measures, and has no observed routing, binary, or citation
+regression. The missing functional observations prevent the required parity proof. The
+missing observations are account capacity, not evidence that A's implementation fails.
+The B disposition does not make a locator-based variant impossible.
+
+Keep 1634, 1635 and the deployment shape of 1637 held. Do not abandon extraction members on
+this partial record, propagate a split/no-split verdict into epic 1627, or mark spec 1628 done.
+The four on-disk Open Decisions and tasks 3.1/3.2 remain open. Working choices of nested names,
+specs as the sole cq owner, alignment as root-align owner, and specs as handoff owner remain
+prototype choices until the full gate and decision are settled. A go would still have to state
+the installed-target migration and update obligations of plugin-layout, command-surface,
+versioning-release, and the Codex translator; no shipping rule is changed here.
+
+### Capacity and evidence retention
+
+The spike made **103 fresh CLI sessions**, below its limit of **120 sessions**. Aggregate measured
+list-price cost from deduplicated native result/cost-state records is **US$22.4056688**; this is
+not a charge or a currency conversion. All measured result model keys are `claude-opus-5-5`.
+Five terminal records contain the account-limit response: the four A functional sessions and
+the debug attempt; the latter and three completely blocked functional sessions cost zero.
+The native response says `You've hit your session limit · resets 7:10pm (America/Sao_Paulo)`;
+the API error is HTTP 429. No retry-after interval was observed, and no further Claude calls
+were started after that condition was identified.
+
+Retained evidence lives under `.quenching/spike-1628/`: `captures/*.jsonl`, native transcripts
+under disposable configs, `runtime-listings.json`, `static-matrix.json`, partition JSON files,
+the original and retained functional logs, `functional-A/*.jsonl`, the repository gate logs,
+and `totals.json`. The original functional harness deletes its temporary boxes; its four
+persistent native transcripts retain their observations and cost-state records. No raw
+credential or full transcript is versioned; the durable tables record the pertinent observations.
+Resume the missing functional checks after capacity is available, preserving the same source,
+model and fixture; retain the 17-session headroom instead of blindly repeating the whole matrix.
