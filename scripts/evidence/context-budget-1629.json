@@ -4,7 +4,11 @@
     "unparsed-record": 88
   },
   "arm": "transcript-jsonl",
-  "budgets": null,
+  "budgets": {
+    "conductor": 150000,
+    "main": 200000,
+    "worker": 100000
+  },
   "capturedBaseline": {
     "date": "2026-10-13",
     "files": 1383,
@@ -5147,8 +5151,18 @@
       "window": 506593
     }
   ],
+  "policyDecision": {
+    "conductor": "150000 rounds above observed p90 127383; 3/49 historical conductors exceed it.",
+    "fieldValidation": "After S3-S6, repeat topology/role/model accounting; verify stops at existing boundaries, quantify overshoot and test the target.",
+    "limitations": "Worker and main workload/model mixes differ. Resume preparation is four opus-only worker pairs. Main/conductor restart cost is unmeasured; unknown attribution and 88 parse failures limit command-level coverage.",
+    "main": "200000 isolates 14/58 sessions carrying 85.954879% of main exposure, with less fragmentation than 150000 (23/58).",
+    "status": "selected engineering policy; not automatically inferred measured limits",
+    "target": "At most 4.33% main exposure from sessions above 200000, rounding upward the observed worker reference share 4.324947%.",
+    "targetStatus": "project hypothesis / role-reference objective; not a causal savings prediction or an enforcement result",
+    "worker": "100000 rounds above observed p90 97126 and exceeds the largest observed resumption preparation window 33159 threefold."
+  },
   "quantiles": "median; p90/p95 nearest rank",
-  "reductionTarget": null,
+  "reductionTarget": 0.0433,
   "restartCost": {
     "causalSavings": "not-measured; this is observed preparation, not a warm-versus-cold treatment comparison",
     "kind": "observed-resumption-preparation",
