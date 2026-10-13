@@ -134,3 +134,33 @@ for path in Path(".quenching/spike-1628").rglob("*.jsonl"):
                 if (m := re.match(r"- (quenching[\w:-]+): (.*)", text))]
         print(path, len(rows), sum(len(description) for _, description in rows))
 ```
+
+
+## Host facts
+
+All facts below are observed on Claude Code 2.1.296. Minimal plugins, their markers, their
+marketplace, and their configuration are below `.quenching/spike-1628/facts/` and `config/`.
+
+| Fact | Command / captured process observation | Result | Consequence for the tested forms |
+| --- | --- | --- | --- |
+| Dependency declaration and auto-install | Consumer manifest `{"name":"quenching-consumer","version":"0.0.1","dependencies":["quenching-base"]}`; `claude plugin marketplace add "$SPIKE/facts"`; `claude plugin install quenching-consumer@spike-1628` | `Successfully installed … (+ 1 dependency: quenching-base)`; `claude plugin list --json` shows both enabled at user scope | The host genuinely supports installation dependencies; absence of this capability does not kill B |
+| Auto-dependency pruning | `claude plugin uninstall quenching-consumer@spike-1628`; `claude plugin prune`; then `claude plugin prune -y` | First identifies one orphan and asks for `-y` outside a TTY; confirmed invocation prints `Removed 1 auto-installed plugin: quenching-base` | Dependencies have a reversible lifecycle within the throwaway config |
+| Duplicate binary order | Fresh session with `--plugin-dir facts/quenching-specs --plugin-dir facts/quenching-base`; observed Bash `type -a cq; printf "PATH=%s\n" "$PATH"; cq` | Two entries, specs first, base second; running `cq` prints `quenching-specs` | A survives only by shipping one PATH shim; copying a shim into every module fails the binary invariant |
+| Cross-plugin reference expansion | Consumer body tells Read to open the base's absolute `shared.md`; that file cites `${CLAUDE_PLUGIN_ROOT}/marker.txt`; captured Read and Bash inspect it and both real marker files | Placeholder remains literal in the Read result; shell `CLAUDE_PLUGIN_ROOT` is empty; both marker contents exist, with no automatically resolved citation root | Dependencies do not export another plugin's root or substitute text returned by Read. Pure B cannot preserve own-root citations to files shipped only in its base |
+| Flat and nested command ids | Native `system.init.slash_commands`; direct `/quenching-specs:specs:develop` reads the specs marker | Both `quenching-specs:develop` and `quenching-specs:specs:develop` are registered; the nested body reads the intended absolute marker | Both naming forms are supported; a rename is a cost, not a veto |
+| Agent id across plugins | Fresh session with specs and consumer; captured Agent input `subagent_type=quenching-specs:root-probe` | Agent reads the specs plugin's absolute marker and returns `SPECS_ROOT_MARKER` | Cross-plugin agents are addressed by their owner's plugin namespace |
+
+The nested/flat ids and agent-id tests are separate halves of the fifth host question; the
+extra pruning row is part of the dependency question, not an additional requirement.
+
+**Disposition of B:** the pure host-dependency form is rejected for the existing citation layout.
+The dependent's `${CLAUDE_PLUGIN_ROOT}/assets/references/...` points at the dependent, not the base;
+putting the reference only in the base leaves that path missing. The measured cross-plugin Read
+also receives an unexpanded placeholder, so it provides no native bridge. A new root locator,
+rewritten read prologue, or resource export could make a different B work; none was proved here.
+This is a limit of the tested form, not a claim that shared-base plugins are impossible in general.
+Copying those resources into dependents instead is the A form tested below.
+
+A and C survive these host facts. Installed targets and their real plugin state remain untouched.
+The dependency marketplace's source must start with `./`; the initial `../` fixture was rejected
+before installation, then replaced with a marketplace at the common parent and `./<plugin>` sources.
