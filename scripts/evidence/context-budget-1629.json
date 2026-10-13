@@ -1,0 +1,5243 @@
+{
+  "anomalies": {
+    "se-attribution-unclosed": 11,
+    "unparsed-record": 88
+  },
+  "arm": "transcript-jsonl",
+  "budgets": null,
+  "capturedBaseline": {
+    "date": "2026-10-13",
+    "files": 1383,
+    "main": 57,
+    "mainExposureApprox": 599000000,
+    "mainShareAbove200kApprox": 0.86,
+    "subagents": 1326
+  },
+  "corpus": "~/.claude/projects/*uench*/**/*.jsonl",
+  "corpusReconciliation": {
+    "note": "Captured baseline has no inventory checksum; additions cannot be identified exactly from aggregate totals.",
+    "rawFilesMinusCaptured": 4,
+    "usageBearingFilesMinusCaptured": 2
+  },
+  "files": 1387,
+  "filesWithRequests": 1385,
+  "filesWithoutRequests": 2,
+  "groups": [
+    {
+      "attribution": {
+        "pointer-closed": 20,
+        "unknown": 239
+      },
+      "dimension": "agentType",
+      "firstObservedFreshInput": {
+        "max": 19398,
+        "median": 17059.5,
+        "n": 8,
+        "p90": 19398,
+        "p95": 19398
+      },
+      "firstObservedWindow": {
+        "max": 19668,
+        "median": 19374.0,
+        "n": 8,
+        "p90": 19668,
+        "p95": 19668
+      },
+      "model": "all-token-exposure",
+      "name": "Explore",
+      "observedExecutorIterationPeak": {
+        "max": 151039,
+        "median": 86574.0,
+        "n": 8,
+        "p90": 151039,
+        "p95": 151039
+      },
+      "peak": {
+        "max": 151039,
+        "median": 86936.5,
+        "n": 8,
+        "p90": 151039,
+        "p95": 151039
+      },
+      "requests": 259,
+      "requestsWithIterationBreakdown": 254,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 8,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 14902234,
+          "exposureShareAbove": 0.720731549898172,
+          "samplesAbove": 3,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 5048006,
+          "exposureShareAbove": 0.2441417299094399,
+          "samplesAbove": 1,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 20676539
+    },
+    {
+      "attribution": {
+        "unknown": 4
+      },
+      "dimension": "agentType",
+      "firstObservedFreshInput": {
+        "max": 40251,
+        "median": 40251,
+        "n": 1,
+        "p90": 40251,
+        "p95": 40251
+      },
+      "firstObservedWindow": {
+        "max": 40251,
+        "median": 40251,
+        "n": 1,
+        "p90": 40251,
+        "p95": 40251
+      },
+      "model": "all-token-exposure",
+      "name": "claude-code-guide",
+      "observedExecutorIterationPeak": {
+        "max": 66584,
+        "median": 66584,
+        "n": 1,
+        "p90": 66584,
+        "p95": 66584
+      },
+      "peak": {
+        "max": 66584,
+        "median": 66584,
+        "n": 1,
+        "p90": 66584,
+        "p95": 66584
+      },
+      "requests": 4,
+      "requestsWithIterationBreakdown": 4,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 198803
+    },
+    {
+      "attribution": {
+        "pointer-closed": 21,
+        "unknown": 2705
+      },
+      "dimension": "agentType",
+      "firstObservedFreshInput": {
+        "max": 40229,
+        "median": 24326.0,
+        "n": 72,
+        "p90": 35130,
+        "p95": 35283
+      },
+      "firstObservedWindow": {
+        "max": 40229,
+        "median": 34450.5,
+        "n": 72,
+        "p90": 35152,
+        "p95": 35283
+      },
+      "model": "all-token-exposure",
+      "name": "general-purpose",
+      "observedExecutorIterationPeak": {
+        "max": 240358,
+        "median": 109115.5,
+        "n": 72,
+        "p90": 183624,
+        "p95": 211499
+      },
+      "peak": {
+        "max": 240358,
+        "median": 109115.5,
+        "n": 72,
+        "p90": 183624,
+        "p95": 211499
+      },
+      "requests": 2726,
+      "requestsWithIterationBreakdown": 2688,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 72,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 228085836,
+          "exposureShareAbove": 0.8560982987392154,
+          "samplesAbove": 38,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 134449354,
+          "exposureShareAbove": 0.5046427487324839,
+          "samplesAbove": 16,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 51639673,
+          "exposureShareAbove": 0.19382455735984147,
+          "samplesAbove": 4,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 266424821
+    },
+    {
+      "attribution": {
+        "pointer-closed": 781,
+        "pointer-upper-bound": 586,
+        "unknown": 1842
+      },
+      "dimension": "agentType",
+      "firstObservedFreshInput": {
+        "max": 29811,
+        "median": 23067.0,
+        "n": 58,
+        "p90": 26909,
+        "p95": 28569
+      },
+      "firstObservedWindow": {
+        "max": 66608,
+        "median": 42719.5,
+        "n": 58,
+        "p90": 54134,
+        "p95": 56825
+      },
+      "model": "all-token-exposure",
+      "name": "not-applicable",
+      "observedExecutorIterationPeak": {
+        "max": 510539,
+        "median": 106752.5,
+        "n": 58,
+        "p90": 292503,
+        "p95": 379757
+      },
+      "peak": {
+        "max": 510539,
+        "median": 106752.5,
+        "n": 58,
+        "p90": 292503,
+        "p95": 379757
+      },
+      "requests": 3209,
+      "requestsWithIterationBreakdown": 3209,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 58,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 597186901,
+          "exposureShareAbove": 0.9919997650111639,
+          "samplesAbove": 30,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 574556291,
+          "exposureShareAbove": 0.9544075811161938,
+          "samplesAbove": 23,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 517451010,
+          "exposureShareAbove": 0.8595487936276577,
+          "samplesAbove": 14,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 602003067
+    },
+    {
+      "attribution": {
+        "unknown": 8
+      },
+      "dimension": "agentType",
+      "firstObservedFreshInput": {
+        "max": 12437,
+        "median": 7814.0,
+        "n": 4,
+        "p90": 12437,
+        "p95": 12437
+      },
+      "firstObservedWindow": {
+        "max": 14007,
+        "median": 8599.0,
+        "n": 4,
+        "p90": 14007,
+        "p95": 14007
+      },
+      "model": "all-token-exposure",
+      "name": "probe",
+      "observedExecutorIterationPeak": {
+        "max": 15938,
+        "median": 9505.5,
+        "n": 4,
+        "p90": 15938,
+        "p95": 15938
+      },
+      "peak": {
+        "max": 15938,
+        "median": 9505.5,
+        "n": 4,
+        "p90": 15938,
+        "p95": 15938
+      },
+      "requests": 8,
+      "requestsWithIterationBreakdown": 8,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 4,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 95353
+    },
+    {
+      "attribution": {
+        "unknown": 1
+      },
+      "dimension": "agentType",
+      "firstObservedFreshInput": {
+        "max": 2299,
+        "median": 2299,
+        "n": 1,
+        "p90": 2299,
+        "p95": 2299
+      },
+      "firstObservedWindow": {
+        "max": 2299,
+        "median": 2299,
+        "n": 1,
+        "p90": 2299,
+        "p95": 2299
+      },
+      "model": "all-token-exposure",
+      "name": "probeplug:rootprobe",
+      "observedExecutorIterationPeak": {
+        "max": 2299,
+        "median": 2299,
+        "n": 1,
+        "p90": 2299,
+        "p95": 2299
+      },
+      "peak": {
+        "max": 2299,
+        "median": 2299,
+        "n": 1,
+        "p90": 2299,
+        "p95": 2299
+      },
+      "requests": 1,
+      "requestsWithIterationBreakdown": 1,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 2299
+    },
+    {
+      "attribution": {
+        "pointer-closed": 5,
+        "unknown": 2114
+      },
+      "dimension": "agentType",
+      "firstObservedFreshInput": {
+        "max": 19389,
+        "median": 8201,
+        "n": 505,
+        "p90": 14761,
+        "p95": 17527
+      },
+      "firstObservedWindow": {
+        "max": 19424,
+        "median": 8499,
+        "n": 505,
+        "p90": 18153,
+        "p95": 19337
+      },
+      "model": "all-token-exposure",
+      "name": "quenching:git-steward",
+      "observedExecutorIterationPeak": {
+        "max": 35178,
+        "median": 18061,
+        "n": 505,
+        "p90": 21981,
+        "p95": 25066
+      },
+      "peak": {
+        "max": 35178,
+        "median": 18061,
+        "n": 505,
+        "p90": 21981,
+        "p95": 25066
+      },
+      "requests": 2119,
+      "requestsWithIterationBreakdown": 2105,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 505,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 32886128
+    },
+    {
+      "attribution": {
+        "pointer-closed": 20,
+        "unknown": 2316
+      },
+      "dimension": "agentType",
+      "firstObservedFreshInput": {
+        "max": 11451,
+        "median": 10593,
+        "n": 49,
+        "p90": 11274,
+        "p95": 11353
+      },
+      "firstObservedWindow": {
+        "max": 11451,
+        "median": 10652,
+        "n": 49,
+        "p90": 11274,
+        "p95": 11353
+      },
+      "model": "all-token-exposure",
+      "name": "quenching:orchestrator",
+      "observedExecutorIterationPeak": {
+        "max": 180379,
+        "median": 46959,
+        "n": 49,
+        "p90": 127383,
+        "p95": 155793
+      },
+      "peak": {
+        "max": 180379,
+        "median": 46959,
+        "n": 49,
+        "p90": 127383,
+        "p95": 155793
+      },
+      "requests": 2336,
+      "requestsWithIterationBreakdown": 2324,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 49,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 72459319,
+          "exposureShareAbove": 0.5947486418902855,
+          "samplesAbove": 8,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 38681187,
+          "exposureShareAbove": 0.31749654499173763,
+          "samplesAbove": 3,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 121831836
+    },
+    {
+      "attribution": {
+        "pointer-closed": 98,
+        "unknown": 138
+      },
+      "dimension": "agentType",
+      "firstObservedFreshInput": {
+        "max": 6940,
+        "median": 3961.0,
+        "n": 30,
+        "p90": 6746,
+        "p95": 6762
+      },
+      "firstObservedWindow": {
+        "max": 6940,
+        "median": 6496.5,
+        "n": 30,
+        "p90": 6746,
+        "p95": 6762
+      },
+      "model": "all-token-exposure",
+      "name": "quenching:scout",
+      "observedExecutorIterationPeak": {
+        "max": 94359,
+        "median": 20201.0,
+        "n": 30,
+        "p90": 42624,
+        "p95": 59348
+      },
+      "peak": {
+        "max": 94359,
+        "median": 20201.0,
+        "n": 30,
+        "p90": 42624,
+        "p95": 59348
+      },
+      "requests": 236,
+      "requestsWithIterationBreakdown": 235,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 30,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 4888194
+    },
+    {
+      "attribution": {
+        "unknown": 431
+      },
+      "dimension": "agentType",
+      "firstObservedFreshInput": {
+        "max": 7155,
+        "median": 6904.0,
+        "n": 32,
+        "p90": 6993,
+        "p95": 7043
+      },
+      "firstObservedWindow": {
+        "max": 7155,
+        "median": 6904.0,
+        "n": 32,
+        "p90": 6993,
+        "p95": 7043
+      },
+      "model": "all-token-exposure",
+      "name": "quenching:spec-architect",
+      "observedExecutorIterationPeak": {
+        "max": 66393,
+        "median": 17997.0,
+        "n": 32,
+        "p90": 43206,
+        "p95": 51292
+      },
+      "peak": {
+        "max": 66393,
+        "median": 17997.0,
+        "n": 32,
+        "p90": 43206,
+        "p95": 51292
+      },
+      "requests": 431,
+      "requestsWithIterationBreakdown": 431,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 32,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 9167114
+    },
+    {
+      "attribution": {
+        "pointer-closed": 167,
+        "unknown": 7015
+      },
+      "dimension": "agentType",
+      "firstObservedFreshInput": {
+        "max": 20215,
+        "median": 14661.5,
+        "n": 364,
+        "p90": 19504,
+        "p95": 19863
+      },
+      "firstObservedWindow": {
+        "max": 20215,
+        "median": 19449.5,
+        "n": 364,
+        "p90": 19962,
+        "p95": 20010
+      },
+      "model": "all-token-exposure",
+      "name": "quenching:spec-runner",
+      "observedExecutorIterationPeak": {
+        "max": 244482,
+        "median": 63721.5,
+        "n": 364,
+        "p90": 97126,
+        "p95": 109006
+      },
+      "peak": {
+        "max": 244482,
+        "median": 63721.5,
+        "n": 364,
+        "p90": 97126,
+        "p95": 109006
+      },
+      "requests": 7182,
+      "requestsWithIterationBreakdown": 7121,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 364,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 133744919,
+          "exposureShareAbove": 0.3210112779446433,
+          "samplesAbove": 32,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 25863592,
+          "exposureShareAbove": 0.06207715988193057,
+          "samplesAbove": 2,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 18019295,
+          "exposureShareAbove": 0.04324947040127574,
+          "samplesAbove": 1,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 416636200
+    },
+    {
+      "attribution": {
+        "pointer-closed": 5,
+        "unknown": 940
+      },
+      "dimension": "agentType",
+      "firstObservedFreshInput": {
+        "max": 9489,
+        "median": 3742,
+        "n": 261,
+        "p90": 8658,
+        "p95": 9185
+      },
+      "firstObservedWindow": {
+        "max": 9489,
+        "median": 7375,
+        "n": 261,
+        "p90": 9173,
+        "p95": 9264
+      },
+      "model": "all-token-exposure",
+      "name": "quenching:verifier",
+      "observedExecutorIterationPeak": {
+        "max": 21144,
+        "median": 12546,
+        "n": 261,
+        "p90": 16674,
+        "p95": 18261
+      },
+      "peak": {
+        "max": 21144,
+        "median": 12561,
+        "n": 261,
+        "p90": 16674,
+        "p95": 18261
+      },
+      "requests": 945,
+      "requestsWithIterationBreakdown": 934,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 261,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 10584615
+    },
+    {
+      "attribution": {
+        "pointer-closed": 2
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 467,
+        "median": 407.5,
+        "n": 2,
+        "p90": 467,
+        "p95": 467
+      },
+      "firstObservedWindow": {
+        "max": 15472,
+        "median": 15412.5,
+        "n": 2,
+        "p90": 15472,
+        "p95": 15472
+      },
+      "model": "claude-sonnet-5-5",
+      "name": "alpha",
+      "observedExecutorIterationPeak": {
+        "max": 15472,
+        "median": 15412.5,
+        "n": 2,
+        "p90": 15472,
+        "p95": 15472
+      },
+      "peak": {
+        "max": 15472,
+        "median": 15412.5,
+        "n": 2,
+        "p90": 15472,
+        "p95": 15472
+      },
+      "requests": 2,
+      "requestsWithIterationBreakdown": 2,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 2,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 30825
+    },
+    {
+      "attribution": {
+        "pointer-closed": 5
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 3955,
+        "median": 3955,
+        "n": 1,
+        "p90": 3955,
+        "p95": 3955
+      },
+      "firstObservedWindow": {
+        "max": 43618,
+        "median": 43618,
+        "n": 1,
+        "p90": 43618,
+        "p95": 43618
+      },
+      "model": "claude-opus-5-5",
+      "name": "plugin-authoring",
+      "observedExecutorIterationPeak": {
+        "max": 68690,
+        "median": 68690,
+        "n": 1,
+        "p90": 68690,
+        "p95": 68690
+      },
+      "peak": {
+        "max": 68690,
+        "median": 68690,
+        "n": 1,
+        "p90": 68690,
+        "p95": 68690
+      },
+      "requests": 5,
+      "requestsWithIterationBreakdown": 5,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 290333
+    },
+    {
+      "attribution": {
+        "pointer-closed": 3
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 196,
+        "median": 196,
+        "n": 1,
+        "p90": 196,
+        "p95": 196
+      },
+      "firstObservedWindow": {
+        "max": 16346,
+        "median": 16346,
+        "n": 1,
+        "p90": 16346,
+        "p95": 16346
+      },
+      "model": "claude-opus-5-5",
+      "name": "probe:py",
+      "observedExecutorIterationPeak": {
+        "max": 16854,
+        "median": 16854,
+        "n": 1,
+        "p90": 16854,
+        "p95": 16854
+      },
+      "peak": {
+        "max": 16854,
+        "median": 16854,
+        "n": 1,
+        "p90": 16854,
+        "p95": 16854
+      },
+      "requests": 3,
+      "requestsWithIterationBreakdown": 3,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 49817
+    },
+    {
+      "attribution": {
+        "pointer-closed": 2
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 116,
+        "median": 116,
+        "n": 1,
+        "p90": 116,
+        "p95": 116
+      },
+      "firstObservedWindow": {
+        "max": 16162,
+        "median": 16162,
+        "n": 1,
+        "p90": 16162,
+        "p95": 16162
+      },
+      "model": "claude-opus-5-5",
+      "name": "probe:py2",
+      "observedExecutorIterationPeak": {
+        "max": 16315,
+        "median": 16315,
+        "n": 1,
+        "p90": 16315,
+        "p95": 16315
+      },
+      "peak": {
+        "max": 16315,
+        "median": 16315,
+        "n": 1,
+        "p90": 16315,
+        "p95": 16315
+      },
+      "requests": 2,
+      "requestsWithIterationBreakdown": 2,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 32477
+    },
+    {
+      "attribution": {
+        "pointer-closed": 2
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 186,
+        "median": 186,
+        "n": 1,
+        "p90": 186,
+        "p95": 186
+      },
+      "firstObservedWindow": {
+        "max": 16194,
+        "median": 16194,
+        "n": 1,
+        "p90": 16194,
+        "p95": 16194
+      },
+      "model": "claude-opus-5-5",
+      "name": "probe:py3",
+      "observedExecutorIterationPeak": {
+        "max": 16462,
+        "median": 16462,
+        "n": 1,
+        "p90": 16462,
+        "p95": 16462
+      },
+      "peak": {
+        "max": 16462,
+        "median": 16462,
+        "n": 1,
+        "p90": 16462,
+        "p95": 16462
+      },
+      "requests": 2,
+      "requestsWithIterationBreakdown": 2,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 32656
+    },
+    {
+      "attribution": {
+        "pointer-closed": 1
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 869,
+        "median": 869,
+        "n": 1,
+        "p90": 869,
+        "p95": 869
+      },
+      "firstObservedWindow": {
+        "max": 15890,
+        "median": 15890,
+        "n": 1,
+        "p90": 15890,
+        "p95": 15890
+      },
+      "model": "claude-opus-4-8",
+      "name": "probe:wide",
+      "observedExecutorIterationPeak": {
+        "max": 15890,
+        "median": 15890,
+        "n": 1,
+        "p90": 15890,
+        "p95": 15890
+      },
+      "peak": {
+        "max": 15890,
+        "median": 15890,
+        "n": 1,
+        "p90": 15890,
+        "p95": 15890
+      },
+      "requests": 1,
+      "requestsWithIterationBreakdown": 1,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 15890
+    },
+    {
+      "attribution": {
+        "pointer-closed": 2
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 202,
+        "median": 202,
+        "n": 1,
+        "p90": 202,
+        "p95": 202
+      },
+      "firstObservedWindow": {
+        "max": 16353,
+        "median": 16353,
+        "n": 1,
+        "p90": 16353,
+        "p95": 16353
+      },
+      "model": "claude-opus-5-5",
+      "name": "probe:wide",
+      "observedExecutorIterationPeak": {
+        "max": 16639,
+        "median": 16639,
+        "n": 1,
+        "p90": 16639,
+        "p95": 16639
+      },
+      "peak": {
+        "max": 16639,
+        "median": 16639,
+        "n": 1,
+        "p90": 16639,
+        "p95": 16639
+      },
+      "requests": 2,
+      "requestsWithIterationBreakdown": 2,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 32992
+    },
+    {
+      "attribution": {
+        "pointer-closed": 9
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 8567,
+        "median": 6881,
+        "n": 3,
+        "p90": 8567,
+        "p95": 8567
+      },
+      "firstObservedWindow": {
+        "max": 18837,
+        "median": 18837,
+        "n": 3,
+        "p90": 18837,
+        "p95": 18837
+      },
+      "model": "claude-sonnet-5-5",
+      "name": "quenching-specs-reader:read",
+      "observedExecutorIterationPeak": {
+        "max": 21044,
+        "median": 20394,
+        "n": 3,
+        "p90": 21044,
+        "p95": 21044
+      },
+      "peak": {
+        "max": 21044,
+        "median": 20394,
+        "n": 3,
+        "p90": 21044,
+        "p95": 21044
+      },
+      "requests": 9,
+      "requestsWithIterationBreakdown": 9,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 3,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 174434
+    },
+    {
+      "attribution": {
+        "pointer-closed": 18
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 23069,
+        "median": 23069,
+        "n": 3,
+        "p90": 23069,
+        "p95": 23069
+      },
+      "firstObservedWindow": {
+        "max": 33430,
+        "median": 33430,
+        "n": 3,
+        "p90": 33430,
+        "p95": 33430
+      },
+      "model": "claude-opus-5-5",
+      "name": "quenching:align",
+      "observedExecutorIterationPeak": {
+        "max": 45534,
+        "median": 42553,
+        "n": 3,
+        "p90": 45534,
+        "p95": 45534
+      },
+      "peak": {
+        "max": 45534,
+        "median": 42553,
+        "n": 3,
+        "p90": 45534,
+        "p95": 45534
+      },
+      "requests": 18,
+      "requestsWithIterationBreakdown": 18,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 3,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 687011
+    },
+    {
+      "attribution": {
+        "pointer-upper-bound": 5
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 3511,
+        "median": 3511,
+        "n": 1,
+        "p90": 3511,
+        "p95": 3511
+      },
+      "firstObservedWindow": {
+        "max": 198291,
+        "median": 198291,
+        "n": 1,
+        "p90": 198291,
+        "p95": 198291
+      },
+      "model": "claude-opus-5-5",
+      "name": "quenching:git:pr:create",
+      "observedExecutorIterationPeak": {
+        "max": 200964,
+        "median": 200964,
+        "n": 1,
+        "p90": 200964,
+        "p95": 200964
+      },
+      "peak": {
+        "max": 200964,
+        "median": 200964,
+        "n": 1,
+        "p90": 200964,
+        "p95": 200964
+      },
+      "requests": 5,
+      "requestsWithIterationBreakdown": 5,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 998988,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 1,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 998988,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 1,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 998988,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 1,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 998988
+    },
+    {
+      "attribution": {
+        "pointer-upper-bound": 4
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 958,
+        "median": 958,
+        "n": 1,
+        "p90": 958,
+        "p95": 958
+      },
+      "firstObservedWindow": {
+        "max": 138021,
+        "median": 138021,
+        "n": 1,
+        "p90": 138021,
+        "p95": 138021
+      },
+      "model": "claude-opus-5-5",
+      "name": "quenching:handoff",
+      "observedExecutorIterationPeak": {
+        "max": 144017,
+        "median": 144017,
+        "n": 1,
+        "p90": 144017,
+        "p95": 144017
+      },
+      "peak": {
+        "max": 144017,
+        "median": 144017,
+        "n": 1,
+        "p90": 144017,
+        "p95": 144017
+      },
+      "requests": 4,
+      "requestsWithIterationBreakdown": 4,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 560503,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 1,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 560503
+    },
+    {
+      "attribution": {
+        "pointer-upper-bound": 1
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 12016,
+        "median": 12016,
+        "n": 1,
+        "p90": 12016,
+        "p95": 12016
+      },
+      "firstObservedWindow": {
+        "max": 57548,
+        "median": 57548,
+        "n": 1,
+        "p90": 57548,
+        "p95": 57548
+      },
+      "model": "claude-opus-5-5",
+      "name": "quenching:knowledge:align",
+      "observedExecutorIterationPeak": {
+        "max": 57548,
+        "median": 57548,
+        "n": 1,
+        "p90": 57548,
+        "p95": 57548
+      },
+      "peak": {
+        "max": 57548,
+        "median": 57548,
+        "n": 1,
+        "p90": 57548,
+        "p95": 57548
+      },
+      "requests": 1,
+      "requestsWithIterationBreakdown": 1,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 57548
+    },
+    {
+      "attribution": {
+        "pointer-closed": 39
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 25355,
+        "median": 24436.0,
+        "n": 4,
+        "p90": 25355,
+        "p95": 25355
+      },
+      "firstObservedWindow": {
+        "max": 42927,
+        "median": 33225.5,
+        "n": 4,
+        "p90": 42927,
+        "p95": 42927
+      },
+      "model": "claude-opus-5-5",
+      "name": "quenching:specs:autopilot",
+      "observedExecutorIterationPeak": {
+        "max": 60953,
+        "median": 56192.0,
+        "n": 4,
+        "p90": 60953,
+        "p95": 60953
+      },
+      "peak": {
+        "max": 60953,
+        "median": 56192.0,
+        "n": 4,
+        "p90": 60953,
+        "p95": 60953
+      },
+      "requests": 39,
+      "requestsWithIterationBreakdown": 39,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 4,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 1797918
+    },
+    {
+      "attribution": {
+        "pointer-closed": 16
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 6509,
+        "median": 6484,
+        "n": 3,
+        "p90": 6509,
+        "p95": 6509
+      },
+      "firstObservedWindow": {
+        "max": 6637,
+        "median": 6509,
+        "n": 3,
+        "p90": 6637,
+        "p95": 6637
+      },
+      "model": "claude-sonnet-5-5",
+      "name": "quenching:specs:autopilot",
+      "observedExecutorIterationPeak": {
+        "max": 26653,
+        "median": 21225,
+        "n": 3,
+        "p90": 26653,
+        "p95": 26653
+      },
+      "peak": {
+        "max": 26653,
+        "median": 21225,
+        "n": 3,
+        "p90": 26653,
+        "p95": 26653
+      },
+      "requests": 16,
+      "requestsWithIterationBreakdown": 16,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 3,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 247799
+    },
+    {
+      "attribution": {
+        "pointer-closed": 4
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 404,
+        "median": 404,
+        "n": 1,
+        "p90": 404,
+        "p95": 404
+      },
+      "firstObservedWindow": {
+        "max": 43980,
+        "median": 43980,
+        "n": 1,
+        "p90": 43980,
+        "p95": 43980
+      },
+      "model": "claude-opus-5-5",
+      "name": "quenching:specs:board",
+      "observedExecutorIterationPeak": {
+        "max": 45726,
+        "median": 45726,
+        "n": 1,
+        "p90": 45726,
+        "p95": 45726
+      },
+      "peak": {
+        "max": 45726,
+        "median": 45726,
+        "n": 1,
+        "p90": 45726,
+        "p95": 45726
+      },
+      "requests": 4,
+      "requestsWithIterationBreakdown": 4,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 180301
+    },
+    {
+      "attribution": {
+        "pointer-closed": 223,
+        "pointer-upper-bound": 43
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 28569,
+        "median": 18494.0,
+        "n": 4,
+        "p90": 28569,
+        "p95": 28569
+      },
+      "firstObservedWindow": {
+        "max": 253751,
+        "median": 126892.5,
+        "n": 4,
+        "p90": 253751,
+        "p95": 253751
+      },
+      "model": "claude-opus-5",
+      "name": "quenching:specs:conclude",
+      "observedExecutorIterationPeak": {
+        "max": 342859,
+        "median": 215341.0,
+        "n": 4,
+        "p90": 342859,
+        "p95": 342859
+      },
+      "peak": {
+        "max": 342859,
+        "median": 215341.0,
+        "n": 4,
+        "p90": 342859,
+        "p95": 342859
+      },
+      "requests": 266,
+      "requestsWithIterationBreakdown": 266,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 4,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 48507838,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 4,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 48507838,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 4,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 25556165,
+          "exposureShareAbove": 0.5268460944394182,
+          "samplesAbove": 2,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 48507838
+    },
+    {
+      "attribution": {
+        "pointer-closed": 16
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 8759,
+        "median": 8759,
+        "n": 1,
+        "p90": 8759,
+        "p95": 8759
+      },
+      "firstObservedWindow": {
+        "max": 176941,
+        "median": 176941,
+        "n": 1,
+        "p90": 176941,
+        "p95": 176941
+      },
+      "model": "claude-opus-5-5",
+      "name": "quenching:specs:conclude",
+      "observedExecutorIterationPeak": {
+        "max": 194782,
+        "median": 194782,
+        "n": 1,
+        "p90": 194782,
+        "p95": 194782
+      },
+      "peak": {
+        "max": 194782,
+        "median": 194782,
+        "n": 1,
+        "p90": 194782,
+        "p95": 194782
+      },
+      "requests": 16,
+      "requestsWithIterationBreakdown": 16,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 2975829,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 1,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 2975829,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 1,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 2975829
+    },
+    {
+      "attribution": {
+        "pointer-closed": 54
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 24979,
+        "median": 7105.0,
+        "n": 4,
+        "p90": 24979,
+        "p95": 24979
+      },
+      "firstObservedWindow": {
+        "max": 356566,
+        "median": 114281.0,
+        "n": 4,
+        "p90": 356566,
+        "p95": 356566
+      },
+      "model": "claude-opus-5",
+      "name": "quenching:specs:create",
+      "observedExecutorIterationPeak": {
+        "max": 365084,
+        "median": 136724.5,
+        "n": 4,
+        "p90": 365084,
+        "p95": 365084
+      },
+      "peak": {
+        "max": 365084,
+        "median": 136724.5,
+        "n": 4,
+        "p90": 365084,
+        "p95": 365084
+      },
+      "requests": 54,
+      "requestsWithIterationBreakdown": 54,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 4,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 7839629,
+          "exposureShareAbove": 0.9380737896959205,
+          "samplesAbove": 3,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 6534080,
+          "exposureShareAbove": 0.781854496912586,
+          "samplesAbove": 2,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 2885502,
+          "exposureShareAbove": 0.3452732005959922,
+          "samplesAbove": 1,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 8357156
+    },
+    {
+      "attribution": {
+        "pointer-closed": 7
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 6073,
+        "median": 6073,
+        "n": 1,
+        "p90": 6073,
+        "p95": 6073
+      },
+      "firstObservedWindow": {
+        "max": 73863,
+        "median": 73863,
+        "n": 1,
+        "p90": 73863,
+        "p95": 73863
+      },
+      "model": "claude-opus-5-5",
+      "name": "quenching:specs:create",
+      "observedExecutorIterationPeak": {
+        "max": 81703,
+        "median": 81703,
+        "n": 1,
+        "p90": 81703,
+        "p95": 81703
+      },
+      "peak": {
+        "max": 81703,
+        "median": 81703,
+        "n": 1,
+        "p90": 81703,
+        "p95": 81703
+      },
+      "requests": 7,
+      "requestsWithIterationBreakdown": 7,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 551106
+    },
+    {
+      "attribution": {
+        "pointer-closed": 100
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 24160,
+        "median": 23994,
+        "n": 7,
+        "p90": 24160,
+        "p95": 24160
+      },
+      "firstObservedWindow": {
+        "max": 64428,
+        "median": 52502,
+        "n": 7,
+        "p90": 64428,
+        "p95": 64428
+      },
+      "model": "claude-opus-5",
+      "name": "quenching:specs:develop",
+      "observedExecutorIterationPeak": {
+        "max": 128168,
+        "median": 119014,
+        "n": 7,
+        "p90": 128168,
+        "p95": 128168
+      },
+      "peak": {
+        "max": 128168,
+        "median": 119014,
+        "n": 7,
+        "p90": 128168,
+        "p95": 128168
+      },
+      "requests": 100,
+      "requestsWithIterationBreakdown": 100,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 7,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 7576374,
+          "exposureShareAbove": 0.8346893243812108,
+          "samplesAbove": 5,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 9076879
+    },
+    {
+      "attribution": {
+        "pointer-closed": 34,
+        "pointer-upper-bound": 42
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 19350,
+        "median": 14817.0,
+        "n": 4,
+        "p90": 19350,
+        "p95": 19350
+      },
+      "firstObservedWindow": {
+        "max": 92269,
+        "median": 41966.5,
+        "n": 4,
+        "p90": 92269,
+        "p95": 92269
+      },
+      "model": "claude-opus-5-5",
+      "name": "quenching:specs:develop",
+      "observedExecutorIterationPeak": {
+        "max": 230889,
+        "median": 97401.0,
+        "n": 4,
+        "p90": 230889,
+        "p95": 230889
+      },
+      "peak": {
+        "max": 230889,
+        "median": 97401.0,
+        "n": 4,
+        "p90": 230889,
+        "p95": 230889
+      },
+      "requests": 76,
+      "requestsWithIterationBreakdown": 75,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 4,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 9223672,
+          "exposureShareAbove": 0.9242759222069495,
+          "samplesAbove": 2,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 7781469,
+          "exposureShareAbove": 0.7797571765452836,
+          "samplesAbove": 1,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 7781469,
+          "exposureShareAbove": 0.7797571765452836,
+          "samplesAbove": 1,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 9979349
+    },
+    {
+      "attribution": {
+        "pointer-closed": 71
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 18444,
+        "median": 18106,
+        "n": 3,
+        "p90": 18444,
+        "p95": 18444
+      },
+      "firstObservedWindow": {
+        "max": 18444,
+        "median": 18106,
+        "n": 3,
+        "p90": 18444,
+        "p95": 18444
+      },
+      "model": "claude-sonnet-5-5",
+      "name": "quenching:specs:develop",
+      "observedExecutorIterationPeak": {
+        "max": 93957,
+        "median": 76579,
+        "n": 3,
+        "p90": 93957,
+        "p95": 93957
+      },
+      "peak": {
+        "max": 93957,
+        "median": 76579,
+        "n": 3,
+        "p90": 93957,
+        "p95": 93957
+      },
+      "requests": 71,
+      "requestsWithIterationBreakdown": 71,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 3,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 3945953
+    },
+    {
+      "attribution": {
+        "pointer-closed": 203
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 102709,
+        "median": 25572,
+        "n": 7,
+        "p90": 102709,
+        "p95": 102709
+      },
+      "firstObservedWindow": {
+        "max": 134057,
+        "median": 54028,
+        "n": 7,
+        "p90": 134057,
+        "p95": 134057
+      },
+      "model": "claude-opus-5",
+      "name": "quenching:specs:execute",
+      "observedExecutorIterationPeak": {
+        "max": 292503,
+        "median": 78022,
+        "n": 7,
+        "p90": 292503,
+        "p95": 292503
+      },
+      "peak": {
+        "max": 292503,
+        "median": 78022,
+        "n": 7,
+        "p90": 292503,
+        "p95": 292503
+      },
+      "requests": 203,
+      "requestsWithIterationBreakdown": 203,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 7,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 31374849,
+          "exposureShareAbove": 0.8890224341605235,
+          "samplesAbove": 1,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 31374849,
+          "exposureShareAbove": 0.8890224341605235,
+          "samplesAbove": 1,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 31374849,
+          "exposureShareAbove": 0.8890224341605235,
+          "samplesAbove": 1,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 35291403
+    },
+    {
+      "attribution": {
+        "pointer-closed": 22
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 29811,
+        "median": 29811,
+        "n": 1,
+        "p90": 29811,
+        "p95": 29811
+      },
+      "firstObservedWindow": {
+        "max": 66608,
+        "median": 66608,
+        "n": 1,
+        "p90": 66608,
+        "p95": 66608
+      },
+      "model": "claude-sonnet-5",
+      "name": "quenching:specs:execute",
+      "observedExecutorIterationPeak": {
+        "max": 155829,
+        "median": 155829,
+        "n": 1,
+        "p90": 155829,
+        "p95": 155829
+      },
+      "peak": {
+        "max": 155829,
+        "median": 155829,
+        "n": 1,
+        "p90": 155829,
+        "p95": 155829
+      },
+      "requests": 22,
+      "requestsWithIterationBreakdown": 22,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 2371546,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 1,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 2371546,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 1,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 2371546
+    },
+    {
+      "attribution": {
+        "pointer-closed": 80
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 28957,
+        "median": 23289,
+        "n": 3,
+        "p90": 28957,
+        "p95": 28957
+      },
+      "firstObservedWindow": {
+        "max": 54236,
+        "median": 52096,
+        "n": 3,
+        "p90": 54236,
+        "p95": 54236
+      },
+      "model": "claude-opus-5-5",
+      "name": "quenching:specs:improve",
+      "observedExecutorIterationPeak": {
+        "max": 191459,
+        "median": 75144,
+        "n": 3,
+        "p90": 191459,
+        "p95": 191459
+      },
+      "peak": {
+        "max": 191459,
+        "median": 75144,
+        "n": 3,
+        "p90": 191459,
+        "p95": 191459
+      },
+      "requests": 80,
+      "requestsWithIterationBreakdown": 80,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 3,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 7765775,
+          "exposureShareAbove": 0.9088503003178376,
+          "samplesAbove": 1,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 7765775,
+          "exposureShareAbove": 0.9088503003178376,
+          "samplesAbove": 1,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 8544614
+    },
+    {
+      "attribution": {
+        "pointer-closed": 183
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 18515,
+        "median": 3636.0,
+        "n": 12,
+        "p90": 14256,
+        "p95": 18515
+      },
+      "firstObservedWindow": {
+        "max": 18515,
+        "median": 6221.5,
+        "n": 12,
+        "p90": 18515,
+        "p95": 18515
+      },
+      "model": "claude-sonnet-5-5",
+      "name": "quenching:specs:improve",
+      "observedExecutorIterationPeak": {
+        "max": 105486,
+        "median": 19685.5,
+        "n": 12,
+        "p90": 91972,
+        "p95": 105486
+      },
+      "peak": {
+        "max": 105486,
+        "median": 19685.5,
+        "n": 12,
+        "p90": 91972,
+        "p95": 105486
+      },
+      "requests": 183,
+      "requestsWithIterationBreakdown": 182,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 12,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 2863838,
+          "exposureShareAbove": 0.361191783380631,
+          "samplesAbove": 1,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 7928857
+    },
+    {
+      "attribution": {
+        "pointer-upper-bound": 491
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 4714,
+        "median": 4335.0,
+        "n": 6,
+        "p90": 4714,
+        "p95": 4714
+      },
+      "firstObservedWindow": {
+        "max": 93378,
+        "median": 82114.5,
+        "n": 6,
+        "p90": 93378,
+        "p95": 93378
+      },
+      "model": "claude-opus-5",
+      "name": "quenching:specs:isolate",
+      "observedExecutorIterationPeak": {
+        "max": 265423,
+        "median": 191845.5,
+        "n": 6,
+        "p90": 265423,
+        "p95": 265423
+      },
+      "peak": {
+        "max": 265423,
+        "median": 191845.5,
+        "n": 6,
+        "p90": 265423,
+        "p95": 265423
+      },
+      "requests": 491,
+      "requestsWithIterationBreakdown": 491,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 6,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 74967560,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 6,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 68260564,
+          "exposureShareAbove": 0.9105346899378878,
+          "samplesAbove": 4,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 43257944,
+          "exposureShareAbove": 0.5770221679883939,
+          "samplesAbove": 2,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 74967560
+    },
+    {
+      "attribution": {
+        "pointer-closed": 16
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 21430,
+        "median": 14457.5,
+        "n": 2,
+        "p90": 21430,
+        "p95": 21430
+      },
+      "firstObservedWindow": {
+        "max": 50237,
+        "median": 28861.0,
+        "n": 2,
+        "p90": 50237,
+        "p95": 50237
+      },
+      "model": "claude-opus-5-5",
+      "name": "quenching:specs:orchestrate",
+      "observedExecutorIterationPeak": {
+        "max": 53355,
+        "median": 38382.5,
+        "n": 2,
+        "p90": 53355,
+        "p95": 53355
+      },
+      "peak": {
+        "max": 53355,
+        "median": 38382.5,
+        "n": 2,
+        "p90": 53355,
+        "p95": 53355
+      },
+      "requests": 16,
+      "requestsWithIterationBreakdown": 16,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 2,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 417204
+    },
+    {
+      "attribution": {
+        "pointer-closed": 5
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 17068,
+        "median": 17068,
+        "n": 1,
+        "p90": 17068,
+        "p95": 17068
+      },
+      "firstObservedWindow": {
+        "max": 17068,
+        "median": 17068,
+        "n": 1,
+        "p90": 17068,
+        "p95": 17068
+      },
+      "model": "claude-sonnet-5-5",
+      "name": "quenching:specs:orchestrate",
+      "observedExecutorIterationPeak": {
+        "max": 22212,
+        "median": 22212,
+        "n": 1,
+        "p90": 22212,
+        "p95": 22212
+      },
+      "peak": {
+        "max": 22212,
+        "median": 22212,
+        "n": 1,
+        "p90": 22212,
+        "p95": 22212
+      },
+      "requests": 5,
+      "requestsWithIterationBreakdown": 5,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 99388
+    },
+    {
+      "attribution": {
+        "unknown": 5
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 40251,
+        "median": 24480.0,
+        "n": 2,
+        "p90": 40251,
+        "p95": 40251
+      },
+      "firstObservedWindow": {
+        "max": 40251,
+        "median": 31324.5,
+        "n": 2,
+        "p90": 40251,
+        "p95": 40251
+      },
+      "model": "claude-haiku-4-5-20251001",
+      "name": "unknown",
+      "observedExecutorIterationPeak": {
+        "max": 66584,
+        "median": 44491.0,
+        "n": 2,
+        "p90": 66584,
+        "p95": 66584
+      },
+      "peak": {
+        "max": 66584,
+        "median": 44491.0,
+        "n": 2,
+        "p90": 66584,
+        "p95": 66584
+      },
+      "requests": 5,
+      "requestsWithIterationBreakdown": 5,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 2,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 221201
+    },
+    {
+      "attribution": {
+        "unknown": 6
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 20097,
+        "median": 11644.0,
+        "n": 4,
+        "p90": 20097,
+        "p95": 20097
+      },
+      "firstObservedWindow": {
+        "max": 30971,
+        "median": 17081.0,
+        "n": 4,
+        "p90": 30971,
+        "p95": 30971
+      },
+      "model": "claude-haiku-5-5",
+      "name": "unknown",
+      "observedExecutorIterationPeak": {
+        "max": 31586,
+        "median": 17347.0,
+        "n": 4,
+        "p90": 31586,
+        "p95": 31586
+      },
+      "peak": {
+        "max": 31586,
+        "median": 17347.0,
+        "n": 4,
+        "p90": 31586,
+        "p95": 31586
+      },
+      "requests": 6,
+      "requestsWithIterationBreakdown": 6,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 4,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 130236
+    },
+    {
+      "attribution": {
+        "unknown": 3
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 15019,
+        "median": 14221.0,
+        "n": 2,
+        "p90": 15019,
+        "p95": 15019
+      },
+      "firstObservedWindow": {
+        "max": 15023,
+        "median": 15021.0,
+        "n": 2,
+        "p90": 15023,
+        "p95": 15023
+      },
+      "model": "claude-opus-4-8",
+      "name": "unknown",
+      "observedExecutorIterationPeak": {
+        "max": 16037,
+        "median": 15530.0,
+        "n": 2,
+        "p90": 16037,
+        "p95": 16037
+      },
+      "peak": {
+        "max": 16037,
+        "median": 15530.0,
+        "n": 2,
+        "p90": 16037,
+        "p95": 16037
+      },
+      "requests": 3,
+      "requestsWithIterationBreakdown": 3,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 2,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 46079
+    },
+    {
+      "attribution": {
+        "unknown": 467
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 34236,
+        "median": 1408.5,
+        "n": 16,
+        "p90": 33778,
+        "p95": 34236
+      },
+      "firstObservedWindow": {
+        "max": 214443,
+        "median": 115335.5,
+        "n": 16,
+        "p90": 196767,
+        "p95": 214443
+      },
+      "model": "claude-opus-5",
+      "name": "unknown",
+      "observedExecutorIterationPeak": {
+        "max": 370473,
+        "median": 165204.5,
+        "n": 16,
+        "p90": 266834,
+        "p95": 370473
+      },
+      "peak": {
+        "max": 370473,
+        "median": 165204.5,
+        "n": 16,
+        "p90": 266834,
+        "p95": 370473
+      },
+      "requests": 467,
+      "requestsWithIterationBreakdown": 459,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 16,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 68638157,
+          "exposureShareAbove": 0.9684501673647883,
+          "samplesAbove": 14,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 58018979,
+          "exposureShareAbove": 0.8186188612681448,
+          "samplesAbove": 10,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 38680233,
+          "exposureShareAbove": 0.5457587988931435,
+          "samplesAbove": 4,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 70874227
+    },
+    {
+      "attribution": {
+        "unknown": 7507
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 35561,
+        "median": 14494.5,
+        "n": 206,
+        "p90": 24770,
+        "p95": 34966
+      },
+      "firstObservedWindow": {
+        "max": 193681,
+        "median": 19395.5,
+        "n": 206,
+        "p90": 35165,
+        "p95": 48039
+      },
+      "model": "claude-opus-5-5",
+      "name": "unknown",
+      "observedExecutorIterationPeak": {
+        "max": 510539,
+        "median": 59423.5,
+        "n": 206,
+        "p90": 155793,
+        "p95": 186900
+      },
+      "peak": {
+        "max": 510539,
+        "median": 59423.5,
+        "n": 206,
+        "p90": 155793,
+        "p95": 186900
+      },
+      "requests": 7507,
+      "requestsWithIterationBreakdown": 7477,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 206,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 610735621,
+          "exposureShareAbove": 0.830414248280053,
+          "samplesAbove": 59,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 455784180,
+          "exposureShareAbove": 0.619727528898532,
+          "samplesAbove": 24,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 337888020,
+          "exposureShareAbove": 0.4594246945539394,
+          "samplesAbove": 9,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 735458986
+    },
+    {
+      "attribution": {
+        "unknown": 200
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 241636,
+        "median": 79235.0,
+        "n": 4,
+        "p90": 241636,
+        "p95": 241636
+      },
+      "firstObservedWindow": {
+        "max": 241636,
+        "median": 79235.0,
+        "n": 4,
+        "p90": 241636,
+        "p95": 241636
+      },
+      "model": "claude-sonnet-5",
+      "name": "unknown",
+      "observedExecutorIterationPeak": {
+        "max": 331962,
+        "median": 177196.5,
+        "n": 4,
+        "p90": 331962,
+        "p95": 331962
+      },
+      "peak": {
+        "max": 331962,
+        "median": 178251.0,
+        "n": 4,
+        "p90": 331962,
+        "p95": 331962
+      },
+      "requests": 200,
+      "requestsWithIterationBreakdown": 178,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 4,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 38924524,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 4,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 31802498,
+          "exposureShareAbove": 0.8170298498704827,
+          "samplesAbove": 2,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 31802498,
+          "exposureShareAbove": 0.8170298498704827,
+          "samplesAbove": 2,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 38924524
+    },
+    {
+      "attribution": {
+        "unknown": 9565
+      },
+      "dimension": "commandByModel",
+      "firstObservedFreshInput": {
+        "max": 34803,
+        "median": 8633,
+        "n": 1119,
+        "p90": 15057,
+        "p95": 18771
+      },
+      "firstObservedWindow": {
+        "max": 35106,
+        "median": 9102,
+        "n": 1119,
+        "p90": 19738,
+        "p95": 19964
+      },
+      "model": "claude-sonnet-5-5",
+      "name": "unknown",
+      "observedExecutorIterationPeak": {
+        "max": 221273,
+        "median": 19108,
+        "n": 1119,
+        "p90": 74568,
+        "p95": 87865
+      },
+      "peak": {
+        "max": 221273,
+        "median": 19108,
+        "n": 1119,
+        "p90": 74568,
+        "p95": 87865
+      },
+      "requests": 9565,
+      "requestsWithIterationBreakdown": 9485,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1119,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 121419291,
+          "exposureShareAbove": 0.28804045899408404,
+          "samplesAbove": 28,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 36395992,
+          "exposureShareAbove": 0.08634145492766064,
+          "samplesAbove": 5,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 8595006,
+          "exposureShareAbove": 0.020389753991372807,
+          "samplesAbove": 1,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 421535542
+    },
+    {
+      "attribution": {
+        "pointer-closed": 20,
+        "unknown": 2316
+      },
+      "dimension": "role",
+      "firstObservedFreshInput": {
+        "max": 11451,
+        "median": 10593,
+        "n": 49,
+        "p90": 11274,
+        "p95": 11353
+      },
+      "firstObservedWindow": {
+        "max": 11451,
+        "median": 10652,
+        "n": 49,
+        "p90": 11274,
+        "p95": 11353
+      },
+      "model": "all-token-exposure",
+      "name": "conductor",
+      "observedExecutorIterationPeak": {
+        "max": 180379,
+        "median": 46959,
+        "n": 49,
+        "p90": 127383,
+        "p95": 155793
+      },
+      "peak": {
+        "max": 180379,
+        "median": 46959,
+        "n": 49,
+        "p90": 127383,
+        "p95": 155793
+      },
+      "requests": 2336,
+      "requestsWithIterationBreakdown": 2324,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 49,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 72459319,
+          "exposureShareAbove": 0.5947486418902855,
+          "samplesAbove": 8,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 38681187,
+          "exposureShareAbove": 0.31749654499173763,
+          "samplesAbove": 3,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 121831836
+    },
+    {
+      "attribution": {
+        "pointer-closed": 781,
+        "pointer-upper-bound": 586,
+        "unknown": 1842
+      },
+      "dimension": "role",
+      "firstObservedFreshInput": {
+        "max": 29811,
+        "median": 23067.0,
+        "n": 58,
+        "p90": 26909,
+        "p95": 28569
+      },
+      "firstObservedWindow": {
+        "max": 66608,
+        "median": 42719.5,
+        "n": 58,
+        "p90": 54134,
+        "p95": 56825
+      },
+      "model": "all-token-exposure",
+      "name": "main",
+      "observedExecutorIterationPeak": {
+        "max": 510539,
+        "median": 106752.5,
+        "n": 58,
+        "p90": 292503,
+        "p95": 379757
+      },
+      "peak": {
+        "max": 510539,
+        "median": 106752.5,
+        "n": 58,
+        "p90": 292503,
+        "p95": 379757
+      },
+      "requests": 3209,
+      "requestsWithIterationBreakdown": 3209,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 58,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 597186901,
+          "exposureShareAbove": 0.9919997650111639,
+          "samplesAbove": 30,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 574556291,
+          "exposureShareAbove": 0.9544075811161938,
+          "samplesAbove": 23,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 517451010,
+          "exposureShareAbove": 0.8595487936276577,
+          "samplesAbove": 14,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 602003067
+    },
+    {
+      "attribution": {
+        "pointer-closed": 149,
+        "unknown": 6580
+      },
+      "dimension": "role",
+      "firstObservedFreshInput": {
+        "max": 40251,
+        "median": 6757.0,
+        "n": 914,
+        "p90": 17586,
+        "p95": 24198
+      },
+      "firstObservedWindow": {
+        "max": 40251,
+        "median": 8381.0,
+        "n": 914,
+        "p90": 19381,
+        "p95": 24588
+      },
+      "model": "all-token-exposure",
+      "name": "other-subagent",
+      "observedExecutorIterationPeak": {
+        "max": 240358,
+        "median": 15992.5,
+        "n": 914,
+        "p90": 35178,
+        "p95": 92255
+      },
+      "peak": {
+        "max": 240358,
+        "median": 15992.5,
+        "n": 914,
+        "p90": 35178,
+        "p95": 92255
+      },
+      "requests": 6729,
+      "requestsWithIterationBreakdown": 6660,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 914,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 242988070,
+          "exposureShareAbove": 0.7044687073059769,
+          "samplesAbove": 41,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 139497360,
+          "exposureShareAbove": 0.40442942269468823,
+          "samplesAbove": 17,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 51639673,
+          "exposureShareAbove": 0.1497132500538539,
+          "samplesAbove": 4,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 344923866
+    },
+    {
+      "attribution": {
+        "pointer-closed": 167,
+        "unknown": 7015
+      },
+      "dimension": "role",
+      "firstObservedFreshInput": {
+        "max": 20215,
+        "median": 14661.5,
+        "n": 364,
+        "p90": 19504,
+        "p95": 19863
+      },
+      "firstObservedWindow": {
+        "max": 20215,
+        "median": 19449.5,
+        "n": 364,
+        "p90": 19962,
+        "p95": 20010
+      },
+      "model": "all-token-exposure",
+      "name": "worker",
+      "observedExecutorIterationPeak": {
+        "max": 244482,
+        "median": 63721.5,
+        "n": 364,
+        "p90": 97126,
+        "p95": 109006
+      },
+      "peak": {
+        "max": 244482,
+        "median": 63721.5,
+        "n": 364,
+        "p90": 97126,
+        "p95": 109006
+      },
+      "requests": 7182,
+      "requestsWithIterationBreakdown": 7121,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 364,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 133744919,
+          "exposureShareAbove": 0.3210112779446433,
+          "samplesAbove": 32,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 25863592,
+          "exposureShareAbove": 0.06207715988193057,
+          "samplesAbove": 2,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 18019295,
+          "exposureShareAbove": 0.04324947040127574,
+          "samplesAbove": 1,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 416636200
+    },
+    {
+      "attribution": {
+        "pointer-closed": 20,
+        "unknown": 2316
+      },
+      "dimension": "roleByModel",
+      "firstObservedFreshInput": {
+        "max": 11451,
+        "median": 10593,
+        "n": 49,
+        "p90": 11274,
+        "p95": 11353
+      },
+      "firstObservedWindow": {
+        "max": 11451,
+        "median": 10652,
+        "n": 49,
+        "p90": 11274,
+        "p95": 11353
+      },
+      "model": "claude-opus-5-5",
+      "name": "conductor",
+      "observedExecutorIterationPeak": {
+        "max": 180379,
+        "median": 46959,
+        "n": 49,
+        "p90": 127383,
+        "p95": 155793
+      },
+      "peak": {
+        "max": 180379,
+        "median": 46959,
+        "n": 49,
+        "p90": 127383,
+        "p95": 155793
+      },
+      "requests": 2336,
+      "requestsWithIterationBreakdown": 2324,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 49,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 72459319,
+          "exposureShareAbove": 0.5947486418902855,
+          "samplesAbove": 8,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 38681187,
+          "exposureShareAbove": 0.31749654499173763,
+          "samplesAbove": 3,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 121831836
+    },
+    {
+      "attribution": {
+        "unknown": 1
+      },
+      "dimension": "roleByModel",
+      "firstObservedFreshInput": {
+        "max": 8709,
+        "median": 8709,
+        "n": 1,
+        "p90": 8709,
+        "p95": 8709
+      },
+      "firstObservedWindow": {
+        "max": 22398,
+        "median": 22398,
+        "n": 1,
+        "p90": 22398,
+        "p95": 22398
+      },
+      "model": "claude-haiku-4-5-20251001",
+      "name": "main",
+      "observedExecutorIterationPeak": {
+        "max": 22398,
+        "median": 22398,
+        "n": 1,
+        "p90": 22398,
+        "p95": 22398
+      },
+      "peak": {
+        "max": 22398,
+        "median": 22398,
+        "n": 1,
+        "p90": 22398,
+        "p95": 22398
+      },
+      "requests": 1,
+      "requestsWithIterationBreakdown": 1,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 22398
+    },
+    {
+      "attribution": {
+        "unknown": 4
+      },
+      "dimension": "roleByModel",
+      "firstObservedFreshInput": {
+        "max": 20097,
+        "median": 20097.0,
+        "n": 2,
+        "p90": 20097,
+        "p95": 20097
+      },
+      "firstObservedWindow": {
+        "max": 30971,
+        "median": 30971.0,
+        "n": 2,
+        "p90": 30971,
+        "p95": 30971
+      },
+      "model": "claude-haiku-5-5",
+      "name": "main",
+      "observedExecutorIterationPeak": {
+        "max": 31586,
+        "median": 31544.5,
+        "n": 2,
+        "p90": 31586,
+        "p95": 31586
+      },
+      "peak": {
+        "max": 31586,
+        "median": 31544.5,
+        "n": 2,
+        "p90": 31586,
+        "p95": 31586
+      },
+      "requests": 4,
+      "requestsWithIterationBreakdown": 4,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 2,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 125031
+    },
+    {
+      "attribution": {
+        "pointer-closed": 1,
+        "unknown": 3
+      },
+      "dimension": "roleByModel",
+      "firstObservedFreshInput": {
+        "max": 15019,
+        "median": 14221.0,
+        "n": 2,
+        "p90": 15019,
+        "p95": 15019
+      },
+      "firstObservedWindow": {
+        "max": 15023,
+        "median": 15021.0,
+        "n": 2,
+        "p90": 15023,
+        "p95": 15023
+      },
+      "model": "claude-opus-4-8",
+      "name": "main",
+      "observedExecutorIterationPeak": {
+        "max": 16037,
+        "median": 15963.5,
+        "n": 2,
+        "p90": 16037,
+        "p95": 16037
+      },
+      "peak": {
+        "max": 16037,
+        "median": 15963.5,
+        "n": 2,
+        "p90": 16037,
+        "p95": 16037
+      },
+      "requests": 4,
+      "requestsWithIterationBreakdown": 4,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 2,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 61969
+    },
+    {
+      "attribution": {
+        "pointer-closed": 580,
+        "pointer-upper-bound": 534,
+        "unknown": 339
+      },
+      "dimension": "roleByModel",
+      "firstObservedFreshInput": {
+        "max": 102709,
+        "median": 25198.0,
+        "n": 18,
+        "p90": 28569,
+        "p95": 102709
+      },
+      "firstObservedWindow": {
+        "max": 134057,
+        "median": 53654.0,
+        "n": 18,
+        "p90": 57025,
+        "p95": 134057
+      },
+      "model": "claude-opus-5",
+      "name": "main",
+      "observedExecutorIterationPeak": {
+        "max": 370473,
+        "median": 185032.5,
+        "n": 18,
+        "p90": 292503,
+        "p95": 370473
+      },
+      "peak": {
+        "max": 370473,
+        "median": 185032.5,
+        "n": 18,
+        "p90": 292503,
+        "p95": 370473
+      },
+      "requests": 1453,
+      "requestsWithIterationBreakdown": 1453,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 18,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 233399464,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 18,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 218337727,
+          "exposureShareAbove": 0.9354679880498783,
+          "samplesAbove": 14,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 171434546,
+          "exposureShareAbove": 0.7345113097603343,
+          "samplesAbove": 7,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 233399464
+    },
+    {
+      "attribution": {
+        "pointer-closed": 167,
+        "pointer-upper-bound": 52,
+        "unknown": 1408
+      },
+      "dimension": "roleByModel",
+      "firstObservedFreshInput": {
+        "max": 28957,
+        "median": 23065,
+        "n": 27,
+        "p90": 25918,
+        "p95": 28513
+      },
+      "firstObservedWindow": {
+        "max": 54236,
+        "median": 39917,
+        "n": 27,
+        "p90": 50237,
+        "p95": 52096
+      },
+      "model": "claude-opus-5-5",
+      "name": "main",
+      "observedExecutorIterationPeak": {
+        "max": 510539,
+        "median": 69467,
+        "n": 27,
+        "p90": 379757,
+        "p95": 451557
+      },
+      "peak": {
+        "max": 510539,
+        "median": 69467,
+        "n": 27,
+        "p90": 379757,
+        "p95": 451557
+      },
+      "requests": 1627,
+      "requestsWithIterationBreakdown": 1627,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 27,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 338636328,
+          "exposureShareAbove": 0.9877887232823575,
+          "samplesAbove": 12,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 331067455,
+          "exposureShareAbove": 0.9657106212620795,
+          "samplesAbove": 9,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 320865355,
+          "exposureShareAbove": 0.9359515006345993,
+          "samplesAbove": 7,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 342822630
+    },
+    {
+      "attribution": {
+        "pointer-closed": 22,
+        "unknown": 79
+      },
+      "dimension": "roleByModel",
+      "firstObservedFreshInput": {
+        "max": 241636,
+        "median": 135723.5,
+        "n": 2,
+        "p90": 241636,
+        "p95": 241636
+      },
+      "firstObservedWindow": {
+        "max": 241636,
+        "median": 154122.0,
+        "n": 2,
+        "p90": 241636,
+        "p95": 241636
+      },
+      "model": "claude-sonnet-5",
+      "name": "main",
+      "observedExecutorIterationPeak": {
+        "max": 331962,
+        "median": 243895.5,
+        "n": 2,
+        "p90": 331962,
+        "p95": 331962
+      },
+      "peak": {
+        "max": 331962,
+        "median": 243895.5,
+        "n": 2,
+        "p90": 331962,
+        "p95": 331962
+      },
+      "requests": 101,
+      "requestsWithIterationBreakdown": 101,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 2,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 25151109,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 2,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 25151109,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 2,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 22779563,
+          "exposureShareAbove": 0.9057080942235987,
+          "samplesAbove": 1,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 25151109
+    },
+    {
+      "attribution": {
+        "pointer-closed": 11,
+        "unknown": 8
+      },
+      "dimension": "roleByModel",
+      "firstObservedFreshInput": {
+        "max": 19669,
+        "median": 11787.0,
+        "n": 8,
+        "p90": 19669,
+        "p95": 19669
+      },
+      "firstObservedWindow": {
+        "max": 30543,
+        "median": 18837.0,
+        "n": 8,
+        "p90": 30543,
+        "p95": 30543
+      },
+      "model": "claude-sonnet-5-5",
+      "name": "main",
+      "observedExecutorIterationPeak": {
+        "max": 31312,
+        "median": 20719.0,
+        "n": 8,
+        "p90": 31312,
+        "p95": 31312
+      },
+      "peak": {
+        "max": 31312,
+        "median": 20719.0,
+        "n": 8,
+        "p90": 31312,
+        "p95": 31312
+      },
+      "requests": 19,
+      "requestsWithIterationBreakdown": 19,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 8,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 420466
+    },
+    {
+      "attribution": {
+        "unknown": 4
+      },
+      "dimension": "roleByModel",
+      "firstObservedFreshInput": {
+        "max": 40251,
+        "median": 40251,
+        "n": 1,
+        "p90": 40251,
+        "p95": 40251
+      },
+      "firstObservedWindow": {
+        "max": 40251,
+        "median": 40251,
+        "n": 1,
+        "p90": 40251,
+        "p95": 40251
+      },
+      "model": "claude-haiku-4-5-20251001",
+      "name": "other-subagent",
+      "observedExecutorIterationPeak": {
+        "max": 66584,
+        "median": 66584,
+        "n": 1,
+        "p90": 66584,
+        "p95": 66584
+      },
+      "peak": {
+        "max": 66584,
+        "median": 66584,
+        "n": 1,
+        "p90": 66584,
+        "p95": 66584
+      },
+      "requests": 4,
+      "requestsWithIterationBreakdown": 4,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 198803
+    },
+    {
+      "attribution": {
+        "unknown": 2
+      },
+      "dimension": "roleByModel",
+      "firstObservedFreshInput": {
+        "max": 3191,
+        "median": 2602.5,
+        "n": 2,
+        "p90": 3191,
+        "p95": 3191
+      },
+      "firstObservedWindow": {
+        "max": 3191,
+        "median": 2602.5,
+        "n": 2,
+        "p90": 3191,
+        "p95": 3191
+      },
+      "model": "claude-haiku-5-5",
+      "name": "other-subagent",
+      "observedExecutorIterationPeak": {
+        "max": 3191,
+        "median": 2602.5,
+        "n": 2,
+        "p90": 3191,
+        "p95": 3191
+      },
+      "peak": {
+        "max": 3191,
+        "median": 2602.5,
+        "n": 2,
+        "p90": 3191,
+        "p95": 3191
+      },
+      "requests": 2,
+      "requestsWithIterationBreakdown": 2,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 2,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 5205
+    },
+    {
+      "attribution": {
+        "unknown": 128
+      },
+      "dimension": "roleByModel",
+      "firstObservedFreshInput": {
+        "max": 34236,
+        "median": 33778,
+        "n": 3,
+        "p90": 34236,
+        "p95": 34236
+      },
+      "firstObservedWindow": {
+        "max": 34236,
+        "median": 34011,
+        "n": 3,
+        "p90": 34236,
+        "p95": 34236
+      },
+      "model": "claude-opus-5",
+      "name": "other-subagent",
+      "observedExecutorIterationPeak": {
+        "max": 174411,
+        "median": 134780,
+        "n": 3,
+        "p90": 174411,
+        "p95": 174411
+      },
+      "peak": {
+        "max": 174411,
+        "median": 134780,
+        "n": 3,
+        "p90": 174411,
+        "p95": 174411
+      },
+      "requests": 128,
+      "requestsWithIterationBreakdown": 120,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 3,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 12738976,
+          "exposureShareAbove": 0.9315113729204841,
+          "samplesAbove": 2,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 6455273,
+          "exposureShareAbove": 0.472028537835893,
+          "samplesAbove": 1,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 13675599
+    },
+    {
+      "attribution": {
+        "pointer-closed": 41,
+        "unknown": 2318
+      },
+      "dimension": "roleByModel",
+      "firstObservedFreshInput": {
+        "max": 35561,
+        "median": 19283.5,
+        "n": 90,
+        "p90": 34992,
+        "p95": 35152
+      },
+      "firstObservedWindow": {
+        "max": 35561,
+        "median": 24155.0,
+        "n": 90,
+        "p90": 35059,
+        "p95": 35165
+      },
+      "model": "claude-opus-5-5",
+      "name": "other-subagent",
+      "observedExecutorIterationPeak": {
+        "max": 240358,
+        "median": 55866.0,
+        "n": 90,
+        "p90": 150170,
+        "p95": 181151
+      },
+      "peak": {
+        "max": 240358,
+        "median": 55866.0,
+        "n": 90,
+        "p90": 150170,
+        "p95": 181151
+      },
+      "requests": 2359,
+      "requestsWithIterationBreakdown": 2350,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 90,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 135506769,
+          "exposureShareAbove": 0.7365422635728704,
+          "samplesAbove": 22,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 81339457,
+          "exposureShareAbove": 0.4421177496791187,
+          "samplesAbove": 10,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 27738029,
+          "exposureShareAbove": 0.1507690783086262,
+          "samplesAbove": 2,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 183976909
+    },
+    {
+      "attribution": {
+        "unknown": 121
+      },
+      "dimension": "roleByModel",
+      "firstObservedFreshInput": {
+        "max": 118241,
+        "median": 40229,
+        "n": 3,
+        "p90": 118241,
+        "p95": 118241
+      },
+      "firstObservedWindow": {
+        "max": 118241,
+        "median": 40229,
+        "n": 3,
+        "p90": 118241,
+        "p95": 118241
+      },
+      "model": "claude-sonnet-5",
+      "name": "other-subagent",
+      "observedExecutorIterationPeak": {
+        "max": 219954,
+        "median": 134439,
+        "n": 3,
+        "p90": 219954,
+        "p95": 219954
+      },
+      "peak": {
+        "max": 219954,
+        "median": 136548,
+        "n": 3,
+        "p90": 219954,
+        "p95": 219954
+      },
+      "requests": 121,
+      "requestsWithIterationBreakdown": 99,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 3,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 16144961,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 3,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 9022935,
+          "exposureShareAbove": 0.5588700400081487,
+          "samplesAbove": 1,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 9022935,
+          "exposureShareAbove": 0.5588700400081487,
+          "samplesAbove": 1,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 16144961
+    },
+    {
+      "attribution": {
+        "pointer-closed": 108,
+        "unknown": 4007
+      },
+      "dimension": "roleByModel",
+      "firstObservedFreshInput": {
+        "max": 34803,
+        "median": 3930.0,
+        "n": 816,
+        "p90": 14510,
+        "p95": 17502
+      },
+      "firstObservedWindow": {
+        "max": 35106,
+        "median": 8369.0,
+        "n": 816,
+        "p90": 18075,
+        "p95": 19344
+      },
+      "model": "claude-sonnet-5-5",
+      "name": "other-subagent",
+      "observedExecutorIterationPeak": {
+        "max": 221273,
+        "median": 15399.0,
+        "n": 816,
+        "p90": 21981,
+        "p95": 26653
+      },
+      "peak": {
+        "max": 221273,
+        "median": 15399.0,
+        "n": 816,
+        "p90": 21981,
+        "p95": 26653
+      },
+      "requests": 4115,
+      "requestsWithIterationBreakdown": 4085,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 816,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 78597364,
+          "exposureShareAbove": 0.600335546886484,
+          "samplesAbove": 15,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 36395992,
+          "exposureShareAbove": 0.27799669925057663,
+          "samplesAbove": 5,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 8595006,
+          "exposureShareAbove": 0.06564962697098355,
+          "samplesAbove": 1,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 130922389
+    },
+    {
+      "attribution": {
+        "unknown": 1465
+      },
+      "dimension": "roleByModel",
+      "firstObservedFreshInput": {
+        "max": 19951,
+        "median": 14779,
+        "n": 47,
+        "p90": 19632,
+        "p95": 19739
+      },
+      "firstObservedWindow": {
+        "max": 19964,
+        "median": 19451,
+        "n": 47,
+        "p90": 19784,
+        "p95": 19923
+      },
+      "model": "claude-opus-5-5",
+      "name": "worker",
+      "observedExecutorIterationPeak": {
+        "max": 244482,
+        "median": 80627,
+        "n": 47,
+        "p90": 138020,
+        "p95": 146012
+      },
+      "peak": {
+        "max": 244482,
+        "median": 80627,
+        "n": 47,
+        "p90": 138020,
+        "p95": 146012
+      },
+      "requests": 1465,
+      "requestsWithIterationBreakdown": 1455,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 47,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 88059154,
+          "exposureShareAbove": 0.7723385797518331,
+          "samplesAbove": 18,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 25863592,
+          "exposureShareAbove": 0.22684126527675785,
+          "samplesAbove": 2,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 18019295,
+          "exposureShareAbove": 0.15804145368497757,
+          "samplesAbove": 1,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 114016257
+    },
+    {
+      "attribution": {
+        "pointer-closed": 167,
+        "unknown": 5550
+      },
+      "dimension": "roleByModel",
+      "firstObservedFreshInput": {
+        "max": 20215,
+        "median": 14656,
+        "n": 317,
+        "p90": 19434,
+        "p95": 19868
+      },
+      "firstObservedWindow": {
+        "max": 20215,
+        "median": 19448,
+        "n": 317,
+        "p90": 19983,
+        "p95": 20045
+      },
+      "model": "claude-sonnet-5-5",
+      "name": "worker",
+      "observedExecutorIterationPeak": {
+        "max": 127071,
+        "median": 63531,
+        "n": 317,
+        "p90": 91261,
+        "p95": 99629
+      },
+      "peak": {
+        "max": 127071,
+        "median": 63531,
+        "n": 317,
+        "p90": 91261,
+        "p95": 99629
+      },
+      "requests": 5717,
+      "requestsWithIterationBreakdown": 5666,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 317,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 45685765,
+          "exposureShareAbove": 0.15096746284166737,
+          "samplesAbove": 14,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 302619943
+    },
+    {
+      "attribution": {
+        "pointer-closed": 39
+      },
+      "dimension": "stageByModel",
+      "firstObservedFreshInput": {
+        "max": 25355,
+        "median": 24436.0,
+        "n": 4,
+        "p90": 25355,
+        "p95": 25355
+      },
+      "firstObservedWindow": {
+        "max": 42927,
+        "median": 33225.5,
+        "n": 4,
+        "p90": 42927,
+        "p95": 42927
+      },
+      "model": "claude-opus-5-5",
+      "name": "autopilot",
+      "observedExecutorIterationPeak": {
+        "max": 60953,
+        "median": 56192.0,
+        "n": 4,
+        "p90": 60953,
+        "p95": 60953
+      },
+      "peak": {
+        "max": 60953,
+        "median": 56192.0,
+        "n": 4,
+        "p90": 60953,
+        "p95": 60953
+      },
+      "requests": 39,
+      "requestsWithIterationBreakdown": 39,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 4,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 1797918
+    },
+    {
+      "attribution": {
+        "pointer-closed": 16
+      },
+      "dimension": "stageByModel",
+      "firstObservedFreshInput": {
+        "max": 6509,
+        "median": 6484,
+        "n": 3,
+        "p90": 6509,
+        "p95": 6509
+      },
+      "firstObservedWindow": {
+        "max": 6637,
+        "median": 6509,
+        "n": 3,
+        "p90": 6637,
+        "p95": 6637
+      },
+      "model": "claude-sonnet-5-5",
+      "name": "autopilot",
+      "observedExecutorIterationPeak": {
+        "max": 26653,
+        "median": 21225,
+        "n": 3,
+        "p90": 26653,
+        "p95": 26653
+      },
+      "peak": {
+        "max": 26653,
+        "median": 21225,
+        "n": 3,
+        "p90": 26653,
+        "p95": 26653
+      },
+      "requests": 16,
+      "requestsWithIterationBreakdown": 16,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 3,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 247799
+    },
+    {
+      "attribution": {
+        "pointer-closed": 223,
+        "pointer-upper-bound": 43
+      },
+      "dimension": "stageByModel",
+      "firstObservedFreshInput": {
+        "max": 28569,
+        "median": 18494.0,
+        "n": 4,
+        "p90": 28569,
+        "p95": 28569
+      },
+      "firstObservedWindow": {
+        "max": 253751,
+        "median": 126892.5,
+        "n": 4,
+        "p90": 253751,
+        "p95": 253751
+      },
+      "model": "claude-opus-5",
+      "name": "conclude",
+      "observedExecutorIterationPeak": {
+        "max": 342859,
+        "median": 215341.0,
+        "n": 4,
+        "p90": 342859,
+        "p95": 342859
+      },
+      "peak": {
+        "max": 342859,
+        "median": 215341.0,
+        "n": 4,
+        "p90": 342859,
+        "p95": 342859
+      },
+      "requests": 266,
+      "requestsWithIterationBreakdown": 266,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 4,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 48507838,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 4,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 48507838,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 4,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 25556165,
+          "exposureShareAbove": 0.5268460944394182,
+          "samplesAbove": 2,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 48507838
+    },
+    {
+      "attribution": {
+        "pointer-closed": 16
+      },
+      "dimension": "stageByModel",
+      "firstObservedFreshInput": {
+        "max": 8759,
+        "median": 8759,
+        "n": 1,
+        "p90": 8759,
+        "p95": 8759
+      },
+      "firstObservedWindow": {
+        "max": 176941,
+        "median": 176941,
+        "n": 1,
+        "p90": 176941,
+        "p95": 176941
+      },
+      "model": "claude-opus-5-5",
+      "name": "conclude",
+      "observedExecutorIterationPeak": {
+        "max": 194782,
+        "median": 194782,
+        "n": 1,
+        "p90": 194782,
+        "p95": 194782
+      },
+      "peak": {
+        "max": 194782,
+        "median": 194782,
+        "n": 1,
+        "p90": 194782,
+        "p95": 194782
+      },
+      "requests": 16,
+      "requestsWithIterationBreakdown": 16,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 2975829,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 1,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 2975829,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 1,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 2975829
+    },
+    {
+      "attribution": {
+        "pointer-closed": 100
+      },
+      "dimension": "stageByModel",
+      "firstObservedFreshInput": {
+        "max": 24160,
+        "median": 23994,
+        "n": 7,
+        "p90": 24160,
+        "p95": 24160
+      },
+      "firstObservedWindow": {
+        "max": 64428,
+        "median": 52502,
+        "n": 7,
+        "p90": 64428,
+        "p95": 64428
+      },
+      "model": "claude-opus-5",
+      "name": "develop",
+      "observedExecutorIterationPeak": {
+        "max": 128168,
+        "median": 119014,
+        "n": 7,
+        "p90": 128168,
+        "p95": 128168
+      },
+      "peak": {
+        "max": 128168,
+        "median": 119014,
+        "n": 7,
+        "p90": 128168,
+        "p95": 128168
+      },
+      "requests": 100,
+      "requestsWithIterationBreakdown": 100,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 7,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 7576374,
+          "exposureShareAbove": 0.8346893243812108,
+          "samplesAbove": 5,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 9076879
+    },
+    {
+      "attribution": {
+        "pointer-closed": 34,
+        "pointer-upper-bound": 42
+      },
+      "dimension": "stageByModel",
+      "firstObservedFreshInput": {
+        "max": 19350,
+        "median": 14817.0,
+        "n": 4,
+        "p90": 19350,
+        "p95": 19350
+      },
+      "firstObservedWindow": {
+        "max": 92269,
+        "median": 41966.5,
+        "n": 4,
+        "p90": 92269,
+        "p95": 92269
+      },
+      "model": "claude-opus-5-5",
+      "name": "develop",
+      "observedExecutorIterationPeak": {
+        "max": 230889,
+        "median": 97401.0,
+        "n": 4,
+        "p90": 230889,
+        "p95": 230889
+      },
+      "peak": {
+        "max": 230889,
+        "median": 97401.0,
+        "n": 4,
+        "p90": 230889,
+        "p95": 230889
+      },
+      "requests": 76,
+      "requestsWithIterationBreakdown": 75,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 4,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 9223672,
+          "exposureShareAbove": 0.9242759222069495,
+          "samplesAbove": 2,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 7781469,
+          "exposureShareAbove": 0.7797571765452836,
+          "samplesAbove": 1,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 7781469,
+          "exposureShareAbove": 0.7797571765452836,
+          "samplesAbove": 1,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 9979349
+    },
+    {
+      "attribution": {
+        "pointer-closed": 71
+      },
+      "dimension": "stageByModel",
+      "firstObservedFreshInput": {
+        "max": 18444,
+        "median": 18106,
+        "n": 3,
+        "p90": 18444,
+        "p95": 18444
+      },
+      "firstObservedWindow": {
+        "max": 18444,
+        "median": 18106,
+        "n": 3,
+        "p90": 18444,
+        "p95": 18444
+      },
+      "model": "claude-sonnet-5-5",
+      "name": "develop",
+      "observedExecutorIterationPeak": {
+        "max": 93957,
+        "median": 76579,
+        "n": 3,
+        "p90": 93957,
+        "p95": 93957
+      },
+      "peak": {
+        "max": 93957,
+        "median": 76579,
+        "n": 3,
+        "p90": 93957,
+        "p95": 93957
+      },
+      "requests": 71,
+      "requestsWithIterationBreakdown": 71,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 3,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 3945953
+    },
+    {
+      "attribution": {
+        "pointer-closed": 203
+      },
+      "dimension": "stageByModel",
+      "firstObservedFreshInput": {
+        "max": 102709,
+        "median": 25572,
+        "n": 7,
+        "p90": 102709,
+        "p95": 102709
+      },
+      "firstObservedWindow": {
+        "max": 134057,
+        "median": 54028,
+        "n": 7,
+        "p90": 134057,
+        "p95": 134057
+      },
+      "model": "claude-opus-5",
+      "name": "execute",
+      "observedExecutorIterationPeak": {
+        "max": 292503,
+        "median": 78022,
+        "n": 7,
+        "p90": 292503,
+        "p95": 292503
+      },
+      "peak": {
+        "max": 292503,
+        "median": 78022,
+        "n": 7,
+        "p90": 292503,
+        "p95": 292503
+      },
+      "requests": 203,
+      "requestsWithIterationBreakdown": 203,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 7,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 31374849,
+          "exposureShareAbove": 0.8890224341605235,
+          "samplesAbove": 1,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 31374849,
+          "exposureShareAbove": 0.8890224341605235,
+          "samplesAbove": 1,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 31374849,
+          "exposureShareAbove": 0.8890224341605235,
+          "samplesAbove": 1,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 35291403
+    },
+    {
+      "attribution": {
+        "pointer-closed": 22
+      },
+      "dimension": "stageByModel",
+      "firstObservedFreshInput": {
+        "max": 29811,
+        "median": 29811,
+        "n": 1,
+        "p90": 29811,
+        "p95": 29811
+      },
+      "firstObservedWindow": {
+        "max": 66608,
+        "median": 66608,
+        "n": 1,
+        "p90": 66608,
+        "p95": 66608
+      },
+      "model": "claude-sonnet-5",
+      "name": "execute",
+      "observedExecutorIterationPeak": {
+        "max": 155829,
+        "median": 155829,
+        "n": 1,
+        "p90": 155829,
+        "p95": 155829
+      },
+      "peak": {
+        "max": 155829,
+        "median": 155829,
+        "n": 1,
+        "p90": 155829,
+        "p95": 155829
+      },
+      "requests": 22,
+      "requestsWithIterationBreakdown": 22,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 2371546,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 1,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 2371546,
+          "exposureShareAbove": 1.0,
+          "samplesAbove": 1,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 2371546
+    },
+    {
+      "attribution": {
+        "pointer-closed": 16
+      },
+      "dimension": "stageByModel",
+      "firstObservedFreshInput": {
+        "max": 21430,
+        "median": 14457.5,
+        "n": 2,
+        "p90": 21430,
+        "p95": 21430
+      },
+      "firstObservedWindow": {
+        "max": 50237,
+        "median": 28861.0,
+        "n": 2,
+        "p90": 50237,
+        "p95": 50237
+      },
+      "model": "claude-opus-5-5",
+      "name": "orchestrate",
+      "observedExecutorIterationPeak": {
+        "max": 53355,
+        "median": 38382.5,
+        "n": 2,
+        "p90": 53355,
+        "p95": 53355
+      },
+      "peak": {
+        "max": 53355,
+        "median": 38382.5,
+        "n": 2,
+        "p90": 53355,
+        "p95": 53355
+      },
+      "requests": 16,
+      "requestsWithIterationBreakdown": 16,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 2,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 417204
+    },
+    {
+      "attribution": {
+        "pointer-closed": 5
+      },
+      "dimension": "stageByModel",
+      "firstObservedFreshInput": {
+        "max": 17068,
+        "median": 17068,
+        "n": 1,
+        "p90": 17068,
+        "p95": 17068
+      },
+      "firstObservedWindow": {
+        "max": 17068,
+        "median": 17068,
+        "n": 1,
+        "p90": 17068,
+        "p95": 17068
+      },
+      "model": "claude-sonnet-5-5",
+      "name": "orchestrate",
+      "observedExecutorIterationPeak": {
+        "max": 22212,
+        "median": 22212,
+        "n": 1,
+        "p90": 22212,
+        "p95": 22212
+      },
+      "peak": {
+        "max": 22212,
+        "median": 22212,
+        "n": 1,
+        "p90": 22212,
+        "p95": 22212
+      },
+      "requests": 5,
+      "requestsWithIterationBreakdown": 5,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 0,
+          "exposureShareAbove": 0.0,
+          "samplesAbove": 0,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 99388
+    },
+    {
+      "attribution": {
+        "pointer-closed": 781,
+        "pointer-upper-bound": 586,
+        "unknown": 1842
+      },
+      "dimension": "topology",
+      "firstObservedFreshInput": {
+        "max": 29811,
+        "median": 23067.0,
+        "n": 58,
+        "p90": 26909,
+        "p95": 28569
+      },
+      "firstObservedWindow": {
+        "max": 66608,
+        "median": 42719.5,
+        "n": 58,
+        "p90": 54134,
+        "p95": 56825
+      },
+      "model": "all-token-exposure",
+      "name": "main",
+      "observedExecutorIterationPeak": {
+        "max": 510539,
+        "median": 106752.5,
+        "n": 58,
+        "p90": 292503,
+        "p95": 379757
+      },
+      "peak": {
+        "max": 510539,
+        "median": 106752.5,
+        "n": 58,
+        "p90": 292503,
+        "p95": 379757
+      },
+      "requests": 3209,
+      "requestsWithIterationBreakdown": 3209,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 58,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 597186901,
+          "exposureShareAbove": 0.9919997650111639,
+          "samplesAbove": 30,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 574556291,
+          "exposureShareAbove": 0.9544075811161938,
+          "samplesAbove": 23,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 517451010,
+          "exposureShareAbove": 0.8595487936276577,
+          "samplesAbove": 14,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 602003067
+    },
+    {
+      "attribution": {
+        "pointer-closed": 336,
+        "unknown": 15911
+      },
+      "dimension": "topology",
+      "firstObservedFreshInput": {
+        "max": 40251,
+        "median": 10652,
+        "n": 1327,
+        "p90": 18561,
+        "p95": 19915
+      },
+      "firstObservedWindow": {
+        "max": 40251,
+        "median": 10702,
+        "n": 1327,
+        "p90": 19892,
+        "p95": 24191
+      },
+      "model": "all-token-exposure",
+      "name": "subagent",
+      "observedExecutorIterationPeak": {
+        "max": 244482,
+        "median": 20081,
+        "n": 1327,
+        "p90": 84976,
+        "p95": 107937
+      },
+      "peak": {
+        "max": 244482,
+        "median": 20081,
+        "n": 1327,
+        "p90": 84976,
+        "p95": 107937
+      },
+      "requests": 16247,
+      "requestsWithIterationBreakdown": 16105,
+      "requestsWithMultipleExecutorIterations": 0,
+      "samples": 1327,
+      "thresholdComparisons": [
+        {
+          "exposureFromSamplesAbove": 449192308,
+          "exposureShareAbove": 0.5084858792377746,
+          "samplesAbove": 81,
+          "threshold": 100000
+        },
+        {
+          "exposureFromSamplesAbove": 204042139,
+          "exposureShareAbove": 0.23097578610133104,
+          "samplesAbove": 22,
+          "threshold": 150000
+        },
+        {
+          "exposureFromSamplesAbove": 69658968,
+          "exposureShareAbove": 0.07885398071036427,
+          "samplesAbove": 5,
+          "threshold": 200000
+        }
+      ],
+      "tokenExposure": 883391902
+    }
+  ],
+  "inventorySha256": "5dbf4ab2956217346753844def8d2393a7ce2a8bd4d349f8c3597927cf400468",
+  "measuredAt": "2026-10-13T18:21:20.484006+00:00",
+  "metric": "token exposure, not monetary cost",
+  "metricDefinitions": {
+    "firstObservedWindow": "First observed top-level request input; entry proxy, not causal restart cost.",
+    "observedExecutorIterationPeak": "Maximum input+cacheRead+cacheCreation within observed type=message iterations; excludes advisor iterations. A lower bound where some requests lack breakdown.",
+    "peak": "Maximum top-level input+cacheRead+cacheCreation per message.id. Matches captured baseline; may sum executor iterations, so not always one context window.",
+    "references": [
+      "https://platform.claude.com/docs/en/build-with-claude/prompt-caching",
+      "https://platform.claude.com/docs/en/agents-and-tools/tool-use/advisor-tool"
+    ]
+  },
+  "peakEvidence": [
+    {
+      "command": "unknown",
+      "executorIterationWindows": [
+        510539
+      ],
+      "hostVersion": "2.1.292",
+      "line": 2573,
+      "messageId": "msg_011CfnnQEnu3dWEixgtKJmmE",
+      "model": "claude-opus-5-5",
+      "quotedUsage": {
+        "cache_creation_input_tokens": 233,
+        "cache_read_input_tokens": 510304,
+        "input_tokens": 2
+      },
+      "transcriptSha256": "4f012cc8891c85227c20726f7195404df69ef57a944f5d25e391d4a8f31954f8",
+      "window": 510539
+    },
+    {
+      "command": "unknown",
+      "executorIterationWindows": [
+        510306
+      ],
+      "hostVersion": "2.1.292",
+      "line": 2566,
+      "messageId": "msg_011CfnnPjmQ3hVUsrUyyvs2G",
+      "model": "claude-opus-5-5",
+      "quotedUsage": {
+        "cache_creation_input_tokens": 918,
+        "cache_read_input_tokens": 509386,
+        "input_tokens": 2
+      },
+      "transcriptSha256": "4f012cc8891c85227c20726f7195404df69ef57a944f5d25e391d4a8f31954f8",
+      "window": 510306
+    },
+    {
+      "command": "unknown",
+      "executorIterationWindows": [
+        509388
+      ],
+      "hostVersion": "2.1.292",
+      "line": 2558,
+      "messageId": "msg_011CfnnEAeamM9XJ4oTRCS8i",
+      "model": "claude-opus-5-5",
+      "quotedUsage": {
+        "cache_creation_input_tokens": 511,
+        "cache_read_input_tokens": 508875,
+        "input_tokens": 2
+      },
+      "transcriptSha256": "4f012cc8891c85227c20726f7195404df69ef57a944f5d25e391d4a8f31954f8",
+      "window": 509388
+    },
+    {
+      "command": "unknown",
+      "executorIterationWindows": [
+        508877
+      ],
+      "hostVersion": "2.1.292",
+      "line": 2543,
+      "messageId": "msg_011Cfnn9wm4qnY6n2BMZgZNt",
+      "model": "claude-opus-5-5",
+      "quotedUsage": {
+        "cache_creation_input_tokens": 260,
+        "cache_read_input_tokens": 508615,
+        "input_tokens": 2
+      },
+      "transcriptSha256": "4f012cc8891c85227c20726f7195404df69ef57a944f5d25e391d4a8f31954f8",
+      "window": 508877
+    },
+    {
+      "command": "unknown",
+      "executorIterationWindows": [
+        508617
+      ],
+      "hostVersion": "2.1.292",
+      "line": 2536,
+      "messageId": "msg_011Cfnn9iEUbXLTpiPVJx92V",
+      "model": "claude-opus-5-5",
+      "quotedUsage": {
+        "cache_creation_input_tokens": 360,
+        "cache_read_input_tokens": 508255,
+        "input_tokens": 2
+      },
+      "transcriptSha256": "4f012cc8891c85227c20726f7195404df69ef57a944f5d25e391d4a8f31954f8",
+      "window": 508617
+    },
+    {
+      "command": "unknown",
+      "executorIterationWindows": [
+        508257
+      ],
+      "hostVersion": "2.1.292",
+      "line": 2529,
+      "messageId": "msg_011Cfnn9XBDTLYAJfweChF6s",
+      "model": "claude-opus-5-5",
+      "quotedUsage": {
+        "cache_creation_input_tokens": 983,
+        "cache_read_input_tokens": 507272,
+        "input_tokens": 2
+      },
+      "transcriptSha256": "4f012cc8891c85227c20726f7195404df69ef57a944f5d25e391d4a8f31954f8",
+      "window": 508257
+    },
+    {
+      "command": "unknown",
+      "executorIterationWindows": [
+        507274
+      ],
+      "hostVersion": "2.1.292",
+      "line": 2516,
+      "messageId": "msg_011Cfnn6n6JvGJE3dUQzyvTt",
+      "model": "claude-opus-5-5",
+      "quotedUsage": {
+        "cache_creation_input_tokens": 681,
+        "cache_read_input_tokens": 506591,
+        "input_tokens": 2
+      },
+      "transcriptSha256": "4f012cc8891c85227c20726f7195404df69ef57a944f5d25e391d4a8f31954f8",
+      "window": 507274
+    },
+    {
+      "command": "unknown",
+      "executorIterationWindows": [
+        506593
+      ],
+      "hostVersion": "2.1.292",
+      "line": 2508,
+      "messageId": "msg_011Cfnn6UvhEgzTHTWGo2nug",
+      "model": "claude-opus-5-5",
+      "quotedUsage": {
+        "cache_creation_input_tokens": 4206,
+        "cache_read_input_tokens": 502385,
+        "input_tokens": 2
+      },
+      "transcriptSha256": "4f012cc8891c85227c20726f7195404df69ef57a944f5d25e391d4a8f31954f8",
+      "window": 506593
+    }
+  ],
+  "quantiles": "median; p90/p95 nearest rank",
+  "reductionTarget": null,
+  "restartCost": {
+    "causalSavings": "not-measured; this is observed preparation, not a warm-versus-cold treatment comparison",
+    "kind": "observed-resumption-preparation",
+    "limitations": "Small opus-only worker sample after security-hook stops; no clean human-led or conductor restart pair was identified. Two main configurable-spec-backend sessions are contaminated by dirty mid-task work, scope changes and a model change.",
+    "pairs": [
+      {
+        "firstNextQueryLine": 29,
+        "model": "claude-opus-5-5",
+        "predecessorLastTaskCheck": {
+          "line": 199,
+          "task": "1.1"
+        },
+        "predecessorSha256": "9d52cf6faeadc647f738e4458a00446ffc6b967e305d99133b085b137c8d0b01",
+        "resumeSha256": "5d88ede7f865c6c3c04d9d8d7b25a2ef604c652965f5e01a6c74ba7e9e7230a5",
+        "spec": "1368",
+        "startupFreshInput": 27271,
+        "startupPeak": 32201,
+        "startupRequests": 3,
+        "startupTokenExposure": 73740
+      },
+      {
+        "firstNextQueryLine": 29,
+        "model": "claude-opus-5-5",
+        "predecessorLastTaskCheck": {
+          "line": 205,
+          "task": "1.1"
+        },
+        "predecessorSha256": "f74bfd0407ce45c9f79abba27db2c4086e8fbe82dbac0363d23b93b679f9c616",
+        "resumeSha256": "3796f9ddaf126407477a1cc8b28406484c7f8f0f96119fb7cacbf1bde27b823f",
+        "spec": "1419",
+        "startupFreshInput": 27403,
+        "startupPeak": 32333,
+        "startupRequests": 3,
+        "startupTokenExposure": 73962
+      },
+      {
+        "firstNextQueryLine": 29,
+        "model": "claude-opus-5-5",
+        "predecessorLastTaskCheck": {
+          "line": 170,
+          "task": "1.1"
+        },
+        "predecessorSha256": "2f67f1da49bb2dd6cf1261699b961f727990e606b2bfabbb0b14aeeafee21caf",
+        "resumeSha256": "4c822f87464e555b6f3786e675a642b1ed448f35c98969218bead6a8fb7b6f9f",
+        "spec": "1386",
+        "startupFreshInput": 27595,
+        "startupPeak": 32525,
+        "startupRequests": 3,
+        "startupTokenExposure": 74376
+      },
+      {
+        "firstNextQueryLine": 29,
+        "model": "claude-opus-5-5",
+        "predecessorLastTaskCheck": {
+          "line": 105,
+          "task": "1.2"
+        },
+        "predecessorSha256": "09e22af21ac392548e87bc5e4c7f910b7066f1436304ad1fbf2fcb714e03c7b7",
+        "resumeSha256": "b0bda81a6cdfb64e7828f10e0637bfd78b0deafbed8f4ac6cb9ac423f87523c7",
+        "spec": "1457",
+        "startupFreshInput": 28229,
+        "startupPeak": 33159,
+        "startupRequests": 3,
+        "startupTokenExposure": 75984
+      }
+    ],
+    "preparationFreshInput": {
+      "max": 28229,
+      "median": 27499.0,
+      "n": 4,
+      "p90": 28229,
+      "p95": 28229
+    },
+    "preparationPeak": {
+      "max": 33159,
+      "median": 32429.0,
+      "n": 4,
+      "p90": 33159,
+      "p95": 33159
+    },
+    "preparationTokenExposure": {
+      "max": 75984,
+      "median": 74169.0,
+      "n": 4,
+      "p90": 75984,
+      "p95": 75984
+    },
+    "scope": "Explicit worker resumes with a preceding task-check invocation for the same spec; preparation ends at first cq specs next invocation. Task-check command success is not inferred.",
+    "status": "measured"
+  },
+  "schema": 1
+}
