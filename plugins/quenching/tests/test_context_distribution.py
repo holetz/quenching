@@ -37,6 +37,14 @@ class TestContextDistribution(unittest.TestCase):
         self.addCleanup(scratch.cleanup)
         self.tmp_path = Path(scratch.name)
 
+    def test_historical_command_identifier_survives_as_namespace_tokens(self):
+        label = "quenching:specs:isolate"
+        row = transcript(self.tmp_path, [request("one", 123, command=label)])
+        group = next(g for g in instrument.aggregate([row])["groups"] if g["dimension"] == "commandByModel")
+        assert ":".join(group["nameParts"]) == label
+        assert "name" not in group
+        assert group["tokenExposure"] == 123
+
     def test_final_split_usage_is_one_request_and_all_input_fields_count(self):
         first = request("same", 10, 1)
         final = request("same", 10, 9)
