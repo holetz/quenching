@@ -232,7 +232,8 @@ def check_restart(evidence: dict) -> int:
 def resumptions(rows: list[dict]) -> dict:
     pairs = []
     for row in rows:
-        if row["role"] != "worker" or not row["explicitResume"] or not row["firstNextQueryLine"]:
+        if (row["role"] != "worker" or not row["assignmentSpec"] or not row["explicitResume"]
+                or not row["firstNextQueryLine"]):
             continue
         same_spec = [p for p in rows if p["assignmentSpec"] == row["assignmentSpec"]
                      and p["role"] == "worker" and p["taskChecks"] and p["startedAt"]
