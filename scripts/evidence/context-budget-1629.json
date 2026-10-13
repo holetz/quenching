@@ -788,7 +788,9 @@
         "p95": 15472
       },
       "model": "claude-sonnet-5-5",
-      "name": "alpha",
+      "nameParts": [
+        "alpha"
+      ],
       "observedExecutorIterationPeak": {
         "max": 15472,
         "median": 15412.5,
@@ -849,7 +851,9 @@
         "p95": 43618
       },
       "model": "claude-opus-5-5",
-      "name": "plugin-authoring",
+      "nameParts": [
+        "plugin-authoring"
+      ],
       "observedExecutorIterationPeak": {
         "max": 68690,
         "median": 68690,
@@ -910,7 +914,10 @@
         "p95": 16346
       },
       "model": "claude-opus-5-5",
-      "name": "probe:py",
+      "nameParts": [
+        "probe",
+        "py"
+      ],
       "observedExecutorIterationPeak": {
         "max": 16854,
         "median": 16854,
@@ -971,7 +978,10 @@
         "p95": 16162
       },
       "model": "claude-opus-5-5",
-      "name": "probe:py2",
+      "nameParts": [
+        "probe",
+        "py2"
+      ],
       "observedExecutorIterationPeak": {
         "max": 16315,
         "median": 16315,
@@ -1032,7 +1042,10 @@
         "p95": 16194
       },
       "model": "claude-opus-5-5",
-      "name": "probe:py3",
+      "nameParts": [
+        "probe",
+        "py3"
+      ],
       "observedExecutorIterationPeak": {
         "max": 16462,
         "median": 16462,
@@ -1093,7 +1106,10 @@
         "p95": 15890
       },
       "model": "claude-opus-4-8",
-      "name": "probe:wide",
+      "nameParts": [
+        "probe",
+        "wide"
+      ],
       "observedExecutorIterationPeak": {
         "max": 15890,
         "median": 15890,
@@ -1154,7 +1170,10 @@
         "p95": 16353
       },
       "model": "claude-opus-5-5",
-      "name": "probe:wide",
+      "nameParts": [
+        "probe",
+        "wide"
+      ],
       "observedExecutorIterationPeak": {
         "max": 16639,
         "median": 16639,
@@ -1215,7 +1234,10 @@
         "p95": 18837
       },
       "model": "claude-sonnet-5-5",
-      "name": "quenching-specs-reader:read",
+      "nameParts": [
+        "quenching-specs-reader",
+        "read"
+      ],
       "observedExecutorIterationPeak": {
         "max": 21044,
         "median": 20394,
@@ -1276,7 +1298,10 @@
         "p95": 33430
       },
       "model": "claude-opus-5-5",
-      "name": "quenching:align",
+      "nameParts": [
+        "quenching",
+        "align"
+      ],
       "observedExecutorIterationPeak": {
         "max": 45534,
         "median": 42553,
@@ -1337,7 +1362,12 @@
         "p95": 198291
       },
       "model": "claude-opus-5-5",
-      "name": "quenching:git:pr:create",
+      "nameParts": [
+        "quenching",
+        "git",
+        "pr",
+        "create"
+      ],
       "observedExecutorIterationPeak": {
         "max": 200964,
         "median": 200964,
@@ -1398,7 +1428,10 @@
         "p95": 138021
       },
       "model": "claude-opus-5-5",
-      "name": "quenching:handoff",
+      "nameParts": [
+        "quenching",
+        "handoff"
+      ],
       "observedExecutorIterationPeak": {
         "max": 144017,
         "median": 144017,
@@ -1459,7 +1492,11 @@
         "p95": 57548
       },
       "model": "claude-opus-5-5",
-      "name": "quenching:knowledge:align",
+      "nameParts": [
+        "quenching",
+        "knowledge",
+        "align"
+      ],
       "observedExecutorIterationPeak": {
         "max": 57548,
         "median": 57548,
@@ -1520,7 +1557,11 @@
         "p95": 42927
       },
       "model": "claude-opus-5-5",
-      "name": "quenching:specs:autopilot",
+      "nameParts": [
+        "quenching",
+        "specs",
+        "autopilot"
+      ],
       "observedExecutorIterationPeak": {
         "max": 60953,
         "median": 56192.0,
@@ -1581,7 +1622,11 @@
         "p95": 6637
       },
       "model": "claude-sonnet-5-5",
-      "name": "quenching:specs:autopilot",
+      "nameParts": [
+        "quenching",
+        "specs",
+        "autopilot"
+      ],
       "observedExecutorIterationPeak": {
         "max": 26653,
         "median": 21225,
@@ -1642,7 +1687,11 @@
         "p95": 43980
       },
       "model": "claude-opus-5-5",
-      "name": "quenching:specs:board",
+      "nameParts": [
+        "quenching",
+        "specs",
+        "board"
+      ],
       "observedExecutorIterationPeak": {
         "max": 45726,
         "median": 45726,
@@ -1704,7 +1753,11 @@
         "p95": 253751
       },
       "model": "claude-opus-5",
-      "name": "quenching:specs:conclude",
+      "nameParts": [
+        "quenching",
+        "specs",
+        "conclude"
+      ],
       "observedExecutorIterationPeak": {
         "max": 342859,
         "median": 215341.0,
@@ -1765,7 +1818,11 @@
         "p95": 176941
       },
       "model": "claude-opus-5-5",
-      "name": "quenching:specs:conclude",
+      "nameParts": [
+        "quenching",
+        "specs",
+        "conclude"
+      ],
       "observedExecutorIterationPeak": {
         "max": 194782,
         "median": 194782,
@@ -1826,7 +1883,11 @@
         "p95": 356566
       },
       "model": "claude-opus-5",
-      "name": "quenching:specs:create",
+      "nameParts": [
+        "quenching",
+        "specs",
+        "create"
+      ],
       "observedExecutorIterationPeak": {
         "max": 365084,
         "median": 136724.5,
@@ -1887,7 +1948,11 @@
         "p95": 73863
       },
       "model": "claude-opus-5-5",
-      "name": "quenching:specs:create",
+      "nameParts": [
+        "quenching",
+        "specs",
+        "create"
+      ],
       "observedExecutorIterationPeak": {
         "max": 81703,
         "median": 81703,
@@ -1948,7 +2013,11 @@
         "p95": 64428
       },
       "model": "claude-opus-5",
-      "name": "quenching:specs:develop",
+      "nameParts": [
+        "quenching",
+        "specs",
+        "develop"
+      ],
       "observedExecutorIterationPeak": {
         "max": 128168,
         "median": 119014,
@@ -2010,7 +2079,11 @@
         "p95": 92269
       },
       "model": "claude-opus-5-5",
-      "name": "quenching:specs:develop",
+      "nameParts": [
+        "quenching",
+        "specs",
+        "develop"
+      ],
       "observedExecutorIterationPeak": {
         "max": 230889,
         "median": 97401.0,
@@ -2071,7 +2144,11 @@
         "p95": 18444
       },
       "model": "claude-sonnet-5-5",
-      "name": "quenching:specs:develop",
+      "nameParts": [
+        "quenching",
+        "specs",
+        "develop"
+      ],
       "observedExecutorIterationPeak": {
         "max": 93957,
         "median": 76579,
@@ -2132,7 +2209,11 @@
         "p95": 134057
       },
       "model": "claude-opus-5",
-      "name": "quenching:specs:execute",
+      "nameParts": [
+        "quenching",
+        "specs",
+        "execute"
+      ],
       "observedExecutorIterationPeak": {
         "max": 292503,
         "median": 78022,
@@ -2193,7 +2274,11 @@
         "p95": 66608
       },
       "model": "claude-sonnet-5",
-      "name": "quenching:specs:execute",
+      "nameParts": [
+        "quenching",
+        "specs",
+        "execute"
+      ],
       "observedExecutorIterationPeak": {
         "max": 155829,
         "median": 155829,
@@ -2254,7 +2339,11 @@
         "p95": 54236
       },
       "model": "claude-opus-5-5",
-      "name": "quenching:specs:improve",
+      "nameParts": [
+        "quenching",
+        "specs",
+        "improve"
+      ],
       "observedExecutorIterationPeak": {
         "max": 191459,
         "median": 75144,
@@ -2315,7 +2404,11 @@
         "p95": 18515
       },
       "model": "claude-sonnet-5-5",
-      "name": "quenching:specs:improve",
+      "nameParts": [
+        "quenching",
+        "specs",
+        "improve"
+      ],
       "observedExecutorIterationPeak": {
         "max": 105486,
         "median": 19685.5,
@@ -2376,7 +2469,11 @@
         "p95": 93378
       },
       "model": "claude-opus-5",
-      "name": "quenching:specs:isolate",
+      "nameParts": [
+        "quenching",
+        "specs",
+        "isolate"
+      ],
       "observedExecutorIterationPeak": {
         "max": 265423,
         "median": 191845.5,
@@ -2437,7 +2534,11 @@
         "p95": 50237
       },
       "model": "claude-opus-5-5",
-      "name": "quenching:specs:orchestrate",
+      "nameParts": [
+        "quenching",
+        "specs",
+        "orchestrate"
+      ],
       "observedExecutorIterationPeak": {
         "max": 53355,
         "median": 38382.5,
@@ -2498,7 +2599,11 @@
         "p95": 17068
       },
       "model": "claude-sonnet-5-5",
-      "name": "quenching:specs:orchestrate",
+      "nameParts": [
+        "quenching",
+        "specs",
+        "orchestrate"
+      ],
       "observedExecutorIterationPeak": {
         "max": 22212,
         "median": 22212,
@@ -2559,7 +2664,9 @@
         "p95": 40251
       },
       "model": "claude-haiku-4-5-20251001",
-      "name": "unknown",
+      "nameParts": [
+        "unknown"
+      ],
       "observedExecutorIterationPeak": {
         "max": 66584,
         "median": 44491.0,
@@ -2620,7 +2727,9 @@
         "p95": 30971
       },
       "model": "claude-haiku-5-5",
-      "name": "unknown",
+      "nameParts": [
+        "unknown"
+      ],
       "observedExecutorIterationPeak": {
         "max": 31586,
         "median": 17347.0,
@@ -2681,7 +2790,9 @@
         "p95": 15023
       },
       "model": "claude-opus-4-8",
-      "name": "unknown",
+      "nameParts": [
+        "unknown"
+      ],
       "observedExecutorIterationPeak": {
         "max": 16037,
         "median": 15530.0,
@@ -2742,7 +2853,9 @@
         "p95": 214443
       },
       "model": "claude-opus-5",
-      "name": "unknown",
+      "nameParts": [
+        "unknown"
+      ],
       "observedExecutorIterationPeak": {
         "max": 370473,
         "median": 165204.5,
@@ -2803,7 +2916,9 @@
         "p95": 48039
       },
       "model": "claude-opus-5-5",
-      "name": "unknown",
+      "nameParts": [
+        "unknown"
+      ],
       "observedExecutorIterationPeak": {
         "max": 510539,
         "median": 59423.5,
@@ -2864,7 +2979,9 @@
         "p95": 241636
       },
       "model": "claude-sonnet-5",
-      "name": "unknown",
+      "nameParts": [
+        "unknown"
+      ],
       "observedExecutorIterationPeak": {
         "max": 331962,
         "median": 177196.5,
@@ -2925,7 +3042,9 @@
         "p95": 19964
       },
       "model": "claude-sonnet-5-5",
-      "name": "unknown",
+      "nameParts": [
+        "unknown"
+      ],
       "observedExecutorIterationPeak": {
         "max": 221273,
         "median": 19108,
@@ -5015,7 +5134,9 @@
   },
   "peakEvidence": [
     {
-      "command": "unknown",
+      "commandParts": [
+        "unknown"
+      ],
       "executorIterationWindows": [
         510539
       ],
@@ -5032,7 +5153,9 @@
       "window": 510539
     },
     {
-      "command": "unknown",
+      "commandParts": [
+        "unknown"
+      ],
       "executorIterationWindows": [
         510306
       ],
@@ -5049,7 +5172,9 @@
       "window": 510306
     },
     {
-      "command": "unknown",
+      "commandParts": [
+        "unknown"
+      ],
       "executorIterationWindows": [
         509388
       ],
@@ -5066,7 +5191,9 @@
       "window": 509388
     },
     {
-      "command": "unknown",
+      "commandParts": [
+        "unknown"
+      ],
       "executorIterationWindows": [
         508877
       ],
@@ -5083,7 +5210,9 @@
       "window": 508877
     },
     {
-      "command": "unknown",
+      "commandParts": [
+        "unknown"
+      ],
       "executorIterationWindows": [
         508617
       ],
@@ -5100,7 +5229,9 @@
       "window": 508617
     },
     {
-      "command": "unknown",
+      "commandParts": [
+        "unknown"
+      ],
       "executorIterationWindows": [
         508257
       ],
@@ -5117,7 +5248,9 @@
       "window": 508257
     },
     {
-      "command": "unknown",
+      "commandParts": [
+        "unknown"
+      ],
       "executorIterationWindows": [
         507274
       ],
@@ -5134,7 +5267,9 @@
       "window": 507274
     },
     {
-      "command": "unknown",
+      "commandParts": [
+        "unknown"
+      ],
       "executorIterationWindows": [
         506593
       ],

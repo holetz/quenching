@@ -215,7 +215,9 @@ def aggregate(rows: list[dict]) -> dict:
     return {"files": len(rows), "filesWithRequests": sum(bool(s["requests"]) for s in rows),
             "filesWithoutRequests": sum(not s["requests"] for s in rows),
             "anomalies": dict(sum((Counter(s["anomalies"]) for s in rows), Counter())),
-            "groups": [{"dimension": dim, "name": name, "model": model, **summary(samples)}
+            "groups": [{"dimension": dim,
+                        **({"nameParts": name.split(":")} if dim == "commandByModel" else {"name": name}),
+                        "model": model, **summary(samples)}
                        for (dim, name, model), samples in sorted(groups.items())]}
 
 
@@ -314,7 +316,8 @@ def main() -> int:
     examples = sorted(((r["window"], row["source"], r["line"], row["sha256"], r)
                        for row in rows for r in row["requests"]), key=lambda x: x[:3])[-8:]
     report["peakEvidence"] = [{"window": w, "transcriptSha256": sha, "line": line,
-                               **{k: r[k] for k in ("model", "command", "quotedUsage", "messageId",
+                               "commandParts": r["command"].split(":"),
+                               **{k: r[k] for k in ("model", "quotedUsage", "messageId",
                                                    "hostVersion", "executorIterationWindows")}}
                               for w, source, line, sha, r in reversed(examples)]
     args.output.parent.mkdir(parents=True, exist_ok=True)
