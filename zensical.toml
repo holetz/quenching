@@ -171,6 +171,7 @@
       "decisions/0010-custo-de-delegar-o-commit-ao-git-commit.md",
       "decisions/0011-seguranca-das-mudancas-dos-epicos-1192-e-1197.md",
       "decisions/0012-lista-agent-do-orchestrator-e-documental.md",
+      "decisions/0013-plugin-module-split.md",
     ] },
     { "Vision" = [
       "vision/index.md",
