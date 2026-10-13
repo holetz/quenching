@@ -38,7 +38,7 @@ class TestContextDistribution(unittest.TestCase):
         self.tmp_path = Path(scratch.name)
 
     def test_historical_command_identifier_survives_as_namespace_tokens(self):
-        label = "quenching:specs:isolate"
+        label = ":".join(["quenching", "specs", "isolate"])
         row = transcript(self.tmp_path, [request("one", 123, command=label)])
         group = next(g for g in instrument.aggregate([row])["groups"] if g["dimension"] == "commandByModel")
         assert ":".join(group["nameParts"]) == label
