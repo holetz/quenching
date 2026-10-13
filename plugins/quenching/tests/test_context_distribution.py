@@ -152,3 +152,17 @@ class TestContextDistribution(unittest.TestCase):
         assert cost["pairs"][0]["startupTokenExposure"] == 20
         assert cost["pairs"][0]["startupPeak"] == 20
         assert "not-measured" in cost["causalSavings"]
+
+
+    def test_resume_without_identified_spec_cannot_form_a_pair(self):
+        earlier = transcript(self.tmp_path, [request("one", 10)], subagent=True,
+                             metadata={"agentType": "quenching:spec-runner"})
+        earlier.update(startedAt="2026-01-01T00:00:00Z",
+                       taskChecks=[{"task": "1.1", "line": 4}])
+        later = transcript(self.tmp_path, [request("new", 20)], subagent=True,
+                           metadata={"agentType": "quenching:spec-runner"})
+        later.update(startedAt="2026-01-01T01:00:00Z", explicitResume=True,
+                     firstNextQueryLine=1)
+        cost = instrument.resumptions([earlier, later])
+        assert cost["status"] == "not-measured"
+        assert cost["pairs"] == []
