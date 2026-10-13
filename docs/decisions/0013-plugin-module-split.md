@@ -164,3 +164,143 @@ Copying those resources into dependents instead is the A form tested below.
 A and C survive these host facts. Installed targets and their real plugin state remain untouched.
 The dependency marketplace's source must start with `./`; the initial `../` fixture was rejected
 before installation, then replaced with a marketplace at the common parent and `./<plugin>` sources.
+
+
+## Partition
+
+A has eight installable modules in three tiers. Source ownership remains specs for session;
+this conservative generated-core prototype also copies session support into alignment so its
+unchanged components parser remains self-contained. The specs module copies components support
+for section reading and the session mount, but exposes no components commands. These support
+copies are priced in the payload, not hidden as a supposedly minimal extraction.
+
+| Module | Command fronts | Python subpackages physically shipped |
+| --- | --- | --- |
+| `quenching-specs` | specs, git, handoff; all six agents | common, specs, git, session, components |
+| `quenching-align` | knowledge, components, root align | common, knowledge, components, generated session support |
+| `quenching-design` | design | common, design |
+| `quenching-ops` | ops | common, ops |
+| `quenching-proof` | proof | common, proof, ops |
+| `quenching-toolchain` | toolchain | common, toolchain |
+| `quenching-delivery` | delivery | common, delivery |
+| `quenching-security` | security | common, security |
+
+The proof module carries ops code to satisfy its imports, without exposing ops commands. Only
+specs owns `bin/cq`; every other module has an empty `bin/`. The disposable `assets/bin/cq`
+prototype extends the Python package search path from those plugin bin directories that the
+host places on PATH, allowing the single executable to import enabled optional subpackages.
+That loader is prototype code, not an established shipping rule or an implementation in this PR.
+
+Reference directories are copied by transitive citation closure. The shared closure S is:
+`align`, `components-command-new`, `git`, `knowledge-add`, `knowledge-align`, `knowledge-import`,
+`specs-align`, `specs-conclude`, `specs-develop`, `specs-execute`.
+
+| Module | Reference directories physically shipped |
+| --- | --- |
+| specs | S plus `specs-create` |
+| alignment | S plus `components-command-eval`, `components-harness-align`, `front-align`, `knowledge-documentation`, `knowledge-import-memory` |
+| design | S plus `design-align`, `front-align` |
+| ops | S plus `ops-align`, `front-align` |
+| proof | S plus `proof-align`, `front-align` |
+| toolchain | S plus `toolchain-align`, `front-align` |
+| delivery | S plus `delivery-align`, `front-align` |
+| security | S |
+
+Other asset directories are conservatively copied to each module. Tests and agents live only
+in specs; the full unchanged test payload is included in its measured install. This deliberately
+prices shared-core duplication instead of claiming an optimized extraction was proved.
+
+Commands retain nested front suffixes: `/quenching-specs:specs:develop`,
+`/quenching-specs:git:branch`, `/quenching-align:knowledge:add`, and
+`/quenching-design:design:status`. Both host naming choices work, but this one preserves suffixes
+and avoids collisions within alignment. The existing command surface has 350 `/quenching:`
+literals in 57 files (`re.findall(r"/quenching:", body)` over the 58 command files); changing
+those prefixes is an accepted migration cost. Wildcard `/quenching:*:align` prose needs a
+separate explicit multi-module treatment during extraction; the spike does not pretend that
+one replacement establishes every production routing rule.
+
+C retains one plugin and all non-command assets, with unwanted command files excluded from its
+loaded profile. Thus it really hides optional fronts while preserving their code payload.
+C/all is byte-identical to the baseline, so its three-repeat routing evidence is shared with
+that baseline instead of purchasing identical sessions again. B is not generated after the
+citation-layout disposition above.
+
+Reproduce the surviving prototypes by saving the following generator at
+`.quenching/spike-1628/generate.py` and running `python3 .quenching/spike-1628/generate.py`.
+It reads the source plugin, writes only inside that spike directory, and prints the static
+form × arrangement measurements; native host checks are separate.
+
+```python
+import json, pathlib, re, shutil
+import yaml
+
+ROOT=pathlib.Path(__file__).resolve().parent
+SOURCE=ROOT.parents[1]/'plugins/quenching'
+GROUPS={'specs':['specs','git','handoff.md'],'align':['knowledge','components','align.md'],'design':['design'],'ops':['ops'],'proof':['proof'],'toolchain':['toolchain'],'delivery':['delivery'],'security':['security']}
+CODE={'specs':['common','specs','git','session','components'],'align':['common','knowledge','components','session'],'design':['common','design'],'ops':['common','ops'],'proof':['common','proof','ops'],'toolchain':['common','toolchain'],'delivery':['common','delivery'],'security':['common','security']}
+OWNERS={front:module for module,fronts in GROUPS.items() for front in fronts}
+ARRANGEMENTS={'specs':['specs'],'specs-align':['specs','align'],'minus-design':[x for x in GROUPS if x!='design'],'all':list(GROUPS)}
+
+def rename(text):
+    def sub(m):
+        front=m.group(1)
+        module=OWNERS.get(front, 'specs' if front in ['orchestrator','spec-runner','spec-architect','verifier','git-steward','scout','handoff'] else 'align' if front=='align' else None)
+        return 'quenching-'+module+':'+front if module else m.group(0)
+    return re.sub(r'quenching:([a-z-]+)',sub,text)
+
+def metadata(plugin):
+    commands=list((plugin/'commands').rglob('*.md'));resident=chars=0
+    for p in commands:
+        fm=p.read_text().split('---',2)[1]
+        if re.search(r'^disable-model-invocation:\s*true',fm,re.M):continue
+        m=re.search(r'^description:\s*(.*?)(?=^\w[\w-]*:|\Z)',fm,re.M|re.S)
+        resident+=1;chars+=len(yaml.safe_load(m.group(0))['description']) if m else 0
+    files=[p for p in plugin.rglob('*') if p.is_file() and '__pycache__' not in p.parts]
+    return {'commands':len(commands),'resident':resident,'characters':chars,'files':len(files),'bytes':sum(p.stat().st_size for p in files)}
+
+def main():
+    for module,fronts in GROUPS.items():
+        p=ROOT/'A'/('quenching-'+module)
+        shutil.copytree(SOURCE,p,ignore=shutil.ignore_patterns('__pycache__'),dirs_exist_ok=True)
+        for f in (p/'commands').iterdir():
+            if f.name not in fronts:
+                shutil.rmtree(f) if f.is_dir() else f.unlink()
+        if module!='specs':
+            shutil.rmtree(p/'agents');shutil.rmtree(p/'tests');shutil.rmtree(p/'bin')
+            (p/'bin').mkdir()
+        manifest=json.loads((p/'.claude-plugin/plugin.json').read_text());manifest['name']='quenching-'+module
+        (p/'.claude-plugin/plugin.json').write_text(json.dumps(manifest,indent=2)+'\n')
+        for f in (p/'assets/bin/quenching').iterdir():
+            if f.is_dir() and f.name not in CODE[module]:shutil.rmtree(f)
+        refs=p/'assets/references'
+        needed=set(); pending=list((p/'commands').rglob('*.md'))+list((p/'agents').rglob('*.md')) if (p/'agents').exists() else list((p/'commands').rglob('*.md'))
+        for file in pending:
+            for match in re.finditer(r'assets/references/([a-z0-9-]+)/',file.read_text()):needed.add(match.group(1))
+        while True:
+            extra={match.group(1) for folder in needed if (refs/folder).exists() for file in (refs/folder).rglob('*.md') for match in re.finditer(r'assets/references/([a-z0-9-]+)/',file.read_text())}
+            if extra<=needed:break
+            needed|=extra
+        for f in refs.iterdir():
+            if f.is_dir() and f.name not in needed:shutil.rmtree(f)
+        for f in p.rglob('*.md'):f.write_text(rename(f.read_text()))
+        entry=p/'assets/bin/cq';txt=entry.read_text();needle='from quenching.common.output import CQArgumentParser, USAGE'
+        hook='''import pathlib
+import quenching
+for path_entry in os.environ.get("PATH", "").split(os.pathsep):
+    package = pathlib.Path(path_entry).parent / "assets" / "bin" / "quenching"
+    if package.is_dir() and str(package) not in quenching.__path__:
+        quenching.__path__.append(str(package))
+'''
+        txt=txt.replace(needle,hook+'\n'+needle)
+        entry.write_text(txt)
+        (ROOT/'A'/('quenching-'+module+'.partition.json')).write_text(json.dumps({'fronts':fronts,'code':CODE[module],'reference_directories':sorted(needed),'metadata':metadata(p)},indent=2))
+    for arrangement,modules in ARRANGEMENTS.items():
+        p=ROOT/'C'/arrangement/'quenching';shutil.copytree(SOURCE,p,ignore=shutil.ignore_patterns('__pycache__'),dirs_exist_ok=True)
+        allowed={front for module in modules for front in GROUPS[module]}
+        for f in (p/'commands').iterdir():
+            if f.name not in allowed:shutil.rmtree(f) if f.is_dir() else f.unlink()
+    matrix={form:{arrangement:{k:sum(metadata(p)[k] for p in plugins) for k in ('commands','resident','characters','files','bytes')} for arrangement,modules in ARRANGEMENTS.items() for plugins in [[ROOT/'A'/('quenching-'+m) for m in modules] if form=='A' else [ROOT/'C'/arrangement/'quenching']]} for form in ['A','C']}
+    (ROOT/'static-matrix.json').write_text(json.dumps(matrix,indent=2));print(json.dumps(matrix,indent=2))
+
+if __name__=='__main__':main()
+```
