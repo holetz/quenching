@@ -344,11 +344,33 @@ proved is a promise execution will refuse.
 `status` — plus `parallel`, where `## Tasks` moved — have run in that same call.
 
 ### 8. Close on a recommendation, and report
-The re-derived stage came back in step 7's call, so **this step opens nothing**. Compare it with
+The re-derived stage came back in step 7's call. Compare it with
 where the pass expected to land: a divergence is named and the pass re-enters at step 3 with a pass
 derived from the real stage. **The re-entry is narrated, never offered.**
 
-Otherwise close, and how it closes is the gear's — §Approval owns the screen's own content:
+**Before either approval route**, run the read-only size signal:
+
+```bash
+cq specs estimate <id> --json
+```
+
+Read the exit code before the payload; refusal or failure leaves approval unstamped. Report
+`maxSectionTokens`, `workerBudgetTokens` (the S2 worker policy is 100000), the section/task counts,
+`complete`, unresolved inputs and `excluded`. This is a UTF-8 bytes / 4 declared-reading heuristic;
+it **never proves the full build fits**, even when every declared input was found. Total reading
+volume is not a context peak; system overhead, future code, outputs and iterations are not predicted.
+
+When `overBudget` is true, follow §Approval's decomposition recommendation **before stamping**:
+brief `spec-architect` in **proposal-only** mode with the source id/problem, task-section estimates,
+worker budget, unresolved inputs and exclusions. It returns independently verifiable slices and
+dependencies without creating children. Offer that concrete proposal to the human (recommended),
+explicit acceptance of the unsplit estimate risk, or stop. Only explicit authorization permits
+capture/linking; preserve the original problem and never approve/execute the children incidentally.
+In `low`, including **forced low** / `autonomous`, do not ask or automatically approve an oversized
+source: return `STATE: blocked` with `NOTE: needs-human: <budget evidence and proposed slices>` to
+the conductor. A lower estimate reports uncertainty and continues; it is not a fits verdict.
+
+With no unresolved size decision, close according to the gear — §Approval owns the screen:
 
 - **`low`** — no screen. With `ready` now **proved** by step 7's payload and `approved` unset, stamp
   it here: `cq specs record <id> approved --set date=<today> --set by=low-gear`. **`by:` is never
