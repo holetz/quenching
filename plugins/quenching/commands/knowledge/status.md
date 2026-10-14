@@ -101,11 +101,12 @@ One report, in this order:
    `glossary-broken-link` (→ `/quenching:knowledge:define`), coverage-ledger deferrals, and
    anything a human has not yet stated. Report the widest few resource-activity intervals as a
    figure in their own line — commits in the radius of a `resource:` glob, never drift of the doc.
+6. **Catalog controls** — the payload's `controls` block — each catalog control id, its requirement ids with `present`, `missing`, `not-measured`, `refused` or `retired`, and the evidence paths. `present` is candidate evidence, never conformance; the block never changes `ok` or the exit code.
 
 Close with the single most useful next command for this repo's actual state, and nothing else.
 
 **A section with nothing in it is reported as empty, never omitted.**
-**Done when:** all five sections are reported and no file has changed.
+**Done when:** all six sections are reported and no file has changed.
 
 ### 5. The density table — figures, not findings
 
