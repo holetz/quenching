@@ -17,7 +17,7 @@ EXCLUDED = [
     "host/system/harness overhead", "conditional execute references", "tool/test output",
     "iteration count", "growing conversation history", "generated code",
 ]
-EXECUTE_BODY = Path(__file__).resolve().parents[4] / "commands/specs/execute.md"
+EXECUTE_BODY = Path(__file__).resolve().parents[5] / "commands/specs/execute.md"
 
 
 def _file_size(root: Path, entry: str, standard: bool = False) -> dict:

@@ -11,7 +11,7 @@ from unittest.mock import patch
 import _paths  # noqa: F401
 from quenching.specs.backends.memory import MemoryBackend
 from quenching.specs.commands.cli import build_parser
-from quenching.specs.commands.estimate import cmd_estimate, estimate_build
+from quenching.specs.commands.estimate import EXECUTE_BODY, cmd_estimate, estimate_build
 from quenching.specs.commands.output import Emitter
 
 
@@ -104,6 +104,18 @@ class DeclaredReading(unittest.TestCase):
 
 
 class EstimatorCommand(unittest.TestCase):
+    def test_default_preamble_is_the_shipped_execute_body(self):
+        shipped = Path(__file__).resolve().parents[1] / "commands/specs/execute.md"
+        self.assertEqual(shipped, EXECUTE_BODY)
+        self.assertTrue(EXECUTE_BODY.is_file())
+        backend = MemoryBackend()
+        backend.create_spec("plans", "---\ntitle: Estimate\ndate: 2026-10-14\n---\n"
+                            "## Tasks\n- [ ] 1.1 Task\n      files: commands/specs/execute.md\n")
+        result = estimate_build(backend.read_spec(1)[0], Path(__file__).resolve().parents[1])
+        self.assertTrue(result["preamble"]["available"])
+        self.assertEqual(shipped.stat().st_size, result["preamble"]["bytes"])
+        self.assertTrue(result["complete"])
+
     def test_cli_accepts_both_identity_forms_and_explicit_budget(self):
         parser, _ = build_parser()
         self.assertEqual("42", parser.parse_args(["estimate", "42"]).spec_id)
