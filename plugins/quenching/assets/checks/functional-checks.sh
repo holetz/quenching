@@ -341,7 +341,11 @@ fi
 # --------------------------------------------------------------------------- #
 if want 4; then
 echo "4. the ops and proof front bodies load and cite their references"
-front_probe () {
+front_# The probes never write, but the proof that no spec leaked is cheap and local: the store branch
+# tips of the repository under test must be the same after the probes as before them.
+store_tips () { git -C "$REPO" rev-parse -q --verify refs/heads/quenching refs/remotes/origin/quenching 2>/dev/null || true; }
+TIPS_BEFORE="$(store_tips)"
+probe () {
   local id="$1" command="$2"
   local box="$WORK/front-$id"
   newbox "$box"
@@ -459,6 +463,8 @@ probe c "add a standard: we always use snake_case for database columns"         
 # measured as a MISS before that edit, so a regression puts it straight back to failing here.
 probe d "set up something that audits our migrations and reports back"                        "quenching:components:agent:new"
 probe e "I want something to catch it automatically whenever a migration lands"               "quenching:components:hook:new"
+if [ "$(store_tips)" = "$TIPS_BEFORE" ]; then r=yes; else r=no; fi
+check "$r" "the routing probes left the spec store branch untouched"
 fi
 
 echo
