@@ -60,8 +60,11 @@ item has exactly one catalog route as well: this prevents a Scorecard check or c
 practice being assessed independently by two owners.
 
 Catalog membership does not authorize new features in a front with a maintenance freeze.
-Specs 1637 and 1639 consume this data; spec 1638 owns the human decision about adding shared
-checks to `security`, `delivery`, `toolchain` and `proof`. The provisional `opensource` owner
+Specs 1637 and 1639 consume this data. Spec 1638 recorded the owner's decision: `security`,
+`delivery`, `toolchain`, `proof` and `knowledge` answer their controls in a read-only `controls`
+block of their `status`, through the shared evaluator `quenching/controls/evaluate.py`, and
+`docs/index.md` records the exception to the freeze. `git` does not answer yet: all its controls
+need a provider. The provisional `opensource` owner
 ID does not settle the future front's name, module layout, command API or adoption level.
 
 ## Evidence and provider absence
