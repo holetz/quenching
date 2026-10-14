@@ -12,6 +12,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[3]
 SPECS = ROOT / "plugins/quenching/commands/specs"
 MOLD = ROOT / "plugins/quenching/assets/references/specs-develop/report-mold.md"
+CADENCE = ROOT / "plugins/quenching/assets/references/specs-execute/execution-cadence.md"
 
 
 def text(path):
@@ -49,6 +50,24 @@ class StageEndContractTests(unittest.TestCase):
     def test_execute_offer_recommends_a_new_session_over_budget(self):
         body = text(SPECS / "execute.md")
         self.assertIn("\"(Recommended)\", is to run `/quenching:specs:conclude <id>` in a new session", body)
+
+
+class SectionBoundaryContractTests(unittest.TestCase):
+    def test_execute_measures_the_boundary_and_asks_only_over_budget(self):
+        body = text(SPECS / "execute.md")
+        step = body[body.index("h. **At a section boundary"):body.index("**Pause if:**")]
+        self.assertIn("keep the task commits", step)
+        self.assertIn("cq components session context --json", step)
+        self.assertIn("Exit 0 or 2 → continue to the next task: the boundary is not a question", step)
+        self.assertIn("Exit 1 → ask once", step)
+        self.assertIn("in a new session \"(Recommended)\"", step)
+        self.assertNotIn("section-boundary offer", body)
+
+    def test_cadence_lets_the_size_decide_only_the_tone(self):
+        cadence = text(CADENCE)
+        self.assertIn("the measured size decides only the tone", cadence)
+        self.assertIn("A count never stops a task midway", cadence)
+        self.assertIn("adds no record and no fifth Handoff event", cadence)
 
 
 if __name__ == "__main__":
