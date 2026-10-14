@@ -39,5 +39,17 @@ class BuildSizeApproval(unittest.TestCase):
             self.assertIn(marker, text)
 
 
+class ObservedCostAtConclude(unittest.TestCase):
+    def test_measurement_precedes_archive_and_has_explicit_build_scope(self):
+        text = prose("commands/specs/conclude.md")
+        step = text[text.index("### 4. Write"):text.index("### 5. Distil")]
+        self.assertLess(step.index("cq session cost"), step.index("cq specs promote"))
+        for marker in ("buildCost", "build-only", "explicit", "per model", "maxRequestExposureTokens",
+                       "unavailable", "Codex", "Never infer", "provenance", "never a context peak"):
+            self.assertIn(marker, step)
+        self.assertIn("measurements=", step)
+        self.assertIn("status=unavailable", step)
+
+
 if __name__ == "__main__":
     unittest.main()
