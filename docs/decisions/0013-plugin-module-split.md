@@ -308,9 +308,9 @@ if __name__=='__main__':main()
 
 ## Matrix
 
-The completed measurements are preserved below; task 2.2 is not complete. A `not proved` cell
-is a failed acceptance gate for decision-making, not an observed behavioral regression. No
-inconclusive check is promoted to pass. Repository verification is a separate repository-wide
+The completed measurements are preserved below. The initially incomplete functional gate was
+resumed after the recorded reset, preserving all earlier evidence. No inconclusive check was
+promoted to pass; the repeated full A harness supplied the missing observations. Repository verification is a separate repository-wide
 check of the durable ADR and unchanged product; it is not the native prototype surface proof.
 
 | Form | Arrangement | Authored cost axis | Binary axis | Install payload / visible commands | Citation axis | Routing axis | Functional surface gate | Overall |
@@ -318,7 +318,7 @@ check of the durable ADR and unchanged product; it is not the native prototype s
 | A | specs | pass: 3226 chars | pass: 1 cq | 2,869,338 bytes / 22 commands | pass: 145 citation reads | not required by D4 | not run on subsets | subset process assertions pass |
 | A | specs-align | pass: 7539 chars | pass: 1 cq | 4,239,597 bytes / 44 commands | pass: 338 citation reads | not required by D4 | not run on subsets | subset process assertions pass |
 | A | minus-design | pass: 7539 chars | pass: 1 cq | 8,386,867 bytes / 55 commands | pass: 661 citation reads | not required by D4 | not run on subsets | subset process assertions pass |
-| A | all | pass: 7539 chars | pass: 1 cq | 9,301,297 bytes / 58 commands | pass: 724 citation reads | pass: 39/39 | inconclusive: 2 pass, 6 unmeasured | not proved |
+| A | all | pass: 7539 chars | pass: 1 cq | 9,301,297 bytes / 58 commands | pass: 724 citation reads | pass: 39/39 | pass: 8/8; exit 0 on resume | pass against baseline |
 | B | specs | not built | not measured | not measured | fail: native dependency does not supply the cited own-root file | not run | not run | not proved |
 | B | specs-align | not built | not measured | not measured | fail: native dependency does not supply the cited own-root file | not run | not run | not proved |
 | B | minus-design | not built | not measured | not measured | fail: native dependency does not supply the cited own-root file | not run | not run | not proved |
@@ -334,11 +334,13 @@ increase is **3.9362699%**, below the relative limit 6,402 × 1.05 = 6,722.1. A 
 independent approved authored ceiling: 7,539 ≤ 7,624. These are two different measures, both
 passing; neither is substituted for the other.
 
-For subsets, intersecting the native all-loaded listing with each fresh session's observed
-registry projects A/specs to 12 descriptions / 2,540 characters, and C/specs to 12 / 2,438;
-all other arrangements retain 31 descriptions and their all-loaded character totals. Those
-subset figures are projections from the observed listing and registry, not fresh subset
-`skill_listing` snapshots; the authored subset counts are directly measured.
+Fresh persisted initial listings now directly confirm every partial arrangement: A/specs =
+12 descriptions / 2,540 characters; A/specs+alignment and A/minus-design = 31 / 6,654;
+C/specs = 12 / 2,438; C/specs+alignment and C/minus-design = 31 / 6,402.
+Those readings match the earlier registry/listing projections. The first A/specs capture was
+written before an API authentication refusal caused by the expired disposable seed; its native
+listing remains direct process evidence. Updating only the disposable credential copy from the
+already renewed real credential restored successful sessions on the same model.
 
 Static cells are produced by the embedded generator. Process cells come from seven fresh
 arrangement sessions. Each executed this Python check through Bash, with `roots` set to that
@@ -375,11 +377,13 @@ baseline. There are no observed routing regressions under the spec's baseline-th
 
 The A functional harness is a disposable copy of the original harness. Changes are limited to
 its plugin-directory root, equivalent renamed expected ids, and retained captures; assertions,
-prompts, turn limits, and anchoring are preserved. Its recorded return code is **0**, but its
-output is **2 passed, 0 failed, 6 inconclusive**. The knowledge reference checks observed their
-reads; ops, proof, and the root conductor produced no tool evidence after the account rate limit.
-The terminal rate refusal also reached the knowledge session after its initial valid read.
-This partly measured return code is not a green functional gate.
+prompts, turn limits, and anchoring are preserved. The initial run returned 0 but printed
+2 passed / 6 inconclusive after the account limit, so it was not treated as green. On
+2026-10-14 01:16 UTC (2026-10-13 in the declared target timezone), the full repeated
+`--only 1,2,4` harness returned **0 with 8 passed, 0 failed, no inconclusive checks**.
+Each of its four terminal native results is successful, on `claude-opus-5-5`.
+Retained output is `A-functional-resume.log`; native captures are in `functional-A-resume/`.
+The earlier failures and captures remain retained.
 
 | Benefit comparison against C | Measured result | What it establishes |
 | --- | --- | --- |
@@ -407,14 +411,14 @@ versioning-release, and the Codex translator; no shipping rule is changed here.
 
 ### Capacity and evidence retention
 
-The spike made **103 fresh CLI sessions**, below its limit of **120 sessions**. Aggregate measured
-list-price cost from deduplicated native result/cost-state records is **US$22.4056688**; this is
+Before the capacity pause, the spike had made **103 fresh CLI sessions**, below its limit of **120 sessions**. At that pause, aggregate measured
+list-price cost from deduplicated native result/cost-state records was **US$22.4056688**; this is
 not a charge or a currency conversion. All measured result model keys are `claude-opus-5-5`.
 Five terminal records contain the account-limit response: the four A functional sessions and
 the debug attempt; the latter and three completely blocked functional sessions cost zero.
 The native response says `You've hit your session limit · resets 7:10pm (America/Sao_Paulo)`;
 the API error is HTTP 429. No retry-after interval was observed, and no further Claude calls
-were started after that condition was identified.
+were started until the orchestrator resumed the run after the recorded reset.
 
 Retained evidence lives under `.quenching/spike-1628/`: `captures/*.jsonl`, native transcripts
 under disposable configs, `runtime-listings.json`, `static-matrix.json`, partition JSON files,
@@ -422,5 +426,11 @@ the original and retained functional logs, `functional-A/*.jsonl`, the repositor
 and `totals.json`. The original functional harness deletes its temporary boxes; its four
 persistent native transcripts retain their observations and cost-state records. No raw
 credential or full transcript is versioned; the durable tables record the pertinent observations.
-Resume the missing functional checks after capacity is available, preserving the same source,
-model and fixture; retain the 17-session headroom instead of blindly repeating the whole matrix.
+The resumed pass used the planned six partial resident snapshots and four full functional
+sessions. Total across both passes is **113 fresh CLI sessions / 120**, and the deduplicated
+native list-price total is **US$24.2255896**, leaving seven sessions unused. The first resumed
+call cost zero and reported a revoked expired-seed OAuth token; it still wrote the A/specs
+initial listing. The next call used the already renewed credential in a disposable copy and
+succeeded. No owner reauthorization, installed-config change, new routing suite, or larger
+session ceiling was required. `totals-resumed.json` and `runtime-resume-listings.json` retain
+the final aggregates and snapshot source paths; the original totals remain intact.
