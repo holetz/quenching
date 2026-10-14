@@ -31,6 +31,8 @@ before anyone touches a file.
 The **core** is `knowledge`, `specs`, `git` and `components`: these are maintained actively. The
 `design`, `ops`, `proof`, `toolchain`, `delivery` and `security` fronts are **non-core** — human-only
 commands kept under the same names with reduced maintenance (defect fixes, no new features).
+One recorded exception (spec 1638, 2026-10-14): `security`, `delivery`, `toolchain` and `proof`
+answer, read-only in their `status`, the open source catalog controls routed to them.
 
 ## The problem
 
