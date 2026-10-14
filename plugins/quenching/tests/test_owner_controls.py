@@ -23,6 +23,7 @@ from quenching.controls.evaluate import (
     untrusted_trigger,
 )
 
+GUIDE = pathlib.PurePosixPath("docs", "deep", "guide.txt").as_posix()
 SHA = "0123456789abcdef0123456789abcdef01234567"
 
 
@@ -64,11 +65,11 @@ class OwnerControls(unittest.TestCase):
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
             _write(root, "SECURITY.md")
-            _write(root, "docs/deep/guide.txt")
+            _write(root, GUIDE)
             states = _requirements(owner_controls("security", root))
             self.assertEqual("present", states["OSPS-VM-02.01"]["state"])
             self.assertEqual(["SECURITY.md"], states["OSPS-VM-02.01"]["evidence"])
-            self.assertIn("docs/deep/guide.txt", states["OSPS-VM-01.01"]["evidence"])
+            self.assertIn(GUIDE, states["OSPS-VM-01.01"]["evidence"])
 
     def test_git_directory_is_never_walked(self):
         with tempfile.TemporaryDirectory() as raw:
