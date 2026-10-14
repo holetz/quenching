@@ -1,10 +1,15 @@
 """Executable proofs for the owner answers to the open source controls catalog."""
 from __future__ import annotations
 
+import contextlib
+import importlib
+import io
+import json
 import pathlib
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 try:
     import _paths  # noqa: F401 — must precede the `quenching` import
@@ -97,6 +102,57 @@ class OwnerControls(unittest.TestCase):
             self.assertEqual([".github/workflows/bad.yml"], result["evidence"])
             self.assertEqual("missing",
                              _requirements(owner_controls("security", root))["OSPS-BR-01.01"]["state"])
+
+
+ROUTES = {
+    "security": ("quenching.security", []),
+    "delivery": ("quenching.delivery.cli", ["status"]),
+    "toolchain": ("quenching.toolchain.cli", ["status"]),
+    "proof": ("quenching.proof.cli", ["status"]),
+    "knowledge": ("quenching.knowledge.cli", ["status"]),
+}
+
+
+def _run(module, argv: list[str]) -> tuple[int, dict]:
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        code = module.main(argv)
+    return code, json.loads(out.getvalue())
+
+
+class OwnerStatusRoutes(unittest.TestCase):
+    def _repository(self, raw: str) -> pathlib.Path:
+        root = pathlib.Path(raw)
+        _write(root, ".claude/quenching.json", "{}\n")
+        _write(root, "README.md")
+        _write(root, "SECURITY.md")
+        _write(root, "tests/test_unit.py", "def test_unit():\n    assert True\n")
+        _write(root, "docs/index.md", "---\nokf_version: 0.1\n---\n# Index\n")
+        _write(root, "pyproject.toml", "[project]\nname = 'x'\nversion = '1.0'\n")
+        _write(root, ".github/workflows/ci.yml",
+               f"on: [pull_request]\njobs:\n  a:\n    runs-on: ubuntu-latest\n"
+               f"    steps:\n      - uses: actions/checkout@{SHA}\n      - run: python -m unittest\n")
+        return root
+
+    def test_each_status_carries_its_owner_block_without_moving_the_exit(self):
+        catalog = load_catalog()
+        stub = {"owner": "stub", "summary": {"present": 0, "missing": 0, "not-measured": 0}}
+        with tempfile.TemporaryDirectory() as raw:
+            root = self._repository(raw)
+            for owner, (name, verb) in ROUTES.items():
+                with self.subTest(owner=owner):
+                    module = importlib.import_module(name)
+                    argv = ["--root", str(root), *verb, "--json"] if owner != "knowledge" \
+                        else ["status", "--root", str(root), "--json"]
+                    code, payload = _run(module, argv)
+                    block = payload["controls"]
+                    owned = {item["id"] for item in catalog["controls"] if item["owner"] == owner}
+                    self.assertEqual(owner, block["owner"])
+                    self.assertEqual(owned, {item["id"] for item in block["controls"]})
+                    with mock.patch.object(module, "owner_controls", return_value=stub):
+                        stub_code, stub_payload = _run(module, argv)
+                    self.assertEqual(code, stub_code)
+                    self.assertEqual(payload["ok"], stub_payload["ok"])
 
 
 if __name__ == "__main__":
