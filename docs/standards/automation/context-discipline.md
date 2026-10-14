@@ -7,7 +7,7 @@ tags: [automation, context, reading, cost, commands, references]
 timestamp: 2026-10-14
 audience: both
 authority: background
-source: read-by-section-not-by-file, narrow-the-execute-preamble, extensible-surface-and-budget-retirement, 2026-08-06, 2026-08-04, scope-the-handoff-rewrite; spec 1629 measured context budgets (2026-10-13); spec 1631 measured stage-boundary tone (2026-10-14); lineage in ADR 0004
+source: read-by-section-not-by-file, narrow-the-execute-preamble, extensible-surface-and-budget-retirement, 2026-08-06, 2026-08-04, scope-the-handoff-rewrite; spec 1629 measured context budgets (2026-10-13); spec 1631 measured stage-boundary tone (2026-10-14); spec 1633 declared-reading estimation and build-cost provenance (2026-10-14); lineage in ADR 0004
 maintainer: quenching
 ---
 
@@ -259,6 +259,39 @@ closing sections — almost entirely the record of sections that had already clo
 boundary was already the point where a run may stop; `scope-the-handoff-rewrite` is the same
 boundary applied to what a rewrite sends, closing a section's block the moment that boundary is
 crossed rather than resending it to every task built after.
+
+## Declared reading is a warning, not measured build usage
+
+<!-- rules -->
+
+`cq specs estimate <id> --json` derives section-level declared reading from UTF-8 file sizes,
+rounded upward at four bytes per token. Each section counts its unique declared task files and
+Impact standards once, plus the shipped execute body and spec build sections; another section
+counts the shared files again. Missing/new files and undeclared task inputs remain unresolved.
+The largest section is compared with the worker policy budget above. Total reading volume is
+not a context peak, and even complete declared-input coverage never proves the build fits:
+host/harness overhead, conditional references, outputs, generated code and iterations are excluded.
+
+Develop checks this signal before every approval path. Known reading above the budget proposes
+independently verifiable slices through `spec-architect` in proposal-only mode. Capturing/linking
+children needs explicit authorization; the source problem and approval/task history survive.
+Low/forced-low autonomous runs return the oversized-plan decision to their conductor, without
+approving it automatically. A human may explicitly accept the unsplit estimate risk.
+
+Conclude preserves observed usage separately in `buildCost`, before archive. A measured record
+requires exact build-only transcript/agent attribution and known models, with request counts,
+input/cache/output totals and maximum reported request exposure per model. That exposure is not
+silently a context peak. Native Codex usage that was not measured, ambiguous scope and partial or
+refused metering are unavailable with source and reason, never estimated numbers or zero fillers.
+Valid measured evidence survives resume; replacing unavailable evidence writes all fields together.
+
+<!-- rationale -->
+
+Spec 1633 adopted two evidence classes because a static reading heuristic is reproducible from
+files while observed usage disappears with its scoped transcript. Keeping them distinct prevents
+an inexpensive estimate from becoming a false build-fit or calibration claim. Regression coverage
+proves the declaration and workflow contract; calibration across actual builds remains future
+measurement, so this standard retains its existing background authority.
 
 ## Measured context budgets
 
