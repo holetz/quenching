@@ -134,6 +134,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   used to ship separately.
 - [**Declared root / resolved root**](standards/architecture/spec-backend.md) — the pair the shared
   layer of `cq specs` must never confuse.
+- [**Declared-reading estimate**](standards/automation/context-discipline.md) — the section-level UTF-8 byte heuristic compared with the worker budget, with unresolved inputs and exclusions, never measured usage or proof that a build fits.
 - [**Dependency map**](standards/automation/dependency-sweep.md) — the table the **Dependency
   sweep** returns, written by the orchestrator into `### Mapa de dependências` under the spec's own
   `## Design` and **dated**: it names every file the proposal's area touches or is touched by, and

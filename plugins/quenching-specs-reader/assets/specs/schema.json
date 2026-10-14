@@ -11,7 +11,7 @@
 
   "frontmatter": {
     "required": ["title", "date"],
-    "optional": ["verification", "priority", "refined", "approved", "branch", "pr", "reviewed", "merge", "outcome", "workItemType", "epic", "tags", "assignee", "start", "target"],
+    "optional": ["verification", "priority", "refined", "approved", "branch", "pr", "reviewed", "merge", "buildCost", "outcome", "workItemType", "epic", "tags", "assignee", "start", "target"],
     "verification": ["per-task", "per-section", "end-of-plan"],
     "outcome": ["done", "abandoned"],
 
@@ -71,6 +71,13 @@
         "writeOnce": true,
         "label": "spec:merged",
         "why": "the strategy was a choice and the subject names the merge it produced. The subject is known BEFORE the merge, so the record is stamped on the work branch and the merge is the last action of `git:merge`'s own run — nothing is written to the base after it. Under `rebase` and `fast-forward` no merge commit exists, so the subject is an explicit none. A spec archived before this change carries `{strategy, commit}` and is read as-is, never backfilled: a recorded sha describes a commit that exists. `pr:` is optional and absent on every local merge; `gh pr merge --merge|--squash|--rebase` maps onto three of the four strategies, so `pr:` under `fast-forward` — which has no `gh` equivalent — is refused. `specs:conclude` never stamps this record; it stops before the merge and names `git:merge` in its own handoff."
+      },
+      "buildCost": {
+        "fields": ["status", "date", "source", "measurements", "reason"],
+        "status": {"levels": ["measured", "unavailable"]},
+        "writtenBy": "conclude",
+        "writeOnce": false,
+        "why": "observed build usage cannot be reconstructed from task files or git after its explicitly scoped transcript is lost. source carries runtime, transcript/agent scope and measurement coverage; measurements is a compact JSON scalar of per-model observed request counts and input/cache/output totals, plus maxRequestExposureTokens (reported request exposure, never silently relabelled a context peak). Unknown or unavailable telemetry has status unavailable, an empty measurements scalar and a reason, never fabricated zeros or estimates. The declared-reading heuristic is derived output and never belongs in this record. Conclude may replace unavailable with new evidence, writing every field so stale reasons or measurements cannot survive a re-stamp."
       },
       "outcome": {
         "valuesFrom": "frontmatter.outcome",
