@@ -174,6 +174,57 @@ A `## Discoveries` line that gets a doc is resolved in place. No OKF bundle → 
 no bundle.
 
 ### 4. Write `## Outcome` and archive
+**First preserve observed build cost, with provenance.** This is independent of the derived
+`cq specs estimate` reading heuristic. Inspect `records.buildCost` from step 1: a valid measured
+record already covers the build and survives a resumed conclude; do not replace it with missing
+telemetry. New evidence may replace `unavailable`, with every field written together so an old
+reason or measurement cannot survive the re-stamp. An abandoned, unbuilt spec also reports
+unavailable rather than inventing an execute cost.
+
+Use the existing meter **only** when the briefing identifies an explicit **build-only** Claude
+Code subagents directory and the agent ids belonging to this spec's execute runs:
+
+```bash
+cq session cost "<explicit-build-only-subagents-directory>" --json
+```
+
+**Never infer** that scope from the latest session, the source spec's branch, transcript mtime,
+prompt prose or a directory containing unrelated workers. Missing/ambiguous scope, native **Codex**
+usage that was not measured, a meter refusal, missing requests or parse findings are unavailable;
+exit 1 is partial evidence, never silently a complete measurement. Preserve the reason and scope
+in the report. Do not invent usage from context capacity, file sizes or model memory.
+
+On exit 0 with exact attribution and known models, retain the meter's `byModel` totals **per model**:
+`model`, `requests`, `input`, `cacheRead`, `cacheWrite`, `output`. For each model, add
+`maxRequestExposureTokens` as the maximum `groups[].maxWindow` for that model. That existing
+meter field is reported request exposure, **never a context peak**: executor iterations can
+aggregate in top-level usage. State that limitation in `source`; no iteration-peak coverage is
+claimed. Keep the array compact as one JSON scalar, with no sum across tiers and no monetary cost.
+Set `source` to runtime, explicit directory/agent ids, measurement command/exit and coverage;
+`measurements` contains only observed values, and `reason` is empty. An unknown model/agent
+attribution does not justify a measured whole-build claim.
+
+Write the conclude-owned record **before archive**, through the generic record writer:
+
+```bash
+cq specs record "<id>" buildCost --set status=measured --set date=<today> \
+  --set "source=<runtime; exact build scope; command/exit; request-exposure limitation>" \
+  --set 'measurements=<compact per-model JSON array from the observed payload>' --set 'reason='
+```
+
+For unavailable evidence write no numeric stand-in; an empty scalar is absence, not zero:
+
+```bash
+cq specs record "<id>" buildCost --set status=unavailable --set date=<today> \
+  --set "source=<runtime and any explicitly known scope>" --set 'measurements=' \
+  --set "reason=<why the build was not measured>"
+```
+
+Read the write's exit code; retry a transport failure with backoff, and read an exit-2 refusal
+without repeating it blindly. A failed write stops this step before archive. Report the record's
+status, provenance, per-model values or unavailable reason; calibration is future evidence work,
+not an inference this conclude makes.
+
 `## Outcome` is the archive gate — the spec cannot move without it. Draft it, confirm it (under `autonomous`, §Under `autonomous`), write it:
 ```bash
 cq specs section "<id>" Outcome --write     # body on stdin

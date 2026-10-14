@@ -24,6 +24,7 @@ from quenching.specs.parse.fields import UnclosedFence
 from quenching.specs.commands.create import cmd_new
 from quenching.specs.commands.doctor import cmd_config, cmd_doctor
 from quenching.specs.commands.epic import cmd_epic
+from quenching.specs.commands.estimate import WORKER_BUDGET_TOKENS, cmd_estimate
 from quenching.specs.commands.fields import cmd_field, cmd_record, cmd_title, cmd_verification
 from quenching.specs.commands.find import cmd_find
 from quenching.specs.commands.granular import cmd_section, cmd_show
@@ -48,7 +49,7 @@ def add_json(sp):
 
 
 # Verbs that take the spec id as a positional as well as `--spec`; True = the id is required.
-SPEC_POSITIONAL = {"status": False, "show": True, "parallel": True}
+SPEC_POSITIONAL = {"status": False, "show": True, "parallel": True, "estimate": True}
 
 
 def add_spec(sp, required: bool):
@@ -239,6 +240,11 @@ def _add_next_and_epic(sub) -> None:
 
 
 def _add_inspection(sub) -> None:
+    sp = add_json(sub.add_parser("estimate", help="estimated declared build reading by task section"))
+    add_spec(sp, True)
+    sp.add_argument("--worker-budget", type=int, default=WORKER_BUDGET_TOKENS,
+                    help="positive policy budget in tokens (default: 100000); not a model limit")
+
     sp = add_json(sub.add_parser("parallel", help="prove a [P] group's files: are disjoint"))
     add_spec(sp, True)
 
@@ -318,6 +324,7 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
 
 
 DISPATCH: dict = {
+    "estimate": cmd_estimate,
     "new": cmd_new,
     "list": cmd_list,
     "status": cmd_status,
