@@ -2,12 +2,12 @@
 type: standard
 title: The specs reader is a generated, read-only sibling plugin
 description: A target that only reads another project's specs enables quenching-specs-reader alone — one command, one read-only entry point that refuses write verbs at the argument boundary and disables every backend write path at runtime, and a payload and version generated from plugins/quenching and held in lockstep by the repository gate
-resource: plugins/quenching-specs-reader/**, scripts/sync_specs_reader_plugin.py, scripts/verify_repo.sh, .claude-plugin/marketplace.json
+resource: plugins/quenching-specs-reader/**, plugins/quenching/assets/modules.json, scripts/generate_plugin_modules.py, scripts/sync_specs_reader_plugin.py, scripts/verify_repo.sh, .claude-plugin/marketplace.json
 tags: [architecture, plugin, specs, read-only, marketplace]
-timestamp: 2026-09-28
+timestamp: 2026-10-14
 audience: both
 authority: current
-source: spec 1139 — an Obsidian vault needed to read another project's specs as its to-do list without enabling 54 commands, and install-profiles.md had already measured that a profile changes no residency
+source: specs 1139 and 1634 — the standalone read-only reader, then manifest-driven generation and published lockstep
 maintainer: quenching
 ---
 
@@ -37,18 +37,34 @@ commands.
 | `bin/cq-specs-read` | hand-owned — the read-only entry point |
 | `README.md` | hand-owned |
 | `assets/bin/quenching/{common,specs}/**`, `assets/specs/**`, `assets/portal/**` | generated from `plugins/quenching/`; the other pillars and the `cq` router are not copied |
+| `assets/modules.json` | generated distribution contract, needed by the copied release module's compatibility export |
 | `VERSION`, `.claude-plugin/plugin.json`, `.generated-from.json` | generated |
 
-`scripts/sync_specs_reader_plugin.py --write` regenerates the generated set, and `--check` runs
-in `scripts/verify_repo.sh`. The editable source of the package stays `plugins/quenching/`: a fix
-made in the copy is overwritten, and a fix made in the source that nobody regenerates fails the
-gate.
+`plugins/quenching/assets/modules.json` declares the source, current published plugins, reader
+copy trees and files, authored paths, and the planned eight-module ownership partition from
+[ADR 0013](../../decisions/0013-plugin-module-split.md). Planned records do not create plugin
+directories or marketplace entries. Production extraction and activation are a later change.
 
-**The version is derived, never bumped.** The release verb moves every artifact in `RELEASE_ARTIFACTS`
-(`release.py`), and rewrites the `version` of every marketplace entry, not only the first
+`python3 scripts/generate_plugin_modules.py --write` regenerates every published generated
+consumer. `--check` compares file bytes, executable bits, missing and stale files without
+writing, and checks published versions, marketplace membership and the single active PATH
+`cq` owner. The repository gate runs that general check. Source paths and ownership are
+validated before writes: traversing or symlink paths, missing copy sources and overlaps with
+authored payload refuse. Stale cleanup is confined to declared generated trees; authored paths
+are preserved. Python caches are excluded.
+
+`scripts/sync_specs_reader_plugin.py` remains a compatibility entry point to the same generator,
+with the same `--write` and `--check` options and no separate copying rules. The editable source
+of the package stays `plugins/quenching/`: a fix made in the copy is overwritten, and an
+unregenerated source fix fails the gate.
+
+**The version is derived.** The release verb derives its surface list from the target repository's
+published module records; `RELEASE_ARTIFACTS` in `release.py` is a derived compatibility export.
+It rewrites the `version` of every marketplace entry, not only the first
 ([versioning-release.md](../ci-cd/versioning-release.md)). The reader's `plugin.json` and `VERSION`
-are also generated from `plugins/quenching/VERSION`, so after a release the reader's `--check`
-fails until `--write` runs, which is the intended signal.
+are also generated from `plugins/quenching/VERSION`. Release moves the version surfaces first;
+the general generator then refreshes copied assets, including the shared version constant. A
+source change whose copy has not been refreshed is a lockstep failure.
 
 ## Read-only is a property of the code
 

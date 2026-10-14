@@ -1,0 +1,353 @@
+{
+  "schemaVersion": 1,
+  "source": "plugins/quenching",
+  "marketplace": ".claude-plugin/marketplace.json",
+  "versionConstant": "plugins/quenching/assets/bin/quenching/common/version.py",
+  "modules": [
+    {
+      "name": "quenching",
+      "path": "plugins/quenching",
+      "published": true,
+      "versionFile": true,
+      "cqPathOwner": true
+    },
+    {
+      "name": "quenching-specs-reader",
+      "path": "plugins/quenching-specs-reader",
+      "published": true,
+      "versionFile": true,
+      "cqPathOwner": false,
+      "authored": [
+        "commands/read.md",
+        "bin/cq-specs-read",
+        "README.md"
+      ],
+      "generated": {
+        "trees": [
+          "assets/bin/quenching/common",
+          "assets/bin/quenching/specs",
+          "assets/specs",
+          "assets/portal"
+        ],
+        "metadata": {
+          "description": "Read-only view of another project's provider-owned quenching specs \u2014 one command, /quenching-specs-reader:read, for a target that must read a specs front without enabling the full quenching plugin. Generated from plugins/quenching; it never writes the tracker.",
+          "keywords": [
+            "claude-code",
+            "spec-driven",
+            "backlog",
+            "read-only",
+            "obsidian"
+          ]
+        },
+        "files": [
+          "assets/modules.json"
+        ]
+      }
+    },
+    {
+      "name": "quenching-hud",
+      "path": "plugins/quenching-hud",
+      "published": true,
+      "versionFile": false,
+      "cqPathOwner": false
+    },
+    {
+      "name": "quenching-specs",
+      "path": "plugins/quenching-specs",
+      "published": false,
+      "versionFile": true,
+      "cqPathOwner": true,
+      "owned": {
+        "commands": [
+          "specs",
+          "git",
+          "handoff.md"
+        ],
+        "packages": [
+          "specs",
+          "git",
+          "session"
+        ],
+        "agents": true
+      },
+      "generatedSupport": {
+        "packages": [
+          "common",
+          "components"
+        ],
+        "references": [
+          "align",
+          "components-command-new",
+          "git",
+          "knowledge-add",
+          "knowledge-align",
+          "knowledge-import",
+          "specs-align",
+          "specs-conclude",
+          "specs-develop",
+          "specs-execute",
+          "specs-create"
+        ],
+        "router": true
+      }
+    },
+    {
+      "name": "quenching-align",
+      "path": "plugins/quenching-align",
+      "published": false,
+      "versionFile": true,
+      "cqPathOwner": false,
+      "owned": {
+        "commands": [
+          "knowledge",
+          "components",
+          "align.md"
+        ],
+        "packages": [
+          "knowledge",
+          "components"
+        ],
+        "agents": false
+      },
+      "generatedSupport": {
+        "packages": [
+          "common",
+          "session"
+        ],
+        "references": [
+          "align",
+          "components-command-new",
+          "git",
+          "knowledge-add",
+          "knowledge-align",
+          "knowledge-import",
+          "specs-align",
+          "specs-conclude",
+          "specs-develop",
+          "specs-execute",
+          "components-command-eval",
+          "components-harness-align",
+          "front-align",
+          "knowledge-documentation",
+          "knowledge-import-memory"
+        ],
+        "router": true
+      }
+    },
+    {
+      "name": "quenching-design",
+      "path": "plugins/quenching-design",
+      "published": false,
+      "versionFile": true,
+      "cqPathOwner": false,
+      "owned": {
+        "commands": [
+          "design"
+        ],
+        "packages": [
+          "design"
+        ],
+        "agents": false
+      },
+      "generatedSupport": {
+        "packages": [
+          "common"
+        ],
+        "references": [
+          "align",
+          "components-command-new",
+          "git",
+          "knowledge-add",
+          "knowledge-align",
+          "knowledge-import",
+          "specs-align",
+          "specs-conclude",
+          "specs-develop",
+          "specs-execute",
+          "design-align",
+          "front-align"
+        ],
+        "router": true
+      }
+    },
+    {
+      "name": "quenching-ops",
+      "path": "plugins/quenching-ops",
+      "published": false,
+      "versionFile": true,
+      "cqPathOwner": false,
+      "owned": {
+        "commands": [
+          "ops"
+        ],
+        "packages": [
+          "ops"
+        ],
+        "agents": false
+      },
+      "generatedSupport": {
+        "packages": [
+          "common"
+        ],
+        "references": [
+          "align",
+          "components-command-new",
+          "git",
+          "knowledge-add",
+          "knowledge-align",
+          "knowledge-import",
+          "specs-align",
+          "specs-conclude",
+          "specs-develop",
+          "specs-execute",
+          "ops-align",
+          "front-align"
+        ],
+        "router": true
+      }
+    },
+    {
+      "name": "quenching-proof",
+      "path": "plugins/quenching-proof",
+      "published": false,
+      "versionFile": true,
+      "cqPathOwner": false,
+      "owned": {
+        "commands": [
+          "proof"
+        ],
+        "packages": [
+          "proof"
+        ],
+        "agents": false
+      },
+      "generatedSupport": {
+        "packages": [
+          "common",
+          "ops"
+        ],
+        "references": [
+          "align",
+          "components-command-new",
+          "git",
+          "knowledge-add",
+          "knowledge-align",
+          "knowledge-import",
+          "specs-align",
+          "specs-conclude",
+          "specs-develop",
+          "specs-execute",
+          "proof-align",
+          "front-align"
+        ],
+        "router": true
+      }
+    },
+    {
+      "name": "quenching-toolchain",
+      "path": "plugins/quenching-toolchain",
+      "published": false,
+      "versionFile": true,
+      "cqPathOwner": false,
+      "owned": {
+        "commands": [
+          "toolchain"
+        ],
+        "packages": [
+          "toolchain"
+        ],
+        "agents": false
+      },
+      "generatedSupport": {
+        "packages": [
+          "common"
+        ],
+        "references": [
+          "align",
+          "components-command-new",
+          "git",
+          "knowledge-add",
+          "knowledge-align",
+          "knowledge-import",
+          "specs-align",
+          "specs-conclude",
+          "specs-develop",
+          "specs-execute",
+          "toolchain-align",
+          "front-align"
+        ],
+        "router": true
+      }
+    },
+    {
+      "name": "quenching-delivery",
+      "path": "plugins/quenching-delivery",
+      "published": false,
+      "versionFile": true,
+      "cqPathOwner": false,
+      "owned": {
+        "commands": [
+          "delivery"
+        ],
+        "packages": [
+          "delivery"
+        ],
+        "agents": false
+      },
+      "generatedSupport": {
+        "packages": [
+          "common"
+        ],
+        "references": [
+          "align",
+          "components-command-new",
+          "git",
+          "knowledge-add",
+          "knowledge-align",
+          "knowledge-import",
+          "specs-align",
+          "specs-conclude",
+          "specs-develop",
+          "specs-execute",
+          "delivery-align",
+          "front-align"
+        ],
+        "router": true
+      }
+    },
+    {
+      "name": "quenching-security",
+      "path": "plugins/quenching-security",
+      "published": false,
+      "versionFile": true,
+      "cqPathOwner": false,
+      "owned": {
+        "commands": [
+          "security"
+        ],
+        "packages": [
+          "security"
+        ],
+        "agents": false
+      },
+      "generatedSupport": {
+        "packages": [
+          "common"
+        ],
+        "references": [
+          "align",
+          "components-command-new",
+          "git",
+          "knowledge-add",
+          "knowledge-align",
+          "knowledge-import",
+          "specs-align",
+          "specs-conclude",
+          "specs-develop",
+          "specs-execute"
+        ],
+        "router": true
+      }
+    }
+  ]
+}
