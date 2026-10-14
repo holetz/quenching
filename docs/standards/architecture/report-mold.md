@@ -4,10 +4,10 @@ title: A front's report is a mold, owned once
 description: The shape a front's commands print their report in belongs to ONE section every one of them cites — three fixed bands, an ordered set of columns each command takes a subset of, and every column naming a command executable as printed — and a block whose cells come from a payload is rendered by the TOOL, with the body quoting the output, because a format rewritten in eight bodies goes stale in seven, a table rewritten in three renderers diverges in all three, and no checker sees either
 resource: plugins/quenching/assets/references/specs-develop/spec-driven.md, plugins/quenching/commands/specs/*.md, plugins/quenching/assets/bin/quenching/specs/commands/next.py
 tags: [architecture, commands, report, output, references, specs]
-timestamp: 2026-10-14
+timestamp: 2026-08-16
 audience: both
 authority: current
-source: 2026-08-04, listagem-ranqueada-nativa-no-cq-specs, 2026-08-16, spec 1631 session-size line (2026-10-14); lineage in ADR 0004
+source: 2026-08-04, listagem-ranqueada-nativa-no-cq-specs, 2026-08-16; lineage in ADR 0004
 maintainer: quenching
 ---
 
@@ -54,12 +54,6 @@ described the report in prose produced six different shapes.
   it is a reminder.
 - **A next-step block last**, under the rule above. Exactly one recommended line, and the reason
   tail only when there is more than one line.
-- **The specs stage ends print one session-size line last in the body**, right before the
-  next-step block: `/quenching:specs:develop`, `/quenching:specs:execute` and
-  `/quenching:specs:conclude` read `cq components session context --json` once, and its exit code
-  sets only the tone of the `→` line — an offer, or a recommendation to run the next stage in a new
-  session. The line's shape is `specs-develop/report-mold.md` §The session-size line; the policy is
-  `docs/standards/automation/context-discipline.md` §Run for less time.
 
 ## Why one section, and not prose in every body
 
