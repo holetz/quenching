@@ -343,10 +343,13 @@ g. **Run and report the declared hook for this event, and move on.** Once the sp
    as the spec-runner's `HOOKS:` line, so an optional hook that never resolved is never lost. A hook
    absent from config is silent.
 
-h. **At a section boundary, keep the task commits and continue to the next task.** The branch is at
-   a clean, independently anchored boundary; another section may still be ahead. A section boundary
-   is not a question and does not pause the run. Stop only when the workflow reaches a question that
-   requires a human answer, or under the pause conditions below. See
+h. **At a section boundary, keep the task commits, read the session size once, and continue.** The
+   branch is at a clean, independently anchored boundary; another section may still be ahead. Run
+   `cq components session context --json` and print its peak and budget in the banner. Exit 0 or 2
+   → continue to the next task: the boundary is not a question. Exit 1 → ask once, with
+   **AskUserQuestion**: stop here and resume with `/quenching:specs:execute <id>` in a new session
+   "(Recommended)", the measured peak in its description, or continue. Otherwise stop only when the
+   workflow reaches a question that requires a human answer, or under the pause conditions below. See
    [execution-cadence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-cadence.md)
    §The section boundary.
 
@@ -382,9 +385,9 @@ small. `--scope current` always resolves to whichever section still has open wor
 [execution-cadence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-cadence.md) §The
 Handoff cadence.
 
-**The section-boundary offer (step 5h) adds no fifth event and writes no new state.** Accepted, it is a
-pause and a last commit, which are already two of the four above; declined, nothing happened worth
-recording.
+**The over-budget question at a section boundary (step 5h) adds no fifth event and writes no new
+state.** Accepted, it is a pause and a last commit, which are already two of the four above;
+declined, nothing happened worth recording.
 **Done when:** the global block and the current section's `## Handoff` block describe the tree as
 it stands after the run's last commit.
 
