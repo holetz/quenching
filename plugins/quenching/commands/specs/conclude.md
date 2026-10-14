@@ -299,7 +299,7 @@ to the `git-steward` after the verifier accepts the spec. Name the handoff (`/qu
 Use the provider configuration already read in step 1 to name the next command: recommend
 `/quenching:git:pr:create` when the configured provider supports the PR route, otherwise
 `/quenching:git:merge`. The human picks, and neither is invoked from here. Name the branch and the
-base so the recommendation is copy-pasteable. For an `abandoned` outcome, skip this handoff and
+base so the recommendation is copy-pasteable. Add one line: once the merge lands, `/quenching:git:cleanup` removes finished work branches and worktrees, listing the ones that must stay (open PR, checked-out worktree, unmerged commits) with the reason; nothing is deleted without the human's confirmation. For an `abandoned` outcome, skip this handoff and
 follow the branch-disposal path below.
 
 For `abandoned`, there is nothing to hand off toward — do not remove any worktree; frame and make
