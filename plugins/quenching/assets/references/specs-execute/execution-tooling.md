@@ -179,7 +179,7 @@ threshold would: an unattended run never judges that something went stale, so a 
 trigger never fires. Each of the four events names an act the loop just performed, never an
 assessment it has to make, which is what lets the rule hold in an unattended run.
 
-### Why a section is the boundary, and why no window size
+### Why a section is the boundary, and why the size sets only the tone
 
 <!-- rationale -->
 
@@ -193,3 +193,9 @@ nothing — which holds only because the trail above was already being maintaine
 A section is the unit because it is the smallest independently deliverable one the front already
 defines; `per-section` is the default verification policy for the same reason, so a boundary is
 also the point where the suite has just run.
+
+The window size came back once it was measured rather than invented: `cq components session
+context` reads the recorded peak against the role budget of
+`docs/standards/automation/context-discipline.md` §Measured context budgets. It still triggers
+nothing — the section boundary does — and it only turns the boundary from silent into a
+recommendation.
