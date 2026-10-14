@@ -23,7 +23,7 @@ class DeclaredReading(unittest.TestCase):
         self.preamble = self.root / "execute.md"
         self.preamble.write_bytes(b"p" * 20)
         (self.root / "a.py").write_bytes(b"a" * 400)
-        standard = self.root / "docs/standards/rule.md"
+        standard = self.root / "docs/standards/agents/communication.md"
         standard.parent.mkdir(parents=True)
         standard.write_bytes(b"s" * 80)
 
@@ -49,11 +49,11 @@ class DeclaredReading(unittest.TestCase):
 
     def test_charges_each_declared_impact_standard_and_no_other_section_path(self):
         result = self.estimate("- [ ] 1.1 Task\n      files: a.py\n",
-                               "- /docs/standards/rule.md §Only a slice\n"
-                               "- /docs/standards/rule.md\n"
-                               "<!-- /docs/standards/hidden.md -->")
-        self.assertEqual(["/docs/standards/rule.md"], result["standards"])
-        self.assertEqual(["a.py", "docs/standards/rule.md"],
+                               "- /docs/standards/agents/communication.md §Only a slice\n"
+                               "- /docs/standards/agents/communication.md\n"
+                               "<!-- /docs/standards/agents/ephemeral-writes.md -->")
+        self.assertEqual(["/docs/standards/agents/communication.md"], result["standards"])
+        self.assertEqual(["a.py", "docs/standards/agents/communication.md"],
                          [r["path"] for r in result["sections"][0]["files"]])
         self.assertTrue(result["complete"])
 
