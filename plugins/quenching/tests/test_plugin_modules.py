@@ -156,6 +156,11 @@ class GeneratedDistribution(unittest.TestCase):
 
 
 class PrincipalPartition(unittest.TestCase):
+    def test_single_repository_gate_checks_the_general_distribution(self):
+        gate = (REPO / "scripts/verify_repo.sh").read_text()
+        self.assertIn("python3 scripts/generate_plugin_modules.py --check", gate)
+        self.assertNotIn("python3 scripts/sync_specs_reader_plugin.py --check", gate)
+
     def test_eight_planned_modules_are_declared_without_production_output(self):
         manifest = load_manifest(REPO)
         planned = [m for m in manifest["modules"] if not m["published"]]
