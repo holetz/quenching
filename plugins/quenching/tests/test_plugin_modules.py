@@ -155,6 +155,104 @@ class GeneratedDistribution(unittest.TestCase):
         self.assertEqual(2, self.run_generator("--write"))
 
 
+class PrincipalGeneration(unittest.TestCase):
+    """Activated principal modules materialize from the source with a closed citation set."""
+
+    def setUp(self):
+        (REPO / ".quenching").mkdir(exist_ok=True)
+        tmp = tempfile.TemporaryDirectory(dir=REPO / ".quenching")
+        self.addCleanup(tmp.cleanup)
+        self.root = root = Path(tmp.name)
+        src = root / "plugins/quenching"
+        files = {
+            "commands/specs/develop.md": "Read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/a.md; "
+                                         "then /quenching-design:design:status.\n",
+            "commands/design/status.md": "Run cq design; see ${CLAUDE_PLUGIN_ROOT}/assets/references/design-align/.\n",
+            "agents/scout.md": "agent\n",
+            "assets/references/specs-develop/a.md": "shared\n",
+            "assets/references/design-align/b.md": "design\n",
+            "assets/bin/quenching/common/version.py": 'VERSION = "1.2.3"\n',
+            "assets/bin/quenching/specs/core.py": "from quenching.common import version\n",
+            "assets/bin/quenching/design/core.py": "from quenching.common import version\n",
+            "assets/specs/schema.json": "{}\n",
+            "assets/bin/cq": "#!/usr/bin/env python3\n",
+            "bin/cq": "#!/usr/bin/env python3\n",
+            "README.md": "manual\n",
+            "VERSION": "1.2.3\n",
+            ".claude-plugin/plugin.json": json.dumps({"name": "quenching", "version": "1.2.3",
+                                                     "author": {"name": "t"}, "license": "MIT",
+                                                     "keywords": ["k"]}),
+        }
+        for rel, text in files.items():
+            path = src / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text)
+        (src / "bin/cq").chmod(0o755)
+        (src / "assets/bin/cq").chmod(0o755)
+        refs = ["specs-develop"]
+        self.manifest = {
+            "schemaVersion": 1, "source": "plugins/quenching", "marketplace": ".claude-plugin/marketplace.json",
+            "versionConstant": "plugins/quenching/assets/bin/quenching/common/version.py",
+            "modules": [
+                {"name": "quenching", "path": "plugins/quenching", "published": False,
+                 "versionFile": True, "cqPathOwner": False},
+                {"name": "quenching-specs", "path": "plugins/quenching-specs", "published": True,
+                 "versionFile": True, "cqPathOwner": True,
+                 "owned": {"commands": ["specs"], "packages": ["specs"], "agents": True},
+                 "generatedSupport": {"packages": ["common"], "references": refs, "router": True}},
+                {"name": "quenching-design", "path": "plugins/quenching-design", "published": True,
+                 "versionFile": True, "cqPathOwner": False,
+                 "owned": {"commands": ["design"], "packages": ["design"], "agents": False},
+                 "generatedSupport": {"packages": ["common"], "references": [*refs, "design-align"],
+                                      "router": True}},
+            ]}
+        (root / MANIFEST).write_text(json.dumps(self.manifest))
+        market = root / self.manifest["marketplace"]
+        market.parent.mkdir(parents=True)
+        market.write_text(json.dumps({"plugins": [
+            {"name": m["name"], "source": "./" + m["path"], "version": "1.2.3"}
+            for m in self.manifest["modules"] if m["published"]]}))
+
+    def run_generator(self, mode):
+        with patch.object(generator, "ROOT", self.root):
+            return generator.main([mode])
+
+    def test_write_materializes_owned_surface_support_closure_and_one_cq(self):
+        self.assertEqual(0, self.run_generator("--write"))
+        specs, design = self.root / "plugins/quenching-specs", self.root / "plugins/quenching-design"
+        self.assertTrue((specs / "commands/specs/develop.md").is_file())
+        self.assertTrue((specs / "agents/scout.md").is_file())
+        self.assertFalse((specs / "commands/design").exists())
+        self.assertFalse((specs / "assets/references/design-align").exists())
+        self.assertTrue((design / "assets/references/design-align/b.md").is_file())
+        self.assertFalse((design / "agents").exists())
+        self.assertTrue((specs / "bin/cq").stat().st_mode & 0o111)
+        self.assertFalse((design / "bin/cq").exists())
+        self.assertTrue((design / "assets/bin/cq").is_file())
+        self.assertTrue((design / "assets/specs/schema.json").is_file())
+        self.assertEqual("quenching-design",
+                         json.loads((design / ".claude-plugin/plugin.json").read_text())["name"])
+        self.assertEqual(0, self.run_generator("--check"))
+        (design / "stale.txt").write_text("x")
+        self.assertEqual(1, self.run_generator("--check"))
+        self.assertEqual(0, self.run_generator("--write"))
+        self.assertFalse((design / "stale.txt").exists())
+
+    def test_check_names_dangling_citations_unpublished_ids_and_unshipped_imports(self):
+        src = self.root / "plugins/quenching"
+        (src / "commands/specs/develop.md").write_text(
+            "${CLAUDE_PLUGIN_ROOT}/assets/references/design-align/b.md /quenching:specs:x "
+            "quenching-design:nowhere\n")
+        (src / "assets/bin/quenching/specs/core.py").write_text("from quenching.design import core\n")
+        with patch.object(generator, "ROOT", self.root), \
+                patch("sys.stderr", new_callable=__import__("io").StringIO) as err:
+            self.assertEqual(1, generator.main(["--check"]))
+        for needle in ("dangling citation assets/references/design-align/b.md",
+                       "unpublished /quenching: id", "quenching-design:nowhere has no owner",
+                       "imports unshipped quenching.design"):
+            self.assertIn(needle, err.getvalue())
+
+
 class PrincipalPartition(unittest.TestCase):
     def test_single_repository_gate_checks_the_general_distribution(self):
         gate = (REPO / "scripts/verify_repo.sh").read_text()
