@@ -42,7 +42,7 @@ commands.
 
 `plugins/quenching/assets/modules.json` declares the source, current published plugins, reader
 copy trees and files, authored paths, and the planned eight-module ownership partition from
-[ADR 0013](/docs/decisions/0013-plugin-module-split.md). Planned records do not create plugin
+[ADR 0013](../../decisions/0013-plugin-module-split.md). Planned records do not create plugin
 directories or marketplace entries. Production extraction and activation are a later change.
 
 `python3 scripts/generate_plugin_modules.py --write` regenerates every published generated
