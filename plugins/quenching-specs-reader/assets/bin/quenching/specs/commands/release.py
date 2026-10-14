@@ -7,7 +7,7 @@ from quenching.common.git import _git, _git_run
 from quenching.common.config import load_config
 from quenching.specs.commands.output import Emitter
 from quenching.specs.config import infer_base_branch
-from quenching.specs.release import RELEASE_ARTIFACTS, SEMVER_RE, bump_release_artifacts
+from quenching.specs.release import SEMVER_RE, bump_release_artifacts, repo_release_artifacts
 
 
 def cmd_release(args, root: str, out: Emitter) -> int:
@@ -31,7 +31,12 @@ def cmd_release(args, root: str, out: Emitter) -> int:
         return out.emit_err(args.json, {"code": "sp-release-no-repo", "exit": 2,
                                         "message": "not inside a git repository"})
 
-    missing = [rel for rel, _ in RELEASE_ARTIFACTS
+    try:
+        artifacts = repo_release_artifacts(repo)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        return out.emit_err(args.json, {"code": "sp-release-not-plugin-repo", "exit": 2,
+                                      "message": f"module manifest refused: {exc}"})
+    missing = [rel for rel, _ in artifacts
               if not os.path.isfile(os.path.join(repo, rel))]
     if missing:
         return out.emit_err(args.json, {"code": "sp-release-not-plugin-repo", "exit": 2,
