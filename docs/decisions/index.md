@@ -26,3 +26,4 @@ evidence, not the rule.
 * [0010 — Cost of delegating each commit to git:commit](0010-custo-de-delegar-o-commit-ao-git-commit.md) — the measured per-task cost of the Skill delegation in execute, the options compared and the recommended one
 * [0011 — Security review of the epic 1192 and 1197 changes](0011-seguranca-das-mudancas-dos-epicos-1192-e-1197.md) — the per-PR verdict on the sensitive changes of epics 1192 and 1197, with the two defects captured as specs
 * [0012 — The orchestrator's Agent(...) list is documentary](0012-lista-agent-do-orchestrator-e-documental.md) — the allowlist restricts nothing in a subagent; accepted, documented and audited by launched type
+* [0013 — Split the plugin into eight generated-core modules](0013-plugin-module-split.md) — measured full-install parity and a smaller specs-only payload than the front-hiding single-plugin prototype
