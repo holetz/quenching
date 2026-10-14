@@ -70,5 +70,15 @@ class SectionBoundaryContractTests(unittest.TestCase):
         self.assertIn("adds no record and no fifth Handoff event", cadence)
 
 
+class StandardContractTests(unittest.TestCase):
+    def test_standard_records_that_the_threshold_decides_only_the_tone(self):
+        standard = text(ROOT / "docs/standards/automation/context-discipline.md")
+        rules = standard[standard.index("## Run for less time"):standard.index("## Measured context budgets")]
+        rules = rules.split("<!-- rationale -->")[0]
+        self.assertIn("The event triggers; the measured threshold decides only the tone — offer or recommendation.", rules)
+        self.assertIn("cq components session context --json", rules)
+        self.assertIn("Nothing is stopped and nothing is recorded.", rules)
+
+
 if __name__ == "__main__":
     unittest.main()
