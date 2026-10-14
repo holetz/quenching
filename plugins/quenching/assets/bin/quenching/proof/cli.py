@@ -9,6 +9,7 @@ from pathlib import Path
 from quenching.common.front import build_parser as build_front_parser, resolve_root
 from quenching.common.output import emit, refuse
 from quenching.common.version import VERSION
+from quenching.controls.evaluate import owner_controls, summary_line
 from quenching.proof.doctor import doctor as run_doctor, inspect_proof
 from quenching.proof.inventory import build_inventory
 from quenching.proof.config import load_proof_config
@@ -105,7 +106,8 @@ def _human_status(payload: dict) -> str:
             f"  layers: {len(payload['layers'])}\n"
             f"  fixture library: {payload['fixtureLibrary']['fixtures']} fixture(s)\n"
             f"  findings: {', '.join(f'{key}={value}' for key, value in payload['findings'].items()) or '(none)'}\n"
-            "  suite: not run")
+            "  suite: not run\n"
+            f"  {summary_line(payload['controls'])}")
 
 
 def main(argv: list[str]) -> int:
@@ -169,5 +171,6 @@ def main(argv: list[str]) -> int:
         return refuse(err, as_json)
     assert payload is not None
     summary = _status_payload(payload)
+    summary["controls"] = owner_controls("proof", root)
     emit(as_json, summary, _human_status(summary))
     return 0 if summary["ok"] else 1
