@@ -136,7 +136,18 @@ selfcheck () {
     return 1
   fi
 
+  # A routing probe measures the Skill call only; it must not be able to run the routed command's
+  # writes (the 2026-10-13 leak of specs 1641-1650 into the real store).
+  joined="$(sed -e ':a' -e '/\\$/N; s/\\\n//; ta' <<<"$active")"
+  open_probe="$(grep -F "$pattern" <<<"$joined" | grep -F '"$phrase"' | grep -vF -- '--disallowedTools "Bash Write Edit NotebookEdit"' || true)"
+  if [ -n "$open_probe" ]; then
+    printf 'FAIL selfcheck: a routing probe does not deny the write tools\n'
+    printf '%s\n' "$open_probe"
+    return 1
+  fi
+
   printf 'PASS selfcheck: %s %s invocation(s) use --plugin-dir\n' "$count" "$pattern"
+  printf 'PASS selfcheck: every routing probe denies write tools\n'
   printf 'PASS selfcheck: no %s outside comments\n' "$forbidden_pattern"
   printf 'PASS selfcheck: no observed path compared outside anchored\n'
 }
@@ -403,6 +414,9 @@ fi
 # specs/plans/, "add a standard" lands one in docs/. A check that mutates the repository it is
 # verifying is not a check, and the mess it leaves is indistinguishable from real work.
 #
+# The probe measures the Skill call, which happens before the routed body acts, so it denies the
+# write tools: a probe that routes to /quenching:specs:create must never be able to land a spec.
+#
 # OPT-IN, AND NOT THE FIRST CHOICE: five sessions, non-deterministic, and duplicating what
 # `/quenching:components:command:eval` step 7 measures properly. See the COST note at the top.
 # --------------------------------------------------------------------------- #
@@ -423,7 +437,7 @@ probe () {
   local box="$WORK/probe-$id"
   newbox "$box" >/dev/null 2>&1
   ( cd "$box" && claude -p --plugin-dir "$PLUGIN" "$phrase" \
-      --max-turns 14 --output-format stream-json --verbose \
+      --disallowedTools "Bash Write Edit NotebookEdit" --max-turns 14 --output-format stream-json --verbose \
       < /dev/null > "$WORK/3$id.jsonl" 2>&1 )
   if ! evidence "$WORK/3$id.jsonl"; then
     inconc "\"$phrase\" -> $want" "no tool_use in the capture"
