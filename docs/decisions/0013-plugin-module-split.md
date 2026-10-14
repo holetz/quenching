@@ -1,19 +1,20 @@
 ---
 type: decision
-title: Plugin module split measurements — decision pending
-description: The measured baseline and disposable module prototypes for spec 1628, with the unresolved functional gate kept visible before any split decision
+title: Split the plugin into eight generated-core modules
+description: The measured go decision for eight generated-core plugin modules, preserving full-install parity and reducing the specs-only install payload against a front-hiding single plugin
 resource: plugins/quenching
 tags: [decision, plugin, modules, measured]
 timestamp: 2026-10-13
 audience: both
-authority: background
+authority: current
 source: spec 1628; Claude Code 2.1.296 on 2026-10-13
 maintainer: quenching
 ---
 
 # Plugin module split measurements
 
-This is an unfinished measurement record, not authorization to extract modules. The repository
+This record earns a **go for form A** under the approved rule. It records the shape for the
+extraction members; it does not itself extract or publish modules. The experimental repository
 baseline is commit `9bebfb8a`; every paid invocation used a disposable `CLAUDE_CONFIG_DIR` below
 `.quenching/spike-1628/`. The native model was `claude-opus-5-5`, without an explicit model override.
 No installed plugin configuration was changed, and no production plugin or script is changed by
@@ -54,7 +55,7 @@ rejects these five existing frontmatters with `YAML Parse error: Unexpected toke
 The four missing resident descriptions account for 855 characters: 7,257 − 855 = 6,402.
 Debug additionally reports that `quenching:git:commit` declares `PreToolUse/PermissionRequest`
 outside `hooks`; it loads without hooks or `allowed-tools`. These are baseline defects, not
-passing host validation. Both prototypes preserve them. The repository gate does not validate
+passing host validation. The measured prototypes preserve them. The repository gate does not validate
 the quenching command YAML with the native host; its native validation step covers the HUD.
 This spike does not repair those files or use the successful repository gate to erase the errors.
 
@@ -395,19 +396,83 @@ The earlier failures and captures remain retained.
 
 ## Verdict
 
-**Needs human / pending; neither go nor no-go is earned.** A has a measured installation benefit,
-passes both description-cost measures, and has no observed routing, binary, or citation
-regression. The missing functional observations prevent the required parity proof. The
-missing observations are account capacity, not evidence that A's implementation fails.
-The B disposition does not make a locator-based variant impossible.
+**Go: form A, eight generated-core modules.** With everything enabled it passes the approved
+absolute authored cost ceiling, the actual native 5% resident-description ceiling, all
+baseline-three-pass routing/load probes, single-binary resolution, reference-file reads, and
+the complete native functional gate. Its specs-only install is 548,478 bytes (16.0476164%)
+smaller than the front-hiding single-plugin C prototype. The benefit is installation payload,
+not a claim of lower all-loaded resident context. All-loaded A is substantially larger because
+of generated support duplication; that cost is explicit in the matrix.
 
-Keep 1634, 1635 and the deployment shape of 1637 held. Do not abandon extraction members on
-this partial record, propagate a split/no-split verdict into epic 1627, or mark spec 1628 done.
-The four on-disk Open Decisions and tasks 3.1/3.2 remain open. Working choices of nested names,
-specs as the sole cq owner, alignment as root-align owner, and specs as handoff owner remain
-prototype choices until the full gate and decision are settled. A go would still have to state
-the installed-target migration and update obligations of plugin-layout, command-surface,
-versioning-release, and the Codex translator; no shipping rule is changed here.
+B's pure native-dependency shape fails the preserved citation layout, not the dependency
+mechanism itself; a future locator remains unproved. C matches visibility and naming stability,
+but the measured profile retains optional code and resources. The verdict compares these
+measured forms, not every imaginable future variant of a single-plugin installer.
+
+### Module count
+
+The eight principal modules are specs, alignment, design, ops, proof, toolchain, delivery,
+and security, with the command ownership and transitive resource closure in the Partition
+section. The existing read-only specs-reader and HUD are companion plugins, not additional
+front modules or a ninth shared base. Their release relationships must be covered in S7/S8.
+
+### Owner of cq
+
+**Specs owns the sole `bin/cq` shim.** Every measured arrangement includes specs, and the host
+put exactly that executable on PATH. Other modules ship their tooling/resources without a
+second cq shim. The prototype's enabled-package discovery across plugin bin directories must
+be made a deliberate generated-core contract in S7; S8 must make the registry/help truthful
+when an optional package is absent rather than treating the prototype loader as production proof.
+
+### Naming scheme
+
+Use nested suffixes under module names: `/quenching-specs:specs:*`, `/quenching-specs:git:*`,
+`/quenching-align:knowledge:*`, `/quenching-align:components:*`, and
+`/quenching-design:design:*` (equivalently for the other optional fronts). Root entry points
+become `/quenching-align:align` and `/quenching-specs:handoff`. The six agent ids move to
+`quenching-specs:<agent-name>`. Native flat and nested names both work; retaining suffixes
+preserves front disambiguation inside alignment and minimizes the structural rename.
+
+### Root align and handoff
+
+**Alignment owns root align; specs owns handoff.** Root align's first knowledge stage passed
+under that ownership in the native functional gate. Specs-only exposes its 22 cycle/git/handoff
+commands and no root align or optional front. The fresh partial registries prove that optional
+command names are absent when their module is absent. Therefore extraction must intersect
+conduction with enabled/installed fronts and never manufacture a Skill route for an absent
+module. S8 must prove that absence behavior; the full-install parity spike does not silently
+claim it tested every partial conductor journey.
+
+### Migration path
+
+Extraction is a breaking release, already accepted as a cost by the owner. An installed target
+chooses its module subset, always including specs for cq; maps any explicit
+`shared.profiles.installed` to those enabled fronts; rewrites its own slash-command and agent
+references from the old namespace using the published mapping; then disables/removes the old
+quenching monolith and enables the chosen new modules as one coordinated transition. No
+compatibility aliases or dual-registered commands are added. The transition must leave one cq
+on PATH, preserve target spec/backend configuration and stored work, and verify the mapped
+commands in a fresh session. A target can roll back by re-enabling the previous monolith and
+its prior namespace/configuration from its own saved configuration. S8 owns the concrete
+migration instructions and actual extraction; this spike changes no installation.
+
+### Changes forced on the contracts and translator
+
+| Owner | Required follow-up before extraction is shippable |
+| --- | --- |
+| `plugin-layout.md` | Replace the one-principal-plugin layout with the eight-module ownership map; specify generated shared-resource closure, one cq owner, enabled-package resolution, and absent-module boundaries while preserving absolute own-root citations |
+| `command-surface.md` | Declare the module namespaces and complete slash-command/agent mapping; preserve one file per entry point, clean renames, correct registries/help, and an explicit treatment of wildcard cross-front routes and uninstalled modules |
+| `versioning-release.md` | Define one release lockstep across all module manifests, marketplace entries, version files/constants and generated companions; adapt the published artifact set and release checks, with no version bump during this spike |
+| Codex `translate.py` / `codex-adaptation.json` | Consume the owner/namespace map instead of one `/quenching:` regex and exact-string map; regenerate and sweep skill ids, agent routes, citations and provenance from the same source without editing the in-flight Codex tree here |
+
+### Closed Open Decisions and handoff
+
+All four S1 choices are now settled from the measured host and matrix evidence: nested naming;
+specs as cq owner; alignment as root-align owner and specs as handoff owner; and
+`claude-opus-5-5` as the same actual probe model. Task 3.1 closes these in the spec store, and
+3.2 carries the split/naming result into epic 1627 and the three dependent members.
+The orchestrator has presented the measured go to the owner, but keeps 1634/1635/1637 held
+until this wave's conclusion/final presentation. This ADR does not dispatch or release them.
 
 ### Capacity and evidence retention
 
