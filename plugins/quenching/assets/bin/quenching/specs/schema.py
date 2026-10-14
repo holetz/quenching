@@ -52,7 +52,7 @@ DEFAULT_SCHEMA: dict = {
     "frontmatter": {
         "required": ["title", "date"],
         "optional": ["verification", "priority", "refined", "approved", "branch", "pr", "reviewed",
-                     "merge", "outcome", "workItemType", "epic", "tags", "assignee", "start", "target"],
+                     "merge", "buildCost", "outcome", "workItemType", "epic", "tags", "assignee", "start", "target"],
         "verification": list(VERIFICATION_POLICIES),
         "outcome": list(OUTCOMES),
         "records": {
@@ -79,6 +79,9 @@ DEFAULT_SCHEMA: dict = {
                       "anchorless": list(MERGE_ANCHORLESS_STRATEGIES),
                       "noPr": list(MERGE_NO_PR_STRATEGIES),
                       "writtenBy": "git:merge", "writeOnce": True, "label": "spec:merged"},
+            "buildCost": {"fields": ["status", "date", "source", "measurements", "reason"],
+                          "status": {"levels": ["measured", "unavailable"]},
+                          "writtenBy": "conclude", "writeOnce": False},
             "outcome": {"valuesFrom": "frontmatter.outcome",
                         "writtenBy": "conclude", "writeOnce": True},
         },
