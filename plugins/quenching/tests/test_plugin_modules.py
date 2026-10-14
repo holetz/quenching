@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import patch
 
 import _paths  # noqa: F401
-from quenching.common.modules import MANIFEST, load_manifest, release_artifacts
+from quenching.common.modules import MANIFEST, load_manifest, namespace_map, published_id, release_artifacts
 
 REPO = Path(__file__).resolve().parents[3]
 spec = importlib.util.spec_from_file_location("generate_plugin_modules", REPO / "scripts/generate_plugin_modules.py")
@@ -172,6 +172,52 @@ class PrincipalPartition(unittest.TestCase):
         for module in planned:
             self.assertFalse((REPO / module["path"]).exists(), module["name"])
             self.assertNotIn((module["path"] + "/VERSION", "plain"), release_artifacts(manifest))
+
+    def test_namespace_map_assigns_every_command_head_and_agent_one_module(self):
+        manifest = load_manifest(REPO)
+        mapping = namespace_map(REPO, manifest)
+        source = REPO / manifest["source"]
+        heads = {p.name.removesuffix(".md") for p in (source / "commands").iterdir()}
+        heads |= {p.stem for p in (source / "agents").glob("*.md")}
+        self.assertEqual(heads, set(mapping))
+        self.assertEqual("quenching-specs:specs:develop", published_id("quenching:specs:develop", mapping))
+        self.assertEqual("quenching-specs:handoff", published_id("quenching:handoff", mapping))
+        self.assertEqual("quenching-align:align", published_id("quenching:align", mapping))
+        self.assertEqual("quenching-align:knowledge:add", published_id("quenching:knowledge:add", mapping))
+        self.assertEqual("quenching-specs:orchestrator", published_id("quenching:orchestrator", mapping))
+        self.assertEqual("quenching-design:design:status", published_id("quenching:design:status", mapping))
+        with self.assertRaises(ValueError):
+            published_id("quenching:nowhere:x", mapping)
+
+    def test_principal_modules_activate_together_and_unpublish_the_source(self):
+        manifest = load_manifest(REPO)
+        with tempfile.TemporaryDirectory(dir=REPO / ".quenching") as tmp:
+            root = Path(tmp)
+            shutil.copytree(REPO / manifest["source"], root / manifest["source"],
+                            ignore=shutil.ignore_patterns("__pycache__", "tests"))
+            reader = REPO / "plugins/quenching-specs-reader"
+            shutil.copytree(reader, root / "plugins/quenching-specs-reader",
+                            ignore=shutil.ignore_patterns("__pycache__"))
+
+            def refused(data):
+                (root / MANIFEST).write_text(json.dumps(data))
+                with self.assertRaises(ValueError):
+                    load_manifest(root)
+
+            partial = copy.deepcopy(manifest)
+            next(m for m in partial["modules"] if m["name"] == "quenching-design")["published"] = True
+            refused(partial)
+            both = copy.deepcopy(manifest)
+            for module in both["modules"]:
+                if "owned" in module:
+                    module["published"] = True
+                if module["name"] == "quenching":
+                    module["cqPathOwner"] = False
+            refused(both)
+            active = copy.deepcopy(both)
+            next(m for m in active["modules"] if m["name"] == "quenching")["published"] = False
+            (root / MANIFEST).write_text(json.dumps(active))
+            self.assertEqual(8, sum(m["published"] for m in load_manifest(root)["modules"] if "owned" in m))
 
     def test_manifest_drives_release_surface_expansion(self):
         manifest = load_manifest(REPO)

@@ -95,10 +95,17 @@ def load_manifest(root: Path) -> dict:
     published = [m for m in data["modules"] if m["published"]]
     if sum(m["cqPathOwner"] for m in published) != 1:
         raise ValueError("published modules must declare exactly one PATH cq owner")
-    planned = [m for m in data["modules"] if not m["published"]]
+    planned = [m for m in data["modules"] if not m["published"] and "owned" in m]
     if planned and sum(m["cqPathOwner"] for m in planned) != 1:
         raise ValueError("planned modules must declare exactly one future PATH cq owner")
-    if data["source"] not in {m["path"] for m in published}:
+    principal = [m for m in data["modules"] if "owned" in m]
+    active = {m["published"] for m in principal}
+    if len(active) > 1:
+        raise ValueError("principal modules are activated together or not at all")
+    source_published = data["source"] in {m["path"] for m in published}
+    if active == {True} and source_published:
+        raise ValueError("the editable source cannot stay published beside the principal modules")
+    if active != {True} and not source_published:
         raise ValueError("the editable source must be a published module")
     for left in paths:
         for right in paths - {left}:
@@ -116,3 +123,30 @@ def release_artifacts(manifest: dict) -> tuple[tuple[str, str], ...]:
             artifacts.append((module["path"] + "/.claude-plugin/plugin.json", "json"))
     return tuple(artifacts + [(manifest["marketplace"], "jsonall"),
                               (manifest["versionConstant"], "py")])
+
+
+def namespace_map(root: Path, manifest: dict) -> dict[str, str]:
+    """Map each `quenching:<head>` id head (a command front, root command or agent) to its module."""
+    source = root / manifest["source"]
+    mapping = {}
+    for module in manifest["modules"]:
+        owned = module.get("owned")
+        if not owned:
+            continue
+        heads = [rel.removesuffix(".md") for rel in owned["commands"]]
+        if owned["agents"]:
+            heads += sorted(p.stem for p in (source / "agents").glob("*.md"))
+        for head in heads:
+            if head in mapping:
+                raise ValueError(f"duplicate namespace head: {head}")
+            mapping[head] = module["name"]
+    return mapping
+
+
+def published_id(old: str, mapping: dict[str, str]) -> str:
+    """`quenching:specs:develop` -> `quenching-specs:specs:develop`; unknown heads are refused."""
+    plugin, _, rest = old.partition(":")
+    head = rest.split(":", 1)[0]
+    if plugin != "quenching" or head not in mapping:
+        raise ValueError(f"no module owns {old}")
+    return f"{mapping[head]}:{rest}"
