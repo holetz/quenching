@@ -406,6 +406,8 @@ Emit §The report mold. The single-spec header line carries overall progress; th
    **quoted** as `/quenching:specs:develop` quotes them: the same artifact is owed the same fidelity
    whichever command wrote it.
 
+Print §The session-size line before the block — `cq components session context --json`, read once; exit 1 turns the `→` line into a recommendation to run the next stage **in a new session**, exit 0 and 2 leave it an offer.
+
 Close on §The next-step block, its recommended line carrying **this spec's id**:
 `/quenching:specs:conclude <id>` at 100%, `/quenching:specs:execute <id>` when the run paused
 mid-plan.
@@ -413,7 +415,9 @@ mid-plan.
 **At 100%**, after the block, offer once to chain straight into `/quenching:specs:conclude` (the `Skill` tool, which takes
 the registry name): the branch review,
 the emergent `/docs/`, the merge, and the archive-time distillation. Declined → the block already
-named the command, so stop. Paused → say why and wait.
+named the command, so stop. Over budget (the session-size line's exit 1) → the offer's first option,
+"(Recommended)", is to run `/quenching:specs:conclude <id>` in a new session, the measured peak in
+its description; chaining here stays an option. Paused → say why and wait.
 **Done when:** the summary is shown and the hand-off has been offered or declined.
 
 ## Output during the loop
