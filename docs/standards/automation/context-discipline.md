@@ -4,10 +4,10 @@ title: Context discipline — open less, run for less time, and emit fewer turns
 description: The two halves of a run's integral `tokens × turns remaining` and the three ways to cut it — open less (the declared files rather than the folder, the cited sections rather than the file, N sections in ONE call, the block rather than the section where a section has blocks, and the rules/rationale marker convention), run for less time (the section boundary as a legitimate stopping point, with measured role budgets checked only at existing boundaries), and emit fewer turns per unit of work (the batching contract, and the ban on a turn that exists only to announce the next tool call); plus the two things measured and refused, segmenting the bundle into more files and deleting rationale to compact it
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/agents/**, scripts/measure_context_distribution.py
 tags: [automation, context, reading, cost, commands, references]
-timestamp: 2026-10-13
+timestamp: 2026-10-14
 audience: both
 authority: background
-source: read-by-section-not-by-file, narrow-the-execute-preamble, extensible-surface-and-budget-retirement, 2026-08-06, 2026-08-04, scope-the-handoff-rewrite; spec 1629 measured context budgets (2026-10-13); lineage in ADR 0004
+source: read-by-section-not-by-file, narrow-the-execute-preamble, extensible-surface-and-budget-retirement, 2026-08-06, 2026-08-04, scope-the-handoff-rewrite; spec 1629 measured context budgets (2026-10-13); spec 1631 measured stage-boundary tone (2026-10-14); lineage in ADR 0004
 maintainer: quenching
 ---
 
@@ -225,9 +225,15 @@ boundary, and a build offers to stop there.
 - **The boundary triggers the check; the measured budget informs the action.** Check the
   applicable role budget from §Measured context budgets at an existing stage end, task-section
   end or worker return. Never stop in the middle of a task because a count crossed a threshold.
-- **A human-led run offers a fresh context at the boundary.** An autonomous conductor already
-  authorized to enforce its budget returns `STATE: continue` with the handoff at that boundary.
-  The role budgets are policy inputs; S3–S6 of epic 1627 implement measurement and enforcement.
+- **The event triggers; the measured threshold decides only the tone — offer or recommendation.**
+  A human-led `/quenching:specs:develop`, `/quenching:specs:execute` or `/quenching:specs:conclude`
+  reads `cq components session context --json` once at its stage end, and `execute` once more at
+  each section boundary. Within the main-session budget, or unmeasured, the next stage stays an
+  offer; over it, the command recommends the next stage in a new session, with the exact command,
+  inside the payload of a question it already asks or in the `→` line. Nothing is stopped and
+  nothing is recorded. An autonomous conductor already authorized to enforce its budget returns
+  `STATE: continue` with the handoff at that boundary; enforcing worker and conductor budgets by
+  code is S5 of epic 1627.
 - **It writes no new state.** The resumption trail — `## Handoff`, `git log`, and the recorded
   commit subjects — is already maintained for other reasons. Preparation in the new context still
   has a measured cost; §Measured context budgets records that cost separately. An offer needing a record of its own would be moving cost, not cutting it.
