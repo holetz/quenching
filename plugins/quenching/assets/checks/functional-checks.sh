@@ -341,11 +341,7 @@ fi
 # --------------------------------------------------------------------------- #
 if want 4; then
 echo "4. the ops and proof front bodies load and cite their references"
-front_# The probes never write, but the proof that no spec leaked is cheap and local: the store branch
-# tips of the repository under test must be the same after the probes as before them.
-store_tips () { git -C "$REPO" rev-parse -q --verify refs/heads/quenching refs/remotes/origin/quenching 2>/dev/null || true; }
-TIPS_BEFORE="$(store_tips)"
-probe () {
+front_probe () {
   local id="$1" command="$2"
   local box="$WORK/front-$id"
   newbox "$box"
@@ -428,6 +424,11 @@ fi
 # guard remains the only path guard for this check, so anchored does not apply here.
 if want 3; then
 echo "3. a spoken trigger routes with no / typed"
+
+# The probes never write, but the proof that no spec leaked is cheap and local: the store branch
+# tips of the repository under test must be the same after the probes as before them.
+store_tips () { git -C "$REPO" rev-parse -q --verify refs/heads/quenching refs/remotes/origin/quenching 2>/dev/null || true; }
+TIPS_BEFORE="$(store_tips)"
 
 # --max-turns is 14, not 4. A probe whose phrase needs any orientation first (a Glob, a Read)
 # spends turns before it routes, and a low cap cuts it off mid-orientation — which reports a
