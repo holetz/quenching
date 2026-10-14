@@ -1,10 +1,12 @@
 {
   "source": "plugins/quenching",
-  "generator": "scripts/sync_specs_reader_plugin.py",
+  "manifest": "plugins/quenching/assets/modules.json",
+  "generator": "scripts/generate_plugin_modules.py",
   "copied": [
     "assets/bin/quenching/common",
     "assets/bin/quenching/specs",
     "assets/specs",
-    "assets/portal"
+    "assets/portal",
+    "assets/modules.json"
   ]
 }
