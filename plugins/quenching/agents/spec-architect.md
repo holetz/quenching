@@ -1,7 +1,7 @@
 ---
 name: spec-architect
 description: Proposes budget-aware spec decomposition, or captures authorized epic members with dependencies and complexity. Use for an oversized develop estimate or an epic's planned slices.
-tools: Read, Grep, Glob, Bash(cq specs new:*), Bash(cq specs list:*), Bash(cq specs show:*), Bash(cq specs estimate:*), Bash(cq specs next:*), Bash(cq specs epic add:*)
+tools: Read, Grep, Glob, Bash(cq specs new:*), Bash(cq specs list:*), Bash(cq specs show:*), Bash(cq specs next:*), Bash(cq specs epic add:*)
 model: opus
 effort: high
 ---
