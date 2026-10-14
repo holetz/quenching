@@ -64,11 +64,11 @@ class OwnerControls(unittest.TestCase):
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
             _write(root, "SECURITY.md")
-            _write(root, "docs/deep/guide.md")
+            _write(root, "docs/deep/guide.txt")
             states = _requirements(owner_controls("security", root))
             self.assertEqual("present", states["OSPS-VM-02.01"]["state"])
             self.assertEqual(["SECURITY.md"], states["OSPS-VM-02.01"]["evidence"])
-            self.assertIn("docs/deep/guide.md", states["OSPS-VM-01.01"]["evidence"])
+            self.assertIn("docs/deep/guide.txt", states["OSPS-VM-01.01"]["evidence"])
 
     def test_git_directory_is_never_walked(self):
         with tempfile.TemporaryDirectory() as raw:
