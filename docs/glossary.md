@@ -138,6 +138,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   sweep** returns, written by the orchestrator into `### Mapa de dependências` under the spec's own
   `## Design` and **dated**: it names every file the proposal's area touches or is touched by, and
   what breaks or goes orphaned if it changes.
+- [**Declared-reading estimate**](/docs/standards/automation/context-discipline.md) — the section-level UTF-8 byte heuristic compared with the worker budget, with unresolved inputs and exclusions, never measured usage or proof that a build fits.
 - [**Dependency sweep**](standards/automation/dependency-sweep.md) — the read-only sub-agent read
   `/quenching:specs:develop` runs **before** the bank asks, so the right question has something to
   be answered with; it fires on selecting the *shape* bank, and on the first entry into the
