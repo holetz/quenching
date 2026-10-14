@@ -392,6 +392,8 @@ blocks:
    whether each was taken; the stage before and after, and whether it landed where the pass expected.
 2. **Parked into `## Discoveries`** — optional, and every line **quoted**.
 
+Print §The session-size line before the block — `cq components session context --json`, read once; exit 1 turns the `→` line into a recommendation to run the next stage **in a new session**, exit 0 and 2 leave it an offer.
+
 Close on §The next-step block — `/quenching:git:branch <id>` once `approved` is stamped, naming it
 the natural moment to isolate before `/quenching:specs:execute <id>` writes any code;
 `/quenching:specs:develop <id>` again to refine a spec that is already `ready`; or
