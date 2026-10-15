@@ -53,7 +53,10 @@ class TaskExecutionContractTests(unittest.TestCase):
     def test_red_worktree_is_removed_before_returning(self):
         for text in (REFERENCE.read_text(encoding="utf-8"), RUNNER.read_text(encoding="utf-8")):
             flat = " ".join(text.split())
-            self.assertIn("git worktree remove --force <path>", flat)
+            self.assertIn("git worktree add --detach .quenching/red <base>", flat)
+            self.assertIn("git worktree remove .quenching/red", flat)
+            self.assertIn("rmdir .quenching", flat)
+            self.assertNotIn("worktree remove --force", flat)
 
     def test_external_backend_records_task_after_the_commit(self):
         command = COMMAND.read_text(encoding="utf-8")
