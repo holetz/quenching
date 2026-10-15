@@ -383,6 +383,8 @@ body blocks:
    `/quenching:specs:develop`'s discoveries stage to close, and they are easiest to lose at exactly
    this moment.
 
+Print §The session-size line before the block — `cq components session context --json`, read once; exit 1 turns the `→` line into a recommendation to run that handoff **in a new session**, exit 0 and 2 leave it an offer.
+
 Close on §The next-step block, its recommended line naming step 6's handoff — `/quenching:git:pr:create`
 or `/quenching:git:merge`, whichever was recommended, or `/quenching:specs:develop <id>` when
 block 3 has rows and that needs settling first.
