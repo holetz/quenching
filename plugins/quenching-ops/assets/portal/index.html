@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Quenching specs</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <h1>Quenching specs</h1>
+  <nav aria-label="Views" id="nav">
+    <a href="#/board" data-view="board">Board</a>
+    <a href="#/list" data-view="list">Ranking</a>
+    <a href="#/epics" data-view="epics" id="nav-epics" hidden>Epics</a>
+  </nav>
+  <form role="search" id="search-form">
+    <label class="sr" for="q">Search specs</label>
+    <input id="q" type="search" placeholder="Search all specs  ( / )" autocomplete="off">
+  </form>
+  <div class="fresh">
+    <span id="fresh" aria-live="off">loading</span>
+    <button id="refresh" type="button">Refresh</button>
+    <button id="capture" type="button" class="primary">Capture</button>
+  </div>
+</header>
+<p id="banner" class="banner" role="status" hidden></p>
+<main id="main" tabindex="-1"></main>
+<div id="toasts" role="alert" aria-live="assertive"></div>
+<dialog id="dlg" aria-labelledby="dlg-title"></dialog>
+<script src="/app.js"></script>
+</body>
+</html>

@@ -54,17 +54,15 @@ class ThePathShim(unittest.TestCase):
             (PLUGIN_ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
         marketplace = json.loads(
             (REPO_ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
-        published = {
+        source = {
             "plugins/quenching/VERSION": VERSION,
             "plugins/quenching/.claude-plugin/plugin.json": claude_manifest["version"],
         }
-        self.assertEqual({VERSION}, set(published.values()), published)
-        marketplace_versions = {
-            item["name"]: item["version"]
-            for item in marketplace["plugins"]
-            if item["name"] == "quenching"
-        }
-        self.assertEqual({"quenching": VERSION}, marketplace_versions)
+        self.assertEqual({VERSION}, set(source.values()), source)
+        marketplace_versions = {item["name"]: item["version"] for item in marketplace["plugins"]}
+        self.assertIn("quenching-specs", marketplace_versions)
+        self.assertNotIn("quenching", marketplace_versions)
+        self.assertEqual({VERSION}, set(marketplace_versions.values()), marketplace_versions)
 
     def test_the_entrypoint_declares_and_checks_the_python_floor_before_package_imports(self):
         source = REAL.read_text(encoding="utf-8")
