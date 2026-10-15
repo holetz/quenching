@@ -10,7 +10,6 @@ from quenching.delivery.probe import probe_delivery, workflow_artifacts
 
 
 _TOP_LEVEL = re.compile(r"^([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
-_CHILD = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
 _MAPPING = re.compile(r"^\s+([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
 _LIST = re.compile(r"^\s*-\s*([^\s#]+)")
 _AZURE_JOB = re.compile(r"^\s*-\s*(?:job|deployment):\s*([^\s#]+)")
@@ -45,10 +44,16 @@ def _block(lines: list[str], heading: str) -> list[str]:
     return lines[start:end]
 
 
+def _mapping_children(block: list[str]) -> list[tuple[int, str]]:
+    mappings = [(index, len(line) - len(line.lstrip()), match.group(1))
+                for index, line in enumerate(block[1:], 1)
+                if (match := _MAPPING.match(line))]
+    indent = min((width for _, width, _ in mappings), default=0)
+    return [(index, name) for index, width, name in mappings if width == indent]
+
+
 def _mapping_names(lines: list[str], heading: str) -> tuple[str, ...]:
-    block = _block(lines, heading)
-    return tuple(sorted(match.group(1) for line in block[1:]
-                         if (match := _CHILD.match(line))))
+    return tuple(sorted(name for _, name in _mapping_children(_block(lines, heading))))
 
 
 def _list_values(lines: list[str], heading: str) -> tuple[str, ...]:
@@ -59,8 +64,7 @@ def _list_values(lines: list[str], heading: str) -> tuple[str, ...]:
 
 def _job_blocks(lines: list[str]) -> list[tuple[str, list[str]]]:
     block = _block(lines, "jobs")
-    starts = [(index, match.group(1)) for index, line in enumerate(block[1:], 1)
-              if (match := _CHILD.match(line))]
+    starts = _mapping_children(block)
     result: list[tuple[str, list[str]]] = []
     for position, (start, name) in enumerate(starts):
         end = starts[position + 1][0] if position + 1 < len(starts) else len(block)
@@ -303,7 +307,7 @@ def _trigger_names(lines: list[str], kind: str) -> list[str]:
         if inline.startswith("[") and inline.endswith("]"):
             return [item.strip(" '\"") for item in inline[1:-1].split(",") if item.strip()]
         return [inline.strip(" '\"")]
-    names = [match.group(1) for line in block[1:] if (match := _CHILD.match(line))]
+    names = [name for _, name in _mapping_children(block)]
     if not names and kind != "gitlab-ci":
         names = [_strip_comment(match.group(1)).strip("'\"") for line in block[1:]
                  if (match := _LIST.match(line))]
