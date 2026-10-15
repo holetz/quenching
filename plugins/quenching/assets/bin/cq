@@ -175,10 +175,18 @@ def run_modules(argv: list[str]) -> int:
     owners = module_owners()
     modules = {}
     for package, module in owners.items():
-        entry = modules.setdefault(module, {"name": module, "pillars": [], "enabled": True})
+        entry = modules.setdefault(module, {"name": module, "pillars": [], "enabled": True, "root": None})
         if package in PILLARS:
             entry["pillars"].append(package)
-        entry["enabled"] = entry["enabled"] and present(package)
+        found = importlib.util.find_spec("quenching." + package)
+        entry["enabled"] = entry["enabled"] and found is not None
+        if found and entry["root"] is None:
+            # <root>/assets/bin/quenching/<package>: the plugin root whose commands/ a conductor reads.
+            entry["root"] = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
+                list(found.submodule_search_locations)[0]))))
+    for entry in modules.values():
+        if not entry["enabled"]:
+            entry["root"] = None
     rows = list(modules.values())
     if parsed.json:
         print(json.dumps({"ok": True, "modules": rows}, indent=2))

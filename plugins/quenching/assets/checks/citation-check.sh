@@ -220,6 +220,15 @@ for root, _, names in os.walk(commands_dir):
             rel = os.path.relpath(os.path.join(root, name), commands_dir)
             live.add("quenching-" + rel[:-3].replace(os.sep, "-"))
 
+# A module name (`quenching-align`, `quenching-specs`) is a plugin, not a mis-separated command,
+# even where it spells the same as one: `/quenching-align:align` lives in module `quenching-align`.
+try:
+    import json
+    with open(os.path.join("plugins", "quenching", "assets", "modules.json"), encoding="utf-8") as handle:
+        live -= {module["name"] for module in json.load(handle)["modules"]}
+except (OSError, ValueError, KeyError):
+    pass
+
 findings, checked = [], 0
 for rel in sys.stdin.buffer.read().split(b"\x00"):
     rel = rel.decode("utf-8", "replace")
