@@ -778,5 +778,69 @@ class FindingFixtures(unittest.TestCase):
             self.assertEqual(code, 1)
 
 
+class MalformedRegistry(unittest.TestCase):
+    """A registry the generator cannot read is a typed refusal or a finding, never a traceback."""
+
+    def _target(self, readme: bytes) -> pathlib.Path:
+        root = pathlib.Path(self.raw.name)
+        (root / ".claude").mkdir()
+        (root / "scripts").mkdir()
+        (root / ".claude" / "quenching.json").write_text(
+            json.dumps({"ops": {"opsRoot": "scripts", "router": "pyproject.toml"}}),
+            encoding="utf-8")
+        (root / "pyproject.toml").write_text("[project.scripts]\nrun = 'run:main'\n",
+                                             encoding="utf-8")
+        (root / "scripts" / "run.py").write_text(
+            "from pathlib import Path\n\nROOT = Path(__file__).resolve()\n\n"
+            "def main():\n    return 0\n\nif __name__ == '__main__':\n    raise SystemExit(main())\n",
+            encoding="utf-8")
+        (root / "scripts" / "README.md").write_bytes(readme)
+        return root
+
+    def setUp(self):
+        self.raw = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.raw.cleanup()
+
+    def _cq(self, root: pathlib.Path, *args: str):
+        from quenching.ops.cli import main
+        import contextlib
+        import io
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = main(["--root", str(root), *args])
+        return code, out.getvalue(), err.getvalue()
+
+    def _duplicated(self) -> bytes:
+        zone = f"{REGISTRY_START}\nrows\n{REGISTRY_END}\n"
+        return (zone + "\n" + zone).encode()
+
+    def test_duplicate_zones_refuse_registry_with_exit_2(self):
+        root = self._target(self._duplicated())
+        for args in (("registry",), ("registry", "--write")):
+            with self.subTest(args=args):
+                code, _, err = self._cq(root, *args)
+                self.assertEqual(code, 2)
+                self.assertIn("more than one generated zone", err)
+
+    def test_invalid_utf8_refuses_registry_with_exit_2(self):
+        root = self._target(b"\xff\xfe not utf-8\n")
+        for args in (("registry",), ("registry", "--write")):
+            with self.subTest(args=args):
+                code, _, err = self._cq(root, *args)
+                self.assertEqual(code, 2)
+                self.assertIn("not valid UTF-8", err)
+
+    def test_doctor_reports_malformed_zone_and_keeps_unrelated_findings(self):
+        root = self._target(self._duplicated())
+        code, out, _ = self._cq(root, "doctor", "--json")
+        codes = {item["code"] for item in json.loads(out)["findings"]}
+        self.assertIn("op-registry-malformed", codes)
+        self.assertIn("op-adhoc-root", codes)
+        self.assertNotIn("op-registry-stale", codes)
+        self.assertEqual(code, 1)
+
+
 if __name__ == "__main__":
     unittest.main()
