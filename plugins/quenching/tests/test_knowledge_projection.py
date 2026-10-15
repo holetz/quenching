@@ -41,6 +41,22 @@ Prose — not an entry.
         self.assertEqual([entry.term for entry in entries], ["ASRC", "Local term"])
         self.assertEqual(entries[0].definition, "expected loss stage with a wrapped definition.")
 
+    def test_em_dashes_inside_the_definition_or_a_label_do_not_move_the_delimiter(self):
+        entries = parse_glossary("""## Terms
+
+- **Spec** — A unit of work — written in prose.
+- **Plan — Act** — two words — one entry
+- [Go — Stop](a.md) — halt — now
+""")
+        self.assertEqual(
+            [(e.term, e.definition) for e in entries],
+            [
+                ("Spec", "A unit of work — written in prose."),
+                ("Plan — Act", "two words — one entry"),
+                ("Go — Stop", "halt — now"),
+            ],
+        )
+
     def test_snippet_is_addressed_to_the_source_it_was_derived_from(self):
         with tempfile.TemporaryDirectory() as tmp:
             source = Path(tmp) / "glossary.md"
