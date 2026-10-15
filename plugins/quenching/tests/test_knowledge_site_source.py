@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 
 import _paths  # noqa: F401
-from quenching.knowledge.nav import build_nav
+from quenching.knowledge.nav import build_nav, generate
 from quenching.knowledge.site_source import MANIFEST_NAME, site_source_findings, stage_site_source
 
 
@@ -104,6 +105,24 @@ class SiteNavTests(unittest.TestCase):
             self.assertNotIn("catalog/index.md", rendered_paths)
             self.assertNotIn("external/index.md", rendered_paths)
             self.assertNotIn("scratch/index.md", rendered_paths)
+
+    def test_titles_with_quotes_and_backslashes_stay_valid_toml_and_idempotent(self) -> None:
+        for title in ('Guia "avançado"', "Pasta C:\\dados", 'Mix \\"x\\" fim'):
+            with self.subTest(title=title), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                (root / "how-to").mkdir()
+                (root / "how-to" / "index.md").write_text(f"---\ntitle: {title}\n---\n# x\n")
+                (root / "index.md").write_text("# Home\n")
+                config = root / "zensical.toml"
+                config.write_text("[project]\nnav = []\n")
+
+                _, first = generate(str(root), str(config))
+                self.assertIn(title.replace("\\", "\\\\").replace('"', '\\"'), first)
+                loaded = tomllib.loads(first)["project"]["nav"]
+                self.assertEqual(list(loaded[1])[0], title)
+                config.write_text(first)
+                current, second = generate(str(root), str(config))
+                self.assertEqual(current, second)
 
 
 if __name__ == "__main__":
