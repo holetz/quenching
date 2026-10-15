@@ -8,36 +8,27 @@ from __future__ import annotations
 import json
 import os
 import re
+from pathlib import Path
 
 from quenching.common.io import read_text, write_text
+from quenching.common.modules import load_manifest, release_artifacts
 
 
 # --------------------------------------------------------------------------- #
 # release — the mechanical half of /docs/standards/ci-cd/versioning-release.md
 # --------------------------------------------------------------------------- #
-# The tuple below is the one list of artifacts: the main plugin's `VERSION` and
-# `plugin.json`, the generated specs-reader sibling's pair, the HUD's `plugin.json`, the
-# marketplace and `common/version.py`. The four self-contained tools once declared their
-# own `VERSION` constant; folding them into one package folded those declarations into
-# the single one `common/version.py` carries, which every module imports. All paths are
-# relative to the REPO root, and this verb only makes sense run from the plugin's own
-# checkout — a target repository that merely has this plugin installed carries none of
-# them.
-# EVERY marketplace entry moves: a "jsonall" artifact carries one `"version"` per plugin
-# entry and each is rewritten.
-RELEASE_ARTIFACTS = (
-    ("plugins/quenching/VERSION", "plain"),
-    ("plugins/quenching/.claude-plugin/plugin.json", "json"),
-    ("plugins/quenching-specs-reader/VERSION", "plain"),
-    ("plugins/quenching-specs-reader/.claude-plugin/plugin.json", "json"),
-    ("plugins/quenching-hud/.claude-plugin/plugin.json", "json"),
-    (".claude-plugin/marketplace.json", "jsonall"),
-    ("plugins/quenching/assets/bin/quenching/common/version.py", "py"),
-)
+# Compatibility export for readers of the bundled contract. Real releases derive the
+# target repository's manifest instead, so an installed tool cannot miss a new consumer.
+RELEASE_ARTIFACTS = release_artifacts(json.loads(
+    (Path(__file__).resolve().parents[3] / "modules.json").read_text(encoding="utf-8")))
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
 _RELEASE_JSON_VERSION_RE = re.compile(r'("version"\s*:\s*")([^"]+)(")')
 _RELEASE_PY_VERSION_RE = re.compile(r'^(VERSION\s*=\s*["\'])([^"\']+)(["\'])', re.M)
 _CHANGELOG_ENTRY_RE = re.compile(r"^##\s+([^\s#]+)\s*$", re.MULTILINE)
+
+
+def repo_release_artifacts(repo_root: str) -> tuple[tuple[str, str], ...]:
+    return release_artifacts(load_manifest(Path(repo_root)))
 
 
 def bump_release_artifacts(repo_root: str, new_version: str) -> dict:
@@ -54,7 +45,11 @@ def bump_release_artifacts(repo_root: str, new_version: str) -> dict:
                 "error": f"CHANGELOG.md has no release entry: ## {new_version}",
                 "artifacts": []}
     reads: list[dict] = []
-    for rel, kind in RELEASE_ARTIFACTS:
+    try:
+        manifest = load_manifest(Path(repo_root))
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        return {"ok": False, "error": f"module manifest refused: {exc}", "artifacts": []}
+    for rel, kind in release_artifacts(manifest):
         path = os.path.join(repo_root, rel)
         text = read_text(path)
         if text is None:
@@ -71,6 +66,11 @@ def bump_release_artifacts(repo_root: str, new_version: str) -> dict:
                     entries = json.loads(text).get("plugins", [])
                 except ValueError:
                     return {"ok": False, "error": f"not valid JSON: {rel}", "artifacts": []}
+                expected = {m["name"] for m in manifest["modules"] if m["published"]}
+                if (len(entries) != len(expected)
+                        or {entry.get("name") for entry in entries} != expected):
+                    return {"ok": False, "artifacts": [],
+                            "error": f"{rel}: entries disagree with published modules"}
                 if len(found) != len(entries):
                     return {"ok": False, "artifacts": [],
                             "error": f"{rel}: {len(entries)} plugin entries but "
