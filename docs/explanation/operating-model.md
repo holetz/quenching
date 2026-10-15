@@ -26,7 +26,7 @@ owning a tree that an align converges.
 
 ```mermaid
 flowchart TD
-    ALL["/quenching:align — one OK, seven local fronts"]
+    ALL["/quenching-align:align — one OK, seven local fronts"]
     ALL -->|conducts first| K["knowledge front<br/>/docs/ OKF bundle"]
     K -->|dependency| D["design front<br/>/.design/ DTCG source"]
     D -->|dependency| C["components front<br/>.claude/ surface"]
@@ -48,16 +48,16 @@ flowchart TD
 
 | Node | Namespace | Converges | Deep dive |
 | --- | --- | --- | --- |
-| knowledge front | `/quenching:knowledge:*` | the `/docs/` OKF bundle | [The OKF bundle](okf-bundle.md) |
-| specs axis | `/quenching:specs:*` | specs on the `quenching` branch; no local tree | [The spec lifecycle](spec-lifecycle.md) |
-| design front | `/quenching:design:*` | the `/.design/` DTCG source and projections | [command catalog](../project/commands.md#the-design-front) |
-| components front | `/quenching:components:*` | the `.claude/` automation surface | [command catalog](../project/commands.md#the-components-front) |
-| ops front | `/quenching:ops:*` | the target repository's operations surface | [command catalog](../project/commands.md#the-ops-front) |
-| proof front | `/quenching:proof:*` | the target repository's verification surface | [command catalog](../project/commands.md#the-proof-front) |
-| toolchain front | `/quenching:toolchain:*` | the target repository's manifests, locks, pins and tool configuration | [toolchain align](../../plugins/quenching/commands/toolchain/align.md) |
-| delivery front | `/quenching:delivery:*` | the target repository's workflow and release reachability | [delivery align](../../plugins/quenching/commands/delivery/align.md) |
-| security pillar | `/quenching:security:*` | nothing — read-only security questions | [security status](../../plugins/quenching/commands/security/status.md) |
-| git pillar | `/quenching:git:*` | nothing — answers, never converges | [command catalog](../project/commands.md#the-git-pillar) |
+| knowledge front | `/quenching-align:knowledge:*` | the `/docs/` OKF bundle | [The OKF bundle](okf-bundle.md) |
+| specs axis | `/quenching-specs:specs:*` | specs on the `quenching` branch; no local tree | [The spec lifecycle](spec-lifecycle.md) |
+| design front | `/quenching-design:design:*` | the `/.design/` DTCG source and projections | [command catalog](../project/commands.md#the-design-front) |
+| components front | `/quenching-align:components:*` | the `.claude/` automation surface | [command catalog](../project/commands.md#the-components-front) |
+| ops front | `/quenching-ops:ops:*` | the target repository's operations surface | [command catalog](../project/commands.md#the-ops-front) |
+| proof front | `/quenching-proof:proof:*` | the target repository's verification surface | [command catalog](../project/commands.md#the-proof-front) |
+| toolchain front | `/quenching-toolchain:toolchain:*` | the target repository's manifests, locks, pins and tool configuration | [toolchain align](../../plugins/quenching/commands/toolchain/align.md) |
+| delivery front | `/quenching-delivery:delivery:*` | the target repository's workflow and release reachability | [delivery align](../../plugins/quenching/commands/delivery/align.md) |
+| security pillar | `/quenching-security:security:*` | nothing — read-only security questions | [security status](../../plugins/quenching/commands/security/status.md) |
+| git pillar | `/quenching-specs:git:*` | nothing — answers, never converges | [command catalog](../project/commands.md#the-git-pillar) |
 
 ## Probe-first: the interface
 
@@ -68,8 +68,8 @@ inventory, no plan, no confirmation, a couple of tool calls total. Only a drifte
 for the full loop: one read-only inventory → ONE consolidated plan → one OK → apply → verify.
 
 This is why re-running an align is always safe and nearly free, and why the status commands
-(`/quenching:knowledge:status`, `/quenching:design:status`, `/quenching:specs:status`,
-`/quenching:toolchain:status`, `/quenching:delivery:status`, `/quenching:security:status`) are
+(`/quenching-align:knowledge:status`, `/quenching-design:design:status`, `/quenching-specs:specs:status`,
+`/quenching-toolchain:toolchain:status`, `/quenching-delivery:delivery:status`, `/quenching-security:security:status`) are
 honest dry runs: they report in the same finding vocabulary the align would act on.
 
 ## Conductors conduct; they never reimplement
@@ -77,14 +77,14 @@ honest dry runs: they report in the same finding vocabulary the align would act 
 The conductor-shaped commands are bound by the same rule — **every write is made by the command
 that owns it**:
 
-- `/quenching:align` conducts the seven local fronts in dependency order on one OK. Authorization
+- `/quenching-align:align` conducts the seven local fronts in dependency order on one OK. Authorization
   nests one level: each front align inherits the OK and never re-asks — while anything touching
   product code, and every irreversible close, still gates on its own.
 - The `specs` axis has no conductor: capture, definition, execution and close are
   separate commands, each with its own authorization and verification contract.
 
 The same ownership rule shapes the documentation pipeline:
-`/quenching:knowledge:documentation:produce` conducts plan → write → review → build, where only
+`/quenching-align:knowledge:documentation:produce` conducts plan → write → review → build, where only
 `write` edits prose, `review` scores without changing a byte (eleven dimensions, bounded
 rounds), and `build` owns the site layer and the strict-build gate.
 
@@ -100,7 +100,7 @@ predictability is machine-checkable: uniform `--json`, exit codes `0` ok · `1` 
 
 !!! abstract "TL;DR for agents"
     - Map: local fronts `knowledge` · `design` · `components` · `ops` · `proof` · `toolchain` · `delivery`, plus
-      `specs`; `security` and `git` are pillars with no align; `/quenching:align` conducts the seven
+      `specs`; `security` and `git` are pillars with no align; `/quenching-align:align` conducts the seven
       local fronts; the specs axis has no conductor.
     - Interface: probe (front verifier) → read-only inventory → ONE plan → one OK → apply →
       verify; clean probe ⇒ stop.

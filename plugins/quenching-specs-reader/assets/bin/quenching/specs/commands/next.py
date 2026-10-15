@@ -3,11 +3,11 @@
 The ranking lives here and nowhere else: four lexicographic factors, plus a live `plan/<id>-<handle>`
 ref that outranks all four in both directions.
 
-`--spec` has three live consumers — `/quenching:specs:execute`, the gate bank of
-`/quenching:specs:develop`, and `assets/checks/conclude-order-check.sh`. `--front` was kept
+`--spec` has three live consumers — `/quenching-specs:specs:execute`, the gate bank of
+`/quenching-specs:specs:develop`, and `assets/checks/conclude-order-check.sh`. `--front` was kept
 deliberately through a period with none, because the front's ordering logic exists nowhere else;
-`--table` gave it two — `/quenching:specs:status` prints it as its whole spec block, and
-`/quenching:specs:triage` prints it under `--order priority` as its closing ranking. Both quote the
+`--table` gave it two — `/quenching-specs:specs:status` prints it as its whole spec block, and
+`/quenching-specs:specs:triage` prints it under `--order priority` as its closing ranking. Both quote the
 rendering; neither re-sorts or re-tallies it."""
 from __future__ import annotations
 

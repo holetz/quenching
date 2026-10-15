@@ -16,8 +16,8 @@ maintainer: quenching
 <!-- rules -->
 
 `knowledge-add/homes.md` §The frontmatter stamp is a **mold**: a block of keys that four commands —
-`/quenching:knowledge:add`, `/quenching:knowledge:learn`, `/quenching:components:harness:align`,
-`/quenching:knowledge:import-memory` — cite by absolute path and fill
+`/quenching-align:knowledge:add`, `/quenching-align:knowledge:learn`, `/quenching-align:components:harness:align`,
+`/quenching-align:knowledge:import-memory` — cite by absolute path and fill
 in when they mint a doc. That is what makes it worth owning once.
 
 It is also what makes it dangerous. **A key in a shared mold is an instruction to supply a value.**
@@ -34,7 +34,7 @@ So the rule is about *membership*, not about wording:
 
 <!-- rationale -->
 
-The tempting alternative is to keep the key in the mold and annotate it — *"only `/quenching:knowledge:import`
+The tempting alternative is to keep the key in the mold and annotate it — *"only `/quenching-align:knowledge:import`
 writes this"*. This repo has already run that experiment with `resource:`.
 
 `resource:` is documented as **derived, never invented** in four separate places, and nothing
@@ -56,7 +56,7 @@ reachable; reach for this when one is not.
 ## What it looks like applied
 
 `source_uri:` — the exact URI of the source unit an imported doc came from — is written by
-`/quenching:knowledge:import` and by nothing else. Its contract lives in
+`/quenching-align:knowledge:import` and by nothing else. Its contract lives in
 `knowledge-import/sources.md` §Attribution, next to the command that owns it. `homes.md` carries a
 four-line note saying the key is *deliberately not in the mold*, who writes it, and where the
 contract is; the mold itself is untouched.

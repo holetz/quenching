@@ -278,7 +278,7 @@ class TheWritePath(_Workspace):
 
 
 class TheScopedRead(_Workspace):
-    """`--scope` on the READ path — the cut `/quenching:specs:execute` step 4 depends on.
+    """`--scope` on the READ path — the cut `/quenching-specs:specs:execute` step 4 depends on.
 
     The write side is singular by what it means and takes `## Handoff` alone; the read side
     composes with everything else asked for, because step 4 is ONE call over the whole `build`

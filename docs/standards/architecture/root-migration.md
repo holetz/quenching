@@ -1,7 +1,7 @@
 ---
 type: standard
 title: A declared root migrates by structural detection, never by `okf_version`
-description: When a plugin release renames a root it itself declares — the bundle root moved from `/.docs/` to `/docs/` once — the migration is detected site by site from what sits on disk, never gated on a version bump, and resolved through exactly one route, `/quenching:knowledge:align`
+description: When a plugin release renames a root it itself declares — the bundle root moved from `/.docs/` to `/docs/` once — the migration is detected site by site from what sits on disk, never gated on a version bump, and resolved through exactly one route, `/quenching-align:knowledge:align`
 resource: plugins/quenching/assets/bin/quenching/knowledge/checks.py, plugins/quenching/assets/bin/quenching/knowledge/validate.py, plugins/quenching/assets/references/knowledge-align/migration.md
 tags: [architecture, bundle, okf, migration, convention]
 timestamp: 2026-08-13
@@ -34,7 +34,7 @@ instead of at the bundle root). The exact severities and messages are
 
 ## Resolution is exactly one route
 
-`/quenching:knowledge:align` is the only command that resolves an `okf-legacy-*` finding — never a
+`/quenching-align:knowledge:align` is the only command that resolves an `okf-legacy-*` finding — never a
 hand `git mv`, never a target improvising its own path. The procedure —
 `plugins/quenching/assets/references/knowledge-align/migration.md` §1g —
 renames the root first, then the homes, quadrants and glossary underneath it, each swept for

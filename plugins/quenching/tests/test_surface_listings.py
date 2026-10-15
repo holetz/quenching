@@ -13,6 +13,7 @@ import tomllib
 import unittest
 
 import _paths  # noqa: F401
+from quenching.common.modules import load_manifest, namespace_map
 from quenching.knowledge.site_source import _selected_files
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
@@ -30,10 +31,10 @@ INVOCABLE = re.compile(r"`(/[a-z][a-z:-]*)`")
 
 
 def _commands_on_disk() -> set[str]:
-    return {
-        "/quenching:" + path.relative_to(COMMANDS).with_suffix("").as_posix().replace("/", ":")
-        for path in COMMANDS.rglob("*.md")
-    }
+    owners = namespace_map(REPO_ROOT, load_manifest(REPO_ROOT))
+    ids = {path.relative_to(COMMANDS).with_suffix("").as_posix().replace("/", ":")
+           for path in COMMANDS.rglob("*.md")}
+    return {f"/{owners[ident.split(':', 1)[0]]}:{ident}" for ident in ids}
 
 
 def _published_docs_on_disk() -> set[str]:
@@ -103,7 +104,7 @@ class ManifestSurfaceTests(unittest.TestCase):
             "git": 11,
         }
         actual = {
-            namespace: sum(command.startswith(f"/quenching:{namespace}:") for command in commands)
+            namespace: sum(command.split(":", 1)[1].startswith(f"{namespace}:") for command in commands)
             for namespace in expected
         }
         self.assertEqual(actual, expected)

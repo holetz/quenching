@@ -18,11 +18,11 @@ import statistics
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "plugins/quenching/assets/bin"))
-from quenching.session.model import Command, normalize  # noqa: E402
+from quenching.session.model import Command, bare_agent, normalize  # noqa: E402
 from quenching.session.parse import blocks, close_attribution, COMMAND_NAME_RE  # noqa: E402
 
 TOKEN_KEYS = ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
-STAGES = {f"{prefix}:{stage}": stage for prefix in ("specs", "quenching:specs")
+STAGES = {f"{prefix}:{stage}": stage for prefix in ("specs", "quenching:specs", "quenching-specs:specs")
           for stage in ("develop", "execute", "conclude", "autopilot", "orchestrate")}
 
 
@@ -148,8 +148,8 @@ def measure(path: Path, root: Path) -> dict:
             anomalies["non-object-agent-metadata"] += 1
             meta = {}
         agent_type = meta.get("agentType") or "unknown"
-        role = {"quenching:spec-runner": "worker", "quenching:orchestrator": "conductor"}.get(
-            agent_type, "unknown-subagent" if agent_type == "unknown" else "other-subagent")
+        role = {"spec-runner": "worker", "orchestrator": "conductor"}.get(
+            bare_agent(agent_type), "unknown-subagent" if agent_type == "unknown" else "other-subagent")
     else:
         role = "main"
     for request in requests.values():

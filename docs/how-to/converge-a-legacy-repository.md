@@ -90,7 +90,7 @@ Keep the same distinction between bounded repair and owner judgement. The proof 
 stop-first ordering, loose fixture ownership, an unmarked gate, or another explicitly structural
 finding. It must report — never infer — unlayered tests, empty layers, an unmeasured surface, absent
 CI, untested operations entry points, and unresolved order evidence. Use
-`/quenching:proof:layer:new` when the owner is ready to choose a layer; do not create placeholder
+`/quenching-proof:proof:layer:new` when the owner is ready to choose a layer; do not create placeholder
 layers just to make the doctor quiet.
 
 The target suite remains outside this alignment pass. Run it with the repository's own supported
@@ -142,6 +142,6 @@ End with four explicit facts:
 3. which judgement findings remain, with their owner command; and
 4. which measured surface produced the floor, or why the floor remains deferred.
 
-Run `/quenching:align` again after the owner closes a judgement item. It will probe all five local
+Run `/quenching-align:align` again after the owner closes a judgement item. It will probe all five local
 fronts in dependency order, and a front with no applicable signal reports **not applicable** rather
 than inventing work.

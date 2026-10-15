@@ -7,7 +7,7 @@ tags: [automation, skills, evaluation, testing, benchmark]
 timestamp: 2026-08-10
 audience: both
 authority: current
-source: "instrument-and-extend-skill-front plan — formats adopted from Anthropic's skill-creator. Graduated to current on its own stated gate: /quenching:components:agent:new and /quenching:components:hook:new each carry a committed evals.json + grading.json + benchmark.json with a non-zero stated delta (2026-07-27)"
+source: "instrument-and-extend-skill-front plan — formats adopted from Anthropic's skill-creator. Graduated to current on its own stated gate: /quenching-align:components:agent:new and /quenching-align:components:hook:new each carry a committed evals.json + grading.json + benchmark.json with a non-zero stated delta (2026-07-27)"
 maintainer: quenching
 ---
 
@@ -22,8 +22,8 @@ that a skill is *shaped* correctly. Nothing checks that the shape *works*. This 
 "works" has to mean before anyone says it.
 
 Born `authority: background` and **graduated to `current` on 2026-07-27**, on its own stated gate:
-`/quenching:components:command:eval` implements the contract, and two commands have now been measured against it with the
-artifacts committed — `/quenching:components:agent:new` and `/quenching:components:hook:new`, each with a non-zero stated delta.
+`/quenching-align:components:command:eval` implements the contract, and two commands have now been measured against it with the
+artifacts committed — `/quenching-align:components:agent:new` and `/quenching-align:components:hook:new`, each with a non-zero stated delta.
 The gate was *at least one committed benchmark*, and every rule below was either exercised by those
 two runs or written from what they measured.
 
@@ -102,10 +102,10 @@ A routing rate is not a property of the description alone — it is a property o
 **in the repo the probe ran in**, because an intent-shaped phrase names a subject the session looks
 for before it routes.
 
-Measured while building these two evals: `/quenching:components:agent:new`'s phrase *"set up something that audits
+Measured while building these two evals: `/quenching-align:components:agent:new`'s phrase *"set up something that audits
 our migrations and reports back"* routed 5/5 in a fixture that shipped
 `/docs/standards/automation/agents.md` — and the identical phrase in a bare repo routed to
-`/quenching:components:command:new` instead. Single variable, both runs healthy. The 5/5 was **fixture-assisted**: the
+`/quenching-align:components:command:new` instead. Single variable, both runs healthy. The 5/5 was **fixture-assisted**: the
 description was borrowing routing the target repo supplied.
 
 Two rules follow:
@@ -135,7 +135,7 @@ routes where.
 - After any edit, `cq components lint` runs again: the caps and the trigger position still hold, and
   tuning must not trade one finding for another.
 
-Everything else a run finds is **reported with the `/quenching:components:command:new` invocation that fixes it**.
+Everything else a run finds is **reported with the `/quenching-align:components:command:new` invocation that fixes it**.
 Rewriting a body is authoring, and authoring needs the human whose intent the skill encodes.
 
 ## Artifacts

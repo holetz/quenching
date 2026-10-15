@@ -41,7 +41,7 @@ file.
 **A second, independent measurement on the same branch, from a different trigger.** The same change
 **retired a command**, and the count of commands is the same kind of fact as the shape of a record —
 written once in code, described many times in prose. Ten sites still said *twenty-six commands* and
-*nine `/quenching:specs:*` commands*, across four files, while `cq components doctor` reported the true figure of
+*nine `/quenching-specs:specs:*` commands*, across four files, while `cq components doctor` reported the true figure of
 25 with no findings and every grep the spec's own gate ran came back empty. The trigger differs; the
 failure and the mitigation do not.
 
@@ -75,7 +75,7 @@ editing the doc updates neither.
 | Consumer | How it is maintained | What a stale copy looks like |
 | --- | --- | --- |
 | the home's `index.md` (e.g. `standards/automation/index.md`) | by hand, usually a shortened form | a row that summarises a rule the doc no longer states |
-| the GENERATED zone of `standards/index.md` | verbatim, rebuilt only by `/quenching:knowledge:align` | the previous `description`, word for word, until a sweep runs |
+| the GENERATED zone of `standards/index.md` | verbatim, rebuilt only by `/quenching-align:knowledge:align` | the previous `description`, word for word, until a sweep runs |
 
 Neither is caught by `cq knowledge validate` — an out-of-date listing is a well-formed listing.
 Measured on `revisar-fluxo-do-develop-custo-e-gates` (2026-08-16), whose task 1.1 rewrote

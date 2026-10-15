@@ -1,7 +1,7 @@
 ---
 type: standard
 title: Dependency sweep
-description: The contract of the sub-agent dependency sweep that runs at the open of a /quenching:specs:develop pass, before it asks anything — trigger, tool profile, deliverable, and the persistence of the map with the date it carries
+description: The contract of the sub-agent dependency sweep that runs at the open of a /quenching-specs:specs:develop pass, before it asks anything — trigger, tool profile, deliverable, and the persistence of the map with the date it carries
 resource: plugins/quenching/commands/specs/develop.md, plugins/quenching/assets/references/specs-develop/questions.md
 tags: [automation, dependency-sweep, subagent, specs-develop]
 timestamp: 2026-08-25
@@ -15,7 +15,7 @@ maintainer: quenching
 
 <!-- rules -->
 
-With no cross-file dependency data on the table, `/quenching:specs:develop`'s refine asks the right
+With no cross-file dependency data on the table, `/quenching-specs:specs:develop`'s refine asks the right
 question and has nothing to answer it with — that was the signal that motivated this contract. The
 sweep exists to put that data on the table **before** the pass asks anything, instead of merely
 confirming decisions already taken.
@@ -69,5 +69,5 @@ re-swept and the map would go stale in silence without that date to expose the l
 Born `authority: background`: the rule above is a contract this repository declared, not yet proven
 by repeated and independent use. It would graduate to `current` once the sweep's result — compared
 against `/plan`'s reference pass (findings on the table before the adversarial bank, the session's
-summed cost) — is measured in a real run of `/quenching:specs:develop` against the `<redacted>_v02`
+summed cost) — is measured in a real run of `/quenching-specs:specs:develop` against the `<redacted>_v02`
 task, per the `## Handoff` of the spec that originated it.

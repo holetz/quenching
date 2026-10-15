@@ -16,7 +16,7 @@ maintainer: quenching
 Facts about **how Zensical actually behaves**, measured by building this plugin's own
 `documentation/` payload with it rather than read from a summary. External tool behaviour, not our
 contract — how this plugin stamps and verifies the site layer is
-`/quenching:knowledge:documentation:build` and its `knowledge-documentation/` references.
+`/quenching-align:knowledge:documentation:build` and its `knowledge-documentation/` references.
 
 Zensical is written by the Material for MkDocs team and is where that team now ships. It reads
 `mkdocs.yml` natively and states it always will, so an existing MkDocs project is not forced to

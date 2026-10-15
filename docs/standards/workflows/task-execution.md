@@ -294,7 +294,7 @@ A blocked marker replaced a hidden attempt counter: the reason now sits in the l
 | | Per-task self-review | Branch review |
 | --- | --- | --- |
 | Scope | one task's diff | the whole branch, `<base>...HEAD` |
-| Owner | `/quenching:specs:execute`, inside the task | `/quenching:specs:conclude`, step 2 |
+| Owner | `/quenching-specs:specs:execute`, inside the task | `/quenching-specs:specs:conclude`, step 2 |
 | When | before every commit | once, before the merge |
 | Looks for | reuse · useless defense · obvious comment · dead code | coherence, layering, whether the parts add up |
 
@@ -445,8 +445,8 @@ present the mid-flow confirmations every sweep depends on — the conversation c
 OK would be out of reach.
 
 Dispatching a sub-agent for a bounded, file-scoped unit of work does the opposite: the
-orchestrator **stays in the live conversation**, exactly as `/quenching:knowledge:glossary-backfill` and
-`/quenching:knowledge:import` already dispatch. One moves the decision-maker out of reach; the other
+orchestrator **stays in the live conversation**, exactly as `/quenching-align:knowledge:glossary-backfill` and
+`/quenching-align:knowledge:import` already dispatch. One moves the decision-maker out of reach; the other
 sends a worker out and keeps the decision-maker in place. They are different mechanisms about
 different things, and no future sweep may "fix" one into the other.
 

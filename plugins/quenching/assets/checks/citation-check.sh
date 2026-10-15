@@ -263,7 +263,7 @@ fi
 # Two assertions, both over tracked text:
 #
 #   a. every cited PATH resolves to a file that exists;
-#   b. every cited /quenching:<ns>:<cmd> corresponds to a body under commands/**.
+#   b. every cited /quenching-<module>:<ns>:<cmd> corresponds to a body under commands/**.
 #
 # Candidate extraction is deliberately conservative: a citation carrying a glob, a placeholder or
 # an unresolved variable is not a claim about a file that exists, so it is not measured. What IS
@@ -316,8 +316,8 @@ PLUGIN_ROOT_RE    = re.compile(r"\$\{CLAUDE_PLUGIN_ROOT\}/([A-Za-z0-9_./-]+)")
 MD_LINK_RE        = re.compile(r"\]\(([^)\s]+)\)")
 REPO_PATH_RE      = re.compile(r"(?<![A-Za-z0-9_./-])(plugins/quenching/[A-Za-z0-9_./-]+)")
 KNOWLEDGE_PATH_RE = re.compile(r"(?<![A-Za-z0-9_./-])/?(docs/[A-Za-z0-9_./-]+)(?![A-Za-z0-9_./-]|\{)")
-# Both citation forms. The Skill tool takes the bare `quenching:<ns>:<cmd>`; a human types the slash.
-CMD_RE            = re.compile(r"/?(quenching(?::[a-z][a-z0-9-]*){2,})")
+# Both citation forms. The Skill tool takes the bare `quenching-<module>:<ns>:<cmd>`; a human types the slash.
+CMD_RE            = re.compile(r"/?(quenching(?:-[a-z]+)?(?::[a-z][a-z0-9-]*){2,})")
 
 # Content the plugin ships for a target checkout to hold, plus the fixture data that names files
 # on purpose absent. See the header: these say which repo a tree describes, they exempt no path.
@@ -351,6 +351,16 @@ def trim(p):
     # below is a single-quoted shell argument, and one would end it mid-parser.)
     return p.rstrip(".,;:)")
 
+# Each command is published under the module that owns its front (assets/modules.json).
+try:
+    import json
+    with open(os.path.join(plugin, "assets/modules.json"), encoding="utf-8") as handle:
+        owners = {rel[:-3] if rel.endswith(".md") else rel: module["name"]
+                  for module in json.load(handle)["modules"]
+                  for rel in module.get("owned", {}).get("commands", [])}
+except (OSError, ValueError, KeyError):
+    owners = {}
+
 path_findings, cmd_findings = [], []
 paths_checked = cmds_checked = 0
 commands = set()
@@ -359,7 +369,8 @@ for root, _, names in os.walk(commands_dir):
     for n in names:
         if n.endswith(".md"):
             rel = os.path.relpath(os.path.join(root, n), commands_dir)
-            commands.add("quenching:" + rel[:-3].replace(os.sep, ":"))
+            ident = rel[:-3].replace(os.sep, ":")
+            commands.add(owners.get(ident.split(":", 1)[0], "quenching") + ":" + ident)
 
 FROZEN_DATA = (plugin + "/tests/fixtures/golden/", plugin + "/tests/capture_golden.py",
                # A `files:` case table reproducing a real, historical bug report verbatim — a
@@ -368,6 +379,11 @@ FROZEN_DATA = (plugin + "/tests/fixtures/golden/", plugin + "/tests/capture_gold
                # historical fact the parser is tested against; the file carries no other path this
                # half would otherwise need to measure.
                plugin + "/tests/test_specs_parse.py")
+
+# Records of what shipped, under the names it shipped with: a CHANGELOG entry or a decision record
+# that cites a pre-module `quenching:<front>:<verb>` is a true historical statement, not a route.
+# Their PATH citations are still measured; only the command half skips them.
+HISTORICAL = ("CHANGELOG.md", "docs/decisions/")
 
 def is_frozen_eval_run(rel):
     parts = rel.split("/")
@@ -423,6 +439,8 @@ for rel in sys.stdin.buffer.read().split(b"\x00"):
         if not any(os.path.exists(t) for t in targets):
             path_findings.append((rel, cited, targets[-1]))
 
+    if rel.startswith(HISTORICAL):
+        continue
     for cited in CMD_RE.findall(text):
         cmds_checked += 1
         if cited not in commands:

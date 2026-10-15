@@ -144,7 +144,7 @@ def namespace_map(root: Path, manifest: dict) -> dict[str, str]:
 
 
 def published_id(old: str, mapping: dict[str, str]) -> str:
-    """`quenching:specs:develop` -> `quenching-specs:specs:develop`; unknown heads are refused."""
+    """`quenching:<front>:<verb>` -> `quenching-<module>:<front>:<verb>`; unknown heads are refused."""
     plugin, _, rest = old.partition(":")
     head = rest.split(":", 1)[0]
     if plugin != "quenching" or head not in mapping:

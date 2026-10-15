@@ -4,9 +4,18 @@ Moved verbatim out of the pre-refactor session script. `read_window` sits here r
 because it is part of what a `Command` records, not part of reading a line."""
 from __future__ import annotations
 
+import re
+
+PLUGIN_PREFIX = re.compile(r"^quenching(?:-[a-z]+)?:")
+
 def normalize(name: str) -> str:
-    """`/quenching:specs:develop` and `quenching:specs:develop` are one command."""
+    """`/quenching-specs:specs:develop` and `quenching-specs:specs:develop` are one command."""
     return name.strip().lstrip("/").strip()
+
+
+def bare_agent(agent_type: str) -> str:
+    """`quenching-specs:orchestrator` and the pre-module `quenching:orchestrator` are one agent."""
+    return PLUGIN_PREFIX.sub("", agent_type)
 
 
 class Command:

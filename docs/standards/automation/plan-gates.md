@@ -123,7 +123,7 @@ The pattern across the three is the same: they negotiate *how many* stops, when 
 whether **that** stop protects anything. A stop that does not protect does not get better by being
 rare.
 
-**Merging stages is not the third form.** `/quenching:specs:develop` later came to compose and
+**Merging stages is not the third form.** `/quenching-specs:specs:develop` later came to compose and
 refine in a single pass, with one edit — and that does not reopen the table above. The third form
 preserved *each stage's gate*; there has been no stage gate here since this criterion was applied to
 the command (2026-08-16), and what gets merged are crossings and reads, never questions. The command

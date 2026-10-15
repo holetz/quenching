@@ -17,15 +17,15 @@ maintainer: quenching
 
 What the `knowledge` front proves mechanically, what it leaves to a skill reading its own work, and
 how to tell which a given invariant deserves. `assets/bin/cq knowledge` is the
-implementation; `quenching:knowledge:align/references/conformance.md` is the code-by-code contract.
+implementation; `quenching-align:knowledge:align/references/conformance.md` is the code-by-code contract.
 This standard is the rule *behind* both.
 
 ## An invariant restated in more than two skills is owed a deterministic check
 
 The rule this front learned the hard way. The glossary tail step — "after a capture, check whether
 the new concept introduced a term that belongs in `glossary.md`" — is specified in **six**
-places: `homes.md` §Enriching the glossary, `quenching:knowledge:add`, `quenching:knowledge:learn`,
-`quenching:knowledge:import-memory`, `quenching:knowledge:define`, and `/quenching:specs:conclude`'s
+places: `homes.md` §Enriching the glossary, `quenching-align:knowledge:add`, `quenching-align:knowledge:learn`,
+`quenching-align:knowledge:import-memory`, `quenching-align:knowledge:define`, and `/quenching-specs:specs:conclude`'s
 `distill.md`. Across two real distillation runs it produced **zero** entries.
 
 An invariant written six times and executed zero times is not under-specified. It is evidence that
@@ -84,7 +84,7 @@ The other honest option above, and the one that needs a home — an accepted gap
 no deterministic check can reach it, and when the reason is **structural rather than unfinished
 work**.
 
-**Import provenance is an identity, not a derivation anything here can verify.** `/quenching:knowledge:import`
+**Import provenance is an identity, not a derivation anything here can verify.** `/quenching-align:knowledge:import`
 stamps `source_uri:` — the exact URI of the source unit — on every doc it creates, and that key is
 what a later run greps to find the doc it already minted for that unit. Nothing checks it, and
 nothing in this front can:
@@ -115,7 +115,7 @@ nothing in this front can:
 <!-- rationale -->
 
 What was done instead is the cut the corollary demands. The rule that an imported doc records where
-it came from used to be written in **four** places — `sources.md`, `/quenching:knowledge:import` twice over, and
+it came from used to be written in **four** places — `sources.md`, `/quenching-align:knowledge:import` twice over, and
 an installed payload. It now has one owner, `sources.md` §Attribution, and the other three cite it.
 Removing three restatements is worth more than a fifth would have been, and this entry is what
 makes the remaining hole *known* rather than merely unfilled.
@@ -194,7 +194,7 @@ Machine checks answer *shape*. They cannot answer:
   actually does.
 
 These stay with the skills, and the front reports them as **figures rather than findings** where it
-can: bundle density (concept docs per home, glossary size, empty homes) appears in `/quenching:knowledge:status`
+can: bundle density (concept docs per home, glossary size, empty homes) appears in `/quenching-align:knowledge:status`
 as a table with **no finding code**. Coding it would make permanent noise of a repo that
 legitimately has no `mlops/`; omitting it would hide a bundle that passes every check while knowing
 nothing. A figure informs without accumulating as a defect to chase.
@@ -227,7 +227,7 @@ repo's own bundle are lists.
 
 | Mode | Runs | Notes |
 | --- | --- | --- |
-| CLI | every check, plus `--activity` as a separate output | the on-demand sweep; `/quenching:knowledge:status` reads both |
+| CLI | every check, plus `--activity` as a separate output | the on-demand sweep; `/quenching-align:knowledge:status` reads both |
 | `PostToolUse` | one file's per-doc checks | never structural |
 | `Stop` | whole tree, dirty-gated | never the activity figure |
 | `PreToolUse` | the two hard violations, opt-in | `hardBlock: true` only |

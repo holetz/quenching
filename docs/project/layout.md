@@ -22,14 +22,14 @@ of a behaviour and editing a generated copy of it.
 
 | Path | What it is | Who writes it |
 | --- | --- | --- |
-| `docs/` | this OKF bundle — the knowledge tree **and** the source of this site | `/quenching:knowledge:*` |
+| `docs/` | this OKF bundle — the knowledge tree **and** the source of this site | `/quenching-align:knowledge:*` |
 | `plugins/quenching/` | the plugin payload that gets installed | the owning spec |
 | `plugins/quenching-specs-reader/` | **generated** read-only sibling of the payload | `scripts/sync_specs_reader_plugin.py` |
 | `plugins/quenching-hud/` | band above the prompt (active spec, stage, task progress; read with `cq specs status --no-fetch`: local ref only, no fetch, no network); **hand-written**, validated by the gate with `claude plugin validate` | the owning spec |
-| `.claude/` | this repository's own local command surface | `/quenching:components:*` |
+| `.claude/` | this repository's own local command surface | `/quenching-align:components:*` |
 | `scripts/` | thin launchers CI calls | the owning spec |
-| `zensical.toml` | the site layer — outside the bundle, on purpose | `/quenching:knowledge:documentation:build` |
-| `CLAUDE.md`, `AGENTS.md` | harness pointers, kept thin over this bundle | `/quenching:components:harness:align` |
+| `zensical.toml` | the site layer — outside the bundle, on purpose | `/quenching-align:knowledge:documentation:build` |
+| `CLAUDE.md`, `AGENTS.md` | harness pointers, kept thin over this bundle | `/quenching-align:components:harness:align` |
 
 `plugins/quenching-specs-reader/` is the trap: it is **regenerated wholesale**, so editing it by
 hand produces a change that survives until the next sync and then vanishes without a diff to
@@ -56,17 +56,17 @@ plugins/quenching/
 ```
 
 **`assets/knowledge/` is not this bundle.** It is the *skeleton* — the empty tree with its
-listings — that `/quenching:knowledge:align` writes into someone else's repository. A link this
+listings — that `/quenching-align:knowledge:align` writes into someone else's repository. A link this
 repository's own prose resolves may not exist there, which is exactly what
 `citation-check.sh`'s third half measures.
 
 ## Where a change belongs
 
 - Changing what a command *does* → its body under `commands/`, through
-  `/quenching:components:command:new`.
+  `/quenching-align:components:command:new`.
 - Changing the detail a body cites → the matching file under `assets/references/`.
 - Changing a durable rule about how we build → a standard under
-  [`standards/`](../standards/index.md), through `/quenching:knowledge:add`.
+  [`standards/`](../standards/index.md), through `/quenching-align:knowledge:add`.
 - Changing what a new target repo receives → `assets/knowledge/`, and never only there: the
   bundle in `docs/` and the skeleton must describe the same shape.
 

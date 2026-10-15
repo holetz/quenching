@@ -94,7 +94,7 @@ class Handlers(PortalCase):
         problem = next(s for s in body["sections"] if s["heading"] == "Problem")
         self.assertIn("Something is wrong", problem["body"])
         self.assertEqual(len(body["tasks"]), 2)
-        self.assertEqual(body["executeCommand"], "/quenching:specs:execute 1")
+        self.assertEqual(body["executeCommand"], "/quenching-specs:specs:execute 1")
         self.assertEqual(self.get("/api/specs/99")[0], 404)
 
     def test_search_finds_text_in_any_section(self):
