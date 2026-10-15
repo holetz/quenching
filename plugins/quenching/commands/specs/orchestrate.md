@@ -21,7 +21,9 @@ Resolve `cq` per [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/referen
 **Done when:** the epic id or the list of spec ids is verified to exist.
 
 ### 2. Check who can run alone
-Split the set from the `show` payloads: **runs alone** is a spec with `approved` recorded or
+Read each spec's metadata with `cq specs status --spec <id> --json`: `complexity` comes from
+`records.priority.complexity` and `approved` from `records.approved`. Split the set from these
+`status` payloads: **runs alone** is a spec with `approved` recorded or
 `complexity: low`; **needs a human** is `medium` or above with no `approved`. Nothing needs a
 human → go to step 3. Otherwise ask once with **AskUserQuestion**, naming the specs on each side:
 
