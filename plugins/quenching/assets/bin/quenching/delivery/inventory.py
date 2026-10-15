@@ -197,26 +197,31 @@ def _job(lines: list[str], name: str, kind: str) -> Job:
                                 if (match := re.search(r"\buses:\s*([^\s#]+)", line)))))
     commands: list[str] = []
     script_indent: int | None = None
+    scalar_indent: int | None = None
+    keys = "run|script|bash|pwsh" if kind == "azure-pipelines" else "run|script"
     for line in lines:
-        if kind == "azure-pipelines":
-            azure_command = re.match(r"^\s*-\s*(?:bash|script|pwsh):\s*(.*?)\s*$", line)
-            if azure_command:
-                value = _strip_comment(azure_command.group(1))
-                if value and value not in {"|", ">"}:
-                    commands.append(value)
+        indent = len(line) - len(line.lstrip())
+        if scalar_indent is not None:
+            if not line.strip():
                 continue
-        run = re.match(r"^\s*-?\s*run:\s*(.*?)\s*$", line)
-        script = re.match(r"^(\s*)script:\s*(.*?)\s*$", line)
-        if run and run.group(1):
-            commands.append(_strip_comment(run.group(1)))
-            continue
-        if script:
-            script_indent = len(script.group(1))
-            if script.group(2):
-                commands.append(_strip_comment(script.group(2)))
+            if indent > scalar_indent:
+                if command := _strip_comment(line):
+                    commands.append(command)
+                continue
+            scalar_indent = None
+        command_key = re.match(rf"^(\s*)(-\s*)?(?:{keys}):\s*(.*?)\s*$", line)
+        if command_key:
+            key_indent = len(command_key.group(1)) + len(command_key.group(2) or "")
+            value = _strip_comment(command_key.group(3))
+            script_indent = None
+            if re.fullmatch(r"[|>](?:[1-9][+-]?|[+-][1-9]?)?", value):
+                scalar_indent = key_indent
+            elif value:
+                commands.append(value)
+            elif re.match(r"^\s*script:", line):
+                script_indent = key_indent
             continue
         if script_indent is not None:
-            indent = len(line) - len(line.lstrip())
             if line.strip() and indent <= script_indent:
                 script_indent = None
             elif (command := re.match(r"^\s*-\s+(.+?)\s*$", line)):
@@ -253,8 +258,15 @@ def _job(lines: list[str], name: str, kind: str) -> Job:
                    or any(re.search(r"(?i)(gh\s+release|npm\s+publish|twine\s+upload|docker\s+push|publish)", value)
                           for value in commands)
                    or any(re.search(r"(?i)(release|publish|deploy)", action) for action in actions))
-    active = not any(re.search(r"^\s*if:\s*(?:\$\{\{\s*)?(?:false|never)(?:\s*\}\})?\s*$", line, re.IGNORECASE)
-                     for line in lines)
+    job_conditions = lines[1:] if lines and not lines[0].startswith("steps:") else []
+    property_indent = min((len(line) - len(line.lstrip()) for line in job_conditions
+                           if _MAPPING.match(line)), default=None)
+    active = not any(
+        found[0] == property_indent
+        and re.fullmatch(r"(?:\$\{\{\s*)?(?:false|never)(?:\s*\}\})?",
+                         found[1], re.IGNORECASE)
+        for line in job_conditions if (found := _key_value(line, "if")) is not None
+    )
     return Job(
         name=name,
         needs=needs,
