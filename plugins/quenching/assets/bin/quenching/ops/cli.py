@@ -12,7 +12,9 @@ from quenching.common.version import VERSION
 from quenching.ops.config import load_ops_config
 from quenching.ops.doctor import doctor as run_doctor, inspect_ops
 from quenching.ops.inventory import build_inventory
-from quenching.ops.registry import inventory_digest, render_registry_document, write_registry
+from quenching.ops.registry import (
+    RegistryError, inventory_digest, read_registry, render_registry_document, write_registry,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -112,13 +114,15 @@ def main(argv: list[str]) -> int:
         assert inventory is not None
         path = Path(config["registry"])
         try:
-            current = path.read_text(encoding="utf-8")
-        except FileNotFoundError:
-            current = ""
-        expected = render_registry_document(current, inventory)
-        changed = current != expected
+            current = read_registry(path)
+            expected = render_registry_document(current, inventory)
+            changed = current != expected
+            if args.write:
+                changed = write_registry(path, inventory)
+        except RegistryError as exc:
+            return refuse({"code": "op-registry-malformed", "message": str(exc),
+                           "path": str(path)}, as_json)
         if args.write:
-            changed = write_registry(path, inventory)
             payload = {"ok": True, "mode": "write", "path": str(path), "changed": changed,
                        "digest": inventory_digest(inventory)}
             emit(as_json, payload, f"ops registry — {'written' if changed else 'unchanged'}")
