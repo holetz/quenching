@@ -841,6 +841,16 @@ class MalformedRegistry(unittest.TestCase):
         self.assertNotIn("op-registry-stale", codes)
         self.assertEqual(code, 1)
 
+    def test_doctor_reports_invalid_utf8_registry_as_malformed(self):
+        root = self._target(b"\xff\xfe not utf-8\n")
+        code, out, _ = self._cq(root, "doctor", "--json")
+        findings = json.loads(out)["findings"]
+        malformed = [item for item in findings if item["code"] == "op-registry-malformed"]
+        self.assertEqual(len(malformed), 1)
+        self.assertIn("not valid UTF-8", malformed[0]["message"])
+        self.assertNotIn("op-registry-stale", {item["code"] for item in findings})
+        self.assertEqual(code, 1)
+
 
 if __name__ == "__main__":
     unittest.main()
