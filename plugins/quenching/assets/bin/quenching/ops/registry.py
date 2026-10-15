@@ -60,12 +60,26 @@ def render_registry_block(inventory: Inventory) -> str:
     return "\n".join(lines)
 
 
+class RegistryError(ValueError):
+    """A registry document the generator cannot read or safely rewrite."""
+
+
+def read_registry(path: Path) -> str:
+    """Read a registry document; an absent file is empty, invalid UTF-8 is a RegistryError."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return ""
+    except UnicodeDecodeError as exc:
+        raise RegistryError(f"registry document is not valid UTF-8: {path}") from exc
+
+
 def render_registry_document(document: str, inventory: Inventory) -> str:
     """Replace only the generated zone, preserving every byte outside it."""
     block = render_registry_block(inventory)
     matches = list(_REGISTRY_ZONE.finditer(document))
     if len(matches) > 1:
-        raise ValueError("registry document has more than one generated zone")
+        raise RegistryError("registry document has more than one generated zone")
     if matches:
         match = matches[0]
         return document[:match.start()] + block + document[match.end():]
@@ -76,10 +90,7 @@ def render_registry_document(document: str, inventory: Inventory) -> str:
 
 def write_registry(path: Path, inventory: Inventory) -> bool:
     """Write a registry document and report whether its content changed."""
-    try:
-        document = path.read_text(encoding="utf-8")
-    except FileNotFoundError:
-        document = ""
+    document = read_registry(path)
     updated = render_registry_document(document, inventory)
     if updated == document:
         return False
