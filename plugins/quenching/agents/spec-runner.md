@@ -47,8 +47,8 @@ base, run it there, and report one `RED: <test> fails without <fix> (copied test
 line (execution.md §The validation loop). Create it at the fixed path `.quenching/red` with
 `git worktree add --detach .quenching/red <base>`. Before you return, make the tree match the base again: delete the copied test if it is new, but when it
 overwrote a file that already exists in the base, rewrite that file with
-`git -C .quenching/red show HEAD:<file> > .quenching/red/<file>` (never checkout or restore). Then
-run `git worktree remove .quenching/red` (never `--force`, never another path), then `rmdir .quenching`
+`git -C .quenching/red cat-file --filters HEAD:<file> > .quenching/red/<file>` (never checkout or restore). This restores
+checkout bytes, including EOL and configured smudge conversions. Then run `git worktree remove .quenching/red` (never `--force`, never another path), then `rmdir .quenching`
 if it is empty: a leftover worktree or empty directory under your own `.quenching/` blocks the
 retirement of the spec's worktree. If the remove refuses, return `STATE: blocked` with the reason. Never `git apply -R`: the base lacks the fix.
 
