@@ -64,7 +64,7 @@ next, open questions) through `cq specs discover`, then return `STATE: continue`
 SPEC: <id>
 WORKTREE: <absolute path>
 STATE: done | continue | blocked | failed
-SHAS: <task commit shas, oldest first>
+SHAS: <task commit shas, 7 characters each, oldest first>
 TASKS: <checked>/<total>
 GATE: pass | fail | not-run — <command and exit code>
 PR: <url or ->
