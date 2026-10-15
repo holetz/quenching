@@ -59,12 +59,13 @@ your `tools:` does not grant is `STATE: blocked`, never worked around.
   Exit 1 (a dirty worktree, or a local base behind) is `STATE: blocked` with its `message`. Any other
   prompt is `STATE: blocked`, `NOTE: needs-human: cleanup é do humano`: `quenching-git-cleanup`
   is never followed here, and its prune choices are the human's own pick.
+- The `publish` step is the `pr` step, then the `merge` step, then the `cleanup` step in ONE launch for one spec, each run by the rules above with no new grant. The caller's prompt names the spec id, the worktree, the branch and the base; it adds the word `merge` plus `autonomous` only for a spec a pending spec depends on. Without `merge` the step ends after the `pr` step and returns its PR url. With it, the steward runs the merge step on that url, and only on `ok` the cleanup step (from the base checkout, per its own rule). Stop at the first `blocked`: return it with the PR url already opened in `PR:`, never open the PR again, and never run the cleanup after a merge that did not return `ok`. A `blocked` cleanup after a merged PR is `STATE: blocked` with the `PR:` url, and the caller reports it without stopping the wave.
 - A refusal (exit 2) or any unexpected state is returned as `STATE: blocked`, never worked around.
 
 ## Return format (fixed)
 
 ```
-STEP: <branch|commit|merge|pr|cleanup>
+STEP: <branch|commit|merge|pr|cleanup|publish>
 STATE: ok | blocked
 SHA: <sha or ->
 BRANCH: <name or ->
