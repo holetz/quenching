@@ -52,7 +52,7 @@ this conductor run: it does not remove commands or change a command's own invoca
 Probe every declared front in the table before inventory. If `$ARGUMENTS` names a front or a path
 inside one, probe only that front and mark the others skipped by scope.
 
-- **`knowledge`** — run `cq knowledge validate /docs --json`; record the bundle, validator counts,
+- **`knowledge`** — run `cq knowledge validate docs --json`; record the bundle, validator counts,
   project memory and harness files.
 - **`design`** — run `cq --root . design status --json` when installed; when absent, run
   `design align --check --json` only when scope or root `PRODUCT.md`/`DESIGN.md` artifacts signal

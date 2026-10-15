@@ -107,7 +107,7 @@ reported.
 ### 5. Self-check + validate
 Self-check every touched file against homes.md §Self-check /
 [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md),
-then run `cq knowledge validate /docs` over the
+then run `cq knowledge validate docs` over the
 bundle: **zero errors**, and the structural WARNs (`dir-no-index` / `index-broken-link` /
 `index-orphan`) cleared. Close the report with a **Residue** block — units deferred, sources left unfetched, MERGE
 targets skipped, contradictions without a decision — one line per item, each with what resuming
