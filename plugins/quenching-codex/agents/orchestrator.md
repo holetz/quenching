@@ -46,7 +46,7 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    product code. The `model: gpt-6-astra` pins of `develop` and `conclude` do not apply under a `spec-runner`: they
    run on the runner's model, so do not budget gpt-6-astra for them.
 3. **Budget.** You stay under 150k tokens of context; a worker under 200k. A delegation prompt is
-   at most 1,500 characters: the spec id, the worktree path (none for a first spawn), the model, the return format and the
+   at most 1,500 characters: the spec id, the worktree path (none for a first spawn), the model, a pointer to the agent's own file (`agents/<type>.md`, section "Return format") instead of a copy of its format, and the
    no-stash sentence below. The verifier's prompt also names the base as `origin/<base>` where `origin` exists (the ref the worktree is cut from and a `gh` merge moves), `<base>` local only with NO-REMOTE. It also carries the exit the worker reported on its `GATE:` line as a claim, and `sem relato` when it reported none. A worker that reaches its limit writes a handoff note and returns
    `STATE: continue`.
 4. **Accept** a spec only when the `verifier` returns PASS for it, check 8 (conclusion: `phase archive`
