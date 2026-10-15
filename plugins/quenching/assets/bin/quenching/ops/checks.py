@@ -109,7 +109,11 @@ def check_registry_stale(inventory: Inventory) -> list[Finding]:
     text = _registry_text(inventory)
     if text is None:
         return []
-    expected = registry.render_registry_document(text, inventory)
+    path = os.path.relpath(_registry_path(inventory), inventory.root).replace(os.sep, "/")
+    try:
+        expected = registry.render_registry_document(text, inventory)
+    except registry.RegistryError as exc:
+        return [_finding("op-registry-malformed", str(exc), path=path)]
     if expected == text:
         return []
     return [_finding(
