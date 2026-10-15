@@ -1,0 +1,186 @@
+"""Manifest generation: ownership, bounded repair and published lockstep in disposable trees."""
+import copy
+import importlib.util
+import json
+from pathlib import Path
+import shutil
+import tempfile
+import unittest
+from unittest.mock import patch
+
+import _paths  # noqa: F401
+from quenching.common.modules import MANIFEST, load_manifest, release_artifacts
+
+REPO = Path(__file__).resolve().parents[3]
+spec = importlib.util.spec_from_file_location("generate_plugin_modules", REPO / "scripts/generate_plugin_modules.py")
+generator = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(generator)
+
+
+class GeneratedDistribution(unittest.TestCase):
+    def setUp(self):
+        (REPO / ".quenching").mkdir(exist_ok=True)
+        tmp = tempfile.TemporaryDirectory(dir=REPO / ".quenching")
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        self.manifest = copy.deepcopy(load_manifest(REPO))
+        # Planned records have source dependencies; separate fixture exercises their real partition.
+        self.manifest["modules"] = [m for m in self.manifest["modules"] if m["published"]]
+        self.source = self.root / self.manifest["source"]
+        self.target = self.root / "plugins/quenching-specs-reader"
+        for module in self.manifest["modules"]:
+            folder = self.root / module["path"]
+            (folder / ".claude-plugin").mkdir(parents=True)
+            (folder / ".claude-plugin/plugin.json").write_text(json.dumps({
+                "name": module["name"], "version": "1.2.3", "author": {"name": "test"}, "license": "MIT"}))
+            if module["versionFile"]:
+                (folder / "VERSION").write_text("1.2.3\n")
+        (self.source / "bin").mkdir()
+        (self.source / "bin/cq").write_text("#!/bin/sh\n")
+        (self.source / "bin/cq").chmod(0o755)
+        reader = self.manifest["modules"][1]
+        for tree in reader["generated"]["trees"]:
+            directory = self.source / tree
+            directory.mkdir(parents=True)
+            (directory / "sample.txt").write_text(tree + "\n")
+        (self.source / "assets/bin/quenching/common/version.py").write_text('VERSION = "1.2.3"\n')
+        self.market = self.root / self.manifest["marketplace"]
+        self.market.parent.mkdir(parents=True)
+        self.market.write_text(json.dumps({"plugins": [
+            {"name": m["name"], "source": "./" + m["path"], "version": "1.2.3"}
+            for m in self.manifest["modules"]]}))
+        for rel in reader["authored"]:
+            path = self.target / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("authored " + rel)
+        self.save_manifest()
+
+    def save_manifest(self):
+        (self.root / MANIFEST).write_text(json.dumps(self.manifest))
+
+    def run_generator(self, mode):
+        with patch.object(generator, "ROOT", self.root):
+            return generator.main([mode])
+
+    def snapshot(self):
+        return {p.relative_to(self.root).as_posix(): (p.read_bytes(), p.stat().st_mode & 0o777)
+                for p in self.root.rglob("*") if p.is_file()}
+
+    def test_write_preserves_authored_files_and_is_idempotent(self):
+        authored = {rel: (self.target / rel).read_bytes() for rel in self.manifest["modules"][1]["authored"]}
+        self.assertEqual(0, self.run_generator("--write"))
+        first = self.snapshot()
+        self.assertEqual(0, self.run_generator("--write"))
+        self.assertEqual(first, self.snapshot())
+        for rel, data in authored.items():
+            self.assertEqual(data, (self.target / rel).read_bytes())
+        self.assertEqual(0, self.run_generator("--check"))
+
+    def test_check_detects_each_drift_without_writes_and_write_repairs_bounded_files(self):
+        self.assertEqual(0, self.run_generator("--write"))
+        tree = self.target / "assets/specs"
+        (tree / "sample.txt").unlink()
+        (self.target / "assets/portal/sample.txt").write_text("changed")
+        (self.target / "assets/bin/quenching/specs/sample.txt").chmod(0o755)
+        (tree / "stale.txt").write_text("obsolete")
+        unrelated = self.target / "notes.txt"
+        unrelated.write_text("not generated")
+        before = self.snapshot()
+        self.assertEqual(1, self.run_generator("--check"))
+        self.assertEqual(before, self.snapshot())
+        self.assertEqual(0, self.run_generator("--write"))
+        self.assertFalse((tree / "stale.txt").exists())
+        self.assertEqual("not generated", unrelated.read_text())
+        self.assertEqual(0, self.run_generator("--check"))
+
+    def test_executable_bits_and_bytes_are_copied_but_python_cache_is_not(self):
+        path = self.source / "assets/portal/sample.txt"
+        path.write_bytes(b"\x00\xff\n")
+        path.chmod(0o755)
+        cache = path.parent / "__pycache__"
+        cache.mkdir()
+        (cache / "x.pyc").write_bytes(b"cache")
+        self.assertEqual(0, self.run_generator("--write"))
+        target = self.target / "assets/portal/sample.txt"
+        self.assertEqual(path.read_bytes(), target.read_bytes())
+        self.assertTrue(target.stat().st_mode & 0o111)
+        self.assertFalse((target.parent / "__pycache__").exists())
+
+    def test_invalid_paths_and_overlaps_refuse_before_any_writes(self):
+        for unsafe in ("../escape", "/escape", "assets/../../escape", "README.md"):
+            with self.subTest(path=unsafe):
+                original = copy.deepcopy(self.manifest)
+                self.manifest["modules"][1]["generated"]["trees"].append(unsafe)
+                self.save_manifest()
+                before = self.snapshot()
+                self.assertEqual(2, self.run_generator("--write"))
+                self.assertEqual(before, self.snapshot())
+                self.manifest = original
+
+    def test_source_missing_symlink_and_target_collision_refuse_before_any_writes(self):
+        directory = self.source / "assets/portal"
+        shutil.rmtree(directory)
+        before = self.snapshot()
+        self.assertEqual(2, self.run_generator("--write"))
+        self.assertEqual(before, self.snapshot())
+        directory.mkdir()
+        (directory / "link").symlink_to(self.source / "VERSION")
+        self.assertEqual(2, self.run_generator("--write"))
+        (directory / "link").unlink()
+        (self.target / "assets").write_text("collision")
+        before = self.snapshot()
+        self.assertEqual(2, self.run_generator("--write"))
+        self.assertEqual(before, self.snapshot())
+
+    def test_version_marketplace_and_path_owner_drift_are_findings(self):
+        self.assertEqual(0, self.run_generator("--write"))
+        hud = self.root / "plugins/quenching-hud/.claude-plugin/plugin.json"
+        metadata = json.loads(hud.read_text())
+        metadata["version"] = "1.2.2"
+        hud.write_text(json.dumps(metadata))
+        extra = self.target / "bin/cq"
+        extra.write_text("duplicate")
+        self.market.write_text(json.dumps({"plugins": []}))
+        before = self.snapshot()
+        self.assertEqual(1, self.run_generator("--check"))
+        self.assertEqual(before, self.snapshot())
+        findings = generator.published_findings(self.root, load_manifest(self.root))
+        self.assertTrue(any("version drift" in f for f in findings))
+        self.assertTrue(any("PATH cq ownership" in f for f in findings))
+        self.assertIn("marketplace membership disagrees with published modules", findings)
+
+    def test_multiple_declared_path_owners_are_refused(self):
+        self.manifest["modules"][1]["cqPathOwner"] = True
+        self.save_manifest()
+        self.assertEqual(2, self.run_generator("--write"))
+
+
+class PrincipalPartition(unittest.TestCase):
+    def test_single_repository_gate_checks_the_general_distribution(self):
+        gate = (REPO / "scripts/verify_repo.sh").read_text()
+        self.assertIn("python3 scripts/generate_plugin_modules.py --check", gate)
+        self.assertNotIn("python3 scripts/sync_specs_reader_plugin.py --check", gate)
+
+    def test_eight_planned_modules_are_declared_without_production_output(self):
+        manifest = load_manifest(REPO)
+        planned = [m for m in manifest["modules"] if not m["published"]]
+        self.assertEqual({"specs", "align", "design", "ops", "proof", "toolchain", "delivery", "security"},
+                         {m["name"].removeprefix("quenching-") for m in planned})
+        self.assertEqual(["quenching-specs"], [m["name"] for m in planned if m["cqPathOwner"]])
+        self.assertEqual(["quenching-specs-reader"], [m["name"] for m in manifest["modules"]
+                                                   if m["published"] and "generated" in m])
+        for module in planned:
+            self.assertFalse((REPO / module["path"]).exists(), module["name"])
+            self.assertNotIn((module["path"] + "/VERSION", "plain"), release_artifacts(manifest))
+
+    def test_manifest_drives_release_surface_expansion(self):
+        manifest = load_manifest(REPO)
+        planned = next(m for m in manifest["modules"] if m["name"] == "quenching-design")
+        planned["published"] = True
+        self.assertIn(("plugins/quenching-design/VERSION", "plain"), release_artifacts(manifest))
+        self.assertIn(("plugins/quenching-design/.claude-plugin/plugin.json", "json"),
+                      release_artifacts(manifest))
+
+
+if __name__ == "__main__":
+    unittest.main()
