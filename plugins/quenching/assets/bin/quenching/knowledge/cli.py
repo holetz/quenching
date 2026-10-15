@@ -43,7 +43,7 @@ from quenching.common.frontmatter import parse_frontmatter
 from quenching.common.output import FINDINGS, OK, REFUSAL, NoAbbrevParser, emit, refuse
 from quenching.common.version import VERSION
 from quenching.controls.evaluate import owner_controls, summary_line
-from quenching.knowledge.config import _load_config, _project_dir
+from quenching.knowledge.config import ConfigError, _load_config, _project_dir
 from quenching.knowledge.render import _render_activity, _render_text, _split
 from quenching.knowledge.projection import (
     DEFAULT_SNIPPET,
@@ -262,8 +262,11 @@ def run_cli(argv: list[str]) -> int:
     _declare_validate(parser)
     args = parser.parse_args(argv)
 
-    cfg = _load_config(_project_dir())
     as_json = args.json
+    try:
+        cfg = _load_config(_project_dir())
+    except ConfigError as exc:
+        return refuse({"code": "config-unreadable", "message": str(exc)}, as_json)
     target = _rooted(args.root, args.bundle)
     ignore_globs = tuple(cfg.get("ignoreGlobs") or ())
     # The figure is its OWN output, never a section of the report. `stale-doc` was retired
