@@ -35,9 +35,11 @@ def _load_config(project_dir: str) -> dict:
         try:
             with pathlib.Path(path).open(encoding="utf-8") as fh:
                 data = json.load(fh)
-        except (OSError, json.JSONDecodeError):
+        except (OSError, ValueError):
             continue
-        cfg.update(data.get("okfValidate") or {})
+        section = data.get("okfValidate") if isinstance(data, dict) else None
+        if isinstance(section, dict):
+            cfg.update(section)
     return cfg
 
 
