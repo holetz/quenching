@@ -143,6 +143,8 @@ apply (a reverse patch of the production diff cannot apply to a tree that lacks 
 checkout or reset this replaces would erase other agents' work in the shared checkout. Record the
 result as one evidence line in the task's report: `RED: <test> fails without <fix> (copied test, base worktree)`.
 
+**Remove the RED worktree before returning**: `git worktree remove --force <path>` on the one you added (the copied test leaves it dirty). A leftover worktree under the spec's `.quenching/` keeps `retire` from retiring the spec's own worktree.
+
 A human resumes a blocked task by fixing the cause and un-blocking it —
 `cq specs task --spec <id> --uncheck <id>` returns it to `- [ ]` — after changing something,
 never merely to try the same approach again.
