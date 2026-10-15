@@ -50,6 +50,11 @@ class TaskExecutionContractTests(unittest.TestCase):
             self.assertIn("RED: <test> fails without <fix>", flat)
             self.assertIn("worktree of the base", flat.replace("base worktree", "worktree of the base"))
 
+    def test_red_worktree_is_removed_before_returning(self):
+        for text in (REFERENCE.read_text(encoding="utf-8"), RUNNER.read_text(encoding="utf-8")):
+            flat = " ".join(text.split())
+            self.assertIn("git worktree remove --force <path>", flat)
+
     def test_external_backend_records_task_after_the_commit(self):
         command = COMMAND.read_text(encoding="utf-8")
         reference = REFERENCE.read_text(encoding="utf-8")
