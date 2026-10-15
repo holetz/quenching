@@ -42,6 +42,7 @@ from pathlib import Path
 from quenching.common.frontmatter import parse_frontmatter
 from quenching.common.output import FINDINGS, OK, REFUSAL, NoAbbrevParser, emit
 from quenching.common.version import VERSION
+from quenching.controls.evaluate import owner_controls, summary_line
 from quenching.knowledge.config import _load_config, _project_dir
 from quenching.knowledge.render import _render_activity, _render_text, _split
 from quenching.knowledge.projection import (
@@ -246,8 +247,10 @@ def _run_status(argv: list[str]) -> int:
     args = _knowledge_args(argv, "cq knowledge status")
     payload = _surface_payload(_rooted(args.root, args.bundle), density=True)
     payload["findingCodes"] = dict(sorted(Counter(item["code"] for item in payload["findings"]).items()))
+    payload["controls"] = owner_controls("knowledge", os.path.normpath(args.root))
     emit(args.json, payload,
-         f"knowledge status — {payload['root']} ({payload['density'].get('conceptDocs', {}).get('total', 0)} document(s))")
+         f"knowledge status — {payload['root']} ({payload['density'].get('conceptDocs', {}).get('total', 0)} document(s)); "
+         f"{summary_line(payload['controls'])}")
     return 0 if payload["ok"] else FINDINGS
 
 
