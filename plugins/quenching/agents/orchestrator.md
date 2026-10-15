@@ -27,7 +27,8 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    each spec's declared dependencies plus the `[P]` groups of `cq specs parallel`. Run in waves: no
    worker starts before every dependency is merged, through step 4's `merge` step. Print the
    waves once, then run them.
-   **Fail fast on approval.** Read `complexity` and `approved` from each spec's `show`. Without
+   **Fail fast on approval.** Run `cq specs status --spec <id> --json` for each spec and read
+   `complexity` from `records.priority.complexity` and `approved` from `records.approved`. Without
    `autonomous`, a spec of `medium` or above with no `approved` record never receives a worker: it
    leaves the DAG with `STATE: blocked`, `NOTE: needs-approval` and `TOKENS: 0`, and every spec
    that depends on it leaves with it, noted `needs-approval: <id>`. With `autonomous`, pass it on
