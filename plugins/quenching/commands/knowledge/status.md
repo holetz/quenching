@@ -51,8 +51,8 @@ never on prose.
 **Done when:** the bundle root and the checker are resolved, or their absence recorded.
 
 ### 2. Collect (read-only)
-- `cq knowledge validate /docs --json` — every conformance finding.
-- `cq knowledge validate /docs --activity --json` — the resource-activity figure, per doc and
+- `cq knowledge validate docs --json` — every conformance finding.
+- `cq knowledge validate docs --activity --json` — the resource-activity figure, per doc and
   per `resource:` entry (CLI only; per [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)
   §Resource activity it emits no finding and never runs in the hook path).
 - `Glob` `/docs/**/*.md` for the density counts, and read `/docs/index.md`, each home's `index.md`,
