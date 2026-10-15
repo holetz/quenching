@@ -35,6 +35,51 @@ class DeliveryResults(unittest.TestCase):
             assert payload is not None
             return payload, code
 
+    def test_workflow_mapping_indentation_preserves_inventory_and_findings(self):
+        baseline = None
+        for trigger_width, job_width in ((2, 2), (4, 4), (2, 4), (4, 2), (6, 6)):
+            with self.subTest(trigger_width=trigger_width, job_width=job_width):
+                trigger = " " * trigger_width
+                job = " " * job_width
+                payload, code = self._run({
+                    ".github/workflows/ci.yml": (
+                        "on:\n # trigger comment\n\n"
+                        + trigger + "push:\n"
+                        + trigger + "  branches: [main]\n"
+                        + trigger + "pull_request:\n"
+                        "jobs:\n # job comment\n\n"
+                        + job + "test:\n"
+                        + job + "  strategy:\n"
+                        + job + "    matrix:\n"
+                        + job + "      python-version: ['3.12']\n"
+                        + job + "  steps:\n"
+                        + job + "    - uses: actions/checkout@v4\n"
+                        + job + "    - run: python -m unittest\n"
+                        + job + "lint:\n"
+                        + job + "  needs: [test]\n"
+                        + job + "  steps:\n"
+                        + job + "    - uses: actions/checkout@v4\n"
+                        + job + "    - run: python -m compileall .\n"
+                    ),
+                })
+                workflow = payload["inventory"]["workflows"][0]
+                self.assertEqual(["pull_request", "push"], workflow["triggers"])
+                self.assertEqual(["lint", "test"], workflow["jobs"])
+                details = {item["name"]: item for item in workflow["jobDetails"]}
+                self.assertEqual({"test", "lint"}, set(details))
+                self.assertEqual(["python -m unittest"], details["test"]["commands"])
+                self.assertEqual(["python -m compileall ."], details["lint"]["commands"])
+                self.assertEqual(["test"], details["lint"]["needs"])
+                codes = {item["code"] for item in payload["findings"]}
+                self.assertIn("delivery-setup-missing", codes)
+                self.assertNotIn("delivery-trigger-unreachable", codes)
+                self.assertEqual(1, code)
+                observed = (workflow, payload["findings"], code)
+                if baseline is None:
+                    baseline = observed
+                else:
+                    self.assertEqual(baseline, observed)
+
     def test_step_condition_does_not_disable_its_job(self):
         for condition in ("false", "${{ false }}", "never"):
             with self.subTest(condition=condition):
