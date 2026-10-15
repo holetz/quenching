@@ -31,7 +31,7 @@ from quenching.git.pr import (labelled_links, normalize_azure_pull_request,
                               review_link)
 from quenching.git.slugs import _read_specs, cmd_specs
 from quenching.git.stale import (_gone_branches, _merged_branches, _merged_remote_branches,
-                                 _orphan_worktrees, _unregistered_worktrees)
+                                 _orphan_worktrees, _unregistered_worktrees, stale_report)
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
@@ -262,6 +262,33 @@ class Stale(RepoCase):
         names = {b["branch"] for b in payload["staleBranches"]}
         self.assertIn("feature-e", names)
         self.assertNotIn("main", names)
+
+    def test_cq_git_stale_keeps_unmerged_and_checked_out_branches_with_reasons(self):
+        _run(self.repo, "branch", "merged-one")
+        _run(self.repo, "checkout", "-q", "-b", "ahead-one")
+        with open(os.path.join(self.repo, "ahead.txt"), "w") as f:
+            f.write("x")
+        _run(self.repo, "add", "ahead.txt")
+        _run(self.repo, "commit", "-q", "-m", "ahead")
+        _run(self.repo, "checkout", "-q", "main")
+        wt = os.path.join(self.tmp, "held-wt")
+        _run(self.repo, "worktree", "add", "-q", "-b", "held-one", wt)
+        payload = _cq_json(self.repo, "stale")
+        kept = {b["branch"]: b["reasons"] for b in payload["keptBranches"]}
+        stale = {b["branch"] for b in payload["staleBranches"]}
+        self.assertEqual(kept["ahead-one"], ["unmerged-commits"])
+        self.assertEqual(kept["held-one"], ["worktree"])
+        self.assertIn("merged-one", stale)
+        self.assertNotIn("held-one", stale)
+        self.assertIn(payload["prLookup"], ("ok", "unavailable"))
+
+    def test_open_pr_moves_a_merged_branch_to_kept(self):
+        _run(self.repo, "branch", "pr-open")
+        with mock.patch("quenching.git.stale._open_pr_heads", return_value={"pr-open"}):
+            report = stale_report(self.repo)
+        self.assertEqual({b["branch"]: b["reasons"] for b in report["keptBranches"]}["pr-open"],
+                         ["open-pr"])
+        self.assertNotIn("pr-open", {b["branch"] for b in report["staleBranches"]})
 
     def test_merged_origin_branch_is_reported_with_remote_identity(self):
         self._origin_with_merged_branch()

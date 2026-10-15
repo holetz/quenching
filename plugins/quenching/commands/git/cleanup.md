@@ -19,7 +19,7 @@ from a fresh report for the selected remote.
 ```bash
 cq git stale --remote <remote> --json
 ```
-The report contains local `staleBranches`, fetched `remoteBranches` from `<remote>`, registered
+The report contains local `staleBranches` (removable), `keptBranches` (staying, with reasons), fetched `remoteBranches` from `<remote>`, registered
 `orphanWorktrees`, and unregistered `unregisteredWorktrees` siblings with their path, branch and
 size. All four lists empty → say so and stop; there is nothing to prune. Do not fetch or run `git
 remote prune` here: if the caller needs newer remote facts, it must fetch explicitly and start a
@@ -28,7 +28,8 @@ lists and the selected remote are in hand.
 
 ### 2. Let the human pick what to prune
 Show every local stale branch with its reason(s), every remote branch as `<remote>/<branch>` with
-its reason(s), and every orphan worktree with its path and branch. Show each `unregisteredWorktrees`
+its reason(s), and every orphan worktree with its path and branch. Show each `keptBranches` entry with its reasons (`open-pr`, `worktree`,
+`unmerged-commits`) as information under "kept — not removable", and do not include it in the prune choices. Show each `unregisteredWorktrees`
 finding with its path, branch and size as information, but do not include it in the prune choices.
 Ask once with **AskUserQuestion** (multi-select) which local branches and live worktrees to prune —
 defaulting to none pre-selected, never to "all". Show the exact local actions in those choices:
@@ -75,6 +76,7 @@ the three outcome classes are named.
 ## Invariants
 
 - Never prune a branch or worktree `cq git stale` did not report.
+- Never offer `keptBranches` for pruning: each is listed with the reason it stays.
 - Never offer `unregisteredWorktrees` for pruning: `git worktree remove` does not act on an
   unregistered directory, and this class carries no action.
 - Never delete a remote branch that `cq git stale` did not report in `remoteBranches`.
