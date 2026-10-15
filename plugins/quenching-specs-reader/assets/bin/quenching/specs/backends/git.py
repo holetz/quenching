@@ -303,7 +303,9 @@ class GitBackend(SpecBackend):
                 info = derive_info(row, snapshot[path][1])
                 row.update({"title": info["frontmatter"].get("title", ""),
                             "state": "closed" if spec_phase == "archive" else "open",
-                            "records": derive_labels(info)})
+                            "records": derive_labels(info),
+                            "epic": info["frontmatter"].get("epic"),
+                            "workItemType": info["frontmatter"].get("workItemType")})
             rows.append(row)
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["id"]))
 

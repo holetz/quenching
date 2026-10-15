@@ -91,6 +91,16 @@ class Scenarios:
         self.assertEqual(0, add(b, 5, after="S2,S3", group="Wave 3")[0])
         return b
 
+    def test_both_list_forms_project_epic_and_work_item_type(self):
+        b = self.diamond()
+        b.create_spec("plans", doc("Loose"))
+        for lean in (False, True):
+            _, got = run(read_cmd.cmd_list, b, phase=None, lean=lean)
+            rows = {r["id"]: r for r in got["specs"]}
+            self.assertEqual((None, "epic"), (rows[1]["epic"], rows[1]["workItemType"]))
+            self.assertEqual((1, None), (rows[2]["epic"], rows[2]["workItemType"]))
+            self.assertEqual((None, None), (rows[6]["epic"], rows[6]["workItemType"]))
+
     def test_add_writes_the_items_in_their_groups_and_the_epic_key_on_the_member(self):
         b = self.diamond()
         epic, _ = b.read_spec(EPIC_ID)
