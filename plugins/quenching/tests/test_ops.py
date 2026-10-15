@@ -4,6 +4,7 @@ from __future__ import annotations
 import importlib
 import json
 import pathlib
+import re
 import subprocess
 import sys
 import tempfile
@@ -144,14 +145,10 @@ class AlignCleanPath(unittest.TestCase):
             self.assertLess(probe_at, clean_stop_at)
             self.assertLess(clean_stop_at, inventory_at)
             clean_branch = " ".join(body[clean_stop_at:inventory_at].split())
-            self.assertIn("ops inventory", clean_branch)
-
-            transcript = [
-                ("Read", str(ALIGN_BODY)),
-                ("Bash", probe),
-            ]
-            self.assertEqual(len(transcript), 2)
-            self.assertNotIn("inventory", bash_commands(transcript))
+            self.assertIn("Do not run `ops inventory`", clean_branch)
+            self.assertIsNone(
+                re.search(r"(?<!not )run `ops inventory`", clean_branch),
+                "clean branch instructs running `ops inventory`")
 
     def test_read_path_containing_inventory_is_not_an_inventory_call(self):
         body_path = "/work/quenching-inventory/plugins/quenching/commands/ops/align.md"
