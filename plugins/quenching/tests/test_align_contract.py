@@ -36,7 +36,7 @@ class KnowledgeAlignmentContract(unittest.TestCase):
             "### 9. Report", 1
         )[0]
         checks = (
-            "cq knowledge validate /docs --json",
+            "cq knowledge validate docs --json",
             "cq knowledge project docs --check",
             "cq knowledge nav docs --check",
             "cq knowledge site-source docs site-source --check",
