@@ -58,6 +58,14 @@ class TaskExecutionContractTests(unittest.TestCase):
             self.assertIn("rmdir .quenching", flat)
             self.assertNotIn("worktree remove --force", flat)
 
+    def test_red_cleanup_restores_tracked_file_from_base(self):
+        for text in (REFERENCE.read_text(encoding="utf-8"), RUNNER.read_text(encoding="utf-8")):
+            flat = " ".join(text.split())
+            self.assertIn("git -C .quenching/red show HEAD:<file>", flat)
+            self.assertIn("already exists in the base", flat)
+            self.assertNotIn("git -C .quenching/red checkout", flat)
+            self.assertNotIn("git -C .quenching/red restore", flat)
+
     def test_external_backend_records_task_after_the_commit(self):
         command = COMMAND.read_text(encoding="utf-8")
         reference = REFERENCE.read_text(encoding="utf-8")
