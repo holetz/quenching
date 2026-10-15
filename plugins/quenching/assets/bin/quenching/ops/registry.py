@@ -65,13 +65,15 @@ class RegistryError(ValueError):
 
 
 def read_registry(path: Path) -> str:
-    """Read a registry document; an absent file is empty, invalid UTF-8 is a RegistryError."""
+    """Read a registry document; an absent file is empty, an unreadable one or invalid UTF-8 is a RegistryError."""
     try:
         return path.read_text(encoding="utf-8")
     except FileNotFoundError:
         return ""
     except UnicodeDecodeError as exc:
         raise RegistryError(f"registry document is not valid UTF-8: {path}") from exc
+    except OSError as exc:
+        raise RegistryError(f"registry document cannot be read: {path} ({exc.strerror})") from exc
 
 
 def render_registry_document(document: str, inventory: Inventory) -> str:
