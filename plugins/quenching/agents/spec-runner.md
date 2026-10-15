@@ -44,7 +44,9 @@ of these, stop and return `STATE: blocked` with the reason.
 
 To prove a regression test fails without the fix, never stash: copy the test into a worktree of the
 base, run it there, and report one `RED: <test> fails without <fix> (copied test, base worktree)`
-line (execution.md §The validation loop). Never `git apply -R`: the base lacks the fix.
+line (execution.md §The validation loop). Remove the worktree you created with
+`git worktree remove --force <path>` before you return: a leftover worktree under your own `.quenching/`
+blocks the retirement of the spec's worktree. Never `git apply -R`: the base lacks the fix.
 
 ## Budget
 
