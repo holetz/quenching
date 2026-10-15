@@ -1,18 +1,18 @@
 ---
 description: >-
-  Capture or create a spec. Use for "convert to a spec", "add to the backlog", "create a spec". Not for: refining → /quenching:specs:develop; executing → /quenching:specs:execute.
+  Capture or create a spec. Use for "convert to a spec", "add to the backlog", "create a spec". Not for: refining → /quenching-specs:specs:develop; executing → /quenching-specs:specs:execute.
 argument-hint: [what to capture, a plan path, or a plan from this session]
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion, Skill
 model: sonnet
 ---
-# /quenching:specs:create — capture one spec, one screen, one turn
+# /quenching-specs:specs:create — capture one spec, one screen, one turn
 
 **Input**: `$ARGUMENTS` — a short description of the problem, a path to a Claude or Codex plan
 file, or a plan already developed in this session (including a `<proposed_plan>` block). With no
 argument and no identifiable plan in the conversation, ask what to capture.
 
-Creates ONE spec: `/quenching:specs:develop` fills its sections, `/quenching:specs:execute` builds
-it, and `/quenching:specs:conclude` closes it out under the same identity.
+Creates ONE spec: `/quenching-specs:specs:develop` fills its sections, `/quenching-specs:specs:execute` builds
+it, and `/quenching-specs:specs:conclude` closes it out under the same identity.
 
 The layout, the thirteen canonical sections, the gates and the front's on-write check live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
@@ -189,10 +189,10 @@ presumed and why — the shape differs by path:
 | sentence | the descriptive title and drafted `## Problem` text **in full**, exactly what a human wants to check about the capture. Plus subject, type, tags and `complexity`, each with its one-line reason |
 | plan source | subject, type, tags and `complexity` (each reasoned), and the **list** of sections filled with the task count. **Never the bodies** — the plan is large and the human just wrote it |
 
-Then the next-step block — `/quenching:specs:develop <id>` as the forward candidate — and **one**
+Then the next-step block — `/quenching-specs:specs:develop <id>` as the forward candidate — and **one**
 `AskUserQuestion`, immediately after. Two options:
 
-1. **Develop now (Recommended)** — narrate, then invoke `quenching:specs:develop <id>` through
+1. **Develop now (Recommended)** — narrate, then invoke `quenching-specs:specs:develop <id>` through
    the **Skill** tool, with no sentence declared. Whether that pass asks anything is the
    `complexity` shown on this screen: `high` and `xhigh` ask, `low` and `medium` answer from
    evidence and park the rest in `## Open Decisions`; correcting it with `Other` is how the human
@@ -218,12 +218,12 @@ both — has been fully honoured.
 - **Never carry a plan's merge obligations into `## Tasks`.** On the plan-source path a native plan's
   "Etapas" routinely end in a version bump, a changelog entry or *update the docs*; none of them
   converts, because what the release *is* is unknowable until the last task lands.
-  `/quenching:specs:conclude` owns them, along with the `/docs/` the work *reveals* and the cycle's
+  `/quenching-specs:specs:conclude` owns them, along with the `/docs/` the work *reveals* and the cycle's
   own closing actions. A standard the plan declares the spec will write still becomes a checkbox.
 - Never accept a generated title or a `titleize` fallback when the input lacks a descriptive title.
 - **Never ask for a metadata field before the spec exists.** Subject, type, tags and `complexity`
   are resolved and written in step 5; the human is asked only after, on the closing screen.
-- **Never invoke `/quenching:specs:develop` without the human having chosen a direction** on the
+- **Never invoke `/quenching-specs:specs:develop` without the human having chosen a direction** on the
   closing screen — a correction alone, with no direction named, ends the run at option 2.
 - **Never print the closing screen without naming what was presumed and why** — every subject,
   type, tag and `complexity` level carries its reason.

@@ -1,12 +1,12 @@
 ---
 description: >-
-  Revert one known commit into a new commit, preserving history. Use for "revert this commit", "undo a task safely", "back out this change". Not for: rewriting history; publishing → /quenching:git:push.
+  Revert one known commit into a new commit, preserving history. Use for "revert this commit", "undo a task safely", "back out this change". Not for: rewriting history; publishing → /quenching-specs:git:push.
 disable-model-invocation: true
 argument-hint: "[commit:ref|spec:id task:id [mainline:n]]"
 allowed-tools: Bash(cq:*), Bash(git status:*), Bash(git branch --show-current:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git merge-base:*), Bash(git log:*), Bash(git show:*), Bash(git diff:*), Bash(git revert:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
-# /quenching:git:revert — compensate one commit without rewriting history
+# /quenching-specs:git:revert — compensate one commit without rewriting history
 
 **Input**: `$ARGUMENTS` — `commit:<ref>` names a commit or tag; `spec:<id> task:<id>` resolves the
 recorded task subject to exactly one commit; append `mainline:<n>` when the target is a merge commit.
@@ -84,7 +84,7 @@ or the conflict/failure is reported without a recovery action.
 State the original target, new revert commit, branch, whether a mainline was used, files affected,
 and, for a task selector, the `--uncheck --reason` write to `## Discoveries`; for a direct commit
 selector, state that no spec record was selected. In either case no remote was changed. Name
-`/quenching:git:push` only as a later human action; do not invoke it. **Done when:** the compensating
+`/quenching-specs:git:push` only as a later human action; do not invoke it. **Done when:** the compensating
 commit or the unchanged conflict state is fully reported.
 
 ## Invariants

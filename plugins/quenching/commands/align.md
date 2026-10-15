@@ -1,6 +1,6 @@
 ---
 description: >-
-  Align the whole repository (docs, design, .claude, ops, proof, toolchain, delivery) on one confirmation. Use for "align the repo", "align everything", "set up quenching here". Not for: one front → its /quenching:*:align.
+  Align the whole repository (docs, design, .claude, ops, proof, toolchain, delivery) on one confirmation. Use for "align the repo", "align everything", "set up quenching here". Not for: one front → its /quenching-<module>:<front>:align.
 argument-hint: [optional-scope]
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
 ---
@@ -17,13 +17,13 @@ front named in that cell has completed its inherited authorization.
 
 | Front | Route | Depends on |
 | --- | --- | --- |
-| `knowledge` — `/docs/` | `/quenching:knowledge:align` | applicability |
-| `design` — `/.design/` | `/quenching:design:align` | `knowledge` |
-| `components` — `.claude/` | `/quenching:components:align` | `design` |
-| `ops` — operations surface | `/quenching:ops:align` | `components` |
-| `proof` — verification surface | `/quenching:proof:align` | `ops` |
-| `toolchain` — toolchain surface | `/quenching:toolchain:align` | `proof` |
-| `delivery` — delivery surface | `/quenching:delivery:align` | `toolchain` |
+| `knowledge` — `/docs/` | `/quenching-align:knowledge:align` | applicability |
+| `design` — `/.design/` | `/quenching-design:design:align` | `knowledge` |
+| `components` — `.claude/` | `/quenching-align:components:align` | `design` |
+| `ops` — operations surface | `/quenching-ops:ops:align` | `components` |
+| `proof` — verification surface | `/quenching-proof:proof:align` | `ops` |
+| `toolchain` — toolchain surface | `/quenching-toolchain:toolchain:align` | `proof` |
+| `delivery` — delivery surface | `/quenching-delivery:delivery:align` | `toolchain` |
 
 **How a front is run.** `knowledge` and `components` are model-invocable: invoke them through the
 Skill tool. `design`, `ops`, `proof`, `toolchain` and `delivery` are typed-only commands
@@ -88,7 +88,7 @@ Wait for one OK. A decline writes nothing.
 
 ### Front: `knowledge`
 
-Invoke `/quenching:knowledge:align` through the Skill tool under its registry name, with the
+Invoke `/quenching-align:knowledge:align` through the Skill tool under its registry name, with the
 inherited authorization:
 
 > Running under `/align` authorization granted at run start — skip your plan-confirmation pause;
@@ -102,39 +102,39 @@ write into or depend on it.
 ### Front: `design`
 
 When `/.design/` is absent and neither scope nor portable artifacts signal adoption, report this
-front not applicable. Otherwise run `/quenching:design:align` (read its body) with the inherited authorization.
+front not applicable. Otherwise run `/quenching-design:design:align` (read its body) with the inherited authorization.
 Product truth and design standards land in the knowledge bundle; source arbitration and visual taste
 remain human choices. A hard failure establishing valid DTCG stops later fronts.
 
 ### Front: `components`
 
 When the automation surface is empty, skip it rather than scaffolding a taxonomy. Otherwise invoke
-`/quenching:components:align` with the inherited authorization after `design` has completed. Its
+`/quenching-align:components:align` with the inherited authorization after `design` has completed. Its
 rule and registry changes belong to the knowledge bundle; its doctrine findings remain report-only.
 
 ### Front: `ops`
 
 When the applicability probe finds no operations signal, report `ops` not applicable. Otherwise
-run `/quenching:ops:align` (read its body) after `components`, with the inherited authorization. Its inventory
+run `/quenching-ops:ops:align` (read its body) after `components`, with the inherited authorization. Its inventory
 and registry feed the proof front's conditional entry-point check.
 
 ### Front: `proof`
 
 When the applicability probe finds no proof signal, report `proof` not applicable. Otherwise run
-`/quenching:proof:align` (read its body) after `ops`, with the inherited authorization. It consumes the operations
+`/quenching-proof:proof:align` (read its body) after `ops`, with the inherited authorization. It consumes the operations
 inventory when configured and reports its own layer and gate residue; it never runs a target suite.
 
 ### Front: `toolchain`
 
 When the applicability probe finds no toolchain signal, report `toolchain` not applicable.
-Otherwise run `/quenching:toolchain:align` (read its body) after `proof`, with the inherited authorization.
+Otherwise run `/quenching-toolchain:toolchain:align` (read its body) after `proof`, with the inherited authorization.
 It consumes the declared manifests, locks, language pins and tool configuration without choosing
 target-owned build policy; its runtime evidence feeds the delivery front.
 
 ### Front: `delivery`
 
 When the applicability probe finds no delivery signal, report `delivery` not applicable. Otherwise
-run `/quenching:delivery:align` (read its body) after `toolchain`, with the inherited authorization. It consumes
+run `/quenching-delivery:delivery:align` (read its body) after `toolchain`, with the inherited authorization. It consumes
 the workflow inventory and reports pipeline reachability while leaving provider, environment,
 promotion, publication and permission policy with the target owner.
 
@@ -158,9 +158,9 @@ writes nothing of its own; each front owns its writes and its report is the acco
 - Never run a front before its dependency in the declaration table has completed.
 - Never ask for a second authorization or suppress an interruption the front contract still owns.
 - Never reimplement a front's stages, verifier or repairs here; run its align: through Skill for `knowledge` and `components`, by reading its body for the typed-only fronts.
-- Never act on residue owned by `/quenching:knowledge:add`, `/quenching:knowledge:learn`,
-  `/quenching:knowledge:define`, `/quenching:specs:develop`, `/quenching:specs:conclude`,
-  `/quenching:design:genre:new`, or `/quenching:components:command:new`.
+- Never act on residue owned by `/quenching-align:knowledge:add`, `/quenching-align:knowledge:learn`,
+  `/quenching-align:knowledge:define`, `/quenching-specs:specs:develop`, `/quenching-specs:specs:conclude`,
+  `/quenching-design:design:genre:new`, or `/quenching-align:components:command:new`.
 - Never scaffold an empty `.claude/` surface or silently install a visual world.
 - Never loop past 3 passes or widen scope to force a clean number.
 - Never hand this command `context: fork`; the gate and nested confirmations are mid-flow.

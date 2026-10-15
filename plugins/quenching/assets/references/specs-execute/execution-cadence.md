@@ -39,7 +39,7 @@ the loop keeps the task commits and continues with the next task.
 - **Only a human-required question or a real blocker pauses the loop.** A section boundary is
   neither; the pause conditions remain the command body's own.
 - **The contract still ends at the last commit.** Reaching this boundary is not a close-out: the
-  branch review, the merge and the archive remain `/quenching:specs:conclude`'s, exactly as they are
+  branch review, the merge and the archive remain `/quenching-specs:specs:conclude`'s, exactly as they are
   for a run that goes to the end.
 
 ## The loop's progress banner

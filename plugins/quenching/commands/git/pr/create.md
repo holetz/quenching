@@ -1,18 +1,18 @@
 ---
 description: >-
-  Push the branch and open a PR on GitHub or Azure DevOps against the resolved base. Use for "open a PR", "create a pull request", "submit this for review". Not for: merging → /quenching:git:merge.
+  Push the branch and open a PR on GitHub or Azure DevOps against the resolved base. Use for "open a PR", "create a pull request", "submit this for review". Not for: merging → /quenching-specs:git:merge.
 argument-hint: [id-or-title] [remote:<name>]
 allowed-tools: Bash(cq git base:*), Bash(cq git conventions:*), Bash(cq git state:*), Bash(cq git push:*), Bash(cq git pr create:*), Bash(cq git pr probe:*), Bash(cq git pr record:*), Bash(cq specs config:*), Bash(cq specs status:*), Bash(cq specs show:*), Bash(cq components read:*), Bash(gh repo view:*), Read, AskUserQuestion
 ---
 
-# /quenching:git:pr:create — push and open the pull request
+# /quenching-specs:git:pr:create — push and open the pull request
 
 **Input**: `$ARGUMENTS` — a spec id (derives title, body and the provider's issue/work-item
 link), or free text to use as the PR title. Append `remote:<name>` to select a remote; omitted
 → `origin`. Omitted title → ask. The word `autonomous` is the human's pre-answer to step 4's
 confirmation, given by a conductor launched with `--autonomous`: see step 4.
 
-Opens the PR and **stops there** — merging is `/quenching:git:merge`'s, on its own confirmation,
+Opens the PR and **stops there** — merging is `/quenching-specs:git:merge`'s, on its own confirmation,
 except in an `autonomous` orchestrated run, where the `git-steward`'s `merge` step merges the PR
 of a spec the next wave depends on.
 The route follows `cq specs config --json`, and both go through `cq git pr` verbs with a fixed argv:

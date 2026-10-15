@@ -1,13 +1,13 @@
 # Authoring a spec's sections
 
-The per-section authoring doctrine every `/quenching:specs:*` command applies when it writes into a spec. The
+The per-section authoring doctrine every `/quenching-specs:specs:*` command applies when it writes into a spec. The
 **layout, the thirteen sections, the gates, the derived stages and the `cq specs` surface** live
 once in
 [spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) and are
 cited, never restated here.
 
 There is **no delta and no sync**. A spec proves its durable rules straight into `docs/standards/`
-while it is built (`/quenching:specs:execute`), and `## Impact` is where it *declares* that scope. Two things
+while it is built (`/quenching-specs:specs:execute`), and `## Impact` is where it *declares* that scope. Two things
 in a spec are machine contracts — the `## Tasks` checkboxes and the one parsed sub-heading of
 `## Impact` — and everything else is prose for a human reviewer.
 
@@ -93,7 +93,7 @@ costs one line.
 - **`## Design`** — each decision with the alternatives weighed and why this one, plus the binding
   contracts the design must not contradict (the relevant `docs/standards/`, the existing code
   shape, external limits). State a decision as a **durable rule**, not a diary entry: this is the
-  material `/quenching:specs:conclude` later distils.
+  material `/quenching-specs:specs:conclude` later distils.
 - **`## Alternatives Considered`** — whole-shape alternatives rejected at the spec level, each with
   the reason it lost. Per-decision alternatives stay inside `## Design`; this section is for the
   ones that would have changed the spec's shape. The next person with the same idea reads why it
@@ -189,7 +189,7 @@ The implementation checklist `cq specs` parses: checkboxes `- [ ] <id> <text>` g
 `### N. <Section>` headings. `cq specs task --spec <id> --check <id>` flips a box mechanically —
 never hand-edit the checkbox character.
 
-Shape it so `/quenching:specs:execute` can walk it top to bottom:
+Shape it so `/quenching-specs:specs:execute` can walk it top to bottom:
 
 - **Ordered by dependency**, grouped into coherent sections (setup → core → wiring → tests → the
   standards `## Impact` declares). Each item is one reviewable unit of work — small enough to
@@ -214,14 +214,14 @@ Shape it so `/quenching:specs:execute` can walk it top to bottom:
 - **What the merge owns is never written here.**
   A version bump, a changelog entry, a manifest re-stamp; the `/docs/` the work *revealed* rather
   than declared; and the cycle's own closing actions — all three belong to
-  `/quenching:specs:conclude`, which settles them once the branch is written and what the release
+  `/quenching-specs:specs:conclude`, which settles them once the branch is written and what the release
   *is* is finally knowable. The axis is **declared versus revealed**, not docs versus code: the
   bullet above still requires a checkbox for every standard `## Impact` declares, and the test is
   whether the task would exist if this branch were never merged.
 
 Do not put `docs/concepts/` captures or glossary terms in `## Tasks` as durable content — those
-route through `/quenching:knowledge:learn` / `/quenching:knowledge:define`; a task may *name* the capture
-(`- [ ] 5.2 Capture the retry-budget gotcha via /quenching:knowledge:learn`) but the knowledge itself lives in its
+route through `/quenching-align:knowledge:learn` / `/quenching-align:knowledge:define`; a task may *name* the capture
+(`- [ ] 5.2 Capture the retry-budget gotcha via /quenching-align:knowledge:learn`) but the knowledge itself lives in its
 OKF home, never in the checklist.
 
 ## Execution metadata — optional, indented, additive
@@ -300,14 +300,14 @@ because the phrase wrapped across a line, and again because inline `**` sat betw
 <!-- rules -->
 `per-task` / `per-section` (default) / `end-of-plan`, recorded in frontmatter. It answers *when* the
 checks run; `verify:` answers *what* runs. Declaring it during definition is what keeps
-`/quenching:specs:execute` from having to guess, or from stopping mid-build to ask.
+`/quenching-specs:specs:execute` from having to guess, or from stopping mid-build to ask.
 
 ## `## Discoveries` and `## Outcome`
 
 **`## Discoveries`** has no gate — it is appended to during execution, one line per finding, by
 `cq specs discover`. Captured **indiscriminately**: whether a discovery is worth acting on is a
 later judgment, and asking the executor to make it mid-task is how a finding gets dropped for being
-inconvenient. Each line is resolved **in place** by `/quenching:specs:develop`'s discoveries stage, so
+inconvenient. Each line is resolved **in place** by `/quenching-specs:specs:develop`'s discoveries stage, so
 provenance is never lost:
 
 ```markdown

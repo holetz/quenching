@@ -49,7 +49,7 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    fast-forward, decided by the audit from the commit graph and never from the entry's message, so
    a ref moved by hand with no message, or with a forged one, is listed like any other.
    The creation of the branch and of the worktree is the oldest reflog entry and is never listed.
-   A listed `rebase` is accepted only when the worker's NOTE says `/quenching:git:sync` ran; any
+   A listed `rebase` is accepted only when the worker's NOTE says `/quenching-specs:git:sync` ran; any
    other listed entry is FAIL. Quote the offending item as evidence. Limit: the reflog is evidence of
    what the worker did not erase, not proof against a worker with `Bash`; a reflog delete (or expire) removes
    the entry and leaves `rewrites` empty with `complete: true`, so an empty `rewrites` never proves

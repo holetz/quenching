@@ -1,6 +1,6 @@
 ---
 description: >-
-  Prune merged or gone branches and orphan worktrees from `cq git stale`. Use for "clean up old branches", "prune stale branches". Not for: isolation → /quenching:git:branch.
+  Prune merged or gone branches and orphan worktrees from `cq git stale`. Use for "clean up old branches", "prune stale branches". Not for: isolation → /quenching-specs:git:branch.
 disable-model-invocation: true
 argument-hint: [remote:<name>]
 allowed-tools: >-
@@ -8,7 +8,7 @@ allowed-tools: >-
   Bash(python3:*), Read, AskUserQuestion
 ---
 
-# /quenching:git:cleanup — prune what `cq git stale` already found
+# /quenching-specs:git:cleanup — prune what `cq git stale` already found
 
 **Input**: `$ARGUMENTS` — optional `remote:<name>`; omitted → `origin`. This command always starts
 from a fresh report for the selected remote.

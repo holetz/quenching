@@ -1,11 +1,11 @@
 ---
 description: >-
-  Create or update the Zensical site layer with extensions, CSS, navigation and strict-build QA. Use for "build the docs site", "fix the docs nav". Not for: prose → /quenching:knowledge:documentation:write.
+  Create or update the Zensical site layer with extensions, CSS, navigation and strict-build QA. Use for "build the docs site", "fix the docs nav". Not for: prose → /quenching-align:knowledge:documentation:write.
 argument-hint: [optional-section-or-config-path]
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash, Write, Edit, AskUserQuestion
 ---
 
-# /quenching:knowledge:documentation:build — create/update the editorially mapped site
+# /quenching-align:knowledge:documentation:build — create/update the editorially mapped site
 
 **Input**: `$ARGUMENTS` (optionally a bundle home to focus the nav check on, or the path of an existing `zensical.toml`; omit to inventory the whole site layer).
 
@@ -20,7 +20,7 @@ home boundaries and the `documentation` type live in
 [knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md) and
 [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md).
 
-`/quenching:knowledge:align` step 7 offers the **first** install; every later install, update and
+`/quenching-align:knowledge:align` step 7 offers the **first** install; every later install, update and
 re-verification is **this** skill.
 
 ## Doctrine
@@ -79,8 +79,8 @@ re-verification is **this** skill.
   conversion as its **own** confirmation item, and never stamp a second config beside a live one.
 - **Report page-level drift; never fix it here.** A section with no `index.md`, a page with no
   frontmatter, an absolute `/docs/<other-home>/…` link that cannot resolve in a site rooted at
-  another home — each is **reported** with the command that closes it (`/quenching:knowledge:align`,
-  `/quenching:knowledge:add`), never repaired by this skill.
+  another home — each is **reported** with the command that closes it (`/quenching-align:knowledge:align`,
+  `/quenching-align:knowledge:add`), never repaired by this skill.
 - **The build is verification, not a deliverable.** `zensical build --strict` reads the generated
   bounded `site-source/` input and writes to the gitignored `site_dir`
   (`site-source-tracked`, `site-artifacts-tracked`, `site-scratch-tracked`).
@@ -112,16 +112,16 @@ the plugin cannot enumerate.
 | `site-docs-dir-mismatch` | `docs_dir` does not point at generated `site-source/` | **FIX, own confirmation** — pointing at the bundle would process excluded homes |
 | `site-source-missing` | generated bounded source tree is absent | **FIX** — run `cq knowledge site-source docs site-source --write` |
 | `site-source-stale` | generated source manifest differs from the allowlisted bundle files | **FIX** — restage with `cq knowledge site-source docs site-source --write` |
-| `site-publication-map-absent` | the accepted plan has no Publication map | **REPORT** → `/quenching:knowledge:documentation:plan` |
-| `site-publication-route-missing` | a `publish`/`publish derived` row has no corresponding built page | **REPORT** → `/quenching:knowledge:documentation:write` |
+| `site-publication-map-absent` | the accepted plan has no Publication map | **REPORT** → `/quenching-align:knowledge:documentation:plan` |
+| `site-publication-route-missing` | a `publish`/`publish derived` row has no corresponding built page | **REPORT** → `/quenching-align:knowledge:documentation:write` |
 | `site-publication-leak` | a `do not publish` home appears in nav, a route or an internal link | **FIX** only in config/nav; otherwise **REPORT** → page author |
 | `site-glossary-projection-stale` | route/snippet origin or source hash differs from the canonical glossary | **FIX** with `cq knowledge project --write`; never rewrite the source glossary |
-| `site-glossary-snippet-missing` | the accepted glossary projection has no generated abbreviation snippet | **REPORT** → `/quenching:knowledge:documentation:write` |
-| `site-glossary-term-unrendered` | a known canonical term is not present as rendered `<abbr>` | **REPORT** → `/quenching:knowledge:documentation:write` |
-| `site-coverage-incomplete` | a publishable document has no built, non-empty page and no explicit `do not publish` row of its own | **REPORT** → `/quenching:knowledge:documentation:write` |
-| `site-skeleton-stub` | a mandatory route's page is byte-identical to the shipped skeleton's section descriptor, or carries only that descriptor's boilerplate | **REPORT** → `/quenching:knowledge:documentation:write`; the route is not coverage |
+| `site-glossary-snippet-missing` | the accepted glossary projection has no generated abbreviation snippet | **REPORT** → `/quenching-align:knowledge:documentation:write` |
+| `site-glossary-term-unrendered` | a known canonical term is not present as rendered `<abbr>` | **REPORT** → `/quenching-align:knowledge:documentation:write` |
+| `site-coverage-incomplete` | a publishable document has no built, non-empty page and no explicit `do not publish` row of its own | **REPORT** → `/quenching-align:knowledge:documentation:write` |
+| `site-skeleton-stub` | a mandatory route's page is byte-identical to the shipped skeleton's section descriptor, or carries only that descriptor's boilerplate | **REPORT** → `/quenching-align:knowledge:documentation:write`; the route is not coverage |
 | `site-catalog-index-missing` | a catalog is incorrectly proposed as a Zensical route | **REPORT** → revise the map; keep raw catalog outside `site-source/` |
-| `site-catalog-lineage-missing` | a catalog fact is being curated without stable source lineage | **REPORT** → `/quenching:knowledge:documentation:write`; do not stage raw detail |
+| `site-catalog-lineage-missing` | a catalog fact is being curated without stable source lineage | **REPORT** → `/quenching-align:knowledge:documentation:write`; do not stage raw detail |
 | `site-nav-absent` | the config declares no `nav` while the home has sections to order | **FIX** — write the list from the folder tree |
 | `site-nav-stale` | the `nav` names an entry that does not exist, or omits a page the home has | **FIX** — regenerate the list, keep every human title |
 | `site-feature-absent` | `navigation.indexes` missing while sections use `index.md` as landing page | **FIX** — add to `theme.features` |
@@ -135,9 +135,9 @@ the plugin cannot enumerate.
 | `site-artifacts-tracked` | `site/` not gitignored (or already tracked) | **FIX** the gitignore; a tracked build is **REPORTED** for the human to remove |
 | `site-scratch-tracked` | `.quenching/` not gitignored — the family's plan-of-record would land in the human's next commit | **FIX** the gitignore; an already-tracked plan is **REPORTED** for the human to remove |
 | `site-source-tracked` | generated bounded `site-source/` is not gitignored (or is already tracked) | **FIX** the gitignore; an already-tracked generated source is **REPORTED** for the human to remove |
-| `site-section-no-index` | a section folder with no `index.md` (breaks `navigation.indexes` *and* the OKF listing rule) | **REPORT** → `/quenching:knowledge:align` |
-| `site-link-escapes` | a page links an exposed home by an internal bundle path instead of its mapped route | **REPORT** → `/quenching:knowledge:documentation:write` |
-| `site-page-unstamped` | a page in a reader-facing quadrant with no `type` matching its home | **REPORT** → `/quenching:knowledge:align` |
+| `site-section-no-index` | a section folder with no `index.md` (breaks `navigation.indexes` *and* the OKF listing rule) | **REPORT** → `/quenching-align:knowledge:align` |
+| `site-link-escapes` | a page links an exposed home by an internal bundle path instead of its mapped route | **REPORT** → `/quenching-align:knowledge:documentation:write` |
+| `site-page-unstamped` | a page in a reader-facing quadrant with no `type` matching its home | **REPORT** → `/quenching-align:knowledge:align` |
 | `site-ci-absent` | no `.github/workflows/docs.yml` | **REPORT**; install only on request (own confirmation — platform-specific) |
 | `site-azure-payload-available` | Azure DevOps remote has no documented opt-in pipeline payload | **OFFER** `azure-pipelines-docs.yml` under its own confirmation; never overwrite an existing pipeline |
 | `site-capability-prerequisite-missing` | an enabled capability lacks its declared prerequisite or fixture | **REPORT** and leave it disabled; do not guess support |
@@ -167,9 +167,9 @@ Never choose a runner from `PATH` alone when a project-managed runner is availab
 
 ### 1. Preflight — the bundle and the home
 Confirm `/docs/index.md` carries `okf_version`. **No bundle → stop** and offer
-`/quenching:knowledge:align` first; there is nothing to render. Bundle
+`/quenching-align:knowledge:align` first; there is nothing to render. Bundle
 but **no reader-facing quadrant** (`tutorials/`, `how-to/`, `explanation/`, `project/`) → stop and
-offer `/quenching:knowledge:align`; never scaffold a home here.
+offer `/quenching-align:knowledge:align`; never scaffold a home here.
 **Done when:** the bundle and documentation home are confirmed, or the handoff is reported.
 
 ### 2. Inventory the site layer (read-only)
@@ -316,7 +316,7 @@ and its result. **Done when:** every fixed/reported finding, build status, and r
 
 - Never write, rewrite, move, delete, or stamp a bundle page — the site layer **only**
   (the CSS asset, an orphan nav sidecar, and the root config files). Page-level drift is reported to
-  `/quenching:knowledge:documentation:write`, never repaired here.
+  `/quenching-align:knowledge:documentation:write`, never repaired here.
 - Never clobber a customized `zensical.toml` or requirements file; add only missing required keys,
   always shown as a diff, and never reorder or drop a key you did not add.
 - Never convert a legacy `mkdocs.yml` without its own confirmation, and never leave two configs at
@@ -329,4 +329,4 @@ and its result. **Done when:** every fixed/reported finding, build status, and r
   generator-neutral.
 - Never run `zensical serve` and never commit the built `site/`.
 - Never report a site as building when no build ran — an unverified run says `unverified`.
-- Never scaffold the bundle, a home, or a missing `index.md` here → `/quenching:knowledge:align`.
+- Never scaffold the bundle, a home, or a missing `index.md` here → `/quenching-align:knowledge:align`.

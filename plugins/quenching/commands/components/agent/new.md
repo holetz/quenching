@@ -1,11 +1,11 @@
 ---
 description: >-
-  Mint or edit ONE subagent definition in .claude/agents/. Use for "create an agent", "add a subagent", "make a verifier agent". Not for: commands → /quenching:components:command:new; hooks → /quenching:components:hook:new.
+  Mint or edit ONE subagent definition in .claude/agents/. Use for "create an agent", "add a subagent", "make a verifier agent". Not for: commands → /quenching-align:components:command:new; hooks → /quenching-align:components:hook:new.
 argument-hint: [agent-name-or-description]
 allowed-tools: Bash(cq:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
 ---
 
-# /quenching:components:agent:new — mint ONE subagent definition
+# /quenching-align:components:agent:new — mint ONE subagent definition
 
 **Input**: `$ARGUMENTS` (the agent to create or edit — a name or a description of the work
 to delegate).
@@ -24,7 +24,7 @@ The delegation economics and the definition contract live in
   Absent + OKF bundle present → the plan offers creating it from
   `automation/agents-standard.md`, born `authority: background`; never created without the OK.
 - **No bundle, no tail — but the mint proceeds.** `/docs/index.md` without `okf_version` (or
-  absent) means: write the definition only, skip the OKF tail silently, suggest `/quenching:knowledge:align`
+  absent) means: write the definition only, skip the OKF tail silently, suggest `/quenching-align:knowledge:align`
   **once**.
 - **One plan, one OK, nothing before.** The delegation buy, the name, the profile, every
   file, and the tail appear in ONE plan; a declined plan writes nothing.
@@ -43,7 +43,7 @@ Resolve `cq` per
 Read `/docs/standards/automation/agents.md` and confirm the bundle (`/docs/index.md` carries
 `okf_version`). Rule present → it governs. Rule absent, bundle present → add "create the rule
 from `automation/agents-standard.md`" to the plan. No bundle → note the tail as skipped and
-plan the `/quenching:knowledge:align` suggestion. **Done when:** the governing rule (or its planned
+plan the `/quenching-align:knowledge:align` suggestion. **Done when:** the governing rule (or its planned
 creation, or the no-bundle note) is fixed.
 
 ### 2. Apply the delegation test
@@ -51,7 +51,7 @@ Per [capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command
 §Subagents: the work qualifies when its returned summary is much smaller than the work
 itself, when slices run in parallel, or when its tool set must be narrower than the
 conversation's. Work that fails the test is a command or an inline step — say so and route
-to `/quenching:components:command:new`. **Done when:** the delegation
+to `/quenching-align:components:command:new`. **Done when:** the delegation
 buy is stated in one line, or the request is rerouted.
 
 ### 3. Derive the name, check collisions
@@ -82,7 +82,7 @@ with its planned content.
 
 ### 7. OKF tail (bundle present)
 The registry's GENERATED zone lists commands only. Offer, as follow-up commands rather than writes
-in this run, one curated registry-prose line for the agent surface and `/quenching:knowledge:define`
+in this run, one curated registry-prose line for the agent surface and `/quenching-align:knowledge:define`
 for a coined repo-specific term; the user decides both. **Done when:** each offer is answered.
 
 ### 8. Self-check

@@ -1,6 +1,6 @@
 # Composing and refining — what `develop` asks, and how
 
-The owner of **what** `/quenching:specs:develop` asks and **when it stops**. The command body owns
+The owner of **what** `/quenching-specs:specs:develop` asks and **when it stops**. The command body owns
 the loop (resolve → derive the pass → ask → one edit → verify); this file owns the two operations,
 the stages around them and the mechanics they share, and the body never restates it.
 
@@ -98,7 +98,7 @@ each of those buys nothing — every turn re-sends the whole conversation, so a 
 costs the preamble again.
 
 Measured on this repository's own transcripts, question turns are **not** where this command's
-tokens go: real `/quenching:specs:develop` runs made 2–5 `AskUserQuestion` calls, against whole-file
+tokens go: real `/quenching-specs:specs:develop` runs made 2–5 `AskUserQuestion` calls, against whole-file
 reference reads worth ~900k token-turns in a single run. Grouping is here because the old rule
 overreached, not because it closes a leak.
 
@@ -278,7 +278,7 @@ The questions come from the gap itself, in the spec's own terms:
 - a term the spec uses in a sense the repo's glossary does not.
 
 **And the three questions only this moment can answer** — every one of them is a decision
-`/quenching:specs:execute` is forbidden to make for itself, so a spec that leaves them unasked is
+`/quenching-specs:specs:execute` is forbidden to make for itself, so a spec that leaves them unasked is
 built with the cheap options closed:
 
 - **which task groups touch provably disjoint `files:`** → mark them `[P]` now. Execution **never

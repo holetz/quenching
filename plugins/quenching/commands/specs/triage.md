@@ -1,12 +1,12 @@
 ---
 description: >-
-  Rank the open specs front into ONE ordered list the human confirms. Use for "triage the specs", "prioritize the front", "which of these first". Not for: building → /quenching:specs:execute.
+  Rank the open specs front into ONE ordered list the human confirms. Use for "triage the specs", "prioritize the front", "which of these first". Not for: building → /quenching-specs:specs:execute.
 argument-hint: [optional-id]
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion
 model: opus
 ---
 
-# /quenching:specs:triage — rank the front, once, on one confirmation
+# /quenching-specs:specs:triage — rank the front, once, on one confirmation
 
 **Input**: `$ARGUMENTS` — optionally one ID to limit the sweep; omit to rank everything in
 the open (`plans`) phase.
@@ -17,8 +17,8 @@ writes each spec's `priority` record.
 **This is the only command that ranks.** `cq specs next --front` consumes what this writes; with no
 `priority` anywhere its ordering falls back to age alone.
 
-**It ranks and nothing else.** Closing out is `/quenching:specs:conclude`'s, resolving
-`## Discoveries` is `/quenching:specs:develop`'s discoveries stage.
+**It ranks and nothing else.** Closing out is `/quenching-specs:specs:conclude`'s, resolving
+`## Discoveries` is `/quenching-specs:specs:develop`'s discoveries stage.
 
 The layout, the derived stages and the front's on-write check live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
@@ -160,7 +160,7 @@ Emit §The report mold. Two body blocks:
    row's `Recommended action` **runnable as printed**: the command with its real argument
    substituted, never a bare command name the reader has to complete.
 
-Then §The next-step block, whose recommended line is `/quenching:specs:execute <id>` for the
+Then §The next-step block, whose recommended line is `/quenching-specs:specs:execute <id>` for the
 spec the approved ranking put first — the first thing the `priority` this just wrote decides.
 **Done when:** both blocks and the next-step block are shown.
 

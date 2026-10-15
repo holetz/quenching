@@ -1,12 +1,12 @@
 ---
 description: >-
-  Report the delivery front (workflow inventory, pipeline findings), read-only. Use for "delivery status", "check the delivery surface". Not for: converging → /quenching:delivery:align.
+  Report the delivery front (workflow inventory, pipeline findings), read-only. Use for "delivery status", "check the delivery surface". Not for: converging → /quenching-delivery:delivery:align.
 disable-model-invocation: true
 argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching:delivery:status — read the delivery front
+# /quenching-delivery:delivery:status — read the delivery front
 
 This command is the read-only view of a target repository's delivery surface. It reports the
 applicability signal, provider-equivalent workflow artifacts, triggers, jobs, stages, setup and
@@ -52,7 +52,7 @@ Report one compact table:
 
 Preserve every finding's code, band, severity, message and path. Distinguish no delivery signal
 (`not-applicable`) from an applicable provider whose workflow shape was not measured. For an
-actionable mechanical or structural finding, name `/quenching:delivery:align`; for a judgement
+actionable mechanical or structural finding, name `/quenching-delivery:delivery:align`; for a judgement
 finding, retain the evidence and name the target owner's closing decision from `delivery-align/bands.md`.
 
 **Done when:** every returned field has an evidence row, every finding keeps its code and band,

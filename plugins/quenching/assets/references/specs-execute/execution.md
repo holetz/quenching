@@ -1,6 +1,6 @@
 # The execution contract — verify, review, commit
 
-The owner of **how** `/quenching:specs:execute` verifies and commits one task. The command body
+The owner of **how** `/quenching-specs:specs:execute` verifies and commits one task. The command body
 owns the workflow (select → isolate → read → loop → hand off); this file owns the core mechanics,
 while delegation and handoff cadence live in focused references.
 
@@ -9,7 +9,7 @@ nothing in between and nothing after. A task that was never run, never reviewed,
 committed leaves a checkbox that claims more than the repo can show.
 
 **Where this contract stops.** It ends at the last task's commit. Reviewing the whole branch,
-writing the `knowledge/` the work *revealed*, merging, and archiving belong to `/quenching:specs:conclude` — a
+writing the `knowledge/` the work *revealed*, merging, and archiving belong to `/quenching-specs:specs:conclude` — a
 different scale of judgment, needing a different confirmation, and resumable on its own: a run that
 dies after task nine must be resumable without redoing tasks one through eight. This file never
 reaches past the loop.
@@ -86,7 +86,7 @@ without moving anything.
 
 <!-- rules -->
 
-Declared per spec in the frontmatter (`verification`), written by `/quenching:specs:develop`, read by
+Declared per spec in the frontmatter (`verification`), written by `/quenching-specs:specs:develop`, read by
 `cq specs status --spec <id> --json`. **Execute never decides when to test.**
 
 | Policy | Run the `verify:` command |
@@ -102,12 +102,12 @@ finding to report, not a silent pass** — say plainly that the task was impleme
 **A check that spawns billed agent sessions does not belong in a `verify:` line.** A `verify:` runs
 per task *and again on every retry of the loop below*, so a suite that costs money per invocation
 is multiplied by exactly the thing this loop is for. Those belong in `## Validation`, which
-`/quenching:specs:conclude` runs **once**, as its pre-merge gate. When a task's `verify:` names one anyway,
+`/quenching-specs:specs:conclude` runs **once**, as its pre-merge gate. When a task's `verify:` names one anyway,
 say so and run the narrowest scope the tool offers rather than the whole suite by reflex — and
 report the substitution, because a narrowed check is a narrowed claim.
 
 **A harness that proves the *command surface* loads belongs to neither.** It is owned by the
-command that edits the surface — `/quenching:components:command:new`, or `/quenching:components:command:eval` for a description.
+command that edits the surface — `/quenching-align:components:command:new`, or `/quenching-align:components:command:eval` for a description.
 
 ## The validation loop
 
@@ -161,7 +161,7 @@ Cheap, per task, over that task's diff only (`git diff`). Four questions, not a 
    mid-task.
 
 Fix what it finds **before** committing, so the commit is the reviewed version. The
-whole-branch review runs once, and it belongs to `/quenching:specs:conclude`.
+whole-branch review runs once, and it belongs to `/quenching-specs:specs:conclude`.
 
 ## The commit — one per task
 

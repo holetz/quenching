@@ -1,6 +1,6 @@
 ---
 description: >-
-  Commit what is already staged under the repo's commit convention. Use for "commit this", "make a commit", "wrap this up in a commit". Not for: staging, merging or pushing → /quenching:git:merge.
+  Commit what is already staged under the repo's commit convention. Use for "commit this", "make a commit", "wrap this up in a commit". Not for: staging, merging or pushing → /quenching-specs:git:merge.
 argument-hint: [subject]
 allowed-tools: Bash(cq git commit:*), Bash(cq git conventions:*), Bash(cq git specs:*), Bash(cq git state:*), Bash(cq specs next:*), Bash(cq components read:*), Read
 hooks:
@@ -12,9 +12,9 @@ hooks:
           timeout: 5
 ---
 
-# /quenching:git:commit — commit what is staged, under the target's own convention
+# /quenching-specs:git:commit — commit what is staged, under the target's own convention
 
-This command is the single commit boundary for standalone commits. `/quenching:specs:execute` does
+This command is the single commit boundary for standalone commits. `/quenching-specs:specs:execute` does
 not delegate here per task: it commits each task through `cq git commit --subject`. This command
 resolves the subject, commits the existing index and reports the subject actually written. It never receives a request to stage an unrelated path.
 

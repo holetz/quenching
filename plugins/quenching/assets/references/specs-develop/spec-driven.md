@@ -3,7 +3,7 @@
 **This file is the single owner of the spec document's format** — identity, frontmatter,
 canonical sections, gates, derived stages, the executor contract and the boundary with the OKF
 bundle. The `cq specs` tool surface and the report shape live in focused references, and every
-`/quenching:specs:*` command cites the smallest owner instead of loading this file whole. The OKF
+`/quenching-specs:specs:*` command cites the smallest owner instead of loading this file whole. The OKF
 bridge (what durable knowledge crosses from a spec into `knowledge/` and how) lives with the close-out command
 ([specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)).
 
@@ -50,7 +50,7 @@ that is fast by construction, and that is its whole content — a spec that shou
 a conversation asks for it by name. Neither distinction changes the continuous execution loop.
 
 At the end of a `low` build, the close-out command carries the PR handoff by `Skill` after its
-green gate: `Skill("quenching:git:pr:create", "<id>")`. The PR command keeps its own confirmation,
+green gate: `Skill("quenching-specs:git:pr:create", "<id>")`. The PR command keeps its own confirmation,
 push and provider record; `low` removes the extra handoff choice from `conclude`, not the safety
 gate owned by the PR command. The other levels retain `conclude`'s named handoff for the human.
 
@@ -212,11 +212,11 @@ the body prose is written in is owned by the bundle's `docs/standards/agents/com
 
 **Every section declares its moment, and that is load-bearing.** `## Proposal` / `## Out of Scope`
 / `## Design` / `## Impact` / `## Handoff` / `## Tasks` are the `build` set — exactly what
-`/quenching:specs:execute` step 4 sends an executor (`cq specs section <id> --moment build`).
+`/quenching-specs:specs:execute` step 4 sends an executor (`cq specs section <id> --moment build`).
 `## Problem` / `## Alternatives Considered` / `## Open Decisions` / `## Risks` are
 `decision` — the human's, weighing whether to build at all. `## Validation` / `## Outcome` are
-`close` — `/quenching:specs:conclude`'s. `## Discoveries` carries no moment: captured
-indiscriminately while building, it is resolved later by `/quenching:specs:develop`'s triage sweep, on its own
+`close` — `/quenching-specs:specs:conclude`'s. `## Discoveries` carries no moment: captured
+indiscriminately while building, it is resolved later by `/quenching-specs:specs:develop`'s triage sweep, on its own
 schedule.
 
 - **`## Validation`** is the fallback for a task with no `verify:` line.
@@ -244,7 +244,7 @@ omission; it is a *not-yet*.
 
 **`ready` is a derived stage, not a folder, and it refuses nothing.** Filling those ten sections is
 what makes a spec ready; no file moves, so there is nothing to refuse. It is a **floor** that
-`/quenching:specs:execute` reports against — and the tool simply has no task to hand out until the ten are
+`/quenching-specs:specs:execute` reports against — and the tool simply has no task to hand out until the ten are
 filled, which is where the old promote's teeth went. The OK to build is a separate fact,
 `approved:`, asked for inline rather than encoded in a folder — or, under the `low` gear alone,
 stamped by the pass itself with `by: low-gear`, the human having authorized the mode rather than
@@ -335,7 +335,7 @@ A bullet may carry a `§`address beside its path —
 `docs/standards/automation/skills.md §The verifier` — naming exactly which sections of that
 standard the task must honor. `parse_impact_standards()` already tolerates it: the regex matches
 only the `docs/standards/**.md` path and ignores the rest of the line, addressed or not. Without an
-address, `/quenching:specs:execute` step 4 reads the file whole — the address is an
+address, `/quenching-specs:specs:execute` step 4 reads the file whole — the address is an
 assertion the spec's own author makes, never an economy the executor infers on its own.
 
 ## `## Tasks` and the `[!]` blocked marker
@@ -401,7 +401,7 @@ a structured result — status, diff summary, `verify:` output, discoveries, han
 
 Discoveries are **captured indiscriminately**; whether one is worth acting on is a later judgment,
 not the executor's. They are born in the origin spec's `## Discoveries` and resolved in place by
-`/quenching:specs:develop`'s discoveries stage — `promoted: <new-slug>`, `folded: <section>`, or
+`/quenching-specs:specs:develop`'s discoveries stage — `promoted: <new-slug>`, `folded: <section>`, or
 `dismissed: <reason>` — so provenance is never lost and the human pays the decision cost in batch.
 
 `## Handoff` refresh is **bound to events, not judgment**: the orchestrator rewrites it on four of
@@ -427,11 +427,11 @@ One writer with mechanical writes is also what makes one file safe under paralle
 this section.
 
 - `specs/plans/` — **the in-flight unit of work**: a spec's problem, design, and task checklist
-  while it is being defined and built. Owned by the `/quenching:specs:*` commands; leaves for `archive/` when
+  while it is being defined and built. Owned by the `/quenching-specs:specs:*` commands; leaves for `archive/` when
   it is concluded.
 - `docs/standards/` — **how WE build** (binding contracts: naming, architecture, code);
   `docs/concepts/` — generic understanding. A spec writes its durable rule **directly** into
-  `docs/standards/` (`authority`-graded) **when a task explicitly names it**, and `/quenching:specs:conclude`
+  `docs/standards/` (`authority`-graded) **when a task explicitly names it**, and `/quenching-specs:specs:conclude`
   routes what the work merely *revealed*
   ([distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)) — never by bulk
   copy.

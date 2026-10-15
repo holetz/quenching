@@ -1,24 +1,24 @@
 ---
 description: >-
-  Refactor CLAUDE.md/AGENTS.md into thin pointers over the /docs/ bundle. Use for "slim down CLAUDE.md", "move CLAUDE.md content into docs". Not for: command bodies → /quenching:components:command:new.
+  Refactor CLAUDE.md/AGENTS.md into thin pointers over the /docs/ bundle. Use for "slim down CLAUDE.md", "move CLAUDE.md content into docs". Not for: command bodies → /quenching-align:components:command:new.
 argument-hint: [optional-harness-file]
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(find:*), Bash(git grep:*), Bash(git check-ignore:*), Bash(grep:*), Bash(python3:*), Bash(py:*), Write, Edit, Task, AskUserQuestion
 ---
 
-# /quenching:components:harness:align — make CLAUDE.md a thin, honest pointer into the bundle
+# /quenching-align:components:harness:align — make CLAUDE.md a thin, honest pointer into the bundle
 
 **Input**: `$ARGUMENTS` (an optional specific harness file; omit to sweep every CLAUDE.md/AGENTS.md).
 
 Refactors a repo's **harness files** (the root `CLAUDE.md`, every subfolder `CLAUDE.md`, and
 `AGENTS.md`) into thin navigation pointers over the OKF `/docs/` bundle: operational rules stay;
 durable knowledge is **moved** into its `/docs/` home and cited. Assumes the bundle already exists (run
-`/quenching:knowledge:align` first if not). It also **creates** a thin subfolder `CLAUDE.md` where discovery
+`/quenching-align:knowledge:align` first if not). It also **creates** a thin subfolder `CLAUDE.md` where discovery
 finds a folder with a local operational surface but no harness — evidence-gated, never one per
 directory (routing §6). The unit → verdict → home routing and the pointer-honesty gate are
 in [components-harness-align/harness-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-harness-align/harness-routing.md); the home boundaries, `type`
-  vocabulary, molds, and index procedure are shared with `/quenching:knowledge:add`
+  vocabulary, molds, and index procedure are shared with `/quenching-align:knowledge:add`
 ([knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)) and
-`/quenching:knowledge:align` ([knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md),
+`/quenching-align:knowledge:align` ([knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md),
 [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md),
 [knowledge-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md)). Harness
 molds live at `${CLAUDE_PLUGIN_ROOT}/assets/templates/harness/`.
@@ -36,11 +36,11 @@ molds live at `${CLAUDE_PLUGIN_ROOT}/assets/templates/harness/`.
 - **Plan first, execute on one confirmation.** Read every harness file, classify every unit, and
   present **ONE** table — file → unit → verdict → destination. A single OK executes the batch; an
   edit whose blast radius reaches **product code** is its own confirmation item. **Exception —
-  cycle-authorized runs:** invoked as a stage of `/quenching:knowledge:align`'s cycle (or of `/align`) under the cycle-authorization contract
+  cycle-authorized runs:** invoked as a stage of `/quenching-align:knowledge:align`'s cycle (or of `/align`) under the cycle-authorization contract
   ([align/convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)), the plan is
   presented as narration, not a gate; a product-code edit still confirms on its own, always. The
   cycle may hand this skill a **pre-collected steps 1–4 table** (gathered read-only while
-  `/quenching:knowledge:import-memory` ran — cycle.md §Parallel prep); before writing, re-verify any unit
+  `/quenching-align:knowledge:import-memory` ran — cycle.md §Parallel prep); before writing, re-verify any unit
   whose home/subject intersects the docs that run just created — a fresh doc can flip a MOVE
   into a DEDUPE (the staleness delta-recheck); the rest of the table stands.
 - **Write-then-verify-then-cut.** A unit leaves the harness file **only after** its concept doc is
@@ -58,7 +58,7 @@ Resolve `cq` per
 ### 1. Inventory the harness surface (read-only)
 `Glob` `**/CLAUDE.md`, `**/AGENTS.md`, and `CLAUDE.local.md`; add a `grep --no-ignore` sweep to
 catch gitignored ones. Confirm `/docs/index.md` carries `okf_version` — if there is no OKF bundle,
-**stop** and offer `/quenching:knowledge:align` first. List every harness file found.
+**stop** and offer `/quenching-align:knowledge:align` first. List every harness file found.
 
 Then **discover greenfield candidates** (read-only), swept **repo-wide from the repository
 root** in one pass, e.g. `find . -type f \( -name '*.sh' -o -name Makefile
@@ -101,7 +101,7 @@ never classify it MOVE or DEDUPE.
 **Done when:** every unit has one routing verdict and any contradiction is quoted.
 
 ### 4. Sweep the blast radius
-Per `/quenching:knowledge:align`'s migration doctrine
+Per `/quenching-align:knowledge:align`'s migration doctrine
 ([knowledge-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md) §3 §4):
 `git grep` + `grep -rn --no-ignore` for anything that reads or links the harness files or their
 anchors. As in step 1, a large sweep goes to one read-only `Task` collector (`model: haiku`,

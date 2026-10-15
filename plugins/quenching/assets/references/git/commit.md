@@ -65,10 +65,10 @@ git log --grep="<the recorded subject>" --fixed-strings
 it has one consequence everywhere: every record is written *before* the thing it describes, so
 nothing is left to write afterwards.
 
-- `/quenching:specs:execute` ticks the box **first**, then commits the code and the ticked box together.
+- `/quenching-specs:specs:execute` ticks the box **first**, then commits the code and the ticked box together.
   The per-task bookkeeping commit is gone — it existed only because a sha cannot be known before the
   commit that carries it. Each task's own commit remains the task's anchor.
-- `/quenching:specs:conclude` stamps `merge: {strategy, subject}` on the work branch, so the **merge is the
+- `/quenching-specs:specs:conclude` stamps `merge: {strategy, subject}` on the work branch, so the **merge is the
   last action of the run** and nothing is ever committed to the base branch after it.
 
 **Two forms are read, forever.** A spec built before this change carries `commit: <sha>` and
@@ -111,6 +111,6 @@ nothing merged, which is recoverable but is not what "the merge is last" promise
 
 A `commit-msg` hook that **replaces** the subject outright breaks the link. Substring matching
 survives every hook that merely *adds* — a ticket prefix, a `Change-Id` trailer, a sign-off — which
-is nearly all of them. After committing, `/quenching:specs:execute` compares `git log -1 --format=%s` against
+is nearly all of them. After committing, `/quenching-specs:specs:execute` compares `git log -1 --format=%s` against
 what it recorded and **reports a mismatch as a finding, writing nothing**: a correction made after
 the commit would reintroduce the very ordering this design removed.
