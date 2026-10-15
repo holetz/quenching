@@ -46,7 +46,7 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    product code. The `model: opus` pins of `develop` and `conclude` do not apply under a `spec-runner`: they
    run on the runner's model, so do not budget opus for them.
 3. **Budget.** You stay under 150k tokens of context; a worker under 200k. A delegation prompt is
-   at most 1,500 characters: the spec id, the worktree path (none for a first spawn), the model, the return format and the
+   at most 1,500 characters: the spec id, the worktree path (none for a first spawn), the model, a pointer to the agent's own file (`agents/<type>.md`, section "Return format") instead of a copy of its format, and the
    no-stash sentence below. The verifier's prompt also names the base as `origin/<base>` where `origin` exists (the ref the worktree is cut from and a `gh` merge moves), `<base>` local only with NO-REMOTE. It also carries the exit the worker reported on its `GATE:` line as a claim, and `sem relato` when it reported none. A worker that reaches its limit writes a handoff note and returns
    `STATE: continue`.
 4. **Accept** a spec only when the `verifier` returns PASS for it, check 8 (conclusion: `phase archive`
@@ -71,6 +71,11 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    it, and stop when the run's budget is hit. Tokens of different tiers are never added into one
    number: report them per model, and take the cost by agent type, model and window from
    `cq components session cost "$CLAUDE_CODE_SESSION_ID" --latest-orchestrator` (the verb itself scopes to the descendants of the most recently started orchestrator, which is you, so the cost is your own window, not that of earlier orchestrators of the session; no clock step) over the subagent transcripts of its session, scoped through `parentAgentId` to the agents launched by subagents, so the orchestrator itself and the conductor's own agents are neither audited nor costed (the harness exposes the session id to a subagent's Bash in that variable). Never guess an id: an empty variable or a refusal from the verb means the cost is reported as `not measured`, and the conductor reads it from its own session. **Audit the launched types:** compare the `agentType` of every row (with the `quenching:` prefix normalized) against the types in your `Agent(...)` list; a type outside it goes on the totals line as `AUDIT: unexpected agent type <type>`. Not measured means this audit did not run, and the line says so.
+
+## Waiting
+
+After launching workers, wait for their completion notification. Never poll: no `sleep` loops and
+no `cat` of task output files. A result enters your context once, as the worker's fixed report.
 
 ## Hard prohibitions
 
