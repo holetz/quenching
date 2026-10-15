@@ -141,14 +141,26 @@ class AlignCleanPath(unittest.TestCase):
                          '"$TARGET_ROOT" ops inventory --json')
             probe_at = body.index(probe)
             clean_stop_at = body.index("When it exits `0` with no findings", probe_at)
-            inventory_at = body.index(inventory, clean_stop_at)
+            clean_end_at = body.index("When it exits `2`", clean_stop_at)
+            next_stage_at = body.index("\n### 2.", probe_at)
+            inventory_at = body.index(inventory, probe_at)
             self.assertLess(probe_at, clean_stop_at)
-            self.assertLess(clean_stop_at, inventory_at)
-            clean_branch = " ".join(body[clean_stop_at:inventory_at].split())
+            self.assertLess(clean_stop_at, clean_end_at)
+            self.assertLess(clean_end_at, next_stage_at)
+            self.assertGreater(
+                inventory_at, next_stage_at,
+                "ops inventory is called before the inventory stage")
+            clean_branch = " ".join(body[clean_stop_at:clean_end_at].split())
+            self.assertIn("and stop", clean_branch)
             self.assertIn("Do not run `ops inventory`", clean_branch)
             self.assertIsNone(
                 re.search(r"(?<!not )run `ops inventory`", clean_branch),
                 "clean branch instructs running `ops inventory`")
+            self.assertIsNone(
+                re.search(r"continue|inventory stage|write the registry",
+                          clean_branch),
+                "clean branch continues past the stop")
+            self.assertEqual(clean_branch.count("ops inventory"), 1)
 
     def test_read_path_containing_inventory_is_not_an_inventory_call(self):
         body_path = "/work/quenching-inventory/plugins/quenching/commands/ops/align.md"
