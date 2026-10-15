@@ -47,6 +47,21 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertEqual(positions, sorted(positions))
         self.assertIn("--glossary-term", verify)
 
+    def test_status_collects_the_payload_that_controls_derive_from(self):
+        status = (ROOT / "commands" / "knowledge" / "status.md").read_text(encoding="utf-8")
+        collect = status.split("### 2. Collect (read-only)", 1)[1].split("### 3.", 1)[0]
+        report = status.split("### 4. Report", 1)[1].split("### 5.", 1)[0]
+
+        self.assertIn("cq knowledge status docs --json", collect)
+        self.assertNotIn("cq knowledge validate docs --json", collect)
+        self.assertIn("cq knowledge validate docs --activity --json", collect)
+        self.assertIn("`Glob` `/docs/**/*.md` for the density counts", collect)
+        controls = report.split("6. **Catalog controls**", 1)[1]
+        self.assertIn("status payload", controls)
+        self.assertLess(
+            status.index("cq knowledge status docs --json"), status.index("**Catalog controls**")
+        )
+
     def test_conductor_order_follows_the_architecture_declaration(self):
         declaration = ALIGN_DECLARATION.read_text(encoding="utf-8")
         edges_block = declaration.split("## Conductor order and dependency edges", 1)[1].split(
