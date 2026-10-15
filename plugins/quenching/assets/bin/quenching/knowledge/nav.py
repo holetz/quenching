@@ -48,7 +48,9 @@ def derive_title(text: str, fallback: str) -> str:
     if not raw:
         heading = _H1.search(_body(text))
         raw = heading.group(1) if heading else ""
-    raw = _ATTR_SUFFIX.sub("", raw).strip().strip('"').strip("'")
+    raw = _ATTR_SUFFIX.sub("", raw).strip()
+    if len(raw) > 1 and raw[0] == raw[-1] and raw[0] in "\"'":
+        raw = raw[1:-1]
     raw = raw.split(" — ")[0].strip()
     if raw.startswith("`") and raw.endswith("`"):
         inner = raw.strip("`").strip()
@@ -136,6 +138,18 @@ def _title_for(bundle_root: str, section_rel: str, kept: dict[str, str]) -> str:
     return derive_title(_read(os.path.join(bundle_root, section_rel, "index.md")), fallback)
 
 
+def _toml_str(value: str) -> str:
+    """A TOML basic string: backslash first, then the quote, so neither is escaped twice."""
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+_ESCAPE = re.compile(r'\\(.)')
+
+
+def _unescape(value: str) -> str:
+    return _ESCAPE.sub(lambda m: m.group(1), value)
+
+
 def render_nav(bundle_root: str, nav: list, kept: dict[str, str], indent: str = "  ") -> str:
     """The `nav = [ ... ]` block, formatted so a human diff shows one page per line."""
     lines = [f"{indent}nav = ["]
@@ -144,10 +158,10 @@ def render_nav(bundle_root: str, nav: list, kept: dict[str, str], indent: str = 
         pad = indent + "  " * depth
         for item in items:
             if isinstance(item, str):
-                lines.append(f'{pad}  "{item}",')
+                lines.append(f"{pad}  {_toml_str(item)},")
             else:
                 title = _title_for(bundle_root, item["__section__"], kept)
-                lines.append(f'{pad}  {{ "{title}" = [')
+                lines.append(f"{pad}  {{ {_toml_str(title)} = [")
                 emit(item["entries"], depth + 1)
                 lines.append(f"{pad}  ] }},")
 
@@ -156,7 +170,8 @@ def render_nav(bundle_root: str, nav: list, kept: dict[str, str], indent: str = 
     return "\n".join(lines)
 
 
-_SECTION_TITLE = re.compile(r'\{\s*"([^"]+)"\s*=\s*\[\s*\n?\s*"([^"]+)/index\.md"')
+_SECTION_TITLE = re.compile(
+    r'\{\s*"((?:[^"\\]|\\.)+)"\s*=\s*\[\s*\n?\s*"((?:[^"\\]|\\.)+)/index\.md"')
 
 
 def kept_titles(config_text: str) -> dict[str, str]:
@@ -165,7 +180,7 @@ def kept_titles(config_text: str) -> dict[str, str]:
     A section is identified by its `index.md`, never by its position: reordering the nav must not
     make the generator forget what a section was called.
     """
-    return {match.group(2): match.group(1) for match in _SECTION_TITLE.finditer(config_text)}
+    return {_unescape(match.group(2)): _unescape(match.group(1)) for match in _SECTION_TITLE.finditer(config_text)}
 
 
 def replace_nav(config_text: str, block: str) -> str:
