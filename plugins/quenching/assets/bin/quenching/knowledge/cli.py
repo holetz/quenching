@@ -40,7 +40,7 @@ import sys
 from pathlib import Path
 
 from quenching.common.frontmatter import parse_frontmatter
-from quenching.common.output import FINDINGS, OK, REFUSAL, NoAbbrevParser, emit
+from quenching.common.output import FINDINGS, OK, REFUSAL, NoAbbrevParser, emit, refuse
 from quenching.common.version import VERSION
 from quenching.controls.evaluate import owner_controls, summary_line
 from quenching.knowledge.config import _load_config, _project_dir
@@ -372,19 +372,13 @@ def run_nav(argv: list[str]) -> int:
     bundle = _rooted(args.root, args.bundle)
     config = _rooted(args.root, args.config)
     if not os.path.isdir(bundle):
-        payload = {"ok": False, "code": "nav-no-bundle",
-                   "message": f"{bundle} is not a directory"}
-        print(json.dumps(payload, indent=2) if args.json else f"error: {payload['message']}",
-              file=None if args.json else sys.stderr)
-        return FINDINGS
+        return refuse({"code": "nav-no-bundle", "message": f"{bundle} is not a directory"},
+                      args.json)
 
     current, desired = generate(bundle, config)
     if not current:
-        payload = {"ok": False, "code": "nav-config-unreadable",
-                   "message": f"{config} is missing or unreadable"}
-        print(json.dumps(payload, indent=2) if args.json else f"error: {payload['message']}",
-              file=None if args.json else sys.stderr)
-        return FINDINGS
+        return refuse({"code": "nav-config-unreadable",
+                       "message": f"{config} is missing or unreadable"}, args.json)
 
     stale = current != desired
     if stale and args.write:

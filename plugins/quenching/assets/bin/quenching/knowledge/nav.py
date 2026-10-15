@@ -78,7 +78,7 @@ def _read(path: str) -> str:
     try:
         with open(path, encoding="utf-8") as handle:
             return handle.read()
-    except OSError:
+    except (OSError, UnicodeDecodeError):
         return ""
 
 
