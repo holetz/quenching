@@ -378,25 +378,68 @@ Shared contracts keep gates explicit; missing `gh` or `az` is a named refusal
 
 ## Install
 
-The published Claude plugin (try it first in a disposable repository) can be installed from inside Claude
-Code by adding the marketplace and installing the plugin:
+quenching is published as eight modules. `quenching-specs` carries the spec cycle, the git
+commands and the one `cq` every other module runs through, so it is always installed; add the
+modules for the fronts you want beside it. Try it first in a disposable repository:
 
 ```text
 /plugin marketplace add holetz/claude-quenching
-/plugin install quenching@quenching
+/plugin install quenching-specs@quenching
+/plugin install quenching-align@quenching
+/plugin install quenching-design@quenching
+/plugin install quenching-ops@quenching
+/plugin install quenching-proof@quenching
+/plugin install quenching-toolchain@quenching
+/plugin install quenching-delivery@quenching
+/plugin install quenching-security@quenching
 ```
+
+All eight together are the whole surface. `quenching-specs` alone is a complete spec cycle, from
+`/quenching-specs:specs:create` to `/quenching-specs:specs:conclude`; a route into a module that is
+not installed is reported `not-installed: <module>` instead of being invoked, and `cq <front>` for
+it exits 2 naming the module to install. `quenching-align` adds `/quenching-align:align`, which
+conducts only the fronts whose module is installed. Install every module at the same version: the
+one `cq` ignores a module whose version differs from its own.
 
 Run `/reload-plugins` after installation when the session was already open.
 
-Local development only:
+Local development only — load the generated module trees, never the `plugins/quenching` source,
+which registers names the bodies do not cite:
 
 ```bash
-claude --plugin-dir ./plugins/quenching
+python3 scripts/generate_plugin_modules.py --write
+claude --plugin-dir ./plugins/quenching-specs --plugin-dir ./plugins/quenching-align
 ```
 
-`--plugin-dir` loads the checkout directly for plugin development and testing; it is not the
-normal adoption or upgrade path. A published installation is managed by Claude Code. All skills
-reach the shared payload via `${CLAUDE_PLUGIN_ROOT}/assets/...`.
+Add one `--plugin-dir` per further module. `--plugin-dir` loads the checkout directly for plugin
+development and testing; it is not the normal adoption or upgrade path. A published installation
+is managed by Claude Code. Every command reaches its own module's payload via
+`${CLAUDE_PLUGIN_ROOT}/assets/...`.
+
+### Migrating from the single `quenching` plugin
+
+Releases before the module split published one plugin, `quenching`, with every command under
+the `quenching:` plugin prefix. That plugin is no longer published and there are no compatibility aliases, so an
+installed target migrates once:
+
+1. Uninstall the old plugin: `/plugin uninstall quenching@quenching`.
+2. Refresh the marketplace (`/plugin marketplace update quenching`) and install `quenching-specs`
+   plus the modules the repository uses, as above.
+3. In the target's `.claude/settings.json`, replace `"quenching@quenching": true` under
+   `enabledPlugins` with one `"quenching-<module>@quenching": true` entry per installed module,
+   so every collaborator gets the same set.
+4. Rename every typed or cited command in the target's own files — its `.claude/commands/**`,
+   `CLAUDE.md`/`AGENTS.md`, hooks and scripts. Replace the old plugin prefix `quenching` with the
+   module that owns the command and keep the rest of the name: the `specs` and `git` fronts and
+   `handoff` move to `quenching-specs` (`/quenching-specs:specs:create`,
+   `/quenching-specs:handoff`); `align`, `knowledge` and `components` move to `quenching-align`
+   (`/quenching-align:align`, `/quenching-align:knowledge:add`); every other front moves to the
+   module of its own name (`/quenching-ops:ops:status`). Agent ids move to `quenching-specs`
+   (`quenching-specs:verifier`).
+5. `/reload-plugins`, then run `cq modules --json` to confirm each module reports `enabled: true`.
+
+Nothing in the target's `/docs/`, `.claude/quenching.json` or spec store changes: a declared
+`shared.profiles.installed` keeps its meaning, now intersected with the installed modules.
 
 ### Read-only: another project's specs only
 
@@ -414,12 +457,14 @@ Point it at a checkout of the project to read with `QUENCHING_SPECS_ROOT` in tha
 
 ## Uninstall or reverse
 
-To remove the installed plugin while keeping the marketplace available:
+To remove an installed module while keeping the marketplace available:
 
 ```text
-/plugin uninstall quenching@quenching
+/plugin uninstall quenching-design@quenching
 /reload-plugins
 ```
+
+Uninstall `quenching-specs` last: every other module runs its `cq` through it.
 
 Removing the marketplace itself (`/plugin marketplace remove quenching`) also uninstalls plugins
 installed from it. Neither operation deletes the target repository's `/docs/`, `.claude/` or
@@ -430,7 +475,7 @@ reinstall the previously published version or load its known checkout with `--pl
 development-only recovery. Reload the session after changing the installation.
 
 The CLI has two equivalent entry points: `bin/cq` on the plugin-managed `PATH` and
-`assets/bin/cq` with an explicit plugin root. Their resolution rules are in
+`assets/bin/cq` with an explicit plugin root. Only `quenching-specs` ships `bin/cq`. Their resolution rules are in
 [`assets/references/align/tool-resolution.md`](assets/references/align/tool-resolution.md).
 
 ## Upgrade
