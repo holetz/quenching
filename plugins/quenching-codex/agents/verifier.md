@@ -120,6 +120,8 @@ VERDICT: PASS | FAIL
 10 ruler: ok|fail|n/a — <evidence; warnings listed>
 ```
 
+Each check's evidence is one line of at most 200 characters; quote the offending item, not the list.
+
 PASS only when every applicable check is ok. Any fail, inconclusive gate or `complete: false` is FAIL.
 
 ## Codex runtime
