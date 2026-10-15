@@ -185,7 +185,7 @@ Use the existing meter **only** when the briefing identifies an explicit **build
 Code subagents directory and the agent ids belonging to this spec's execute runs:
 
 ```bash
-cq session cost "<explicit-build-only-subagents-directory>" --json
+cq components session cost "<explicit-build-only-subagents-directory>" --json
 ```
 
 **Never infer** that scope from the latest session, the source spec's branch, transcript mtime,
