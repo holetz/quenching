@@ -96,7 +96,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 
 | Doc | Covers |
 | --- | --- |
-| [versioning-release.md](ci-cd/versioning-release.md) | The source version surfaces that cq specs release bumps together, with the generated specs-reader sibling and the HUD manifest moved to the same version |
+| [versioning-release.md](ci-cd/versioning-release.md) | The version surfaces cq specs release bumps together — the unpublished source, every published module manifest (the eight principal modules, the specs reader and the HUD) and every marketplace entry |
 
 ### code/
 
