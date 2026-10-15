@@ -22,8 +22,8 @@
 #           2 nothing could be measured — no verdict, do not read it as a pass
 #
 # WHO RUNS THIS, AND WHEN. It belongs to the **components front**: the commands that change the surface
-# are the ones that prove it still loads — `/quenching:components:command:new` after minting or editing a command here,
-# and `/quenching:components:command:eval` when it tunes a description. It is NOT a repo-wide post-change mandate and it
+# are the ones that prove it still loads — `/quenching-align:components:command:new` after minting or editing a command here,
+# and `/quenching-align:components:command:eval` when it tunes a description. It is NOT a repo-wide post-change mandate and it
 # does NOT belong in a spec's `## Validation` or a task's `verify:`. Measured 2026-07-29 over the
 # whole archive: every red run this harness ever produced traced to a defect in THIS SCRIPT — a
 # cp1252 read, a hardcoded marketplace ref, a turn cap, a flaky probe — and not one to a surface
@@ -53,11 +53,11 @@
 # marketplace paths remains correct even if Claude Code canonicalizes or copies
 # the plugin directory, while the positive $PLUGIN prefix stays diagnostic.
 #
-# CHECK 3 IS OPT-IN, AND `/quenching:components:command:eval` IS THE BETTER INSTRUMENT. Check 3 is five of the seven
+# CHECK 3 IS OPT-IN, AND `/quenching-align:components:command:eval` IS THE BETTER INSTRUMENT. Check 3 is five of the seven
 # sessions, the only NON-DETERMINISTIC one (recorded twice: same tree, opposite verdicts on
-# identical runs), and a strictly worse duplicate of `/quenching:components:command:eval` step 7 — which measures the
+# identical runs), and a strictly worse duplicate of `/quenching-align:components:command:eval` step 7 — which measures the
 # same thing with should-trigger AND should-not-trigger prompts, graded, per command, instead of
-# five hardcoded phrases with no boundary arm. Reach for `/quenching:components:command:eval` when a description changed;
+# five hardcoded phrases with no boundary arm. Reach for `/quenching-align:components:command:eval` when a description changed;
 # reach for `--only 3` only to re-guard the five phrases already tuned here.
 #
 # Established by the `collapse-skills-into-commands` spec, task 7.1.
@@ -263,11 +263,11 @@ print(n)
 #   - an intent-shaped phrase names a subject ("our migrations"), and where the subject does
 #     not exist the session correctly challenges the premise instead of routing. Probe d
 #     failed in a bare box with "There are no migrations to audit", while the same phrase
-#     routed in the /quenching:components:agent:new eval, whose fixture carried a migration.
+#     routed in the /quenching-align:components:agent:new eval, whose fixture carried a migration.
 #   - a phrase whose command wants an OKF bundle ("add a standard") spends its turns looking
 #     for one. That cost used to be hidden because probe c ran against REPO, which has a
 #     bundle; sandboxing removed it and pushed the probe into the turn cap.
-#   - a command that reports on a workspace ("/quenching:knowledge:status") wants one to report on.
+#   - a command that reports on a workspace ("/quenching-align:knowledge:status") wants one to report on.
 # So every box gets a migration, a minimal bundle and an empty `specs/plans/`: the smallest repo
 # every prompt below can be answered in without exploring to find out its subject is missing.
 # The folder alone is the workspace — `plans/index.md` is a retired artifact, and `cq specs`
@@ -293,7 +293,7 @@ echo
 # The prompt never names a path: the command must report the citations IT was given, so a
 # Read landing under assets/references/ proves the placeholder resolved in production.
 #
-# It also covers re-homed references for free: /quenching:knowledge:status cites a reference directory that
+# It also covers re-homed references for free: /quenching-align:knowledge:status cites a reference directory that
 # the knowledge-flow consolidation owns, so a stale citation fails here rather than silently
 # reading nothing.
 #
@@ -303,7 +303,7 @@ echo
 if want 1; then
 echo "1. a collapsed command loads and cites its re-homed reference"
 newbox "$WORK/sandbox1"
-( cd "$WORK/sandbox1" && claude -p --plugin-dir "$PLUGIN" "/quenching:knowledge:status
+( cd "$WORK/sandbox1" && claude -p --plugin-dir "$PLUGIN" "/quenching-align:knowledge:status
 
 Before the report: list the absolute path of every reference file THIS COMMAND'S OWN BODY tells
 you to consult, exactly as the body spells them. Then Read the first one. Do not guess a path —
@@ -350,8 +350,8 @@ copy it from the body you were given." \
     inconc "$command read nothing under a skills/ tree" "no tool_use in the capture"
   fi
 }
-front_probe ops /quenching:ops:status
-front_probe proof /quenching:proof:status
+front_probe ops /quenching-ops:ops:status
+front_probe proof /quenching-proof:proof:status
 fi
 
 # --------------------------------------------------------------------------- #
@@ -370,24 +370,24 @@ newbox "$WORK/sandbox2"
 # disobedience, not the routing. Seed one real knowledge finding (a concept doc with no
 # frontmatter) so Front 1 has work and the conductor must reach it.
 printf '# Orphan\n' > "$WORK/sandbox2/docs/standards/orphan.md"
-( cd "$WORK/sandbox2" && claude -p --plugin-dir "$PLUGIN" "/quenching:align
+( cd "$WORK/sandbox2" && claude -p --plugin-dir "$PLUGIN" "/quenching-align:align
 
 You have my authorization for the whole run — treat the plan gate as granted and proceed. I only
 need you to reach and INVOKE Front 1 via the Skill tool; stop right after that stage is invoked." \
   --max-turns 12 --output-format stream-json --verbose < /dev/null > "$WORK/2.jsonl" 2>&1 )
 if evidence "$WORK/2.jsonl"; then
-  if grep -q '"quenching:knowledge:align"' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=yes
+  if grep -q '"quenching-align:knowledge:align"' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=yes
   elif grep -q '"subtype":"error_max_turns"' "$WORK/2.jsonl"; then r=cap
   else r=no; fi
   if [ "$r" = cap ]; then
-    inconc "invoked quenching:knowledge:align by name" "hit the turn cap before routing"
+    inconc "invoked quenching-align:knowledge:align by name" "hit the turn cap before routing"
   else
-    check "$r" "invoked quenching:knowledge:align by name"
+    check "$r" "invoked quenching-align:knowledge:align by name"
   fi
   if grep -qE '"skill": *"[^"]*quenching-knowledge-align"' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=no; else r=yes; fi
   check "$r" "invoked no retired quenching-* skill name"
 else
-  inconc "invoked quenching:knowledge:align by name" "no tool_use in the capture"
+  inconc "invoked quenching-align:knowledge:align by name" "no tool_use in the capture"
   inconc "invoked no retired quenching-* skill name" "no tool_use in the capture"
 fi
 fi
@@ -404,7 +404,7 @@ fi
 # verifying is not a check, and the mess it leaves is indistinguishable from real work.
 #
 # OPT-IN, AND NOT THE FIRST CHOICE: five sessions, non-deterministic, and duplicating what
-# `/quenching:components:command:eval` step 7 measures properly. See the COST note at the top.
+# `/quenching-align:components:command:eval` step 7 measures properly. See the COST note at the top.
 # --------------------------------------------------------------------------- #
 # These assertions also grade Skill names rather than observed paths; the static --plugin-dir
 # guard remains the only path guard for this check, so anchored does not apply here.
@@ -414,7 +414,7 @@ echo "3. a spoken trigger routes with no / typed"
 # --max-turns is 14, not 4. A probe whose phrase needs any orientation first (a Glob, a Read)
 # spends turns before it routes, and a low cap cuts it off mid-orientation — which reports a
 # FALSE miss, and a false miss here argues for deleting a trigger that works. Measured while
-# building the /quenching:components:agent:new eval: at 3 turns two working triggers reported as misses. 8 was
+# building the /quenching-align:components:agent:new eval: at 3 turns two working triggers reported as misses. 8 was
 # then enough in a rich fixture but not in these boxes, where two probes hit the cap while still
 # orienting. A probe that still hits the cap is reported INCONCLUSIVE rather than graded, so
 # a cap that is one day too low again can never masquerade as a routing failure.
@@ -435,16 +435,16 @@ probe () {
     check no "\"$phrase\" -> $want"
   fi
 }
-probe a "park a spec for later: the export CSV endpoint times out on large accounts" "quenching:specs:create"
-probe b "capture this for the backlog — we should look at retry logic on the webhook sender"  "quenching:specs:create"
-probe c "add a standard: we always use snake_case for database columns"                       "quenching:knowledge:add"
+probe a "park a spec for later: the export CSV endpoint times out on large accounts" "quenching-specs:specs:create"
+probe b "capture this for the backlog — we should look at retry logic on the webhook sender"  "quenching-specs:specs:create"
+probe c "add a standard: we always use snake_case for database columns"                       "quenching-align:knowledge:add"
 
 # One probe per mint added by the capability layer. Both phrases are intent-shaped — they name
 # no artifact and type no `/` — because that is the routing the descriptions have to earn.
-# Probe e also guards the trigger the /quenching:components:hook:new eval added: it is the exact phrase that
+# Probe e also guards the trigger the /quenching-align:components:hook:new eval added: it is the exact phrase that
 # measured as a MISS before that edit, so a regression puts it straight back to failing here.
-probe d "set up something that audits our migrations and reports back"                        "quenching:components:agent:new"
-probe e "I want something to catch it automatically whenever a migration lands"               "quenching:components:hook:new"
+probe d "set up something that audits our migrations and reports back"                        "quenching-align:components:agent:new"
+probe e "I want something to catch it automatically whenever a migration lands"               "quenching-align:components:hook:new"
 fi
 
 echo

@@ -87,14 +87,14 @@ The status commands are intended as read-only views, and their declared tool gra
 `Write` and `Edit`:
 
 ```text
-/quenching:knowledge:status
-/quenching:design:status
-/quenching:specs:status
-/quenching:ops:status
-/quenching:proof:status
-/quenching:toolchain:status
-/quenching:delivery:status
-/quenching:security:status
+/quenching-align:knowledge:status
+/quenching-design:design:status
+/quenching-specs:specs:status
+/quenching-ops:ops:status
+/quenching-proof:proof:status
+/quenching-toolchain:toolchain:status
+/quenching-delivery:delivery:status
+/quenching-security:security:status
 ```
 
 These reports cover the seven aligned fronts, provider-owned specs and the read-only security
@@ -105,7 +105,7 @@ not a sandbox: an available shell or Python interpreter remains outside the stat
 ## 4. Run your first alignment
 
 ```text
-/quenching:align
+/quenching-align:align
 ```
 
 This conducts the seven local fronts in dependency order. What happens next depends on what the probe

@@ -94,8 +94,8 @@ class ContextTests(unittest.TestCase):
             self.assertEqual(data["iterationCoverage"], coverage)
 
     def test_agent_roles_come_from_metadata_and_unknown_refuses(self):
-        for kind, role, budget in (("quenching:spec-runner", "worker", 100000),
-                                    ("quenching:orchestrator", "conductor", 150000),
+        for kind, role, budget in (("quenching-specs:spec-runner", "worker", 100000),
+                                    ("quenching-specs:orchestrator", "conductor", 150000),
                                     ("quenching:autopilot", "conductor", 150000),
                                     ("Explore", "unknown", None), (7, "unknown", None)):
             agent = self.base / "session/subagents/agent-worker.jsonl"
@@ -180,7 +180,7 @@ class ContextTests(unittest.TestCase):
         self.write(request("main", usage(1, [1])), path=project / "live.jsonl")
         agent = project / "live/subagents/agent-a.jsonl"
         self.write(request("agent", usage(2, [2])), path=agent)
-        agent.with_suffix(".meta.json").write_text('{"agentType":"quenching:spec-runner"}')
+        agent.with_suffix(".meta.json").write_text('{"agentType":"quenching-specs:spec-runner"}')
         with mock.patch.dict(os.environ, {"CLAUDE_CODE_SESSION_ID": "live", "QUENCHING_TRANSCRIPTS_ROOT": str(project.parent)}):
             self.assertEqual(run()[1]["peakContext"], 1)
             self.assertEqual(run("--agent", "a")[1]["role"], "worker")

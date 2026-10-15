@@ -243,7 +243,7 @@ pasted by a human into a raw terminal dangles a `${CLAUDE_PLUGIN_ROOT}` citation
 blocks the moment a human reads that block verbatim — before the file is copied anywhere, and
 regardless of whether the plugin is loaded in the session doing the reading. Three trees still
 answer the wider test today — `assets/templates/**` (the harness and front-matter molds),
-`assets/knowledge/**` (the OKF skeleton, copied by `/quenching:knowledge:align`) and `assets/specs/templates/**`; a
+`assets/knowledge/**` (the OKF skeleton, copied by `/quenching-align:knowledge:align`) and `assets/specs/templates/**`; a
 fourth surface added later inherits the rule without amending this list. Naming one folder was how
 a `${CLAUDE_PLUGIN_ROOT}` citation reached `assets/docs/` unnoticed: the reasoning covered it, the
 wording did not, and nothing else checks. **No validator catches this** — a path that fails to
@@ -284,7 +284,7 @@ citing a path in the target's own bundle — needs its own rule, because nothing
 `/docs/standards/<subject>/<file>.md` is a **fixed string**
 ([bundle-root.md](bundle-root.md)), never a variable, so it reads as a well-formed link in every
 repo whether or not the named file actually exists there. Existence is not syntax: a target only
-carries that file if `/quenching:knowledge:align` installs it — that is, only if it exists under
+carries that file if `/quenching-align:knowledge:align` installs it — that is, only if it exists under
 `plugins/quenching/assets/knowledge/**` in this very plugin.
 
 **A command body or a reference in `commands/**` or `assets/references/**` links a `/docs/` path
@@ -321,7 +321,7 @@ the slug stays English, the prose around it follows the tag. Their whole value i
 at the instant a slug is written, which a citation spends a tool call to destroy.
 
 **The ownership test** — is a reminder legitimate at all? A boundary reminder states the edge of a
-rule the citing place **already owns**, seen from the other side. `/quenching:knowledge:add` owns where a doc goes
+rule the citing place **already owns**, seen from the other side. `/quenching-align:knowledge:add` owns where a doc goes
 and what its slug looks like, so "the slug is canonical English, the body may follow the repo's
 language" is that command's own rule at its border, not a second copy of somebody else's. A
 restatement states a fact the citing place neither owns nor can change.

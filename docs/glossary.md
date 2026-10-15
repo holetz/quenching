@@ -82,15 +82,15 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   it.
 - [**Boundary reminder**](standards/architecture/plugin-layout.md) — a one-clause line that states
   the *edge* of a rule the citing place already owns, seen from the other side
-  (`/quenching:knowledge:add` saying a heading is canonical English while the body prose follows
+  (`/quenching-align:knowledge:add` saying a heading is canonical English while the body prose follows
   whatever language the repo declared), as opposed to a restatement, which repeats a fact the citing
   place neither owns nor can change.
 - [**Branch record**](standards/workflows/plan-git-record.md) — the `branch: {base, work}`
-  frontmatter entry stamped by `/quenching:specs:execute` once the work ref is resolved, write-once
+  frontmatter entry stamped by `/quenching-specs:specs:execute` once the work ref is resolved, write-once
   — for **any** branch that is not the repo's base (the one it cut and the one a human already had
   open alike), and for work done in place, where `work` equals `base`.
 - [**Bundle density**](standards/quality/bundle-verification.md) — the figures
-  `/quenching:knowledge:status` prints alongside conformance (concept docs per home, empty homes
+  `/quenching-align:knowledge:status` prints alongside conformance (concept docs per home, empty homes
   shown as `0`, glossary size, which `standards/` subjects hold anything), carrying **no finding
   code** by design: coding them would make permanent noise of a repo that legitimately has no
   `mlops/`, omitting them would hide a bundle passing every check while knowing nothing.
@@ -113,14 +113,14 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   checkbox to the commit implementing it by naming that commit's **subject** and resolving with `git
   log --grep --fixed-strings`.
 - **Compose** (`plugins/quenching/assets/references/specs-develop/questions.md`) — the monotonic
-  half of a `/quenching:specs:develop` pass: it takes a spec from wherever its derived stage leaves
+  half of a `/quenching-specs:specs:develop` pass: it takes a spec from wherever its derived stage leaves
   it to a closed ten-section ready set, filling what is absent and sharpening what is thin, and it
   never overturns what a human settled.
 - [**Context (components)**](standards/naming/command-surface.md) — one of the four sibling contexts
   under the `components` front — `command/`, `agent/`, `hook/`, `harness/` — each named for the
   artifact it mints, none a sub-type of another. A front-level verb sits at the front's own root
-  (`/quenching:components:align`); an artifact-level verb sits under its context
-  (`/quenching:components:command:new`).
+  (`/quenching-align:components:align`); an artifact-level verb sits under its context
+  (`/quenching-align:components:command:new`).
 - [**Context integral**](standards/automation/context-discipline.md) — a run's true cost, `tokens ×
   turns remaining`, not `tokens`: every turn re-sends the whole conversation, so a block loaded once
   is paid once for each turn that follows it.
@@ -140,7 +140,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   `## Design` and **dated**: it names every file the proposal's area touches or is touched by, and
   what breaks or goes orphaned if it changes.
 - [**Dependency sweep**](standards/automation/dependency-sweep.md) — the read-only sub-agent read
-  `/quenching:specs:develop` runs **before** the bank asks, so the right question has something to
+  `/quenching-specs:specs:develop` runs **before** the bank asks, so the right question has something to
   be answered with; it fires on selecting the *shape* bank, and on the first entry into the
   *adversarial* bank for a spec that was born `proposed` and never swept.
 - [**Derived marker**](standards/architecture/proof-front.md) — a test-runner marker projected from
@@ -198,14 +198,14 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   verification gate actually measures, with an unmeasured shipped root reported as drift rather than
   hidden behind an honest percentage.
 - [**Merge record**](standards/workflows/plan-git-record.md) — the `merge: {strategy, subject, pr}`
-  frontmatter entry stamped by `/quenching:specs:conclude`, write-once, **on the work branch before
+  frontmatter entry stamped by `/quenching-specs:specs:conclude`, write-once, **on the work branch before
   the merge** — which is what makes the merge that command's last action and leaves nothing to be
   committed to the base after it.
 - [**Mold**](standards/architecture/shared-mold-keys.md) — the fixed shape (frontmatter keys and
   sections) a kind of file is minted from; shared molds keep several fronts consistent.
 - [**Moment**](standards/workflows/plan-artifacts.md) — the point on a spec's timeline a canonical
   section is read at, one value per section: `decision` (the human, weighing whether to build),
-  `build` (the executor), `close` (`/quenching:specs:conclude`).
+  `build` (the executor), `close` (`/quenching-specs:specs:conclude`).
 - [**Normalized script pattern**](standards/architecture/ops-front.md) — a stable vocabulary for
   routine project operations, derived from GitHub's pattern so contributors can use predictable
   names without learning each repository's internal layout.
@@ -219,7 +219,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   can hide.
 - [**Origin key** (`source_uri`)](standards/quality/bundle-verification.md) — the frontmatter key
   holding the **exact** URI or path of the source unit an imported doc was minted from, written by
-  `/quenching:knowledge:import` and by no other command; a doc with no external origin simply does
+  `/quenching-align:knowledge:import` and by no other command; a doc with no external origin simply does
   not have it.
 - [**`[P]` marker**](standards/workflows/task-execution.md) — the opt-in flag set on a task when the
   tasks are written, declaring it may run concurrently with its group; honoured only when `cq specs
@@ -287,7 +287,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   `plugins/quenching/assets/knowledge/`: index files plus a single leaf standard
   (`standards/agents/communication.md`).
 - **Refine** (`plugins/quenching/assets/references/specs-develop/questions.md`) — the non-monotonic
-  half of a `/quenching:specs:develop` pass, and the only operation licensed to overturn what the
+  half of a `/quenching-specs:specs:develop` pass, and the only operation licensed to overturn what the
   spec already says, the `## Proposal` included.
 - [**Refinement record**](standards/workflows/plan-artifacts.md) — the `refined: {mode, date}` entry
   a spec's **frontmatter** gains once it has been interrogated, whose absence raises the non-gating
@@ -367,7 +367,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   where nothing computes the fact: with no value to spell out, each site wrote the rule in its own
   words, so no grep finds the set.
 - [**Worktree setup**](standards/workflows/worktree-setup.md) — the single key `worktreeSetup` in
-  `.claude/quenching.json`, holding a command `/quenching:specs:execute` runs once inside a newly
+  `.claude/quenching.json`, holding a command `/quenching-specs:specs:execute` runs once inside a newly
   created worktree so a repo with installed dependencies gets a usable tree rather than one that
   breaks at the first `verify:`.
 - [**Zensical**](external/tools/zensical-measured-behaviour.md) — the static site generator the
@@ -381,12 +381,12 @@ Add a term whenever a repo-specific word, acronym, or piece of jargon surfaces t
 newcomer would not know. Three ways in:
 
 - **Automatically, as a tail of a capture.** The `quenching` knowledge skills
-  (`quenching:knowledge:learn`, `quenching:knowledge:add`, `quenching:knowledge:import-memory`) each check, at
+  (`quenching-align:knowledge:learn`, `quenching-align:knowledge:add`, `quenching-align:knowledge:import-memory`) each check, at
   the end of a capture, whether the new concept introduced a term that belongs here, and
   add or update the entry — linking it to the concept doc just written.
-- **On demand, one term at a time.** Run `quenching:knowledge:define` to add or refine a single
+- **On demand, one term at a time.** Run `quenching-align:knowledge:define` to add or refine a single
   entry (inserted in alphabetical position, MERGE — never clobbering a filled definition).
-- **In bulk, across the whole bundle.** Run `quenching:knowledge:glossary-backfill` to sweep every doc
+- **In bulk, across the whole bundle.** Run `quenching-align:knowledge:glossary-backfill` to sweep every doc
   already in `/docs/` for repo-specific terms that were never fed into the glossary and
   backfill them in one pass.
 

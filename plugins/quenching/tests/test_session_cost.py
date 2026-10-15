@@ -109,10 +109,10 @@ class ScopeTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.sub = pathlib.Path(self.tmp.name) / "subagents"
         self.sub.mkdir()
-        for aid, kind, parent in (("orc", "quenching:orchestrator", None),
-                                  ("scout", "quenching:scout", None),
-                                  ("w1", "quenching:spec-runner", "orc"),
-                                  ("v1", "quenching:verifier", "w1")):
+        for aid, kind, parent in (("orc", "quenching-specs:orchestrator", None),
+                                  ("scout", "quenching-specs:scout", None),
+                                  ("w1", "quenching-specs:spec-runner", "orc"),
+                                  ("v1", "quenching-specs:verifier", "w1")):
             write(self.sub / f"agent-{aid}.jsonl", [rec(f"m-{aid}", "sonnet", 3)])
             meta = {"agentType": kind}
             if parent:
@@ -128,14 +128,14 @@ class ScopeTests(unittest.TestCase):
         return {g["agentType"] for g in json.loads(out)["groups"]}
 
     def test_unscoped_keeps_everything(self):
-        self.assertIn("quenching:scout", self.types())
+        self.assertIn("quenching-specs:scout", self.types())
 
     def test_descendants_exclude_the_orchestrator_and_other_roots(self):
         self.assertEqual(self.types("--descendants-of", "orc"),
-                         {"quenching:spec-runner", "quenching:verifier"})
+                         {"quenching-specs:spec-runner", "quenching-specs:verifier"})
 
     def test_nested_keeps_only_agents_with_a_parent(self):
-        self.assertEqual(self.types("--nested"), {"quenching:spec-runner", "quenching:verifier"})
+        self.assertEqual(self.types("--nested"), {"quenching-specs:spec-runner", "quenching-specs:verifier"})
 
     def test_empty_scope_refuses(self):
         self.assertEqual(run("--json", "--descendants-of", "nobody", str(self.sub))[0], 2)
@@ -153,7 +153,7 @@ class WindowTests(unittest.TestCase):
             r = rec(f"m-{aid}", "sonnet", 3)
             r["timestamp"] = ts
             write(self.sub / f"agent-{aid}.jsonl", [r])
-            meta = {"agentType": "quenching:spec-runner" if parent else "quenching:orchestrator"}
+            meta = {"agentType": "quenching-specs:spec-runner" if parent else "quenching-specs:orchestrator"}
             if parent:
                 meta["parentAgentId"] = parent
             (self.sub / f"agent-{aid}.meta.json").write_text(json.dumps(meta))
@@ -174,7 +174,7 @@ class WindowTests(unittest.TestCase):
         self.assertEqual(code, 0)
         data = json.loads(out)
         self.assertEqual(sum(g["requests"] for g in data["groups"]), 1)
-        self.assertEqual({g["agentType"] for g in data["groups"]}, {"quenching:spec-runner"})
+        self.assertEqual({g["agentType"] for g in data["groups"]}, {"quenching-specs:spec-runner"})
 
     def test_latest_orchestrator_refuses_without_one(self):
         for f in self.sub.glob("agent-orc*"):

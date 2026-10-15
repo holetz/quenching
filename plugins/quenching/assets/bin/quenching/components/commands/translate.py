@@ -63,7 +63,7 @@ def _default_pair(payload: Path, root: str | None) -> tuple[Path, Path]:
     The packaged pair only when the CALLER stands in the marketplace checkout that carries it;
     anywhere else the subject is the caller's own repository surface. Reading the payload alone
     made a target repo's bare probe measure the PLUGIN's translation and report it as the repo's
-    — `/quenching:components:align` §1 runs exactly this call and read a green it never measured
+    — `/quenching-align:components:align` §1 runs exactly this call and read a green it never measured
     — while an installed plugin, having no `plugins/` tree at all, reported every generated file
     as drift. Deciding on the caller's surface root keeps CI's
     `cq --root . components translate --check` on the packaged pair and points every other

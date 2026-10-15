@@ -53,18 +53,18 @@ writing anything.
 
 | Surface | What converges | The one align |
 | --- | --- | --- |
-| `/docs/` | a canonical **OKF bundle** — standards, concepts, glossary, and this site | `/quenching:knowledge:align` |
+| `/docs/` | a canonical **OKF bundle** — standards, concepts, glossary, and this site | `/quenching-align:knowledge:align` |
 | Specs | a plan cycle stored on the **`quenching` branch**, with GitHub or Azure Boards cards | cycle and status commands |
-| `/.design/` | one DTCG source projected to portable Impeccable and editorial media artifacts | `/quenching:design:align` |
-| `.claude/` | one file per entry point, every description audited | `/quenching:components:align` |
-| `ops` | a declared operations root, its entry-point inventory, registry and lifecycle/write policy | `/quenching:ops:align` |
-| `proof` | test layers, fixture ownership, gate evidence, measured surfaces and the coverage floor | `/quenching:proof:align` |
-| `toolchain` | manifests, locks, language pins and tool configuration | `/quenching:toolchain:align` |
-| `delivery` | provider-equivalent workflows, reachability, provenance and release shape | `/quenching:delivery:align` |
+| `/.design/` | one DTCG source projected to portable Impeccable and editorial media artifacts | `/quenching-design:design:align` |
+| `.claude/` | one file per entry point, every description audited | `/quenching-align:components:align` |
+| `ops` | a declared operations root, its entry-point inventory, registry and lifecycle/write policy | `/quenching-ops:ops:align` |
+| `proof` | test layers, fixture ownership, gate evidence, measured surfaces and the coverage floor | `/quenching-proof:proof:align` |
+| `toolchain` | manifests, locks, language pins and tool configuration | `/quenching-toolchain:toolchain:align` |
+| `delivery` | provider-equivalent workflows, reachability, provenance and release shape | `/quenching-delivery:delivery:align` |
 | `security` | read-only workflow, secret, dependency and access questions | *(none, by design)* |
 | *(git)* | nothing — a pillar that answers questions, converges no tree | *(none, by design)* |
 
-One more command, `/quenching:align`, conducts the seven local aligned fronts in dependency order on a single
+One more command, `/quenching-align:align`, conducts the seven local aligned fronts in dependency order on a single
 OK. Read [the operating model](explanation/operating-model.md) and you know the whole plugin.
 
 ## Quick start
@@ -77,7 +77,7 @@ cq --version                              # prints the plugin version — the bu
 Then, inside the session, ask for a read-only status before you change anything:
 
 ```text
-/quenching:knowledge:status
+/quenching-align:knowledge:status
 ```
 
 The full path — install, probe, first alignment — is the
@@ -127,7 +127,7 @@ skills' `references/`.
 - Contract: seven local fronts (`knowledge`, `design`, `components`, `ops`, `proof`, `toolchain`,
   `delivery`) plus the
   `specs` flow and a `git` pillar; ONE align per local front, probe-first;
-  `/quenching:align` conducts the seven aligned fronts on one OK.
+  `/quenching-align:align` conducts the seven aligned fronts on one OK.
 - Rails: `cq` CLI — `cq knowledge`, `cq specs`, `cq design`, `cq components`, `cq ops`, `cq proof`, `cq toolchain`, `cq delivery`, `cq git`; uniform `--json`;
   exit codes `0` ok · `1` findings · `2` refusal.
 - Invariants: nothing is written before a human OK; blast radius reaching product code

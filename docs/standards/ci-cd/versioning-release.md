@@ -82,7 +82,7 @@ sibling (`plugins/quenching-codex/`) was retired on 2026-10-11 and is no longer 
 
 The surfaces move **once per release, on the primary branch, as the deliberate act that publishes
 it** — see [branching.md](../git/branching.md). A version bump is never a task in a
-spec's `## Tasks`, `/quenching:specs:execute` never makes one, and `/quenching:specs:conclude` no longer makes one
+spec's `## Tasks`, `/quenching-specs:specs:execute` never makes one, and `/quenching-specs:specs:conclude` no longer makes one
 either: a spec's own conclude merges into the primary branch with the lockstep untouched, and the
 artifacts move only when the release command runs `cq specs release`.
 

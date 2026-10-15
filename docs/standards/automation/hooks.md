@@ -18,8 +18,8 @@ maintainer: quenching
 A hook charges **other people's operations**: it fires on events the command that installed
 it does not own, so a session-wide hook taxes every iteration in the repo — including every
 one it never helps. This repo therefore installs every hook at the **narrowest scope that
-still catches what it exists to catch**, minted by `/quenching:components:hook:new` under one plan → one
-OK, inventoried (report-only) by `/quenching:components:align`.
+still catches what it exists to catch**, minted by `/quenching-align:components:hook:new` under one plan → one
+OK, inventoried (report-only) by `/quenching-align:components:align`.
 
 ## The scope ladder — narrowest first
 
@@ -73,11 +73,11 @@ deterministic 95% may share a matcher with a `prompt` rung for the judgment tail
 `stopScan: "dirty"`-gated `Stop` sweep, both invoking `cq knowledge hook` — for every repo that had
 the plugin installed. The capability was discontinued outright (`descontinuar-hooks-do-plugin`
 spec), not merely rescoped: nothing in this repo answers a hook event any more, and
-`/quenching:components:hook:new` is how a hook — a future one of this repo's own, or a target's —
+`/quenching-align:components:hook:new` is how a hook — a future one of this repo's own, or a target's —
 gets minted, under the two ladders above.
 
 **The three bundle-writing commands hold no rung, and rely on their own Self-check.**
-`/quenching:knowledge:add`, `/quenching:knowledge:learn` and `/quenching:knowledge:define` each
+`/quenching-align:knowledge:add`, `/quenching-align:knowledge:learn` and `/quenching-align:knowledge:define` each
 carried a rung-1 frontmatter block running `cq knowledge validate` on its own `Write`/`Edit`. All
 three were removed on 2026-08-03 (`enxugar-create-e-eliminar-o-rung-hooks` spec) as redundant with
 the wiring above — which was then discontinued along with it. **Nothing replaced them**: each
@@ -85,7 +85,7 @@ command's own *Self-check against the conformance core* step, run against
 `plugins/quenching/assets/references/knowledge-align/conformance.md`, is the whole of the
 conformance check at the moment of the write, and it is a step the body executes rather than an
 event anything answers. Restoring the rung would be a **mint, not a revert** — through
-`/quenching:components:hook:new`, under the two ladders above and behind the missing-handler guard
+`/quenching-align:components:hook:new`, under the two ladders above and behind the missing-handler guard
 this standard requires, since `cq` may not be installed in the target being written into. Stated
 here because the claim is otherwise re-derived from the removal's own rationale, which the
 discontinuation invalidated: the plugin manual asserted the three blocks as live for two releases
@@ -98,7 +98,7 @@ still resolving its bundle root from a retired `docsDir` config key. The dead co
 `bundle root is not a directory` on every sweep, against a bundle the current checker passed
 clean: a frozen duplicate does not merely go redundant, because the contract it was frozen against
 can move underneath it, and it then reports **failures of its own staleness as findings about your
-repo**. `/quenching:knowledge:align` removes that class of debris on sight.
+repo**. `/quenching-align:knowledge:align` removes that class of debris on sight.
 
 The full pricing doctrine lives once, in
 `plugins/quenching/assets/references/components-command-new/capabilities.md` §Hooks;

@@ -91,8 +91,8 @@ claude --plugin-dir ./plugins/quenching
 the normal adoption or upgrade path. A published installation is managed by Claude Code.
 
 Then, inside a target repository, use the `/` menu — every command is
-`/quenching:<front>:<verb>` when installed as a plugin (`/quenching:knowledge:align`,
-`/quenching:specs:execute`, `/quenching:components:command:new`, …); the bare `/<front>:<verb>`
+`/quenching:<front>:<verb>` when installed as a plugin (`/quenching-align:knowledge:align`,
+`/quenching-specs:specs:execute`, `/quenching-align:components:command:new`, …); the bare `/<front>:<verb>`
 form only resolves in a repo that vendored the file into its own `.claude/commands/`. The full,
 current list — one file per entry point — is the
 [plugin README](plugins/quenching/README.md), never duplicated here.

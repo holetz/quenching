@@ -25,7 +25,7 @@ allowed-tools: <only the tools the steps actually use, each SCOPED — e.g. Read
 # paths: <glob patterns binding AUTONOMOUS firing to matching files — the natural
 #   reinforcement for a domain-bound command; typed invocation is unaffected.>
 # hooks: <a check tied to THIS command's own workflow, scoped to its lifecycle — the
-#   narrowest rung of the hook ladder. Wired by /quenching:components:hook:new from the hook mold.>
+#   narrowest rung of the hook ladder. Wired by /quenching-align:components:hook:new from the hook mold.>
 ---
 
 # /<front>:<verb> — <one-line role>
@@ -52,7 +52,7 @@ exist, exists; every step's criterion held. Report what was written.>
 <!-- MOLD (quenching · automation command) → becomes
      `.claude/commands/<folder-path>/<verb>.md` in a target repo, invocable as
      `/<folder>:<subfolder>:<verb>` — native `:` separator, one per path segment — and minted
-     by `/quenching:components:command:new` under the taxonomy rule (`/docs/standards/automation/skills.md`) and the
+     by `/quenching-align:components:command:new` under the taxonomy rule (`/docs/standards/automation/skills.md`) and the
      writing doctrine (predictability as the root virtue).
 
      ONE FILE PER ENTRY POINT. Claude Code merged custom commands into skills, so this file

@@ -76,7 +76,8 @@ class KnowledgeAlignmentContract(unittest.TestCase):
         self.assertEqual([front for front, _, _ in parsed], declared_order)
         for index, (front, route, dependency) in enumerate(parsed):
             with self.subTest(front=front):
-                self.assertEqual(route, f"/quenching:{front}:align")
+                module = "align" if front in ("knowledge", "components") else front
+                self.assertEqual(route, f"/quenching-{module}:{front}:align")
                 self.assertEqual(dependency, "applicability" if index == 0 else parsed[index - 1][0])
 
         workflow = align.split("## Workflow", 1)[1].split("## Invariants", 1)[0]
@@ -128,10 +129,11 @@ class KnowledgeAlignmentContract(unittest.TestCase):
             script = repo / "plugins" / "quenching" / "assets" / "checks" / check.name
             script.parent.mkdir(parents=True)
             shutil.copy2(check, script)
+            shutil.copy2(ROOT / "assets" / "modules.json", script.parents[1] / "modules.json")
             command = repo / "plugins" / "quenching" / "commands" / "knowledge" / "align.md"
             command.parent.mkdir(parents=True)
             command.write_text(
-                "/quenching:knowledge:align\n"
+                "/quenching-align:knowledge:align\n"
                 "`plugins/quenching/commands/knowledge/align.md`\n"
                 "[reference.md](../../assets/references/reference.md) §Inexistente\n",
                 encoding="utf-8",
@@ -163,11 +165,12 @@ class KnowledgeAlignmentContract(unittest.TestCase):
             script = repo / "plugins" / "quenching" / "assets" / "checks" / check.name
             script.parent.mkdir(parents=True)
             shutil.copy2(check, script)
+            shutil.copy2(ROOT / "assets" / "modules.json", script.parents[1] / "modules.json")
             command = repo / "plugins" / "quenching" / "commands" / "knowledge" / "align.md"
             command.parent.mkdir(parents=True)
             missing_path = "${CLAUDE_PLUGIN_ROOT}/assets/references/" + "missing.md"
             command.write_text(
-                "/quenching:knowledge:align\n"
+                "/quenching-align:knowledge:align\n"
                 f"`{missing_path}`\n"
                 "[reference.md](../../assets/references/reference.md) §Existing\n",
                 encoding="utf-8",

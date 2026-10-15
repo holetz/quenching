@@ -1,6 +1,6 @@
 # Hook mold — the three wiring shapes, narrowest first
 
-The mold `/quenching:components:hook:new` copies from. A hook is not one file: it is a **wiring** (where it
+The mold `/quenching-align:components:hook:new` copies from. A hook is not one file: it is a **wiring** (where it
 is declared, which decides its scope) plus, for a `command` handler, a **script**. Pick the
 shape from the scope ladder
 (`${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md` §Hooks) — the narrowest
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     sys.exit(main())
 ```
 
-<!-- MOLD (quenching · scoped hook) → wired by /quenching:components:hook:new under
+<!-- MOLD (quenching · scoped hook) → wired by /quenching-align:components:hook:new under
      `/docs/standards/automation/hooks.md`, one plan → one OK.
 
      THE COST CLAIM. Every hook enters its plan with one line of arithmetic: which event ×

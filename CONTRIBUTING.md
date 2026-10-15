@@ -5,7 +5,7 @@
 Open an ordinary issue with the **Bug report** or **Feature request** template. You do not need to
 write a spec.
 
-Specs are different: they are created by the tool (`/quenching:specs:create`), carry a structured
+Specs are different: they are created by the tool (`/quenching-specs:specs:create`), carry a structured
 body that `cq specs` parses, and are labeled `spec`. Do not hand-write one. A maintainer converts an
 accepted issue into a spec. To see only human issues, search `-label:spec`.
 

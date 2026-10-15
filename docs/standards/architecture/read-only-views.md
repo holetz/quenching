@@ -57,7 +57,7 @@ tool grants instead of to the directory tree.
 
 ## The precedent
 
-`/quenching:specs:status` established the shape and `/quenching:knowledge:status` mirrored it exactly: both carry
+`/quenching-specs:specs:status` established the shape and `/quenching-align:knowledge:status` mirrored it exactly: both carry
 `allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*)`, own no contract, and cite three
 references apiece. A future front's read command copies this, and a proposal to add a read-only
 mode to an existing align is refused on this standard.

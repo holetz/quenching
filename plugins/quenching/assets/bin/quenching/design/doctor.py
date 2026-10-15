@@ -42,7 +42,7 @@ def inspect_design(root: Path) -> tuple[dict[str, Any], list[dict[str, str]]]:
     if not token_path.is_file():
         findings.append({
             "severity": "error", "code": "design-front-absent", "path": ".design/tokens.json",
-            "message": "design front is not installed; run `/quenching:design:align`",
+            "message": "design front is not installed; run `/quenching-design:design:align`",
         })
         return payload, findings
     try:

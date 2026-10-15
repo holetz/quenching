@@ -27,16 +27,16 @@ uses the same entry names, while `/align` can conduct only the seven local front
 
 | Entry | Commands | Kind |
 | --- | --- | --- |
-| `knowledge` | `/quenching:knowledge:*` | front |
-| `specs` | `/quenching:specs:*` | provider-owned axis |
-| `design` | `/quenching:design:*` | front |
-| `components` | `/quenching:components:*` | front |
-| `ops` | `/quenching:ops:*` | front |
-| `proof` | `/quenching:proof:*` | front |
-| `toolchain` | `/quenching:toolchain:*` | front |
-| `delivery` | `/quenching:delivery:*` | front |
-| `security` | `/quenching:security:*` | pillar |
-| `git` | `/quenching:git:*` | pillar |
+| `knowledge` | `/quenching-align:knowledge:*` | front |
+| `specs` | `/quenching-specs:specs:*` | provider-owned axis |
+| `design` | `/quenching-design:design:*` | front |
+| `components` | `/quenching-align:components:*` | front |
+| `ops` | `/quenching-ops:ops:*` | front |
+| `proof` | `/quenching-proof:proof:*` | front |
+| `toolchain` | `/quenching-toolchain:toolchain:*` | front |
+| `delivery` | `/quenching-delivery:delivery:*` | front |
+| `security` | `/quenching-security:security:*` | pillar |
+| `git` | `/quenching-specs:git:*` | pillar |
 
 `specs` has no local tree, and `security` and `git` have no conductor row. Their commands remain
 available through their own namespaces regardless of the local-front scope.

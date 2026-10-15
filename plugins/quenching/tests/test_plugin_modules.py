@@ -155,6 +155,10 @@ class GeneratedDistribution(unittest.TestCase):
         self.assertEqual(2, self.run_generator("--write"))
 
 
+ROOT_TOKEN = "${CLAUDE_" + "PLUGIN_ROOT}"  # split so the repository citation check reads no claim
+OLD = "quenching" + ":"  # the pre-module prefix, split for the same reason
+
+
 class PrincipalGeneration(unittest.TestCase):
     """Activated principal modules materialize from the source with a closed citation set."""
 
@@ -165,9 +169,9 @@ class PrincipalGeneration(unittest.TestCase):
         self.root = root = Path(tmp.name)
         src = root / "plugins/quenching"
         files = {
-            "commands/specs/develop.md": "Read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/a.md; "
+            "commands/specs/develop.md": f"Read {ROOT_TOKEN}/assets/references/specs-develop/a.md; "
                                          "then /quenching-design:design:status.\n",
-            "commands/design/status.md": "Run cq design; see ${CLAUDE_PLUGIN_ROOT}/assets/references/design-align/.\n",
+            "commands/design/status.md": f"Run cq design; see {ROOT_TOKEN}/assets/references/design-align/.\n",
             "agents/scout.md": "agent\n",
             "assets/references/specs-develop/a.md": "shared\n",
             "assets/references/design-align/b.md": "design\n",
@@ -241,7 +245,7 @@ class PrincipalGeneration(unittest.TestCase):
     def test_check_names_dangling_citations_unpublished_ids_and_unshipped_imports(self):
         src = self.root / "plugins/quenching"
         (src / "commands/specs/develop.md").write_text(
-            "${CLAUDE_PLUGIN_ROOT}/assets/references/design-align/b.md /quenching:specs:x "
+            f"{ROOT_TOKEN}/assets/references/design-align/b.md /{OLD}specs:x "
             "quenching-design:nowhere\n")
         (src / "assets/bin/quenching/specs/core.py").write_text("from quenching.design import core\n")
         with patch.object(generator, "ROOT", self.root), \
@@ -278,14 +282,14 @@ class PrincipalPartition(unittest.TestCase):
         heads = {p.name.removesuffix(".md") for p in (source / "commands").iterdir()}
         heads |= {p.stem for p in (source / "agents").glob("*.md")}
         self.assertEqual(heads, set(mapping))
-        self.assertEqual("quenching-specs:specs:develop", published_id("quenching:specs:develop", mapping))
-        self.assertEqual("quenching-specs:handoff", published_id("quenching:handoff", mapping))
-        self.assertEqual("quenching-align:align", published_id("quenching:align", mapping))
-        self.assertEqual("quenching-align:knowledge:add", published_id("quenching:knowledge:add", mapping))
-        self.assertEqual("quenching-specs:orchestrator", published_id("quenching:orchestrator", mapping))
-        self.assertEqual("quenching-design:design:status", published_id("quenching:design:status", mapping))
+        self.assertEqual("quenching-specs:specs:develop", published_id(OLD + "specs:develop", mapping))
+        self.assertEqual("quenching-specs:handoff", published_id(OLD + "handoff", mapping))
+        self.assertEqual("quenching-align:align", published_id(OLD + "align", mapping))
+        self.assertEqual("quenching-align:knowledge:add", published_id(OLD + "knowledge:add", mapping))
+        self.assertEqual("quenching-specs:orchestrator", published_id(OLD + "orchestrator", mapping))
+        self.assertEqual("quenching-design:design:status", published_id(OLD + "design:status", mapping))
         with self.assertRaises(ValueError):
-            published_id("quenching:nowhere:x", mapping)
+            published_id(OLD + "nowhere:x", mapping)
 
     def test_principal_modules_activate_together_and_unpublish_the_source(self):
         manifest = load_manifest(REPO)

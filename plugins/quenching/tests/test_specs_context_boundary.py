@@ -49,7 +49,7 @@ class StageEndContractTests(unittest.TestCase):
 
     def test_execute_offer_recommends_a_new_session_over_budget(self):
         body = text(SPECS / "execute.md")
-        self.assertIn("\"(Recommended)\", is to run `/quenching:specs:conclude <id>` in a new session", body)
+        self.assertIn("\"(Recommended)\", is to run `/quenching-specs:specs:conclude <id>` in a new session", body)
 
 
 class SectionBoundaryContractTests(unittest.TestCase):

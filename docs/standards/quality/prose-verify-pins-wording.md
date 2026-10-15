@@ -33,10 +33,10 @@ actions:
 | What is wrong | How you recognise it | What to do |
 | --- | --- | --- |
 | the text | the required phrase is the one the author actually meant, and the text does not contain it | change the text |
-| the check | the required phrase was never agreed — a sentence-initial capital, a synonym, a different order | it is a definition defect: `/quenching:specs:develop` fixes the `verify:` |
+| the check | the required phrase was never agreed — a sentence-initial capital, a synonym, a different order | it is a definition defect: `/quenching-specs:specs:develop` fixes the `verify:` |
 
 The **third reading is never permitted**: rewriting the check to match whatever the text happens to
-say. It is the prohibition `/quenching:specs:execute` already carries — never edit the assertion so
+say. It is the prohibition `/quenching-specs:specs:execute` already carries — never edit the assertion so
 it stops failing — applied to the case where the assertion is a string.
 
 ## How to write the assertion

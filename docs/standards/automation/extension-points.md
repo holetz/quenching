@@ -26,7 +26,7 @@ A point of extension is an **event** in a command's run — `before_<command>` a
 named after the command whose flow carries the event. The command that owns the event is the one
 that **announces** it; the hooks are what the declaring repository attached to the event.
 
-The one event this plugin ships today is `after_specs_execute_task` on `/quenching:specs:execute` — a hook
+The one event this plugin ships today is `after_specs_execute_task` on `/quenching-specs:specs:execute` — a hook
 runs after each task the spec cycle commits. Nothing here is specific to it: the contract is the
 same for every event a command declares.
 
