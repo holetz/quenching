@@ -7,6 +7,8 @@ finishes.
 
 import json
 from pathlib import Path
+import re
+import shlex
 import subprocess
 import tempfile
 import unittest
@@ -61,10 +63,56 @@ class TaskExecutionContractTests(unittest.TestCase):
     def test_red_cleanup_restores_tracked_file_from_base(self):
         for text in (REFERENCE.read_text(encoding="utf-8"), RUNNER.read_text(encoding="utf-8")):
             flat = " ".join(text.split())
-            self.assertIn("git -C .quenching/red show HEAD:<file>", flat)
+            self.assertIn("git -C .quenching/red cat-file --filters HEAD:<file>", flat)
+            self.assertNotIn("git -C .quenching/red show HEAD:<file>", flat)
             self.assertIn("already exists in the base", flat)
             self.assertNotIn("git -C .quenching/red checkout", flat)
             self.assertNotIn("git -C .quenching/red restore", flat)
+
+    def test_red_cleanup_restores_checkout_bytes_and_removes_worktree(self):
+        test_path = "tests/test_x.py"
+        for carrier in (REFERENCE, RUNNER):
+            text = carrier.read_text(encoding="utf-8")
+            restore = re.search(
+                r"`(git -C \.quenching/red [^`]+ HEAD:<file>) > \.quenching/red/<file>`",
+                text,
+            )
+            self.assertIsNotNone(restore, carrier)
+            argv = shlex.split(restore.group(1).replace("<file>", test_path))
+            for mode in ("attributes", "autocrlf", "plain-lf"):
+                with self.subTest(carrier=carrier.name, mode=mode):
+                    with tempfile.TemporaryDirectory() as directory:
+                        root = Path(directory)
+                        git(root, "init", "-q", "-b", "main")
+                        git(root, "config", "user.email", "red-check@example.invalid")
+                        git(root, "config", "user.name", "RED cleanup check")
+                        git(root, "config", "core.autocrlf", "false")
+                        git(root, "config", "core.eol", "lf")
+                        original = b"def test_base():\n    assert True\n"
+                        source = root / test_path
+                        source.parent.mkdir()
+                        source.write_bytes(original)
+                        if mode == "attributes":
+                            (root / ".gitattributes").write_text("*.py text eol=crlf\n")
+                        git(root, "add", ".")
+                        git(root, "commit", "-qm", "base test")
+                        if mode == "autocrlf":
+                            git(root, "config", "core.autocrlf", "true")
+                        red = root / ".quenching/red"
+                        git(root, "worktree", "add", "--detach", str(red), "HEAD")
+                        target = red / test_path
+                        checkout = target.read_bytes()
+                        expected = (original if mode == "plain-lf"
+                                    else original.replace(b"\n", b"\r\n"))
+                        self.assertEqual(checkout, expected)
+                        target.write_bytes(b"def test_new():\n    assert False\n")
+                        with target.open("wb") as output:
+                            subprocess.run(argv, cwd=root, stdout=output,
+                                           stderr=subprocess.PIPE, check=True)
+                        self.assertEqual(target.read_bytes(), checkout)
+                        self.assertEqual(git(red, "status", "--short"), "")
+                        git(root, "worktree", "remove", str(red))
+                        self.assertFalse(red.exists())
 
     def test_external_backend_records_task_after_the_commit(self):
         command = COMMAND.read_text(encoding="utf-8")
