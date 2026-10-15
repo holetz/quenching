@@ -131,12 +131,19 @@ def _density(bundle_root: str) -> dict:
     }
 
 
-def _surface_payload(bundle_root: str, *, density: bool = False) -> dict:
+def _config_dir(root: str) -> str:
+    """The directory whose `.claude/hooks` configuration governs a run: the target root when one
+    was named, else the project directory the environment or cwd gives."""
+    return _project_dir() if root == "." else root
+
+
+def _surface_payload(bundle_root: str, *, density: bool = False,
+                     ignore_globs: tuple[str, ...] = ()) -> dict:
     if not os.path.isdir(bundle_root):
         return {"root": bundle_root, "applicable": False, "state": "missing",
                 "findings": [], "errors": 0, "warnings": 0, "ok": True,
                 **({"density": {}} if density else {})}
-    findings = _knowledge_findings(validate_tree(bundle_root))
+    findings = _knowledge_findings(validate_tree(bundle_root, ignore_globs=ignore_globs))
     payload = {
         "root": bundle_root,
         "applicable": True,
@@ -235,7 +242,12 @@ def _knowledge_args(argv: list[str], prog: str) -> argparse.Namespace:
 
 def _run_doctor(argv: list[str]) -> int:
     args = _knowledge_args(argv, "cq knowledge doctor")
-    payload = _surface_payload(_rooted(args.root, args.bundle))
+    try:
+        cfg = _load_config(_config_dir(args.root))
+    except ConfigError as exc:
+        return refuse({"code": "config-unreadable", "message": str(exc)}, args.json)
+    payload = _surface_payload(_rooted(args.root, args.bundle),
+                               ignore_globs=tuple(cfg.get("ignoreGlobs") or ()))
     if not payload["applicable"]:
         payload["message"] = "knowledge bundle is not installed; run knowledge align to install it"
     emit(args.json, payload,
@@ -245,7 +257,12 @@ def _run_doctor(argv: list[str]) -> int:
 
 def _run_status(argv: list[str]) -> int:
     args = _knowledge_args(argv, "cq knowledge status")
-    payload = _surface_payload(_rooted(args.root, args.bundle), density=True)
+    try:
+        cfg = _load_config(_config_dir(args.root))
+    except ConfigError as exc:
+        return refuse({"code": "config-unreadable", "message": str(exc)}, args.json)
+    payload = _surface_payload(_rooted(args.root, args.bundle), density=True,
+                               ignore_globs=tuple(cfg.get("ignoreGlobs") or ()))
     payload["findingCodes"] = dict(sorted(Counter(item["code"] for item in payload["findings"]).items()))
     payload["controls"] = owner_controls("knowledge", os.path.normpath(args.root))
     emit(args.json, payload,
@@ -264,7 +281,7 @@ def run_cli(argv: list[str]) -> int:
 
     as_json = args.json
     try:
-        cfg = _load_config(_project_dir())
+        cfg = _load_config(_config_dir(args.root))
     except ConfigError as exc:
         return refuse({"code": "config-unreadable", "message": str(exc)}, as_json)
     target = _rooted(args.root, args.bundle)
