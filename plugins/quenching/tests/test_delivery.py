@@ -35,6 +35,80 @@ class DeliveryResults(unittest.TestCase):
             assert payload is not None
             return payload, code
 
+    def test_step_condition_does_not_disable_its_job(self):
+        for condition in ("false", "${{ false }}", "never"):
+            with self.subTest(condition=condition):
+                payload, _ = self._run({
+                    ".github/workflows/ci.yml": (
+                        "on: push\njobs:\n  test:\n    steps:\n"
+                        "      - name: disabled\n        if: " + condition + "\n"
+                        "        run: echo skipped\n"
+                        "      - run: python -m unittest\n"
+                    ),
+                })
+                job = payload["inventory"]["workflows"][0]["jobDetails"][0]
+                self.assertTrue(job["active"])
+                codes = {finding["code"] for finding in payload["findings"]}
+                self.assertIn("delivery-checkout-missing", codes)
+                self.assertIn("delivery-setup-missing", codes)
+
+    def test_azure_top_level_step_condition_does_not_disable_synthetic_job(self):
+        payload, _ = self._run({
+            "azure-pipelines.yml": (
+                "trigger: [main]\nsteps:\n- script: echo skipped\n  if: false\n"
+                "- script: python -m unittest\n"
+            ),
+        })
+        job = payload["inventory"]["workflows"][0]["jobDetails"][0]
+        self.assertTrue(job["active"])
+        self.assertIn("delivery-setup-missing", {item["code"] for item in payload["findings"]})
+
+    def test_job_false_condition_stays_inactive(self):
+        for indent in ("    ", "      "):
+            with self.subTest(indent=len(indent)):
+                payload, _ = self._run({
+                    ".github/workflows/ci.yml": (
+                        "on: push\njobs:\n  test:\n" + indent + "if: ${{ false }}\n"
+                        + indent + "steps:\n" + indent + "  - run: python -m unittest\n"
+                    ),
+                })
+                self.assertFalse(payload["inventory"]["workflows"][0]["jobDetails"][0]["active"])
+                codes = {finding["code"] for finding in payload["findings"]}
+                self.assertNotIn("delivery-checkout-missing", codes)
+                self.assertNotIn("delivery-setup-missing", codes)
+
+    def test_multiline_commands_preserve_runtime_and_publish_evidence(self):
+        for marker in ("|", ">", "|-", ">+", "|2-"):
+            for provider in ("github", "azure-bash", "azure-script", "azure-pwsh", "gitlab"):
+                with self.subTest(provider=provider, marker=marker):
+                    if provider == "github":
+                        path = ".github/workflows/ci.yml"
+                        body = ("on: push\njobs:\n  test:\n    steps:\n"
+                                "      - run: " + marker + "\n"
+                                "          echo starting\n          python -m build\n"
+                                "          npm publish\n"
+                                "        name: metadata\n      - run: echo next\n")
+                    elif provider.startswith("azure"):
+                        path = "azure-pipelines.yml"
+                        key = provider.split("-", 1)[1]
+                        body = ("trigger: [main]\nsteps:\n- " + key + ": " + marker + "\n"
+                                "    echo starting\n    python -m build\n    npm publish\n"
+                                "  displayName: metadata\n- script: echo next\n")
+                    else:
+                        path = ".gitlab-ci.yml"
+                        body = ("test:\n  script: " + marker + "\n"
+                                "    echo starting\n    python -m build\n    npm publish\n"
+                                "  after_script:\n    - echo after\n")
+                    payload, _ = self._run({path: body})
+                    job = payload["inventory"]["workflows"][0]["jobDetails"][0]
+                    self.assertEqual(["echo starting", "python -m build", "npm publish"] +
+                                     ([] if provider == "gitlab" else ["echo next"]), job["commands"])
+                    self.assertTrue(job["release"])
+                    codes = {finding["code"] for finding in payload["findings"]}
+                    self.assertIn("delivery-setup-missing", codes)
+                    if provider != "gitlab":
+                        self.assertIn("delivery-checkout-missing", codes)
+
     def test_absent_is_explicit_not_applicable(self):
         payload, code = self._run({})
         self.assertEqual(0, code)
