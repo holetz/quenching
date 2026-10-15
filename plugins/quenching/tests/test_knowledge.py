@@ -156,6 +156,55 @@ RETIRED_LOG_FIXTURE = {
 }
 
 
+class NavRefusalsAndConfigTolerance(unittest.TestCase):
+    def _nav(self, tmp, *extra):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = knowledge_cli.main(["nav", "--root", tmp, "--check", *extra])
+        return code, out.getvalue(), err.getvalue()
+
+    def test_missing_bundle_is_a_refusal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            code, _, err = self._nav(tmp)
+        self.assertEqual(code, 2)
+        self.assertIn("is not a directory", err)
+
+    def test_missing_config_is_a_refusal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.mkdir(os.path.join(tmp, "docs"))
+            code, out, _ = self._nav(tmp, "--json")
+        self.assertEqual(code, 2)
+        self.assertEqual(json.loads(out)["code"], "nav-config-unreadable")
+
+    def test_non_utf8_nav_config_is_a_refusal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.mkdir(os.path.join(tmp, "docs"))
+            pathlib.Path(tmp, "zensical.toml").write_bytes(b"\xff\xfe\x00nav = [")
+            code, out, _ = self._nav(tmp, "--json")
+        self.assertEqual(code, 2)
+        self.assertEqual(json.loads(out)["code"], "nav-config-unreadable")
+
+    def _config(self, raw: bytes) -> dict:
+        from quenching.knowledge.config import DEFAULTS, _load_config
+        with tempfile.TemporaryDirectory() as tmp:
+            hooks = pathlib.Path(tmp, ".claude", "hooks")
+            hooks.mkdir(parents=True)
+            (hooks / "hooks-config.json").write_bytes(raw)
+            return _load_config(tmp), DEFAULTS
+
+    def test_non_utf8_hooks_config_falls_back_to_defaults(self):
+        cfg, defaults = self._config(b"\xff\xfe{")
+        self.assertEqual(cfg, defaults)
+
+    def test_array_hooks_config_falls_back_to_defaults(self):
+        cfg, defaults = self._config(b"[]")
+        self.assertEqual(cfg, defaults)
+
+    def test_null_hooks_config_falls_back_to_defaults(self):
+        cfg, defaults = self._config(b"null")
+        self.assertEqual(cfg, defaults)
+
+
 class RetiredLogChecker(unittest.TestCase):
     """Prove the retirement in all three places it has to hold at once."""
 
