@@ -20,9 +20,9 @@ of — costs **one line and no authoring**:
 cq specs discover "<id>" "<what was found, one line>"
 ```
 
-It is captured **indiscriminately**. The lines are resolved by `/quenching:specs:develop`'s
+It is captured **indiscriminately**. The lines are resolved by `/quenching-specs:specs:develop`'s
 discoveries stage, and the doc an emergent finding deserves is written by
-`/quenching:specs:conclude` at distillation.
+`/quenching-specs:specs:conclude` at distillation.
 
 A task that writes into `knowledge/` is not delegated — §Delegating an executor.
 
@@ -36,7 +36,7 @@ A per-task executor sub-agent (`Task`) is **permitted** when both hold:
 - the task writes nothing under `knowledge/`.
 
 Pin it to the session model. **Never `haiku`** — it is writing production code, and the model
-policy for that is the same one that protects `/quenching:knowledge:import-memory`'s classifiers.
+policy for that is the same one that protects `/quenching-align:knowledge:import-memory`'s classifiers.
 
 **The orchestrator keeps, without exception:** spec selection, the isolation offer, every
 confirmation, every `cq specs task --check` flip, every `cq specs task --block` marker, every

@@ -1,12 +1,12 @@
 ---
 description: >-
-  Mint ONE Python ops entry point, register it in the router and regenerate the registry. Use for "mint an ops entry point", "add a command to the ops router". Not for: repairs → /quenching:ops:align.
+  Mint ONE Python ops entry point, register it in the router and regenerate the registry. Use for "mint an ops entry point", "add a command to the ops router". Not for: repairs → /quenching-ops:ops:align.
 disable-model-invocation: true
 argument-hint: <entry-point-name-or-purpose>
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion, Write, Edit
 ---
 
-# /quenching:ops:entrypoint:new — mint one operations entry point
+# /quenching-ops:ops:entrypoint:new — mint one operations entry point
 
 **Input**: `$ARGUMENTS` (one proposed operation name or a short description of the entry point).
 
@@ -130,7 +130,7 @@ selected write/non-write shape has a captured help, preview or JSON proof.
 
 Report the invocation, created path, purpose, domain, lifecycle, router, registry path, write
 policy, verification payloads and any target-owned residue. State explicitly when the command
-refused before writing or when a judgement finding remains for `/quenching:ops:align`.
+refused before writing or when a judgement finding remains for `/quenching-ops:ops:align`.
 
 **Done when:** one new entry point and its proof are fully accounted for, with no claim beyond the
 captured verifier output.

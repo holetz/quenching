@@ -1,11 +1,11 @@
 ---
 description: >-
-  Score documentation pages against the eleven-dimension quality gate, read-only. Use for "review the documentation", "score the docs pages". Not for: fixing gaps → /quenching:knowledge:documentation:write.
+  Score documentation pages against the eleven-dimension quality gate, read-only. Use for "review the documentation", "score the docs pages". Not for: fixing gaps → /quenching-align:knowledge:documentation:write.
 argument-hint: [optional-page-slice-or-plan-path]
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Task
 ---
 
-# /quenching:knowledge:documentation:review — score and report without writing
+# /quenching-align:knowledge:documentation:review — score and report without writing
 
 **Input**: `$ARGUMENTS` (an optional page slice or plan path; omit to review the pages named by
 `${CLAUDE_PROJECT_DIR}/.quenching/documentation/plan.md`).

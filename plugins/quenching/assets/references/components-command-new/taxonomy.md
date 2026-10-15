@@ -30,7 +30,7 @@ fits; it is never forced.**
 - **Category, no single real folder tied to the skill** — e.g. `git` for a `commit`
   skill: a subject, not a repo folder. The skill nests flat under the category. **This
   example stays valid even in a repo that also has this plugin installed** — a target's own
-  bare-cited `git`-category `commit` command and this plugin's `/quenching:git:commit` coexist
+  bare-cited `git`-category `commit` command and this plugin's `/quenching-specs:git:commit` coexist
   rather than collide, because the citation forms already separate them
   (`naming/command-surface.md` §Three citation forms): the example is about the target's own
   category, and this plugin's commands are never bare-cited in a repo that did not vendor them.
@@ -131,10 +131,10 @@ This file owns, because no tool decides it:
   `sk-no-zone`.
 - **What the zone is derived from.** The local `.claude/commands/**/*.md` frontmatter,
   and only that: the zone lists the repo's **own** surface. Commands contributed by
-  installed plugins (`/quenching:specs:*`, marketplace plugins) stay out of it and may be pointed
+  installed plugins (`/quenching-specs:specs:*`, marketplace plugins) stay out of it and may be pointed
   at from the curated prose.
-- **Who may run the regeneration.** `/quenching:components:command:new` (in its OKF tail) and
-  `/quenching:components:align` (in its verify step). Neither writes between the markers by
+- **Who may run the regeneration.** `/quenching-align:components:command:new` (in its OKF tail) and
+  `/quenching-align:components:align` (in its verify step). Neither writes between the markers by
   hand, and neither composes the table itself. Both end their run on a second
   `registry reindex` reporting `changed: false`.
 

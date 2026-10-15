@@ -2,8 +2,8 @@
 
 <!-- rules -->
 
-The plugin has **two** aligns: `/quenching:knowledge:align` (`knowledge/`) and
-`/quenching:components:align` (`.claude/`) — plus `/align`, which conducts both. The specs front is
+The plugin has **two** aligns: `/quenching-align:knowledge:align` (`knowledge/`) and
+`/quenching-align:components:align` (`.claude/`) — plus `/align`, which conducts both. The specs front is
 provider-owned and has no align.
 Everything about **how** the operation behaves is identical across them and lives here; only a
 front's own deltas (what it inventories, which findings it produces, what its verifier is) stay in
@@ -162,8 +162,8 @@ resolves nowhere.
 | Plugin-prefixed slash | `/<plugin>:<front>:<verb>` | a human types it wherever the plugin is installed **as a plugin** |
 | Bare slash | `/<front>:<verb>` | **only** where that command's file lives in the target repo's own `.claude/commands/` |
 
-So an align invokes its stage as `quenching:knowledge:import-memory` and tells a human to run
-`/quenching:knowledge:import-memory`. An align that cannot see the target's `.claude/commands/` has no
+So an align invokes its stage as `quenching-align:knowledge:import-memory` and tells a human to run
+`/quenching-align:knowledge:import-memory`. An align that cannot see the target's `.claude/commands/` has no
 grounds to emit the bare form.
 
 **Write the shapes, not instances, whenever the sentence is *about* the forms.**
@@ -185,8 +185,8 @@ it deliberately did not close, each with the command that closes it.
 
 | Front | Align | Verifier |
 | --- | --- | --- |
-| `knowledge/` | `/quenching:knowledge:align` | `cq knowledge validate <knowledge-dir>` — exit 0 **and** no `dir-no-index` / `index-broken-link` / `index-orphan` (they are WARN; read the findings) |
-| `.claude/` | `/quenching:components:align` | `cq components lint` + `cq components doctor`, plus `cq components registry reindex` reporting `changed: false` for the zone |
+| `knowledge/` | `/quenching-align:knowledge:align` | `cq knowledge validate <knowledge-dir>` — exit 0 **and** no `dir-no-index` / `index-broken-link` / `index-orphan` (they are WARN; read the findings) |
+| `.claude/` | `/quenching-align:components:align` | `cq components lint` + `cq components doctor`, plus `cq components registry reindex` reporting `changed: false` for the zone |
 
 All three verifiers read the same contract — `--json` on every subcommand and exit **0** ok · **1**
 findings · **2** refusal — so an align branches on data it did not have to interpret. Warnings are

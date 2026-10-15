@@ -1,15 +1,15 @@
 ---
 description: >-
-  Converge the .claude command surface onto one file per entry point and review descriptions. Use for "align the skills", "audit the command bodies", "shorten the descriptions". Not for: one command → /quenching:components:command:new.
+  Converge the .claude command surface onto one file per entry point and review descriptions. Use for "align the skills", "audit the command bodies", "shorten the descriptions". Not for: one command → /quenching-align:components:command:new.
 argument-hint: [optional-scope]
 allowed-tools: Bash(cq:*), Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion
 ---
 
-# /quenching:components:align — force the automation surface onto the taxonomy
+# /quenching-align:components:align — force the automation surface onto the taxonomy
 
 **Input**: `$ARGUMENTS` (an optional scope; omit to sweep the whole automation surface).
 
-The sweep counterpart of `/quenching:components:command:new`: where the mint keeps each **new** command
+The sweep counterpart of `/quenching-align:components:command:new`: where the mint keeps each **new** command
 conformant, this one converges everything that **already exists** — including a surface still
 built as `skills/<name>/SKILL.md` + a mirrored wrapper, which it **collapses to one file per
 entry point** (§6 below) — then **reads every surviving body against the writing doctrine** (§7)
@@ -37,7 +37,7 @@ this skill's doctrine. What follows is specific to `.claude/`:
 - **The wider `.claude/` is inventoried, never migrated.** `.claude/agents/*.md` and the
   hooks wired in `settings.json` and in command frontmatter are **report-only** surfaces:
   the tool names their findings (`sk-agent-*`, `sk-hook-*`) and each is routed to the mint
-  that owns it (`/quenching:components:agent:new`, `/quenching:components:hook:new`).
+  that owns it (`/quenching-align:components:agent:new`, `/quenching-align:components:hook:new`).
 - **Codex translation drift is reported, never repaired here.** When this checkout carries the
   generated Codex sibling, `cq components translate --check --json` names every divergent file
   with `ct-translation-drift`. The align report includes those findings and routes the repair to
@@ -190,7 +190,7 @@ read-only `Task` collectors — one per slice — that report *what each body co
 its frontmatter, what it cites, where its numbered steps end) and nothing else; every doctrine
 verdict stays with the orchestrator.
 
-Report each finding as `command · violated rule · one-line evidence · the /quenching:components:command:new invocation
+Report each finding as `command · violated rule · one-line evidence · the /quenching-align:components:command:new invocation
 that opens the edit`, labelled **"reported, not applied"**. Skip every legacy `openspec-*` body —
 that surface is out of scope here as everywhere. Never rewrite a body to close a finding.
 **Done when:** every surviving body carries a verdict — a finding with its fix invocation, or
@@ -221,7 +221,7 @@ Judge each description against the three slots and the competitor test in
 | no trigger, or a trigger after the second sentence (`sk-trigger-position`) | **add** one verbatim phrase per branch that has none; move them into the second sentence. **Routed only** — on a typed-only command an absent trigger is not a defect, and adding one buys nothing that routes |
 | `Not for:` naming a command that fails the competitor test | **cut**, and record the waiver with the competitor set checked |
 | a real competitor with no `Not for:` (`sk-no-boundary`) | **add** the one clause that routes: `Not for: <job> → <command>` |
-| a quoted trigger that looks like sediment | **report**, never cut — `/quenching:components:command:eval <command>` decides it on a measured miss |
+| a quoted trigger that looks like sediment | **report**, never cut — `/quenching-align:components:command:eval <command>` decides it on a measured miss |
 | over a cap (`sk-metadata-cap`, `sk-description-portable`) after all of the above | **report** the residue with its code; a cap is not closed by deleting a trigger |
 
 The competitor test runs **against the surface in hand**: §1's `lint` paths and the descriptions
@@ -262,10 +262,10 @@ In an OKF repo, confirm the registry is indexed, per
 counts go in the report below, not into the bundle.
 Report: passes run; collapsed / renamed / created / flattened / rule+registry created / unroutable /
 flagged; every surviving `sk-*` finding and every `ct-translation-drift` result, by code; §7's doctrine findings, listed
-apart, each with its `/quenching:components:command:new`; and §8's line — descriptions reviewed, edited,
+apart, each with its `/quenching-align:components:command:new`; and §8's line — descriptions reviewed, edited,
 declined; the description-code count before → after from `lint`; every waived boundary with the
 competitor set checked (and its accepted `sk-no-boundary`); and every trigger handed to
-`/quenching:components:command:eval`. **Done when:** `doctor` and `lint` exit 0 or each surviving
+`/quenching-align:components:command:eval`. **Done when:** `doctor` and `lint` exit 0 or each surviving
 finding is named with its code, the second
 `registry reindex` reports `changed: false`, and the counts, the doctrine findings and §8's line
 are reported.
@@ -283,7 +283,7 @@ are reported.
 - Never inventory before the probe, and never treat §7's read-only findings as progress that
   justifies another pass.
 - Never delete a quoted trigger phrase — not for length, not for looking redundant. A trigger
-  retires on a measured miss, which is `/quenching:components:command:eval`'s; here it is reported
+  retires on a measured miss, which is `/quenching-align:components:command:eval`'s; here it is reported
   with that invocation.
 - Never write a `Not for:` clause naming a command that fails the competitor test, and never cut
   one without stating the set that was checked.

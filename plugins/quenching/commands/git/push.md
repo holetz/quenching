@@ -1,12 +1,12 @@
 ---
 description: >-
-  Publish a local branch to a named remote without opening a PR. Use for "push this branch", "push a checkpoint". Not for: PRs → /quenching:git:pr:create; rebasing → /quenching:git:sync.
+  Publish a local branch to a named remote without opening a PR. Use for "push this branch", "push a checkpoint". Not for: PRs → /quenching-specs:git:pr:create; rebasing → /quenching-specs:git:sync.
 disable-model-invocation: true
 argument-hint: [branch|--remote remote branch]
 allowed-tools: Bash(cq:*), Bash(git status:*), Bash(git branch --show-current:*), Bash(git remote:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git log:*), Bash(git reflog:*), Bash(git ls-remote:*), Bash(git push:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
-# /quenching:git:push — publish one branch, without opening a PR
+# /quenching-specs:git:push — publish one branch, without opening a PR
 
 **Input**: `$ARGUMENTS` — omitted means the current branch on `origin`; one positional argument
 names a branch; `--remote <remote> [branch]` names the remote and optionally the branch. A branch
@@ -36,7 +36,7 @@ remote URL, local branch, target ref and base comparison are known, or the refus
 Resolve the local branch and its upstream with `git rev-parse`; inspect the remote ref with
 `git ls-remote`; when it exists, measure ahead/behind with `git rev-list --left-right --count` and
 list the commits to publish with `git log`. A branch behind or divergent from its remote is a
-refusal for `/quenching:git:sync` **unless** `git reflog show <branch>` proves the remote tip was
+refusal for `/quenching-specs:git:sync` **unless** `git reflog show <branch>` proves the remote tip was
 the branch's prior tip and the local commits are the same work after a rebase. That one proven
 case is a lease publication, not a normal push; an unproven divergence remains a refusal. An
 absent remote branch is a new upstream candidate. No commits ahead is an informational no-op.
@@ -66,7 +66,7 @@ publication.
 
 Run only the confirmed normal or lease `git push` command. Preserve Git's failure and output
 verbatim; do not retry with a stronger option. On success, report the new upstream and pushed commits, then name
-`/quenching:git:pr:create` as a possible later action without invoking it. **Done when:** the push
+`/quenching-specs:git:pr:create` as a possible later action without invoking it. **Done when:** the push
 succeeded with its remote facts, or its refusal/failure is reported and no bypass was attempted.
 
 ## Invariants

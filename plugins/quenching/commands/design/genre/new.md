@@ -1,12 +1,12 @@
 ---
 description: >-
-  Mint ONE editorial genre under /.design/genres/ with fields, register and medium templates. Use for "create a design genre", "define a deck contract". Not for: whole front → /quenching:design:align.
+  Mint ONE editorial genre under /.design/genres/ with fields, register and medium templates. Use for "create a design genre", "define a deck contract". Not for: whole front → /quenching-design:design:align.
 disable-model-invocation: true
 argument-hint: <genre-name-or-description>
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion
 ---
 
-# /quenching:design:genre:new — one genre, N destinations
+# /quenching-design:design:genre:new — one genre, N destinations
 
 **Input**: `$ARGUMENTS` (one genre name or a short description of it).
 
@@ -20,7 +20,7 @@ This command mints one stable editorial contract. It does not produce an instanc
 Resolve `cq` per
 [tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool and run `design status --json`. An absent or invalid front routes to
-`/quenching:design:align` and stops. Read existing genres and medium templates for name/path
+`/quenching-design:design:align` and stops. Read existing genres and medium templates for name/path
 collisions.
 
 **Done when:** the front is healthy and the proposed genre has no collision.

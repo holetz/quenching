@@ -1,12 +1,12 @@
 ---
 description: >-
-  Build ONE spec task by task: write, verify, self-review, tick, commit. Use for "execute this spec", "build it", "implement the tasks", "continue building". Not for: sharpening → /quenching:specs:develop; closing → /quenching:specs:conclude.
+  Build ONE spec task by task: write, verify, self-review, tick, commit. Use for "execute this spec", "build it", "implement the tasks", "continue building". Not for: sharpening → /quenching-specs:specs:develop; closing → /quenching-specs:specs:conclude.
 argument-hint: [id]
 allowed-tools: Bash(cq:*), Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Task, Skill
 model: sonnet
 ---
 
-# /quenching:specs:execute — build one spec, one task at a time
+# /quenching-specs:specs:execute — build one spec, one task at a time
 
 **Input**: `$ARGUMENTS` — optionally a spec id. Omitted → infer from the conversation, or
 auto-select when exactly one spec is under way; vague or ambiguous → you MUST prompt.
@@ -15,7 +15,7 @@ Builds the `## Tasks` of ONE spec: writing each task, verifying it under the spe
 policy, reviewing its diff, committing it alone, and recording the spec task after that commit.
 
 **This command stops at the last commit.** Reviewing the whole branch, writing the `/docs/` the work
-revealed, merging, and archiving belong to `/quenching:specs:conclude`.
+revealed, merging, and archiving belong to `/quenching-specs:specs:conclude`.
 
 `Bash` is unrestricted: the verification, `cq specs` and Git commands are resolved from the live
 spec. The commit itself is one `cq git commit` call, which commits the existing index.
@@ -97,15 +97,15 @@ this checkout, or `git checkout <work ref>` in it. **Nothing is stamped** — a 
 one exists, is write-once and already true. Declining leaves the run on the base; say plainly that
 the commits will land there.
 
-**On the base branch, with nothing to check out → hand off to `/quenching:git:branch`**, which owns
+**On the base branch, with nothing to check out → hand off to `/quenching-specs:git:branch`**, which owns
 the offer (worktree leading with its cost stated, `worktreeSetup`, the `branch:` record and the
 branch's `quenching-specs:` marking):
 
 ```
-Skill("quenching:git:branch", "<id>")
+Skill("quenching-specs:git:branch", "<id>")
 ```
 
-**When this run's input carried `autonomous`, pass it on** — `Skill("quenching:git:branch", "<id> autonomous")`
+**When this run's input carried `autonomous`, pass it on** — `Skill("quenching-specs:git:branch", "<id> autonomous")`
 — so the command takes the worktree unasked, from the remote base, instead of stopping the run on
 its question. Otherwise it runs its own **AskUserQuestion**; it is a `Skill` call, never `context: fork`. When it returns,
 re-read the state it left:
@@ -162,14 +162,14 @@ of [execution-delegation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execu
   on a yes stamp it `--set by=human` (`cq specs record "<id>" approved --set date=<today> --set
   by=human`). **Never refuse over it.** A no ends the run cleanly.
 - **`next` reports `write_section`** → the ready gate is not met. Name the missing or malformed
-  sections and route to `/quenching:specs:develop <id>`, then stop.
-- **Every task already `- [x]`** → say so and offer to chain into `/quenching:specs:conclude` (step 7).
+  sections and route to `/quenching-specs:specs:develop <id>`, then stop.
+- **Every task already `- [x]`** → say so and offer to chain into `/quenching-specs:specs:conclude` (step 7).
 - **`[!]` blocked tasks** → name them and their reasons up front. They were tried and stopped, not
   skipped.
 
 Mention any open `cq specs validate` warning **once** — `sp-unrefined` (nobody has interrogated
 this spec), `sp-impact-uncovered` (a declared standard no task writes) — and offer
-`/quenching:specs:develop`. Never gate on it: the ready gate is a floor, not a verdict.
+`/quenching-specs:specs:develop`. Never gate on it: the ready gate is a floor, not a verdict.
 **Done when:** the state is in hand, `approved` is settled, and any warning has been surfaced once.
 
 ### 4. Read what the tasks must satisfy
@@ -205,7 +205,7 @@ read the file whole. Reading less is the spec author's assertion, never the exec
 **Nothing scans the folder for a contract nobody declared**
 ([execution-tooling.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-tooling.md)
 §Tooling asides). The gap costs one line when it shows up — `cq specs discover` records it while
-building, and `/quenching:specs:develop` repairs `## Impact`.
+building, and `/quenching-specs:specs:develop` repairs `## Impact`.
 **Done when:** the spec's sections and the declared binding standards are read.
 
 ### 5. Implement tasks — loop until done or blocked
@@ -271,7 +271,7 @@ e. **Then verify, stage, commit and confirm the spec task as ONE chained operati
    The subject is the one the declared-directive layer's table and
    [commit.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md) §Commit messages
    §The subject is the anchor name, resolved from what 5d already loaded — never reload
-   `/quenching:git:commit` per task. Execute stages only the task's declared files, commits that
+   `/quenching-specs:git:commit` per task. Execute stages only the task's declared files, commits that
    index with `cq git commit --subject`, which never stages, amends or skips hooks, then sends the
    subject and sha it reports to `cq specs task --check`:
 
@@ -347,15 +347,15 @@ h. **At a section boundary, keep the task commits, read the session size once, a
    branch is at a clean, independently anchored boundary; another section may still be ahead. Run
    `cq components session context --json` and print its peak and budget in the banner. Exit 0 or 2
    → continue to the next task: the boundary is not a question. Exit 1 → ask once, with
-   **AskUserQuestion**: stop here and resume with `/quenching:specs:execute <id>` in a new session
+   **AskUserQuestion**: stop here and resume with `/quenching-specs:specs:execute <id>` in a new session
    "(Recommended)", the measured peak in its description, or continue. Otherwise stop only when the
    workflow reaches a question that requires a human answer, or under the pause conditions below. See
    [execution-cadence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-cadence.md)
    §The section boundary.
 
-**Pause if:** a task is unclear; implementation reveals a design problem (→ `/quenching:specs:develop`); a
+**Pause if:** a task is unclear; implementation reveals a design problem (→ `/quenching-specs:specs:develop`); a
 task contradicts a `/docs/standards/` contract (surface it and let the human pick — revise the
-standard via `/quenching:knowledge:add`, or the spec via `/quenching:specs:develop`); attempts stop converging; or the user
+standard via `/quenching-align:knowledge:add`, or the spec via `/quenching-specs:specs:develop`); attempts stop converging; or the user
 interrupts.
 **Done when:** every task is `- [x]` or `- [!]`, or the run pauses with the reason stated.
 
@@ -406,20 +406,20 @@ Emit §The report mold. The single-spec header line carries overall progress; th
    commit and the subject recorded for it, and any subject that drifted.
 2. **Blocked** — optional. Each blocked task with its reason.
 3. **Written along the way** — optional. The standards written, and the discoveries recorded,
-   **quoted** as `/quenching:specs:develop` quotes them: the same artifact is owed the same fidelity
+   **quoted** as `/quenching-specs:specs:develop` quotes them: the same artifact is owed the same fidelity
    whichever command wrote it.
 
 Print §The session-size line before the block — `cq components session context --json`, read once; exit 1 turns the `→` line into a recommendation to run the next stage **in a new session**, exit 0 and 2 leave it an offer.
 
 Close on §The next-step block, its recommended line carrying **this spec's id**:
-`/quenching:specs:conclude <id>` at 100%, `/quenching:specs:execute <id>` when the run paused
+`/quenching-specs:specs:conclude <id>` at 100%, `/quenching-specs:specs:execute <id>` when the run paused
 mid-plan.
 
-**At 100%**, after the block, offer once to chain straight into `/quenching:specs:conclude` (the `Skill` tool, which takes
+**At 100%**, after the block, offer once to chain straight into `/quenching-specs:specs:conclude` (the `Skill` tool, which takes
 the registry name): the branch review,
 the emergent `/docs/`, the merge, and the archive-time distillation. Declined → the block already
 named the command, so stop. Over budget (the session-size line's exit 1) → the offer's first option,
-"(Recommended)", is to run `/quenching:specs:conclude <id>` in a new session, the measured peak in
+"(Recommended)", is to run `/quenching-specs:specs:conclude <id>` in a new session, the measured peak in
 its description; chaining here stays an option. Paused → say why and wait.
 **Done when:** the summary is shown and the hand-off has been offered or declined.
 
@@ -459,7 +459,7 @@ each is absolute. The three whose failure is **silent and permanent**:
 
 - Require a clean tree before the first code change; **isolated means this checkout is ON the work
   ref**, never that the ref exists somewhere — and where it is not, offer to take a live ref inline
-  or hand off to `/quenching:git:branch` to cut one, recommending isolation either way and never
+  or hand off to `/quenching-specs:git:branch` to cut one, recommending isolation either way and never
   imposing it.
 - Drive off `cq specs status` / `next` / `task` and their exit codes. Never assume a path, never
   choose the next task by reading `## Tasks`, and never hand-edit a `- [ ]` / `- [x]` character.
@@ -482,8 +482,8 @@ each is absolute. The three whose failure is **silent and permanent**:
   §Delegating an executor (declares `files:`, touches no `/docs/`, pinned to the session model —
   **never `haiku`**), and run two tasks in parallel only when `cq specs parallel` reports the `[P]`
   group eligible.
-- Never review the whole branch, merge, or archive from here — that is `/quenching:specs:conclude`.
+- Never review the whole branch, merge, or archive from here — that is `/quenching-specs:specs:conclude`.
 - Keep changes minimal and scoped to each task; pause on errors, blockers, or unclear requirements
   rather than guessing.
 - **Route other durable learning to its OKF home**: an insight worth keeping beyond this spec goes
-  through `/quenching:knowledge:learn` / `/quenching:knowledge:add` / `/quenching:knowledge:define` — offered, never auto-written.
+  through `/quenching-align:knowledge:learn` / `/quenching-align:knowledge:add` / `/quenching-align:knowledge:define` — offered, never auto-written.

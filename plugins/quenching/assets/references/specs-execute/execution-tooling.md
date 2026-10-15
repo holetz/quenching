@@ -9,7 +9,7 @@ context, loaded only when a command needs to explain one of those choices.
 
 <!-- rationale -->
 
-`/quenching:specs:execute` is the one `/quenching:specs:*` command that runs the target repo's own toolchain
+`/quenching-specs:specs:execute` is the one `/quenching-specs:specs:*` command that runs the target repo's own toolchain
 — build, tests, linters, migrations, and `git` — as part of implementing a task. Its siblings are
 scoped to `python3`/`py` because they only ever talk to `cq specs`.
 
@@ -44,7 +44,7 @@ The mirror image of the line above. `cq specs validate` already warns when a dec
 no task (`sp-impact-uncovered`); the inverse — a binding standard nobody declared — is not
 derivable, because deciding a standard governs a task is reading, not parsing. Every approximation
 of it has to re-read the folder to have something to warn about, which is the cost
-`/quenching:specs:execute` step 4 removed by reading only the declared files.
+`/quenching-specs:specs:execute` step 4 removed by reading only the declared files.
 
 ### Why the spec's author declares the policy
 
@@ -163,8 +163,8 @@ cannot present the mid-flow confirmations every sweep depends on — the convers
 human's OK would be out of reach.
 
 Dispatching a `Task` for a bounded, file-scoped unit of work does the opposite: **the orchestrator
-stays in the live conversation**, exactly where `/quenching:knowledge:glossary-backfill` and
-`/quenching:knowledge:import` already dispatch from. One moves the decision-maker out of reach; the
+stays in the live conversation**, exactly where `/quenching-align:knowledge:glossary-backfill` and
+`/quenching-align:knowledge:import` already dispatch from. One moves the decision-maker out of reach; the
 other sends a worker out and keeps the decision-maker in place. They are different mechanisms
 about different things, and no future sweep should "fix" one into the other.
 

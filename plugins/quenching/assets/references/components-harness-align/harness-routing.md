@@ -1,8 +1,8 @@
 # Harness routing — from a CLAUDE.md/AGENTS.md unit to its OKF home
 
-How `/quenching:components:harness:align` decides, for each unit of a harness file, whether it **stays** (harness-
+How `/quenching-align:components:harness:align` decides, for each unit of a harness file, whether it **stays** (harness-
 operational) or **moves** into an OKF home (durable knowledge). Once a unit is routed to a home it
-is filed exactly as `/quenching:knowledge:add` would — see
+is filed exactly as `/quenching-align:knowledge:add` would — see
 [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md) for the
 `type`/mold/path shape and the index/log procedure, and
 [knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md) for the
@@ -56,7 +56,7 @@ units.
 | architecture description / module map | **MOVE** | `standards/architecture/` (`standard`; unproven ⇒ `authority: background`), or `concepts/<subject>/` (`concept`) if non-binding |
 | coding / naming conventions | **MOVE** | `standards/code/` · `standards/naming/` (`standard`) |
 | "we chose X because Y" — agreed / proven | **MOVE** | `standards/` (`standard`; agreed-but-unproven ⇒ `authority: background`, proven ⇒ `current`) — no separate decision home |
-| roadmap / TODO / next-steps item (raw, unscoped) | **MOVE** | a spec in `specs/plans/` (via `/quenching:specs:create`, outside the OKF bundle — unranked until `/quenching:specs:triage` says otherwise), or `vision/` (`vision`) for settled direction with no deadline |
+| roadmap / TODO / next-steps item (raw, unscoped) | **MOVE** | a spec in `specs/plans/` (via `/quenching-specs:specs:create`, outside the OKF bundle — unranked until `/quenching-specs:specs:triage` says otherwise), or `vision/` (`vision`) for settled direction with no deadline |
 | step-by-step procedure / onboarding | **MOVE** | `how-to/` (`documentation`) |
 | facts about an external tool / lib / service | **MOVE** | `external/{tools,libraries,regulations}/` (`external`) |
 | domain concept / glossary term | **MOVE** | `concepts/<subject>/` (`concept`) |
@@ -71,7 +71,7 @@ line beginning `Ephemeral writes:` and carrying exactly one path plus this citat
 `Ephemeral writes: <path> — the contract is /docs/standards/agents/ephemeral-writes.md`.
 Preserve it verbatim; never classify it MOVE or DEDUPE.
 
-**Tie-breakers** are `/quenching:knowledge:add`'s — see
+**Tie-breakers** are `/quenching-align:knowledge:add`'s — see
 [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md).
 
 ## 5. Pointer-honesty checklist (the step-8 verify gate)
@@ -112,7 +112,7 @@ The validator won't check harness files, so this skill does:
   `site-packages`/vendored dependency trees, and anything gitignored as a build artifact (verify
   with `git check-ignore`). A folder that only holds data or
   output earns no harness.
-- `/quenching:knowledge:align`'s skeleton already owns `docs/standards/CLAUDE.md`.
+- `/quenching-align:knowledge:align`'s skeleton already owns `docs/standards/CLAUDE.md`.
 
 ## 7. AGENTS.md
 

@@ -1,11 +1,11 @@
 ---
 description: >-
-  Sweep the whole bundle to backfill glossary.md with missing terms. Use for "backfill the glossary", "find terms we never added". Not for: one term → /quenching:knowledge:define.
+  Sweep the whole bundle to backfill glossary.md with missing terms. Use for "backfill the glossary", "find terms we never added". Not for: one term → /quenching-align:knowledge:define.
 argument-hint: [optional-home-scope]
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Write, Edit, Task, AskUserQuestion
 ---
 
-# /quenching:knowledge:glossary-backfill — backfill the glossary from the whole bundle
+# /quenching-align:knowledge:glossary-backfill — backfill the glossary from the whole bundle
 
 **Input**: `$ARGUMENTS` (an optional home/slice to scope the sweep; omit to scan the whole bundle).
 
@@ -13,21 +13,21 @@ Sweeps the canonical OKF bundle's **entire** `/docs/` tree for repo-specific ter
 [`/docs/glossary.md`](/docs/glossary.md), and backfills them in one
 consolidated pass. This is a **retroactive, whole-bundle** sweep, not a capture: it never
 writes a `concepts/` concept doc and never asks the human what a term means — those stay
-`/quenching:knowledge:learn`'s job. The glossary format and the shared **Enriching the glossary**
-procedure live with `/quenching:knowledge:add`
+`/quenching-align:knowledge:learn`'s job. The glossary format and the shared **Enriching the glossary**
+procedure live with `/quenching-align:knowledge:add`
 ([knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)); the
-`type` vocabulary and conformance rules with `/quenching:knowledge:align`
+`type` vocabulary and conformance rules with `/quenching-align:knowledge:align`
 ([knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md),
 [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)). The fan-out convention
 (bounded recon, sliced `Task` agents, compact partials, one merged plan) follows
-`/quenching:knowledge:import-memory`, the only other skill in this plugin that uses `Task`.
+`/quenching-align:knowledge:import-memory`, the only other skill in this plugin that uses `Task`.
 
 ## Workflow
 
 ### 1. Locate the glossary and read the baseline
 Find `/docs/glossary.md` — the bundle root is the fixed `/docs/` convention. If the
 `concepts/` home or the glossary seed is missing, stop and offer
-`/quenching:knowledge:align` to install the skeleton, then stop; do not resume in the same run. Read the current entries once — this
+`/quenching-align:knowledge:align` to install the skeleton, then stop; do not resume in the same run. Read the current entries once — this
 is the dedupe baseline every slice's candidates get checked against.
 **Done when:** the glossary path and baseline are resolved, or the missing-bundle handoff is reported.
 
@@ -94,4 +94,4 @@ glossary passes the conformance and link checks.
 - Never blindly descend into `catalog/**` or `external/repositories/**` — list-only by
   default, reported as excluded, opt-in only.
 - Never author a `concepts/` concept doc or ask the human what a term means — that is
-  `/quenching:knowledge:learn`'s job, not this skill's.
+  `/quenching-align:knowledge:learn`'s job, not this skill's.

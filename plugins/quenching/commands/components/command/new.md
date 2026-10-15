@@ -1,11 +1,11 @@
 ---
 description: >-
-  Mint or edit ONE command in .claude, one file per entry point. Use for "create a command", "mint a command for X". Not for: agents → /quenching:components:agent:new; hooks → /quenching:components:hook:new.
+  Mint or edit ONE command in .claude, one file per entry point. Use for "create a command", "mint a command for X". Not for: agents → /quenching-align:components:agent:new; hooks → /quenching-align:components:hook:new.
 argument-hint: [skill-name-or-description]
 allowed-tools: Bash(cq:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
 ---
 
-# /quenching:components:command:new — mint ONE conformant command, registry included
+# /quenching-align:components:command:new — mint ONE conformant command, registry included
 
 **Input**: `$ARGUMENTS` (the command to create or edit — a name or a description of what it should do).
 
@@ -30,7 +30,7 @@ Molds live at
   never created without the OK.
 - **No bundle, no tail — but the mint proceeds.** `/docs/index.md` without `okf_version`
   (or absent) means: write the command file only, skip registry/glossary, report that the bundle
-  tail did not apply, and suggest `/quenching:knowledge:align` **once**.
+  tail did not apply, and suggest `/quenching-align:knowledge:align` **once**.
 - **One plan, one OK, nothing before.** Classification, names, every file to be written,
   and the OKF tail appear in ONE plan; no file is created or modified before the single
   confirmation. A declined plan writes nothing.
@@ -53,7 +53,7 @@ Resolve `cq components` per
 Read `/docs/standards/automation/skills.md` and confirm the bundle
 (`/docs/index.md` carries `okf_version`). Rule present → it governs. Rule absent, bundle
 present → add "create the rule from `automation/skills-standard.md`" to the plan. No
-bundle → note the tail as skipped and plan the `/quenching:knowledge:align` suggestion.
+bundle → note the tail as skipped and plan the `/quenching-align:knowledge:align` suggestion.
 **Done when:** the governing rule (or its planned creation, or the no-bundle note) is fixed.
 
 ### 2. Classify — category first, then the axis
@@ -151,7 +151,7 @@ test, sediment, sprawl, positive prescription — is still read by eye against
 So this step, not a later one, owns the functional proof: **where the repo ships a harness that
 spawns a fresh session and asserts on captured tool calls, run it now** — scoped to what this mint
 changed. In this plugin that is
-`assets/checks/functional-checks.sh` (default subset for a body; `/quenching:components:command:eval` for a description).
+`assets/checks/functional-checks.sh` (default subset for a body; `/quenching-align:components:command:eval` for a description).
 **Where the repo ships none, say plainly that the command is written but unproven until a fresh
 session** — never report a linter's exit 0 as evidence that the surface loaded.
 

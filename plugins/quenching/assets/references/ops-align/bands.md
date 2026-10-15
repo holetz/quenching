@@ -54,9 +54,9 @@ The command is part of the report so the owner can act without guessing what the
 
 | Code | Evidence to report | Closing command to name |
 | --- | --- | --- |
-| `op-unarmed-write` | The entry point reaches a write-capable session or client without a preview and explicit arming decision. | The target owner's reviewed entry-point change, or `quenching:ops:entrypoint:new` when the entry point is being reminted. |
-| `op-disabled-check` | The commented verification call, its entry-point control-flow location, and the choice to re-enable or explicitly declare it off. | The target owner's reviewed verification change, or `quenching:ops:entrypoint:new` when the entry point is being reminted. |
-| `op-orphan` | The entry point's path, lifecycle declaration, and why it is not reachable from the canonical router. | The target owner's reviewed router, lifecycle, or archive change, or `quenching:ops:entrypoint:new` when the entry point is being reminted. |
+| `op-unarmed-write` | The entry point reaches a write-capable session or client without a preview and explicit arming decision. | The target owner's reviewed entry-point change, or `quenching-ops:ops:entrypoint:new` when the entry point is being reminted. |
+| `op-disabled-check` | The commented verification call, its entry-point control-flow location, and the choice to re-enable or explicitly declare it off. | The target owner's reviewed verification change, or `quenching-ops:ops:entrypoint:new` when the entry point is being reminted. |
+| `op-orphan` | The entry point's path, lifecycle declaration, and why it is not reachable from the canonical router. | The target owner's reviewed router, lifecycle, or archive change, or `quenching-ops:ops:entrypoint:new` when the entry point is being reminted. |
 
 The command named in this table is a hand-off, not an instruction for the align to execute. A
 judgement finding remains open until its owner has made and verified the operational decision.

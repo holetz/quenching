@@ -5,7 +5,7 @@ question, or reads a doctrine or standard to obey part of it, pays for what it r
 that follows. This file states the two rules that keep that payment proportional to the question
 being answered, cited by `${CLAUDE_PLUGIN_ROOT}` from wherever a command needs them.
 
-Measured on one real `/quenching:specs:develop` session (`renomear-docs-para-knowledge`, backend
+Measured on one real `/quenching-specs:specs:develop` session (`renomear-docs-para-knowledge`, backend
 `github`): raw evidence was 36.6% of the ~58k tokens ingested — one `grep` alone returned 14,252
 chars to produce an eight-line table — and whole-reference reads were 20.2%. Neither number is the
 rule; both are why it was written down.
