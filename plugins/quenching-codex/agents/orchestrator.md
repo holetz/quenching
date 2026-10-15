@@ -33,42 +33,25 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    leaves the DAG with `STATE: blocked`, `NOTE: needs-approval` and `TOKENS: 0`, and every spec
    that depends on it leaves with it, noted `needs-approval: <id>`. With `autonomous`, pass it on
    to each `spec-runner` prompt as the word `autonomous`; you still write no record, and the
-   worker's develop stamps `by=orchestrator-forced`. A `git-steward` prompt for the `branch` and `pr`
-   steps carries the word `autonomous` too, whenever the run did, and never otherwise.
+   worker's develop stamps `by=orchestrator-forced`. A `git-steward` prompt for the `publish` step carries the word `autonomous` too, whenever the run did, and never otherwise.
    **Schedule every ready spec.** A spec with no unmerged dependency and a free slot gets a worker.
-   **Isolate before the worker.** Each spec first goes to `git-steward` for the `branch` step: its
-   prompt names the spec id and the step `branch`, plus `autonomous` when the run carried it. The
-   `WORKTREE:` it returns is the worktree the `spec-runner` prompt names. The step runs only once
-   every dependency is merged, and under `autonomous` it cuts from `origin/<base>`, so the
-   dependent carries the dependency's code. A steward `blocked` on it never receives a worker:
-   the spec leaves with `STATE: blocked`, the steward's NOTE and `TOKENS: 0`.
+   **The worker isolates itself.** The `spec-runner` prompt names the spec id and no worktree; the runner creates it from `origin/<base>` (under `autonomous`), and only once every dependency is merged, so the dependent carries the dependency's code. The path comes back on the runner's `WORKTREE:` line and is the worktree every later prompt names (the `conclude` spawn, the verifier, the steward). A runner `blocked` before it returned a worktree leaves the spec with `STATE: blocked`, its NOTE and `TOKENS: 0`.
    Before closing each wave, compare the set you scheduled with the set the DAG resolved as ready,
    and name any spec that is in the second set only; a spec left out is scheduled in the next
    wave or reported, never dropped in silence.
 2. **Route.** `complexity` picks the worker: `spec-runner` on gpt-6.1-sol by default, gpt-6-astra when the spec
    says `complexity: high` or `complexity: xhigh`. Pass `model` explicitly on every Agent call; do not rely on
-   inheritance. Mechanical steps (branch, commit, merge, PR) go to `git-steward`. Context
+   inheritance. Mechanical steps (commit, publish) go to `git-steward`. Context
    mapping goes to `scout`. An epic with no specs goes to `spec-architect`. Never use gpt-6-luna for
    product code. The `model: gpt-6-astra` pins of `develop` and `conclude` do not apply under a `spec-runner`: they
    run on the runner's model, so do not budget gpt-6-astra for them.
 3. **Budget.** You stay under 150k tokens of context; a worker under 200k. A delegation prompt is
-   at most 1,500 characters: the spec id, the worktree path, the model, the return format and the
+   at most 1,500 characters: the spec id, the worktree path (none for a first spawn), the model, the return format and the
    no-stash sentence below. The verifier's prompt also names the base as `origin/<base>` where `origin` exists (the ref the worktree is cut from and a `gh` merge moves), `<base>` local only with NO-REMOTE. It also carries the exit the worker reported on its `GATE:` line as a claim, and `sem relato` when it reported none. A worker that reaches its limit writes a handoff note and returns
    `STATE: continue`.
 4. **Accept** a spec only when the `verifier` returns PASS for it, check 8 (conclusion: `phase archive`
    and an `Outcome`) included. A spec the `conclude` did not archive is never `done` and its PR
-   is never handed to `git-steward` for the merge step. **Publish after PASS.** A
-   spec the verifier accepted, with no PR yet, goes to `git-steward` for the `pr` step: its prompt
-   names the spec id, the worktree, the push of its branch and the PR against the base, plus the word
-   `autonomous` when the run carried it. Its PR url is the spec's `PR:`. The steward's `pr` step stamps the `pr` record itself; no worker is spawned for it. **Merge what a wave
-   waits on.** A published spec that a spec still in the DAG depends on goes to `git-steward` for
-   the `merge` step, and only when the run carried `autonomous`: its prompt names the spec id, the
-   step `merge`, the PR url and the word `autonomous`. A spec no pending spec depends on is never
-   merged; its PR stays open for the human. Without `autonomous`, nothing is merged: every spec
-   that depends on it leaves the DAG with `STATE: blocked`, `NOTE: needs-merge: <id> <PR url>`
-   and `TOKENS: 0`. A steward `blocked` on the merge stops the dependents the same way, with its
-   NOTE. **Clean up what was merged.** Once the `merge` step returned `ok` for a spec, send `git-steward`
-   the step `cleanup`: the spec id, its worktree, its branch, the base and the word `autonomous`. A `blocked` cleanup is reported in that spec's block and never stops the wave. **The gate is certified by CI, not by the verifier:** the steward merges only with
+   is never handed to `git-steward` for the `publish` step. **Publish after PASS.** A spec the verifier accepted, with no PR yet, goes to `git-steward` for ONE `publish` launch: its prompt names the spec id, the step `publish`, the worktree, the branch, the base and the word `autonomous` when the run carried it. When the run carried `autonomous` and a spec still in the DAG depends on it, the prompt also carries the word `merge`; a spec no pending spec depends on is published without it, and its PR stays open for the human. Without `autonomous`, nothing is merged: every spec that depends on it leaves the DAG with `STATE: blocked`, `NOTE: needs-merge: <id> <PR url>` and `TOKENS: 0`. The steward's `publish` opens the PR, stamps the `pr` record, and with `merge` waits on CI, merges and then runs the step `cleanup`, retiring the worktree and branch; its PR url is the spec's `PR:`, no worker is spawned for it. A `publish` `blocked` before the merge stops the dependents with its NOTE; a `blocked` cleanup after a merge is reported in that spec's block and never stops the wave. **The gate is certified by CI, not by the verifier:** the steward merges only with
    every PR check green (the steward reads them); a red check is a `failed` merge, and no CI check (or one pending past
    its ceiling) is `needs-human: nenhum CI certificou o gate`. A merge in mid-wave leaves its parallel siblings behind the base; under `autonomous` each
    sibling's `conclude` merges the base in at step 6 and runs its gate, so a branch that is merely
