@@ -94,6 +94,10 @@ class FrontKernel(unittest.TestCase):
         self.assertEqual(resolve_root(None), str(pathlib.Path.cwd()))
 
 
+def bash_commands(transcript):
+    return " ".join(call for tool, call in transcript if tool == "Bash")
+
+
 class AlignCleanPath(unittest.TestCase):
     def test_conformant_fixture_stops_after_two_calls_before_inventory(self):
         """The clean branch proves the probe-first stop, not just a prose substring.
@@ -147,7 +151,15 @@ class AlignCleanPath(unittest.TestCase):
                 ("Bash", probe),
             ]
             self.assertEqual(len(transcript), 2)
-            self.assertNotIn("inventory", " ".join(call for _, call in transcript))
+            self.assertNotIn("inventory", bash_commands(transcript))
+
+    def test_read_path_containing_inventory_is_not_an_inventory_call(self):
+        body_path = "/work/quenching-inventory/plugins/quenching/commands/ops/align.md"
+        probe = 'cq --root "$TARGET_ROOT" ops doctor --json'
+        clean = [("Read", body_path), ("Bash", probe)]
+        self.assertNotIn("inventory", bash_commands(clean))
+        called = clean + [("Bash", 'cq --root "$TARGET_ROOT" ops inventory --json')]
+        self.assertIn("inventory", bash_commands(called))
 
 
 class AlignThreeBands(unittest.TestCase):
