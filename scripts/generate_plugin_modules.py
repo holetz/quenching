@@ -233,8 +233,10 @@ def main(argv: list[str] | None = None) -> int:
                       if m["published"] and "owned" in m]
         # Preflight the complete plan, including published surfaces, before any file mutation.
         findings = published_findings(ROOT, manifest)
-        findings += [line for module, tree in consumers if "owned" in module
-                     for line in closure_findings(ROOT, manifest, module, tree)]
+        # Planned principal modules are proved closed too, in memory, before they are activated.
+        findings += [line for module in manifest["modules"] if "owned" in module
+                     for line in closure_findings(ROOT, manifest, module,
+                                                  principal_tree(ROOT, manifest, module))]
         drift = [line for module, tree in consumers for line in differences(ROOT, module, tree)]
         if args.check:
             if findings or drift:

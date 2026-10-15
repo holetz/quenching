@@ -74,7 +74,7 @@ against the word's plain reading.
 nothing to derive from, and the two errors are not symmetric: `low` is a positive claim — *this can
 run unattended, and the pass may stamp the go itself* — and it is the one that costs when it is
 wrong. Guessing upward costs a refine pass nobody asked for; guessing downward costs a spec built
-on nobody's word ([triage.md](${CLAUDE_PLUGIN_ROOT}/commands/specs/triage.md) states the same asymmetry for a ranked
+on nobody's word (`/quenching-specs:specs:triage` states the same asymmetry for a ranked
 row's floor).
 
 **Every defining stage reads the level from a payload it already fetches.** `cq specs status --spec

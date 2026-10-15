@@ -157,9 +157,12 @@ class EnabledModules(unittest.TestCase):
         enabled = ("quenching-specs", "quenching-design")
         run = self.cq("design", "--help", enabled=enabled)
         self.assertEqual(0, run.returncode, run.stderr)
-        rows = {row["name"]: row["enabled"]
+        rows = {row["name"]: row
                 for row in json.loads(self.cq("modules", "--json", enabled=enabled).stdout)["modules"]}
-        self.assertTrue(rows["quenching-design"])
+        self.assertTrue(rows["quenching-design"]["enabled"])
+        self.assertEqual(str(self.roots["quenching-design"].resolve()),
+                         str(pathlib.Path(rows["quenching-design"]["root"]).resolve()))
+        self.assertIsNone(rows["quenching-security"]["root"])
 
     def test_a_module_of_another_version_is_not_loaded(self):
         version = self.roots["quenching-design"] / "VERSION"
