@@ -180,13 +180,28 @@ def source_digest() -> str:
     return digest.hexdigest()
 
 
+def module_owners() -> dict[str, str]:
+    """Command head -> owning module, from the distribution's own module manifest."""
+    data = json.loads((payload_root() / "assets" / "modules.json").read_text(encoding="utf-8"))
+    return {rel.removesuffix(".md"): module["name"] for module in data["modules"]
+            for rel in module.get("owned", {}).get("commands", [])}
+
+
 def transform_platform(text: str, adaptation: dict) -> str:
     neutral_marker = "\x00QUENCHING_PLATFORM_NEUTRAL_CLAUDE_CODEX\x00"
     text = text.replace(PLATFORM_NEUTRAL_CLAUDE_CODEX, neutral_marker)
     for old, new in adaptation["replacements"].items():
         text = text.replace(old, new)
-    text = re.sub(r"/quenching:([A-Za-z0-9:-]+)",
-                  lambda match: "quenching-" + match.group(1).replace(":", "-"), text)
+    owners = module_owners()
+
+    def skill_id(match: re.Match) -> str:
+        module, ident = match.group(1), match.group(2)
+        if owners.get(ident.split(":", 1)[0]) != module:
+            raise ValueError(f"no module owns /{module}:{ident}")
+        return "quenching-" + ident.replace(":", "-")
+
+    # Codex ships one plugin, so the module that owns a front leaves the skill id.
+    text = re.sub(r"/(quenching-[a-z]+):([A-Za-z0-9:-]+)", skill_id, text)
     text = text.replace("Claude Code", "Codex").replace("Claude", "Codex")
     text = text.replace(neutral_marker, PLATFORM_NEUTRAL_CLAUDE_CODEX)
     for marker in FORBIDDEN_AFTER_TRANSLATION:
