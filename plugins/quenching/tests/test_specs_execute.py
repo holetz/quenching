@@ -211,6 +211,19 @@ class TaskExecutionContractTests(unittest.TestCase):
         self.assertIn("with `model` passed explicitly", orchestrator)
         self.assertIn("call the `verifier` only after it returns", orchestrator)
 
+    def test_orchestration_reads_scheduling_records_from_status(self):
+        for carrier in ("agents/orchestrator.md", "commands/specs/orchestrate.md"):
+            with self.subTest(carrier=carrier):
+                text = (ROOT / "plugins/quenching" / carrier).read_text(encoding="utf-8")
+                flat = " ".join(re.sub(r"[`*_]", "", text).split())
+                self.assertIn("cq specs status --spec <id> --json", flat)
+                self.assertIn("records.priority.complexity", flat)
+                self.assertIn("records.approved", flat)
+                self.assertIn("cq specs show --spec <id> --json", flat)
+                self.assertNotRegex(flat, r"Read complexity and approved from each spec's show")
+                self.assertNotIn("Split the set from the show payloads", flat)
+                self.assertNotIn("show --full", flat)
+
     def test_explicit_subject_commits_only_staged_files(self):
         with tempfile.TemporaryDirectory() as directory:
             git(directory, "init", "-q", "-b", "main")
