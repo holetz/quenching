@@ -44,6 +44,8 @@ Report one compact table:
 | `advisory-dependency-configuration` | `present`/`missing`/`refused` | recognized advisory configuration paths |
 | `access-ownership` | `present`/`missing` | recognized ownership declaration paths, never owner values |
 
+Then report the payload's `controls` block — each catalog control id, its requirement ids with `present`, `missing`, `not-measured`, `refused` or `retired`, and the evidence paths. `present` is candidate evidence, never conformance; the block never changes `ok` or the exit code.
+
 Preserve every question key, state, evidence path and detail returned by the route. Distinguish a
 missing declaration from a source that was not measurable or was refused. Preserve the payload's
 `readOnly` and `writePolicy` values: the pillar read workflow permissions, ignore patterns,
