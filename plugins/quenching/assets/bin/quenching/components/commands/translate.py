@@ -183,16 +183,70 @@ def source_digest() -> str:
 def transform_platform(text: str, adaptation: dict) -> str:
     neutral_marker = "\x00QUENCHING_PLATFORM_NEUTRAL_CLAUDE_CODEX\x00"
     text = text.replace(PLATFORM_NEUTRAL_CLAUDE_CODEX, neutral_marker)
+    text = text.replace(".claude/quenching.json", "\x00SHARED_CONFIG\x00")
+    text = text.replace("~/.claude/projects/", "\x00SOURCE_MEMORY_ROOT\x00")
+    text = text.replace("Claude Code memory", "\x00SOURCE_MEMORY_NAME\x00")
+    text = text.replace("Claude Code project memory", "\x00SOURCE_PROJECT_MEMORY_NAME\x00")
     for old, new in adaptation["replacements"].items():
         text = text.replace(old, new)
     text = re.sub(r"/quenching:([A-Za-z0-9:-]+)",
                   lambda match: "quenching-" + match.group(1).replace(":", "-"), text)
     text = text.replace("Claude Code", "Codex").replace("Claude", "Codex")
     text = text.replace(neutral_marker, PLATFORM_NEUTRAL_CLAUDE_CODEX)
+    text = text.replace("\x00SHARED_CONFIG\x00", ".claude/quenching.json")
+    text = text.replace("\x00SOURCE_MEMORY_ROOT\x00", "~/.claude/projects/")
+    text = text.replace("\x00SOURCE_MEMORY_NAME\x00", "Claude Code memory")
+    text = text.replace("\x00SOURCE_PROJECT_MEMORY_NAME\x00", "Claude Code project memory")
     for marker in FORBIDDEN_AFTER_TRANSLATION:
         if marker in text:
             raise ValueError(f"untranslated platform marker: {marker}")
     return text
+
+
+def transform_codex_runtime(text: str, adaptation: dict) -> str:
+    """Adapt executable Markdown, keeping code examples and source runtime pins intact."""
+    models = adaptation["runtime"]["models"]
+    # Fenced fixtures and historical snippets are data. Agent YAML frontmatter is active.
+    pieces = re.split(r"(```[^\n]*\n[\s\S]*?```)", text)
+    for index in range(0, len(pieces), 2):
+        pieces[index] = re.sub(r"\b(opus|sonnet|haiku)\b",
+                               lambda match: models[match.group()], pieces[index])
+        pieces[index] = pieces[index].replace("`TaskStop`", "the host's interrupt-agent tool")
+    text = "".join(pieces)
+    text = re.sub(r"8\. \*\*Telemetry\.\*\*[\s\S]*?(?=\n## Hard prohibitions)",
+        "8. **Telemetry.** Record host-provided usage per Codex model and agent role, never sum "
+        "tiers. If the host exposes no token telemetry, report `not measured`; never invoke "
+        "Claude transcript/session tools or infer tokens from output length. Audit launched roles "
+        "from host agent metadata; state when that audit could not run.\n", text)
+    text = text.replace("read with\n`cq components session cost`", "from host-provided Codex telemetry (otherwise `not measured`)")
+    text = text.replace("fresh `claude -p`", "fresh Codex host sessions")
+    text = text.replace(", Bash(cq components session cost:*)", "")
+    text = text.replace("for `claude --agent`", "for the source platform's top-level agent launcher")
+    text = text.replace("A worker with no activity for more than **20 min** (its transcript's mtime) and no\n  live child process is stopped with the host's interrupt-agent tool and relaunched **once**.",
+        "A worker confirmed inactive for more than **20 min** through host activity/status metadata "
+        "and with no active work is interrupted through the host tool and relaunched **once**. "
+        "If the host cannot expose activity or active-work evidence, report liveness as unmeasured; "
+        "do not infer a stall or restart from silence alone.")
+    return text
+
+
+def codex_runtime_policy(adaptation: dict) -> str:
+    models = adaptation["runtime"]["models"]
+    return ("## Codex runtime\n\n"
+        "Use Codex host sub-agents only. Never launch Claude CLI, request Claude models, or "
+        "fall back to Claude during a Codex run. The Claude source may separately delegate "
+        "development to Codex. Read each named agent protocol and pass its role, prohibitions, "
+        "model and effort to the host's spawn-agent tool; protocol files are not automatically "
+        "registered agent types. Use host messaging, completion notifications and interrupt tools "
+        "for lifecycle management. If delegation is unavailable, report the limitation; do not "
+        "silently replace required independent verification with self-review.\n\n"
+        f"Tier mapping: opus → `{models['opus']}`; sonnet → `{models['sonnet']}`; "
+        f"haiku → `{models['haiku']}`. Preserve declared effort. Pass model explicitly; "
+        "when the host requires a fresh context for model overrides, use that mode and include "
+        "the necessary brief and protocol. Never use gpt-6-luna for product code or "
+        "import-memory classification/executor roles. Report tokens per model and role only "
+        "when host telemetry provides them; otherwise `not measured`. Claude session logs and "
+        "`cq components session cost` do not measure this Codex run.\n\n")
 
 
 def has_cq_invocation(text: str) -> bool:
@@ -374,7 +428,34 @@ def transform_asset(relative: Path, text: str, adaptation: dict) -> str:
     # and paths it must recognize when it runs again from the generated plugin.
     if relative.as_posix() == "quenching/components/commands/translate.py":
         return text
+    if relative.as_posix() == "quenching/session/commands/cost.py":
+        return '\n'.join([
+            '"""Generated Codex refusal: source transcript tokens cannot measure this host."""',
+            'from quenching.common.output import refuse', '',
+            'def cmd_cost(args) -> int:',
+            '    return refuse({"code": "se-codex-telemetry-unavailable",',
+            '                   "message": "Codex token usage not measured: use host telemetry when available; source transcript accounting is unsupported."}, args.json)',
+            '',
+        ])
+    if relative.suffix == ".md":
+        text = transform_codex_runtime(text, adaptation)
     text = transform_platform(text, adaptation)
+    if relative.as_posix() == "functional-checks.sh":
+        return """#!/usr/bin/env bash
+# Generated Codex adapter: source stream-json checks require the source host.
+# No Claude subprocess is permitted during a Codex run.
+set -uo pipefail
+case "${1:-}" in
+  --selfcheck)
+    printf '%s\\n' 'PASS: generated Codex adapter launches no external model runtime'
+    exit 0 ;;
+  -h|--help)
+    printf '%s\\n' 'Codex surface-load measurement unavailable; exit 2 is inconclusive.'
+    exit 0 ;;
+esac
+printf '%s\\n' 'INCONCLUSIVE: no Codex surface-load capture harness is implemented; no model was launched.' >&2
+exit 2
+"""
     if relative.as_posix() in {"citation-check.sh", "functional-checks.sh"}:
         # The packaged Claude checks live four levels below the repository root;
         # their Codex siblings live three levels below it.
@@ -393,6 +474,8 @@ def transform_asset(relative: Path, text: str, adaptation: dict) -> str:
         text = codex_tool_resolution(text)
     if relative.suffix == ".md":
         text = transform_codex_markdown(text)
+        if relative.name in {"orchestrator.md", "scout.md", "spec-runner.md", "spec-architect.md", "verifier.md", "git-steward.md"}:
+            text += "\n" + codex_runtime_policy(adaptation)
     if relative.as_posix() != "quenching/components/surface.py":
         return text
     start = text.index("def discover_commands(")
@@ -464,7 +547,16 @@ def command_to_skill(command: Path, adaptation: dict) -> str:
     header = ("---\n" + f"name: {fields['name']}\n" +
               f"description: {json.dumps(transform_platform(skill_description(fields['description']), adaptation), ensure_ascii=False)}\n" +
               f"---\n\n<!-- GENERATED FROM {origin} -->\n\n")
-    return header + transform_codex_markdown(transform_platform(raw[end + len("\n---\n"):], adaptation))
+    pin = re.search(r"^model: (opus|sonnet|haiku)$", raw[4:end], re.MULTILINE)
+    preference = ("Preferred model: `" + adaptation["runtime"]["models"][pin.group(1)] + "`.\n\n") if pin else ""
+    effort = re.search(r"^effort: ([a-z]+)$", raw[4:end], re.MULTILINE)
+    if command.name == "import-memory.md":
+        preference += ("Memory input: existing Claude-format project memory data under `~/.claude/projects/`; "
+                       "reading this data does not launch Claude. No Codex memory layout is assumed.\n\n")
+    if effort:
+        preference += "Declared effort: `" + effort.group(1) + "`.\n\n"
+    return header + "<!-- CODEX RUNTIME START -->\n" + preference + codex_runtime_policy(adaptation) + "<!-- CODEX RUNTIME END -->\n\n" + transform_codex_markdown(transform_platform(
+        transform_codex_runtime(raw[end + len("\n---\n"):], adaptation), adaptation))
 
 
 def skill_policy(command: Path) -> bytes | None:
@@ -489,7 +581,10 @@ def generated_tree() -> dict[str, bytes]:
         if references.is_dir():
             for reference in sorted(path for path in references.rglob("*") if path.is_file()):
                 relative = reference.relative_to(references)
-                translated = transform_platform(reference.read_text(encoding="utf-8"), adaptation)
+                translated = reference.read_text(encoding="utf-8")
+                if reference.suffix == ".md":
+                    translated = transform_codex_runtime(translated, adaptation)
+                translated = transform_platform(translated, adaptation)
                 if reference.suffix == ".md":
                     translated = transform_codex_markdown(translated)
                 output[str(Path("references") / relative)] = translated.encode()
@@ -523,7 +618,8 @@ def generated_tree() -> dict[str, bytes]:
         destination = Path("scripts/cq") if rel == "bin/cq" else Path(rel)
         content = transform_platform((source() / rel).read_text(encoding="utf-8"), adaptation)
         if rel == "README.md":
-            content = codex_readme(content)
+            content = codex_readme(transform_codex_runtime(content, adaptation))
+            content = codex_runtime_policy(adaptation) + content
             content = "# quenching-codex (generated)\n\nThis plugin is generated from `plugins/quenching/`, which is the only editable source.\nRun `python3 scripts/sync_codex_plugin.py --write` to refresh it.\n\n" + content
         output[str(destination)] = content.encode()
     for rel in COPY_DIRS:
@@ -598,10 +694,14 @@ def _body(text: str) -> str:
         marker_end = text.find("-->\n\n")
         if marker_end >= 0:
             text = text[marker_end + len("-->\n\n"):]
+    text = re.sub(r"^<!-- CODEX RUNTIME START -->[\s\S]*?<!-- CODEX RUNTIME END -->\n\n", "", text)
     return text
 
 
 def _claude_body(text: str) -> str:
+    models = read_adaptation()["runtime"]["models"]
+    for original, translated in models.items():
+        text = text.replace(translated, original)
     return (text.replace("${CODEX_PLUGIN_ROOT}", "${CLAUDE_PLUGIN_ROOT}")
                 .replace(".agents/", ".claude/")
                 .replace("AGENTS.md", "CLAUDE.md")
@@ -626,6 +726,11 @@ def propagate_bodies_from_codex(tree: dict[str, bytes]) -> None:
         expected_header = expected.split("---\n", 2)[:2]
         if actual_header != expected_header:
             raise ValueError(f"Codex frontmatter change at {rel}; the Claude side is authoritative")
+        prefix_pattern = r"<!-- CODEX RUNTIME START -->[\s\S]*?<!-- CODEX RUNTIME END -->\n\n"
+        actual_prefix = re.search(prefix_pattern, actual)
+        expected_prefix = re.search(prefix_pattern, expected)
+        if (actual_prefix.group() if actual_prefix else None) != (expected_prefix.group() if expected_prefix else None):
+            raise ValueError(f"Codex runtime policy change at {rel}; the Claude side is authoritative")
         parts = Path(rel).parts[1:-1]
         source_command = ((source() / "commands") if plugin_translation() else claude_surface() / "commands")
         command = source_command.joinpath(*parts).with_suffix(".md")

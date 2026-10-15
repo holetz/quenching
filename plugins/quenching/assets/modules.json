@@ -3,6 +3,10 @@
   "source": "plugins/quenching",
   "marketplace": ".claude-plugin/marketplace.json",
   "versionConstant": "plugins/quenching/assets/bin/quenching/common/version.py",
+  "siblingArtifacts": [
+    ["plugins/quenching-codex/VERSION", "plain"],
+    ["plugins/quenching-codex/.codex-plugin/plugin.json", "json"]
+  ],
   "modules": [
     {
       "name": "quenching",
