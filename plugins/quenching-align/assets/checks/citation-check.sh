@@ -98,12 +98,28 @@ if [ "$TOPLEVEL" != "$REPO" ]; then
 fi
 SELF="${SELF_DIR#"$REPO"/}/$(basename "${BASH_SOURCE[0]}")"
 
+# The generated principal module trees are byte copies of plugins/quenching, proved equal and
+# closure-checked per module by `scripts/generate_plugin_modules.py --check`. Every half here
+# measures the source once; sweeping the copies too would re-measure it under paths the source's
+# own exemptions do not name.
+mapfile -t GENERATED < <(python3 -c '
+import json, os, sys
+manifest = os.path.join(sys.argv[1], "plugins/quenching/assets/modules.json")
+if os.path.isfile(manifest):
+    for m in json.load(open(manifest, encoding="utf-8"))["modules"]:
+        if "owned" in m: print(m["path"])
+' "$REPO")
+GENERATED_EXCLUDE=()
+for tree in "${GENERATED[@]}"; do GENERATED_EXCLUDE+=(":!$tree/"); done
+export QUENCHING_GENERATED_TREES="${GENERATED[*]}"
+
 # Half 1's own scope, beyond frozen golden data, not live citations — see the header's third scope
 # rule for why.
 SCOPE_EXCLUDE=(':!plugins/quenching/tests/fixtures/golden/'
                ':!plugins/quenching/tests/capture_golden.py'
                ':(exclude,glob)plugins/quenching/assets/evals/**/runs/**'
-               ':!plugins/quenching/assets/checks/citation-check.sh')
+               ':!plugins/quenching/assets/checks/citation-check.sh'
+               "${GENERATED_EXCLUDE[@]}")
 
 want () { case ",$HALF," in *",$1,"*) return 0 ;; *) return 1 ;; esac; }
 FAIL=0
@@ -312,7 +328,7 @@ fi
 # --------------------------------------------------------------------------- #
 if want 2; then
   echo "2. the new names were born"
-  git ls-files -z | python3 -c '
+  git ls-files -z -- . "${GENERATED_EXCLUDE[@]}" | python3 -c '
 import os, re, sys
 
 plugin = "plugins/quenching"
@@ -516,7 +532,9 @@ section_re = re.compile(r"§")
 
 def tracked_files():
     result = subprocess.run(
-        ["git", "ls-files", "-z"], cwd=repo, check=True, stdout=subprocess.PIPE
+        ["git", "ls-files", "-z", "--", ".",
+         *(":!" + tree + "/" for tree in os.environ.get("QUENCHING_GENERATED_TREES", "").split())],
+        cwd=repo, check=True, stdout=subprocess.PIPE
     )
     return [path.decode("utf-8", "replace") for path in result.stdout.split(b"\x00") if path]
 
