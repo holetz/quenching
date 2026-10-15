@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Command surface naming
-description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the design namespace for DTCG source and projections; the proof namespace for the verification surface rather than its test artifact; the seventh namespace (`git`, a pillar rather than a front) and its coexistence with a target's own `git` category; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context
-resource: plugins/quenching/commands/**
+description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the module prefix each front publishes under and the full command and agent mapping; the design namespace for DTCG source and projections; the proof namespace for the verification surface rather than its test artifact; the seventh namespace (`git`, a pillar rather than a front) and its coexistence with a target's own `git` category; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context
+resource: plugins/quenching/commands/**, plugins/quenching/agents/**, plugins/quenching/assets/modules.json
 tags: [naming, commands, taxonomy]
-timestamp: 2026-08-27
+timestamp: 2026-10-14
 audience: both
 authority: current
-source: rename-command-surface, 2026-07-21, 2026-07-24, collapse-skills-into-commands, 2026-07-26, correct-command-citation-form; lineage in ADR 0004
+source: rename-command-surface, 2026-07-21, 2026-07-24, collapse-skills-into-commands, 2026-07-26, correct-command-citation-form, spec 1635 (module extraction); lineage in ADR 0004 and ADR 0013
 maintainer: quenching
 ---
 
@@ -59,6 +59,43 @@ mandated existed to be *mirrored* by a command path; with nothing to mirror, it 
 with it the bijection rule, the mirroring requirement, and the two root exceptions that needed
 `sk-path-mismatch` recorded as intended. Nothing derives a name that could disagree with the path,
 so nothing checks that they agree.
+
+## The plugin prefix is the module
+
+The plugin is published as eight modules ([../architecture/plugin-layout.md](../architecture/plugin-layout.md)
+§One editable source, eight generated modules), so the segment before the first `:` names the
+**module** that registers the command, and the rest is the command's path inside it. Every front
+belongs to exactly one module, and so does every agent:
+
+| Module | Commands it registers | Agents |
+| --- | --- | --- |
+| `quenching-specs` | `/quenching-specs:specs:*`, `/quenching-specs:git:*`, `/quenching-specs:handoff` | `quenching-specs:git-steward`, `:orchestrator`, `:scout`, `:spec-architect`, `:spec-runner`, `:verifier` |
+| `quenching-align` | `/quenching-align:align`, `/quenching-align:knowledge:*`, `/quenching-align:components:*` | — |
+| `quenching-design` | `/quenching-design:design:*` | — |
+| `quenching-ops` | `/quenching-ops:ops:*` | — |
+| `quenching-proof` | `/quenching-proof:proof:*` | — |
+| `quenching-toolchain` | `/quenching-toolchain:toolchain:*` | — |
+| `quenching-delivery` | `/quenching-delivery:delivery:*` | — |
+| `quenching-security` | `/quenching-security:security:*` | — |
+
+- **The map has one home.** The front-to-module assignment is the `owned` record of each module in
+  `plugins/quenching/assets/modules.json`; `quenching.common.modules.namespace_map` derives the
+  table above from it, the Codex translator consumes the same map, and the generator refuses a
+  module file citing a `quenching-<module>:` id no module owns. The table is a reading of that
+  record, never a second source.
+- **The published name is written in the source.** Bodies, agents, references, the README and the
+  Python literals that recognize ids spell `quenching-<module>:…`; the bare `quenching:` prefix
+  survives only as the source's own unpublished registration and in history (`docs/decisions/`,
+  `CHANGELOG.md`).
+- **Nested, not flattened.** The front keeps its own segment inside the module
+  (`/quenching-align:knowledge:add`, not `/quenching-align:add`), so the path below the module is
+  still the file's path under `commands/` and §The path IS the identity holds unchanged.
+- **A route into another module is conditional.** A `Not for:` hand-off, an offer or a `Skill`
+  call naming another module's command runs only when that module is enabled; otherwise it is
+  reported `not-installed: <module>` and never invoked
+  (`plugins/quenching/assets/references/align/tool-resolution.md` §Routing into another module).
+  A wildcard such as `/quenching-align:*` names every command of one module and carries the same
+  condition.
 
 ## Namespaces are honest by front
 
