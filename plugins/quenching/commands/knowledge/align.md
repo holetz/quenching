@@ -22,7 +22,7 @@ The payload (skeleton, molds, validator) lives at `${CLAUDE_PLUGIN_ROOT}/assets/
 - [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md) §Bundle level §Structural integrity (whole-tree — CLI + `Stop` only) §Resource integrity (per-doc — every mode) — the exact checks the validator applies.
 - [knowledge-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/cycle.md) §The stage pipeline §Finding → owning-command routing table — the stage pipeline, the parallel-prep flow, and the finding → owning-command routing table.
 
-The executable checker is bare `cq` (`cq knowledge validate /docs` → exit 0 = conforms), the one
+The executable checker is bare `cq` (`cq knowledge validate docs` → exit 0 = conforms), the one
 form every body writes —
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool.
@@ -80,7 +80,7 @@ write stays gated by the workflow below.
 Resolve the bundle at its fixed root `/docs/`, then read all three signals and nothing
 else:
 ```bash
-cq knowledge validate /docs --json          # structure: exit 0 = conformant
+cq knowledge validate docs --json          # structure: exit 0 = conformant
 ls ~/.claude/projects/<cwd>/memory/    # out-of-band store 1: any undrained memory?
 ```
 plus one `Read` of each harness file that exists (`CLAUDE.md`, `AGENTS.md`) — a fat one inlines
@@ -280,7 +280,7 @@ run. Never run the sweep to discover whether it had work.
 the offer was deliberately not made.
 
 ### 8. Verify, then decide: loop or stop
-Re-run the applicable convergence checks in this order: `cq knowledge validate /docs --json`,
+Re-run the applicable convergence checks in this order: `cq knowledge validate docs --json`,
 `cq knowledge project docs --check`, `cq knowledge nav docs --check`,
 `cq knowledge site-source docs site-source --check`, a strict site build, and the rendered site
 checker (`documentation-site-check.py`) immediately after that build. The projection, navigation and bounded-source checks are
