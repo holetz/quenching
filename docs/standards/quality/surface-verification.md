@@ -4,10 +4,10 @@ title: Surface verification
 description: How a change to the command surface is proven — a fresh process because the registry is built at session start, assertions on captured tool_use rather than prose, the five preconditions a functional check must satisfy to measure what it claims, why the harness belongs to the components front rather than the spec cycle and how to scope its cost, and how an ordering property is verified by running a real cycle
 resource: plugins/quenching/tests/test_readme_surface.py, plugins/quenching/assets/checks/functional-checks.sh, plugins/quenching/commands/components/command/new.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/**
 tags: [quality, verification, automation, commands, functional-tests, cost]
-timestamp: 2026-08-27
+timestamp: 2026-10-15
 audience: both
 authority: current
-source: collapse-skills-into-commands, move-conclude-merge-last, 2026-07-28, verify-allowed-tools-enforcement, 2026-07-29, stale-installed-copy; lineage in ADR 0004
+source: collapse-skills-into-commands, move-conclude-merge-last, 2026-07-28, verify-allowed-tools-enforcement, 2026-07-29, stale-installed-copy, spec 1677 user-plugin isolation; lineage in ADR 0004
 maintainer: quenching
 ---
 
@@ -69,11 +69,10 @@ claimed:
 
 1. **Redirect stdin.** `claude -p` without `< /dev/null` waits on stdin and warns. Non-obvious,
    and it makes an otherwise correct check hang.
-2. **An invasive check runs in a throwaway repo with its own `enabledPlugins`.** A `git init`
-   scratch dir carrying
-   `{"enabledPlugins": {"quenching@quenching": true}}` gets the real surface —
-   the plugin loads from the marketplace path — while anything the command writes lands in the
-   scratch dir.
+2. **An invasive check runs in a throwaway repo with empty project settings.** A `git init`
+   scratch directory keeps any command writes away from the checkout. Load the checkout explicitly
+   and restrict settings sources as precondition 5 requires; enabling a marketplace copy in the
+   fixture would test that installed copy.
 3. **Satisfy the command's own preconditions, or you measure the precondition.** A spoken-routing
    probe for `/quenching:knowledge:add` invoked nothing in an empty sandbox — correctly, because there was no OKF
    bundle to add to. That reads as a routing failure and is not one. Re-run against a real bundle,
@@ -98,16 +97,28 @@ claimed:
    through that registration therefore loads *that* copy whatever tree `claude -p` was launched
    from. Measured 2026-07-28, twice: from a worktree, check 1's probe read the **main** checkout's
    reference file; and the served cache was a `3.0.0` tree still carrying a command `4.2.0` had
-   deleted. `claude -p --plugin-dir <the checkout under test>` in a box whose settings enable no
-   plugin loads exactly one copy, and it is the right one.
+   deleted. Use `claude -p --plugin-dir <the checkout under test> --setting-sources project` in a
+   box with empty project settings. An empty project settings file alone does not exclude plugins
+   enabled in the user's settings. Measured 2026-10-15 with startup-only probes: without the
+   source filter, three additional installed plugins loaded; with it, the registry contained the
+   checkout and CLI builtins. Restricting setting sources preserves the authenticated profile
+   without copying credentials or editing the user's configuration.
 
-   The harness now witnesses this precondition in two independent ways: `--selfcheck` reads the
-   harness source — every non-commented `claude -p` invocation must carry `--plugin-dir`, no
+   Before grading tools, inspect the captured `system/init.plugins` registry. Permit only the
+   expected checkout path and entries whose path is `builtin`. An unexpected external plugin is
+   a measured failure even when every expected tool call occurred. A missing, malformed or
+   target-free inventory is inconclusive. If no session supplies both an isolated registry and
+   tool activity, exit 2; the local store-unchanged assertion cannot make that run green.
+
+   The harness witnesses this precondition in three independent ways: `--selfcheck` reads the
+   harness source — every non-commented `claude -p` invocation must carry `--plugin-dir` and
+   `--setting-sources project`, no
    `enabledPlugins` may appear outside a comment, and no observed path may be compared with a raw
-   `grep` instead of the anchor — while the observed-path anchor checks the `tool_use` capture
-   during each applicable check. Each of the three is stated as a pattern over the source rather
-   than as a list of the assertions that exist today, so a check added later is born inside the
-   guard instead of outside it. The anchor's negative half,
+   `grep` instead of the anchor; the startup registry validates isolation; and the observed-path
+   anchor checks the `tool_use` capture during each applicable check. The static requirements
+   apply across session invocations rather than enumerating today's probes, so new probes remain
+   inside the guard. Offline fake-CLI tests exercise all nine sessions, including a foreign plugin
+   alongside otherwise correct tool events, without billing model calls. The anchor's negative half,
    which rejects `/plugins/cache/` and `/plugins/marketplaces/`, is the grading guard because those
    paths identify the stale source even when Claude Code canonicalizes or copies the plugin
    directory. Its positive `$PLUGIN` prefix is the diagnostic companion: when it differs, the
