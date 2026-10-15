@@ -45,6 +45,8 @@ class MemoryBackend(SpecBackend):
                     "title": info["frontmatter"].get("title", ""),
                     "state": "closed" if descriptor["phase"] == "archive" else "open",
                     "records": derive_labels(info),
+                    "epic": info["frontmatter"].get("epic"),
+                    "workItemType": info["frontmatter"].get("workItemType"),
                 })
             rows.append(descriptor)
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["id"]))
