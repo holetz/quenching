@@ -184,25 +184,45 @@ class NavRefusalsAndConfigTolerance(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertEqual(json.loads(out)["code"], "nav-config-unreadable")
 
-    def _config(self, raw: bytes) -> dict:
+    def _validate_with_config(self, raw: bytes):
+        with tempfile.TemporaryDirectory() as tmp:
+            hooks = pathlib.Path(tmp, ".claude", "hooks")
+            hooks.mkdir(parents=True)
+            cfg = hooks / "hooks-config.json"
+            cfg.write_bytes(raw)
+            os.mkdir(os.path.join(tmp, "docs"))
+            out, err = io.StringIO(), io.StringIO()
+            with (mock.patch.dict(os.environ, {"CLAUDE_PROJECT_DIR": tmp}),
+                  contextlib.redirect_stdout(out), contextlib.redirect_stderr(err)):
+                code = knowledge_cli.main(["validate", "--json", "--root", tmp, "docs"])
+            return code, out.getvalue(), str(cfg)
+
+    def _assert_refused(self, raw: bytes):
+        code, out, cfg = self._validate_with_config(raw)
+        self.assertEqual(code, 2)
+        payload = json.loads(out)
+        self.assertEqual(payload["code"], "config-unreadable")
+        self.assertIn(cfg, payload["message"])
+
+    def test_non_utf8_hooks_config_is_a_refusal(self):
+        self._assert_refused(b'{"okfValidate":{"warnAsError":true},"x":"caf\xe9"}')
+
+    def test_array_hooks_config_is_a_refusal(self):
+        self._assert_refused(b'[{"okfValidate":{"warnAsError":true}}]')
+
+    def test_null_hooks_config_is_a_refusal(self):
+        self._assert_refused(b"null")
+
+    def test_truncated_hooks_config_is_a_refusal(self):
+        self._assert_refused(b'{"okfValidate":{"warnAs')
+
+    def test_absent_okf_section_still_uses_defaults(self):
         from quenching.knowledge.config import DEFAULTS, _load_config
         with tempfile.TemporaryDirectory() as tmp:
             hooks = pathlib.Path(tmp, ".claude", "hooks")
             hooks.mkdir(parents=True)
-            (hooks / "hooks-config.json").write_bytes(raw)
-            return _load_config(tmp), DEFAULTS
-
-    def test_non_utf8_hooks_config_falls_back_to_defaults(self):
-        cfg, defaults = self._config(b"\xff\xfe{")
-        self.assertEqual(cfg, defaults)
-
-    def test_array_hooks_config_falls_back_to_defaults(self):
-        cfg, defaults = self._config(b"[]")
-        self.assertEqual(cfg, defaults)
-
-    def test_null_hooks_config_falls_back_to_defaults(self):
-        cfg, defaults = self._config(b"null")
-        self.assertEqual(cfg, defaults)
+            (hooks / "hooks-config.json").write_bytes(b"{}")
+            self.assertEqual(_load_config(tmp), DEFAULTS)
 
 
 class RetiredLogChecker(unittest.TestCase):
