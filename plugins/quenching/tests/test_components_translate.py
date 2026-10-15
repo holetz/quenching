@@ -389,7 +389,7 @@ class ModuleNamespaceTranslation(unittest.TestCase):
         self.assertEqual("see quenching-specs-develop, quenching-align and quenching-handoff",
                          translate.transform_platform(text, {"replacements": {}}))
         with self.assertRaises(ValueError):
-            translate.transform_platform("/quenching-design:specs:develop", {"replacements": {}})
+            translate.transform_platform("/quenching-" + "design:specs:develop", {"replacements": {}})
 
 
 class PayloadResolution(unittest.TestCase):
