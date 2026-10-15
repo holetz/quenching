@@ -2479,6 +2479,34 @@ class WorktreeRetire(RepoCase):
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertFalse(os.path.exists(self.wt))
 
+    def _seed_pytest_cache(self):
+        cache = pathlib.Path(self.wt, ".pytest_cache")
+        (cache / "v" / "cache").mkdir(parents=True)
+        (cache / ".gitignore").write_text("*\n", encoding="utf-8")
+        (cache / "CACHEDIR.TAG").write_text("x\n", encoding="utf-8")
+        (cache / "v" / "cache" / "lastfailed").write_text("{}\n", encoding="utf-8")
+
+    def test_pytest_cache_is_discarded_when_declared_regenerable(self):
+        self._merge_through_gh()
+        self._seed_pytest_cache()
+        self._declare_regenerable(".pytest_cache")
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertFalse(os.path.exists(self.wt))
+
+    def test_pytest_cache_blocks_retire_when_not_declared(self):
+        self._merge_through_gh()
+        self._seed_pytest_cache()
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        self.assertIn(".pytest_cache", json.loads(proc.stdout)["ignored"][0])
+        self.assertTrue(os.path.isdir(self.wt))
+
+    def test_repo_config_declares_pytest_cache_regenerable(self):
+        root = pathlib.Path(__file__).resolve().parents[3]
+        config = json.loads((root / ".claude" / "quenching.json").read_text(encoding="utf-8"))
+        self.assertIn(".pytest_cache", config["shared"]["regenerablePaths"])
+
     def test_an_undeclared_ignored_file_still_stands_beside_declared_ones(self):
         self._merge_through_gh()
         pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
