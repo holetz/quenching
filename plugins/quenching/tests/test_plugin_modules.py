@@ -24,8 +24,12 @@ class GeneratedDistribution(unittest.TestCase):
         self.addCleanup(tmp.cleanup)
         self.root = Path(tmp.name)
         self.manifest = copy.deepcopy(load_manifest(REPO))
-        # Planned records have source dependencies; separate fixture exercises their real partition.
-        self.manifest["modules"] = [m for m in self.manifest["modules"] if m["published"]]
+        # The generated-consumer contract is exercised in the pre-activation shape (the source
+        # published and owning cq); principal modules have source dependencies, and a separate
+        # fixture exercises their real partition.
+        self.manifest["modules"] = [m for m in self.manifest["modules"] if "owned" not in m]
+        source_record = next(m for m in self.manifest["modules"] if m["path"] == self.manifest["source"])
+        source_record.update(published=True, cqPathOwner=True)
         self.source = self.root / self.manifest["source"]
         self.target = self.root / "plugins/quenching-specs-reader"
         for module in self.manifest["modules"]:
@@ -263,17 +267,24 @@ class PrincipalPartition(unittest.TestCase):
         self.assertIn("python3 scripts/generate_plugin_modules.py --check", gate)
         self.assertNotIn("python3 scripts/sync_specs_reader_plugin.py --check", gate)
 
-    def test_eight_planned_modules_are_declared_without_production_output(self):
+    def test_eight_principal_modules_are_published_and_the_source_is_not(self):
         manifest = load_manifest(REPO)
-        planned = [m for m in manifest["modules"] if not m["published"]]
+        principal = [m for m in manifest["modules"] if "owned" in m]
         self.assertEqual({"specs", "align", "design", "ops", "proof", "toolchain", "delivery", "security"},
-                         {m["name"].removeprefix("quenching-") for m in planned})
-        self.assertEqual(["quenching-specs"], [m["name"] for m in planned if m["cqPathOwner"]])
-        self.assertEqual(["quenching-specs-reader"], [m["name"] for m in manifest["modules"]
-                                                   if m["published"] and "generated" in m])
-        for module in planned:
-            self.assertFalse((REPO / module["path"]).exists(), module["name"])
-            self.assertNotIn((module["path"] + "/VERSION", "plain"), release_artifacts(manifest))
+                         {m["name"].removeprefix("quenching-") for m in principal})
+        self.assertTrue(all(m["published"] for m in principal))
+        published = [m for m in manifest["modules"] if m["published"]]
+        self.assertEqual(["quenching-specs"], [m["name"] for m in published if m["cqPathOwner"]])
+        source = next(m for m in manifest["modules"] if m["path"] == manifest["source"])
+        self.assertFalse(source["published"])
+        self.assertFalse(source["cqPathOwner"])
+        market = json.loads((REPO / manifest["marketplace"]).read_text())
+        self.assertEqual({m["name"] for m in published}, {e["name"] for e in market["plugins"]})
+        for module in principal:
+            self.assertTrue((REPO / module["path"] / ".claude-plugin/plugin.json").is_file(), module["name"])
+            self.assertIn((module["path"] + "/VERSION", "plain"), release_artifacts(manifest))
+        # The source still carries the version the generated modules copy.
+        self.assertIn((manifest["source"] + "/VERSION", "plain"), release_artifacts(manifest))
 
     def test_namespace_map_assigns_every_command_head_and_agent_one_module(self):
         manifest = load_manifest(REPO)
@@ -306,15 +317,21 @@ class PrincipalPartition(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     load_manifest(root)
 
+            # One principal module published beside the still-published source: refused.
             partial = copy.deepcopy(manifest)
-            next(m for m in partial["modules"] if m["name"] == "quenching-design")["published"] = True
+            for module in partial["modules"]:
+                if "owned" in module:
+                    module["published"] = module["name"] == "quenching-design"
+                    module["cqPathOwner"] = module["name"] == "quenching-specs"
+                if module["name"] == "quenching":
+                    module.update(published=True, cqPathOwner=True)
             refused(partial)
             both = copy.deepcopy(manifest)
             for module in both["modules"]:
                 if "owned" in module:
                     module["published"] = True
                 if module["name"] == "quenching":
-                    module["cqPathOwner"] = False
+                    module.update(published=True, cqPathOwner=False)
             refused(both)
             active = copy.deepcopy(both)
             next(m for m in active["modules"] if m["name"] == "quenching")["published"] = False
@@ -323,8 +340,10 @@ class PrincipalPartition(unittest.TestCase):
 
     def test_manifest_drives_release_surface_expansion(self):
         manifest = load_manifest(REPO)
-        planned = next(m for m in manifest["modules"] if m["name"] == "quenching-design")
-        planned["published"] = True
+        design = next(m for m in manifest["modules"] if m["name"] == "quenching-design")
+        design["published"] = False
+        self.assertNotIn(("plugins/quenching-design/VERSION", "plain"), release_artifacts(manifest))
+        design["published"] = True
         self.assertIn(("plugins/quenching-design/VERSION", "plain"), release_artifacts(manifest))
         self.assertIn(("plugins/quenching-design/.claude-plugin/plugin.json", "json"),
                       release_artifacts(manifest))

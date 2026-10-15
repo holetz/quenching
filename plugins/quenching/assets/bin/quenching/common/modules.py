@@ -117,7 +117,9 @@ def load_manifest(root: Path) -> dict:
 def release_artifacts(manifest: dict) -> tuple[tuple[str, str], ...]:
     artifacts = []
     for module in manifest["modules"]:
-        if module["published"]:
+        # The editable source carries the version every generated module copies, so it moves with
+        # the lockstep whether or not it is itself published.
+        if module["published"] or module["path"] == manifest["source"]:
             if module["versionFile"]:
                 artifacts.append((module["path"] + "/VERSION", "plain"))
             artifacts.append((module["path"] + "/.claude-plugin/plugin.json", "json"))

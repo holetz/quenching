@@ -1,0 +1,15 @@
+{
+  "name": "quenching-ops",
+  "version": "6.4.0",
+  "description": "The declared-operations front: /quenching-ops:ops:* aligns and reports the operations registry a repository declares. Requires quenching-specs for cq.",
+  "author": {
+    "name": "Israel Holetz",
+    "email": "holetz@gmail.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "operations",
+    "conformance"
+  ]
+}

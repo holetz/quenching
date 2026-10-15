@@ -1,0 +1,35 @@
+{
+  "source": "plugins/quenching",
+  "manifest": "plugins/quenching/assets/modules.json",
+  "generator": "scripts/generate_plugin_modules.py",
+  "owned": {
+    "commands": [
+      "proof"
+    ],
+    "packages": [
+      "proof"
+    ],
+    "agents": false
+  },
+  "generatedSupport": {
+    "packages": [
+      "common",
+      "ops"
+    ],
+    "references": [
+      "align",
+      "components-command-new",
+      "git",
+      "knowledge-add",
+      "knowledge-align",
+      "knowledge-import",
+      "specs-align",
+      "specs-conclude",
+      "specs-develop",
+      "specs-execute",
+      "proof-align",
+      "front-align"
+    ],
+    "router": true
+  }
+}
