@@ -294,6 +294,10 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         args = argparse.Namespace(source=str(self.root), target=str(self.root), check=False, write=True,
                                   diff=False, json=True)
         self.assertEqual(translate.cmd_translate(args, str(self.root)), 0)
+        source_text = (self.root / ".claude" / "commands" / "specs" / "status.md").read_text()
+        self.assertNotIn("Codex runtime", source_text)
+        self.assertNotIn("host sub-agents only", source_text)
+        self.assertNotIn("CODEX RUNTIME", source_text)
         self.assertIn("Claude body edit.", (self.root / ".claude" / "commands" / "specs" / "status.md")
                       .read_text(encoding="utf-8"))
         skill.write_text(skill.read_text(encoding="utf-8").replace("name: quenching-specs-status",
@@ -332,8 +336,9 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         functional = translate.generated_tree()["checks/functional-checks.sh"].decode("utf-8")
         self.assertIn('SELF_DIR/../../../"', citation)
         self.assertNotIn('SELF_DIR/../../../.."', citation)
-        self.assertIn('dirname "${BASH_SOURCE[0]}")/../../../"', functional)
-        self.assertNotIn('dirname "${BASH_SOURCE[0]}")/../../../.."', functional)
+        self.assertNotIn("claude -p", functional)
+        self.assertIn("INCONCLUSIVE", functional)
+        self.assertTrue(functional.rstrip().endswith("exit 2"))
 
     def test_codex_readme_accepts_changelog_extracted_from_upgrade_section(self):
         source = (
@@ -436,12 +441,10 @@ class PayloadResolution(unittest.TestCase):
                          (payload, self.root / "plugins" / "quenching-codex"))
 
     def test_bare_invocation_inside_the_marketplace_without_the_sibling_translates_the_repository(self):
-        payload = translate.payload_root()
-        repository = payload.parent.parent
-        translate.configure(None, None, str(repository))
-        self.assertEqual(translate.source(), repository)
-        self.assertEqual(translate.target(), repository)
-        self.assertFalse(translate.plugin_translation())
+        payload = self.root / "plugins" / "quenching"
+        payload.mkdir(parents=True)
+        self.assertEqual(translate._default_pair(payload, str(self.root)),
+                         (self.root, self.root))
 
     def test_the_adaptation_map_is_the_payloads_whatever_the_pair(self):
         expected = translate.payload_root() / "assets" / "translation" / "codex-adaptation.json"
@@ -463,3 +466,76 @@ class ConcludeGeneratedConflictRecipeTest(unittest.TestCase):
                        "python3 scripts/sync_specs_reader_plugin.py --write",
                        "python3 scripts/sync_specs_reader_plugin.py --check"):
             self.assertIn(needle, text)
+
+
+class CodexRuntimeTranslation(unittest.TestCase):
+    def test_runtime_maps_active_models_preserving_fixture_data(self):
+        adaptation = translate.read_adaptation()
+        raw = "model: opus\neffort: high\nNever haiku for product code; sonnet worker.\n```python\nfixture = 'opus'\n```\n"
+        result = translate.transform_codex_runtime(raw, adaptation)
+        self.assertIn("model: gpt-6-astra", result)
+        self.assertIn("effort: high", result)
+        self.assertIn("Never gpt-6-luna for product code; gpt-6.1-sol worker", result)
+        self.assertIn("fixture = 'opus'", result)
+        self.assertIn("model: opus", raw)
+
+    def test_generated_protocols_use_codex_models_and_host_lifecycle(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            translate.configure(str(translate.payload_root()), tmp)
+            tree = translate.generated_tree()
+        orchestrator = tree["agents/orchestrator.md"].decode()
+        autopilot = tree["skills/quenching-specs-autopilot/SKILL.md"].decode()
+        memory = tree["skills/quenching-knowledge-import-memory/SKILL.md"].decode()
+        self.assertIn("model: gpt-6-astra", orchestrator)
+        self.assertIn("spec-runner` on gpt-6.1-sol", orchestrator)
+        self.assertNotIn("CLAUDE_CODE_SESSION_ID", orchestrator)
+        self.assertIn("host-provided usage", orchestrator)
+        self.assertIn("liveness as unmeasured", autopilot)
+        self.assertNotIn("transcript's mtime", autopilot)
+        self.assertNotIn("~/.codex/projects/", memory)
+        self.assertIn("existing Claude-format project memory data", memory)
+        self.assertNotIn("read with\n`cq components session cost`", autopilot)
+        self.assertIn("`model: gpt-6.1-sol`, `effort: low`", memory)
+        self.assertIn("Use Codex host sub-agents only", memory)
+        self.assertIn(".claude/quenching.json", translate.transform_platform(".claude/quenching.json", translate.read_adaptation()))
+
+    def test_generated_measurements_refuse_instead_of_launching_source_runtime(self):
+        import subprocess
+        with tempfile.TemporaryDirectory() as tmp:
+            translate.configure(str(translate.payload_root()), tmp)
+            tree = translate.generated_tree()
+            script = Path(tmp) / "functional-checks.sh"
+            script.write_bytes(tree["checks/functional-checks.sh"])
+            result = subprocess.run(["bash", str(script)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("INCONCLUSIVE", result.stderr)
+        self.assertIn(b"se-codex-telemetry-unavailable", tree["scripts/bin/quenching/session/commands/cost.py"])
+        self.assertIn(b'CONFIG_FILE = os.path.join(".claude", "quenching.json")',
+                      tree["scripts/bin/quenching/common/config.py"])
+
+    def test_generated_config_reads_the_shared_claude_envelope(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            translate.configure(str(translate.payload_root()), str(root / "out"))
+            code = translate.generated_tree()["scripts/bin/quenching/common/config.py"].decode()
+            (root / ".claude").mkdir()
+            (root / ".claude/quenching.json").write_text(json.dumps({"specs": {"backend": "git"}}))
+            namespace = {"__name__": "generated_shared_config"}
+            exec(compile(code, "generated_config.py", "exec"), namespace)
+            cfg = namespace["load_config"](str(root), detect_provider_info=False)
+            self.assertEqual(cfg["specs"]["backend"], "git")
+
+    def test_runtime_prefix_edits_are_refused_without_changing_source(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            command = root / ".claude/commands/specs/status.md"
+            command.parent.mkdir(parents=True)
+            command.write_text(COMMAND)
+            translate.configure(str(root), str(root))
+            tree = translate.generated_tree()
+            translate.write_tree(tree)
+            skill = root / ".agents/skills/specs/status/SKILL.md"
+            skill.write_text(skill.read_text().replace("Use Codex host sub-agents only", "Use other sub-agents"))
+            with self.assertRaisesRegex(ValueError, "runtime policy change"):
+                translate.propagate_bodies_from_codex(tree)
+            self.assertEqual(command.read_text(), COMMAND)

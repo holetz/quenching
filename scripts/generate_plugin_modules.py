@@ -120,9 +120,9 @@ def published_findings(root: Path, manifest: dict) -> list[str]:
                 versions = [entry.get("version") for entry in entries]
             else:
                 versions = [data.get("version")]
-                owner = next(m for m in manifest["modules"]
-                             if rel == m["path"] + "/.claude-plugin/plugin.json")
-                if data.get("name") != owner["name"]:
+                owner = next((m for m in manifest["modules"]
+                              if rel == m["path"] + "/.claude-plugin/plugin.json"), None)
+                if owner and data.get("name") != owner["name"]:
                     findings.append(f"plugin identity disagrees: {rel}")
         if not versions or any(v != source_version for v in versions):
             findings.append(f"version drift {rel}: {versions}, source={source_version}")

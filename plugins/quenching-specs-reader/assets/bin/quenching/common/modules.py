@@ -114,5 +114,7 @@ def release_artifacts(manifest: dict) -> tuple[tuple[str, str], ...]:
             if module["versionFile"]:
                 artifacts.append((module["path"] + "/VERSION", "plain"))
             artifacts.append((module["path"] + "/.claude-plugin/plugin.json", "json"))
+    # A generated sibling outside the Claude marketplace (the Codex plugin) moves in lockstep too.
+    artifacts.extend((rel, kind) for rel, kind in manifest.get("siblingArtifacts", []))
     return tuple(artifacts + [(manifest["marketplace"], "jsonall"),
                               (manifest["versionConstant"], "py")])
