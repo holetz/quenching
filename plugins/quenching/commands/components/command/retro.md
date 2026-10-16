@@ -41,7 +41,7 @@ reported as a session with nothing to improve.
 
 ### 2. Choose ONE command
 One command per run keeps the output actionable by a single `/quenching:components:command:new`. A command named in
-`$ARGUMENTS` → take it. Otherwise one command found → take it; several → a decision sheet (`specs-develop/questions.md` §1),
+`$ARGUMENTS` → take it. Otherwise one command found → take it; several → a decision sheet ([specs-develop/questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §1),
 one option per command showing its `attributedRun` line range and its `toolCalls`, defaulting
 to the session opener.
 **Done when:** exactly one command is chosen and named back to the user.
