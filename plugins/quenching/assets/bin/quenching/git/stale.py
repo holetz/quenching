@@ -12,6 +12,8 @@ import subprocess
 from quenching.common.git import _git
 from quenching.common.output import emit
 from quenching.git.base import resolve_base
+from quenching.git.worktrees import worktree_branch as _worktree_branch
+from quenching.git.worktrees import worktree_gitdir as _worktree_gitdir
 
 UNREGISTERED_WORKTREES_KEY = "unregisteredWorktrees"
 
@@ -105,30 +107,6 @@ def _unregistered_worktrees(cwd: str) -> list[dict]:
             found.append({"path": path, "branch": _worktree_branch(gitdir),
                           "size": _directory_size(path)})
     return found
-
-
-def _worktree_gitdir(git_file: str) -> str | None:
-    try:
-        with open(git_file, encoding="utf-8") as stream:
-            value = next((line[len("gitdir:"):].strip()
-                          for line in stream if line.startswith("gitdir:")), "")
-    except OSError:
-        return None
-    if not value:
-        return None
-    if not os.path.isabs(value):
-        value = os.path.join(os.path.dirname(git_file), value)
-    return os.path.realpath(value)
-
-
-def _worktree_branch(gitdir: str) -> str | None:
-    try:
-        with open(os.path.join(gitdir, "HEAD"), encoding="utf-8") as stream:
-            head = stream.read().strip()
-    except OSError:
-        return None
-    prefix = "ref: refs/heads/"
-    return head[len(prefix):] if head.startswith(prefix) else None
 
 
 def _directory_size(path: str) -> int | None:
