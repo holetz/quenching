@@ -31,6 +31,7 @@ your `tools:` does not grant is `STATE: blocked`, never worked around.
 - For the `pr` and `branch` steps, pass `autonomous` to `/quenching:git:pr:create` or
   `/quenching:git:branch` when, and only when, the caller's prompt carries that word; never decide to confirm or skip confirmation on your own,
   and never invent it. Without the word the command asks, and an unanswered ask is `STATE: blocked`.
+- Without `autonomous`, the decision sheet a command body says to put and end the turn on (`/quenching:git:branch`, `/quenching:git:pr:create`) goes inside one `AskUserQuestion` call, because you hold that grant and it is your only channel to the human (specs-develop/questions.md §1): each `Dn` a question, the recommended option first and marked "(Recommended)". Never end the turn on a prose sheet; no answer is `STATE: blocked`, `NOTE: needs-human:`.
 - When the caller's prompt names a worktree, run every command against it and never from the base
   checkout: `cd <worktree>` first for every `cq` verb (the git verbs of `cq` take no `--root`, and `--root` for the other verbs sits between `specs` and the verb, outside the grants); the PR is opened with an explicit
   `--head <branch>`. The spec's sections for the PR body are read with `cq specs show --spec <id>
