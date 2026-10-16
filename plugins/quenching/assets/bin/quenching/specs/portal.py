@@ -11,11 +11,13 @@ tests call without a socket; `serve` only wraps it in `ThreadingHTTPServer`.
 SECURITY
 --------
 * Loopback only: a non-loopback `--host` is refused before a socket opens.
-* A random per-run token is required on every `/api/` call (header `X-Quenching-Token`, or
-  `?token=` for reads). The page itself needs it too; static assets carry no data and need none.
-* `Host` must name the bound loopback address (DNS rebinding) and `Origin`, when sent, must be
-  this server (CSRF from another tab).
-* Writes need the header token (never the query), `application/json`, and are refused SERVER-SIDE
+* A random per-run token is required on every `/api/` call and for the page, carried by the
+  `qtoken` cookie (`HttpOnly; SameSite=Strict; Path=/`) or the `X-Quenching-Token` header; it is
+  never accepted in a URL. The URL the portal prints and `--open` passes holds only a one-use
+  nonce, which `GET /?nonce=` trades for the cookie (303 to `/`). Static assets need nothing.
+* `Host` must name the bound loopback address (DNS rebinding); `Origin`, when sent, must be this
+  server, and every POST must send it (CSRF from another tab).
+* Writes need `application/json` and are refused SERVER-SIDE
   when the portal is `--read-only` or the backend itself is read-only.
 * A refusal or conflict is an HTTP error that carries the CLI's refusal `code`; never a success.
 """
@@ -34,6 +36,7 @@ import sys
 import threading
 import time
 from argparse import Namespace
+from http.cookies import CookieError, SimpleCookie
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
@@ -55,6 +58,7 @@ from quenching.specs.parse.tasks import task_progress
 from quenching.specs.schema import canonical_headings
 
 TOKEN_HEADER = "X-Quenching-Token"
+COOKIE_NAME = "qtoken"
 TTL_SECONDS = 5.0
 MAX_BODY = 1_000_000
 STAGE_ORDER = ["captured", "ready", "approved", "executing", "blocked", "review",
@@ -124,8 +128,9 @@ class Portal:
     `_STDIO_LOCK` around the redirection, which keeps two portals from capturing each other."""
 
     def __init__(self, root: str, token: str, read_only: bool = False,
-                 host: str = "127.0.0.1", port: int = 0) -> None:
+                 host: str = "127.0.0.1", port: int = 0, nonce: str | None = None) -> None:
         self.root, self.token, self.read_only = root, token, read_only
+        self.nonce: str | None = nonce if nonce is not None else secrets.token_urlsafe(18)
         self.host, self.port = host, port
         self.lock = threading.RLock()
         self._cache: dict | None = None
@@ -139,17 +144,31 @@ class Portal:
     def check_host(self, headers: dict) -> bool:
         return headers.get("host", "").lower() in {h.lower() for h in self.allowed_hosts()}
 
-    def check_origin(self, headers: dict) -> bool:
+    def check_origin(self, headers: dict, required: bool = False) -> bool:
         origin = headers.get("origin")
         if origin is None:
-            return True
+            return not required
         return origin.lower() in {f"http://{h}".lower() for h in self.allowed_hosts()}
 
-    def check_token(self, headers: dict, query: dict, header_only: bool) -> bool:
+    def check_token(self, headers: dict) -> bool:
         given = headers.get(TOKEN_HEADER.lower())
-        if given is None and not header_only:
-            given = (query.get("token") or [None])[0]
+        if given is None:
+            jar = SimpleCookie()
+            try:
+                jar.load(headers.get("cookie", ""))
+            except CookieError:
+                return False
+            morsel = jar.get(COOKIE_NAME)
+            given = morsel.value if morsel else None
         return bool(given) and hmac.compare_digest(str(given), self.token)
+
+    def redeem_nonce(self, given: str | None) -> bool:
+        """The one-use nonce of the printed URL: true once, then never again."""
+        with self.lock:
+            if not given or self.nonce is None or not hmac.compare_digest(given, self.nonce):
+                return False
+            self.nonce = None
+            return True
 
     def writes_enabled(self) -> tuple[bool, str]:
         if self.read_only:
@@ -164,7 +183,7 @@ class Portal:
         headers = {k.lower(): v for k, v in headers.items()}
         if not self.check_host(headers):
             return _error(403, "sp-portal-bad-host", "Host header is not this server")
-        if not self.check_origin(headers):
+        if not self.check_origin(headers, required=method == "POST"):
             return _error(403, "sp-portal-bad-origin", "Origin is not this server")
         parts = urlsplit(target)
         query = parse_qs(parts.query)
@@ -174,12 +193,18 @@ class Portal:
                 return self._api(method, path, query, headers, body)
             if method not in ("GET", "HEAD"):
                 return _error(405, "sp-portal-method", "static files are read-only")
-            if path in ("/", "/index.html") and not self.check_token(headers, query, False):
+            if path in ("/", "/index.html") and not self.check_token(headers):
+                if method == "GET" and self.redeem_nonce((query.get("nonce") or [None])[0]):
+                    return 303, {"Location": "/", "Set-Cookie": self.cookie(),
+                                 "Cache-Control": "no-store", "Referrer-Policy": "no-referrer"}, b""
                 return _error(401, "sp-portal-token", "open the URL `cq specs serve` printed")
             return self._static(path)
         except BackendRefusal as e:
             return _json(_status_for(e.err), {"ok": False, **{
                 k: v for k, v in e.err.items() if k != "exit"}})
+
+    def cookie(self) -> str:
+        return f"{COOKIE_NAME}={self.token}; HttpOnly; SameSite=Strict; Path=/"
 
     def _static(self, path: str) -> tuple[int, dict, bytes]:
         root = static_dir()
@@ -200,7 +225,7 @@ class Portal:
         write = method == "POST"
         if method not in ("GET", "POST"):
             return _error(405, "sp-portal-method", "GET or POST only")
-        if not self.check_token(headers, query, header_only=write):
+        if not self.check_token(headers):
             return _error(401, "sp-portal-token", "a valid token is required on every API call")
         route = path[len("/api/"):].strip("/")
         if write:
@@ -621,7 +646,7 @@ def cmd_serve(args, root: str, out: Emitter) -> int:
     portal = server.portal
     shown = "localhost" if host == "localhost" else host
     url = f"http://{shown if ':' not in shown else '[' + shown + ']'}:{portal.port}/" \
-          f"?token={portal.token}"
+          f"?nonce={portal.nonce}"
     writable, why = portal.writes_enabled()
     info = {"ok": True, "url": url, "host": host, "port": portal.port, "backend": backend.name,
             "writable": writable, "readOnlyReason": why}
