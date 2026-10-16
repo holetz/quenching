@@ -28,12 +28,12 @@ decides it.
 
 ## Routes
 
-GET: `/api/config`, `/api/specs`, `/api/specs/<id>`, `/api/search`, `/api/epics`; static assets
+GET: `/api/config`, `/api/specs`, `/api/specs/<id>`, `/api/search`, `/api/epics`, `/api/human`; static assets
 under `/`. POST: `/api/capture`, `/api/section`, `/api/approve`, `/api/reorder`,
 `/api/discovery`, each delegating to the CLI's own verb so CAS and refusals are the terminal's.
 
 - No new POST route enters without a human decision. Reading more is a GET over the same store.
-- The portal spawns no process.
+- A portal request starts no process beyond the read the store backend already makes (on the git backend, `git` reading the `quenching` branch), and never calls `gh`.
 - Static assets are read-only: any non-GET/HEAD method on them is a 405.
 
 ## Security guarantees
