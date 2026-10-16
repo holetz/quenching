@@ -96,7 +96,7 @@ else: never add `--delete-source-branch`, and an absent title or a missing spec 
 asked, never invented. Without the token, the confirmation below stands.
 
 Show the remote, the branch name it pushes under, and the title/body, and put them on a
-decision sheet ([specs-develop/questions.md](../../references/specs-develop/questions.md) §1; A confirm, B decline) that ends the turn:
+decision sheet ([specs-develop/questions.md](../../references/specs-develop/questions.md) §1; A confirm, B decline) that ends the turn — except in a sub-agent that holds the AskUserQuestion grant (the `git-steward`), which carries the sheet inside one `AskUserQuestion` call (§1):
 For Azure, show the work item id, whether the separate source-branch deletion offer was accepted
 (`--delete-source-branch`), and whether `--transition-work-items` is included in the
 command the human is confirming. The deletion offer defaults to preserve the branch.
