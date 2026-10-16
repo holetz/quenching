@@ -55,7 +55,8 @@ from quenching.specs.schema import canonical_headings
 TOKEN_HEADER = "X-Quenching-Token"
 TTL_SECONDS = 5.0
 MAX_BODY = 1_000_000
-STAGE_ORDER = ["captured", "ready", "approved", "executing", "review", "archived"]
+STAGE_ORDER = ["captured", "ready", "approved", "executing", "blocked", "review",
+               "archived"]
 CONFLICT_MARKERS = ("stale", "conflict", "write-once", "changed")
 
 
@@ -243,6 +244,8 @@ class Portal:
     def _stage(info: dict) -> str:
         if info["phase"] == "archive":
             return "archived"
+        if task_progress(info["tasks"])[1] > 0:
+            return "blocked"
         if info["frontmatter"].get("reviewed"):
             return "review"
         stage = info["stage"]
