@@ -63,7 +63,7 @@ State the base branch (from step 1), the branch name that would be cut — `conf
 step 1 governs it where declared, else the target's docs, else `plan/<id>-<handle>` with an ID and a
 kebab-case name derived from `$ARGUMENTS` or asked for without one — the worktree path, and —
 `worktreeSetup` non-null — the setup command **verbatim**; `sharedPaths` non-empty — the declared
-paths **verbatim**. Then put ONE decision sheet (`specs-develop/questions.md` §1) and end the turn;
+paths **verbatim**. Then put ONE decision sheet ([specs-develop/questions.md](../../references/specs-develop/questions.md) §1) and end the turn;
 an ambiguous reply is asked again, never filled in. `D1` is the isolation form:
 
 - **A (recommended) Worktree** — `cq git worktree add --path ../<repo>-<name> --branch <branch> --base <base>`.

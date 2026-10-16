@@ -45,7 +45,7 @@ outside this command). Never check out the base here.
 stopped for lack of one.
 
 ### 2. Offer the strategy, and the branch's fate under squash
-Show the trade in one line each, from §Merge strategies, and put it on ONE decision sheet (`specs-develop/questions.md` §1) that ends the turn; the options
+Show the trade in one line each, from §Merge strategies, and put it on ONE decision sheet ([specs-develop/questions.md](../../references/specs-develop/questions.md) §1) that ends the turn; the options
 of `D1`, with A the recommended one:
 
 - **A (recommended) merge commit** — every per-task commit stays on the base, one extra commit.
