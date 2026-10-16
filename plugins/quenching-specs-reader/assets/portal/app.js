@@ -1,5 +1,5 @@
 "use strict";
-/* Quenching spec portal. No build, no CDN, no innerHTML: every node is created with
+/* Quenching spec portal. No build, no CDN, no HTML strings: every node is created with
    textContent, so spec text can never inject markup. */
 (() => {
   const params = new URLSearchParams(location.search);
@@ -13,7 +13,7 @@
   const $ = (s) => document.querySelector(s);
   const state = { specs: [], stages: [], fetchedAt: 0, ttl: 5, writable: false, why: "",
                   filters: { subject: "", tag: "", type: "", assignee: "", complexity: "" },
-                  epics: { supported: false, epics: [] }, busy: false };
+                  epics: { supported: false, epics: [] }, human: null, busy: false };
 
   /* ── helpers ─────────────────────────────────────────────────────────────── */
   function h(tag, attrs, ...kids) {
@@ -113,6 +113,8 @@
       state.epics = ep;
     } catch (e) { state.epics = { supported: false, epics: [] }; }
     $("#nav-epics").hidden = !state.epics.supported;
+    try { state.human = await api("human"); } catch (e) { state.human = null; }
+    paintHumanCount();
     tickFreshness();
   }
   async function loadConfig() {
@@ -265,6 +267,63 @@
         : h("ul", {}, e.children.map((c) => h("li", {}, h("a", { href: "#/spec/" + c.id }, `${c.id} · ${c.title}`), " ", stagePill(c.stage))))));
   }
 
+  /* ── decidir com o humano ────────────────────────────────────────────────── */
+  function paintHumanCount() {
+    const n = state.human ? state.human.count : 0;
+    $("#human-count").textContent = n;
+    $("#human-count").classList.toggle("hot", n > 0);
+    document.title = (n > 0 ? `(${n}) ` : "") + "Quenching specs";
+    const c = document.createElement("canvas");
+    c.width = c.height = 32;
+    const g = c.getContext && c.getContext("2d");
+    if (!g) return;
+    g.fillStyle = n > 0 ? "#b4410a" : "#5f5c56";
+    g.beginPath(); g.arc(16, 16, 15, 0, 2 * Math.PI); g.fill();
+    g.fillStyle = "#ffffff"; g.font = "bold 20px sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(n > 99 ? "99" : String(n), 16, 17);
+    $("#favicon").href = c.toDataURL("image/png");
+  }
+  let drawerOpener = null;
+  function closeDrawer() {
+    const d = $("#drawer");
+    if (d.hidden) return;
+    d.hidden = true; d.replaceChildren();
+    if (drawerOpener && drawerOpener.isConnected) drawerOpener.focus();
+    drawerOpener = null;
+  }
+  async function openDrawer(id, opener) {
+    drawerOpener = opener;
+    const d = $("#drawer");
+    let det;
+    try { det = await api("specs/" + encodeURIComponent(id)); } catch (e) { fail(e); return; }
+    const problem = det.sections.find((x) => x.heading === "Problem");
+    d.replaceChildren(
+      h("div", { class: "sechead" }, h("h2", { id: "drawer-title" }, `${det.spec.id} · ${det.spec.title}`),
+        h("button", { type: "button", id: "drawer-close", on: { click: closeDrawer } }, "Close (Esc)")),
+      h("div", { class: "meta" }, stagePill(det.spec.stage), " ", h("a", { href: "#/spec/" + det.spec.id }, "open the whole spec")),
+      h("h3", {}, "Problem"),
+      problem && problem.state !== "absent" ? markdown(problem.body) : h("p", { class: "empty" }, "no Problem written"));
+    d.hidden = false;
+    $("#drawer-close").focus();
+  }
+  function humanRow(id, title, stage, extra, label) {
+    const btn = id ? h("button", { type: "button", class: "link", on: { click: (e) => openDrawer(id, e.currentTarget) } }, `${id} · ${title}`) : h("span", {}, `${label || "?"} · ${title}`);
+    return h("li", {}, btn, " ", stagePill(stage), extra);
+  }
+  function viewHuman() {
+    const hu = state.human;
+    if (!hu) return h("p", { class: "empty" }, "The waiting list could not be read.");
+    const list = (title, rows, empty) => h("section", { class: "panel" },
+      h("div", { class: "sechead" }, h("h2", {}, title), h("span", {}, rows.length)),
+      rows.length ? h("ul", { class: "humanlist" }, rows) : h("p", { class: "empty" }, empty));
+    return [
+      h("div", { class: "hero", role: "status" }, h("strong", { class: "heronum" }, hu.count),
+        h("span", {}, hu.count === 1 ? "spec waits for the human" : "specs wait for the human")),
+      list("Open in human-decision epics", hu.epicMembers.map((m) => humanRow(m.id, m.title, m.stage, h("span", { class: "meta" }, ` epic ${m.epic} · ${m.label}`), m.label)), "no open decision"),
+      list("Blocked tasks", hu.blocked.map((b) => humanRow(b.id, b.title, b.stage, h("div", { class: "bad" }, b.reasons.map((r) => `${r.task}: ${r.reason || "(no reason)"}`).join("; ")))), "nothing blocked"),
+      list("Ready, awaiting approval", hu.awaitingApproval.map((r) => humanRow(r.id, r.title, r.stage)), "nothing to approve")];
+  }
+
   async function viewDetail(id) {
     let d;
     try { d = await api("specs/" + encodeURIComponent(id)); } catch (e) { fail(e); return h("p", { class: "empty" }, "Spec not found."); }
@@ -347,6 +406,7 @@
 
   /* ── router ──────────────────────────────────────────────────────────────── */
   async function render() {
+    closeDrawer();
     const route = location.hash.replace(/^#\/?/, "") || "board";
     const [view, arg] = route.split("/");
     document.querySelectorAll("#nav a").forEach((a) => { if (a.dataset.view === view) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
@@ -354,6 +414,7 @@
     if (view === "spec") content = await viewDetail(decodeURIComponent(arg || ""));
     else if (view === "search") content = await viewSearch(decodeURIComponent(arg || ""));
     else if (view === "list") content = viewList();
+    else if (view === "human") content = viewHuman();
     else if (view === "epics" && state.epics.supported) content = viewEpics();
     else content = viewBoard();
     $("#main").replaceChildren(...[content].flat());
@@ -365,6 +426,7 @@
   $("#search-form").addEventListener("submit", (e) => { e.preventDefault(); const q = $("#q").value.trim(); if (q) location.hash = "#/search/" + encodeURIComponent(q); });
   window.addEventListener("hashchange", () => { render().then(() => $("#main").focus()); });
   document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeDrawer();
     if (e.key === "/" && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) { e.preventDefault(); $("#q").focus(); }
   });
   setInterval(tickFreshness, 1000);
