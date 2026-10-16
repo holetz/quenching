@@ -85,7 +85,7 @@ overwrite. `merge` and `pr` are read only to answer the "already merged" row abo
 
 ## Under `autonomous`
 
-A run whose input carries `autonomous` has no human and no **AskUserQuestion**: it asks nothing.
+A run whose input carries `autonomous` has no human and no decision sheet: it asks nothing.
 Every point where this command would ask takes the one answer below — the narrowest that lets the
 step run — and nothing outside this table is granted. A case the table sends to `needs-human`
 stops the run with `STATE: blocked` and `NOTE: needs-human: <the question>`.
@@ -113,14 +113,14 @@ branch's own marking:
 [auto-discover.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/auto-discover.md)
 §Reading the marking §Filtering to valid IDs §Resolving what remains, cited rather than
 restated. One valid id resolves it silently, naming the marking as the source; more than one asks
-which, via **AskUserQuestion**. No valid marking → §The fallback there measures the diff and always
+which, on a decision sheet ([questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared mechanics §1). No valid marking → §The fallback there measures the diff and always
 asks whether to materialize a minimal spec — accepted, its new id is used from here on exactly
 like a marked one. **Declined, headless completion — closing with no spec file at all — is not
 built**: say so, record it with `cq specs discover`, and fall back to `cq specs list --json` and
-ask. Establish the outcome — **ask if it was not stated**, via
-**AskUserQuestion**: *done* (it shipped) or *abandoned* (it will not be built). Under `autonomous`,
-every question of this run is answered by §Under `autonomous`; elsewhere, where **AskUserQuestion**
-is unavailable (a sub-agent), do not ask: return `STATE: blocked` with `NOTE: needs-human: <question>`.
+ask. Establish the outcome — **ask if it was not stated**, on a
+decision sheet: *done* (it shipped) or *abandoned* (it will not be built). Under `autonomous`,
+every question of this run is answered by §Under `autonomous`; elsewhere a sub-agent does not ask:
+return `STATE: blocked` with `NOTE: needs-human:` carrying the decision sheet.
 ```bash
 cq specs status --spec "<id>" --json
 ```
