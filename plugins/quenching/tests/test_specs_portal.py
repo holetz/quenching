@@ -75,6 +75,33 @@ class PortalCase(unittest.TestCase):
         return status, json.loads(body)
 
 
+class ChangeToken(PortalCase):
+    def raw(self, target, headers=AUTH):
+        return self.portal.handle("GET", target, headers)
+
+    def test_list_reads_carry_an_etag_and_a_match_is_a_bodyless_304(self):
+        for route in ("specs", "epics", "human"):
+            status, hdrs, _ = self.raw(f"/api/{route}")
+            self.assertEqual(status, 200)
+            etag = hdrs["ETag"]
+            status, hdrs, body = self.raw(f"/api/{route}", {**AUTH, "If-None-Match": etag})
+            self.assertEqual((status, body, hdrs["ETag"]), (304, b"", etag))
+            self.assertEqual(self.raw(f"/api/{route}", {**AUTH, "If-None-Match": '"x"'})[0], 200)
+
+    def test_the_token_survives_a_snapshot_rebuild_and_moves_with_content(self):
+        etag = self.raw("/api/specs")[1]["ETag"]
+        again = self.raw("/api/specs?refresh=1")
+        self.assertEqual(again[1]["ETag"], etag)
+        self.backend.create_spec("plans", READY.format(title="Delta"))
+        self.assertNotEqual(self.raw("/api/specs?refresh=1")[1]["ETag"], etag)
+
+    def test_a_304_still_needs_the_token_and_the_host(self):
+        etag = self.raw("/api/specs")[1]["ETag"]
+        self.assertEqual(self.raw("/api/specs", {**HOST, "If-None-Match": etag})[0], 401)
+        self.assertEqual(self.raw("/api/specs", {"Host": "evil:1", "X-Quenching-Token": TOKEN,
+                                                 "If-None-Match": etag})[0], 403)
+
+
 class Handlers(PortalCase):
     def test_list_is_lean_with_derived_stage_progress_and_rank(self):
         status, body = self.get("/api/specs")
