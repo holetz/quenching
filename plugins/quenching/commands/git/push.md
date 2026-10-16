@@ -57,7 +57,7 @@ the no-op/refusal is reported.
 
 Show the remote URL, local branch, destination branch, upstream action, ahead/behind counts and
 every commit that will be sent. For a lease push, also show the expected remote SHA, the current
-remote SHA and the commits being replaced. Put a decision sheet (`specs-develop/questions.md` §1; A confirm, B decline) for confirmation of exactly
+remote SHA and the commits being replaced. Put a decision sheet ([specs-develop/questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §1; A confirm, B decline) for confirmation of exactly
 that normal or lease push, and end the turn. A changed destination, branch, remote URL, lease or commit list requires
 a fresh run and a new confirmation. **Done when:** the human confirms or declines the exact
 publication.
