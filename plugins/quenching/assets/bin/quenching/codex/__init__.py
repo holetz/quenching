@@ -19,7 +19,7 @@ from quenching.common.version import VERSION
 
 
 def build_parser() -> argparse.ArgumentParser:
-    common = argparse.ArgumentParser(add_help=False)
+    common = NoAbbrevParser(add_help=False)
     common.add_argument("--root", default=argparse.SUPPRESS,
                         help="repository root whose .claude/quenching.json is read")
     common.add_argument("--json", action="store_true", default=argparse.SUPPRESS,
