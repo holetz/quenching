@@ -543,7 +543,7 @@
     "scripts/bin/quenching/components/commands/cli.py": "ba3bd64258e7f764320c9d4eb0b737e9cd383eba89db5b88891559748b950f88",
     "scripts/bin/quenching/components/commands/cost.py": "2004c5fbe1365fa473d899862ea52eae216e88b2132bb79ead5ca9ab18a0d8a5",
     "scripts/bin/quenching/components/commands/doctor.py": "67f1ac026f4e3b6d09db82708012e94793ca91cd7231d67a39f37b9a52c0a7d9",
-    "scripts/bin/quenching/components/commands/lint.py": "c1f4d86cab2c9eed4883e8ffe32a45d365b42ffbc2d2712263ce65f017d4e0da",
+    "scripts/bin/quenching/components/commands/lint.py": "ca1b092ba9e281655c0a65676a958d659943a6688a931b75d4756338b3c1b918",
     "scripts/bin/quenching/components/commands/read.py": "a0dd7e9c409dda70939e3c1d502da0154bfb02c81d92d09e038c75926567964f",
     "scripts/bin/quenching/components/commands/registry.py": "b1aece1a797267ff0005237e33bafe7a9e53ef18dc98b6c495528e67eda9d312",
     "scripts/bin/quenching/components/commands/translate.py": "b369ac9d67d83b05403427e595b2eac50043c48ea33b770faf8d89eba85f45b8",
