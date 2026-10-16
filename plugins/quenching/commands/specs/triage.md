@@ -107,8 +107,9 @@ Rules for the table:
 
 ### 3. One OK
 Present the table and **wait for a single confirmation**. Adjustments → adjust and re-present;
-rejection → write nothing and stop. Use **AskUserQuestion** when the choice is between two orderings
-rather than open-ended.
+rejection → write nothing and stop. Put a choice between two orderings on a decision sheet
+([questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared mechanics §1)
+rather than asking it open-ended.
 **Done when:** the human has approved, adjusted, or rejected the whole table.
 
 ### 4. Apply exactly what was approved

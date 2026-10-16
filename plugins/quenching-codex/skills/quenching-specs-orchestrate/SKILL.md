@@ -18,7 +18,7 @@ Tier mapping: opus → `gpt-6-astra`; sonnet → `gpt-6.1-sol`; haiku → `gpt-6
 # quenching-specs-orchestrate — conduct an epic or a queue
 
 **Input**: `$ARGUMENTS` — an epic id or a list of spec ids, and optionally `--autonomous`. Empty or ambiguous → run
-`cq specs list --json` and ask which with **AskUserQuestion**.
+`cq specs list --json` and ask which on a decision sheet ([questions.md](../../references/specs-develop/questions.md) §The four shared mechanics §1).
 
 This command is a launcher. The protocol (waves, routing, budgets, acceptance, audit) lives in the
 `orchestrator` agent definition, `../../agents/orchestrator.md`; do not restate it.
@@ -35,7 +35,7 @@ Read each spec's metadata with `cq specs status --spec <id> --json`: `complexity
 `records.priority.complexity` and `approved` from `records.approved`. Split the set from these
 `status` payloads: **runs alone** is a spec with `approved` recorded or
 `complexity: low`; **needs a human** is `medium` or above with no `approved`. Nothing needs a
-human → go to step 3. Otherwise ask once with **AskUserQuestion**, naming the specs on each side:
+human → go to step 3. Otherwise ask once on a decision sheet, naming the specs on each side:
 
 - **Develop now** — run `quenching-specs-develop <id>` in this session, one spec after another,
   for the specs that need a human, then launch everything. A develop of a `medium` spec costs about
