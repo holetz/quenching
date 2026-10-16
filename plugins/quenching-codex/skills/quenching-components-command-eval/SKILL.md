@@ -24,7 +24,7 @@ Resolve `cq components` per
 §Resolving the tool.
 
 **Input**: optionally a skill name. If omitted, infer from context; if more than one is plausible,
-put a decision sheet (`specs-develop/questions.md` §1) and end the turn.
+put a decision sheet ([specs-develop/questions.md](../../references/specs-develop/questions.md) §1) and end the turn.
 
 ## Workflow
 
