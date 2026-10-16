@@ -15,7 +15,7 @@ SOURCE: Path | None = None
 TARGET: Path | None = None
 MANIFEST: Path | None = None
 COPY_DIRS = ("assets/references", "assets/templates", "assets/specs", "assets/knowledge", "assets/checks", "assets/design", "assets/portal", "assets/bin", "agents")
-COPY_FILES = ("bin/cq", "README.md", "VERSION")
+COPY_FILES = ("bin/cq", "assets/modules.json", "README.md", "VERSION")
 DROP_FRONTMATTER = {"argument-hint", "allowed-tools", "model", "context", "hooks"}
 FORBIDDEN_AFTER_TRANSLATION = ("${CLAUDE_PLUGIN_ROOT}", "${CLAUDE_PROJECT_DIR}", "CLAUDE_PLUGIN_ROOT")
 PLATFORM_NEUTRAL_CLAUDE_CODEX = "\u0043laude or \u0043odex"
@@ -428,11 +428,13 @@ def transform_asset(relative: Path, text: str, adaptation: dict) -> str:
     # and paths it must recognize when it runs again from the generated plugin.
     if relative.as_posix() == "quenching/components/commands/translate.py":
         return text
-    if relative.as_posix() == "quenching/session/commands/cost.py":
+    if relative.as_posix() in {"quenching/session/commands/cost.py",
+                               "quenching/session/commands/context.py"}:
+        command = relative.stem
         return '\n'.join([
             '"""Generated Codex refusal: source transcript tokens cannot measure this host."""',
             'from quenching.common.output import refuse', '',
-            'def cmd_cost(args) -> int:',
+            f'def cmd_{command}(args) -> int:',
             '    return refuse({"code": "se-codex-telemetry-unavailable",',
             '                   "message": "Codex token usage not measured: use host telemetry when available; source transcript accounting is unsupported."}, args.json)',
             '',
@@ -616,6 +618,8 @@ def generated_tree() -> dict[str, bytes]:
             output[str(Path("skills") / skill_name(command) / "agents" / "openai.yaml")] = policy
     for rel in COPY_FILES:
         destination = Path("scripts/cq") if rel == "bin/cq" else Path(rel)
+        if rel == "assets/modules.json":
+            destination = Path("scripts/modules.json")
         content = transform_platform((source() / rel).read_text(encoding="utf-8"), adaptation)
         if rel == "README.md":
             content = codex_readme(transform_codex_runtime(content, adaptation))

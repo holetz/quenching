@@ -469,6 +469,33 @@ class ConcludeGeneratedConflictRecipeTest(unittest.TestCase):
 
 
 class CodexRuntimeTranslation(unittest.TestCase):
+    def test_generated_cli_runs_from_an_isolated_plugin_install(self):
+        import subprocess
+        import sys
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            installed = root / "cache/quenching-codex/6.4.0"
+            translate.configure(str(translate.payload_root()), str(installed))
+            for relative, content in translate.generated_tree().items():
+                path = installed / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(content)
+            launcher = [sys.executable, str(installed / "scripts/cq")]
+            for front in ("specs", "components", "knowledge", "git", "design",
+                          "ops", "proof", "toolchain", "delivery", "security"):
+                with self.subTest(front=front):
+                    result = subprocess.run([*launcher, front, "--help"], cwd=root,
+                                            capture_output=True, text=True)
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            for command in ("cost", "context"):
+                with self.subTest(command=command):
+                    result = subprocess.run(
+                        [*launcher, "components", "session", command, "--json"],
+                        cwd=root, capture_output=True, text=True)
+                    self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+                    self.assertIn("se-codex-telemetry-unavailable", result.stdout)
+                    self.assertNotIn("Traceback", result.stderr)
+
     def test_runtime_maps_active_models_preserving_fixture_data(self):
         adaptation = translate.read_adaptation()
         raw = "model: opus\neffort: high\nNever haiku for product code; sonnet worker.\n```python\nfixture = 'opus'\n```\n"
