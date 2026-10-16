@@ -195,6 +195,7 @@ workItemType: epic
         epic = f"""---
 title: Autopilot - decidir com o humano
 date: 2026-01-01
+workItemType: epic
 ---
 
 ## Tasks
@@ -225,6 +226,22 @@ date: 2026-01-01
         self.assertEqual(body["count"], len({str(m["id"]) for m in body["epicMembers"] if m["id"]}
                                             | {str(b["id"]) for b in body["blocked"]}
                                             | {str(a["id"]) for a in body["awaitingApproval"]}) + 1)
+
+    def test_human_ignores_plain_specs_and_archived_epics_titled_like_the_mark(self):
+        plain = """---
+title: Painel decidir com o humano
+date: 2026-01-01
+---
+
+## Tasks
+
+- [ ] 1.1 Implement it
+"""
+        self.backend.create_spec("plans", plain)
+        status, body = self.get("/api/human?refresh=1")
+        self.assertEqual(status, 200)
+        self.assertEqual(body["epicMembers"], [])
+        self.assertEqual(body["count"], 0)
 
     def test_human_needs_the_token(self):
         status, _, _ = self.portal.handle("GET", "/api/human", HOST, b"")
