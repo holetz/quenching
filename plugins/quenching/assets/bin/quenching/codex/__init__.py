@@ -2,7 +2,8 @@
 
     cq codex probe [--json]    exit 0 available · 1 unavailable · 2 unknown (the quota);
                                `sandbox` says whether Codex can run commands on this host
-    cq codex review --worktree <dir> --prompt <file> [--run <name>] [--json]
+    cq codex review --worktree <dir> --prompt <file> [--base <ref> [--head <ref>]]
+                    [--run <name>] [--json]
                                exit 0 reviewed · 1 fall back to Claude · 2 refusal
 """
 from __future__ import annotations
@@ -36,6 +37,9 @@ def build_parser() -> argparse.ArgumentParser:
     review.add_argument("--worktree", required=True, help="the checkout Codex reviews")
     review.add_argument("--prompt", required=True, help="file whose text is sent on stdin")
     review.add_argument("--run", help="run name under .quenching/codex/ (default: UTC stamp)")
+    review.add_argument("--base", help="the ref whose diff goes into the prompt when the "
+                                       "sandbox is unavailable")
+    review.add_argument("--head", default="HEAD", help="the diff's other end (default: HEAD)")
     return parser
 
 
@@ -63,7 +67,8 @@ def main(argv: list[str]) -> int:
     if args.command == "probe":
         return _probe(root, as_json)
     settings, warnings = load_settings(root)
-    payload, code = run_review(root, settings, args.worktree, args.prompt, args.run)
+    payload, code = run_review(root, settings, args.worktree, args.prompt, args.run,
+                               base=args.base, head=args.head)
     if code == 2:
         return refuse({k: v for k, v in payload.items() if k != "ok"}, as_json)
     payload["warnings"] = warnings
