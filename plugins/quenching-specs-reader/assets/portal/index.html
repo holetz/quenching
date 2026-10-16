@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>Quenching specs</title>
+<link rel="icon" id="favicon" href="data:,">
 <link rel="stylesheet" href="/app.css">
 </head>
 <body>
@@ -14,6 +15,7 @@
   <nav aria-label="Views" id="nav">
     <a href="#/board" data-view="board">Board</a>
     <a href="#/list" data-view="list">Ranking</a>
+    <a href="#/human" data-view="human" id="nav-human">Decidir com o humano <span id="human-count" class="count" aria-label="waiting for the human">0</span></a>
     <a href="#/epics" data-view="epics" id="nav-epics" hidden>Epics</a>
   </nav>
   <form role="search" id="search-form">
@@ -29,6 +31,7 @@
 <p id="banner" class="banner" role="status" hidden></p>
 <main id="main" tabindex="-1"></main>
 <div id="toasts" role="alert" aria-live="assertive"></div>
+<aside id="drawer" class="drawer" role="dialog" aria-modal="false" aria-labelledby="drawer-title" hidden></aside>
 <dialog id="dlg" aria-labelledby="dlg-title"></dialog>
 <script src="/app.js"></script>
 </body>
