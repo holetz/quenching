@@ -13,7 +13,7 @@
     "${CLAUDE_PLUGIN_ROOT}/assets/checks/": "../../checks/",
     "${CLAUDE_PLUGIN_ROOT}": "../..",
     "${CLAUDE_PROJECT_DIR}": ".",
-    "~/.claude/projects/": "~/.codex/projects/",
+    "~/.claude/projects/": "~/.codex/sessions/",
     ".claude/commands/": ".agents/skills/",
     ".claude/skills/": ".agents/skills/",
     ".claude/": ".agents/",

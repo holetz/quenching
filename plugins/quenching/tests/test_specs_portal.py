@@ -24,7 +24,8 @@ TOKEN = "t0ken"
 PORT = 4321
 HOST = {"Host": f"127.0.0.1:{PORT}"}
 AUTH = {**HOST, "X-Quenching-Token": TOKEN}
-JSON = {**AUTH, "Content-Type": "application/json"}
+ORIGIN = {"Origin": f"http://127.0.0.1:{PORT}"}
+JSON = {**AUTH, **ORIGIN, "Content-Type": "application/json"}
 
 READY = """---
 title: {title}
@@ -323,18 +324,57 @@ class Security(PortalCase):
                 self.assertEqual(self.portal.handle("GET", f"/api/{route}", HOST)[0], 401)
         self.assertEqual(self.portal.handle(
             "GET", "/api/specs", {**HOST, "X-Quenching-Token": "nope"})[0], 401)
-        self.assertEqual(self.portal.handle("POST", "/api/capture", HOST, b"{}")[0], 401)
+        self.assertEqual(self.portal.handle("POST", "/api/capture", {**HOST, **ORIGIN}, b"{}")[0], 401)
 
-    def test_token_in_the_query_reads_but_never_writes(self):
-        self.assertEqual(self.portal.handle("GET", f"/api/specs?token={TOKEN}", HOST)[0], 200)
-        status, _, _ = self.portal.handle(
-            "POST", f"/api/reorder?token={TOKEN}",
-            {**HOST, "Content-Type": "application/json"}, b'{"order":[1]}')
-        self.assertEqual(status, 401)
+    def test_the_query_token_is_never_accepted(self):
+        self.assertEqual(self.portal.handle("GET", f"/api/specs?token={TOKEN}", HOST)[0], 401)
+        self.assertEqual(self.portal.handle("GET", f"/?token={TOKEN}", HOST)[0], 401)
+
+    def test_the_cookie_authenticates_reads_and_writes(self):
+        jar = {**HOST, **ORIGIN, "Cookie": f"qtoken={TOKEN}", "Content-Type": "application/json"}
+        self.assertEqual(self.portal.handle("GET", "/api/specs", jar)[0], 200)
+        self.assertEqual(self.portal.handle("GET", "/", jar)[0], 200)
+        self.assertEqual(self.portal.handle("POST", "/api/reorder", jar, b'{"order":[1]}')[0], 200)
+        bad = {**jar, "Cookie": "qtoken=nope"}
+        self.assertEqual(self.portal.handle("GET", "/api/specs", bad)[0], 401)
+
+    def test_a_post_without_origin_is_refused_even_with_a_valid_token(self):
+        headers = {**AUTH, "Content-Type": "application/json"}
+        status, _, body = self.portal.handle("POST", "/api/reorder", headers, b'{"order":[1]}')
+        self.assertEqual((status, json.loads(body)["code"]), (403, "sp-portal-bad-origin"))
+
+    def test_the_nonce_trades_once_for_an_httponly_strict_cookie(self):
+        nonce = self.portal.nonce
+        status, headers, _ = self.portal.handle("GET", f"/?nonce={nonce}", HOST)
+        self.assertEqual((status, headers["Location"]), (303, "/"))
+        cookie = headers["Set-Cookie"]
+        for part in (f"qtoken={TOKEN}", "HttpOnly", "SameSite=Strict", "Path=/"):
+            self.assertIn(part, cookie)
+        self.assertEqual(self.portal.handle("GET", f"/?nonce={nonce}", HOST)[0], 401)
+        self.assertEqual(self.portal.handle("GET", "/?nonce=wrong", HOST)[0], 401)
+
+    def test_the_client_keeps_no_token(self):
+        js = (portal_mod.static_dir() / "app.js").read_text()
+        for needle in ("X-Quenching-Token", "sessionStorage", "?token", 'get("token")'):
+            self.assertNotIn(needle, js)
+
+    def test_the_open_url_carries_the_nonce_and_never_the_token(self):
+        server = portal_mod.make_server(self.tmp, token=TOKEN)
+        self.addCleanup(server.server_close)
+        args = mock.Mock(host="127.0.0.1", port=0, read_only=False, json=True, open=True)
+        out = mock.Mock()
+        opened = []
+        with mock.patch.object(portal_mod, "make_server", return_value=server), \
+                mock.patch("webbrowser.open", side_effect=opened.append), \
+                mock.patch.object(server, "serve_forever", side_effect=KeyboardInterrupt):
+            portal_mod.cmd_serve(args, self.tmp, out)
+        self.assertEqual(len(opened), 1)
+        self.assertNotIn(TOKEN, opened[0])
+        self.assertIn(f"nonce={server.portal.nonce}", opened[0])
 
     def test_the_page_needs_the_token_but_assets_do_not(self):
         self.assertEqual(self.portal.handle("GET", "/", HOST)[0], 401)
-        self.assertEqual(self.portal.handle("GET", f"/?token={TOKEN}", HOST)[0], 200)
+        self.assertEqual(self.portal.handle("GET", "/", AUTH)[0], 200)
         self.assertEqual(self.portal.handle("GET", "/app.js", HOST)[0], 200)
 
     def test_bad_host_is_refused_even_with_a_valid_token(self):
@@ -350,11 +390,11 @@ class Security(PortalCase):
             "POST", "/api/reorder", {**JSON, "Origin": "http://evil.example"}, b'{"order":[1]}')
         self.assertEqual((status, json.loads(body)["code"]), (403, "sp-portal-bad-origin"))
         ok = self.portal.handle("GET", "/api/specs",
-                                {**AUTH, "Origin": f"http://127.0.0.1:{PORT}"})
+                                {**AUTH, **ORIGIN})
         self.assertEqual(ok[0], 200)
 
     def test_writes_need_json_and_traversal_is_closed(self):
-        status, _, _ = self.portal.handle("POST", "/api/reorder", AUTH, b'{"order":[1]}')
+        status, _, _ = self.portal.handle("POST", "/api/reorder", {**AUTH, **ORIGIN}, b'{"order":[1]}')
         self.assertEqual(status, 415)
         self.assertEqual(self.portal.handle("GET", "/..%2f..%2fetc/passwd", HOST)[0], 404)
         self.assertEqual(self.portal.handle("GET", "/../../etc/passwd", HOST)[0], 404)

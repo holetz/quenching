@@ -42,9 +42,14 @@ under `/`. POST: `/api/capture`, `/api/section`, `/api/approve`, `/api/reorder`,
 Kept as `portal.py` documents them in its docstring:
 
 - Loopback only; a non-loopback `--host` is refused before a socket opens.
-- A random per-run token on every `/api/` call (`X-Quenching-Token`, or `?token=` for reads), and
-  for the page itself. Writes accept the header only.
-- `Host` must name the bound loopback address and `Origin`, when sent, must be this server.
+- A random per-run token on every `/api/` call and for the page itself, carried by the `qtoken`
+  cookie (`HttpOnly; SameSite=Strict; Path=/`) or the `X-Quenching-Token` header, and never
+  accepted in a URL (`?token=` is refused). The URL the portal prints and `--open` hands to the
+  browser holds only a random one-use nonce: `GET /?nonce=` trades it once for the cookie with a
+  303 to `/`, and a used or wrong nonce is a 401. The token never reaches the argv, the history
+  or `app.js`.
+- `Host` must name the bound loopback address; `Origin`, when sent, must be this server, and
+  every POST must send it (a POST without `Origin` is refused with `sp-portal-bad-origin`).
 - Writes need `application/json`, are bounded by `MAX_BODY`, and are refused server-side under
   `--read-only` or a read-only backend.
 - A refusal or conflict is an HTTP error carrying the CLI's `code`, never a success.
