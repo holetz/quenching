@@ -122,10 +122,9 @@ that carries content stays: the pass and its stop conditions (step 3), the conso
 (step 6), the report (step 8).
 
 **A recommendation rides inside the question, never in a turn before it.** Where a choice is
-genuinely the human's, the recommendation and the reasoning behind it go in the **AskUserQuestion**
-payload — the recommended option first and marked "(Recommended)", the reasoning in its description
-— so the human answers in one word and no turn was spent setting the question up.
-Where **AskUserQuestion** is unavailable (a sub-agent), do not ask: return `STATE: blocked` with `NOTE: needs-human: <question>`.
+genuinely the human's, the recommendation and the reasoning behind it go on the **decision sheet**
+([questions.md](../../references/specs-develop/questions.md) §The four shared mechanics §1) — option A, recommended, the reasoning in its own text — so the human answers in one word and no turn was spent setting the question up.
+A sub-agent does not ask: return `STATE: blocked` with `NOTE: needs-human:` carrying the decision sheet.
 **This contract stops at the edge of how questions are grouped.**
 [questions.md](../../references/specs-develop/questions.md) §The four shared
 mechanics §1 is the only authority there: a question travels with the ones whose answers cannot
@@ -135,7 +134,7 @@ change it, and alone otherwise.
 
 ### 1. Resolve the spec, and announce where it lives
 Take the id from the input, infer it from the conversation, or run `cq specs list --json` and ask
-with **AskUserQuestion** (most recently modified marked "(Recommended)"). Announce it and how to
+on a decision sheet (most recently modified as option A, recommended). Announce it and how to
 override. Two matches for one id is exit 2 — report both paths and stop, never guess which was
 meant. An archived spec has nothing to develop: say so and stop.
 
@@ -389,9 +388,9 @@ With no unresolved size decision, close according to the gear — §Approval own
   this pass never had. When the conductor declared `low` as **forced** (the invocation says
   `autonomous`) and the on-disk level is above `low`, stamp `--set by=orchestrator-forced`
   instead. That is the only path that writes this value, and only after step 7 proved `ready`.
-- **`medium` · `high` · `xhigh`** — ONE closing screen that **recommends** rather than defaulting to
+- **`medium` · `high` · `xhigh`** — ONE closing decision sheet that **recommends** rather than defaulting to
   approve. Judge what the pass produced against §Refine's three signals and lead with the move they
-  argue for, marked "(Recommended)", carrying the signal in its own text: approve, refine (a raise
+  argue for, as option A (recommended), carrying the signal in its own text: approve, refine (a raise
   to `high`), refine with the premortem (a raise to `xhigh`), or stop. Choosing a raise IS the OK to
   restamp `complexity`; apply both and re-enter at step 3 under the raised level. A pass where
   refine already ran recommends approving and names what the argument settled — never the raise the

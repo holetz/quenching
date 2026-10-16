@@ -201,7 +201,7 @@ presumed and why — the shape differs by path:
 | plan source | subject, type, tags and `complexity` (each reasoned), and the **list** of sections filled with the task count. **Never the bodies** — the plan is large and the human just wrote it |
 
 Then the next-step block — `quenching-specs-develop <id>` as the forward candidate — and **one**
-`AskUserQuestion`, immediately after. Two options:
+decision sheet ([questions.md](../../references/specs-develop/questions.md) §The four shared mechanics §1), immediately after. Two options:
 
 1. **Develop now (Recommended)** — narrate, then invoke `quenching:specs:develop <id>` through
    the **Skill** tool, with no sentence declared. Whether that pass asks anything is the

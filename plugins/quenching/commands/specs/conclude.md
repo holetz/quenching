@@ -113,7 +113,7 @@ branch's own marking:
 [auto-discover.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/auto-discover.md)
 §Reading the marking §Filtering to valid IDs §Resolving what remains, cited rather than
 restated. One valid id resolves it silently, naming the marking as the source; more than one asks
-which, on a decision sheet ([questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared mechanics §1). No valid marking → §The fallback there measures the diff and always
+which, on a decision sheet. No valid marking → §The fallback there measures the diff and always
 asks whether to materialize a minimal spec — accepted, its new id is used from here on exactly
 like a marked one. **Declined, headless completion — closing with no spec file at all — is not
 built**: say so, record it with `cq specs discover`, and fall back to `cq specs list --json` and
