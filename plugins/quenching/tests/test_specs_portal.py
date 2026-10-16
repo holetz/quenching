@@ -115,6 +115,53 @@ class Handlers(PortalCase):
     def test_epics_are_hidden_when_no_spec_is_an_epic(self):
         self.assertFalse(self.get("/api/epics")[1]["supported"])
 
+    def test_epics_carry_waves_dependencies_and_critical_path(self):
+        epic = """---
+title: Program
+date: 2026-01-01
+workItemType: epic
+---
+
+## Tasks
+
+### 1. First
+
+- [ ] S1 One — spec: #1
+- [ ] S2 Two — spec: #2 — after: S1
+
+### 2. Second
+
+- [ ] S3 Three — spec: #3 — after: S2
+"""
+        self.backend.create_spec("plans", epic)
+        body = self.get("/api/epics")[1]
+        self.assertTrue(body["supported"])
+        row = body["epics"][0]
+        self.assertEqual([i["label"] for i in row["items"]], ["S1", "S2", "S3"])
+        self.assertEqual(row["items"][1]["after"], ["S1"])
+        self.assertEqual(row["items"][1]["status"], "waiting")
+        self.assertEqual([g["group"] for g in row["groups"]], [1, 2])
+        self.assertEqual(row["criticalPath"], ["S1", "S2", "S3"])
+        self.assertIsNone(row["cycle"])
+        self.assertNotIn("member", row["items"][0])
+
+    def test_epics_report_a_dependency_cycle(self):
+        epic = """---
+title: Loop
+date: 2026-01-01
+workItemType: epic
+---
+
+## Tasks
+
+- [ ] S1 One — spec: #1 — after: S2
+- [ ] S2 Two — spec: #2 — after: S1
+"""
+        self.backend.create_spec("plans", epic)
+        row = self.get("/api/epics")[1]["epics"][0]
+        self.assertTrue(row["cycle"])
+        self.assertEqual(row["criticalPath"], [])
+
     def test_capture_creates_a_spec_through_the_cli_verb(self):
         status, body = self.post("capture", {"title": "Delta", "problem": "It hurts."})
         self.assertEqual(status, 200, body)
