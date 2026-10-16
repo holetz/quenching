@@ -624,7 +624,7 @@
     "scripts/bin/quenching/specs/backends/__init__.py": "4a48fcadb75cded02b36aeefe23afcc3c330f28ad0d6a94a0f5939e31ce0801a",
     "scripts/bin/quenching/specs/backends/azure.py": "b55979ec00280ca7fb691021c4cab15aba5e1f58d9bf393699df9ca2a412e973",
     "scripts/bin/quenching/specs/backends/base.py": "4c5673a9a179c45ce9d305c7e664d65d702039027c5e6dcd8c1a0667ee8e2d69",
-    "scripts/bin/quenching/specs/backends/git.py": "3378fce8732a59b4b00b2b974271cda2de1285525714dcf60a2db310d30be25d",
+    "scripts/bin/quenching/specs/backends/git.py": "6b1b01c5c8bef9b2e814258a4a98e73d1bfd36a59e397297411c7f0e67931f57",
     "scripts/bin/quenching/specs/backends/github.py": "6c920d45126a9cd150af2cff181c2e09b217d115a813a091a062c57d9ead154b",
     "scripts/bin/quenching/specs/backends/hybrid.py": "d8dc25aa28f0a2f62ea0f056e391ff3a3e2457150d89a21eeaac04f84812da44",
     "scripts/bin/quenching/specs/backends/memory.py": "49261a3b16e95d72286c43d2560e670cede995bb0bbab548d95660282cf49443",
