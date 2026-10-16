@@ -363,8 +363,11 @@ class Portal:
         for e in infos.values():
             if HUMAN_EPIC_MARK not in str(e["frontmatter"].get("title") or "").lower():
                 continue
+            if str(e["frontmatter"].get("workItemType") or "").lower() != "epic" \
+                    or e["phase"] == "archive":
+                continue
             for it in derive_epic(e, members)["items"]:
-                if it["status"] == "done":
+                if it["status"] in ("done", "dropped"):
                     continue
                 sid = str(it["spec"]) if it["spec"] else ""
                 row = rows.get(sid)
