@@ -98,9 +98,12 @@ você vetar"; the structure does not change.
 When the human asks for the menu, the recommended option is listed first and marked
 "(Recommended)", and the grouping rule above still decides what travels together.
 
-**A sub-agent never asks.** It returns `STATE: blocked` with `NOTE: needs-human:` carrying the
-sheet, and the conductor presents it. Autonomous paths and the `low` gear ask nothing, sheet or
-menu.
+**A sub-agent without the `AskUserQuestion` grant never asks.** It returns `STATE: blocked` with
+`NOTE: needs-human:` carrying the sheet, and the conductor presents it. **A sub-agent that holds the
+AskUserQuestion grant is the exception:** it carries the sheet inside one `AskUserQuestion` call
+(each `Dn` a question, the recommended option first and marked "(Recommended)", the reasoning in its
+description), because that call is its only channel to the human, and it does not end the turn on
+prose. Autonomous paths and the `low` gear ask nothing, sheet or menu.
 
 Which shape a stage takes is a property of the stage, stated with it:
 
