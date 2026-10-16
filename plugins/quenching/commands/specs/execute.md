@@ -348,7 +348,7 @@ h. **At a section boundary, keep the task commits, read the session size once, a
    `cq components session context --json` and print its peak and budget in the banner. Exit 0 or 2
    → continue to the next task: the boundary is not a question. Exit 1 → ask once, on a
    decision sheet: stop here and resume with `/quenching:specs:execute <id>` in a new session
-   as option A (recommended), the measured peak in its description, or continue. Otherwise stop only when the
+   "(Recommended)" as option A, the measured peak in its description, or continue. Otherwise stop only when the
    workflow reaches a question that requires a human answer, or under the pause conditions below. See
    [execution-cadence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-cadence.md)
    §The section boundary.
