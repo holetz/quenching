@@ -108,3 +108,22 @@ dialog label { display: grid; gap: 3px; font-size: 13px; color: var(--muted); }
 dialog textarea { min-height: 160px; font-family: ui-monospace, monospace; }
 .actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 @media (prefers-reduced-motion: no-preference) { .bar > i { transition: width .2s; } }
+
+/* epic waves */
+.waves { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 1fr); gap: 12px; overflow-x: auto; }
+.wave { background: var(--chip); border-radius: 10px; padding: 10px; }
+.wave ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.wave-item { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+.wave-item.critical { border: 2px solid var(--accent); }
+.chip.crit { background: var(--accent); color: var(--accent-ink); }
+.chip.st-done { background: #d8eee1; color: var(--ok); }
+.chip.st-in-progress { background: #f6e4c4; color: var(--warn); }
+.chip.st-ready { background: #dbe8fb; color: #0f3d8a; }
+.chip.st-waiting, .chip.st-not-ready, .chip.st-missing, .chip.st-dropped { background: var(--chip); color: var(--muted); }
+.chip.st-blocked, .chip.st-unmerged { background: var(--bad); color: #ffffff; font-weight: 600; }
+@media (prefers-color-scheme: dark) {
+  .chip.st-done { background: #1b3a2a; }
+  .chip.st-in-progress { background: #3d3216; }
+  .chip.st-ready { background: #1f3358; color: #a9c5ff; }
+  .chip.st-blocked, .chip.st-unmerged { color: #1a0807; }
+}
