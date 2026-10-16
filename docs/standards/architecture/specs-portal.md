@@ -22,7 +22,7 @@ limits; it does not prescribe layout.
 ## Read scope
 
 The portal reads exactly what `open_backend` reads, through the same layer the CLI uses. Nothing
-else is read: no `~/.claude`, no other file tree, no `gh` call (`derive_epic` runs without
+else is read: no `~/.claude`, no other file tree, no `gh` call on a read (`derive_epic` runs without
 `pr_states`). A change that needs data outside the store is not a portal change until a human
 decides it.
 
@@ -33,7 +33,8 @@ under `/`. POST: `/api/capture`, `/api/section`, `/api/approve`, `/api/reorder`,
 `/api/discovery`, each delegating to the CLI's own verb so CAS and refusals are the terminal's.
 
 - No new POST route enters without a human decision. Reading more is a GET over the same store.
-- A portal request starts no process beyond the read the store backend already makes (on the git backend, `git` reading the `quenching` branch), and never calls `gh`.
+- A GET request starts no process beyond the read the store backend already makes (on the git backend, `git` reading the `quenching` branch), and never calls `gh`.
+- A POST request writes to the store and pushes to git through the CLI's own verb. `/api/capture` is the one route that also reaches `gh`: it resolves the repository and projects the card through it (`cmd_new` → `resolve_card_client`). This describes what exists; it grants nothing new.
 - Static assets are read-only: any non-GET/HEAD method on them is a 405.
 
 ## Security guarantees
