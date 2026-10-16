@@ -192,6 +192,10 @@
   }
   function anyFilter() { return Object.values(state.filters).some(Boolean); }
 
+  function stagePill(stage) {
+    return h("span", { class: "chip stage-" + stage }, stage);
+  }
+
   function viewList() {
     const plans = state.specs.filter((s) => s.phase === "plans").sort((a, b) => a.rank - b.rank);
     const visible = filtered().filter((s) => s.phase === "plans").sort((a, b) => a.rank - b.rank);
@@ -208,7 +212,7 @@
         } },
         h("td", { class: "num" }, s.rank),
         h("td", {}, h("a", { href: "#/spec/" + s.id }, `${s.id} · ${s.title}`)),
-        h("td", {}, s.stage), h("td", {}, cardMeta(s)),
+        h("td", {}, stagePill(s.stage)), h("td", {}, cardMeta(s)),
         h("td", { class: "grip" },
           h("button", { type: "button", disabled: !canDrag || idx === 0, "aria-label": `Move ${s.id} up`, on: { click: () => step(plans, s.id, -1) } }, "▲"),
           h("button", { type: "button", disabled: !canDrag || idx === visible.length - 1, "aria-label": `Move ${s.id} down`, on: { click: () => step(plans, s.id, 1) } }, "▼")));
@@ -244,7 +248,7 @@
     return state.epics.epics.map((e) => h("section", { class: "panel" },
       h("div", { class: "sechead" }, h("h2", {}, h("a", { href: "#/spec/" + e.id }, `${e.id} · ${e.title}`)), h("span", {}, `${e.done}/${e.total} done`)),
       e.total ? h("div", { class: "meta" }, h("span", { class: "bar", role: "img", "aria-label": `${e.done} of ${e.total} children archived` }, h("i", { style: `width:${Math.round(100 * e.done / e.total)}%` }))) : h("p", { class: "empty" }, "no children yet"),
-      h("ul", {}, e.children.map((c) => h("li", {}, h("a", { href: "#/spec/" + c.id }, `${c.id} · ${c.title}`), " ", h("span", { class: "chip" }, c.stage))))));
+      h("ul", {}, e.children.map((c) => h("li", {}, h("a", { href: "#/spec/" + c.id }, `${c.id} · ${c.title}`), " ", stagePill(c.stage))))));
   }
 
   async function viewDetail(id) {
@@ -324,7 +328,7 @@
     let r;
     try { r = await api("search?q=" + encodeURIComponent(q)); } catch (e) { fail(e); return h("p", {}, "Search failed."); }
     return h("section", { class: "panel" }, h("h2", {}, `${r.count} result(s) for "${q}"`),
-      h("ul", {}, r.results.map((x) => h("li", {}, h("a", { href: "#/spec/" + x.id }, `${x.id} · ${x.title}`), " ", h("span", { class: "chip" }, x.stage), x.snippet ? h("div", { class: "meta" }, "…" + x.snippet + "…") : null))));
+      h("ul", {}, r.results.map((x) => h("li", {}, h("a", { href: "#/spec/" + x.id }, `${x.id} · ${x.title}`), " ", stagePill(x.stage), x.snippet ? h("div", { class: "meta" }, "…" + x.snippet + "…") : null))));
   }
 
   /* ── router ──────────────────────────────────────────────────────────────── */
