@@ -113,10 +113,15 @@ _EPIC_ITEM_KEYS = ("label", "title", "spec", "after", "group", "groupTitle", "wa
 
 HUMAN_EPIC_MARK = "decidir com o humano"
 
+# sys.stdin/stdout/stderr belong to the process, so the lock that guards their redirection does too.
+# Always taken after `Portal.lock` and never held while taking another: no deadlock between portals.
+_STDIO_LOCK = threading.RLock()
+
 
 class Portal:
-    """One portal over one repository root. Every backend touch happens under `self.lock`
-    because the CLI verbs print to the process-wide stdout, which the lock lets us capture."""
+    """One portal over one repository root. Every backend touch happens under `self.lock`;
+    the CLI verbs print to the process-wide stdout, so `_verb` also takes the module-wide
+    `_STDIO_LOCK` around the redirection, which keeps two portals from capturing each other."""
 
     def __init__(self, root: str, token: str, read_only: bool = False,
                  host: str = "127.0.0.1", port: int = 0) -> None:
@@ -416,19 +421,20 @@ class Portal:
         """Run one CLI verb in-process and parse its `--json` payload. Returns the payload dict
         on success or a ready `(status, headers, body)` for a refusal."""
         out_buf, err_buf = io.StringIO(), io.StringIO()
-        old_in = sys.stdin
-        sys.stdin = io.StringIO(stdin)
         rc = 2
-        try:
-            with contextlib.redirect_stdout(out_buf), contextlib.redirect_stderr(err_buf):
-                try:
-                    rc = fn(Namespace(json=True, **args), self.root, Emitter())
-                except BackendRefusal as e:
-                    rc = e.err.get("exit", 2)
-                    print(json.dumps({"ok": False, **{k: v for k, v in e.err.items()
-                                                      if k != "exit"}}))
-        finally:
-            sys.stdin = old_in
+        with _STDIO_LOCK:
+            old_in = sys.stdin
+            sys.stdin = io.StringIO(stdin)
+            try:
+                with contextlib.redirect_stdout(out_buf), contextlib.redirect_stderr(err_buf):
+                    try:
+                        rc = fn(Namespace(json=True, **args), self.root, Emitter())
+                    except BackendRefusal as e:
+                        rc = e.err.get("exit", 2)
+                        print(json.dumps({"ok": False, **{k: v for k, v in e.err.items()
+                                                          if k != "exit"}}))
+            finally:
+                sys.stdin = old_in
         try:
             payload = json.loads(out_buf.getvalue())
         except ValueError:
