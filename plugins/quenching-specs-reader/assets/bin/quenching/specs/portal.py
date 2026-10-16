@@ -22,6 +22,7 @@ SECURITY
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import hmac
 import io
 import ipaddress
@@ -77,6 +78,18 @@ def _json(status: int, obj: dict) -> tuple[int, dict, bytes]:
     return status, {"Content-Type": "application/json; charset=utf-8",
                     "Cache-Control": "no-store"}, \
         json.dumps(obj, ensure_ascii=False).encode("utf-8")
+
+
+def _validated(headers: dict, obj: dict) -> tuple[int, dict, bytes]:
+    """A list read with a change token: the ETag hashes the content without `fetchedAt` (which
+    moves on every snapshot rebuild), and a matching `If-None-Match` is a body-less 304."""
+    stable = {k: v for k, v in obj.items() if k != "fetchedAt"}
+    etag = '"' + hashlib.sha256(json.dumps(
+        stable, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()[:32] + '"'
+    if etag in [t.strip() for t in headers.get("if-none-match", "").split(",")]:
+        return 304, {"ETag": etag, "Cache-Control": "no-store"}, b""
+    status, out, body = _json(200, obj)
+    return status, {**out, "ETag": etag}, body
 
 
 def _error(status: int, code: str, message: str, **extra) -> tuple[int, dict, bytes]:
@@ -200,10 +213,10 @@ class Portal:
             if not isinstance(data, dict):
                 return _error(400, "sp-portal-bad-json", "the body must be a JSON object")
             return self._post(route, data)
-        return self._get(route, query)
+        return self._get(route, query, headers)
 
     # ── reads ────────────────────────────────────────────────────────────────────────────
-    def _get(self, route: str, query: dict):
+    def _get(self, route: str, query: dict, headers: dict):
         fresh = (query.get("refresh") or ["0"])[0] == "1"
         if route == "config":
             ok, why = self.writes_enabled()
@@ -215,17 +228,17 @@ class Portal:
             if isinstance(snap, tuple):
                 return snap
             if route == "specs":
-                return _json(200, {"ok": True, "fetchedAt": snap["at"], "ttlSeconds": TTL_SECONDS,
-                                   "count": len(snap["rows"]), "specs": snap["rows"],
-                                   "stages": STAGE_ORDER})
+                return _validated(headers, {
+                    "ok": True, "fetchedAt": snap["at"], "ttlSeconds": TTL_SECONDS,
+                    "count": len(snap["rows"]), "specs": snap["rows"], "stages": STAGE_ORDER})
             if route.startswith("specs/"):
                 return self._detail(snap, route.split("/", 1)[1])
             if route == "search":
                 return self._search(snap, (query.get("q") or [""])[0])
             if route == "epics":
-                return _json(200, {"ok": True, **self._epics(snap)})
+                return _validated(headers, {"ok": True, **self._epics(snap)})
             if route == "human":
-                return _json(200, {"ok": True, **self._human(snap)})
+                return _validated(headers, {"ok": True, **self._human(snap)})
         return _error(404, "sp-portal-not-found", f"no such route: /api/{route}")
 
     def _snapshot(self, fresh: bool):
