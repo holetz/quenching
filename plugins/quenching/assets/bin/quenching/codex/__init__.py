@@ -1,14 +1,18 @@
 """The ``codex`` pillar: whether the Codex quota allows a call, and nothing that writes code.
 
     cq codex probe [--json]    exit 0 available · 1 unavailable · 2 unknown
+    cq codex review --worktree <dir> --prompt <file> [--run <name>] [--json]
+                               exit 0 reviewed · 1 fall back to Claude · 2 refusal
 """
 from __future__ import annotations
 
 import argparse
+import json
 import os
 
 from quenching.codex.config import load_settings
 from quenching.codex.probe import EXIT, probe
+from quenching.codex.review import run_review
 from quenching.common.front import resolve_root
 from quenching.common.output import NoAbbrevParser, emit, refuse
 from quenching.common.version import VERSION
@@ -26,6 +30,11 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("probe", parents=[common],
                    help="exit 0 when the quota allows a call, 1 when it does not, 2 when unknown")
+    review = sub.add_parser("review", parents=[common],
+                            help="run codex exec read-only over a worktree, prompt on stdin")
+    review.add_argument("--worktree", required=True, help="the checkout Codex reviews")
+    review.add_argument("--prompt", required=True, help="file whose text is sent on stdin")
+    review.add_argument("--run", help="run name under .quenching/codex/ (default: UTC stamp)")
     return parser
 
 
@@ -48,4 +57,16 @@ def main(argv: list[str]) -> int:
     if not os.path.isdir(root):
         return refuse({"code": "codex-root-missing", "root": root,
                        "message": f"repository root does not exist: {root}"}, as_json)
-    return _probe(root, as_json)
+    if args.command == "probe":
+        return _probe(root, as_json)
+    settings, warnings = load_settings(root)
+    payload, code = run_review(root, settings, args.worktree, args.prompt, args.run)
+    if code == 2:
+        return refuse({k: v for k, v in payload.items() if k != "ok"}, as_json)
+    payload["warnings"] = warnings
+    tokens = payload["tokens"]
+    if isinstance(tokens, dict):
+        tokens = tokens.get("total_tokens", json.dumps(tokens))
+    emit(as_json, payload,
+         f"codex review — {payload['reason']}; tokens: {tokens}; run: {payload['runDir']}")
+    return code
