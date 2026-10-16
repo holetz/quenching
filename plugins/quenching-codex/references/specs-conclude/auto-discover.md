@@ -37,7 +37,7 @@ surfaced as a choice, and never assumed to be the answer because it was the only
 | Valid IDs remaining | What `conclude` does |
 | --- | --- |
 | exactly one | resolves it, and names the marking as the source in its report |
-| more than one | lists the candidates with **AskUserQuestion** and proceeds with the one picked — the "one spec per call" contract does not change |
+| more than one | lists the candidates on a decision sheet and proceeds with the one picked — the "one spec per call" contract does not change |
 | zero | falls to §The fallback |
 
 ## The fallback — no valid marking
@@ -48,8 +48,8 @@ surfaced as a choice, and never assumed to be the answer because it was the only
    [isolation.md](../../references/git/isolation.md) §Recording the isolation
    already uses: the branch's own `branch.base` record if one exists, else `origin/HEAD`, else
    `init.defaultBranch`, else `main`.
-2. **Always ask — never a size threshold.** Show the measurement and ask, with
-   **AskUserQuestion**, whether to materialize a minimal spec from this diff before concluding:
+2. **Always ask — never a size threshold.** Show the measurement and ask, on a
+   decision sheet, whether to materialize a minimal spec from this diff before concluding:
    `cq specs new`, with a title and `## Problem` drafted from the diff summary. No diff size skips
    the question or answers it by default — "big enough to matter" is a human judgment that changes
    by repository, and the question is already cheap.
