@@ -62,6 +62,7 @@ from quenching.common.version import VERSION
 from quenching.session.commands.context import cmd_context
 from quenching.session.commands.cost import cmd_cost
 from quenching.session.commands.digest import cmd_digest
+from quenching.session.commands.live import cmd_live
 from quenching.session.commands.read import cmd_list
 
 
@@ -106,6 +107,11 @@ def add_subcommands(sub: argparse._SubParsersAction) -> argparse._SubParsersActi
     cx.add_argument("--agent", metavar="AGENT_ID", help="select this session's subagent transcript")
     cx.add_argument("--json", action="store_true", help="machine-readable output")
     cx.set_defaults(func=cmd_context)
+    lv = sub.add_parser("live", help="live sessions and sub-agents, fixed fields only")
+    lv.add_argument("--cwd", metavar="PATH",
+                    help="keep only sessions inside this repository's worktrees")
+    lv.add_argument("--json", action="store_true", help="machine-readable output")
+    lv.set_defaults(func=cmd_live)
     return sub
 
 
@@ -114,6 +120,7 @@ DISPATCH: dict = {
     "digest": cmd_digest,
     "cost": cmd_cost,
     "context": cmd_context,
+    "live": cmd_live,
 }
 
 
