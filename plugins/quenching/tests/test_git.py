@@ -1653,7 +1653,7 @@ class PullRequestPayload(unittest.TestCase):
         self.assertIn("do not invent a `Closes #<n>` sentence", self.payload_step)
 
     def test_payload_is_shown_once_before_the_single_external_write_confirmation(self):
-        self.assertEqual(self.command.count("**AskUserQuestion**"), 1)
+        self.assertEqual(self.command.count("decision sheet"), 1)
         self.assertIn("provider-native link (or its absence)", self.payload_step)
         self.assertIn("one confirmation", self.command.lower())
 
