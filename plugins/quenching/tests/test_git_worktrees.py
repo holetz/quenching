@@ -1,0 +1,64 @@
+"""`quenching.git.worktrees` — worktrees read from files, against a real throwaway repository."""
+from __future__ import annotations
+
+import os
+import subprocess
+import tempfile
+import unittest
+from unittest import mock
+
+import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
+from quenching.git.worktrees import list_worktrees, session_slug, with_slugs
+
+
+def _git(cwd, *args):
+    subprocess.run(["git", "-C", cwd, "-c", "user.name=t", "-c", "user.email=t@t", *args],
+                   check=True, capture_output=True)
+
+
+class ListWorktreesTest(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.base = os.path.realpath(tmp.name)
+        self.main = os.path.join(self.base, "repo")
+        os.mkdir(self.main)
+        _git(self.main, "init", "-q", "-b", "main")
+        _git(self.main, "commit", "-q", "--allow-empty", "-m", "init")
+        self.plain = os.path.join(self.base, "wt-plain")
+        self.dotted = os.path.join(self.base, "wt.dotted")
+        _git(self.main, "worktree", "add", "-q", "-b", "feat-a", self.plain)
+        _git(self.main, "worktree", "add", "-q", "--detach", self.dotted)
+
+    def _rows(self, root):
+        with mock.patch("subprocess.run", side_effect=AssertionError("process opened")), \
+             mock.patch("subprocess.Popen", side_effect=AssertionError("process opened")):
+            return list_worktrees(root)
+
+    def test_lists_main_first_then_linked_without_a_process(self):
+        self.assertEqual(self._rows(self.main), [
+            {"path": self.main, "branch": "main", "main": True},
+            {"path": self.plain, "branch": "feat-a", "main": False},
+            {"path": self.dotted, "branch": None, "main": False},
+        ])
+
+    def test_a_linked_root_sees_the_same_set(self):
+        self.assertEqual(self._rows(self.plain), self._rows(self.main))
+
+    def test_a_removed_directory_is_skipped(self):
+        subprocess.run(["rm", "-rf", self.plain], check=True)
+        self.assertNotIn(self.plain, [row["path"] for row in self._rows(self.main)])
+
+    def test_not_a_repository_is_empty(self):
+        self.assertEqual(list_worktrees(self.base), [])
+
+    def test_slug_encodes_dots_and_slashes(self):
+        self.assertEqual(session_slug("/a/b.c/d"), "-a-b-c-d")
+        rows = with_slugs(self._rows(self.main))
+        slug = next(row["slug"] for row in rows if row["path"] == self.dotted)
+        self.assertNotIn(".", slug)
+        self.assertNotIn("/", slug)
+
+
+if __name__ == "__main__":
+    unittest.main()
