@@ -410,6 +410,37 @@ class LiveServer(PortalCase):
         self.assertEqual(ctx.exception.code, 403)
 
 
+class StdoutIsolation(unittest.TestCase):
+    def test_two_portals_never_capture_each_others_verb_output(self):
+        import time
+        roots = ["/repo/a", "/repo/b"]
+        portals = [portal_mod.Portal(r, TOKEN, False, "127.0.0.1", PORT) for r in roots]
+
+        def verb(args, root, emitter):
+            time.sleep(0.01)
+            print(json.dumps({"ok": True, "root": root}))
+            return 0
+
+        results, errors = [], []
+
+        def run(portal, root):
+            for _ in range(10):
+                try:
+                    results.append((root, portal._verb(verb, {})))
+                except Exception as e:  # noqa: BLE001
+                    errors.append(e)
+
+        threads = [threading.Thread(target=run, args=(p, r)) for p, r in zip(portals, roots)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(10)
+        self.assertEqual(errors, [])
+        self.assertEqual(len(results), 20)
+        for root, payload in results:
+            self.assertEqual(payload.get("root"), root)
+
+
 TOKEN_HEADER = portal_mod.TOKEN_HEADER
 
 if __name__ == "__main__":
