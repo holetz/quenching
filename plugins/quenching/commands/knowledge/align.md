@@ -273,7 +273,7 @@ Read the free proxy: the count of concept docs in the bundle against the number 
 and a glossary that did not is the signal.
 
 Offer `quenching:knowledge:glossary-backfill` with what it costs (a whole-bundle sweep, fanned out per
-home) and what the proxy shows. Use **AskUserQuestion** when the answer is a plain yes/no. A
+home) and what the proxy shows. Put it as a decision sheet (`specs-develop/questions.md` §1; A recommended) when the answer is a plain yes/no. A
 declined offer is a complete answer — record it and do not re-offer on a later pass of the same
 run. Never run the sweep to discover whether it had work.
 **Done when:** the offer has been made once per run and answered, or the proxy showed no gap and
