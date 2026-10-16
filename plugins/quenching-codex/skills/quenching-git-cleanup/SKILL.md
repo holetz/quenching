@@ -38,13 +38,14 @@ Show every local stale branch with its reason(s), every remote branch as `<remot
 its reason(s), and every orphan worktree with its path and branch. Show each `keptBranches` entry with its reasons (`open-pr`, `worktree`,
 `unmerged-commits`) as information under "kept — not removable", and do not include it in the prune choices. Show each `unregisteredWorktrees`
 finding with its path, branch and size as information, but do not include it in the prune choices.
-Ask once with **AskUserQuestion** (multi-select) which local branches and live worktrees to prune —
-defaulting to none pre-selected, never to "all". Show the exact local actions in those choices:
+Put ONE decision sheet (`specs-develop/questions.md` §1) that ends the turn; its decision lists the local
+branches and live worktrees as numbered items and accepts several of them in the reply
+(`D1 1,3`), or `none` — option A (recommended) is `none`, never "all". An unclear reply is asked again. Show the exact local actions in those choices:
 `git branch -d <branch>` or `git worktree remove <path>`, which `cq git prune` runs. **Done when:** the local selection is
 settled.
 
 For any remote branch in the fresh `remoteBranches` list, show its exact destructive action
-`git push <remote> --delete <branch>`, which `cq git prune --remote-branch` runs, and ask separately with **AskUserQuestion**. A remote branch is never
+`git push <remote> --delete <branch>`, which `cq git prune --remote-branch` runs, and put it as its own decision on the sheet (`D2`, `none` recommended). A remote branch is never
 included in the local confirmation. **Done when:** the remote selection is settled and every selected
 item has one explicit action.
 

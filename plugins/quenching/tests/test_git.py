@@ -1825,7 +1825,8 @@ class PullRequestPayload(unittest.TestCase):
         self.assertIn("remote selection", cleanup)
         self.assertIn("remote branch is never", cleanup)
         self.assertIn("confirmation", cleanup)
-        self.assertEqual(cleanup.count("**askuserquestion**"), 2)
+        self.assertIn("decision sheet", cleanup)
+        self.assertEqual(cleanup.count("**askuserquestion**"), 0)
 
     def test_cleanup_does_not_fetch_or_prune_implicitly(self):
         cleanup = CLEANUP_COMMAND.read_text(encoding="utf-8").lower()
