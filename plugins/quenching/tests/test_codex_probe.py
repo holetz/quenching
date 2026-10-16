@@ -25,7 +25,8 @@ except ModuleNotFoundError:  # package-qualified unittest invocation from the re
     import _paths  # noqa: F401
 from quenching.codex import main
 from quenching.codex.config import DEFAULTS, load_settings
-from quenching.codex.probe import APP_SERVER_ARGV, judge, probe, read_sessions
+from quenching.codex.probe import (APP_SERVER_ARGV, SANDBOX_ARGV, judge, probe, read_sessions,
+                                   sandbox)
 
 HERE = pathlib.Path(__file__).resolve().parent
 FIXTURE_HOME = HERE / "fixtures" / "codex"
@@ -33,6 +34,18 @@ CQ = HERE.parent / "assets" / "bin" / "cq"
 
 FAKE = r'''
 import json, os, sys, time
+if sys.argv[1:2] == ["sandbox"]:
+    sandbox_log = os.environ.get("FAKE_CODEX_SANDBOX_LOG")
+    if sandbox_log:
+        with open(sandbox_log, "a", encoding="utf-8") as handle:
+            handle.write(json.dumps(sys.argv[1:]) + "\n")
+    sandbox = os.environ.get("FAKE_CODEX_SANDBOX", "ok")
+    if sandbox == "hang":
+        time.sleep(30)
+    if sandbox == "bwrap":
+        sys.stderr.write("bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted\n")
+        sys.exit(1)
+    sys.exit(0)
 log = os.environ.get("FAKE_CODEX_LOG")
 if log:
     with open(log, "a", encoding="utf-8") as handle:
@@ -260,6 +273,42 @@ class TheSettings(unittest.TestCase):
             self.assertEqual(1, len(load_settings(raw)[1]))
 
 
+class TheSandboxCheck(FakeCodex):
+    def setUp(self):
+        super().setUp()
+        self.sandbox_log = self.tmp / "sandbox.log"
+        self.env["FAKE_CODEX_SANDBOX_LOG"] = str(self.sandbox_log)
+
+    def test_a_working_sandbox_is_available_and_spends_no_quota(self):
+        out = sandbox(self.settings(), str(self.tmp), env=self.env)
+        self.assertEqual("available", out["state"])
+        argv = json.loads(self.sandbox_log.read_text(encoding="utf-8"))
+        self.assertEqual([*SANDBOX_ARGV, "-C", str(self.tmp), "--", "true"], argv)
+        self.assertEqual([], self.calls())
+
+    def test_a_bwrap_failure_is_unavailable_with_its_reason(self):
+        self.env["FAKE_CODEX_SANDBOX"] = "bwrap"
+        out = sandbox(self.settings(), str(self.tmp), env=self.env)
+        self.assertEqual("unavailable", out["state"])
+        self.assertIn("bwrap: loopback: Failed RTM_NEWADDR", out["reason"])
+
+    def test_a_hung_sandbox_is_stopped(self):
+        self.env["FAKE_CODEX_SANDBOX"] = "hang"
+        started = time.monotonic()
+        out = sandbox(self.settings(timeoutSeconds=1), str(self.tmp), env=self.env)
+        self.assertLess(time.monotonic() - started, 10)
+        self.assertIn("ran past 1s", out["reason"])
+
+    def test_the_short_circuits_never_spawn_the_sandbox(self):
+        off = sandbox(self.settings(crossReview="off"), str(self.tmp), env=self.env)
+        self.assertEqual(("unavailable", "shared.codex.crossReview is off"),
+                         (off["state"], off["reason"]))
+        self.env["PATH"] = str(self.tmp / "empty")
+        self.assertEqual("codex is not on PATH",
+                         sandbox(self.settings(), str(self.tmp), env=self.env)["reason"])
+        self.assertFalse(self.sandbox_log.exists())
+
+
 class TheCommandLine(FakeCodex):
     def run_main(self, argv: list[str]) -> tuple[int, str]:
         buffer = io.StringIO()
@@ -278,6 +327,16 @@ class TheCommandLine(FakeCodex):
         self.assertFalse(json.loads(out)["ok"])
         self.env["FAKE_CODEX_MODE"] = "crash"
         self.assertEqual(2, self.run_main(["probe", "--root", root])[0])
+
+    def test_a_broken_sandbox_is_reported_and_leaves_the_quota_exit(self):
+        self.env["FAKE_CODEX_SANDBOX"] = "bwrap"
+        code, out = self.run_main(["--root", str(self.tmp), "probe", "--json"])
+        payload = json.loads(out)
+        self.assertEqual((0, "available"), (code, payload["state"]))
+        self.assertEqual("unavailable", payload["sandbox"]["state"])
+        self.assertIn("RTM_NEWADDR", payload["sandbox"]["reason"])
+        code, out = self.run_main(["--root", str(self.tmp), "probe"])
+        self.assertIn("sandbox: unavailable (codex sandbox exited 1: bwrap", out)
 
     def test_a_missing_root_is_a_refusal(self):
         code, out = self.run_main(["--root", str(self.tmp / "nowhere"), "probe", "--json"])

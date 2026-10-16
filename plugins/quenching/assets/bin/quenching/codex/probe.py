@@ -11,6 +11,10 @@ event in `$CODEX_HOME/sessions/**/rollout-*.jsonl`. `auth.json` is never opened.
 
 The app-server takes no `--ignore-user-config`; the probe starts no thread and no turn, and still
 overrides the sandbox and approval policy so nothing of the user's `danger-full-access` applies.
+
+The sandbox is a separate question, asked without spending quota: `codex sandbox -- true` under
+the read-only policy. A host that forbids unprivileged user namespaces fails it (`bwrap:
+loopback: Failed RTM_NEWADDR`), and then every command Codex runs inside a review fails too.
 """
 from __future__ import annotations
 
@@ -28,6 +32,7 @@ import time
 APP_SERVER_DEADLINE = 15
 APP_SERVER_ARGV = ("app-server", "-c", 'sandbox_mode="read-only"',
                    "-c", 'approval_policy="untrusted"')
+SANDBOX_ARGV = ("sandbox", "-c", 'sandbox_mode="read-only"')
 EXIT = {"available": 0, "unavailable": 1, "unknown": 2}
 WINDOWS = ("primary", "secondary")
 
@@ -101,6 +106,40 @@ def read_app_server(binary: str, seconds: float,
         for stream in (process.stdin, process.stdout):
             with contextlib.suppress(OSError):
                 stream.close()
+
+
+def check_sandbox(binary: str, cwd: str, seconds: float, env: dict | None = None) -> dict:
+    """Run `true` inside the read-only Codex sandbox: no model call, so no quota is spent."""
+    try:
+        process = subprocess.Popen([binary, *SANDBOX_ARGV, "-C", cwd, "--", "true"],
+                                   stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                   stderr=subprocess.PIPE, text=True, cwd=cwd, env=env,
+                                   start_new_session=True)
+    except OSError as exc:
+        return {"state": "unavailable", "reason": f"codex sandbox did not start: {exc}"}
+    try:
+        _, stderr = process.communicate(timeout=seconds)
+    except subprocess.TimeoutExpired:
+        stop(process)
+        return {"state": "unavailable", "reason": f"codex sandbox ran past {seconds:g}s"}
+    if process.returncode == 0:
+        return {"state": "available", "reason": "codex sandbox ran `true` read-only"}
+    last = [line.strip() for line in (stderr or "").splitlines() if line.strip()]
+    detail = last[-1] if last else "no stderr"
+    return {"state": "unavailable",
+            "reason": f"codex sandbox exited {process.returncode}: {detail}"}
+
+
+def sandbox(settings: dict, cwd: str, env: dict | None = None) -> dict:
+    """The sandbox half of the probe, short-circuited by the same known facts as the quota."""
+    env = os.environ if env is None else env
+    if settings["crossReview"] == "off":
+        return {"state": "unavailable", "reason": "shared.codex.crossReview is off"}
+    binary = shutil.which("codex", path=env.get("PATH"))
+    if binary is None:
+        return {"state": "unavailable", "reason": "codex is not on PATH"}
+    return check_sandbox(binary, cwd, min(APP_SERVER_DEADLINE, settings["timeoutSeconds"]),
+                         dict(env))
 
 
 def _window(raw, used: str, minutes: str, resets: str) -> dict | None:

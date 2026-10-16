@@ -1,6 +1,7 @@
 """The ``codex`` pillar: whether the Codex quota allows a call, and nothing that writes code.
 
-    cq codex probe [--json]    exit 0 available · 1 unavailable · 2 unknown
+    cq codex probe [--json]    exit 0 available · 1 unavailable · 2 unknown (the quota);
+                               `sandbox` says whether Codex can run commands on this host
     cq codex review --worktree <dir> --prompt <file> [--run <name>] [--json]
                                exit 0 reviewed · 1 fall back to Claude · 2 refusal
 """
@@ -11,7 +12,7 @@ import json
 import os
 
 from quenching.codex.config import load_settings
-from quenching.codex.probe import EXIT, probe
+from quenching.codex.probe import EXIT, probe, sandbox
 from quenching.codex.review import run_review
 from quenching.common.front import resolve_root
 from quenching.common.output import NoAbbrevParser, emit, refuse
@@ -41,9 +42,11 @@ def build_parser() -> argparse.ArgumentParser:
 def _probe(root: str, as_json: bool) -> int:
     settings, warnings = load_settings(root)
     payload = probe(settings)
-    payload = {"ok": payload["state"] == "available", **payload, "warnings": warnings}
+    payload = {"ok": payload["state"] == "available", **payload,
+               "sandbox": sandbox(settings, root), "warnings": warnings}
     source = payload["source"] or "no source"
-    emit(as_json, payload, f"codex probe — {payload['state']} ({source}): {payload['reason']}")
+    emit(as_json, payload, f"codex probe — {payload['state']} ({source}): {payload['reason']}; "
+                           f"sandbox: {payload['sandbox']['state']} ({payload['sandbox']['reason']})")
     return EXIT[payload["state"]]
 
 
