@@ -2,7 +2,7 @@
 type: standard
 title: The specs portal reads one store and widens nothing without a decision
 description: The local spec portal (cq specs serve) reads only the specs store open_backend reads, exposes a fixed set of GET and POST routes, keeps its loopback, token, Host/Origin and CSP guarantees, builds every node with textContent, reuses cockpit UX patterns but never its code, and regenerates the reader copy and the Codex mirror with every change
-resource: plugins/quenching/assets/bin/quenching/specs/portal.py, plugins/quenching/assets/portal/**
+resource: plugins/quenching/assets/bin/quenching/specs/portal.py, plugins/quenching/assets/portal/**, plugins/quenching/assets/bin/quenching/portal/**
 tags: [architecture, portal, specs, security, ux]
 timestamp: 2026-10-16
 audience: both
@@ -25,6 +25,17 @@ The portal reads exactly what `open_backend` reads, through the same layer the C
 else is read: no `~/.claude`, no other file tree, no `gh` call on a read (`derive_epic` runs without
 `pr_states`). A change that needs data outside the store is not a portal change until a human
 decides it.
+
+## Project registry
+
+The projects a portal shows are registered in `~/.config/quenching/projects.json`
+(`{"schemaVersion": 1, "projects": [{"name", "path"}]}`, `path` the absolute main root of the
+repository, never a worktree). Only `cq portal add`, `cq portal remove` and `cq portal list`
+(`quenching/portal/`) write it, atomically; no server and no page writes it, and a portal reads it
+only once a spec that declares that read has landed. The one-time `cq portal add --from-orca` opens
+only orca's `profiles/*/orca-data.json` and keeps `repos[].path` and `repos[].displayName`; any other
+field there, tokens and credentials included, is never read into the registry or printed, and a
+second import is refused. Reading orca live is not part of this standard.
 
 ## Routes
 
