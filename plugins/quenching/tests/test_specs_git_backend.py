@@ -217,14 +217,19 @@ class Reading(GitStoreFixture):
 
     def test_an_external_commit_after_the_ttl_is_seen_by_the_same_instance(self):
         a_path = self.clone("a")
+        b = GitBackend(self.clone("b"))
+        b.create_spec("plans", canonical._case_doc())
         backend = GitBackend(a_path)
-        self.assertEqual([], backend.list_specs())
-        GitBackend(self.clone("b")).create_spec("plans", canonical._case_doc())
-        _sh(a_path, "fetch", "--quiet", "origin", "+quenching:refs/remotes/origin/quenching")
-        with mock.patch.dict(os.environ, {git_mod.NO_FETCH_ENV: "1"}):
-            self.assertEqual([], backend.list_specs())     # inside the memo window
-            with mock.patch.object(git_mod, "TIP_MEMO_S", 0):
-                self.assertEqual([1], [r["id"] for r in backend.list_specs()])
+        now = [1000.0]    # injected clock: no real sleep, no dependence on how fast the test runs
+        with mock.patch.object(git_mod.time, "monotonic", lambda: now[0]):
+            self.assertEqual([1], [r["id"] for r in backend.list_specs()])   # memoizes a non-null tip
+            b.create_spec("plans", canonical._case_doc())
+            _sh(a_path, "fetch", "--quiet", "origin", "+quenching:refs/remotes/origin/quenching")
+            with mock.patch.dict(os.environ, {git_mod.NO_FETCH_ENV: "1"}):
+                now[0] += 0.5
+                self.assertEqual([1], [r["id"] for r in backend.list_specs()])   # inside the memo window
+                now[0] += 2.0   # past the window, still far inside FETCH_TTL_S
+                self.assertEqual([1, 2], sorted(r["id"] for r in backend.list_specs()))
 
     def test_the_portal_etag_moves_after_an_external_commit_to_the_store_ref(self):
         from quenching.specs import portal as portal_mod
