@@ -71,10 +71,12 @@ def main(argv: list[str]) -> int:
                                base=args.base, head=args.head)
     if code == 2:
         return refuse({k: v for k, v in payload.items() if k != "ok"}, as_json)
+    payload["findingsNeedReproduction"] = True  # a Codex finding is work only once reproduced
     payload["warnings"] = warnings
     tokens = payload["tokens"]
     if isinstance(tokens, dict):
         tokens = tokens.get("total_tokens", json.dumps(tokens))
     emit(as_json, payload,
-         f"codex review — {payload['reason']}; tokens: {tokens}; run: {payload['runDir']}")
+         f"codex review — {payload['reason']}; tokens: {tokens}; mode: {payload['mode']}; "
+         f"run: {payload['runDir']}")
     return code

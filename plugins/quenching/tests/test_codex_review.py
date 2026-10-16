@@ -216,6 +216,19 @@ class ThePromptOnlyFallback(unittest.TestCase):
                                    str(self.worktree), "--prompt", str(self.prompt), "--run",
                                    "p5", "--base", "base", "--head", "HEAD", "--json"])
         self.assertEqual((0, "prompt-only"), (code, json.loads(out)["mode"]))
+        self.assertTrue(json.loads(out)["findingsNeedReproduction"])
+
+    def test_the_report_names_each_mode(self):
+        base = ["--root", str(self.root), "review", "--worktree", str(self.worktree),
+                "--prompt", str(self.prompt)]
+        self.env["PATH"] += os.pathsep + os.path.dirname(shutil.which("git"))
+        modes = []
+        for run, sandbox, extra in (("m1", "ok", []), ("m2", "bwrap", ["--base", "base"]),
+                                    ("m3", "bwrap", [])):
+            self.env["FAKE_CODEX_SANDBOX"] = sandbox
+            code, out = self.run_main([*base, "--run", run, *extra])
+            modes.append((code, out.split("; mode: ")[1].split(";")[0]))
+        self.assertEqual([(0, "sandboxed"), (0, "prompt-only"), (1, "unavailable")], modes)
 
 
 if __name__ == "__main__":
