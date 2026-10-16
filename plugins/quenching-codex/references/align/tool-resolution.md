@@ -2,7 +2,7 @@
 
 Front-neutral: every command body shells out to the same single entry point, `cq`, naming its
 front as the first argument. The fronts are `specs`, `git`, `knowledge`, `components`, `design`,
-`ops`, `proof`, `toolchain`, `delivery` and `security`; all resolve it the same way.
+`ops`, `proof`, `toolchain`, `delivery`, `security` and `codex`; all resolve it the same way.
 
 ## Resolving the tool
 
