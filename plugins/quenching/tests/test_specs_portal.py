@@ -87,6 +87,16 @@ class Handlers(PortalCase):
         self.assertIn(row["stage"], body["stages"])
         self.assertEqual(sorted(r["rank"] for r in body["specs"]), [1, 2, 3])
 
+    def test_a_blocked_task_moves_the_spec_to_the_blocked_stage(self):
+        text = READY.format(title="Stuck").replace("- [ ] 2. second", "- [!] 2. second — waits")
+        self.backend.create_spec("plans", text)
+        _, body = self.get("/api/specs")
+        stuck = next(r for r in body["specs"] if r["title"] == "Stuck")
+        self.assertEqual(stuck["progress"]["blocked"], 1)
+        self.assertEqual(stuck["stage"], "blocked")
+        self.assertIn("blocked", body["stages"])
+        self.assertNotIn("blocked", [r["stage"] for r in body["specs"] if r["title"] != "Stuck"])
+
     def test_detail_carries_sections_tasks_and_records(self):
         status, body = self.get("/api/specs/1")
         self.assertEqual(status, 200)
