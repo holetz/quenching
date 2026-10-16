@@ -58,7 +58,7 @@ git -C <primary checkout from step 1> log --oneline --merges <last-tag>..HEAD
 The first names the last tag; the second lists every PR merged into the primary branch since it —
 "since the last release", without depending on a second branch. **No tag yet** → the range is the
 whole history; treat the count as "since the beginning". **Zero** → nothing to publish; report that
-and stop. **Exactly one** → ask, once, on a decision sheet (`specs-develop/questions.md` §1; A habit-stop recommended, B release): "the primary branch carries one PR
+and stop. **Exactly one** → ask, once, on a decision sheet ([specs-develop/questions.md](plugins/quenching/assets/references/specs-develop/questions.md) §1; A habit-stop recommended, B release): "the primary branch carries one PR
 since the last release — is this a release, or is it habit?" (the mitigation
 [branching.md](/docs/standards/git/branching.md) §The trigger is demand, not cadence names: nothing else
 pushes back on turning every single spec into its own release). Answering habit stops the run

@@ -64,7 +64,7 @@ explicit `mainline:<n>` naming one valid parent; never choose a mainline by posi
 ### 4. Show the revert and ask once
 
 Show the branch, target SHA, original subject, author/date, files, selected mainline, expected
-inverse effect and the native `git revert` command. Put a decision sheet (`specs-develop/questions.md` §1; A confirm, B decline) for confirmation of
+inverse effect and the native `git revert` command. Put a decision sheet ([specs-develop/questions.md](../../references/specs-develop/questions.md) §1; A confirm, B decline) for confirmation of
 that exact new commit, and end the turn. Before confirmation, do not alter spec records, task checkboxes, remote refs
 or the target commit. **Done when:** the human confirms or declines the exact revert.
 
