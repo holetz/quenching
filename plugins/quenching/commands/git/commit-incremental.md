@@ -72,7 +72,7 @@ applies. The subject describes the group's concern, not its file list.
 ### 4. Confirm, then stage and commit each group
 
 Before the first `git add`, show the full group table, paths, diffs, subjects and the two byte/secret
-guards' clean result. Ask once with **AskUserQuestion** whether to carry out the listed commits;
+guards' clean result. Put one decision sheet (`specs-develop/questions.md` §1; A carry out, B decline) on whether to carry out the listed commits, and end the turn;
 decline leaves every pending path untouched. Then, for each group in dependency order, quote each
 path and stage only that list:
 
