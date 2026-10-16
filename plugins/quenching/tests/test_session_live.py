@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-import os
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -24,7 +23,7 @@ def _ts(minutes_ago):
 
 def _write(path, lines):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(l if isinstance(l, str) else json.dumps(l) for l in lines) + "\n")
+    path.write_text("\n".join(row if isinstance(row, str) else json.dumps(row) for row in lines) + "\n")
 
 
 class LiveTest(unittest.TestCase):
