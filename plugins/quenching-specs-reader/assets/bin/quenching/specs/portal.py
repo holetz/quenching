@@ -46,6 +46,7 @@ from quenching.specs.commands.granular import cmd_section
 from quenching.specs.commands.next import _priority_rank
 from quenching.specs.commands.output import Emitter
 from quenching.specs.commands.task import cmd_discover
+from quenching.specs.parse.epics import derive_epic
 from quenching.specs.parse.fields import set_frontmatter_record
 from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.sections import ready_report, section_state
@@ -91,6 +92,10 @@ def _status_for(payload: dict) -> int:
     if "unknown" in code or "not-found" in code or code.endswith("-no-spec"):
         return 404
     return 422
+
+
+_EPIC_ITEM_KEYS = ("label", "title", "spec", "after", "group", "groupTitle", "waitingOn",
+                   "status")
 
 
 class Portal:
@@ -312,13 +317,18 @@ class Portal:
         an epic through a `parent:` (or `epic:`) frontmatter key."""
         epics = [i for i in snap["infos"].values()
                  if str(i["frontmatter"].get("workItemType") or "").lower() == "epic"]
+        members = {str(i["id"]): i for i in snap["infos"].values()}
         rows = []
         for e in epics:
             kids = [i for i in snap["infos"].values()
                     if str(i["frontmatter"].get("parent") or i["frontmatter"].get("epic") or "")
                     .lstrip("#") == str(e["id"])]
             done = [k for k in kids if k["phase"] == "archive"]
+            derived = derive_epic(e, members)
+            items = [{k: v for k, v in i.items() if k in _EPIC_ITEM_KEYS} for i in derived["items"]]
             rows.append({"id": e["id"], "title": str(e["frontmatter"].get("title") or ""),
+                         "items": items, "groups": derived["groups"],
+                         "cycle": derived["cycle"], "criticalPath": derived["criticalPath"],
                          "children": [{"id": k["id"], "title": str(k["frontmatter"].get("title")
                                                                     or ""),
                                        "stage": self._stage(k)} for k in kids],
