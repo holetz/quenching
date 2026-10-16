@@ -2,14 +2,6 @@
 /* Quenching spec portal. No build, no CDN, no HTML strings: every node is created with
    textContent, so spec text can never inject markup. */
 (() => {
-  const params = new URLSearchParams(location.search);
-  const TOKEN = params.get("token") || sessionStorageGet("qtoken") || "";
-  if (TOKEN) { sessionStorageSet("qtoken", TOKEN); }
-  if (params.has("token")) history.replaceState(null, "", location.pathname + location.hash);
-
-  function sessionStorageGet(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
-  function sessionStorageSet(k, v) { try { sessionStorage.setItem(k, v); } catch (e) { /* private mode */ } }
-
   const $ = (s) => document.querySelector(s);
   const state = { specs: [], stages: [], fetchedAt: 0, ttl: 5, writable: false, why: "",
                   filters: { subject: "", tag: "", type: "", assignee: "", complexity: "" },
@@ -39,7 +31,7 @@
   const validated = {};
   let changed = false;
   async function api(path, opts = {}) {
-    const init = { method: opts.body ? "POST" : "GET", headers: { "X-Quenching-Token": TOKEN } };
+    const init = { method: opts.body ? "POST" : "GET", headers: {}, credentials: "same-origin" };
     const kept = !opts.body && /^(specs|epics|human)(\?|$)/.test(path) ? validated[path] : null;
     if (kept) init.headers["If-None-Match"] = kept.etag;
     if (opts.body) { init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(opts.body); }
@@ -472,7 +464,6 @@
   setInterval(() => { if (!$("#dlg").open) refresh(false); }, 8000);
 
   (async () => {
-    if (!TOKEN) { $("#main").replaceChildren(h("p", { class: "bad" }, "Open the URL printed by `cq specs serve`: it carries the access token.")); return; }
     await loadConfig();
     try { await load(false); } catch (e) { fail(e); }
     await render();
