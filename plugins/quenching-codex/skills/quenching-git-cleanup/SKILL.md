@@ -38,7 +38,7 @@ Show every local stale branch with its reason(s), every remote branch as `<remot
 its reason(s), and every orphan worktree with its path and branch. Show each `keptBranches` entry with its reasons (`open-pr`, `worktree`,
 `unmerged-commits`) as information under "kept — not removable", and do not include it in the prune choices. Show each `unregisteredWorktrees`
 finding with its path, branch and size as information, but do not include it in the prune choices.
-Put ONE decision sheet (`specs-develop/questions.md` §1) that ends the turn; its decision lists the local
+Put ONE decision sheet ([specs-develop/questions.md](../../references/specs-develop/questions.md) §1) that ends the turn; its decision lists the local
 branches and live worktrees as numbered items and accepts several of them in the reply
 (`D1 1,3`), or `none` — option A (recommended) is `none`, never "all". An unclear reply is asked again. Show the exact local actions in those choices:
 `git branch -d <branch>` or `git worktree remove <path>`, which `cq git prune` runs. **Done when:** the local selection is
