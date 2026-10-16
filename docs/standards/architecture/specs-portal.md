@@ -34,7 +34,7 @@ under `/`. POST: `/api/capture`, `/api/section`, `/api/approve`, `/api/reorder`,
 
 - No new POST route enters without a human decision. Reading more is a GET over the same store.
 - A GET request starts no process beyond the read the store backend already makes (on the git backend, `git` reading the `quenching` branch), and never calls `gh`.
-- A POST request writes to the store and pushes to git through the CLI's own verb. `/api/capture` is the one route that also reaches `gh`: it resolves the repository and projects the card through it (`cmd_new` → `resolve_card_client`). This describes what exists; it grants nothing new.
+- A POST request writes to the store and pushes to git through the CLI's own verb. Every write route goes through the backend's write path, and with a card provider configured (`card: {provider: github}`) that path reaches `gh`: it creates the card on capture (`cmd_new` → `resolve_card_client`) and, through `_card_transitions` in the git backend, updates it when the `lifecycle_key` changes (title, board state, phase, labels or tags). Which routes trigger it follows from that mechanism, not from a list. This describes what exists; it grants nothing new.
 - Static assets are read-only: any non-GET/HEAD method on them is a 405.
 
 ## Security guarantees
