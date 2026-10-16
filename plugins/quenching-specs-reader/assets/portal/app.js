@@ -244,11 +244,25 @@
     if (focusId != null) { const b = document.querySelector(`tr[data-id="${focusId}"] button:not(:disabled)`); if (b) b.focus(); }
   }
 
+  function epicItem(it, critical) {
+    const on = critical.includes(it.label);
+    return h("li", { class: "wave-item" + (on ? " critical" : ""), "data-label": it.label },
+      h("div", {}, h("strong", {}, it.label), " ", it.spec ? h("a", { href: "#/spec/" + it.spec }, it.title) : it.title),
+      h("div", { class: "meta" }, h("span", { class: "chip st-" + it.status }, it.status), on ? h("span", { class: "chip crit" }, "critical path") : null),
+      it.after.length ? h("div", { class: "meta" }, "after: " + it.after.join(", ") + (it.waitingOn.length ? " (waiting on " + it.waitingOn.join(", ") + ")" : "")) : null);
+  }
+
   function viewEpics() {
     return state.epics.epics.map((e) => h("section", { class: "panel" },
       h("div", { class: "sechead" }, h("h2", {}, h("a", { href: "#/spec/" + e.id }, `${e.id} · ${e.title}`)), h("span", {}, `${e.done}/${e.total} done`)),
       e.total ? h("div", { class: "meta" }, h("span", { class: "bar", role: "img", "aria-label": `${e.done} of ${e.total} children archived` }, h("i", { style: `width:${Math.round(100 * e.done / e.total)}%` }))) : h("p", { class: "empty" }, "no children yet"),
-      h("ul", {}, e.children.map((c) => h("li", {}, h("a", { href: "#/spec/" + c.id }, `${c.id} · ${c.title}`), " ", stagePill(c.stage))))));
+      e.cycle ? h("p", { class: "bad", role: "alert" }, "Dependency cycle: " + e.cycle.join(" → ")) : null,
+      e.criticalPath.length ? h("p", { class: "meta" }, "Critical path: " + e.criticalPath.join(" → ")) : null,
+      e.items.length
+        ? h("div", { class: "waves" }, e.groups.map((g) => h("div", { class: "wave" },
+          h("h3", {}, `Wave ${g.group}${g.title ? " · " + g.title : ""}`, " ", h("span", { class: "meta" }, `${g.done}/${g.total}`)),
+          h("ul", {}, e.items.filter((it) => it.group === g.group).map((it) => epicItem(it, e.criticalPath))))))
+        : h("ul", {}, e.children.map((c) => h("li", {}, h("a", { href: "#/spec/" + c.id }, `${c.id} · ${c.title}`), " ", stagePill(c.stage))))));
   }
 
   async function viewDetail(id) {
