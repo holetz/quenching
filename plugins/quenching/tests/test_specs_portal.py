@@ -162,6 +162,47 @@ workItemType: epic
         self.assertTrue(row["cycle"])
         self.assertEqual(row["criticalPath"], [])
 
+    def test_human_lists_epic_members_blocked_tasks_and_unapproved_ready(self):
+        self.backend.create_spec("plans", READY.format(title="Member"))
+        mid = self.get("/api/specs")[1]["specs"][-1]["id"]
+        epic = f"""---
+title: Autopilot - decidir com o humano
+date: 2026-01-01
+---
+
+## Tasks
+
+- [ ] S1 Decide it — spec: #{mid}
+- [ ] S2 Loose item
+"""
+        self.backend.create_spec("plans", epic)
+        other = """---
+title: Program
+date: 2026-01-01
+---
+
+## Tasks
+
+- [ ] S1 Elsewhere — spec: #1
+"""
+        self.backend.create_spec("plans", other)
+        blocked = READY.format(title="Stuck").replace(
+            "- [ ] 2. second", "- [!] 2. second — blocked: needs a call")
+        self.backend.create_spec("plans", blocked)
+        status, body = self.get("/api/human?refresh=1")
+        self.assertEqual(status, 200)
+        self.assertEqual([m["label"] for m in body["epicMembers"]], ["S1", "S2"])
+        self.assertEqual(body["epicMembers"][0]["id"], str(mid))
+        self.assertEqual(len(body["blocked"]), 1)
+        self.assertIn("needs a call", body["blocked"][0]["reasons"][0]["reason"])
+        self.assertEqual(body["count"], len({str(m["id"]) for m in body["epicMembers"] if m["id"]}
+                                            | {str(b["id"]) for b in body["blocked"]}
+                                            | {str(a["id"]) for a in body["awaitingApproval"]}) + 1)
+
+    def test_human_needs_the_token(self):
+        status, _, _ = self.portal.handle("GET", "/api/human", HOST, b"")
+        self.assertEqual(status, 401)
+
     def test_capture_creates_a_spec_through_the_cli_verb(self):
         status, body = self.post("capture", {"title": "Delta", "problem": "It hurts."})
         self.assertEqual(status, 200, body)
