@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Codex pillar
-description: A pillar that reads the Codex quota and runs the Codex CLI as an independent, read-only reviewer — app-server quota first, session snapshot as fallback, exit 0/1/2 failing closed, and a fixed `-s read-only --ignore-user-config` argv that never inherits the user's Codex configuration
-resource: plugins/quenching/assets/bin/quenching/codex/**, plugins/quenching/tests/test_codex_*.py, plugins/quenching/tests/fixtures/codex/**, .claude/quenching.json
+description: A pillar that reads the Codex quota and runs the Codex CLI as an independent, read-only reviewer — app-server quota first, session snapshot as fallback, exit 0/1/2 failing closed, a quota-free sandbox check, a prompt-only mode where the sandbox fails, and a fixed `-s read-only --ignore-user-config` argv that never inherits the user's Codex configuration
+resource: plugins/quenching/assets/bin/quenching/codex/**, plugins/quenching/tests/test_codex_probe.py, plugins/quenching/tests/test_codex_review.py, plugins/quenching/tests/fixtures/codex/**, .claude/quenching.json
 tags: [architecture, codex, pillar, read-only, quota, review]
 timestamp: 2026-10-16
 audience: both
 authority: current
-source: spec 1818 (task 2.1) — the `cq codex` pillar of epic 1817 (D8 A, Codex as independent reviewer by default when quota allows), absorbing the quota probe proved in spec 1660
+source: spec 1818 (tasks 2.1 and 3.3) — the `cq codex` pillar of epic 1817 (D8 A, Codex as independent reviewer by default when quota allows), absorbing the quota probe proved in spec 1660
 maintainer: quenching
 ---
 
@@ -40,9 +40,20 @@ never writes code, never edits the repository it reviews, and never grants a too
   app-server is `unknown`, and the percentages are not used to infer past it.
 - **Never read `auth.json`.**
 
+### The sandbox check
+
+The probe also answers whether Codex can run commands on this host, without spending quota:
+`codex sandbox -c sandbox_mode="read-only" -C <root> -- true`, under the same deadline. The payload
+carries `sandbox: {state: available | unavailable, reason}`, the reason being the last stderr line
+— `bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted` on a host with
+`apparmor_restrict_unprivileged_userns=1`. `crossReview: "off"` and a missing `codex` report the
+sandbox `unavailable` without spawning anything. **The exit stays the quota's**: a broken
+sandbox still leaves the prompt-only review.
+
 ## The read-only review
 
-`cq codex review --worktree <dir> --prompt <file> [--run <name>] [--json]` runs exactly:
+`cq codex review --worktree <dir> --prompt <file> [--base <ref> [--head <ref>]] [--run <name>]
+[--json]` runs exactly:
 
 ```text
 codex exec -s read-only --ignore-user-config --ignore-rules -m <model> \
@@ -61,7 +72,25 @@ codex exec -s read-only --ignore-user-config --ignore-rules -m <model> \
   prompt or `codex`, or a bad or reused run name.
 - **Tokens only when measured:** the last `total_token_usage` in `events.jsonl`, else the string
   `not measured`.
-- The review never calls the probe: whether to run is the caller's decision.
+- The review never calls the probe: whether to run is the caller's decision. It does run the
+  sandbox check first, which spends no quota.
+
+### The three modes
+
+The payload's `mode` names how the review ran, and the human line carries `; mode: <mode>`:
+
+| `mode` | When | What Codex sees |
+| --- | --- | --- |
+| `sandboxed` | the sandbox check passed | the worktree, through read-only commands |
+| `prompt-only` | the sandbox failed and `--base` was given | only `.quenching/codex/<run>/prompt.md`: the prompt, the rule not to run commands, `git diff <base>..<head>` (`--head` defaults to `HEAD`) and every touched file at `<head>` |
+| `unavailable` | the sandbox failed and no `--base` was given | nothing — Codex is not called; exit 1 with `fallback: true` |
+
+- The argv is the same in every mode. A broken sandbox never widens it: no `workspace-write`, no
+  `danger-full-access`, no `--dangerously-bypass-approvals-and-sandbox`.
+- A diff `cq` cannot read (an unknown `--base`) is a refusal, exit 2 `codex-diff-unreadable`.
+- **Every finding needs reproduction.** The payload carries `findingsNeedReproduction: true`: a
+  Codex finding becomes work only once the Claude side reproduces it, with the command and its
+  output (decision 3 of epic 1817). A `prompt-only` finding was never run by Codex at all.
 
 ## Configuration
 
@@ -93,6 +122,13 @@ turn, and still passes `-c sandbox_mode="read-only"` and `-c approval_policy="un
 
 `codex exec review --base` is not used: its help shows no `-s`, so the read-only sandbox could not
 be proved.
+
+## Why prompt-only and not a wider sandbox
+
+Where the sandbox cannot start, every command a `sandboxed` review runs fails and the review comes
+back empty — observed on 2026-10-16 on a host with `apparmor_restrict_unprivileged_userns=1`.
+Widening the sandbox to make the commands run would give a reviewer write access to the tree it
+reviews. Moving the material into the prompt keeps Codex a reader: `cq`, not Codex, runs `git`.
 
 ## Why the app-server comes first
 
