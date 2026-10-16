@@ -217,7 +217,7 @@ The exit code decides the tone, never the line's presence:
 | Exit | The line | The next-step block |
 | --- | --- | --- |
 | `0` | `<peak> / <budget> (<role>) — <remaining> left` | unchanged — the next stage is an offer |
-| `1` | `<peak> / <budget> (<role>) — <over> over budget` | the `→` line recommends the next stage **in a new session**, with the exact command — `→ quenching-specs-execute 41   — in a new session: this one is over its budget`; a question the command already asks carries that recommendation inside its own payload, marked "(Recommended)" |
+| `1` | `<peak> / <budget> (<role>) — <over> over budget` | the `→` line recommends the next stage **in a new session**, with the exact command — `→ quenching-specs-execute 41   — in a new session: this one is over its budget`; a question the command already asks carries that recommendation as option A of its decision sheet, marked recommended — or first and marked "(Recommended)" on the menu the human asked for |
 | `2` | `Session: unmeasured — <code>` | unchanged — an offer, never a recommendation without a number |
 
 - **The stage end triggers the read; the number decides only the tone.** Nothing stops, nothing is
@@ -258,7 +258,7 @@ Next step
   [align/sweep-doctrine.md](../../references/align/sweep-doctrine.md) §7,
   which this mold selects from rather than restates.
 - **The block is a suggestion, never an offer** — with two named exceptions, both printing the
-  block and *then* opening an `AskUserQuestion` rather than stopping: `quenching-specs-execute` at
+  block and *then* ending the turn on a decision sheet rather than stopping: `quenching-specs-execute` at
   100%, and `quenching-specs-create`, whose closing screen is exactly that offer (§The one screen
   in its own body) — develop it now, with or without questions, or stop here. `quenching-specs-status`
   prints the block and stops — no plan, no "shall I". The form is identical across the three;

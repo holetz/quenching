@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: /docs/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-08-29
+timestamp: 2026-10-16
 audience: both
 authority: current
 source: quenching skeleton
@@ -132,6 +132,11 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - [**cq**](/plugins/quenching/assets/references/align/tool-resolution.md) — the plugin's one entry
   point, `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`, replacing the self-contained scripts each pillar
   used to ship separately.
+- [**Decision sheet**](/plugins/quenching/assets/references/specs-develop/questions.md) — the
+  default form of every question put to the human: an opening reply-format line (`D1 A · D2 B …`),
+  one `### D<n>` per independent decision with context and options `A (recommended)` / `B` / `C`,
+  each with its consequence, the dependencies declared, and a closing block of fixes made unless
+  vetoed. It ends the turn; `AskUserQuestion` is the menu used only when the human asks for one.
 - [**Declared root / resolved root**](standards/architecture/spec-backend.md) — the pair the shared
   layer of `cq specs` must never confuse.
 - [**Declared-reading estimate**](standards/automation/context-discipline.md) — the section-level UTF-8 byte heuristic compared with the worker budget, with unresolved inputs and exclusions, never measured usage or proof that a build fits.
