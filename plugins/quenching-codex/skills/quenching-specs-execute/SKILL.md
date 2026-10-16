@@ -359,7 +359,7 @@ h. **At a section boundary, keep the task commits, read the session size once, a
    `cq components session context --json` and print its peak and budget in the banner. Exit 0 or 2
    → continue to the next task: the boundary is not a question. Exit 1 → ask once, on a
    decision sheet: stop here and resume with `quenching-specs-execute <id>` in a new session
-   "(Recommended)" as option A, the measured peak in its description, or continue. Otherwise stop only when the
+   as option A (recommended), the measured peak in its own text, or continue. Otherwise stop only when the
    workflow reaches a question that requires a human answer, or under the pause conditions below. See
    [execution-cadence.md](../../references/specs-execute/execution-cadence.md)
    §The section boundary.
@@ -429,9 +429,9 @@ mid-plan.
 **At 100%**, after the block, offer once to chain straight into `quenching-specs-conclude` (the `Skill` tool, which takes
 the registry name): the branch review,
 the emergent `/docs/`, the merge, and the archive-time distillation. Declined → the block already
-named the command, so stop. Over budget (the session-size line's exit 1) → the offer's first option,
-"(Recommended)", is to run `quenching-specs-conclude <id>` in a new session, the measured peak in
-its description; chaining here stays an option. Paused → say why and wait.
+named the command, so stop. Over budget (the session-size line's exit 1) → the offer's first option
+(A, recommended) is to run `quenching-specs-conclude <id>` in a new session, the measured peak in
+its own text; chaining here stays an option. Paused → say why and wait.
 **Done when:** the summary is shown and the hand-off has been offered or declined.
 
 ## Output during the loop
