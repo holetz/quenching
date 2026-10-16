@@ -34,13 +34,24 @@
   }
   function safeHref(url) { return /^https?:\/\//i.test(url) ? url : ""; }
 
+  /* Change token: the list reads carry an ETag. The server answers no-store, so the page keeps
+     the validator and the body itself and sends If-None-Match; a 304 reuses the kept body. */
+  const validated = {};
+  let changed = false;
   async function api(path, opts = {}) {
     const init = { method: opts.body ? "POST" : "GET", headers: { "X-Quenching-Token": TOKEN } };
+    const kept = !opts.body && /^(specs|epics|human)(\?|$)/.test(path) ? validated[path] : null;
+    if (kept) init.headers["If-None-Match"] = kept.etag;
     if (opts.body) { init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(opts.body); }
     let res, data;
-    try { res = await fetch("/api/" + path, init); data = await res.json(); }
-    catch (e) { throw { code: "network", message: "the portal server is not reachable" }; }
+    try {
+      res = await fetch("/api/" + path, init);
+      if (res.status === 304 && kept) return kept.data;
+      data = await res.json();
+    } catch (e) { throw { code: "network", message: "the portal server is not reachable" }; }
     if (!res.ok || data.ok === false) throw { code: data.code || "http-" + res.status, message: data.message || res.statusText, data };
+    const etag = res.headers.get("ETag");
+    if (etag && !opts.body && /^(specs|epics|human)(\?|$)/.test(path)) { validated[path] = { etag, data }; changed = true; }
     return data;
   }
   function toast(msg, ok) {
@@ -105,9 +116,11 @@
 
   /* ── data ────────────────────────────────────────────────────────────────── */
   async function load(refresh) {
+    changed = false;
+    const before = state.human ? state.human.count : null;
     const data = await api("specs" + (refresh ? "?refresh=1" : ""));
     state.specs = data.specs; state.stages = data.stages; state.ttl = data.ttlSeconds;
-    state.fetchedAt = data.fetchedAt * 1000;
+    state.fetchedAt = Date.now();
     try {
       const ep = await api("epics");
       state.epics = ep;
@@ -115,7 +128,29 @@
     $("#nav-epics").hidden = !state.epics.supported;
     try { state.human = await api("human"); } catch (e) { state.human = null; }
     paintHumanCount();
+    notifyGrowth(before, state.human ? state.human.count : 0);
     tickFreshness();
+    return changed;
+  }
+  /* Opt-in browser notification (off by default, no Claude permission): only when the queue grows. */
+  function notifyOn() { return localStorageGet("qnotify") === "1" && typeof Notification !== "undefined" && Notification.permission === "granted"; }
+  function localStorageGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function localStorageSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } }
+  function notifyGrowth(before, now) {
+    if (before == null || now <= before || !notifyOn()) return;
+    try { new Notification("Quenching specs", { body: `${now} ${now === 1 ? "spec waits" : "specs wait"} for the human` }); } catch (e) { /* unsupported */ }
+  }
+  function paintNotify() {
+    const b = $("#notify");
+    if (typeof Notification === "undefined") { b.hidden = true; return; }
+    b.textContent = notifyOn() ? "Notifications: on" : "Notifications: off";
+    b.setAttribute("aria-pressed", notifyOn() ? "true" : "false");
+  }
+  async function toggleNotify() {
+    if (notifyOn()) { localStorageSet("qnotify", "0"); paintNotify(); return; }
+    const perm = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
+    if (perm === "granted") localStorageSet("qnotify", "1"); else toast("Notifications were not allowed by the browser.");
+    paintNotify();
   }
   async function loadConfig() {
     try {
@@ -136,7 +171,7 @@
   }
   async function refresh(force) {
     $("#refresh").disabled = true;
-    try { await load(force); await render(); } catch (e) { fail(e); } finally { $("#refresh").disabled = false; }
+    try { const did = await load(force); if (force || did) await render(); } catch (e) { fail(e); } finally { $("#refresh").disabled = false; }
   }
 
   /* ── views ───────────────────────────────────────────────────────────────── */
@@ -430,7 +465,11 @@
     if (e.key === "/" && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) { e.preventDefault(); $("#q").focus(); }
   });
   setInterval(tickFreshness, 1000);
-  setInterval(() => { if (!document.hidden && !$("#dlg").open) refresh(false); }, 30000);
+  $("#notify").addEventListener("click", toggleNotify);
+  paintNotify();
+  /* 8 s: just above the server's 5 s cache; a 304 makes each unchanged poll nearly free, and a
+     hidden tab keeps polling so the title, the favicon and the notification still move. */
+  setInterval(() => { if (!$("#dlg").open) refresh(false); }, 8000);
 
   (async () => {
     if (!TOKEN) { $("#main").replaceChildren(h("p", { class: "bad" }, "Open the URL printed by `cq specs serve`: it carries the access token.")); return; }
