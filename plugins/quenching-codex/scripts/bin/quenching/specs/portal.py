@@ -98,6 +98,9 @@ _EPIC_ITEM_KEYS = ("label", "title", "spec", "after", "group", "groupTitle", "wa
                    "status")
 
 
+HUMAN_EPIC_MARK = "decidir com o humano"
+
+
 class Portal:
     """One portal over one repository root. Every backend touch happens under `self.lock`
     because the CLI verbs print to the process-wide stdout, which the lock lets us capture."""
@@ -221,6 +224,8 @@ class Portal:
                 return self._search(snap, (query.get("q") or [""])[0])
             if route == "epics":
                 return _json(200, {"ok": True, **self._epics(snap)})
+            if route == "human":
+                return _json(200, {"ok": True, **self._human(snap)})
         return _error(404, "sp-portal-not-found", f"no such route: /api/{route}")
 
     def _snapshot(self, fresh: bool):
@@ -334,6 +339,46 @@ class Portal:
                                        "stage": self._stage(k)} for k in kids],
                          "done": len(done), "total": len(kids)})
         return {"supported": bool(epics), "epics": rows}
+
+    def _human(self, snap: dict) -> dict:
+        """What waits for the human, read from the snapshot alone: open members of the epics
+        titled `HUMAN_EPIC_MARK`, specs with a blocked task, and ready specs nobody approved."""
+        infos = snap["infos"]
+        rows = {str(r["id"]): r for r in snap["rows"]}
+        members = {k: v for k, v in infos.items()}
+        epic_members, seen = [], set()
+        for e in infos.values():
+            if HUMAN_EPIC_MARK not in str(e["frontmatter"].get("title") or "").lower():
+                continue
+            for it in derive_epic(e, members)["items"]:
+                if it["status"] == "done":
+                    continue
+                sid = str(it["spec"]) if it["spec"] else ""
+                row = rows.get(sid)
+                epic_members.append({"epic": e["id"], "label": it["label"],
+                                     "id": it["spec"] or None,
+                                     "title": row["title"] if row else it["title"],
+                                     "stage": row["stage"] if row else "missing",
+                                     "status": it["status"]})
+                if sid:
+                    seen.add(sid)
+        blocked, waiting = [], []
+        for sid, info in infos.items():
+            row = rows[sid]
+            if info["phase"] != "plans":
+                continue
+            reasons = [{"task": t.get("id"), "reason": t.get("reason") or ""}
+                       for t in info["tasks"] if t.get("blocked")]
+            if reasons:
+                blocked.append({"id": info["id"], "title": row["title"], "stage": row["stage"],
+                                "reasons": reasons})
+                seen.add(sid)
+            if info["stage"] == "ready" and not info["frontmatter"].get("approved"):
+                waiting.append({"id": info["id"], "title": row["title"], "stage": row["stage"]})
+                seen.add(sid)
+        return {"fetchedAt": snap["at"], "count": len(seen) + sum(
+                    1 for m in epic_members if not m["id"]),
+                "epicMembers": epic_members, "blocked": blocked, "awaitingApproval": waiting}
 
     # ── writes ───────────────────────────────────────────────────────────────────────────
     def _post(self, route: str, data: dict):
