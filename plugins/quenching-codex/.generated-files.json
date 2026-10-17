@@ -704,7 +704,7 @@
     "scripts/bin/quenching/toolchain/model.py": "2e24e70ac5019d17a05ee9fb73dd2a6bbe936642fadff7af2be0b6c9f1d92487",
     "scripts/bin/quenching/toolchain/probe.py": "f76a9388586457289497bbf16b9b889ebcde601fb70f0dfcc7f80626da8ce883",
     "scripts/cq": "71340c3d3f71973f99afa91dcaf9c56a7a3449bdbfaef5530abc36f05a0c9185",
-    "scripts/modules.json": "b4ae5e9aa7d57bf83e921ead5c700569fff6d9e1e9347dd36f183d4f47de3086",
+    "scripts/modules.json": "a79447289e7120d6274ccc091b2f4f53255ea3c6e0cff841af974b8267c9dd54",
     "skills/quenching-align/SKILL.md": "fc93e8c8f4b55398e5b845d61479fe03fa1ec5b311cfb11d96191415030ac484",
     "skills/quenching-components-agent-new/SKILL.md": "5cadc5b0615be65dcf3e38ee0ef74399b4d3e4f216e113f0a147412100ce21a7",
     "skills/quenching-components-align/SKILL.md": "42c6552bf98ec327d983008097a993de98a9818a184db97305fef2e3621c272c",
