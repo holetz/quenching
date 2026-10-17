@@ -262,6 +262,8 @@ with its sha on the task line; step 5g never writes `origin/HEAD` and aims a dec
 write-only, nothing reads it back, so it is never a second store.
 `cq specs serve [--port N] [--host 127.0.0.1] [--read-only] [--open] [--sessions]` starts the local spec portal (loopback only, a per-run token on every call, `Host`/`Origin` validated; writes go through the CLI's own verbs, so CAS and refusals are the CLI's, and a refusal is shown with its code). `--sessions`, off by default, adds `GET /api/sessions` and the board's Sessions view: the live Claude Code sessions of this repository's worktrees, fixed fields only. `/quenching-specs:specs:board` launches it.
 
+`cq portal serve [--port N] [--host 127.0.0.1] [--read-only] [--open] [--sessions]` serves every project registered with `cq portal add` from one loopback server: the page gains a side menu of projects and their worktrees, each project's API lives under `/p/<name>/api/`, and one token cookie covers them all. `cq specs serve` is unchanged.
+
 | Command | Role |
 | --- | --- |
 | `/quenching-specs:specs:status` | The front's only **read-only** view: specs by derived stage with task progress, the frontmatter records as the history they narrate, the verifier results, and provider configuration findings. |
