@@ -49,7 +49,7 @@ your `tools:` does not grant is `STATE: blocked`, never worked around.
   `cq git pr merge --url <url> --wait 90 --json`, which reads the PR checks through gh and merges with
   `--merge --match-head-commit` only when every check is green (a required check that was skipped
   is not) and the PR's merge state is clean; `--wait` stays under the Bash tool's 2-minute
-  timeout. `reason: pending` → run it again, up to 30 minutes in all. `reason: failed` is `STATE: blocked`, `NOTE: failed: <notGreen>`; `reason: no-checks`, or
+  timeout. One merge call per PR at a time: never launch a second `cq git pr merge` for the same PR while the first is running, and run the `pending` repeat only after the previous call returned. A PR already merged returns `ok` with `alreadyMerged: true`, which is success. `reason: pending` → run it again, up to 30 minutes in all. `reason: failed` is `STATE: blocked`, `NOTE: failed: <notGreen>`; `reason: no-checks`, or
   `pending` past the ceiling, is `STATE: blocked`, `NOTE: needs-human: nenhum CI certificou o gate`;
   `reason: skipped-required` is `STATE: blocked`, `NOTE: failed: <notGreen>`; `reason: merge-state` (head moved, behind, blocked) is `STATE: blocked` with its `message`; `reason: merge-refused` (conflict, review required) is `STATE: blocked` with its `message`.
 - The `cleanup` step has two shapes. When the caller's prompt names the step `cleanup`, the worktree

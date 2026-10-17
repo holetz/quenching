@@ -115,6 +115,15 @@ def _view(url: str) -> tuple[str, str]:
         return "", ""
 
 
+def _is_merged(url: str) -> bool:
+    """True only when gh reports the PR `MERGED`; anything unreadable is not merged."""
+    _, out, _ = _gh("pr", "view", url, "--json", "state")
+    try:
+        return json.loads(out).get("state") == "MERGED"
+    except (json.JSONDecodeError, AttributeError, TypeError):
+        return False
+
+
 def _merge(args) -> int:
     match = PR_URL.fullmatch(args.url or "")
     if not match:
@@ -123,6 +132,10 @@ def _merge(args) -> int:
     if not 0 <= args.wait <= WAIT_MAX_S:
         return refuse({"code": "git-pr-wait-invalid",
                        "message": f"--wait must be between 0 and {WAIT_MAX_S} seconds"}, args.json)
+    if _is_merged(args.url):
+        emit(args.json, {"ok": True, "url": args.url, "number": int(match.group(1)),
+                         "alreadyMerged": True}, f"already merged {args.url}")
+        return OK
     deadline = time.monotonic() + args.wait
     head, _ = _view(args.url)
     while True:
