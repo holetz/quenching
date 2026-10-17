@@ -28,6 +28,10 @@ tree. Other namespaces are read by their owning front.
 | `shared.workHost` | `{target, dockerContext, runner, remoteRoot, syncFlags, syncExclude, pullBack, protectedPaths, minFreeGb}` — a bad leaf falls back to its default and is named in `warnings` | disabled until `target` is set | `cq config host --plan`, which prints the dispatch steps and runs nothing |
 | `shared.okfValidate` | `{warnAsError: boolean, ignoreGlobs: list of strings}` | `{warnAsError: false, ignoreGlobs: []}`, key by key; wins over `.agents/hooks/hooks-config*.json` | `cq knowledge validate` |
 | `shared.contextBudgets` | `{main, worker, conductor}`, positive integers | `{main: 200000, worker: 100000, conductor: 150000}` | `cq session context`; `worker` is also the default of `cq specs estimate --worker-budget` |
+| `shared.codex` | `{crossReview: auto \| off, maxUsedPercent: {primary, secondary}, timeoutSeconds, model, executor}` — a bad leaf falls back to its default and is named in `warnings` | `{auto, {80, 90}, 900, gpt-6-astra}`, leaf by leaf | `cq codex` |
+| `delivery.provider` | a provider name, declared explicitly | none — absent declares no provider; it chooses no pipeline policy | the delivery front (`delivery/config.py`) |
+| `specs.artifactLanguage` | a non-empty string | none | `cq specs`, on the branch or here |
+| `specs.cardAt` | the sibling spelling of `specs.card.at` | none | the card layer, on the branch or here |
 | `specs.chat` | `{model, budgetUsd, timeoutSeconds}` | `{gpt-6.1-sol, 0.50, 300}` | the portal's `--chat`; `--chat-budget-usd` wins |
 | `specs.azureStates` | `{"plans": "<state>", "archive": "<state>"}` | **none, deliberately** — refuses (exit 2, `sp-az-no-states`) rather than guess | the `azure-boards` backend only |
 | `specs.azurePlacement` | `{areaPath, workItemType, discoveryTag, team, iterationPath, boardColumn, defaultSubject}` — `workItemType` retired, see `workItemTypes` below | per sub-key — `areaPath` **none, deliberately**, the rest default | the `azure-boards` backend only |
@@ -63,3 +67,5 @@ stays the layer below, and the bundle root is the fixed `/docs/` convention no c
 `autonomy`, `contextBudgets`, `okfValidate` and `workHost` blocks and `specs.chat`); `cq config check`
 and `cq doctor` list the seeded keys a file lacks. They only report: an existing file is never
 rewritten.
+
+`cq doctor --setup` previews a minimal file from the detected provider and `--write` confirms it; it records the deprecated root `backend`, so prefer `cq config init`.
