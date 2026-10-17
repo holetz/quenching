@@ -66,6 +66,25 @@ def _common_dir(root: str) -> str | None:
     return os.path.realpath(value if os.path.isabs(value) else os.path.join(gitdir, value))
 
 
+def _main_path(common: str, root: str) -> str | None:
+    """The main checkout of a common dir: its parent when named `.git`, else `core.worktree`,
+    else the checkout discovery started from when it holds the common dir itself."""
+    if os.path.basename(common) == ".git":
+        return os.path.dirname(common)
+    try:
+        with open(os.path.join(common, "config"), encoding="utf-8") as stream:
+            for line in stream:
+                key, _, value = line.partition("=")
+                if key.strip() == "worktree" and value.strip():
+                    return os.path.realpath(os.path.join(common, value.strip()))
+    except OSError:
+        pass
+    checkout = _checkout_root(root)
+    if checkout and worktree_gitdir(os.path.join(checkout, ".git")) == common:
+        return checkout
+    return None
+
+
 def list_worktrees(root: str) -> list[dict]:
     """`[{path, branch, main}]` for the repository `root` belongs to, main worktree first.
 
@@ -74,7 +93,8 @@ def list_worktrees(root: str) -> list[dict]:
     common = _common_dir(os.fspath(root))
     if not common:
         return []
-    found = [{"path": os.path.dirname(common), "branch": worktree_branch(common), "main": True}]
+    main = _main_path(common, os.fspath(root))
+    found = [{"path": main, "branch": worktree_branch(common), "main": True}] if main else []
     base = os.path.join(common, "worktrees")
     try:
         names = sorted(os.listdir(base))

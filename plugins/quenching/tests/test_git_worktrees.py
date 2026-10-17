@@ -57,6 +57,17 @@ class ListWorktreesTest(unittest.TestCase):
         os.mkdir(nested)
         self.assertEqual(self._rows(nested), self._rows(self.main))
 
+    def test_separate_git_dir_names_the_checkout_not_the_store_parent(self):
+        meta = os.path.join(self.base, "meta")
+        os.mkdir(meta)
+        repo = os.path.join(self.base, "sep")
+        _git(self.base, "init", "-q", "-b", "main", "--separate-git-dir",
+             os.path.join(meta, "store.git"), repo)
+        self.assertEqual(self._rows(repo), [{"path": repo, "branch": "main", "main": True}])
+        sub = os.path.join(repo, "a")
+        os.mkdir(sub)
+        self.assertEqual(self._rows(sub), self._rows(repo))
+
     def test_not_a_repository_is_empty(self):
         self.assertEqual(list_worktrees(self.base), [])
 
