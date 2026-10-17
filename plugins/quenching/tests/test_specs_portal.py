@@ -116,6 +116,18 @@ class Handlers(PortalCase):
         self.assertIn(row["stage"], body["stages"])
         self.assertEqual(sorted(r["rank"] for r in body["specs"]), [1, 2, 3])
 
+    def test_list_and_detail_carry_the_runner_record_field_by_field(self):
+        text = READY.format(title="Ran").replace(
+            "tags:", "run: {state: done, verifier: pass, date: 2026-10-17, note: leak}\ntags:")
+        self.backend.create_spec("plans", text)
+        _, body = self.get("/api/specs")
+        ran = next(r for r in body["specs"] if r["title"] == "Ran")
+        self.assertEqual(ran["run"], {"state": "done", "verifier": "pass", "date": "2026-10-17"})
+        plain = next(r for r in body["specs"] if r["title"] == "Alpha")
+        self.assertIsNone(plain["run"])
+        _, detail = self.get(f"/api/specs/{ran['id']}")
+        self.assertIn("run", [t["record"] for t in detail["timeline"]])
+
     def test_a_blocked_task_moves_the_spec_to_the_blocked_stage(self):
         text = READY.format(title="Stuck").replace("- [ ] 2. second", "- [!] 2. second — waits")
         self.backend.create_spec("plans", text)

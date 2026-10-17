@@ -11,7 +11,7 @@
 
   "frontmatter": {
     "required": ["title", "date"],
-    "optional": ["verification", "priority", "refined", "approved", "branch", "pr", "reviewed", "merge", "buildCost", "outcome", "workItemType", "epic", "tags", "assignee", "start", "target"],
+    "optional": ["verification", "priority", "refined", "approved", "branch", "pr", "reviewed", "merge", "buildCost", "run", "outcome", "workItemType", "epic", "tags", "assignee", "start", "target"],
     "verification": ["per-task", "per-section", "end-of-plan"],
     "outcome": ["done", "abandoned"],
 
@@ -78,6 +78,14 @@
         "writtenBy": "conclude",
         "writeOnce": false,
         "why": "observed build usage cannot be reconstructed from task files or git after its explicitly scoped transcript is lost. source carries runtime, transcript/agent scope and measurement coverage; measurements is a compact JSON scalar of per-model observed request counts and input/cache/output totals, plus maxRequestExposureTokens (reported request exposure, never silently relabelled a context peak). Unknown or unavailable telemetry has status unavailable, an empty measurements scalar and a reason, never fabricated zeros or estimates. The declared-reading heuristic is derived output and never belongs in this record. Conclude may replace unavailable with new evidence, writing every field so stale reasons or measurements cannot survive a re-stamp."
+      },
+      "run": {
+        "fields": ["state", "verifier", "date"],
+        "state": {"levels": ["done", "continue", "blocked", "failed"]},
+        "verifier": {"levels": ["pass", "fail", "not-run"]},
+        "writtenBy": "spec-runner",
+        "writeOnce": false,
+        "why": "the board shows how the last orchestrated step of a spec ended without the orchestrator holding a write grant (spec 1774, decision A): the spec-runner stamps this one short record at the end of its step. NOTE and TOKENS of the return format stay out of the store. Each step rewrites every field, so the record always describes the latest step."
       },
       "outcome": {
         "valuesFrom": "frontmatter.outcome",

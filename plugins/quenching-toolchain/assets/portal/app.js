@@ -191,6 +191,9 @@
     return h("div", { class: "meta" },
       s.priority && s.priority.level ? h("span", { class: "chip" }, "P" + s.priority.level) : null,
       s.complexity ? h("span", { class: "chip" }, s.complexity) : null,
+      s.run && s.run.state ? h("span", {
+        class: "chip run" + (s.run.state === "failed" || s.run.state === "blocked" || s.run.verifier === "fail" ? " run-bad" : ""),
+        title: "last runner step" + (s.run.date ? " on " + s.run.date : "") }, "run: " + s.run.state + (s.run.verifier ? " / " + s.run.verifier : "")) : null,
       s.subject ? h("span", { class: "chip" }, s.subject) : null,
       s.tags.map((t) => h("span", { class: "chip" }, "#" + t)),
       s.assignee ? h("span", {}, "@" + s.assignee) : null,

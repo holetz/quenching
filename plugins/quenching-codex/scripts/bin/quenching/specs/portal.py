@@ -338,6 +338,7 @@ class Portal:
         card = fm.get("card") or fm.get("issue") or (locator if locator.startswith("http") else "")
         merge = fm.get("merge") if isinstance(fm.get("merge"), dict) else {}
         priority = fm.get("priority") if isinstance(fm.get("priority"), dict) else None
+        run = fm.get("run") if isinstance(fm.get("run"), dict) else None
         return {
             "id": info["id"], "title": str(fm.get("title") or ""), "phase": info["phase"],
             "stage": self._stage(info), "derivedStage": info["stage"], "date": info["date"],
@@ -348,6 +349,7 @@ class Portal:
             "assignee": fm.get("assignee") or "", "workItemType": fm.get("workItemType") or "",
             "approved": fm.get("approved") or None, "card": card,
             "pr": fm.get("pr") or merge.get("pr") or "",
+            "run": {k: str(run.get(k) or "") for k in ("state", "verifier", "date")} if run else None,
         }
 
     def _detail(self, snap: dict, spec_id: str):
