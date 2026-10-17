@@ -33,7 +33,7 @@ class InstallProfileContract(unittest.TestCase):
     def test_config_reference_uses_the_same_scope_and_default(self):
         reference = CONFIG_REFERENCE.read_text(encoding="utf-8").lower()
         self.assertIn("shared.profiles", reference)
-        self.assertIn("all seven local fronts eligible", reference)
+        self.assertIn("all eight local fronts eligible", reference)
         self.assertIn("conduction scope", reference)
 
     def test_this_repository_profile_declares_every_current_entry(self):
