@@ -167,6 +167,43 @@ class StrictFrontmatter(unittest.TestCase):
         self.assertEqual(payload["commandCount"], 58)
 
 
+class ReferenceRoot(unittest.TestCase):
+    """`sk-reference-root`: a reference citation must resolve from the plugin root."""
+
+    def _codes(self, body: str, base: str = BASE) -> list[str]:
+        return [f["code"] for f in lint_command(command(body), base)
+                if f["code"] == "sk-reference-root"]
+
+    def test_a_bare_components_read_target_is_an_error(self):
+        body = "Run `cq components read specs-develop/questions.md --sections x`.\n"
+        with tempfile.TemporaryDirectory() as tmp:
+            refs = pathlib.Path(tmp) / "assets" / "references" / "specs-develop"
+            refs.mkdir(parents=True)
+            (refs / "questions.md").write_text("x", encoding="utf-8")
+            self.assertEqual(self._codes(body, tmp), ["sk-reference-root"])
+
+    def test_a_link_to_references_without_the_root_is_an_error(self):
+        body = "See [q](assets/references/specs-develop/questions.md).\n"
+        self.assertEqual(self._codes(body), ["sk-reference-root"])
+
+    def test_a_root_anchored_link_is_clean_when_no_tree_is_present(self):
+        body = "See [q](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md).\n"
+        self.assertEqual(self._codes(body), [])
+
+    def test_a_root_anchored_link_to_a_missing_file_is_an_error_with_a_tree(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            refs = pathlib.Path(tmp) / "assets" / "references" / "a"
+            refs.mkdir(parents=True)
+            (refs / "real.md").write_text("x", encoding="utf-8")
+            root = "${CLAUDE_PLUGIN_ROOT}/" + "assets" + "/references/"
+            ok = f"[r]({root}a/real.md)\n"
+            bad = f"[r]({root}a/gone.md)\n"
+            bare = "[r](a/real.md)\n"
+            self.assertEqual(self._codes(ok, tmp), [])
+            self.assertEqual(self._codes(bad, tmp), ["sk-reference-root"])
+            self.assertEqual(self._codes(bare, tmp), ["sk-reference-root"])
+
+
 class StepCriterion(unittest.TestCase):
     def test_child_headings_under_workflow_are_steps_without_numbers(self):
         body = ("## Workflow\n\n### Probe\n\nRead the payload.\n\n"
