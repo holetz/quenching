@@ -11,8 +11,8 @@ allowed-tools: Bash(cq:*), Bash(git:*), Bash, Read, Grep, Glob, Agent, Task, Tas
 **Input**: `$ARGUMENTS` — no flag runs **ONE round** (steps 1–8) and stops. `--until-dry` repeats
 rounds until the queue runs dry; `--until <date-time with offset>` (e.g. `2026-10-09T07:00-03:00`)
 repeats them until the deadline (and still stops at a dry queue). `--max-launches <n>` sets the
-launch ceiling (default **40**, provisional: it is fixed only after the human reads the measurement
-of the last three runs). `--max-tree-tokens <n>` sets an opt-in ceiling on the tokens measured per
+launch ceiling; without it the ceiling is `shared.autonomy.maxLaunches` from `cq config show --effective --json`
+(default **40**, provisional: it is fixed only after the human reads the measurement of the last three runs), and the flag wins over the key. `--max-tree-tokens <n>` sets an opt-in ceiling on the tokens measured per
 model across the tree, with **no default**: without it nothing is read or compared. Optionally focus areas as in `/quenching-specs:specs:improve`.
 Typed by the human only: **the invocation is the human's delegation** for the whole run — every
 forced execution, push, PR and merge below is authorized by it, and by nothing else.
@@ -39,7 +39,7 @@ non-`cq`, non-`git` command is run.
   left to polish" is never a reason to invent work.
 - **Findings become specs, never hot fixes.** What the correctness review finds is a spec of the
   next round; the conductor never patches `main` itself.
-- **Liveness.** A worker with no activity for more than **20 min** (its transcript's mtime) and no
+- **Liveness.** A worker with no activity for more than `shared.autonomy.livenessMinutes` (default **20 min**; its transcript's mtime) and no
   live child process is stopped with `TaskStop` and relaunched **once**. A second stall goes to the
   final report, never a third launch.
 - **Git is read-only for every agent this session briefs, except the orchestrator's workers.**
