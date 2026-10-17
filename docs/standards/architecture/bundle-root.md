@@ -4,10 +4,10 @@ title: The bundle root is the fixed `/docs/` convention
 description: The OKF bundle of a target repo lives at the fixed `/docs/` root and the design source at `/.design/` — neither root is configurable, because an LLM executor runs command bodies literally and a root it must resolve from configuration is a root it can resolve wrong
 resource: /docs/**
 tags: [architecture, bundle, okf, convention, config]
-timestamp: 2026-08-29
+timestamp: 2026-10-17
 audience: both
 authority: current
-source: "docs-em-diretorio-customizado spec (task 1.4, 2026-08-06) — proved by the migration itself: the bundle moved to the fixed root and every shipped reader updated in the same branch; provider-owned specs have no repository root"
+source: "docs-em-diretorio-customizado spec (task 1.4, 2026-08-06) — proved by the migration itself: the bundle moved to the fixed root and every shipped reader updated in the same branch; provider-owned specs have no repository root; aligned to the loader by spec 1912 (no key count)"
 maintainer: quenching
 ---
 
@@ -26,7 +26,7 @@ configurable.
   `/.design/tokens.json` is the only primitive source the design front writes.
 
 The bundle root is a **convention, not a setting**. It is not named by `.claude/quenching.json`, which
-recognises six keys and none of them is a path
+recognises no key that is a path
 ([plugin-configuration.md](../workflows/plugin-configuration.md)); nor by the target's
 `.claude/hooks/hooks-config.json`, which carries only the checker's behaviour knobs. The
 validator's `_load_config` reads just that one file — the bundle root is a constant of the
