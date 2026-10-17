@@ -155,6 +155,28 @@ class Gates(CentralCase):
         self.assertEqual((status, json.loads(out)["code"]), (403, "sp-read-only"))
 
 
+class Chat(CentralCase):
+    def test_a_project_chat_runs_in_its_own_worktree_only(self):
+        from test_specs_chat import install_fake
+        claude, log = install_fake(self)
+        chat = {"claude": claude, "budget": 0.5, "worktrees": None}
+        central = serve_mod.Central(portal_mod, worktrees_mod.list_worktrees, self.projects,
+                                    TOKEN, host="127.0.0.1", port=PORT, chat=chat)
+        alpha, beta = (p["path"] for p in self.projects)
+        status, _, out = central.handle("POST", "/p/alpha/api/chat", JSON,
+                                        json.dumps({"question": "q", "worktree": beta}).encode())
+        self.assertEqual((400, "sp-portal-chat-worktree"), (status, json.loads(out)["code"]))
+        status, _, out = central.handle("POST", "/p/alpha/api/chat", JSON,
+                                        json.dumps({"question": "q", "worktree": alpha}).encode())
+        self.assertEqual(202, status, out)
+        job = central.portals["alpha"].jobs[json.loads(out)["job"]]
+        job.thread.join(10)
+        self.assertEqual("done", job.status)
+        self.assertEqual(alpha, os.path.realpath(json.loads(pathlib.Path(log).read_text())["cwd"]))
+        status, _, out = central.handle("GET", f"/p/beta%20b/api/chat/{job.id}", AUTH)
+        self.assertEqual(404, status)
+
+
 class LiveServer(CentralCase):
     def test_a_real_socket_routes_to_a_project(self):
         server = serve_mod.make_central_server(self.central)
@@ -200,6 +222,16 @@ class Command(unittest.TestCase):
         with mock.patch.object(serve_mod, "make_central_server") as server:
             rc, body = self.run_json()
         self.assertEqual((rc, body["code"]), (2, "portal-no-projects"))
+        server.assert_not_called()
+
+    def test_chat_with_a_bad_budget_is_refused_before_a_socket(self):
+        lent_mod.lend(serve_mod.SPECS, "quenching.specs.portal")
+        lent_mod.lend(serve_mod.WORKTREES, "quenching.session.worktrees")
+        with mock.patch.object(serve_mod.registry, "list_projects",
+                               return_value=[{"name": "a", "path": "/tmp"}]), \
+                mock.patch.object(serve_mod, "make_central_server") as server:
+            rc, body = self.run_json("--chat", "--chat-budget-usd", "0")
+        self.assertEqual((rc, body["code"]), (2, "sp-portal-chat-budget"))
         server.assert_not_called()
 
     def test_a_non_loopback_host_is_refused(self):
