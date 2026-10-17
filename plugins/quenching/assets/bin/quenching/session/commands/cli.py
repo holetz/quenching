@@ -25,7 +25,7 @@ target repo to hold, so nothing installs it.
 
 Two consequences follow, and both are deliberate:
 
-  * It is **outside the six-artifact lockstep** of `/docs/standards/ci-cd/versioning-release.md`.
+  * It is **outside the seven-artifact lockstep** of `/docs/standards/ci-cd/versioning-release.md`.
     That lockstep exists because an align must decide whether an installed copy is stale;
     with no installed copy there is no such decision. `VERSION` below tracks the plugin for
     a legible `--version`, and no align compares it against anything.
@@ -46,6 +46,10 @@ every subcommand takes `--json`, and the exit code is the whole decision.
     2   refusal       nothing usable: no transcript, an empty one, a non-empty one that
                       yielded no command, or a `--command` that is not in it
 
+For `context`, 0 means a reliable recorded peak within its role budget, 1 means above
+budget, and 2 means inconclusive usage, iteration coverage, identity or role. Command
+attribution is not required. The current request is absent from the transcript snapshot.
+
 Exit 1 exists so a caller can tell "clean read" from "read with holes" without parsing the
 anomaly list. It is not a failure — the findings are printed either way.
 """
@@ -55,8 +59,10 @@ import argparse
 
 from quenching.common.output import OK, NoAbbrevParser
 from quenching.common.version import VERSION
+from quenching.session.commands.context import cmd_context
 from quenching.session.commands.cost import cmd_cost
 from quenching.session.commands.digest import cmd_digest
+from quenching.session.commands.live import cmd_live
 from quenching.session.commands.read import cmd_list
 
 
@@ -83,8 +89,29 @@ def add_subcommands(sub: argparse._SubParsersAction) -> argparse._SubParsersActi
     co.add_argument("transcript", nargs="?",
                     help="path to a .jsonl transcript, a session id, or a subagents/ directory; "
                          "default: the most recent session for this cwd")
+    scope = co.add_mutually_exclusive_group()
+    scope.add_argument("--descendants-of", metavar="AGENT_ID",
+                       help="count only agents launched, directly or not, by this agent (parentAgentId)")
+    scope.add_argument("--nested", action="store_true",
+                       help="count only agents that have a parentAgentId (launched by a subagent)")
+    scope.add_argument("--latest-orchestrator", action="store_true",
+                       help="count only the descendants of the most recently started orchestrator "
+                            "(they run one at a time): the window is resolved here, no clock needed")
+    co.add_argument("--since", metavar="ISO8601",
+                    help="count only requests at or after this instant (an orchestrator's own window "
+                         "when several share the session)")
     co.add_argument("--json", action="store_true", help="machine-readable output")
     co.set_defaults(func=cmd_cost)
+    cx = sub.add_parser("context", help="measure a live transcript's context and role budget")
+    cx.add_argument("transcript", nargs="?", help="transcript path or session id; default: CLAUDE_CODE_SESSION_ID")
+    cx.add_argument("--agent", metavar="AGENT_ID", help="select this session's subagent transcript")
+    cx.add_argument("--json", action="store_true", help="machine-readable output")
+    cx.set_defaults(func=cmd_context)
+    lv = sub.add_parser("live", help="live sessions and sub-agents, fixed fields only")
+    lv.add_argument("--cwd", metavar="PATH",
+                    help="keep only sessions inside this repository's worktrees")
+    lv.add_argument("--json", action="store_true", help="machine-readable output")
+    lv.set_defaults(func=cmd_live)
     return sub
 
 
@@ -92,6 +119,8 @@ DISPATCH: dict = {
     "list": cmd_list,
     "digest": cmd_digest,
     "cost": cmd_cost,
+    "context": cmd_context,
+    "live": cmd_live,
 }
 
 

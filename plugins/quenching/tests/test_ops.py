@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import importlib
 import json
+import os
 import pathlib
+import re
 import subprocess
 import sys
 import tempfile
@@ -28,7 +30,7 @@ from quenching.ops.checks import (
 )
 from quenching.ops.cli import _status_payload
 from quenching.ops.doctor import doctor, inspect_ops
-from quenching.ops.inventory import build_inventory
+from quenching.ops.inventory import _registry_lifecycle, build_inventory
 from quenching.ops.model import EntryPoint, Inventory, Router
 from quenching.ops.registry import (
     REGISTRY_END,
@@ -94,6 +96,10 @@ class FrontKernel(unittest.TestCase):
         self.assertEqual(resolve_root(None), str(pathlib.Path.cwd()))
 
 
+def bash_commands(transcript):
+    return " ".join(call for tool, call in transcript if tool == "Bash")
+
+
 class AlignCleanPath(unittest.TestCase):
     def test_conformant_fixture_stops_after_two_calls_before_inventory(self):
         """The clean branch proves the probe-first stop, not just a prose substring.
@@ -136,18 +142,34 @@ class AlignCleanPath(unittest.TestCase):
                          '"$TARGET_ROOT" ops inventory --json')
             probe_at = body.index(probe)
             clean_stop_at = body.index("When it exits `0` with no findings", probe_at)
-            inventory_at = body.index(inventory, clean_stop_at)
+            clean_end_at = body.index("When it exits `2`", clean_stop_at)
+            next_stage_at = body.index("\n### 2.", probe_at)
+            inventory_at = body.index(inventory, probe_at)
             self.assertLess(probe_at, clean_stop_at)
-            self.assertLess(clean_stop_at, inventory_at)
-            clean_branch = " ".join(body[clean_stop_at:inventory_at].split())
-            self.assertIn("ops inventory", clean_branch)
+            self.assertLess(clean_stop_at, clean_end_at)
+            self.assertLess(clean_end_at, next_stage_at)
+            self.assertGreater(
+                inventory_at, next_stage_at,
+                "ops inventory is called before the inventory stage")
+            clean_branch = " ".join(body[clean_stop_at:clean_end_at].split())
+            self.assertIn("and stop", clean_branch)
+            self.assertIn("Do not run `ops inventory`", clean_branch)
+            self.assertIsNone(
+                re.search(r"(?<!not )run `ops inventory`", clean_branch),
+                "clean branch instructs running `ops inventory`")
+            self.assertIsNone(
+                re.search(r"continue|inventory stage|write the registry",
+                          clean_branch),
+                "clean branch continues past the stop")
+            self.assertEqual(clean_branch.count("ops inventory"), 1)
 
-            transcript = [
-                ("Read", str(ALIGN_BODY)),
-                ("Bash", probe),
-            ]
-            self.assertEqual(len(transcript), 2)
-            self.assertNotIn("inventory", " ".join(call for _, call in transcript))
+    def test_read_path_containing_inventory_is_not_an_inventory_call(self):
+        body_path = "/work/quenching-inventory/plugins/quenching/commands/ops/align.md"
+        probe = 'cq --root "$TARGET_ROOT" ops doctor --json'
+        clean = [("Read", body_path), ("Bash", probe)]
+        self.assertNotIn("inventory", bash_commands(clean))
+        called = clean + [("Bash", 'cq --root "$TARGET_ROOT" ops inventory --json')]
+        self.assertIn("inventory", bash_commands(called))
 
 
 class AlignThreeBands(unittest.TestCase):
@@ -323,6 +345,120 @@ class RegistryStale(unittest.TestCase):
             end = updated.index(REGISTRY_END) + len(REGISTRY_END)
             self.assertEqual(updated[:start], prefix)
             self.assertEqual(updated[end:], suffix)
+
+    def _lifecycle_of(self, text):
+        with tempfile.TemporaryDirectory() as raw:
+            path = pathlib.Path(raw) / "registry.md"
+            path.write_text(text, encoding="utf-8")
+            return _registry_lifecycle(raw, str(path))
+
+    def test_archived_with_reason_is_read_in_cell_and_declaration(self):
+        table = (
+            "| Entry | Purpose | Lifecycle |\n| --- | --- | --- |\n"
+            "| `prune.py` | Prune | archived (2026-08-30, replaced by run) |\n"
+            "| `run.py` | Run | active - main job |\n"
+        )
+        self.assertEqual(self._lifecycle_of(table), {"prune.py": "archived", "run.py": "active"})
+        declared = (
+            "`prune.py` \u2014 archived (2026-08-30, replaced by run)\n"
+            "- `run.py` \u2014 active\n"
+            "* `old.sh` \u2014 archived: superseded\n"
+        )
+        self.assertEqual(
+            self._lifecycle_of(declared),
+            {"prune.py": "archived", "run.py": "active", "old.sh": "archived"},
+        )
+
+    def test_state_word_followed_by_prose_is_not_a_lifecycle(self):
+        table = (
+            "| Entry | Purpose | Lifecycle |\n| --- | --- | --- |\n"
+            "| `run.py` | Run | active sessions |\n"
+        )
+        self.assertEqual(self._lifecycle_of(table), {"run.py": "active"})
+        self.assertEqual(self._lifecycle_of("`run.py` \u2014 active sessions\n"), {})
+
+    def test_styled_and_cased_forms_are_read(self):
+        cases = {
+            "| Entry | Purpose | Lifecycle |\n| --- | --- | --- |\n| `run.py` | R | `active` |\n": {"run.py": "active"},
+            "| Entry | Purpose | Lifecycle |\n| --- | --- | --- |\n| `a.py` | R | archived 2026-08-30 |\n": {"a.py": "archived"},
+            "| Entry | Purpose | Lifecycle |\n| --- | --- | --- |\n| `a.py` | R | archived since 2026-08-30 |\n": {"a.py": "archived"},
+            "| Entry | Purpose | Lifecycle |\n| --- | --- | --- |\n| `a.py` | R | **archived** |\n": {"a.py": "archived"},
+            "| Purpose | Entry | Lifecycle |\n| --- | --- | --- |\n| R | `a.py` | Active |\n": {"a.py": "active"},
+            "`old.py` \u2014 Archived (2026-08-30)\n": {"old.py": "archived"},
+            "- `run.py` \u2014 Active\n": {"run.py": "active"},
+            "- `run.py` \u2014 `active`\n": {"run.py": "active"},
+            "`a.py` \u2014 **archived** 2026-08-30\n": {"a.py": "archived"},
+        }
+        for text, expected in cases.items():
+            with self.subTest(text=text):
+                self.assertEqual(self._lifecycle_of(text), expected)
+
+    def test_column_index_does_not_leak_into_a_headerless_table(self):
+        text = (
+            "| Entry | Purpose | Lifecycle |\n| --- | --- | --- |\n"
+            "| `a.py` | A | active |\n\n"
+            "| `b.py` | B | archived |\n"
+        )
+        self.assertEqual(self._lifecycle_of(text), {"a.py": "active"})
+
+    def test_purpose_word_does_not_invent_a_lifecycle(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            (root / "prune.py").write_text("def main():\n    return 0\n", encoding="utf-8")
+            inventory = Inventory(
+                str(root),
+                Router("pyproject.toml", "python-console-script", True),
+                (EntryPoint("prune.py", "prune", "/prune", "Delete active sessions"),),
+            )
+            path = root / "registry.md"
+            write_registry(path, inventory)
+            self.assertEqual(_registry_lifecycle(str(root), str(path)), {})
+            self.assertFalse(write_registry(path, inventory))
+
+    def test_write_then_check_with_active_in_purpose_is_not_stale(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            scripts = root / "scripts"
+            scripts.mkdir()
+            (root / ".claude").mkdir()
+            (root / ".claude" / "quenching.json").write_text(
+                json.dumps({"ops": {"opsRoot": "scripts", "router": "pyproject.toml"}}),
+                encoding="utf-8",
+            )
+            (root / "pyproject.toml").write_text(
+                "[project.scripts]\nprune = 'prune:main'\n", encoding="utf-8"
+            )
+            (scripts / "prune.py").write_text(
+                '"""Delete active sessions."""\n\n'
+                "def main():\n"
+                "    return 0\n",
+                encoding="utf-8",
+            )
+            registry_path = scripts / "README.md"
+            first, err = build_inventory(str(root))
+            self.assertEqual(err, {})
+            assert first is not None
+            write_registry(registry_path, first)
+            self.assertIn("Delete active sessions.", registry_path.read_text(encoding="utf-8"))
+            second, err = build_inventory(str(root))
+            self.assertEqual(err, {})
+            assert second is not None
+            self.assertFalse(write_registry(registry_path, second))
+            self.assertEqual(check_registry_stale(second), [])
+
+    def test_lifecycle_is_read_from_its_column_only(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            path = root / "registry.md"
+            path.write_text(
+                "| Entry point | Purpose | Invocation | Lifecycle | Writes | Flags |\n"
+                "| --- | --- | --- | --- | --- | --- |\n"
+                "| `a.py` | Keep active and archived | `/a` | archived | no | — |\n"
+                "| `b.py` | Plain | `/b` | active | no | — |\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(_registry_lifecycle(str(root), str(path)),
+                             {"a.py": "archived", "b.py": "active"})
 
     def test_stale_check_delegates_to_registry_generator(self):
         with tempfile.TemporaryDirectory() as raw:
@@ -641,6 +777,97 @@ class FindingFixtures(unittest.TestCase):
             self.assertEqual(err, {})
             self.assertIsNotNone(payload)
             self.assertEqual(code, 1)
+
+
+class MalformedRegistry(unittest.TestCase):
+    """A registry the generator cannot read is a typed refusal or a finding, never a traceback."""
+
+    def _target(self, readme: bytes) -> pathlib.Path:
+        root = pathlib.Path(self.raw.name)
+        (root / ".claude").mkdir()
+        (root / "scripts").mkdir()
+        (root / ".claude" / "quenching.json").write_text(
+            json.dumps({"ops": {"opsRoot": "scripts", "router": "pyproject.toml"}}),
+            encoding="utf-8")
+        (root / "pyproject.toml").write_text("[project.scripts]\nrun = 'run:main'\n",
+                                             encoding="utf-8")
+        (root / "scripts" / "run.py").write_text(
+            "from pathlib import Path\n\nROOT = Path(__file__).resolve()\n\n"
+            "def main():\n    return 0\n\nif __name__ == '__main__':\n    raise SystemExit(main())\n",
+            encoding="utf-8")
+        (root / "scripts" / "README.md").write_bytes(readme)
+        return root
+
+    def setUp(self):
+        self.raw = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.raw.cleanup()
+
+    def _cq(self, root: pathlib.Path, *args: str):
+        from quenching.ops.cli import main
+        import contextlib
+        import io
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = main(["--root", str(root), *args])
+        return code, out.getvalue(), err.getvalue()
+
+    def _duplicated(self) -> bytes:
+        zone = f"{REGISTRY_START}\nrows\n{REGISTRY_END}\n"
+        return (zone + "\n" + zone).encode()
+
+    def test_duplicate_zones_refuse_registry_with_exit_2(self):
+        root = self._target(self._duplicated())
+        for args in (("registry",), ("registry", "--write")):
+            with self.subTest(args=args):
+                code, _, err = self._cq(root, *args)
+                self.assertEqual(code, 2)
+                self.assertIn("more than one generated zone", err)
+
+    def test_invalid_utf8_refuses_registry_with_exit_2(self):
+        root = self._target(b"\xff\xfe not utf-8\n")
+        for args in (("registry",), ("registry", "--write")):
+            with self.subTest(args=args):
+                code, _, err = self._cq(root, *args)
+                self.assertEqual(code, 2)
+                self.assertIn("not valid UTF-8", err)
+
+    def test_doctor_reports_malformed_zone_and_keeps_unrelated_findings(self):
+        root = self._target(self._duplicated())
+        code, out, _ = self._cq(root, "doctor", "--json")
+        codes = {item["code"] for item in json.loads(out)["findings"]}
+        self.assertIn("op-registry-malformed", codes)
+        self.assertIn("op-adhoc-root", codes)
+        self.assertNotIn("op-registry-stale", codes)
+        self.assertEqual(code, 1)
+
+    def test_doctor_reports_invalid_utf8_registry_as_malformed(self):
+        root = self._target(b"\xff\xfe not utf-8\n")
+        code, out, _ = self._cq(root, "doctor", "--json")
+        findings = json.loads(out)["findings"]
+        malformed = [item for item in findings if item["code"] == "op-registry-malformed"]
+        self.assertEqual(len(malformed), 1)
+        self.assertIn("not valid UTF-8", malformed[0]["message"])
+        self.assertNotIn("op-registry-stale", {item["code"] for item in findings})
+        self.assertEqual(code, 1)
+
+    @unittest.skipIf(hasattr(os, "geteuid") and os.geteuid() == 0, "root reads any file")
+    def test_unreadable_registry_is_malformed_finding_and_exit_2(self):
+        root = self._target(b"# readme\n")
+        readme = root / "scripts" / "README.md"
+        readme.chmod(0)
+        try:
+            code, out, _ = self._cq(root, "doctor", "--json")
+            codes = {item["code"] for item in json.loads(out)["findings"]}
+            code2, _, err = self._cq(root, "registry")
+        finally:
+            readme.chmod(0o644)
+        self.assertIn("op-registry-malformed", codes)
+        self.assertEqual(code, 1)
+        code = code2
+        self.assertEqual(code, 2)
+        self.assertIn("cannot be read", err)
 
 
 if __name__ == "__main__":

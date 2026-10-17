@@ -111,10 +111,9 @@ that carries content stays: the pass and its stop conditions (step 3), the conso
 (step 6), the report (step 8).
 
 **A recommendation rides inside the question, never in a turn before it.** Where a choice is
-genuinely the human's, the recommendation and the reasoning behind it go in the **AskUserQuestion**
-payload — the recommended option first and marked "(Recommended)", the reasoning in its description
-— so the human answers in one word and no turn was spent setting the question up.
-Where **AskUserQuestion** is unavailable (a sub-agent), do not ask: return `STATE: blocked` with `NOTE: needs-human: <question>`.
+genuinely the human's, the recommendation and the reasoning behind it go on the **decision sheet**
+([questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared mechanics §1) — option A, recommended, the reasoning in its own text — so the human answers in one word and no turn was spent setting the question up.
+A sub-agent does not ask: return `STATE: blocked` with `NOTE: needs-human:` carrying the decision sheet.
 **This contract stops at the edge of how questions are grouped.**
 [questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared
 mechanics §1 is the only authority there: a question travels with the ones whose answers cannot
@@ -124,7 +123,7 @@ change it, and alone otherwise.
 
 ### 1. Resolve the spec, and announce where it lives
 Take the id from the input, infer it from the conversation, or run `cq specs list --json` and ask
-with **AskUserQuestion** (most recently modified marked "(Recommended)"). Announce it and how to
+on a decision sheet (most recently modified as option A, recommended). Announce it and how to
 override. Two matches for one id is exit 2 — report both paths and stop, never guess which was
 meant. An archived spec has nothing to develop: say so and stop.
 
@@ -344,11 +343,33 @@ proved is a promise execution will refuse.
 `status` — plus `parallel`, where `## Tasks` moved — have run in that same call.
 
 ### 8. Close on a recommendation, and report
-The re-derived stage came back in step 7's call, so **this step opens nothing**. Compare it with
+The re-derived stage came back in step 7's call. Compare it with
 where the pass expected to land: a divergence is named and the pass re-enters at step 3 with a pass
 derived from the real stage. **The re-entry is narrated, never offered.**
 
-Otherwise close, and how it closes is the gear's — §Approval owns the screen's own content:
+**Before either approval route**, run the read-only size signal:
+
+```bash
+cq specs estimate <id> --json
+```
+
+Read the exit code before the payload; refusal or failure leaves approval unstamped. Report
+`maxSectionTokens`, `workerBudgetTokens` (the S2 worker policy is 100000), the section/task counts,
+`complete`, unresolved inputs and `excluded`. This is a UTF-8 bytes / 4 declared-reading heuristic;
+it **never proves the full build fits**, even when every declared input was found. Total reading
+volume is not a context peak; system overhead, future code, outputs and iterations are not predicted.
+
+When `overBudget` is true, follow §Approval's decomposition recommendation **before stamping**:
+brief `spec-architect` in **proposal-only** mode with the source id/problem, task-section estimates,
+worker budget, unresolved inputs and exclusions. It returns independently verifiable slices and
+dependencies without creating children. Offer that concrete proposal to the human (recommended),
+explicit acceptance of the unsplit estimate risk, or stop. Only explicit authorization permits
+capture/linking; preserve the original problem and never approve/execute the children incidentally.
+In `low`, including **forced low** / `autonomous`, do not ask or automatically approve an oversized
+source: return `STATE: blocked` with `NOTE: needs-human: <budget evidence and proposed slices>` to
+the conductor. A lower estimate reports uncertainty and continues; it is not a fits verdict.
+
+With no unresolved size decision, close according to the gear — §Approval owns the screen:
 
 - **`low`** — no screen. With `ready` now **proved** by step 7's payload and `approved` unset, stamp
   it here: `cq specs record <id> approved --set date=<today> --set by=low-gear`. **`by:` is never
@@ -356,9 +377,9 @@ Otherwise close, and how it closes is the gear's — §Approval owns the screen'
   this pass never had. When the conductor declared `low` as **forced** (the invocation says
   `autonomous`) and the on-disk level is above `low`, stamp `--set by=orchestrator-forced`
   instead. That is the only path that writes this value, and only after step 7 proved `ready`.
-- **`medium` · `high` · `xhigh`** — ONE closing screen that **recommends** rather than defaulting to
+- **`medium` · `high` · `xhigh`** — ONE closing decision sheet that **recommends** rather than defaulting to
   approve. Judge what the pass produced against §Refine's three signals and lead with the move they
-  argue for, marked "(Recommended)", carrying the signal in its own text: approve, refine (a raise
+  argue for, as option A (recommended), carrying the signal in its own text: approve, refine (a raise
   to `high`), refine with the premortem (a raise to `xhigh`), or stop. Choosing a raise IS the OK to
   restamp `complexity`; apply both and re-enter at step 3 under the raised level. A pass where
   refine already ran recommends approving and names what the argument settled — never the raise the
@@ -391,6 +412,8 @@ blocks:
    `by: low-gear` or `by: orchestrator-forced` on its own line**; the sections edited; the records stamped; the routed offers and
    whether each was taken; the stage before and after, and whether it landed where the pass expected.
 2. **Parked into `## Discoveries`** — optional, and every line **quoted**.
+
+Print §The session-size line before the block — `cq components session context --json`, read once; exit 1 turns the `→` line into a recommendation to run the next stage **in a new session**, exit 0 and 2 leave it an offer.
 
 Close on §The next-step block — `/quenching:git:branch <id>` once `approved` is stamped, naming it
 the natural moment to isolate before `/quenching:specs:execute <id>` writes any code;

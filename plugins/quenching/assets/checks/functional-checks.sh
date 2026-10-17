@@ -8,8 +8,9 @@
 # asserts on what the process DID (a Read/Bash read of a given path, a Skill invoked by a given name) and
 # never on what its prose claims. A self-report is not a test.
 #
-# EVERY check loads the plugin with `--plugin-dir`, from a sandbox that enables NO plugin, so
-# exactly one copy is loaded and it is the checkout THIS SCRIPT LIVES IN. Resolving through the
+# EVERY check loads the plugin with `--plugin-dir`, from a sandbox that enables NO plugin
+# and project settings only; user-installed plugins are excluded without moving authentication.
+# The startup plugin inventory must contain only this checkout and CLI builtins. Resolving through the
 # marketplace instead — which checks 1-3 used to do — serves whatever `~/.claude/plugins/cache/`
 # last installed: measured 2026-07-28, a 3.0.0 tree still carrying a command 4.2.0 had deleted,
 # so the repo's only check for a `commands/**` change was grading a copy nobody had edited.
@@ -43,7 +44,7 @@
 #   --only 1,2,3,4 all four
 #
 # TWO GUARDS, TWO ZERO-COST MODES. The static guard in --selfcheck reads this file:
-# every non-commented `claude -p` must carry --plugin-dir, no `enabledPlugins` may
+# every non-commented `claude -p` must carry --plugin-dir and the project settings filter; no `enabledPlugins` may
 # appear outside a comment, and no observed path may be compared with a raw grep
 # instead of `anchored`; the anchored guard checks the paths observed in captured
 # tool_use events. The --selfcheck mode runs only the source guard, while --selftest
@@ -89,7 +90,7 @@ REPO="$(cd "$REPO" 2>/dev/null && pwd)" || {
 PLUGIN="$REPO/plugins/quenching"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-PASS=0; FAIL=0; INCONC=0
+PASS=0; FAIL=0; INCONC=0; MEASURED=0
 
 want () { case ",$ONLY," in *",$1,"*) return 0 ;; *) return 1 ;; esac; }
 
@@ -101,13 +102,21 @@ inconc () { emit "SKIP" "$1 (inconclusive: $2)"; INCONC=$((INCONC+1)); }
 # header are deliberately excluded so the guard measures executable source, not prose.
 selfcheck () {
   local src="${BASH_SOURCE[0]}"
-  local active invocations forbidden pattern guarded_pattern count guarded_count
+  local active invocations forbidden pattern guarded_pattern count guarded_count isolated_count
   pattern="claude -""p"
   guarded_pattern="$pattern --plugin-dir"
   active="$(sed '/^[[:space:]]*#/d' "$src")"
   invocations="$(grep -nF "$pattern" <<<"$active" || true)"
   count="$(grep -cF "$pattern" <<<"$active")"
   guarded_count="$(grep -cF "$guarded_pattern" <<<"$active")"
+
+  isolated_count="$(grep -F "$pattern" <<<"$active" | grep -cF -- "--setting-sources project")"
+
+  if [ "$count" -ne "$isolated_count" ]; then
+    printf 'FAIL selfcheck: every non-commented %s must restrict settings to project\n' "$pattern"
+    printf '%s\n' "$invocations"
+    return 1
+  fi
 
   if [ "$count" -ne "$guarded_count" ]; then
     printf 'FAIL selfcheck: every non-commented %s must use --plugin-dir\n' "$pattern"
@@ -136,7 +145,19 @@ selfcheck () {
     return 1
   fi
 
+  # A routing probe measures the Skill call only; it must not be able to run the routed command's
+  # writes (the 2026-10-13 leak of specs 1641-1650 into the real store).
+  joined="$(sed -e ':a' -e '/\\$/N; s/\\\n//; ta' <<<"$active")"
+  open_probe="$(grep -F "$pattern" <<<"$joined" | grep -F '"$phrase"' | grep -vF -- '--disallowedTools "Bash Write Edit NotebookEdit"' || true)"
+  if [ -n "$open_probe" ]; then
+    printf 'FAIL selfcheck: a routing probe does not deny the write tools\n'
+    printf '%s\n' "$open_probe"
+    return 1
+  fi
+
   printf 'PASS selfcheck: %s %s invocation(s) use --plugin-dir\n' "$count" "$pattern"
+  printf 'PASS selfcheck: every session restricts settings to project\n'
+  printf 'PASS selfcheck: every routing probe denies write tools\n'
   printf 'PASS selfcheck: no %s outside comments\n' "$forbidden_pattern"
   printf 'PASS selfcheck: no observed path compared outside anchored\n'
 }
@@ -242,7 +263,39 @@ fi
 # must be gated on this, because the NEGATIVE halves ("read nothing under a skills/ tree") pass
 # vacuously over an empty stream: an unreadable capture would report a clean surface.
 # No evidence is reported as INCONCLUSIVE. It is never a pass and never a failure.
+# Startup inventory is independent of the calls we grade: a correct call must not
+# hide a competing plugin. Missing inventory is absence of evidence, not contamination.
+isolated () {
+  python3 -c '
+import json,sys
+from pathlib import Path
+for line in open(sys.argv[1], encoding="utf-8", errors="replace"):
+    try: ev=json.loads(line)
+    except ValueError: continue
+    if not isinstance(ev,dict) or ev.get("type")!="system" or ev.get("subtype")!="init": continue
+    plugins=ev.get("plugins")
+    if not isinstance(plugins,list) or not plugins: sys.exit(2)
+    paths=[p.get("path") if isinstance(p,dict) else None for p in plugins]
+    if any(not isinstance(p,str) or not p for p in paths): sys.exit(2)
+    expected=Path(sys.argv[2]).resolve()
+    foreign=[p for p in plugins if p["path"]!="builtin" and Path(p["path"]).resolve()!=expected]
+    if foreign:
+        print("FAIL isolation: unexpected plugins: " + json.dumps(foreign))
+        sys.exit(1)
+    sys.exit(0 if any(p!="builtin" and Path(p).resolve()==expected for p in paths) else 2)
+sys.exit(2)
+' "$1" "$PLUGIN"
+}
+
 evidence () {
+  local isolation_rc=0
+  isolated "$1" || isolation_rc=$?
+  if [ "$isolation_rc" -ne 0 ]; then
+    if [ "$isolation_rc" -eq 1 ]; then
+      check no "session plugin registry is isolated"
+    fi
+    return 1
+  fi
   [ "$(python3 -c '
 import json,sys
 n=0
@@ -252,11 +305,13 @@ for line in open(sys.argv[1], encoding="utf-8", errors="replace"):
     for c in (ev.get("message",{}).get("content") or []):
         if isinstance(c,dict) and c.get("type")=="tool_use": n+=1
 print(n)
-' "$1")" -gt 0 ]
+' "$1")" -gt 0 ] || return 1
+  MEASURED=$((MEASURED+1))
 }
 
 # Every check gets a throwaway git repo that enables NO plugin — the plugin arrives by
-# --plugin-dir, so exactly one copy is loaded and it is $PLUGIN.
+# --plugin-dir with project settings only. The startup inventory verifies that no external
+# installed plugin leaked in; CLI builtins are permitted.
 #
 # The box must contain whatever the prompts refer to, or a check grades the FIXTURE.
 # Three ways that bit, all observed here:
@@ -303,7 +358,7 @@ echo
 if want 1; then
 echo "1. a collapsed command loads and cites its re-homed reference"
 newbox "$WORK/sandbox1"
-( cd "$WORK/sandbox1" && claude -p --plugin-dir "$PLUGIN" "/quenching:knowledge:status
+( cd "$WORK/sandbox1" && claude -p --plugin-dir "$PLUGIN" --setting-sources project "/quenching:knowledge:status
 
 Before the report: list the absolute path of every reference file THIS COMMAND'S OWN BODY tells
 you to consult, exactly as the body spells them. Then Read the first one. Do not guess a path —
@@ -315,8 +370,8 @@ if evidence "$WORK/1.jsonl"; then
   if grep -q '/skills/' <<<"$(reference_reads "$WORK/1.jsonl")"; then r=no; else r=yes; fi
   check "$r" "read nothing under a skills/ tree"
 else
-  inconc "Read a file under assets/references/ (placeholder substituted)" "no tool_use in the capture"
-  inconc "read nothing under a skills/ tree" "no tool_use in the capture"
+  inconc "Read a file under assets/references/ (placeholder substituted)" "missing tool activity or verifiable plugin inventory"
+  inconc "read nothing under a skills/ tree" "missing tool activity or verifiable plugin inventory"
 fi
 fi
 
@@ -334,7 +389,7 @@ front_probe () {
   local id="$1" command="$2"
   local box="$WORK/front-$id"
   newbox "$box"
-  ( cd "$box" && claude -p --plugin-dir "$PLUGIN" "$command
+  ( cd "$box" && claude -p --plugin-dir "$PLUGIN" --setting-sources project "$command
 
 Before the report: list the absolute path of every reference file THIS COMMAND'S OWN BODY tells
 you to consult, exactly as the body spells them. Then Read the first one. Do not guess a path —
@@ -346,8 +401,8 @@ copy it from the body you were given." \
     if grep -q '/skills/' <<<"$(reference_reads "$WORK/front-$id.jsonl")"; then r=no; else r=yes; fi
     check "$r" "$command read nothing under a skills/ tree"
   else
-    inconc "$command loaded from this checkout" "no tool_use in the capture"
-    inconc "$command read nothing under a skills/ tree" "no tool_use in the capture"
+    inconc "$command loaded from this checkout" "missing tool activity or verifiable plugin inventory"
+    inconc "$command read nothing under a skills/ tree" "missing tool activity or verifiable plugin inventory"
   fi
 }
 front_probe ops /quenching:ops:status
@@ -370,7 +425,7 @@ newbox "$WORK/sandbox2"
 # disobedience, not the routing. Seed one real knowledge finding (a concept doc with no
 # frontmatter) so Front 1 has work and the conductor must reach it.
 printf '# Orphan\n' > "$WORK/sandbox2/docs/standards/orphan.md"
-( cd "$WORK/sandbox2" && claude -p --plugin-dir "$PLUGIN" "/quenching:align
+( cd "$WORK/sandbox2" && claude -p --plugin-dir "$PLUGIN" --setting-sources project "/quenching:align
 
 You have my authorization for the whole run — treat the plan gate as granted and proceed. I only
 need you to reach and INVOKE Front 1 via the Skill tool; stop right after that stage is invoked." \
@@ -387,8 +442,8 @@ if evidence "$WORK/2.jsonl"; then
   if grep -qE '"skill": *"[^"]*quenching-knowledge-align"' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=no; else r=yes; fi
   check "$r" "invoked no retired quenching-* skill name"
 else
-  inconc "invoked quenching:knowledge:align by name" "no tool_use in the capture"
-  inconc "invoked no retired quenching-* skill name" "no tool_use in the capture"
+  inconc "invoked quenching:knowledge:align by name" "missing tool activity or verifiable plugin inventory"
+  inconc "invoked no retired quenching-* skill name" "missing tool activity or verifiable plugin inventory"
 fi
 fi
 
@@ -403,6 +458,9 @@ fi
 # specs/plans/, "add a standard" lands one in docs/. A check that mutates the repository it is
 # verifying is not a check, and the mess it leaves is indistinguishable from real work.
 #
+# The probe measures the Skill call, which happens before the routed body acts, so it denies the
+# write tools: a probe that routes to /quenching:specs:create must never be able to land a spec.
+#
 # OPT-IN, AND NOT THE FIRST CHOICE: five sessions, non-deterministic, and duplicating what
 # `/quenching:components:command:eval` step 7 measures properly. See the COST note at the top.
 # --------------------------------------------------------------------------- #
@@ -410,6 +468,11 @@ fi
 # guard remains the only path guard for this check, so anchored does not apply here.
 if want 3; then
 echo "3. a spoken trigger routes with no / typed"
+
+# The probes never write, but the proof that no spec leaked is cheap and local: the store branch
+# tips of the repository under test must be the same after the probes as before them.
+store_tips () { git -C "$REPO" rev-parse -q --verify refs/heads/quenching refs/remotes/origin/quenching 2>/dev/null || true; }
+TIPS_BEFORE="$(store_tips)"
 
 # --max-turns is 14, not 4. A probe whose phrase needs any orientation first (a Glob, a Read)
 # spends turns before it routes, and a low cap cuts it off mid-orientation — which reports a
@@ -422,11 +485,11 @@ probe () {
   local id="$1" phrase="$2" want="$3"
   local box="$WORK/probe-$id"
   newbox "$box" >/dev/null 2>&1
-  ( cd "$box" && claude -p --plugin-dir "$PLUGIN" "$phrase" \
-      --max-turns 14 --output-format stream-json --verbose \
+  ( cd "$box" && claude -p --plugin-dir "$PLUGIN" --setting-sources project "$phrase" \
+      --disallowedTools "Bash Write Edit NotebookEdit" --max-turns 14 --output-format stream-json --verbose \
       < /dev/null > "$WORK/3$id.jsonl" 2>&1 )
   if ! evidence "$WORK/3$id.jsonl"; then
-    inconc "\"$phrase\" -> $want" "no tool_use in the capture"
+    inconc "\"$phrase\" -> $want" "missing tool activity or verifiable plugin inventory"
   elif grep -q "\"$want\"" <<<"$(tools Skill "$WORK/3$id.jsonl")"; then
     check yes "\"$phrase\" -> $want"
   elif grep -q '"subtype":"error_max_turns"' "$WORK/3$id.jsonl"; then
@@ -445,6 +508,8 @@ probe c "add a standard: we always use snake_case for database columns"         
 # measured as a MISS before that edit, so a regression puts it straight back to failing here.
 probe d "set up something that audits our migrations and reports back"                        "quenching:components:agent:new"
 probe e "I want something to catch it automatically whenever a migration lands"               "quenching:components:hook:new"
+if [ "$(store_tips)" = "$TIPS_BEFORE" ]; then r=yes; else r=no; fi
+check "$r" "the routing probes left the spec store branch untouched"
 fi
 
 echo
@@ -457,7 +522,7 @@ fi
 # An inconclusive assertion is NOT a passing one. A run that measured nothing at all exits 2 so
 # it can never be quoted as a green gate — the failure mode precondition 4 exists to name.
 if [ "$FAIL" -gt 0 ]; then exit 1; fi
-if [ "$PASS" -eq 0 ]; then
+if [ "$MEASURED" -eq 0 ]; then
   echo "  nothing could be measured — this is not a pass"
   exit 2
 fi

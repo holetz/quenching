@@ -29,11 +29,13 @@ finally fires, borrowing that section's own `## Tasks` heading as its title.
 A `## N.` section's last task committing, with another section still ahead, is a **clean boundary**:
 the loop keeps the task commits and continues with the next task.
 
-- **The trigger is that event, never a window size.** No threshold, no token count, no "this is
-  getting long".
+- **The trigger is that event, never a window size; the measured size decides only the tone.** The
+  boundary reads `cq components session context --json` once. Within the budget, or unmeasured
+  (exit 2), the loop continues and the boundary is not a question. Over it (exit 1), the loop asks
+  once, recommending a new session; continuing stays an option. A count never stops a task midway.
 - **Nothing extra is written.** `## Handoff`, `git log`, and the `subjects` `cq specs status`
   returns already carry everything a fresh session needs; the boundary adds no record and no fifth
-  Handoff event. The boundary is not a question and never pauses the loop.
+  Handoff event.
 - **Only a human-required question or a real blocker pauses the loop.** A section boundary is
   neither; the pause conditions remain the command body's own.
 - **The contract still ends at the last commit.** Reaching this boundary is not a close-out: the

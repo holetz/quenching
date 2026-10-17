@@ -10,7 +10,6 @@ from quenching.delivery.probe import probe_delivery, workflow_artifacts
 
 
 _TOP_LEVEL = re.compile(r"^([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
-_CHILD = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
 _MAPPING = re.compile(r"^\s+([A-Za-z_][A-Za-z0-9_.-]*):(?:\s*(.*?))?\s*$")
 _LIST = re.compile(r"^\s*-\s*([^\s#]+)")
 _AZURE_JOB = re.compile(r"^\s*-\s*(?:job|deployment):\s*([^\s#]+)")
@@ -45,10 +44,16 @@ def _block(lines: list[str], heading: str) -> list[str]:
     return lines[start:end]
 
 
+def _mapping_children(block: list[str]) -> list[tuple[int, str]]:
+    mappings = [(index, len(line) - len(line.lstrip()), match.group(1))
+                for index, line in enumerate(block[1:], 1)
+                if (match := _MAPPING.match(line))]
+    indent = min((width for _, width, _ in mappings), default=0)
+    return [(index, name) for index, width, name in mappings if width == indent]
+
+
 def _mapping_names(lines: list[str], heading: str) -> tuple[str, ...]:
-    block = _block(lines, heading)
-    return tuple(sorted(match.group(1) for line in block[1:]
-                         if (match := _CHILD.match(line))))
+    return tuple(sorted(name for _, name in _mapping_children(_block(lines, heading))))
 
 
 def _list_values(lines: list[str], heading: str) -> tuple[str, ...]:
@@ -59,8 +64,7 @@ def _list_values(lines: list[str], heading: str) -> tuple[str, ...]:
 
 def _job_blocks(lines: list[str]) -> list[tuple[str, list[str]]]:
     block = _block(lines, "jobs")
-    starts = [(index, match.group(1)) for index, line in enumerate(block[1:], 1)
-              if (match := _CHILD.match(line))]
+    starts = _mapping_children(block)
     result: list[tuple[str, list[str]]] = []
     for position, (start, name) in enumerate(starts):
         end = starts[position + 1][0] if position + 1 < len(starts) else len(block)
@@ -197,26 +201,31 @@ def _job(lines: list[str], name: str, kind: str) -> Job:
                                 if (match := re.search(r"\buses:\s*([^\s#]+)", line)))))
     commands: list[str] = []
     script_indent: int | None = None
+    scalar_indent: int | None = None
+    keys = "run|script|bash|pwsh" if kind == "azure-pipelines" else "run|script"
     for line in lines:
-        if kind == "azure-pipelines":
-            azure_command = re.match(r"^\s*-\s*(?:bash|script|pwsh):\s*(.*?)\s*$", line)
-            if azure_command:
-                value = _strip_comment(azure_command.group(1))
-                if value and value not in {"|", ">"}:
-                    commands.append(value)
+        indent = len(line) - len(line.lstrip())
+        if scalar_indent is not None:
+            if not line.strip():
                 continue
-        run = re.match(r"^\s*-?\s*run:\s*(.*?)\s*$", line)
-        script = re.match(r"^(\s*)script:\s*(.*?)\s*$", line)
-        if run and run.group(1):
-            commands.append(_strip_comment(run.group(1)))
-            continue
-        if script:
-            script_indent = len(script.group(1))
-            if script.group(2):
-                commands.append(_strip_comment(script.group(2)))
+            if indent > scalar_indent:
+                if command := _strip_comment(line):
+                    commands.append(command)
+                continue
+            scalar_indent = None
+        command_key = re.match(rf"^(\s*)(-\s*)?(?:{keys}):\s*(.*?)\s*$", line)
+        if command_key:
+            key_indent = len(command_key.group(1)) + len(command_key.group(2) or "")
+            value = _strip_comment(command_key.group(3))
+            script_indent = None
+            if re.fullmatch(r"[|>](?:[1-9][+-]?|[+-][1-9]?)?", value):
+                scalar_indent = key_indent
+            elif value:
+                commands.append(value)
+            elif re.match(r"^\s*script:", line):
+                script_indent = key_indent
             continue
         if script_indent is not None:
-            indent = len(line) - len(line.lstrip())
             if line.strip() and indent <= script_indent:
                 script_indent = None
             elif (command := re.match(r"^\s*-\s+(.+?)\s*$", line)):
@@ -253,8 +262,15 @@ def _job(lines: list[str], name: str, kind: str) -> Job:
                    or any(re.search(r"(?i)(gh\s+release|npm\s+publish|twine\s+upload|docker\s+push|publish)", value)
                           for value in commands)
                    or any(re.search(r"(?i)(release|publish|deploy)", action) for action in actions))
-    active = not any(re.search(r"^\s*if:\s*(?:\$\{\{\s*)?(?:false|never)(?:\s*\}\})?\s*$", line, re.IGNORECASE)
-                     for line in lines)
+    job_conditions = lines[1:] if lines and not lines[0].startswith("steps:") else []
+    property_indent = min((len(line) - len(line.lstrip()) for line in job_conditions
+                           if _MAPPING.match(line)), default=None)
+    active = not any(
+        found[0] == property_indent
+        and re.fullmatch(r"(?:\$\{\{\s*)?(?:false|never)(?:\s*\}\})?",
+                         found[1], re.IGNORECASE)
+        for line in job_conditions if (found := _key_value(line, "if")) is not None
+    )
     return Job(
         name=name,
         needs=needs,
@@ -279,21 +295,50 @@ def _job(lines: list[str], name: str, kind: str) -> Job:
     )
 
 
-def _triggers(lines: list[str], kind: str) -> tuple[str, ...]:
+def _trigger_names(lines: list[str], kind: str) -> list[str]:
     block = _block(lines, "on") or _block(lines, "trigger")
     if not block and kind == "gitlab-ci":
         block = _block(lines, "workflow") or _block(lines, "rules")
     if not block:
-        return ()
+        return []
     first = _TOP_LEVEL.match(block[0])
     inline = _strip_comment(first.group(2) or "") if first else ""
     if inline and inline not in {"{}", "null"}:
         if inline.startswith("[") and inline.endswith("]"):
-            return tuple(sorted(item.strip(" '\"") for item in inline[1:-1].split(",")
-                                if item.strip()))
-        return (inline.strip(" '\""),)
-    return tuple(sorted(match.group(1) for line in block[1:]
-                         if (match := _CHILD.match(line))))
+            return [item.strip(" '\"") for item in inline[1:-1].split(",") if item.strip()]
+        return [inline.strip(" '\"")]
+    names = [name for _, name in _mapping_children(block)]
+    if not names and kind != "gitlab-ci":
+        names = [_strip_comment(match.group(1)).strip("'\"") for line in block[1:]
+                 if (match := _LIST.match(line))]
+    return names
+
+
+def _azure_extra_triggers(lines: list[str]) -> list[str]:
+    names = []
+    pr = _block(lines, "pr")
+    if pr:
+        first = _TOP_LEVEL.match(pr[0])
+        inline = _strip_comment(first.group(2) or "") if first else ""
+        body = [line for line in pr[1:] if _strip_comment(line)]
+        items = [_strip_comment(m.group(1)).strip("'\"") for line in body
+                 if (m := _LIST.match(line))]
+        if inline:
+            if inline.lower() != "none" and inline not in {"{}", "null"}:
+                names.append("pr")
+        elif body and not (items and all(item.lower() == "none" for item in items)
+                           and len(items) == len(body)):
+            names.append("pr")
+    if _block(lines, "schedules"):
+        names.append("schedules")
+    return names
+
+
+def _triggers(lines: list[str], kind: str) -> tuple[str, ...]:
+    names = _trigger_names(lines, kind)
+    if kind == "azure-pipelines":
+        names += _azure_extra_triggers(lines)
+    return tuple(sorted(set(name for name in names if name.lower() != "none")))
 
 
 def _workflow(root: Path, relative: str, provider: str, kind: str) -> Workflow:

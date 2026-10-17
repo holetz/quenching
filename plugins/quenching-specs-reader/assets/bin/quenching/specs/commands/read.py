@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 
+from quenching.common.config import load_config
 from quenching.common.io import write_text
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.epic import cmd_epic_status
@@ -21,6 +22,17 @@ from quenching.specs.parse.tasks import task_progress
 from quenching.specs.schema import canonical_headings, load_schema
 
 
+def epic_meta(row_id, fm: dict) -> dict:
+    """`epic` and `workItemType` as stored in frontmatter; absent is `null`. `epic` takes the
+    identifier type of the row's `id`."""
+    epic = fm.get("epic")
+    epic = None if epic in (None, "") else str(epic).strip().lstrip("#") or None
+    if epic is not None and isinstance(row_id, int) and epic.isdigit():
+        epic = int(epic)
+    wit = fm.get("workItemType")
+    return {"epic": epic, "workItemType": None if wit in (None, "") else str(wit)}
+
+
 def cmd_list(args, root: str, out: Emitter) -> int:
     backend, err = open_backend(root)
     if err:
@@ -31,6 +43,7 @@ def cmd_list(args, root: str, out: Emitter) -> int:
             "id": s["id"], "title": s.get("title", ""), "phase": s["phase"],
             "state": s.get("state"), "path": display_locator(s["path"], root),
             "records": s.get("records", []),
+            **epic_meta(s["id"], {"epic": s.get("epic"), "workItemType": s.get("workItemType")}),
         } for s in backend.list_specs(phase, lean=True)]
         unavailable = ["date", "stage", "outcome", "verification",
                        "ready", "sections", "tasks", "unreadable"]
@@ -79,6 +92,7 @@ def cmd_list(args, root: str, out: Emitter) -> int:
             "unreadable": unreadable,
             "tasks": {"checked": checked, "blocked": blocked, "total": total},
             "path": display_locator(s["path"], root),
+            **epic_meta(s["id"], info["frontmatter"]),
         })
     if args.json:
         print(json.dumps({"ok": True, **front_fields(root), "count": len(rows), "specs": rows},
@@ -120,9 +134,26 @@ def cmd_status(args, root: str, out: Emitter) -> int:
     if not args.spec:
         return out.emit_err(args.json, {"code": "sp-no-target", "exit": 2,
                                         "message": "pass --spec <id>, or --epic <id>"})
+    no_fetch = getattr(args, "no_fetch", False)
+    if no_fetch:
+        # Decided from the local config alone: opening a github backend resolves the repo through
+        # the API and writes its cache, and `--no-fetch` promises neither.
+        cfg = load_config(root)
+        declared_git = cfg.get("data", {}).get("backend") == "git"
+        if not declared_git and not cfg.get("unknownBackend") \
+                and cfg.get("provider") in ("github", "azure-boards"):
+            return out.emit_err(args.json, {
+                "code": "sp-no-local-read", "exit": 2,
+                "message": f"--no-fetch needs the git store; the '{cfg['provider']}' backend has no "
+                           "local copy to read, so it would have to use the network"})
     backend, err = open_backend(root)
     if err:
         return out.emit_err(args.json, err)
+    if no_fetch and not backend.has_local_ref():
+        return out.emit_err(args.json, {
+            "code": "sp-no-local-ref", "exit": 2,
+            "message": f"--no-fetch reads the local ref '{backend.tracking_ref}', which does not exist "
+                       "here; run a command without --no-fetch once to fetch the store"})
     info, err = read_one(backend, args.spec, out)
     if err:
         return out.emit_err(args.json, err)

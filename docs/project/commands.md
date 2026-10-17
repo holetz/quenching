@@ -78,7 +78,7 @@ commands share is explained in [The spec lifecycle](../explanation/spec-lifecycl
 | `/quenching:specs:orchestrate` | Launches the `orchestrator` agent over an epic or a list of specs: waves, at most 3 workers, accepted only on a verifier PASS. |
 | `/quenching:specs:autopilot` | Typed only. Unattended rounds — triage, map, epic, orchestrate `autonomous`, correctness review, gate — until `--until` or a dry queue; never forces a widening decision. |
 | `/quenching:specs:triage` | Ranks the whole front in ONE confirmed table, writing `priority:` per spec and nothing else — merging, never clobbering a human's ranking. |
-| `/quenching:specs:board` | Human-only launcher for the local spec portal (`cq specs serve`): board, ranking, detail, search, capture and approve in the browser, over the same backend. |
+| `/quenching:specs:board` | Human-only launcher for the local spec portal (`cq specs serve`): board, ranking, detail, search, capture and approve in the browser, over the same backend; its contract is [specs-portal.md](../standards/architecture/specs-portal.md). |
 
 ## The design front
 

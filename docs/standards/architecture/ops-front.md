@@ -200,7 +200,7 @@ the report; they do not create a second operations implementation.
 
 ## Finding vocabulary
 
-The verifier and the align use these eight codes. Their names are stable so a target can fix a
+The verifier and the align use these nine codes. Their names are stable so a target can fix a
 finding without translating a private vocabulary invented by one implementation:
 
 | Code | Meaning | Severity |
@@ -213,3 +213,4 @@ finding without translating a private vocabulary invented by one implementation:
 | `op-disabled-check` | A verification call is commented out inside an entry point's control flow. | `warn` |
 | `op-orphan` | An entry point is present in the operations tree but is not reachable from the canonical router. | `error` |
 | `op-no-router` | The repository has no single declared router for its normalized operations surface. | `error` |
+| `op-registry-malformed` | The registry file is unreadable as a registry: its generated zone is duplicated or the file is not valid UTF-8. | `error` |

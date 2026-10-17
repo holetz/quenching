@@ -44,6 +44,8 @@ fi
 # The CI `lint` job runs this exact command; the local gate must not pass what the CI refuses.
 run_check "ruff" \
   uv run ruff check .
+run_check "open source controls catalog" \
+  python3 scripts/check_opensource_controls.py
 run_check "proof doctor" \
   python3 plugins/quenching/assets/bin/cq proof doctor
 # The ops front is not adopted here (no `ops.opsRoot`/`ops.router`): `op-config-missing` is expected
@@ -66,8 +68,12 @@ run_check "harness (AGENTS.md / CLAUDE.md)" \
   python3 scripts/check_claude_harness.py
 run_check "docs bundle" \
   python3 plugins/quenching/assets/bin/cq knowledge validate docs
-run_check "specs reader lockstep" \
-  python3 scripts/sync_specs_reader_plugin.py --check
+run_check "generated plugin modules and published lockstep" \
+  python3 scripts/generate_plugin_modules.py --check
+run_check "Claude/Codex translation" \
+  python3 scripts/sync_codex_plugin.py --source plugins/quenching --target plugins/quenching-codex --check --json
+run_check "Codex artifact lockstep" \
+  python3 scripts/validate_codex_plugin.py
 run_check "citation checks" \
   bash plugins/quenching/assets/checks/citation-check.sh
 run_check "documentation site source" \
@@ -79,11 +85,11 @@ run_check "built-site checks" \
 
 # The quenching-hud mod is validated by the host's own validator. Without `claude` the skip is
 # stated loudly, as with `coverage`: a local gate must not demand an install, but the release has it.
-printf '\n==> quenching-hud plugin\n'
 if command -v claude >/dev/null 2>&1; then
   run_check "quenching-hud plugin" \
     claude plugin validate plugins/quenching-hud
 else
+  printf '\n==> quenching-hud plugin\n'
   printf 'SKIPPED: `claude` is not on PATH; plugins/quenching-hud was not validated.\n'
 fi
 

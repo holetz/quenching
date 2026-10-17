@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Context discipline — open less, run for less time, and emit fewer turns
-description: The two halves of a run's integral `tokens × turns remaining` and the three ways to cut it — open less (the declared files rather than the folder, the cited sections rather than the file, N sections in ONE call, the block rather than the section where a section has blocks, and the rules/rationale marker convention), run for less time (the section boundary as a legitimate stopping point, triggered by an event and never by a threshold), and emit fewer turns per unit of work (the batching contract, and the ban on a turn that exists only to announce the next tool call); plus the two things measured and refused, segmenting the bundle into more files and deleting rationale to compact it
-resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/specs/**
+description: The two halves of a run's integral `tokens × turns remaining` and the three ways to cut it — open less (the declared files rather than the folder, the cited sections rather than the file, N sections in ONE call, the block rather than the section where a section has blocks, and the rules/rationale marker convention), run for less time (the section boundary as a legitimate stopping point, with measured role budgets checked only at existing boundaries), and emit fewer turns per unit of work (the batching contract, and the ban on a turn that exists only to announce the next tool call); plus the two things measured and refused, segmenting the bundle into more files and deleting rationale to compact it
+resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/agents/**, scripts/measure_context_distribution.py
 tags: [automation, context, reading, cost, commands, references]
-timestamp: 2026-08-25
+timestamp: 2026-10-16
 audience: both
 authority: background
-source: read-by-section-not-by-file, narrow-the-execute-preamble, extensible-surface-and-budget-retirement, 2026-08-06, 2026-08-04, scope-the-handoff-rewrite; lineage in ADR 0004
+source: read-by-section-not-by-file, narrow-the-execute-preamble, extensible-surface-and-budget-retirement, 2026-08-06, 2026-08-04, scope-the-handoff-rewrite; spec 1629 measured context budgets (2026-10-13); spec 1631 measured stage-boundary tone (2026-10-14); spec 1633 declared-reading estimation and build-cost provenance (2026-10-14); lineage in ADR 0004; spec 1754 decision sheet as the default question form (2026-10-16)
 maintainer: quenching
 ---
 
@@ -222,13 +222,21 @@ The integral is quadratic in the turn count, so **shortening the window beats sh
 reads**. A `## N.` section's last task committing, with another section still ahead, is a clean
 boundary, and a build offers to stop there.
 
-- **The trigger is that event, never a window size.** No threshold, no token count, no "this is
-  getting long". A number invented before it is measured fixes the answer.
-- **It offers; it never imposes and never ends a run itself.** An unattended run that decides to
-  stop trades a cost for a surprise.
+- **The boundary triggers the check; the measured budget informs the action.** Check the
+  applicable role budget from §Measured context budgets at an existing stage end, task-section
+  end or worker return. Never stop in the middle of a task because a count crossed a threshold.
+- **The event triggers; the measured threshold decides only the tone — offer or recommendation.**
+  A human-led `/quenching:specs:develop`, `/quenching:specs:execute` or `/quenching:specs:conclude`
+  reads `cq components session context --json` once at its stage end, and `execute` once more at
+  each section boundary. Within the main-session budget, or unmeasured, the next stage stays an
+  offer; over it, the command recommends the next stage in a new session, with the exact command,
+  inside the payload of a question it already asks or in the `→` line. Nothing is stopped and
+  nothing is recorded. An autonomous conductor already authorized to enforce its budget returns
+  `STATE: continue` with the handoff at that boundary; enforcing worker and conductor budgets by
+  code is S5 of epic 1627.
 - **It writes no new state.** The resumption trail — `## Handoff`, `git log`, and the recorded
-  commit subjects — is already maintained for other reasons, and that is precisely what makes the
-  cut nearly free. An offer needing a record of its own would be moving cost, not cutting it.
+  commit subjects — is already maintained for other reasons. Preparation in the new context still
+  has a measured cost; §Measured context budgets records that cost separately. An offer needing a record of its own would be moving cost, not cutting it.
 - **The same event also bounds what a rewrite touches, not only whether a run stops.**
   `## Handoff`'s per-section blocks close on it: a `### N.` block is never targeted again once its
   section's last task commits, so a task built later is never resent the record of a section
@@ -237,8 +245,8 @@ boundary, and a build offers to stop there.
 <!-- rationale -->
 
 Seven runs of ~45 turns cost roughly **a seventh** of one run of 300 for the same work. That is
-declared arithmetic over the integral, not a measured run, and it assumes resumption costs about
-nothing. Measured against the workspace that would use it: 34 specs in `plans/`, a median of 4
+declared arithmetic over the integral, not a measured run, and it assumes negligible resumption
+cost. That assumption is not evidence: the measured worker preparation below is non-zero. Measured against the workspace that would use it: 34 specs in `plans/`, a median of 4
 sections each (0:4, 2:1, 3:6, 4:11, 5:5, 6:4, 7:3) — so the event fires a median of three times per
 spec, and the smallest threshold that would change anything (≥2 sections remaining) would remove
 the offer entirely from the 2- and 3-section specs, which are the runs most able to end cleanly
@@ -251,6 +259,132 @@ closing sections — almost entirely the record of sections that had already clo
 boundary was already the point where a run may stop; `scope-the-handoff-rewrite` is the same
 boundary applied to what a rewrite sends, closing a section's block the moment that boundary is
 crossed rather than resending it to every task built after.
+
+## Declared reading is a warning, not measured build usage
+
+<!-- rules -->
+
+`cq specs estimate <id> --json` derives section-level declared reading from UTF-8 file sizes,
+rounded upward at four bytes per token. Each section counts its unique declared task files and
+Impact standards once, plus the shipped execute body and spec build sections; another section
+counts the shared files again. Missing/new files and undeclared task inputs remain unresolved.
+The largest section is compared with the worker policy budget above. Total reading volume is
+not a context peak, and even complete declared-input coverage never proves the build fits:
+host/harness overhead, conditional references, outputs, generated code and iterations are excluded.
+
+Develop checks this signal before every approval path. Known reading above the budget proposes
+independently verifiable slices through `spec-architect` in proposal-only mode. Capturing/linking
+children needs explicit authorization; the source problem and approval/task history survive.
+Low/forced-low autonomous runs return the oversized-plan decision to their conductor, without
+approving it automatically. A human may explicitly accept the unsplit estimate risk.
+
+Conclude preserves observed usage separately in `buildCost`, before archive. A measured record
+requires exact build-only transcript/agent attribution and known models, with request counts,
+input/cache/output totals and maximum reported request exposure per model. That exposure is not
+silently a context peak. Native Codex usage that was not measured, ambiguous scope and partial or
+refused metering are unavailable with source and reason, never estimated numbers or zero fillers.
+Valid measured evidence survives resume; replacing unavailable evidence writes all fields together.
+
+<!-- rationale -->
+
+Spec 1633 adopted two evidence classes because a static reading heuristic is reproducible from
+files while observed usage disappears with its scoped transcript. Keeping them distinct prevents
+an inexpensive estimate from becoming a false build-fit or calibration claim. Regression coverage
+proves the declaration and workflow contract; calibration across actual builds remains future
+measurement, so this standard retains its existing background authority.
+
+## Measured context budgets
+
+<!-- rules -->
+
+Use these selected policy budgets in input-context tokens, measured by code from the transcript:
+
+| Role | Budget | Applies to |
+| --- | --- | --- |
+| Main session | 200000 | Human-led spec stages and the top-level conversation |
+| Worker | 100000 | The spec-runner building one spec in its isolated context |
+| Conductor | 150000 | Orchestrator and autopilot coordination contexts |
+
+Role comes from topology/agent metadata, independently of command attribution. A conductor
+uses its conductor budget even when its transcript is a subagent. A new role or missing
+metadata is reported as unknown, never classified from prompt prose. The main-session budget
+also covers a top-level autopilot conversation; its separately spawned conductor uses the
+conductor budget. These numbers are engineering policy chosen from the distributions below,
+not limits automatically inferred by the host or a model remembering its own usage.
+
+A request's reported input is `input_tokens + cache_read_input_tokens +
+cache_creation_input_tokens`, deduplicated by `message.id` with final usage. For context peak,
+use the maximum executor `type: message` iteration when `usage.iterations` is available:
+top-level input fields can sum multiple executor iterations. Declare missing iteration coverage;
+do not silently call aggregated request exposure a single context window. Keep model tiers
+separate for cost claims. Unknown command attribution stays unknown; an unclosed conducted
+stage remains an upper bound under [session-evidence.md](session-evidence.md).
+
+The rollout target is **at most 4.33%** of main-session token exposure coming from sessions
+whose input-context peak exceeds 200000 (fraction `0.0433`). This is a **project hypothesis**,
+using the observed worker distribution as a reference, not a causal savings prediction or an
+already measured enforcement result. Validate after S3–S6 of epic 1627, using the same role/model
+accounting and reporting boundary stops, overshoot, parse coverage and workload differences.
+Do not count a changed sample or model mix as demonstrated causal savings.
+
+Keep context changes at the existing boundaries described in §Run for less time. Preserve
+`## Handoff` and task commits. Do not treat fresh-context preparation as free, split one task
+because of its window, or extrapolate the worker restart sample to a measured main/conductor
+restart cost. Budget enforcement is not implemented by publishing this standard.
+
+<!-- rationale -->
+
+**Measured 2026-10-13**, JSONL arm, by
+[`scripts/measure_context_distribution.py`](../../../scripts/measure_context_distribution.py),
+with sanitized evidence in
+[`scripts/evidence/context-budget-1629.json`](../../../scripts/evidence/context-budget-1629.json).
+The private inventory checksum in that artifact fixes the sample without publishing prompts
+or tool payloads. The scan found 1387 files, 1385 with usable requests: 58 main sessions and
+1327 subagents. Two files had no requests; 88 records were invalid JSON and 11 conducted-stage
+attributions were unclosed. Measurement exit 1 means evidence with findings, not a clean read.
+
+The captured 1383-usable-transcript baseline (57 main, 1326 subagents) had no inventory hash;
+the new usable sample is larger by two, and those additions cannot be identified exactly from
+the captured totals. Preserve the captured evidence; do not relabel it as the new sample.
+
+| Role | Sessions | Median peak | p90 peak | Maximum peak | Sessions above selected budget |
+| --- | --- | --- | --- | --- | --- |
+| Main | 58 | 106752.5 | 292503 | 510539 | 14 |
+| Worker | 364 | 63721.5 | 97126 | 244482 | 32 |
+| Conductor | 49 | 46959 | 127383 | 180379 | 3 |
+| All subagents | 1327 | 20081 | 84976 | 244482 | Not one shared budget |
+
+Median is the statistical median; p90 is nearest rank. All 3209 main requests have exactly
+one executor iteration, so the main peak is a single observed prompt: `2 + 233 + 510304 =
+510539`, on Claude Code 2.1.292, `claude-opus-5-5`. The artifact quotes the three usage fields,
+message id, source hash and line. No maximum host capacity is inferred from that observation.
+The [prompt-caching contract](https://platform.claude.com/docs/en/build-with-claude/prompt-caching)
+defines total input; the
+[advisor usage contract](https://platform.claude.com/docs/en/agents-and-tools/tool-use/advisor-tool)
+explains aggregation across executor iterations.
+
+Main exposure is 602003067 tokens; the 14 sessions above 200000 account for 517451010
+(85.954879%). A 150000 cut would affect 23/58 sessions. Choose 200000 to address the
+concentrated long tail with less fragmentation. Worker 100000 rounds above p90 97126;
+conductor 150000 rounds above p90 127383. These choices price different role distributions
+rather than copying the old unmeasured 150k/200k prose.
+
+Four identified opus-only worker resumes (specs 1368, 1419, 1386 and 1457), paired with an
+earlier task-check invocation for the same spec, each took three requests through the first
+`cq specs next`. Preparation context peaked at median 32429, maximum 33159; fresh input was
+median 27499, maximum 28229; preparation exposure was median 74169, maximum 75984. Worker
+100000 is more than three times that observed preparation peak. A task-check invocation is
+not inferred to have succeeded merely because its text exists; these are bounded preparation
+observations, not warm-versus-cold treatment comparisons. No clean main/conductor restart pair
+was identified. The two main `configurable-spec-backend` executions are contaminated by dirty
+mid-task work, scope changes and a model change.
+
+Worker exposure from its one session above 200000 is 18019295/416636200 = 4.324947%; rounding
+up yields the 4.33% reference target. Main and worker scopes, model mixes and attribution
+coverage differ. The target asks whether explicit context boundaries can move the main long
+tail toward the observed worker profile; this spike does not prove that outcome. Command
+attribution is absent for 1842/3209 main requests, 7015/7182 worker requests and 2316/2336
+conductor requests, so pointer-labeled stage distributions are partial evidence only.
 
 ## Emit fewer turns per unit of work
 
@@ -268,9 +402,11 @@ rules, both about turns rather than tokens:
   own output will not say, and costs a re-send of the whole conversation to say it. Narration that
   carries content — a plan, a report, a stop condition — is not this.
 
-Where a turn must carry a recommendation, the recommendation lives **inside the question's own
-payload** — an option marked "(Recommended)", the reasoning in its description — never in a turn of
-prose set in front of the question.
+Where a turn must carry a recommendation, the recommendation lives **inside the question itself**
+— option A of each `D<n>` on the decision sheet, its reasoning in A's own text, or the option
+marked "(Recommended)" on a menu the human asked for — never in a turn of prose set in front of the
+question. The decision sheet, which ends the turn, is that question; its shape is owned by
+`specs-develop/questions.md` §The four shared mechanics.
 
 **Neither rule reaches how questions are grouped.** Two questions whose answers can change each
 other are asked separately whatever this axis costs. That limit is owned by the command surface's

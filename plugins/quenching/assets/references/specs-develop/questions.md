@@ -58,17 +58,52 @@ question the spec's own state answers better than the human can.
 
 Every stage of the pass obeys all four.
 
-### 1. Grouped by dependency, and every question carries a recommendation
+### 1. Grouped by dependency, asked on a decision sheet, and every question carries a recommendation
 
 <!-- rules -->
 **A question travels with the ones whose answers cannot change it, and alone otherwise.**
 
-- **Independent → one call.** Where answering A would not change what B asks, ask A and B together
-  in a single **AskUserQuestion** — up to the harness cap of **four per call**, each with its own
-  options.
-- **Dependent → sequential.** Where the next question's *content* depends on the last answer, ask
-  it alone, wait, and choose the next in light of what was just said rather than from a list
-  written in advance.
+- **Independent → one sheet.** Where answering A would not change what B asks, A and B go
+  together on ONE **decision sheet**. There is **no cap**: every independent decision open at that
+  moment goes on the same sheet.
+- **Dependent → the next sheet.** Where a question's *content* depends on an earlier answer, it
+  stays off the sheet, waits for the reply, and is chosen in light of what was just said rather
+  than from a list written in advance.
+
+**The decision sheet is the default form of every question put to the human.** It is prose in the
+turn, not a tool payload, and its shape is fixed:
+
+1. **An opening line with the reply format** — `D1 A · D2 A · D3 B …` — saying free corrections
+   may follow it.
+2. **One `### D<n> — <title>` per decision**: the context (how it is today, why it matters), a
+   table where one helps, and the options `A (recommended)` / `B` / `C`, each stating its
+   consequence. **The recommendation is option A**, listed first, with its reasoning in A's own
+   text.
+3. **The dependencies declared** — a decision appears early only when it depends on no earlier
+   one; a dependent decision is named as waiting for the next sheet.
+4. **A closing "what I fix without asking, unless you veto" block** — the numbered corrections the
+   evidence already settles, each with its evidence.
+
+**The sheet ends the turn.** It is an explicit stop: nothing after it runs until the human replies.
+**A reply that does not resolve every `Dn` without ambiguity is asked again** — a new sheet
+carrying only the unresolved `Dn` — and is never filled in by default. A free correction in the
+reply is an answer like any other and names its section (§4).
+
+**The labels follow the declared conversation language** — the one tag the root harness line
+declares. In a pt-BR conversation they read `A (recomendada)` and "O que corrijo sem pedir, salvo se
+você vetar"; the structure does not change.
+
+**`AskUserQuestion` is the menu, used only when the human asks for one.** Its grant stays in
+`allowed-tools` as the proof that the gate exists; the sheet is that same gate in another form.
+When the human asks for the menu, the recommended option is listed first and marked
+"(Recommended)", and the grouping rule above still decides what travels together.
+
+**A sub-agent without the `AskUserQuestion` grant never asks.** It returns `STATE: blocked` with
+`NOTE: needs-human:` carrying the sheet, and the conductor presents it. **A sub-agent that holds the
+AskUserQuestion grant is the exception:** it carries the sheet inside one `AskUserQuestion` call
+(each `Dn` a question, the recommended option first and marked "(Recommended)", the reasoning in its
+description), because that call is its only channel to the human, and it does not end the turn on
+prose. Autonomous paths and the `low` gear ask nothing, sheet or menu.
 
 Which shape a stage takes is a property of the stage, stated with it:
 
@@ -79,15 +114,13 @@ Which shape a stage takes is a property of the stage, stated with it:
 | [refine](#refine) | sequential | a criticism once answered rewrites the next one |
 
 Every question carries **an inline recommendation and the reasoning behind it**, so the human can
-answer in one word — in a grouped call, the recommended option is listed **first and marked
-"(Recommended)"**:
+answer in one letter:
 
 > **Weak** — "What should the failure budget be?"
-> **Strong** — "How many attempts before a task is declared blocked? I'd say five: enough to
-> absorb a flaky test or a missing import, short enough that a genuinely wrong approach stops
-> burning tokens. Agree, or is this suite slow enough that five is too many?"
-
-Use **AskUserQuestion** when relevant.
+> **Strong** — "### D1 — Failure budget. **A (recommended):** five attempts before a task is
+> declared blocked: enough to absorb a flaky test or a missing import, short enough that a
+> genuinely wrong approach stops burning tokens. **B:** three, if this suite is slow enough that
+> five costs too much."
 
 <!-- rationale -->
 The rule this replaced was *never batch* — absolute, and stronger than its own reason. That reason
@@ -104,6 +137,13 @@ overreached, not because it closes a leak.
 
 The recommendation is not a formality. A pass that hands the human a bare question list has moved
 the work rather than done it — the command is supposed to arrive with an opinion.
+
+The sheet replaced the menu as the default because the menu limited the dialogue: four questions
+per call, a few options each and no room for the context a decision needs. In session 76eec84e the
+human rejected a four-question `AskUserQuestion` and asked for the decisions listed with their
+recommendations and detail, to answer them all at once in text. The sheet is that answer, made
+the default. The grant stays because the lints read it as proof of the gate, not as a promise of
+the tool's form.
 
 ### 2. Accumulate; apply in ONE edit per pass
 
@@ -226,7 +266,7 @@ overturn what a human already settled. Overturning is §Refine's.
 
 **Shape.** Sequential to shape, grouped to close (§1). What is actually wrong decides which shapes
 are worth tabling at all; once a shape is on the page, the remaining headings do not move one
-another and travel four to a call.
+another and travel together on one decision sheet.
 
 **Drive the gap off the tool, never off a reading of the file.** The `sections` and `ready`
 (`{ok, missing, malformed}`) fields of the step's own `cq specs status --spec <id> --json` payload
@@ -434,9 +474,10 @@ on is this stage's judgment, never the executor's — which is exactly why it wa
 one.
 
 **Shape.** Grouped (§1) — the lines do not reach each other, and every one of them takes the same
-three resolutions, so four fit in one call.
+three resolutions, so they all fit on one decision sheet.
 
-Ask about the unresolved lines, four to a call, each with a recommendation. Every line resolves **in
+Ask about every unresolved line on one decision sheet, one `Dn` per line, each with a
+recommendation. Every line resolves **in
 place**, so provenance is never lost:
 
 ```markdown
@@ -477,24 +518,43 @@ built** — and say what should happen to it next.
 This stage adds nothing to the body: it writes one record and no section. What it shows is always
 the same: what the spec now commits to, in the proposal's one line, the task count, the
 `verification` policy in force, the declared `docs/standards/` paths, and the biggest accepted
-risk.
+risk, plus the declared-reading estimate, worker budget and unknown inputs.
+
+**The size signal precedes every approval stamp.** Run `cq specs estimate <id> --json` after
+ready verification. Its `overBudget` compares the largest task section's known reading estimate
+with `workerBudgetTokens` (S2: 100000). Bytes / 4 is a heuristic, not measured build context;
+excluded overhead and unknown inputs remain visible below the budget. Never claim a build fits
+from this signal, and never change `complexity` to make a plan appear smaller.
+
+An excess recommends **decomposition via `spec-architect`**, not an unconditional approve:
+pass the source spec and section estimates in `proposal-only` mode, obtain independent slices
+and dependency edges, and present them before asking to capture an epic. Capture/linking needs
+explicit authorization and keeps the original problem available; an existing approval or task
+history is never silently rewritten. The human may instead **explicitly accept** the unsplit
+estimate risk or stop. **No automatic approval** above budget, including `low`, **forced low**
+and `autonomous`: a worker returns `STATE: blocked` / `NOTE: needs-human:` with the evidence and
+proposal so the conductor holds the decision. An estimator refusal/failure also leaves approval
+unstamped. Incomplete input coverage is reported honestly; it never becomes a false fits verdict.
 
 **The screen recommends, rather than defaulting to approve.** It judges what the pass just produced
-against §Refine's three signals and leads with the move those signals argue for, marked
-"(Recommended)" and carrying the signal that motivated it in its own text:
+against §Refine's three signals and leads with the move those signals argue for, as option A of
+its decision sheet (§1), marked recommended and carrying the signal that motivated it in its own
+text:
 
 | Recommendation | When | What choosing it does |
 | --- | --- | --- |
+| **Decompose** | known declared reading exceeds worker budget | propose independently verifiable slices via `spec-architect`; capture only on explicit authorization |
 | **Approve** | no signal fired | `cq specs record "<id>" approved --set date=<today> --set by=human`, never by editing the provider document directly |
 | **Refine** | a scope or critique signal fired, and refine has not run this pass | a **raise to `high`** because the composition has outgrown its original level; the choice IS the OK to restamp `complexity`, and the pass re-enters at refine |
 | **Refine with the premortem** | the spec is irreversible | a raise to `xhigh`, same mechanics, premortem forced |
 | **Stop here** | — | nothing stamped, and the report says what is open |
 
-A pass where refine already ran does not recommend refining again; it recommends approving, and
+A pass where refine already ran does not recommend refining again; absent a size excess it recommends approving, and
 names what the argument settled. Recommending the raise a human has already taken is asking them to
 decide the same thing twice.
 
-**At `low` — the pass approves, and the record says so.**
+**At `low`, after the size check leaves no unresolved oversized-plan decision — the pass approves,
+and the record says so.**
 `cq specs record "<id>" approved --set date=<today> --set by=low-gear`. There is no screen, because
 `low` is the level whose whole content is that there is none. The review window is **the spec's URL
 in the backend**, announced before the pass read anything and repeated in its report. The stamp is

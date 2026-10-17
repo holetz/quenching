@@ -20,9 +20,11 @@ import sys
 from quenching.common.output import CQArgumentParser, OK, refuse
 from quenching.common.version import VERSION
 from quenching.specs.backends.base import BackendRefusal
+from quenching.specs.parse.fields import UnclosedFence
 from quenching.specs.commands.create import cmd_new
 from quenching.specs.commands.doctor import cmd_config, cmd_doctor
 from quenching.specs.commands.epic import cmd_epic
+from quenching.specs.commands.estimate import WORKER_BUDGET_TOKENS, cmd_estimate
 from quenching.specs.commands.fields import cmd_field, cmd_record, cmd_title, cmd_verification
 from quenching.specs.commands.find import cmd_find
 from quenching.specs.commands.granular import cmd_section, cmd_show
@@ -47,7 +49,7 @@ def add_json(sp):
 
 
 # Verbs that take the spec id as a positional as well as `--spec`; True = the id is required.
-SPEC_POSITIONAL = {"status": False, "show": True, "parallel": True}
+SPEC_POSITIONAL = {"status": False, "show": True, "parallel": True, "estimate": True}
 
 
 def add_spec(sp, required: bool):
@@ -98,6 +100,9 @@ def _add_read(sub) -> None:
                                                 "or one epic's progress with --epic"))
     add_spec(sp, False)
     sp.add_argument("--epic", help="an epic ID: progress per group, blocked items, critical path")
+    sp.add_argument("--no-fetch", action="store_true",
+                    help="read the local remote-tracking ref already present; never fetch "
+                         "(git store only — other backends refuse)")
 
     sp = add_json(sub.add_parser("show", help="granular read: ONE task, the map by default, "
                                               "the document only with --full (section "
@@ -230,9 +235,16 @@ def _add_next_and_epic(sub) -> None:
     ep.add_argument("--group", help="the `### N.` group (wave) to list it under; "
                                     "created when new")
     ep.add_argument("--label", help="the item label (default: the next S<n>)")
+    ep.add_argument("--move", action="store_true",
+                    help="take a spec that belongs to another epic out of it first")
 
 
 def _add_inspection(sub) -> None:
+    sp = add_json(sub.add_parser("estimate", help="estimated declared build reading by task section"))
+    add_spec(sp, True)
+    sp.add_argument("--worker-budget", type=int, default=WORKER_BUDGET_TOKENS,
+                    help="positive policy budget in tokens (default: 100000); not a model limit")
+
     sp = add_json(sub.add_parser("parallel", help="prove a [P] group's files: are disjoint"))
     add_spec(sp, True)
 
@@ -312,6 +324,7 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
 
 
 DISPATCH: dict = {
+    "estimate": cmd_estimate,
     "new": cmd_new,
     "list": cmd_list,
     "status": cmd_status,
@@ -374,6 +387,8 @@ def main(argv: list[str]) -> int:
         args.spec = args.spec or pos
         if SPEC_POSITIONAL[args.cmd] and not args.spec:
             parser.error(f"{args.cmd}: the spec id is required: pass <id> or --spec <id>")
+    if getattr(args, "no_fetch", False):
+        os.environ["QUENCHING_SPECS_NO_FETCH"] = "1"        # before the config load shares the backend
     root = find_repo_root(os.path.abspath(args.root or os.getcwd()))
     # One command, one resolution — held by the emitter's lifetime. It is built here, handed to
     # the verb, and dropped when the call returns, so a process that dispatches more than once
@@ -387,3 +402,6 @@ def main(argv: list[str]) -> int:
         # a legible refusal and never a traceback — so the failure is raised where it
         # happens, carrying the message already built, and converted exactly once here.
         return out.emit_err(args.json, e.err)
+    except UnclosedFence as e:
+        return out.emit_err(args.json, {"ok": False, "code": "sp-unclosed-fence", "exit": 2,
+                                        "key": e.key, "message": str(e)})

@@ -99,6 +99,18 @@ scope is unchanged and the target has produced the artifact the ratchet reads:
 cq --root "$TARGET_ROOT" proof ratchet --raise --json
 ```
 
+Read the result by the codes in `findings`, not by the exit code alone:
+
+- Exit `2` is a refusal (`pf-coverage-missing`, `pf-coverage-invalid`, `pf-coverage-no-measured-root`,
+  `pf-floor-invalid`): nothing was written.
+- Exit `1` with `pf-floor-regressed` or `pf-floor-unmeasured` in `findings` is blocked: nothing was
+  written. In both cases the floor was not raised: report the code, the root and the message as
+  judgement or refusal residue per the gate contract, never call the floor raised, and never edit
+  the floor file or the measured roots to make it pass.
+- Exit `1` with only `pf-no-floor` is the first raise: the floor file was written for the new roots
+  (`ratchetPath` in the JSON). Report it as raised, naming that file and the roots, and leave the
+  written file in the working tree for the plan's review.
+
 Never create a layer, choose a measured surface, install CI, classify an empty layer as required,
 arm or waive an operations entry point, or run a target test suite. If the floor is deferred, do
 not call the ratchet; state the reason in the report.

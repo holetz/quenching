@@ -5,11 +5,15 @@ the human's own confirmation, the same split every other destructive step in thi
 keeps between "what is true" and "what to do about it"."""
 from __future__ import annotations
 
+import json
 import os
+import subprocess
 
 from quenching.common.git import _git
 from quenching.common.output import emit
 from quenching.git.base import resolve_base
+from quenching.git.worktrees import worktree_branch as _worktree_branch
+from quenching.git.worktrees import worktree_gitdir as _worktree_gitdir
 
 UNREGISTERED_WORKTREES_KEY = "unregisteredWorktrees"
 
@@ -105,30 +109,6 @@ def _unregistered_worktrees(cwd: str) -> list[dict]:
     return found
 
 
-def _worktree_gitdir(git_file: str) -> str | None:
-    try:
-        with open(git_file, encoding="utf-8") as stream:
-            value = next((line[len("gitdir:"):].strip()
-                          for line in stream if line.startswith("gitdir:")), "")
-    except OSError:
-        return None
-    if not value:
-        return None
-    if not os.path.isabs(value):
-        value = os.path.join(os.path.dirname(git_file), value)
-    return os.path.realpath(value)
-
-
-def _worktree_branch(gitdir: str) -> str | None:
-    try:
-        with open(os.path.join(gitdir, "HEAD"), encoding="utf-8") as stream:
-            head = stream.read().strip()
-    except OSError:
-        return None
-    prefix = "ref: refs/heads/"
-    return head[len(prefix):] if head.startswith(prefix) else None
-
-
 def _directory_size(path: str) -> int | None:
     size = 0
     try:
@@ -143,6 +123,30 @@ def _directory_size(path: str) -> int | None:
     except OSError:
         return None
     return size
+
+
+def _checked_out_branches(cwd: str) -> set[str]:
+    out = _git(cwd, "worktree", "list", "--porcelain")
+    return {line[len("branch "):].removeprefix("refs/heads/")
+            for line in out.splitlines() if line.startswith("branch ")}
+
+
+def _open_pr_heads(cwd: str) -> set[str] | None:
+    """Head branches of open PRs, or None when the lookup is unavailable (no `gh`, no host)."""
+    try:
+        done = subprocess.run(["gh", "pr", "list", "--state", "open", "--limit", "500",
+                               "--json", "headRefName"], cwd=cwd, capture_output=True,
+                              text=True, timeout=20)
+        if done.returncode != 0:
+            return None
+        return {row["headRefName"] for row in json.loads(done.stdout)}
+    except (OSError, subprocess.SubprocessError, ValueError, KeyError, TypeError):
+        return None
+
+
+def _local_branches(cwd: str) -> set[str]:
+    out = _git(cwd, "for-each-ref", "--format=%(refname:short)", "refs/heads")
+    return {b for b in out.splitlines() if b}
 
 
 def stale_report(cwd: str, remote: str = "origin") -> dict:
@@ -160,9 +164,28 @@ def stale_report(cwd: str, remote: str = "origin") -> dict:
         reasons.setdefault(b, set()).add("merged")
     for b in _gone_branches(cwd, protected):
         reasons.setdefault(b, set()).add("gone")
+    # Guidance first: a branch that must stay is listed with the reason, never offered for
+    # deletion. `open-pr` needs the host (`gh`); when it is unreachable the report says so.
+    open_prs = _open_pr_heads(cwd)
+    checked_out = _checked_out_branches(cwd)
+    kept: dict[str, set[str]] = {}
+    for b in _local_branches(cwd) - protected:
+        why = set()
+        if open_prs and b in open_prs:
+            why.add("open-pr")
+        if b in checked_out:
+            why.add("worktree")
+        if b not in reasons:
+            why.add("unmerged-commits")
+        if why:
+            kept[b] = why
+            reasons.pop(b, None)
     branches = [{"branch": b, "reasons": sorted(r)} for b, r in sorted(reasons.items())]
+    kept_branches = [{"branch": b, "reasons": sorted(r)} for b, r in sorted(kept.items())]
     remote_branches = _merged_remote_branches(cwd, base, protected, remote)
     return {"ok": True, "base": base, "remote": remote, "staleBranches": branches,
+            "keptBranches": kept_branches,
+            "prLookup": "ok" if open_prs is not None else "unavailable",
             "remoteBranches": remote_branches, "orphanWorktrees": _orphan_worktrees(cwd),
             UNREGISTERED_WORKTREES_KEY: _unregistered_worktrees(cwd)}
 
@@ -176,6 +199,10 @@ def cmd_stale(args) -> int:
     lines = [f"base: {base}"]
     lines.append("stale branches:" if branches else "stale branches: none")
     for b in branches:
+        lines.append(f"  {b['branch']} ({', '.join(b['reasons'])})")
+    kept_rows = report["keptBranches"]
+    lines.append("kept branches (not removable):" if kept_rows else "kept branches: none")
+    for b in kept_rows:
         lines.append(f"  {b['branch']} ({', '.join(b['reasons'])})")
     lines.append("stale remote branches:" if remote_branches else "stale remote branches: none")
     for b in remote_branches:

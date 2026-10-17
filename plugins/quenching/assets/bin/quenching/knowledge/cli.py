@@ -40,9 +40,10 @@ import sys
 from pathlib import Path
 
 from quenching.common.frontmatter import parse_frontmatter
-from quenching.common.output import FINDINGS, OK, REFUSAL, NoAbbrevParser, emit
+from quenching.common.output import FINDINGS, OK, REFUSAL, NoAbbrevParser, emit, refuse
 from quenching.common.version import VERSION
-from quenching.knowledge.config import _load_config, _project_dir
+from quenching.controls.evaluate import owner_controls, summary_line
+from quenching.knowledge.config import ConfigError, _load_config, _project_dir
 from quenching.knowledge.render import _render_activity, _render_text, _split
 from quenching.knowledge.projection import (
     DEFAULT_SNIPPET,
@@ -130,12 +131,19 @@ def _density(bundle_root: str) -> dict:
     }
 
 
-def _surface_payload(bundle_root: str, *, density: bool = False) -> dict:
+def _config_dir(root: str) -> str:
+    """The directory whose `.claude/hooks` configuration governs a run: the target root when one
+    was named, else the project directory the environment or cwd gives."""
+    return _project_dir() if root == "." else root
+
+
+def _surface_payload(bundle_root: str, *, density: bool = False,
+                     ignore_globs: tuple[str, ...] = ()) -> dict:
     if not os.path.isdir(bundle_root):
         return {"root": bundle_root, "applicable": False, "state": "missing",
                 "findings": [], "errors": 0, "warnings": 0, "ok": True,
                 **({"density": {}} if density else {})}
-    findings = _knowledge_findings(validate_tree(bundle_root))
+    findings = _knowledge_findings(validate_tree(bundle_root, ignore_globs=ignore_globs))
     payload = {
         "root": bundle_root,
         "applicable": True,
@@ -234,7 +242,12 @@ def _knowledge_args(argv: list[str], prog: str) -> argparse.Namespace:
 
 def _run_doctor(argv: list[str]) -> int:
     args = _knowledge_args(argv, "cq knowledge doctor")
-    payload = _surface_payload(_rooted(args.root, args.bundle))
+    try:
+        cfg = _load_config(_config_dir(args.root))
+    except ConfigError as exc:
+        return refuse({"code": "config-unreadable", "message": str(exc)}, args.json)
+    payload = _surface_payload(_rooted(args.root, args.bundle),
+                               ignore_globs=tuple(cfg.get("ignoreGlobs") or ()))
     if not payload["applicable"]:
         payload["message"] = "knowledge bundle is not installed; run knowledge align to install it"
     emit(args.json, payload,
@@ -244,10 +257,17 @@ def _run_doctor(argv: list[str]) -> int:
 
 def _run_status(argv: list[str]) -> int:
     args = _knowledge_args(argv, "cq knowledge status")
-    payload = _surface_payload(_rooted(args.root, args.bundle), density=True)
+    try:
+        cfg = _load_config(_config_dir(args.root))
+    except ConfigError as exc:
+        return refuse({"code": "config-unreadable", "message": str(exc)}, args.json)
+    payload = _surface_payload(_rooted(args.root, args.bundle), density=True,
+                               ignore_globs=tuple(cfg.get("ignoreGlobs") or ()))
     payload["findingCodes"] = dict(sorted(Counter(item["code"] for item in payload["findings"]).items()))
+    payload["controls"] = owner_controls("knowledge", os.path.normpath(args.root))
     emit(args.json, payload,
-         f"knowledge status — {payload['root']} ({payload['density'].get('conceptDocs', {}).get('total', 0)} document(s))")
+         f"knowledge status — {payload['root']} ({payload['density'].get('conceptDocs', {}).get('total', 0)} document(s)); "
+         f"{summary_line(payload['controls'])}")
     return 0 if payload["ok"] else FINDINGS
 
 
@@ -259,8 +279,11 @@ def run_cli(argv: list[str]) -> int:
     _declare_validate(parser)
     args = parser.parse_args(argv)
 
-    cfg = _load_config(_project_dir())
     as_json = args.json
+    try:
+        cfg = _load_config(_config_dir(args.root))
+    except ConfigError as exc:
+        return refuse({"code": "config-unreadable", "message": str(exc)}, as_json)
     target = _rooted(args.root, args.bundle)
     ignore_globs = tuple(cfg.get("ignoreGlobs") or ())
     # The figure is its OWN output, never a section of the report. `stale-doc` was retired
@@ -369,19 +392,13 @@ def run_nav(argv: list[str]) -> int:
     bundle = _rooted(args.root, args.bundle)
     config = _rooted(args.root, args.config)
     if not os.path.isdir(bundle):
-        payload = {"ok": False, "code": "nav-no-bundle",
-                   "message": f"{bundle} is not a directory"}
-        print(json.dumps(payload, indent=2) if args.json else f"error: {payload['message']}",
-              file=None if args.json else sys.stderr)
-        return FINDINGS
+        return refuse({"code": "nav-no-bundle", "message": f"{bundle} is not a directory"},
+                      args.json)
 
     current, desired = generate(bundle, config)
     if not current:
-        payload = {"ok": False, "code": "nav-config-unreadable",
-                   "message": f"{config} is missing or unreadable"}
-        print(json.dumps(payload, indent=2) if args.json else f"error: {payload['message']}",
-              file=None if args.json else sys.stderr)
-        return FINDINGS
+        return refuse({"code": "nav-config-unreadable",
+                       "message": f"{config} is missing or unreadable"}, args.json)
 
     stale = current != desired
     if stale and args.write:

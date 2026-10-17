@@ -67,6 +67,53 @@ class TheCoverageRatchet(unittest.TestCase):
                     self.assertFalse(payload["ok"])
                 previous = current
 
+    def test_raise_then_check_on_the_same_artifact_passes_when_rounding_goes_up(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            floor = root / ".coverage-floor.json"
+            config = {
+                "repoRoot": str(root),
+                "proofRoot": str(root / "tests"),
+                "ratchetPath": str(floor),
+                "measuredRoots": [{"relative": "src"}],
+            }
+            (root / "coverage.json").write_text(json.dumps({
+                "files": {"src/a.py": {"covered_lines": 2, "num_statements": 3}},
+                "totals": {"percent_covered": 66.6666666},
+            }), encoding="utf-8")
+            floor.write_text(json.dumps({"version": 1, "floors": {"src": 0}}),
+                             encoding="utf-8")
+            _, raise_code = evaluate(config, mode="raise")
+            self.assertEqual(0, raise_code)
+            self.assertEqual(66.666667, json.loads(
+                floor.read_text(encoding="utf-8"))["floors"]["src"])
+            checked, check_code = evaluate(config, mode="check")
+            self.assertEqual(0, check_code, checked["findings"])
+            self.assertTrue(checked["ok"])
+
+    def test_a_root_with_a_floor_and_no_measurement_is_an_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            floor = root / ".coverage-floor.json"
+            config = {
+                "repoRoot": str(root),
+                "proofRoot": str(root / "tests"),
+                "ratchetPath": str(floor),
+                "measuredRoots": [{"relative": "src"}, {"relative": "lib"}],
+            }
+            (root / "coverage.json").write_text(json.dumps({
+                "files": {"src/a.py": {"covered_lines": 9, "num_statements": 10}},
+                "totals": {"percent_covered": 90.0},
+            }), encoding="utf-8")
+            floor.write_text(json.dumps({"version": 1, "floors": {"src": 90, "lib": 90}}),
+                             encoding="utf-8")
+            for mode in ("check", "raise"):
+                payload, code = evaluate(config, mode=mode)
+                self.assertEqual(1, code, mode)
+                self.assertFalse(payload["ok"])
+                self.assertIn(("pf-floor-unmeasured", "lib"),
+                              [(f["code"], f["root"]) for f in payload["findings"]])
+
     def test_coverage_py_nested_summaries_preserve_independent_root_floors(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -417,6 +464,89 @@ class MeasuredRootNormalisation(unittest.TestCase):
             self._payload("pkg/a.py", 1, 2), [{"relative": "."}])
         self.assertEqual(finding, {})
         self.assertAlmostEqual(result["."], 50.0)
+
+
+class PytestDiscoveryAndSurfaces(unittest.TestCase):
+    def _inventory(self, files):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / ".claude").mkdir()
+            (root / ".claude" / "quenching.json").write_text(json.dumps({"proof": {
+                "proofRoot": "tests",
+                "layers": {"unit": {"reach": "nothing", "budget": 2, "required": True}},
+                "measuredRoots": ["src"]}}), encoding="utf-8")
+            (root / "tests" / "unit").mkdir(parents=True)
+            (root / "tests" / "unit" / "test_a.py").write_text(
+                "def test_a(): pass\n", encoding="utf-8")
+            for relative, text in files.items():
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(text, encoding="utf-8")
+            inventory, err = build_inventory(str(root))
+            self.assertEqual({}, err)
+            assert inventory is not None
+            return inventory
+
+    def test_pytest_ini_wins_over_a_pyproject_without_ini_options(self):
+        inventory = self._inventory({
+            "pyproject.toml": "[project]\nname = 'x'\n",
+            "pytest.ini": "[pytest]\naddopts = --strict-markers --maxfail=1\n",
+            "src/a.py": "X = 1\n"})
+        self.assertEqual("pytest.ini", inventory.gate.path)
+        self.assertTrue(inventory.gate.strict_markers)
+        self.assertIn("--maxfail=1", inventory.gate.addopts)
+
+    def test_pyproject_with_ini_options_is_used_when_no_pytest_ini(self):
+        inventory = self._inventory({
+            "pyproject.toml": "[tool.pytest.ini_options]\naddopts = '--strict-markers'\n"})
+        self.assertEqual("pyproject.toml", inventory.gate.path)
+        self.assertTrue(inventory.gate.strict_markers)
+
+    def test_dependency_and_build_directories_are_not_surfaces(self):
+        files = {"src/a.py": "X = 1\n"}
+        for name in ("node_modules", "vendor", "build", "dist", ".eggs"):
+            files[f"{name}/x/index.js"] = "x\n"
+        files["lib/node_modules/y.js"] = "y\n"
+        files["lib/z.py"] = "Z = 1\n"
+        inventory = self._inventory(files)
+        self.assertEqual(("lib", "src"), inventory.source_surfaces)
+
+    def test_tests_under_a_vendor_folder_are_still_scanned(self):
+        inventory = self._inventory({
+            "pytest.ini": "[pytest]\n",
+            "tests/vendor/test_w.py": "def test_w(): pass\n"})
+        self.assertIn("vendor/test_w.py", [item.path for item in inventory.test_modules])
+
+    def test_a_nested_build_folder_is_still_a_surface(self):
+        inventory = self._inventory({"lib/build/core.py": "X = 1\n"})
+        self.assertIn("lib", inventory.source_surfaces)
+
+    def test_setup_cfg_tool_pytest_is_read(self):
+        inventory = self._inventory({
+            "setup.cfg": "[tool:pytest]\naddopts = --strict-markers\n"})
+        self.assertEqual("setup.cfg", inventory.gate.path)
+        self.assertTrue(inventory.gate.strict_markers)
+
+    def test_a_nested_virtualenv_is_not_a_surface(self):
+        inventory = self._inventory({
+            "src/a.py": "X = 1\n",
+            "docs/index.md": "# docs\n",
+            "/".join(("docs", ".venv", "lib", "pkg", "mod.py")): "X = 1\n"})
+        self.assertEqual(("src",), inventory.source_surfaces)
+
+    def test_a_percent_in_markers_does_not_crash_the_gate_read(self):
+        inventory = self._inventory({
+            "setup.cfg": ("[tool:pytest]\naddopts = --strict-markers\n"
+                          "markers =\n    unit: u (runs in <1% of time)\n")})
+        self.assertEqual("setup.cfg", inventory.gate.path)
+        self.assertTrue(inventory.gate.strict_markers)
+
+    def test_dot_pytest_ini_wins_over_setup_cfg(self):
+        inventory = self._inventory({
+            ".pytest.ini": "[pytest]\naddopts = --strict-markers\n",
+            "setup.cfg": "[tool:pytest]\naddopts = -ra\n"})
+        self.assertEqual(".pytest.ini", inventory.gate.path)
+        self.assertTrue(inventory.gate.strict_markers)
 
 
 if __name__ == "__main__":

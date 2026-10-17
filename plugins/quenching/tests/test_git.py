@@ -31,7 +31,7 @@ from quenching.git.pr import (labelled_links, normalize_azure_pull_request,
                               review_link)
 from quenching.git.slugs import _read_specs, cmd_specs
 from quenching.git.stale import (_gone_branches, _merged_branches, _merged_remote_branches,
-                                 _orphan_worktrees, _unregistered_worktrees)
+                                 _orphan_worktrees, _unregistered_worktrees, stale_report)
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
@@ -263,6 +263,33 @@ class Stale(RepoCase):
         self.assertIn("feature-e", names)
         self.assertNotIn("main", names)
 
+    def test_cq_git_stale_keeps_unmerged_and_checked_out_branches_with_reasons(self):
+        _run(self.repo, "branch", "merged-one")
+        _run(self.repo, "checkout", "-q", "-b", "ahead-one")
+        with open(os.path.join(self.repo, "ahead.txt"), "w") as f:
+            f.write("x")
+        _run(self.repo, "add", "ahead.txt")
+        _run(self.repo, "commit", "-q", "-m", "ahead")
+        _run(self.repo, "checkout", "-q", "main")
+        wt = os.path.join(self.tmp, "held-wt")
+        _run(self.repo, "worktree", "add", "-q", "-b", "held-one", wt)
+        payload = _cq_json(self.repo, "stale")
+        kept = {b["branch"]: b["reasons"] for b in payload["keptBranches"]}
+        stale = {b["branch"] for b in payload["staleBranches"]}
+        self.assertEqual(kept["ahead-one"], ["unmerged-commits"])
+        self.assertEqual(kept["held-one"], ["worktree"])
+        self.assertIn("merged-one", stale)
+        self.assertNotIn("held-one", stale)
+        self.assertIn(payload["prLookup"], ("ok", "unavailable"))
+
+    def test_open_pr_moves_a_merged_branch_to_kept(self):
+        _run(self.repo, "branch", "pr-open")
+        with mock.patch("quenching.git.stale._open_pr_heads", return_value={"pr-open"}):
+            report = stale_report(self.repo)
+        self.assertEqual({b["branch"]: b["reasons"] for b in report["keptBranches"]}["pr-open"],
+                         ["open-pr"])
+        self.assertNotIn("pr-open", {b["branch"] for b in report["staleBranches"]})
+
     def test_merged_origin_branch_is_reported_with_remote_identity(self):
         self._origin_with_merged_branch()
         rows = _merged_remote_branches(self.repo, "main", {"main"})
@@ -353,6 +380,254 @@ class Audit(RepoCase):
     def _grants(self):
         return _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main",
                         "--branch", "spec/1")["grants"]
+
+    def _lowered(self):
+        return _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main",
+                        "--branch", "spec/1")["lowered"]
+
+    def test_lowered_fails_a_deleted_test_and_a_test_that_lost_its_asserts(self):
+        self._commit_file("tests/test_a.py", "def test_a():\n    assert 1\n", "add")
+        self._commit_file("tests/test_b.py", "def test_b():\n    assert 1\n", "add")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        self._commit_file("tests/test_b.py", "def test_b():\n    pass\n", "weaken")
+        _run(self.wt, "rm", "-q", "tests/test_a.py")
+        _run(self.wt, "commit", "-q", "-m", "drop")
+        got = {(e["path"], e["severity"], e["kind"]) for e in self._lowered()}
+        self.assertEqual(got, {("tests/test_a.py", "fail", "test-deleted"),
+                               ("tests/test_b.py", "fail", "test-lost-asserts")})
+
+    def test_lowered_ignores_a_moved_test_and_a_deleted_non_test_under_tests(self):
+        self._commit_file("tests/test_m.py", "def test_m():\n    assert 1\n", "add")
+        self._commit_file("tests/fixtures/old.json", "{}\n", "fixture")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        pathlib.Path(self.wt, "pkg/tests").mkdir(parents=True)
+        _run(self.wt, "mv", "tests/test_m.py", "pkg/tests/test_m.py")
+        _run(self.wt, "rm", "-q", "tests/fixtures/old.json")
+        _run(self.wt, "commit", "-q", "-m", "move and drop")
+        self.assertEqual(self._lowered(), [])
+
+    def _lowered_after(self, files, drop, add):
+        for rel, text in files.items():
+            self._commit_file(rel, text, "add")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        _run(self.wt, "rm", "-q", drop)
+        for rel, text in add.items():
+            full = pathlib.Path(self.wt, rel)
+            full.parent.mkdir(parents=True, exist_ok=True)
+            full.write_text(text, encoding="utf-8")
+            _run(self.wt, "add", rel)
+        _run(self.wt, "commit", "-q", "-m", "change")
+        return {(e["path"], e["severity"], e["kind"]) for e in self._lowered()}
+
+    def test_lowered_fails_a_deleted_test_when_an_unrelated_same_name_file_is_added(self):
+        got = self._lowered_after({"tests/test_a.py": "def test_a():\n    assert 1\n"},
+                                  "tests/test_a.py", {"examples/test_a.py": "x = 1\n"})
+        self.assertEqual(got, {("tests/test_a.py", "fail", "test-deleted")})
+
+    def test_lowered_fails_a_deleted_test_when_the_same_name_target_is_not_a_test(self):
+        got = self._lowered_after({"tests/checks.py": "def t():\n    assert 1\n"},
+                                  "tests/checks.py", {"src/checks.py": "x = 1\n"})
+        self.assertEqual(got, {("tests/checks.py", "fail", "test-deleted")})
+
+    def test_lowered_fails_a_moved_test_that_lost_its_asserts(self):
+        got = self._lowered_after({"tests/test_m.py": "def test_m():\n    assert 1\n"},
+                                  "tests/test_m.py",
+                                  {"pkg/tests/test_m.py": "def test_m():\n    pass\n"})
+        self.assertEqual(got, {("pkg/tests/test_m.py", "fail", "test-lost-asserts")})
+
+    def test_lowered_ignores_a_moved_test_that_keeps_its_asserts(self):
+        got = self._lowered_after({"tests/test_m.py": "def test_m():\n    assert 1\n"},
+                                  "tests/test_m.py",
+                                  {"pkg/tests/test_m.py": "def test_m():\n    assert 2\n"})
+        self.assertEqual(got, set())
+
+    def test_lowered_keeps_a_moved_test_clean_when_an_earlier_code_file_changes(self):
+        got = self._lowered_after({"tests/test_m.py": "def test_m():\n    assert 1\n",
+                                   "src/a.py": "x = 1\n"},
+                                  "tests/test_m.py",
+                                  {"pkg/tests/test_m.py": "def test_m():\n    assert 2\n",
+                                   "src/a.py": "x = 2\n"})
+        self.assertEqual(got, set())
+
+    def test_lowered_fails_the_second_deletion_sharing_one_target(self):
+        self._commit_file("src/a.py", "x = 1\n", "code")
+        self._commit_file("a/tests/test_x.py", "def t():\n    assert 1\n", "a")
+        self._commit_file("b/tests/test_x.py", "def t():\n    assert 1\n", "b")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        _run(self.wt, "rm", "-q", "a/tests/test_x.py", "b/tests/test_x.py")
+        self._commit_file("src/a.py", "x = 2\n", "edit")
+        self._commit_file("c/tests/test_x.py", "def t():\n    assert 1\n", "c")
+        got = {(e["kind"]) for e in self._lowered()}
+        self.assertEqual(got, {"test-deleted"})
+
+    def test_lowered_fails_a_test_moved_out_of_the_discovered_directory(self):
+        for dest in ("plugins/q/attic/test_m.py", "elsewhere/test_m.py"):
+            with self.subTest(dest=dest):
+                self.setUp()
+                got = self._lowered_after({"plugins/q/tests/test_m.py": "def t():\n    assert 1\n",
+                                           "src/a.py": "x = 1\n"},
+                                          "plugins/q/tests/test_m.py",
+                                          {dest: "def t():\n    assert 1\n", "src/a.py": "x = 2\n"})
+                self.assertEqual(got, {("plugins/q/tests/test_m.py", "fail", "test-deleted")})
+                self.tearDown()
+
+    def test_lowered_ignores_a_js_or_ts_test_move_when_the_repo_has_no_gate(self):
+        body = "it('x', () => { expect(1).toBe(1); });\n"
+        for src, dest in (("src/a.test.js", "tests/a.test.js"),
+                          ("__tests__/a.test.ts", "src/__tests__/a.test.ts")):
+            with self.subTest(src=src):
+                self.setUp()
+                got = self._lowered_after({src: body, "src/k.js": "x = 1\n"}, src,
+                                          {dest: body, "src/k.js": "x = 2\n"})
+                self.assertEqual(got, set())
+                self.tearDown()
+
+    def test_lowered_ignores_a_test_renamed_inside_tests_with_the_same_content(self):
+        got = self._lowered_after({"tests/test_m.py": "def t():\n    assert 1\n"},
+                                  "tests/test_m.py", {"tests/test_n.py": "def t():\n    assert 1\n"})
+        self.assertEqual(got, set())
+
+    def test_lowered_pairs_moves_one_to_one_not_greedily(self):
+        self._commit_file("a/tests/test_x.py", "def t():\n    assert 1\n", "a")
+        self._commit_file("b/tests/test_x.py", "def t():\n    assert 1\n    assert 2\n    assert 3\n", "b")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        _run(self.wt, "rm", "-q", "a/tests/test_x.py", "b/tests/test_x.py")
+        self._commit_file("c/tests/test_x.py", "def t():\n    assert 1\n    assert 2\n    assert 3\n", "c")
+        self._commit_file("d/tests/test_x.py", "def t():\n    assert 1\n", "d")
+        self.assertEqual(self._lowered(), [])
+
+    def test_lowered_fails_a_test_moved_where_the_gate_does_not_discover(self):
+        for dest in ("attic/tests/sub/test_a.py", "attic/test/a_cases.py", "tests/fixtures/a.txt"):
+            with self.subTest(dest=dest):
+                self.setUp()
+                got = self._lowered_after({"tests/test_a.py": "def t():\n    assert 1\n"},
+                                          "tests/test_a.py", {dest: "def t():\n    assert 1\n"})
+                self.assertEqual(got, {("tests/test_a.py", "fail", "test-deleted")})
+                self.tearDown()
+
+    def test_lowered_fails_a_test_renamed_to_a_name_the_gate_does_not_run(self):
+        for dest in ("tests/test_a.py.bak", "tests/test_a.py.disabled", "tests/test_a.txt", "attic/tests/test_a.md"):
+            with self.subTest(dest=dest):
+                self.setUp()
+                got = self._lowered_after({"tests/test_a.py": "def t():\n    assert 1\n"},
+                                          "tests/test_a.py", {dest: "def t():\n    assert 1\n"})
+                self.assertEqual(got, {("tests/test_a.py", "fail", "test-deleted")})
+                self.tearDown()
+
+    def test_lowered_reads_the_discover_command_past_quotes_and_comments(self):
+        gates = ("python3 -m unittest discover -s tests -p 'test_*.py'\n",
+                 'python3 -m unittest discover -s "tests"\n',
+                 'cd x\npython3 -m unittest discover -s "$ROOT"\n',
+                 "# was: python3 -m unittest discover -s old\npython3 -m unittest discover -s tests\n",
+                 "python3 -m unittest discover -v -s tests\n",
+                 "python3 -m unittest discover --start-directory tests\n",
+                 "python3 -m unittest discover tests\n")
+        for gate in gates:
+            with self.subTest(gate=gate):
+                self.setUp()
+                self._commit_file("scripts/verify_repo.sh", gate, "gate")
+                root = gate.count("$ROOT")
+                src = "def t():\n    assert 1\n"
+                a, b = ("test_a.py", "test_b.py") if root else ("tests/test_a.py", "tests/test_b.py")
+                got = self._lowered_after({a: src}, a, {b: src})
+                self.assertEqual(got, set())
+                self.tearDown()
+
+    def test_lowered_declares_an_unrecognised_discover_command_as_inconclusive(self):
+        src = "def t():\n    assert 1\n"
+        for gate in ("python3 -m pytest tests\n", 'python3 -m unittest discover -s "$OTHER"\n'):
+            with self.subTest(gate=gate):
+                self.setUp()
+                self._commit_file("scripts/verify_repo.sh", gate, "gate")
+                got = self._lowered_after({"tests/test_a.py": src}, "tests/test_a.py", {"tests/test_b.py": src})
+                self.assertEqual(got, {("scripts/verify_repo.sh", "warn", "discover-unrecognized")})
+                self.tearDown()
+
+    def test_lowered_fails_a_move_to_a_folder_the_quoted_discover_does_not_reach(self):
+        self._commit_file("scripts/verify_repo.sh", "python3 -m unittest discover -s tests -p 'test_*.py'\n", "gate")
+        got = self._lowered_after({"tests/test_a.py": "def t():\n    assert 1\n"},
+                                  "tests/test_a.py", {"attic/tests/test_a.py": "def t():\n    assert 1\n"})
+        self.assertEqual(got, {("tests/test_a.py", "fail", "test-deleted")})
+
+    def test_lowered_reads_the_discovery_root_from_the_gate_script(self):
+        gate = "python3 -m unittest discover -s lib/tests\n"
+        for dest, want in (("lib/tests/test_a.py", set()),
+                           ("lib/tests/sub/test_a.py", {("lib/tests/test_a.py", "fail", "test-deleted")}),
+                           ("lib/tests/a_cases.py", {("lib/tests/test_a.py", "fail", "test-deleted")})):
+            with self.subTest(dest=dest):
+                self.setUp()
+                self._commit_file("scripts/verify_repo.sh", gate, "gate")
+                got = self._lowered_after({"lib/tests/test_b.py": "def t():\n    assert 1\n",
+                                           "lib/tests/test_a.py": "def t():\n    assert 1\n"},
+                                          "lib/tests/test_a.py",
+                                          {dest: "def t():\n    assert 1\n"} if dest != "lib/tests/test_a.py"
+                                          else {"lib/tests/test_n.py": "def t():\n    assert 1\n"})
+                self.assertEqual(got, want if dest != "lib/tests/test_a.py" else set())
+                self.tearDown()
+
+    def test_lowered_hollowed_same_name_move_is_not_absolved_by_another_new_test(self):
+        got = self._lowered_after({"a/tests/test_a.py": "def t():\n    assert 1\n    assert 2\n    assert 3\n",
+                                   "src/a.py": "x = 1\n"},
+                                  "a/tests/test_a.py",
+                                  {"b/tests/test_a.py": "def t():\n    pass\n",
+                                   "b/tests/test_new.py": "def t():\n    assert 1\n    assert 2\n    assert 3\n"})
+        self.assertEqual(got, {("b/tests/test_a.py", "fail", "test-lost-asserts")})
+
+    def test_lowered_detail_says_how_many_asserts_were_kept(self):
+        self._commit_file("a/tests/test_a.py", "def t():\n    assert 1\n    assert 2\n    assert 3\n", "a")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        _run(self.wt, "rm", "-q", "a/tests/test_a.py")
+        self._commit_file("b/tests/test_a.py", "def t():\n    assert 1\n    assert 2\n", "b")
+        self.assertEqual([e["detail"] for e in self._lowered()], ["2 of 3 asserts kept"])
+
+    def test_lowered_fails_a_moved_test_that_kept_fewer_asserts(self):
+        got = self._lowered_after({"tests/test_m.py": "def t():\n    assert 1\n    assert 2\n"
+                                                     "    assert 3\n    assert 4\n",
+                                   "src/a.py": "x = 1\n"},
+                                  "tests/test_m.py",
+                                  {"pkg/tests/test_m.py": "def t():\n    assert 1\n",
+                                   "src/a.py": "x = 2\n"})
+        self.assertEqual(got, {("pkg/tests/test_m.py", "fail", "test-lost-asserts")})
+
+    def test_lowered_fails_a_moved_test_whose_assert_is_a_comment_or_trivial(self):
+        for body in ("def t():\n    pass  # assert nothing\n", "def t():\n    assert True\n"):
+            with self.subTest(body=body):
+                self.setUp()
+                got = self._lowered_after({"tests/test_m.py": "def t():\n    assert 1\n",
+                                           "src/a.py": "x = 1\n"},
+                                          "tests/test_m.py",
+                                          {"pkg/tests/test_m.py": body, "src/a.py": "x = 2\n"})
+                self.assertEqual(got, {("pkg/tests/test_m.py", "fail", "test-lost-asserts")})
+                self.tearDown()
+
+    def test_lowered_reads_a_removed_gate_line_that_starts_with_dashes(self):
+        self._commit_file("scripts/verify_repo.sh", "# gate\n--strict\nrun one\n", "gate")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        self._commit_file("scripts/verify_repo.sh", "# gate\nrun one\n", "shrink")
+        got = self._lowered()
+        self.assertEqual([(e["kind"], e["detail"]) for e in got], [("gate-shrunk", ["--strict"])])
+
+    def test_lowered_fails_a_shrunk_gate_and_ignores_growth(self):
+        self._commit_file("scripts/verify_repo.sh", "# gate\nrun one\nrun two\n", "gate")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        self._commit_file("scripts/verify_repo.sh", "# gate\nrun one\nrun two\nrun three\n", "grow")
+        self.assertEqual(self._lowered(), [])
+        self._commit_file("scripts/verify_repo.sh", "# gate\nrun one\nrun three\n", "shrink")
+        got = self._lowered()
+        self.assertEqual([(e["severity"], e["kind"], e["detail"]) for e in got],
+                         [("fail", "gate-shrunk", ["run two"])])
+
+    def test_lowered_only_warns_for_added_suppressions(self):
+        self._commit_file("tests/test_c.py", "import unittest\n\n@unittest.skip('x')\n"
+                          "def test_c():\n    assert 1  # noqa\n", "skip")
+        got = self._lowered()
+        self.assertEqual([(e["severity"], e["kind"]) for e in got], [("warn", "suppression-added")])
+
+    def test_lowered_is_empty_for_an_assert_preserving_edit(self):
+        self._commit_file("tests/test_d.py", "def test_d():\n    assert 1\n", "add")
+        _run(self.repo, "merge", "-q", "--ff-only", "spec/1")
+        self._commit_file("tests/test_d.py", "def test_d():\n    assert 2\n", "edit")
+        self.assertEqual(self._lowered(), [])
 
     def test_grants_reports_added_entries_and_never_a_narrowing(self):
         agent = "plugins/p/agents/a.md"
@@ -1378,7 +1653,7 @@ class PullRequestPayload(unittest.TestCase):
         self.assertIn("do not invent a `Closes #<n>` sentence", self.payload_step)
 
     def test_payload_is_shown_once_before_the_single_external_write_confirmation(self):
-        self.assertEqual(self.command.count("**AskUserQuestion**"), 1)
+        self.assertEqual(self.command.count("decision sheet"), 1)
         self.assertIn("provider-native link (or its absence)", self.payload_step)
         self.assertIn("one confirmation", self.command.lower())
 
@@ -1550,7 +1825,8 @@ class PullRequestPayload(unittest.TestCase):
         self.assertIn("remote selection", cleanup)
         self.assertIn("remote branch is never", cleanup)
         self.assertIn("confirmation", cleanup)
-        self.assertEqual(cleanup.count("**askuserquestion**"), 2)
+        self.assertIn("decision sheet", cleanup)
+        self.assertEqual(cleanup.count("**askuserquestion**"), 0)
 
     def test_cleanup_does_not_fetch_or_prune_implicitly(self):
         cleanup = CLEANUP_COMMAND.read_text(encoding="utf-8").lower()
@@ -2204,6 +2480,34 @@ class WorktreeRetire(RepoCase):
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertFalse(os.path.exists(self.wt))
 
+    def _seed_pytest_cache(self):
+        cache = pathlib.Path(self.wt, ".pytest_cache")
+        (cache / "v" / "cache").mkdir(parents=True)
+        (cache / ".gitignore").write_text("*\n", encoding="utf-8")
+        (cache / "CACHEDIR.TAG").write_text("x\n", encoding="utf-8")
+        (cache / "v" / "cache" / "lastfailed").write_text("{}\n", encoding="utf-8")
+
+    def test_pytest_cache_is_discarded_when_declared_regenerable(self):
+        self._merge_through_gh()
+        self._seed_pytest_cache()
+        self._declare_regenerable(".pytest_cache")
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertFalse(os.path.exists(self.wt))
+
+    def test_pytest_cache_blocks_retire_when_not_declared(self):
+        self._merge_through_gh()
+        self._seed_pytest_cache()
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        self.assertIn(".pytest_cache", json.loads(proc.stdout)["ignored"][0])
+        self.assertTrue(os.path.isdir(self.wt))
+
+    def test_repo_config_declares_pytest_cache_regenerable(self):
+        root = pathlib.Path(__file__).resolve().parents[3]
+        config = json.loads((root / ".claude" / "quenching.json").read_text(encoding="utf-8"))
+        self.assertIn(".pytest_cache", config["shared"]["regenerablePaths"])
+
     def test_an_undeclared_ignored_file_still_stands_beside_declared_ones(self):
         self._merge_through_gh()
         pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
@@ -2344,6 +2648,43 @@ class PruneVerb(RepoCase):
         heads = subprocess.run(["git", "for-each-ref", "--format=%(refname)", "refs/heads"],
                                cwd=remote, capture_output=True, text=True).stdout.split()
         self.assertEqual(sorted(heads), ["refs/heads/main", "refs/heads/unmerged"])
+
+    def test_a_remote_branch_moved_since_the_fetch_is_refused_and_stands(self):
+        remote = os.path.join(self.tmp, "origin.git")
+        _run(self.tmp, "init", "-q", "--bare", "-b", "main", remote)
+        _run(self.repo, "remote", "add", "origin", remote)
+        _run(self.repo, "push", "-q", "origin", "main", "merged")
+        _run(self.repo, "fetch", "-q", "origin")
+        other = os.path.join(self.tmp, "other")
+        _run(self.tmp, "clone", "-q", remote, other)
+        _run(other, "config", "user.email", "o@example.com")
+        _run(other, "config", "user.name", "o")
+        _run(other, "checkout", "-q", "merged")
+        pathlib.Path(other, "new.txt").write_text("new\n", encoding="utf-8")
+        _run(other, "add", "new.txt")
+        _run(other, "commit", "-q", "-m", "collaborator work")
+        _run(other, "push", "-q", "origin", "merged")
+        moved = _cq(self.repo, "prune", "--remote-branch", "merged")
+        self.assertEqual(moved.returncode, 1, moved.stdout)
+        heads = subprocess.run(["git", "for-each-ref", "--format=%(refname)", "refs/heads"],
+                               cwd=remote, capture_output=True, text=True).stdout.split()
+        self.assertIn("refs/heads/merged", heads)
+        self.assertIn("stale info", moved.stdout)
+
+    def test_a_remote_branch_already_gone_is_pruned_with_its_tracking_ref(self):
+        remote = os.path.join(self.tmp, "origin.git")
+        _run(self.tmp, "init", "-q", "--bare", "-b", "main", remote)
+        _run(self.repo, "remote", "add", "origin", remote)
+        _run(self.repo, "push", "-q", "origin", "main", "merged")
+        _run(self.repo, "fetch", "-q", "origin")
+        _run(remote, "branch", "-q", "-D", "merged")
+        payload = _cq_json(self.repo, "prune", "--remote-branch", "merged")
+        self.assertTrue(payload["ok"])
+        self.assertIn("already gone", payload.get("message", ""))
+        tracking = subprocess.run(["git", "for-each-ref", "--format=%(refname)",
+                                   "refs/remotes/origin/merged"], cwd=self.repo,
+                                  capture_output=True, text=True).stdout.strip()
+        self.assertEqual(tracking, "")
 
 
 FAKE_GH = """#!/usr/bin/env python3

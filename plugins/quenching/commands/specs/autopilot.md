@@ -16,8 +16,8 @@ forced execution, push, PR and merge below is authorized by it, and by nothing e
 This session is the **conductor**. It decides as the owner's delegate, keeps only summaries, and
 never builds: reading, mapping, decomposing, building and reviewing are agents
 (`quenching:scout`, `quenching:spec-architect`, `quenching:orchestrator`, and the read-only opus
-`quenching:reviewer`, which the orchestrator launches once per epic). The orchestrator's protocol
-(waves, workers, verifier, acceptance, review) lives in `plugins/quenching/agents/orchestrator.md`;
+`quenching:reviewer`, which this conductor launches at step 6). The orchestrator's protocol
+(waves, workers, verifier, acceptance) lives in `plugins/quenching/agents/orchestrator.md`;
 do not restate it.
 
 **Why `Bash` is unrestricted here.** Step 1 and step 7 run the gate the target's root harness
@@ -99,17 +99,16 @@ the report with its note, never retried in this round.
 **Done when:** the orchestrator returned its fixed report and every non-`done` spec is placed.
 
 ### 6. Correctness review
-The epic's review is `quenching:reviewer`, run once by the orchestrator at its step 9: read the
-`REVIEW:` lines of its report. It reports only findings it **reproduced** — a command, its output,
-the `path:line` — never style, and a security review of the same range when the epic touched a
-grant, a hook or anything that executes. That review hunts the widening a worker makes by mistake,
-never deliberate evasion of the audit (symlink, BOM, line separators, a diff driver in
-`.git/config`): the audit is no sandbox. **Never run a second review of the same epic.** Only when
-the report carries no `REVIEW:` line and the epic changed code, start `quenching:reviewer` yourself
-(`model: opus`) over the epic's merges (`git log --merges <round start>..main`). Each finding becomes
-a loose spec (`cq specs new`, then its `## Problem` with the reproduction), queued for the next
-round; `REVIEW: NONE` creates none.
-**Done when:** the review was read (or, absent, run once) and each reproduced finding is a spec.
+After every epic that changed code, start `quenching:reviewer` once (`model: opus`) over the epic's
+merges (`git log --merges <round start>..main`); the orchestrator does not launch it. It is
+read-only, and the gate is the only thing it executes. It reports only findings it **reproduced** —
+a command, its output, the `path:line` — never style, and a security review of the same range when
+the epic touched a grant, a hook or anything that executes. That review hunts the widening a worker
+makes by mistake, never deliberate evasion of the audit (symlink, BOM, line separators, a diff
+driver in `.git/config`): the audit is no sandbox. Never a second review of the same range. Each
+finding becomes a loose spec (`cq specs new`, then its `## Problem` with the reproduction), queued
+for the next round; `NONE` creates none.
+**Done when:** the review returned and each reproduced finding is a spec.
 
 ### 7. Gate and audit
 On `main`: pull, run the gate, and the audit of step 1. Red → the first spec of the next round.

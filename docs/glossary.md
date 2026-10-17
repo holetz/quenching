@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: /docs/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-08-29
+timestamp: 2026-10-16
 audience: both
 authority: current
 source: quenching skeleton
@@ -132,8 +132,14 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - [**cq**](/plugins/quenching/assets/references/align/tool-resolution.md) — the plugin's one entry
   point, `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`, replacing the self-contained scripts each pillar
   used to ship separately.
+- [**Decision sheet**](/plugins/quenching/assets/references/specs-develop/questions.md) — the
+  default form of every question put to the human: an opening reply-format line (`D1 A · D2 B …`),
+  one `### D<n>` per independent decision with context and options `A (recommended)` / `B` / `C`,
+  each with its consequence, the dependencies declared, and a closing block of fixes made unless
+  vetoed. It ends the turn; `AskUserQuestion` is the menu used only when the human asks for one.
 - [**Declared root / resolved root**](standards/architecture/spec-backend.md) — the pair the shared
   layer of `cq specs` must never confuse.
+- [**Declared-reading estimate**](standards/automation/context-discipline.md) — the section-level UTF-8 byte heuristic compared with the worker budget, with unresolved inputs and exclusions, never measured usage or proof that a build fits.
 - [**Dependency map**](standards/automation/dependency-sweep.md) — the table the **Dependency
   sweep** returns, written by the orchestrator into `### Mapa de dependências` under the spec's own
   `## Design` and **dated**: it names every file the proposal's area touches or is touched by, and
@@ -356,8 +362,8 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - [**Verification policy**](standards/workflows/task-execution.md) — the per-spec declaration
   (`per-task`, `per-section`, `end-of-plan`) written at creation that decides when a task's
   `verify:` command runs, so execution never guesses and never asks mid-task.
-- [**Version lockstep**](standards/ci-cd/versioning-release.md) — the four version strings a release
-  must bump together, split into two halves read by two independent consumers: the `plugin.json`
+- [**Version lockstep**](standards/ci-cd/versioning-release.md) — the version strings a release
+  must bump together (the list is `RELEASE_ARTIFACTS` in `release.py`), split into two halves read by two independent consumers: the `plugin.json`
   `version` + `VERSION` pair Claude Code compares to decide an upgrade fires, and the one shared
   `VERSION` constant every pillar's `--version` reads.
 - [**Withdrawn contract residue**](standards/quality/withdrawn-contract-residue.md) — the prose

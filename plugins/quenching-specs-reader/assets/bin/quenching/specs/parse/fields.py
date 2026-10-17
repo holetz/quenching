@@ -31,6 +31,16 @@ def scalar_break(value: str) -> str | None:
     return None
 
 
+class UnclosedFence(ValueError):
+    """The document opens a `---` frontmatter fence that never closes: a writer cannot land a
+    key in it, and returning the text unchanged would let the caller report a write that did
+    not happen. `main` carries it to exit 2."""
+
+    def __init__(self, key: str) -> None:
+        super().__init__(f"the frontmatter fence is never closed, so `{key}` cannot be written")
+        self.key = key
+
+
 def _refuse_line_break(value: str) -> None:
     if any(c in SCALAR_LINE_BREAKS for c in value):
         raise ValueError(f"a frontmatter value may not carry a line break: {value!r}")
@@ -72,7 +82,7 @@ def set_frontmatter_key(text: str, key: str, value: str,
         return f"---\n{key}: {value}\n---\n\n" + text
     close = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
     if close is None:
-        return text
+        raise UnclosedFence(key)
     for i in range(1, close):
         if _top_level_key(lines[i]) == key:
             return "".join(lines[:i] + [f"{key}: {value}\n"]
@@ -146,7 +156,7 @@ def strip_frontmatter_keys(text: str, keys: tuple[str, ...]) -> str:
         return text
     close = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
     if close is None:
-        return text
+        raise UnclosedFence(", ".join(keys))
     kept = [ln for i, ln in enumerate(lines)
            if not (1 <= i < close and ln.split(":", 1)[0].strip() in keys)]
     return "".join(kept)
@@ -213,7 +223,7 @@ def set_frontmatter_record(text: str, key: str, rec: dict) -> str:
         return "---\n" + "".join(new_lines) + "---\n\n" + text
     close = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
     if close is None:
-        return text
+        raise UnclosedFence(key)
     for i in range(1, close):
         if _top_level_key(lines[i]) == key:
             return "".join(lines[:i] + new_lines + lines[_continuation_end(lines, i, close):])

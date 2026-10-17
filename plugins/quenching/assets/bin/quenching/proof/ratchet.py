@@ -228,6 +228,9 @@ def _read_floor(path: Path) -> tuple[dict[str, float], dict]:
     return result, {}
 
 
+FLOOR_TOLERANCE = 1e-6  # the recorded floor is rounded to 6 places
+
+
 def _floor_payload(floors: dict[str, float]) -> dict[str, Any]:
     return {"version": FLOOR_VERSION, "floors": {
         key: round(value, 6) for key, value in sorted(floors.items())
@@ -257,7 +260,7 @@ def evaluate(config: dict, *, mode: str, artifact: str | None = None) -> tuple[d
                              "root": root, "message": f"no floor recorded for `{root}`"})
             if mode == "raise":
                 next_floors[root] = achieved
-        elif achieved < current:
+        elif achieved + FLOOR_TOLERANCE < current:
             findings.append({"code": "pf-floor-regressed", "severity": "error",
                              "root": root, "floor": current, "achieved": achieved,
                              "message": f"coverage for `{root}` fell from {current:.2f}% "
@@ -265,7 +268,16 @@ def evaluate(config: dict, *, mode: str, artifact: str | None = None) -> tuple[d
         elif mode == "raise" and achieved > current:
             next_floors[root] = achieved
 
-    if mode == "raise" and not any(item["code"] == "pf-floor-regressed" for item in findings):
+    for entry in config["measuredRoots"]:
+        declared = entry["relative"]
+        if declared in floors and declared not in percentages:
+            findings.append({"code": "pf-floor-unmeasured", "severity": "error",
+                             "root": declared,
+                             "message": f"`{declared}` has a floor but the coverage "
+                                        f"artifact did not measure it"})
+
+    blocking = {"pf-floor-regressed", "pf-floor-unmeasured"}
+    if mode == "raise" and not any(item["code"] in blocking for item in findings):
         floor_path.parent.mkdir(parents=True, exist_ok=True)
         floor_path.write_text(json.dumps(_floor_payload(next_floors), indent=2) + "\n",
                               encoding="utf-8")
