@@ -1,7 +1,7 @@
-"""The `config` pillar's own entry point — read-only views over the configuration layers.
+"""The `config` pillar's own entry point — views over the configuration layers, and the seed.
 
-`show --effective` prints every key with its effective value and the layer that supplied it
-(`default`, `user`, `repository`, `branch`)."""
+`init` seeds the file and `check` lists what it lacks. `show --effective` prints every key with
+its effective value and the layer that supplied it (`default`, `user`, `repository`, `branch`)."""
 from __future__ import annotations
 
 import argparse
@@ -11,10 +11,13 @@ import shlex
 import sys
 
 from quenching.common.front import resolve_root
-from quenching.common.output import REFUSAL, NoAbbrevParser, emit
+from quenching.common.config import CONFIG_FILE, find_repo_root
+from quenching.common.io import write_text
+from quenching.common.output import FINDINGS, OK, REFUSAL, NoAbbrevParser, emit, refuse
 from quenching.common.version import VERSION
 from quenching.config.effective import effective
 from quenching.config.host import build_plan, load_settings
+from quenching.config.seed import missing_keys, read_repository, seed_document
 
 
 def _render(payload: dict) -> str:
@@ -65,6 +68,51 @@ def cmd_host(args) -> int:
     return 0
 
 
+def cmd_init(args) -> int:
+    root = resolve_root(args.root)
+    path = os.path.join(find_repo_root(root), CONFIG_FILE)
+    if os.path.isfile(path):
+        return refuse({
+            "code": "cq-config-present", "config": path,
+            "message": f"{CONFIG_FILE} already exists; init will not overwrite it",
+            "remedy": "run `cq config check` to list the seeded keys it lacks, and add them by hand",
+        }, args.json)
+    document = seed_document(root)
+    if args.write:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        write_text(path, json.dumps(document, indent=2, ensure_ascii=False) + "\n")
+    action = "written" if args.write else "preview"
+    human = (f"cq config init — {path}\n"
+             + json.dumps(document, indent=2, ensure_ascii=False)
+             + f"\n{action}: {'yes' if args.write else 'no — rerun with `--write` to create it'}")
+    emit(args.json, {"ok": True, "action": f"init-{action}", "path": path,
+                     "document": document, "written": args.write}, human)
+    return OK
+
+
+def cmd_check(args) -> int:
+    root = resolve_root(args.root)
+    path = os.path.join(find_repo_root(root), CONFIG_FILE)
+    if not os.path.isfile(path):
+        return refuse({
+            "code": "cq-config-absent", "config": path,
+            "message": f"{CONFIG_FILE} does not exist",
+            "remedy": "run `cq config init --write` to seed it",
+        }, args.json)
+    document = read_repository(root)
+    if document is None:
+        return refuse({
+            "code": "cq-config-unparseable", "config": path,
+            "message": f"{CONFIG_FILE} is not a JSON object",
+            "remedy": "fix the file by hand; check reads only a valid object",
+        }, args.json)
+    missing = missing_keys(document, root)
+    human = ("seeded keys missing from the file:\n" + "\n".join(f"  {k}" for k in missing)
+             if missing else "every seeded key is declared")
+    emit(args.json, {"ok": not missing, "path": path, "missing": missing}, human)
+    return FINDINGS if missing else OK
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = NoAbbrevParser(prog="cq config", description="the configuration layers, read-only")
     p.add_argument("--version", action="store_true", help="print the version and exit")
@@ -79,6 +127,11 @@ def build_parser() -> argparse.ArgumentParser:
                     help="print the dispatch steps for the command after `--`; runs nothing")
     hp.add_argument("--json", action="store_true", help="machine-readable output")
     hp.add_argument("command", nargs="*", help="the command to dispatch, after `--`")
+    ip = sub.add_parser("init", help="seed .claude/quenching.json with every adjustable default")
+    ip.add_argument("--write", action="store_true", help="create the file (default: preview)")
+    ip.add_argument("--json", action="store_true", help="machine-readable output")
+    kp = sub.add_parser("check", help="list the seeded keys the file lacks")
+    kp.add_argument("--json", action="store_true", help="machine-readable output")
     return p
 
 
@@ -91,4 +144,4 @@ def main(argv: list[str]) -> int:
     if not args.cmd:
         parser.print_usage(sys.stderr)
         return REFUSAL
-    return cmd_host(args) if args.cmd == "host" else cmd_show(args)
+    return {"host": cmd_host, "init": cmd_init, "check": cmd_check}.get(args.cmd, cmd_show)(args)
