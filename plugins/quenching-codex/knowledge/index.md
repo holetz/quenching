@@ -49,7 +49,7 @@ processes every Markdown file below `docs_dir` and does not support `exclude_doc
 only reader-facing and selected durable-knowledge homes enter it. `catalog/` and `external/` stay
 in the bundle and never enter the Zensical source tree. The plugin ships a batteries-included
 **Zensical** setup at the repo root (`zensical.toml`) — first installed by
-`quenching:knowledge:align`, then owned by the
+`quenching-align:knowledge:align`, then owned by the
 **documentation family**: `plan`, `write`, `review` and `build`, conducted end to end by
 `produce`.
 

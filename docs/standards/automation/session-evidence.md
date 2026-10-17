@@ -7,7 +7,7 @@ tags: [automation, transcript, evidence, session, retro]
 timestamp: 2026-08-25
 audience: both
 authority: background
-source: improve-command-from-session plan — the go/no-go this standard's gate restates was answered PASS at task 1.3, against a real /quenching:specs:develop session (94120e96) that conducted /specs:isolate as a stage
+source: improve-command-from-session plan — the go/no-go this standard's gate restates was answered PASS at task 1.3, against a real /quenching-specs:specs:develop session (94120e96) that conducted /specs:isolate as a stage
 maintainer: quenching
 ---
 
@@ -17,14 +17,14 @@ maintainer: quenching
 
 A command body is normally revised from taste alone — nobody reads back the session the command
 actually drove. This standard is the contract for the one tool that does:
-`plugins/quenching/assets/bin/quenching/session/` (driven by `/quenching:components:command:retro`,
+`plugins/quenching/assets/bin/quenching/session/` (driven by `/quenching-align:components:command:retro`,
 `plugins/quenching/commands/components/command/retro.md`) turns a session transcript into evidence about the
 command that ran in it, so a finding can carry a count and a quoted turn instead of an impression.
 
 ## Where a transcript lives
 
 One JSONL file per session, at `~/.claude/projects/<cwd-slug>/<session-id>.jsonl` — the same tree
-`/quenching:knowledge:import-memory` already drains `memory/` from. `resolve_transcript`
+`/quenching-align:knowledge:import-memory` already drains `memory/` from. `resolve_transcript`
 (`session/transcript.py:40`) takes an explicit path, a bare session id, or resolves the newest file for the
 current `cwd` by encoding it with the same `encode_cwd` charset (`session/transcript.py:14`) that convention
 already uses. The file is readable while its own session is still running; only the in-flight
@@ -67,7 +67,7 @@ Skill-invoked stages in an 86-transcript corpus, attribution reverts to the cond
 stage returns exactly **once**; it never returns 36 times, and jumps to a third command 6 times.
 Reporting every command's counts as exact off this pointer alone over-credits a conducted stage
 with its conductor's own later work — concretely, `/specs:isolate` was once credited with 5
-question rounds (then `AskUserQuestion` calls; today often decision sheets) that were `/quenching:specs:develop`'s own composition questions (recorded in
+question rounds (then `AskUserQuestion` calls; today often decision sheets) that were `/quenching-specs:specs:develop`'s own composition questions (recorded in
 `improve-command-from-session`'s `## Discoveries`, session 94120e96).
 
 <!-- rationale -->
@@ -123,5 +123,5 @@ across repeated independent use. It graduates to `current` on the same criterion
 counted finding no participant stated during the session**, checked against a real conducted
 session and not merely a rereading of the same transcript. That criterion has been met **once**
 (task 1.3, session 94120e96, `## Discoveries`); graduation is a separate, later judgment for
-whether `/quenching:components:command:retro` keeps clearing that bar in independent use, not an automatic consequence of
+whether `/quenching-align:components:command:retro` keeps clearing that bar in independent use, not an automatic consequence of
 this one internal test.

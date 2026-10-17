@@ -1,0 +1,42 @@
+{
+  "source": "plugins/quenching",
+  "manifest": "plugins/quenching/assets/modules.json",
+  "generator": "scripts/generate_plugin_modules.py",
+  "owned": {
+    "commands": [
+      "knowledge",
+      "components",
+      "align.md"
+    ],
+    "packages": [
+      "knowledge",
+      "components"
+    ],
+    "agents": false
+  },
+  "generatedSupport": {
+    "packages": [
+      "common",
+      "session",
+      "controls"
+    ],
+    "references": [
+      "align",
+      "components-command-new",
+      "git",
+      "knowledge-add",
+      "knowledge-align",
+      "knowledge-import",
+      "specs-align",
+      "specs-conclude",
+      "specs-develop",
+      "specs-execute",
+      "components-command-eval",
+      "components-harness-align",
+      "front-align",
+      "knowledge-documentation",
+      "knowledge-import-memory"
+    ],
+    "router": true
+  }
+}

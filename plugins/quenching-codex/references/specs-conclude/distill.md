@@ -69,7 +69,9 @@ Runs **after** the archive move succeeds, as the command's distillation step:
    else durable, is normal; say so and skip to done.
 2. **One plan, one OK.** Present the candidate list as a single distillation plan and ask one
    confirmation. The user may strike items. If the OKF bundle is missing (no `knowledge/index.md` with
-   `okf_version`), offer `quenching-knowledge-align` first, or skip distillation entirely — never scaffold ad hoc.
+   `okf_version`), offer `quenching-knowledge-align` first — only when `quenching-align` is
+   enabled ([tool-resolution.md](../../references/align/tool-resolution.md)
+   §Routing into another module) — or skip distillation entirely — never scaffold ad hoc.
 3. **Mint each approved doc** under the insert procedure
    ([homes.md](../../references/knowledge-add/homes.md)): fill the home's mold, stamp the
    frontmatter (`resource` may cite the archived spec path — it exists, so the link is derived, not

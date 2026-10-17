@@ -388,6 +388,15 @@ class RepositorySurfaceTranslation(unittest.TestCase):
             self.assertIn("disable-model-invocation: true", text, relative)
 
 
+class ModuleNamespaceTranslation(unittest.TestCase):
+    def test_module_ids_become_one_codex_skill_id_and_a_wrong_owner_refuses(self):
+        text = "see /quenching-specs:specs:develop, /quenching-align:align and /quenching-specs:handoff"
+        self.assertEqual("see quenching-specs-develop, quenching-align and quenching-handoff",
+                         translate.transform_platform(text, {"replacements": {}}))
+        with self.assertRaises(ValueError):
+            translate.transform_platform("/quenching-" + "design:specs:develop", {"replacements": {}})
+
+
 class PayloadResolution(unittest.TestCase):
     """Where the translator finds itself, and what a BARE invocation therefore translates.
 

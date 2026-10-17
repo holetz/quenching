@@ -203,7 +203,7 @@ presumed and why — the shape differs by path:
 Then the next-step block — `quenching-specs-develop <id>` as the forward candidate — and **one**
 decision sheet ([questions.md](../../references/specs-develop/questions.md) §The four shared mechanics §1), immediately after. Two options, labelled in the declared language:
 
-A. **Develop now (recommended)** — narrate, then invoke `quenching:specs:develop <id>` through
+A. **Develop now (recommended)** — narrate, then invoke `quenching-specs:specs:develop <id>` through
    the **Skill** tool, with no sentence declared. Whether that pass asks anything is the
    `complexity` shown on this sheet: `high` and `xhigh` ask, `low` and `medium` answer from
    evidence and park the rest in `## Open Decisions`; correcting it in the reply is how the human

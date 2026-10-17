@@ -66,7 +66,7 @@ records its non-applicability rather than creating a placeholder.
 
 ## Minting one declared layer
 
-`quenching:proof:layer:new` applies the five coupled edits as one unit for the layer a human names:
+`quenching-proof:proof:layer:new` applies the five coupled edits as one unit for the layer a human names:
 
 | Edit | Contract it closes |
 | --- | --- |

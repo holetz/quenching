@@ -1700,9 +1700,9 @@ class PullRequestPayload(unittest.TestCase):
         for phrase in (
             "read-only",
             "not for:",
-            "/quenching:git:pr:create",
-            "/quenching:git:pr:review",
-            "/quenching:git:merge",
+            "/quenching-specs:git:pr:create",
+            "/quenching-specs:git:pr:review",
+            "/quenching-specs:git:merge",
             "authentication",
             "permission",
             "not-found",
@@ -1742,7 +1742,7 @@ class PullRequestPayload(unittest.TestCase):
             "detached head",
             "divergent",
             "no commits ahead",
-            "/quenching:git:pr:create",
+            "/quenching-specs:git:pr:create",
         ):
             self.assertIn(phrase.lower(), lower)
 
@@ -3162,8 +3162,8 @@ class StewardSkillSubset(unittest.TestCase):
         cls.agent = PLUGIN_ROOT / "agents" / "git-steward.md"
         cls.tools = _grants(cls.agent, "tools")
         text = " ".join(cls.agent.read_text(encoding="utf-8").split("## Rules")[0].split())
-        names = re.findall(r"`(/quenching:git:[a-z:]+|:[a-z]+(?::[a-z]+)?)`", text)
-        cls.named = [n.removeprefix("/quenching:git:").removeprefix(":").replace(":", "/") for n in names]
+        names = re.findall(r"`(/quenching-specs:git:[a-z:]+|:[a-z]+(?::[a-z]+)?)`", text)
+        cls.named = [n.removeprefix("/quenching-specs:git:").removeprefix(":").replace(":", "/") for n in names]
 
     def _extra(self, command: str) -> list:
         path = PLUGIN_ROOT / "commands" / "git" / f"{command}.md"

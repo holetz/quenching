@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from quenching.common.output import FINDINGS, OK, refuse
+from quenching.session.model import bare_agent
 from quenching.session.transcript import resolve_project_dir, resolve_transcript
 
 UNKNOWN = "unknown"
@@ -111,7 +112,7 @@ def _started(transcript: Path) -> tuple:
 
 def latest_orchestrator(transcripts: list) -> str | None:
     """The agent id of the most recently started `orchestrator` (orchestrators run one at a time)."""
-    found = [tr for tr in transcripts if _agent_type(tr).removeprefix("quenching:") == "orchestrator"]
+    found = [tr for tr in transcripts if bare_agent(_agent_type(tr)) == "orchestrator"]
     return _agent_id(max(found, key=_started)) if found else None
 
 

@@ -25,10 +25,10 @@ The following design findings require the owner command named in the table:
 
 | Code(s) | Evidence to report | Closing command to name |
 | --- | --- | --- |
-| `design-front-absent`, `design-source-unreadable`, `design-build-refusal` | missing, unreadable or unbuildable DTCG source and the exact refusal | the owner's reviewed source installation or `/quenching:design:align` |
-| `design-generated-drift` | projection path and byte-level difference, plus whether an external proposal exists | `/quenching:design:align` with the owner's `--design-winner import` or `--design-winner build` choice |
+| `design-front-absent`, `design-source-unreadable`, `design-build-refusal` | missing, unreadable or unbuildable DTCG source and the exact refusal | the owner's reviewed source installation or `/quenching-design:design:align` |
+| `design-generated-drift` | projection path and byte-level difference, plus whether an external proposal exists | `/quenching-design:design:align` with the owner's `--design-winner import` or `--design-winner build` choice |
 | `design-import-diff`, `design-import-skipped` | portable values that differ and richer values that cannot round-trip | the owner's reviewed import decision, then `cq design import` when accepted |
-| `design-dtcg-schema`, `design-extension-missing`, `design-extension-field`, `design-external-version`, `design-product-version`, `design-dtcg-shape`, `design-token-empty`, `design-token-value`, `design-token-reference` | source path and invalid DTCG or extension field | the owner's reviewed `.design/tokens.json` change, then `/quenching:design:align` |
+| `design-dtcg-schema`, `design-extension-missing`, `design-extension-field`, `design-external-version`, `design-product-version`, `design-dtcg-shape`, `design-token-empty`, `design-token-value`, `design-token-reference` | source path and invalid DTCG or extension field | the owner's reviewed `.design/tokens.json` change, then `/quenching-design:design:align` |
 | `design-components-shape`, `design-component-shape`, `design-component-property`, `design-component-reference` | component name/property and the unsupported or missing reference | the owner's reviewed component extension or projection change |
 | `design-asset-orphan`, `design-asset-manifest`, `design-asset-variant-missing` | asset or manifest path, role/orientation evidence and the missing reference/variant | the owner's reviewed asset or manifest change, then `cq design doctor --json` |
 | `design-font-metadata`, `design-font-unresolved` | font token, metadata and unresolved asset path | the owner's reviewed font declaration or asset change |

@@ -408,12 +408,14 @@ path for inspecting the workflow without installing a host integration.
 
 ## Uninstall or reverse
 
-To remove the installed plugin while keeping the marketplace available:
+To remove an installed module while keeping the marketplace available:
 
 ```text
-/plugin uninstall quenching@quenching
+/plugin uninstall quenching-design@quenching
 /reload-plugins
 ```
+
+Uninstall `quenching-specs` last: every other module runs its `cq` through it.
 
 Removing the marketplace itself (`/plugin marketplace remove quenching`) also uninstalls plugins
 installed from it. Neither operation deletes the target repository's `/docs/`, `.agents/` or

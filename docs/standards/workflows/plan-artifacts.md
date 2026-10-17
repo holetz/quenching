@@ -102,10 +102,10 @@ set is a stray and `validate` flags it. Which language a spec's body is written 
 
 **Moment replaces an unread `audience` field.** Each canonical section is born `moment: decision |
 build | close` in `assets/specs/schema.json` — the point on the spec's timeline it is read at, not
-who reads it. `/quenching:specs:execute` step 4 (`cq specs section <id> --moment build`) sends an
+who reads it. `/quenching-specs:specs:execute` step 4 (`cq specs section <id> --moment build`) sends an
 executor exactly the `build` set; `decision` stays with the human weighing whether to build at all,
-and `close` is `/quenching:specs:conclude`'s. `## Discoveries` carries no `moment` — captured
-indiscriminately while building, it is resolved later by `/quenching:specs:develop`'s triage sweep on its own
+and `close` is `/quenching-specs:specs:conclude`'s. `## Discoveries` carries no `moment` — captured
+indiscriminately while building, it is resolved later by `/quenching-specs:specs:develop`'s triage sweep on its own
 schedule, tied to none of the three.
 
 Two are load-bearing for machinery, not only for thinking:
@@ -161,9 +161,9 @@ on the spec's branch. Three classes fail that test, and each already has a comma
 
 | Not a task | Why it cannot be one | Owner |
 | --- | --- | --- |
-| A merge obligation — a version bump, a changelog entry, a manifest re-stamp, a tag, a release note | What the release *is* depends on what the last task turned out to be, so none of it is knowable at task 1; scheduled as work it also collides, two branches bumping from the same base to the same number | `/quenching:specs:conclude`, which settles them against the base actually being merged into |
-| The `/docs/` the work **revealed** | It does not exist while the list is being written — it is an output of building, not an input to it | `/quenching:specs:conclude`, which writes it with the branch review |
-| The cycle's own closing actions — review the branch, archive, distil, merge or open the PR | They are that command's steps, not work the spec delivers | `/quenching:specs:conclude` |
+| A merge obligation — a version bump, a changelog entry, a manifest re-stamp, a tag, a release note | What the release *is* depends on what the last task turned out to be, so none of it is knowable at task 1; scheduled as work it also collides, two branches bumping from the same base to the same number | `/quenching-specs:specs:conclude`, which settles them against the base actually being merged into |
+| The `/docs/` the work **revealed** | It does not exist while the list is being written — it is an output of building, not an input to it | `/quenching-specs:specs:conclude`, which writes it with the branch review |
+| The cycle's own closing actions — review the branch, archive, distil, merge or open the PR | They are that command's steps, not work the spec delivers | `/quenching-specs:specs:conclude` |
 
 **One class stays a task, and stays required.** Every `/docs/standards/**.md` path the spec
 **declares** under §`## Impact` carries one parsed sub-heading gets its own checkbox — that is the
@@ -176,8 +176,8 @@ the code that performs a bump exists on its own; performing *this* cycle's bump 
 there is a merge. The first is a task even in a spec whose product is the release; the second never
 is.
 
-This is the authoring half of a boundary `/quenching:specs:conclude` already states from the
-consuming side, and `/quenching:specs:execute` already refuses at build time. Written only there,
+This is the authoring half of a boundary `/quenching-specs:specs:conclude` already states from the
+consuming side, and `/quenching-specs:specs:execute` already refuses at build time. Written only there,
 the box had already been drafted, counted toward the ready gate and approved by a human before
 anything rejected it.
 
@@ -212,7 +212,7 @@ A bullet may carry a `§`address beside its path —
 `/docs/standards/automation/skills.md §The verifier` — naming exactly which sections of that
 standard the task must honor. `parse_impact_standards()` already tolerates it: the regex matches
 only the `/docs/standards/**.md` path and ignores the rest of the line, addressed or not, so no code
-changed to accept it. Without an address, `/quenching:specs:execute` step 4 reads the file whole,
+changed to accept it. Without an address, `/quenching-specs:specs:execute` step 4 reads the file whole,
 exactly as before — the address is an assertion the spec's own author makes, never an economy the
 executor infers on its own.
 

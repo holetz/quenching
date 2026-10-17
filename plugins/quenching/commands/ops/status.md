@@ -1,12 +1,12 @@
 ---
 description: >-
-  Report the operations front: root, router, entry points, lifecycle and findings, read-only. Use for "ops status", "report operations drift". Not for: converging → /quenching:ops:align.
+  Report the operations front: root, router, entry points, lifecycle and findings, read-only. Use for "ops status", "report operations drift". Not for: converging → /quenching-ops:ops:align.
 disable-model-invocation: true
 argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching:ops:status — read the operations front
+# /quenching-ops:ops:status — read the operations front
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
@@ -70,7 +70,7 @@ and every finding keeps its code and disposition.
 ### 3. Hand back control
 
 State that this command wrote nothing. For an actionable mechanical or structural finding, name
-`/quenching:ops:align` as the command that can converge it. For a judgement finding, retain its
+`/quenching-ops:ops:align` as the command that can converge it. For a judgement finding, retain its
 evidence and name the target owner's closing command from `bands.md`; status never runs it.
 
 **Done when:** the report ends with the appropriate owner for each finding and no repair has been

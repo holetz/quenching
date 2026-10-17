@@ -1,11 +1,11 @@
 ---
 description: >-
-  Read a PR's checks, reviews, threads and mergeability, read-only. Use for "check the PR status", "show the review state". Not for: opening → /quenching:git:pr:create; threads → /quenching:git:pr:review; merging → /quenching:git:merge.
+  Read a PR's checks, reviews, threads and mergeability, read-only. Use for "check the PR status", "show the review state". Not for: opening → /quenching-specs:git:pr:create; threads → /quenching-specs:git:pr:review; merging → /quenching-specs:git:merge.
 argument-hint: [spec-id|pr-number|pr-url]
 allowed-tools: Bash(cq:*), Bash(python3:*), Bash(git remote get-url:*), Bash(git branch:*), Bash(gh repo view:*), Bash(gh pr view:*), Bash(gh api graphql:*), Bash(az repos pr:*), Bash(az devops invoke:*), Read
 ---
 
-# /quenching:git:pr:status — read one pull request snapshot
+# /quenching-specs:git:pr:status — read one pull request snapshot
 
 **Input**: `$ARGUMENTS` — `spec:<id>`, a provider PR number or URL, or omitted for the current
 branch's PR.
@@ -60,7 +60,7 @@ as Link para revisão; if no safe browser link can be derived, report it as `unk
 ### 4. Choose the textual next step
 
 Apply the reference's recommendation rules to the normalized facts. Point to
-`/quenching:git:pr:review`, `/quenching:git:sync`, `/quenching:git:merge` or no action as the facts
+`/quenching-specs:git:pr:review`, `/quenching-specs:git:sync`, `/quenching-specs:git:merge` or no action as the facts
 warrant; recommendations are prose only. **Done when:** one next step is stated with the fact that
 caused it, or the refusal is the next step.
 

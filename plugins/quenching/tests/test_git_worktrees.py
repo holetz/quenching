@@ -1,4 +1,4 @@
-"""`quenching.git.worktrees` — worktrees read from files, against a real throwaway repository."""
+"""`quenching.session.worktrees` — worktrees read from files, against a real throwaway repository."""
 from __future__ import annotations
 
 import os
@@ -8,7 +8,7 @@ import unittest
 from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
-from quenching.git.worktrees import list_worktrees, session_slug, with_slugs
+from quenching.session.worktrees import list_worktrees, session_slug, with_slugs
 
 
 def _git(cwd, *args):

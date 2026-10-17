@@ -63,7 +63,7 @@ def _default_pair(payload: Path, root: str | None) -> tuple[Path, Path]:
     The packaged pair only when the CALLER stands in the marketplace checkout that carries it;
     anywhere else the subject is the caller's own repository surface. Reading the payload alone
     made a target repo's bare probe measure the PLUGIN's translation and report it as the repo's
-    — `/quenching:components:align` §1 runs exactly this call and read a green it never measured
+    — `/quenching-align:components:align` §1 runs exactly this call and read a green it never measured
     — while an installed plugin, having no `plugins/` tree at all, reported every generated file
     as drift. Deciding on the caller's surface root keeps CI's
     `cq --root . components translate --check` on the packaged pair and points every other
@@ -180,6 +180,13 @@ def source_digest() -> str:
     return digest.hexdigest()
 
 
+def module_owners() -> dict[str, str]:
+    """Command head -> owning module, from the distribution's own module manifest."""
+    data = json.loads((payload_root() / "assets" / "modules.json").read_text(encoding="utf-8"))
+    return {rel.removesuffix(".md"): module["name"] for module in data["modules"]
+            for rel in module.get("owned", {}).get("commands", [])}
+
+
 def transform_platform(text: str, adaptation: dict) -> str:
     neutral_marker = "\x00QUENCHING_PLATFORM_NEUTRAL_CLAUDE_CODEX\x00"
     text = text.replace(PLATFORM_NEUTRAL_CLAUDE_CODEX, neutral_marker)
@@ -189,8 +196,16 @@ def transform_platform(text: str, adaptation: dict) -> str:
     text = text.replace("Claude Code project memory", "\x00SOURCE_PROJECT_MEMORY_NAME\x00")
     for old, new in adaptation["replacements"].items():
         text = text.replace(old, new)
-    text = re.sub(r"/quenching:([A-Za-z0-9:-]+)",
-                  lambda match: "quenching-" + match.group(1).replace(":", "-"), text)
+    owners = module_owners()
+
+    def skill_id(match: re.Match) -> str:
+        module, ident = match.group(1), match.group(2)
+        if owners.get(ident.split(":", 1)[0]) != module:
+            raise ValueError(f"no module owns /{module}:{ident}")
+        return "quenching-" + ident.replace(":", "-")
+
+    # Codex ships one plugin, so the module that owns a front leaves the skill id.
+    text = re.sub(r"/(quenching-[a-z]+):([A-Za-z0-9:-]+)", skill_id, text)
     text = text.replace("Claude Code", "Codex").replace("Claude", "Codex")
     text = text.replace(neutral_marker, PLATFORM_NEUTRAL_CLAUDE_CODEX)
     text = text.replace("\x00SHARED_CONFIG\x00", ".claude/quenching.json")

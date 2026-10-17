@@ -24,6 +24,22 @@ merge anything into a target's `.claude/settings.json` to make a tool resolve.
 Branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json` payload, never on
 prose.
 
+### Modules: one `cq`, the fronts of the enabled modules
+
+The plugin ships as modules (`quenching-specs`, `quenching-align`, `quenching-design`, …), and only
+`quenching-specs` puts `bin/cq` on `PATH`; that one `cq` reaches the packages of every other
+**enabled** module. A front whose module is not enabled answers **exit 2** naming the module to
+enable, never a traceback. `cq modules --json` lists every module with `enabled: true|false`.
+
+### Routing into another module
+
+A route into a command of another module — a `Skill` call, an offer, a `Not for:` hand-off — runs
+only when that module is enabled. Read `cq modules --json` once, where the route is about to be
+taken: an enabled owner gets the route as written; an absent one is reported as
+`not-installed: <module>` and the step continues without it (an offer is dropped, a stage is
+skipped and named in the report). Never invoke a `Skill` whose module is absent, and never
+manufacture the command it would have run.
+
 ### Working on the quenching repository itself
 
 The `PATH` entry names the *installed* checkout, so a bare `cq` there runs the plugin the session

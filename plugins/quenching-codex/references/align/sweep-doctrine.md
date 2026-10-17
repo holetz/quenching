@@ -162,7 +162,7 @@ resolves nowhere.
 | Plugin-prefixed slash | `/<plugin>:<front>:<verb>` | a human types it wherever the plugin is installed **as a plugin** |
 | Bare slash | `/<front>:<verb>` | **only** where that command's file lives in the target repo's own `.agents/skills/` |
 
-So an align invokes its stage as `quenching:knowledge:import-memory` and tells a human to run
+So an align invokes its stage as `quenching-align:knowledge:import-memory` and tells a human to run
 `quenching-knowledge-import-memory`. An align that cannot see the target's `.agents/skills/` has no
 grounds to emit the bare form.
 

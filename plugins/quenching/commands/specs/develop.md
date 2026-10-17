@@ -1,12 +1,12 @@
 ---
 description: >-
-  Develop an existing spec to ready, argue with it, approve it. Use for "develop this spec", "refine the spec", "approve this spec". Not for: new specs → /quenching:specs:create; building → /quenching:specs:execute.
+  Develop an existing spec to ready, argue with it, approve it. Use for "develop this spec", "refine the spec", "approve this spec". Not for: new specs → /quenching-specs:specs:create; building → /quenching-specs:specs:execute.
 argument-hint: [id-or-description]
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion, Task
 model: opus
 ---
 
-# /quenching:specs:develop — compose a spec, argue with it, and settle its go
+# /quenching-specs:specs:develop — compose a spec, argue with it, and settle its go
 
 **Input**: `$ARGUMENTS` — a spec id, or a description of what to work on.
 
@@ -89,7 +89,7 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 - **`complexity` is re-evaluated at the close, never mid-pass.** The close's own recommendation IS
   that re-evaluation where it names a raise; where the pass merely outgrew its size, the evidence
   that moved it is named and the level proposed. A pass that changed no size proposes nothing.
-- **Every pass reviews `tags` in silence** — `/quenching:specs:create` presumes them. The review is
+- **Every pass reviews `tags` in silence** — `/quenching-specs:specs:create` presumes them. The review is
   narrated in step 6's consolidated plan and applied in step 7's single edit, with no screen of its
   own.
 
@@ -415,32 +415,32 @@ blocks:
 
 Print §The session-size line before the block — `cq components session context --json`, read once; exit 1 turns the `→` line into a recommendation to run the next stage **in a new session**, exit 0 and 2 leave it an offer.
 
-Close on §The next-step block — `/quenching:git:branch <id>` once `approved` is stamped, naming it
-the natural moment to isolate before `/quenching:specs:execute <id>` writes any code;
-`/quenching:specs:develop <id>` again to refine a spec that is already `ready`; or
-`/quenching:specs:execute <id>` to carry it to the end task by task.
+Close on §The next-step block — `/quenching-specs:git:branch <id>` once `approved` is stamped, naming it
+the natural moment to isolate before `/quenching-specs:specs:execute <id>` writes any code;
+`/quenching-specs:specs:develop <id>` again to refine a spec that is already `ready`; or
+`/quenching-specs:specs:execute <id>` to carry it to the end task by task.
 
-**Isolation is named, never taken** — `/quenching:git:branch <id>` appears once, in the next-step
+**Isolation is named, never taken** — `/quenching-specs:git:branch <id>` appears once, in the next-step
 block, and is never asked as a question mid-pass.
 **Done when:** the pass closed or re-entered, and the summary is shown.
 
 ## Invariants to never violate
 
 - **NEVER edit implementation code.** If the spec implies code changes, stop and name
-  `/quenching:specs:execute`.
-- **Never write into `/docs/`.** A durable rule a question surfaces routes to `/quenching:knowledge:add`, an
-  understanding to `/quenching:knowledge:learn`, a term to `/quenching:knowledge:define` — **offered, never
+  `/quenching-specs:specs:execute`.
+- **Never write into `/docs/`.** A durable rule a question surfaces routes to `/quenching-align:knowledge:add`, an
+  understanding to `/quenching-align:knowledge:learn`, a term to `/quenching-align:knowledge:define` — **offered, never
   auto-written**. The rules a spec *proves* are written during execution, not during definition.
 - **Never write into `## Tasks` what the merge owns.** A version bump, a changelog entry, a manifest
   re-stamp; the `/docs/` the work *revealed* rather than declared; the cycle's own closing actions
-  (review, archive, distil, merge, open the PR) — all three belong to `/quenching:specs:conclude`,
+  (review, archive, distil, merge, open the PR) — all three belong to `/quenching-specs:specs:conclude`,
   which settles them once what the release *is* is knowable. A standard this spec **declares** under
   `## Impact` still gets its own checkbox and still must: the axis is declared versus revealed,
   never docs versus code.
 - **Park an out-of-scope follow-up; never mint a spec for it.** A finding this pass raised that does
   not belong to the spec being developed becomes ONE line of `## Discoveries` on that same spec —
   `cq specs discover <id> "<finding>"` — landed inside the step 7 edit, never as a loose call
-  mid-stage. Turning a follow-up into its own spec stays `/quenching:specs:conclude`'s. This route
+  mid-stage. Turning a follow-up into its own spec stays `/quenching-specs:specs:conclude`'s. This route
   is not an offer: nothing is created, so there is nothing to ask for.
 - **Inside a develop pass, `cq specs new` runs only as the discoveries stage's `promoted:`
   resolution.** Nothing else here mints a spec.
@@ -448,7 +448,7 @@ block, and is never asked as a question mid-pass.
   human settled; refine may, and a change to `## Proposal` is always put to the human rather than
   taken. Where no human is present the pass never reached refine, so the licence never runs
   unattended — and a request that replaces the spec's subject outright is still a fresh
-  `/quenching:specs:create`, not a rewrite of what was already agreed.
+  `/quenching-specs:specs:create`, not a rewrite of what was already agreed.
 - **Never write a section that was not narrated first.** The consolidated plan is shown in full
   (step 6) and then applied.
 - Never write anything mid-stage — accumulate across the whole pass, then apply once.

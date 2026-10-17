@@ -1,11 +1,11 @@
 ---
 description: >-
-  Report the /.design/ front: source validity, generated identity, genres and drift, read-only. Use for "design status", "is DESIGN.md current". Not for: fixes → /quenching:design:align.
+  Report the /.design/ front: source validity, generated identity, genres and drift, read-only. Use for "design status", "is DESIGN.md current". Not for: fixes → /quenching-design:design:align.
 disable-model-invocation: true
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching:design:status — read the whole design front
+# /quenching-design:design:status — read the whole design front
 
 **Input**: `$ARGUMENTS` (optional focus; omission reads the whole front).
 

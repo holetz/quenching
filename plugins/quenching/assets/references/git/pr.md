@@ -1,6 +1,6 @@
 # Pull request status — provider facts and normalized snapshot
 
-This reference owns the read-only facts used by `/quenching:git:pr:status`. The command resolves
+This reference owns the read-only facts used by `/quenching-specs:git:pr:status`. The command resolves
 the provider from the specs backend and the `origin` host, then reports the provider's answer
 without turning an unavailable field into a positive state.
 
@@ -91,10 +91,10 @@ labels distinct from provider-specific detail.
 
 Recommendations are text only:
 
-- unresolved threads → `/quenching:git:pr:review`;
+- unresolved threads → `/quenching-specs:git:pr:review`;
 - failed checks or conflicts → inspect/fix before merge;
 - pending checks or unknown mergeability → wait or refresh provider state;
-- known clean checks, approvals and mergeability → `/quenching:git:merge` may be the next human step;
+- known clean checks, approvals and mergeability → `/quenching-specs:git:merge` may be the next human step;
 - missing PR, authentication failure or incomplete evidence → no action until the cause is resolved.
 
 The command never pushes, edits, resolves threads, changes a spec record or merges a PR.

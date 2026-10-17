@@ -1,10 +1,10 @@
 ---
 description: >-
-  Report the specs front and store configuration, read-only. Use for "specs status", "store configuration". Not for: developing or executing → /quenching:specs:develop; ranking → /quenching:specs:triage.
+  Report the specs front and store configuration, read-only. Use for "specs status", "store configuration". Not for: developing or executing → /quenching-specs:specs:develop; ranking → /quenching-specs:specs:triage.
 allowed-tools: Bash(cq:*), Bash(python3:*), Read
 ---
 
-# /quenching:specs:status — read the specs front
+# /quenching-specs:specs:status — read the specs front
 
 The canonical documents live on the `quenching` branch (the git store), or in a deprecated tracker
 backend. There is no local `/.specs/` root.
@@ -33,5 +33,5 @@ not create a local specs store or infer missing configuration.
 - Never write, scaffold, align, migrate or repair anything.
 - Never treat an absent local `/.specs/` directory as a finding; external backends do not use it.
 - Never call `FilesBackend`, infer `backend: files`, or offer a local fallback.
-- Use `/quenching:specs:develop`, `/quenching:specs:execute`, or `/quenching:specs:conclude` for
+- Use `/quenching-specs:specs:develop`, `/quenching-specs:specs:execute`, or `/quenching-specs:specs:conclude` for
   lifecycle work on one named provider-owned spec.

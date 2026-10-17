@@ -43,7 +43,7 @@ always allowed, because open tasks are what closing out unbuilt work looks like.
 
 ### `conclude` archives before the merge, and `## Outcome` asserts only what it delivered
 
-`/quenching:specs:conclude` promotes to `archive/` — the one hop above — **before** any merge
+`/quenching-specs:specs:conclude` promotes to `archive/` — the one hop above — **before** any merge
 happens, not after. `## Outcome` is drafted and written at that same gate, so what it can honestly
 assert is bounded by what is true at that moment: for `done`, that the branch was **reviewed**,
 the emergent `/docs/` was **written**, the spec was **distilled**, and the pre-merge gate ran
@@ -68,8 +68,8 @@ the run that closed the spec; the two records narrate whatever ran after it.
 **came into being after the move** — which is not a revision of what the spec claimed, but a
 record of what happened to it. There are exactly three, and — unlike before `conclude` stopped
 short of the merge — they no longer share one writer or one run: the distillation line is
-`/quenching:specs:conclude`'s own, made in the same run as the archive move; `merge:` and `pr:` are
-made later, by whichever of `/quenching:git:merge` / `/quenching:git:pr:create` the human runs next,
+`/quenching-specs:specs:conclude`'s own, made in the same run as the archive move; `merge:` and `pr:` are
+made later, by whichever of `/quenching-specs:git:merge` / `/quenching-specs:git:pr:create` the human runs next,
 onto the spec that command's own invocation names. All three still land only onto the spec being
 touched, and none of them after the merge:
 
@@ -121,8 +121,8 @@ bend; the derivation it relied on stopped existing.
 
 **`complexity` is the second — and it moved against the test rather than by it.** It used to earn
 its place as a human's guess, the triage sweep's rough size in hours, a judgment like any other.
-Then part of it became computed: `/quenching:specs:create` derives a level from its own classification of
-the input (a sentence is `low`, a plan file is `medium`), `/quenching:specs:develop` re-evaluates the level
+Then part of it became computed: `/quenching-specs:specs:create` derives a level from its own classification of
+the input (a sentence is `low`, a plan file is `medium`), `/quenching-specs:specs:develop` re-evaluates the level
 when a pass closes, and both write through `cq specs record` on a human's confirmation, never a
 silent restamp — the judgment left in the field is the word on the proposal, not the value itself.
 What keeps it in frontmatter is its provenance: no file, filesystem or git state carries the
@@ -206,19 +206,19 @@ moment in the lifecycle, not about which command happens to be running:
 
 | Moment | What happens to an out-of-scope finding |
 | --- | --- |
-| definition — `/quenching:specs:develop`, any stage | one line of `## Discoveries` on the spec being developed, written with `cq specs discover` inside the pass's one consolidated edit |
-| close-out — `/quenching:specs:conclude` on a `done` outcome | the harvest turns it into a fresh spec, if it still deserves one |
+| definition — `/quenching-specs:specs:develop`, any stage | one line of `## Discoveries` on the spec being developed, written with `cq specs discover` inside the pass's one consolidated edit |
+| close-out — `/quenching-specs:specs:conclude` on a `done` outcome | the harvest turns it into a fresh spec, if it still deserves one |
 
 The asymmetry is the whole rule. At definition time nobody knows whether the parent will ship, so
 a spec minted then is a bet placed before the information arrives; at close-out that fact is in
 hand, which is why the harvest table in `specs-conclude/distill.md` is the only place a follow-up
 becomes a file.
 
-**The measurement.** One autonomous `/quenching:specs:develop` pass over 32 open specs, one agent per spec,
+**The measurement.** One autonomous `/quenching-specs:specs:develop` pass over 32 open specs, one agent per spec,
 raised 4–6 follow-up candidates each — well over a hundred — and the same `cq specs` defects
 surfaced independently in three or four agents that could not see one another. A definition-time
 offer scales with what the pass *imagines*, and the queue it fills is charged again to every
-`cq specs next --front` ranking, `/quenching:specs:status` view and `/quenching:specs:triage` read that has to walk
+`cq specs next --front` ranking, `/quenching-specs:specs:status` view and `/quenching-specs:specs:triage` read that has to walk
 past it. Duplicates arriving through that door are turned away at it: the discoveries stage's
 `promoted:` resolution reads the front first and resolves a line an open spec already covers as
 `dismissed: already covered by {slug}` — still three resolutions, never a fourth token.
@@ -238,7 +238,7 @@ regression — which is why the independence is recorded here rather than left t
 
 **One route this does not touch.** A human who asks mid-pass for something that would rewrite an
 already-agreed spec is not filing a follow-up: the alternative there is damaging the spec that
-exists, so `/quenching:specs:develop`'s intent-change route still names `/quenching:specs:create`. Parking is for what
+exists, so `/quenching-specs:specs:develop`'s intent-change route still names `/quenching-specs:specs:create`. Parking is for what
 the pass surfaced on its own.
 
 ## The v2→v3 migration

@@ -1,6 +1,6 @@
 {
   "replacements": {
-    "Run the `quenching:scout` agent per area, at most 3 at a time,": "Run the scout protocol of `../../agents/scout.md` in Codex host sub-agents per area, at most 3 at a time,",
+    "Run the `quenching-specs:scout` agent per area, at most 3 at a time,": "Run the scout protocol of `../../agents/scout.md` in Codex host sub-agents per area, at most 3 at a time,",
     "Claude Code": "Codex",
     "${CLAUDE_PLUGIN_ROOT}/assets/references/": "../../references/",
     "${CLAUDE_PLUGIN_ROOT}/assets/templates/": "../../templates/",

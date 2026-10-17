@@ -24,7 +24,7 @@ store is the git branch `quenching` (`cq specs config` prints `backend: git`), s
 - Do not add `context: fork` beside a command's mid-flow gate; the minimal building cycle is the
   only documented exception, and its review lives in the PR.
 - Never downgrade classification or executor sub-agents to `haiku` in
-  `/quenching:knowledge:import-memory`.
+  `/quenching-align:knowledge:import-memory`.
 
 Both rules are also scoped in `.claude/rules/` so they load when those files are touched.
 

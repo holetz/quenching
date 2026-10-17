@@ -270,4 +270,4 @@ the same page in reverse: `cq components` reports the mechanically decidable sli
 `sk-agent-no-description`), and the doctrine audit reads what no parser can — a fork that
 forks away its own context, a hook whose cost claim no longer holds, an agent whose
 description routes nothing — each reported with the command that fixes it
-(`/quenching:components:command:new`, `/quenching:components:hook:new`, `/quenching:components:agent:new`), never rewritten in place.
+(`/quenching-align:components:command:new`, `/quenching-align:components:hook:new`, `/quenching-align:components:agent:new`), never rewritten in place.

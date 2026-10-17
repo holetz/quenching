@@ -49,8 +49,8 @@ tests -k assets` exists to prove the two have not drifted — edit both or neith
 
 ### Payload applied per insert
 
-`templates/` — the molds. `/quenching:knowledge:add` picks one by home → `type`,
-`/quenching:components:harness:align` applies the `harness/` pair, the `/quenching:components:*`
+`templates/` — the molds. `/quenching-align:knowledge:add` picks one by home → `type`,
+`/quenching-align:components:harness:align` applies the `harness/` pair, the `/quenching-align:components:*`
 family applies `automation/`. The mold's *content* reaches the target; the file itself never does.
 Inventory and stamp discipline: [templates/README.md](templates/README.md).
 
@@ -62,7 +62,7 @@ copy of the same standard legitimately differ in wording.
 
 | Path | Role | Installed into a target? |
 | --- | --- | --- |
-| `bin/cq` | every pillar's deterministic rails — `specs`, `knowledge` (the OKF v0.1 conformance checker, CLI **and** hook) and `components` (the `.claude/` front's `doctor` / `lint` / `drift`), plus `components session`, which reads a session transcript as evidence for `/quenching:components:command:retro` and, with `cost`, a session's subagent spend per agent type, model and window; `context [transcript-or-session-id] --agent ID --json` reports recorded executor-window peak, request turns, exposure integral and role budget distance (default selector: `CLAUDE_CODE_SESSION_ID`). Missing iteration coverage yields a null peak and exit 2, with request exposure upper bound separate; the in-flight request is excluded, and native Codex usage without compatible telemetry is unmeasured | **no** — the plugin's own `hooks/hooks.json` and every command body invoke it by `${CLAUDE_PLUGIN_ROOT}` |
+| `bin/cq` | every pillar's deterministic rails — `specs`, `knowledge` (the OKF v0.1 conformance checker, CLI **and** hook) and `components` (the `.claude/` front's `doctor` / `lint` / `drift`), plus `components session`, which reads a session transcript as evidence for `/quenching-align:components:command:retro` and, with `cost`, a session's subagent spend per agent type, model and window; `context [transcript-or-session-id] --agent ID --json` reports recorded executor-window peak, request turns, exposure integral and role budget distance (default selector: `CLAUDE_CODE_SESSION_ID`). Missing iteration coverage yields a null peak and exit 2, with request exposure upper bound separate; the in-flight request is excluded, and native Codex usage without compatible telemetry is unmeasured | **no** — the plugin's own `hooks/hooks.json` and every command body invoke it by `${CLAUDE_PLUGIN_ROOT}` |
 
 **`cq` is not installed anywhere.** Resolution is plugin-first with **no third rung**
 ([references/align/tool-resolution.md](references/align/tool-resolution.md)): bare, through the
@@ -82,7 +82,7 @@ retired.
 | Subtree | What it is |
 | --- | --- |
 | `references/` | the **shared procedure** — owned once, cited by absolute path from the command bodies rather than restated. One folder per owning command, named for that command's path with `/` → `-`; other commands may cite it (`references/align/` serves seven). |
-| `evals/` | the **measured case sets** written by `/quenching:components:command:eval` — `evals.json` plus a timestamped run directory. The tree mirrors the command's path with the slashes kept, so `commands/components/hook/new.md` ↔ `evals/components/hook/new/`, and renaming a command renames its eval folder in the same step. |
+| `evals/` | the **measured case sets** written by `/quenching-align:components:command:eval` — `evals.json` plus a timestamped run directory. The tree mirrors the command's path with the slashes kept, so `commands/components/hook/new.md` ↔ `evals/components/hook/new/`, and renaming a command renames its eval folder in the same step. |
 | `checks/` | the **harnesses that grade this checkout** out of process — `functional-checks.sh` (the command registry is built at session start, so no change under `commands/**` is testable in the session that writes it), `conclude-order-check.sh` (order is a property only a real git history exhibits), and `citation-check.sh` (a rename's old name dead and its new name born cannot be seen by the session that moved the body, and a third half measures that the prose shipped into a target promises only what the published skeleton delivers). Never installed, outside the lockstep. |
 
 ## The signature
@@ -94,21 +94,21 @@ errors, 0 warnings**.
 
 ## How the commands use it
 
-- **`/quenching:knowledge:align`** scaffolds the applicable homes from `knowledge/` (including the fixed
+- **`/quenching-align:knowledge:align`** scaffolds the applicable homes from `knowledge/` (including the fixed
   `glossary.md` seed), stamps frontmatter with `templates/`, offers to wire `hooks/`
   (step 6) and stamps `zensical/` **once** (step 7).
-- **`/quenching:knowledge:add`** picks a mold from `templates/` by home → `type`, updates the bundle's
+- **`/quenching-align:knowledge:add`** picks a mold from `templates/` by home → `type`, updates the bundle's
   `index.md`, and rows any new repo-specific term into `glossary.md`.
-- **`/quenching:knowledge:define`** adds/refines one entry in the fixed `glossary.md` term lookup
-  (alphabetical, MERGE never clobber); `/quenching:knowledge:learn` and `/quenching:knowledge:import-memory` run the same
-  enrichment as a tail step; `/quenching:knowledge:glossary-backfill` backfills it in bulk from a whole-bundle sweep.
-- **`/quenching:knowledge:documentation:build`** owns `zensical/` after that first stamp: every install, config
+- **`/quenching-align:knowledge:define`** adds/refines one entry in the fixed `glossary.md` term lookup
+  (alphabetical, MERGE never clobber); `/quenching-align:knowledge:learn` and `/quenching-align:knowledge:import-memory` run the same
+  enrichment as a tail step; `/quenching-align:knowledge:glossary-backfill` backfills it in bulk from a whole-bundle sweep.
+- **`/quenching-align:knowledge:documentation:build`** owns `zensical/` after that first stamp: every install, config
   merge, nav regeneration and `zensical build --strict` verification is its.
-- **`/quenching:components:harness:align`** applies the `templates/harness/` molds to rewrite a repo's `CLAUDE.md` /
+- **`/quenching-align:components:harness:align`** applies the `templates/harness/` molds to rewrite a repo's `CLAUDE.md` /
   `AGENTS.md` as thin pointers over the bundle, moving inlined knowledge into its home.
-- **`specs/`** is a seed no command copies any more — the specs front is provider-owned, and its align went with the local backend. `/quenching:specs:*` drive the cycle through `cq specs`, which reads `specs/schema.json` and stamps `specs/templates/spec.md`.
-- **`/quenching:components:align`** offers to remove a legacy tool copy under a target's
-  `.claude/hooks/`; the `/quenching:components:*` minters apply `templates/automation/`.
+- **`specs/`** is a seed no command copies any more — the specs front is provider-owned, and its align went with the local backend. `/quenching-specs:specs:*` drive the cycle through `cq specs`, which reads `specs/schema.json` and stamps `specs/templates/spec.md`.
+- **`/quenching-align:components:align`** offers to remove a legacy tool copy under a target's
+  `.claude/hooks/`; the `/quenching-align:components:*` minters apply `templates/automation/`.
 
 ## Install discipline
 

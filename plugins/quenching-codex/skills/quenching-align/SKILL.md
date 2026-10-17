@@ -1,6 +1,6 @@
 ---
 name: quenching-align
-description: "Align the whole repository (docs, design, .claude, ops, proof, toolchain, delivery) on one confirmation. Use for \"align the repo\", \"align everything\", \"set up quenching here\". Not for: one front → its /quenching:*:align."
+description: "Align the whole repository (docs, design, .claude, ops, proof, toolchain, delivery) on one confirmation. Use for \"align the repo\", \"align everything\", \"set up quenching here\". Not for: one front → its /quenching-<module>:<front>:align."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/align.md -->
@@ -35,12 +35,18 @@ front named in that cell has completed its inherited authorization.
 | `toolchain` — toolchain surface | `quenching-toolchain-align` | `proof` |
 | `delivery` — delivery surface | `quenching-delivery-align` | `toolchain` |
 
+**Only enabled modules are conducted.** Before the first front, read `cq modules --json` once
+([tool-resolution.md](../../references/align/tool-resolution.md) §Routing into
+another module). A front whose module reports `enabled: false` is `not-installed: <module>`: it is
+skipped, named in the report, and its dependants depend on the nearest earlier front that ran.
+
 **How a front is run.** `knowledge` and `components` are model-invocable: invoke them through the
 Skill tool. `design`, `ops`, `proof`, `toolchain` and `delivery` are typed-only commands
 (`disable-model-invocation: true`), so the Skill tool refuses them. For those five, Read the
-front's own body at `../../commands/<front>/align.md` and follow it inline,
-substituting this body's expanded plugin root for any `../..` it cites, with the same
-inherited authorization and the same stages; its `cq <front> …` verbs run as written.
+front's own body at `<root>/commands/<front>/align.md`, where `<root>` is the `root` that
+`cq modules --json` reports for the front's module, and follow it inline, substituting that same
+`<root>` for any `../..` it cites, with the same inherited authorization and the
+same stages; its `cq <front> …` verbs run as written.
 
 The `specs` provider flow has no row because it owns no local tree, while the `security` and `git`
 pillars have no row because they answer live questions without a converging front tree. Their

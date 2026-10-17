@@ -3,7 +3,7 @@
 Frontmatter + body molds the commands stamp/apply. They live **outside** the `/docs/` bundle
 (so they are not themselves validated), and each produces an OKF-conformant concept doc when
 filled — except the `harness/` and `automation/command|agent|hook` molds, which produce files
-that are not OKF concepts at all. `/quenching:knowledge:add` picks the mold by home → `type` (see
+that are not OKF concepts at all. `/quenching-align:knowledge:add` picks the mold by home → `type` (see
 `${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md`).
 
 A mold is **applied per insert, never copied wholesale**: its content reaches the target repo,
@@ -31,13 +31,13 @@ the file itself does not.
 
 The **harness molds** (`harness/`) produce **exempt** files — `CLAUDE.md`/`AGENTS.md` carry **no
 frontmatter and no `type`** (harness pointers, not OKF concepts — okf-spec strict-7; the validator
-skips them). `/quenching:components:harness:align` applies them when it refactors a repo's harness files into thin
+skips them). `/quenching-align:components:harness:align` applies them when it refactors a repo's harness files into thin
 pointers over the bundle.
 
-The **automation molds** (`automation/`) are the `/quenching:components:*` family's —
-`/quenching:components:command:new`, `/quenching:components:agent:new`,
-`/quenching:components:hook:new` mint from the three artifact molds, and
-`/quenching:components:align` maintains the registry and the three `*-standard.md` rules in the
+The **automation molds** (`automation/`) are the `/quenching-align:components:*` family's —
+`/quenching-align:components:command:new`, `/quenching-align:components:agent:new`,
+`/quenching-align:components:hook:new` mint from the three artifact molds, and
+`/quenching-align:components:align` maintains the registry and the three `*-standard.md` rules in the
 target's bundle. There is
 ONE command mold, not a skill-plus-wrapper pair: Claude Code merged commands into skills, so a
 single `.claude/commands/<path>.md` carries both the description that routes to it and the body

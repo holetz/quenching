@@ -71,10 +71,10 @@ class TestContextDistribution(unittest.TestCase):
 
 
     def test_unclosed_skill_is_upper_bound_and_unknown_pointer_stays_unknown(self):
-        caller = request("a", 10, command="quenching:specs:orchestrate")
+        caller = request("a", 10, command="quenching-specs:specs:orchestrate")
         caller["message"]["content"] = [{"type": "tool_use", "name": "Skill",
-                                            "input": {"skill": "quenching:specs:execute"}}]
-        row = transcript(self.tmp_path, [caller, request("b", 100, command="quenching:specs:execute"),
+                                            "input": {"skill": "quenching-specs:specs:execute"}}]
+        row = transcript(self.tmp_path, [caller, request("b", 100, command="quenching-specs:specs:execute"),
                                     request("c", 20)])
         assert [r["attribution"] for r in row["requests"]] == [
             "pointer-closed", "pointer-upper-bound", "unknown"]
@@ -84,7 +84,7 @@ class TestContextDistribution(unittest.TestCase):
 
     def test_role_comes_from_metadata_and_models_do_not_merge(self):
         row = transcript(self.tmp_path, [request("a", 10), request("b", 40, model="model-b")],
-                         subagent=True, metadata={"agentType": "quenching:orchestrator"})
+                         subagent=True, metadata={"agentType": "quenching-specs:orchestrator"})
         assert row["role"] == "conductor"
         groups = instrument.aggregate([row])["groups"]
         assert [(g["model"], g["tokenExposure"]) for g in groups if g["dimension"] == "roleByModel"] == [
@@ -140,11 +140,11 @@ class TestContextDistribution(unittest.TestCase):
 
     def test_identified_resume_preparation_ends_at_task_selection(self):
         earlier = transcript(self.tmp_path, [request("one", 10)], subagent=True,
-                             metadata={"agentType": "quenching:spec-runner"})
+                             metadata={"agentType": "quenching-specs:spec-runner"})
         earlier.update(assignmentSpec="1234", startedAt="2026-01-01T00:00:00Z",
                        taskChecks=[{"task": "1.1", "line": 4}])
         later = transcript(self.tmp_path, [request("new", 20), request("work", 80)], subagent=True,
-                           metadata={"agentType": "quenching:spec-runner"})
+                           metadata={"agentType": "quenching-specs:spec-runner"})
         later.update(assignmentSpec="1234", startedAt="2026-01-01T01:00:00Z", explicitResume=True,
                      firstNextQueryLine=1)
         cost = instrument.resumptions([earlier, later])
@@ -156,11 +156,11 @@ class TestContextDistribution(unittest.TestCase):
 
     def test_resume_without_identified_spec_cannot_form_a_pair(self):
         earlier = transcript(self.tmp_path, [request("one", 10)], subagent=True,
-                             metadata={"agentType": "quenching:spec-runner"})
+                             metadata={"agentType": "quenching-specs:spec-runner"})
         earlier.update(startedAt="2026-01-01T00:00:00Z",
                        taskChecks=[{"task": "1.1", "line": 4}])
         later = transcript(self.tmp_path, [request("new", 20)], subagent=True,
-                           metadata={"agentType": "quenching:spec-runner"})
+                           metadata={"agentType": "quenching-specs:spec-runner"})
         later.update(startedAt="2026-01-01T01:00:00Z", explicitResume=True,
                      firstNextQueryLine=1)
         cost = instrument.resumptions([earlier, later])

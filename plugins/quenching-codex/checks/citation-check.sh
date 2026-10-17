@@ -98,13 +98,29 @@ if [ "$TOPLEVEL" != "$REPO" ]; then
 fi
 SELF="${SELF_DIR#"$REPO"/}/$(basename "${BASH_SOURCE[0]}")"
 
+# The generated principal module trees are byte copies of plugins/quenching, proved equal and
+# closure-checked per module by `scripts/generate_plugin_modules.py --check`. Every half here
+# measures the source once; sweeping the copies too would re-measure it under paths the source's
+# own exemptions do not name.
+mapfile -t GENERATED < <(python3 -c '
+import json, os, sys
+manifest = os.path.join(sys.argv[1], "plugins/quenching/assets/modules.json")
+if os.path.isfile(manifest):
+    for m in json.load(open(manifest, encoding="utf-8"))["modules"]:
+        if "owned" in m: print(m["path"])
+' "$REPO")
+GENERATED_EXCLUDE=()
+for tree in "${GENERATED[@]}"; do GENERATED_EXCLUDE+=(":!$tree/"); done
+export QUENCHING_GENERATED_TREES="${GENERATED[*]}"
+
 # Half 1's own scope, beyond frozen golden data, not live citations — see the header's third scope
 # rule for why.
 SCOPE_EXCLUDE=(':!plugins/quenching/tests/fixtures/golden/'
                ':!plugins/quenching/tests/capture_golden.py'
                ':(exclude,glob)plugins/quenching/assets/evals/**/runs/**'
                ':!plugins/quenching/assets/checks/citation-check.sh'
-               ':!plugins/quenching-codex/checks/citation-check.sh')
+               ':!plugins/quenching-codex/checks/citation-check.sh'
+               "${GENERATED_EXCLUDE[@]}")
 
 want () { case ",$HALF," in *",$1,"*) return 0 ;; *) return 1 ;; esac; }
 FAIL=0
@@ -190,7 +206,7 @@ if want 1; then
 
   # The hyphenated spelling of a LIVE command. `quenching-knowledge-add` is not a retired name —
   # it is the right command with the wrong separator, and it routes nowhere: the registry takes
-  # `quenching:knowledge:add` and the human types `quenching-knowledge-add`. A reader who follows
+  # `quenching:knowledge:add` and the human types `/quenching:knowledge:add`. A reader who follows
   # one types a command the surface does not register.
   #
   # THE NAMES ARE DERIVED FROM DISK, never listed here. A closed verb list was the other candidate
@@ -220,6 +236,15 @@ for root, _, names in os.walk(commands_dir):
         if name.endswith(".md"):
             rel = os.path.relpath(os.path.join(root, name), commands_dir)
             live.add("quenching-" + rel[:-3].replace(os.sep, "-"))
+
+# A module name (`quenching-align`, `quenching-specs`) is a plugin, not a mis-separated command,
+# even where it spells the same as one: `quenching-align` lives in module `quenching-align`.
+try:
+    import json
+    with open(os.path.join("plugins", "quenching", "assets", "modules.json"), encoding="utf-8") as handle:
+        live -= {module["name"] for module in json.load(handle)["modules"]}
+except (OSError, ValueError, KeyError):
+    pass
 
 findings, checked = [], 0
 for rel in sys.stdin.buffer.read().split(b"\x00"):
@@ -264,7 +289,7 @@ fi
 # Two assertions, both over tracked text:
 #
 #   a. every cited PATH resolves to a file that exists;
-#   b. every cited /quenching:<ns>:<cmd> corresponds to a body under commands/**.
+#   b. every cited /quenching-<module>:<ns>:<cmd> corresponds to a body under commands/**.
 #
 # Candidate extraction is deliberately conservative: a citation carrying a glob, a placeholder or
 # an unresolved variable is not a claim about a file that exists, so it is not measured. What IS
@@ -304,7 +329,7 @@ fi
 # --------------------------------------------------------------------------- #
 if want 2; then
   echo "2. the new names were born"
-  git ls-files -z | python3 -c '
+  git ls-files -z -- . "${GENERATED_EXCLUDE[@]}" | python3 -c '
 import os, re, sys
 
 plugin = "plugins/quenching"
@@ -317,8 +342,8 @@ PLUGIN_ROOT_RE    = re.compile(r"\$\{CODEX_PLUGIN_ROOT\}/([A-Za-z0-9_./-]+)")
 MD_LINK_RE        = re.compile(r"\]\(([^)\s]+)\)")
 REPO_PATH_RE      = re.compile(r"(?<![A-Za-z0-9_./-])(plugins/quenching/[A-Za-z0-9_./-]+)")
 KNOWLEDGE_PATH_RE = re.compile(r"(?<![A-Za-z0-9_./-])/?(docs/[A-Za-z0-9_./-]+)(?![A-Za-z0-9_./-]|\{)")
-# Both citation forms. The Skill tool takes the bare `quenching:<ns>:<cmd>`; a human types the slash.
-CMD_RE            = re.compile(r"/?(quenching(?::[a-z][a-z0-9-]*){2,})")
+# Both citation forms. The Skill tool takes the bare `quenching-<module>:<ns>:<cmd>`; a human types the slash.
+CMD_RE            = re.compile(r"/?(quenching(?:-[a-z]+)?(?::[a-z][a-z0-9-]*){2,})")
 
 # Content the plugin ships for a target checkout to hold, plus the fixture data that names files
 # on purpose absent. See the header: these say which repo a tree describes, they exempt no path.
@@ -360,6 +385,16 @@ def trim(p):
     # below is a single-quoted shell argument, and one would end it mid-parser.)
     return p.rstrip(".,;:)")
 
+# Each command is published under the module that owns its front (assets/modules.json).
+try:
+    import json
+    with open(os.path.join(plugin, "assets/modules.json"), encoding="utf-8") as handle:
+        owners = {rel[:-3] if rel.endswith(".md") else rel: module["name"]
+                  for module in json.load(handle)["modules"]
+                  for rel in module.get("owned", {}).get("commands", [])}
+except (OSError, ValueError, KeyError):
+    owners = {}
+
 path_findings, cmd_findings = [], []
 paths_checked = cmds_checked = 0
 commands = set()
@@ -368,7 +403,8 @@ for root, _, names in os.walk(commands_dir):
     for n in names:
         if n.endswith(".md"):
             rel = os.path.relpath(os.path.join(root, n), commands_dir)
-            commands.add("quenching:" + rel[:-3].replace(os.sep, ":"))
+            ident = rel[:-3].replace(os.sep, ":")
+            commands.add(owners.get(ident.split(":", 1)[0], "quenching") + ":" + ident)
 
 FROZEN_DATA = (plugin + "/tests/fixtures/golden/", plugin + "/tests/capture_golden.py",
                # A `files:` case table reproducing a real, historical bug report verbatim — a
@@ -378,6 +414,11 @@ FROZEN_DATA = (plugin + "/tests/fixtures/golden/", plugin + "/tests/capture_gold
                # half would otherwise need to measure.
                plugin + "/tests/test_specs_parse.py")
 
+# Records of what shipped, under the names it shipped with: a CHANGELOG entry or a decision record
+# that cites a pre-module `quenching:<front>:<verb>` is a true historical statement, not a route.
+# Their PATH citations are still measured; only the command half skips them.
+HISTORICAL = ("CHANGELOG.md", "docs/decisions/")
+
 def is_frozen_eval_run(rel):
     parts = rel.split("/")
     return len(parts) > 2 and rel.startswith(plugin + "/assets/evals/") and "runs" in parts
@@ -386,7 +427,7 @@ for rel in sys.stdin.buffer.read().split(b"\x00"):
     rel = rel.decode("utf-8", "replace")
     if not rel or rel.endswith((".png", ".jpg", ".gif", ".ico")):
         continue
-    if rel == plugin + "/assets/checks/citation-check.sh":
+    if rel in (plugin + "/assets/checks/citation-check.sh", "plugins/quenching-codex/checks/citation-check.sh"):
         continue
     if rel.startswith(FROZEN_DATA) or is_frozen_eval_run(rel):
         continue
@@ -432,6 +473,8 @@ for rel in sys.stdin.buffer.read().split(b"\x00"):
         if not any(os.path.exists(t) for t in targets):
             path_findings.append((rel, cited, targets[-1]))
 
+    if rel.startswith(HISTORICAL):
+        continue
     for cited in CMD_RE.findall(text):
         cmds_checked += 1
         if cited not in commands:
@@ -498,7 +541,9 @@ section_re = re.compile(r"§")
 
 def tracked_files():
     result = subprocess.run(
-        ["git", "ls-files", "-z"], cwd=repo, check=True, stdout=subprocess.PIPE
+        ["git", "ls-files", "-z", "--", ".",
+         *(":!" + tree + "/" for tree in os.environ.get("QUENCHING_GENERATED_TREES", "").split())],
+        cwd=repo, check=True, stdout=subprocess.PIPE
     )
     return [path.decode("utf-8", "replace") for path in result.stdout.split(b"\x00") if path]
 

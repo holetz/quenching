@@ -202,7 +202,7 @@ def check_okf_signature(has_root_index: bool, has_okf_version: bool,
     missing = "has no `index.md`" if not has_root_index else "`index.md` declares no `okf_version`"
     return [("ERROR", root_rel, "not-an-okf-bundle",
              f"`{root_rel}/` {missing} — it is a directory, not an OKF bundle; "
-             f"`/quenching:knowledge:align` converts one, and per-file OKF findings are "
+             f"`/quenching-align:knowledge:align` converts one, and per-file OKF findings are "
              f"withheld until it does")]
 
 

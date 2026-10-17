@@ -1,11 +1,11 @@
 ---
 description: >-
-  Report the automation surface: command count, fronts and findings, read-only. Use for "components status", "check the automation surface". Not for: repairs → /quenching:components:align.
+  Report the automation surface: command count, fronts and findings, read-only. Use for "components status", "check the automation surface". Not for: repairs → /quenching-align:components:align.
 argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching:components:status — read the automation surface
+# /quenching-align:components:status — read the automation surface
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
@@ -36,8 +36,8 @@ write-capable subcommand.
 Report one compact table with the target root and applicability state, command count, counts by
 front, finding codes with their error/warning totals, and the overall `ok` state. Preserve every
 returned code and message; an empty surface is an explicit state, not a reason to invent commands.
-For an actionable finding, name `/quenching:components:align` as the bounded repair route; for a
-single command body or description, name `/quenching:components:command:new` as the focused edit
+For an actionable finding, name `/quenching-align:components:align` as the bounded repair route; for a
+single command body or description, name `/quenching-align:components:command:new` as the focused edit
 route. Status itself does not invoke either route.
 
 **Done when:** every returned field is represented, and each finding keeps its code, severity and

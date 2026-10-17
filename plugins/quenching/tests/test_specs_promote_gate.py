@@ -6,7 +6,7 @@ blocked task reported `promote: {"missing": [], "ok": true}` from `cq specs stat
 
 The two verbs were reading different gates. `gate_report` measures SECTIONS — the entry gate of the
 destination folder — while `promote` applies a second condition that lived only inside itself: with
-`--outcome done`, any unticked task refuses, blocked `[!]` included. `/quenching:specs:status`
+`--outcome done`, any unticked task refuses, blocked `[!]` included. `/quenching-specs:specs:status`
 describes itself as "an honest dry run before a sweep is authorized", so a caller branching on its
 `ok` was branching on a verdict the real verb did not share.
 

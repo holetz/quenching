@@ -1,0 +1,64 @@
+{
+  "replacements": {
+    "Run the `quenching-specs:scout` agent per area, at most 3 at a time,": "Run the scout protocol of `../../agents/scout.md` in Codex host sub-agents per area, at most 3 at a time,",
+    "Claude Code": "Codex",
+    "${CLAUDE_PLUGIN_ROOT}/assets/references/": "../../references/",
+    "${CLAUDE_PLUGIN_ROOT}/assets/templates/": "../../templates/",
+    "${CLAUDE_PLUGIN_ROOT}/assets/specs/": "../../specs/",
+    "${CLAUDE_PLUGIN_ROOT}/assets/knowledge/": "../../knowledge/",
+    "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq": "../../scripts/cq",
+    "plugins/quenching/assets/bin/cq": "plugins/quenching-codex/scripts/bin/cq",
+    "assets/bin/cq": "scripts/bin/cq",
+    "\"assets\", \"bin\", \"cq\"": "\"scripts\", \"bin\", \"cq\"",
+    "${CLAUDE_PLUGIN_ROOT}/assets/checks/": "../../checks/",
+    "${CLAUDE_PLUGIN_ROOT}": "../..",
+    "${CLAUDE_PROJECT_DIR}": ".",
+    "~/.claude/projects/": "~/.codex/sessions/",
+    ".claude/commands/": ".agents/skills/",
+    ".claude/skills/": ".agents/skills/",
+    ".claude/": ".agents/",
+    "os.path.join(\".claude\", \"quenching.json\")": "os.path.join(\".claude\", \"quenching.json\")",
+    "CLAUDE.md": "AGENTS.md",
+    "CLAUDE_PLUGIN_ROOT": "CODEX_PLUGIN_ROOT",
+    "COMMANDS_DIR = \"commands\"": "COMMANDS_DIR = \"skills\"",
+    "CLAUDE_DIR = \".claude\"": "CLAUDE_DIR = \".agents\"",
+    "PLUGIN_MANIFEST = os.path.join(\".claude-plugin\", \"plugin.json\")": "PLUGIN_MANIFEST = os.path.join(\".codex-plugin\", \"plugin.json\")",
+    "REFERENCES_DIR = os.path.join(\"assets\", \"references\")": "REFERENCES_DIR = \"references\"",
+    "plugins/quenching/agents/": "../../agents/"
+  },
+  "dropped_frontmatter": [
+    "argument-hint",
+    "allowed-tools",
+    "model",
+    "context",
+    "hooks"
+  ],
+  "manual_review": [
+    "AskUserQuestion",
+    "Task",
+    "Skill",
+    "context: fork",
+    "hooks",
+    "align — preserve the seven-front dependency order, applicability probes, not-applicable versus skipped vocabulary, and cross-front re-probe",
+    "ops:align — preserve the probe-before-inventory boundary, three-band disposition, and report-only judgement findings",
+    "ops:status — preserve the read-only boundary, finding bands, and explicit configuration/refusal states",
+    "ops:entrypoint:new — preserve its human gate, put as a decision sheet with no cap of four, when translating the body",
+    "proof:align — preserve the three-band plan, floor-deferral rule, and report-only judgement band",
+    "proof:status — preserve the read-only boundary and explicit suite-not-run statement",
+    "proof:layer:new — preserve the human gate as a decision sheet and separate test-migration confirmation"
+  ],
+  "runtime": {
+    "models": {
+      "opus": "gpt-6-astra",
+      "sonnet": "gpt-6.1-sol",
+      "haiku": "gpt-6-luna"
+    },
+    "provider": "codex-only",
+    "subagents": "host-native",
+    "telemetry": "host-provided-or-not-measured",
+    "unsupported_measurements": [
+      "claude-stream-json-surface-load",
+      "claude-transcript-token-cost"
+    ]
+  }
+}

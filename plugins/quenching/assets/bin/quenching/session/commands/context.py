@@ -8,6 +8,7 @@ from pathlib import Path
 
 from quenching.common.output import FINDINGS, OK, REFUSAL, emit, refuse
 from quenching.session.commands.cost import _meta
+from quenching.session.model import bare_agent
 from quenching.session.transcript import resolve_transcript
 
 TOKEN_KEYS = ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
@@ -92,7 +93,7 @@ def measure_context(path: Path) -> dict:
     agent_type = None
     if path.parent.name == "subagents" or path.stem.startswith("agent-"):
         agent_type = _meta(path).get("agentType")
-        role = ROLES.get(agent_type.removeprefix("quenching:"), "unknown") \
+        role = ROLES.get(bare_agent(agent_type), "unknown") \
             if isinstance(agent_type, str) else "unknown"
     peak = max(measured) if complete else None
     budget = BUDGETS.get(role)

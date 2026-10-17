@@ -72,5 +72,5 @@ target suite. Its five subcommands share the proof root and expose JSON payloads
 | `cq proof readme [--check\|--write] [--json]` | Check or regenerate the generated proof README. |
 | `cq proof ratchet check [--json]` / `raise [--json]` | Check or advance coverage floors from an existing coverage artifact. |
 
-The command surface complements this CLI with `/quenching:proof:layer:new`, which mints one
+The command surface complements this CLI with `/quenching-proof:proof:layer:new`, which mints one
 named layer and then uses these read/write rails to regenerate and verify its declaration.

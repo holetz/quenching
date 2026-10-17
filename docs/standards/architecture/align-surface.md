@@ -87,14 +87,14 @@ conductor boundary; it does not transfer ownership between toolchain, delivery o
 
 | Front | Command |
 | --- | --- |
-| `/docs/` | `/quenching:knowledge:align` |
+| `/docs/` | `/quenching-align:knowledge:align` |
 | `/.specs/` | **none** — see §The specs front lost its align with its backend, below |
-| `/.design/` | `/quenching:design:align` |
-| `.claude/` | `/quenching:components:align` |
-| `ops` | `/quenching:ops:align` |
-| `proof` | `/quenching:proof:align` |
-| `toolchain` | `/quenching:toolchain:align` |
-| `delivery` | `/quenching:delivery:align` |
+| `/.design/` | `/quenching-design:design:align` |
+| `.claude/` | `/quenching-align:components:align` |
+| `ops` | `/quenching-ops:ops:align` |
+| `proof` | `/quenching-proof:proof:align` |
+| `toolchain` | `/quenching-toolchain:toolchain:align` |
+| `delivery` | `/quenching-delivery:delivery:align` |
 | `security` | **none** — read-only pillar; see §The security subject is pillar-shaped, above |
 | `git` | **none** — see §The git pillar has no align, below |
 | all seven aligned fronts | `/align` — conducts them in dependency order, on one nested OK |
@@ -117,8 +117,8 @@ The specs front's align existed while the front had a **local** tree to converge
 its phased folders, its scaffold and its stray-file sweep. `remover-backend-local-do-plugin`
 retired that backend — the canonical documents live in the repository provider, GitHub Issues or
 Azure Boards — and the align went with it, because there is no longer a tree of this repo's own for
-a probe to find drifted. What survives is read (`/quenching:specs:status`, `cq specs doctor`) and
-ranking (`/quenching:specs:triage`, on the human's own confirmation), neither of which is a
+a probe to find drifted. What survives is read (`/quenching-specs:specs:status`, `cq specs doctor`) and
+ranking (`/quenching-specs:specs:triage`, on the human's own confirmation), neither of which is a
 convergence sweep.
 
 The name is deliberately not spelled out anywhere on this page. A three-segment command name is a
@@ -146,12 +146,12 @@ would be filling a table for a front that does not exist, the same reasoning
 own place in the command taxonomy.
 
 **A repo whose git hygiene has drifted is not this column's problem.** A stale `plan/*` branch or
-an orphaned worktree is what `cq git stale` reports and `/quenching:git:cleanup` prunes — on the
+an orphaned worktree is what `cq git stale` reports and `/quenching-specs:git:cleanup` prunes — on the
 human's own word, per that command's own doctrine — never something an align sweeps unattended,
 because deleting a branch is exactly the kind of irreversible action the align surface otherwise
 conducts only through a stage's own gate.
 
-The two real loops survive where the looping is real: `/quenching:knowledge:align` keeps its
+The two real loops survive where the looping is real: `/quenching-align:knowledge:align` keeps its
 internal fixpoint (memory → harness → glossary feed each other), and `/align` keeps the
 cross-front pass, because the seven aligned fronts feed each other (the design front's standards,
 the components front's registry, the ops front's inventory and registry, the proof front's gate,
@@ -165,11 +165,11 @@ categories).
 ### The proof front has its own align
 
 The proof front now has a local tree to converge: the target's declared test root, gate, measured
-surfaces, fixtures, layers, and CI evidence. `/quenching:proof:align` probes `cq proof doctor`
+surfaces, fixtures, layers, and CI evidence. `/quenching-proof:proof:align` probes `cq proof doctor`
 before reading that tree, applies only bounded structural repairs, and reports layer taxonomy,
 measurement scope, CI installation, and operations-entry-point coverage to the target owner. Its
 floor-deferral rule keeps a new coverage promise from being written while the measured surface is
-still changing; `/quenching:proof:status` remains the read-only view.
+still changing; `/quenching-proof:proof:status` remains the read-only view.
 
 ## The conductor categories
 
@@ -208,7 +208,7 @@ case is what permits an align to carry its front's content stages at all, instea
 living in a separate command nobody invokes.
 
 **A stage the probe cannot price is offered, never run to find out.** The standing example is the
-whole-bundle glossary sweep in `/quenching:knowledge:align`: no cheap signal exists, so it is gated on a free
+whole-bundle glossary sweep in `/quenching-align:knowledge:align`: no cheap signal exists, so it is gated on a free
 proxy (doc count against glossary size) and offered with its cost stated, never entered
 automatically.
 
@@ -227,7 +227,7 @@ including the no-op runs the probe rule exists to make free. A sweep whose clean
 tool calls should not spend a fourth narrating that it found nothing.
 
 It also removed the one thing every align wrote **outside its own front**. The specs front's align
-and `/quenching:specs:triage` reached into the `/docs/` bundle for a log line and nothing else; with that gone,
+and `/quenching-specs:specs:triage` reached into the `/docs/` bundle for a log line and nothing else; with that gone,
 the `specs` front writes into `/docs/` at exactly one point — a concluded spec's distillation,
 which mints real knowledge rather than a record of activity. The cross-front dependency in
 [§The aligned-front column](#the-aligned-front-column) records the dependency: `/docs/` still

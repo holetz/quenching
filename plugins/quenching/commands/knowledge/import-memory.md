@@ -1,22 +1,22 @@
 ---
 description: >-
-  Drain the project's Claude Code memory into the OKF bundle, then clear it. Use for "convert the memory into docs", "flush the memory into docs". Not for: external sources → /quenching:knowledge:import.
+  Drain the project's Claude Code memory into the OKF bundle, then clear it. Use for "convert the memory into docs", "flush the memory into docs". Not for: external sources → /quenching-align:knowledge:import.
 argument-hint: [optional-scope]
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(rm:*), Write, Edit, Task, AskUserQuestion
 ---
 
-# /quenching:knowledge:import-memory — drain project memory into the OKF bundle
+# /quenching-align:knowledge:import-memory — drain project memory into the OKF bundle
 
 **Input**: `$ARGUMENTS` (an optional subset or scope; omit to drain all project memory).
 
 Promotes the durable facts in **project memory** (`~/.claude/projects/<cwd>/memory/`) into the
-canonical OKF `/docs/` bundle, then clears them from memory. Assumes the bundle already exists (run `/quenching:knowledge:align` first if not). The memory-type → home routing
+canonical OKF `/docs/` bundle, then clears them from memory. Assumes the bundle already exists (run `/quenching-align:knowledge:align` first if not). The memory-type → home routing
 and the deletion contract are in [knowledge-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import-memory/memory-routing.md)
 §Routing table — memory `type` → likely home (content overrides) §Deletion contract;
 the home boundaries, `type` vocabulary, and molds are shared with
-`/quenching:knowledge:add` ([knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)
+`/quenching-align:knowledge:add` ([knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)
 §Classification — one question decides the home §Boundary tie-breakers §The frontmatter stamp) and
-`/quenching:knowledge:align` ([knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md)
+`/quenching-align:knowledge:align` ([knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md)
 §The canonical tree §The `type` vocabulary §Boundary rules,
 [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)
 §Concept docs (`check_concept`) §Resource integrity (per-doc — every mode)). Molds live at
@@ -27,7 +27,7 @@ the home boundaries, `type` vocabulary, and molds are shared with
 - **Plan first, execute on one confirmation.** Cover **every** memory, classify each, and present
   ONE table — every memory → its target home + doc path + whether it will be deleted. Execute the
   whole batch on a single OK. **Exception — cycle-authorized runs:**
-  invoked as a stage of `/quenching:knowledge:align`'s cycle (or of `/align`) under the cycle-authorization contract
+  invoked as a stage of `/quenching-align:knowledge:align`'s cycle (or of `/align`) under the cycle-authorization contract
   ([align/convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
   §The cycle-authorization contract), the plan is
   presented as narration, not a gate — the write-then-verify-then-delete contract is unchanged.
@@ -71,7 +71,7 @@ the home boundaries, `type` vocabulary, and molds are shared with
   documentary home **stays** in memory and is reported.
 - **Content decides the home; `metadata.type` is a hint.** Route by what the fact IS
   ([knowledge-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import-memory/memory-routing.md)
-  §Routing table — memory `type` → likely home (content overrides)), reusing `/quenching:knowledge:add`'s home
+  §Routing table — memory `type` → likely home (content overrides)), reusing `/quenching-align:knowledge:add`'s home
   boundaries. Split a memory that carries several facts into one concept per file.
 - **Salvage, don't transcribe.** A memory is terse; the doc is structured. Keep the
   `**Why:**`/`**How to apply:**` prose in the body, derive `resource` honestly (never invent),
@@ -81,7 +81,7 @@ the home boundaries, `type` vocabulary, and molds are shared with
   `authority: background`.
 - **Feed the glossary.** When a migrated memory introduces a repo-specific term, add its entry to
   `glossary.md` (the fixed A–Z lookup) as the tail of that memory's insert — the same
-  step `/quenching:knowledge:add`/`/quenching:knowledge:learn` run — so the term is resolvable once the doc lands.
+  step `/quenching-align:knowledge:add`/`/quenching-align:knowledge:learn` run — so the term is resolvable once the doc lands.
 - **One resolver, both platforms.** The memory directory is derived from the **native** working
   directory in Python, never from `pwd` or shell string-munging (Windows Git Bash reports the MSYS
   form `/c/Users/…`, whose encoding names no directory). Resolution is by data — exact match, then
@@ -184,7 +184,7 @@ stamp → index → glossary → self-check (against
 §Concept docs (`check_concept`) §Resource integrity (per-doc — every mode)) —
 with this skill's deltas kept inline:
 - `source` defaults to "project memory"; salvage the terse body into a structured doc.
-- A **unit of work** row instead follows the `/quenching:specs:create` path: run `cq specs new
+- A **unit of work** row instead follows the `/quenching-specs:specs:create` path: run `cq specs new
   <name>` and write the memory's content into `## Problem` and nothing else, then `cq specs
   validate --spec <id>` — the ID the create reported — as the self-check per
   [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
@@ -192,7 +192,7 @@ with this skill's deltas kept inline:
   (`cq knowledge validate` never covers the specs front); carry the memory source in the spec's
   own record.
   **Never stamp an OKF `type:` on it** — a spec is not a concept doc, and never invent a
-  `priority`: an unranked spec is `/quenching:specs:triage`'s to place.
+  `priority`: an unranked spec is `/quenching-specs:specs:triage`'s to place.
 - **Only after the self-check passes:** delete the memory `.md` (`rm` — the one destructive shell
   this command runs, and the only reason `Bash(rm:*)` is granted) and prune its `- [..](..)` line
   from `MEMORY.md` with `Edit`. Pass the path the Step 1 resolver printed, quoted. A failed write

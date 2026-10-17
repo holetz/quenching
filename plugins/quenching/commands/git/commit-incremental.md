@@ -1,6 +1,6 @@
 ---
 description: >-
-  Turn pending worktree changes into small cohesive commits with one confirmation. Use for "organize and commit my worktree". Not for: the staged index → /quenching:git:commit.
+  Turn pending worktree changes into small cohesive commits with one confirmation. Use for "organize and commit my worktree". Not for: the staged index → /quenching-specs:git:commit.
 disable-model-invocation: true
 argument-hint: [optional subject prefix]
 allowed-tools: >-
@@ -9,7 +9,7 @@ allowed-tools: >-
   Bash(git commit:*), Bash(git log:*), Bash(python3:*), AskUserQuestion
 ---
 
-# /quenching:git:commit-incremental — turn the current worktree into atomic commits
+# /quenching-specs:git:commit-incremental — turn the current worktree into atomic commits
 
 **Input**: `$ARGUMENTS` — an optional subject prefix; absent → use the target convention or the
 fallback below.

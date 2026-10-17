@@ -12,8 +12,8 @@ import subprocess
 from quenching.common.git import _git
 from quenching.common.output import emit
 from quenching.git.base import resolve_base
-from quenching.git.worktrees import worktree_branch as _worktree_branch
-from quenching.git.worktrees import worktree_gitdir as _worktree_gitdir
+from quenching.session.worktrees import worktree_branch as _worktree_branch
+from quenching.session.worktrees import worktree_gitdir as _worktree_gitdir
 
 UNREGISTERED_WORKTREES_KEY = "unregisteredWorktrees"
 

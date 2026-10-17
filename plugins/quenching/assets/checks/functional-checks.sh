@@ -8,9 +8,13 @@
 # asserts on what the process DID (a Read/Bash read of a given path, a Skill invoked by a given name) and
 # never on what its prose claims. A self-report is not a test.
 #
-# EVERY check loads the plugin with `--plugin-dir`, from a sandbox that enables NO plugin
-# and project settings only; user-installed plugins are excluded without moving authentication.
-# The startup plugin inventory must contain only this checkout and CLI builtins. Resolving through the
+# EVERY check loads the GENERATED modules with `--plugin-dir`, one flag per module, from a sandbox
+# that enables NO plugin and reads project settings only; user-installed plugins are excluded
+# without moving authentication. The source tree `plugins/quenching` is never loaded: it registers
+# `/quenching:*` while its bodies cite the published `/quenching-<module>:*`, so only the generated
+# trees can prove what an install registers. A read observed under the source is therefore a failure,
+# like a cache read. The startup plugin inventory must contain only these checkout modules and CLI
+# builtins. Resolving through the
 # marketplace instead — which checks 1-3 used to do — serves whatever `~/.claude/plugins/cache/`
 # last installed: measured 2026-07-28, a 3.0.0 tree still carrying a command 4.2.0 had deleted,
 # so the repo's only check for a `commands/**` change was grading a copy nobody had edited.
@@ -23,15 +27,15 @@
 #           2 nothing could be measured — no verdict, do not read it as a pass
 #
 # WHO RUNS THIS, AND WHEN. It belongs to the **components front**: the commands that change the surface
-# are the ones that prove it still loads — `/quenching:components:command:new` after minting or editing a command here,
-# and `/quenching:components:command:eval` when it tunes a description. It is NOT a repo-wide post-change mandate and it
+# are the ones that prove it still loads — `/quenching-align:components:command:new` after minting or editing a command here,
+# and `/quenching-align:components:command:eval` when it tunes a description. It is NOT a repo-wide post-change mandate and it
 # does NOT belong in a spec's `## Validation` or a task's `verify:`. Measured 2026-07-29 over the
 # whole archive: every red run this harness ever produced traced to a defect in THIS SCRIPT — a
 # cp1252 read, a hardcoded marketplace ref, a turn cap, a flaky probe — and not one to a surface
 # regression. A check that has only ever caught itself earns a narrow trigger, not a broad one.
 #
 # Two further triggers, both opt-in by construction. `QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh`
-# runs checks 1, 2 and 4 inside the repository gate, and there exit 1 OR 2 fails the gate: whoever
+# runs checks 1, 2, 4 and 5 inside the repository gate, and there exit 1 OR 2 fails the gate: whoever
 # asked for the measurement does not accept "inconclusive", and a missing `claude` fails too. Without
 # the variable the gate prints SKIPPED and stays deterministic. `/release` runs that gated form before
 # the bump and blocks on any exit other than 0. CI runs only `--selfcheck` and `--selftest`: it has no
@@ -39,9 +43,14 @@
 #
 # COST — each check is a full agent session, so scope the run to what the change can break:
 #
-#   (no flag)      checks 1, 2, 4 — command bodies, citation paths, and both declared fronts
-#   --only 3       spoken routing — OPT-IN, see below
-#   --only 1,2,3,4 all four
+#   (no flag)        checks 1, 2, 4, 5 — command bodies, citation paths, both declared fronts,
+#                    and the specs-only arrangement
+#   --only 3         spoken routing — OPT-IN, see below
+#   --only 1,2,3,4,5 all five
+#
+# TWO ARRANGEMENTS. Checks 1-4 load all eight principal modules (parity with the monolith they
+# replace); check 5 loads `quenching-specs` alone, the smallest install that must still work.
+# A principal module whose tree is not generated yet makes every session check exit 2.
 #
 # TWO GUARDS, TWO ZERO-COST MODES. The static guard in --selfcheck reads this file:
 # every non-commented `claude -p` must carry --plugin-dir and the project settings filter; no `enabledPlugins` may
@@ -50,21 +59,21 @@
 # tool_use events. The --selfcheck mode runs only the source guard, while --selftest
 # exercises the observed-path guard against a synthetic capture, and neither starts
 # a session.
-# The negative half of the observed-path guard is mandatory: rejecting cache and
-# marketplace paths remains correct even if Claude Code canonicalizes or copies
-# the plugin directory, while the positive $PLUGIN prefix stays diagnostic.
+# The negative halves of the observed-path guard are mandatory: rejecting cache,
+# marketplace and source-tree paths remains correct even if Claude Code canonicalizes or copies
+# a module directory, while the positive loaded-module prefix stays diagnostic.
 #
-# CHECK 3 IS OPT-IN, AND `/quenching:components:command:eval` IS THE BETTER INSTRUMENT. Check 3 is five of the seven
+# CHECK 3 IS OPT-IN, AND `/quenching-align:components:command:eval` IS THE BETTER INSTRUMENT. Check 3 is five of the seven
 # sessions, the only NON-DETERMINISTIC one (recorded twice: same tree, opposite verdicts on
-# identical runs), and a strictly worse duplicate of `/quenching:components:command:eval` step 7 — which measures the
+# identical runs), and a strictly worse duplicate of `/quenching-align:components:command:eval` step 7 — which measures the
 # same thing with should-trigger AND should-not-trigger prompts, graded, per command, instead of
-# five hardcoded phrases with no boundary arm. Reach for `/quenching:components:command:eval` when a description changed;
+# five hardcoded phrases with no boundary arm. Reach for `/quenching-align:components:command:eval` when a description changed;
 # reach for `--only 3` only to re-guard the five phrases already tuned here.
 #
 # Established by the `collapse-skills-into-commands` spec, task 7.1.
 set -uo pipefail
 
-ONLY="1,2,4"
+ONLY="1,2,4,5"
 REPO=""
 SELF_CHECK=0
 SELF_TEST=0
@@ -87,7 +96,26 @@ REPO="$(cd "$REPO" 2>/dev/null && pwd)" || {
   printf 'functional-checks: plugin repository is not a directory: %s\n' "$REPO" >&2
   exit 2
 }
-PLUGIN="$REPO/plugins/quenching"
+SOURCE="$REPO/plugins/quenching"
+# The principal modules, the `cq` owner first: every arrangement loads it, because no other module
+# ships `bin/cq`. Read from the module manifest so a new module cannot be born outside the gate.
+mapfile -t MODULE_DIRS < <(python3 -c '
+import json, sys
+root = sys.argv[1]
+mods = [m for m in json.load(open(root + "/plugins/quenching/assets/modules.json", encoding="utf-8"))["modules"] if "owned" in m]
+mods.sort(key=lambda m: not m.get("cqPathOwner"))
+for m in mods: print(root + "/" + m["path"])
+' "$REPO")
+if [ "${#MODULE_DIRS[@]}" -eq 0 ]; then
+  printf 'functional-checks: no principal module in %s/plugins/quenching/assets/modules.json\n' "$REPO" >&2
+  exit 2
+fi
+SPECS="${MODULE_DIRS[0]}"
+# `--plugin-dir` pairs for every principal module after the `cq` owner — the all-enabled arrangement.
+ALL_EXTRA=()
+for dir in "${MODULE_DIRS[@]:1}"; do ALL_EXTRA+=(--plugin-dir "$dir"); done
+# The module roots the current arrangement loaded; `anchored` accepts a read under any of them.
+LOADED=("${MODULE_DIRS[@]}")
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 PASS=0; FAIL=0; INCONC=0; MEASURED=0
@@ -180,7 +208,8 @@ want=sys.argv[1]
 for line in open(sys.argv[2], encoding="utf-8", errors="replace"):
     try: ev=json.loads(line)
     except Exception: continue
-    for c in (ev.get("message",{}).get("content") or []):
+    msg=ev.get("message") if isinstance(ev,dict) else None
+    for c in ((msg.get("content") if isinstance(msg,dict) else None) or []):
         if isinstance(c,dict) and c.get("type")=="tool_use" and c.get("name")==want:
             print(json.dumps(c.get("input",{})))
 ' "$1" "$2"
@@ -201,6 +230,8 @@ anchored () {
   local forbidden=""
   local result=yes
 
+  local dir inside=no
+
   forbidden="$(grep -nE '/plugins/(cache|marketplaces)/' <<<"$observed" || true)"
   if [ -n "$forbidden" ]; then
     printf 'FAIL anchor: observed path came from cache or marketplace\n'
@@ -208,31 +239,42 @@ anchored () {
     result=no
   fi
 
-  if ! grep -qF "$PLUGIN/" <<<"$observed"; then
-    printf 'FAIL anchor: observed path is outside the expected plugin checkout\n'
+  forbidden="$(grep -nF "$SOURCE/" <<<"$observed" || true)"
+  if [ -n "$forbidden" ]; then
+    printf 'FAIL anchor: observed path came from the unloaded source tree\n'
+    printf '%s\n' "$forbidden"
+    result=no
+  fi
+
+  for dir in "${LOADED[@]}"; do
+    if grep -qF "$dir/" <<<"$observed"; then inside=yes; fi
+  done
+  if [ "$inside" = no ]; then
+    printf 'FAIL anchor: observed path is outside every loaded module\n'
     printf '  observed: %s\n' "$observed"
-    printf '  expected: %s/\n' "$PLUGIN"
+    printf '  expected under: %s/\n' "${LOADED[@]}"
     result=no
   fi
 
   [ "$result" = yes ]
 }
 
-# Exercise both halves of anchored without starting a session. The first event is a valid
-# checkout path; the second is the stale source this guard must reject.
+# Exercise every branch of anchored without starting a session: a loaded module's path passes;
+# a cache copy, the unloaded source tree, and a module outside the arrangement are rejected.
 selftest () {
   local fixture="$WORK/selftest.jsonl"
   local result=0
   local -a inputs=()
 
   cat > "$fixture" <<EOF
-{"message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"$PLUGIN/assets/references/selftest.md"}}]}}
+{"message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"${MODULE_DIRS[1]}/assets/references/selftest.md"}}]}}
 {"message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"/plugins/cache/quenching/3.0.0/assets/references/selftest.md"}}]}}
+{"message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"$SOURCE/assets/references/selftest.md"}}]}}
 EOF
   mapfile -t inputs < <(tools Read "$fixture")
 
-  if [ "${#inputs[@]}" -ne 2 ]; then
-    printf 'FAIL selftest: expected two captured Read inputs, got %s\n' "${#inputs[@]}"
+  if [ "${#inputs[@]}" -ne 3 ]; then
+    printf 'FAIL selftest: expected three captured Read inputs, got %s\n' "${#inputs[@]}"
     return 1
   fi
 
@@ -249,6 +291,23 @@ EOF
   else
     printf 'PASS selftest: rejected the cache path\n'
   fi
+
+  if anchored "${inputs[2]}" >/dev/null; then
+    printf 'FAIL selftest: accepted the unloaded source path\n'
+    result=1
+  else
+    printf 'PASS selftest: rejected the unloaded source path\n'
+  fi
+
+  # The specs-only arrangement: a module that is not loaded is not a valid origin either.
+  LOADED=("$SPECS")
+  if anchored "${inputs[0]}" >/dev/null; then
+    printf 'FAIL selftest: accepted a module outside the specs-only arrangement\n'
+    result=1
+  else
+    printf 'PASS selftest: rejected a module outside the specs-only arrangement\n'
+  fi
+  LOADED=("${MODULE_DIRS[@]}")
 
   return "$result"
 }
@@ -277,14 +336,15 @@ for line in open(sys.argv[1], encoding="utf-8", errors="replace"):
     if not isinstance(plugins,list) or not plugins: sys.exit(2)
     paths=[p.get("path") if isinstance(p,dict) else None for p in plugins]
     if any(not isinstance(p,str) or not p for p in paths): sys.exit(2)
-    expected=Path(sys.argv[2]).resolve()
-    foreign=[p for p in plugins if p["path"]!="builtin" and Path(p["path"]).resolve()!=expected]
+    expected={Path(a).resolve() for a in sys.argv[2:]}
+    foreign=[p for p in plugins if p["path"]!="builtin" and Path(p["path"]).resolve() not in expected]
     if foreign:
         print("FAIL isolation: unexpected plugins: " + json.dumps(foreign))
         sys.exit(1)
-    sys.exit(0 if any(p!="builtin" and Path(p).resolve()==expected for p in paths) else 2)
+    loaded={Path(p).resolve() for p in paths if p!="builtin"}
+    sys.exit(0 if expected <= loaded else 2)
 sys.exit(2)
-' "$1" "$PLUGIN"
+' "$1" "${LOADED[@]}"
 }
 
 evidence () {
@@ -302,14 +362,15 @@ n=0
 for line in open(sys.argv[1], encoding="utf-8", errors="replace"):
     try: ev=json.loads(line)
     except Exception: continue
-    for c in (ev.get("message",{}).get("content") or []):
+    msg=ev.get("message") if isinstance(ev,dict) else None
+    for c in ((msg.get("content") if isinstance(msg,dict) else None) or []):
         if isinstance(c,dict) and c.get("type")=="tool_use": n+=1
 print(n)
 ' "$1")" -gt 0 ] || return 1
   MEASURED=$((MEASURED+1))
 }
 
-# Every check gets a throwaway git repo that enables NO plugin — the plugin arrives by
+# Every check gets a throwaway git repo that enables NO plugin — the modules arrive by
 # --plugin-dir with project settings only. The startup inventory verifies that no external
 # installed plugin leaked in; CLI builtins are permitted.
 #
@@ -318,11 +379,11 @@ print(n)
 #   - an intent-shaped phrase names a subject ("our migrations"), and where the subject does
 #     not exist the session correctly challenges the premise instead of routing. Probe d
 #     failed in a bare box with "There are no migrations to audit", while the same phrase
-#     routed in the /quenching:components:agent:new eval, whose fixture carried a migration.
+#     routed in the /quenching-align:components:agent:new eval, whose fixture carried a migration.
 #   - a phrase whose command wants an OKF bundle ("add a standard") spends its turns looking
 #     for one. That cost used to be hidden because probe c ran against REPO, which has a
 #     bundle; sandboxing removed it and pushed the probe into the turn cap.
-#   - a command that reports on a workspace ("/quenching:knowledge:status") wants one to report on.
+#   - a command that reports on a workspace ("/quenching-align:knowledge:status") wants one to report on.
 # So every box gets a migration, a minimal bundle and an empty `specs/plans/`: the smallest repo
 # every prompt below can be answered in without exploring to find out its subject is missing.
 # The folder alone is the workspace — `plans/index.md` is a retired artifact, and `cq specs`
@@ -338,7 +399,16 @@ newbox () {
   ( cd "$1" && git init -q . && printf '# scratch\n' > README.md && git add -A && git commit -qm init )
 }
 
-echo "functional-checks — plugin at $PLUGIN"
+# Every session loads generated trees; one that was never generated has nothing to measure.
+for dir in "${MODULE_DIRS[@]}"; do
+  if [ ! -f "$dir/.claude-plugin/plugin.json" ]; then
+    printf 'functional-checks: module tree not generated: %s (run scripts/generate_plugin_modules.py --write)\n' "$dir" >&2
+    exit 2
+  fi
+done
+
+echo "functional-checks — modules under $REPO/plugins"
+printf '  loaded: %s\n' "${MODULE_DIRS[@]##*/}"
 echo "  checks: $ONLY"
 echo
 
@@ -348,7 +418,7 @@ echo
 # The prompt never names a path: the command must report the citations IT was given, so a
 # Read landing under assets/references/ proves the placeholder resolved in production.
 #
-# It also covers re-homed references for free: /quenching:knowledge:status cites a reference directory that
+# It also covers re-homed references for free: /quenching-align:knowledge:status cites a reference directory that
 # the knowledge-flow consolidation owns, so a stale citation fails here rather than silently
 # reading nothing.
 #
@@ -358,7 +428,7 @@ echo
 if want 1; then
 echo "1. a collapsed command loads and cites its re-homed reference"
 newbox "$WORK/sandbox1"
-( cd "$WORK/sandbox1" && claude -p --plugin-dir "$PLUGIN" --setting-sources project "/quenching:knowledge:status
+( cd "$WORK/sandbox1" && claude -p --plugin-dir "$SPECS" "${ALL_EXTRA[@]}" --setting-sources project "/quenching-align:knowledge:status
 
 Before the report: list the absolute path of every reference file THIS COMMAND'S OWN BODY tells
 you to consult, exactly as the body spells them. Then Read the first one. Do not guess a path —
@@ -389,7 +459,7 @@ front_probe () {
   local id="$1" command="$2"
   local box="$WORK/front-$id"
   newbox "$box"
-  ( cd "$box" && claude -p --plugin-dir "$PLUGIN" --setting-sources project "$command
+  ( cd "$box" && claude -p --plugin-dir "$SPECS" "${ALL_EXTRA[@]}" --setting-sources project "$command
 
 Before the report: list the absolute path of every reference file THIS COMMAND'S OWN BODY tells
 you to consult, exactly as the body spells them. Then Read the first one. Do not guess a path —
@@ -405,15 +475,15 @@ copy it from the body you were given." \
     inconc "$command read nothing under a skills/ tree" "missing tool activity or verifiable plugin inventory"
   fi
 }
-front_probe ops /quenching:ops:status
-front_probe proof /quenching:proof:status
+front_probe ops /quenching-ops:ops:status
+front_probe proof /quenching-proof:proof:status
 fi
 
 # --------------------------------------------------------------------------- #
 # 2. a conductor reaches its stage BY NAME
 #
 # The highest-risk path: a wrong name produces a conductor that runs and does nothing. It runs
-# against a throwaway repo — /align is invasive — with the plugin loaded from $PLUGIN.
+# against a throwaway repo — /align is invasive — with the modules loaded by --plugin-dir.
 # --------------------------------------------------------------------------- #
 # These assertions grade Skill names, not observed paths; the static --plugin-dir guard is the
 # only path guard for this check, so anchored does not apply here.
@@ -425,24 +495,24 @@ newbox "$WORK/sandbox2"
 # disobedience, not the routing. Seed one real knowledge finding (a concept doc with no
 # frontmatter) so Front 1 has work and the conductor must reach it.
 printf '# Orphan\n' > "$WORK/sandbox2/docs/standards/orphan.md"
-( cd "$WORK/sandbox2" && claude -p --plugin-dir "$PLUGIN" --setting-sources project "/quenching:align
+( cd "$WORK/sandbox2" && claude -p --plugin-dir "$SPECS" "${ALL_EXTRA[@]}" --setting-sources project "/quenching-align:align
 
 You have my authorization for the whole run — treat the plan gate as granted and proceed. I only
 need you to reach and INVOKE Front 1 via the Skill tool; stop right after that stage is invoked." \
   --max-turns 12 --output-format stream-json --verbose < /dev/null > "$WORK/2.jsonl" 2>&1 )
 if evidence "$WORK/2.jsonl"; then
-  if grep -q '"quenching:knowledge:align"' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=yes
+  if grep -q '"quenching-align:knowledge:align"' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=yes
   elif grep -q '"subtype":"error_max_turns"' "$WORK/2.jsonl"; then r=cap
   else r=no; fi
   if [ "$r" = cap ]; then
-    inconc "invoked quenching:knowledge:align by name" "hit the turn cap before routing"
+    inconc "invoked quenching-align:knowledge:align by name" "hit the turn cap before routing"
   else
-    check "$r" "invoked quenching:knowledge:align by name"
+    check "$r" "invoked quenching-align:knowledge:align by name"
   fi
   if grep -qE '"skill": *"[^"]*quenching-knowledge-align"' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=no; else r=yes; fi
   check "$r" "invoked no retired quenching-* skill name"
 else
-  inconc "invoked quenching:knowledge:align by name" "missing tool activity or verifiable plugin inventory"
+  inconc "invoked quenching-align:knowledge:align by name" "missing tool activity or verifiable plugin inventory"
   inconc "invoked no retired quenching-* skill name" "missing tool activity or verifiable plugin inventory"
 fi
 fi
@@ -459,10 +529,10 @@ fi
 # verifying is not a check, and the mess it leaves is indistinguishable from real work.
 #
 # The probe measures the Skill call, which happens before the routed body acts, so it denies the
-# write tools: a probe that routes to /quenching:specs:create must never be able to land a spec.
+# write tools: a probe that routes to /quenching-specs:specs:create must never be able to land a spec.
 #
 # OPT-IN, AND NOT THE FIRST CHOICE: five sessions, non-deterministic, and duplicating what
-# `/quenching:components:command:eval` step 7 measures properly. See the COST note at the top.
+# `/quenching-align:components:command:eval` step 7 measures properly. See the COST note at the top.
 # --------------------------------------------------------------------------- #
 # These assertions also grade Skill names rather than observed paths; the static --plugin-dir
 # guard remains the only path guard for this check, so anchored does not apply here.
@@ -477,7 +547,7 @@ TIPS_BEFORE="$(store_tips)"
 # --max-turns is 14, not 4. A probe whose phrase needs any orientation first (a Glob, a Read)
 # spends turns before it routes, and a low cap cuts it off mid-orientation — which reports a
 # FALSE miss, and a false miss here argues for deleting a trigger that works. Measured while
-# building the /quenching:components:agent:new eval: at 3 turns two working triggers reported as misses. 8 was
+# building the /quenching-align:components:agent:new eval: at 3 turns two working triggers reported as misses. 8 was
 # then enough in a rich fixture but not in these boxes, where two probes hit the cap while still
 # orienting. A probe that still hits the cap is reported INCONCLUSIVE rather than graded, so
 # a cap that is one day too low again can never masquerade as a routing failure.
@@ -485,7 +555,7 @@ probe () {
   local id="$1" phrase="$2" want="$3"
   local box="$WORK/probe-$id"
   newbox "$box" >/dev/null 2>&1
-  ( cd "$box" && claude -p --plugin-dir "$PLUGIN" --setting-sources project "$phrase" \
+  ( cd "$box" && claude -p --plugin-dir "$SPECS" "${ALL_EXTRA[@]}" --setting-sources project "$phrase" \
       --disallowedTools "Bash Write Edit NotebookEdit" --max-turns 14 --output-format stream-json --verbose \
       < /dev/null > "$WORK/3$id.jsonl" 2>&1 )
   if ! evidence "$WORK/3$id.jsonl"; then
@@ -498,18 +568,47 @@ probe () {
     check no "\"$phrase\" -> $want"
   fi
 }
-probe a "park a spec for later: the export CSV endpoint times out on large accounts" "quenching:specs:create"
-probe b "capture this for the backlog — we should look at retry logic on the webhook sender"  "quenching:specs:create"
-probe c "add a standard: we always use snake_case for database columns"                       "quenching:knowledge:add"
+probe a "park a spec for later: the export CSV endpoint times out on large accounts" "quenching-specs:specs:create"
+probe b "capture this for the backlog — we should look at retry logic on the webhook sender"  "quenching-specs:specs:create"
+probe c "add a standard: we always use snake_case for database columns"                       "quenching-align:knowledge:add"
 
 # One probe per mint added by the capability layer. Both phrases are intent-shaped — they name
 # no artifact and type no `/` — because that is the routing the descriptions have to earn.
-# Probe e also guards the trigger the /quenching:components:hook:new eval added: it is the exact phrase that
+# Probe e also guards the trigger the /quenching-align:components:hook:new eval added: it is the exact phrase that
 # measured as a MISS before that edit, so a regression puts it straight back to failing here.
-probe d "set up something that audits our migrations and reports back"                        "quenching:components:agent:new"
-probe e "I want something to catch it automatically whenever a migration lands"               "quenching:components:hook:new"
+probe d "set up something that audits our migrations and reports back"                        "quenching-align:components:agent:new"
+probe e "I want something to catch it automatically whenever a migration lands"               "quenching-align:components:hook:new"
 if [ "$(store_tips)" = "$TIPS_BEFORE" ]; then r=yes; else r=no; fi
 check "$r" "the routing probes left the spec store branch untouched"
+fi
+
+# --------------------------------------------------------------------------- #
+# 5. the specs-only arrangement: a spec body loads with no other module enabled
+#
+# The smallest install there is. `quenching-specs` alone must register its own commands and read
+# its own references; a read under any other module, or under the source, fails the anchor,
+# because with one module loaded no other origin exists.
+# --------------------------------------------------------------------------- #
+if want 5; then
+echo "5. the specs-only arrangement loads a specs body from quenching-specs alone"
+LOADED=("$SPECS")
+newbox "$WORK/sandbox5"
+( cd "$WORK/sandbox5" && claude -p --plugin-dir "$SPECS" --setting-sources project "/quenching-specs:specs:status
+
+Before the report: list the absolute path of every reference file THIS COMMAND'S OWN BODY tells
+you to consult, exactly as the body spells them. Then Read the first one. Do not guess a path —
+copy it from the body you were given." \
+  --max-turns 10 --output-format stream-json --verbose < /dev/null > "$WORK/5.jsonl" 2>&1 )
+if evidence "$WORK/5.jsonl"; then
+  if anchored "$(reference_reads "$WORK/5.jsonl")"; then r=yes; else r=no; fi
+  check "$r" "/quenching-specs:specs:status read only quenching-specs"
+  if grep -q '"quenching-' <<<"$(tools Skill "$WORK/5.jsonl" | grep -v '"quenching-specs:')"; then r=no; else r=yes; fi
+  check "$r" "invoked no skill of a module that is not loaded"
+else
+  inconc "/quenching-specs:specs:status read only quenching-specs" "missing tool activity or verifiable plugin inventory"
+  inconc "invoked no skill of a module that is not loaded" "missing tool activity or verifiable plugin inventory"
+fi
+LOADED=("${MODULE_DIRS[@]}")
 fi
 
 echo

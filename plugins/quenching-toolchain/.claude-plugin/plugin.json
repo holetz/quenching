@@ -1,0 +1,15 @@
+{
+  "name": "quenching-toolchain",
+  "version": "6.4.0",
+  "description": "The toolchain front: /quenching-toolchain:toolchain:* aligns and reports the toolchain a repository declares. Requires quenching-specs for cq.",
+  "author": {
+    "name": "Israel Holetz",
+    "email": "holetz@gmail.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "toolchain",
+    "conformance"
+  ]
+}

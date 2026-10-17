@@ -1,23 +1,23 @@
 ---
 description: >-
-  Import an external source (files, folders, URLs) into the OKF bundle as many docs. Use for "ingest a source into the base", "generate OKF docs from these files". Not for: one item → /quenching:knowledge:add.
+  Import an external source (files, folders, URLs) into the OKF bundle as many docs. Use for "ingest a source into the base", "generate OKF docs from these files". Not for: one item → /quenching-align:knowledge:add.
 argument-hint: [source-paths-or-urls]
 allowed-tools: Bash(cq:*), Read, Grep, Glob, WebFetch, Bash(python3:*), Write, Edit, Task, AskUserQuestion
 ---
 
-# /quenching:knowledge:import — import an external source into the OKF bundle
+# /quenching-align:knowledge:import — import an external source into the OKF bundle
 
 **Input**: `$ARGUMENTS` (the source to ingest — local file/folder paths, or URLs).
 
 A Claude-native analogue of the OKF reference implementation's `enrich` command — **without**
 BigQuery or heavy dependencies. It reads an external source (local files/folders, or URLs)
 and mints **multiple** conformant OKF concept docs from it. It is a **batch fan-out of
-`/quenching:knowledge:add`**: [`knowledge-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)
+`/quenching-align:knowledge:add`**: [`knowledge-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)
 is the **single owner** of the per-doc procedure (classify → stamp → index → glossary →
 self-check); this skill **cites** it and adds only the ingestion-safety deltas below. Source
 scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
 [knowledge-import/sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import/sources.md). Requires an existing OKF bundle — run
-`/quenching:knowledge:align` first if `/docs/` is not one.
+`/quenching-align:knowledge:align` first if `/docs/` is not one.
 
 ## Doctrine (own deltas; the per-doc procedure is homes.md)
 
@@ -41,7 +41,7 @@ scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
   ephemeral chatter — they are not durable knowledge. A secret is **referenced, never copied**.
 - **Additive only.** Enrich never deletes a source or a bundle doc; it mints and merges.
 
-## Workflow (force-with-1-confirmation, like `/quenching:knowledge:align`)
+## Workflow (force-with-1-confirmation, like `/quenching-align:knowledge:align`)
 
 ### 1. Scope the source (read-only)
 Identify the inputs: local files/folders (`Read`/`Glob`/`Grep`) or URLs (`WebFetch`). For a
@@ -63,7 +63,7 @@ doc, with the passage from each side), carrying the URI or the term that decided
 slice** out to return **compact unit candidates** (home / `type` / path / one-line + source
 anchor + its `source_uri`), never full bodies; the orchestrator merges and judges. Extraction sub-agents may run
 on a **cheap model/effort** — enrich **deletes nothing**, so a misclassification only misfiles
-a doc (correctable), unlike `/quenching:knowledge:import-memory` (see the model policy in
+a doc (correctable), unlike `/quenching-align:knowledge:import-memory` (see the model policy in
   [README.md §model-policy](${CLAUDE_PLUGIN_ROOT}/README.md#model-policy)). **Done when:** every unit
   has a new/imported/resemblance/contradicts verdict with its source anchor.
 
@@ -85,7 +85,7 @@ residue.
 
 A single OK executes the whole batch. A
 minted/edited doc whose change reaches the target's **product code** is its **own**
-confirmation item (mirrors `/quenching:knowledge:align`) — never folded into the batch OK.
+confirmation item (mirrors `/quenching-align:knowledge:align`) — never folded into the batch OK.
 **Done when:** the complete mint/enrich table and every separate code-coupled item are presented.
 
 ### 4. Execute on OK — mint each doc via the insert procedure
@@ -111,7 +111,7 @@ then run `cq knowledge validate docs` over the
 bundle: **zero errors**, and the structural WARNs (`dir-no-index` / `index-broken-link` /
 `index-orphan`) cleared. Close the report with a **Residue** block — units deferred, sources left unfetched, MERGE
 targets skipped, contradictions without a decision — one line per item, each with what resuming
-it needs (the seed list of a fresh run). Offer it to the human as a `/quenching:specs:create`
+it needs (the seed list of a fresh run). Offer it to the human as a `/quenching-specs:specs:create`
 capture; never create the spec unasked, never write the residue into the repo.
 **Done when:** validation has run and the Residue block is reported.
 

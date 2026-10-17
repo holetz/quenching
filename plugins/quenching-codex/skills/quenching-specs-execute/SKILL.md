@@ -113,10 +113,10 @@ the offer (worktree leading with its cost stated, `worktreeSetup`, the `branch:`
 branch's `quenching-specs:` marking):
 
 ```
-Skill("quenching:git:branch", "<id>")
+Skill("quenching-specs:git:branch", "<id>")
 ```
 
-**When this run's input carried `autonomous`, pass it on** — `Skill("quenching:git:branch", "<id> autonomous")`
+**When this run's input carried `autonomous`, pass it on** — `Skill("quenching-specs:git:branch", "<id> autonomous")`
 — so the command takes the worktree unasked, from the remote base, instead of stopping the run on
 its question. Otherwise it asks on its own decision sheet; it is a `Skill` call, never `context: fork`. When it returns,
 re-read the state it left:

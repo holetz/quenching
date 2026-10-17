@@ -7,7 +7,7 @@ description: >-
   asks for confirmation before touching anything; when the primary branch carries exactly
   one PR since the last release, asks once whether this is a release or a habit. When it
   finishes: the bump and its tag live on the primary branch's tip, on origin. Not for:
-  concluding or merging ONE spec into the primary branch → /quenching:specs:conclude.
+  concluding or merging ONE spec into the primary branch → /quenching-specs:specs:conclude.
 argument-hint: [version — optional, skips the proposal and confirms this exact X.Y.Z]
 allowed-tools: Bash(git:*), Bash(python3:*), Bash(QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh:*), Read, AskUserQuestion
 ---

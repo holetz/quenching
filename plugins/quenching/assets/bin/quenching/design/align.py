@@ -185,7 +185,7 @@ def _product_document(product: dict[str, Any]) -> str:
         "description: Confirmed product truth projected into PRODUCT.md for design consumers",
         "resource: PRODUCT.md", "tags: [product, design]", f"timestamp: {today}",
         "audience: both", "authority: background",
-        "source: confirmed product interview conducted by /quenching:design:align",
+        "source: confirmed product interview conducted by /quenching-design:design:align",
         "maintainer: project", "---", "", "# Product record",
     ]
     for heading in PRODUCT_SECTIONS:

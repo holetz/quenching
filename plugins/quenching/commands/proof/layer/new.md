@@ -1,12 +1,12 @@
 ---
 description: >-
-  Mint one named proof test layer: marker, reach, budget, fixtures, README. Use for "create a proof layer", "add a test layer". Not for: existing drift → /quenching:proof:align.
+  Mint one named proof test layer: marker, reach, budget, fixtures, README. Use for "create a proof layer", "add a test layer". Not for: existing drift → /quenching-proof:proof:align.
 disable-model-invocation: true
 argument-hint: <layer-name> [optional-target-root]
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(mkdir:*), Bash(mv:*), AskUserQuestion, Write, Edit
 ---
 
-# /quenching:proof:layer:new — mint one proof layer
+# /quenching-proof:proof:layer:new — mint one proof layer
 
 **Input**: `$ARGUMENTS` — one new layer name and an optional target repository root. A layer name
 must be a single stable directory/marker name; the command never invents a taxonomy or mints more
@@ -126,7 +126,7 @@ moved or left in place, README digest, and the closing doctor payload. State whe
 is empty by design and state plainly that the target suite was not run.
 
 If a finding remains, distinguish the new layer's evidence from pre-existing residue and name
-`/quenching:proof:align` or the target owner's reviewed change that closes it. Do not call an empty
+`/quenching-proof:proof:align` or the target owner's reviewed change that closes it. Do not call an empty
 new layer healthy; report its declared state and the command that owns the next decision.
 
 **Done when:** the five-edit contract has a static closing proof, the migration decision is visible,
