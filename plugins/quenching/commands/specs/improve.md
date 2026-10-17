@@ -76,8 +76,7 @@ fewer.
 ### 5. Decide with the human
 Collect the open questions whose answer changes the plan: identity or scope, irreversible
 migrations, breaking changes, autonomy limits. Leave out the ones you can settle with a sound
-default. Ask them in rounds of at most 4 with **AskUserQuestion**, recommendation first, each next
-round shaped by the last. Then present the backlog as ordered waves with dependencies, and ask which
+default. Ask them on decision sheets ([questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared mechanics §1), no cap: independent ones on one sheet, recommendation first, each dependent one on the next sheet, shaped by the last. Then present the backlog as ordered waves with dependencies, and ask which
 part to approve: all, some waves, or chosen items. **Ask the epic's autonomy policy** in the same
 rounds, recommendation first: develop the members to `ready` now with the human present (each one
 reaches `approved by=human`), or authorize forced execution (`/quenching:specs:orchestrate

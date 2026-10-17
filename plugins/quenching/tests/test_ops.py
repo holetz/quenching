@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import os
 import pathlib
 import re
 import subprocess
@@ -840,6 +841,33 @@ class MalformedRegistry(unittest.TestCase):
         self.assertIn("op-adhoc-root", codes)
         self.assertNotIn("op-registry-stale", codes)
         self.assertEqual(code, 1)
+
+    def test_doctor_reports_invalid_utf8_registry_as_malformed(self):
+        root = self._target(b"\xff\xfe not utf-8\n")
+        code, out, _ = self._cq(root, "doctor", "--json")
+        findings = json.loads(out)["findings"]
+        malformed = [item for item in findings if item["code"] == "op-registry-malformed"]
+        self.assertEqual(len(malformed), 1)
+        self.assertIn("not valid UTF-8", malformed[0]["message"])
+        self.assertNotIn("op-registry-stale", {item["code"] for item in findings})
+        self.assertEqual(code, 1)
+
+    @unittest.skipIf(hasattr(os, "geteuid") and os.geteuid() == 0, "root reads any file")
+    def test_unreadable_registry_is_malformed_finding_and_exit_2(self):
+        root = self._target(b"# readme\n")
+        readme = root / "scripts" / "README.md"
+        readme.chmod(0)
+        try:
+            code, out, _ = self._cq(root, "doctor", "--json")
+            codes = {item["code"] for item in json.loads(out)["findings"]}
+            code2, _, err = self._cq(root, "registry")
+        finally:
+            readme.chmod(0o644)
+        self.assertIn("op-registry-malformed", codes)
+        self.assertEqual(code, 1)
+        code = code2
+        self.assertEqual(code, 2)
+        self.assertIn("cannot be read", err)
 
 
 if __name__ == "__main__":

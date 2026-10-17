@@ -15,10 +15,15 @@ but no new features. Type the command name to use one.
 
 Release history is maintained in the [`CHANGELOG`](CHANGELOG.md).
 
-The generated Codex sibling (`plugins/quenching-codex/`) was retired on 2026-10-11; this
-repository no longer publishes or checks it. The translator stays: a repository that wants a Codex
-surface generates one with `cq components translate --write` (or the compatibility launcher
-`python3 scripts/sync_codex_plugin.py --write`).
+The generated Codex sibling lives in `plugins/quenching-codex/` and is registered in
+`.agents/plugins/marketplace.json`. Claude remains the editable source; regenerate the plugin with
+`python3 scripts/sync_codex_plugin.py --write`. The repository gate checks translation drift and
+the generated package. To install this checkout locally:
+
+```bash
+codex plugin marketplace add .
+codex plugin add quenching-codex@quenching
+```
 
 The `CI` workflow (`.github/workflows/ci.yml`) runs on pushes to `main` and on pull requests. It installs the locked
 toolchain, runs the repository gate on Python 3.11 and 3.13, lints with ruff and reports the functional checks (exit 2 is inconclusive).

@@ -33,15 +33,15 @@ class ThePathShim(unittest.TestCase):
         self.assertTrue(SHIM.is_file(), f"the shim does not resolve: {SHIM}")
         self.assertTrue(os.access(SHIM, os.X_OK), f"the shim carries no execute bit: {SHIM}")
 
-    def test_it_exposes_ten_pillars(self):
+    def test_it_exposes_eleven_pillars(self):
         run = subprocess.run([sys.executable, str(REAL), "--help"], capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stderr)
         choices = next(line.strip() for line in run.stdout.splitlines()
                        if line.strip().startswith("{") and line.strip().endswith("}"))
         pillars = set(choices[1:-1].split(","))
-        self.assertEqual(10, len(pillars))
+        self.assertEqual(12, len(pillars))
         self.assertEqual({"specs", "knowledge", "design", "components", "ops", "proof", "git",
-                          "toolchain", "delivery", "security"}, pillars)
+                          "toolchain", "delivery", "security", "codex", "portal"}, pillars)
 
     def test_it_answers_the_version_lockstep(self):
         run = subprocess.run([str(SHIM), "--version"], capture_output=True, text=True)
@@ -75,7 +75,7 @@ class ThePathShim(unittest.TestCase):
 
     def test_each_pillar_uses_the_same_version_grammar(self):
         pillars = ("specs", "knowledge", "design", "components", "ops", "proof", "git",
-                   "toolchain", "delivery", "security")
+                   "toolchain", "delivery", "security", "codex", "portal")
         for pillar in pillars:
             with self.subTest(pillar=pillar):
                 run = subprocess.run([str(SHIM), pillar, "--version"],
