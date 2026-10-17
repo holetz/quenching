@@ -7,7 +7,7 @@ tags: [workflows, specs, configuration, provider, plugin]
 timestamp: 2026-10-17
 audience: both
 authority: current
-source: spec 1065 (task 3.1) — the namespaced envelope and migration refusal are implemented and covered by the source test matrix; extended by spec 1075 (2026-09-01) with `shared.gitConventions`, the `git` pillar's per-artifact writing directives; extended by spec 1405 (2026-10-08) with `shared.regenerablePaths`; by spec 1907 (2026-10-17) with the user layer; by spec 1908 (2026-10-17) with the `quenching` branch layer and `cq config show --effective`; by spec 1911 (2026-10-17) with `shared.autonomy`; by spec 1910 (2026-10-17) with `shared.okfValidate`, `shared.contextBudgets` and `specs.chat`
+source: spec 1065 (task 3.1) — the namespaced envelope and migration refusal are implemented and covered by the source test matrix; extended by spec 1075 (2026-09-01) with `shared.gitConventions`, the `git` pillar's per-artifact writing directives; extended by spec 1405 (2026-10-08) with `shared.regenerablePaths`; by spec 1907 (2026-10-17) with the user layer; by spec 1908 (2026-10-17) with the `quenching` branch layer and `cq config show --effective`; by spec 1911 (2026-10-17) with `shared.autonomy`; by spec 1910 (2026-10-17) with `shared.okfValidate`, `shared.contextBudgets` and `specs.chat`; by spec 1909 (2026-10-17) with the seed (`cq config init`) and the missing-keys check
 maintainer: quenching
 ---
 
@@ -66,6 +66,25 @@ exception is a key whose default lives in code as data (`shared.codex` and `shar
 with `default` where no layer declares the leaf. A key absent from every layer and without a
 default in code does not appear. The verb only reads: an unreadable layer is reported on its row of
 `layers` and never fatal.
+
+## The seed and the missing-keys check
+
+`cq config init [--write]` creates `.claude/quenching.json` with every adjustable default spelled
+out: `shared.codex` (including `executor`), `shared.autonomy`, `shared.contextBudgets`,
+`shared.okfValidate`, `shared.workHost` (its leaves with a non-null default; `target`,
+`dockerContext` and `runner` stay absent because the loader warns on a null), `specs.chat`, the
+detected `shared.profiles.installed`, and `backend: git`. Without `--write` it prints the document
+and writes nothing. The document is built from the owning modules' own default constants
+(`config/seed.py`), so it cannot drift from the code; the two defaults that live where the
+`quenching-specs` module cannot import them are restated and pinned to their owners by a test.
+
+`init` refuses an existing file (exit 2, `cq-config-present`) and never merges into a file a human
+edited. `cq config check` flattens the file to dotted leaves and lists the seeded leaves it lacks
+(exit 1; exit 2 when the file is absent or not an object); it never reports extra keys, and reads
+only the repository file. `cq doctor` prints the same list as a `config` block and a line in its
+report, but only reports: a missing key is information, never a failed prerequisite.
+`/quenching-align:align` runs `check` before the fronts and, under its one authorization, seeds an
+absent file.
 
 ## The envelope and its owners
 
