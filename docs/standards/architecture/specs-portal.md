@@ -2,12 +2,12 @@
 type: standard
 title: The specs portal reads one store and widens nothing without a decision
 description: The local spec portal (cq specs serve) reads only the specs store open_backend reads, exposes a fixed set of GET and POST routes, keeps its loopback, token, Host/Origin and CSP guarantees, builds every node with textContent, reuses cockpit UX patterns but never its code, and regenerates the reader copy and the Codex mirror with every change
-resource: plugins/quenching/assets/bin/quenching/specs/portal.py, plugins/quenching/assets/portal/**, plugins/quenching/assets/bin/quenching/portal/**, plugins/quenching/assets/bin/quenching/common/lent.py, plugins/quenching/assets/bin/quenching/session/portal.py
+resource: plugins/quenching/assets/bin/quenching/specs/portal.py, plugins/quenching/assets/bin/quenching/specs/chat.py, plugins/quenching/assets/portal/**, plugins/quenching/assets/bin/quenching/portal/**, plugins/quenching/assets/bin/quenching/common/lent.py, plugins/quenching/assets/bin/quenching/session/portal.py
 tags: [architecture, portal, specs, security, ux]
 timestamp: 2026-10-17
 audience: both
 authority: current
-source: spec 1769 and the fixed owner decisions B-O1 to B-O4 of epic 1768; spec 1812 (epic 1810) for the sessions read; spec 1814 (epic 1810) for the central server
+source: spec 1769 and the fixed owner decisions B-O1 to B-O4 of epic 1768; spec 1812 (epic 1810) for the sessions read; spec 1814 (epic 1810) for the central server; spec 1815 (epic 1810) for the chat
 maintainer: quenching
 ---
 
@@ -46,6 +46,14 @@ same route, never a direct import: the `portal` pillar borrows `portal.specs`
 package, so nothing is lent and it refuses `--sessions` (`sp-portal-sessions-unavailable`) before
 a socket opens.
 
+The second exception is the chat, and only when the portal was started with `--chat` (off by
+default). Then `POST /api/chat` starts one child process, `claude -p`, whose `cwd` is a worktree of
+this project; that process reads files of that worktree with `Read`, `Grep` and `Glob` and nothing
+else (§Security guarantees). The portal itself still reads only the store: it reads the child's
+stdout, never the files the child opened. `specs/portal.py` imports `quenching.specs.chat`, which
+imports only the standard library, so the reader copy keeps carrying only `common` and `specs`.
+Without the flag no process is started and both chat routes are a 404.
+
 ## Project registry
 
 The projects a portal shows are registered in `~/.config/quenching/projects.json`
@@ -60,7 +68,7 @@ second import is refused. Reading orca live is not part of this standard.
 
 ## Central server
 
-`cq portal serve [--host] [--port] [--read-only] [--open] [--sessions]` binds one loopback
+`cq portal serve [--host] [--port] [--read-only] [--open] [--sessions] [--chat] [--chat-budget-usd N]` binds one loopback
 `ThreadingHTTPServer` and builds one `Portal` per registered project, all sharing that server's
 single token, host and port. `quenching/portal/serve.py`'s `Central.handle` checks `Host` and
 `Origin` first, then:
@@ -75,7 +83,9 @@ single token, host and port. `quenching/portal/serve.py`'s `Central.handle` chec
   is a 404 `portal-unknown-project`, and a non-API path under a prefix is a 404.
 
 `--read-only` reaches every project; `--sessions` gives each project's portal the session reader,
-which keeps only the sessions inside **that** project's worktrees. The `Portal.lock` is per
+which keeps only the sessions inside **that** project's worktrees; `--chat` gives each project's
+portal the chat, with `list_worktrees` (borrowed as `portal.worktrees`) as the list a question's
+`worktree` must be in. Under `cq specs serve` that list is the root alone. The `Portal.lock` is per
 project and `_STDIO_LOCK` is per process, so two projects never capture each other's verb output.
 `SpecBackend.read_only` and `transport_read_only()` are process-wide and therefore hold for every
 project at once. `cq specs serve` is unchanged: its `Portal` has no `/api/projects`, so the page
@@ -88,9 +98,20 @@ under `/`. With `--sessions` only, also `GET /api/sessions`; without the flag it
 (`sp-portal-not-found`) like any unknown route, and `/api/config` reports `sessions: false`. POST: `/api/capture`, `/api/section`, `/api/approve`, `/api/reorder`,
 `/api/discovery`, each delegating to the CLI's own verb so CAS and refusals are the terminal's.
 
+- With `--chat` only: `POST /api/chat` (`{question, worktree?}`) answers `202 {job, worktree}`,
+  and `GET /api/chat/<job>?after=<n>` answers `{status, events[n:], next, costUsd, error}`, where
+  `status` is `running`, `done`, `failed` or `timeout`. Without the flag both are a 404 and
+  `/api/config` reports `chat: false` (`chatBudgetUsd` carries the ceiling when it is on). The
+  POST goes through the token, `Origin`, `application/json` and `MAX_BODY` gates but not through
+  `writes_enabled`: it writes nothing to the store, so `--read-only` does not turn it off; `--chat`
+  is what turns it on. A `question` is a non-empty string of at most 4000 characters (else `400
+  sp-portal-bad-input`); a `worktree`, compared by `realpath`, must be one of the project's
+  worktrees, and an absent one means the root (else `400 sp-portal-chat-worktree`); one job at a
+  time per project (`409 sp-portal-chat-busy`); an unknown job is `404 sp-portal-chat-unknown-job`.
+  The page polls every 1.5 s; there is no streaming and no WebSocket.
 - Under `cq portal serve` only: `GET /api/projects`, and every route above under
   `/p/<project>/` (§Central server).
-- No new POST route enters without a human decision. Reading more is a GET over the same store.
+- No new POST route enters without a human decision; `/api/chat` is the one epic 1810 decided. Reading more is a GET over the same store.
 - A GET request starts no process beyond the read the store backend already makes (on the git backend, `git` reading the `quenching` branch), and never calls `gh`.
 - A POST request writes to the store and pushes to git through the CLI's own verb. Every write route goes through the backend's write path, and with a card provider configured (`card: {provider: github}`) that path reaches `gh`: it creates the card on capture (`cmd_new` → `resolve_card_client`) and, through `_card_transitions` in the git backend, updates it when the `lifecycle_key` changes (title, board state, phase, labels or tags). Which routes trigger it follows from that mechanism, not from a list. This describes what exists; it grants nothing new.
 - Static assets are read-only: any non-GET/HEAD method on them is a 405.
@@ -119,6 +140,25 @@ Kept as `portal.py` documents them in its docstring:
 - Writes need `application/json`, are bounded by `MAX_BODY`, and are refused server-side under
   `--read-only` or a read-only backend.
 - A refusal or conflict is an HTTP error carrying the CLI's `code`, never a success.
+- The chat child runs a fixed argv (`quenching.specs.chat.chat_argv`): `claude -p --model sonnet
+  --output-format stream-json --verbose --tools Read,Grep,Glob --strict-mcp-config
+  --no-session-persistence --disable-slash-commands --permission-mode dontAsk --setting-sources
+  project --max-budget-usd <ceiling> --settings <deny file>`. The question enters through stdin,
+  never the argv. Any tool beyond `Read`/`Grep`/`Glob` (Bash, writes, web, MCP, sub-agents) is
+  outside what epic 1810 authorized.
+- The deny file is a temporary `0600` file, deleted when the job ends, carrying `disableAllHooks:
+  true` and `permissions.deny` of `Read(~/.ssh/**)`, `Read(~/.config/**)`, `Read(**/*.key)` and
+  `Read(**/.env)`; Claude Code applies `Read` rules to `Grep` and `Glob` as well, so no separate
+  rule is written for them.
+- The ceiling is `--chat-budget-usd` (default `0.50`), passed as `--max-budget-usd`; a value ≤ 0 is
+  refused before a socket opens (`sp-portal-chat-budget`), and so is `--chat` without `claude` on
+  `PATH` (`sp-portal-chat-unavailable`). A fixed `CHAT_TIMEOUT_SECONDS = 300` kills the process and
+  ends the job as `timeout`.
+- What a poll exposes is rebuilt field by field from each `stream-json` line: the assistant's text,
+  the **name** of each tool used, and from the final `result` its text, `costUsd` and `isError`.
+  Never a `tool_result`, never a tool `input`, never the raw line; a line that is not JSON is
+  dropped. A job keeps at most 500 events and 200 000 characters, and a portal keeps the 20 most
+  recent jobs in memory only; nothing persists across restarts.
 
 Static assets carry this CSP: `default-src 'none'; script-src 'self'; style-src 'self';
 connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors
