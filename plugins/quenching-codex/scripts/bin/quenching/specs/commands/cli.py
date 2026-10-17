@@ -304,6 +304,9 @@ def _add_migrate_export_serve(sub) -> None:
     sp.add_argument("--read-only", action="store_true", dest="read_only",
                     help="disable every write route on the server")
     sp.add_argument("--open", action="store_true", help="open the URL in the browser")
+    sp.add_argument("--sessions", action="store_true",
+                    help="serve GET /api/sessions: the live Codex sessions of this "
+                         "repository's worktrees, fixed fields only (off by default)")
 
 
 def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]:
