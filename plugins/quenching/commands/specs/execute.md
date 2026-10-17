@@ -230,6 +230,12 @@ b. **Write the code**, minimal and scoped to the declared files. A task that dec
      --sections "§Delegating an executor"
    ```
 
+   **The Codex executor comes first, one task at a time.** Unless stop-loss switched it off in this
+   run, `cq codex eligible --spec "<id>" --task "<task-id>" --json`: exit 0 → dispatch it, and act
+   on its exit, per
+   [execution-delegation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-delegation.md)
+   §The Codex executor, loaded then; exit 1 or 2 → the executor above.
+
 c. **Write only the `/docs/` this task names.** When this task writes `/docs/`, load the rule that
    draws the line between declared and emergent, and the boundary it crosses:
 
@@ -409,7 +415,7 @@ cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/report-
 Emit §The report mold. The single-spec header line carries overall progress; three body blocks:
 
 1. **This session** — fixed. The isolation and its `branch` record, tasks completed, each task's
-   commit and the subject recorded for it, and any subject that drifted.
+   commit and the subject recorded for it, any subject that drifted, and each `Codex:` line of 5b.
 2. **Blocked** — optional. Each blocked task with its reason.
 3. **Written along the way** — optional. The standards written, and the discoveries recorded,
    **quoted** as `/quenching-specs:specs:develop` quotes them: the same artifact is owed the same fidelity

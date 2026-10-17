@@ -1,0 +1,212 @@
+"""Let Codex write one eligible spec task inside a worktree — and prove by code it touched nothing else.
+
+The task is judged again by `eligibility` (the quota included), so a caller cannot dispatch what
+`cq codex eligible` would refuse. The argv is fixed here: `--dangerously-bypass-approvals-and-sandbox`
+by default (`shared.codex.executor.sandbox: "off"`, for the hosts whose sandbox needs admin to
+work) or `-s workspace-write` when the executor opts in — never both — and always
+`--ignore-user-config --ignore-rules -m <model> -c model_reasoning_effort=<effort> -C <worktree>
+--json`. The environment loses `GH_TOKEN`, `GITHUB_TOKEN` and every `AWS_*`, `AZURE_*` and
+`GOOGLE_*` variable; the prompt forbids git and any write outside the task's `files:`.
+
+The git guard is read before and after: the worktree's `HEAD` and branch, its reflog tip, the
+stash ref, every worktree's `HEAD`, and `git status` contained in `files:`. A divergence is
+exit 2 with the offending paths: Codex discards the diff inside `files:` (never `reset`,
+`stash` or `checkout`) and writes the task itself.
+
+The quota is probed again afterwards. A primary window that moved by more than
+`stopLossPercent` points sets `stopLoss`: the diff stands, and the executor stays off for the rest
+of the execution.
+
+    exit 0  Codex finished and its diff stays inside `files:` — Codex verifies, reviews, commits
+    exit 1  fall back to Codex: ineligible, sandbox opt-in unavailable, Codex failed or timed out
+    exit 2  refusal (missing worktree, prompt, spec, task or `codex`, a dirty tree outside
+            `files:`), or `codex-git-guard`: the guard saw a divergence
+"""
+from __future__ import annotations
+
+import os
+import shutil
+import subprocess
+import time
+
+from quenching.codex.eligible import eligibility, strip_annotation
+from quenching.codex.probe import executor_sandbox, probe, stop
+from quenching.codex.review import RUN_NAME, measured_tokens, refusal
+from quenching.specs.backends import open_backend
+
+SECRET_NAMES = ("GH_TOKEN", "GITHUB_TOKEN")
+SECRET_PREFIXES = ("AWS_", "AZURE_", "GOOGLE_")
+BYPASS = "--dangerously-bypass-approvals-and-sandbox"
+RULE = (
+    "Regras do executor: escreva apenas nos arquivos listados abaixo, dentro deste diretório. "
+    "Não rode nenhum comando git (nem commit, stash, reset, checkout, branch ou push) e não "
+    "escreva fora do diretório de trabalho. Não rode testes que gastem cota de agentes. "
+    "O lado Codex verifica, revisa e faz o commit.")
+
+
+def clean_env(env: dict) -> dict:
+    return {k: v for k, v in env.items()
+            if k not in SECRET_NAMES and not k.startswith(SECRET_PREFIXES)}
+
+
+def build_argv(executor: dict, model: str, worktree: str, message_path: str,
+               windows: bool = os.name == "nt") -> list[str]:
+    if executor["sandbox"] == "off":
+        isolation = [BYPASS]
+    else:
+        isolation = ["-s", "workspace-write"]
+        if windows:
+            isolation += ["-c", f'windows.sandbox="{executor["windowsSandbox"]}"']
+    return ["exec", *isolation, "--ignore-user-config", "--ignore-rules", "-m", model,
+            "-c", f"model_reasoning_effort={executor['reasoningEffort']}", "-C", worktree,
+            "--json", "-o", message_path, "-"]
+
+
+def _git(worktree: str, *args: str) -> str:
+    result = subprocess.run(["git", "-C", worktree, *args], capture_output=True, text=True,
+                            errors="replace")
+    return result.stdout if result.returncode == 0 else ""
+
+
+def touched(worktree: str) -> set[str]:
+    """Every path `git status` reports, rename sources included."""
+    entries = _git(worktree, "status", "--porcelain=v1", "-z", "--untracked-files=all").split("\0")
+    paths: set[str] = set()
+    skip = False
+    for entry in entries:
+        if skip:
+            paths.add(entry)
+            skip = False
+            continue
+        if len(entry) > 3:
+            paths.add(entry[3:])
+            skip = "R" in entry[:2] or "C" in entry[:2]
+    return paths
+
+
+def guard(worktree: str) -> dict:
+    """The refs Codex must not move, read without writing anything."""
+    others = {}
+    for block in _git(worktree, "worktree", "list", "--porcelain").split("\n\n"):
+        fields = dict(line.split(" ", 1) for line in block.splitlines() if " " in line)
+        if "worktree" in fields:
+            others[fields["worktree"]] = fields.get("HEAD")
+    return {"head": _git(worktree, "rev-parse", "HEAD").strip(),
+            "branch": _git(worktree, "symbolic-ref", "-q", "HEAD").strip(),
+            "reflogLength": len(_git(worktree, "reflog", "--format=%H").splitlines()),
+            "stash": _git(worktree, "rev-parse", "-q", "--verify", "refs/stash").strip(),
+            "worktrees": others}
+
+
+def primary_used(quota: dict | None):
+    window = ((quota or {}).get("rateLimits") or {}).get("primary") or {}
+    return window.get("usedPercent")
+
+
+def read_task(root: str, spec: str, task_id: str) -> tuple[dict | None, tuple[dict, int] | None]:
+    backend, err = open_backend(root)
+    if err:
+        return None, refusal("codex-specs-unreadable",
+                             err.get("message", "the spec store could not be opened"))
+    info, err = backend.read_spec(spec)
+    if info is None:
+        return None, refusal("codex-spec-missing", (err or {}).get("message", f"no spec {spec}"))
+    task = next((t for t in info.get("tasks", []) if t["id"] == task_id), None)
+    if task is None:
+        return None, refusal("codex-task-missing", f"spec {spec} has no task {task_id}")
+    return task, None
+
+
+def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: str,
+                  prompt: str, run: str | None, env: dict | None = None,
+                  quota=None) -> tuple[dict, int]:
+    """`quota` replaces the probe before and after, so tests never reach Codex."""
+    env = dict(os.environ if env is None else env)
+    quota = quota or probe
+    worktree, prompt = os.path.realpath(worktree), os.path.abspath(prompt)
+    if not os.path.isdir(worktree):
+        return refusal("codex-worktree-missing", f"worktree does not exist: {worktree}")
+    if os.path.realpath(_git(worktree, "rev-parse", "--show-toplevel").strip() or "/") != worktree:
+        return refusal("codex-worktree-not-toplevel",
+                       f"worktree is not the top level of a git checkout: {worktree}")
+    if not os.path.isfile(prompt):
+        return refusal("codex-prompt-missing", f"prompt file does not exist: {prompt}")
+    task, refused = read_task(root, spec, task_id)
+    if refused:
+        return refused
+    files = sorted(strip_annotation(f).lstrip("/") for f in task["files"])
+    dirty = sorted(touched(worktree) - set(files))
+    if dirty:
+        return refusal("codex-tree-dirty", "the tree is dirty outside files: "
+                       + ", ".join(dirty))
+    binary = shutil.which("codex", path=env.get("PATH"))
+    if binary is None:
+        return refusal("codex-missing", "codex is not on PATH")
+    run = run or time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+    if not RUN_NAME.match(run):
+        return refusal("codex-run-name", f"run name must match {RUN_NAME.pattern}: {run}")
+    run_dir = os.path.join(root, ".quenching", "codex", run)
+    if os.path.exists(run_dir):
+        return refusal("codex-run-exists", f"run directory already exists: {run_dir}")
+
+    judged, code = eligibility(task, settings, worktree, lambda s: quota(s, env=env))
+    executor = settings["executor"]
+    out = {"ok": False, "fallback": True, "spec": str(spec), "task": task_id, "files": files,
+           "class": judged["class"], "model": judged["model"], "sandbox": executor["sandbox"],
+           "run": run, "runDir": None, "argv": None, "exitCode": None, "timedOut": False,
+           "tokens": None, "quotaBefore": primary_used(judged["quota"]), "quotaAfter": None,
+           "quotaDelta": None, "stopLoss": False, "guard": None, "outside": []}
+    if code != 0:
+        return {**out, "reason": judged["reason"]}, 1
+    if executor["sandbox"] != "off":
+        box = executor_sandbox(settings, worktree, env)
+        if box["state"] != "available":
+            return {**out, "reason": f"the workspace-write sandbox is {box['state']}: "
+                                     f"{box['reason']}"}, 1
+
+    os.makedirs(run_dir)
+    prompt_path = os.path.join(run_dir, "prompt.md")
+    message_path = os.path.join(run_dir, "last-message.md")
+    events_path = os.path.join(run_dir, "events.jsonl")
+    with open(prompt, encoding="utf-8") as handle:
+        text = handle.read().rstrip("\n")
+    with open(prompt_path, "w", encoding="utf-8") as handle:
+        handle.write(f"{text}\n\n{RULE}\n\nArquivos: {', '.join(files)}\n")
+    argv = build_argv(executor, judged["model"], worktree, message_path)
+    before = guard(worktree)
+    with open(prompt_path, encoding="utf-8") as stdin, \
+            open(events_path, "w", encoding="utf-8") as stdout, \
+            open(os.path.join(run_dir, "stderr.log"), "w", encoding="utf-8") as stderr:
+        process = subprocess.Popen([binary, *argv], stdin=stdin, stdout=stdout, stderr=stderr,
+                                   cwd=worktree, env=clean_env(env), start_new_session=True)
+        try:
+            exit_code = process.wait(timeout=settings["timeoutSeconds"])
+        except subprocess.TimeoutExpired:
+            stop(process)
+            exit_code, out["timedOut"] = process.returncode, True
+    after = guard(worktree)
+    out.update(runDir=run_dir, argv=["codex", *argv], exitCode=exit_code,
+               tokens=measured_tokens(events_path))
+    out["quotaAfter"] = primary_used(quota({**settings, "crossReview": "auto"}, env=env))
+    if out["quotaBefore"] is not None and out["quotaAfter"] is not None:
+        out["quotaDelta"] = out["quotaAfter"] - out["quotaBefore"]
+        out["stopLoss"] = out["quotaDelta"] > executor["stopLossPercent"]
+
+    out["outside"] = sorted(touched(worktree) - set(files))
+    moved = sorted(key for key in before if before[key] != after[key])
+    if moved or out["outside"]:
+        out["guard"] = {"moved": moved, "before": before, "after": after}
+        detail = "; ".join(filter(None, [moved and "moved: " + ", ".join(moved),
+                                         out["outside"] and "outside files: "
+                                         + ", ".join(out["outside"])]))
+        return {**out, "code": "codex-git-guard",
+                "discard": files, "message": f"the git guard saw a divergence — {detail}",
+                "reason": f"git guard: {detail}"}, 2
+    if out["timedOut"]:
+        reason = f"codex ran past {settings['timeoutSeconds']}s and was stopped"
+    elif exit_code != 0:
+        reason = f"codex exited {exit_code}"
+    else:
+        reason = "codex wrote the task"
+    ok = not out["timedOut"] and exit_code == 0
+    return {**out, "ok": ok, "fallback": not ok, "reason": reason}, 0 if ok else 1

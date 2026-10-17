@@ -102,6 +102,23 @@ class TheReview(unittest.TestCase):
         self.assertEqual(NOT_MEASURED, measured_tokens(str(events)))
         self.assertEqual(NOT_MEASURED, measured_tokens(str(self.tmp / "absent.jsonl")))
 
+    def test_turn_completed_usage_is_measured(self):
+        events = pathlib.Path(__file__).resolve().parent / "fixtures" / "codex" / \
+            "events-turn-completed.jsonl"
+        self.assertEqual({"input_tokens": 24763, "cached_input_tokens": 24448,
+                          "output_tokens": 122, "total_tokens": 24885},
+                         measured_tokens(str(events)))
+
+    def test_every_turn_completed_is_summed_over_the_rollout_format(self):
+        events = self.tmp / "events.jsonl"
+        events.write_text("\n".join(json.dumps(e) for e in [
+            {"type": "token_count", "info": {"total_token_usage": {"total_tokens": 7}}},
+            {"type": "turn.completed", "usage": {"input_tokens": 10, "output_tokens": 2}},
+            {"type": "turn.completed", "usage": {"input_tokens": 5, "output_tokens": 1}}]) + "\n",
+                          encoding="utf-8")
+        self.assertEqual({"input_tokens": 15, "output_tokens": 3, "total_tokens": 18},
+                         measured_tokens(str(events)))
+
     def test_refusals(self):
         self.assertEqual("codex-run-name", self.review(run="../x")[0]["code"])
         self.review()

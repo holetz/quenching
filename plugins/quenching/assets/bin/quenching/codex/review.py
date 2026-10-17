@@ -55,18 +55,37 @@ def _last_usage(node, found: list) -> None:
             _last_usage(item, found)
 
 
+def _add_turn(totals: dict, usage: dict) -> None:
+    for key, value in usage.items():
+        if isinstance(value, int) and not isinstance(value, bool):
+            totals[key] = totals.get(key, 0) + value
+
+
 def measured_tokens(events_path: str):
-    """The last `total_token_usage` in the events, or `not measured`."""
+    """The usage of every `turn.completed` that `codex exec --json` printed, summed.
+
+    Without one, the last `total_token_usage` of the rollout format; without either,
+    `not measured`. `total_tokens` is input plus output, as the event does not carry it.
+    """
+    turns: dict = {}
     found: list = []
     try:
         with open(events_path, encoding="utf-8", errors="replace") as handle:
             for line in handle:
                 try:
-                    _last_usage(json.loads(line), found)
+                    event = json.loads(line)
                 except json.JSONDecodeError:
                     continue
+                if isinstance(event, dict) and event.get("type") == "turn.completed" \
+                        and isinstance(event.get("usage"), dict):
+                    _add_turn(turns, event["usage"])
+                else:
+                    _last_usage(event, found)
     except OSError:
         return NOT_MEASURED
+    if turns:
+        turns["total_tokens"] = turns.get("input_tokens", 0) + turns.get("output_tokens", 0)
+        return turns
     return found[-1] if found else NOT_MEASURED
 
 

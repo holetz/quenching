@@ -3,6 +3,11 @@
 The block is optional: absent, every default holds and `crossReview` is `auto`. `"off"` is the
 explicit opt-out. A value of the wrong shape falls back to its default and is named in
 `warnings`, so a typo never silently changes the threshold a caller relies on.
+
+`executor` configures Codex writing one task's code inside `/quenching-specs:specs:execute`. It is
+on by default and independent of `crossReview`: `crossReview: "off"` turns off the review, never
+the executor. `sandbox: "off"` runs Codex without its sandbox, inside the worktree only;
+`"workspace-write"` is the opt-in for a host whose sandbox works.
 """
 from __future__ import annotations
 
@@ -13,8 +18,24 @@ DEFAULTS = {
     "maxUsedPercent": {"primary": 80, "secondary": 90},
     "timeoutSeconds": 900,
     "model": "gpt-6-astra",
+    "executor": {
+        "enabled": True,
+        "modelSmall": "gpt-6.1-sol",
+        "modelVerified": "gpt-6.1-sol",
+        "reasoningEffort": "medium",
+        "sandbox": "off",
+        "windowsSandbox": "unelevated",
+        "maxTaskTokens": 20000,
+        "reservePercent": 10,
+        "stopLossPercent": 15,
+    },
 }
 CROSS_REVIEW = ("auto", "off")
+CHOICES = {
+    "reasoningEffort": ("minimal", "low", "medium", "high"),
+    "sandbox": ("off", "workspace-write"),
+    "windowsSandbox": ("elevated", "unelevated"),
+}
 
 
 def _percent(value) -> bool:
@@ -24,7 +45,8 @@ def _percent(value) -> bool:
 def load_settings(root: str) -> tuple[dict, list[str]]:
     """Return the effective settings and the warnings for every value that was ignored."""
     block = namespace(load_config(root, detect_provider_info=False), "shared").get("codex")
-    settings = {**DEFAULTS, "maxUsedPercent": dict(DEFAULTS["maxUsedPercent"])}
+    settings = {**DEFAULTS, "maxUsedPercent": dict(DEFAULTS["maxUsedPercent"]),
+                "executor": dict(DEFAULTS["executor"])}
     warnings: list[str] = []
     if block is None:
         return settings, warnings
@@ -60,4 +82,38 @@ def load_settings(root: str) -> tuple[dict, list[str]]:
             settings["model"] = block["model"].strip()
         else:
             warnings.append(f"shared.codex.model must be a name; {DEFAULTS['model']} applies")
+    if "executor" in block:
+        warnings += _executor(block["executor"], settings["executor"])
     return settings, warnings
+
+
+def _executor(block, executor: dict) -> list[str]:
+    """Apply the declared `shared.codex.executor` keys onto `executor`; return the warnings."""
+    if not isinstance(block, dict):
+        return ["shared.codex.executor is not an object; defaults apply"]
+    warnings: list[str] = []
+    for key, default in DEFAULTS["executor"].items():
+        if key not in block:
+            continue
+        value = block[key]
+        if key == "enabled":
+            valid = isinstance(value, bool)
+            rule = "true or false"
+        elif key in CHOICES:
+            valid = value in CHOICES[key]
+            rule = "one of " + ", ".join(repr(c) for c in CHOICES[key])
+        elif key == "maxTaskTokens":
+            valid = isinstance(value, int) and not isinstance(value, bool) and value > 0
+            rule = "a positive integer"
+        elif key in ("reservePercent", "stopLossPercent"):
+            valid = _percent(value)
+            rule = "0-100"
+        else:
+            valid = isinstance(value, str) and bool(value.strip())
+            value = value.strip() if valid else value
+            rule = "a name"
+        if valid:
+            executor[key] = value
+        else:
+            warnings.append(f"shared.codex.executor.{key} must be {rule}; {default!r} applies")
+    return warnings

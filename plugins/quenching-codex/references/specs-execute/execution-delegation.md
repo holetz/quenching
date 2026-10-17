@@ -44,6 +44,12 @@ confirmation, every `cq specs task --check` flip, every `cq specs task --block` 
 sub-agent writes code inside its declared files and reports back — it never talks to the human and
 never touches the spec's bookkeeping.
 
+**The Codex executor is the admitted non-Codex executor.** A task `cq codex eligible` admits
+(exit 0) is written by Codex through `cq codex implement` — a cheap model, not a `Task`, so the
+model rule above binds sub-agents, not it. The orchestrator keeps the same list, plus the task's
+`verify:` (run on every Codex task whatever the declared policy) and the self-review, which runs
+outside Codex on its returned diff.
+
 ### The cost of delegating, and when it inverts
 
 <!-- rules -->
@@ -51,7 +57,10 @@ never touches the spec's bookkeeping.
 **Permitted is not free, and the account runs the other way more often than it looks.**
 
 - **Delegate by file, or by section of tasks — never task by task.** One sub-agent that owns six
-  tasks over one file reads it once; six sub-agents read it six times.
+  tasks over one file reads it once; six sub-agents read it six times. The one exception is the Codex
+  executor: it is dispatched **one task at a time**, never two at once, because its eligibility
+  and its quota reserve are judged per task and a single heavy run must not drain the window for
+  the rest.
 - **Run the four-item self-review INSIDE the sub-agent**, and have it return a verdict. A
   sub-agent that hands its diff back for review puts the diff into the long context, which is the
   cost the delegation was for.
@@ -86,3 +95,31 @@ Reports each `[P]` group and whether it is `eligible`. Exit **0** when every mar
 eligible, **1** when any group overlaps or lacks `files:`. **Branch on that, never on judgment**:
 a group reported ineligible runs serially, and the reason is stated in the report rather than
 argued about.
+
+## The Codex executor
+
+<!-- rules -->
+
+`cq codex eligible` exit 1 or 2 → the task goes on as §Delegating an executor says. Exit 0 →
+write the task's text, `files:`, `verify:`, `pattern:` and the sections execute's step 4 read into
+a prompt file under `.quenching/codex/`, and dispatch it alone — never two Codex runs at once:
+
+```bash
+cq codex implement --spec "<id>" --task "<task-id>" --worktree "<work checkout>" \
+  --prompt <prompt file> --json
+```
+
+- **Exit 0** → the diff is Codex's. Run the task's `verify:` **whatever the declared policy**,
+  then execute's self-review (step 5d). A red `verify:` is fixed by you **on top of Codex's
+  diff**, fed its output; start from scratch only when the self-review judges the approach wrong. Codex never
+  gets a second attempt at the task.
+- **Exit 1** (quota, timeout, unavailable sandbox, Codex error) → write the task yourself.
+- **Exit 2** (`codex-git-guard`) → discard the diff **inside the payload's `discard` only**:
+  rewrite each tracked file with `git cat-file --filters HEAD:<file> > <file>` and delete each
+  new one; never `reset`, `stash`, `checkout` or `restore`. Then write the task yourself and
+  carry the guard's `reason` to the report.
+- **`stopLoss: true`**, on any exit → keep this task's outcome, and route every later task of
+  this run as §Delegating an executor says; nothing is written to disk.
+
+Each dispatch is one report line: `Codex: <task-id> <wrote|fallback|guard> — <reason>, <tokens or
+not measured>, quota +<delta or not measured>`.

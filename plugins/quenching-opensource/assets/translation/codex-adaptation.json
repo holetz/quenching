@@ -111,6 +111,17 @@
       "command": "specs/execute",
       "from": "\n\n   A repository that wants a Codex review per task declares it as this hook; the recipe is\n   `docs/standards/architecture/codex-pillar.md` §The per-task review hook.",
       "replace": ""
+    },
+    {
+      "command": "specs/execute",
+      "from": "   **The Codex executor comes first, one task at a time.**",
+      "until": "c. **Write only",
+      "replace": ""
+    },
+    {
+      "command": "specs/execute",
+      "from": ", any subject that drifted, and each `Codex:` line of 5b.",
+      "replace": ", and any subject that drifted."
     }
   ]
 }
