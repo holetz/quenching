@@ -230,6 +230,37 @@ b. **Write the code**, minimal and scoped to the declared files. A task that dec
      --sections "§Delegating an executor"
    ```
 
+   **The Codex executor comes first, one task at a time.** Unless it was switched off earlier in
+   this run, ask the code before writing:
+
+   ```bash
+   cq codex eligible --spec "<id>" --task "<task-id>" --json
+   ```
+
+   Exit 1 or 2 → the task goes on with the executor above, unchanged. Exit 0 → write the task's
+   text, `files:`, `verify:`, `pattern:` and the sections step 4 read into a prompt file under
+   `.quenching/codex/`, and dispatch it alone — never two Codex runs at once:
+
+   ```bash
+   cq codex implement --spec "<id>" --task "<task-id>" --worktree "<work checkout>" \
+     --prompt <prompt file> --json
+   ```
+
+   - **Exit 0** → the diff is Codex's. Run the task's `verify:` **whatever the declared policy**,
+     then the self-review of 5d. A red `verify:` is fixed by you **on top of Codex's diff**, fed its
+     output; start from scratch only when the self-review judges the approach wrong. Codex never
+     gets a second attempt at the task.
+   - **Exit 1** (quota, timeout, unavailable sandbox, Codex error) → write the task yourself.
+   - **Exit 2** (`codex-git-guard`) → discard the diff **inside the payload's `discard` only**:
+     rewrite each tracked file with `git cat-file --filters HEAD:<file> > <file>` and delete each
+     new one; never `reset`, `stash`, `checkout` or `restore`. Then write the task yourself and
+     carry the guard's `reason` to the report.
+   - **`stopLoss: true`**, on any exit → keep this task's outcome, and route every later task of
+     this run to the executor above; nothing is written to disk.
+
+   Each dispatch is one report line: `Codex: <task-id> <wrote|fallback|guard> — <reason>, <tokens or
+   not measured>, quota +<delta or not measured>`.
+
 c. **Write only the `/docs/` this task names.** When this task writes `/docs/`, load the rule that
    draws the line between declared and emergent, and the boundary it crosses:
 
@@ -409,7 +440,7 @@ cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/report-
 Emit §The report mold. The single-spec header line carries overall progress; three body blocks:
 
 1. **This session** — fixed. The isolation and its `branch` record, tasks completed, each task's
-   commit and the subject recorded for it, and any subject that drifted.
+   commit and the subject recorded for it, any subject that drifted, and each `Codex:` line of 5b.
 2. **Blocked** — optional. Each blocked task with its reason.
 3. **Written along the way** — optional. The standards written, and the discoveries recorded,
    **quoted** as `/quenching-specs:specs:develop` quotes them: the same artifact is owed the same fidelity
