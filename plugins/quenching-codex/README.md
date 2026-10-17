@@ -38,11 +38,11 @@ probe-first, so a clean front costs a couple of tool calls — that forces the s
 shape and carries that front's content stages. Read the next section and you know the whole
 plugin.
 
-## The seven fronts, the non-converging axes, and the one align per front
+## The eight fronts, the non-converging axes, and the one align per front
 
-The plugin acts on **seven** surfaces of a repository, and the interface is the **same on each**.
-Seven local fronts have an align, the specs axis has no local tree to converge,
-and one root command spans the seven aligned fronts. The `security` and `git` axes are
+The plugin acts on **eight** surfaces of a repository, and the interface is the **same on each**.
+Eight local fronts have an align, the specs axis has no local tree to converge,
+and one root command spans the eight aligned fronts. The `security` and `git` axes are
 **pillars** rather than fronts — they converge no tree of their own, so they carry no align at all
 (see [`architecture/align-surface.md`](../../docs/standards/architecture/align-surface.md)
 §The security subject is pillar-shaped and §The git pillar has no align):
@@ -57,12 +57,13 @@ and one root command spans the seven aligned fronts. The `security` and `git` ax
 | target-declared verification root | `quenching-proof-*` | `quenching-proof-align` |
 | target-declared toolchain surface | `quenching-toolchain-*` | `quenching-toolchain-align` |
 | target-declared delivery surface | `quenching-delivery-*` | `quenching-delivery-align` |
+| license, community and governance artifacts | `quenching-opensource-*` | `quenching-opensource-align` |
 | *(pillar)* — read-only security questions | `quenching-security-*` | **none** |
 | *(pillar)* — a repository's own git facts | `quenching-git-*` | **none** |
-| **all seven aligned fronts** | *(root)* | **`quenching-align`** |
+| **all eight aligned fronts** | *(root)* | **`quenching-align`** |
 
 **The probe comes before the inventory.** Each implemented align opens by running its front's own verifier
-(`cq knowledge validate`, `cq design doctor`, `cq components doctor`/`lint`, `cq ops doctor`, `cq proof doctor`, `cq toolchain doctor`, `cq delivery doctor`); a clean
+(`cq knowledge validate`, `cq design doctor`, `cq components doctor`/`lint`, `cq ops doctor`, `cq proof doctor`, `cq toolchain doctor`, `cq delivery doctor`, `cq opensource doctor`); a clean
 probe stops with nothing to inventory, plan, or confirm. Otherwise: one read-only inventory → ONE
 consolidated plan → one OK → apply → verify, then the front's content stages, each run only when
 the probe found it work:
@@ -77,8 +78,9 @@ the probe found it work:
 | `proof` | probes the declared verification surface, applies bounded gate repairs, reports judgement findings, and keeps status read-only |
 | `toolchain` | probes manifests, locks, language pins and tool configuration, applies only bounded repairs, and leaves build policy with the target owner; status is the read-only view |
 | `delivery` | probes provider-equivalent workflows, reports pipeline reachability and provenance, and leaves provider, environment, promotion, publication and permission policy with the target owner; status is the read-only view |
+| `opensource` | aggregates every owner's catalog answers into the baseline level, writes only the license, community and governance artifacts it owns from pinned templates, and leaves the license, maintainers, contact and funding to the owner; status is the read-only view |
 
-The cross-front `quenching-align` conducts the seven aligned fronts in dependency order on one nested OK and **loops
+The cross-front `quenching-align` conducts the eight aligned fronts in dependency order on one nested OK and **loops
 across fronts**, because they feed each other: a spec's distillation is glossary work the
 `docs` front must then index; the design front installs product/design standards; the components front creates the rule and registry that the `docs`
 listings must carry.
@@ -107,7 +109,7 @@ and `commands/**` disagree
 The split is by front and pillar: `quenching-knowledge-*` acts on the OKF `/docs/` bundle,
 `quenching-specs-*` on the specs branch and its cards, `quenching-design-*` on the DTCG
 source and its projections, `quenching-components-*` on the target's `.agents/` automation surface,
-`quenching-ops-*` on the target's operations surface, `quenching-proof-*` on the target's verification surface, `quenching-toolchain-*` on the target's toolchain surface, `quenching-delivery-*` on the target's delivery surface, and `quenching-git-*` on a repository's own git facts. Two commands sit at the root. Codex auto-routes to a command by its `description`; typing the command is
+`quenching-ops-*` on the target's operations surface, `quenching-proof-*` on the target's verification surface, `quenching-toolchain-*` on the target's toolchain surface, `quenching-delivery-*` on the target's delivery surface, `quenching-opensource-*` on its license, community and governance artifacts, and `quenching-git-*` on a repository's own git facts. Two commands sit at the root. Codex auto-routes to a command by its `description`; typing the command is
 the explicit entry point.
 
 ### The `knowledge` front — the OKF `/docs/` bundle
@@ -183,6 +185,13 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 | `quenching-delivery-align` | Probes provider-equivalent workflows, applies bounded pipeline-shape repairs under one plan, and reports provider and release policy without choosing it. |
 | `quenching-delivery-status` | Reports applicability, workflow inventory, reachability, provenance and `delivery-*` findings without writing or running a pipeline. |
 
+### The opensource front — license, community and governance artifacts
+
+| Command | Does |
+| --- | --- |
+| `quenching-opensource-align` | Probes applicability, plans the license, contributing, conduct, support, governance, owners and template artifacts on one OK, and writes each through `cq opensource apply` from a pinned template, never choosing the owner's license, maintainers, contact or funding. |
+| `quenching-opensource-status` | Reports every owner's catalog answers, the OSPS baseline level reached and `os-*` findings without writing. |
+
 ### The security pillar — read-only repository security questions
 
 | Command | Does |
@@ -219,7 +228,7 @@ instead of running either.
 
 | Command | Does |
 | --- | --- |
-| `quenching-align` | The one align that spans the seven aligned fronts, on ONE confirmation — conducting each front's own align in dependency order, never reimplementing any of them. |
+| `quenching-align` | The one align that spans the eight aligned fronts, on ONE confirmation — conducting each front's own align in dependency order, never reimplementing any of them. |
 | `quenching-handoff` | Compacts the current conversation into a handoff document a fresh session can continue from — referencing existing plans, issues, commits and diffs rather than duplicating them. |
 
 The `specs` front has ten commands and a flow worth reading as a whole, so it gets its own section
