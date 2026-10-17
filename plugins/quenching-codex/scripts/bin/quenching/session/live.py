@@ -116,14 +116,14 @@ def _blocks(event: dict) -> list[dict]:
     return [b for b in content if isinstance(b, dict)] if isinstance(content, list) else []
 
 
-def _pending(events: list[dict]) -> str | None:
-    """Text of the last asking tool call with no result yet, else None."""
-    asked: dict[str, str] = {}
+def _pending(events: list[dict]) -> tuple[str, str] | None:
+    """(tool name, text) of the last asking tool call with no result yet, else None."""
+    asked: dict[str, tuple[str, str]] = {}
     answered: set[str] = set()
     for event in events:
         for block in _blocks(event):
             if block.get("type") == "tool_use" and block.get("name") in ASKING:
-                asked[str(block.get("id"))] = _question_text(block)
+                asked[str(block.get("id"))] = (str(block.get("name")), _question_text(block))
             elif block.get("type") == "tool_result":
                 answered.add(str(block.get("tool_use_id")))
     open_ids = [key for key in asked if key not in answered]
@@ -188,11 +188,12 @@ def _session_row(info: dict, projects: Path, now: datetime) -> dict:
         events, bad = _tail_events(folder / f"{session_id}.jsonl")
         subagents = _subagents(folder / session_id / "subagents", now, activity)
     last = _bucket(events, now, activity)
-    question = _pending(events)
-    state = "waiting" if question is not None else "busy" if status == "busy" else "idle"
+    pending = _pending(events)
+    tool, question = pending if pending else (None, None)
+    state = "waiting" if pending is not None else "busy" if status == "busy" else "idle"
     return {"sessionId": session_id, "pid": info.get("pid"), "cwd": cwd, "status": status,
             "statusSince": _iso(since), "lastEvent": _iso(last), "state": state,
-            "pendingQuestion": question, "subagents": subagents, "activity": activity,
+            "pendingQuestion": question, "pendingTool": tool, "subagents": subagents, "activity": activity,
             "unparsed": bad}
 
 
