@@ -1409,6 +1409,18 @@ class AuditRelocation(RepoCase):
                              self.AGENT.format(tools="Agent(quenching:w), Read")})["grants"]
         self.assertEqual([g["added"] for g in got], [["Agent(quenching:w)", "Read"]])
 
+    def test_a_probe_rewritten_by_the_manifest_namespace_is_not_a_shrunk_gate(self):
+        self.assertEqual(self._payload({self.CHECK: "probe m:specs:x\nkeep\n"})["lowered"], [])
+
+    def test_a_probe_rewritten_to_an_unknown_head_is_a_shrunk_gate(self):
+        got = self._payload({self.CHECK: "probe m:ghost:x\nkeep\n"})["lowered"]
+        self.assertEqual([(e["kind"], e["detail"]) for e in got],
+                         [("gate-shrunk", ["probe quenching:specs:x"])])
+
+    def test_a_probe_dropped_is_still_a_shrunk_gate(self):
+        got = self._payload({self.CHECK: "keep\n"})["lowered"]
+        self.assertEqual([e["kind"] for e in got], ["gate-shrunk"])
+
 
 class VerifierGrants(unittest.TestCase):
     """The read-only `verifier` holds no grant whose `*` sits mid-pattern, and no raw `git` or
