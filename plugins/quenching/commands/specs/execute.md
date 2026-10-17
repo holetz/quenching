@@ -236,6 +236,10 @@ b. **Write the code**, minimal and scoped to the declared files. A task that dec
    [execution-delegation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-delegation.md)
    §The Codex executor, loaded then; exit 1 or 2 → the executor above.
 
+   **The `haiku` rung is per task.** For the `Task` executor, `cq specs estimate --spec "<id>"
+   --task "<task-id>" --json` reporting `smallTierEligible: true` admits a `haiku` pin for one
+   attempt, under §Delegating an executor; anything else pins the session model.
+
 c. **Write only the `/docs/` this task names.** When this task writes `/docs/`, load the rule that
    draws the line between declared and emergent, and the boundary it crosses:
 
@@ -492,7 +496,7 @@ each is absolute. The three whose failure is **silent and permanent**:
 - Delegate an executor only under
   [execution-delegation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-delegation.md)
   §Delegating an executor (declares `files:`, touches no `/docs/`, pinned to the session model —
-  **never `haiku`**), and run two tasks in parallel only when `cq specs parallel` reports the `[P]`
+  `haiku` only on a task `cq specs estimate --task` reports `smallTierEligible`), and run two tasks in parallel only when `cq specs parallel` reports the `[P]`
   group eligible.
 - Never review the whole branch, merge, or archive from here — that is `/quenching-specs:specs:conclude`.
 - Keep changes minimal and scoped to each task; pause on errors, blockers, or unclear requirements
