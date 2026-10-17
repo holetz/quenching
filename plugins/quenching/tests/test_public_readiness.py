@@ -64,6 +64,12 @@ def git(root: str, *argv: str, env: dict | None = None) -> str:
                           env=env).stdout
 
 
+def identity(email: str = "dev@users.noreply.github.com") -> dict:
+    """A committer identity in the env, since a CI runner has no user.name/user.email configured."""
+    return dict(os.environ, GIT_AUTHOR_NAME="Dev", GIT_AUTHOR_EMAIL=email,
+                GIT_COMMITTER_NAME="Dev", GIT_COMMITTER_EMAIL=email)
+
+
 def commit(root: str, path: str, content: bytes | str, message: str = "c",
            email: str = "dev@users.noreply.github.com") -> str:
     target = pathlib.Path(root, path)
@@ -72,10 +78,8 @@ def commit(root: str, path: str, content: bytes | str, message: str = "c",
         target.write_text(content, encoding="utf-8")
     else:
         target.write_bytes(content)
-    env = dict(os.environ, GIT_AUTHOR_NAME="Dev", GIT_AUTHOR_EMAIL=email,
-               GIT_COMMITTER_NAME="Dev", GIT_COMMITTER_EMAIL=email)
     git(root, "add", "--", path)
-    git(root, "commit", "-q", "-m", message, env=env)
+    git(root, "commit", "-q", "-m", message, env=identity(email))
     return git(root, "rev-parse", "HEAD").strip()
 
 
@@ -207,7 +211,7 @@ class AdversarialTest(ReadinessCase):
     def test_a_secret_removed_from_the_tree_still_blocks_from_history(self):
         sha = commit(self.root, "deploy/key.pem", f"{SENTINEL}\n")
         git(self.root, "rm", "-q", "deploy/key.pem")
-        git(self.root, "commit", "-q", "-m", "remove")
+        git(self.root, "commit", "-q", "-m", "remove", env=identity())
         payload, _ = self.gitleaks([{"File": "deploy/key.pem", "Commit": sha, "Secret": SENTINEL}])
         [blocker] = payload["blockers"]
         self.assertEqual((sha, "deploy/key.pem"), (blocker["commit"], blocker["location"]))
