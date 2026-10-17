@@ -73,18 +73,18 @@ class EffectiveConfig(unittest.TestCase):
                                                 rows["specs.subjects"]["value"]))
         self.assertNotIn("specs.worktreeSetup", rows)
         self.assertEqual("repository", rows["backend"]["source"])
-        self.assertTrue(next(l for l in payload["layers"] if l["name"] == "branch")["applies"])
+        self.assertTrue(next(x for x in payload["layers"] if x["name"] == "branch")["applies"])
 
         self._repo({"specs": {"subjects": {"a": 1}}})
         rows, payload = self._rows({"subjects": {"b": 2}})
         self.assertEqual(("repository", {"a": 1}), (rows["specs.subjects"]["source"],
                                                    rows["specs.subjects"]["value"]))
-        self.assertFalse(next(l for l in payload["layers"] if l["name"] == "branch")["applies"])
+        self.assertFalse(next(x for x in payload["layers"] if x["name"] == "branch")["applies"])
 
     def test_unreadable_user_file_is_reported_not_fatal(self):
         self.user.write_text("{nope")
         _, payload = self._rows()
-        layer = next(l for l in payload["layers"] if l["name"] == "user")
+        layer = next(x for x in payload["layers"] if x["name"] == "user")
         self.assertTrue(layer["unparseable"])
 
     def test_cli_json_and_required_flag(self):
