@@ -3268,3 +3268,31 @@ class StewardGrants(unittest.TestCase):
         self.assertIn("`branch -d`", steward)
         self.assertNotIn("cleanup (always blocked)", steward)
         self.assertIn("the step `cleanup`", orchestrator)
+
+
+class ReviewerHistory(RepoCase):
+    """The `reviewer` reads history through `cq git history`, which cannot write a file."""
+
+    def test_reviewer_has_no_raw_git_grant(self):
+        text = (PLUGIN_ROOT / "agents" / "reviewer.md").read_text(encoding="utf-8")
+        tools = next(line for line in text.splitlines() if line.startswith("tools:"))
+        grants = re.findall(r"Bash\(([^)]*)\)", tools)
+        self.assertIn("cq git history:*", grants)
+        for raw in ("git log:*", "git show:*", "git diff:*"):
+            self.assertNotIn(raw, grants)
+
+    def test_reads_log_show_and_diff(self):
+        pathlib.Path(self.repo, "a.txt").write_text("a\n", encoding="utf-8")
+        _run(self.repo, "add", "a.txt")
+        _run(self.repo, "commit", "-m", "add a")
+        self.assertIn("add a", _cq_json(self.repo, "history", "log", "HEAD")["output"])
+        self.assertIn("+a", _cq_json(self.repo, "history", "show", "HEAD")["output"])
+        self.assertIn("a.txt", _cq_json(self.repo, "history", "diff", "HEAD~1", "HEAD")["output"])
+
+    def test_output_option_writes_nothing(self):
+        target = pathlib.Path(self.repo, "written.txt")
+        for argv in (("diff", "--output=written.txt", "HEAD"), ("log", "--output=written.txt", "HEAD"),
+                     ("diff", "HEAD", "--output", "written.txt")):
+            proc = _cq(self.repo, "history", *argv)
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertFalse(target.exists())
