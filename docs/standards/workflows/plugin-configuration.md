@@ -4,10 +4,10 @@ title: Plugin configuration contract
 description: "`.claude/quenching.json` is the plugin's single configuration home; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles, proposal catalogues and the `git` pillar's per-artifact writing directives remain explicit target settings"
 resource: .claude/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/specs/config.py, plugins/quenching/assets/bin/quenching/ops/**, plugins/quenching/assets/bin/quenching/proof/**, plugins/quenching/assets/bin/quenching/git/base.py, plugins/quenching/assets/bin/quenching/git/conventions.py
 tags: [workflows, specs, configuration, provider, plugin]
-timestamp: 2026-10-08
+timestamp: 2026-10-17
 audience: both
 authority: current
-source: spec 1065 (task 3.1) — the namespaced envelope and migration refusal are implemented and covered by the source test matrix; extended by spec 1075 (2026-09-01) with `shared.gitConventions`, the `git` pillar's per-artifact writing directives; extended by spec 1405 (2026-10-08) with `shared.regenerablePaths`
+source: spec 1065 (task 3.1) — the namespaced envelope and migration refusal are implemented and covered by the source test matrix; extended by spec 1075 (2026-09-01) with `shared.gitConventions`, the `git` pillar's per-artifact writing directives; extended by spec 1405 (2026-10-08) with `shared.regenerablePaths`; by spec 1907 (2026-10-17) with the user layer
 maintainer: quenching
 ---
 
@@ -33,9 +33,22 @@ projection uses the corresponding `.agents/quenching.json` home; both projection
 envelope and namespace contract. A leftover `/.specs/config.json` is diagnostic residue and is
 never merged with this file.
 
-There is no per-front configuration file and no precedence order between two configuration
-sources. One file and one namespace owner keep a declaration visible to every reader that needs
-it.
+There is no per-front configuration file. One repository file and one namespace owner keep a
+declaration visible to every reader that needs it.
+
+## The user layer
+
+A second file, `~/.config/quenching/config.json` (overridden by `$QUENCHING_USER_CONFIG`), carries
+the same envelope for the person rather than the repository. `load_config` reads it and merges it
+under each namespace **key by key, the repository winning**: a key the repository declares
+replaces the user's value whole, never merged into it, and a key only the user declares fills in.
+The merged result is what `namespace()` and `data` return, so no reader changes.
+
+Only the namespaces (`shared`, `specs`, `ops`, `proof`, `delivery`) count there. The root `backend`
+and the pre-envelope flat keys describe one repository, so they are ignored and listed in
+`userConfig.ignoredKeys`. A missing file is a no-op; an unreadable one is reported in
+`userConfig.unparseable` and never fatal. A namespace the repository declares as a non-object
+stays invalid. `present` and `path` still describe only the repository file.
 
 ## The envelope and its owners
 
