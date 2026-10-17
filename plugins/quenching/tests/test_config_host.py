@@ -82,6 +82,21 @@ class WorkHost(unittest.TestCase):
         with self.assertRaises(ValueError):
             build_plan({**settings, "enabled": False}, "p", ["ls"])
 
+    def test_cli(self):
+        self._user({"target": "h"})
+        out = io.StringIO()
+        with redirect_stdout(out):
+            rc = main(["--root", str(self.repo), "host", "--json"])
+        self.assertEqual(rc, 0)
+        self.assertTrue(json.loads(out.getvalue())["enabled"])
+        out = io.StringIO()
+        with redirect_stdout(out):
+            rc = main(["--root", str(self.repo), "host", "--plan", "--json", "--", "make", "test"])
+        self.assertEqual(rc, 0)
+        self.assertEqual(json.loads(out.getvalue())["steps"][2]["step"], "run")
+        with redirect_stdout(io.StringIO()):
+            self.assertEqual(main(["--root", str(self.repo), "host", "--plan"]), 2)
+
 
 if __name__ == "__main__":
     unittest.main()
