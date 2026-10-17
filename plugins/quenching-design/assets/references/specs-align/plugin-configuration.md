@@ -58,3 +58,8 @@ and no value is merged.
 
 The checker's `warnAsError` and `ignoreGlobs` are `shared.okfValidate`; `.claude/hooks/hooks-config.json`
 stays the layer below, and the bundle root is the fixed `/docs/` convention no configuration names.
+
+`cq config init --write` seeds the file with every default above spelled out (the `shared.codex`,
+`autonomy`, `contextBudgets`, `okfValidate` and `workHost` blocks and `specs.chat`); `cq config check`
+and `cq doctor` list the seeded keys a file lacks. They only report: an existing file is never
+rewritten.

@@ -12,6 +12,7 @@ completed its provider setup while never making a GitHub repository look like Az
 """
 from __future__ import annotations
 
+import importlib
 import os
 import shutil
 import sys
@@ -142,6 +143,36 @@ def _missing_payload(report: dict) -> dict:
     }
 
 
+def config_report(root: str) -> dict | None:
+    """`{present, missing}` for the seeded keys, or `None` where this module ships no seed.
+
+    Reports only: a missing key is information, never a failed prerequisite.
+    """
+    # By name, not by statement: only the modules that ship the `config` package can seed, and
+    # the others must report nothing instead of failing the pre-flight check.
+    try:
+        seed = importlib.import_module("quenching.config.seed")
+    except ImportError:
+        return None
+    missing_keys, read_repository = seed.missing_keys, seed.read_repository
+    document = read_repository(root)
+    if document is None:
+        return {"present": False, "missing": []}
+    return {"present": True, "missing": missing_keys(document, root)}
+
+
+def _config_line(config: dict | None) -> str | None:
+    if config is None:
+        return None
+    if not config["present"]:
+        return "config: no .claude/quenching.json — `cq config init --write` seeds it"
+    if config["missing"]:
+        return (f"config: {len(config['missing'])} seeded key(s) missing "
+                f"({', '.join(config['missing'][:3])}{', …' if len(config['missing']) > 3 else ''})"
+                " — `cq config check` lists them")
+    return "config: every seeded key is declared"
+
+
 def _run_setup(as_json: bool, root: str, write: bool) -> int:
     result, error = (write_minimal_config(root) if write else prepare_minimal_config(root))
     if error:
@@ -196,5 +227,9 @@ def run(as_json: bool, root: str, *, setup: bool = False, write: bool = False) -
              f"  backend: {report['backend'] or '(none)'}\n"
              f"  profile: {profile_text}\n"
              f"  dependencies: {tools or '(none required)'}")
+    config = config_report(resolved_root)
+    if config is not None:
+        report = {**report, "config": config}
+        human += f"\n  {_config_line(config)}"
     emit(as_json, {"ok": True, **report}, human)
     return OK
