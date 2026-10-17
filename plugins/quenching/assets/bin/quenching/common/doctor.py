@@ -12,6 +12,7 @@ completed its provider setup while never making a GitHub repository look like Az
 """
 from __future__ import annotations
 
+import importlib
 import os
 import shutil
 import sys
@@ -147,10 +148,13 @@ def config_report(root: str) -> dict | None:
 
     Reports only: a missing key is information, never a failed prerequisite.
     """
+    # By name, not by statement: only the modules that ship the `config` package can seed, and
+    # the others must report nothing instead of failing the pre-flight check.
     try:
-        from quenching.config.seed import missing_keys, read_repository
+        seed = importlib.import_module("quenching.config.seed")
     except ImportError:
         return None
+    missing_keys, read_repository = seed.missing_keys, seed.read_repository
     document = read_repository(root)
     if document is None:
         return {"present": False, "missing": []}
