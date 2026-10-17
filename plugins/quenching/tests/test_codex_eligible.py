@@ -71,6 +71,22 @@ class EligibilityTest(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual((payload["class"], payload["model"]), ("verified", "v-m"))
 
+    def test_verified_task_with_a_protected_oracle_takes_the_small_tier(self):
+        self.write("src/a.py", 4000)
+        row = {"oracleProtected": True, "smallTierEligible": True}
+        payload, code = eligibility(task(verify="make test"), settings(maxTaskTokens=100),
+                                    self.root, Quota(), row)
+        self.assertEqual(code, 0)
+        self.assertEqual((payload["class"], payload["model"]), ("verified", "gpt-6-luna"))
+
+    def test_verified_task_without_the_small_tier_keeps_sol(self):
+        self.write("src/a.py", 4000)
+        for row in (None, {"oracleProtected": False, "smallTierEligible": True},
+                    {"oracleProtected": True, "smallTierEligible": False}):
+            payload, code = eligibility(task(verify="make test"), settings(maxTaskTokens=100),
+                                        self.root, Quota(), row)
+            self.assertEqual((code, payload["model"]), (0, "gpt-6.1-sol"), row)
+
     def test_large_task_without_verify_stays_with_claude(self):
         self.write("src/a.py", 4000)
         quota = Quota()

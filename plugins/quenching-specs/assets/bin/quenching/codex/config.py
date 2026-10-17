@@ -22,6 +22,7 @@ DEFAULTS = {
         "enabled": True,
         "modelSmall": "gpt-6.1-sol",
         "modelVerified": "gpt-6.1-sol",
+        "modelSmallTier": "gpt-6-luna",
         "reasoningEffort": "medium",
         "sandbox": "off",
         "windowsSandbox": "unelevated",

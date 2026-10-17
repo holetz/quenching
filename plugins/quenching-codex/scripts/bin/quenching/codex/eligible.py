@@ -3,7 +3,9 @@
 A task is eligible when the executor is enabled, it declares `files:`, none of them lies under
 `docs/` or `knowledge/`, and it is either **small** (the bytes of its existing `files:` over four
 stay within `maxTaskTokens`) or **verified** (it carries a `verify:` command). Small wins when both
-hold, and the class picks the model (`modelSmall` or `modelVerified`).
+hold, and the class picks the model (`modelSmall` or `modelVerified`). A verified task whose
+`cq specs estimate --task` reports `oracleProtected` and `smallTierEligible` takes the small tier
+(`modelSmallTier`, ADR 0014) instead.
 
 The quota is asked last, because it is the only check that starts a process: the probe must
 answer `available` under every ceiling lowered by `reservePercent`, so a dispatch never spends the
@@ -20,6 +22,7 @@ import os
 
 from quenching.codex.probe import probe
 from quenching.specs.backends import open_backend
+from quenching.specs.commands.estimate import estimate_task
 
 BYTES_PER_TOKEN = 4
 WRITTEN_KNOWLEDGE = ("docs", "knowledge")
@@ -48,8 +51,13 @@ def reserved(settings: dict) -> dict:
                                for window, ceiling in settings["maxUsedPercent"].items()}}
 
 
-def eligibility(task: dict, settings: dict, root: str, quota=None) -> tuple[dict, int]:
-    """Judge one parsed task; `quota` replaces the probe, so tests never reach Codex."""
+def eligibility(task: dict, settings: dict, root: str, quota=None,
+                small_tier: dict | None = None) -> tuple[dict, int]:
+    """Judge one parsed task; `quota` replaces the probe, so tests never reach Codex.
+
+    `small_tier` is the task's `estimate_task` row: a verified task it reports protected and
+    eligible runs on `modelSmallTier`; anything else keeps `modelVerified`.
+    """
     executor = settings["executor"]
     out = {"ok": False, "task": task["id"], "class": None, "model": None,
            "reasoningEffort": executor["reasoningEffort"], "sandbox": executor["sandbox"],
@@ -73,7 +81,10 @@ def eligibility(task: dict, settings: dict, root: str, quota=None) -> tuple[dict
     if out["tokens"] <= executor["maxTaskTokens"]:
         out["class"], out["model"] = "small", executor["modelSmall"]
     elif task["verify"]:
-        out["class"], out["model"] = "verified", executor["modelVerified"]
+        protected = bool(small_tier and small_tier["oracleProtected"]
+                         and small_tier["smallTierEligible"])
+        out["class"] = "verified"
+        out["model"] = executor["modelSmallTier" if protected else "modelVerified"]
     else:
         return no(f"the task is large ({out['tokens']} > {executor['maxTaskTokens']} tokens) "
                   "and has no verify:")
@@ -100,6 +111,6 @@ def run_eligible(root: str, settings: dict, spec: str, task_id: str,
     if task is None:
         return {"ok": False, "code": "codex-task-missing",
                 "message": f"spec {spec} has no task {task_id}"}, 2
-    payload, code = eligibility(task, settings, root, quota)
+    payload, code = eligibility(task, settings, root, quota, estimate_task(info, task_id, root))
     payload["spec"] = str(spec)
     return payload, code
