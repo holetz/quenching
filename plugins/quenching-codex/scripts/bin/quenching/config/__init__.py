@@ -27,6 +27,8 @@ def _render(payload: dict) -> str:
     for row in payload["values"]:
         lines.append(f"{row['key']:<{width}} = {json.dumps(row['value'], ensure_ascii=False)}"
                      f"  [{row['source']}]")
+    if payload.get("warnings"):
+        lines.extend(["", "warnings:", *(f"  {warning}" for warning in payload["warnings"])])
     return "\n".join(lines)
 
 
