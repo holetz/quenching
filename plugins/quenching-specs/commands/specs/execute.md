@@ -333,6 +333,9 @@ g. **Run and report the declared hook for this event, and move on.** Once the sp
    with the hook's text instead of the fixed report is a defect. An orchestrated run always ends
    with the fixed report.
 
+   A repository that wants a Codex review per task declares it as this hook; the recipe is
+   `docs/standards/architecture/codex-pillar.md` §The per-task review hook.
+
    `enabled: false` was filtered during the config read and is never announced or invoked;
    absence of `enabled` means enabled. The executor never evaluates `condition`: it reports the
    declaration and passes it as context to the hook. An optional hook failure is reported and the
