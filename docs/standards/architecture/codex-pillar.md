@@ -7,7 +7,7 @@ tags: [architecture, codex, pillar, read-only, quota, review, executor]
 timestamp: 2026-10-17
 audience: both
 authority: current
-source: spec 1818 (tasks 2.1, 3.3) — the `cq codex` pillar of epic 1817 (D8 A), absorbing the quota probe of spec 1660; spec 1879 (task 4.1) — the per-task executor of epic 1914 (E1 A, E2 bypass by default)
+source: spec 1818 (tasks 2.1, 3.3) — the `cq codex` pillar of epic 1817 (D8 A), absorbing the quota probe of spec 1660; spec 1879 (task 4.1) — the per-task executor of epic 1914 (E1 A, E2 bypass by default); spec 1661 (task 5.1) — `modelSmallTier` for the protected-oracle verified class (ADR 0014)
 maintainer: quenching
 ---
 
@@ -106,7 +106,7 @@ The optional `shared.codex` block of `.claude/quenching.json`:
 {"crossReview": "auto", "maxUsedPercent": {"primary": 80, "secondary": 90},
  "timeoutSeconds": 900, "model": "gpt-6-astra",
  "executor": {"enabled": true, "modelSmall": "gpt-6.1-sol", "modelVerified": "gpt-6.1-sol",
-              "reasoningEffort": "medium", "sandbox": "off", "windowsSandbox": "unelevated",
+              "modelSmallTier": "gpt-6-luna", "reasoningEffort": "medium", "sandbox": "off", "windowsSandbox": "unelevated",
               "maxTaskTokens": 20000, "reservePercent": 10, "stopLossPercent": 15}}
 ```
 
@@ -151,7 +151,9 @@ body runs, in order:
 refusal (unknown spec or task). A task is eligible when `executor.enabled` holds, it declares
 `files:`, none of them under `docs/` or `knowledge/`, and it is `small` (the bytes of its `files:`
 over 4 at most `maxTaskTokens`) or `verified` (it carries a `verify:`). The class picks
-`modelSmall` or `modelVerified`. The quota must sit under `maxUsedPercent − reservePercent` in both
+`modelSmall` or `modelVerified`; a `verified` task whose `verify:` is a protected oracle (tests
+outside its `files:`) and whose `cq specs estimate --task` reports `smallTierEligible` runs on
+`modelSmallTier` instead ([ADR 0014](../../decisions/0014-tier-pequeno-em-tarefa-testavel.md)). The quota must sit under `maxUsedPercent − reservePercent` in both
 windows; an unknown quota is not eligible.
 
 `cq codex implement --spec <id> --task <tid> --worktree <dir> --prompt <file> [--run <name>]`
