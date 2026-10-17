@@ -777,7 +777,10 @@ def _lint_frontmatter_hooks(cmd: dict, where: dict) -> list[dict]:
 
 
 REF_ROOT = "${CLAUDE_PLUGIN_ROOT}/assets/references/"
-REF_LINK_RE = re.compile(r"\]\(([^)\s]+\.md)(?:#[^)]*)?\)|components read\s+([^\s`\"'<>-][^\s`\"']*\.md)")
+REF_LINK_RE = re.compile(r"\]\(([^)\s]+\.md)(?:#[^)]*)?\)|components read\s+[\"']?([^\s`\"'<>-][^\s`\"']*\.md)")
+
+
+URL_SCHEME_RE = re.compile(r"(?:[A-Za-z][A-Za-z0-9+.-]*:|//)")
 
 
 def reference_root_findings(body: str, base: str, where: dict) -> list[dict]:
@@ -790,14 +793,14 @@ def reference_root_findings(body: str, base: str, where: dict) -> list[dict]:
     seen: set[str] = set()
     for m in REF_LINK_RE.finditer(body):
         target = m.group(1) or m.group(2)
-        if target in seen:
+        if target in seen or URL_SCHEME_RE.match(target):
             continue
         if target.startswith(REF_ROOT):
             if have_tree and not os.path.isfile(os.path.join(refs_dir, target[len(REF_ROOT):])):
                 problem = "does not exist under assets/references/"
             else:
                 continue
-        elif "assets/references/" in target or "/references/" in target:
+        elif "assets/references/" in target:
             problem = "is not anchored at the plugin root"
         elif have_tree and "/" in target and not target.startswith(("/", ".", "$", "http")) \
                 and os.path.isfile(os.path.join(refs_dir, target)):
