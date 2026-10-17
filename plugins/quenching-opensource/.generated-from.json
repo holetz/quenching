@@ -29,7 +29,8 @@
       "specs-execute",
       "front-align",
       "opensource-controls",
-      "opensource-align"
+      "opensource-align",
+      "opensource-readiness"
     ],
     "router": true
   }
