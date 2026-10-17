@@ -307,6 +307,11 @@ def _add_migrate_export_serve(sub) -> None:
     sp.add_argument("--sessions", action="store_true",
                     help="serve GET /api/sessions: the live Claude Code sessions of this "
                          "repository's worktrees, fixed fields only (off by default)")
+    sp.add_argument("--chat", action="store_true",
+                    help="serve POST /api/chat: questions answered by a read-only `claude -p` "
+                         "(sonnet, Read/Grep/Glob only) in a worktree, polled (off by default)")
+    sp.add_argument("--chat-budget-usd", type=float, default=None, dest="chat_budget_usd",
+                    help="the dollar ceiling of one chat question (default: 0.50)")
 
 
 def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]:
