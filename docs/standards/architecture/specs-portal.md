@@ -4,10 +4,10 @@ title: The specs portal reads one store and widens nothing without a decision
 description: The local spec portal (cq specs serve) reads only the specs store open_backend reads, exposes a fixed set of GET and POST routes, keeps its loopback, token, Host/Origin and CSP guarantees, builds every node with textContent, reuses cockpit UX patterns but never its code, and regenerates the reader copy and the Codex mirror with every change
 resource: plugins/quenching/assets/bin/quenching/specs/portal.py, plugins/quenching/assets/portal/**, plugins/quenching/assets/bin/quenching/portal/**
 tags: [architecture, portal, specs, security, ux]
-timestamp: 2026-10-16
+timestamp: 2026-10-17
 audience: both
 authority: current
-source: spec 1769 and the fixed owner decisions B-O1 to B-O4 of epic 1768
+source: spec 1769 and the fixed owner decisions B-O1 to B-O4 of epic 1768; spec 1812 (epic 1810) for the sessions read
 maintainer: quenching
 ---
 
@@ -26,6 +26,16 @@ else is read: no `~/.claude`, no other file tree, no `gh` call on a read (`deriv
 `pr_states`). A change that needs data outside the store is not a portal change until a human
 decides it.
 
+The one exception is the live Claude Code sessions, and only when the portal was started with
+`--sessions` (off by default). Then, and only on `GET /api/sessions`, it reads
+`<claude root>/sessions/*.json` (`QUENCHING_CLAUDE_ROOT`, else `~/.claude`) and the tail of each
+live session's transcript, through `quenching.session.live.read_live`, keeping only the sessions
+whose `cwd` lies inside a worktree of this repository (`quenching.session.worktrees.list_worktrees`).
+It never opens a `*.key` file and never returns `messagingSocketPath`, a `pid`, a `tool_result` or
+a raw tool `input`. Without the flag, nothing under `~/.claude` is read and the session code is
+not even imported. The `quenching-specs-reader` copy does not carry the session package and
+refuses `--sessions` (`sp-portal-sessions-unavailable`) before a socket opens.
+
 ## Project registry
 
 The projects a portal shows are registered in `~/.config/quenching/projects.json`
@@ -40,13 +50,21 @@ second import is refused. Reading orca live is not part of this standard.
 ## Routes
 
 GET: `/api/config`, `/api/specs`, `/api/specs/<id>`, `/api/search`, `/api/epics`, `/api/human`; static assets
-under `/`. POST: `/api/capture`, `/api/section`, `/api/approve`, `/api/reorder`,
+under `/`. With `--sessions` only, also `GET /api/sessions`; without the flag it is a 404
+(`sp-portal-not-found`) like any unknown route, and `/api/config` reports `sessions: false`. POST: `/api/capture`, `/api/section`, `/api/approve`, `/api/reorder`,
 `/api/discovery`, each delegating to the CLI's own verb so CAS and refusals are the terminal's.
 
 - No new POST route enters without a human decision. Reading more is a GET over the same store.
 - A GET request starts no process beyond the read the store backend already makes (on the git backend, `git` reading the `quenching` branch), and never calls `gh`.
 - A POST request writes to the store and pushes to git through the CLI's own verb. Every write route goes through the backend's write path, and with a card provider configured (`card: {provider: github}`) that path reaches `gh`: it creates the card on capture (`cmd_new` → `resolve_card_client`) and, through `_card_transitions` in the git backend, updates it when the `lifecycle_key` changes (title, board state, phase, labels or tags). Which routes trigger it follows from that mechanism, not from a list. This describes what exists; it grants nothing new.
 - Static assets are read-only: any non-GET/HEAD method on them is a 405.
+- `GET /api/sessions` returns `generatedAt`, `windowMinutes` and, per session, exactly
+  `sessionId`, `cwd`, `worktree` (`{path, branch, main}` or null), `state`, `status`,
+  `statusSince`, `lastEvent`, `pendingQuestion` (the question texts of an unanswered
+  `AskUserQuestion`, or `plan` for `ExitPlanMode`), `subagents[{agentType, start, end, active}]`
+  and `activity` (60 per-minute counts). Every row is rebuilt field by field, so a field Claude
+  Code adds tomorrow never reaches the page. It starts no process: the liveness check is a
+  signal 0, and worktrees are read from the git directory, not through `git`.
 
 ## Security guarantees
 
