@@ -497,6 +497,11 @@ class CodexRuntimeTranslation(unittest.TestCase):
                     self.assertNotIn("Traceback", result.stderr)
 
     def test_runtime_maps_active_models_preserving_fixture_data(self):
+        saved = (translate.SOURCE, translate.TARGET, translate.MANIFEST)
+        self.addCleanup(lambda: setattr(translate, "SOURCE", saved[0]))
+        self.addCleanup(lambda: setattr(translate, "TARGET", saved[1]))
+        self.addCleanup(lambda: setattr(translate, "MANIFEST", saved[2]))
+        translate.configure(str(translate.payload_root()), str(translate.payload_root()))
         adaptation = translate.read_adaptation()
         raw = "model: opus\neffort: high\nNever haiku for product code; sonnet worker.\n```python\nfixture = 'opus'\n```\n"
         result = translate.transform_codex_runtime(raw, adaptation)
