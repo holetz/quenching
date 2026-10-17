@@ -115,8 +115,8 @@ the conductor alone calls `cq codex`. Exit 1 of the probe, or exit 1 or a timeou
 no Codex findings: the final report names the fallback and its reason, and the step goes on with the
 Claude review alone; a refusal (exit 2) is reported the same way and never blocks the step.
 
-**Consolidate by `path:line`.** Merge both lists, one entry per `path:line`, marked `claude`,
-`codex` or `both`. A finding the reviewer reproduced stands. A `codex`-only finding becomes a spec
+**Consolidate by `path:line`.** Merge both lists, one entry per `path:line`, marked claude,
+codex or both. A finding the reviewer reproduced stands. A `codex`-only finding becomes a spec
 only once reproduced — by the reviewer or by the conductor, with the command and its output; the
 payload's `findingsNeedReproduction` binds, and a `prompt-only` finding was never run by Codex.
 Unreproduced ones are dropped and counted in the report. Keep the Codex tokens from the payload, or
