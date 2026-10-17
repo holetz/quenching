@@ -208,7 +208,8 @@ want=sys.argv[1]
 for line in open(sys.argv[2], encoding="utf-8", errors="replace"):
     try: ev=json.loads(line)
     except Exception: continue
-    for c in (ev.get("message",{}).get("content") or []):
+    msg=ev.get("message") if isinstance(ev,dict) else None
+    for c in ((msg.get("content") if isinstance(msg,dict) else None) or []):
         if isinstance(c,dict) and c.get("type")=="tool_use" and c.get("name")==want:
             print(json.dumps(c.get("input",{})))
 ' "$1" "$2"
@@ -361,7 +362,8 @@ n=0
 for line in open(sys.argv[1], encoding="utf-8", errors="replace"):
     try: ev=json.loads(line)
     except Exception: continue
-    for c in (ev.get("message",{}).get("content") or []):
+    msg=ev.get("message") if isinstance(ev,dict) else None
+    for c in ((msg.get("content") if isinstance(msg,dict) else None) or []):
         if isinstance(c,dict) and c.get("type")=="tool_use": n+=1
 print(n)
 ' "$1")" -gt 0 ] || return 1

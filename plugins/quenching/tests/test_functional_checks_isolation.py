@@ -29,6 +29,7 @@ if not isolated or os.environ.get("FOREIGN_PLUGIN"):
 mode = os.environ.get("REGISTRY_MODE", "valid")
 if mode != "missing":
     print(json.dumps({"type": "system", "subtype": "init", "plugins": plugins if mode == "valid" else [{}]}))
+print(json.dumps({"type": "queue-operation", "message": "a string, not an object"}))
 prompt = args[args.index("--setting-sources") + 2] if isolated else args[-1]
 if prompt.startswith("/quenching-align:align"):
     tool, data = "Skill", {"skill": "quenching-align:knowledge:align"}
