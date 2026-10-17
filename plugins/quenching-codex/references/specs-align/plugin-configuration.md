@@ -25,6 +25,10 @@ tree. Other namespaces are read by their owning front.
 | `shared.profiles` | `{"installed": ["knowledge", "specs", "design", "components", "ops", "proof", "toolchain", "delivery", "opensource", "security", "git"]}` | none — an absent key leaves all eight local fronts eligible | the align conductor's conduction scope |
 | `shared.gitConventions` | `{commitSubject, branchName, prTitle, prBody, mergeSubject}` — prose directives, never templates | `{}` | the whole `git` pillar, through `cq git conventions`; see [git/conventions.md](../../references/git/conventions.md) §The declared-directive layer |
 | `shared.autonomy` | `{runAloneUpTo: none \| low \| medium \| high \| xhigh, merge: policy \| never \| dependencies \| all, maxWorkers: 1-8, maxLaunches: ≥ 1, livenessMinutes: ≥ 1}` — a bad leaf falls back to its default and is named in `warnings` | `{runAloneUpTo: low, merge: policy, maxWorkers: 3, maxLaunches: 40, livenessMinutes: 20}`, leaf by leaf | `quenching-specs-orchestrate`, the `orchestrator` and `quenching-specs-autopilot`, through `cq config show --effective` |
+| `shared.workHost` | `{target, dockerContext, runner, remoteRoot, syncFlags, syncExclude, pullBack, protectedPaths, minFreeGb}` — a bad leaf falls back to its default and is named in `warnings` | disabled until `target` is set | `cq config host --plan`, which prints the dispatch steps and runs nothing |
+| `shared.okfValidate` | `{warnAsError: boolean, ignoreGlobs: list of strings}` | `{warnAsError: false, ignoreGlobs: []}`, key by key; wins over `.agents/hooks/hooks-config*.json` | `cq knowledge validate` |
+| `shared.contextBudgets` | `{main, worker, conductor}`, positive integers | `{main: 200000, worker: 100000, conductor: 150000}` | `cq session context`; `worker` is also the default of `cq specs estimate --worker-budget` |
+| `specs.chat` | `{model, budgetUsd, timeoutSeconds}` | `{gpt-6.1-sol, 0.50, 300}` | the portal's `--chat`; `--chat-budget-usd` wins |
 | `specs.azureStates` | `{"plans": "<state>", "archive": "<state>"}` | **none, deliberately** — refuses (exit 2, `sp-az-no-states`) rather than guess | the `azure-boards` backend only |
 | `specs.azurePlacement` | `{areaPath, workItemType, discoveryTag, team, iterationPath, boardColumn, defaultSubject}` — `workItemType` retired, see `workItemTypes` below | per sub-key — `areaPath` **none, deliberately**, the rest default | the `azure-boards` backend only |
 | `specs.azureColumns` | `{"<board state>": "<lane>", …}` — any subset | `{}` — falls back to `azurePlacement.boardColumn` per state | the `azure-boards` backend only |
@@ -52,6 +56,5 @@ Root-level front-owned keys such as `opsRoot`, `router`, `proofRoot`, `layers`, 
 `sp-config-unscoped` and exit 2, naming each key and its destination namespace; no namespace wins
 and no value is merged.
 
-The checker's own settings (`warnAsError`, `ignoreGlobs`) and the bundle root never lived in this
-file — they come from the target's own `.agents/hooks/hooks-config.json`, and the bundle root is
-the fixed `/docs/` convention no configuration names.
+The checker's `warnAsError` and `ignoreGlobs` are `shared.okfValidate`; `.agents/hooks/hooks-config.json`
+stays the layer below, and the bundle root is the fixed `/docs/` convention no configuration names.
