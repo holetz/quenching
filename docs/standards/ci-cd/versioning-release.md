@@ -22,6 +22,12 @@ partial bump makes one of them wrong.
 `cq specs release <version>` — the tool this section's *Verifying* block names — requires a matching
 `## <version>` entry in `CHANGELOG.md`, then moves every surface in one release operation.
 
+The release commit is self-contained: the verb refuses (exit 2, nothing written) when the tree
+has changes beyond `CHANGELOG.md`, bumps, **regenerates the copies**
+(`scripts/generate_plugin_modules.py --write` and `scripts/sync_codex_plugin.py --write`, each when
+present) and commits everything with the `CHANGELOG.md` entry, so `verify_repo.sh` is already green
+on the tag. A failed regeneration leaves the bump uncommitted and makes no commit or tag.
+
 ## The published set
 
 `plugins/quenching/assets/modules.json` is the declarative source. Each published module
