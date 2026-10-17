@@ -107,6 +107,7 @@ sys.path.extend(p for p in enabled_module_paths(os.environ.get("PATH", "")) if p
 from quenching.common.output import CQArgumentParser, USAGE
 from quenching.common.version import VERSION
 from quenching.common.doctor import run as run_doctor
+from quenching.common.lent import lend
 
 
 class Pillar(NamedTuple):
@@ -155,6 +156,13 @@ PILLARS: dict[str, Pillar] = {
     "portal": Pillar(
         "quenching.portal", False,
         "the project registry the local portal shows — add, remove, list"),
+}
+
+
+# What a pillar borrows from another, keyed by borrower: (capability, lender package, module).
+# `cq` lends only what an enabled module carries, so the borrower never imports the lender.
+LOANS: dict[str, tuple[tuple[str, str, str], ...]] = {
+    "specs": (("specs.portal.sessions", "session", "quenching.session.portal"),),
 }
 
 
@@ -322,6 +330,9 @@ def main(argv: list[str]) -> int:
         print(f"cq: {args.pillar} belongs to module {module_owners().get(args.pillar, '?')}, "
               "which is not enabled; enable it beside quenching-specs", file=sys.stderr)
         return 2
+    for capability, package, module in LOANS.get(args.pillar, ()):
+        if present(package):
+            lend(capability, module)
     try:
         return importlib.import_module(pillar.module).main(rest)
     except SystemExit as exc:

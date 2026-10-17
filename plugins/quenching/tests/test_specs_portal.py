@@ -15,6 +15,7 @@ try:
 except ModuleNotFoundError:
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
+from quenching.common import lent as lent_mod
 from quenching.specs import backends as backends_mod
 from quenching.specs import portal as portal_mod
 from quenching.specs.backends.base import BackendRefusal, SpecBackend
@@ -403,6 +404,107 @@ class Security(PortalCase):
         self.assertTrue(portal_mod.is_loopback("127.0.0.1"))
         self.assertFalse(portal_mod.is_loopback("0.0.0.0"))
         self.assertFalse(portal_mod.is_loopback("192.168.1.5"))
+
+
+class Sessions(PortalCase):
+    """`GET /api/sessions` exists only under `--sessions`, and returns fixed fields only."""
+    SECRET = "SECRET-do-not-leak"
+    FIELDS = {"sessionId", "cwd", "worktree", "state", "status", "statusSince", "lastEvent",
+              "pendingQuestion", "subagents", "activity"}
+
+    def setUp(self):
+        super().setUp()
+        import os
+        import subprocess
+        from datetime import datetime, timedelta, timezone
+        from quenching.session.transcript import encode_cwd
+        subprocess.run(["git", "init", "-q", "-b", "main", self.tmp], check=True)
+        self.claude = pathlib.Path(tempfile.mkdtemp(prefix="quenching-claude-"))
+        self.addCleanup(__import__("shutil").rmtree, self.claude, True)
+        now = datetime.now(timezone.utc)
+
+        def ts(minutes):
+            return (now - timedelta(minutes=minutes)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+        def session(name, sid, cwd, events):
+            info = {"pid": os.getpid(), "sessionId": sid, "cwd": cwd, "status": "busy",
+                    "statusUpdatedAt": int(now.timestamp() * 1000),
+                    "messagingSocketPath": "/tmp/" + self.SECRET, "name": self.SECRET}
+            (self.claude / "sessions").mkdir(exist_ok=True)
+            (self.claude / "sessions" / f"{name}.json").write_text(json.dumps(info))
+            (self.claude / "sessions" / f"{name}.{self.SECRET}.key").write_text(self.SECRET)
+            folder = self.claude / "projects" / encode_cwd(cwd)
+            folder.mkdir(parents=True, exist_ok=True)
+            (folder / f"{sid}.jsonl").write_text(
+                "\n".join(json.dumps(e) for e in events) + "\n")
+            return folder / sid / "subagents"
+
+        sub = os.path.join(self.tmp, "sub")
+        os.mkdir(sub)
+        agents = session("1", "s-in", sub, [
+            {"type": "user", "timestamp": ts(3), "message": {"content": self.SECRET}},
+            {"type": "assistant", "timestamp": ts(2), "message": {"content": [
+                {"type": "tool_use", "id": "b1", "name": "Bash",
+                 "input": {"command": self.SECRET}}]}},
+            {"type": "user", "timestamp": ts(2), "message": {"content": [
+                {"type": "tool_result", "tool_use_id": "b1", "content": self.SECRET}]}},
+            {"type": "assistant", "timestamp": ts(1), "message": {"content": [
+                {"type": "tool_use", "id": "q1", "name": "AskUserQuestion",
+                 "input": {"questions": [{"question": "Merge now?"}]}}]}}])
+        agents.mkdir(parents=True)
+        (agents / "agent-a.jsonl").write_text(json.dumps(
+            {"type": "assistant", "timestamp": ts(1), "message": {"content": self.SECRET}}) + "\n")
+        (agents / "agent-a.meta.json").write_text(json.dumps(
+            {"agentType": "quenching:spec-runner", "prompt": self.SECRET}))
+        session("2", "s-out", "/elsewhere/other-repo", [
+            {"type": "user", "timestamp": ts(1), "message": {"content": "x"}}])
+        from quenching.session.portal import reader
+        self.on = portal_mod.Portal(self.tmp, TOKEN, False, "127.0.0.1", PORT, sessions={
+            "read": reader(self.claude, self.claude / "projects")})
+
+    def test_without_the_flag_the_route_is_404_and_nothing_is_read(self):
+        with mock.patch("quenching.session.portal.read_live",
+                        side_effect=AssertionError("read without --sessions")):
+            status, body = self.get("/api/sessions")
+        self.assertEqual((status, body["code"]), (404, "sp-portal-not-found"))
+        self.assertFalse(self.get("/api/config")[1]["sessions"])
+
+    def test_with_the_flag_only_the_fixed_fields_of_this_repo_surface(self):
+        status, _, raw = self.on.handle("GET", "/api/sessions", AUTH)
+        self.assertEqual(status, 200)
+        self.assertNotIn(self.SECRET, raw.decode("utf-8"))
+        body = json.loads(raw)
+        self.assertEqual([s["sessionId"] for s in body["sessions"]], ["s-in"])
+        row = body["sessions"][0]
+        self.assertEqual(set(row), self.FIELDS)
+        self.assertEqual((row["state"], row["pendingQuestion"]), ("waiting", "Merge now?"))
+        self.assertEqual(row["worktree"]["branch"], "main")
+        self.assertEqual(set(row["subagents"][0]), {"agentType", "start", "end", "active"})
+        self.assertEqual(row["subagents"][0]["agentType"], "quenching:spec-runner")
+        self.assertEqual(len(row["activity"]), body["windowMinutes"])
+        self.assertTrue(json.loads(self.on.handle("GET", "/api/config", AUTH)[2])["sessions"])
+
+    def test_an_unchanged_poll_is_a_304(self):
+        _, headers, _ = self.on.handle("GET", "/api/sessions", AUTH)
+        again = self.on.handle("GET", "/api/sessions", {**AUTH, "If-None-Match": headers["ETag"]})
+        self.assertEqual(again[0], 304)
+
+    def test_a_copy_without_the_session_reader_refuses_the_flag(self):
+        with mock.patch.dict(lent_mod._LENT, clear=True):
+            source, refusal = portal_mod.sessions_source()
+        self.assertIsNone(source)
+        self.assertEqual(refusal["code"], "sp-portal-sessions-unavailable")
+
+    def test_the_lent_reader_answers_the_flag(self):
+        with mock.patch.dict(lent_mod._LENT, {portal_mod.SESSIONS: "quenching.session.portal"}), \
+                mock.patch.dict("os.environ", {"QUENCHING_CLAUDE_ROOT": str(self.claude)}):
+            source, refusal = portal_mod.sessions_source()
+        self.assertIsNone(refusal)
+        self.assertEqual(set(source), {"read"})
+
+    def test_the_portal_never_imports_the_session_pillar(self):
+        source = pathlib.Path(portal_mod.__file__).read_text()
+        self.assertNotRegex(source, r"(?m)^\s*(?:from|import) quenching\.session")
 
 
 class ReadOnly(PortalCase):
