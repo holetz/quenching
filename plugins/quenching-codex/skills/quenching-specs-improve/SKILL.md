@@ -89,7 +89,9 @@ default. Ask them on decision sheets ([questions.md](../../references/specs-deve
 part to approve: all, some waves, or chosen items. **Ask the epic's autonomy policy** in the same
 rounds, recommendation first: develop the members to `ready` now with the human present (each one
 reaches `approved by=human`), or authorize forced execution (`quenching-specs-orchestrate
---autonomous`, each approval stamped `by=orchestrator-forced`). Record each decision and default in the map's
+--autonomous`, each approval stamped `by=orchestrator-forced`). Only the second choice records
+the canonical policy text "forced execution, push, PR and merge of every member"; the first records
+"human present; no forced execution, no push, no merge", which the orchestrator never reads as a merge authorization. Record each decision and default in the map's
 `README.md` and update the affected candidate files. Ask nothing whose answer would not change what
 you write.
 **Done when:** the human has approved an explicit subset of the backlog, or declined, which ends the
@@ -101,7 +103,7 @@ add. Otherwise:
 
 1. **Epic.** Create it with `cq specs new "<title>" --type epic`. Fill its `## Problem` (the goal),
    `## Proposal`, `## Out of Scope`, `## Risks`, `## Validation` (done criteria per wave) and
-   `## Design` (the recorded decisions, **including the autonomy policy chosen in step 5**) with
+   `## Design` (the recorded decisions, **including the autonomy policy chosen in step 5, dated, in the canonical text of that choice**) with
    `cq specs section <id> "<Heading>" --write`.
 2. **Members.** For each approved candidate, in wave order:
    - Search the lean listing by title first, so a retry never duplicates.
