@@ -1371,6 +1371,11 @@ class VerifierScopeCheck(unittest.TestCase):
         self.assertIn("cq specs show --spec <id> --task <t> --json", text)
         self.assertIn("carries no `files:`", text)
 
+    def test_check_4_subtracts_the_audits_generated_paths(self):
+        text = " ".join((PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8").split())
+        self.assertIn("remove the payload's `generated`", text)
+        self.assertIn("byte-for-byte copy of their source", text)
+
 
 class OrchestratorGrants(unittest.TestCase):
     """The `orchestrator` reads the wave audit through `cq git state`, never a raw `git status`
