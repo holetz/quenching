@@ -4,9 +4,9 @@ title: Subagent authoring
 description: When work becomes a subagent, the definition contract for .claude/agents/, and how the surface is inventoried
 resource: plugins/quenching/commands/components/agent/new.md, plugins/quenching/commands/components/align.md, plugins/quenching/assets/bin/quenching/components/**
 tags: [automation, agents, delegation]
-timestamp: 2026-10-08
+timestamp: 2026-10-17
 audience: both
-authority: background
+authority: current
 source: skill-front capability research (2026-07-27) — hookify/plugin-dev/agent-sdk-dev + official docs; instrument-and-extend-skill-front plan §6
 maintainer: quenching
 ---
@@ -77,4 +77,8 @@ Rules for agents the plugin itself ships in `plugins/quenching/agents/` (as oppo
   in a fixed return report. A worker result is accepted only on a `verifier` PASS.
 - Plugin agents cannot carry hooks, so prohibitions are prose, enforced by the verifier's audit.
 - Pass `model` explicitly when delegating; a declared pin may not survive into a subagent.
-- Models: no `haiku` for agents that write product code.
+- Models: no `haiku` for agents that write product code, except the per-task executor of
+  `/quenching-specs:specs:execute` on a task with a protected oracle (an executable `verify:` whose
+  tests sit outside its `files:`, nothing under `/docs/`, projected context ≤ 80k by
+  `cq specs estimate --task`) — ADR 0014. Judgment agents (orchestrator, verifier, reviewer,
+  spec-architect, spec-runner) never descend, and `import-memory` stays never-`haiku`.
