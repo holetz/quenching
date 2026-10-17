@@ -104,10 +104,25 @@ read-only, and the gate is the only thing it executes. It reports only findings 
 a command, its output, the `path:line` — never style, and a security review of the same range when
 the epic touched a grant, a hook or anything that executes. That review hunts the widening a worker
 makes by mistake, never deliberate evasion of the audit (symlink, BOM, line separators, a diff
-driver in `.git/config`): the audit is no sandbox. Never a second review of the same range. Each
-finding becomes a loose spec (`cq specs new`, then its `## Problem` with the reproduction), queued
-for the next round; `NONE` creates none.
-**Done when:** the review returned and each reproduced finding is a spec.
+driver in `.git/config`): the audit is no sandbox. Never a second review of the same range.
+
+**Codex, in parallel.** Right after launching the reviewer, run `cq codex probe --json`. Exit 0 or 2
+→ write a prompt file under `<ephemeral area>/autopilot/<date>/` (the range, one line per finding as
+`path:line — what — why`, no style) and run `cq codex review --worktree <checkout> --prompt <file>
+--base <round start> --run <name> --json` while the reviewer works. The reviewer gets no Codex grant;
+the conductor alone calls `cq codex`. Exit 1 of the probe, or exit 1 or a timeout of the review →
+no Codex findings: the final report names the fallback and its reason, and the step goes on with the
+Claude review alone; a refusal (exit 2) is reported the same way and never blocks the step.
+
+**Consolidate by `path:line`.** Merge both lists, one entry per `path:line`, marked `claude`,
+`codex` or `both`. A finding the reviewer reproduced stands. A `codex`-only finding becomes a spec
+only once reproduced — by the reviewer or by the conductor, with the command and its output; the
+payload's `findingsNeedReproduction` binds, and a `prompt-only` finding was never run by Codex.
+Unreproduced ones are dropped and counted in the report. Keep the Codex tokens from the payload, or
+`not measured`. Each finding kept becomes a loose spec (`cq specs new`, then its `## Problem` with
+the reproduction), queued for the next round; `NONE` creates none.
+**Done when:** the review returned (and Codex returned or fell back, reported) and each reproduced
+finding is a spec.
 
 ### 7. Gate and audit
 On `main`: pull, run the gate, and the audit of step 1. Red → the first spec of the next round.
