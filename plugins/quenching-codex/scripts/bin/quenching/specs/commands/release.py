@@ -7,7 +7,9 @@ from quenching.common.git import _git, _git_run
 from quenching.common.config import load_config
 from quenching.specs.commands.output import Emitter
 from quenching.specs.config import infer_base_branch
-from quenching.specs.release import SEMVER_RE, bump_release_artifacts, repo_release_artifacts
+from quenching.specs.release import (
+    SEMVER_RE, bump_release_artifacts, dirty_paths, regenerate_copies, repo_release_artifacts,
+)
 
 
 def cmd_release(args, root: str, out: Emitter) -> int:
@@ -64,13 +66,26 @@ def cmd_release(args, root: str, out: Emitter) -> int:
                                                f"bump must be committed on the primary "
                                                f"branch so the release tag carries it"})
 
+    dirty = [p for p in dirty_paths(repo) if p != "CHANGELOG.md"]
+    if dirty:
+        return out.emit_err(args.json, {"code": "sp-release-dirty", "exit": 2, "paths": dirty,
+                                        "message": "the tree has changes besides CHANGELOG.md "
+                                                   "— the release commit carries only the "
+                                                   "release: " + ", ".join(dirty)})
+
     result = bump_release_artifacts(repo, new_version)
     if not result["ok"]:
         return out.emit_err(args.json, {"code": "sp-release-drift", "exit": 2,
                                         "message": result["error"]})
 
-    rels = [a["path"] for a in result["artifacts"]]
-    code, _, err = _git_run(repo, "add", *rels)
+    failed = regenerate_copies(repo)
+    if failed:
+        return out.emit_err(args.json, {"code": "sp-release-regenerate-failed", "exit": 2,
+                                        "message": f"regeneration failed at {failed} — the bump "
+                                                   "is uncommitted in the tree; no commit, no tag"})
+
+    # The tree was clean but for the CHANGELOG, so everything dirty now belongs to the release.
+    code, _, err = _git_run(repo, "add", "-A")
     if code != 0:
         return out.emit_err(args.json, {"code": "sp-release-git-failed", "exit": 2,
                                         "step": "add", "message": f"git add failed: {err}"})

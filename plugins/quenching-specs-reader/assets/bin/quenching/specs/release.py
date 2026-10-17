@@ -8,8 +8,11 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
+import sys
 from pathlib import Path
 
+from quenching.common.git import _git
 from quenching.common.io import read_text, write_text
 from quenching.common.modules import load_manifest, release_artifacts
 
@@ -104,3 +107,31 @@ def bump_release_artifacts(repo_root: str, new_version: str) -> dict:
         artifacts.append({"path": r["rel"], "old": r["old"], "new": new_version})
     return {"ok": True, "oldVersion": old_version, "newVersion": new_version,
             "artifacts": artifacts, "error": None}
+
+
+_REGENERATE_STEPS = (
+    ("generate_plugin_modules", ("scripts/generate_plugin_modules.py", "--write")),
+    ("sync_codex_plugin", ("scripts/sync_codex_plugin.py", "--source", "plugins/quenching",
+                           "--target", "plugins/quenching-codex", "--write")),
+)
+
+
+def dirty_paths(repo: str) -> list[str]:
+    """Paths `git status --porcelain` reports, untracked ones included."""
+    paths = []
+    for line in _git(repo, "status", "--porcelain", "--untracked-files=all").splitlines():
+        path = line[3:].split(" -> ")[-1].strip().strip('"')
+        if path:
+            paths.append(path)
+    return paths
+
+
+def regenerate_copies(repo: str) -> str | None:
+    """Run each generator that exists in the repository; the failing step's name, else None."""
+    for name, argv in _REGENERATE_STEPS:
+        if not os.path.isfile(os.path.join(repo, argv[0])):
+            continue
+        proc = subprocess.run([sys.executable, *argv], cwd=repo, capture_output=True, text=True)
+        if proc.returncode != 0:
+            return f"{name}: {(proc.stderr or proc.stdout).strip()}"
+    return None
