@@ -39,9 +39,9 @@ class ThePathShim(unittest.TestCase):
         choices = next(line.strip() for line in run.stdout.splitlines()
                        if line.strip().startswith("{") and line.strip().endswith("}"))
         pillars = set(choices[1:-1].split(","))
-        self.assertEqual(11, len(pillars))
+        self.assertEqual(12, len(pillars))
         self.assertEqual({"specs", "knowledge", "design", "components", "ops", "proof", "git",
-                          "toolchain", "delivery", "security", "portal"}, pillars)
+                          "toolchain", "delivery", "security", "codex", "portal"}, pillars)
 
     def test_it_answers_the_version_lockstep(self):
         run = subprocess.run([str(SHIM), "--version"], capture_output=True, text=True)
@@ -75,7 +75,7 @@ class ThePathShim(unittest.TestCase):
 
     def test_each_pillar_uses_the_same_version_grammar(self):
         pillars = ("specs", "knowledge", "design", "components", "ops", "proof", "git",
-                   "toolchain", "delivery", "security", "portal")
+                   "toolchain", "delivery", "security", "codex", "portal")
         for pillar in pillars:
             with self.subTest(pillar=pillar):
                 run = subprocess.run([str(SHIM), pillar, "--version"],
