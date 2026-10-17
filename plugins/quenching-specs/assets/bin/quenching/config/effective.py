@@ -14,10 +14,11 @@ import os
 from quenching.codex.config import DEFAULTS as CODEX_DEFAULTS
 from quenching.common.config import (CONFIG_FILE, NAMESPACES, _load_user_layer, find_repo_root)
 from quenching.common.io import read_text
+from quenching.config.autonomy import DEFAULTS as AUTONOMY_DEFAULTS, coerce as coerce_autonomy
 
 # Namespace keys whose defaults live in code as data: the key is shown leaf by leaf, because the
 # owning front completes a partial block leaf by leaf.
-DEFAULT_BLOCKS = {("shared", "codex"): CODEX_DEFAULTS}
+DEFAULT_BLOCKS = {("shared", "codex"): CODEX_DEFAULTS, ("shared", "autonomy"): AUTONOMY_DEFAULTS}
 
 
 def _read_repository(path: str) -> tuple[dict, dict]:
@@ -81,15 +82,21 @@ def effective(root: str) -> dict:
         declared[f"specs.{key}"] = (value, "branch")
 
     rows: dict[str, dict] = {}
+    warnings: list[str] = []
     for key, (value, layer) in declared.items():
         rows[key] = {"key": key, "value": value, "source": layer}
     for (name, key), defaults in DEFAULT_BLOCKS.items():
         base = f"{name}.{key}"
         block, layer = declared.pop(base, (None, "default"))
         rows.pop(base, None)
+        if (name, key) == ("shared", "autonomy"):
+            checked, found = coerce_autonomy(block)
+            warnings.extend(found)
+            if isinstance(block, dict):
+                block = {leaf: given for leaf, given in block.items() if checked.get(leaf) == given}
         for leaf, given, default in _leaves(base, block, defaults):
             rows[leaf] = ({"key": leaf, "value": given, "source": layer} if given is not None
                           else {"key": leaf, "value": default, "source": "default"})
     return {"layers": [{"name": "default", "path": None, "present": True, "unparseable": None},
                        user_info, repo_info, branch_info],
-            "values": [rows[key] for key in sorted(rows)]}
+            "values": [rows[key] for key in sorted(rows)], "warnings": warnings}
