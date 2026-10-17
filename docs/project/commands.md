@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: plugins/quenching/README.md §The 58 commands (long rows condensed); command set held in lockstep by test_commands_catalog.py
+source: plugins/quenching/README.md §The 60 commands (long rows condensed); command set held in lockstep by test_commands_catalog.py
 maintainer: Israel Holetz
 ---
 
