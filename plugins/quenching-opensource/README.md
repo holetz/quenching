@@ -317,6 +317,44 @@ the Claude review alone, and the final report names the fallback and its reason.
 side reproduces it, with the command and its output; a `prompt-only` finding was never run by
 Codex at all. The Codex surface (`quenching-codex`) has no such step.
 
+### O executor Codex
+
+Step 5b of `/quenching-specs:specs:execute` hands **one task at a time** to Codex when the code
+admits it; Claude keeps the self-review, the `verify:`, the commit, the tick and the verifier. It
+is **on by default**, under `shared.codex.executor` in `.claude/quenching.json`, and independent of
+`crossReview` (`executor.enabled: false` is its opt-out).
+
+- **Eligibility** — `cq codex eligible --spec <id> --task <tid> --json`: an open task that declares
+  `files:`, writes nothing under `docs/` or `knowledge/`, and is small (bytes of its `files:` / 4 ≤
+  `maxTaskTokens`, `20000`) or carries a `verify:`. A cheap model (`modelSmall`, `modelVerified`)
+  at `reasoningEffort` `medium`.
+- **Quota** — one dispatch at a time, only under `maxUsedPercent − reservePercent` (`80 − 10`) in
+  both windows. A task that moves the primary window by more than `stopLossPercent` (`15` points)
+  keeps its diff and turns the executor off for the rest of the run.
+- **Failure** — a red `verify:` is fixed by Claude on top of Codex's diff; a timeout, a Codex error
+  or a spent quota falls back to Claude. Codex never gets a second attempt.
+
+**Bypass by default, and its risk.** `cq codex implement` runs `codex exec
+--dangerously-bypass-approvals-and-sandbox -C <worktree>` by default, because most machines lack
+the admin rights the native sandbox needs. The bounds are the plugin's: `--ignore-user-config`, an
+environment without `GH_TOKEN`, `GITHUB_TOKEN`, `AWS_*`, `AZURE_*` or `GOOGLE_*`, a prompt that
+forbids git, and a **git guard** that compares `HEAD`, branch, reflog, stash, every worktree's
+`HEAD` and `git status` before and after — any divergence or a path outside `files:` is exit `2`,
+the diff is discarded inside `files:` and Claude writes the task. What remains is a command run
+outside the worktree that git cannot see.
+
+**Sandbox opt-in, per system.** `shared.codex.executor.sandbox: "workspace-write"` runs `-s
+workspace-write` instead, never with the bypass; `cq codex probe` checks it first, and an
+unavailable sandbox falls back to Claude, never to the bypass.
+
+| System | What `workspace-write` needs |
+| --- | --- |
+| Linux | `bwrap` with unprivileged user namespaces (blocked by `apparmor_restrict_unprivileged_userns=1` unless a profile allows it) |
+| macOS | Seatbelt, available without setup |
+| Windows | `windowsSandbox`: `unelevated` (default) or `elevated`, after `codex sandbox setup --elevated` |
+
+The Codex surface (`quenching-codex`) has no executor: a Codex run never launches Codex.
+
 The shared facts live once — the spec document, the thirteen canonical sections, the
 gates, the record vocabulary, and the `cq specs` surface in
 [`specs-develop/spec-driven.md`](assets/references/specs-develop/spec-driven.md),
