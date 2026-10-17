@@ -4,7 +4,7 @@ title: Task execution contract
 description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the three causes of a check that can never pass (one of them invisible to the falsification run), `files:` naming the derived artifacts an edit invalidates, the failure budget, one commit per task retained across section boundaries, the two-level review split, the four-event Handoff refresh cadence, and the delegation and [P] disjunction rules
 resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/artifacts.md, plugins/quenching/assets/references/git/commit.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/specs/templates/spec.md
 tags: [workflows, specs, execution, verification, commits, delegation, handoff]
-timestamp: 2026-08-27
+timestamp: 2026-10-17
 audience: both
 authority: current
 source: refine-and-execute-specs-flow, cut-specs-execute-turns; history in ADR 0002
@@ -432,7 +432,27 @@ when nothing changed.
 ## Delegation is permitted; the orchestrator never is
 
 A per-task executor sub-agent is permitted when the task **declares `files:`** and **touches no
-`/docs/`**, pinned to the session model — never `haiku`, which writes production code here.
+`/docs/`**, pinned to the session model by default.
+
+### The small-tier rung
+
+The executor may run on `haiku` (Codex: `gpt-6-luna`) for ONE task when **all** of ADR 0014's
+conditions hold:
+
+1. **Protected oracle** — an executable `verify:`, and the tests it runs sit outside the task's
+   `files:`;
+2. **Reversible** — a disposable worktree, no destructive git, nothing under `/docs/` or
+   `knowledge/`;
+3. **Projected context ≤ 80k** — `cq specs estimate --spec <id> --task <tid> --json` reports
+   `oracleProtected` and `smallTierEligible`; 80k is a margin under the 100k worker budget;
+4. **Short ladder** — one attempt on the small tier; a failed `verify:` returns the task to the
+   session model, which corrects on the diff; a second failure goes to the human;
+5. **Review by reading** — execute's own self-review, on the session model, reads the diff before
+   the tick.
+
+The rung lives per task, inside execute: the whole-spec route (the orchestrator's spec-runner) does
+not change, and judgment — develop, triage, conclude, orchestrator, verifier, reviewer,
+spec-architect, every `/docs/standards/` write — never descends.
 
 The orchestrator keeps, without exception: spec selection, the isolation offer, every
 confirmation, every `cq specs task --check` flip, every block marker, every `/docs/standards/`
