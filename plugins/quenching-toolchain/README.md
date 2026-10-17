@@ -264,6 +264,8 @@ write-only, nothing reads it back, so it is never a second store.
 
 `cq config show --effective [--json]` prints every configuration key with its effective value and the layer it came from (`default`, `user`, `repository`, `branch`), plus the path and state of each layer; it only reads.
 
+`cq config init [--write]` seeds `.claude/quenching.json` with every adjustable default spelled out (preview without `--write`; an existing file is refused, never merged), and `cq config check [--json]` lists the seeded keys the file lacks (exit 1). `cq doctor` prints the same list in a `config` block and only reports it; `/quenching-align:align` runs the check and seeds an absent file under its one authorization.
+
 `cq portal serve [--port N] [--host 127.0.0.1] [--read-only] [--open] [--sessions] [--chat] [--chat-budget-usd N]` serves every project registered with `cq portal add` from one loopback server: the page gains a side menu of projects and their worktrees, each project's API lives under `/p/<name>/api/`, and one token cookie covers them all; with `--chat` the Chat tab offers that project's worktrees. `cq specs serve` is unchanged.
 
 | Command | Role |
