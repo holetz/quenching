@@ -44,6 +44,12 @@ confirmation, every `cq specs task --check` flip, every `cq specs task --block` 
 sub-agent writes code inside its declared files and reports back — it never talks to the human and
 never touches the spec's bookkeeping.
 
+**The Codex executor is the admitted non-Claude executor.** A task `cq codex eligible` admits
+(exit 0) is written by Codex through `cq codex implement` — a cheap model, not a `Task`, so the
+model rule above binds sub-agents, not it. The orchestrator keeps the same list, plus the task's
+`verify:` (run on every Codex task whatever the declared policy) and the self-review, which runs
+outside Codex on its returned diff.
+
 ### The cost of delegating, and when it inverts
 
 <!-- rules -->
@@ -51,7 +57,10 @@ never touches the spec's bookkeeping.
 **Permitted is not free, and the account runs the other way more often than it looks.**
 
 - **Delegate by file, or by section of tasks — never task by task.** One sub-agent that owns six
-  tasks over one file reads it once; six sub-agents read it six times.
+  tasks over one file reads it once; six sub-agents read it six times. The one exception is the Codex
+  executor: it is dispatched **one task at a time**, never two at once, because its eligibility
+  and its quota reserve are judged per task and a single heavy run must not drain the window for
+  the rest.
 - **Run the four-item self-review INSIDE the sub-agent**, and have it return a verdict. A
   sub-agent that hands its diff back for review puts the diff into the long context, which is the
   cost the delegation was for.
