@@ -659,7 +659,7 @@
     "scripts/bin/quenching/security/__init__.py": "8c11f6e89e9491b3f15fef76ea4dafacdea916671ea94a28eec6e670f5e2bc86",
     "scripts/bin/quenching/security/model.py": "5c2e839a1b80384c97d115a24cab934530c3e08d5ca01a7d86a305a84eb6ea6e",
     "scripts/bin/quenching/security/probe.py": "e4ae1d1ab092506d6444d0c925a80538156710569357482b289432f05b3bab85",
-    "scripts/bin/quenching/session/commands/cli.py": "41e5226c9d300dad6c973c885f1bd69c612b37d927d004151e23ba5dce9d2106",
+    "scripts/bin/quenching/session/commands/cli.py": "1cd5472bafd073b2207415d8f88312c46a4b0fcc375c15bbf7b14feebdf43ac1",
     "scripts/bin/quenching/session/commands/context.py": "64e6f931898a68eb3ae9a87ea4d6b8503903d626a0bde06cbfe2328f418a30ab",
     "scripts/bin/quenching/session/commands/cost.py": "497d635b7110611715d05f9c32b06d88f1b3bc5347105dbfae4ff4c86fa326b7",
     "scripts/bin/quenching/session/commands/digest.py": "f562a72a11e8e3efbd062c211f380fdf45f31622511238ed01189112a342962b",

@@ -97,6 +97,9 @@ def add_subcommands(sub: argparse._SubParsersAction) -> argparse._SubParsersActi
     scope.add_argument("--latest-orchestrator", action="store_true",
                        help="count only the descendants of the most recently started orchestrator "
                             "(they run one at a time): the window is resolved here, no clock needed")
+    scope.add_argument("--self", dest="self_marker", metavar="MARKER",
+                       help="count only the descendants of the calling orchestrator: the subagent "
+                            "transcript whose latest call carries `session cost --self MARKER`")
     co.add_argument("--since", metavar="ISO8601",
                     help="count only requests at or after this instant (an orchestrator's own window "
                          "when several share the session)")

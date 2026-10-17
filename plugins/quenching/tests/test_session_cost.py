@@ -219,6 +219,58 @@ class WindowTests(unittest.TestCase):
         self.assertEqual(len(data["anomalies"]), 1)
 
 
+class SelfWindowTests(unittest.TestCase):
+    """Two orchestrator trees interleaved in one session: --self gives each caller its own window,
+    even when the other one started later."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.sub = pathlib.Path(self.tmp.name) / "sess" / "subagents"
+        self.sub.mkdir(parents=True)
+        for aid, parent, ts in (("orc1", None, "2026-10-12T01:00:00Z"), ("orc2", None, "2026-10-12T03:00:00Z"),
+                                ("w1", "orc1", "2026-10-12T04:00:00Z"), ("w2", "orc2", "2026-10-12T03:30:00Z")):
+            r = rec(f"m-{aid}", "opus" if aid == "w1" else "sonnet", 3)
+            r["timestamp"] = ts
+            records = [r]
+            if not parent:
+                records.append(self.call(aid, ts))
+            write(self.sub / f"agent-{aid}.jsonl", records)
+            meta = {"agentType": "quenching-specs:spec-runner" if parent else "quenching-specs:orchestrator"}
+            if parent:
+                meta["parentAgentId"] = parent
+            (self.sub / f"agent-{aid}.meta.json").write_text(json.dumps(meta))
+
+    @staticmethod
+    def call(aid, ts):
+        command = f'cq components session cost "$ID" --self orchestrator-{aid} --json'
+        return {"type": "assistant", "timestamp": ts, "message": {"content": [
+            {"type": "tool_use", "name": "Bash", "input": {"command": command}}]}}
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def window(self, marker):
+        code, out = run("--json", "--self", marker, str(self.sub))
+        self.assertEqual(code, 0)
+        data = json.loads(out)
+        return {g["model"] for g in data["groups"]}, {a["agentId"] for a in data["agents"]}
+
+    def test_each_orchestrator_gets_its_own_window(self):
+        self.assertEqual(self.window("orchestrator-orc1"), ({"opus"}, {"w1"}))
+        self.assertEqual(self.window("orchestrator-orc2"), ({"sonnet"}, {"w2"}))
+
+    def test_latest_orchestrator_still_picks_the_later_started(self):
+        code, out = run("--json", "--latest-orchestrator", str(self.sub))
+        self.assertEqual({g["model"] for g in json.loads(out)["groups"]}, {"sonnet"})
+
+    def test_unknown_marker_refuses(self):
+        self.assertEqual(run("--json", "--self", "orchestrator-nobody", str(self.sub))[0], 2)
+
+    def test_marker_carried_by_two_with_the_same_stamp_refuses(self):
+        write(self.sub / "agent-orc2.jsonl", [self.call("orc1", "2026-10-12T01:00:00Z")])
+        self.assertEqual(run("--json", "--self", "orchestrator-orc1", str(self.sub))[0], 2)
+
+
 class SessionChoiceTests(unittest.TestCase):
     """Without an argument the verb never picks between sessions by mtime in silence."""
 
