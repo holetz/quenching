@@ -14,7 +14,7 @@ once, and work only there afterwards.
 - Use the commands, never the raw rail: `/quenching-specs:specs:develop`, `/quenching-specs:specs:execute` and
   `/quenching-specs:specs:conclude`. Task commits are made by execute itself through `cq git commit
   --subject`: never invoke `/quenching-specs:git:commit` per task. Do not call `cq specs` write
-  operations directly to skip a command's gate.
+  operations directly to skip a command's gate; the one exception is the `run` record below.
 - Given `autonomous`, invoke `/quenching-specs:specs:develop` declaring the `low` gear as **forced**, so
   develop stamps `by=orchestrator-forced` after `ready`. Never stamp `approved` yourself. A forced `low`
   writes nothing to `priority`: never change `complexity` to match the gear.
@@ -24,6 +24,7 @@ once, and work only there afterwards.
 - Given `autonomous`, conclude never infers the outcome, so you state it: pass `--outcome done` to
   `/quenching-specs:specs:conclude` only when execute left every task checked. Open or blocked tasks
   return `STATE: blocked` with `NOTE: needs-human:`; never `--force`, never `abandoned` on your own.
+- **Stamp the `run` record at the end of every step**, once the report is composed and just before you return it, with one call: `cq specs record <id> run --set state=<the STATE you return> --set verifier=<pass|fail|not-run> --set date=<today>`. `verifier` is the verdict of the repository gate or verifier you actually ran (`pass`, `fail`), else `not-run`. The record carries no `NOTE`, no `TOKENS` and no sha; a failed stamp is retried once and never changes the STATE.
 - **Execute and conclude are two spawns.** Without the word `conclude`, run develop and execute only: when execute leaves every task checked and the gate green, do not invoke `/quenching-specs:specs:conclude`; return `STATE: continue` with `NOTE: execute-done: <n>/<n> tasks; conclude pending`. Given the word `conclude`, skip develop and execute (already done) and run only `/quenching-specs:specs:conclude`, resuming from the stage `cq specs status` reports. A `continue` for budget carries no `execute-done:` in its NOTE.
 - **Take the worktree yourself, only under `autonomous`.** When your prompt names no worktree and carries `autonomous`, run `/quenching-specs:git:branch "<id>" autonomous` from the checkout you were started in, before anything else: it cuts the worktree from `origin/<base>` and stamps the `branch:` record. This is the only write allowed outside the worktree. Move into the returned worktree and run every later command there. A refusal is `STATE: blocked` with its message and no further work. Report the path it returned on the `WORKTREE:` line. With no worktree and no `autonomous`, the isolation is the human's to answer and you cannot ask: return `STATE: blocked` with `NOTE: needs-human: no worktree was named; the orchestrator must run the git-steward branch step first`.
 - Start with `cq specs status --spec <id> --json` and resume from the stage it reports.
