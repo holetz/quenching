@@ -82,7 +82,8 @@ class FunctionalSessionIsolation(unittest.TestCase):
         self.assertTrue(all(call["isolated"] for call in calls), calls)
         modules = sorted(str(ROOT / "plugins" / name) for name in (
             "quenching-specs", "quenching-align", "quenching-design", "quenching-ops",
-            "quenching-proof", "quenching-toolchain", "quenching-delivery", "quenching-security"))
+            "quenching-proof", "quenching-toolchain", "quenching-delivery", "quenching-security",
+            "quenching-opensource"))
         self.assertTrue(all(sorted(call["plugins"]) == modules for call in calls), calls)
 
     def test_foreign_plugin_fails_even_with_the_expected_tool_calls(self):
