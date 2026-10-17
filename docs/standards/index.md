@@ -78,6 +78,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 | [toolchain-front.md](architecture/toolchain-front.md) | The target repository's toolchain surface — manifests, locks, language pins and tool configuration, with explicit ownership boundaries and stable tc-* findings |
 | [surface-translation.md](architecture/surface-translation.md) | A repository may carry Claude and Codex surfaces together; Claude owns configuration and deterministic translation keeps their command, reference, and harness artifacts aligned |
 | [type-follows-home.md](architecture/type-follows-home.md) | Every home in the canonical tree owns exactly one `type:` value (`standards/` → `standard`, `concepts/` → `concept`, and so on) — a home that renames without restamping every doc's `type:` recreates the naming complaint one level down, in the most greppable field of the bundle, and nothing today checks for the mismatch |
+| [codex-pillar.md](architecture/codex-pillar.md) | A pillar that reads the Codex quota and runs the Codex CLI as an independent, read-only reviewer — app-server quota first, session snapshot as fallback, exit 0/1/2 failing closed, and a fixed `-s read-only --ignore-user-config` argv that never inherits the user's Codex configuration |
 
 ### automation/
 
