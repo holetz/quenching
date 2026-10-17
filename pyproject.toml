@@ -38,7 +38,8 @@ target-version = "py311"
 extend-exclude = ["site", "site-source", "plugins/quenching-specs-reader", "plugins/quenching-codex", "plugins/quenching-specs",
                   "plugins/quenching-align", "plugins/quenching-design", "plugins/quenching-ops",
                   "plugins/quenching-proof", "plugins/quenching-toolchain",
-                  "plugins/quenching-delivery", "plugins/quenching-security", ".quenching"]
+                  "plugins/quenching-delivery", "plugins/quenching-security", "plugins/quenching-opensource",
+                  ".quenching"]
 
 [tool.ruff.lint]
 select = ["E", "F"]
