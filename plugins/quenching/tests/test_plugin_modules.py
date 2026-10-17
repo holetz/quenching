@@ -279,10 +279,11 @@ class PrincipalPartition(unittest.TestCase):
         self.assertIn("python3 scripts/generate_plugin_modules.py --check", gate)
         self.assertNotIn("python3 scripts/sync_specs_reader_plugin.py --check", gate)
 
-    def test_eight_principal_modules_are_published_and_the_source_is_not(self):
+    def test_nine_principal_modules_are_published_and_the_source_is_not(self):
         manifest = load_manifest(REPO)
         principal = [m for m in manifest["modules"] if "owned" in m]
-        self.assertEqual({"specs", "align", "design", "ops", "proof", "toolchain", "delivery", "security"},
+        self.assertEqual({"specs", "align", "design", "ops", "proof", "toolchain", "delivery", "security",
+                          "opensource"},
                          {m["name"].removeprefix("quenching-") for m in principal})
         self.assertTrue(all(m["published"] for m in principal))
         published = [m for m in manifest["modules"] if m["published"]]
@@ -348,7 +349,7 @@ class PrincipalPartition(unittest.TestCase):
             active = copy.deepcopy(both)
             next(m for m in active["modules"] if m["name"] == "quenching")["published"] = False
             (root / MANIFEST).write_text(json.dumps(active))
-            self.assertEqual(8, sum(m["published"] for m in load_manifest(root)["modules"] if "owned" in m))
+            self.assertEqual(9, sum(m["published"] for m in load_manifest(root)["modules"] if "owned" in m))
 
     def test_manifest_drives_release_surface_expansion(self):
         manifest = load_manifest(REPO)
