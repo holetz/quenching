@@ -4,10 +4,10 @@ title: Agent ephemeral writes
 description: Where an agent puts a file it creates — the three destinations, the one question that sorts them, and the session-start declaration that makes the durable-ignored path present before the first write
 resource: CLAUDE.md, AGENTS.md
 tags: [agents, files, ephemeral, scratchpad, harness]
-timestamp: 2026-08-31
+timestamp: 2026-10-17
 audience: both
 authority: current
-source: spec 1058 — declare where an agent's ephemeral writes live and put the contract in session context
+source: spec 1058 — declare where an agent's ephemeral writes live and put the contract in session context; the plugin's fixed `.quenching/*` paths named by spec 1912
 maintainer: quenching
 ---
 
@@ -54,6 +54,14 @@ area does not yet survive a worktree: declaring it does not declare `sharedPaths
 link, or provide history and backup. A worktree carries only tracked files, so the ignored
 destination remains local unless a separate target-owned mechanism makes it shared. That plumbing
 and the policy for the path belong to the target, or to a separate contract that owns them.
+
+## The plugin's own fixed paths
+
+The plugin writes a few fixed paths under `.quenching/` on its own account: `.quenching/codex/<run>/`
+(a Codex run's prompt and output), `.quenching/documentation/` and `.quenching/red/` (the base
+worktree of a regression proof). They are the plugin's, not a choice of destination by an agent and
+not the durable-ignored area a target declares; the routing test above does not apply to them. A
+target whose declared durable-ignored area is `.quenching/` shares the directory, never the meaning.
 
 ## The boundary
 
