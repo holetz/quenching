@@ -236,7 +236,17 @@ def cmd_cost(args) -> int:
         if since is None:
             return refuse({"code": "se-bad-since",
                            "message": f"--since is not an ISO-8601 instant: {args.since}"}, args.json)
-    out = aggregate(directory, getattr(args, "descendants_of", None), getattr(args, "nested", False), since,
+    descendants_of = getattr(args, "descendants_of", None)
+    marker = getattr(args, "self_marker", None)
+    if marker:
+        from quenching.session.commands.context import find_self  # context imports this module
+        found, code = find_self(Path(str(directory.parent) + ".jsonl"), marker, "cost", subagents_only=True)
+        if found is None:
+            return refuse({"code": code, "message":
+                           f"no single subagent transcript under {directory} carries `session cost --self {marker}`"},
+                          args.json)
+        descendants_of = _agent_id(found)
+    out = aggregate(directory, descendants_of, getattr(args, "nested", False), since,
                     getattr(args, "latest_orchestrator", False))
     if out.get("noOrchestrator"):
         return refuse({"code": "se-no-orchestrator",
