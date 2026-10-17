@@ -2813,6 +2813,14 @@ class PullRequestVerbs(RepoCase):
         self.assertEqual(proc.returncode, 1, proc.stdout)
         self.assertEqual(json.loads(proc.stdout)["reason"], "skipped-required")
 
+    def test_an_already_merged_pull_request_is_ok_without_a_second_merge(self):
+        proc = self._merge('[{"name":"gate","bucket":"pass"}]',
+                           FAKE_GH_VIEW='{"headRefOid":"abc123","mergeStateStatus":"UNKNOWN","state":"MERGED"}')
+        self.assertEqual(proc.returncode, 0, proc.stdout)
+        payload = json.loads(proc.stdout)
+        self.assertEqual((payload["ok"], payload["alreadyMerged"]), (True, True))
+        self.assertEqual(self._merge_calls(), [])
+
     def test_a_moved_or_unclean_pull_request_is_not_merged(self):
         checks = '[{"name":"gate","bucket":"pass"}]'
         for view in ('{"headRefOid":"abc123","mergeStateStatus":"BEHIND"}',
