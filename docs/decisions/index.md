@@ -27,3 +27,4 @@ evidence, not the rule.
 * [0011 — Security review of the epic 1192 and 1197 changes](0011-seguranca-das-mudancas-dos-epicos-1192-e-1197.md) — the per-PR verdict on the sensitive changes of epics 1192 and 1197, with the two defects captured as specs
 * [0012 — The orchestrator's Agent(...) list is documentary](0012-lista-agent-do-orchestrator-e-documental.md) — the allowlist restricts nothing in a subagent; accepted, documented and audited by launched type
 * [0013 — Split the plugin into eight generated-core modules](0013-plugin-module-split.md) — measured full-install parity and a smaller specs-only payload than the front-hiding single-plugin prototype
+* [0014 — The small tier executes a testable task below the context cut](0014-tier-pequeno-em-tarefa-testavel.md) — haiku and gpt-6-luna admitted per task under a protected verify oracle and a projected context of 80k or less, with the dated prices; provisional until the pilot
