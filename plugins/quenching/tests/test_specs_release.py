@@ -7,8 +7,12 @@ matter: agreeing values all move together, and one already-drifted value refuses
 any artifact is touched — kept as two separate cases below rather than folded into one, so
 a failure names which direction broke.
 """
+import argparse
+import contextlib
+import io
 import json
 import os
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -177,6 +181,74 @@ class Lockstep(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertIn("published modules", result["error"])
         self.assertEqual(before, {p: p.read_bytes() for p in before})
+
+
+GENERATOR = (
+    "import pathlib, sys\n"
+    "v = pathlib.Path('plugins/quenching/VERSION').read_text().strip()\n"
+    "pathlib.Path('copy.txt').write_text('copy ' + v + '\\n')\n"
+)
+
+
+class CmdReleaseCommit(Lockstep):
+    """`cmd_release` in a disposable git repository: the commit is self-contained."""
+
+    def setUp(self):
+        super().setUp()
+        self.git("init", "-q", "-b", "main")
+        self.git("config", "user.email", "t@example.com")
+        self.git("config", "user.name", "t")
+        self.git("config", "commit.gpgsign", "false")
+        os.makedirs(os.path.join(self.tmp, "scripts"))
+        write_text(os.path.join(self.tmp, "scripts/generate_plugin_modules.py"), GENERATOR)
+        write_text(os.path.join(self.tmp, "copy.txt"), "copy\n")
+        write_text(os.path.join(self.tmp, "CHANGELOG.md"), "# Changelog\n\n## 9.9.9\n")
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "init")
+        write_text(os.path.join(self.tmp, "CHANGELOG.md"), "# Changelog\n\n## 9.10.0\n\n## 9.9.9\n")
+
+    def git(self, *argv):
+        return subprocess.run(["git", *argv], cwd=self.tmp, capture_output=True, text=True,
+                              check=True).stdout
+
+    def release(self):
+        from quenching.specs.commands.output import Emitter
+        from quenching.specs.commands.release import cmd_release
+        cwd = os.getcwd()
+        os.chdir(self.tmp)
+        try:
+            with contextlib.redirect_stdout(io.StringIO()):
+                return cmd_release(argparse.Namespace(new_version="9.10.0", json=True),
+                                   self.tmp, Emitter())
+        finally:
+            os.chdir(cwd)
+
+    def test_the_commit_carries_changelog_bump_and_regenerated_copy(self):
+        self.assertEqual(self.release(), 0)
+        files = set(self.git("show", "--name-only", "--format=", "HEAD").split())
+        self.assertIn("CHANGELOG.md", files)
+        self.assertIn("copy.txt", files)
+        self.assertIn("plugins/quenching/VERSION", files)
+        self.assertEqual(read_text(os.path.join(self.tmp, "copy.txt")), "copy 9.10.0\n")
+        self.assertEqual(self.git("status", "--porcelain"), "")
+        self.assertEqual(self.git("rev-list", "-n1", "9.10.0"), self.git("rev-parse", "HEAD"))
+
+    def test_a_tree_dirty_beyond_the_changelog_is_refused_and_nothing_is_written(self):
+        write_text(os.path.join(self.tmp, "stray.txt"), "x")
+        head = self.git("rev-parse", "HEAD")
+        self.assertEqual(self.release(), 2)
+        self.assertEqual(self.git("rev-parse", "HEAD"), head)
+        self.assertEqual(read_text(os.path.join(self.tmp, "plugins/quenching/VERSION")).strip(), "9.9.9")
+
+    def test_a_failing_generator_leaves_the_bump_uncommitted_and_untagged(self):
+        write_text(os.path.join(self.tmp, "scripts/generate_plugin_modules.py"),
+                   "raise SystemExit(3)\n")
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "break generator")
+        head = self.git("rev-parse", "HEAD")
+        self.assertEqual(self.release(), 2)
+        self.assertEqual(self.git("rev-parse", "HEAD"), head)
+        self.assertEqual(self.git("tag"), "")
 
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
