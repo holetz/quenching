@@ -52,8 +52,7 @@ non-`cq`, non-`git` command is run.
   `git stash list` and `git worktree list`; any change is reported, never silently reverted.
 - **Cost.** At most 3 workers at a time; each brief ≤ 1,500 characters, each return ≤ 800 words.
   Wait for completion notifications instead of polling. One correctness review per epic, never per
-  spec. The conductor reads summaries, never diffs or file dumps. The Codex review of step 6 is one
-  call per epic and its tokens are reported, or `not measured`.
+  spec. The conductor reads summaries, never diffs or file dumps.
 - **The deadline binds launches.** With `--until`, no worker starts if it cannot finish before the
   deadline; what is in flight at the deadline is reported `continue` with its state.
 
@@ -115,22 +114,11 @@ the epic touched a grant, a hook or anything that executes. That review hunts th
 makes by mistake, never deliberate evasion of the audit (symlink, BOM, line separators, a diff
 driver in `.git/config`): the audit is no sandbox. Never a second review of the same range.
 
-**Codex, in parallel.** Right after launching the reviewer, run `cq codex probe --json`. Exit 0 or 2
-→ write a prompt file under `<ephemeral area>/autopilot/<date>/` (the range, one line per finding as
-`path:line — what — why`, no style) and run `cq codex review --worktree <checkout> --prompt <file>
---base <round start> --run <name> --json` while the reviewer works. The reviewer gets no Codex grant;
-the conductor alone calls `cq codex`. Exit 1 of the probe, or exit 1 or a timeout of the review →
-no Codex findings: the final report names the fallback and its reason, and the step goes on with the
-Codex review alone; a refusal (exit 2) is reported the same way and never blocks the step.
+**Codex review: unavailable on this surface.** A Codex run never launches Codex (no nested Codex); the report names the review `unavailable`.
 
-**Consolidate by `path:line`.** Merge both lists, one entry per `path:line`, marked claude,
-codex or both. A finding the reviewer reproduced stands. A `codex`-only finding becomes a spec
-only once reproduced — by the reviewer or by the conductor, with the command and its output; the
-payload's `findingsNeedReproduction` binds, and a `prompt-only` finding was never run by Codex.
-Unreproduced ones are dropped and counted in the report. Keep the Codex tokens from the payload, or
-`not measured`. Each finding kept becomes a loose spec (`cq specs new`, then its `## Problem` with
+**Consolidate by `path:line`.** The reviewer's findings stand once reproduced, with the command and its output. Each finding kept becomes a loose spec (`cq specs new`, then its `## Problem` with
 the reproduction), queued for the next round; `NONE` creates none.
-**Done when:** the review returned (and Codex returned or fell back, reported) and each reproduced
+**Done when:** the review returned and each reproduced
 finding is a spec.
 
 ### 7. Gate and audit
@@ -147,7 +135,5 @@ Neither → the next round starts at step 1.
 ### 8. Final report
 Print: per epic, the merged specs with their PRs; the human epic and its members; every decision
 this session took as the delegated owner; specs in flight at the deadline, as `continue` with their
-state; second stalls; and the tokens the run spent per model and agent type, from host-provided Codex telemetry (otherwise `not measured`) and never summed across tiers; plus the Codex review of each epic —
-ran or fallback with its reason, findings by origin, dropped unreproduced count, and its tokens or
-`not measured`, kept apart from the Codex tiers.
+state; second stalls; and the tokens the run spent per model and agent type, from host-provided Codex telemetry (otherwise `not measured`) and never summed across tiers.
 **Done when:** the report is printed.
