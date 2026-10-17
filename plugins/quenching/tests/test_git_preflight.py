@@ -86,5 +86,14 @@ class Preflight(unittest.TestCase):
         self.assertEqual(out["code"], "git-preflight-remote-unknown")
 
 
+class AutopilotContract(unittest.TestCase):
+    def test_step_one_calls_preflight_and_gates_merges(self):
+        body = AUTOPILOT.read_text(encoding="utf-8")
+        self.assertIn("cq git preflight", body)
+        self.assertIn("mergesAllowed", body)
+        self.assertIn("no merges", body)
+        self.assertIn("Bash(cq:*)", body)
+
+
 if __name__ == "__main__":
     unittest.main()
