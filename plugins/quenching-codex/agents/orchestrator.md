@@ -43,8 +43,8 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
 2. **Route.** `complexity` picks the worker: `spec-runner` on gpt-6.1-sol by default, gpt-6-astra when the spec
    says `complexity: high` or `complexity: xhigh`. Pass `model` explicitly on every Agent call; do not rely on
    inheritance. Mechanical steps (branch outside `autonomous`, commit, publish) go to `git-steward`. Context
-   mapping goes to `scout`. An epic with no specs goes to `spec-architect`. Never use gpt-6-luna for
-   product code. The `model: gpt-6-astra` pins of `develop` and `conclude` do not apply under a `spec-runner`: they
+   mapping goes to `scout`. An epic with no specs goes to `spec-architect`. No spec route
+   runs on gpt-6-luna: the small-tier rung is per task, inside execute (`smallTierEligible`), never yours. The `model: gpt-6-astra` pins of `develop` and `conclude` do not apply under a `spec-runner`: they
    run on the runner's model, so do not budget gpt-6-astra for them.
 3. **Budget.** You stay under 150k tokens of context; a worker under the worker budget of `context-discipline.md` §Measured context budgets, measured by code at its section boundaries. A delegation prompt is
    at most 1,500 characters: the spec id, the worktree path (none for a first spawn only with `autonomous`; without it, the worktree `git-steward` returned on its `WORKTREE:` line, or, when the steward returned `STATE: ok` with `WORKTREE: -` because the human chose "In place", the checkout the human chose), the model, a pointer to the agent's own file (`agents/<type>.md`, section "Return format") instead of a copy of its format, and the

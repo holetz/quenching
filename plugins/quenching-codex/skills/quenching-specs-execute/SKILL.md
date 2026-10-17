@@ -494,7 +494,7 @@ each is absolute. The three whose failure is **silent and permanent**:
 - Delegate an executor only under
   [execution-delegation.md](../../references/specs-execute/execution-delegation.md)
   §Delegating an executor (declares `files:`, touches no `/docs/`, pinned to the session model —
-  **never `gpt-6-luna`**), and run two tasks in parallel only when `cq specs parallel` reports the `[P]`
+  `gpt-6-luna` only on a task `cq specs estimate --task` reports `smallTierEligible`), and run two tasks in parallel only when `cq specs parallel` reports the `[P]`
   group eligible.
 - Never review the whole branch, merge, or archive from here — that is `quenching-specs-conclude`.
 - Keep changes minimal and scoped to each task; pause on errors, blockers, or unclear requirements
