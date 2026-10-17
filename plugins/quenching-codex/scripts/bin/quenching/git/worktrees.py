@@ -36,8 +36,23 @@ def worktree_branch(gitdir: str) -> str | None:
     return head[len(prefix):] if head.startswith(prefix) else None
 
 
+def _checkout_root(start: str) -> str | None:
+    """The nearest directory at or above `start` that holds a `.git` entry."""
+    current = os.path.realpath(start)
+    while True:
+        if os.path.lexists(os.path.join(current, ".git")):
+            return current
+        parent = os.path.dirname(current)
+        if parent == current:
+            return None
+        current = parent
+
+
 def _common_dir(root: str) -> str | None:
-    dot_git = os.path.join(root, ".git")
+    checkout = _checkout_root(root)
+    if checkout is None:
+        return None
+    dot_git = os.path.join(checkout, ".git")
     if os.path.isdir(dot_git):
         return os.path.realpath(dot_git)
     gitdir = worktree_gitdir(dot_git)
@@ -51,6 +66,25 @@ def _common_dir(root: str) -> str | None:
     return os.path.realpath(value if os.path.isabs(value) else os.path.join(gitdir, value))
 
 
+def _main_path(common: str, root: str) -> str | None:
+    """The main checkout of a common dir: its parent when named `.git`, else `core.worktree`,
+    else the checkout discovery started from when it holds the common dir itself."""
+    if os.path.basename(common) == ".git":
+        return os.path.dirname(common)
+    try:
+        with open(os.path.join(common, "config"), encoding="utf-8") as stream:
+            for line in stream:
+                key, _, value = line.partition("=")
+                if key.strip() == "worktree" and value.strip():
+                    return os.path.realpath(os.path.join(common, value.strip()))
+    except OSError:
+        pass
+    checkout = _checkout_root(root)
+    if checkout and worktree_gitdir(os.path.join(checkout, ".git")) == common:
+        return checkout
+    return None
+
+
 def list_worktrees(root: str) -> list[dict]:
     """`[{path, branch, main}]` for the repository `root` belongs to, main worktree first.
 
@@ -59,7 +93,8 @@ def list_worktrees(root: str) -> list[dict]:
     common = _common_dir(os.fspath(root))
     if not common:
         return []
-    found = [{"path": os.path.dirname(common), "branch": worktree_branch(common), "main": True}]
+    main = _main_path(common, os.fspath(root))
+    found = [{"path": main, "branch": worktree_branch(common), "main": True}] if main else []
     base = os.path.join(common, "worktrees")
     try:
         names = sorted(os.listdir(base))
@@ -73,8 +108,10 @@ def list_worktrees(root: str) -> list[dict]:
                 pointer = stream.read().strip()
         except OSError:
             continue
-        path = os.path.dirname(pointer)
-        if pointer and os.path.isdir(path):
+        if not pointer:
+            continue
+        path = os.path.dirname(os.path.normpath(os.path.join(entry, pointer)))
+        if os.path.isdir(path):
             linked.append({"path": path, "branch": worktree_branch(entry), "main": False})
     return found + sorted(linked, key=lambda row: row["path"])
 
