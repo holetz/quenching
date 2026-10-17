@@ -24,9 +24,10 @@ forced execution, push, PR and merge below is authorized by it, and by nothing e
 
 This session is the **conductor**. It decides as the owner's delegate, keeps only summaries, and
 never builds: reading, mapping, decomposing, building and reviewing are agents
-(`quenching:scout`, `quenching:spec-architect`, `quenching:orchestrator`, and a read-only gpt-6-astra
-reviewer). The orchestrator's protocol (waves, workers, verifier, acceptance) lives in
-`../../agents/orchestrator.md`; do not restate it.
+(`quenching:scout`, `quenching:spec-architect`, `quenching:orchestrator`, and the read-only gpt-6-astra
+`quenching:reviewer`, which this conductor launches at step 6). The orchestrator's protocol
+(waves, workers, verifier, acceptance) lives in `../../agents/orchestrator.md`;
+do not restate it.
 
 **Why `Bash` is unrestricted here.** Step 1 and step 7 run the gate the target's root harness
 declares in its operating section (`AGENTS.md` or `AGENTS.md`), whose command no fixed grant can name. No other
@@ -106,12 +107,15 @@ the report with its note, never retried in this round.
 **Done when:** the orchestrator returned its fixed report and every non-`done` spec is placed.
 
 ### 6. Correctness review
-After every epic that changed code, start one read-only gpt-6-astra agent over the epic's merges
-(`git log --merges <round start>..main`). It reports only findings it **reproduced** — a command,
-its output, the `path:line` — never style. When the epic touched a grant, a hook or anything that
-executes, it runs a security review of the same range too. That review hunts the widening a worker
-makes by mistake, never deliberate evasion of the audit (symlink, BOM, line separators, a diff driver in `.git/config`): the audit is no sandbox. Each finding becomes a loose spec
-(`cq specs new`, then its `## Problem` with the reproduction), queued for the next round.
+After every epic that changed code, start `quenching:reviewer` once (`model: gpt-6-astra`) over the epic's
+merges (`git log --merges <round start>..main`); the orchestrator does not launch it. It is
+read-only, and the gate is the only thing it executes. It reports only findings it **reproduced** —
+a command, its output, the `path:line` — never style, and a security review of the same range when
+the epic touched a grant, a hook or anything that executes. That review hunts the widening a worker
+makes by mistake, never deliberate evasion of the audit (symlink, BOM, line separators, a diff
+driver in `.git/config`): the audit is no sandbox. Never a second review of the same range. Each
+finding becomes a loose spec (`cq specs new`, then its `## Problem` with the reproduction), queued
+for the next round; `NONE` creates none.
 **Done when:** the review returned and each reproduced finding is a spec.
 
 ### 7. Gate and audit
