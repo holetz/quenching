@@ -230,36 +230,11 @@ b. **Write the code**, minimal and scoped to the declared files. A task that dec
      --sections "§Delegating an executor"
    ```
 
-   **The Codex executor comes first, one task at a time.** Unless it was switched off earlier in
-   this run, ask the code before writing:
-
-   ```bash
-   cq codex eligible --spec "<id>" --task "<task-id>" --json
-   ```
-
-   Exit 1 or 2 → the task goes on with the executor above, unchanged. Exit 0 → write the task's
-   text, `files:`, `verify:`, `pattern:` and the sections step 4 read into a prompt file under
-   `.quenching/codex/`, and dispatch it alone — never two Codex runs at once:
-
-   ```bash
-   cq codex implement --spec "<id>" --task "<task-id>" --worktree "<work checkout>" \
-     --prompt <prompt file> --json
-   ```
-
-   - **Exit 0** → the diff is Codex's. Run the task's `verify:` **whatever the declared policy**,
-     then the self-review of 5d. A red `verify:` is fixed by you **on top of Codex's diff**, fed its
-     output; start from scratch only when the self-review judges the approach wrong. Codex never
-     gets a second attempt at the task.
-   - **Exit 1** (quota, timeout, unavailable sandbox, Codex error) → write the task yourself.
-   - **Exit 2** (`codex-git-guard`) → discard the diff **inside the payload's `discard` only**:
-     rewrite each tracked file with `git cat-file --filters HEAD:<file> > <file>` and delete each
-     new one; never `reset`, `stash`, `checkout` or `restore`. Then write the task yourself and
-     carry the guard's `reason` to the report.
-   - **`stopLoss: true`**, on any exit → keep this task's outcome, and route every later task of
-     this run to the executor above; nothing is written to disk.
-
-   Each dispatch is one report line: `Codex: <task-id> <wrote|fallback|guard> — <reason>, <tokens or
-   not measured>, quota +<delta or not measured>`.
+   **The Codex executor comes first, one task at a time.** Unless stop-loss switched it off in this
+   run, `cq codex eligible --spec "<id>" --task "<task-id>" --json`: exit 0 → dispatch it, and act
+   on its exit, per
+   [execution-delegation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-delegation.md)
+   §The Codex executor, loaded then; exit 1 or 2 → the executor above.
 
 c. **Write only the `/docs/` this task names.** When this task writes `/docs/`, load the rule that
    draws the line between declared and emergent, and the boundary it crosses:

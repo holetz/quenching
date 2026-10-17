@@ -86,7 +86,7 @@ class EligibilityTest(unittest.TestCase):
         self.assertEqual(code, 0)
 
     def test_docs_and_knowledge_are_never_codex(self):
-        for path in ("docs/standards/x.md", "/docs/index.md", "knowledge/a.md"):
+        for path in ("docs/standards/architecture/codex-pillar.md", "/docs/index.md", "knowledge/a.md"):
             payload, code = eligibility(task(files=["src/a.py", path]), settings(), self.root,
                                         Quota())
             self.assertEqual(code, 1, path)

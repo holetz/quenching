@@ -182,7 +182,7 @@ class Implement(unittest.TestCase):
         self.assertTrue(payload["timedOut"])
 
     def test_an_ineligible_task_never_starts_codex(self):
-        self.tasks = [task(files=["docs/x.md"])]
+        self.tasks = [task(files=["docs/index.md"])]
         payload, code = self.implement()
         self.assertEqual(code, 1)
         self.assertIn("docs/", payload["reason"])
