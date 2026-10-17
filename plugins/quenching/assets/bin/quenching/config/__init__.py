@@ -6,12 +6,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import shlex
 import sys
 
 from quenching.common.front import resolve_root
 from quenching.common.output import REFUSAL, NoAbbrevParser, emit
 from quenching.common.version import VERSION
 from quenching.config.effective import effective
+from quenching.config.host import build_plan, load_settings
 
 
 def _render(payload: dict) -> str:
@@ -41,6 +44,27 @@ def cmd_show(args) -> int:
     return 0
 
 
+def cmd_host(args) -> int:
+    settings, warnings = load_settings(resolve_root(args.root))
+    payload = {"ok": True, **settings, "warnings": warnings}
+    if args.plan:
+        command = [c for c in args.command if c != "--"] if args.command else []
+        try:
+            steps, notes = build_plan(settings, os.path.basename(resolve_root(args.root)), command)
+        except ValueError as exc:
+            print(f"cq config host: {exc}", file=sys.stderr)
+            return REFUSAL
+        payload.update(steps=steps, notes=notes)
+        text = "\n".join(f"{s['step']:<5} {shlex.join(s['argv'])}" for s in steps)
+        text += "".join(f"\nnote: {n}" for n in notes)
+    else:
+        text = "\n".join(f"{k} = {json.dumps(v, ensure_ascii=False)}"
+                         for k, v in settings.items())
+    text += "".join(f"\nwarning: {w}" for w in warnings)
+    emit(args.json, payload, text)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = NoAbbrevParser(prog="cq config", description="the configuration layers, read-only")
     p.add_argument("--version", action="store_true", help="print the version and exit")
@@ -50,6 +74,11 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--effective", action="store_true",
                     help="every key with its effective value and source layer")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
+    hp = sub.add_parser("host", help="print the work host (`shared.workHost`) and its dispatch plan")
+    hp.add_argument("--plan", action="store_true",
+                    help="print the dispatch steps for the command after `--`; runs nothing")
+    hp.add_argument("--json", action="store_true", help="machine-readable output")
+    hp.add_argument("command", nargs="*", help="the command to dispatch, after `--`")
     return p
 
 
@@ -62,4 +91,4 @@ def main(argv: list[str]) -> int:
     if not args.cmd:
         parser.print_usage(sys.stderr)
         return REFUSAL
-    return cmd_show(args)
+    return cmd_host(args) if args.cmd == "host" else cmd_show(args)
