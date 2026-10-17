@@ -148,6 +148,16 @@ Acts on the target repository's provider-equivalent workflows and release shape.
 | `/quenching-delivery:delivery:align` | Probes provider-equivalent workflows, applies bounded pipeline-shape repairs under one plan, and reports provider and release policy without choosing it. |
 | `/quenching-delivery:delivery:status` | Reports applicability, workflow inventory, reachability, provenance and `delivery-*` findings without writing or running a pipeline. |
 
+## The opensource front
+
+Acts on the target repository's license, community and governance artifacts, and aggregates every
+owner's open source catalog answers.
+
+| Command | Does |
+| --- | --- |
+| `/quenching-opensource:opensource:align` | Plans the license, community and governance artifacts on one OK and writes each from a pinned template through `cq opensource apply`, never choosing the owner's answers. |
+| `/quenching-opensource:opensource:status` | Reports every owner's catalog answers, the baseline level reached and `os-*` findings without writing. |
+
 ## The security pillar
 
 Answers read-only repository security questions; it converges no tree and carries no align.
@@ -179,7 +189,7 @@ align. The specs front hands off to it rather than executing git itself.
 
 | Command | Does |
 | --- | --- |
-| `/quenching-align:align` | The one align spanning the seven local fronts on ONE confirmation — conducting each front's own align, never reimplementing any. |
+| `/quenching-align:align` | The one align spanning the eight local fronts on ONE confirmation — conducting each front's own align, never reimplementing any. |
 | `/quenching-specs:handoff` | Compacts the current conversation into a handoff document a fresh session can continue from. |
 
 **Next:** this repository's own local automation surface (four development commands) is the
