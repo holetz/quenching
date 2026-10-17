@@ -1,7 +1,7 @@
 ---
 type: standard
 title: Loading is a call inside the step; citing is preamble prose
-description: A body that needs a reference section at step N loads that section at step N, with the literal, copy-pasteable cq components read invocation — a preamble citation says where the rule lives and does not make the session open the file, and the opposite was measured happening across the eight /quenching:specs:* bodies
+description: A body that needs a reference section at step N loads that section at step N, with the literal, copy-pasteable cq components read invocation — a preamble citation says where the rule lives and does not make the session open the file, and the opposite was measured happening across the eight /quenching-specs:specs:* bodies
 resource: plugins/quenching/commands/**/*.md
 tags: [architecture, references, commands, skills, cq]
 timestamp: 2026-08-10
@@ -38,7 +38,7 @@ end to end sees the sentence, knows the rule exists somewhere, and moves on — 
 
 ## The proof
 
-Before the tasks this standard documents, seven of the eight `/quenching:specs:*` bodies cited
+Before the tasks this standard documents, seven of the eight `/quenching-specs:specs:*` bodies cited
 `spec-driven.md` §The report mold like this, in the preamble:
 
 > "whose §The report mold owns the shape step 7 prints in"
@@ -55,7 +55,7 @@ step forced the session to open it before writing.
 The fix was not rewriting the preamble prose — it already told the truth about where the rule lives,
 and deleting it would lose the explanation of why. The fix was to insert, inside each of the eight
 report steps, the call the two bodies that already reported consistently
-(the front's router, since retired, and `/quenching:specs:execute`, before this spec) already
+(the front's router, since retired, and `/quenching-specs:specs:execute`, before this spec) already
 contained: the literal invocation, at the exact point where the loaded block is used.
 
 ## Where a preamble citation is still right

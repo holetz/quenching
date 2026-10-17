@@ -39,7 +39,7 @@ class TaskExecutionContractTests(unittest.TestCase):
         commit = (ROOT / "plugins/quenching/commands/git/commit.md").read_text(encoding="utf-8")
 
         self.assertIn('cq git commit --subject "<subject>"', command)
-        self.assertNotIn('Skill("quenching:git:commit"', command)
+        self.assertNotIn('Skill("quenching-specs:git:commit"', command)
         self.assertIn("single commit boundary", commit)
         self.assertNotIn("git commit -m", command)
         self.assertNotIn('--subject "plan/<id>-<handle>', command)
@@ -173,11 +173,11 @@ class TaskExecutionContractTests(unittest.TestCase):
         conclude = CONCLUDE.read_text(encoding="utf-8")
         scale = SCALE.read_text(encoding="utf-8")
 
-        self.assertIn('Skill("quenching:git:pr:create", "<id>")', conclude)
+        self.assertIn('Skill("quenching-specs:git:pr:create", "<id>")', conclude)
         self.assertIn("`low` chains the provider handoff", conclude)
         self.assertNotIn('"<id> autonomous")', conclude)
         self.assertIn("do not invoke it", conclude)
-        self.assertIn('Skill("quenching:git:pr:create", "<id>")', scale)
+        self.assertIn('Skill("quenching-specs:git:pr:create", "<id>")', scale)
         self.assertIn("The other levels retain", scale)
 
     def test_autonomous_conclude_answers_every_question_without_inferring_the_outcome(self):
@@ -197,7 +197,7 @@ class TaskExecutionContractTests(unittest.TestCase):
         ):
             self.assertIn(row, conclude)
         self.assertIn("`autonomous` never supplies an outcome", conclude)
-        self.assertIn("pass `--outcome done` to `/quenching:specs:conclude` only when execute left every task checked", runner)
+        self.assertIn("pass `--outcome done` to `/quenching-specs:specs:conclude` only when execute left every task checked", runner)
         self.assertIn("never `--force`, never `abandoned` on your own", runner)
 
     def test_conclude_runs_in_its_own_spawn(self):

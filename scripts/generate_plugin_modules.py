@@ -10,7 +10,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "plugins/quenching/assets/bin"))
-from quenching.common.modules import MANIFEST, load_manifest, release_artifacts, safe_path  # noqa: E402
+from quenching.common.modules import (MANIFEST, load_manifest, namespace_map,  # noqa: E402
+                                      release_artifacts, safe_path)
 
 
 def build_artifact(path: Path) -> bool:
@@ -48,8 +49,90 @@ def generated_tree(root: Path, manifest: dict, module: dict) -> dict:
     return tree
 
 
+def copy_files(tree: dict, source: Path, rel: str) -> None:
+    base = source / rel
+    paths = [base] if base.is_file() else sorted(base.rglob("*"))
+    for path in paths:
+        if path.is_file() and not build_artifact(path):
+            tree[path.relative_to(source).as_posix()] = (
+                path.read_bytes(), 0o755 if path.stat().st_mode & 0o111 else 0o644)
+
+
+def principal_tree(root: Path, manifest: dict, module: dict) -> dict:
+    """A principal module: its owned surface plus the generated support closure, all from source."""
+    source = root / manifest["source"]
+    owned, support = module["owned"], module["generatedSupport"]
+    tree: dict = {}
+    for rel in owned["commands"]:
+        copy_files(tree, source, "commands/" + rel)
+    if owned["agents"]:
+        copy_files(tree, source, "agents")
+    for package in [*owned["packages"], *support["packages"]]:
+        copy_files(tree, source, "assets/bin/quenching/" + package)
+    for reference in support["references"]:
+        copy_files(tree, source, "assets/references/" + reference)
+    for child in sorted((source / "assets").iterdir()):
+        if child.name not in {"bin", "references"}:
+            copy_files(tree, source, "assets/" + child.name)
+    if support["router"]:
+        copy_files(tree, source, "assets/bin/cq")
+    if module["cqPathOwner"]:
+        copy_files(tree, source, "bin/cq")
+    copy_files(tree, source, "README.md")
+    version = (source / "VERSION").read_text().strip()
+    original = json.loads((source / ".claude-plugin/plugin.json").read_text())
+    fronts = ", ".join(rel.removesuffix(".md") for rel in owned["commands"])
+    metadata = module.get("metadata", {})
+    plugin = {"name": module["name"], "version": version,
+              "description": metadata.get("description", f"quenching module for {fronts}. "
+                                          "Generated from plugins/quenching."),
+              "author": original["author"], "license": original["license"],
+              "keywords": metadata.get("keywords", original["keywords"])}
+    record = {"source": manifest["source"], "manifest": MANIFEST,
+              "generator": "scripts/generate_plugin_modules.py",
+              "owned": owned, "generatedSupport": support}
+    tree["VERSION"] = (version.encode() + b"\n", 0o644)
+    for rel, payload in ((".claude-plugin/plugin.json", plugin), (".generated-from.json", record)):
+        tree[rel] = ((json.dumps(payload, indent=2, ensure_ascii=False) + "\n").encode(), 0o644)
+    return tree
+
+
+CITATION = re.compile(r"\$\{CLAUDE_PLUGIN_ROOT\}/([A-Za-z0-9_./-]+)")
+MODULE_ID = re.compile(r"\b(quenching-[a-z]+):([a-z][a-z-]*)")
+IMPORT = re.compile(r"^\s*(?:from|import) quenching\.([a-z_]+)", re.M)
+
+
+def closure_findings(root: Path, manifest: dict, module: dict, tree: dict) -> list[str]:
+    """Every own-root citation resolves, every import is shipped, every module id has an owner."""
+    mapping = namespace_map(root, manifest)
+    folders = set(tree) | {p.as_posix() for rel in tree for p in Path(rel).parents}
+    shipped = {rel.split("/")[3] for rel in tree if rel.startswith("assets/bin/quenching/")}
+    principal = {m["name"] for m in manifest["modules"] if "owned" in m}
+    findings = []
+    for rel, (data, _) in sorted(tree.items()):
+        if rel.endswith(".md"):
+            text = data.decode("utf-8", "replace")
+            for match in CITATION.finditer(text):
+                cited = match.group(1).rstrip("./")
+                if cited not in folders:
+                    findings.append(f"{module['name']}: dangling citation {cited} in {rel}")
+            if "/quenching:" in text:
+                findings.append(f"{module['name']}: unpublished /quenching: id in {rel}")
+            for name, head in MODULE_ID.findall(text):
+                if name in principal and mapping.get(head) != name:
+                    findings.append(f"{module['name']}: {name}:{head} has no owner in {rel}")
+        elif rel.endswith(".py"):
+            for package in IMPORT.findall(data.decode("utf-8", "replace")):
+                if package not in shipped:
+                    findings.append(f"{module['name']}: imports unshipped quenching.{package} in {rel}")
+    return findings
+
+
 def existing_generated(root: Path, module: dict) -> set[str]:
     target = root / module["path"]
+    if "owned" in module:
+        return {p.relative_to(target).as_posix() for p in target.rglob("*")
+                if p.is_file() and not build_artifact(p)} if target.is_dir() else set()
     found = set()
     for tree in module["generated"]["trees"]:
         found.update(p.relative_to(target).as_posix() for p in (target / tree).rglob("*")
@@ -87,7 +170,7 @@ def write_tree(root: Path, module: dict, tree: dict) -> None:
         if not path.is_file() or path.read_bytes() != data:
             path.write_bytes(data)
         path.chmod(mode)
-    for rel in module["generated"]["trees"]:
+    for rel in module["generated"]["trees"] if "generated" in module else ["."]:
         for directory in sorted((target / rel).rglob("*"), reverse=True):
             if directory.is_dir() and not any(directory.iterdir()):
                 directory.rmdir()
@@ -146,8 +229,14 @@ def main(argv: list[str] | None = None) -> int:
         manifest = load_manifest(ROOT)
         consumers = [(m, generated_tree(ROOT, manifest, m)) for m in manifest["modules"]
                      if m["published"] and "generated" in m]
+        consumers += [(m, principal_tree(ROOT, manifest, m)) for m in manifest["modules"]
+                      if m["published"] and "owned" in m]
         # Preflight the complete plan, including published surfaces, before any file mutation.
         findings = published_findings(ROOT, manifest)
+        # Planned principal modules are proved closed too, in memory, before they are activated.
+        findings += [line for module in manifest["modules"] if "owned" in module
+                     for line in closure_findings(ROOT, manifest, module,
+                                                  principal_tree(ROOT, manifest, module))]
         drift = [line for module, tree in consumers for line in differences(ROOT, module, tree)]
         if args.check:
             if findings or drift:
@@ -160,7 +249,9 @@ def main(argv: list[str] | None = None) -> int:
             write_tree(ROOT, module, tree)
         print(f"generated modules rewritten ({len(drift)} paths changed)")
         # Generation repairs copied surfaces only; authored version drift remains a finding.
-        remaining = published_findings(ROOT, manifest)
+        remaining = published_findings(ROOT, manifest) + [
+            line for module, tree in consumers if "owned" in module
+            for line in closure_findings(ROOT, manifest, module, tree)]
         if remaining:
             print("\n".join(remaining), file=sys.stderr)
             return 1

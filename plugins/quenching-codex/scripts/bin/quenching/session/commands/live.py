@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 from quenching.common.output import OK, refuse
-from quenching.git.worktrees import list_worktrees
+from quenching.session.worktrees import list_worktrees
 from quenching.session.live import read_live
 from quenching.session.transcript import projects_root
 

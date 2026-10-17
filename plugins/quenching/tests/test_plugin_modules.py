@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import patch
 
 import _paths  # noqa: F401
-from quenching.common.modules import MANIFEST, load_manifest, release_artifacts
+from quenching.common.modules import MANIFEST, load_manifest, namespace_map, published_id, release_artifacts
 
 REPO = Path(__file__).resolve().parents[3]
 spec = importlib.util.spec_from_file_location("generate_plugin_modules", REPO / "scripts/generate_plugin_modules.py")
@@ -24,8 +24,12 @@ class GeneratedDistribution(unittest.TestCase):
         self.addCleanup(tmp.cleanup)
         self.root = Path(tmp.name)
         self.manifest = copy.deepcopy(load_manifest(REPO))
-        # Planned records have source dependencies; separate fixture exercises their real partition.
-        self.manifest["modules"] = [m for m in self.manifest["modules"] if m["published"]]
+        # The generated-consumer contract is exercised in the pre-activation shape (the source
+        # published and owning cq); principal modules have source dependencies, and a separate
+        # fixture exercises their real partition.
+        self.manifest["modules"] = [m for m in self.manifest["modules"] if "owned" not in m]
+        source_record = next(m for m in self.manifest["modules"] if m["path"] == self.manifest["source"])
+        source_record.update(published=True, cqPathOwner=True)
         self.source = self.root / self.manifest["source"]
         self.target = self.root / "plugins/quenching-specs-reader"
         for module in self.manifest["modules"]:
@@ -167,28 +171,191 @@ class GeneratedDistribution(unittest.TestCase):
         self.assertEqual(2, self.run_generator("--write"))
 
 
+ROOT_TOKEN = "${CLAUDE_" + "PLUGIN_ROOT}"  # split so the repository citation check reads no claim
+OLD = "quenching" + ":"  # the pre-module prefix, split for the same reason
+
+
+class PrincipalGeneration(unittest.TestCase):
+    """Activated principal modules materialize from the source with a closed citation set."""
+
+    def setUp(self):
+        (REPO / ".quenching").mkdir(exist_ok=True)
+        tmp = tempfile.TemporaryDirectory(dir=REPO / ".quenching")
+        self.addCleanup(tmp.cleanup)
+        self.root = root = Path(tmp.name)
+        src = root / "plugins/quenching"
+        files = {
+            "commands/specs/develop.md": f"Read {ROOT_TOKEN}/assets/references/specs-develop/a.md; "
+                                         "then /quenching-design:design:status.\n",
+            "commands/design/status.md": f"Run cq design; see {ROOT_TOKEN}/assets/references/design-align/.\n",
+            "agents/scout.md": "agent\n",
+            "assets/references/specs-develop/a.md": "shared\n",
+            "assets/references/design-align/b.md": "design\n",
+            "assets/bin/quenching/common/version.py": 'VERSION = "1.2.3"\n',
+            "assets/bin/quenching/specs/core.py": "from quenching.common import version\n",
+            "assets/bin/quenching/design/core.py": "from quenching.common import version\n",
+            "assets/specs/schema.json": "{}\n",
+            "assets/bin/cq": "#!/usr/bin/env python3\n",
+            "bin/cq": "#!/usr/bin/env python3\n",
+            "README.md": "manual\n",
+            "VERSION": "1.2.3\n",
+            ".claude-plugin/plugin.json": json.dumps({"name": "quenching", "version": "1.2.3",
+                                                     "author": {"name": "t"}, "license": "MIT",
+                                                     "keywords": ["k"]}),
+        }
+        for rel, text in files.items():
+            path = src / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text)
+        (src / "bin/cq").chmod(0o755)
+        (src / "assets/bin/cq").chmod(0o755)
+        refs = ["specs-develop"]
+        self.manifest = {
+            "schemaVersion": 1, "source": "plugins/quenching", "marketplace": ".claude-plugin/marketplace.json",
+            "versionConstant": "plugins/quenching/assets/bin/quenching/common/version.py",
+            "modules": [
+                {"name": "quenching", "path": "plugins/quenching", "published": False,
+                 "versionFile": True, "cqPathOwner": False},
+                {"name": "quenching-specs", "path": "plugins/quenching-specs", "published": True,
+                 "versionFile": True, "cqPathOwner": True,
+                 "owned": {"commands": ["specs"], "packages": ["specs"], "agents": True},
+                 "generatedSupport": {"packages": ["common"], "references": refs, "router": True}},
+                {"name": "quenching-design", "path": "plugins/quenching-design", "published": True,
+                 "versionFile": True, "cqPathOwner": False,
+                 "owned": {"commands": ["design"], "packages": ["design"], "agents": False},
+                 "generatedSupport": {"packages": ["common"], "references": [*refs, "design-align"],
+                                      "router": True}},
+            ]}
+        (root / MANIFEST).write_text(json.dumps(self.manifest))
+        market = root / self.manifest["marketplace"]
+        market.parent.mkdir(parents=True)
+        market.write_text(json.dumps({"plugins": [
+            {"name": m["name"], "source": "./" + m["path"], "version": "1.2.3"}
+            for m in self.manifest["modules"] if m["published"]]}))
+
+    def run_generator(self, mode):
+        with patch.object(generator, "ROOT", self.root):
+            return generator.main([mode])
+
+    def test_write_materializes_owned_surface_support_closure_and_one_cq(self):
+        self.assertEqual(0, self.run_generator("--write"))
+        specs, design = self.root / "plugins/quenching-specs", self.root / "plugins/quenching-design"
+        self.assertTrue((specs / "commands/specs/develop.md").is_file())
+        self.assertTrue((specs / "agents/scout.md").is_file())
+        self.assertFalse((specs / "commands/design").exists())
+        self.assertFalse((specs / "assets/references/design-align").exists())
+        self.assertTrue((design / "assets/references/design-align/b.md").is_file())
+        self.assertFalse((design / "agents").exists())
+        self.assertTrue((specs / "bin/cq").stat().st_mode & 0o111)
+        self.assertFalse((design / "bin/cq").exists())
+        self.assertTrue((design / "assets/bin/cq").is_file())
+        self.assertTrue((design / "assets/specs/schema.json").is_file())
+        self.assertEqual("quenching-design",
+                         json.loads((design / ".claude-plugin/plugin.json").read_text())["name"])
+        self.assertEqual(0, self.run_generator("--check"))
+        (design / "stale.txt").write_text("x")
+        self.assertEqual(1, self.run_generator("--check"))
+        self.assertEqual(0, self.run_generator("--write"))
+        self.assertFalse((design / "stale.txt").exists())
+
+    def test_check_names_dangling_citations_unpublished_ids_and_unshipped_imports(self):
+        src = self.root / "plugins/quenching"
+        (src / "commands/specs/develop.md").write_text(
+            f"{ROOT_TOKEN}/assets/references/design-align/b.md /{OLD}specs:x "
+            "quenching-design:nowhere\n")
+        (src / "assets/bin/quenching/specs/core.py").write_text("from quenching.design import core\n")
+        with patch.object(generator, "ROOT", self.root), \
+                patch("sys.stderr", new_callable=__import__("io").StringIO) as err:
+            self.assertEqual(1, generator.main(["--check"]))
+        for needle in ("dangling citation assets/references/design-align/b.md",
+                       "unpublished /quenching: id", "quenching-design:nowhere has no owner",
+                       "imports unshipped quenching.design"):
+            self.assertIn(needle, err.getvalue())
+
+
 class PrincipalPartition(unittest.TestCase):
     def test_single_repository_gate_checks_the_general_distribution(self):
         gate = (REPO / "scripts/verify_repo.sh").read_text()
         self.assertIn("python3 scripts/generate_plugin_modules.py --check", gate)
         self.assertNotIn("python3 scripts/sync_specs_reader_plugin.py --check", gate)
 
-    def test_eight_planned_modules_are_declared_without_production_output(self):
+    def test_eight_principal_modules_are_published_and_the_source_is_not(self):
         manifest = load_manifest(REPO)
-        planned = [m for m in manifest["modules"] if not m["published"]]
+        principal = [m for m in manifest["modules"] if "owned" in m]
         self.assertEqual({"specs", "align", "design", "ops", "proof", "toolchain", "delivery", "security"},
-                         {m["name"].removeprefix("quenching-") for m in planned})
-        self.assertEqual(["quenching-specs"], [m["name"] for m in planned if m["cqPathOwner"]])
-        self.assertEqual(["quenching-specs-reader"], [m["name"] for m in manifest["modules"]
-                                                   if m["published"] and "generated" in m])
-        for module in planned:
-            self.assertFalse((REPO / module["path"]).exists(), module["name"])
-            self.assertNotIn((module["path"] + "/VERSION", "plain"), release_artifacts(manifest))
+                         {m["name"].removeprefix("quenching-") for m in principal})
+        self.assertTrue(all(m["published"] for m in principal))
+        published = [m for m in manifest["modules"] if m["published"]]
+        self.assertEqual(["quenching-specs"], [m["name"] for m in published if m["cqPathOwner"]])
+        source = next(m for m in manifest["modules"] if m["path"] == manifest["source"])
+        self.assertFalse(source["published"])
+        self.assertFalse(source["cqPathOwner"])
+        market = json.loads((REPO / manifest["marketplace"]).read_text())
+        self.assertEqual({m["name"] for m in published}, {e["name"] for e in market["plugins"]})
+        for module in principal:
+            self.assertTrue((REPO / module["path"] / ".claude-plugin/plugin.json").is_file(), module["name"])
+            self.assertIn((module["path"] + "/VERSION", "plain"), release_artifacts(manifest))
+        # The source still carries the version the generated modules copy.
+        self.assertIn((manifest["source"] + "/VERSION", "plain"), release_artifacts(manifest))
+
+    def test_namespace_map_assigns_every_command_head_and_agent_one_module(self):
+        manifest = load_manifest(REPO)
+        mapping = namespace_map(REPO, manifest)
+        source = REPO / manifest["source"]
+        heads = {p.name.removesuffix(".md") for p in (source / "commands").iterdir()}
+        heads |= {p.stem for p in (source / "agents").glob("*.md")}
+        self.assertEqual(heads, set(mapping))
+        self.assertEqual("quenching-specs:specs:develop", published_id(OLD + "specs:develop", mapping))
+        self.assertEqual("quenching-specs:handoff", published_id(OLD + "handoff", mapping))
+        self.assertEqual("quenching-align:align", published_id(OLD + "align", mapping))
+        self.assertEqual("quenching-align:knowledge:add", published_id(OLD + "knowledge:add", mapping))
+        self.assertEqual("quenching-specs:orchestrator", published_id(OLD + "orchestrator", mapping))
+        self.assertEqual("quenching-design:design:status", published_id(OLD + "design:status", mapping))
+        with self.assertRaises(ValueError):
+            published_id(OLD + "nowhere:x", mapping)
+
+    def test_principal_modules_activate_together_and_unpublish_the_source(self):
+        manifest = load_manifest(REPO)
+        with tempfile.TemporaryDirectory(dir=REPO / ".quenching") as tmp:
+            root = Path(tmp)
+            shutil.copytree(REPO / manifest["source"], root / manifest["source"],
+                            ignore=shutil.ignore_patterns("__pycache__", "tests"))
+            reader = REPO / "plugins/quenching-specs-reader"
+            shutil.copytree(reader, root / "plugins/quenching-specs-reader",
+                            ignore=shutil.ignore_patterns("__pycache__"))
+
+            def refused(data):
+                (root / MANIFEST).write_text(json.dumps(data))
+                with self.assertRaises(ValueError):
+                    load_manifest(root)
+
+            # One principal module published beside the still-published source: refused.
+            partial = copy.deepcopy(manifest)
+            for module in partial["modules"]:
+                if "owned" in module:
+                    module["published"] = module["name"] == "quenching-design"
+                    module["cqPathOwner"] = module["name"] == "quenching-specs"
+                if module["name"] == "quenching":
+                    module.update(published=True, cqPathOwner=True)
+            refused(partial)
+            both = copy.deepcopy(manifest)
+            for module in both["modules"]:
+                if "owned" in module:
+                    module["published"] = True
+                if module["name"] == "quenching":
+                    module.update(published=True, cqPathOwner=False)
+            refused(both)
+            active = copy.deepcopy(both)
+            next(m for m in active["modules"] if m["name"] == "quenching")["published"] = False
+            (root / MANIFEST).write_text(json.dumps(active))
+            self.assertEqual(8, sum(m["published"] for m in load_manifest(root)["modules"] if "owned" in m))
 
     def test_manifest_drives_release_surface_expansion(self):
         manifest = load_manifest(REPO)
-        planned = next(m for m in manifest["modules"] if m["name"] == "quenching-design")
-        planned["published"] = True
+        design = next(m for m in manifest["modules"] if m["name"] == "quenching-design")
+        design["published"] = False
+        self.assertNotIn(("plugins/quenching-design/VERSION", "plain"), release_artifacts(manifest))
+        design["published"] = True
         self.assertIn(("plugins/quenching-design/VERSION", "plain"), release_artifacts(manifest))
         self.assertIn(("plugins/quenching-design/.claude-plugin/plugin.json", "json"),
                       release_artifacts(manifest))

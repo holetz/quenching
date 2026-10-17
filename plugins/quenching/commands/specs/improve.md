@@ -1,12 +1,12 @@
 ---
 description: >-
-  Map a repository's relevant improvement opportunities, settle the owner's decisions, turn the plan into an epic. Use for "map what to improve", "improvement plan". Not for: ONE spec → /quenching:specs:create; rounds → /quenching:specs:autopilot.
+  Map a repository's relevant improvement opportunities, settle the owner's decisions, turn the plan into an epic. Use for "map what to improve", "improvement plan". Not for: ONE spec → /quenching-specs:specs:create; rounds → /quenching-specs:specs:autopilot.
 disable-model-invocation: true
 argument-hint: "[focus areas | --depth quick|full | --with-session-logs]"
 allowed-tools: Bash(cq:*), Bash(git:*), Bash(wc:*), Bash(mkdir:*), Read, Grep, Glob, Write, Agent, Task, AskUserQuestion
 ---
 
-# /quenching:specs:improve — from a critical map to an approved epic
+# /quenching-specs:specs:improve — from a critical map to an approved epic
 
 **Input**: `$ARGUMENTS` — optional focus areas (e.g. `specs storage, CI`), `--depth quick|full`
 (default `full`), and `--with-session-logs` to mine the target's Claude Code session logs for usage
@@ -14,7 +14,7 @@ evidence. Typed by the human only: this command reads the whole repository and c
 
 The run has four outputs, in order: a **map** (candidate files the human can read), the human's
 **decisions**, an **approved backlog**, and **one epic** whose members are the approved specs. It
-never builds anything; building is `/quenching:specs:orchestrate` or `/quenching:specs:execute`.
+never builds anything; building is `/quenching-specs:specs:orchestrate` or `/quenching-specs:specs:execute`.
 
 ## Invariants
 - **Relevance over coverage.** A candidate exists only with evidence (`path:line`, a command's
@@ -48,7 +48,7 @@ one line. Ask only if the focus is genuinely ambiguous.
 Split the repository into at most six areas, chosen from what exists: architecture and code; tests,
 verification and CI; documentation and knowledge; the agent harness and command surface
 (`AGENTS.md`/`CLAUDE.md`, `.claude/`, descriptions, context cost); planning and specs flow;
-delivery, operations and security. Run the `quenching:scout` agent per area, at most 3 at a time,
+delivery, operations and security. Run the `quenching-specs:scout` agent per area, at most 3 at a time,
 each with: the area, the focus, the open-spec titles, the relevance invariant above, and the
 return format: candidates as `title · evidence (path:line or measurement) · consequence ·
 severity (high/medium) · effort (S/M/L)`. With `--with-session-logs`, one agent instead measures
@@ -79,7 +79,7 @@ migrations, breaking changes, autonomy limits. Leave out the ones you can settle
 default. Ask them on decision sheets ([questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared mechanics §1), no cap: independent ones on one sheet, recommendation first, each dependent one on the next sheet, shaped by the last. Then present the backlog as ordered waves with dependencies, and ask which
 part to approve: all, some waves, or chosen items. **Ask the epic's autonomy policy** in the same
 rounds, recommendation first: develop the members to `ready` now with the human present (each one
-reaches `approved by=human`), or authorize forced execution (`/quenching:specs:orchestrate
+reaches `approved by=human`), or authorize forced execution (`/quenching-specs:specs:orchestrate
 --autonomous`, each approval stamped `by=orchestrator-forced`). Record each decision and default in the map's
 `README.md` and update the affected candidate files. Ask nothing whose answer would not change what
 you write.
@@ -107,8 +107,8 @@ dependencies, and `cq specs validate` raises no `sp-epic-*` finding.
 
 ### 7. Hand off
 Print the epic id, its members per wave, and the next commands:
-- `/quenching:specs:develop <id>` to compose each member to ready;
-- `/quenching:specs:orchestrate <epic>` to build the epic in waves — with `--autonomous` appended
+- `/quenching-specs:specs:develop <id>` to compose each member to ready;
+- `/quenching-specs:specs:orchestrate <epic>` to build the epic in waves — with `--autonomous` appended
   when the policy in the epic's `## Design` is the forced-execution authorization.
 
 Do not start either. With the policy "develop with the human present", the first command is the one

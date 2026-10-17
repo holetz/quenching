@@ -502,7 +502,9 @@ def named_by_bodies(commands: list[dict], prefix: str) -> dict[str, set[str]]:
     by membership in the surface's own set — never one regex per target name re-run for
     every caller, which cost the square of the surface's size."""
     by_name = {c["command"].lstrip("/"): c["command"] for c in commands}
-    esc = re.escape(prefix)
+    # A module family shares one stem: `quenching-specs:` and `quenching-align:` both name
+    # commands of the `quenching` source surface, so any `<stem>-<module>:` prefix counts.
+    esc = re.escape(prefix.split("-", 1)[0]) + r"(?:-[a-z]+)?"
     registry_re = re.compile(rf"(?<![\w:/-]){esc}:{NAME_SHAPE}(?![\w:-])")
     adjacent_re = re.compile(rf"(?<![\w:-])/?({esc}:)?{NAME_SHAPE}(?![\w:-])")
 

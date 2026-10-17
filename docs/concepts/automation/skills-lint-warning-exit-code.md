@@ -29,8 +29,8 @@ code is not the signal for anything below `error`.
 
 Given one file, `lint` resolves its root to that file's own directory, so a finding for
 `commands/knowledge/add.md` reports back as `"command": "/add", "path": "add.md"` — not
-`/quenching:knowledge:add` and not the full repo-relative path. A filter written against the full
-command path (`/quenching:knowledge:add`) matches nothing against that output, silently.
+`/quenching-align:knowledge:add` and not the full repo-relative path. A filter written against the full
+command path (`/quenching-align:knowledge:add`) matches nothing against that output, silently.
 
 **Consequence.** Run `lint` against the **whole surface** (`cq --root . components lint --json`)
 and filter the returned `findings` array by `path` (repo-relative) and `code`, rather than

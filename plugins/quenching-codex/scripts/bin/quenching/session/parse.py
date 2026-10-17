@@ -13,7 +13,7 @@ this repo rather than assumed:
   uuid              stable per record; the dedup key
   timestamp         ISO-8601
   sessionId, cwd, gitBranch, version
-  attributionSkill  THE command a turn belongs to, e.g. "quenching:specs:develop"
+  attributionSkill  THE command a turn belongs to, e.g. "quenching-specs:specs:develop"
   attributionPlugin the plugin that owns it, e.g. "quenching"
   message.content   str, or a list of blocks: text | thinking | tool_use | tool_result
 

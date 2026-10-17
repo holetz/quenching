@@ -26,12 +26,12 @@ the most visible product of the whole front, and it is the one part no validator
 
 For the `specs` front that section is
 `plugins/quenching/assets/references/specs-develop/spec-driven.md`
-§The report mold, cited by seven of the eight `/quenching:specs:*` commands.
+§The report mold, cited by seven of the eight `/quenching-specs:specs:*` commands.
 
 The mold is **literal**: it carries the rendered block the body copies and substitutes into, not a
 description of what the block ought to contain. That choice is not aesthetic — the only two commands
 that already had consistent output before this work (the front's router, since retired, and
-`/quenching:specs:execute`) were exactly the two carrying a literal block, and the six that
+`/quenching-specs:specs:execute`) were exactly the two carrying a literal block, and the six that
 described the report in prose produced six different shapes.
 
 ### What the mold fixes
@@ -71,8 +71,8 @@ report in prose. The accumulated result:
 | Symptom | Count |
 | --- | --- |
 | different verbs for the closing line | 6 |
-| commands with no next-step suggestion at all | 1 (`/quenching:specs:conclude`, the one that closes the spec) |
-| chainings that name the command without the slug | 1 (`/quenching:specs:execute` → `conclude`) |
+| commands with no next-step suggestion at all | 1 (`/quenching-specs:specs:conclude`, the one that closes the spec) |
+| chainings that name the command without the slug | 1 (`/quenching-specs:specs:execute` → `conclude`) |
 | ownerless wordings of "verbatim" | 7 |
 | shared glyph vocabulary | none |
 | tables using the `title` `cq specs` already emitted | none |
@@ -97,11 +97,11 @@ The test is the source of the cells, not the size of the block:
 | a judgment the model makes in this run (a triage's `Reason` column, a proposal) | the **body**, under the shape the mold fixes |
 
 **The measurement.** On 2026-08-16, over a front of 147 specs, **one** ranked table had **three**
-hand-written and divergent renderers: a Python heredoc embedded in `/quenching:specs:triage`'s body,
-prose describing the columns in `/quenching:specs:status`'s body, and a third variant improvised in
+hand-written and divergent renderers: a Python heredoc embedded in `/quenching-specs:specs:triage`'s body,
+prose describing the columns in `/quenching-specs:specs:status`'s body, and a third variant improvised in
 a session because neither of the other two served. All three read `cq specs list --json` — 312,511
 bytes, of which 144,057 were `## Overview` prose none of the three printed. The collection step of
-`/quenching:specs:status` asked for 338,875 bytes to produce a 45-row table, under a first sentence
+`/quenching-specs:specs:status` asked for 338,875 bytes to produce a 45-row table, under a first sentence
 that promised to be *"near-free by construction"*.
 
 With the rendering moved into the tool (`cq specs next --front --table`,
@@ -164,7 +164,7 @@ closing sentence. It was a shared format *in fact*, written twice and owned by n
 
 This work touched only the `specs` front, so **the two stopped being mirrors**. That is recorded as
 an accepted divergence, not as a silent pending item: the `docs` front adopting the mold is work of
-its own, and until then `/quenching:knowledge:status` remains the owner of its own shape. The
+its own, and until then `/quenching-align:knowledge:status` remains the owner of its own shape. The
 alternative — generalizing the mold to three different finding vocabularies in the same move — would
 have written a generic contract before there were two proven cases to generalize from.
 

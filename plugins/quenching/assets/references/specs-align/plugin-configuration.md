@@ -18,7 +18,7 @@ tree. Other namespaces are read by their owning front.
 | --- | --- | --- | --- |
 | `backend` | `git` · `github` · `azure-boards` (the last two deprecated) | derived from the repository remote | store selection and legacy-value refusal |
 | `specs.card` | `{provider: github \| azure-boards \| none, at: capture}` | `github` on a GitHub remote, else `none` | the card layer, on the branch or here |
-| `shared.worktreeSetup` | a shell command, run as written | none | `/quenching:specs:execute`'s isolation offer, after `git worktree add` |
+| `shared.worktreeSetup` | a shell command, run as written | none | `/quenching-specs:specs:execute`'s isolation offer, after `git worktree add` |
 | `shared.sharedPaths` | a list of repo-relative paths | none — an absent or empty list declares no shared area | `cq git worktree link`, from the isolation flow |
 | `shared.regenerablePaths` | a list of repo-relative paths; a slash-less entry matches that name at any depth; a trailing slash (`data/`) anchors it at the root | none — an absent list declares nothing regenerable | `cq git worktree retire`, which discards matching ignored files without `--discard-ignored` |
 | `shared.hooks` | `{"<event>": [{"command": "<cmd>", ...}]}` | none — an absent key declares no events | the command that owns the event |
@@ -27,9 +27,9 @@ tree. Other namespaces are read by their owning front.
 | `specs.azureStates` | `{"plans": "<state>", "archive": "<state>"}` | **none, deliberately** — refuses (exit 2, `sp-az-no-states`) rather than guess | the `azure-boards` backend only |
 | `specs.azurePlacement` | `{areaPath, workItemType, discoveryTag, team, iterationPath, boardColumn, defaultSubject}` — `workItemType` retired, see `workItemTypes` below | per sub-key — `areaPath` **none, deliberately**, the rest default | the `azure-boards` backend only |
 | `specs.azureColumns` | `{"<board state>": "<lane>", …}` — any subset | `{}` — falls back to `azurePlacement.boardColumn` per state | the `azure-boards` backend only |
-| `specs.subjects` | `{"<key>": {name, description, parent, tags}, …}` | `{}` | `/quenching:specs:create`'s subject proposal |
-| `specs.tagCatalog` | `{"<tag>": "<description>", …}` | `{}` | `/quenching:specs:create`'s tag proposal |
-| `specs.workItemTypes` | `{"<key>": {description, azure, github, default}, …}` | `{}` | `/quenching:specs:create`'s type proposal, `cq specs new --type`, and every backend's `create_spec` |
+| `specs.subjects` | `{"<key>": {name, description, parent, tags}, …}` | `{}` | `/quenching-specs:specs:create`'s subject proposal |
+| `specs.tagCatalog` | `{"<tag>": "<description>", …}` | `{}` | `/quenching-specs:specs:create`'s tag proposal |
+| `specs.workItemTypes` | `{"<key>": {description, azure, github, default}, …}` | `{}` | `/quenching-specs:specs:create`'s type proposal, `cq specs new --type`, and every backend's `create_spec` |
 | `ops.opsRoot`, `ops.router` | repository-relative paths | none — `op-config-missing` when absent | `cq ops` |
 | `ops.registry` | a repository-relative path | `<ops.opsRoot>/README.md` | `cq ops registry` |
 | `proof.proofRoot` | a repository-relative path | `tests` | `cq proof` |

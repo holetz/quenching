@@ -140,8 +140,8 @@ those trees against the base that matters.
 **Manual and documented, not gated automatically** — decided by the human, 2026-08-11 (Open
 Decision 2 of the spec that wrote this standard). Unlike `functional-checks.sh`
 ([surface-verification.md](surface-verification.md) §The harness belongs to the components
-front), `citation-check.sh` is not wired into `/quenching:components:align`, into
-`/quenching:specs:conclude`'s merge gate, or into any spec's `## Validation`. It is run by hand,
+front), `citation-check.sh` is not wired into `/quenching-align:components:align`, into
+`/quenching-specs:specs:conclude`'s merge gate, or into any spec's `## Validation`. It is run by hand,
 from the repo root, when a change makes half-finished citations plausible.
 
 **Two shapes of change do, and they are not the same shape.** The first is a **rename or a

@@ -53,7 +53,7 @@ and the cycle authorization wording is in
   Azure DevOps artifact, or local-only). Forward any local-preview request to `build` as its own
   confirmation; an artifact or preview is never reported as an external deployment.
 - **Editorial loop is bounded.** Route `review → write` for at most three rounds; an unresolved page is reported below threshold.
-- **Stages are named registry entries.** Invoke `quenching:knowledge:documentation:build`, `quenching:knowledge:documentation:plan`, `quenching:knowledge:documentation:write` and `quenching:knowledge:documentation:review` with the `Skill` tool.
+- **Stages are named registry entries.** Invoke `quenching-align:knowledge:documentation:build`, `quenching-align:knowledge:documentation:plan`, `quenching-align:knowledge:documentation:write` and `quenching-align:knowledge:documentation:review` with the `Skill` tool.
 
 Running under `quenching-knowledge-documentation-produce` authorization granted at run start — skip your plan-confirmation pause; present your plan as narration and execute; code-coupled and irreversible items still gate individually.
 
@@ -72,26 +72,26 @@ falls back to the complete run and is recorded in the report; the full run remai
 
 ### 2. Establish the site layer
 
-Use the `Skill` tool to invoke `quenching:knowledge:documentation:build` as the first pass. It
+Use the `Skill` tool to invoke `quenching-align:knowledge:documentation:build` as the first pass. It
 ensures the Markdown extensions and CSS payload exist before prose is written. **Done when:** build
 returns its site-layer report, including `unverified` when the toolchain is absent.
 
 ### 3. Create the plan of record
 
-Invoke `quenching:knowledge:documentation:plan` with the source scope and the cycle authorization
+Invoke `quenching-align:knowledge:documentation:plan` with the source scope and the cycle authorization
 sentence above. **Done when:** `.quenching/documentation/plan.md` contains all seven contracts,
 the complete publication map and the accepted page assignments.
 
 ### 4. Write and review the pages
 
-Invoke `quenching:knowledge:documentation:write`, then `quenching:knowledge:documentation:review`.
+Invoke `quenching-align:knowledge:documentation:write`, then `quenching-align:knowledge:documentation:review`.
 When the verdict is below threshold, pass the ranked defects to `write` and repeat this pair up to
 three rounds. A source gap remains a reported gap. **Done when:** every page passes the rubric or
 is explicitly marked below threshold with dimensions and evidence.
 
 ### 5. Validate the finished site
 
-Invoke `quenching:knowledge:documentation:build` again. Read the strict-build result, verify the
+Invoke `quenching-align:knowledge:documentation:build` again. Read the strict-build result, verify the
 `site-source/` manifest, run the
 projection gate and **always** run `documentation-site-check.py` immediately after the build;
 distinguish site-layer fixes from page-level reports and state browser-QA limits.

@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Versioning and release — the version lockstep
-description: The source version surfaces that cq specs release bumps together, with the generated specs-reader sibling and the HUD manifest moved to the same version
-resource: plugins/quenching/assets/modules.json, plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py, scripts/generate_plugin_modules.py
+description: The version surfaces cq specs release bumps together — the unpublished source, every published module manifest (the eight principal modules, the specs reader and the HUD) and every marketplace entry
+resource: plugins/quenching/assets/modules.json, plugins/quenching-*/VERSION, plugins/quenching-*/.claude-plugin/plugin.json, plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py, scripts/generate_plugin_modules.py
 tags: [release, versioning, lockstep, plugin, distribution]
 timestamp: 2026-10-14
 audience: both
 authority: current
-source: modularizar-specs-knowledge-components, one-entry-point, notice-installed-tool-version-drift, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, configurable-branch-strategy, spec 1634; lineage in ADR 0004
+source: modularizar-specs-knowledge-components, one-entry-point, notice-installed-tool-version-drift, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, configurable-branch-strategy, spec 1634, spec 1635 (module extraction); lineage in ADR 0004 and ADR 0013
 maintainer: quenching
 ---
 
@@ -25,20 +25,26 @@ partial bump makes one of them wrong.
 ## The published set
 
 `plugins/quenching/assets/modules.json` is the declarative source. Each published module
-contributes its `.claude-plugin/plugin.json` and, when declared, its `VERSION` file. The
-marketplace and source `common/version.py` complete the set. Planned records contribute no
-release surfaces until explicitly activated. `cq specs release` loads the **target repository's**
+contributes its `.claude-plugin/plugin.json` and, when declared, its `VERSION` file. The editable
+source `plugins/quenching` contributes its pair **although it is not published**: it is the
+version every generated module copies, so a release that skipped it would regenerate every module
+back to the old number. The marketplace and source `common/version.py` complete the set. A module
+record that is not published (and is not the source) contributes no release surface. `cq specs release` loads the **target repository's**
 manifest; `RELEASE_ARTIFACTS` in `release.py` is a derived export of the bundled manifest for
 existing callers, not a separately maintained list.
 
 | # | Artifact | Read by |
 | --- | --- | --- |
-| 1 | `plugins/quenching/.claude-plugin/plugin.json` → `version` | Claude Code, to detect and apply an upgrade |
-| 2 | `plugins/quenching/VERSION` | the same detection, as the pair's other half |
-| 3 | `.claude-plugin/marketplace.json` → the plugin entry's `version` | the marketplace listing |
+| 1 | `plugins/quenching-<module>/.claude-plugin/plugin.json` → `version`, for every published module | Claude Code, to detect and apply an upgrade |
+| 2 | `plugins/quenching-<module>/VERSION`, for every published module that declares one | the same detection, as the pair's other half |
+| 3 | `.claude-plugin/marketplace.json` → **every** entry's `version` | the marketplace listing |
 | 4 | `plugins/quenching/assets/bin/quenching/common/version.py` → `VERSION` | every pillar's own `--version` (`cq specs`, `cq knowledge`, `cq components`) |
+| 5 | `plugins/quenching/VERSION` and `plugins/quenching/.claude-plugin/plugin.json` (the unpublished source) | `scripts/generate_plugin_modules.py`, which writes it into every generated module |
 
-The reader's VERSION/manifest pair and the HUD's manifest are also published module surfaces.
+The published modules are the eight principal modules (`quenching-specs`, `quenching-align`,
+`quenching-design`, `quenching-ops`, `quenching-proof`, `quenching-toolchain`,
+`quenching-delivery`, `quenching-security`), the generated `quenching-specs-reader` and the
+authored `quenching-hud`, whose manifest carries no `VERSION` file.
 Adding a published module changes the derived release set without editing the release code.
 Manifest paths and ownership are validated before writes; artifact presence, changelog entry,
 marketplace membership and existing version agreement must all pass before any version moves.
@@ -47,7 +53,10 @@ marketplace membership and existing version agreement must all pass before any v
 
 <!-- rationale -->
 
-**Artifacts 1–2 are the Claude upgrade trigger.** The `plugin.json` `version` and the `VERSION` file are
+**Artifacts 1–2 are the Claude upgrade trigger, once per module.** Each enabled module is its own
+installed plugin, so a module left at the old number is a module the host never upgrades while its
+siblings move: the one `cq` in `quenching-specs` refuses to load a module package whose version
+differs from its own, so a split version silently removes that module's fronts. The `plugin.json` `version` and the `VERSION` file are
 the pair Claude Code uses to decide that an installed plugin is stale and should be replaced. Bump
 one without the other and the upgrade either never fires or fires against a plugin that reports a
 version it does not have.
@@ -67,9 +76,10 @@ forced, back when each pillar shipped as its own script
 internal imports has no such constraint: `common/version.py` is read by every pillar's `--version`,
 not duplicated by it.
 
-The generated sibling is bumped in the same operation. `cq specs release` also moves
-`plugins/quenching-specs-reader/VERSION`, its `.claude-plugin/plugin.json` and the HUD's `plugins/quenching-hud/.claude-plugin/plugin.json`, and it rewrites the
-`version` of **every** plugin entry in `.claude-plugin/marketplace.json`, never only the first. A
+Every module is bumped in the same operation. `cq specs release` moves each published module's
+`VERSION` and `.claude-plugin/plugin.json` — the eight principal modules, the specs reader and the
+HUD's manifest — together with the source pair, and it rewrites the `version` of **every** plugin
+entry in `.claude-plugin/marketplace.json`, never only the first. A
 marketplace entry with no `version`, or entries that disagree with published module membership,
 are refused. Afterwards `python3 scripts/generate_plugin_modules.py --write` regenerates the
 copied assets; `--check` proves generated consumers, published versions and the single active
@@ -85,7 +95,7 @@ gate checks both translation drift and package validity.
 
 The surfaces move **once per release, on the primary branch, as the deliberate act that publishes
 it** — see [branching.md](../git/branching.md). A version bump is never a task in a
-spec's `## Tasks`, `/quenching:specs:execute` never makes one, and `/quenching:specs:conclude` no longer makes one
+spec's `## Tasks`, `/quenching-specs:specs:execute` never makes one, and `/quenching-specs:specs:conclude` no longer makes one
 either: a spec's own conclude merges into the primary branch with the lockstep untouched, and the
 artifacts move only when the release command runs `cq specs release`.
 

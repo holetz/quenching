@@ -50,7 +50,7 @@ that is fast by construction, and that is its whole content — a spec that shou
 a conversation asks for it by name. Neither distinction changes the continuous execution loop.
 
 At the end of a `low` build, the close-out command carries the PR handoff by `Skill` after its
-green gate: `Skill("quenching:git:pr:create", "<id>")`. The PR command keeps its own confirmation,
+green gate: `Skill("quenching-specs:git:pr:create", "<id>")`. The PR command keeps its own confirmation,
 push and provider record; `low` removes the extra handoff choice from `conclude`, not the safety
 gate owned by the PR command. The other levels retain `conclude`'s named handoff for the human.
 
@@ -74,7 +74,7 @@ against the word's plain reading.
 nothing to derive from, and the two errors are not symmetric: `low` is a positive claim — *this can
 run unattended, and the pass may stamp the go itself* — and it is the one that costs when it is
 wrong. Guessing upward costs a refine pass nobody asked for; guessing downward costs a spec built
-on nobody's word ([triage.md](../../commands/specs/triage.md) states the same asymmetry for a ranked
+on nobody's word (`quenching-specs-triage` states the same asymmetry for a ranked
 row's floor).
 
 **Every defining stage reads the level from a payload it already fetches.** `cq specs status --spec

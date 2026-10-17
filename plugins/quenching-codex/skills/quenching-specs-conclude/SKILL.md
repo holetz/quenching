@@ -34,7 +34,11 @@ base.**
 
 The distillation doctrine — what crosses into `/docs/`, what stays, and how it is graded — lives in
 [specs-conclude/distill.md](../../references/specs-conclude/distill.md)
-§What crosses, what stays. The layout and the gates live in
+§What crosses, what stays. Every hand-off into another module's command (`/quenching-align:*`
+for the bundle) runs only where that module is enabled, per
+[tool-resolution.md](../../references/align/tool-resolution.md) §Routing into
+another module; with `quenching-specs` alone, the distillation still writes through the shipped
+insert procedure and only the offers into `quenching-align` drop. The layout and the gates live in
 [specs-develop/spec-driven.md](../../references/specs-develop/spec-driven.md)
 §The spec document §The gates and the stage-scoped explicit-none rule. The `cq specs`
 surface lives in
@@ -348,7 +352,7 @@ read the complexity from the status payload already in hand. **`low` chains the 
 now:**
 
 ```text
-Skill("quenching:git:pr:create", "<id>")
+Skill("quenching-specs:git:pr:create", "<id>")
 ```
 
 Invoke it with the spec id; `quenching-git-pr-create` owns its own confirmation, push and PR

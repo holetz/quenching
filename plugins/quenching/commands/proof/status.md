@@ -1,12 +1,12 @@
 ---
 description: >-
-  Report the proof front: layers, fixtures, floors, CI evidence and findings, read-only. Use for "proof status", "check the verification surface". Not for: converging → /quenching:proof:align.
+  Report the proof front: layers, fixtures, floors, CI evidence and findings, read-only. Use for "proof status", "check the verification surface". Not for: converging → /quenching-proof:proof:align.
 disable-model-invocation: true
 argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching:proof:status — read the verification surface
+# /quenching-proof:proof:status — read the verification surface
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 
@@ -77,9 +77,9 @@ finding keeps its code and band, and the report distinguishes static evidence fr
 ### 3. Hand back control
 
 State that this command wrote nothing and that the suite was not run. For a structural finding,
-name `/quenching:proof:align` as the command that can converge it. For a judgement finding,
+name `/quenching-proof:proof:align` as the command that can converge it. For a judgement finding,
 retain its evidence and name the target owner's closing command from `bands.md`; status never
-runs that command. For a missing layer, name `/quenching:proof:layer:new`; for a missing CI gate,
+runs that command. For a missing layer, name `/quenching-proof:proof:layer:new`; for a missing CI gate,
 name the target owner's reviewed CI change.
 
 **Done when:** the report ends with the appropriate owner for each finding and no repair or test
@@ -93,5 +93,5 @@ execution has been attempted.
   nothing is called healthy because it is missing.
 - Findings come from `bands.md` and retain their severity and code.
 - The target suite is never run; status reports this explicitly.
-- Status names `/quenching:proof:align` for bounded repair and `/quenching:proof:layer:new` for
+- Status names `/quenching-proof:proof:align` for bounded repair and `/quenching-proof:proof:layer:new` for
   layer creation, without invoking either.

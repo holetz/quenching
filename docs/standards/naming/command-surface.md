@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Command surface naming
-description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the design namespace for DTCG source and projections; the proof namespace for the verification surface rather than its test artifact; the seventh namespace (`git`, a pillar rather than a front) and its coexistence with a target's own `git` category; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context
-resource: plugins/quenching/commands/**
+description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the module prefix each front publishes under and the full command and agent mapping; the design namespace for DTCG source and projections; the proof namespace for the verification surface rather than its test artifact; the seventh namespace (`git`, a pillar rather than a front) and its coexistence with a target's own `git` category; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context
+resource: plugins/quenching/commands/**, plugins/quenching/agents/**, plugins/quenching/assets/modules.json
 tags: [naming, commands, taxonomy]
-timestamp: 2026-08-27
+timestamp: 2026-10-14
 audience: both
 authority: current
-source: rename-command-surface, 2026-07-21, 2026-07-24, collapse-skills-into-commands, 2026-07-26, correct-command-citation-form; lineage in ADR 0004
+source: rename-command-surface, 2026-07-21, 2026-07-24, collapse-skills-into-commands, 2026-07-26, correct-command-citation-form, spec 1635 (module extraction); lineage in ADR 0004 and ADR 0013
 maintainer: quenching
 ---
 
@@ -31,12 +31,12 @@ and only one of them is unconditionally correct for this repo's commands:
 
 | Form | Example | Correct when |
 | --- | --- | --- |
-| Registry name (no `/`) | `quenching:specs:develop` | the `Skill` tool resolves it — always, for a plugin command |
-| Plugin-prefixed slash | `/quenching:specs:develop` | a human types it wherever `quenching` is installed **as a plugin** |
+| Registry name (no `/`) | `quenching-specs:specs:develop` | the `Skill` tool resolves it — always, for a plugin command |
+| Plugin-prefixed slash | `/quenching-specs:specs:develop` | a human types it wherever `quenching` is installed **as a plugin** |
 | Bare slash | `/commands:tighten` | **only** where that command file lives in the target repo's own `.claude/commands/` |
 
-So `commands/specs/develop.md` is cited as `quenching:specs:develop` for the tool and
-`/quenching:specs:develop` for the human — and bare **only** by a repo that vendored the file into
+So `commands/specs/develop.md` is cited as `quenching-specs:specs:develop` for the tool and
+`/quenching-specs:specs:develop` for the human — and bare **only** by a repo that vendored the file into
 its own `.claude/commands/`. Re-measured in this tree on 2026-08-26: that directory does exist
 here, and holds four commands of this repo's own — `/release`, `/skill-map`, `/commands:tighten`
 and `/references:tighten` — which is why the bare row's example is one of them. Not one plugin
@@ -60,21 +60,58 @@ with it the bijection rule, the mirroring requirement, and the two root exceptio
 `sk-path-mismatch` recorded as intended. Nothing derives a name that could disagree with the path,
 so nothing checks that they agree.
 
+## The plugin prefix is the module
+
+The plugin is published as eight modules ([../architecture/plugin-layout.md](../architecture/plugin-layout.md)
+§One editable source, eight generated modules), so the segment before the first `:` names the
+**module** that registers the command, and the rest is the command's path inside it. Every front
+belongs to exactly one module, and so does every agent:
+
+| Module | Commands it registers | Agents |
+| --- | --- | --- |
+| `quenching-specs` | `/quenching-specs:specs:*`, `/quenching-specs:git:*`, `/quenching-specs:handoff` | `quenching-specs:git-steward`, `:orchestrator`, `:scout`, `:spec-architect`, `:spec-runner`, `:verifier` |
+| `quenching-align` | `/quenching-align:align`, `/quenching-align:knowledge:*`, `/quenching-align:components:*` | — |
+| `quenching-design` | `/quenching-design:design:*` | — |
+| `quenching-ops` | `/quenching-ops:ops:*` | — |
+| `quenching-proof` | `/quenching-proof:proof:*` | — |
+| `quenching-toolchain` | `/quenching-toolchain:toolchain:*` | — |
+| `quenching-delivery` | `/quenching-delivery:delivery:*` | — |
+| `quenching-security` | `/quenching-security:security:*` | — |
+
+- **The map has one home.** The front-to-module assignment is the `owned` record of each module in
+  `plugins/quenching/assets/modules.json`; `quenching.common.modules.namespace_map` derives the
+  table above from it, the Codex translator consumes the same map, and the generator refuses a
+  module file citing a `quenching-<module>:` id no module owns. The table is a reading of that
+  record, never a second source.
+- **The published name is written in the source.** Bodies, agents, references, the README and the
+  Python literals that recognize ids spell `quenching-<module>:…`; the bare `quenching:` prefix
+  survives only as the source's own unpublished registration and in history (`docs/decisions/`,
+  `CHANGELOG.md`).
+- **Nested, not flattened.** The front keeps its own segment inside the module
+  (`/quenching-align:knowledge:add`, not `/quenching-align:add`), so the path below the module is
+  still the file's path under `commands/` and §The path IS the identity holds unchanged.
+- **A route into another module is conditional.** A `Not for:` hand-off, an offer or a `Skill`
+  call naming another module's command runs only when that module is enabled; otherwise it is
+  reported `not-installed: <module>` and never invoked
+  (`plugins/quenching/assets/references/align/tool-resolution.md` §Routing into another module).
+  A wildcard such as `/quenching-align:*` names every command of one module and carries the same
+  condition.
+
 ## Namespaces are honest by front
 
 The surface is partitioned by the artifact each front's commands touch:
 
-- **`/quenching:knowledge:`** — the OKF `/docs/` bundle.
-- **`/quenching:specs:`** — provider-owned spec documents and their lifecycle.
-- **`/quenching:design:`** — the `/.design/` DTCG source, projections, and editorial genres.
-- **`/quenching:components:`** — the target repo's `.claude/` automation surface.
-- **`/quenching:ops:`** — the target repository's canonical operations surface. It is the fifth
+- **`/quenching-align:knowledge:`** — the OKF `/docs/` bundle.
+- **`/quenching-specs:specs:`** — provider-owned spec documents and their lifecycle.
+- **`/quenching-design:design:`** — the `/.design/` DTCG source, projections, and editorial genres.
+- **`/quenching-align:components:`** — the target repo's `.claude/` automation surface.
+- **`/quenching-ops:ops:`** — the target repository's canonical operations surface. It is the fifth
   local aligned-front namespace; its contract and command bodies are now published.
-- **`/quenching:proof:`** — the target repository's verification surface: its layers, fixtures,
+- **`/quenching-proof:proof:`** — the target repository's verification surface: its layers, fixtures,
   gates, and CI. It is the sixth plugin namespace and the fifth local aligned-front namespace. The front is named `proof`, not `tests`, because
   `tests` would name an artifact inside the surface rather than what the surface produces; the
   same front-versus-artifact distinction is why `components` replaced `skill`.
-- **`/quenching:git:`** — the seventh namespace, and the odd one out: it names a **pillar**, not a
+- **`/quenching-specs:git:`** — the seventh namespace, and the odd one out: it names a **pillar**, not a
   front. The other six namespaces name fronts or the provider-owned specs flow; only the five
   local fronts converge a tree toward a canonical shape. `git` answers questions about the target
   repository's own live git state instead, which is why it carries no `align` verb of its own —
@@ -92,7 +129,7 @@ by `/align`; `specs` remains provider-owned and `git` remains a pillar without a
 A target may mint its own `/git:commit` or `/git:cleanup` under its own `.claude/commands/git/` —
 `components-command-new/taxonomy.md`'s own canonical category example — naming a convention that
 repo declared for itself. §Three citation forms is what keeps the two apart: the plugin's own
-`git` commands are always spelled `/quenching:git:<verb>` (or bare, only inside this repo's own
+`git` commands are always spelled `/quenching-specs:git:<verb>` (or bare, only inside this repo's own
 `.claude/commands/`, which does not hold one), so a target's bare `/git:<verb>` names its own
 command and nothing this plugin ships, on every repo that installs it.
 
@@ -104,8 +141,8 @@ either being merely out of date, which is why a rename's blast-radius sweep belo
 standards and not only the code.
 
 A command's namespace MUST match what it touches: a command that mints commands lives under
-`/quenching:components:`, never `/quenching:knowledge:`; a command that reads or writes the bundle
-lives under `/quenching:knowledge:`.
+`/quenching-align:components:`, never `/quenching-align:knowledge:`; a command that reads or writes the bundle
+lives under `/quenching-align:knowledge:`.
 
 ## `components` — four contexts, each named for the artifact it mints
 
@@ -120,20 +157,20 @@ holds **four sibling contexts, each named for the artifact it mints, none a sub-
 
 | Context | Mints | Front-level verb | Artifact-level verbs |
 | --- | --- | --- | --- |
-| *(front root)* | — | `/quenching:components:align` | — |
-| `command/` | a command | — | `/quenching:components:command:new`, `/quenching:components:command:eval`, `/quenching:components:command:retro` |
-| `agent/` | a subagent | — | `/quenching:components:agent:new` |
-| `hook/` | a hook | — | `/quenching:components:hook:new` |
-| `harness/` | — | — | `/quenching:components:harness:align` |
+| *(front root)* | — | `/quenching-align:components:align` | — |
+| `command/` | a command | — | `/quenching-align:components:command:new`, `/quenching-align:components:command:eval`, `/quenching-align:components:command:retro` |
+| `agent/` | a subagent | — | `/quenching-align:components:agent:new` |
+| `hook/` | a hook | — | `/quenching-align:components:hook:new` |
+| `harness/` | — | — | `/quenching-align:components:harness:align` |
 
 **The rule: a front-level verb sits at the front's own root; an artifact-level verb sits under its
-context.** `/quenching:components:align` is the front's own sweep — it has no artifact of its own
-to sit under, so it stays at the root, exactly as `/quenching:knowledge:align` does for its
+context.** `/quenching-align:components:align` is the front's own sweep — it has no artifact of its own
+to sit under, so it stays at the root, exactly as `/quenching-align:knowledge:align` does for its
 front. `command:new`, `command:eval` and `command:retro` are three verbs that all act
 on the same artifact (a command), so they share the `command/` context rather than each claiming a
 piece of the front root the way the old front's `new`/`eval` verbs used to.
 
-`/quenching:components:harness:align` is the one entry that **changed front**, not merely name:
+`/quenching-align:components:harness:align` is the one entry that **changed front**, not merely name:
 `CLAUDE.md` and `AGENTS.md` are files Claude Code reads as instruction, which makes the harness an
 artifact of `components` — the front that owns everything Claude Code loads as automation — never
 a `knowledge` document, even though refactoring them moves durable knowledge *into* the bundle as a
@@ -196,7 +233,7 @@ Both are warnings, so no gate catches it — which is why it is recorded here in
 **Spoken routing was measured, not assumed, and it survived.** On 2026-07-26, three natural
 phrases with no `/` typed each reached their command by description alone in a fresh `claude -p`:
 *"park a spec for later…"* and *"capture this for the backlog…"* both reached `/specs:capture`,
-and *"add a standard: we always use snake_case…"* reached `/quenching:knowledge:add`. So a
+and *"add a standard: we always use snake_case…"* reached `/quenching-align:knowledge:add`. So a
 description naming only the action **does** still route — the claim that it would not is
 contradicted by the measurement.
 

@@ -1,11 +1,11 @@
 ---
 description: >-
-  Run an epic or a list of specs through the orchestrator agent. Use for "orchestrate this epic", "run these specs in waves". Not for: ONE spec → /quenching:specs:execute; ranking → /quenching:specs:triage; rounds → /quenching:specs:autopilot.
+  Run an epic or a list of specs through the orchestrator agent. Use for "orchestrate this epic", "run these specs in waves". Not for: ONE spec → /quenching-specs:specs:execute; ranking → /quenching-specs:specs:triage; rounds → /quenching-specs:specs:autopilot.
 argument-hint: [epic-id | spec-id ...] [--autonomous]
 allowed-tools: Bash(cq:*), Read, Agent, Task
 ---
 
-# /quenching:specs:orchestrate — conduct an epic or a queue
+# /quenching-specs:specs:orchestrate — conduct an epic or a queue
 
 **Input**: `$ARGUMENTS` — an epic id or a list of spec ids, and optionally `--autonomous`. Empty or ambiguous → run
 `cq specs list --json` and ask which on a decision sheet ([questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared mechanics §1).
@@ -27,11 +27,11 @@ Read each spec's metadata with `cq specs status --spec <id> --json`: `complexity
 `complexity: low`; **needs a human** is `medium` or above with no `approved`. Nothing needs a
 human → go to step 3. Otherwise ask once on a decision sheet, naming the specs on each side:
 
-- **Develop now** — run `/quenching:specs:develop <id>` in this session, one spec after another,
+- **Develop now** — run `/quenching-specs:specs:develop <id>` in this session, one spec after another,
   for the specs that need a human, then launch everything. A develop of a `medium` spec costs about
   40k tokens of this session (its body and references alone are about 17k), so this is offered
   only for **two specs or fewer**; for more, end the run by listing one
-  `/quenching:specs:develop <id>` line per spec and `/quenching:specs:orchestrate` again after.
+  `/quenching-specs:specs:develop <id>` line per spec and `/quenching-specs:specs:orchestrate` again after.
 - **Launch the independent subset** — only the specs that run alone and depend on none of the
   ones that need a human.
 - **Force it** — `--autonomous`: every spec runs, and the approval is stamped
@@ -40,7 +40,7 @@ human → go to step 3. Otherwise ask once on a decision sheet, naming the specs
 `--autonomous` already given → skip the question. **Done when:** the set to launch is fixed.
 
 ### 3. Launch the orchestrator
-Start the `quenching:orchestrator` agent with a prompt of at most 1,500 characters: the epic id or
+Start the `quenching-specs:orchestrator` agent with a prompt of at most 1,500 characters: the epic id or
 the spec ids, the base branch, and the word `autonomous` when it was forced. Pass nothing else; it
 carries its own protocol, and without `autonomous` it blocks a spec that still needs approval.
 **Done when:** the orchestrator has returned its fixed report.

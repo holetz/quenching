@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Specs are created by the tool (`/quenching:specs:create`). This form opens an ordinary issue;
+        Specs are created by the tool (`/quenching-specs:specs:create`). This form opens an ordinary issue;
         a maintainer converts it into a spec if it is accepted.
   - type: textarea
     id: problem

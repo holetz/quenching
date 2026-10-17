@@ -24,10 +24,9 @@ forced execution, push, PR and merge below is authorized by it, and by nothing e
 
 This session is the **conductor**. It decides as the owner's delegate, keeps only summaries, and
 never builds: reading, mapping, decomposing, building and reviewing are agents
-(`quenching:scout`, `quenching:spec-architect`, `quenching:orchestrator`, and the read-only gpt-6-astra
-`quenching:reviewer`, which this conductor launches at step 6). The orchestrator's protocol
-(waves, workers, verifier, acceptance) lives in `../../agents/orchestrator.md`;
-do not restate it.
+(`quenching-specs:scout`, `quenching-specs:spec-architect`, `quenching-specs:orchestrator`, and the read-only gpt-6-astra
+`quenching-specs:reviewer`, which this conductor launches at step 6). The orchestrator's protocol (waves, workers, verifier, acceptance) lives in
+`../../agents/orchestrator.md`; do not restate it.
 
 **Why `Bash` is unrestricted here.** Step 1 and step 7 run the gate the target's root harness
 declares in its operating section (`AGENTS.md` or `AGENTS.md`), whose command no fixed grant can name. No other
@@ -70,7 +69,7 @@ start ref: `git rev-parse main`.
 
 ### 2. Queue
 List the loose specs — open, in no epic — with `cq specs list --lean --json`, and the store's
-errors with `cq specs validate`. Before any of them enters, one `quenching:scout` per batch proves
+errors with `cq specs validate`. Before any of them enters, one `quenching-specs:scout` per batch proves
 it is still relevant against the current code:
 
 - the surface it describes has changed → record the evidence in `## Outcome`
@@ -82,7 +81,7 @@ it is still relevant against the current code:
 
 ### 3. Map
 Only when the queue is short (fewer than three specs): run the mapping of
-`quenching-specs-improve` steps 1–3 — read-only `quenching:scout` agents per area, evidence plus
+`quenching-specs-improve` steps 1–3 — read-only `quenching-specs:scout` agents per area, evidence plus
 consequence, no duplicate of an open spec, at most 15 candidates, every `high` re-checked — with
 this session deciding the owner's questions as the delegated owner, except those on the
 **never forced** list, which go to the human epic. Focus areas from `$ARGUMENTS` narrow the areas.
@@ -90,7 +89,7 @@ The map is ephemeral, under `<ephemeral area>/autopilot/<date>/`.
 **Done when:** the candidates kept are listed with evidence, or the map found none.
 
 ### 4. Epic
-Hand the queue and the kept candidates to `quenching:spec-architect`: it creates the epic and the
+Hand the queue and the kept candidates to `quenching-specs:spec-architect`: it creates the epic and the
 member specs (searching by title first), with waves whose `after:` serializes any two members that
 touch the same files. Then write the epic's `## Design` with `cq specs section <epic> Design
 --write`, carrying the **autonomy policy**: forced execution, push, PR and merge of every member
@@ -100,14 +99,14 @@ after a verifier PASS, authorized by this invocation, with its date. Check the r
 `validate` raises no `sp-epic-*` finding.
 
 ### 5. Orchestrate
-Start `quenching:orchestrator` on the epic with the word `autonomous`, the base branch and the
+Start `quenching-specs:orchestrator` on the epic with the word `autonomous`, the base branch and the
 deadline (≤ 1,500 characters). Apply **Liveness** to every worker it reports. A spec it returns
 `blocked` with a `needs-human:` note moves to the human epic; `failed` or `continue` is carried to
 the report with its note, never retried in this round.
 **Done when:** the orchestrator returned its fixed report and every non-`done` spec is placed.
 
 ### 6. Correctness review
-After every epic that changed code, start `quenching:reviewer` once (`model: gpt-6-astra`) over the epic's
+After every epic that changed code, start `quenching-specs:reviewer` once (`model: gpt-6-astra`) over the epic's
 merges (`git log --merges <round start>..main`); the orchestrator does not launch it. It is
 read-only, and the gate is the only thing it executes. It reports only findings it **reproduced** —
 a command, its output, the `path:line` — never style, and a security review of the same range when

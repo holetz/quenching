@@ -28,12 +28,12 @@ before the commit exists, so it lets the task checkbox and the task's code trave
 
 Two consequences follow:
 
-- **`/quenching:specs:execute` ticks the box before committing**, so the checkbox travels inside the commit
+- **`/quenching-specs:specs:execute` ticks the box before committing**, so the checkbox travels inside the commit
   that implements it — one task, one commit. A section boundary does not reset, recommit, or rewrite
   those task commits.
-- **`/quenching:git:merge` stamps `merge:` on the work branch before merging**, so the merge is the
+- **`/quenching-specs:git:merge` stamps `merge:` on the work branch before merging**, so the merge is the
   last action of *that* command and **nothing is ever committed to the base branch after it**. One
-  merge carries the code, the emergent docs (written earlier, by `/quenching:specs:conclude`, which
+  merge carries the code, the emergent docs (written earlier, by `/quenching-specs:specs:conclude`, which
   stops before the merge and hands off to this command) and the archived spec's distillation;
   reverting it reverts the spec's whole footprint.
 
@@ -47,7 +47,7 @@ record lands in whichever checkout will still exist to carry it forward.
 
 **When there is a merge, that checkout is the branch** — the merge carries it, which is the whole
 mechanism the order rule above depends on. **When there is no merge, that checkout is the base's
-own** — `/quenching:specs:conclude`'s `--outcome abandoned` path never merges, so a record written on the
+own** — `/quenching-specs:specs:conclude`'s `--outcome abandoned` path never merges, so a record written on the
 branch would depend on a branch nobody adopted to still exist. It lands instead in the checkout
 already holding `<base>`, located the same way the merge itself locates it below (§The merge runs in
 the checkout that already holds the base) — `git worktree list --porcelain`, then `git -C <that
@@ -117,7 +117,7 @@ accepted together or alone by the same `task --check`; neither is a replacement 
 ### Where each form can fail
 
 A `commit-msg` hook that **replaces** the subject outright breaks a subject-anchored link; substring
-matching survives every hook that merely *adds*, which is nearly all of them. `/quenching:specs:execute`
+matching survives every hook that merely *adds*, which is nearly all of them. `/quenching-specs:specs:execute`
 compares `git log -1 --format=%s` against what it recorded and **reports a mismatch as a finding,
 writing nothing** — correcting it after the commit would restore the ordering this contract removed.
 A commit-anchored link has no equivalent subject mismatch, but a `--commit` write that fails (a
@@ -130,7 +130,7 @@ proof of nothing.
 All three belong to the record vocabulary in [plan-lifecycle.md](plan-lifecycle.md) and pass the
 same admission test — a fact no derivation can reproduce:
 
-- **`branch: {base, work}`** — stamped by `/quenching:specs:execute`'s inline isolation offer, write-once,
+- **`branch: {base, work}`** — stamped by `/quenching-specs:specs:execute`'s inline isolation offer, write-once,
   **once the work ref is resolved** — taken or declined. `work` is derivable while the branch is
   checked out; `base` is not — **after the merge, git cannot say what the branch was cut from**,
   which is the whole reason the record exists and why it is captured while still true. A later run
@@ -161,10 +161,10 @@ same admission test — a fact no derivation can reproduce:
   name, and a commit ancestral to three branches identifies none of them. The mechanics live in
   `plugins/quenching/assets/references/git/isolation.md` §Recording the
   isolation, cited rather than restated.
-- **`pr: {number, url, date}`** — stamped by `/quenching:git:pr:create` the moment `gh pr create`
+- **`pr: {number, url, date}`** — stamped by `/quenching-specs:git:pr:create` the moment `gh pr create`
   returns, and **write-many** where the other two are write-once: a PR may be closed and reopened,
   or force-pushed to a fresh number, and each is a new fact rather than a falsification of the old
-  one — which is why it carries its own `date`. `/quenching:specs:conclude` never opens a PR or
+  one — which is why it carries its own `date`. `/quenching-specs:specs:conclude` never opens a PR or
   writes this record itself; it stops before either, naming `git:pr:create` as the human's own next
   command.
 
@@ -180,7 +180,7 @@ same admission test — a fact no derivation can reproduce:
   honest way to record the PR it had just opened — stamping the write-once `merge` for a merge that
   had not been decided would have burned the one write it gets.
 
-- **`merge: {strategy, subject, pr}`** — stamped by `/quenching:git:merge`, write-once, **on the
+- **`merge: {strategy, subject, pr}`** — stamped by `/quenching-specs:git:merge`, write-once, **on the
   work branch before the merge**. The strategy is a human choice, offered by that command, and the
   subject names the merge it will produce. Under `rebase` and `fast-forward` no merge commit
   exists, so the subject is an explicit none; `cq specs validate` reports a record that gets this
@@ -200,8 +200,8 @@ base is the host's own default branch. `Closes #<n>` only populates `closingIssu
 | `true` | **read on demand** — `gh pr view`/`git log` already answer the same question the record would, so a caller may skip stamping and read the host directly |
 | `false` (this repo's own case, base `develop`) | **mandatory stamp** — unchanged from above; nothing on the host names the link back |
 
-`/quenching:git:pr:create` and `/quenching:git:merge` both consult this fact before deciding
-whether to stamp; `/quenching:specs:conclude` consults it only to decide which of the two to name
+`/quenching-specs:git:pr:create` and `/quenching-specs:git:merge` both consult this fact before deciding
+whether to stamp; `/quenching-specs:specs:conclude` consults it only to decide which of the two to name
 in its own handoff. The same rule is assumed, not yet measured, for `azure-boards` ([ADR 0003](../../decisions/0003-plan-git-record-history.md) §azure-boards assumption).
 
 **The record is never the signal.** A human may cut `plan/<id>-<handle>` by hand and stamp nothing, and a
@@ -221,14 +221,14 @@ The exception was found when every in-place spec ranked first in `cq specs next`
 
 ## The branch also carries a git-native mark, outside any frontmatter record
 
-Beside `branch:`, `pr:` and `merge:` above, `/quenching:specs:execute` writes one more signal that is
+Beside `branch:`, `pr:` and `merge:` above, `/quenching-specs:specs:execute` writes one more signal that is
 **not** a frontmatter record: a recognizable line in the branch's own description —
 `quenching-specs: <id1>,<id2>` — rewritten, never duplicated, after every task's commit, and
 never written when the spec runs `In place`. The mechanism is
 `plugins/quenching/assets/references/git/isolation.md` §Marking the branch with
 the specs it built, owned by `execute`.
 
-`/quenching:specs:conclude` reads it to resolve which spec(s) built the branch it is closing when
+`/quenching-specs:specs:conclude` reads it to resolve which spec(s) built the branch it is closing when
 called with no `--spec`: one valid ID resolves silently, more than one asks, and an ID the marking
 names that no longer resolves under `plans/` is dropped as stale rather than trusted. No
 valid marking at all falls to measuring the branch's own diff and always asking whether to
@@ -250,8 +250,8 @@ the mark.
 
 ## The route is a second choice, and it moves when `merge:` is stamped
 
-The **route** — pull request, or local — is which of `/quenching:git:pr:create` and
-`/quenching:git:merge` the human runs, and in which order; `conclude` chooses neither, it only
+The **route** — pull request, or local — is which of `/quenching-specs:git:pr:create` and
+`/quenching-specs:git:merge` the human runs, and in which order; `conclude` chooses neither, it only
 proves the branch ready and names both by way of §What conclude hands off, below. The route decides
 how the merge reaches the base; `git:merge`'s own strategy offer decides what shape it takes once
 it does. Three of the four strategies map one-to-one onto a `gh pr merge` flag (`--merge`,
@@ -276,9 +276,9 @@ commands' own runs, and is reported rather than repaired.
 
 ### What `conclude` hands off
 
-`/quenching:specs:conclude` proves the branch reviewed, distilled and gate-green, then **names**
-the route rather than choosing it: `/quenching:git:pr:create` where `gh` resolves the repository,
-`/quenching:git:merge` either way, in its own next-step block. Neither is invoked from `conclude`
+`/quenching-specs:specs:conclude` proves the branch reviewed, distilled and gate-green, then **names**
+the route rather than choosing it: `/quenching-specs:git:pr:create` where `gh` resolves the repository,
+`/quenching-specs:git:merge` either way, in its own next-step block. Neither is invoked from `conclude`
 itself — every run reads the named route and runs the command on its own word. The PR route and the
 merge route remain separate because human review decides whether and when the branch enters the
 base (`plugins/quenching/assets/references/align/convergence.md` §The PR route).
@@ -296,7 +296,7 @@ the recorded subjects resolve against:
 | rebase | **survive**: the rewrite carries the message, so every record still resolves |
 
 A squash is a common house style and is not argued against — but its consequence is said out loud:
-when squash is chosen, `/quenching:git:merge` records it in `merge:` and offers **not** to delete
+when squash is chosen, `/quenching-specs:git:merge` records it in `merge:` and offers **not** to delete
 the branch, the only way the archived spec's `subject:` fields stay resolvable. `## Outcome` no
 longer names the strategy — it is decided after `conclude` has already written and archived it — so
 the branch's own `merge:` record and `git log` are where a later reader resolves which strategy
@@ -333,7 +333,7 @@ It never manufactures a temporary checkout. This costs nothing, because `merge:`
 
 Isolation that is not cleaned up accumulates: directories beside the repo, each pointing at a
 branch already integrated, none of them obviously safe to delete. So once the merge exits 0,
-`/quenching:git:merge` removes the worktree — run from the base's checkout, because nothing removes the
+`/quenching-specs:git:merge` removes the worktree — run from the base's checkout, because nothing removes the
 tree it is standing in:
 
 ```bash
@@ -373,7 +373,7 @@ unchanged, and it is separate from `branch:`, `pr:` and `merge:` records. The de
 uses no implicit fetch or remote-prune: a caller that needs newer facts fetches explicitly and
 starts a fresh report.
 
-`/quenching:git:cleanup` presents remote branches together with local branches and orphan worktrees
+`/quenching-specs:git:cleanup` presents remote branches together with local branches and orphan worktrees
 in one human selection. A selected remote item is deleted only with the exact `git push origin
 --delete <branch>` action shown before confirmation. `origin/HEAD`, the resolved base, the current
 branch and every remote branch absent from the fresh report remain protected; a refusal leaves the
@@ -389,7 +389,7 @@ report states which one governed.
 
 With nothing declared, the plugin's defaults apply — branch `plan/<id>-<handle>`, one commit per task with
 the subject `plan/<id>-<handle>: <task-id> <task title>` throughout execution, an optional merge-time
-squash chosen by `/quenching:git:merge`, `plan/<id>-<handle>: merge (<strategy>)` for a merge, and
+squash chosen by `/quenching-specs:git:merge`, `plan/<id>-<handle>: merge (<strategy>)` for a merge, and
 `plan/<id>-<handle>: record …` for bookkeeping that remains. That bookkeeping is now only what a
 commit genuinely cannot carry ahead of itself — `## Handoff`, which describes the tree *after* the
 last commit — and no longer includes a ticked box or a stamped `merge:` record.
@@ -397,5 +397,5 @@ last commit — and no longer includes a ticked box or a stamped `merge:` record
 **Never install `/docs/standards/git/**` into a target.** A default written into the repo stops
 being a default: it converts an offer into a rule the repo now declares, which then wins forever
 without anyone having agreed to it. A target that wants its conventions written down routes
-through `/quenching:knowledge:add`, on its human's word. The same restraint bars inferring house style from
+through `/quenching-align:knowledge:add`, on its human's word. The same restraint bars inferring house style from
 `git log` — a guess that looks deliberate is worse than the stated default.

@@ -10,9 +10,9 @@ description: >-
   incoherences the cut exposes instead of fixing them silently, and measures the delta
   against the working tree it opened. Not for: a file under assets/references/, where
   rationale is relocated and never deleted → /references:tighten; minting a command or
-  fixing a body's STRUCTURE → /quenching:components:command:new; the whole surface's
-  descriptions in one sweep → /quenching:components:align; a /docs/ standard →
-  /quenching:knowledge:align.
+  fixing a body's STRUCTURE → /quenching-align:components:command:new; the whole surface's
+  descriptions in one sweep → /quenching-align:components:align; a /docs/ standard →
+  /quenching-align:knowledge:align.
 argument-hint: "[command-path | --all] [--review] [--skip <path>]"
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash(python3:*), Bash(grep:*), Bash(git grep:*),
   Bash(git status:*), Bash(wc:*), Bash(bash plugins/quenching/assets/checks/functional-checks.sh:*),
@@ -178,7 +178,7 @@ say why, and the harness ran once over the result.
 ## Invariants to never violate
 
 - **Never cut a quoted trigger from a description.** Only a measured miss retires one —
-  `/quenching:components:command:eval`'s. A trigger that looks like sediment is REPORTED with that
+  `/quenching-align:components:command:eval`'s. A trigger that looks like sediment is REPORTED with that
   command named.
 - **Never cut a `Done when:` marker**, and never leave a numbered step without one — `lint` counts
   that literal string (`sk-step-criterion`).
@@ -198,4 +198,4 @@ say why, and the harness ran once over the result.
   then regenerate.
 - **Never write during `--review`.**
 - Never edit a `/docs/` standard, a reference, or a file outside a command body from here —
-  report it with the command that owns it (`/quenching:knowledge:add`, `/references:tighten`).
+  report it with the command that owns it (`/quenching-align:knowledge:add`, `/references:tighten`).

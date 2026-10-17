@@ -50,7 +50,7 @@ human → go to step 3. Otherwise ask once on a decision sheet, naming the specs
 `--autonomous` already given → skip the question. **Done when:** the set to launch is fixed.
 
 ### 3. Launch the orchestrator
-Start the `quenching:orchestrator` agent with a prompt of at most 1,500 characters: the epic id or
+Start the `quenching-specs:orchestrator` agent with a prompt of at most 1,500 characters: the epic id or
 the spec ids, the base branch, and the word `autonomous` when it was forced. Pass nothing else; it
 carries its own protocol, and without `autonomous` it blocks a spec that still needs approval.
 **Done when:** the orchestrator has returned its fixed report.

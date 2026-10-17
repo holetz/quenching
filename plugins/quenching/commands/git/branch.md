@@ -1,11 +1,11 @@
 ---
 description: >-
-  Take isolation for a piece of work: worktree, plain branch or in place, stamped. Use for "isolate this work", "cut a branch for this", "take a worktree". Not for: pruning → /quenching:git:cleanup.
+  Take isolation for a piece of work: worktree, plain branch or in place, stamped. Use for "isolate this work", "cut a branch for this", "take a worktree". Not for: pruning → /quenching-specs:git:cleanup.
 argument-hint: [id-or-branch-name]
 allowed-tools: Bash(cq git base:*), Bash(cq git conventions:*), Bash(cq git specs:*), Bash(cq git state:*), Bash(cq git worktree add:*), Bash(cq specs config:*), Bash(cq specs status:*), Bash(cq components read:*), Read, AskUserQuestion
 ---
 
-# /quenching:git:branch — take isolation before writing code
+# /quenching-specs:git:branch — take isolation before writing code
 
 **Input**: `$ARGUMENTS` — optionally a spec id (stamps that spec's `branch:` record and its
 `quenching-specs:` marking) or a short name for standalone work with no spec behind it. Omitted →

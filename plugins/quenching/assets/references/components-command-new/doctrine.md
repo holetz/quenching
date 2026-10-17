@@ -56,8 +56,8 @@ silently swallowed.
 
 <!-- rationale -->
 
-`/quenching:components:command:new` applies this doctrine to every command it mints or edits;
-`/quenching:components:align` cites it when judging conformance gaps. Adapted from mattpocock/skills'
+`/quenching-align:components:command:new` applies this doctrine to every command it mints or edits;
+`/quenching-align:components:align` cites it when judging conformance gaps. Adapted from mattpocock/skills'
 `writing-great-skills`, folded into this plugin's own constraints (the description caps, the
 bundled-reference pattern, the plan → OK gate).
 
@@ -116,9 +116,9 @@ with this" is a claim about the whole surface and only a reader holding all of i
 
 **A quoted trigger is never cut for length.** Shortening a description by deleting a trigger is how
 a command quietly stops firing for the user who worded it differently, and only a measured miss
-retires one — `/quenching:components:command:eval`'s, and that measured retirement is the one edit
+retires one — `/quenching-align:components:command:eval`'s, and that measured retirement is the one edit
 measurement authorizes. A trigger that looks like sediment is **reported** with the
-`/quenching:components:command:eval <command>` that decides it.
+`/quenching-align:components:command:eval <command>` that decides it.
 
 ## The loading hierarchy
 

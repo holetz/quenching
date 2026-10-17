@@ -1,6 +1,6 @@
 # Where an abandoned outcome's writes land
 
-Everything `/quenching:specs:conclude`'s `--outcome abandoned` path writes — the emergent `/docs/` in
+Everything `/quenching-specs:specs:conclude`'s `--outcome abandoned` path writes — the emergent `/docs/` in
 step 3, the archive move and `## Outcome` in step 4, the distillation's background note in step 5 —
 lands in the checkout that already holds `<base>`, never on the work branch. There is no merge to
 carry a branch commit home, so a record left on the branch would depend on a branch nobody adopted
@@ -30,7 +30,7 @@ has the base checked out; nothing is fabricated.
 `git -C <that path> status --porcelain` non-empty → **refuse**: report it verbatim and stop without
 writing anything — the checkout may be what the human is using for something else right now, and
 there is no task here to separate an unrelated edit from. **Stage only the paths just written, never
-`git add -A`** — the same contamination `/quenching:specs:execute`'s own precondition refuses at the start of
+`git add -A`** — the same contamination `/quenching-specs:specs:execute`'s own precondition refuses at the start of
 a build, now guarded on someone else's tree instead of this run's own.
 
 This clean check and this staging rule govern every write this outcome makes into that checkout —

@@ -93,7 +93,7 @@ artifact, per §The declared-directive layer's table.
 
 **Never install a git standard into a target.** Not as a fixup, not as a suggestion applied, not
 "so the next run has something to read". If a human wants their conventions written down, that is
-`/quenching:knowledge:add`, on their word.
+`/quenching-align:knowledge:add`, on their word.
 
 An `authority: background` git standard in the target still wins over these defaults. It is an
 agreed-but-unproven rule someone wrote on purpose; that beats a plugin's opinion either way.
@@ -126,7 +126,7 @@ ones in this pillar.
 <!-- rationale -->
 
 Writing `docs/standards/git/**` into a repository that
-never asked for it is `/quenching:specs:*` reaching into `/quenching:knowledge:align`'s territory, and it converts a default
+never asked for it is `/quenching-specs:specs:*` reaching into `/quenching-align:knowledge:align`'s territory, and it converts a default
 this file *offers* into a rule the repo now *declares* — which then wins over this file forever,
 without anyone having agreed to it.
 

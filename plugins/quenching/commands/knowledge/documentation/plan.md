@@ -1,11 +1,11 @@
 ---
 description: >-
-  Build a sourced documentation plan for the OKF bundle with reader journeys. Use for "plan the documentation", "design the documentation architecture". Not for: pages → /quenching:knowledge:documentation:write.
+  Build a sourced documentation plan for the OKF bundle with reader journeys. Use for "plan the documentation", "design the documentation architecture". Not for: pages → /quenching-align:knowledge:documentation:write.
 argument-hint: [optional-source-paths-or-scope]
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(rg:*), Write, AskUserQuestion
 ---
 
-# /quenching:knowledge:documentation:plan — diagnose sources and record the documentation plan
+# /quenching-align:knowledge:documentation:plan — diagnose sources and record the documentation plan
 
 **Input**: `$ARGUMENTS` (optional source paths or a scope; omit to inspect the target repository's
 README, legacy docs, code, specs and `/docs/standards/`).
@@ -36,7 +36,7 @@ Resolve the repository root and verify `/docs/index.md`, then inventory `tutoria
 paths, heading skeletons, links, existing nav/config and relevant code/specs with read-only tools.
 The inventory is the whole bundle even when the requested editorial slice is small. **Done when:**
 the source inventory names each home, its paths and audience, or records the missing bundle as a
-handoff to `/quenching:knowledge:align`.
+handoff to `/quenching-align:knowledge:align`.
 
 ### 2. Diagnose faults and truth risks
 

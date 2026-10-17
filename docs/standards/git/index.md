@@ -1,7 +1,7 @@
 # `standards/git/`
 
 How this repository uses git — long-lived branches, the publication trigger, and the conventions
-`/quenching:specs:execute` / `/quenching:specs:conclude` read as read-if-present.
+`/quenching-specs:specs:execute` / `/quenching-specs:specs:conclude` read as read-if-present.
 
 **Boundary:** the branch and publication *flow* lives here; the version lockstep that publication
 moves lives in [../ci-cd/](../ci-cd/index.md); one spec's own task→commit record lives in
@@ -30,7 +30,7 @@ Per-subject ledger the verify gate reads. A subject is "done" only when every ca
 
 - `branching` — **present**: [branching.md](branching.md).
 - `commit-conventions` — **deferred, not applicable.** With no `/docs/standards/git/**` on commit
-  messages, `/quenching:specs:execute` already applies the plugin's default
+  messages, `/quenching-specs:specs:execute` already applies the plugin's default
   (`plugins/quenching/assets/references/git/commit.md` §Commit messages); writing one here would
   turn that default into a contract of this repository without anyone having asked for it.
 - `tagging` — **deferred, covered by `versioning-release.md`.** The tag is created by the same

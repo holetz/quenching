@@ -24,12 +24,14 @@ from quenching.specs.release import (
 )
 
 # One value per artifact `kind`, each pre-set to the old version the bump must move away from.
+PUBLISHED = [m["name"] for m in load_manifest(Path(__file__).resolve().parents[3])["modules"]
+             if m["published"]]
 KINDS = {
     "plain": "9.9.9\n",
     "json": '{\n  "name": "x",\n  "version": "9.9.9"\n}\n',
     "jsonall": json.dumps({"plugins": [
         {"name": name, "version": "9.9.9"}
-        for name in ("quenching", "quenching-specs-reader", "quenching-hud")]}),
+        for name in PUBLISHED]}),
     "py": 'VERSION = "9.9.9"  # a comment that must survive the bump\n',
 }
 
@@ -44,9 +46,18 @@ class Lockstep(unittest.TestCase):
             os.makedirs(os.path.dirname(path), exist_ok=True)
             write_text(path, KINDS[kind])
         manifest = load_manifest(Path(__file__).resolve().parents[3])
-        manifest["modules"] = [m for m in manifest["modules"] if m["published"]]
+        manifest["modules"] = [m for m in manifest["modules"]
+                               if m["published"] or m["path"] == manifest["source"]]
+        source = Path(self.tmp) / manifest["source"] / "assets"
         for module in manifest["modules"]:
             module.pop("generated", None)
+            # Principal records name source closures load_manifest checks exist; stand them up empty.
+            if "owned" in module:
+                support = module["generatedSupport"]
+                for package in [*module["owned"]["packages"], *support["packages"]]:
+                    (source / "bin/quenching" / package).mkdir(parents=True, exist_ok=True)
+                for reference in support["references"]:
+                    (source / "references" / reference).mkdir(parents=True, exist_ok=True)
         self.manifest_path = Path(self.tmp) / MANIFEST
         self.manifest_path.write_text(json.dumps(manifest))
         write_text(os.path.join(self.tmp, "CHANGELOG.md"), "# Changelog\n\n## 9.10.0\n")

@@ -1,12 +1,12 @@
 ---
 description: >-
-  Measure whether a command teaches anything with with/without runs graded on evidence. Use for "run the with/without eval on this skill". Not for: unevidenced edits → /quenching:components:command:new.
+  Measure whether a command teaches anything with with/without runs graded on evidence. Use for "run the with/without eval on this skill". Not for: unevidenced edits → /quenching-align:components:command:new.
 disable-model-invocation: true
 argument-hint: [skill-name]
 allowed-tools: Bash(cq:*), Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion
 ---
 
-# /quenching:components:command:eval — measure whether a skill teaches anything
+# /quenching-align:components:command:eval — measure whether a skill teaches anything
 
 ## Resolving the tool
 
@@ -81,7 +81,7 @@ plainly when the delta is **zero**.
 - Never run only the with-skill arm, and never reuse this context as an arm.
 - Never grade without evidence — `unknown` is an honest grade, an unquoted pass is not.
 - Never downgrade an arm's model to `haiku`; the delta is only comparable between equal arms.
-- Never rewrite a skill body here — report it with its `/quenching:components:command:new` invocation. The description is
+- Never rewrite a skill body here — report it with its `/quenching-align:components:command:new` invocation. The description is
   the single exception, and only under step 7's own confirmation.
 - Never duplicate an unchanged `cq components lint` check; after editing a description, rerun it and
   report the new findings by code.

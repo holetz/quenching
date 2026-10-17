@@ -16,8 +16,8 @@ maintainer: quenching
 <!-- rules -->
 
 A **subagent** is a delegation: work runs in a fresh context and only its result returns.
-One definition per file at `.claude/agents/<name>.md`, minted by `/quenching:components:agent:new` under
-one plan → one OK, inventoried (report-only) by `/quenching:components:align`.
+One definition per file at `.claude/agents/<name>.md`, minted by `/quenching-align:components:agent:new` under
+one plan → one OK, inventoried (report-only) by `/quenching-align:components:align`.
 
 ## When work is a subagent — and when it is not
 

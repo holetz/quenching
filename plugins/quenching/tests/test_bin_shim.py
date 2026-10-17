@@ -54,17 +54,15 @@ class ThePathShim(unittest.TestCase):
             (PLUGIN_ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
         marketplace = json.loads(
             (REPO_ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
-        published = {
+        source = {
             "plugins/quenching/VERSION": VERSION,
             "plugins/quenching/.claude-plugin/plugin.json": claude_manifest["version"],
         }
-        self.assertEqual({VERSION}, set(published.values()), published)
-        marketplace_versions = {
-            item["name"]: item["version"]
-            for item in marketplace["plugins"]
-            if item["name"] == "quenching"
-        }
-        self.assertEqual({"quenching": VERSION}, marketplace_versions)
+        self.assertEqual({VERSION}, set(source.values()), source)
+        marketplace_versions = {item["name"]: item["version"] for item in marketplace["plugins"]}
+        self.assertIn("quenching-specs", marketplace_versions)
+        self.assertNotIn("quenching", marketplace_versions)
+        self.assertEqual({VERSION}, set(marketplace_versions.values()), marketplace_versions)
 
     def test_the_entrypoint_declares_and_checks_the_python_floor_before_package_imports(self):
         source = REAL.read_text(encoding="utf-8")
@@ -105,3 +103,71 @@ class ThePathShim(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class EnabledModules(unittest.TestCase):
+    """One cq reaches the packages of the modules the host enabled, and names the ones it did not."""
+
+    @classmethod
+    def setUpClass(cls):
+        import copy
+        import importlib.util
+        import tempfile
+        (REPO_ROOT / ".quenching").mkdir(exist_ok=True)
+        cls.tmp = tempfile.TemporaryDirectory(dir=REPO_ROOT / ".quenching")
+        root = pathlib.Path(cls.tmp.name)
+        spec = importlib.util.spec_from_file_location(
+            "generate_plugin_modules", REPO_ROOT / "scripts/generate_plugin_modules.py")
+        generator = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(generator)
+        manifest = copy.deepcopy(generator.load_manifest(REPO_ROOT))
+        cls.roots = {}
+        for module in manifest["modules"]:
+            if module["name"] in ("quenching-specs", "quenching-design"):
+                target = root / module["name"]
+                for rel, (data, mode) in generator.principal_tree(REPO_ROOT, manifest, module).items():
+                    path = target / rel
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(data)
+                    path.chmod(mode)
+                cls.roots[module["name"]] = target
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp.cleanup()
+
+    def cq(self, *args, enabled=("quenching-specs",)):
+        path = os.pathsep.join([str(self.roots[name] / "bin") for name in enabled]
+                               + [os.environ.get("PATH", "")])
+        return subprocess.run([str(self.roots["quenching-specs"] / "bin/cq"), *args],
+                              capture_output=True, text=True, env={**os.environ, "PATH": path})
+
+    def test_specs_alone_refuses_an_absent_front_by_its_module(self):
+        run = self.cq("design", "--help")
+        self.assertEqual(2, run.returncode, run.stdout)
+        self.assertIn("quenching-design, which is not enabled", run.stderr)
+        self.assertIn("(module quenching-design is not enabled)", self.cq("--help").stdout)
+        rows = {row["name"]: row["enabled"] for row in json.loads(self.cq("modules", "--json").stdout)["modules"]}
+        self.assertTrue(rows["quenching-specs"])
+        self.assertFalse(rows["quenching-design"])
+
+    def test_an_enabled_module_on_path_is_reached_by_the_one_cq(self):
+        enabled = ("quenching-specs", "quenching-design")
+        run = self.cq("design", "--help", enabled=enabled)
+        self.assertEqual(0, run.returncode, run.stderr)
+        rows = {row["name"]: row
+                for row in json.loads(self.cq("modules", "--json", enabled=enabled).stdout)["modules"]}
+        self.assertTrue(rows["quenching-design"]["enabled"])
+        self.assertEqual(str(self.roots["quenching-design"].resolve()),
+                         str(pathlib.Path(rows["quenching-design"]["root"]).resolve()))
+        self.assertIsNone(rows["quenching-security"]["root"])
+
+    def test_a_module_of_another_version_is_not_loaded(self):
+        version = self.roots["quenching-design"] / "VERSION"
+        original = version.read_text()
+        version.write_text("0.0.0\n")
+        try:
+            run = self.cq("design", "--help", enabled=("quenching-specs", "quenching-design"))
+        finally:
+            version.write_text(original)
+        self.assertEqual(2, run.returncode)

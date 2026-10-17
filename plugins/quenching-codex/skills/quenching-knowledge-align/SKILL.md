@@ -53,7 +53,7 @@ write stays gated by the workflow below.
   ([convergence.md](../../references/align/convergence.md) §The convergence contract).
 - **Conduct the content stages, never reimplement them.** Steps 6–7 **invoke**
   `quenching-knowledge-import-memory`, `quenching-components-harness-align` and `quenching-knowledge-glossary-backfill` through the `Skill` tool
-  under their registry names (`quenching:knowledge:import-memory`, …); each runs under its own
+  under their registry names (`quenching-align:knowledge:import-memory`, …); each runs under its own
   doctrine and code-coupled confirmations.
 - **The expensive stage is offered, never assumed.** The glossary sweep reads the whole bundle and
   has no cheap signal, so it is gated on a free proxy and **offered** with its cost
@@ -258,15 +258,15 @@ or `uv.lock` — hands off to that command.
 was skipped.
 
 ### 6. Run the content stages that have work, in order
-Invoke each through the `Skill` tool under its **registry name** — `quenching:knowledge:import-memory`,
-`quenching:components:harness:align`. Which of the three citation forms is correct, and the condition on each,
+Invoke each through the `Skill` tool under its **registry name** — `quenching-align:knowledge:import-memory`,
+`quenching-align:components:harness:align`. Which of the three citation forms is correct, and the condition on each,
 is [sweep-doctrine.md](../../references/align/sweep-doctrine.md) §7. Citing a command. Declare the cycle-authorization mode to each
 ([convergence.md](../../references/align/convergence.md)
 §The cycle-authorization contract), and **skip any stage the probe found empty**:
 
-1. `quenching:knowledge:import-memory` — drain the project's memory dir into its homes, clearing each
+1. `quenching-align:knowledge:import-memory` — drain the project's memory dir into its homes, clearing each
    memory once its doc lands and passes conformance.
-2. `quenching:components:harness:align` — thin `AGENTS.md`/`AGENTS.md`, MOVEing durable knowledge into homes.
+2. `quenching-align:components:harness:align` — thin `AGENTS.md`/`AGENTS.md`, MOVEing durable knowledge into homes.
 
 The order is
 [knowledge-align/cycle.md](../../references/knowledge-align/cycle.md) §The stage
@@ -282,7 +282,7 @@ Read the free proxy: the count of concept docs in the bundle against the number 
 `glossary.md`, plus whether steps 4 and 6 created any docs this pass. A bundle that grew
 and a glossary that did not is the signal.
 
-Offer `quenching:knowledge:glossary-backfill` with what it costs (a whole-bundle sweep, fanned out per
+Offer `quenching-align:knowledge:glossary-backfill` with what it costs (a whole-bundle sweep, fanned out per
 home) and what the proxy shows. Put it as a decision sheet ([specs-develop/questions.md](../../references/specs-develop/questions.md) §1; A recommended) when the answer is a plain yes/no. A
 declined offer is a complete answer — record it and do not re-offer on a later pass of the same
 run. Never run the sweep to discover whether it had work.

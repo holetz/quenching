@@ -1,6 +1,6 @@
 # Merging a work branch home — the four strategies, and the caveats each carries
 
-The strategies `/quenching:git:merge` offers once a spec's branch is reviewed and archived, what
+The strategies `/quenching-specs:git:merge` offers once a spec's branch is reviewed and archived, what
 each buys and costs, and how the worktree that held the work comes down afterward. Read
 [conventions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md) first: the read-if-present
 rule and the two prohibitions bind here too.
@@ -13,7 +13,7 @@ rule and the two prohibitions bind here too.
 
 <!-- rules -->
 
-Offered by `/quenching:specs:conclude`, never chosen for the human. State the trade in one line each.
+Offered by `/quenching-specs:specs:conclude`, never chosen for the human. State the trade in one line each.
 
 **Every one of them runs in the checkout that already holds the base**, located first and merged
 into in place:
@@ -27,7 +27,7 @@ git -C <that path> <the chosen command>
 `fatal: '<base>' is already used by worktree at …`, exit 128 — so it is broken for exactly the
 isolation recommended above. `git -C` is one path, not two special cases: from a worktree it names
 the main checkout, from the main checkout it names itself. When no checkout holds the base,
-`/quenching:specs:conclude` says so and stops without merging rather than manufacturing one.
+`/quenching-specs:specs:conclude` says so and stops without merging rather than manufacturing one.
 
 | Strategy | Command | What it buys | What it costs |
 | --- | --- | --- | --- |
@@ -62,7 +62,7 @@ none (`sp-bad-merge`).
 <!-- rules -->
 
 **The per-task commits survive only on the
-branch.** So when squash is chosen, `/quenching:git:merge` offers **not** to delete the branch, and says
+branch.** So when squash is chosen, `/quenching-specs:git:merge` offers **not** to delete the branch, and says
 why. Keeping it costs a ref; deleting it silently turns every `subject:` field in the archived spec
 into a reference that resolves to nothing.
 
@@ -88,7 +88,7 @@ applies only to specs still carrying the sha form.
 <!-- rules -->
 
 Once the merge exits 0,
-`/quenching:git:merge` removes the worktree — from the base's checkout, because nothing removes the tree
+`/quenching-specs:git:merge` removes the worktree — from the base's checkout, because nothing removes the tree
 it is standing in:
 
 ```bash

@@ -37,3 +37,4 @@ site-source/
 !.env.example
 *.pem
 *.key
+!plugins/quenching-*/assets/checks/fixtures/documentation-site-check/glossary/site/

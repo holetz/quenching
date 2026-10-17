@@ -6,7 +6,7 @@ argument-hint: [optional-target-root]
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*)
 ---
 
-# /quenching:security:status — read the security pillar
+# /quenching-security:security:status — read the security pillar
 
 **Input**: `$ARGUMENTS` (an optional target repository root; omit to use the current repository).
 

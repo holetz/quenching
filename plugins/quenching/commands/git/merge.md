@@ -1,11 +1,11 @@
 ---
 description: >-
-  Merge a branch into its base with one of four strategies, offered to the human. Use for "merge this branch", "land this work". Not for: opening a PR → /quenching:git:pr:create; pruning → /quenching:git:cleanup.
+  Merge a branch into its base with one of four strategies, offered to the human. Use for "merge this branch", "land this work". Not for: opening a PR → /quenching-specs:git:pr:create; pruning → /quenching-specs:git:cleanup.
 argument-hint: [id-or-branch]
 allowed-tools: Bash(cq:*), Bash(git worktree:*), Bash(git merge:*), Bash(git rebase:*), Bash(git branch:*), Bash(python3:*), Read, AskUserQuestion
 ---
 
-# /quenching:git:merge — bring a branch home, on the human's own strategy
+# /quenching-specs:git:merge — bring a branch home, on the human's own strategy
 
 **Input**: `$ARGUMENTS` — a spec id (its `branch.work`/`branch.base` records name the branch and
 target) or a bare branch name to merge into the resolved base. Omitted → ask.

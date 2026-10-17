@@ -113,7 +113,7 @@ def validate_tree(bundle_root: str, deadline: float | None = None,
     if not (root / "index.md").exists():
         findings.append(("WARN", "index.md", "bundle-no-index", "bundle root has no `index.md`"))
     # Does this directory claim to be a bundle at all? Structural and legacy checks below still
-    # run — they are what `/quenching:knowledge:align` reads to migrate a target — but the
+    # run — they are what `/quenching-align:knowledge:align` reads to migrate a target — but the
     # per-file concept-doc verdicts are withheld, because they judge files against a contract
     # this tree never adopted.
     # `_build_corpus` keys by ABSOLUTE path; joining onto the caller's (possibly relative)

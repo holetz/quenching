@@ -17,7 +17,7 @@ maintainer: quenching
 
 The contract for how a command enters and stays in this plugin's automation surface, distilled
 from the skill-authoring + skill-alignment change that first paired a skill with its wrapper.
-`/quenching:components:command:new` mints or edits one command; `/quenching:components:align`
+`/quenching-align:components:command:new` mints or edits one command; `/quenching-align:components:align`
 sweeps the whole surface into conformance. The naming these produce is governed by
 [command-surface.md](../naming/command-surface.md); the layout rule for what may sit under
 `commands/` by [../architecture/plugin-layout.md](../architecture/plugin-layout.md); the
@@ -83,7 +83,7 @@ the *verb* differs — a command that waits for a human-stated edit and one that
 questions are opposite directions of initiative and stay apart; two scripts for the same
 interrogation do not.
 
-## Authoring (`/quenching:components:command:new`)
+## Authoring (`/quenching-align:components:command:new`)
 
 - **ONE file** per mint — a `commands/<path>.md` carrying frontmatter and body. Nothing else goes
   under `commands/`.
@@ -103,7 +103,7 @@ interrogation do not.
 - **OKF tail** on every mint: regenerate the derived registry's GENERATED zone, offer a glossary
   entry for any coined term, append a log entry, and self-check.
 
-## Alignment (`/quenching:components:align`)
+## Alignment (`/quenching-align:components:align`)
 
 - **Read-only inventory** of the existing command surface before any plan — plus a `Glob` for any
   surviving `skills/<name>/SKILL.md`, which the verifier cannot see because it reads `commands/**`
@@ -118,7 +118,7 @@ interrogation do not.
   scaffolding change — existing bodies are preserved. An unclassifiable command is kept and
   reported, never forced.
 - **One surface-wide description review, on its own confirmation.** A body is reported with the
-  `/quenching:components:command:new` that fixes it; a **description** is rewritten here, because its central question —
+  `/quenching-align:components:command:new` that fixes it; a **description** is rewritten here, because its central question —
   does anything else answer to the same request? — is unanswerable one command at a time, and this
   is the only pass holding the whole surface. Prose about *how* a command works is cut, a missing
   concept or trigger is added, an unearned `Not for:` is waived with the competitor set named — and
@@ -188,8 +188,8 @@ Two consequences that are not obvious from the test itself:
 
 - **"A human might type this" is not a reason to pick typed-only.** Every command can be typed. The
   question is whether anything *else* reaches it, and for a conductor stage the answer is yes even
-  though a human can also type it — which is exactly how `/quenching:components:harness:align`, `/quenching:knowledge:import-memory` and
-  `/quenching:knowledge:glossary-backfill` would be misclassified by intuition.
+  though a human can also type it — which is exactly how `/quenching-align:components:harness:align`, `/quenching-align:knowledge:import-memory` and
+  `/quenching-align:knowledge:glossary-backfill` would be misclassified by intuition.
 - **The name-reachable half is not a judgment call.** `cq components lint` derives it from the command
   bodies and reports `sk-inert-stage` at error for a typed-only command another body reaches by
   name. Classify against the instrument, not against recollection of who calls what.
@@ -205,7 +205,7 @@ The test is the interaction, never the interaction's weight, and that is already
 checks: a fork beside an `AskUserQuestion` grant is `sk-fork-gate`, an error, whatever the command
 does with the grant.
 
-**Dropping a plan gate does not buy a command the fork.** `/quenching:specs:develop` writes its
+**Dropping a plan gate does not buy a command the fork.** `/quenching-specs:specs:develop` writes its
 consolidated edit without confirming it and stays forbidden all the same, because every level but
 `low` asks at each stage and its approval close still waits on a go. A command earns the lever by asking nothing at
 all — one that only reads and reports may fork freely, and that is the lever's home: self-contained,
@@ -216,7 +216,7 @@ noisy, summary-out work whose trail would otherwise sit in the main context fore
 Every further capability a command uses — `context: fork` with `agent`/`background`, a
 `model`/`effort` pin, `paths`, frontmatter `hooks:` — is an **authored, priced decision**: the
 default profile is all levers off, and each departure enters the mint's plan with its stated
-buy. The five inline `model:` pins on `/quenching:specs:*` (opus: develop, conclude, triage; sonnet: create, execute) are that decision made on purpose — a pinned model is a price the spec lifecycle pays for judgment or throughput — and are recorded in [ADR 0007](../../decisions/0007-native-claude-code-features.md). An inline pin invalidates the session's prompt cache (a pin inside a fork or an agent is
+buy. The five inline `model:` pins on `/quenching-specs:specs:*` (opus: develop, conclude, triage; sonnet: create, execute) are that decision made on purpose — a pinned model is a price the spec lifecycle pays for judgment or throughput — and are recorded in [ADR 0007](../../decisions/0007-native-claude-code-features.md). An inline pin invalidates the session's prompt cache (a pin inside a fork or an agent is
 cache-safe); `paths` binds a domain-bound command's autonomous firing to its folder. Subagents
 are governed by [agents.md](agents.md), hooks by [hooks.md](hooks.md); the pricing doctrine
 lives once in the plugin
@@ -232,7 +232,7 @@ shell for the turn. `cq components lint` reports a bare grant as `sk-unscoped-ba
 One exception, and it must be **stated in the body**: a skill that runs the *target repo's own*
 toolchain — its build, its tests, its linters, its migrations — cannot enumerate those commands in
 advance, because they are the repo's, not the plugin's. Such a command may hold an unscoped `Bash`
-provided its body says so and says why. `/quenching:specs:execute` is the standing example. The
+provided its body says so and says why. `/quenching-specs:specs:execute` is the standing example. The
 finding is still reported; what the stated reason buys is a reader who can tell a deliberate grant
 from an unexamined one.
 

@@ -11,21 +11,21 @@ once, and work only there afterwards.
 
 ## How you work
 
-- Use the commands, never the raw rail: `/quenching:specs:develop`, `/quenching:specs:execute` and
-  `/quenching:specs:conclude`. Task commits are made by execute itself through `cq git commit
-  --subject`: never invoke `/quenching:git:commit` per task. Do not call `cq specs` write
+- Use the commands, never the raw rail: `/quenching-specs:specs:develop`, `/quenching-specs:specs:execute` and
+  `/quenching-specs:specs:conclude`. Task commits are made by execute itself through `cq git commit
+  --subject`: never invoke `/quenching-specs:git:commit` per task. Do not call `cq specs` write
   operations directly to skip a command's gate.
-- Given `autonomous`, invoke `/quenching:specs:develop` declaring the `low` gear as **forced**, so
+- Given `autonomous`, invoke `/quenching-specs:specs:develop` declaring the `low` gear as **forced**, so
   develop stamps `by=orchestrator-forced` after `ready`. Never stamp `approved` yourself. A forced `low`
   writes nothing to `priority`: never change `complexity` to match the gear.
-- Given `autonomous`, also pass the word `autonomous` to `/quenching:specs:execute` and `/quenching:specs:conclude`, so neither loads the report mold and conclude stops at
+- Given `autonomous`, also pass the word `autonomous` to `/quenching-specs:specs:execute` and `/quenching-specs:specs:conclude`, so neither loads the report mold and conclude stops at
   the named PR handoff. You never push and never open the PR in an orchestrated run: the orchestrator
   hands that step to the `git-steward`. Return `STATE: done` with `PR: -`.
 - Given `autonomous`, conclude never infers the outcome, so you state it: pass `--outcome done` to
-  `/quenching:specs:conclude` only when execute left every task checked. Open or blocked tasks
+  `/quenching-specs:specs:conclude` only when execute left every task checked. Open or blocked tasks
   return `STATE: blocked` with `NOTE: needs-human:`; never `--force`, never `abandoned` on your own.
-- **Execute and conclude are two spawns.** Without the word `conclude`, run develop and execute only: when execute leaves every task checked and the gate green, do not invoke `/quenching:specs:conclude`; return `STATE: continue` with `NOTE: execute-done: <n>/<n> tasks; conclude pending`. Given the word `conclude`, skip develop and execute (already done) and run only `/quenching:specs:conclude`, resuming from the stage `cq specs status` reports. A `continue` for budget carries no `execute-done:` in its NOTE.
-- **Take the worktree yourself, only under `autonomous`.** When your prompt names no worktree and carries `autonomous`, run `/quenching:git:branch "<id>" autonomous` from the checkout you were started in, before anything else: it cuts the worktree from `origin/<base>` and stamps the `branch:` record. This is the only write allowed outside the worktree. Move into the returned worktree and run every later command there. A refusal is `STATE: blocked` with its message and no further work. Report the path it returned on the `WORKTREE:` line. With no worktree and no `autonomous`, the isolation is the human's to answer and you cannot ask: return `STATE: blocked` with `NOTE: needs-human: no worktree was named; the orchestrator must run the git-steward branch step first`.
+- **Execute and conclude are two spawns.** Without the word `conclude`, run develop and execute only: when execute leaves every task checked and the gate green, do not invoke `/quenching-specs:specs:conclude`; return `STATE: continue` with `NOTE: execute-done: <n>/<n> tasks; conclude pending`. Given the word `conclude`, skip develop and execute (already done) and run only `/quenching-specs:specs:conclude`, resuming from the stage `cq specs status` reports. A `continue` for budget carries no `execute-done:` in its NOTE.
+- **Take the worktree yourself, only under `autonomous`.** When your prompt names no worktree and carries `autonomous`, run `/quenching-specs:git:branch "<id>" autonomous` from the checkout you were started in, before anything else: it cuts the worktree from `origin/<base>` and stamps the `branch:` record. This is the only write allowed outside the worktree. Move into the returned worktree and run every later command there. A refusal is `STATE: blocked` with its message and no further work. Report the path it returned on the `WORKTREE:` line. With no worktree and no `autonomous`, the isolation is the human's to answer and you cannot ask: return `STATE: blocked` with `NOTE: needs-human: no worktree was named; the orchestrator must run the git-steward branch step first`.
 - Start with `cq specs status --spec <id> --json` and resume from the stage it reports.
 - Read only what a task names.
 - Stay inside each task's `files:`. Anything else you learn is one line:

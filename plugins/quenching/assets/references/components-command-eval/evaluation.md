@@ -1,7 +1,7 @@
 # The evaluation contract — cases, grading, and the benchmark
 
 <!-- rules -->
-The owner of **what an evaluation produces**. `/quenching:components:command:eval`'s body owns the workflow;
+The owner of **what an evaluation produces**. `/quenching-align:components:command:eval`'s body owns the workflow;
 this file owns the three artifact shapes, what makes an assertion worth grading, and the
 description-tuning loop.
 
@@ -26,7 +26,7 @@ have installed.
     benchmark.json                  # the run's aggregate and its delta
 ```
 
-`<path>` **mirrors the command path**: `/quenching:knowledge:add` is measured by
+`<path>` **mirrors the command path**: `/quenching-align:knowledge:add` is measured by
 `.claude/evals/knowledge/add/evals.json`. In this plugin the same tree lives at
 `${CLAUDE_PLUGIN_ROOT}/assets/evals/<path>/`.
 

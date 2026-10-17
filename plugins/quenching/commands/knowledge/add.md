@@ -1,18 +1,18 @@
 ---
 description: >-
-  Insert ONE new concept doc into the OKF bundle with the right home, type and stamp. Use for "add a standard/table/announcement". Not for: glossary terms → /quenching:knowledge:define; batches → /quenching:knowledge:import.
+  Insert ONE new concept doc into the OKF bundle with the right home, type and stamp. Use for "add a standard/table/announcement". Not for: glossary terms → /quenching-align:knowledge:define; batches → /quenching-align:knowledge:import.
 argument-hint: [the-knowledge-to-add]
 allowed-tools: Bash(cq:*), Read, Grep, Glob, Write, Edit, AskUserQuestion
 ---
 
-# /quenching:knowledge:add — add new knowledge, OKF-conformant
+# /quenching-align:knowledge:add — add new knowledge, OKF-conformant
 
 **Input**: `$ARGUMENTS` (the piece of information to file — a standard, catalog table, announcement, external asset, …).
 
 Files one new piece of knowledge into the canonical OKF bundle so it lands in the right home
-with a complete stamp. Assumes the bundle already exists (run `/quenching:knowledge:align` first if not).
+with a complete stamp. Assumes the bundle already exists (run `/quenching-align:knowledge:align` first if not).
 The routing table and procedure are in [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md). The home boundaries, `type`
-vocabulary, and conformance rules are shared with `/quenching:knowledge:align`
+vocabulary, and conformance rules are shared with `/quenching-align:knowledge:align`
 (`${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md`,
 `${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md`).
 
@@ -80,7 +80,7 @@ index lists the new file and remains frontmatter-free.
 ### 6. Enrich the glossary
 If the new concept introduced a **repo-specific term**, add or sharpen its entry in
 `glossary.md` per **Enriching the glossary** in [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)
-(`/quenching:knowledge:define` handles one term; `/quenching:knowledge:glossary-backfill` handles a bulk sweep).
+(`/quenching-align:knowledge:define` handles one term; `/quenching-align:knowledge:glossary-backfill` handles a bulk sweep).
 **Done when:** every introduced repo-specific term is linked or explicitly left for a glossary command.
 
 ### 7. Self-check against the conformance core
