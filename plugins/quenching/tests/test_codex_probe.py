@@ -39,6 +39,9 @@ if sys.argv[1:2] == ["sandbox"]:
     if sandbox_log:
         with open(sandbox_log, "a", encoding="utf-8") as handle:
             handle.write(json.dumps(sys.argv[1:]) + "\n")
+    if "-C" in sys.argv and "--permission-profile" not in sys.argv:
+        sys.stderr.write("error: the following required arguments were not provided: --permission-profile <NAME>\n")
+        sys.exit(2)
     sandbox = os.environ.get("FAKE_CODEX_SANDBOX", "ok")
     if sandbox == "hang":
         time.sleep(30)
@@ -52,6 +55,9 @@ if log:
         handle.write(json.dumps(sys.argv[1:]) + "\n")
 mode = os.environ.get("FAKE_CODEX_MODE", "ok")
 if sys.argv[1:2] == ["app-server"]:
+    if any("approval_policy" in a for a in sys.argv):
+        sys.stderr.write('Error: approval_policy = "untrusted" is no longer supported; remove this setting\n')
+        sys.exit(1)
     if mode == "hang":
         time.sleep(30)
     if mode == "crash":
@@ -202,6 +208,14 @@ class TheSessionsFallback(FakeCodex):
         self.assertIn("did not answer", out["appServerError"])
         self.assertEqual(12.0, out["rateLimits"]["primary"]["usedPercent"])
 
+    def test_the_app_server_stderr_is_reported(self):
+        self.env.update(FAKE_CODEX_MODE="crash", CODEX_HOME=str(FIXTURE_HOME))
+        module = sys.modules["quenching.codex.probe"]
+        with mock.patch.object(module, "APP_SERVER_ARGV",
+                               (*APP_SERVER_ARGV, "-c", 'approval_policy="untrusted"')):
+            out = probe(self.settings(), env=self.env, now=self.NOW_BEFORE_RESET)
+        self.assertIn("no longer supported", out["appServerError"])
+
     def test_a_json_rpc_error_falls_back(self):
         self.env.update(FAKE_CODEX_MODE="error", CODEX_HOME=str(FIXTURE_HOME))
         out = probe(self.settings(), env=self.env, now=self.NOW_BEFORE_RESET)
@@ -283,7 +297,7 @@ class TheSandboxCheck(FakeCodex):
         out = sandbox(self.settings(), str(self.tmp), env=self.env)
         self.assertEqual("available", out["state"])
         argv = json.loads(self.sandbox_log.read_text(encoding="utf-8"))
-        self.assertEqual([*SANDBOX_ARGV, "-C", str(self.tmp), "--", "true"], argv)
+        self.assertEqual([*SANDBOX_ARGV, "--", "true"], argv)
         self.assertEqual([], self.calls())
 
     def test_a_bwrap_failure_is_unavailable_with_its_reason(self):

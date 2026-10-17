@@ -10,7 +10,7 @@ event in `$CODEX_HOME/sessions/**/rollout-*.jsonl`. `auth.json` is never opened.
     unknown     (exit 2)  no source could be read, or the only snapshot is stale
 
 The app-server takes no `--ignore-user-config`; the probe starts no thread and no turn, and still
-overrides the sandbox and approval policy so nothing of the user's `danger-full-access` applies.
+overrides the sandbox policy so nothing of the user's `danger-full-access` applies.
 
 The sandbox is a separate question, asked without spending quota: `codex sandbox -- true` under
 the read-only policy. A host that forbids unprivileged user namespaces fails it (`bwrap:
@@ -27,12 +27,12 @@ import shutil
 import signal
 import subprocess
 import threading
+import tempfile
 import time
 
 APP_SERVER_DEADLINE = 15
-APP_SERVER_ARGV = ("app-server", "-c", 'sandbox_mode="read-only"',
-                   "-c", 'approval_policy="untrusted"')
-SANDBOX_ARGV = ("sandbox", "-c", 'sandbox_mode="read-only"')
+APP_SERVER_ARGV = ("app-server", "-c", 'sandbox_mode="read-only"')
+SANDBOX_ARGV = ("sandbox", "-c", 'sandbox_mode="read-only"')  # no -C: it demands --permission-profile
 EXIT = {"available": 0, "unavailable": 1, "unknown": 2}
 WINDOWS = ("primary", "secondary")
 
@@ -72,14 +72,24 @@ def _rpc(process: subprocess.Popen, lines: queue.Queue, deadline: float, payload
             return message.get("result") or {}
 
 
+def _with_stderr(message: str, process: subprocess.Popen, errors) -> str:
+    """Append the last stderr line the app-server wrote, so a refusal is not silent."""
+    stop(process)
+    errors.seek(0)
+    last = [line.strip() for line in errors.read().splitlines() if line.strip()]
+    return f"{message} (stderr: {last[-1]})" if last else message
+
+
 def read_app_server(binary: str, seconds: float,
                     env: dict | None = None) -> tuple[dict | None, str | None]:
     """Return (`GetAccountRateLimitsResponse`, None) or (None, why it could not be read)."""
+    errors = tempfile.TemporaryFile(mode="w+", encoding="utf-8", errors="replace")
     try:
         process = subprocess.Popen([binary, *APP_SERVER_ARGV], stdin=subprocess.PIPE,
-                                   stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+                                   stdout=subprocess.PIPE, stderr=errors, text=True,
                                    start_new_session=True, env=env)
     except OSError as exc:
+        errors.close()
         return None, f"app-server did not start: {exc}"
     lines: queue.Queue = queue.Queue()
 
@@ -97,12 +107,13 @@ def read_app_server(binary: str, seconds: float,
         _rpc(process, lines, deadline, {"method": "initialized"})
         return _rpc(process, lines, deadline, {"id": 2, "method": "account/rateLimits/read"}), None
     except queue.Empty:
-        return None, f"app-server did not answer within {seconds:g}s"
+        return None, _with_stderr(f"app-server did not answer within {seconds:g}s", process, errors)
     except (TimeoutError, ConnectionError, RuntimeError, OSError) as exc:
-        return None, f"app-server: {exc}"
+        return None, _with_stderr(f"app-server: {exc}", process, errors)
     finally:
         stop(process)
         reader.join(timeout=1)
+        errors.close()
         for stream in (process.stdin, process.stdout):
             with contextlib.suppress(OSError):
                 stream.close()
@@ -111,7 +122,7 @@ def read_app_server(binary: str, seconds: float,
 def check_sandbox(binary: str, cwd: str, seconds: float, env: dict | None = None) -> dict:
     """Run `true` inside the read-only Codex sandbox: no model call, so no quota is spent."""
     try:
-        process = subprocess.Popen([binary, *SANDBOX_ARGV, "-C", cwd, "--", "true"],
+        process = subprocess.Popen([binary, *SANDBOX_ARGV, "--", "true"],
                                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                    stderr=subprocess.PIPE, text=True, cwd=cwd, env=env,
                                    start_new_session=True)

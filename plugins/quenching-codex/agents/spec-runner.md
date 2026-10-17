@@ -55,8 +55,13 @@ retirement of the spec's worktree. If the remove refuses, return `STATE: blocked
 
 ## Budget
 
-Stay under 200k tokens of context. Near the limit, write a handoff note (what is done, what is
-next, open questions) through `cq specs discover`, then return `STATE: continue`.
+Your budget is the worker budget of `docs/standards/automation/context-discipline.md` §Measured
+context budgets, measured by code, never by your own count. `quenching-specs-execute` reads
+it at each section boundary with `cq components session context --self <id> --json`; under
+`autonomous`, over budget (exit 1) it stops there. Then write a handoff note (what is done, what is
+next, open questions) through `cq specs discover` and return `STATE: continue` with
+`NOTE: budget: <peak>/<budget> after section <N>`. Exit 2 (unmeasured) never stops the run. A
+budget stop never happens mid-task.
 
 ## Return format (fixed; no prose around it)
 
