@@ -1,4 +1,4 @@
-"""The `portal` pillar — the project registry the local portals read, written only here."""
+"""The `portal` pillar — the project registry, written only here, and the central server over it."""
 from __future__ import annotations
 
 import argparse
@@ -11,7 +11,7 @@ from quenching.portal.registry import PortalRefusal
 
 def build_parser() -> argparse.ArgumentParser:
     p = NoAbbrevParser(prog="cq portal",
-                       description="register the projects the quenching portal shows")
+                       description="register the projects the quenching portal shows, and serve them")
     p.add_argument("--version", action="store_true", help="print the version and exit")
     sub = p.add_subparsers(dest="cmd")
 
@@ -28,6 +28,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp = sub.add_parser("list", help="print the registered projects")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
+
+    sp = sub.add_parser("serve", help="one loopback portal over every registered project")
+    sp.add_argument("--port", type=int, default=0, help="port (default: a free one)")
+    sp.add_argument("--host", default="127.0.0.1", help="loopback address only")
+    sp.add_argument("--read-only", action="store_true", dest="read_only",
+                    help="disable every write route on the server")
+    sp.add_argument("--open", action="store_true", help="open the URL in the browser")
+    sp.add_argument("--sessions", action="store_true",
+                    help="serve GET /api/sessions per project: the live Codex sessions of "
+                         "its worktrees, fixed fields only (off by default)")
+    sp.add_argument("--json", action="store_true", help="machine-readable output")
     return p
 
 
@@ -42,7 +53,10 @@ def main(argv: list[str]) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     if not args.cmd:
-        parser.error("choose add, remove or list")
+        parser.error("choose add, remove, list or serve")
+    if args.cmd == "serve":
+        from quenching.portal.serve import cmd_serve
+        return cmd_serve(args)
     as_json = bool(getattr(args, "json", False))
     try:
         if args.cmd == "add":

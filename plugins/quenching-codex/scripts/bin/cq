@@ -155,7 +155,7 @@ PILLARS: dict[str, Pillar] = {
         "a repository's git facts — the base branch, and whether it is the host's own default"),
     "portal": Pillar(
         "quenching.portal", False,
-        "the project registry the local portal shows — add, remove, list"),
+        "the project registry and the central portal over it — add, remove, list, serve"),
 }
 
 
@@ -163,6 +163,9 @@ PILLARS: dict[str, Pillar] = {
 # `cq` lends only what an enabled module carries, so the borrower never imports the lender.
 LOANS: dict[str, tuple[tuple[str, str, str], ...]] = {
     "specs": (("specs.portal.sessions", "session", "quenching.session.portal"),),
+    "portal": (("portal.specs", "specs", "quenching.specs.portal"),
+               ("portal.worktrees", "session", "quenching.session.worktrees"),
+               ("specs.portal.sessions", "session", "quenching.session.portal")),
 }
 
 
