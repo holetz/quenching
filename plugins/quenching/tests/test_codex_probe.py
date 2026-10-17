@@ -25,8 +25,8 @@ except ModuleNotFoundError:  # package-qualified unittest invocation from the re
     import _paths  # noqa: F401
 from quenching.codex import main
 from quenching.codex.config import DEFAULTS, load_settings
-from quenching.codex.probe import (APP_SERVER_ARGV, SANDBOX_ARGV, judge, probe, read_sessions,
-                                   sandbox)
+from quenching.codex.probe import (APP_SERVER_ARGV, SANDBOX_ARGV, WORKSPACE_WRITE_ARGV,
+                                   executor_sandbox, judge, probe, read_sessions, sandbox)
 
 HERE = pathlib.Path(__file__).resolve().parent
 FIXTURE_HOME = HERE / "fixtures" / "codex"
@@ -287,6 +287,49 @@ class TheSettings(unittest.TestCase):
             self.assertEqual(1, len(load_settings(raw)[1]))
 
 
+class TheExecutorSettings(unittest.TestCase):
+    write = TheSettings.write
+
+    def test_the_executor_is_on_by_default_and_outside_cross_review(self):
+        with tempfile.TemporaryDirectory() as raw:
+            self.write(pathlib.Path(raw), {"crossReview": "off"})
+            settings, warnings = load_settings(raw)
+        self.assertEqual([], warnings)
+        self.assertEqual(DEFAULTS["executor"], settings["executor"])
+        self.assertEqual((True, "off", 20000, 10, 15),
+                         tuple(settings["executor"][k] for k in (
+                             "enabled", "sandbox", "maxTaskTokens", "reservePercent",
+                             "stopLossPercent")))
+
+    def test_declared_executor_values_override_the_defaults(self):
+        with tempfile.TemporaryDirectory() as raw:
+            self.write(pathlib.Path(raw), {"executor": {
+                "enabled": False, "modelSmall": " s ", "sandbox": "workspace-write",
+                "windowsSandbox": "elevated", "maxTaskTokens": 5000, "reservePercent": 5}})
+            settings, warnings = load_settings(raw)
+        self.assertEqual([], warnings)
+        executor = settings["executor"]
+        self.assertEqual((False, "s", "workspace-write", "elevated", 5000, 5, 15),
+                         (executor["enabled"], executor["modelSmall"], executor["sandbox"],
+                          executor["windowsSandbox"], executor["maxTaskTokens"],
+                          executor["reservePercent"], executor["stopLossPercent"]))
+        self.assertEqual("off", DEFAULTS["executor"]["sandbox"])
+
+    def test_bad_executor_values_fall_back_and_are_named(self):
+        with tempfile.TemporaryDirectory() as raw:
+            self.write(pathlib.Path(raw), {"executor": {
+                "enabled": "yes", "modelVerified": "", "reasoningEffort": "max",
+                "sandbox": "danger-full-access", "maxTaskTokens": True,
+                "stopLossPercent": 101}})
+            settings, warnings = load_settings(raw)
+        self.assertEqual(6, len(warnings))
+        self.assertEqual(DEFAULTS["executor"], settings["executor"])
+        with tempfile.TemporaryDirectory() as raw:
+            self.write(pathlib.Path(raw), {"executor": "on"})
+            self.assertEqual(["shared.codex.executor is not an object; defaults apply"],
+                             load_settings(raw)[1])
+
+
 class TheSandboxCheck(FakeCodex):
     def setUp(self):
         super().setUp()
@@ -321,6 +364,51 @@ class TheSandboxCheck(FakeCodex):
         self.assertEqual("codex is not on PATH",
                          sandbox(self.settings(), str(self.tmp), env=self.env)["reason"])
         self.assertFalse(self.sandbox_log.exists())
+
+
+class TheExecutorSandboxCheck(FakeCodex):
+    def setUp(self):
+        super().setUp()
+        self.sandbox_log = self.tmp / "sandbox.log"
+        self.env["FAKE_CODEX_SANDBOX_LOG"] = str(self.sandbox_log)
+
+    def executor(self, **executor) -> dict:
+        return self.settings(executor={**DEFAULTS["executor"], **executor})
+
+    def logged(self) -> list:
+        return [json.loads(line)
+                for line in self.sandbox_log.read_text(encoding="utf-8").splitlines()]
+
+    def test_sandbox_off_never_runs_the_workspace_write_check(self):
+        out = executor_sandbox(self.executor(), str(self.tmp), env=self.env)
+        self.assertEqual(("off", "shared.codex.executor.sandbox is off"),
+                         (out["state"], out["reason"]))
+        out = executor_sandbox(self.executor(enabled=False, sandbox="workspace-write"),
+                               str(self.tmp), env=self.env)
+        self.assertEqual("off", out["state"])
+        self.assertFalse(self.sandbox_log.exists())
+
+    def test_workspace_write_is_checked_under_its_own_policy(self):
+        out = executor_sandbox(self.executor(sandbox="workspace-write"), str(self.tmp),
+                               env=self.env)
+        self.assertEqual(("available", "codex sandbox ran `true` workspace-write"),
+                         (out["state"], out["reason"]))
+        self.assertEqual([[*WORKSPACE_WRITE_ARGV, "--", "true"]], self.logged())
+        self.assertEqual([], self.calls())
+
+    def test_a_broken_workspace_write_sandbox_is_unavailable(self):
+        self.env["FAKE_CODEX_SANDBOX"] = "bwrap"
+        out = executor_sandbox(self.executor(sandbox="workspace-write"), str(self.tmp),
+                               env=self.env)
+        self.assertEqual("unavailable", out["state"])
+        self.assertIn("RTM_NEWADDR", out["reason"])
+
+    def test_the_probe_sandbox_carries_the_executor_even_with_cross_review_off(self):
+        out = sandbox(self.settings(crossReview="off",
+                                    executor={**DEFAULTS["executor"],
+                                              "sandbox": "workspace-write"}),
+                      str(self.tmp), env=self.env)
+        self.assertEqual(("unavailable", "available"), (out["state"], out["executor"]["state"]))
 
 
 class TheCommandLine(FakeCodex):
