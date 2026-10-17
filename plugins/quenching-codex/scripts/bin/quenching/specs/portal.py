@@ -735,7 +735,9 @@ def sessions_source() -> tuple[dict | None, dict | None]:
 def chat_settings(root: str | None) -> dict:
     """`specs.chat` over the code defaults; a bad leaf warns on stderr and is ignored."""
     from quenching.common.config import setting
-    positive = lambda v: isinstance(v, (int, float)) and not isinstance(v, bool) and v > 0
+    def positive(v) -> bool:
+        return isinstance(v, (int, float)) and not isinstance(v, bool) and v > 0
+
     checks = {"model": lambda v: isinstance(v, str) and bool(v.strip()),
               "budgetUsd": positive, "timeoutSeconds": positive}
     defaults = {"model": "sonnet", "budgetUsd": chat_mod.DEFAULT_BUDGET_USD,
