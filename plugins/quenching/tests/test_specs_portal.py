@@ -422,7 +422,7 @@ class Sessions(PortalCase):
     """`GET /api/sessions` exists only under `--sessions`, and returns fixed fields only."""
     SECRET = "SECRET-do-not-leak"
     FIELDS = {"sessionId", "cwd", "worktree", "state", "status", "statusSince", "lastEvent",
-              "pendingQuestion", "subagents", "activity"}
+              "pendingQuestion", "pendingTool", "subagents", "activity"}
 
     def setUp(self):
         super().setUp()

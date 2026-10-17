@@ -20,7 +20,7 @@ from quenching.session.transcript import encode_cwd
 NOW = datetime(2026, 10, 16, 12, 0, 0, tzinfo=timezone.utc)
 SECRET = "SECRET-TOKEN-do-not-leak"
 FIELDS = {"sessionId", "pid", "cwd", "status", "statusSince", "lastEvent", "state",
-          "pendingQuestion", "subagents", "activity", "unparsed"}
+          "pendingQuestion", "pendingTool", "subagents", "activity", "unparsed"}
 
 
 def _ts(minutes_ago):
@@ -76,12 +76,14 @@ class LiveTest(unittest.TestCase):
         self._session(1, "s1", self.repo, "idle", [ask])
         (row,) = self._read()["sessions"]
         self.assertEqual((row["state"], row["pendingQuestion"]), ("waiting", "Which one?"))
+        self.assertEqual(row["pendingTool"], "AskUserQuestion")
         self.assertNotIn(SECRET, json.dumps(row))
         answer = {"type": "user", "timestamp": _ts(4), "message": {"content": [
             {"type": "tool_result", "tool_use_id": "q1", "content": SECRET}]}}
         self._session(1, "s1", self.repo, "idle", [ask, answer])
         (row,) = self._read()["sessions"]
         self.assertEqual((row["state"], row["pendingQuestion"]), ("idle", None))
+        self.assertIsNone(row["pendingTool"])
 
     def test_plan_approval_is_pending_as_plan(self):
         self._session(1, "s1", self.repo, "idle", [
@@ -90,6 +92,7 @@ class LiveTest(unittest.TestCase):
                  "input": {"plan": SECRET}}]}}])
         (row,) = self._read()["sessions"]
         self.assertEqual((row["state"], row["pendingQuestion"]), ("waiting", "plan"))
+        self.assertEqual(row["pendingTool"], "ExitPlanMode")
 
     def test_activity_is_per_minute_oldest_first(self):
         self._session(1, "s1", self.repo, "busy", [
