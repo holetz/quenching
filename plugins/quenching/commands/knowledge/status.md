@@ -51,11 +51,11 @@ never on prose.
 **Done when:** the bundle root and the checker are resolved, or their absence recorded.
 
 ### 2. Collect (read-only)
-- `cq knowledge validate /docs --json` — every conformance finding.
-- `cq knowledge validate /docs --activity --json` — the resource-activity figure, per doc and
+- `cq knowledge status docs --json` — the status payload, a superset of validate: `findings`, `findingCodes`, `ok`, `controls`, `density`. It is the only source of the controls report (§4 item 6) and of every conformance finding.
+- `cq knowledge validate docs --activity --json` — the resource-activity figure, per doc and
   per `resource:` entry (CLI only; per [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)
   §Resource activity it emits no finding and never runs in the hook path).
-- `Glob` `/docs/**/*.md` for the density counts, and read `/docs/index.md`, each home's `index.md`,
+- `Glob` `/docs/**/*.md` for the density counts (the payload's `density` is not used in its place), and read `/docs/index.md`, each home's `index.md`,
   and `/docs/glossary.md`.
 - `Glob` `~/.claude/projects/<cwd>/memory/*.md` and read the root `CLAUDE.md`/`AGENTS.md` size —
   the two out-of-band stores whose content the cycle would pull in.
@@ -101,7 +101,7 @@ One report, in this order:
    `glossary-broken-link` (→ `/quenching:knowledge:define`), coverage-ledger deferrals, and
    anything a human has not yet stated. Report the widest few resource-activity intervals as a
    figure in their own line — commits in the radius of a `resource:` glob, never drift of the doc.
-6. **Catalog controls** — the payload's `controls` block — each catalog control id, its requirement ids with `present`, `missing`, `not-measured`, `refused` or `retired`, and the evidence paths. `present` is candidate evidence, never conformance; the block never changes `ok` or the exit code.
+6. **Catalog controls** — the `controls` block of the §2 status payload, never inferred when the payload is missing (report the controls as unverified) — each catalog control id, its requirement ids with `present`, `missing`, `not-measured`, `refused` or `retired`, and the evidence paths. `present` is candidate evidence, never conformance; the block never changes `ok` or the exit code.
 
 Close with the single most useful next command for this repo's actual state, and nothing else.
 

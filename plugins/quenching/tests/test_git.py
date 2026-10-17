@@ -1653,7 +1653,7 @@ class PullRequestPayload(unittest.TestCase):
         self.assertIn("do not invent a `Closes #<n>` sentence", self.payload_step)
 
     def test_payload_is_shown_once_before_the_single_external_write_confirmation(self):
-        self.assertEqual(self.command.count("**AskUserQuestion**"), 1)
+        self.assertEqual(self.command.count("decision sheet"), 1)
         self.assertIn("provider-native link (or its absence)", self.payload_step)
         self.assertIn("one confirmation", self.command.lower())
 
@@ -1825,7 +1825,8 @@ class PullRequestPayload(unittest.TestCase):
         self.assertIn("remote selection", cleanup)
         self.assertIn("remote branch is never", cleanup)
         self.assertIn("confirmation", cleanup)
-        self.assertEqual(cleanup.count("**askuserquestion**"), 2)
+        self.assertIn("decision sheet", cleanup)
+        self.assertEqual(cleanup.count("**askuserquestion**"), 0)
 
     def test_cleanup_does_not_fetch_or_prune_implicitly(self):
         cleanup = CLEANUP_COMMAND.read_text(encoding="utf-8").lower()
@@ -2478,6 +2479,34 @@ class WorktreeRetire(RepoCase):
         proc = self._retire()
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertFalse(os.path.exists(self.wt))
+
+    def _seed_pytest_cache(self):
+        cache = pathlib.Path(self.wt, ".pytest_cache")
+        (cache / "v" / "cache").mkdir(parents=True)
+        (cache / ".gitignore").write_text("*\n", encoding="utf-8")
+        (cache / "CACHEDIR.TAG").write_text("x\n", encoding="utf-8")
+        (cache / "v" / "cache" / "lastfailed").write_text("{}\n", encoding="utf-8")
+
+    def test_pytest_cache_is_discarded_when_declared_regenerable(self):
+        self._merge_through_gh()
+        self._seed_pytest_cache()
+        self._declare_regenerable(".pytest_cache")
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertFalse(os.path.exists(self.wt))
+
+    def test_pytest_cache_blocks_retire_when_not_declared(self):
+        self._merge_through_gh()
+        self._seed_pytest_cache()
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        self.assertIn(".pytest_cache", json.loads(proc.stdout)["ignored"][0])
+        self.assertTrue(os.path.isdir(self.wt))
+
+    def test_repo_config_declares_pytest_cache_regenerable(self):
+        root = pathlib.Path(__file__).resolve().parents[3]
+        config = json.loads((root / ".claude" / "quenching.json").read_text(encoding="utf-8"))
+        self.assertIn(".pytest_cache", config["shared"]["regenerablePaths"])
 
     def test_an_undeclared_ignored_file_still_stands_beside_declared_ones(self):
         self._merge_through_gh()
