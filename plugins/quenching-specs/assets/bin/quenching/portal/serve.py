@@ -34,6 +34,7 @@ class Central:
                  chat: dict | None = None) -> None:
         self.specs, self.list_worktrees, self.projects = specs, list_worktrees, projects
         self.door = specs.Portal("", token, read_only, host, port, nonce=nonce)
+        self.door.serve_cmd = "cq portal serve"
         self.portals = {}
         for project in projects:
             portal = specs.Portal(project["path"], token, read_only, host, port,
