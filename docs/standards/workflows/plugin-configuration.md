@@ -2,12 +2,12 @@
 type: standard
 title: Plugin configuration contract
 description: "`.claude/quenching.json` is the plugin's single configuration home; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles, proposal catalogues and the `git` pillar's per-artifact writing directives remain explicit target settings"
-resource: .claude/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/specs/config.py, plugins/quenching/assets/bin/quenching/ops/**, plugins/quenching/assets/bin/quenching/proof/**, plugins/quenching/assets/bin/quenching/git/base.py, plugins/quenching/assets/bin/quenching/git/conventions.py
+resource: .claude/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/specs/config.py, plugins/quenching/assets/bin/quenching/ops/**, plugins/quenching/assets/bin/quenching/proof/**, plugins/quenching/assets/bin/quenching/git/base.py, plugins/quenching/assets/bin/quenching/git/conventions.py, plugins/quenching/assets/bin/quenching/config/**
 tags: [workflows, specs, configuration, provider, plugin]
 timestamp: 2026-10-17
 audience: both
 authority: current
-source: spec 1065 (task 3.1) — the namespaced envelope and migration refusal are implemented and covered by the source test matrix; extended by spec 1075 (2026-09-01) with `shared.gitConventions`, the `git` pillar's per-artifact writing directives; extended by spec 1405 (2026-10-08) with `shared.regenerablePaths`; by spec 1907 (2026-10-17) with the user layer
+source: spec 1065 (task 3.1) — the namespaced envelope and migration refusal are implemented and covered by the source test matrix; extended by spec 1075 (2026-09-01) with `shared.gitConventions`, the `git` pillar's per-artifact writing directives; extended by spec 1405 (2026-10-08) with `shared.regenerablePaths`; by spec 1907 (2026-10-17) with the user layer; by spec 1908 (2026-10-17) with the `quenching` branch layer and `cq config show --effective`
 maintainer: quenching
 ---
 
@@ -49,6 +49,23 @@ and the pre-envelope flat keys describe one repository, so they are ignored and 
 `userConfig.ignoredKeys`. A missing file is a no-op; an unreadable one is reported in
 `userConfig.unparseable` and never fatal. A namespace the repository declares as a non-object
 stays invalid. `present` and `path` still describe only the repository file.
+
+## The branch layer and the effective view
+
+With root `"backend": "git"`, a third file counts: `quenching.json` on the `quenching` branch, whose
+`specs` namespace may declare `subjects`, `tagCatalog`, `workItemTypes`, `azurePlacement`,
+`azureColumns`, `azureStates`, `artifactLanguage`, `card` and `cardAt`. Each key present there
+replaces the same key from the other layers, whole. Any other key on the branch is ignored, and
+with any other `backend` the branch is not read at all.
+
+The precedence, lowest to highest, is `default` < `user` < `repository` < `branch`.
+`cq config show --effective [--json]` prints every key with its effective value and the layer that
+supplied it, plus each layer's path, `present` and `unparseable` state (the branch layer also
+carries `applies`). A key is one row per `namespace.key`, because layers replace a key whole; the
+exception is a key whose default lives in code as data (today `shared.codex`), shown leaf by leaf
+with `default` where no layer declares the leaf. A key absent from every layer and without a
+default in code does not appear. The verb only reads: an unreadable layer is reported on its row of
+`layers` and never fatal.
 
 ## The envelope and its owners
 
