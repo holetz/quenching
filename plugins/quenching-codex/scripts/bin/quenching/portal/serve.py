@@ -30,13 +30,15 @@ class Central:
 
     def __init__(self, specs, list_worktrees, projects: list[dict], token: str,
                  read_only: bool = False, host: str = "127.0.0.1", port: int = 0,
-                 sessions: dict | None = None, nonce: str | None = None) -> None:
+                 sessions: dict | None = None, nonce: str | None = None,
+                 chat: dict | None = None) -> None:
         self.specs, self.list_worktrees, self.projects = specs, list_worktrees, projects
         self.door = specs.Portal("", token, read_only, host, port, nonce=nonce)
         self.portals = {}
         for project in projects:
             portal = specs.Portal(project["path"], token, read_only, host, port,
-                                  sessions=sessions)
+                                  sessions=sessions,
+                                  chat={**chat, "worktrees": list_worktrees} if chat else None)
             portal.nonce = None  # only the door trades a nonce for the cookie
             self.portals[project["name"]] = portal
 
@@ -158,8 +160,11 @@ def cmd_serve(args) -> int:
         sessions, refusal = specs.sessions_source()
         if refusal:
             return refuse({k: v for k, v in refusal.items() if k != "exit"}, as_json)
+    chat, refusal = specs.chat_source(bool(args.chat), args.chat_budget_usd)
+    if refusal:
+        return refuse({k: v for k, v in refusal.items() if k != "exit"}, as_json)
     central = Central(specs, worktrees.list_worktrees, projects, secrets.token_urlsafe(24),
-                      bool(args.read_only), args.host, sessions=sessions)
+                      bool(args.read_only), args.host, sessions=sessions, chat=chat)
     server = make_central_server(central, args.host, args.port)
     port = server.server_address[1]
     shown = args.host if ":" not in args.host else f"[{args.host}]"
@@ -167,7 +172,8 @@ def cmd_serve(args) -> int:
     writable, why = central.door.writes_enabled()
     emit(as_json, {"ok": True, "url": url, "host": args.host, "port": port,
                    "projects": [p["name"] for p in projects], "writable": writable,
-                   "readOnlyReason": why, "sessions": sessions is not None},
+                   "readOnlyReason": why, "sessions": sessions is not None,
+                   "chat": chat is not None},
          f"quenching portal — {len(projects)} project(s), "
          f"{'read-write' if writable else 'read-only: ' + why}\n{url}\nCtrl-C to stop")
     sys.stdout.flush()

@@ -6,7 +6,8 @@
   const state = { specs: [], stages: [], fetchedAt: 0, ttl: 5, writable: false, why: "",
                   filters: { subject: "", tag: "", type: "", assignee: "", complexity: "" },
                   epics: { supported: false, epics: [] }, human: null, busy: false,
-                  sessionsOn: false, sessions: null,
+                  sessionsOn: false, sessions: null, chatOn: false, chatBudget: null,
+                  chat: { draft: "", worktree: "", job: null, status: "", events: [], next: 0, cost: null, error: "" },
                   projects: null, project: "", base: "" };
 
   /* ── helpers ─────────────────────────────────────────────────────────────── */
@@ -155,8 +156,10 @@
     try {
       const c = await api("config");
       state.writable = c.writable; state.why = c.readOnlyReason; state.sessionsOn = !!c.sessions;
+      state.chatOn = !!c.chat; state.chatBudget = c.chatBudgetUsd;
     } catch (e) { fail(e); }
     $("#nav-sessions").hidden = !state.sessionsOn;
+    $("#nav-chat").hidden = !state.chatOn;
     $("#capture").disabled = !state.writable;
     const b = $("#banner");
     b.hidden = state.writable;
@@ -357,6 +360,76 @@
           : h("p", { class: "empty" }, "no live session in this repository's worktrees"))];
   }
 
+  /* ── chat (only under `serve --chat`): one read-only `claude -p` job, polled ── */
+  const CHAT_POLL_MS = 1500;
+  const CHAT_DONE = ["done", "failed", "timeout"];
+  function chatTrees() {
+    const p = state.projects && state.projects.find((x) => x.name === state.project);
+    return p ? p.worktrees || [] : [];
+  }
+  function chatLog() {
+    const c = state.chat;
+    const items = c.events.map((ev) =>
+      ev.kind === "tool" ? h("li", { class: "chat-tool" }, "ferramenta: ", h("code", {}, ev.name))
+        : ev.kind === "result" ? h("li", { class: "chat-result" + (ev.isError ? " bad" : "") }, h("strong", {}, "Resposta"), h("div", { class: "chat-text" }, ev.text || ""))
+          : h("li", { class: "chat-text" }, ev.text || ""));
+    const tail = [];
+    if (c.job && !CHAT_DONE.includes(c.status)) tail.push(h("p", { class: "meta", role: "status" }, "rodando…"));
+    if (c.status && c.status !== "running") tail.push(h("p", { class: "meta" }, "estado: " + c.status));
+    if (c.error) tail.push(h("p", { class: "bad" }, c.error));
+    if (c.cost != null) tail.push(h("p", { class: "meta" }, `custo: US$ ${Number(c.cost).toFixed(4)}`));
+    return h("div", { id: "chat-log", "aria-live": "polite" }, items.length ? h("ol", { class: "chat-events" }, items) : null, tail);
+  }
+  function paintChatLog() {
+    const old = $("#chat-log");
+    if (old) old.replaceWith(chatLog());
+    const send = $("#chat-send");
+    if (send) send.disabled = !!state.chat.job && !CHAT_DONE.includes(state.chat.status);
+  }
+  async function pollChat(job) {
+    const c = state.chat;
+    while (c.job === job && !CHAT_DONE.includes(c.status)) {
+      await new Promise((r) => setTimeout(r, CHAT_POLL_MS));
+      if (c.job !== job) return;
+      let r;
+      try { r = await api(`chat/${encodeURIComponent(job)}?after=${c.next}`); }
+      catch (e) { c.status = "failed"; c.error = e.message; paintChatLog(); return; }
+      c.events.push(...(r.events || [])); c.next = r.next; c.status = r.status;
+      c.error = r.error || ""; c.cost = r.costUsd;
+      paintChatLog();
+    }
+  }
+  async function askChat(e) {
+    e.preventDefault();
+    const c = state.chat;
+    const question = c.draft.trim();
+    if (!question) return;
+    const body = { question };
+    if (c.worktree) body.worktree = c.worktree;
+    let r;
+    try { r = await api("chat", { body }); } catch (err) { fail(err); return; }
+    Object.assign(c, { job: r.job, status: "running", events: [], next: 0, cost: null, error: "" });
+    paintChatLog();
+    pollChat(r.job);
+  }
+  function viewChat() {
+    const c = state.chat;
+    const trees = chatTrees();
+    if (c.worktree && !trees.some((w) => w.path === c.worktree)) c.worktree = "";
+    return h("section", { class: "panel chat" },
+      h("div", { class: "sechead" }, h("h2", {}, "Chat"),
+        h("span", { class: "meta" }, "só leitura (Read, Grep, Glob)" + (state.chatBudget != null ? ` · teto US$ ${state.chatBudget}` : ""))),
+      h("form", { class: "chat-form", on: { submit: askChat } },
+        trees.length ? h("label", {}, "Worktree",
+          h("select", { on: { change: (ev) => { c.worktree = ev.target.value; } } },
+            trees.map((w) => h("option", { value: w.main ? "" : w.path, selected: (w.main ? "" : w.path) === c.worktree, title: w.path },
+              (w.branch || "(detached)") + (w.main ? " · main" : ""))))) : null,
+        h("label", {}, "Pergunta",
+          h("textarea", { maxLength: 4000, required: true, value: c.draft, on: { input: (ev) => { c.draft = ev.target.value; } } })),
+        h("div", { class: "actions" }, h("button", { type: "submit", class: "primary", id: "chat-send" }, "Perguntar"))),
+      chatLog());
+  }
+
   /* ── decidir com o humano ────────────────────────────────────────────────── */
   function paintHumanCount() {
     const n = state.human ? state.human.count : 0;
@@ -519,6 +592,7 @@
     if (p.name === state.project) return;
     state.project = p.name; state.base = p.prefix; localStorageSet("qproject", p.name);
     state.human = null; state.sessions = null;
+    Object.assign(state.chat, { worktree: "", job: null, status: "", events: [], next: 0, cost: null, error: "" });
     paintProjects();
     await loadConfig();
     try { await load(true); } catch (e) { fail(e); }
@@ -539,8 +613,10 @@
     else if (view === "human") content = viewHuman();
     else if (view === "epics" && state.epics.supported) content = viewEpics();
     else if (view === "sessions" && state.sessionsOn) content = viewSessions();
+    else if (view === "chat" && state.chatOn) content = viewChat();
     else content = viewBoard();
     $("#main").replaceChildren(...[content].flat());
+    if (view === "chat") paintChatLog();
   }
 
   /* ── boot ────────────────────────────────────────────────────────────────── */

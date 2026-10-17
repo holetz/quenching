@@ -24,6 +24,10 @@ SECURITY
   only through the reader `cq` lends from the session pillar (`quenching.common.lent`), so this
   module never imports `session` and the reader copy, which lends nothing, refuses the flag;
   each row is rebuilt from `SESSION_FIELDS`, never copied by key.
+* The chat runs only under `--chat` (off by default): `POST /api/chat` starts one read-only
+  `claude -p` (`quenching.specs.chat`) in a worktree of this project, one job at a time, and
+  `GET /api/chat/<job>` polls its projected events. It writes nothing to the store, so it is
+  outside `writes_enabled`, but it keeps every other POST gate (token, Origin, JSON, size).
 """
 from __future__ import annotations
 
@@ -47,6 +51,7 @@ from urllib.parse import parse_qs, urlsplit
 from quenching.common.dates import today
 from quenching.common.lent import borrow
 from quenching.common.output import OK
+from quenching.specs import chat as chat_mod
 from quenching.specs.backends import open_backend
 from quenching.specs.backends.base import BackendRefusal, SpecBackend, transport_read_only
 from quenching.specs.commands.create import cmd_new
@@ -137,9 +142,11 @@ class Portal:
 
     def __init__(self, root: str, token: str, read_only: bool = False,
                  host: str = "127.0.0.1", port: int = 0, nonce: str | None = None,
-                 sessions: dict | None = None) -> None:
+                 sessions: dict | None = None, chat: dict | None = None) -> None:
         self.root, self.token, self.read_only = root, token, read_only
         self.sessions = sessions  # {"read"} lent by the session pillar under --sessions, else None
+        self.chat = chat  # {"claude", "budget", "worktrees"} under --chat, else None
+        self.jobs: dict[str, chat_mod.Job] = {}
         self.nonce: str | None = nonce if nonce is not None else secrets.token_urlsafe(18)
         self.host, self.port = host, port
         self.lock = threading.RLock()
@@ -240,7 +247,7 @@ class Portal:
         route = path[len("/api/"):].strip("/")
         if write:
             ok, why = self.writes_enabled()
-            if not ok:
+            if not ok and not (route == "chat" and self.chat is not None):
                 return _error(403, "sp-read-only", f"writes are disabled: {why}")
             if "application/json" not in headers.get("content-type", ""):
                 return _error(415, "sp-portal-content-type", "send application/json")
@@ -252,6 +259,8 @@ class Portal:
                 return _error(400, "sp-portal-bad-json", "the body is not valid JSON")
             if not isinstance(data, dict):
                 return _error(400, "sp-portal-bad-json", "the body must be a JSON object")
+            if route == "chat" and self.chat is not None:
+                return self._chat_start(data)
             return self._post(route, data)
         return self._get(route, query, headers)
 
@@ -263,9 +272,13 @@ class Portal:
             return _json(200, {"ok": True, "writable": ok, "readOnlyReason": why,
                                "ttlSeconds": TTL_SECONDS, "stages": STAGE_ORDER,
                                "headings": canonical_headings(),
-                               "sessions": self.sessions is not None})
+                               "sessions": self.sessions is not None,
+                               "chat": self.chat is not None,
+                               "chatBudgetUsd": self.chat["budget"] if self.chat else None})
         if route == "sessions" and self.sessions is not None:
             return _validated(headers, self._sessions(), volatile="generatedAt")
+        if route.startswith("chat/") and self.chat is not None:
+            return self._chat_poll(route.split("/", 1)[1], query)
         with self.lock:
             snap = self._snapshot(fresh)
             if isinstance(snap, tuple):
@@ -458,6 +471,45 @@ class Portal:
         return {"ok": True, "generatedAt": live["generatedAt"],
                 "windowMinutes": live["windowMinutes"], "sessions": rows}
 
+    # ── chat ─────────────────────────────────────────────────────────────────────────────
+    def _chat_trees(self) -> list[str]:
+        lister = self.chat.get("worktrees")
+        trees = (lister(self.root) if lister else None) or [{"path": self.root}]
+        return [os.path.realpath(w["path"]) for w in trees]
+
+    def _chat_start(self, data: dict):
+        question = data.get("question")
+        if not isinstance(question, str) or not question.strip():
+            return _error(400, "sp-portal-bad-input", "`question` is required (a string)")
+        if len(question) > chat_mod.MAX_QUESTION:
+            return _error(400, "sp-portal-bad-input",
+                          f"`question` is longer than {chat_mod.MAX_QUESTION} characters")
+        tree = data.get("worktree") or self.root
+        trees = self._chat_trees()
+        if not isinstance(tree, str) or os.path.realpath(tree) not in trees:
+            return _error(400, "sp-portal-chat-worktree", "`worktree` is not a worktree of "
+                                                          "this project")
+        cwd = os.path.realpath(tree)
+        with self.lock:
+            if any(job.running for job in self.jobs.values()):
+                return _error(409, "sp-portal-chat-busy", "a chat question is still running")
+            job = chat_mod.Job(self.chat["claude"], self.chat["budget"], cwd, question.strip())
+            self.jobs[job.id] = job
+            for old in list(self.jobs)[:-chat_mod.KEEP_JOBS]:
+                if not self.jobs[old].running:
+                    del self.jobs[old]
+        return _json(202, {"ok": True, "job": job.id, "worktree": cwd})
+
+    def _chat_poll(self, job_id: str, query: dict):
+        job = self.jobs.get(job_id)
+        if job is None:
+            return _error(404, "sp-portal-chat-unknown-job", "no such chat job")
+        try:
+            after = int((query.get("after") or ["0"])[0])
+        except ValueError:
+            after = 0
+        return _json(200, job.view(after))
+
     # ── writes ───────────────────────────────────────────────────────────────────────────
     def _post(self, route: str, data: dict):
         handlers = {"capture": self._capture, "section": self._section, "approve": self._approve,
@@ -623,12 +675,13 @@ def is_loopback(host: str) -> bool:
 
 
 def make_server(root: str, host: str = "127.0.0.1", port: int = 0, read_only: bool = False,
-                token: str | None = None, sessions: dict | None = None):
+                token: str | None = None, sessions: dict | None = None,
+                chat: dict | None = None):
     """A bound, not yet serving `ThreadingHTTPServer` carrying its `Portal` as `.portal`."""
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
     portal = Portal(root, token or secrets.token_urlsafe(24), read_only, host, 0,
-                    sessions=sessions)
+                    sessions=sessions, chat=chat)
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "quenching-portal"
@@ -674,6 +727,21 @@ def sessions_source() -> tuple[dict | None, dict | None]:
     return lender.source()
 
 
+def chat_source(enabled: bool, budget: float | None) -> tuple[dict | None, dict | None]:
+    """`({"claude", "budget"}, None)` for `--chat`, `(None, None)` without it, or a refusal."""
+    if not enabled:
+        return None, None
+    budget = chat_mod.DEFAULT_BUDGET_USD if budget is None else budget
+    if not budget > 0:
+        return None, {"code": "sp-portal-chat-budget", "exit": 2,
+                      "message": "--chat-budget-usd must be a positive dollar amount"}
+    claude = chat_mod.find_claude()
+    if claude is None:
+        return None, {"code": "sp-portal-chat-unavailable", "exit": 2,
+                      "message": "--chat needs the `claude` CLI on PATH"}
+    return {"claude": claude, "budget": budget, "worktrees": None}, None
+
+
 def cmd_serve(args, root: str, out: Emitter) -> int:
     host = args.host
     if not is_loopback(host):
@@ -692,15 +760,19 @@ def cmd_serve(args, root: str, out: Emitter) -> int:
         sessions, refusal = sessions_source()
         if refusal:
             return out.emit_err(args.json, refusal)
+    chat, refusal = chat_source(bool(vars(args).get("chat")), vars(args).get("chat_budget_usd"))
+    if refusal:
+        return out.emit_err(args.json, refusal)
     read_only = bool(args.read_only)
-    server = make_server(root, host, args.port, read_only, sessions=sessions)
+    server = make_server(root, host, args.port, read_only, sessions=sessions, chat=chat)
     portal = server.portal
     shown = "localhost" if host == "localhost" else host
     url = f"http://{shown if ':' not in shown else '[' + shown + ']'}:{portal.port}/" \
           f"?nonce={portal.nonce}"
     writable, why = portal.writes_enabled()
     info = {"ok": True, "url": url, "host": host, "port": portal.port, "backend": backend.name,
-            "writable": writable, "readOnlyReason": why, "sessions": sessions is not None}
+            "writable": writable, "readOnlyReason": why, "sessions": sessions is not None,
+            "chat": chat is not None}
     out.emit(args.json, info,
              f"quenching portal ({backend.name}) — {'read-write' if writable else 'read-only: ' + why}\n"
              f"{url}\nCtrl-C to stop")
