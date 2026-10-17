@@ -76,7 +76,9 @@
         "packages": [
           "specs",
           "git",
-          "session"
+          "session",
+          "codex",
+          "portal"
         ],
         "agents": true
       },
