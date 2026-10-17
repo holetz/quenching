@@ -55,6 +55,14 @@ def resolve_transcript(arg: str | None, cwd: Path) -> tuple[Path | None, str]:
             byid = d / f"{arg}.jsonl"
             if byid.is_file():
                 return byid, f"session id in {how} project dir"
+        # A sibling worktree has no project dir of its own and no ancestor that is the checkout's,
+        # so a session id is also looked up across every project dir: ids are unique.
+        root = projects_root()
+        hits = sorted(root.glob(f"*/{arg}.jsonl")) if root.is_dir() and "/" not in arg else []
+        if len(hits) == 1:
+            return hits[0], "session id across project dirs"
+        if len(hits) > 1:
+            return None, f"session id {arg} is ambiguous across project dirs"
         return None, f"no transcript at {arg}"
     d, how = resolve_project_dir(cwd)
     if d is None:

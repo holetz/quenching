@@ -63,6 +63,26 @@ class CostTests(unittest.TestCase):
         self.assertEqual(rows[("Explore", "sonnet")]["requests"], 1)
         self.assertEqual(rows[("unknown", "opus")]["requests"], 1)
 
+    def test_agents_carry_peak_role_budget_and_over_budget(self):
+        def windowed(mid, window):
+            usage = {"input_tokens": window, "cache_read_input_tokens": 0,
+                     "cache_creation_input_tokens": 0, "output_tokens": 1,
+                     "iterations": [{"type": "message", "input_tokens": window}]}
+            return {"type": "assistant", "message": {"id": mid, "model": "opus", "usage": usage}}
+        write(self.sub / "agent-w1.jsonl", [windowed("w1a", 50000), windowed("w1b", 120000)])
+        (self.sub / "agent-w1.meta.json").write_text('{"agentType":"quenching-specs:spec-runner"}')
+        write(self.sub / "agent-w2.jsonl", [windowed("w2a", 90000)])
+        (self.sub / "agent-w2.meta.json").write_text('{"agentType":"quenching-specs:spec-runner"}')
+        code, out = run("--json", str(self.sub))
+        data = json.loads(out)
+        agents = {a["agentId"]: a for a in data["agents"]}
+        self.assertEqual((agents["w1"]["role"], agents["w1"]["peakContext"], agents["w1"]["budget"],
+                          agents["w1"]["exceeded"]), ("worker", 120000, 100000, True))
+        self.assertFalse(agents["w2"]["exceeded"])
+        self.assertIsNone(agents["a"]["exceeded"])
+        self.assertEqual(data["overBudget"], ["w1"])
+        self.assertIn(("Explore", "opus"), {(g["agentType"], g["model"]) for g in data["groups"]})
+
     def test_never_one_total_across_models(self):
         data = json.loads(run("--json", str(self.sub))[1])
         self.assertEqual({m["model"] for m in data["byModel"]}, {"opus", "sonnet"})
