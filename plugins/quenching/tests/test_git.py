@@ -1343,6 +1343,73 @@ class AuditGenerated(RepoCase):
                                           "plugins/other/commands/" + "z.md": "z\n"}), [])
 
 
+class AuditRelocation(RepoCase):
+    """`grants` and `lowered` accept a relocation only on proof: a byte-for-byte copy of its source, or
+    the namespace rewrite the BASE manifest assigns. A grant added, a source-less surface and a head the
+    manifest does not know stay listed."""
+
+    AGENT = "---\nname: w\ntools: {tools}\n---\nbody\n"
+    CHECK = f"{SRC}/assets/checks/f.sh"
+
+    def setUp(self):
+        super().setUp()
+        manifest = {"source": SRC,
+                    "modules": [{"name": "m", "path": MOD, "published": True,
+                                 "owned": {"commands": ["specs"], "agents": True}}]}
+        files = {f"{SRC}/assets/modules.json": json.dumps(manifest),
+                 f"{SRC}/agents/w.md": self.AGENT.format(tools="Agent(quenching:w), Read"),
+                 self.CHECK: "probe quenching:specs:x\nkeep\n"}
+        for rel, text in files.items():
+            path = pathlib.Path(self.repo, rel)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding="utf-8")
+        _run(self.repo, "add", ".")
+        _run(self.repo, "commit", "-q", "-m", "base")
+        self.wt = os.path.join(self.tmp, "wt")
+        _run(self.repo, "worktree", "add", "-q", "-b", "spec/1", self.wt)
+        _run(self.wt, "config", "user.email", "test@example.com")
+        _run(self.wt, "config", "user.name", "Test")
+
+    def _payload(self, files: dict[str, str]) -> dict:
+        for rel, text in files.items():
+            path = pathlib.Path(self.wt, rel)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding="utf-8")
+        _run(self.wt, "add", ".")
+        _run(self.wt, "commit", "-q", "-m", "task")
+        payload = _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main",
+                           "--branch", "spec/1")
+        self.assertTrue(payload["complete"], payload["errors"])
+        return payload
+
+    def _grants_of(self, tools: str) -> list:
+        return self._payload({f"{MOD}/agents/w.md": self.AGENT.format(tools=tools)})["grants"]
+
+    def test_a_reproduced_copy_adds_no_grant(self):
+        text = self.AGENT.format(tools="Agent(quenching:w), Read")
+        self.assertEqual(self._payload({f"{MOD}/agents/w.md": text})["grants"], [])
+
+    def test_a_namespace_swap_by_the_base_manifest_adds_no_grant(self):
+        self.assertEqual(self._grants_of("Agent(m:w), Read"), [])
+
+    def test_a_grant_added_beside_the_swap_is_listed_alone(self):
+        got = self._grants_of("Agent(m:w), Read, Bash")
+        self.assertEqual([(g["kind"], g["added"]) for g in got], [("tools", ["Bash"])])
+
+    def test_a_head_the_manifest_does_not_know_is_listed(self):
+        got = self._grants_of("Agent(m:ghost), Read")
+        self.assertEqual([g["added"] for g in got], [["Agent(m:ghost)"]])
+
+    def test_a_new_module_surface_without_a_source_is_listed(self):
+        got = self._payload({f"{MOD}/agents/new.md": self.AGENT.format(tools="Read")})["grants"]
+        self.assertEqual([(g["path"], g["added"]) for g in got], [(f"{MOD}/agents/new.md", ["Read"])])
+
+    def test_a_copy_outside_a_declared_module_is_not_absolved(self):
+        got = self._payload({"plugins/other/agents/w.md":
+                             self.AGENT.format(tools="Agent(quenching:w), Read")})["grants"]
+        self.assertEqual([g["added"] for g in got], [["Agent(quenching:w)", "Read"]])
+
+
 class VerifierGrants(unittest.TestCase):
     """The read-only `verifier` holds no grant whose `*` sits mid-pattern, and no raw `git` or
     `bash` grant: those admitted `branch -D`, `clean -fdx`, `--output=<file>` and arbitrary code."""
