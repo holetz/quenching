@@ -82,7 +82,12 @@ Resolve `cq` per [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/referen
 §Resolving the tool; branch on the exit code. Read the root harness for the gate command and the
 ephemeral area. Check, on `main`: the checkout is clean (`git status --short`), `git stash list` is
 empty, `git worktree list` holds only this run's worktrees, and the gate is green. Anything red →
-this round's first spec is fixing it (`cq specs new`, then steps 4–5 on it alone). Read the
+this round's first spec is fixing it (`cq specs new`, then steps 4–5 on it alone). Then run
+`cq git preflight --json` once (covered by the existing `Bash(cq:*)`; no new grant) and write its
+five checks (`store`, `types`, `push`, `ghAuth`, `ci`) in the round block as `preflight:`. `store`,
+`push` or `ghAuth` in `fail` → fixing it is this round's first spec, like a red gate. `mergesAllowed:
+false` (CI unavailable) → steps 4–5 plan no merges and no chain that depends on a merge, and the
+report says why. Hooks are never disabled and `--no-verify` is never passed. Read the
 round record first: an `open` round whose start ref is still reachable from `main` resumes at its
 recorded next step and keeps its `launches`; any other record opens a new round. Record the
 round's start ref: `git rev-parse main`.
