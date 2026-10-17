@@ -4,10 +4,10 @@ title: Worktree setup contract
 description: The `worktreeSetup` hook prepares a code-isolation worktree from `.claude/quenching.json`; its absence is normal, the execute offer displays and authorizes the command, and provider-owned specs never use this hook as persistent storage
 resource: plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/git/branch.md, plugins/quenching/assets/references/git/isolation.md
 tags: [workflows, specs, worktree, configuration, consent]
-timestamp: 2026-08-11
+timestamp: 2026-10-17
 audience: both
 authority: current
-source: prefer-worktree-isolation plan (task 4.2), revised by remover-backend-local-do-plugin (task 4.6)
+source: prefer-worktree-isolation plan (task 4.2), revised by remover-backend-local-do-plugin (task 4.6); aligned to the loader by spec 1912 (namespaced example, real specs store)
 maintainer: quenching
 ---
 
@@ -23,7 +23,7 @@ that closes that gap, and the bounds that keep a hook from becoming a configurat
 ## Where it is declared
 
 ```json
-{"worktreeSetup": "./scripts/wt-setup.sh"}
+{"shared": {"worktreeSetup": "./scripts/wt-setup.sh"}}
 ```
 
 In `.claude/quenching.json` at the **repo root**, the plugin's single configuration home. The file
@@ -31,7 +31,8 @@ itself — every recognised key, the defaults, the reading rules, and the findin
 malformed one — is owned by [plugin-configuration.md](plugin-configuration.md). This standard owns
 only what the key *means*.
 
-`worktreeSetup` holds a shell command, run as written.
+`worktreeSetup` lives in the `shared` namespace and holds a shell command, run as written. A flat
+root-level `worktreeSetup` is refused with `sp-config-unscoped` (exit 2) and never read.
 
 ## Absence is the normal case, and never a finding
 
@@ -68,9 +69,9 @@ rather than executed and blamed on the shell.
 Only the inline offer runs it, and only on creation. Re-running setup over a worktree that already
 exists is a second entry point for the same hook and is deliberately not offered.
 
-**This hook prepares only the code-isolation worktree.** Provider-owned specs live in GitHub or
-Azure Boards, so no persistent specs worktree exists and this command is never used to host,
-archive, or migrate a spec document.
+**This hook prepares only the code-isolation worktree.** Specs live on the `quenching` branch (or,
+deprecated, in the selected tracker), so no persistent specs worktree exists and this command is
+never used to host, archive, or migrate a spec document.
 
 ## The consent is the isolation offer, not a prompt of its own
 
