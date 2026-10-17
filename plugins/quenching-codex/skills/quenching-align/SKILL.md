@@ -87,11 +87,17 @@ inside one, probe only that front and mark the others skipped by scope.
   `COPYING*`, or `opensource` in `shared.profiles.installed`) and findings are the complete probe
   result.
 
+- **configuration** (not a front) — run `cq config check --json`. Exit 2 `cq-config-absent` puts
+  "seed `.claude/quenching.json` with `cq config init --write`" in the plan; the Authorization OK
+  covers it, and it runs before the first front so every front reads the seeded file. Exit 1 lists
+  the seeded keys the file lacks: report them, never rewrite a file the human edited. Exit 0 is
+  conformant.
+
 Use **not applicable** only when the probe found no declared root or conventional signal. Use
 **skipped** only for explicit scope exclusion or an earlier hard failure. A present front with no
 findings is **conformant**.
 
-If all applicable fronts are conformant, report *"all applicable fronts conformant — nothing to
+If all applicable fronts are conformant and the configuration probe is exit 0, report *"all applicable fronts conformant — nothing to
 align"* and stop before presenting a plan. An applicable but undeclared front is adoption work,
 not drift, until its own align is invoked.
 
