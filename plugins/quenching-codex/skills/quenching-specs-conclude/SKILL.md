@@ -164,7 +164,7 @@ diff contradicts.
 `cq codex probe --json`: exit 0 (available) or 2 (unknown) → write the prompt (the diff range
 `origin/<base>...HEAD`, asking for findings as `path:line` with severity) to
 `.quenching/codex/<run>/prompt.md` and run, in the background,
-`cq codex review --worktree <work checkout> --prompt <that file> --run <run> --base origin/<base> --json`
+`cq codex review --worktree <work checkout> --prompt <that file> --run <run> --base origin/<base> --json` (NO-REMOTE: the local `<base>`, in the prompt and `--base` alike)
 while you read the diff yourself. Exit 1 from the probe, a timeout or any failure of the review →
 **fallback**: the Codex review stands alone and the report says `Codex: fallback (<reason>)`; it is
 never a conclude error and never blocks `reviewed`. Consolidate both lists by `path:line`: a finding
