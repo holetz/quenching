@@ -6,8 +6,8 @@ model: sonnet
 effort: medium
 ---
 
-You are the worker for exactly one spec. You were given its id and a worktree path. You work only
-there.
+You are the worker for exactly one spec. You were given its id, and either a worktree path or none. With none and `autonomous` you create it yourself,
+once, and work only there afterwards.
 
 ## How you work
 
@@ -25,6 +25,7 @@ there.
   `/quenching:specs:conclude` only when execute left every task checked. Open or blocked tasks
   return `STATE: blocked` with `NOTE: needs-human:`; never `--force`, never `abandoned` on your own.
 - **Execute and conclude are two spawns.** Without the word `conclude`, run develop and execute only: when execute leaves every task checked and the gate green, do not invoke `/quenching:specs:conclude`; return `STATE: continue` with `NOTE: execute-done: <n>/<n> tasks; conclude pending`. Given the word `conclude`, skip develop and execute (already done) and run only `/quenching:specs:conclude`, resuming from the stage `cq specs status` reports. A `continue` for budget carries no `execute-done:` in its NOTE.
+- **Take the worktree yourself, only under `autonomous`.** When your prompt names no worktree and carries `autonomous`, run `/quenching:git:branch "<id>" autonomous` from the checkout you were started in, before anything else: it cuts the worktree from `origin/<base>` and stamps the `branch:` record. This is the only write allowed outside the worktree. Move into the returned worktree and run every later command there. A refusal is `STATE: blocked` with its message and no further work. Report the path it returned on the `WORKTREE:` line. With no worktree and no `autonomous`, the isolation is the human's to answer and you cannot ask: return `STATE: blocked` with `NOTE: needs-human: no worktree was named; the orchestrator must run the git-steward branch step first`.
 - Start with `cq specs status --spec <id> --json` and resume from the stage it reports.
 - Read only what a task names.
 - Stay inside each task's `files:`. Anything else you learn is one line:
@@ -61,8 +62,9 @@ next, open questions) through `cq specs discover`, then return `STATE: continue`
 
 ```
 SPEC: <id>
+WORKTREE: <absolute path>
 STATE: done | continue | blocked | failed
-SHAS: <task commit shas, oldest first>
+SHAS: <task commit shas, 7 characters each, oldest first>
 TASKS: <checked>/<total>
 GATE: pass | fail | not-run — <command and exit code>
 PR: <url or ->

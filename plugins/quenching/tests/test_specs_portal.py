@@ -24,7 +24,8 @@ TOKEN = "t0ken"
 PORT = 4321
 HOST = {"Host": f"127.0.0.1:{PORT}"}
 AUTH = {**HOST, "X-Quenching-Token": TOKEN}
-JSON = {**AUTH, "Content-Type": "application/json"}
+ORIGIN = {"Origin": f"http://127.0.0.1:{PORT}"}
+JSON = {**AUTH, **ORIGIN, "Content-Type": "application/json"}
 
 READY = """---
 title: {title}
@@ -75,6 +76,33 @@ class PortalCase(unittest.TestCase):
         return status, json.loads(body)
 
 
+class ChangeToken(PortalCase):
+    def raw(self, target, headers=AUTH):
+        return self.portal.handle("GET", target, headers)
+
+    def test_list_reads_carry_an_etag_and_a_match_is_a_bodyless_304(self):
+        for route in ("specs", "epics", "human"):
+            status, hdrs, _ = self.raw(f"/api/{route}")
+            self.assertEqual(status, 200)
+            etag = hdrs["ETag"]
+            status, hdrs, body = self.raw(f"/api/{route}", {**AUTH, "If-None-Match": etag})
+            self.assertEqual((status, body, hdrs["ETag"]), (304, b"", etag))
+            self.assertEqual(self.raw(f"/api/{route}", {**AUTH, "If-None-Match": '"x"'})[0], 200)
+
+    def test_the_token_survives_a_snapshot_rebuild_and_moves_with_content(self):
+        etag = self.raw("/api/specs")[1]["ETag"]
+        again = self.raw("/api/specs?refresh=1")
+        self.assertEqual(again[1]["ETag"], etag)
+        self.backend.create_spec("plans", READY.format(title="Delta"))
+        self.assertNotEqual(self.raw("/api/specs?refresh=1")[1]["ETag"], etag)
+
+    def test_a_304_still_needs_the_token_and_the_host(self):
+        etag = self.raw("/api/specs")[1]["ETag"]
+        self.assertEqual(self.raw("/api/specs", {**HOST, "If-None-Match": etag})[0], 401)
+        self.assertEqual(self.raw("/api/specs", {"Host": "evil:1", "X-Quenching-Token": TOKEN,
+                                                 "If-None-Match": etag})[0], 403)
+
+
 class Handlers(PortalCase):
     def test_list_is_lean_with_derived_stage_progress_and_rank(self):
         status, body = self.get("/api/specs")
@@ -86,6 +114,16 @@ class Handlers(PortalCase):
         self.assertEqual(row["tags"], ["alpha"])
         self.assertIn(row["stage"], body["stages"])
         self.assertEqual(sorted(r["rank"] for r in body["specs"]), [1, 2, 3])
+
+    def test_a_blocked_task_moves_the_spec_to_the_blocked_stage(self):
+        text = READY.format(title="Stuck").replace("- [ ] 2. second", "- [!] 2. second — waits")
+        self.backend.create_spec("plans", text)
+        _, body = self.get("/api/specs")
+        stuck = next(r for r in body["specs"] if r["title"] == "Stuck")
+        self.assertEqual(stuck["progress"]["blocked"], 1)
+        self.assertEqual(stuck["stage"], "blocked")
+        self.assertIn("blocked", body["stages"])
+        self.assertNotIn("blocked", [r["stage"] for r in body["specs"] if r["title"] != "Stuck"])
 
     def test_detail_carries_sections_tasks_and_records(self):
         status, body = self.get("/api/specs/1")
@@ -104,6 +142,111 @@ class Handlers(PortalCase):
 
     def test_epics_are_hidden_when_no_spec_is_an_epic(self):
         self.assertFalse(self.get("/api/epics")[1]["supported"])
+
+    def test_epics_carry_waves_dependencies_and_critical_path(self):
+        epic = """---
+title: Program
+date: 2026-01-01
+workItemType: epic
+---
+
+## Tasks
+
+### 1. First
+
+- [ ] S1 One — spec: #1
+- [ ] S2 Two — spec: #2 — after: S1
+
+### 2. Second
+
+- [ ] S3 Three — spec: #3 — after: S2
+"""
+        self.backend.create_spec("plans", epic)
+        body = self.get("/api/epics")[1]
+        self.assertTrue(body["supported"])
+        row = body["epics"][0]
+        self.assertEqual([i["label"] for i in row["items"]], ["S1", "S2", "S3"])
+        self.assertEqual(row["items"][1]["after"], ["S1"])
+        self.assertEqual(row["items"][1]["status"], "waiting")
+        self.assertEqual([g["group"] for g in row["groups"]], [1, 2])
+        self.assertEqual(row["criticalPath"], ["S1", "S2", "S3"])
+        self.assertIsNone(row["cycle"])
+        self.assertNotIn("member", row["items"][0])
+
+    def test_epics_report_a_dependency_cycle(self):
+        epic = """---
+title: Loop
+date: 2026-01-01
+workItemType: epic
+---
+
+## Tasks
+
+- [ ] S1 One — spec: #1 — after: S2
+- [ ] S2 Two — spec: #2 — after: S1
+"""
+        self.backend.create_spec("plans", epic)
+        row = self.get("/api/epics")[1]["epics"][0]
+        self.assertTrue(row["cycle"])
+        self.assertEqual(row["criticalPath"], [])
+
+    def test_human_lists_epic_members_blocked_tasks_and_unapproved_ready(self):
+        self.backend.create_spec("plans", READY.format(title="Member"))
+        mid = self.get("/api/specs")[1]["specs"][-1]["id"]
+        epic = f"""---
+title: Autopilot - decidir com o humano
+date: 2026-01-01
+workItemType: epic
+---
+
+## Tasks
+
+- [ ] S1 Decide it — spec: #{mid}
+- [ ] S2 Loose item
+"""
+        self.backend.create_spec("plans", epic)
+        other = """---
+title: Program
+date: 2026-01-01
+---
+
+## Tasks
+
+- [ ] S1 Elsewhere — spec: #1
+"""
+        self.backend.create_spec("plans", other)
+        blocked = READY.format(title="Stuck").replace(
+            "- [ ] 2. second", "- [!] 2. second — blocked: needs a call")
+        self.backend.create_spec("plans", blocked)
+        status, body = self.get("/api/human?refresh=1")
+        self.assertEqual(status, 200)
+        self.assertEqual([m["label"] for m in body["epicMembers"]], ["S1", "S2"])
+        self.assertEqual(body["epicMembers"][0]["id"], str(mid))
+        self.assertEqual(len(body["blocked"]), 1)
+        self.assertIn("needs a call", body["blocked"][0]["reasons"][0]["reason"])
+        self.assertEqual(body["count"], len({str(m["id"]) for m in body["epicMembers"] if m["id"]}
+                                            | {str(b["id"]) for b in body["blocked"]}
+                                            | {str(a["id"]) for a in body["awaitingApproval"]}) + 1)
+
+    def test_human_ignores_plain_specs_and_archived_epics_titled_like_the_mark(self):
+        plain = """---
+title: Painel decidir com o humano
+date: 2026-01-01
+---
+
+## Tasks
+
+- [ ] 1.1 Implement it
+"""
+        self.backend.create_spec("plans", plain)
+        status, body = self.get("/api/human?refresh=1")
+        self.assertEqual(status, 200)
+        self.assertEqual(body["epicMembers"], [])
+        self.assertEqual(body["count"], 0)
+
+    def test_human_needs_the_token(self):
+        status, _, _ = self.portal.handle("GET", "/api/human", HOST, b"")
+        self.assertEqual(status, 401)
 
     def test_capture_creates_a_spec_through_the_cli_verb(self):
         status, body = self.post("capture", {"title": "Delta", "problem": "It hurts."})
@@ -181,18 +324,57 @@ class Security(PortalCase):
                 self.assertEqual(self.portal.handle("GET", f"/api/{route}", HOST)[0], 401)
         self.assertEqual(self.portal.handle(
             "GET", "/api/specs", {**HOST, "X-Quenching-Token": "nope"})[0], 401)
-        self.assertEqual(self.portal.handle("POST", "/api/capture", HOST, b"{}")[0], 401)
+        self.assertEqual(self.portal.handle("POST", "/api/capture", {**HOST, **ORIGIN}, b"{}")[0], 401)
 
-    def test_token_in_the_query_reads_but_never_writes(self):
-        self.assertEqual(self.portal.handle("GET", f"/api/specs?token={TOKEN}", HOST)[0], 200)
-        status, _, _ = self.portal.handle(
-            "POST", f"/api/reorder?token={TOKEN}",
-            {**HOST, "Content-Type": "application/json"}, b'{"order":[1]}')
-        self.assertEqual(status, 401)
+    def test_the_query_token_is_never_accepted(self):
+        self.assertEqual(self.portal.handle("GET", f"/api/specs?token={TOKEN}", HOST)[0], 401)
+        self.assertEqual(self.portal.handle("GET", f"/?token={TOKEN}", HOST)[0], 401)
+
+    def test_the_cookie_authenticates_reads_and_writes(self):
+        jar = {**HOST, **ORIGIN, "Cookie": f"qtoken={TOKEN}", "Content-Type": "application/json"}
+        self.assertEqual(self.portal.handle("GET", "/api/specs", jar)[0], 200)
+        self.assertEqual(self.portal.handle("GET", "/", jar)[0], 200)
+        self.assertEqual(self.portal.handle("POST", "/api/reorder", jar, b'{"order":[1]}')[0], 200)
+        bad = {**jar, "Cookie": "qtoken=nope"}
+        self.assertEqual(self.portal.handle("GET", "/api/specs", bad)[0], 401)
+
+    def test_a_post_without_origin_is_refused_even_with_a_valid_token(self):
+        headers = {**AUTH, "Content-Type": "application/json"}
+        status, _, body = self.portal.handle("POST", "/api/reorder", headers, b'{"order":[1]}')
+        self.assertEqual((status, json.loads(body)["code"]), (403, "sp-portal-bad-origin"))
+
+    def test_the_nonce_trades_once_for_an_httponly_strict_cookie(self):
+        nonce = self.portal.nonce
+        status, headers, _ = self.portal.handle("GET", f"/?nonce={nonce}", HOST)
+        self.assertEqual((status, headers["Location"]), (303, "/"))
+        cookie = headers["Set-Cookie"]
+        for part in (f"qtoken={TOKEN}", "HttpOnly", "SameSite=Strict", "Path=/"):
+            self.assertIn(part, cookie)
+        self.assertEqual(self.portal.handle("GET", f"/?nonce={nonce}", HOST)[0], 401)
+        self.assertEqual(self.portal.handle("GET", "/?nonce=wrong", HOST)[0], 401)
+
+    def test_the_client_keeps_no_token(self):
+        js = (portal_mod.static_dir() / "app.js").read_text()
+        for needle in ("X-Quenching-Token", "sessionStorage", "?token", 'get("token")'):
+            self.assertNotIn(needle, js)
+
+    def test_the_open_url_carries_the_nonce_and_never_the_token(self):
+        server = portal_mod.make_server(self.tmp, token=TOKEN)
+        self.addCleanup(server.server_close)
+        args = mock.Mock(host="127.0.0.1", port=0, read_only=False, json=True, open=True)
+        out = mock.Mock()
+        opened = []
+        with mock.patch.object(portal_mod, "make_server", return_value=server), \
+                mock.patch("webbrowser.open", side_effect=opened.append), \
+                mock.patch.object(server, "serve_forever", side_effect=KeyboardInterrupt):
+            portal_mod.cmd_serve(args, self.tmp, out)
+        self.assertEqual(len(opened), 1)
+        self.assertNotIn(TOKEN, opened[0])
+        self.assertIn(f"nonce={server.portal.nonce}", opened[0])
 
     def test_the_page_needs_the_token_but_assets_do_not(self):
         self.assertEqual(self.portal.handle("GET", "/", HOST)[0], 401)
-        self.assertEqual(self.portal.handle("GET", f"/?token={TOKEN}", HOST)[0], 200)
+        self.assertEqual(self.portal.handle("GET", "/", AUTH)[0], 200)
         self.assertEqual(self.portal.handle("GET", "/app.js", HOST)[0], 200)
 
     def test_bad_host_is_refused_even_with_a_valid_token(self):
@@ -208,11 +390,11 @@ class Security(PortalCase):
             "POST", "/api/reorder", {**JSON, "Origin": "http://evil.example"}, b'{"order":[1]}')
         self.assertEqual((status, json.loads(body)["code"]), (403, "sp-portal-bad-origin"))
         ok = self.portal.handle("GET", "/api/specs",
-                                {**AUTH, "Origin": f"http://127.0.0.1:{PORT}"})
+                                {**AUTH, **ORIGIN})
         self.assertEqual(ok[0], 200)
 
     def test_writes_need_json_and_traversal_is_closed(self):
-        status, _, _ = self.portal.handle("POST", "/api/reorder", AUTH, b'{"order":[1]}')
+        status, _, _ = self.portal.handle("POST", "/api/reorder", {**AUTH, **ORIGIN}, b'{"order":[1]}')
         self.assertEqual(status, 415)
         self.assertEqual(self.portal.handle("GET", "/..%2f..%2fetc/passwd", HOST)[0], 404)
         self.assertEqual(self.portal.handle("GET", "/../../etc/passwd", HOST)[0], 404)
@@ -266,6 +448,37 @@ class LiveServer(PortalCase):
         with self.assertRaises(urllib.error.HTTPError) as ctx:
             urllib.request.urlopen(forged)
         self.assertEqual(ctx.exception.code, 403)
+
+
+class StdoutIsolation(unittest.TestCase):
+    def test_two_portals_never_capture_each_others_verb_output(self):
+        import time
+        roots = ["/repo/a", "/repo/b"]
+        portals = [portal_mod.Portal(r, TOKEN, False, "127.0.0.1", PORT) for r in roots]
+
+        def verb(args, root, emitter):
+            time.sleep(0.01)
+            print(json.dumps({"ok": True, "root": root}))
+            return 0
+
+        results, errors = [], []
+
+        def run(portal, root):
+            for _ in range(10):
+                try:
+                    results.append((root, portal._verb(verb, {})))
+                except Exception as e:  # noqa: BLE001
+                    errors.append(e)
+
+        threads = [threading.Thread(target=run, args=(p, r)) for p, r in zip(portals, roots)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(10)
+        self.assertEqual(errors, [])
+        self.assertEqual(len(results), 20)
+        for root, payload in results:
+            self.assertEqual(payload.get("root"), root)
 
 
 TOKEN_HEADER = portal_mod.TOKEN_HEADER

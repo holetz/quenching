@@ -31,8 +31,8 @@ never on prose.
 
 ### 1. Select the spec
 An ID was given → use it. Otherwise infer from the conversation, auto-select when exactly one spec
-is under way, or run `cq specs list --json` and pick with **AskUserQuestion**. Announce
-"Building spec: `<id>`" and how to override. Where **AskUserQuestion** is unavailable (a sub-agent), do not ask: return `STATE: blocked` with `NOTE: needs-human: <question>`.
+is under way, or run `cq specs list --json` and pick on a decision sheet ([questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared mechanics §1). Announce
+"Building spec: `<id>`" and how to override. A sub-agent does not ask: return `STATE: blocked` with `NOTE: needs-human:` carrying the decision sheet.
 **Done when:** one spec is resolved.
 
 ### 2. Take the tree, the isolation and the state in one read
@@ -107,7 +107,7 @@ Skill("quenching:git:branch", "<id>")
 
 **When this run's input carried `autonomous`, pass it on** — `Skill("quenching:git:branch", "<id> autonomous")`
 — so the command takes the worktree unasked, from the remote base, instead of stopping the run on
-its question. Otherwise it runs its own **AskUserQuestion**; it is a `Skill` call, never `context: fork`. When it returns,
+its question. Otherwise it asks on its own decision sheet; it is a `Skill` call, never `context: fork`. When it returns,
 re-read the state it left:
 
 ```bash
@@ -346,9 +346,9 @@ g. **Run and report the declared hook for this event, and move on.** Once the sp
 h. **At a section boundary, keep the task commits, read the session size once, and continue.** The
    branch is at a clean, independently anchored boundary; another section may still be ahead. Run
    `cq components session context --json` and print its peak and budget in the banner. Exit 0 or 2
-   → continue to the next task: the boundary is not a question. Exit 1 → ask once, with
-   **AskUserQuestion**: stop here and resume with `/quenching:specs:execute <id>` in a new session
-   "(Recommended)", the measured peak in its description, or continue. Otherwise stop only when the
+   → continue to the next task: the boundary is not a question. Exit 1 → ask once, on a
+   decision sheet: stop here and resume with `/quenching:specs:execute <id>` in a new session
+   as option A (recommended), the measured peak in its own text, or continue. Otherwise stop only when the
    workflow reaches a question that requires a human answer, or under the pause conditions below. See
    [execution-cadence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-cadence.md)
    §The section boundary.
@@ -418,9 +418,9 @@ mid-plan.
 **At 100%**, after the block, offer once to chain straight into `/quenching:specs:conclude` (the `Skill` tool, which takes
 the registry name): the branch review,
 the emergent `/docs/`, the merge, and the archive-time distillation. Declined → the block already
-named the command, so stop. Over budget (the session-size line's exit 1) → the offer's first option,
-"(Recommended)", is to run `/quenching:specs:conclude <id>` in a new session, the measured peak in
-its description; chaining here stays an option. Paused → say why and wait.
+named the command, so stop. Over budget (the session-size line's exit 1) → the offer's first option
+(A, recommended) is to run `/quenching:specs:conclude <id>` in a new session, the measured peak in
+its own text; chaining here stays an option. Paused → say why and wait.
 **Done when:** the summary is shown and the hand-off has been offered or declined.
 
 ## Output during the loop
