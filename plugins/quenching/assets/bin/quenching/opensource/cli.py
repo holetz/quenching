@@ -1,4 +1,4 @@
-"""The ``cq opensource`` route: read-only ``doctor`` and ``status``."""
+"""The ``cq opensource`` route: read-only ``doctor`` and ``status``, and the bounded ``apply``."""
 from __future__ import annotations
 
 import argparse
@@ -8,6 +8,7 @@ from quenching.common.front import build_parser as build_front_parser, resolve_r
 from quenching.common.output import emit, refuse
 from quenching.common.version import VERSION
 from quenching.opensource.aggregate import doctor, status
+from quenching.opensource.apply import Refusal, apply
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -17,6 +18,13 @@ def build_parser() -> argparse.ArgumentParser:
          ("status", "read every owner's catalog answers and the baseline level, read-only")),
     )
     parser.add_argument("--version", action="store_true", help="print the opensource version")
+    sub = next(action for action in parser._actions if isinstance(action, argparse._SubParsersAction))
+    child = sub.add_parser("apply", help="write one community artifact from its pinned template")
+    child.add_argument("--artifact", required=True, help="the template's artifact name")
+    child.add_argument("--var", action="append", default=[], metavar="KEY=VALUE",
+                       help="a declared placeholder value (repeatable); `spdx` selects the license")
+    child.add_argument("--dry-run", action="store_true", help="report without writing")
+    child.add_argument("--json", action="store_true", help="print machine-readable output")
     return parser
 
 
@@ -39,6 +47,15 @@ def main(argv: list[str]) -> int:
     if not os.path.isdir(root):
         return refuse({"code": "os-root-missing", "root": root,
                        "message": f"repository root does not exist: {root}"}, as_json)
+    if args.cmd == "apply":
+        values = dict(item.partition("=")[::2] for item in args.var)
+        try:
+            result = apply(root, args.artifact, values, dry_run=args.dry_run)
+        except Refusal as refusal:
+            return refuse(refusal.payload, as_json)
+        verb = "would write" if result["dryRun"] else "wrote"
+        emit(as_json, result, f"opensource apply — {verb} {result['target']} from {result['source']}")
+        return 0
     payload = doctor(root) if args.cmd == "doctor" else status(root)
     emit(as_json, payload, _human(payload))
     return 0 if payload["ok"] else 1

@@ -1,6 +1,7 @@
 """Executable proofs for the ``cq opensource`` front: aggregation, level, applicability, apply."""
 from __future__ import annotations
 
+import hashlib
 import json
 import pathlib
 import subprocess
@@ -14,7 +15,8 @@ except ModuleNotFoundError:  # package-qualified unittest invocation from the re
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
 from quenching.controls.evaluate import load_catalog
-from quenching.opensource.aggregate import _level, doctor, status, template_integrity
+from quenching.opensource.aggregate import TEMPLATES, _level, doctor, load_sources, status, template_integrity
+from quenching.opensource.apply import Refusal, apply
 
 CQ = pathlib.Path(__file__).resolve().parent.parent / "assets" / "bin" / "cq"
 
@@ -98,6 +100,63 @@ class DoctorTest(unittest.TestCase):
         code, payload = _cq("--root", "/nonexistent/quenching-root", "opensource", "status", "--json")
         self.assertEqual(2, code)
         self.assertEqual("os-root-missing", payload["code"])
+
+
+class ApplyTest(unittest.TestCase):
+    def test_every_upstream_template_matches_its_pinned_sha256(self):
+        pinned = [e for e in load_sources()["templates"] if e.get("sha256")]
+        self.assertEqual({"license", "conduct", "dco"}, {e["artifact"] for e in pinned})
+        for entry in pinned:
+            with self.subTest(path=entry["path"]):
+                digest = hashlib.sha256((TEMPLATES / entry["path"]).read_bytes()).hexdigest()
+                self.assertEqual(entry["sha256"], digest)
+                self.assertTrue(entry["url"].startswith("https://"))
+
+    def test_the_upstream_text_is_copied_with_only_its_declared_placeholder_filled(self):
+        upstream = (TEMPLATES / "upstream" / "code_of_conduct.md").read_bytes()
+        with tempfile.TemporaryDirectory() as root:
+            code, payload = _cq("--root", root, "opensource", "apply", "--artifact", "conduct",
+                                "--var", "contact=conduct@example.org", "--json")
+            written = pathlib.Path(root, "CODE_OF_CONDUCT.md").read_bytes()
+            again, refusal = _cq("--root", root, "opensource", "apply", "--artifact", "conduct",
+                                 "--var", "contact=other@example.org", "--json")
+            unchanged = pathlib.Path(root, "CODE_OF_CONDUCT.md").read_bytes()
+        self.assertEqual(0, code)
+        self.assertTrue(payload["written"])
+        self.assertEqual(upstream.replace(b"[INSERT CONTACT METHOD]", b"conduct@example.org"), written)
+        self.assertEqual(2, again)
+        self.assertEqual("os-target-exists", refusal["code"])
+        self.assertEqual(written, unchanged)
+
+    def test_dry_run_writes_nothing(self):
+        with tempfile.TemporaryDirectory() as root:
+            result = apply(root, "pr-template", {}, dry_run=True)
+            self.assertFalse(pathlib.Path(root, ".github").exists())
+        self.assertFalse(result["written"])
+        self.assertEqual(".github/PULL_REQUEST_TEMPLATE.md", result["target"])
+
+    def test_the_license_is_selected_by_spdx_and_unvendored_ids_refuse(self):
+        with tempfile.TemporaryDirectory() as root:
+            apply(root, "license", {"spdx": "MIT", "year": "2026", "holders": "Ada"})
+            self.assertIn("Copyright (c) 2026 Ada", pathlib.Path(root, "LICENSE").read_text())
+            with self.assertRaises(Refusal) as caught:
+                apply(root, "license", {"spdx": "GPL-3.0-only"}, dry_run=True)
+        self.assertEqual("os-license-unvendored", caught.exception.payload["code"])
+
+    def test_missing_and_undeclared_values_refuse(self):
+        with tempfile.TemporaryDirectory() as root:
+            for values, code in (({}, "os-var-missing"),
+                                 ({"contact": "a", "extra": "b"}, "os-var-unknown")):
+                with self.subTest(code=code), self.assertRaises(Refusal) as caught:
+                    apply(root, "conduct", values)
+                self.assertEqual(code, caught.exception.payload["code"])
+            self.assertEqual([], list(pathlib.Path(root).iterdir()))
+
+    def test_status_reads_without_writing(self):
+        with tempfile.TemporaryDirectory() as root:
+            status(root)
+            doctor(root)
+            self.assertEqual([], list(pathlib.Path(root).iterdir()))
 
 
 if __name__ == "__main__":
