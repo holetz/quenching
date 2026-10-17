@@ -75,7 +75,7 @@ STAGE_ORDER = ["captured", "ready", "approved", "executing", "blocked", "review"
                "archived"]
 CONFLICT_MARKERS = ("stale", "conflict", "write-once", "changed")
 SESSION_FIELDS = ("sessionId", "cwd", "state", "status", "statusSince", "lastEvent",
-                  "pendingQuestion", "activity")
+                  "pendingQuestion", "pendingTool", "activity")
 SUBAGENT_FIELDS = ("agentType", "start", "end", "active")
 
 
