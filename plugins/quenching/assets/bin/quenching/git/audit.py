@@ -790,7 +790,8 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
     the base, a gate file (`scripts/verify_repo.sh`, `plugins/quenching/assets/checks/**`) deleted or
     with a removed non-comment line that no added line of that file repeats; `severity: warn` — a
     `noqa`, `type: ignore`, `skip`, `skipIf`, `skipUnless` or `xfail` added to a code file. A reworded
-    gate step reads as shrunk: the conductor settles it."""
+    gate step reads as shrunk: the conductor settles it, except a line whose `quenching:<head>`
+    ids, rewritten by the BASE manifest's namespace map, are an added line verbatim."""
     code, out, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "--name-status",
                               "-z", "--no-renames", f"{base}...{tip}", env=env)
     if code != 0:
@@ -804,6 +805,8 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
         return text if c == 0 else ""
 
     pairs = list(zip(fields[0::2], fields[1::2]))
+    view = _modules(cwd, base, env, errors)
+    mapping = view[2] if view else {}
     disc = _read_discover(show(tip, "scripts/verify_repo.sh"))
     root, pattern = disc if disc else (None, "test*.py")
     inconclusive = disc is False
@@ -885,7 +888,8 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
             found.append({"path": path, "severity": "fail", "kind": "test-lost-asserts",
                           "detail": "no assert left"})
         if gate:
-            lost = [m for m in minus if m and not m.startswith("#") and m not in plus]
+            lost = [m for m in minus if m and not m.startswith("#") and m not in plus
+                    and _swap(m, mapping) not in plus]
             if lost:
                 found.append({"path": path, "severity": "fail", "kind": "gate-shrunk", "detail": lost})
         if CODE_EXT.search(path):
