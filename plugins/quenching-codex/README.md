@@ -94,12 +94,12 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](assets/references/align/convergence.md).
 
-## The 60 commands
+## The 61 commands
 
 **One file per entry point** — Codex merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs; there is
 no `skills/` tree and no wrapper. The tables below are the manual, and the count is a property of
-their rows rather than a second structural inventory: the `60` in this heading is the manual's
+their rows rather than a second structural inventory: the `61` in this heading is the manual's
 canonical displayed total, while [`tests/test_readme_surface.py`](tests/test_readme_surface.py)
 reads it and fails the suite whenever these tables
 and `commands/**` disagree
@@ -191,6 +191,7 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 | --- | --- |
 | `quenching-opensource-align` | Probes applicability, plans the license, contributing, conduct, support, governance, owners and template artifacts on one OK, and writes each through `cq opensource apply` from a pinned template, never choosing the owner's license, maintainers, contact or funding. |
 | `quenching-opensource-status` | Reports every owner's catalog answers, the OSPS baseline level reached and `os-*` findings without writing. |
+| `quenching-opensource-readiness` | Assesses secrets in tree and history, internal identifiers, attribution and the owner's license and consent evidence before a repository goes public, read-only; reports blockers, warnings and unmeasured coverage and never approves publication. |
 
 ### The security pillar — read-only repository security questions
 

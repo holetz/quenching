@@ -1,4 +1,4 @@
-"""The ``cq opensource`` route: read-only ``doctor`` and ``status``, and the bounded ``apply``."""
+"""The ``cq opensource`` route: read-only ``doctor``, ``status`` and ``readiness``, and the bounded ``apply``."""
 from __future__ import annotations
 
 import argparse
@@ -9,6 +9,7 @@ from quenching.common.output import emit, refuse
 from quenching.common.version import VERSION
 from quenching.opensource.aggregate import doctor, status
 from quenching.opensource.apply import Refusal, apply
+from quenching.opensource.readiness import DEFAULT_TIMEOUT_S, assess
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -25,6 +26,12 @@ def build_parser() -> argparse.ArgumentParser:
                        help="a declared placeholder value (repeatable); `spdx` selects the license")
     child.add_argument("--dry-run", action="store_true", help="report without writing")
     child.add_argument("--json", action="store_true", help="print machine-readable output")
+    child = sub.add_parser("readiness", help="assess tree and history before making the repository public, read-only")
+    child.add_argument("--evidence", metavar="PATH",
+                       help="the owner's reviewed dependency-license and history-consent evidence (JSON)")
+    child.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT_S, metavar="SECONDS",
+                       help="per-scanner bound")
+    child.add_argument("--json", action="store_true", help="print machine-readable output")
     return parser
 
 
@@ -33,6 +40,12 @@ def _human(payload: dict) -> str:
     codes = ", ".join(sorted({row["code"] for row in payload["findings"]})) or "none"
     return (f"opensource {payload.get('applicability', {}).get('state', 'status')} — {payload['root']}; "
             f"baseline {baseline['version']} level {baseline['level']}; findings: {codes}")
+
+
+def _readiness_human(payload: dict) -> str:
+    unmeasured = ", ".join(row["class"] for row in payload["coverage"] if row["state"] != "measured") or "none"
+    return (f"opensource readiness — {len(payload['blockers'])} blocker(s), {len(payload['warnings'])} "
+            f"warning(s); unmeasured: {unmeasured}; never a publication approval")
 
 
 def main(argv: list[str]) -> int:
@@ -56,6 +69,10 @@ def main(argv: list[str]) -> int:
         verb = "would write" if result["dryRun"] else "wrote"
         emit(as_json, result, f"opensource apply — {verb} {result['target']} from {result['source']}")
         return 0
+    if args.cmd == "readiness":
+        payload, code = assess(root, args.evidence, args.timeout)
+        emit(as_json, payload, _readiness_human(payload))
+        return code
     payload = doctor(root) if args.cmd == "doctor" else status(root)
     emit(as_json, payload, _human(payload))
     return 0 if payload["ok"] else 1
