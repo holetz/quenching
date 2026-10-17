@@ -39,8 +39,11 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    a reported failure decides your verdict on its own, and a claimed failure is FAIL.
 4. Scope: the payload's `changed` is a subset of the union of the tasks' `files:` (plus spec
    records). The `tasks` list of `cq specs show --spec <id> --json` carries no `files:`: read it
-   per task with `cq specs show --spec <id> --task <t> --json` (`--task` repeats). List every
-   path outside it.
+   per task with `cq specs show --spec <id> --task <t> --json` (`--task` repeats). First remove the
+   payload's `generated`: paths the audit proved a byte-for-byte copy of their source in a module the
+   base manifest declares. List every remaining path outside the union. A generated file that was
+   edited by hand, a derived output that is no copy and an authored file are not in `generated`,
+   so they stay listed.
 5. Hygiene: the payload's `stash` and `status` are both empty.
 6. Delivery: when the worker reported a PR, `gh pr view <n>` exists and targets the base.
 

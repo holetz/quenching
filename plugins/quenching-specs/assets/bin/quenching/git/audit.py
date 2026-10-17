@@ -24,7 +24,10 @@ plugin root the base or the tip declares (a `.claude-plugin/plugin.json`, a rela
 any depth, so an OKF standard filed under `standards/agents/` is no grant. A file a CI root of the
 base or the tip includes (GitLab `include`, top level or under a job's `trigger:`, Azure `template:`,
 `@self` included, GitHub `uses: ./`, where `./` is the whole repository), transitively, is
-surface like the root itself. Nothing here executes the
+surface like the root itself. `generated` is the part of `changed` that is a byte-for-byte copy of its
+source file under a module the BASE's `plugins/quenching/assets/modules.json` declares (same relative
+path, same blob at the tip, or absent from both); derived outputs that are no copy are never in it.
+Nothing here executes the
 audited branch's code: the gate is certified by CI before the merge, never by this verb."""
 from __future__ import annotations
 
@@ -819,6 +822,44 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
     return found
 
 
+MODULES = "plugins/quenching/assets/modules.json"
+
+
+def _blob(cwd: str, tip: str, path: str, env: dict[str, str]) -> str | None:
+    code, out = _run(cwd, "rev-parse", "--verify", "--quiet", "--end-of-options", f"{tip}:{path}", env=env)
+    return out.strip() if code == 0 and out.strip() else None
+
+
+def _generated(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, str],
+               errors: list[dict]) -> list[str]:
+    """The changed paths that are a byte-for-byte copy of their source file in a declared module.
+    The manifest is read from the BASE, so the branch cannot declare its own outputs."""
+    if not changed:
+        return []
+    code, out, err = _git_run(cwd, *SAFE, "show", f"{base}:{MODULES}", env=env)
+    if code != 0:
+        return []                         # no manifest at the base: nothing is declared generated
+    try:
+        manifest = json.loads(out)
+        source = manifest["source"].strip("/")
+        roots = [m["path"].strip("/") for m in manifest["modules"]
+                 if m.get("published") and ("generated" in m or "owned" in m)]
+    except (ValueError, KeyError, TypeError, AttributeError) as exc:
+        errors.append(_error(("show", MODULES), 0, f"unreadable module manifest: {exc}"))
+        return []
+    found = []
+    for path in changed:
+        for root in roots:
+            if root != source and path.startswith(root + "/"):
+                rel = path[len(root) + 1:]
+                mine = _blob(cwd, tip, path, env)
+                theirs = _blob(cwd, tip, f"{source}/{rel}", env)
+                if mine == theirs:
+                    found.append(path)
+                break
+    return found
+
+
 def cmd_audit(args) -> int:
     cwd = os.getcwd()
     worktree = os.path.realpath(args.worktree)
@@ -866,12 +907,14 @@ def cmd_audit(args) -> int:
                      "head": _rewrites(worktree, "HEAD", env, errors)},
     }
     payload["grants"] = _grants(worktree, base, tip, payload["changed"], env, errors)
+    payload["generated"] = _generated(worktree, base, tip, payload["changed"], env, errors)
     payload["lowered"] = _lowered(worktree, base, tip, env, errors)
     payload["errors"] = errors
     payload["complete"] = not errors
 
     lines = [f"worktree: {worktree}", f"branch: {args.branch} ({tip[:12]}) over {args.base}",
              f"commits: {len(payload['commits'])}", f"changed: {len(payload['changed'])} path(s)",
+             f"generated: {len(payload['generated'])} path(s)",
              f"status: {len(payload['status'])} entries", f"stash: {len(payload['stash'])} entries",
              f"grants added: {sum(len(g['added']) for g in payload['grants'])}",
              f"lowered: {len(payload['lowered'])} entr(ies)"]
