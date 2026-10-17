@@ -16,6 +16,7 @@ from quenching.common.io import read_text, write_text
 
 CONFIG_FILE = os.path.join(".claude", "quenching.json")
 LEGACY_CONFIG_FILE = "config.json"
+USER_CONFIG_ENV = "QUENCHING_USER_CONFIG"
 NAMESPACES = ("shared", "specs", "ops", "proof", "delivery")
 
 # Root-level keys accepted by the pre-envelope format. They are diagnostic-only now: a front
@@ -124,6 +125,42 @@ def _migration_refusal(path: str, obj: dict, legacy_keys: list[str]) -> dict | N
     }
 
 
+def user_config_path() -> str:
+    """The user layer's file: `$QUENCHING_USER_CONFIG`, else `~/.config/quenching/config.json`."""
+    override = os.environ.get(USER_CONFIG_ENV)
+    if override:
+        return override
+    return os.path.join(os.path.expanduser("~"), ".config", "quenching", "config.json")
+
+
+def _load_user_layer() -> dict:
+    """Read the user layer: the same envelope, namespaces only.
+
+    The root `backend` and the pre-envelope flat keys describe one repository, so they are
+    ignored here and listed in `ignoredKeys`. An unreadable file is reported, never fatal.
+    """
+    path = user_config_path()
+    out = {"path": path, "present": os.path.isfile(path), "unparseable": None,
+           "namespaces": {}, "ignoredKeys": []}
+    if not out["present"]:
+        return out
+    try:
+        obj = json.loads(read_text(path) or "")
+    except json.JSONDecodeError as exc:
+        out["unparseable"] = str(exc)
+        return out
+    if not isinstance(obj, dict):
+        out["unparseable"] = f"top level is {type(obj).__name__}, not an object"
+        return out
+    for key, value in obj.items():
+        if key in NAMESPACES and isinstance(value, dict):
+            out["namespaces"][key] = value
+        else:
+            out["ignoredKeys"].append(key)
+    out["ignoredKeys"].sort()
+    return out
+
+
 def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     """Return the parsed envelope and metadata without interpreting any namespace."""
     repo = find_repo_root(root)
@@ -151,8 +188,17 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
         "invalidNamespaces": [],
         "legacyPath": os.path.join(root, LEGACY_CONFIG_FILE)
         if os.path.isfile(os.path.join(root, LEGACY_CONFIG_FILE)) else None,
+        "userConfig": {"path": None, "present": False, "unparseable": None,
+                       "ignoredKeys": [], "keys": {}},
     }
+    user = _load_user_layer()
+    out["userConfig"] = {"path": user["path"], "present": user["present"],
+                         "unparseable": user["unparseable"],
+                         "ignoredKeys": user["ignoredKeys"],
+                         "keys": {name: sorted(value)
+                                  for name, value in user["namespaces"].items()}}
     if not out["present"]:
+        _apply_user_layer(out, user["namespaces"], {})
         return out
     try:
         obj = json.loads(read_text(path) or "")
@@ -171,6 +217,7 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
             out["namespaces"][name] = value
         elif name in obj:
             out["invalidNamespaces"].append(name)
+    _apply_user_layer(out, user["namespaces"], obj)
     out["legacyKeys"] = sorted(key for key in obj if key in LEGACY_KEYS)
     envelope_keys = {"backend", *NAMESPACES}
     out["unknownKeys"] = sorted(
@@ -182,6 +229,23 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     )
     out["migrationRefusal"] = _migration_refusal(path, obj, out["legacyKeys"])
     return out
+
+
+def _apply_user_layer(out: dict, layer: dict, repo: dict) -> None:
+    """Fill each namespace with the user's keys the repository does not declare.
+
+    The repository wins key by key: a key present in the repository's namespace replaces the
+    user's value whole, never merges into it. A namespace the repository declares as a
+    non-object stays invalid and the user layer does not paper over it.
+    """
+    for name, values in layer.items():
+        if name in out["invalidNamespaces"] or (name in repo and not isinstance(repo[name], dict)):
+            continue
+        merged = {**values, **(repo.get(name) or {})}
+        out[name] = merged
+        out["namespaces"][name] = merged
+        if isinstance(out["data"], dict):
+            out["data"] = {**out["data"], name: merged}
 
 
 def namespace(config: dict, name: str) -> dict:
