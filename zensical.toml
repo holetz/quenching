@@ -147,6 +147,7 @@
         "standards/workflows/retiring-a-standard.md",
         "standards/workflows/task-execution.md",
         "standards/workflows/worktree-setup.md",
+        "standards/workflows/work-host.md",
       ] },
     ] },
     { "Concepts" = [
