@@ -287,6 +287,49 @@ class TheSettings(unittest.TestCase):
             self.assertEqual(1, len(load_settings(raw)[1]))
 
 
+class TheExecutorSettings(unittest.TestCase):
+    write = TheSettings.write
+
+    def test_the_executor_is_on_by_default_and_outside_cross_review(self):
+        with tempfile.TemporaryDirectory() as raw:
+            self.write(pathlib.Path(raw), {"crossReview": "off"})
+            settings, warnings = load_settings(raw)
+        self.assertEqual([], warnings)
+        self.assertEqual(DEFAULTS["executor"], settings["executor"])
+        self.assertEqual((True, "off", 20000, 10, 15),
+                         tuple(settings["executor"][k] for k in (
+                             "enabled", "sandbox", "maxTaskTokens", "reservePercent",
+                             "stopLossPercent")))
+
+    def test_declared_executor_values_override_the_defaults(self):
+        with tempfile.TemporaryDirectory() as raw:
+            self.write(pathlib.Path(raw), {"executor": {
+                "enabled": False, "modelSmall": " s ", "sandbox": "workspace-write",
+                "windowsSandbox": "elevated", "maxTaskTokens": 5000, "reservePercent": 5}})
+            settings, warnings = load_settings(raw)
+        self.assertEqual([], warnings)
+        executor = settings["executor"]
+        self.assertEqual((False, "s", "workspace-write", "elevated", 5000, 5, 15),
+                         (executor["enabled"], executor["modelSmall"], executor["sandbox"],
+                          executor["windowsSandbox"], executor["maxTaskTokens"],
+                          executor["reservePercent"], executor["stopLossPercent"]))
+        self.assertEqual("off", DEFAULTS["executor"]["sandbox"])
+
+    def test_bad_executor_values_fall_back_and_are_named(self):
+        with tempfile.TemporaryDirectory() as raw:
+            self.write(pathlib.Path(raw), {"executor": {
+                "enabled": "yes", "modelVerified": "", "reasoningEffort": "max",
+                "sandbox": "danger-full-access", "maxTaskTokens": True,
+                "stopLossPercent": 101}})
+            settings, warnings = load_settings(raw)
+        self.assertEqual(6, len(warnings))
+        self.assertEqual(DEFAULTS["executor"], settings["executor"])
+        with tempfile.TemporaryDirectory() as raw:
+            self.write(pathlib.Path(raw), {"executor": "on"})
+            self.assertEqual(["shared.codex.executor is not an object; defaults apply"],
+                             load_settings(raw)[1])
+
+
 class TheSandboxCheck(FakeCodex):
     def setUp(self):
         super().setUp()
