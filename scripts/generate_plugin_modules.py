@@ -128,6 +128,31 @@ def closure_findings(root: Path, manifest: dict, module: dict, tree: dict) -> li
     return findings
 
 
+PILLAR = re.compile(r'Pillar\(\s*"quenching\.([a-z_]+)')
+
+
+def ownership_findings(root: Path, manifest: dict) -> list[str]:
+    """Every shipped package, `cq` pillar and reference has a module that embeds it."""
+    source = root / manifest["source"]
+    principal = [m for m in manifest["modules"] if "owned" in m]
+    if not principal:
+        return []
+    owned = {p for m in principal for p in m["owned"]["packages"]}
+    packages = owned | {p for m in principal for p in m["generatedSupport"]["packages"]}
+    references = {r for m in principal for r in m["generatedSupport"]["references"]}
+    findings = []
+    for path in sorted((source / "assets/bin/quenching").iterdir()):
+        if path.is_dir() and path.name != "__pycache__" and path.name not in packages:
+            findings.append(f"package {path.name} has no owner module in the manifest")
+    for package in sorted(set(PILLAR.findall((source / "assets/bin/cq").read_text(encoding="utf-8")))):
+        if package not in owned:
+            findings.append(f"cq pillar package {package} has no owner module (owned.packages)")
+    for path in sorted((source / "assets/references").iterdir()):
+        if path.is_dir() and path.name not in references:
+            findings.append(f"reference {path.name} is shipped by no module")
+    return findings
+
+
 def authored_findings(root: Path, module: dict) -> list[str]:
     """A consumer's hand-written prose never names an unpublished /quenching: id."""
     findings = []
@@ -243,7 +268,7 @@ def main(argv: list[str] | None = None) -> int:
         consumers += [(m, principal_tree(ROOT, manifest, m)) for m in manifest["modules"]
                       if m["published"] and "owned" in m]
         # Preflight the complete plan, including published surfaces, before any file mutation.
-        findings = published_findings(ROOT, manifest)
+        findings = published_findings(ROOT, manifest) + ownership_findings(ROOT, manifest)
         # Planned principal modules are proved closed too, in memory, before they are activated.
         findings += [line for module in manifest["modules"] if "owned" in module
                      for line in closure_findings(ROOT, manifest, module,
@@ -262,7 +287,7 @@ def main(argv: list[str] | None = None) -> int:
             write_tree(ROOT, module, tree)
         print(f"generated modules rewritten ({len(drift)} paths changed)")
         # Generation repairs copied surfaces only; authored version drift remains a finding.
-        remaining = published_findings(ROOT, manifest) + [
+        remaining = published_findings(ROOT, manifest) + ownership_findings(ROOT, manifest) + [
             line for module, tree in consumers if "owned" in module
             for line in closure_findings(ROOT, manifest, module, tree)] + [
             line for module, _ in consumers for line in authored_findings(ROOT, module)]
