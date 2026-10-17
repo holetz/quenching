@@ -327,6 +327,27 @@ class PrincipalPartition(unittest.TestCase):
         with self.assertRaises(ValueError):
             published_id(OLD + "nowhere:x", mapping)
 
+    def test_every_package_pillar_and_reference_has_an_owner_module(self):
+        manifest = load_manifest(REPO)
+        self.assertEqual([], generator.ownership_findings(REPO, manifest))
+        specs = next(m for m in manifest["modules"] if m["name"] == "quenching-specs")
+        for package in ("codex", "portal"):
+            broken = copy.deepcopy(manifest)
+            owner = next(m for m in broken["modules"] if m["name"] == "quenching-specs")
+            owner["owned"]["packages"].remove(package)
+            lines = generator.ownership_findings(REPO, broken)
+            self.assertTrue(any(f"package {package} has no owner" in x for x in lines), lines)
+            self.assertTrue(any(f"pillar package {package} has no owner" in x for x in lines), lines)
+        broken = copy.deepcopy(manifest)
+        for module in broken["modules"]:
+            if "owned" in module:
+                support = module["generatedSupport"]["references"]
+                if "opensource-controls" in support:
+                    support.remove("opensource-controls")
+        lines = generator.ownership_findings(REPO, broken)
+        self.assertEqual(["reference opensource-controls is shipped by no module"], lines)
+        self.assertIn("codex", specs["owned"]["packages"])
+
     def test_principal_modules_activate_together_and_unpublish_the_source(self):
         manifest = load_manifest(REPO)
         with tempfile.TemporaryDirectory(dir=REPO / ".quenching") as tmp:
