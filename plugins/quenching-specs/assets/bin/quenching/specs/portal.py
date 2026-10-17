@@ -20,6 +20,10 @@ SECURITY
 * Writes need `application/json` and are refused SERVER-SIDE
   when the portal is `--read-only` or the backend itself is read-only.
 * A refusal or conflict is an HTTP error that carries the CLI's refusal `code`; never a success.
+* `~/.claude` is read only under `--sessions` (off by default), only by `GET /api/sessions`, and
+  only through the reader `cq` lends from the session pillar (`quenching.common.lent`), so this
+  module never imports `session` and the reader copy, which lends nothing, refuses the flag;
+  each row is rebuilt from `SESSION_FIELDS`, never copied by key.
 """
 from __future__ import annotations
 
@@ -41,6 +45,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 from quenching.common.dates import today
+from quenching.common.lent import borrow
 from quenching.common.output import OK
 from quenching.specs.backends import open_backend
 from quenching.specs.backends.base import BackendRefusal, SpecBackend, transport_read_only
@@ -64,6 +69,9 @@ MAX_BODY = 1_000_000
 STAGE_ORDER = ["captured", "ready", "approved", "executing", "blocked", "review",
                "archived"]
 CONFLICT_MARKERS = ("stale", "conflict", "write-once", "changed")
+SESSION_FIELDS = ("sessionId", "cwd", "state", "status", "statusSince", "lastEvent",
+                  "pendingQuestion", "activity")
+SUBAGENT_FIELDS = ("agentType", "start", "end", "active")
 
 
 def static_dir() -> Path | None:
@@ -84,10 +92,10 @@ def _json(status: int, obj: dict) -> tuple[int, dict, bytes]:
         json.dumps(obj, ensure_ascii=False).encode("utf-8")
 
 
-def _validated(headers: dict, obj: dict) -> tuple[int, dict, bytes]:
-    """A list read with a change token: the ETag hashes the content without `fetchedAt` (which
-    moves on every snapshot rebuild), and a matching `If-None-Match` is a body-less 304."""
-    stable = {k: v for k, v in obj.items() if k != "fetchedAt"}
+def _validated(headers: dict, obj: dict, volatile: str = "fetchedAt") -> tuple[int, dict, bytes]:
+    """A list read with a change token: the ETag hashes the content without `volatile` (which
+    moves on every rebuild), and a matching `If-None-Match` is a body-less 304."""
+    stable = {k: v for k, v in obj.items() if k != volatile}
     etag = '"' + hashlib.sha256(json.dumps(
         stable, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()[:32] + '"'
     if etag in [t.strip() for t in headers.get("if-none-match", "").split(",")]:
@@ -128,8 +136,10 @@ class Portal:
     `_STDIO_LOCK` around the redirection, which keeps two portals from capturing each other."""
 
     def __init__(self, root: str, token: str, read_only: bool = False,
-                 host: str = "127.0.0.1", port: int = 0, nonce: str | None = None) -> None:
+                 host: str = "127.0.0.1", port: int = 0, nonce: str | None = None,
+                 sessions: dict | None = None) -> None:
         self.root, self.token, self.read_only = root, token, read_only
+        self.sessions = sessions  # {"read"} lent by the session pillar under --sessions, else None
         self.nonce: str | None = nonce if nonce is not None else secrets.token_urlsafe(18)
         self.host, self.port = host, port
         self.lock = threading.RLock()
@@ -252,7 +262,10 @@ class Portal:
             ok, why = self.writes_enabled()
             return _json(200, {"ok": True, "writable": ok, "readOnlyReason": why,
                                "ttlSeconds": TTL_SECONDS, "stages": STAGE_ORDER,
-                               "headings": canonical_headings()})
+                               "headings": canonical_headings(),
+                               "sessions": self.sessions is not None})
+        if route == "sessions" and self.sessions is not None:
+            return _validated(headers, self._sessions(), volatile="generatedAt")
         with self.lock:
             snap = self._snapshot(fresh)
             if isinstance(snap, tuple):
@@ -426,6 +439,25 @@ class Portal:
                     1 for m in epic_members if not m["id"]),
                 "epicMembers": epic_members, "blocked": blocked, "awaitingApproval": waiting}
 
+    def _sessions(self) -> dict:
+        """The live sessions inside this repository's worktrees, rebuilt field by field."""
+        live, trees = self.sessions["read"](self.root)
+        reals = sorted(((os.path.realpath(w["path"]), w) for w in trees),
+                       key=lambda pair: len(pair[0]), reverse=True)
+        rows = []
+        for row in live["sessions"]:
+            real = os.path.realpath(row["cwd"])
+            tree = next((w for path, w in reals
+                         if real == path or real.startswith(path + os.sep)), None)
+            out = {k: row.get(k) for k in SESSION_FIELDS}
+            out["worktree"] = {"path": tree["path"], "branch": tree["branch"],
+                               "main": tree["main"]} if tree else None
+            out["subagents"] = [{k: s.get(k) for k in SUBAGENT_FIELDS}
+                                for s in row.get("subagents") or []]
+            rows.append(out)
+        return {"ok": True, "generatedAt": live["generatedAt"],
+                "windowMinutes": live["windowMinutes"], "sessions": rows}
+
     # ── writes ───────────────────────────────────────────────────────────────────────────
     def _post(self, route: str, data: dict):
         handlers = {"capture": self._capture, "section": self._section, "approve": self._approve,
@@ -591,11 +623,12 @@ def is_loopback(host: str) -> bool:
 
 
 def make_server(root: str, host: str = "127.0.0.1", port: int = 0, read_only: bool = False,
-                token: str | None = None):
+                token: str | None = None, sessions: dict | None = None):
     """A bound, not yet serving `ThreadingHTTPServer` carrying its `Portal` as `.portal`."""
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-    portal = Portal(root, token or secrets.token_urlsafe(24), read_only, host, 0)
+    portal = Portal(root, token or secrets.token_urlsafe(24), read_only, host, 0,
+                    sessions=sessions)
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "quenching-portal"
@@ -628,6 +661,19 @@ def make_server(root: str, host: str = "127.0.0.1", port: int = 0, read_only: bo
     return server
 
 
+SESSIONS = "specs.portal.sessions"  # the capability name `cq` lends under
+
+
+def sessions_source() -> tuple[dict | None, dict | None]:
+    """`({"read"}, None)` for `--sessions`, or `(None, refusal)`."""
+    lender = borrow(SESSIONS)
+    if lender is None:
+        return None, {"code": "sp-portal-sessions-unavailable", "exit": 2,
+                      "message": "this copy of the portal carries no session reader; "
+                                 "--sessions needs the full quenching plugin"}
+    return lender.source()
+
+
 def cmd_serve(args, root: str, out: Emitter) -> int:
     host = args.host
     if not is_loopback(host):
@@ -641,15 +687,20 @@ def cmd_serve(args, root: str, out: Emitter) -> int:
     backend, err = open_backend(root)
     if err:
         return out.emit_err(args.json, err)
+    sessions = None
+    if vars(args).get("sessions"):
+        sessions, refusal = sessions_source()
+        if refusal:
+            return out.emit_err(args.json, refusal)
     read_only = bool(args.read_only)
-    server = make_server(root, host, args.port, read_only)
+    server = make_server(root, host, args.port, read_only, sessions=sessions)
     portal = server.portal
     shown = "localhost" if host == "localhost" else host
     url = f"http://{shown if ':' not in shown else '[' + shown + ']'}:{portal.port}/" \
           f"?nonce={portal.nonce}"
     writable, why = portal.writes_enabled()
     info = {"ok": True, "url": url, "host": host, "port": portal.port, "backend": backend.name,
-            "writable": writable, "readOnlyReason": why}
+            "writable": writable, "readOnlyReason": why, "sessions": sessions is not None}
     out.emit(args.json, info,
              f"quenching portal ({backend.name}) — {'read-write' if writable else 'read-only: ' + why}\n"
              f"{url}\nCtrl-C to stop")
