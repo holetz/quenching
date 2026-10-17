@@ -2,7 +2,7 @@
 type: standard
 title: The specs portal reads one store and widens nothing without a decision
 description: The local spec portal (cq specs serve) reads only the specs store open_backend reads, exposes a fixed set of GET and POST routes, keeps its loopback, token, Host/Origin and CSP guarantees, builds every node with textContent, reuses cockpit UX patterns but never its code, and regenerates the reader copy and the Codex mirror with every change
-resource: plugins/quenching/assets/bin/quenching/specs/portal.py, plugins/quenching/assets/portal/**, plugins/quenching/assets/bin/quenching/portal/**
+resource: plugins/quenching/assets/bin/quenching/specs/portal.py, plugins/quenching/assets/portal/**, plugins/quenching/assets/bin/quenching/portal/**, plugins/quenching/assets/bin/quenching/common/lent.py, plugins/quenching/assets/bin/quenching/session/portal.py
 tags: [architecture, portal, specs, security, ux]
 timestamp: 2026-10-17
 audience: both
@@ -33,8 +33,14 @@ live session's transcript, through `quenching.session.live.read_live`, keeping o
 whose `cwd` lies inside a worktree of this repository (`quenching.session.worktrees.list_worktrees`).
 It never opens a `*.key` file and never returns `messagingSocketPath`, a `pid`, a `tool_result` or
 a raw tool `input`. Without the flag, nothing under `~/.claude` is read and the session code is
-not even imported. The `quenching-specs-reader` copy does not carry the session package and
-refuses `--sessions` (`sp-portal-sessions-unavailable`) before a socket opens.
+not even imported. `specs/portal.py` never imports `quenching.session`: the reader is lent to it.
+`cq` declares the loan in its `LOANS` table (`specs` borrows `specs.portal.sessions` from
+`quenching.session.portal`) and registers it at dispatch, through `quenching.common.lent.lend`,
+only when the module carrying the session package is enabled; the portal calls
+`borrow(SESSIONS)`, which imports the lender only then. A new cross-pillar capability takes the
+same route, never a direct import. The `quenching-specs-reader` copy does not carry the session
+package, so nothing is lent and it refuses `--sessions` (`sp-portal-sessions-unavailable`) before
+a socket opens.
 
 ## Project registry
 
