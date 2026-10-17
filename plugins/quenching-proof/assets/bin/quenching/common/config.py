@@ -359,3 +359,22 @@ def write_minimal_config(root: str) -> tuple[dict | None, dict]:
     os.makedirs(os.path.dirname(plan["path"]), exist_ok=True)
     write_text(plan["path"], json.dumps(plan["document"], indent=2, ensure_ascii=False) + "\n")
     return {**plan, "written": True}, {}
+
+
+def setting(root: str, ns: str, path: str, default, check) -> tuple[object, str | None]:
+    """Read one optional leaf of a namespace: `(value, warning)`.
+
+    `path` is dotted inside the namespace (`contextBudgets.worker`). An absent leaf, or a block
+    along the way that is absent, returns `default` and no warning; a leaf `check` rejects returns
+    `default` and a warning naming the ignored value, so a typo never changes a limit silently.
+    """
+    node: object = namespace(load_config(root, detect_provider_info=False), ns)
+    for part in path.split("."):
+        if not isinstance(node, dict):
+            return default, f"{ns}.{path} is under a value that is not an object; {default!r} applies"
+        if part not in node:
+            return default, None
+        node = node[part]
+    if check(node):
+        return node, None
+    return default, f"{ns}.{path} has an invalid value {node!r}; {default!r} applies"

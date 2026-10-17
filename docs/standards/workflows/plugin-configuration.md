@@ -7,7 +7,7 @@ tags: [workflows, specs, configuration, provider, plugin]
 timestamp: 2026-10-17
 audience: both
 authority: current
-source: spec 1065 (task 3.1) — the namespaced envelope and migration refusal are implemented and covered by the source test matrix; extended by spec 1075 (2026-09-01) with `shared.gitConventions`, the `git` pillar's per-artifact writing directives; extended by spec 1405 (2026-10-08) with `shared.regenerablePaths`; by spec 1907 (2026-10-17) with the user layer; by spec 1908 (2026-10-17) with the `quenching` branch layer and `cq config show --effective`; by spec 1911 (2026-10-17) with `shared.autonomy`
+source: spec 1065 (task 3.1) — the namespaced envelope and migration refusal are implemented and covered by the source test matrix; extended by spec 1075 (2026-09-01) with `shared.gitConventions`, the `git` pillar's per-artifact writing directives; extended by spec 1405 (2026-10-08) with `shared.regenerablePaths`; by spec 1907 (2026-10-17) with the user layer; by spec 1908 (2026-10-17) with the `quenching` branch layer and `cq config show --effective`; by spec 1911 (2026-10-17) with `shared.autonomy`; by spec 1910 (2026-10-17) with `shared.okfValidate`, `shared.contextBudgets` and `specs.chat`
 maintainer: quenching
 ---
 
@@ -119,8 +119,8 @@ Ownership follows the meaning of the key, not the module that happens to read it
 | Namespace | Owned declarations | Boundary |
 | --- | --- | --- |
 | root | `backend` | legacy/provider metadata only; provider selection comes from `origin` |
-| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `autonomy` | settings used by more than one local surface or by isolation |
-| `specs` | Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes` | provider-owned plan lifecycle and proposal conventions |
+| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `autonomy`, `workHost`, `okfValidate`, `contextBudgets` | settings used by more than one local surface or by isolation |
+| `specs` | Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes`, `chat` | provider-owned plan lifecycle and proposal conventions |
 | `ops` | `opsRoot`, `router`, `registry` | operations inventory, router and generated registry |
 | `proof` | `proofRoot`, `layers`, `measuredRoots`, `proofExclusions`, `ratchetPath` | verification inventory, layers and coverage evidence |
 
@@ -147,6 +147,22 @@ A value of the wrong shape falls back to the leaf default and is named in the `w
 effective view; it is never applied silently. An explicit flag wins over the key. No value grants a
 permission, removes a sandbox or loosens a verifier check: `merge: all` applies only under
 `autonomous`, still on green CI and a verifier PASS.
+
+## Limits and checker settings
+
+Four optional keys carry a limit or a checker setting whose default lives in code. An absent key, or a
+leaf of the wrong shape, leaves the default and names the ignored value in a warning on stderr; an
+explicit flag wins over the key.
+
+| Key | Values | Default | Read by |
+| --- | --- | --- | --- |
+| `shared.okfValidate` | `{warnAsError: boolean, ignoreGlobs: list of strings}` | `false`, `[]` | `cq knowledge validate`; wins key by key over `.claude/hooks/hooks-config.local.json` and `hooks-config.json` |
+| `shared.contextBudgets` | `{main, worker, conductor}`, positive integers | `200000` / `100000` / `150000` | `cq session context` per role; `cq specs estimate --worker-budget` uses `worker` |
+| `shared.autonomy.maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs:specs:autopilot` (see the autonomy block); the launch ceiling lives only there |
+| `shared.workHost` | `{target, dockerContext, runner, remoteRoot, syncFlags, syncExclude, pullBack, protectedPaths, minFreeGb}` | disabled | `cq config host --plan`; see [work-host.md](work-host.md) |
+| `specs.chat` | `{model: string, budgetUsd: number > 0, timeoutSeconds: number > 0}` | `sonnet`, `0.50`, `300` | the portal's `--chat`; `--chat-budget-usd` wins over `budgetUsd` |
+
+The internal timeouts of `git` and `gh` stay in code.
 
 ## Provider-derived selection
 

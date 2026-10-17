@@ -496,7 +496,9 @@ class Portal:
         with self.lock:
             if any(job.running for job in self.jobs.values()):
                 return _error(409, "sp-portal-chat-busy", "a chat question is still running")
-            job = chat_mod.Job(self.chat["claude"], self.chat["budget"], cwd, question.strip())
+            job = chat_mod.Job(self.chat["claude"], self.chat["budget"], cwd, question.strip(),
+                               self.chat.get("timeout", chat_mod.CHAT_TIMEOUT_SECONDS),
+                               self.chat.get("model", "sonnet"))
             self.jobs[job.id] = job
             for old in list(self.jobs)[:-chat_mod.KEEP_JOBS]:
                 if not self.jobs[old].running:
@@ -730,11 +732,33 @@ def sessions_source() -> tuple[dict | None, dict | None]:
     return lender.source()
 
 
-def chat_source(enabled: bool, budget: float | None) -> tuple[dict | None, dict | None]:
+def chat_settings(root: str | None) -> dict:
+    """`specs.chat` over the code defaults; a bad leaf warns on stderr and is ignored."""
+    from quenching.common.config import setting
+    def positive(v) -> bool:
+        return isinstance(v, (int, float)) and not isinstance(v, bool) and v > 0
+
+    checks = {"model": lambda v: isinstance(v, str) and bool(v.strip()),
+              "budgetUsd": positive, "timeoutSeconds": positive}
+    defaults = {"model": "sonnet", "budgetUsd": chat_mod.DEFAULT_BUDGET_USD,
+                "timeoutSeconds": chat_mod.CHAT_TIMEOUT_SECONDS}
+    out = dict(defaults)
+    for key, check in checks.items():
+        if root is None:
+            break
+        out[key], warning = setting(root, "specs", f"chat.{key}", defaults[key], check)
+        if warning:
+            print(f"warning: {warning}", file=sys.stderr)
+    return out
+
+
+def chat_source(enabled: bool, budget: float | None,
+                root: str | None = None) -> tuple[dict | None, dict | None]:
     """`({"claude", "budget"}, None)` for `--chat`, `(None, None)` without it, or a refusal."""
     if not enabled:
         return None, None
-    budget = chat_mod.DEFAULT_BUDGET_USD if budget is None else budget
+    cfg = chat_settings(root)
+    budget = cfg["budgetUsd"] if budget is None else budget
     if not budget > 0:
         return None, {"code": "sp-portal-chat-budget", "exit": 2,
                       "message": "--chat-budget-usd must be a positive dollar amount"}
@@ -742,7 +766,12 @@ def chat_source(enabled: bool, budget: float | None) -> tuple[dict | None, dict 
     if claude is None:
         return None, {"code": "sp-portal-chat-unavailable", "exit": 2,
                       "message": "--chat needs the `claude` CLI on PATH"}
-    return {"claude": claude, "budget": budget, "worktrees": None}, None
+    chat = {"claude": claude, "budget": budget, "worktrees": None}
+    if cfg["model"] != "sonnet":
+        chat["model"] = cfg["model"]
+    if cfg["timeoutSeconds"] != chat_mod.CHAT_TIMEOUT_SECONDS:
+        chat["timeout"] = cfg["timeoutSeconds"]
+    return chat, None
 
 
 def cmd_serve(args, root: str, out: Emitter) -> int:
@@ -763,7 +792,7 @@ def cmd_serve(args, root: str, out: Emitter) -> int:
         sessions, refusal = sessions_source()
         if refusal:
             return out.emit_err(args.json, refusal)
-    chat, refusal = chat_source(bool(vars(args).get("chat")), vars(args).get("chat_budget_usd"))
+    chat, refusal = chat_source(bool(vars(args).get("chat")), vars(args).get("chat_budget_usd"), root)
     if refusal:
         return out.emit_err(args.json, refusal)
     read_only = bool(args.read_only)
