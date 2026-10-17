@@ -13,6 +13,24 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 6.5.0
+
+the plugin **split into installable modules** (`quenching-specs`, `-align`, `-design`, `-ops`,
+  `-proof`, `-toolchain`, `-delivery`, `-security`, `-opensource`), generated from one source,
+  and **Codex became an independent reviewer by default when quota allows**: a `cq codex` pillar
+  (`probe` reads the quota, `review` runs read-only), a Codex pass beside the opus review in the
+  autopilot and in conclude with a reported fallback, and an optional per-task hook in execute.
+  The autopilot gained cost control — one round by default (`--until-dry` drains the queue), a
+  measured launch ceiling, an orchestrator that returns `continue` past its own budget, an
+  economy mode without an orchestrator for small epics, and a deterministic `cq git preflight`.
+  The portal became multi-project (`cq portal serve`, `cq portal add/remove/list`) with a live
+  sessions panel behind `--sessions`, a read-only chat tab, an HttpOnly cookie in place of the
+  URL token, and the spec-runner's last record on the board. Every human question became a text
+  decision sheet; the verifier tells relocation from widening and accepts byte-identical generator
+  output; the git-steward no longer fires two merges for one PR; `session cost --self` scopes cost
+  per orchestrator; and `opensource` controls with `SECURITY.md` bring the repository to OSPS
+  level 1.
+
 ## 6.4.0
 
 specs **left the issue body**. A spec now lives on the git branch `quenching` (`specs/`,
