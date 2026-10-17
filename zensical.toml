@@ -176,6 +176,7 @@
       "decisions/0011-seguranca-das-mudancas-dos-epicos-1192-e-1197.md",
       "decisions/0012-lista-agent-do-orchestrator-e-documental.md",
       "decisions/0013-plugin-module-split.md",
+      "decisions/0014-tier-pequeno-em-tarefa-testavel.md",
     ] },
     { "Vision" = [
       "vision/index.md",

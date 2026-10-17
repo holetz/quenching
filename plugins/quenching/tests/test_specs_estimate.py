@@ -11,7 +11,9 @@ from unittest.mock import patch
 import _paths  # noqa: F401
 from quenching.specs.backends.memory import MemoryBackend
 from quenching.specs.commands.cli import build_parser
-from quenching.specs.commands.estimate import EXECUTE_BODY, cmd_estimate, estimate_build
+from quenching.specs.commands.estimate import (EXECUTE_BODY, EXECUTOR_FIXED_TOKENS,
+                                               SMALL_TIER_CEILING, cmd_estimate, estimate_build,
+                                               estimate_task)
 from quenching.specs.commands.output import Emitter
 
 
@@ -103,6 +105,53 @@ class DeclaredReading(unittest.TestCase):
         self.assertEqual(open_task["maxSectionTokens"], done_task["maxSectionTokens"])
 
 
+class SmallTierProjection(unittest.TestCase):
+    setUp = DeclaredReading.setUp
+    info = DeclaredReading.info
+    VERIFY = "      verify: python3 -m unittest discover -s tests -p test_a.py\n"
+
+    def project(self, tasks, task_id="1.1"):
+        return estimate_task(self.info(tasks), task_id, self.root)
+
+    def test_projects_files_and_pattern_with_tokenizer_factor_and_fixed_prompt(self):
+        (self.root / "b.py").write_bytes(b"b" * 400)
+        row = self.project("- [ ] 1.1 Task\n      files: a.py\n      pattern: b.py\n" + self.VERIFY)
+        self.assertEqual(200, row["readTokens"])
+        self.assertEqual(260 + EXECUTOR_FIXED_TOKENS, row["projectedTokens"])
+        self.assertTrue(row["oracleProtected"])
+        self.assertTrue(row["smallTierEligible"])
+
+    def test_oracle_inside_files_or_missing_verify_is_not_protected(self):
+        inside = self.project("- [ ] 1.1 Task\n      files: a.py, tests/test_a.py\n" + self.VERIFY)
+        self.assertFalse(inside["oracleProtected"])
+        self.assertEqual(["tests/test_a.py"], inside["oracleInFiles"])
+        self.assertFalse(inside["smallTierEligible"])
+        named = self.project("- [ ] 1.1 Task\n      files: a.py, check.sh\n      verify: bash check.sh\n")
+        self.assertFalse(named["oracleProtected"])
+        bare = self.project("- [ ] 1.1 Task\n      files: a.py\n")
+        self.assertFalse(bare["oracleProtected"])
+        self.assertIn("no verify: oracle", bare["reasons"])
+
+    def test_docs_writes_and_projection_above_the_ceiling_are_not_eligible(self):
+        docs = self.project("- [ ] 1.1 Task\n      files: a.py, docs/standards/agents/communication.md\n"
+                            + self.VERIFY)
+        self.assertTrue(docs["oracleProtected"])
+        self.assertFalse(docs["smallTierEligible"])
+        room = SMALL_TIER_CEILING - EXECUTOR_FIXED_TOKENS
+        (self.root / "big.py").write_bytes(b"x" * (int(room / 1.3) * 4 + 8))
+        big = self.project("- [ ] 1.1 Task\n      files: big.py\n" + self.VERIFY)
+        self.assertGreater(big["projectedTokens"], SMALL_TIER_CEILING)
+        self.assertTrue(big["oracleProtected"])
+        self.assertFalse(big["smallTierEligible"])
+
+    def test_new_file_is_free_but_a_missing_one_blocks_and_unknown_task_is_none(self):
+        new = self.project("- [ ] 1.1 Task\n      files: fresh.py (new)\n" + self.VERIFY)
+        self.assertTrue(new["smallTierEligible"])
+        missing = self.project("- [ ] 1.1 Task\n      files: gone.py\n" + self.VERIFY)
+        self.assertFalse(missing["smallTierEligible"])
+        self.assertIsNone(self.project("- [ ] 1.1 Task\n      files: a.py\n", "9.9"))
+
+
 class EstimatorCommand(unittest.TestCase):
     def test_default_preamble_is_the_shipped_execute_body(self):
         shipped = Path(__file__).resolve().parents[1] / "commands/specs/execute.md"
@@ -121,9 +170,10 @@ class EstimatorCommand(unittest.TestCase):
         self.assertEqual("42", parser.parse_args(["estimate", "42"]).spec_id)
         args = parser.parse_args(["estimate", "--spec", "42", "--worker-budget", "50000"])
         self.assertEqual(("42", 50000), (args.spec, args.worker_budget))
+        self.assertEqual("2.1", parser.parse_args(["estimate", "42", "--task", "2.1"]).task)
 
-    def run_cmd(self, backend, budget=100000, json_output=True):
-        args = argparse.Namespace(spec=1, worker_budget=budget, json=json_output)
+    def run_cmd(self, backend, budget=100000, json_output=True, task=None):
+        args = argparse.Namespace(spec=1, worker_budget=budget, json=json_output, task=task)
         stream = io.StringIO()
         with patch("quenching.specs.commands.estimate.open_backend", return_value=(backend, {})), \
                 contextlib.redirect_stdout(stream):
@@ -139,6 +189,18 @@ class EstimatorCommand(unittest.TestCase):
         self.assertEqual("estimated-declared-reading", json.loads(body)["kind"])
         self.assertEqual(original, backend.docs)
         self.assertIn("NOT a build-fit verdict", self.run_cmd(backend, json_output=False)[1])
+
+    def test_task_flag_emits_the_projection_and_refuses_an_unknown_task(self):
+        backend = MemoryBackend()
+        backend.create_spec("plans", "---\ntitle: Estimate\ndate: 2026-10-14\n---\n"
+                            "## Tasks\n- [ ] 1.1 Task\n      files: x.py (new)\n"
+                            "      verify: python3 -m unittest\n")
+        code, body = self.run_cmd(backend, task="1.1")
+        payload = json.loads(body)
+        self.assertEqual((0, "small-tier-projection"), (code, payload["kind"]))
+        self.assertIn("smallTierEligible", payload)
+        code, body = self.run_cmd(backend, task="7.7")
+        self.assertEqual((2, "sp-unknown-task"), (code, json.loads(body)["code"]))
 
     def test_refuses_invalid_budget_and_propagates_provider_refusal(self):
         code, body = self.run_cmd(MemoryBackend(), budget=0)

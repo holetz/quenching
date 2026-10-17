@@ -100,8 +100,13 @@ with zero interrogation, a fixed-vocabulary classification the plan gate re-chec
 **A cheaper `model` pin** (`gpt-6-luna`, `gpt-6.1-sol`) belongs only on work whose failure is cheap and
 caught: extraction and collection cross-checked by the orchestrator, bucketing of an
 already-computed hit list. The standing prohibition: never on a step whose output authorizes
-a deletion or lands in production code — a misclassification there becomes a wrong
-irreversible action, which is this plugin's `import-memory` rule generalized.
+a deletion, or that lands in production code **without a protected oracle** — a
+misclassification there becomes a wrong irreversible action, which is this plugin's
+`import-memory` rule generalized. A protected oracle is an executable `verify:` whose test
+files sit outside the task's `files:`, in a disposable worktree, with the projected context
+at or under 80k (`cq specs estimate --spec <id> --task <tid>` reports `smallTierEligible`);
+there `gpt-6-luna` may execute ONE task, and a failed `verify:` returns it to the session model.
+Judgment never descends.
 
 **The cache trap.** The model and the effort level are part of the session's prompt-cache
 key. A pin on an *inline* command switches them for the turn and invalidates the whole
