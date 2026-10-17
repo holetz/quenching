@@ -110,6 +110,7 @@ stops the run with `STATE: blocked` and `NOTE: needs-human: <the question>`.
 | Step 1 — the outcome | taken **only** from the input's `--outcome`; absent → `needs-human`. `autonomous` never supplies an outcome |
 | Step 1 — which spec (several marked ids, or no marking) | `needs-human` |
 | Step 1 — open tasks under `done` | `needs-human`; never `--force`, never a switch to `abandoned` |
+| Step 2 — the Codex review | no question exists: probe, review and fallback run as written; a Codex-only finding not reproduced goes to the report, never to a fix |
 | Step 3 — the emergent `/docs/` plan | `done`: the narrated plan is applied on the work branch, unconfirmed — the PR is its human review. `abandoned`: declined; the candidates are named in the report |
 | Step 4 — the `## Outcome` draft | written unconfirmed; an exit 2 from `promote` → `needs-human` with the refusal quoted, never `--force` |
 | Step 5 — the distillation plan | as step 3: applied on the work branch for `done`, declined and named for `abandoned` |
@@ -158,6 +159,19 @@ three-dot form keeps the diff to this spec even when the remote base advanced af
 the whole change for **coherence**, beyond execute's per-task self-review — two tasks that solved the same problem differently, an abstraction that wanted
 extracting once the third caller appeared, a `## Impact` path nothing ever wrote, a standard the
 diff contradicts.
+
+**Independent Codex review, in parallel, by default when there is quota.** Before reading, run
+`cq codex probe --json`: exit 0 (available) or 2 (unknown) → write the prompt (the diff range
+`origin/<base>...HEAD`, asking for findings as `path:line` with severity) to
+`.quenching/codex/<run>/prompt.md` and run, in the background,
+`cq codex review --worktree <work checkout> --prompt <that file> --run <run> --base origin/<base> --json` (NO-REMOTE: the local `<base>`, in the prompt and `--base` alike)
+while you read the diff yourself. Exit 1 from the probe, a timeout or any failure of the review →
+**fallback**: the Codex review stands alone and the report says `Codex: fallback (<reason>)`; it is
+never a conclude error and never blocks `reviewed`. Consolidate both lists by `path:line`: a finding
+both reviewers share counts; one **only Codex** raised counts only once reproduced (by your own
+reading, or by a command whose output you quote), otherwise it is reported as unreproduced and
+never becomes a fix. Codex runs read-only; its output is never applied unread. A Codex-surface run
+skips this paragraph (no nested Codex).
 
 Present the findings. Fixes go in as ordinary commits on the branch, before the merge. Then stamp
 the record — `cq specs record "<id>" reviewed --set date=<today>`, never by editing the
@@ -390,7 +404,7 @@ body blocks:
 
 1. **At close** — fixed. Task progress, `reviewed` / `branch` as they now stand, and — for an
    abandonment — that nothing was adopted and what became of the branch.
-2. **The review** — fixed. What it found and what was done about it, the docs written in step 3 and
+2. **The review** — fixed. What it found and what was done about it (and the Codex line: `Codex: reviewed (<n> findings, <m> reproduced)` or `Codex: fallback (<reason>)`), the docs written in step 3 and
    step 5, and what the pre-merge gate returned. §Quoting a tool's own output governs the gate's
    result, which means **a check that came back inconclusive is named as such, never counted as
    passed**.
