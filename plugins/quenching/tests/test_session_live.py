@@ -113,6 +113,30 @@ class LiveTest(unittest.TestCase):
         kept = self._read(cwds=[self.repo])["sessions"]
         self.assertEqual([r["sessionId"] for r in kept], ["s1"])
 
+    def test_structured_identity_fields_drop_the_record_and_never_leak(self):
+        self._session(1, "s1", self.repo, "idle", [])
+        bad = {"sessionId": {"messagingSocketPath": SECRET}, "cwd": self.repo, "status": "idle"}
+        for pid, patch in ((2, {"pid": 2}), (3, {"pid": 3, "cwd": [SECRET], "sessionId": "x"}),
+                           (4, {"pid": True, "sessionId": "x", "cwd": self.repo}),
+                           (5, {"pid": "5", "sessionId": "x", "cwd": self.repo})):
+            _write(self.root / "sessions" / f"{pid}.json", [{**bad, **patch}])
+        out = self._read()
+        self.assertEqual([r["sessionId"] for r in out["sessions"]], ["s1"])
+        self.assertNotIn(SECRET, json.dumps(out))
+
+    def test_out_of_range_timestamp_becomes_null_and_keeps_other_sessions(self):
+        self._session(1, "good", self.repo, "idle", [])
+        for pid, value in ((2, 253402300800000), (3, 1e30), (4, float("inf")),
+                           (5, float("nan")), (6, True)):
+            _write(self.root / "sessions" / f"{pid}.json", [{
+                "pid": pid, "sessionId": f"s{pid}", "cwd": self.repo, "status": "idle",
+                "statusUpdatedAt": value}])
+        rows = {r["sessionId"]: r for r in self._read()["sessions"]}
+        self.assertEqual(len(rows), 6)
+        self.assertIsNotNone(rows["good"]["statusSince"])
+        for sid in ("s2", "s3", "s4", "s5", "s6"):
+            self.assertIsNone(rows[sid]["statusSince"])
+
     def test_no_sessions_is_an_empty_result(self):
         (self.root / "sessions").mkdir()
         self.assertEqual(self._read()["sessions"], [])
