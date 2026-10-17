@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Install profiles — the front is the unit of alignment
-description: A profile declares which of the seven local fronts a repository asks the root align to conduct; provider-owned specs and the security and git pillars remain available axes, and the profile does not alter command files or host invocation behavior; the root align conducts the intersection of the profile with the enabled modules
-resource: .claude/quenching.json, plugins/quenching/assets/modules.json, plugins/quenching/commands/align.md, plugins/quenching/assets/references/align/tool-resolution.md, plugins/quenching/commands/knowledge/**, plugins/quenching/commands/specs/**, plugins/quenching/commands/design/**, plugins/quenching/commands/components/**, plugins/quenching/commands/ops/**, plugins/quenching/commands/proof/**, plugins/quenching/commands/toolchain/**, plugins/quenching/commands/delivery/**, plugins/quenching/commands/security/**, plugins/quenching/commands/git/**
+description: A profile declares which of the eight local fronts a repository asks the root align to conduct; provider-owned specs and the security and git pillars remain available axes, and the profile does not alter command files or host invocation behavior; the root align conducts the intersection of the profile with the enabled modules
+resource: .claude/quenching.json, plugins/quenching/assets/modules.json, plugins/quenching/commands/align.md, plugins/quenching/assets/references/align/tool-resolution.md, plugins/quenching/commands/knowledge/**, plugins/quenching/commands/specs/**, plugins/quenching/commands/design/**, plugins/quenching/commands/components/**, plugins/quenching/commands/ops/**, plugins/quenching/commands/proof/**, plugins/quenching/commands/toolchain/**, plugins/quenching/commands/delivery/**, plugins/quenching/commands/opensource/**, plugins/quenching/commands/security/**, plugins/quenching/commands/git/**
 tags: [architecture, install, profiles, fronts, configuration]
-timestamp: 2026-10-14
+timestamp: 2026-10-17
 audience: both
 authority: current
-source: spec 1111 — a fresh Claude Code 2.1.258 session showed no observable profile-controlled context difference, so the profile contract is limited to `/align` conduction scope; spec 1635 intersected it with the enabled modules
+source: spec 1111 — a fresh Claude Code 2.1.258 session showed no observable profile-controlled context difference, so the profile contract is limited to `/align` conduction scope; spec 1635 intersected it with the enabled modules; spec 1637 (opensource)
 maintainer: quenching
 ---
 
@@ -20,10 +20,10 @@ asks the root `/align` conductor to consider. It is a planning and conduction sc
 installation mechanism: the plugin's command files remain present and their host invocation and
 context behavior remain unchanged.
 
-## The seven local fronts and the non-conducted axes
+## The eight local fronts and the non-conducted axes
 
-The plugin exposes seven local fronts, one provider-owned specs axis, and two pillars. The profile
-uses the same entry names, while `/align` can conduct only the seven local fronts:
+The plugin exposes eight local fronts, one provider-owned specs axis, and two pillars. The profile
+uses the same entry names, while `/align` can conduct only the eight local fronts:
 
 | Entry | Commands | Kind | Module |
 | --- | --- | --- | --- |
@@ -35,6 +35,7 @@ uses the same entry names, while `/align` can conduct only the seven local front
 | `proof` | `/quenching-proof:proof:*` | front | `quenching-proof` |
 | `toolchain` | `/quenching-toolchain:toolchain:*` | front | `quenching-toolchain` |
 | `delivery` | `/quenching-delivery:delivery:*` | front | `quenching-delivery` |
+| `opensource` | `/quenching-opensource:opensource:*` | front | `quenching-opensource` |
 | `security` | `/quenching-security:security:*` | pillar | `quenching-security` |
 | `git` | `/quenching-specs:git:*` | pillar | `quenching-specs` |
 
@@ -76,14 +77,14 @@ A profile is a `shared.profiles.installed` list in the repository envelope:
 }
 ```
 
-An absent profile means that all seven local fronts are eligible for `/align`, which is the
+An absent profile means that all eight local fronts are eligible for `/align`, which is the
 default behavior. A declared list names the entries the conductor may run; malformed values belong
 to the configuration doctor's findings and never become a silent partial scope.
 
 ## What `/align` does with a profile
 
 Before probing, `/align` reads `cq specs config --json`. If `shared.profiles.installed` is absent,
-it considers all seven local fronts whose module is enabled. If it is present, it conducts only the named local fronts in
+it considers all eight local fronts whose module is enabled. If it is present, it conducts only the named local fronts in
 the declared dependency order and reports each other local front as skipped by profile. The
 provider-owned axis and pillars are not rows in this conductor and are not silently invoked.
 
@@ -98,6 +99,6 @@ Do not infer a residency, invocation or context effect from a profile entry. If 
 future supported mechanism, it needs its own measured spec and explicit adapter; this standard
 remains valid without it.
 
-Declaring all seven local fronts installed — the profile of this repository when one is needed —
+Declaring all eight local fronts installed — the profile of this repository when one is needed —
 keeps the conductor's default behavior. Omitting the profile is the ordinary equivalent and avoids
 duplicating that declaration.

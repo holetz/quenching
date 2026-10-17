@@ -4,10 +4,10 @@ title: Command surface naming
 description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the module prefix each front publishes under and the full command and agent mapping; the design namespace for DTCG source and projections; the proof namespace for the verification surface rather than its test artifact; the seventh namespace (`git`, a pillar rather than a front) and its coexistence with a target's own `git` category; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context
 resource: plugins/quenching/commands/**, plugins/quenching/agents/**, plugins/quenching/assets/modules.json
 tags: [naming, commands, taxonomy]
-timestamp: 2026-10-14
+timestamp: 2026-10-17
 audience: both
 authority: current
-source: rename-command-surface, 2026-07-21, 2026-07-24, collapse-skills-into-commands, 2026-07-26, correct-command-citation-form, spec 1635 (module extraction); lineage in ADR 0004 and ADR 0013
+source: rename-command-surface, 2026-07-21, 2026-07-24, collapse-skills-into-commands, 2026-07-26, correct-command-citation-form, spec 1635 (module extraction), spec 1637 (the `quenching-opensource` module); lineage in ADR 0004 and ADR 0013
 maintainer: quenching
 ---
 
@@ -62,7 +62,7 @@ so nothing checks that they agree.
 
 ## The plugin prefix is the module
 
-The plugin is published as eight modules ([../architecture/plugin-layout.md](../architecture/plugin-layout.md)
+The plugin is published as nine modules ([../architecture/plugin-layout.md](../architecture/plugin-layout.md)
 §One editable source, eight generated modules), so the segment before the first `:` names the
 **module** that registers the command, and the rest is the command's path inside it. Every front
 belongs to exactly one module, and so does every agent:
@@ -77,6 +77,7 @@ belongs to exactly one module, and so does every agent:
 | `quenching-toolchain` | `/quenching-toolchain:toolchain:*` | — |
 | `quenching-delivery` | `/quenching-delivery:delivery:*` | — |
 | `quenching-security` | `/quenching-security:security:*` | — |
+| `quenching-opensource` | `/quenching-opensource:opensource:*` | — |
 
 - **The map has one home.** The front-to-module assignment is the `owned` record of each module in
   `plugins/quenching/assets/modules.json`; `quenching.common.modules.namespace_map` derives the
