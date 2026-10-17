@@ -562,7 +562,7 @@
     "references/toolchain-align/bands.md": "e2c57eb87ac507550a0afb2b90bcba7b66974f11ab5f22b6a63d468a4ff95f71",
     "scripts/bin/cq": "338ec68135632c55a6494dcd0b3268296cfc9dc83a47acd48f0e6b77d701f235",
     "scripts/bin/quenching/codex/__init__.py": "80bdeea566201c5f88a2a19e2b2432d43a624daf228cbc4c85c1a7e593427f38",
-    "scripts/bin/quenching/codex/config.py": "a3b1a949b5bfd3386d345cb741ff293a7f2b30656e67652673d6168ee141e3aa",
+    "scripts/bin/quenching/codex/config.py": "8c2aff38fdce4b11770179829055eb2c3b4fff1e75fb37b9806ff1b324fb1b28",
     "scripts/bin/quenching/codex/probe.py": "5b9e9971756c29324265168b5d598b7b51a329b81d1a8e87a21e33cb638b4bd3",
     "scripts/bin/quenching/codex/review.py": "d31d670ef87e3271d8acb411bbf511dc8ad779ad68705ec46f6313c443066f89",
     "scripts/bin/quenching/common/config.py": "2fa7c1fa3158db7b3ce116e2a8032572fec29f1c22b99e7b623ec960b2eb526c",
