@@ -166,10 +166,14 @@ def module_owners() -> dict[str, str]:
 
 
 def _plugin_name(root: str) -> str:
-    try:
-        return json.loads(_read(os.path.join(root, ".claude-plugin", "plugin.json")) or "{}").get("name", "")
-    except ValueError:
-        return ""
+    for manifest in (".claude-plugin", ".codex-plugin"):
+        try:
+            name = json.loads(_read(os.path.join(root, manifest, "plugin.json")) or "{}").get("name", "")
+        except ValueError:
+            name = ""
+        if name:
+            return name
+    return ""
 
 
 def package_root(package: str) -> str | None:
@@ -184,7 +188,7 @@ def package_root(package: str) -> str | None:
         if os.path.basename(os.path.normpath(entry)) != "bin" or not os.path.isdir(os.path.join(entry, "quenching", package)):
             continue
         root = os.path.dirname(os.path.dirname(os.path.realpath(entry)))
-        if owner is None or _plugin_name(root) in (owner, "quenching"):
+        if owner is None or _plugin_name(root) in (owner, "quenching", "quenching-codex"):
             return root
     return None
 
