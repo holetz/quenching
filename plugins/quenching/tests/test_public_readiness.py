@@ -6,12 +6,14 @@ must never reach any output path.
 """
 from __future__ import annotations
 
+import io
 import json
 import os
 import pathlib
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import unittest
 from unittest import mock
@@ -366,6 +368,49 @@ class AdversarialTest(ReadinessCase):
                 self.assertEqual(2, run.returncode, run.stderr)
                 self.assertNotIn(SENTINEL, run.stdout + run.stderr)
                 self.assertNotIn(self.tmp.name, run.stdout + run.stderr)
+
+
+REPO = pathlib.Path(__file__).resolve().parents[3]
+
+
+class CleanCloneTest(ReadinessCase):
+    """The published quenching-opensource module, exported from the committed tree, runs the flow."""
+
+    def export(self) -> pathlib.Path:
+        if subprocess.run(["git", "-C", str(REPO), "rev-parse", "--verify", "-q", "HEAD"],
+                          capture_output=True).returncode != 0:
+            self.skipTest("the repository is not a git checkout")
+        target = pathlib.Path(self.tmp.name, "export")
+        target.mkdir()
+        archive = subprocess.run(["git", "-C", str(REPO), "archive", "HEAD", "plugins/quenching-opensource"],
+                                 check=True, capture_output=True).stdout
+        with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
+            tar.extractall(target, filter="data")
+        return target / "plugins" / "quenching-opensource"
+
+    def test_the_module_carries_the_command_and_the_reference_it_cites(self):
+        module = self.export()
+        command = (module / "commands" / "opensource" / "readiness.md").read_text(encoding="utf-8")
+        self.assertIn("cq --root \"$TARGET_ROOT\" opensource readiness --json", command)
+        self.assertIn("${CLAUDE_PLUGIN_ROOT}/assets/references/opensource-readiness/report.md", command)
+        self.assertTrue((module / "assets" / "references" / "opensource-readiness" / "report.md").is_file())
+
+    def test_the_module_route_measures_a_clean_fixture_end_to_end(self):
+        module = self.export()
+        commit(self.root, "README.md", "hello\n")
+        self.install("gitleaks", "reuse")
+        evidence = self.evidence({"state": "compatible", "reviewedBy": "owner"},
+                                 {"state": "granted", "reviewedBy": "owner"})
+        env = dict(os.environ, FAKE_REUSE_ROWS=json.dumps({"non_compliant": {}}))
+        before = snapshot(self.root)
+        run = subprocess.run([sys.executable, str(module / "assets" / "bin" / "cq"), "--root", self.root,
+                              "opensource", "readiness", "--json", "--evidence", evidence],
+                             capture_output=True, text=True, env=env)
+        self.assertEqual(before, snapshot(self.root))
+        self.assertEqual(0, run.returncode, run.stdout + run.stderr)
+        payload = json.loads(run.stdout)
+        self.assertEqual({"measured"}, {row["state"] for row in payload["coverage"]})
+        self.assertFalse(payload["grantsPublication"])
 
 
 if __name__ == "__main__":
