@@ -246,7 +246,7 @@ boundary, and a build offers to stop there.
   conductor (the autopilot in the main session) is still not enforced by code.
 - **The tree-token ceiling is opt-in.** `/quenching-specs:specs:autopilot --max-tree-tokens <n>`
   has no default value; without it nothing is read. With it, before each launch the conductor
-  reads `cq components session cost "$CLAUDE_CODE_SESSION_ID" --json` and compares, per model and
+  reads `cq components session cost --json` (its default is the most recent session for this cwd, the conductor's own) and compares, per model and
   never summed across tiers, `input + cacheRead + cacheWrite + output` of that model's `byModel`
   row with `<n>`; a model at the ceiling, or whose total plus the largest measured total of one
   agent of that model reaches it, admits no launch, and the round record is written `open` with

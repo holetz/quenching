@@ -57,7 +57,7 @@ non-`cq`, non-`git` command is run.
   and reports `continue`. The count covers what the conductor and the returned reports show; what
   is in flight is declared `not measured`.
 - **The tree-token ceiling is opt-in and per model.** Only with `--max-tree-tokens <n>`, before each
-  launch the conductor reads `cq components session cost "$CLAUDE_CODE_SESSION_ID" --json` and
+  launch the conductor reads `cq components session cost --json` (its default is the most recent session for this cwd, the conductor's own) and
   compares, per model, the measured tokens (`input + cacheRead + cacheWrite + output` of that
   model's `byModel` row) with `<n>`, never summing tiers. A model already at the ceiling, or with no
   margin (its measured total plus the largest measured total of a single agent of that model in the
