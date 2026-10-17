@@ -277,6 +277,44 @@ write-only, nothing reads it back, so it is never a second store.
 | `/quenching-specs:specs:triage` | Ranks the whole front in ONE confirmed table, writing `priority: {level, criticality, complexity, date}` per spec and nothing else — merging, never clobbering a human's ranking. |
 | `/quenching-specs:specs:board` | Human-only. Starts `cq specs serve` in the background and prints the URL: a local browser portal (board by derived stage, drag-to-rank list, spec detail, search, capture, approve as `by: human`) over the same backend as the CLI. Loopback only, per-run token, `Host`/`Origin` checks, `--read-only` disables writes on the server; `cq-specs-read serve` is always read-only. |
 
+### A revisão Codex independente
+
+Step 6 of `/quenching-specs:specs:autopilot` runs, once per epic, a second and independent
+correctness review by Codex beside the Claude reviewer. Only the conductor calls `cq codex`; the
+reviewer gets no Codex grant. Two verbs of the `codex` pillar carry it:
+
+- `cq codex probe [--json]` answers whether Codex may be called now, without spending quota:
+  exit `0` available, `1` unavailable (a window over its ceiling, `crossReview: "off"`, no `codex`
+  on `PATH`), `2` unknown (no readable source or a stale snapshot).
+- `cq codex review --worktree <dir> --prompt <file> --base <ref> --run <name>` runs
+  `codex exec` with a fixed read-only sandbox that ignores the user's Codex configuration.
+
+**Default and opt-out.** The review runs by default whenever the quota allows
+(`shared.codex.crossReview: "auto"`); `"off"` in `.claude/quenching.json` is the explicit refusal.
+The optional `shared.codex` block defaults to `maxUsedPercent` `80` (primary) and `90`
+(secondary), `timeoutSeconds` `900` and `model` `gpt-6-astra`; an absent block is every default.
+
+**Cost and quota.** One Codex call per epic, billed to the ChatGPT/Codex quota and never to the
+Claude one. The final report carries its tokens as measured, or `not measured`, apart from the
+Claude tiers.
+
+**Where the output lands.** `.quenching/codex/<run>/` holds `review.md`, `events.jsonl` and, in
+`prompt-only` mode, `prompt.md`. The payload's `mode` is one of three:
+
+| `mode` | When | What Codex sees |
+| --- | --- | --- |
+| `sandboxed` | the sandbox check passed | the worktree, through read-only commands |
+| `prompt-only` | the sandbox failed and `--base` was given | only `prompt.md`: the prompt, the diff and every touched file |
+| `unavailable` | the sandbox failed and no `--base` was given | nothing; Codex is not called |
+
+**Fallback.** A probe that exits `1`, or a review that times out or exits `1`, leaves the step with
+the Claude review alone, and the final report names the fallback and its reason. A refusal (exit
+`2`) is reported the same way and never blocks the step.
+
+**Findings need reproduction.** A finding only Codex raised becomes a spec only once the Claude
+side reproduces it, with the command and its output; a `prompt-only` finding was never run by
+Codex at all. The Codex surface (`quenching-codex`) has no such step.
+
 The shared facts live once — the spec document, the thirteen canonical sections, the
 gates, the record vocabulary, and the `cq specs` surface in
 [`specs-develop/spec-driven.md`](assets/references/specs-develop/spec-driven.md),
