@@ -141,12 +141,14 @@ def _latest_self_call(path: Path, pattern: re.Pattern) -> str | None:
     return latest
 
 
-def find_self(main: Path, marker: str) -> tuple[Path | None, str]:
-    """The transcript of this session whose latest `--self <marker>` call is the newest.
+def find_self(main: Path, marker: str, verb: str = "context",
+              subagents_only: bool = False) -> tuple[Path | None, str]:
+    """The transcript of this session whose latest `session <verb> … --self <marker>` call is the newest.
 
     The in-flight tool call is already recorded when its command runs, so the caller finds itself."""
-    pattern = re.compile(r"session context\b.*--self[ =]['\"]?" + re.escape(marker) + r"['\"]?(\s|$)")
-    candidates = [main, *sorted((main.with_suffix("") / "subagents").glob("agent-*.jsonl"))]
+    pattern = re.compile(r"session " + re.escape(verb) + r"\b.*--self[ =]['\"]?" + re.escape(marker) + r"['\"]?(\s|$)")
+    candidates = [*([] if subagents_only else [main]),
+                  *sorted((main.with_suffix("") / "subagents").glob("agent-*.jsonl"))]
     found = [(stamp, path) for path in candidates
              if (stamp := _latest_self_call(path, pattern)) is not None]
     if not found:
