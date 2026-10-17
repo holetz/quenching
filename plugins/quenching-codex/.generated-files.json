@@ -426,7 +426,7 @@
     "agents/reviewer.md": "a5070e75b28e164e01cfa9d7ff803e24ea54b5db3b88cc2b62aa2a5034ba7574",
     "agents/scout.md": "8ad0d49e6b2a0a74fad195c7f302c9211e444fd03f10080954da34769e8fcb1b",
     "agents/spec-architect.md": "b77a22b26733e984b6d257cda7e04104e2de97cb04f0bbf743d859c919b9a58e",
-    "agents/spec-runner.md": "d9d19d8deaf84beb53355cdbaf3cfba1776f7aa9b125bf687c59b04b35e66b6c",
+    "agents/spec-runner.md": "b92e31dc03be367713ab1b67e1e813ff36a11dd333d9930329c699e7f7da7a1d",
     "agents/verifier.md": "6aa030719c98f3a88716cf252370c97f09d12ab056af6b2d89fd7ede42cab436",
     "checks/catalog-publication-check.py": "9f4c9b75b524e31bd9420036a5384801ef707ef5708956abba1d6eb62c398f9e",
     "checks/citation-check.sh": "fe686c9b8fb8ac91cf86bbfbfc64d91a4ce7172d6b9a866b527d822231d12b36",
