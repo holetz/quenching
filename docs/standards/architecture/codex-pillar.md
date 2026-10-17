@@ -105,6 +105,35 @@ These are the defaults; an absent block is every default. `crossReview: "off"` i
 opt-out. A value of the wrong shape falls back to its default and is named in the payload's
 `warnings`.
 
+## The per-task review hook
+
+A repository may ask for a Codex review after each committed spec task by declaring an optional
+`after_specs_execute_task` hook ([extension-points.md](../automation/extension-points.md) holds the contract). This
+repository does not declare it: switching it on is the human's decision.
+
+```json
+{"shared": {"hooks": {"after_specs_execute_task": [{"command": "/<repo>:codex-review", "optional": true}]}}}
+```
+
+The command is the declaring repository's own (for example `.claude/commands/codex-review.md`, with
+its own `Bash(cq:*)` grant); the plugin ships none, and no `allowed-tools` or `tools:` widens. Its
+body runs, in order:
+
+1. `cq codex probe --json`. Exit 0 continues. Exit 1 reports the quota as unavailable and stops:
+   the Claude review stands. Exit 2 (`unknown`) tries the review and reports the fallback if it fails.
+2. Writes the prompt to a file, naming the diff the execute step hands the hook
+   (`review: git -C <toplevel> diff origin/<base>...HEAD`) and asking for an independent review.
+3. `cq codex review --worktree <toplevel> --prompt <file> --base origin/<base> --run <spec>-<task>`.
+4. Reports the review path `.quenching/codex/<run>/review.md`, the `mode`, the tokens (or
+   `not measured`) and, on exit 1, the `fallback: true` fallback to the Claude review.
+
+- **The hook is `optional: true`:** an absent `codex`, a spent quota or a timeout never pauses the build.
+- **Worktree limit.** `/quenching-specs:specs:execute` never invokes a hook in a linked worktree
+  (it reports `skipped: worktree`), so this review runs only in the main checkout, never in an
+  orchestrated build.
+- **Findings are reported, never acted on:** `findingsNeedReproduction` holds, so a Codex finding
+  becomes work only after the Claude side reproduces it with a command and its output.
+
 ## Tests
 
 No test reaches the real Codex. Every test of the pillar runs with `PATH` reduced to a fake
