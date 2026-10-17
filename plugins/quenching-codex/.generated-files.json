@@ -630,7 +630,7 @@
     "scripts/bin/quenching/session/live.py": "b5f6cff83f0bc618de97ef910b98248aa5fff07a3b234938a43a55b2081786c3",
     "scripts/bin/quenching/session/model.py": "0c31594f3bc2ca69f41aa5aec0e69dc9ad8239b6f6beb232d612876bd83b2526",
     "scripts/bin/quenching/session/parse.py": "1a4be101b5538bab603557cf36bdc3b86a5dffc89c451b2ec6537004de9bd817",
-    "scripts/bin/quenching/session/transcript.py": "4863200a6ef898dd3f54a32cb64d0a06172c26008b666951362be66b08ad970c",
+    "scripts/bin/quenching/session/transcript.py": "06ca578b8bdb55e3cd0f83fe2c4bcf1a1c3277604b886538ea69b1cda2761004",
     "scripts/bin/quenching/specs/backends/__init__.py": "4a48fcadb75cded02b36aeefe23afcc3c330f28ad0d6a94a0f5939e31ce0801a",
     "scripts/bin/quenching/specs/backends/azure.py": "b55979ec00280ca7fb691021c4cab15aba5e1f58d9bf393699df9ca2a412e973",
     "scripts/bin/quenching/specs/backends/base.py": "4c5673a9a179c45ce9d305c7e664d65d702039027c5e6dcd8c1a0667ee8e2d69",
