@@ -5,7 +5,8 @@
   const $ = (s) => document.querySelector(s);
   const state = { specs: [], stages: [], fetchedAt: 0, ttl: 5, writable: false, why: "",
                   filters: { subject: "", tag: "", type: "", assignee: "", complexity: "" },
-                  epics: { supported: false, epics: [] }, human: null, busy: false };
+                  epics: { supported: false, epics: [] }, human: null, busy: false,
+                  sessionsOn: false, sessions: null };
 
   /* ── helpers ─────────────────────────────────────────────────────────────── */
   function h(tag, attrs, ...kids) {
@@ -32,7 +33,7 @@
   let changed = false;
   async function api(path, opts = {}) {
     const init = { method: opts.body ? "POST" : "GET", headers: {}, credentials: "same-origin" };
-    const kept = !opts.body && /^(specs|epics|human)(\?|$)/.test(path) ? validated[path] : null;
+    const kept = !opts.body && /^(specs|epics|human|sessions)(\?|$)/.test(path) ? validated[path] : null;
     if (kept) init.headers["If-None-Match"] = kept.etag;
     if (opts.body) { init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(opts.body); }
     let res, data;
@@ -43,7 +44,7 @@
     } catch (e) { throw { code: "network", message: "the portal server is not reachable" }; }
     if (!res.ok || data.ok === false) throw { code: data.code || "http-" + res.status, message: data.message || res.statusText, data };
     const etag = res.headers.get("ETag");
-    if (etag && !opts.body && /^(specs|epics|human)(\?|$)/.test(path)) { validated[path] = { etag, data }; changed = true; }
+    if (etag && !opts.body && /^(specs|epics|human|sessions)(\?|$)/.test(path)) { validated[path] = { etag, data }; changed = true; }
     return data;
   }
   function toast(msg, ok) {
@@ -119,6 +120,10 @@
     } catch (e) { state.epics = { supported: false, epics: [] }; }
     $("#nav-epics").hidden = !state.epics.supported;
     try { state.human = await api("human"); } catch (e) { state.human = null; }
+    if (state.sessionsOn) {
+      try { state.sessions = await api("sessions"); } catch (e) { state.sessions = null; }
+      paintSessionsCount();
+    }
     paintHumanCount();
     notifyGrowth(before, state.human ? state.human.count : 0);
     tickFreshness();
@@ -147,8 +152,9 @@
   async function loadConfig() {
     try {
       const c = await api("config");
-      state.writable = c.writable; state.why = c.readOnlyReason;
+      state.writable = c.writable; state.why = c.readOnlyReason; state.sessionsOn = !!c.sessions;
     } catch (e) { fail(e); }
+    $("#nav-sessions").hidden = !state.sessionsOn;
     $("#capture").disabled = !state.writable;
     const b = $("#banner");
     b.hidden = state.writable;
@@ -292,6 +298,61 @@
           h("h3", {}, `Wave ${g.group}${g.title ? " · " + g.title : ""}`, " ", h("span", { class: "meta" }, `${g.done}/${g.total}`)),
           h("ul", {}, e.items.filter((it) => it.group === g.group).map((it) => epicItem(it, e.criticalPath))))))
         : h("ul", {}, e.children.map((c) => h("li", {}, h("a", { href: "#/spec/" + c.id }, `${c.id} · ${c.title}`), " ", stagePill(c.stage))))));
+  }
+
+  /* ── sessões ao vivo (only under `serve --sessions`) ─────────────────────── */
+  function isWaiting(s) { return s.state === "waiting" || s.status === "waiting"; }
+  function sessionLabel(s) {
+    const w = s.worktree;
+    if (w && w.branch) return w.branch + (w.main ? " (main checkout)" : "");
+    return (s.cwd || "").split("/").filter(Boolean).pop() || s.sessionId;
+  }
+  function paintSessionsCount() {
+    const n = state.sessions ? state.sessions.sessions.filter(isWaiting).length : 0;
+    $("#sessions-count").textContent = n;
+    $("#sessions-count").classList.toggle("hot", n > 0);
+  }
+  function since(iso) {
+    if (!iso) return "";
+    const m = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000));
+    return m < 1 ? "just now" : m < 60 ? m + " min ago" : Math.floor(m / 60) + " h ago";
+  }
+  function radar(activity) {
+    const peak = Math.max(1, ...activity);
+    const total = activity.reduce((a, b) => a + b, 0);
+    return h("div", { class: "radar", role: "img", "aria-label": `${total} events in the last ${activity.length} minutes` },
+      activity.map((n) => h("i", { class: n ? "on" : "", style: `height:${n ? Math.max(12, Math.round(100 * n / peak)) : 4}%` })));
+  }
+  function subLane(sa, winStart, winMs) {
+    const at = (iso, fallback) => Math.min(1, Math.max(0, ((iso ? Date.parse(iso) : fallback) - winStart) / winMs));
+    const from = at(sa.start, winStart), to = at(sa.end, winStart + winMs);
+    return h("div", { class: "sublane" },
+      h("span", { class: "sublabel" }, sa.agentType || "sub-agent", sa.active ? h("span", { class: "chip st-in-progress" }, "active") : null),
+      h("div", { class: "track", role: "img", "aria-label": `${sa.agentType || "sub-agent"} from ${sa.start || "?"} to ${sa.end || "now"}` },
+        h("i", { class: sa.active ? "span active" : "span", style: `left:${(100 * from).toFixed(1)}%;width:${Math.max(0.8, 100 * (to - from)).toFixed(1)}%` })));
+  }
+  function viewSessions() {
+    const ss = state.sessions;
+    if (!ss) return h("p", { class: "empty" }, "The live sessions could not be read.");
+    const waiting = ss.sessions.filter(isWaiting);
+    const winMs = ss.windowMinutes * 60000;
+    const winStart = Date.parse(ss.generatedAt) - winMs;
+    return [
+      h("section", { class: "panel waiting" },
+        h("div", { class: "sechead" }, h("h2", {}, "Esperando você"), h("span", {}, waiting.length)),
+        waiting.length ? h("ul", { class: "humanlist" }, waiting.map((s) => h("li", {},
+          h("strong", {}, sessionLabel(s)), " ", h("span", { class: "meta" }, "since " + since(s.statusSince || s.lastEvent)),
+          h("blockquote", { class: "question" }, s.pendingQuestion || "(waiting, no question text)"))))
+          : h("p", { class: "empty" }, "no session is waiting for you")),
+      h("section", { class: "panel" },
+        h("div", { class: "sechead" }, h("h2", {}, `Sessões · last ${ss.windowMinutes} min`), h("span", {}, ss.sessions.length)),
+        ss.sessions.length ? ss.sessions.map((s) => h("div", { class: "lane" + (isWaiting(s) ? " hot" : "") },
+          h("div", { class: "lanehead" },
+            h("strong", {}, sessionLabel(s)), " ", h("span", { class: "chip ss-" + s.state }, s.state),
+            h("span", { class: "meta" }, "last event " + (since(s.lastEvent) || "never"))),
+          radar(s.activity || []),
+          (s.subagents || []).map((sa) => subLane(sa, winStart, winMs))))
+          : h("p", { class: "empty" }, "no live session in this repository's worktrees"))];
   }
 
   /* ── decidir com o humano ────────────────────────────────────────────────── */
@@ -443,6 +504,7 @@
     else if (view === "list") content = viewList();
     else if (view === "human") content = viewHuman();
     else if (view === "epics" && state.epics.supported) content = viewEpics();
+    else if (view === "sessions" && state.sessionsOn) content = viewSessions();
     else content = viewBoard();
     $("#main").replaceChildren(...[content].flat());
   }
