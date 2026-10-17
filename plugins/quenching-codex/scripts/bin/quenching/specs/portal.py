@@ -21,7 +21,8 @@ SECURITY
   when the portal is `--read-only` or the backend itself is read-only.
 * A refusal or conflict is an HTTP error that carries the CLI's refusal `code`; never a success.
 * `~/.claude` is read only under `--sessions` (off by default), only by `GET /api/sessions`, and
-  only through `quenching.session.live`, imported late so the reader copy (no `session/`) loads;
+  only through the reader `cq` lends from the session pillar (`quenching.common.lent`), so this
+  module never imports `session` and the reader copy, which lends nothing, refuses the flag;
   each row is rebuilt from `SESSION_FIELDS`, never copied by key.
 """
 from __future__ import annotations
@@ -44,6 +45,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 from quenching.common.dates import today
+from quenching.common.lent import borrow
 from quenching.common.output import OK
 from quenching.specs.backends import open_backend
 from quenching.specs.backends.base import BackendRefusal, SpecBackend, transport_read_only
@@ -137,7 +139,7 @@ class Portal:
                  host: str = "127.0.0.1", port: int = 0, nonce: str | None = None,
                  sessions: dict | None = None) -> None:
         self.root, self.token, self.read_only = root, token, read_only
-        self.sessions = sessions  # {"claudeRoot", "projects"} under --sessions, else None
+        self.sessions = sessions  # {"read"} lent by the session pillar under --sessions, else None
         self.nonce: str | None = nonce if nonce is not None else secrets.token_urlsafe(18)
         self.host, self.port = host, port
         self.lock = threading.RLock()
@@ -439,13 +441,9 @@ class Portal:
 
     def _sessions(self) -> dict:
         """The live sessions inside this repository's worktrees, rebuilt field by field."""
-        from quenching.session.live import read_live
-        from quenching.session.worktrees import list_worktrees
-        trees = list_worktrees(self.root) or [{"path": self.root, "branch": None, "main": True}]
+        live, trees = self.sessions["read"](self.root)
         reals = sorted(((os.path.realpath(w["path"]), w) for w in trees),
                        key=lambda pair: len(pair[0]), reverse=True)
-        live = read_live(self.sessions["claudeRoot"], projects=self.sessions["projects"],
-                         cwds=[w["path"] for w in trees])
         rows = []
         for row in live["sessions"]:
             real = os.path.realpath(row["cwd"])
@@ -663,20 +661,17 @@ def make_server(root: str, host: str = "127.0.0.1", port: int = 0, read_only: bo
     return server
 
 
+SESSIONS = "specs.portal.sessions"  # the capability name `cq` lends under
+
+
 def sessions_source() -> tuple[dict | None, dict | None]:
-    """`({"claudeRoot", "projects"}, None)` for `--sessions`, or `(None, refusal)`."""
-    try:
-        from quenching.session.commands.live import _projects
-    except ImportError:
+    """`({"read"}, None)` for `--sessions`, or `(None, refusal)`."""
+    lender = borrow(SESSIONS)
+    if lender is None:
         return None, {"code": "sp-portal-sessions-unavailable", "exit": 2,
                       "message": "this copy of the portal carries no session reader; "
                                  "--sessions needs the full quenching plugin"}
-    configured = os.environ.get("QUENCHING_CLAUDE_ROOT")
-    claude_root = Path(configured) if configured else Path.home() / ".claude"
-    if not (claude_root / "sessions").is_dir():
-        return None, {"code": "se-no-sessions", "exit": 2,
-                      "message": f"no sessions directory at {claude_root}"}
-    return {"claudeRoot": claude_root, "projects": _projects(configured, claude_root)}, None
+    return lender.source()
 
 
 def cmd_serve(args, root: str, out: Emitter) -> int:

@@ -15,6 +15,7 @@ try:
 except ModuleNotFoundError:
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
+from quenching.common import lent as lent_mod
 from quenching.specs import backends as backends_mod
 from quenching.specs import portal as portal_mod
 from quenching.specs.backends.base import BackendRefusal, SpecBackend
@@ -457,11 +458,12 @@ class Sessions(PortalCase):
             {"agentType": "quenching:spec-runner", "prompt": self.SECRET}))
         session("2", "s-out", "/elsewhere/other-repo", [
             {"type": "user", "timestamp": ts(1), "message": {"content": "x"}}])
+        from quenching.session.portal import reader
         self.on = portal_mod.Portal(self.tmp, TOKEN, False, "127.0.0.1", PORT, sessions={
-            "claudeRoot": self.claude, "projects": self.claude / "projects"})
+            "read": reader(self.claude, self.claude / "projects")})
 
     def test_without_the_flag_the_route_is_404_and_nothing_is_read(self):
-        with mock.patch("quenching.session.live.read_live",
+        with mock.patch("quenching.session.portal.read_live",
                         side_effect=AssertionError("read without --sessions")):
             status, body = self.get("/api/sessions")
         self.assertEqual((status, body["code"]), (404, "sp-portal-not-found"))
@@ -488,10 +490,21 @@ class Sessions(PortalCase):
         self.assertEqual(again[0], 304)
 
     def test_a_copy_without_the_session_reader_refuses_the_flag(self):
-        with mock.patch.dict(sys.modules, {"quenching.session.commands.live": None}):
+        with mock.patch.dict(lent_mod._LENT, clear=True):
             source, refusal = portal_mod.sessions_source()
         self.assertIsNone(source)
         self.assertEqual(refusal["code"], "sp-portal-sessions-unavailable")
+
+    def test_the_lent_reader_answers_the_flag(self):
+        with mock.patch.dict(lent_mod._LENT, {portal_mod.SESSIONS: "quenching.session.portal"}), \
+                mock.patch.dict("os.environ", {"QUENCHING_CLAUDE_ROOT": str(self.claude)}):
+            source, refusal = portal_mod.sessions_source()
+        self.assertIsNone(refusal)
+        self.assertEqual(set(source), {"read"})
+
+    def test_the_portal_never_imports_the_session_pillar(self):
+        source = pathlib.Path(portal_mod.__file__).read_text()
+        self.assertNotRegex(source, r"(?m)^\s*(?:from|import) quenching\.session")
 
 
 class ReadOnly(PortalCase):
