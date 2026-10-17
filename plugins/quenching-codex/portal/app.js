@@ -6,7 +6,8 @@
   const state = { specs: [], stages: [], fetchedAt: 0, ttl: 5, writable: false, why: "",
                   filters: { subject: "", tag: "", type: "", assignee: "", complexity: "" },
                   epics: { supported: false, epics: [] }, human: null, busy: false,
-                  sessionsOn: false, sessions: null };
+                  sessionsOn: false, sessions: null,
+                  projects: null, project: "", base: "" };
 
   /* ── helpers ─────────────────────────────────────────────────────────────── */
   function h(tag, attrs, ...kids) {
@@ -33,18 +34,19 @@
   let changed = false;
   async function api(path, opts = {}) {
     const init = { method: opts.body ? "POST" : "GET", headers: {}, credentials: "same-origin" };
-    const kept = !opts.body && /^(specs|epics|human|sessions)(\?|$)/.test(path) ? validated[path] : null;
+    const key = state.base + path;
+    const kept = !opts.body && /^(specs|epics|human|sessions)(\?|$)/.test(path) ? validated[key] : null;
     if (kept) init.headers["If-None-Match"] = kept.etag;
     if (opts.body) { init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(opts.body); }
     let res, data;
     try {
-      res = await fetch("/api/" + path, init);
+      res = await fetch(state.base + "/api/" + path, init);
       if (res.status === 304 && kept) return kept.data;
       data = await res.json();
     } catch (e) { throw { code: "network", message: "the portal server is not reachable" }; }
     if (!res.ok || data.ok === false) throw { code: data.code || "http-" + res.status, message: data.message || res.statusText, data };
     const etag = res.headers.get("ETag");
-    if (etag && !opts.body && /^(specs|epics|human|sessions)(\?|$)/.test(path)) { validated[path] = { etag, data }; changed = true; }
+    if (etag && !opts.body && /^(specs|epics|human|sessions)(\?|$)/.test(path)) { validated[key] = { etag, data }; changed = true; }
     return data;
   }
   function toast(msg, ok) {
@@ -360,7 +362,7 @@
     const n = state.human ? state.human.count : 0;
     $("#human-count").textContent = n;
     $("#human-count").classList.toggle("hot", n > 0);
-    document.title = (n > 0 ? `(${n}) ` : "") + "Quenching specs";
+    document.title = (n > 0 ? `(${n}) ` : "") + (state.project ? state.project + " — " : "") + "Quenching specs";
     const c = document.createElement("canvas");
     c.width = c.height = 32;
     const g = c.getContext && c.getContext("2d");
@@ -492,6 +494,38 @@
       h("ul", {}, r.results.map((x) => h("li", {}, h("a", { href: "#/spec/" + x.id }, `${x.id} · ${x.title}`), " ", stagePill(x.stage), x.snippet ? h("div", { class: "meta" }, "…" + x.snippet + "…") : null))));
   }
 
+  /* ── projects: only `cq portal serve` answers /api/projects; `cq specs serve` 404s it ── */
+  async function loadProjects() {
+    let r;
+    try { r = await api("projects"); } catch (e) { return; }
+    if (!r || !Array.isArray(r.projects) || !r.projects.length) return;
+    state.projects = r.projects;
+    const kept = localStorageGet("qproject");
+    const chosen = r.projects.find((p) => p.name === kept) || r.projects[0];
+    state.project = chosen.name; state.base = chosen.prefix;
+    paintProjects();
+  }
+  function paintProjects() {
+    const nav = $("#projects");
+    const pick = (p) => ({ click: () => switchProject(p) });
+    nav.replaceChildren(h("h2", {}, "Projetos"), h("ul", {}, state.projects.map((p) => h("li", {},
+      h("button", { type: "button", class: "project", "aria-current": p.name === state.project ? "true" : false, on: pick(p) }, p.name),
+      h("ul", { class: "trees", "aria-label": "Worktrees de " + p.name }, (p.worktrees || []).map((w) => h("li", {},
+        h("button", { type: "button", class: "tree", title: w.path, on: pick(p) },
+          (w.branch || "(detached)") + (w.main ? " · main" : "")))))))));
+    nav.hidden = false;
+  }
+  async function switchProject(p) {
+    if (p.name === state.project) return;
+    state.project = p.name; state.base = p.prefix; localStorageSet("qproject", p.name);
+    state.human = null; state.sessions = null;
+    paintProjects();
+    await loadConfig();
+    try { await load(true); } catch (e) { fail(e); }
+    if (location.hash && !/^#\/?(board)?$/.test(location.hash)) location.hash = "#/board";
+    else await render();
+  }
+
   /* ── router ──────────────────────────────────────────────────────────────── */
   async function render() {
     closeDrawer();
@@ -526,6 +560,7 @@
   setInterval(() => { if (!$("#dlg").open) refresh(false); }, 8000);
 
   (async () => {
+    await loadProjects();
     await loadConfig();
     try { await load(false); } catch (e) { fail(e); }
     await render();

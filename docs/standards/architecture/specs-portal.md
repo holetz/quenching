@@ -7,7 +7,7 @@ tags: [architecture, portal, specs, security, ux]
 timestamp: 2026-10-17
 audience: both
 authority: current
-source: spec 1769 and the fixed owner decisions B-O1 to B-O4 of epic 1768; spec 1812 (epic 1810) for the sessions read
+source: spec 1769 and the fixed owner decisions B-O1 to B-O4 of epic 1768; spec 1812 (epic 1810) for the sessions read; spec 1814 (epic 1810) for the central server
 maintainer: quenching
 ---
 
@@ -15,7 +15,8 @@ maintainer: quenching
 
 <!-- rules -->
 
-`cq specs serve` is a local portal over the specs store. This standard is the contract any change
+`cq specs serve` is a local portal over the specs store, and `cq portal serve` serves one such
+portal per registered project from a single server (§Central server). This standard is the contract any change
 to `portal.py` or `assets/portal/**` is reviewed against. It describes what exists and fixes the
 limits; it does not prescribe layout.
 
@@ -38,7 +39,10 @@ not even imported. `specs/portal.py` never imports `quenching.session`: the read
 `quenching.session.portal`) and registers it at dispatch, through `quenching.common.lent.lend`,
 only when the module carrying the session package is enabled; the portal calls
 `borrow(SESSIONS)`, which imports the lender only then. A new cross-pillar capability takes the
-same route, never a direct import. The `quenching-specs-reader` copy does not carry the session
+same route, never a direct import: the `portal` pillar borrows `portal.specs`
+(`quenching.specs.portal`), `portal.worktrees` (`quenching.session.worktrees`) and
+`specs.portal.sessions` under `LOANS["portal"]`, and `cq portal serve` refuses
+(`portal-serve-unavailable`) when either of the first two is not lent. The `quenching-specs-reader` copy does not carry the session
 package, so nothing is lent and it refuses `--sessions` (`sp-portal-sessions-unavailable`) before
 a socket opens.
 
@@ -47,11 +51,35 @@ a socket opens.
 The projects a portal shows are registered in `~/.config/quenching/projects.json`
 (`{"schemaVersion": 1, "projects": [{"name", "path"}]}`, `path` the absolute main root of the
 repository, never a worktree). Only `cq portal add`, `cq portal remove` and `cq portal list`
-(`quenching/portal/`) write it, atomically; no server and no page writes it, and a portal reads it
-only once a spec that declares that read has landed. The one-time `cq portal add --from-orca` opens
+(`quenching/portal/`) write it, atomically; no server and no page writes it. `cq portal serve` reads it once,
+at start (a change to the registry needs a restart), and refuses an empty one
+(`portal-no-projects`) before a socket opens. The one-time `cq portal add --from-orca` opens
 only orca's `profiles/*/orca-data.json` and keeps `repos[].path` and `repos[].displayName`; any other
 field there, tokens and credentials included, is never read into the registry or printed, and a
 second import is refused. Reading orca live is not part of this standard.
+
+## Central server
+
+`cq portal serve [--host] [--port] [--read-only] [--open] [--sessions]` binds one loopback
+`ThreadingHTTPServer` and builds one `Portal` per registered project, all sharing that server's
+single token, host and port. `quenching/portal/serve.py`'s `Central.handle` checks `Host` and
+`Origin` first, then:
+
+- the page, its assets and the `?nonce=` trade go to a door `Portal` over no root, which never
+  reaches a backend because every `/api/` path is answered before it;
+- `GET /api/projects` (token required) returns, per project, `name`, `path`, `prefix`
+  (`/p/<name percent-encoded>`) and `worktrees[{path, branch, main}]`, read from the git directory
+  by `list_worktrees`, never through `git`;
+- `/p/<name>/api/<route>` (token required) strips the prefix and hands the request, query string
+  included, to that project's `Portal`, which applies every gate of its own; an unregistered name
+  is a 404 `portal-unknown-project`, and a non-API path under a prefix is a 404.
+
+`--read-only` reaches every project; `--sessions` gives each project's portal the session reader,
+which keeps only the sessions inside **that** project's worktrees. The `Portal.lock` is per
+project and `_STDIO_LOCK` is per process, so two projects never capture each other's verb output.
+`SpecBackend.read_only` and `transport_read_only()` are process-wide and therefore hold for every
+project at once. `cq specs serve` is unchanged: its `Portal` has no `/api/projects`, so the page
+sees a 404 there and shows no project menu.
 
 ## Routes
 
@@ -60,6 +88,8 @@ under `/`. With `--sessions` only, also `GET /api/sessions`; without the flag it
 (`sp-portal-not-found`) like any unknown route, and `/api/config` reports `sessions: false`. POST: `/api/capture`, `/api/section`, `/api/approve`, `/api/reorder`,
 `/api/discovery`, each delegating to the CLI's own verb so CAS and refusals are the terminal's.
 
+- Under `cq portal serve` only: `GET /api/projects`, and every route above under
+  `/p/<project>/` (§Central server).
 - No new POST route enters without a human decision. Reading more is a GET over the same store.
 - A GET request starts no process beyond the read the store backend already makes (on the git backend, `git` reading the `quenching` branch), and never calls `gh`.
 - A POST request writes to the store and pushes to git through the CLI's own verb. Every write route goes through the backend's write path, and with a card provider configured (`card: {provider: github}`) that path reaches `gh`: it creates the card on capture (`cmd_new` → `resolve_card_client`) and, through `_card_transitions` in the git backend, updates it when the `lifecycle_key` changes (title, board state, phase, labels or tags). Which routes trigger it follows from that mechanism, not from a list. This describes what exists; it grants nothing new.
@@ -77,7 +107,8 @@ under `/`. With `--sessions` only, also `GET /api/sessions`; without the flag it
 Kept as `portal.py` documents them in its docstring:
 
 - Loopback only; a non-loopback `--host` is refused before a socket opens.
-- A random per-run token on every `/api/` call and for the page itself, carried by the `qtoken`
+- A random per-run token on every `/api/` call and for the page itself (under `cq portal serve`,
+  one token and one cookie for the whole server and every project behind it), carried by the `qtoken`
   cookie (`HttpOnly; SameSite=Strict; Path=/`) or the `X-Quenching-Token` header, and never
   accepted in a URL (`?token=` is refused). The URL the portal prints and `--open` hands to the
   browser holds only a random one-use nonce: `GET /?nonce=` trades it once for the cookie with a
