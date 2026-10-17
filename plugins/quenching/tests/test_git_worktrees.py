@@ -49,6 +49,39 @@ class ListWorktreesTest(unittest.TestCase):
         subprocess.run(["rm", "-rf", self.plain], check=True)
         self.assertNotIn(self.plain, [row["path"] for row in self._rows(self.main)])
 
+    def test_a_subdirectory_resolves_to_the_enclosing_checkout(self):
+        sub = os.path.join(self.main, "plugins", "deep")
+        os.makedirs(sub)
+        self.assertEqual(self._rows(sub), self._rows(self.main))
+        nested = os.path.join(self.plain, "x")
+        os.mkdir(nested)
+        self.assertEqual(self._rows(nested), self._rows(self.main))
+
+    def test_separate_git_dir_names_the_checkout_not_the_store_parent(self):
+        meta = os.path.join(self.base, "meta")
+        os.mkdir(meta)
+        repo = os.path.join(self.base, "sep")
+        _git(self.base, "init", "-q", "-b", "main", "--separate-git-dir",
+             os.path.join(meta, "store.git"), repo)
+        self.assertEqual(self._rows(repo), [{"path": repo, "branch": "main", "main": True}])
+        sub = os.path.join(repo, "a")
+        os.mkdir(sub)
+        self.assertEqual(self._rows(sub), self._rows(repo))
+
+    def test_a_relative_gitdir_pointer_resolves_against_its_own_file(self):
+        entry = os.path.join(self.main, ".git", "worktrees", "wt-plain")
+        with open(os.path.join(entry, "gitdir"), "w", encoding="utf-8") as stream:
+            stream.write("../../../../wt-plain/.git\n")
+        expected = self._rows(self.main)
+        self.assertIn(self.plain, [row["path"] for row in expected])
+        for cwd in ("/", entry):
+            before = os.getcwd()
+            os.chdir(cwd)
+            try:
+                self.assertEqual(self._rows(self.main), expected)
+            finally:
+                os.chdir(before)
+
     def test_not_a_repository_is_empty(self):
         self.assertEqual(list_worktrees(self.base), [])
 
