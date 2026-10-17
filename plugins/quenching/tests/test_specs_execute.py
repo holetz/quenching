@@ -84,6 +84,8 @@ class TaskExecutionContractTests(unittest.TestCase):
                     with tempfile.TemporaryDirectory() as directory:
                         root = Path(directory)
                         git(root, "init", "-q", "-b", "main")
+                        git(root, "config", "maintenance.auto", "false")
+                        git(root, "config", "gc.auto", "0")
                         git(root, "config", "user.email", "red-check@example.invalid")
                         git(root, "config", "user.name", "RED cleanup check")
                         git(root, "config", "core.autocrlf", "false")
@@ -227,6 +229,8 @@ class TaskExecutionContractTests(unittest.TestCase):
     def test_explicit_subject_commits_only_staged_files(self):
         with tempfile.TemporaryDirectory() as directory:
             git(directory, "init", "-q", "-b", "main")
+            git(directory, "config", "maintenance.auto", "false")
+            git(directory, "config", "gc.auto", "0")
             git(directory, "config", "user.email", "execute-check@example.invalid")
             git(directory, "config", "user.name", "task execution check")
             Path(directory, "README.md").write_text("seed\n", encoding="utf-8")
@@ -257,6 +261,8 @@ class TaskExecutionContractTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             git(directory, "init", "-q", "-b", "main")
+            git(directory, "config", "maintenance.auto", "false")
+            git(directory, "config", "gc.auto", "0")
             git(directory, "config", "user.email", "execute-check@example.invalid")
             git(directory, "config", "user.name", "task execution check")
             Path(directory, "README.md").write_text("seed\n", encoding="utf-8")
