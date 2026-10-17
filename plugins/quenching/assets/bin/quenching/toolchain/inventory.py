@@ -112,6 +112,14 @@ def _arbiter_entries(text: str | None) -> list[dict[str, str]]:
     ]
 
 
+def _split_requirement(item: str) -> tuple[str, str]:
+    """Split a PEP 508 requirement into its bare name and its specifier."""
+    match = re.match(r"\s*([A-Za-z0-9][A-Za-z0-9._-]*)\s*(?:\[[^\]]*\])?\s*(.*)", item)
+    if not match:
+        return "", ""
+    return match.group(1), match.group(2).split(";", 1)[0].strip()
+
+
 def _pyproject(path: Path, root: Path) -> tuple[Artifact, list[Artifact]]:
     data, error = _read_toml(path)
     text = _read_text(path)
@@ -123,8 +131,11 @@ def _pyproject(path: Path, root: Path) -> tuple[Artifact, list[Artifact]]:
     if isinstance(groups, dict):
         for group, values in groups.items():
             if isinstance(values, list):
-                dev_specs.update({item.split(" ", 1)[0]: item for item in values
-                                  if isinstance(item, str)})
+                for item in values:
+                    if isinstance(item, str):
+                        name, specifier = _split_requirement(item)
+                        if name:
+                            dev_specs[name] = specifier
     semantic_keys = []
     if isinstance(project, dict) and isinstance(project.get("scripts"), dict):
         semantic_keys.append("project.scripts")

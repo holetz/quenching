@@ -86,6 +86,17 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    The limit is declared: `grants` catches the widening a worker that follows the protocol makes by mistake;
    it is no sandbox against one who circumvents it on purpose (a worker with free `Bash` writes outside the diff anyway).
 
+10. Ruler: the payload's `lowered` lists how the branch lowers the bar the gate measures, each entry
+   `{path, severity, kind, detail}`. Any `severity: fail` entry (`test-deleted`, `test-lost-asserts`,
+   `gate-shrunk`: a test file deleted or left with no assert, a step removed from
+   `scripts/verify_repo.sh` or `plugins/quenching/assets/checks/**`) is FAIL with
+   `needs-human: régua rebaixada`, quoting each `path` and `detail`. When the spec's own `## Problem` or
+   `## Proposal` declares that removal as its objective, the FAIL quotes that declaration for the
+   conductor; it never dispenses the FAIL by itself. `severity: warn` entries (`suppression-added`: a new
+   `noqa`, `type: ignore`, `skip`, `skipIf`, `skipUnless`, `xfail`; `discover-unrecognized`: the gate's test-discovery command was not recognised, so a moved
+   test was judged by folder name) are listed in the evidence and never
+   block. Empty is ok. A weakened task `verify:` is not read here: the spec store is not in the diff.
+
 If a check does not apply (no PR yet, no declared `files:`), mark it `n/a`; do not fail on it.
 
 ## Not checked here
@@ -106,6 +117,9 @@ VERDICT: PASS | FAIL
 7 history: ...
 8 conclusion: ...
 9 grants: ok|fail|n/a — <evidence>
+10 ruler: ok|fail|n/a — <evidence; warnings listed>
 ```
+
+Each check's evidence is one line of at most 200 characters; quote the offending item, not the list.
 
 PASS only when every applicable check is ok. Any fail, inconclusive gate or `complete: false` is FAIL.

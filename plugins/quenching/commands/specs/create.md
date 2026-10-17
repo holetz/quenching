@@ -190,22 +190,22 @@ presumed and why — the shape differs by path:
 | plan source | subject, type, tags and `complexity` (each reasoned), and the **list** of sections filled with the task count. **Never the bodies** — the plan is large and the human just wrote it |
 
 Then the next-step block — `/quenching:specs:develop <id>` as the forward candidate — and **one**
-`AskUserQuestion`, immediately after. Two options:
+decision sheet ([questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared mechanics §1), immediately after. Two options, labelled in the declared language:
 
-1. **Develop now (Recommended)** — narrate, then invoke `quenching:specs:develop <id>` through
+A. **Develop now (recommended)** — narrate, then invoke `quenching:specs:develop <id>` through
    the **Skill** tool, with no sentence declared. Whether that pass asks anything is the
-   `complexity` shown on this screen: `high` and `xhigh` ask, `low` and `medium` answer from
-   evidence and park the rest in `## Open Decisions`; correcting it with `Other` is how the human
+   `complexity` shown on this sheet: `high` and `xhigh` ask, `low` and `medium` answer from
+   evidence and park the rest in `## Open Decisions`; correcting it in the reply is how the human
    chooses to be asked or not.
-2. **Stop here** — nothing more is invoked; the report above is the whole of this run.
+B. **Stop here** — nothing more is invoked; the report above is the whole of this run.
 
-**The correction is `Other`**, which the tool always offers and which the question text invites
-explicitly ("…or answer `Other` to correct any presumption before continuing"). A correction is
+**The correction is free text in the reply**, invited explicitly by the sheet ("…or correct any
+presumption in your reply before continuing"). A correction is
 applied with the deterministic verb that owns the field — `cq specs tags <id> "<whole list>"`
 (fixed tags included, or they are lost), `cq specs record <id> priority --set
 complexity=<level> --set date=<today>`, `cq specs section <id> "<Heading>" --write` — **and only
-then** honour whichever of the two options the same answer also names. An `Other` answer that names
-no direction falls to option 2.
+then** honour whichever of the two options the same reply also names. A reply that names
+no direction falls to B.
 
 **Done when:** the screen has been shown and the human's answer — a correction, a direction, or
 both — has been fully honoured.
@@ -224,6 +224,6 @@ both — has been fully honoured.
 - **Never ask for a metadata field before the spec exists.** Subject, type, tags and `complexity`
   are resolved and written in step 5; the human is asked only after, on the closing screen.
 - **Never invoke `/quenching:specs:develop` without the human having chosen a direction** on the
-  closing screen — a correction alone, with no direction named, ends the run at option 2.
+  closing screen — a correction alone, with no direction named, ends the run at option B.
 - **Never print the closing screen without naming what was presumed and why** — every subject,
   type, tag and `complexity` level carries its reason.

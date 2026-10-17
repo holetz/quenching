@@ -2,9 +2,9 @@
 type: standard
 title: Security pillar
 description: A read-only pillar that reports workflow permissions, secret and ignore coverage, advisory dependency configuration and access ownership without owning a converged tree
-resource: .github/workflows/**, .gitignore, pyproject.toml, .claude/quenching.json, plugins/quenching/commands/security/**, plugins/quenching/assets/bin/quenching/security/**
+resource: .github/workflows/**, .gitignore, pyproject.toml, .claude/quenching.json, plugins/quenching/commands/security/**, plugins/quenching/assets/bin/quenching/security/**, plugins/quenching/assets/bin/quenching/controls/**
 tags: [architecture, security, pillar, read-only, permissions]
-timestamp: 2026-08-31
+timestamp: 2026-10-14
 audience: both
 authority: background
 source: spec 1071 (task 1.1) — the security subject was classified as pillar-shaped by the axis contract; this declaration fixes its questions and boundary before route implementation
@@ -32,6 +32,15 @@ a secure value.
 | Do ignore rules cover the secret classes the repository exposes? | Repository ignore patterns and the secret-bearing paths they cover | The target owns secret policy; the pillar never adds or edits an ignore rule. |
 | Is advisory dependency configuration present? | Dependency-advisory or update configuration and the manifests it names | `toolchain` owns dependency declarations; the pillar only reports advisory coverage. |
 | Who may touch the relevant security surface? | Access-ownership declarations such as CODEOWNERS or an equivalent provider artifact | The provider and target owner own access policy; the pillar does not grant or revoke access. |
+
+### Catalog controls
+
+Beside the four questions, the payload carries a `controls` block: every control the open source
+controls catalog routes to `security`, each requirement with its id and a state (`present`,
+`missing`, `not-measured`, `refused` or `retired`) and its evidence paths, computed by the shared
+evaluator `quenching/controls/evaluate.py`. `present` is candidate evidence, never conformance.
+A requirement that needs a provider fact is `not-measured`; the pillar reads no provider. The
+block never changes `ok` or the exit code (spec 1638).
 
 <!-- rationale -->
 

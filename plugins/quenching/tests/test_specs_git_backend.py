@@ -205,6 +205,58 @@ class Reading(GitStoreFixture):
         with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
             self.assertEqual([1], [r["id"] for r in GitBackend(a_path).list_specs()])
 
+    def test_no_fetch_reads_the_local_ref_even_when_the_cache_expired(self):
+        a_path = self.clone("a")
+        GitBackend(a_path).list_specs()
+        GitBackend(self.clone("b")).create_spec("plans", canonical._case_doc())
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0), \
+                mock.patch.dict(os.environ, {git_mod.NO_FETCH_ENV: "1"}):
+            self.assertEqual([], GitBackend(a_path).list_specs())
+        with mock.patch.object(git_mod, "FETCH_TTL_S", 0):
+            self.assertEqual([1], [r["id"] for r in GitBackend(a_path).list_specs()])
+
+    def test_an_external_commit_after_the_ttl_is_seen_by_the_same_instance(self):
+        a_path = self.clone("a")
+        b = GitBackend(self.clone("b"))
+        b.create_spec("plans", canonical._case_doc())
+        backend = GitBackend(a_path)
+        now = [1000.0]    # injected clock: no real sleep, no dependence on how fast the test runs
+        with mock.patch.object(git_mod.time, "monotonic", lambda: now[0]):
+            self.assertEqual([1], [r["id"] for r in backend.list_specs()])   # memoizes a non-null tip
+            b.create_spec("plans", canonical._case_doc())
+            _sh(a_path, "fetch", "--quiet", "origin", "+quenching:refs/remotes/origin/quenching")
+            with mock.patch.dict(os.environ, {git_mod.NO_FETCH_ENV: "1"}):
+                now[0] += 0.5
+                self.assertEqual([1], [r["id"] for r in backend.list_specs()])   # inside the memo window
+                now[0] += 2.0   # past the window, still far inside FETCH_TTL_S
+                self.assertEqual([1, 2], sorted(r["id"] for r in backend.list_specs()))
+
+    def test_the_portal_etag_moves_after_an_external_commit_to_the_store_ref(self):
+        from quenching.specs import portal as portal_mod
+        a_path = self.clone("a")
+        writer = self.clone("w")
+        GitBackend(writer).create_spec("plans", canonical._case_doc())
+        _sh(a_path, "fetch", "--quiet", "origin", "+quenching:refs/remotes/origin/quenching")
+        headers = {"Host": "127.0.0.1:4321", "X-Quenching-Token": "t"}
+        with mock.patch.dict(os.environ, {git_mod.NO_FETCH_ENV: "1"}), \
+                mock.patch.object(git_mod, "TIP_MEMO_S", 0), \
+                mock.patch.object(portal_mod, "TTL_SECONDS", 0):
+            backends_mod._BACKEND_CACHE[a_path] = GitBackend(a_path)
+            portal = portal_mod.Portal(a_path, "t", True, "127.0.0.1", 4321)
+            status, hdrs, body = portal.handle("GET", "/api/specs", headers)
+            self.assertEqual(200, status, body)
+            etag = hdrs["ETag"]
+            self.assertEqual(304, portal.handle("GET", "/api/specs",
+                                                {**headers, "If-None-Match": etag})[0])
+            info, _ = GitBackend(writer).read_spec(1)
+            GitBackend(writer).write_spec(info, info["text"].replace(
+                "title: Alpha", "title: Renamed outside the portal", 1))
+            _sh(a_path, "fetch", "--quiet", "origin", "+quenching:refs/remotes/origin/quenching")
+            status, hdrs, _ = portal.handle("GET", "/api/specs",
+                                            {**headers, "If-None-Match": etag})
+            self.assertEqual(200, status)
+            self.assertNotEqual(etag, hdrs["ETag"])
+
     def test_a_read_only_mirror_never_touches_the_target_and_refuses_writes(self):
         target = self.clone("target")    # before the branch exists: no tracking ref yet
         GitBackend(self.clone("writer")).create_spec("plans", canonical._case_doc())

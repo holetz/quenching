@@ -35,6 +35,125 @@ class DeliveryResults(unittest.TestCase):
             assert payload is not None
             return payload, code
 
+    def test_workflow_mapping_indentation_preserves_inventory_and_findings(self):
+        baseline = None
+        for trigger_width, job_width in ((2, 2), (4, 4), (2, 4), (4, 2), (6, 6)):
+            with self.subTest(trigger_width=trigger_width, job_width=job_width):
+                trigger = " " * trigger_width
+                job = " " * job_width
+                payload, code = self._run({
+                    ".github/workflows/ci.yml": (
+                        "on:\n # trigger comment\n\n"
+                        + trigger + "push:\n"
+                        + trigger + "  branches: [main]\n"
+                        + trigger + "pull_request:\n"
+                        "jobs:\n # job comment\n\n"
+                        + job + "test:\n"
+                        + job + "  strategy:\n"
+                        + job + "    matrix:\n"
+                        + job + "      python-version: ['3.12']\n"
+                        + job + "  steps:\n"
+                        + job + "    - uses: actions/checkout@v4\n"
+                        + job + "    - run: python -m unittest\n"
+                        + job + "lint:\n"
+                        + job + "  needs: [test]\n"
+                        + job + "  steps:\n"
+                        + job + "    - uses: actions/checkout@v4\n"
+                        + job + "    - run: python -m compileall .\n"
+                    ),
+                })
+                workflow = payload["inventory"]["workflows"][0]
+                self.assertEqual(["pull_request", "push"], workflow["triggers"])
+                self.assertEqual(["lint", "test"], workflow["jobs"])
+                details = {item["name"]: item for item in workflow["jobDetails"]}
+                self.assertEqual({"test", "lint"}, set(details))
+                self.assertEqual(["python -m unittest"], details["test"]["commands"])
+                self.assertEqual(["python -m compileall ."], details["lint"]["commands"])
+                self.assertEqual(["test"], details["lint"]["needs"])
+                codes = {item["code"] for item in payload["findings"]}
+                self.assertIn("delivery-setup-missing", codes)
+                self.assertNotIn("delivery-trigger-unreachable", codes)
+                self.assertEqual(1, code)
+                observed = (workflow, payload["findings"], code)
+                if baseline is None:
+                    baseline = observed
+                else:
+                    self.assertEqual(baseline, observed)
+
+    def test_step_condition_does_not_disable_its_job(self):
+        for condition in ("false", "${{ false }}", "never"):
+            with self.subTest(condition=condition):
+                payload, _ = self._run({
+                    ".github/workflows/ci.yml": (
+                        "on: push\njobs:\n  test:\n    steps:\n"
+                        "      - name: disabled\n        if: " + condition + "\n"
+                        "        run: echo skipped\n"
+                        "      - run: python -m unittest\n"
+                    ),
+                })
+                job = payload["inventory"]["workflows"][0]["jobDetails"][0]
+                self.assertTrue(job["active"])
+                codes = {finding["code"] for finding in payload["findings"]}
+                self.assertIn("delivery-checkout-missing", codes)
+                self.assertIn("delivery-setup-missing", codes)
+
+    def test_azure_top_level_step_condition_does_not_disable_synthetic_job(self):
+        payload, _ = self._run({
+            "azure-pipelines.yml": (
+                "trigger: [main]\nsteps:\n- script: echo skipped\n  if: false\n"
+                "- script: python -m unittest\n"
+            ),
+        })
+        job = payload["inventory"]["workflows"][0]["jobDetails"][0]
+        self.assertTrue(job["active"])
+        self.assertIn("delivery-setup-missing", {item["code"] for item in payload["findings"]})
+
+    def test_job_false_condition_stays_inactive(self):
+        for indent in ("    ", "      "):
+            with self.subTest(indent=len(indent)):
+                payload, _ = self._run({
+                    ".github/workflows/ci.yml": (
+                        "on: push\njobs:\n  test:\n" + indent + "if: ${{ false }}\n"
+                        + indent + "steps:\n" + indent + "  - run: python -m unittest\n"
+                    ),
+                })
+                self.assertFalse(payload["inventory"]["workflows"][0]["jobDetails"][0]["active"])
+                codes = {finding["code"] for finding in payload["findings"]}
+                self.assertNotIn("delivery-checkout-missing", codes)
+                self.assertNotIn("delivery-setup-missing", codes)
+
+    def test_multiline_commands_preserve_runtime_and_publish_evidence(self):
+        for marker in ("|", ">", "|-", ">+", "|2-"):
+            for provider in ("github", "azure-bash", "azure-script", "azure-pwsh", "gitlab"):
+                with self.subTest(provider=provider, marker=marker):
+                    if provider == "github":
+                        path = ".github/workflows/ci.yml"
+                        body = ("on: push\njobs:\n  test:\n    steps:\n"
+                                "      - run: " + marker + "\n"
+                                "          echo starting\n          python -m build\n"
+                                "          npm publish\n"
+                                "        name: metadata\n      - run: echo next\n")
+                    elif provider.startswith("azure"):
+                        path = "azure-pipelines.yml"
+                        key = provider.split("-", 1)[1]
+                        body = ("trigger: [main]\nsteps:\n- " + key + ": " + marker + "\n"
+                                "    echo starting\n    python -m build\n    npm publish\n"
+                                "  displayName: metadata\n- script: echo next\n")
+                    else:
+                        path = ".gitlab-ci.yml"
+                        body = ("test:\n  script: " + marker + "\n"
+                                "    echo starting\n    python -m build\n    npm publish\n"
+                                "  after_script:\n    - echo after\n")
+                    payload, _ = self._run({path: body})
+                    job = payload["inventory"]["workflows"][0]["jobDetails"][0]
+                    self.assertEqual(["echo starting", "python -m build", "npm publish"] +
+                                     ([] if provider == "gitlab" else ["echo next"]), job["commands"])
+                    self.assertTrue(job["release"])
+                    codes = {finding["code"] for finding in payload["findings"]}
+                    self.assertIn("delivery-setup-missing", codes)
+                    if provider != "gitlab":
+                        self.assertIn("delivery-checkout-missing", codes)
+
     def test_absent_is_explicit_not_applicable(self):
         payload, code = self._run({})
         self.assertEqual(0, code)
@@ -151,6 +270,65 @@ class DeliveryResults(unittest.TestCase):
         } <= codes)
         self.assertTrue(all(item["band"] == "Structural"
                             for item in payload["findings"]))
+
+    def test_list_form_triggers_are_triggers(self):
+        github, _ = self._run({
+            ".github/workflows/ci.yml": (
+                "name: CI\non:\n  - push\njobs:\n  test:\n    runs-on: ubuntu-latest\n"
+                "    steps:\n      - run: echo ok\n"
+            ),
+        })
+        azure, _ = self._run({
+            "azure-pipelines.yml": "trigger:\n- main\nsteps:\n- script: echo ok\n",
+        })
+        self.assertEqual(["push"], github["inventory"]["workflows"][0]["triggers"])
+        self.assertEqual(["main"], azure["inventory"]["workflows"][0]["triggers"])
+        for payload in (github, azure):
+            self.assertNotIn("delivery-trigger-unreachable",
+                             {item["code"] for item in payload["findings"]})
+
+    def test_trigger_none_is_no_trigger(self):
+        for body in ("trigger: none\n", "trigger:\n- none\n"):
+            payload, _ = self._run({
+                "azure-pipelines.yml": body + "steps:\n- script: echo ok\n",
+            })
+            self.assertEqual([], payload["inventory"]["workflows"][0]["triggers"])
+            self.assertIn("delivery-trigger-unreachable",
+                          {item["code"] for item in payload["findings"]})
+
+    def test_azure_pr_and_schedules_are_triggers_with_trigger_none(self):
+        bodies = {
+            "pr": "trigger: none\npr:\n- main\n",
+            "pr-branches": "trigger: none\npr:\n  branches:\n    include:\n    - main\n",
+            "schedules": "trigger: none\nschedules:\n- cron: '0 0 * * *'\n  branches:\n    include: [main]\n",
+        }
+        for name, body in bodies.items():
+            payload, _ = self._run({
+                "azure-pipelines.yml": body + "steps:\n- script: echo ok\n",
+            })
+            self.assertNotEqual([], payload["inventory"]["workflows"][0]["triggers"], name)
+            self.assertNotIn("delivery-trigger-unreachable",
+                             {item["code"] for item in payload["findings"]}, name)
+
+    def test_azure_pr_none_stays_without_trigger(self):
+        for body in ("trigger: none\npr: none\n", "trigger: none\npr:\n- none\n"):
+            payload, _ = self._run({
+                "azure-pipelines.yml": body + "steps:\n- script: echo ok\n",
+            })
+            self.assertEqual([], payload["inventory"]["workflows"][0]["triggers"])
+            self.assertIn("delivery-trigger-unreachable",
+                          {item["code"] for item in payload["findings"]})
+
+    def test_github_schedule_in_on_is_a_trigger(self):
+        for on in ("on:\n  schedule:\n    - cron: '0 0 * * *'\n", "on: schedule\n"):
+            payload, _ = self._run({
+                ".github/workflows/nightly.yml": (
+                    "name: N\n" + on + "jobs:\n  t:\n    runs-on: ubuntu-latest\n"
+                    "    steps:\n      - run: echo ok\n"),
+            })
+            self.assertEqual(["schedule"], payload["inventory"]["workflows"][0]["triggers"])
+            self.assertNotIn("delivery-trigger-unreachable",
+                             {item["code"] for item in payload["findings"]})
 
     def test_matrix_setup_uv_and_bash_only_jobs_raise_no_false_errors(self):
         payload, code = self._run({

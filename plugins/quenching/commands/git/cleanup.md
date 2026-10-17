@@ -19,7 +19,7 @@ from a fresh report for the selected remote.
 ```bash
 cq git stale --remote <remote> --json
 ```
-The report contains local `staleBranches`, fetched `remoteBranches` from `<remote>`, registered
+The report contains local `staleBranches` (removable), `keptBranches` (staying, with reasons), fetched `remoteBranches` from `<remote>`, registered
 `orphanWorktrees`, and unregistered `unregisteredWorktrees` siblings with their path, branch and
 size. All four lists empty → say so and stop; there is nothing to prune. Do not fetch or run `git
 remote prune` here: if the caller needs newer remote facts, it must fetch explicitly and start a
@@ -28,15 +28,17 @@ lists and the selected remote are in hand.
 
 ### 2. Let the human pick what to prune
 Show every local stale branch with its reason(s), every remote branch as `<remote>/<branch>` with
-its reason(s), and every orphan worktree with its path and branch. Show each `unregisteredWorktrees`
+its reason(s), and every orphan worktree with its path and branch. Show each `keptBranches` entry with its reasons (`open-pr`, `worktree`,
+`unmerged-commits`) as information under "kept — not removable", and do not include it in the prune choices. Show each `unregisteredWorktrees`
 finding with its path, branch and size as information, but do not include it in the prune choices.
-Ask once with **AskUserQuestion** (multi-select) which local branches and live worktrees to prune —
-defaulting to none pre-selected, never to "all". Show the exact local actions in those choices:
+Put ONE decision sheet ([specs-develop/questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §1) that ends the turn; its decision lists the local
+branches and live worktrees as numbered items and accepts several of them in the reply
+(`D1 1,3`), or `none` — option A (recommended) is `none`, never "all". An unclear reply is asked again. Show the exact local actions in those choices:
 `git branch -d <branch>` or `git worktree remove <path>`, which `cq git prune` runs. **Done when:** the local selection is
 settled.
 
 For any remote branch in the fresh `remoteBranches` list, show its exact destructive action
-`git push <remote> --delete <branch>`, which `cq git prune --remote-branch` runs, and ask separately with **AskUserQuestion**. A remote branch is never
+`git push <remote> --delete <branch>`, which `cq git prune --remote-branch` runs, and put it as its own decision on the sheet (`D2`, `none` recommended). A remote branch is never
 included in the local confirmation. **Done when:** the remote selection is settled and every selected
 item has one explicit action.
 
@@ -75,6 +77,7 @@ the three outcome classes are named.
 ## Invariants
 
 - Never prune a branch or worktree `cq git stale` did not report.
+- Never offer `keptBranches` for pruning: each is listed with the reason it stays.
 - Never offer `unregisteredWorktrees` for pruning: `git worktree remove` does not act on an
   unregistered directory, and this class carries no action.
 - Never delete a remote branch that `cq git stale` did not report in `remoteBranches`.

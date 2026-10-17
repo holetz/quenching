@@ -18,7 +18,7 @@ async function refresh($: EngineInterface) {
       return
     }
 
-    const status = await $.process.run(['cq', 'specs', 'status', '--spec', String(id), '--json'], { cwd })
+    const status = await $.process.run(['cq', 'specs', 'status', '--spec', String(id), '--no-fetch', '--json'], { cwd })
     const next = status.exitCode === 0 ? lineFromStatus(id, status.stdout, basename(cwd)) : null
     await update($, line, () => next)
   } catch {

@@ -682,6 +682,7 @@ def lint_command(cmd: dict, base: str, named_by: set[str] | None = None) -> list
         out.append(finding("sk-unscoped-bash", "warn", message,
                            tool=bare, priced=priced, **where))
 
+    out.extend(reference_root_findings(body, base, where))
     out.extend(_lint_invocation(fm, where, named_by))
     out.extend(_lint_frontmatter_hooks(cmd, where))
     out.extend(_lint_profile(fm, where))
@@ -770,6 +771,41 @@ def _lint_frontmatter_hooks(cmd: dict, where: dict) -> list[dict]:
                                   "assets/templates/automation/hook.md shape 1 (/quenching:components:hook:new)"))
     out.extend(hook_ladder_findings(cmd.get("hooks") or {},
                                     where_in=f"{where['path']} frontmatter", where=where))
+    return out
+
+
+REF_ROOT = "${CLAUDE_PLUGIN_ROOT}/assets/references/"
+REF_LINK_RE = re.compile(r"\]\(([^)\s]+\.md)(?:#[^)]*)?\)|components read\s+([^\s`\"'<>-][^\s`\"']*\.md)")
+
+
+def reference_root_findings(body: str, base: str, where: dict) -> list[dict]:
+    """`sk-reference-root` (error): a link or `cq components read` target that names a
+    `assets/references/**` file without the plugin root, or whose root-anchored path does not
+    exist. The bare form (`specs-develop/questions.md`) makes `cq components read` exit 2."""
+    refs_dir = os.path.join(base, "assets", "references")
+    have_tree = os.path.isdir(refs_dir)
+    out: list[dict] = []
+    seen: set[str] = set()
+    for m in REF_LINK_RE.finditer(body):
+        target = m.group(1) or m.group(2)
+        if target in seen:
+            continue
+        if target.startswith(REF_ROOT):
+            if have_tree and not os.path.isfile(os.path.join(refs_dir, target[len(REF_ROOT):])):
+                problem = "does not exist under assets/references/"
+            else:
+                continue
+        elif "assets/references/" in target or "/references/" in target:
+            problem = "is not anchored at the plugin root"
+        elif have_tree and "/" in target and not target.startswith(("/", ".", "$", "http")) \
+                and os.path.isfile(os.path.join(refs_dir, target)):
+            problem = "names a reference without the plugin root"
+        else:
+            continue
+        seen.add(target)
+        out.append(finding("sk-reference-root", "error",
+                           f"`{target}` {problem} — cite it as `{REF_ROOT}<path>` so it resolves "
+                           "from the plugin root", target=target, **where))
     return out
 
 

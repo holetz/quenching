@@ -56,6 +56,11 @@ A member carries a first-level `epic: <id>` key. `cq specs epic add <epic> <spec
 and is idempotent, so it is also the repair for a half-written link. One level only: an epic cannot
 be a member, and a spec belongs to one epic.
 
+A spec that already belongs to another epic is refused (`sp-epic-member-taken`). `--move` takes it
+out of that epic and into this one in the same write: the old item leaves the old epic's `## Tasks`,
+the new item is listed, and `epic:` is restamped. A move is refused (`sp-epic-move-dependents`, nothing
+written) while another item of the old epic waits `after` the moved one.
+
 ## Reading an epic
 
 - `cq specs status --epic <id>` — progress per group, blocked items with their reasons, the critical

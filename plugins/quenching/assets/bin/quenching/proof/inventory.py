@@ -26,10 +26,15 @@ from quenching.proof.model import (
 )
 
 
+# pytest's default `norecursedirs` (plus tool caches): the test walk skips these at any depth.
 _SKIP_DIRS = frozenset({
     ".git", ".mypy_cache", ".pytest_cache", ".ruff_cache", "__pycache__",
-    ".tox", ".venv", "venv",
+    ".tox", ".venv", "venv", "node_modules", "build", "dist", ".eggs",
 })
+# Dependency folders pytest does not skip: never a top-level surface, but not skipped deeper.
+_SURFACE_SKIP_TOP = _SKIP_DIRS | {"vendor"}
+# Environments and caches are never source, however deep: the surface walk prunes them at any depth.
+_ENV_DIRS = frozenset({".venv", "venv", ".tox", "__pycache__", "node_modules"})
 _TEST_RE = re.compile(r"(?:^test_.*\.py$|^.*_test\.py$)")
 _PYTEST_FIXTURE = re.compile(r"(?:^|\.)fixture$")
 
@@ -114,12 +119,15 @@ def _layer_models(proof_root: str, declarations: dict[str, dict[str, Any]]) -> t
     return tuple(result)
 
 
-def _gate_from_toml(path: Path) -> tuple[dict[str, Any], str | None]:
+def _toml(path: Path) -> dict[str, Any]:
     try:
         import tomllib
-        data = tomllib.loads(_read(path))
+        return tomllib.loads(_read(path))
     except (ImportError, TypeError, ValueError):
-        return {}, None
+        return {}
+
+
+def _gate_from_toml(data: dict[str, Any]) -> dict[str, Any]:
     pytest = data.get("tool", {}).get("pytest", {}).get("ini_options", {})
     coverage_run = data.get("tool", {}).get("coverage", {}).get("run", {})
     coverage_report = data.get("tool", {}).get("coverage", {}).get("report", {})
@@ -129,18 +137,18 @@ def _gate_from_toml(path: Path) -> tuple[dict[str, Any], str | None]:
         "strict_markers": pytest.get("strict_markers", False),
         "coverage_sources": coverage_run.get("source", []),
         "coverage_floor": coverage_report.get("fail_under"),
-    }, _rel(str(path), str(path.parent.parent))
+    }
 
 
-def _gate_from_ini(path: Path) -> dict[str, Any]:
-    parser = configparser.ConfigParser()
+def _gate_from_ini(path: Path, section_name: str = "pytest") -> dict[str, Any]:
+    parser = configparser.ConfigParser(interpolation=None)
     try:
         parser.read(path, encoding="utf-8")
     except (OSError, UnicodeError, configparser.Error):
         return {}
-    section = "pytest" if parser.has_section("pytest") else None
+    section = section_name if parser.has_section(section_name) else None
     if not section:
-        return {}
+        return {"unconfigured": True}
     return {
         "addopts": parser.get(section, "addopts", fallback=""),
         "markers": [line.strip() for line in parser.get(section, "markers", fallback="").splitlines()
@@ -175,16 +183,26 @@ def _gate(repo_root: str, ratchet_path: str) -> GateConfig:
     path: str | None = None
     raw: dict[str, Any] = {}
     pyproject = root / "pyproject.toml"
-    if pyproject.is_file():
-        raw, _ = _gate_from_toml(pyproject)
-        path = _rel(str(pyproject), repo_root)
-    else:
-        for name in ("pytest.ini", "tox.ini"):
-            candidate = root / name
-            if candidate.is_file():
-                raw = _gate_from_ini(candidate)
-                path = _rel(str(candidate), repo_root)
-                break
+    data = _toml(pyproject) if pyproject.is_file() else {}
+    from_toml = _gate_from_toml(data) if data else {}
+    for name in ("pytest.ini", ".pytest.ini", "pyproject.toml", "tox.ini", "setup.cfg"):
+        candidate = root / name
+        if not candidate.is_file():
+            continue
+        if name == "pyproject.toml":
+            if not isinstance(data.get("tool", {}).get("pytest", {}).get("ini_options"), dict):
+                continue
+            found = from_toml
+        else:
+            found = _gate_from_ini(
+                candidate, "tool:pytest" if name == "setup.cfg" else "pytest")
+            if name in ("tox.ini", "setup.cfg") and found.get("unconfigured"):
+                continue
+        raw, path = found, _rel(str(candidate), repo_root)
+        break
+    for key in ("coverage_sources", "coverage_floor"):
+        if key not in raw and key in from_toml:
+            raw = {**raw, key: from_toml[key]}
     coverage_sources = raw.get("coverage_sources", [])
     if isinstance(coverage_sources, str):
         coverage_sources = [coverage_sources]
@@ -205,18 +223,23 @@ def _gate(repo_root: str, ratchet_path: str) -> GateConfig:
 
 
 def _source_surfaces(repo_root: str, proof_root: str) -> tuple[str, ...]:
-    """Find top-level directories that contain source-like files, excluding the proof root."""
+    """Find top-level directories that contain source-like files, excluding the proof root.
+
+    Dependency and build directories are never a surface. The front stays static, so it asks no
+    subprocess (git included) which files are tracked.
+    """
     suffixes = {".c", ".cpp", ".go", ".java", ".js", ".py", ".rs", ".scala", ".sh",
                 ".sql", ".ts", ".tsx"}
     result: list[str] = []
     root = Path(repo_root)
     proof_name = Path(proof_root).name
     for child in sorted(root.iterdir()):
-        if not child.is_dir() or child.name.startswith(".") or child.name == proof_name:
+        if (not child.is_dir() or child.name.startswith(".") or child.name == proof_name
+                or child.name in _SURFACE_SKIP_TOP):
             continue
         found = False
         for directory, dirnames, filenames in os.walk(child):
-            dirnames[:] = sorted(name for name in dirnames if name not in _SKIP_DIRS)
+            dirnames[:] = sorted(name for name in dirnames if name not in _ENV_DIRS)
             if any(Path(name).suffix.lower() in suffixes for name in filenames):
                 found = True
                 break

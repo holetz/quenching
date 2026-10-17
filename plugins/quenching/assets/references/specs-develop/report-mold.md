@@ -197,6 +197,43 @@ Which of the two tables a row belongs to is decided by the code, never by the co
 finding carrying an `sp-` code goes to §The findings table, and anything the sweep merely noticed
 comes here.
 
+### The session-size line
+
+<!-- rules -->
+
+**Printed by `/quenching:specs:develop`, `/quenching:specs:execute` and `/quenching:specs:conclude`
+only**, as the last line of the body, right before §The next-step block. One read, once per report:
+
+```bash
+cq components session context --json
+```
+
+```
+Session: 212480 / 200000 (main) — 12480 over budget
+```
+
+The exit code decides the tone, never the line's presence:
+
+| Exit | The line | The next-step block |
+| --- | --- | --- |
+| `0` | `<peak> / <budget> (<role>) — <remaining> left` | unchanged — the next stage is an offer |
+| `1` | `<peak> / <budget> (<role>) — <over> over budget` | the `→` line recommends the next stage **in a new session**, with the exact command — `→ /quenching:specs:execute 41   — in a new session: this one is over its budget`; a question the command already asks carries that recommendation as option A of its decision sheet, marked recommended — or first and marked "(Recommended)" on the menu the human asked for |
+| `2` | `Session: unmeasured — <code>` | unchanged — an offer, never a recommendation without a number |
+
+- **The stage end triggers the read; the number decides only the tone.** Nothing stops, nothing is
+  asked that the command did not already ask, and nothing is recorded: the resumption trail stays
+  `## Handoff`, `git log` and the recorded subjects.
+- **An `autonomous` run prints no line** — it skips this mold whole, and a conductor's budget is
+  its own.
+
+<!-- rationale -->
+
+Four measured `/quenching:specs:execute` sessions peaked between 250k and 370k, each stage paying
+for everything the earlier ones had loaded. `cq components session context` (epic 1627 S3) is the
+measurement, and the main-session budget is
+`docs/standards/automation/context-discipline.md` §Measured context budgets. The peak excludes
+the request in flight, so the line slightly undercounts; it only sets a tone, so that is accepted.
+
 ### The next-step block
 
 <!-- rules -->
@@ -221,7 +258,7 @@ Next step
   [align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §7,
   which this mold selects from rather than restates.
 - **The block is a suggestion, never an offer** — with two named exceptions, both printing the
-  block and *then* opening an `AskUserQuestion` rather than stopping: `/quenching:specs:execute` at
+  block and *then* ending the turn on a decision sheet rather than stopping: `/quenching:specs:execute` at
   100%, and `/quenching:specs:create`, whose closing screen is exactly that offer (§The one screen
   in its own body) — develop it now, with or without questions, or stop here. `/quenching:specs:status`
   prints the block and stops — no plan, no "shall I". The form is identical across the three;

@@ -51,7 +51,7 @@ unreserved.
 **The reservation is what makes that true**, and it is load-bearing in a way the silence hides:
 drop `log.md` from the validator's `RESERVED` tuple and every log surviving in an already-aligned
 bundle falls through to `check_concept` — `missing-type` at ERROR, and denied writes under the hard
-gate. `cq knowledge validate selftest` holds the line with a fixture bundle carrying two surviving logs.
+gate. `RetiredLogChecker` in `tests/test_knowledge.py` holds the line with a fixture bundle carrying two surviving logs.
 
 ## Bundle level
 
@@ -183,7 +183,7 @@ paths from the scan.
 
 <!-- rules -->
 
-A bundle is **aligned** when `cq knowledge validate /docs` exits 0 **and** the structural-integrity and
+A bundle is **aligned** when `cq knowledge validate docs` exits 0 **and** the structural-integrity and
 resource-integrity WARNs are all cleared — **zero** `dir-no-index`, `index-broken-link`,
 `index-orphan`, `glossary-broken-link`, `generated-listing-missing`, `generated-listing-drift`,
 `resource-unresolved`, `resource-self`. (These are WARN,

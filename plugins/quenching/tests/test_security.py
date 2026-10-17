@@ -4,10 +4,14 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import os
 import pathlib
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 try:
     import _paths  # noqa: F401 — must precede the `quenching` import
@@ -64,6 +68,73 @@ class SecurityQuestions(unittest.TestCase):
                 {"environment-files", "private-keys", "credential-files"},
                 set(result["details"]["patterns"]),
             )
+
+    def test_secret_ignore_coverage_normalizes_globs(self):
+        for entry in (".env*", "**/.env", "*.env", "/.env"):
+            with self.subTest(entry=entry), tempfile.TemporaryDirectory() as raw:
+                root = pathlib.Path(raw)
+                (root / ".gitignore").write_text(
+                    f"{entry}\n*.pem\nservice-secret.json\n", encoding="utf-8")
+                result = secret_ignore_coverage(root).as_dict()
+                self.assertEqual("present", result["state"])
+                self.assertIn("environment-files", result["details"]["patterns"])
+
+    def test_secret_ignore_coverage_follows_git_semantics(self):
+        rest = "*.pem\nservice-secret.json\n"
+        cases = {
+            "directory-only": (".env/\n" + rest, "missing"),
+            "env-glob-dir": ("**/.env/\n" + rest, "missing"),
+            "example-only": (".env.example\n" + rest, "missing"),
+            "env-local": (".env.local\n" + rest, "missing"),
+            "env-dot-star": (".env.*\n" + rest, "missing"),
+            "negated": (".env\n!.env\n" + rest, "missing"),
+            "negated-later-glob": (".env*\n!.env\n" + rest, "missing"),
+            "plain": (".env\n" + rest, "present"),
+        }
+        for name, (text, state) in cases.items():
+            with self.subTest(case=name), tempfile.TemporaryDirectory() as raw:
+                root = pathlib.Path(raw)
+                (root / ".gitignore").write_text(text, encoding="utf-8")
+                result = secret_ignore_coverage(root).as_dict()
+                self.assertEqual(state, result["state"])
+                if state == "missing":
+                    self.assertIn("environment-files", result["details"]["uncovered"])
+
+    def test_secret_ignore_coverage_ignores_inherited_git_environment(self):
+        with tempfile.TemporaryDirectory() as raw:
+            other = pathlib.Path(raw, "other")
+            subprocess.run(["git", "init", "-q", str(other)], check=True)
+            hooks = other / ".git" / "hooks"
+            shutil.rmtree(hooks)
+            hooks.mkdir()
+            (other / ".git" / "info").mkdir(exist_ok=True)
+            (other / ".git" / "info" / "exclude").write_text(".env\n", encoding="utf-8")
+            root = pathlib.Path(raw, "target")
+            root.mkdir()
+            (root / ".gitignore").write_text("*.pem\nservice-secret.json\n", encoding="utf-8")
+            with mock.patch.dict(os.environ, {"GIT_DIR": str(other / ".git")}):
+                result = secret_ignore_coverage(root).as_dict()
+            self.assertEqual("missing", result["state"])
+            self.assertIn("environment-files", result["details"]["uncovered"])
+            self.assertEqual([], list(hooks.iterdir()))
+
+    def test_secret_ignore_coverage_counts_literal_names_with_a_path(self):
+        rails = "/.env*\n/config/master.key\n/config/credentials/*.key\n"
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            (root / ".gitignore").write_text(rails, encoding="utf-8")
+            result = secret_ignore_coverage(root).as_dict()
+            self.assertNotIn("private-keys", result["details"].get("uncovered", []))
+            self.assertIn("private-keys", result["details"]["patterns"])
+
+    def test_secret_ignore_coverage_partial_is_missing(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            (root / ".gitignore").write_text(".env\n", encoding="utf-8")
+            result = secret_ignore_coverage(root).as_dict()
+            self.assertEqual("missing", result["state"])
+            self.assertEqual(
+                ["credential-files", "private-keys"], result["details"]["uncovered"])
 
     def test_advisory_and_access_questions_find_known_files(self):
         with tempfile.TemporaryDirectory() as raw:

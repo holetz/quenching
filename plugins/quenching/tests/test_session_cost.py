@@ -104,6 +104,101 @@ class CostTests(unittest.TestCase):
         self.assertEqual({g["agentType"] for g in json.loads(out)["groups"]}, {"unknown"})
 
 
+class ScopeTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.sub = pathlib.Path(self.tmp.name) / "subagents"
+        self.sub.mkdir()
+        for aid, kind, parent in (("orc", "quenching:orchestrator", None),
+                                  ("scout", "quenching:scout", None),
+                                  ("w1", "quenching:spec-runner", "orc"),
+                                  ("v1", "quenching:verifier", "w1")):
+            write(self.sub / f"agent-{aid}.jsonl", [rec(f"m-{aid}", "sonnet", 3)])
+            meta = {"agentType": kind}
+            if parent:
+                meta["parentAgentId"] = parent
+            (self.sub / f"agent-{aid}.meta.json").write_text(json.dumps(meta))
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def types(self, *flags):
+        code, out = run("--json", *flags, str(self.sub))
+        self.assertEqual(code, 0)
+        return {g["agentType"] for g in json.loads(out)["groups"]}
+
+    def test_unscoped_keeps_everything(self):
+        self.assertIn("quenching:scout", self.types())
+
+    def test_descendants_exclude_the_orchestrator_and_other_roots(self):
+        self.assertEqual(self.types("--descendants-of", "orc"),
+                         {"quenching:spec-runner", "quenching:verifier"})
+
+    def test_nested_keeps_only_agents_with_a_parent(self):
+        self.assertEqual(self.types("--nested"), {"quenching:spec-runner", "quenching:verifier"})
+
+    def test_empty_scope_refuses(self):
+        self.assertEqual(run("--json", "--descendants-of", "nobody", str(self.sub))[0], 2)
+
+
+class WindowTests(unittest.TestCase):
+    """Two orchestrators in one session: --nested alone sums both, --since cuts the second's window."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.sub = pathlib.Path(self.tmp.name) / "subagents"
+        self.sub.mkdir()
+        for aid, parent, ts in (("orc1", None, "2026-10-12T01:00:00Z"), ("orc2", None, "2026-10-12T03:00:00Z"),
+                                ("w1", "orc1", "2026-10-12T01:30:00Z"), ("w2", "orc2", "2026-10-12T03:30:00Z")):
+            r = rec(f"m-{aid}", "sonnet", 3)
+            r["timestamp"] = ts
+            write(self.sub / f"agent-{aid}.jsonl", [r])
+            meta = {"agentType": "quenching:spec-runner" if parent else "quenching:orchestrator"}
+            if parent:
+                meta["parentAgentId"] = parent
+            (self.sub / f"agent-{aid}.meta.json").write_text(json.dumps(meta))
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def requests(self, *flags):
+        code, out = run("--json", "--nested", *flags, str(self.sub))
+        self.assertEqual(code, 0)
+        return sum(g["requests"] for g in json.loads(out)["groups"])
+
+    def test_nested_alone_counts_every_orchestrators_descendants(self):
+        self.assertEqual(self.requests(), 2)
+
+    def test_latest_orchestrator_resolves_the_window_alone(self):
+        code, out = run("--json", "--latest-orchestrator", str(self.sub))
+        self.assertEqual(code, 0)
+        data = json.loads(out)
+        self.assertEqual(sum(g["requests"] for g in data["groups"]), 1)
+        self.assertEqual({g["agentType"] for g in data["groups"]}, {"quenching:spec-runner"})
+
+    def test_latest_orchestrator_refuses_without_one(self):
+        for f in self.sub.glob("agent-orc*"):
+            f.unlink()
+        self.assertEqual(run("--json", "--latest-orchestrator", str(self.sub))[0], 2)
+
+    def test_since_keeps_only_the_window(self):
+        self.assertEqual(self.requests("--since", "2026-10-12T03:00:00Z"), 1)
+
+    def test_since_everything_before_refuses_as_empty(self):
+        self.assertEqual(run("--json", "--nested", "--since", "2026-10-13T00:00:00Z", str(self.sub))[0], 2)
+
+    def test_bad_since_is_a_refusal(self):
+        self.assertEqual(run("--json", "--since", "yesterday", str(self.sub))[0], 2)
+
+    def test_request_without_timestamp_is_a_finding_not_counted(self):
+        write(self.sub / "agent-w2.jsonl", [rec("m-x", "sonnet", 3)])
+        code, out = run("--json", "--nested", "--since", "2026-10-12T00:00:00Z", str(self.sub))
+        self.assertEqual(code, 1)
+        data = json.loads(out)
+        self.assertEqual(sum(g["requests"] for g in data["groups"]), 1)
+        self.assertEqual(len(data["anomalies"]), 1)
+
+
 class SessionChoiceTests(unittest.TestCase):
     """Without an argument the verb never picks between sessions by mtime in silence."""
 

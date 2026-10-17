@@ -33,6 +33,7 @@ import json
 import os
 import posixpath
 import re
+import shlex
 from quenching.common.git import _git_run
 from quenching.common.output import emit, refuse
 
@@ -637,6 +638,187 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
     return found
 
 
+TEST_PATH = re.compile(r"(^|/)(tests?|__tests__)/|(^|/)test_[^/]*$|_test\.[^/]+$|\.(test|spec)\.[^/]+$")
+TEST_NAME = re.compile(r"(^|/)test_[^/]*$|_test\.[^/]+$|\.(test|spec)\.[^/]+$")
+ASSERT = re.compile(r"\bassert\w*\b|\bexpect\s*\(")
+GATE_PATH = re.compile(r"^scripts/verify_repo\.sh$|^plugins/quenching/assets/checks/")
+CODE_EXT = re.compile(r"\.(py|sh|js|jsx|ts|tsx|rb|go|rs|java|kt|cs)$")
+TEST_DIRECT = re.compile(r"(^|/)(tests?|__tests__)/[^/]+$")
+DISCOVER_WORD = re.compile(r"\b(discover|pytest|nosetests?|tox)\b")
+TRIVIAL = re.compile(r"\bassert\s+True\s*$|\bexpect\s*\(\s*true\s*\)")
+SUPPRESSION = re.compile(r"noqa|type:\s*ignore|\bskip(If|Unless|Test)?\b|\bxfail\b|\bxit\s*\(|\bxdescribe\s*\(")
+
+
+def _read_discover(script: str) -> tuple[str, str] | None | bool:
+    """The `(root, pattern)` of the first `unittest discover` in a gate script, comments and quotes
+    ignored (`-s`/`--start-directory`/positional, `-p`/`--pattern`, defaults `.` and `test*.py`).
+    `None`: the script names no test runner. `False`: it names one this reader does not recognise
+    (pytest, an unexpanded variable, unbalanced quotes) -- inconclusive, never guessed."""
+    named = False
+    for line in script.replace("\\\n", " ").splitlines():
+        try:
+            tokens = shlex.split(line, comments=True)
+        except ValueError:
+            if DISCOVER_WORD.search(line.split("#", 1)[0]):
+                named = True
+            continue
+        if not tokens:
+            continue
+        if "discover" in tokens and tokens[tokens.index("discover") - 1:tokens.index("discover")] == ["unittest"]:
+            rest = tokens[tokens.index("discover") + 1:]
+            root, pattern, i = None, "test*.py", 0
+            while i < len(rest):
+                t = rest[i]
+                if t in ("-s", "--start-directory", "-p", "--pattern", "-t", "--top-level-directory") and i + 1 < len(rest):
+                    if t in ("-s", "--start-directory"):
+                        root = rest[i + 1]
+                    elif t in ("-p", "--pattern"):
+                        pattern = rest[i + 1]
+                    i += 2
+                    continue
+                if t.startswith("--start-directory="):
+                    root = t.split("=", 1)[1]
+                elif t.startswith("--pattern="):
+                    pattern = t.split("=", 1)[1]
+                elif t.startswith("-"):
+                    if t in ("-s", "--start-directory", "-p", "--pattern"):
+                        return False
+                elif root is None:
+                    root = t
+                i += 1
+            root = "." if root is None else root
+            if root in ("$ROOT", "${ROOT}", "$PWD", "${PWD}"):
+                root = "."
+            if "$" in root or "$" in pattern or "`" in root or "`" in pattern:
+                return False
+            return root, pattern
+        if any(DISCOVER_WORD.fullmatch(t) for t in tokens):
+            named = True
+    return False if named else None
+
+
+def _asserts(text: str) -> int:
+    """Real assertions in `text`: a match outside a comment, and not `assert True`/`expect(true)`."""
+    n = 0
+    for line in text.splitlines():
+        code = "" if re.match(r"\s*(#|//|\*|/\*)", line) else re.sub(r"\s#.*$", "", line)
+        if ASSERT.search(code) and not TRIVIAL.search(code):
+            n += 1
+    return n
+
+
+def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[dict]) -> list[dict]:
+    """The ways the branch lowers the bar a gate measures, read from `base...tip`, never judged for
+    justification. `severity: fail` — a test file deleted, a test file left with no assert it had at
+    the base, a gate file (`scripts/verify_repo.sh`, `plugins/quenching/assets/checks/**`) deleted or
+    with a removed non-comment line that no added line of that file repeats; `severity: warn` — a
+    `noqa`, `type: ignore`, `skip`, `skipIf`, `skipUnless` or `xfail` added to a code file. A reworded
+    gate step reads as shrunk: the conductor settles it."""
+    code, out, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "--name-status",
+                              "-z", "--no-renames", f"{base}...{tip}", env=env)
+    if code != 0:
+        errors.append(_error(("diff", "--name-status"), code, err))
+        return []
+    fields = [f for f in out.split("\0") if f]
+    found = []
+
+    def show(rev: str, path: str) -> str:
+        c, text, _e = _git_run(cwd, *SAFE, "show", "--no-textconv", f"{rev}:{path}", env=env)
+        return text if c == 0 else ""
+
+    pairs = list(zip(fields[0::2], fields[1::2]))
+    disc = _read_discover(show(tip, "scripts/verify_repo.sh"))
+    root, pattern = disc if disc else (None, "test*.py")
+    inconclusive = disc is False
+
+    def discovered(path: str) -> bool:
+        """Where the gate finds a test: a `.py` file the `unittest discover -s <root> -p <pattern>` of
+        `scripts/verify_repo.sh` at the tip reaches; with no recognised command (or no gate), a test file of any language directly
+        under a tests dir (and the result is declared inconclusive)."""
+        if root is not None:
+            if not path.endswith(".py"):
+                return False
+            return (posixpath.dirname(path) or ".") == posixpath.normpath(root) and fnmatch.fnmatch(posixpath.basename(path), pattern)
+        return bool(TEST_DIRECT.search(path)) and bool(TEST_NAME.search(path)) and bool(CODE_EXT.search(path))
+
+    added = [p for s_, p in pairs if s_.startswith("A") and discovered(p)]
+
+    def is_test(path: str) -> bool:
+        if TEST_NAME.search(path):
+            return True
+        return bool(TEST_PATH.search(path)) and bool(ASSERT.search(show(base, path)))
+
+    gone = [p for s_, p in pairs if s_.startswith("D") and is_test(p)]
+    had = {p: _asserts(show(base, p)) for p in gone}
+    kept_n = {a: _asserts(show(tip, a)) for a in added}
+
+    def base_name(path: str) -> str:
+        return path.rsplit("/", 1)[-1]
+
+    def candidates(g: str) -> list[str]:
+        same = [a for a in added if base_name(a) == base_name(g)]
+        return same or added                      # a same-name target is the only one that may absolve
+
+    owner: dict[str, str] = {}                    # a target absolves ONE deletion: a one-to-one matching
+
+    def place(g: str, seen: set[str]) -> bool:
+        for a in candidates(g):
+            if kept_n[a] >= had[g] and a not in seen:
+                seen.add(a)
+                if a not in owner or place(owner[a], seen):
+                    owner[a] = g
+                    return True
+        return False
+
+    for g in gone:
+        place(g, set())
+    paired = set(owner.values())
+    if inconclusive and paired:
+        found.append({"path": "scripts/verify_repo.sh", "severity": "warn", "kind": "discover-unrecognized",
+                      "detail": "the test-discovery command was not recognised; a moved test was judged "
+                                "by folder name, not by what the gate runs"})
+    for status, path in pairs:
+        gate = bool(GATE_PATH.search(path))
+        deleted = status.startswith("D")
+        test = path in gone if deleted else is_test(path)
+        if deleted and test:                      # a move reads D plus A under --no-renames
+            if path in paired:
+                continue                          # a target under tests/ keeps its asserts
+            dests = [a for a in added if a not in owner and base_name(a) == base_name(path)]
+            if dests:
+                found.append({"path": dests[0], "severity": "fail", "kind": "test-lost-asserts",
+                              "detail": f"{kept_n[dests[0]]} of {had[path]} asserts kept"})
+                continue
+        if deleted and (test or gate):
+            found.append({"path": path, "severity": "fail",
+                          "kind": "test-deleted" if test else "gate-shrunk", "detail": "(deleted)"})
+            continue
+        if deleted:
+            continue
+        code, diff, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "--text",
+                                   "-U0", "--no-renames", f"{base}...{tip}", "--", path, env=env)
+        if code != 0:
+            errors.append(_error(("diff", "-U0"), code, err))
+            continue
+        rows = diff.splitlines()
+        body = rows[next((i for i, r in enumerate(rows) if r.startswith("@@")), len(rows)):]
+        plus = [r[1:].strip() for r in body if r.startswith("+")]
+        minus = [r[1:].strip() for r in body if r.startswith("-")]
+        if test and _asserts(show(base, path)) and not _asserts(show(tip, path)):
+            found.append({"path": path, "severity": "fail", "kind": "test-lost-asserts",
+                          "detail": "no assert left"})
+        if gate:
+            lost = [m for m in minus if m and not m.startswith("#") and m not in plus]
+            if lost:
+                found.append({"path": path, "severity": "fail", "kind": "gate-shrunk", "detail": lost})
+        if CODE_EXT.search(path):
+            muted = [m for m in plus if SUPPRESSION.search(m)]
+            if muted:
+                found.append({"path": path, "severity": "warn", "kind": "suppression-added",
+                              "detail": muted})
+    return found
+
+
 def cmd_audit(args) -> int:
     cwd = os.getcwd()
     worktree = os.path.realpath(args.worktree)
@@ -684,13 +866,15 @@ def cmd_audit(args) -> int:
                      "head": _rewrites(worktree, "HEAD", env, errors)},
     }
     payload["grants"] = _grants(worktree, base, tip, payload["changed"], env, errors)
+    payload["lowered"] = _lowered(worktree, base, tip, env, errors)
     payload["errors"] = errors
     payload["complete"] = not errors
 
     lines = [f"worktree: {worktree}", f"branch: {args.branch} ({tip[:12]}) over {args.base}",
              f"commits: {len(payload['commits'])}", f"changed: {len(payload['changed'])} path(s)",
              f"status: {len(payload['status'])} entries", f"stash: {len(payload['stash'])} entries",
-             f"grants added: {sum(len(g['added']) for g in payload['grants'])}"]
+             f"grants added: {sum(len(g['added']) for g in payload['grants'])}",
+             f"lowered: {len(payload['lowered'])} entr(ies)"]
     lines += [f"ERROR {e['read']} (exit {e['code']}): {e['message']}" for e in errors]
     lines += [f"ancestor {s}: {'yes' if ok else 'NO'}" for s, ok in payload["ancestry"].items()]
     emit(args.json, payload, "\n".join(lines))

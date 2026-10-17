@@ -326,6 +326,18 @@ The OKF contract lives in the skills' `references/`; the installable payload is 
 
 ## Model policy
 
+`cq specs estimate <id> --json` reports a **declared-reading estimate** by task section: unique
+declared files and Impact standards, plus the execute command body and spec build sections, using
+UTF-8 bytes / 4 rounded upward. Files repeated in one section count once; a new section counts its
+reads again. Missing/new files and tasks without declared files remain `unresolved`. The default
+worker policy is **100000 input-context tokens** (S2); `--worker-budget` declares an explicit override.
+The estimate **never proves** a full build fits: system/harness overhead, conditional references,
+future code, tool/test output, iteration count and growing history are excluded. Total reading
+volume is not a context peak. Develop compares the largest section before approval and proposes
+decomposition via `spec-architect` when known reading exceeds the budget. It presents independent
+slices first; capturing an epic requires explicit authorization. Forced low leaves an oversized
+source unapproved and returns the decision to its conductor.
+
 The command registry loads at **session start**, so surface changes require fresh `claude -p`
 processes. `assets/checks/functional-checks.sh` runs them with `--plugin-dir` and proves root
 substitution, conductor reachability and description routing. Each check is a **billed agent
@@ -342,7 +354,7 @@ spoken routing is opt-in (`--only 3`).
 | `/quenching:specs:status` | **no pin**, no sub-agents, **no `Write`/`Edit` in `allowed-tools`** — it classifies against a fixed finding vocabulary it does not own, and `cq specs status` is scoped to full-progress plans rather than run per plan. The former `effort: low` was dropped for the cache trap: a read-only view is not worth invalidating the session's prompt cache |
 | `/quenching:knowledge:status` | **no pin**, no sub-agents, **no `Write`/`Edit` in `allowed-tools`** — the `docs` counterpart of the row above, and its `effort: low` was dropped for the same reason. Both bodies also forbid `context: fork` by name: each doubles as a sweep's preview, and the report has to land in the conversation where the OK will be given |
 | `/quenching:specs:board` | **no pin**, `disable-model-invocation: true`, `Bash(cq:*)` only — a launcher over `cq specs serve`; the server is stdlib Python and its assets live in `assets/portal/` (no build, no CDN) |
-| `/quenching:specs:orchestrate` | **no pin**, no `Write`/`Edit` in `allowed-tools` — a launcher; the plugin ships seven agents in `agents/` that carry the pins: `orchestrator` opus/medium, `spec-runner` sonnet/medium (opus when `complexity: high`, passed by the orchestrator), `verifier`, `git-steward` and `scout` sonnet/low, `spec-architect` opus/high, `reviewer` opus/high (read-only, once per epic, launched by the orchestrator). Never haiku for product code. |
+| `/quenching:specs:orchestrate` | **no pin**, no `Write`/`Edit` in `allowed-tools` — a launcher; the plugin ships seven agents in `agents/` that carry the pins: `orchestrator` opus/medium, `spec-runner` sonnet/medium (opus when `complexity: high`, passed by the orchestrator), `verifier`, `git-steward` and `scout` sonnet/low, `spec-architect` opus/high, `reviewer` opus/high (read-only, once per epic, launched by the autopilot conductor, not by the orchestrator). Never haiku for product code. |
 | `/quenching:specs:conclude` | **`model: opus`** when a human invokes it directly (under the `spec-runner` it runs on the runner's model, sonnet or opus by `complexity`, because the pin does not switch the runner's session), no sub-agents — the branch review, the merge choice, the outcome, and the distillation are all judgment; there is nothing mechanical here to downgrade, and the review reads a whole branch diff for coherence rather than one task's |
 | `/quenching:knowledge:glossary-backfill` | **no pin** on the orchestrator (the former inline `effort: medium` charged the cache trap); slice sub-agents `model: haiku` + `effort: low` (pure extraction, cross-checked by the orchestrator) — a sub-agent's pin is cache-safe, it has its own context. `Bash` scoped to `python3`/`py`: its reading is `Grep`/`Glob`/`Task`, and the checker is the only shell it runs |
 | `/quenching:knowledge:import-memory` | classification sub-agents `model: sonnet` + `effort: low`; **executor sub-agents inherit the session model** (their self-check authorizes memory deletion). `Bash` stays unrestricted **and is now priced in the body**: step 1 derives the memory directory as one compound shell expression, which no prefix grant can match |

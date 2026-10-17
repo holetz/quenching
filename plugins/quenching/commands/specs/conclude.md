@@ -85,7 +85,7 @@ overwrite. `merge` and `pr` are read only to answer the "already merged" row abo
 
 ## Under `autonomous`
 
-A run whose input carries `autonomous` has no human and no **AskUserQuestion**: it asks nothing.
+A run whose input carries `autonomous` has no human and no decision sheet: it asks nothing.
 Every point where this command would ask takes the one answer below — the narrowest that lets the
 step run — and nothing outside this table is granted. A case the table sends to `needs-human`
 stops the run with `STATE: blocked` and `NOTE: needs-human: <the question>`.
@@ -113,14 +113,14 @@ branch's own marking:
 [auto-discover.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/auto-discover.md)
 §Reading the marking §Filtering to valid IDs §Resolving what remains, cited rather than
 restated. One valid id resolves it silently, naming the marking as the source; more than one asks
-which, via **AskUserQuestion**. No valid marking → §The fallback there measures the diff and always
+which, on a decision sheet. No valid marking → §The fallback there measures the diff and always
 asks whether to materialize a minimal spec — accepted, its new id is used from here on exactly
 like a marked one. **Declined, headless completion — closing with no spec file at all — is not
 built**: say so, record it with `cq specs discover`, and fall back to `cq specs list --json` and
-ask. Establish the outcome — **ask if it was not stated**, via
-**AskUserQuestion**: *done* (it shipped) or *abandoned* (it will not be built). Under `autonomous`,
-every question of this run is answered by §Under `autonomous`; elsewhere, where **AskUserQuestion**
-is unavailable (a sub-agent), do not ask: return `STATE: blocked` with `NOTE: needs-human: <question>`.
+ask. Establish the outcome — **ask if it was not stated**, on a
+decision sheet: *done* (it shipped) or *abandoned* (it will not be built). Under `autonomous`,
+every question of this run is answered by §Under `autonomous`; elsewhere a sub-agent does not ask:
+return `STATE: blocked` with `NOTE: needs-human:` carrying the decision sheet.
 ```bash
 cq specs status --spec "<id>" --json
 ```
@@ -174,6 +174,57 @@ A `## Discoveries` line that gets a doc is resolved in place. No OKF bundle → 
 no bundle.
 
 ### 4. Write `## Outcome` and archive
+**First preserve observed build cost, with provenance.** This is independent of the derived
+`cq specs estimate` reading heuristic. Inspect `records.buildCost` from step 1: a valid measured
+record already covers the build and survives a resumed conclude; do not replace it with missing
+telemetry. New evidence may replace `unavailable`, with every field written together so an old
+reason or measurement cannot survive the re-stamp. An abandoned, unbuilt spec also reports
+unavailable rather than inventing an execute cost.
+
+Use the existing meter **only** when the briefing identifies an explicit **build-only** Claude
+Code subagents directory and the agent ids belonging to this spec's execute runs:
+
+```bash
+cq components session cost "<explicit-build-only-subagents-directory>" --json
+```
+
+**Never infer** that scope from the latest session, the source spec's branch, transcript mtime,
+prompt prose or a directory containing unrelated workers. Missing/ambiguous scope, native **Codex**
+usage that was not measured, a meter refusal, missing requests or parse findings are unavailable;
+exit 1 is partial evidence, never silently a complete measurement. Preserve the reason and scope
+in the report. Do not invent usage from context capacity, file sizes or model memory.
+
+On exit 0 with exact attribution and known models, retain the meter's `byModel` totals **per model**:
+`model`, `requests`, `input`, `cacheRead`, `cacheWrite`, `output`. For each model, add
+`maxRequestExposureTokens` as the maximum `groups[].maxWindow` for that model. That existing
+meter field is reported request exposure, **never a context peak**: executor iterations can
+aggregate in top-level usage. State that limitation in `source`; no iteration-peak coverage is
+claimed. Keep the array compact as one JSON scalar, with no sum across tiers and no monetary cost.
+Set `source` to runtime, explicit directory/agent ids, measurement command/exit and coverage;
+`measurements` contains only observed values, and `reason` is empty. An unknown model/agent
+attribution does not justify a measured whole-build claim.
+
+Write the conclude-owned record **before archive**, through the generic record writer:
+
+```bash
+cq specs record "<id>" buildCost --set status=measured --set date=<today> \
+  --set "source=<runtime; exact build scope; command/exit; request-exposure limitation>" \
+  --set 'measurements=<compact per-model JSON array from the observed payload>' --set 'reason='
+```
+
+For unavailable evidence write no numeric stand-in; an empty scalar is absence, not zero:
+
+```bash
+cq specs record "<id>" buildCost --set status=unavailable --set date=<today> \
+  --set "source=<runtime and any explicitly known scope>" --set 'measurements=' \
+  --set "reason=<why the build was not measured>"
+```
+
+Read the write's exit code; retry a transport failure with backoff, and read an exit-2 refusal
+without repeating it blindly. A failed write stops this step before archive. Report the record's
+status, provenance, per-model values or unavailable reason; calibration is future evidence work,
+not an inference this conclude makes.
+
 `## Outcome` is the archive gate — the spec cannot move without it. Draft it, confirm it (under `autonomous`, §Under `autonomous`), write it:
 ```bash
 cq specs section "<id>" Outcome --write     # body on stdin
@@ -299,7 +350,7 @@ to the `git-steward` after the verifier accepts the spec. Name the handoff (`/qu
 Use the provider configuration already read in step 1 to name the next command: recommend
 `/quenching:git:pr:create` when the configured provider supports the PR route, otherwise
 `/quenching:git:merge`. The human picks, and neither is invoked from here. Name the branch and the
-base so the recommendation is copy-pasteable. For an `abandoned` outcome, skip this handoff and
+base so the recommendation is copy-pasteable. Add one line: once the merge lands, `/quenching:git:cleanup` removes finished work branches and worktrees, listing the ones that must stay (open PR, checked-out worktree, unmerged commits) with the reason; nothing is deleted without the human's confirmation. For an `abandoned` outcome, skip this handoff and
 follow the branch-disposal path below.
 
 For `abandoned`, there is nothing to hand off toward — do not remove any worktree; frame and make
@@ -331,6 +382,8 @@ body blocks:
 3. **Unresolved `## Discoveries`** — optional, each line named. They are
    `/quenching:specs:develop`'s discoveries stage to close, and they are easiest to lose at exactly
    this moment.
+
+Print §The session-size line before the block — `cq components session context --json`, read once; exit 1 turns the `→` line into a recommendation to run that handoff **in a new session**, exit 0 and 2 leave it an offer.
 
 Close on §The next-step block, its recommended line naming step 6's handoff — `/quenching:git:pr:create`
 or `/quenching:git:merge`, whichever was recommended, or `/quenching:specs:develop <id>` when

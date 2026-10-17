@@ -45,7 +45,7 @@ does not invent a default when the value is absent.
 | Align body | probe before inventory, applicability classification, one plan/authorization, bounded ownership-safe writes, the same closing verifier and a residual report | source arbitration, registry repair, layer/floor treatment and other domain decisions |
 | Status body | read-only payload, explicit missing/refused/not-applicable states, stable finding codes and bands, and the owner/command that closes actionable residue | authoritative evidence rows and front-specific findings |
 | Disposition bands | mechanical, structural and judgement mapping; evidence; closure command; and the person or mechanism allowed to decide | codes, severity, structural repairs and judgement owner |
-| Translation | none in this repository: the Codex mirror was retired on 2026-10-11 | none |
+| Translation | generated Codex skills and references checked against the Claude source | front-specific vocabulary |
 
 The mold is a minimum, not a cloned template. A front-specific field belongs in the front's own
 contract when another citer may not legitimately write it. Optionality alone does not make a field
@@ -95,7 +95,7 @@ judgement command in a report is a hand-off, not an invocation by the align or s
 
 ## Measured baseline and footprint
 
-Both measurements below are historical (the Codex columns count the mirror retired on 2026-10-11); they were taken on 2026-08-31 from tracked UTF-8 files. A front footprint means
+Both measurements below are historical (the current generated mirror may have a different footprint); they were taken on 2026-08-31 from tracked UTF-8 files. A front footprint means
 its architecture declaration, `align` and `status` command bodies, all front-specific source
 references, the two Codex align/status skills, all Codex front references, and its test module plus
 golden fixtures. The three creation commands are deliberate front deltas, so they are excluded
