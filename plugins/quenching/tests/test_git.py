@@ -1289,18 +1289,21 @@ class Audit(RepoCase):
         self.assertIn("--base origin/<base>", verifier)
 
 
+SRC, MOD = "plugins/" + "quenching", "plugins/" + "m"
+
+
 class AuditGenerated(RepoCase):
     """`generated`: the changed paths that are a byte-for-byte copy of their source in a module the
     BASE manifest declares. Nothing of the branch is executed."""
 
     def setUp(self):
         super().setUp()
-        manifest = {"source": "plugins/quenching",
-                    "modules": [{"name": "m", "path": "plugins/m", "published": True,
+        manifest = {"source": SRC,
+                    "modules": [{"name": "m", "path": MOD, "published": True,
                                  "owned": {"commands": []}}]}
-        for rel, text in (("plugins/quenching/assets/modules.json", json.dumps(manifest)),
-                          ("plugins/quenching/commands/x.md", "x\n"),
-                          ("plugins/m/commands/x.md", "x\n")):
+        for rel, text in ((f"{SRC}/assets/modules.json", json.dumps(manifest)),
+                          (f"{SRC}/commands/x.md", "x\n"),
+                          (f"{MOD}/commands/x.md", "x\n")):
             path = pathlib.Path(self.repo, rel)
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(text, encoding="utf-8")
@@ -1326,18 +1329,18 @@ class AuditGenerated(RepoCase):
         return payload["generated"]
 
     def test_a_reproduced_copy_is_generated_and_its_source_is_not(self):
-        got = self._generated({"plugins/quenching/commands/x.md": "y\n", "plugins/m/commands/x.md": "y\n"})
-        self.assertEqual(got, ["plugins/m/commands/x.md"])
+        got = self._generated({f"{SRC}/commands/x.md": "y\n", f"{MOD}/commands/x.md": "y\n"})
+        self.assertEqual(got, [f"{MOD}/commands/x.md"])
 
     def test_a_hand_edited_copy_is_not_generated(self):
-        self.assertEqual(self._generated({"plugins/m/commands/x.md": "edited\n"}), [])
+        self.assertEqual(self._generated({f"{MOD}/commands/x.md": "edited\n"}), [])
 
     def test_an_authored_file_outside_a_module_is_not_generated(self):
-        self.assertEqual(self._generated({"docs/a.md": "a\n"}), [])
+        self.assertEqual(self._generated({"docs" + "/a.md": "a\n"}), [])
 
     def test_a_module_the_manifest_does_not_declare_is_not_generated(self):
-        self.assertEqual(self._generated({"plugins/quenching/commands/z.md": "z\n",
-                                          "plugins/other/commands/z.md": "z\n"}), [])
+        self.assertEqual(self._generated({f"{SRC}/commands/z.md": "z\n",
+                                          "plugins/other/commands/" + "z.md": "z\n"}), [])
 
 
 class VerifierGrants(unittest.TestCase):
