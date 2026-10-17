@@ -1,7 +1,10 @@
 """Declared build reading by task section, explicitly a heuristic rather than telemetry."""
 from __future__ import annotations
 
+import fnmatch
+import math
 import re
+import shlex
 import sys
 from pathlib import Path
 
@@ -19,6 +22,12 @@ EXCLUDED = [
     "iteration count", "growing conversation history", "generated code",
 ]
 EXECUTE_BODY = Path(__file__).resolve().parents[5] / "commands/specs/execute.md"
+# Small-tier projection (ADR 0014). Fixed prompt of a Task sub-agent in this repository,
+# measured 2026-10-17 on the first turn of general-purpose sub-agents (32065-33329 tokens).
+EXECUTOR_FIXED_TOKENS = 33000
+SMALL_TIER_TOKENIZER_FACTOR = 1.3  # Haiku 5.5 counts ~30% more tokens than Haiku 4.5
+SMALL_TIER_CEILING = 80000  # margin under the 100k worker cut
+IRREVERSIBLE_ROOTS = ("docs/", "knowledge/")
 
 
 def _file_size(root: Path, entry: str, standard: bool = False) -> dict:
@@ -95,6 +104,83 @@ def estimate_build(info: dict, root: str | Path, budget: int = WORKER_BUDGET_TOK
                            "totalReadTokens is reading volume, not a context peak."}
 
 
+def _oracle_tokens(verify: str) -> list[str]:
+    try:
+        words = shlex.split(verify)
+    except ValueError:
+        words = verify.split()
+    return [w.rstrip("/") for w in words if "/" in w or re.search(r"\.\w+$", w)]
+
+
+def _is_oracle(path: str, tokens: list[str]) -> bool:
+    name = path.rsplit("/", 1)[-1]
+    if re.match(r"test_.*|.*_test\.\w+$|.*\.(test|spec)\.\w+$", name) or "/tests/" in f"/{path}":
+        return True
+    return any(path == t or path.startswith(t + "/") or fnmatch.fnmatch(name, t)
+               or fnmatch.fnmatch(path, t) for t in tokens)
+
+
+def estimate_task(info: dict, task_id: str, root: str | Path,
+                  fixed: int = EXECUTOR_FIXED_TOKENS) -> dict | None:
+    """Project one task's executor context and judge the small-tier conditions (ADR 0014)."""
+    root = Path(root).resolve()
+    task = next((t for t in info["tasks"] if t["id"] == task_id), None)
+    if task is None:
+        return None
+    entries = list(task["files"]) + ([task["pattern"]] if task.get("pattern") else [])
+    files: dict[str, dict] = {}
+    for entry in entries:
+        row = _file_size(root, entry)
+        files[row["path"]] = row
+    new = {_file_size(root, e)["path"] for e in task["files"] if e.rstrip().endswith("(new)")}
+    unresolved = [{"path": r["path"], "reason": r["reason"]} for r in files.values()
+                  if r["bytes"] is None and r["path"] not in new]
+    byte_count = sum(r["bytes"] or 0 for r in files.values())
+    read_tokens = (byte_count + BYTES_PER_TOKEN - 1) // BYTES_PER_TOKEN
+    projected = math.ceil(round(read_tokens * SMALL_TIER_TOKENIZER_FACTOR, 6)) + fixed
+    verify = task.get("verify") or ""
+    tokens = _oracle_tokens(verify)
+    declared = [_file_size(root, e)["path"] for e in task["files"]]
+    oracle_in_files = sorted(p for p in declared if _is_oracle(p, tokens))
+    irreversible = sorted(p for p in declared if p.lstrip("/").startswith(IRREVERSIBLE_ROOTS))
+    protected = bool(verify) and bool(declared) and not oracle_in_files
+    reasons = []
+    if not verify:
+        reasons.append("no verify: oracle")
+    if not declared:
+        reasons.append("no files: declared")
+    if oracle_in_files:
+        reasons.append("oracle inside files: " + ", ".join(oracle_in_files))
+    if irreversible:
+        reasons.append("writes under docs/ or knowledge/: " + ", ".join(irreversible))
+    if unresolved:
+        reasons.append("unresolved inputs")
+    if projected > SMALL_TIER_CEILING:
+        reasons.append(f"projected {projected} > {SMALL_TIER_CEILING}")
+    return {"task": task_id, "files": sorted(files.values(), key=lambda r: r["path"]),
+            "bytes": byte_count, "readTokens": read_tokens,
+            "tokenizerFactor": SMALL_TIER_TOKENIZER_FACTOR, "executorFixedTokens": fixed,
+            "projectedTokens": projected, "ceilingTokens": SMALL_TIER_CEILING,
+            "verify": verify or None, "oracleProtected": protected,
+            "oracleInFiles": oracle_in_files, "unresolved": unresolved,
+            "smallTierEligible": not reasons, "reasons": reasons,
+            "method": "ceil(UTF-8 bytes / 4) x 1.3 over files: + pattern:, plus executorFixedTokens"}
+
+
+def _cmd_estimate_task(args, root: str, out: Emitter, info: dict) -> int:
+    row = estimate_task(info, args.task, root)
+    if row is None:
+        return out.emit_err(args.json, {"code": "sp-unknown-task", "exit": 2,
+                                       "message": f"spec {info['id']} has no task {args.task}"})
+    payload = {"ok": True, "id": info["id"], "kind": "small-tier-projection", **row}
+    verdict = "eligible" if row["smallTierEligible"] else "not eligible: " + "; ".join(row["reasons"])
+    human = (f"{info['id']} task {args.task} — projected {row['projectedTokens']} tokens "
+             f"(ceiling {row['ceilingTokens']}); oracle protected: {row['oracleProtected']}\n"
+             f"  small tier: {verdict}")
+    out.emit(args.json, payload, human)
+    return 0
+
+
 def cmd_estimate(args, root: str, out: Emitter) -> int:
     if args.worker_budget is None:
         from quenching.common.config import setting
@@ -112,6 +198,8 @@ def cmd_estimate(args, root: str, out: Emitter) -> int:
     info, err = read_one(backend, args.spec, out)
     if err:
         return out.emit_err(args.json, err)
+    if getattr(args, "task", None):
+        return _cmd_estimate_task(args, root, out, info)
     payload = {"ok": True, "id": info["id"], **estimate_build(info, root, args.worker_budget)}
     human = (f"{info['id']} — estimated declared reading (UTF-8 bytes / 4)\n"
              f"  max section: {payload['maxSectionTokens']} estimated tokens / "

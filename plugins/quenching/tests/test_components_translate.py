@@ -520,6 +520,14 @@ class CodexRuntimeTranslation(unittest.TestCase):
         self.assertIn("fixture = 'opus'", result)
         self.assertIn("model: opus", raw)
 
+    def test_runtime_policy_admits_luna_only_on_a_protected_oracle(self):
+        adaptation = {"runtime": {"models": {"opus": "gpt-6-astra", "sonnet": "gpt-6.1-sol",
+                                             "haiku": "gpt-6-luna"}}}
+        policy = translate.codex_runtime_policy(adaptation)
+        self.assertIn("`oracleProtected` and `smallTierEligible`", policy)
+        self.assertIn("Never use gpt-6-luna for judgment roles or for import-memory", policy)
+        self.assertNotIn("Never use gpt-6-luna for product code", policy)
+
     def test_generated_protocols_use_codex_models_and_host_lifecycle(self):
         with tempfile.TemporaryDirectory() as tmp:
             translate.configure(str(translate.payload_root()), tmp)

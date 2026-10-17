@@ -35,8 +35,15 @@ A per-task executor sub-agent (`Task`) is **permitted** when both hold:
 - the task declares `files:` — the sub-agent gets a bounded scope, not the whole repo;
 - the task writes nothing under `knowledge/`.
 
-Pin it to the session model. **Never `gpt-6-luna`** — it is writing production code, and the model
-policy for that is the same one that protects `quenching-knowledge-import-memory`'s classifiers.
+Pin it to the session model, with one exception: **the `gpt-6-luna` rung, per task.** When
+`cq specs estimate --spec <id> --task <tid> --json` reports `smallTierEligible: true` — an
+executable `verify:` whose tests sit outside the task's `files:` (`oracleProtected`), nothing under
+`/docs/` or `knowledge/`, and a projected context at or under 80k — the executor may be pinned to
+`gpt-6-luna` for ONE attempt. A failed `verify:` returns the task to the session model, which corrects on
+the diff; a second failure goes to the human. The self-review (5d) reads the diff on the session
+model before the tick. `smallTierEligible: false`, or no estimate → the session model. Judgment
+never descends, and `quenching-knowledge-import-memory`'s classifiers stay never-`gpt-6-luna`:
+they authorize a deletion and have no oracle.
 
 **The orchestrator keeps, without exception:** spec selection, the isolation offer, every
 confirmation, every `cq specs task --check` flip, every `cq specs task --block` marker, every

@@ -258,8 +258,12 @@ def codex_runtime_policy(adaptation: dict) -> str:
         f"Tier mapping: opus → `{models['opus']}`; sonnet → `{models['sonnet']}`; "
         f"haiku → `{models['haiku']}`. Preserve declared effort. Pass model explicitly; "
         "when the host requires a fresh context for model overrides, use that mode and include "
-        "the necessary brief and protocol. Never use gpt-6-luna for product code or "
-        "import-memory classification/executor roles. Report tokens per model and role only "
+        "the necessary brief and protocol. Use gpt-6-luna for product code only on ONE task "
+        "whose `cq specs estimate --task` reports `oracleProtected` and `smallTierEligible` "
+        "(an executable `verify:` whose tests sit outside the task's `files:`, nothing under "
+        "`/docs/`, projected context at or under 80k); a failed `verify:` returns it to the "
+        "session model. Never use gpt-6-luna for judgment roles or for import-memory "
+        "classification/executor roles. Report tokens per model and role only "
         "when host telemetry provides them; otherwise `not measured`. Claude session logs and "
         "`cq components session cost` do not measure this Codex run.\n\n")
 
