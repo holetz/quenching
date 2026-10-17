@@ -356,10 +356,13 @@ g. **Run and report the declared hook for this event, and move on.** Once the sp
 
 h. **At a section boundary, keep the task commits, read the session size once, and continue.** The
    branch is at a clean, independently anchored boundary; another section may still be ahead. Run
-   `cq components session context --json` and print its peak and budget in the banner. Exit 0 or 2
+   `cq components session context --self <id> --json` — `--self` measures this run's own transcript,
+   a sub-agent's included — and print its peak and budget in the banner. Exit 0 or 2
    → continue to the next task: the boundary is not a question. Exit 1 → ask once, on a
    decision sheet: stop here and resume with `quenching-specs-execute <id>` in a new session
-   as option A (recommended), the measured peak in its own text, or continue. Otherwise stop only when the
+   as option A (recommended), the measured peak in its own text, or continue. **Under `autonomous`,
+   exit 1 asks nothing: stop at this boundary** and return the measured peak, the budget and the
+   section just closed, so the caller hands the rest to a fresh context. Otherwise stop only when the
    workflow reaches a question that requires a human answer, or under the pause conditions below. See
    [execution-cadence.md](../../references/specs-execute/execution-cadence.md)
    §The section boundary.

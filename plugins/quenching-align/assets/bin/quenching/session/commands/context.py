@@ -111,6 +111,51 @@ def measure_context(path: Path) -> dict:
                              "Request aggregates are exposure, not measured context windows."]}
 
 
+def _latest_self_call(path: Path, pattern: re.Pattern) -> str | None:
+    """The timestamp of the newest Bash call in `path` that invokes `session context --self`."""
+    latest = None
+    try:
+        stream = path.open(encoding="utf-8")
+    except OSError:
+        return None
+    with stream:
+        for raw in stream:
+            if "--self" not in raw:
+                continue
+            try:
+                record = json.loads(raw)
+            except ValueError:
+                continue
+            msg = record.get("message") if isinstance(record, dict) else None
+            content = msg.get("content") if isinstance(msg, dict) else None
+            stamp = record.get("timestamp")
+            if not isinstance(content, list) or not isinstance(stamp, str):
+                continue
+            for block in content:
+                if not isinstance(block, dict) or block.get("type") != "tool_use" \
+                        or block.get("name") != "Bash":
+                    continue
+                command = (block.get("input") or {}).get("command")
+                if isinstance(command, str) and pattern.search(command) and (latest is None or stamp > latest):
+                    latest = stamp
+    return latest
+
+
+def find_self(main: Path, marker: str) -> tuple[Path | None, str]:
+    """The transcript of this session whose latest `--self <marker>` call is the newest.
+
+    The in-flight tool call is already recorded when its command runs, so the caller finds itself."""
+    pattern = re.compile(r"session context\b.*--self[ =]['\"]?" + re.escape(marker) + r"['\"]?(\s|$)")
+    candidates = [main, *sorted((main.with_suffix("") / "subagents").glob("agent-*.jsonl"))]
+    found = [(stamp, path) for path in candidates
+             if (stamp := _latest_self_call(path, pattern)) is not None]
+    if not found:
+        return None, "se-self-not-found"
+    newest = max(stamp for stamp, _ in found)
+    paths = [path for stamp, path in found if stamp == newest]
+    return (paths[0], "self marker") if len(paths) == 1 else (None, "se-self-ambiguous")
+
+
 def cmd_context(args) -> int:
     selector = args.transcript or os.environ.get("CLAUDE_CODE_SESSION_ID")
     if not selector:
@@ -119,7 +164,14 @@ def cmd_context(args) -> int:
     path, how = resolve_transcript(selector, Path.cwd().resolve())
     if path is None:
         return refuse({"code": "se-no-transcript", "message": how}, args.json)
-    if args.agent:
+    marker = getattr(args, "self_marker", None)
+    if marker:
+        path, found = find_self(path, marker)
+        if path is None:
+            return refuse({"code": found, "message":
+                           f"no single transcript of this session carries `--self {marker}`"}, args.json)
+        how += "; self marker"
+    elif args.agent:
         if not re.fullmatch(r"[A-Za-z0-9_-]+", args.agent):
             return refuse({"code": "se-invalid-agent-id", "message": "agent id must be a bare identifier"}, args.json)
         path = path.with_suffix("") / "subagents" / f"agent-{args.agent}.jsonl"
