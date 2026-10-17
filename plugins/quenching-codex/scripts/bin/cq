@@ -168,8 +168,36 @@ def module_owners() -> dict[str, str]:
             for package in module.get("owned", {}).get("packages", [])}
 
 
+def _plugin_name(root: str) -> str:
+    for manifest in (".claude-plugin", ".codex-plugin"):
+        try:
+            name = json.loads(_read(os.path.join(root, manifest, "plugin.json")) or "{}").get("name", "")
+        except ValueError:
+            name = ""
+        if name:
+            return name
+    return ""
+
+
+def package_root(package: str) -> str | None:
+    """The plugin root that OWNS `package` among the enabled ones, or None.
+
+    A package merely copied into another module's tree (proof embeds `ops`) does not enable the
+    module that owns it: only a root whose manifest names the owner (or the monolithic source
+    `quenching`) counts, and that root is the one a conductor reads `commands/` from.
+    """
+    owner = module_owners().get(package)
+    for entry in sys.path:
+        if os.path.basename(os.path.normpath(entry)) != "bin" or not os.path.isdir(os.path.join(entry, "quenching", package)):
+            continue
+        root = os.path.dirname(os.path.dirname(os.path.realpath(entry)))
+        if owner is None or _plugin_name(root) in (owner, "quenching", "quenching-codex"):
+            return root
+    return None
+
+
 def present(package: str) -> bool:
-    return importlib.util.find_spec("quenching." + package) is not None
+    return package_root(package) is not None
 
 
 def absent_note(name: str) -> str:
@@ -187,12 +215,10 @@ def run_modules(argv: list[str]) -> int:
         entry = modules.setdefault(module, {"name": module, "pillars": [], "enabled": True, "root": None})
         if package in PILLARS:
             entry["pillars"].append(package)
-        found = importlib.util.find_spec("quenching." + package)
+        found = package_root(package)
         entry["enabled"] = entry["enabled"] and found is not None
         if found and entry["root"] is None:
-            # <root>/assets/bin/quenching/<package>: the plugin root whose commands/ a conductor reads.
-            entry["root"] = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
-                list(found.submodule_search_locations)[0]))))
+            entry["root"] = found  # the plugin root whose commands/ a conductor reads
     for entry in modules.values():
         if not entry["enabled"]:
             entry["root"] = None
