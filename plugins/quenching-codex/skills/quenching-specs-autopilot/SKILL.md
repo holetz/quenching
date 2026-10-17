@@ -28,7 +28,7 @@ forced execution, push, PR and merge below is authorized by it, and by nothing e
 
 This session is the **conductor**. It decides as the owner's delegate, keeps only summaries, and
 never builds: reading, mapping, decomposing, building and reviewing are agents
-(`quenching-specs:scout`, `quenching-specs:spec-architect`, `quenching-specs:orchestrator`, and the read-only gpt-6-astra
+(`quenching-specs:scout`, `quenching-specs:spec-architect` for real decomposition only, `quenching-specs:orchestrator` or, in economy mode, the spec-runner/verifier/git-steward trio, and the read-only gpt-6-astra
 `quenching-specs:reviewer`, which this conductor launches at step 6). The orchestrator's protocol (waves, workers, verifier, acceptance) lives in
 `../../agents/orchestrator.md`; do not restate it.
 
@@ -117,22 +117,44 @@ The map is ephemeral, under `<ephemeral area>/autopilot/<date>/`.
 **Done when:** the candidates kept are listed with evidence, or the map found none.
 
 ### 4. Epic
-Hand the queue and the kept candidates to `quenching-specs:spec-architect`: it creates the epic and the
-member specs (searching by title first), with waves whose `after:` serializes any two members that
-touch the same files. Then write the epic's `## Design` with `cq specs section <epic> Design
---write`, carrying the **autonomy policy**: forced execution, push, PR and merge of every member
-after a verifier PASS, authorized by this invocation, with its date. Check the result with
-`cq specs status --epic <epic>` and `cq specs validate`.
+**Mechanical capture, by default.** When the queue and the kept candidates already decide the
+members (title, `complexity`, dependencies), this session creates the epic and the members itself,
+with no `quenching-specs:spec-architect`: search by title in `cq specs list --json` first (a match is
+reused), then `cq specs new "<title>" --complexity <level> </dev/null` per member and `cq specs epic
+add <epic> <spec> --group "<wave>" --after <labels>` (labels `S<n>` returned by earlier `epic add`
+calls), serializing any two members that touch the same files with `after:`. Exit 2 is read, never
+repeated blindly. The model restrictions on code and classification stay as they are.
+**Decomposition, by the architect.** `quenching-specs:spec-architect` is launched only for real
+decomposition: members not yet decided, a spec over the worker budget (`proposal-only`), or waves that
+need reading file overlap. Hand it the queue and the kept candidates; it creates the epic and the
+members.
+Either way, write the epic's `## Design` with `cq specs section <epic> Design --write`, carrying the
+**autonomy policy**: forced execution, push, PR and merge of every member after a verifier PASS,
+authorized by this invocation, with its date. Check the result with `cq specs status --epic <epic>`
+and `cq specs validate`.
 **Done when:** the epic exists with its waves, its `## Design` carries the dated policy, and
 `validate` raises no `sp-epic-*` finding.
 
 ### 5. Orchestrate
-Start `quenching-specs:orchestrator` on the epic with the word `autonomous`, the base branch and the
-deadline (≤ 1,500 characters). Apply **Liveness** to every worker it reports. A spec it returns
-`blocked` with a `needs-human:` note moves to the human epic; `failed` or `continue` is carried to
-the report with its note, never retried in this round; a `continue` whose note starts with `budget:`
-is the exception, relaunched as the invariant above says.
-**Done when:** the orchestrator returned its fixed report and every non-`done` spec is placed.
+**Economy mode.** An epic with **at most 2 members, every one `low` or `medium`**, runs without
+`quenching-specs:orchestrator`: this session launches `quenching-specs:spec-runner` →
+`quenching-specs:verifier` → `quenching-specs:git-steward` for each member, with the acceptance rules
+of the orchestrator's protocol, cited and not restated — steps 3 (budget, `budget:` relaunch), 4
+(acceptance only on a verifier PASS, the `execute-done:`/`conclude` two spawns, `publish` by the
+steward, one re-spawn) and 5 (retry, idempotency) of `../../agents/orchestrator.md`.
+Each prompt is ≤ 1,500 characters and carries the word `autonomous`, the model passed explicitly and
+the sentence "No git stash, checkout or reset; work only in your worktree." Two members with a
+dependency run in series; without one, in parallel (never more than 3 workers). Every launch counts
+in `launches`, and the ceilings of the invariants above bind it. No new grant: this session already
+holds `Agent` and `Task`.
+**Otherwise** (3 or more members, or any `high`/`xhigh`), start `quenching-specs:orchestrator` on
+the epic with the word `autonomous`, the base branch and the deadline (≤ 1,500 characters).
+Apply **Liveness** to every worker, in either mode. A spec returned `blocked` with a `needs-human:`
+note moves to the human epic; `failed` or `continue` is carried to the report with its note, never
+retried in this round; a `continue` whose note starts with `budget:` is the exception, relaunched as
+the invariant above says.
+**Done when:** every member is `done` or placed (economy mode), or the orchestrator returned its
+fixed report and every non-`done` spec is placed.
 
 ### 6. Correctness review
 After every epic that changed code, start `quenching-specs:reviewer` once (`model: gpt-6-astra`) over the epic's
