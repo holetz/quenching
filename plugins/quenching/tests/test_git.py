@@ -1358,7 +1358,7 @@ class AuditRelocation(RepoCase):
                                  "owned": {"commands": ["specs"], "agents": True}}]}
         files = {f"{SRC}/assets/modules.json": json.dumps(manifest),
                  f"{SRC}/agents/w.md": self.AGENT.format(tools="Agent(quenching:w), Read"),
-                 self.CHECK: "probe quenching:specs:x\nkeep\n"}
+                 self.CHECK: "probe quenching:specs run\nkeep\n"}
         for rel, text in files.items():
             path = pathlib.Path(self.repo, rel)
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -1410,12 +1410,12 @@ class AuditRelocation(RepoCase):
         self.assertEqual([g["added"] for g in got], [["Agent(quenching:w)", "Read"]])
 
     def test_a_probe_rewritten_by_the_manifest_namespace_is_not_a_shrunk_gate(self):
-        self.assertEqual(self._payload({self.CHECK: "probe m:specs:x\nkeep\n"})["lowered"], [])
+        self.assertEqual(self._payload({self.CHECK: "probe m:specs run\nkeep\n"})["lowered"], [])
 
     def test_a_probe_rewritten_to_an_unknown_head_is_a_shrunk_gate(self):
-        got = self._payload({self.CHECK: "probe m:ghost:x\nkeep\n"})["lowered"]
+        got = self._payload({self.CHECK: "probe m:ghost run\nkeep\n"})["lowered"]
         self.assertEqual([(e["kind"], e["detail"]) for e in got],
-                         [("gate-shrunk", ["probe quenching:specs:x"])])
+                         [("gate-shrunk", ["probe quenching:specs run"])])
 
     def test_a_probe_dropped_is_still_a_shrunk_gate(self):
         got = self._payload({self.CHECK: "keep\n"})["lowered"]
