@@ -115,6 +115,7 @@ dialog textarea { min-height: 160px; font-family: ui-monospace, monospace; }
 .wave ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .wave-item { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
 .wave-item.critical { border: 2px solid var(--accent); }
+.chip.run-bad { background: var(--bad); color: #ffffff; font-weight: 600; }
 .chip.crit { background: var(--accent); color: var(--accent-ink); }
 .chip.st-done { background: #d8eee1; color: var(--ok); }
 .chip.st-in-progress { background: #f6e4c4; color: var(--warn); }
