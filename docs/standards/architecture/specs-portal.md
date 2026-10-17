@@ -1,7 +1,7 @@
 ---
 type: standard
 title: The specs portal reads one store and widens nothing without a decision
-description: The local spec portal (cq specs serve) reads only the specs store open_backend reads, exposes a fixed set of GET and POST routes, keeps its loopback, token, Host/Origin and CSP guarantees, builds every node with textContent, reuses cockpit UX patterns but never its code, and regenerates the reader copy and the Codex mirror with every change
+description: The local spec portal (cq specs serve) reads only the specs store open_backend reads, exposes a fixed set of GET and POST routes plus, under --chat, a read-only claude -p chat polled by job, keeps its loopback, token, Host/Origin and CSP guarantees, builds every node with textContent, reuses cockpit UX patterns but never its code, and regenerates the reader copy and the Codex mirror with every change
 resource: plugins/quenching/assets/bin/quenching/specs/portal.py, plugins/quenching/assets/bin/quenching/specs/chat.py, plugins/quenching/assets/portal/**, plugins/quenching/assets/bin/quenching/portal/**, plugins/quenching/assets/bin/quenching/common/lent.py, plugins/quenching/assets/bin/quenching/session/portal.py
 tags: [architecture, portal, specs, security, ux]
 timestamp: 2026-10-17
