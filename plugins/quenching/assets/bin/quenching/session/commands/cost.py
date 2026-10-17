@@ -170,7 +170,8 @@ def aggregate(directory: Path, descendants_of: str | None = None, nested: bool =
         descendants_of = latest_orchestrator(sorted(directory.glob("agent-*.jsonl")))
         if descendants_of is None:
             return {"groups": [], "byModel": [], "anomalies": [], "noOrchestrator": True}
-    for tr in scoped(sorted(directory.glob("agent-*.jsonl")), descendants_of, nested):
+    transcripts = scoped(sorted(directory.glob("agent-*.jsonl")), descendants_of, nested)
+    for tr in transcripts:
         agent = _agent_type(tr)
         for model, usage, when, line in _requests(tr, anomalies).values():
             if since is not None:
@@ -198,8 +199,27 @@ def aggregate(directory: Path, descendants_of: str | None = None, nested: bool =
                                            "cacheRead": 0, "cacheWrite": 0, "output": 0})
         for k in ("requests", "input", "cacheRead", "cacheWrite", "output"):
             m[k] += g[k]
+    agents = agent_peaks(transcripts)
     return {"groups": rows, "byModel": sorted(models.values(), key=lambda m: m["model"]),
+            "agents": agents, "overBudget": [a["agentId"] for a in agents if a["exceeded"]],
             "anomalies": anomalies}
+
+
+def agent_peaks(transcripts: list) -> list:
+    """Each agent's recorded context peak against its role budget, whole transcript.
+
+    `exceeded` is None where no reliable peak or no role budget exists: unmeasured, never within."""
+    from quenching.session.commands.context import measure_context  # context imports this module
+    rows = []
+    for tr in transcripts:
+        try:
+            m = measure_context(tr)
+        except (OSError, UnicodeError):
+            m = {"agentType": _agent_type(tr), "role": "unknown", "peakContext": None,
+                 "budget": None, "exceeded": None}
+        rows.append({"agentId": _agent_id(tr), "agentType": m["agentType"], "role": m["role"],
+                     "peakContext": m["peakContext"], "budget": m["budget"], "exceeded": m["exceeded"]})
+    return rows
 
 
 def cmd_cost(args) -> int:
