@@ -24,7 +24,10 @@ plugin root the base or the tip declares (a `.claude-plugin/plugin.json`, a rela
 any depth, so an OKF standard filed under `standards/agents/` is no grant. A file a CI root of the
 base or the tip includes (GitLab `include`, top level or under a job's `trigger:`, Azure `template:`,
 `@self` included, GitHub `uses: ./`, where `./` is the whole repository), transitively, is
-surface like the root itself. Nothing here executes the
+surface like the root itself. `generated` is the part of `changed` that is a byte-for-byte copy of its
+source file under a module the BASE's `plugins/quenching/assets/modules.json` declares (same relative
+path, same blob at the tip, or absent from both); derived outputs that are no copy are never in it.
+Nothing here executes the
 audited branch's code: the gate is certified by CI before the merge, never by this verb."""
 from __future__ import annotations
 
@@ -542,8 +545,68 @@ def _deny_entries(path: str, text: str | None, key: str = "deny") -> set[str]:
     return (_entries(parsed[0], DENY_KEYS) if parsed else None) or set()
 
 
+MODULES = "plugins/quenching/assets/modules.json"
+NAMESPACED = re.compile(r"(?<![\w-])quenching:([a-z][a-z-]*)")
+
+
+def _modules(cwd: str, base: str, env: dict[str, str],
+             errors: list[dict]) -> tuple[str, list[str], dict[str, str]] | None:
+    """The module manifest of the BASE, never the branch's: `(source, module roots, namespace map)`.
+    The map sends each `quenching:<head>` head (an owned command front or root command, and every
+    agent of the source when the module owns agents) to its owning module, as `namespace_map` of the
+    generator does. Absent manifest -> None (nothing is declared); unreadable or a duplicate head ->
+    an `errors` entry and None, so no relocation is ever accepted on a manifest the audit cannot read."""
+    code, out, _err = _git_run(cwd, *SAFE, "show", f"{base}:{MODULES}", env=env)
+    if code != 0:
+        return None
+    try:
+        manifest = json.loads(out)
+        source = manifest["source"].strip("/")
+        roots = [m["path"].strip("/") for m in manifest["modules"]
+                 if m.get("published") and ("generated" in m or "owned" in m)]
+        agents: list[str] | None = None
+        mapping: dict[str, str] = {}
+        for module in manifest["modules"]:
+            owned = module.get("owned")
+            if not owned:
+                continue
+            heads = [rel.removesuffix(".md") for rel in owned.get("commands", [])]
+            if owned.get("agents"):
+                if agents is None:
+                    c, listing, _e = _git_run(cwd, *SAFE, "ls-tree", "--name-only", base,
+                                              f"{source}/agents/", env=env)
+                    agents = [posixpath.basename(n)[:-3] for n in listing.splitlines()
+                              if n.endswith(".md")] if c == 0 else []
+                heads += sorted(agents)
+            for head in heads:
+                if head in mapping:
+                    raise ValueError(f"duplicate namespace head: {head}")
+                mapping[head] = module["name"]
+    except (ValueError, KeyError, TypeError, AttributeError) as exc:
+        errors.append(_error(("show", MODULES), 0, f"unreadable module manifest: {exc}"))
+        return None
+    return source, roots, mapping
+
+
+def _swap(text: str, mapping: dict[str, str]) -> str:
+    """`quenching:<head>` -> `<module>:<head>` for the heads the BASE manifest assigns to a module;
+    a head it does not know is left alone, so it can never be matched by a rewrite."""
+    return NAMESPACED.sub(lambda m: f"{mapping[m.group(1)]}:{m.group(1)}"
+                          if m.group(1) in mapping else m.group(0), text)
+
+
+def _origin(path: str, view: tuple[str, list[str], dict[str, str]] | None) -> str | None:
+    """The same relative path under the source, for a path inside a declared module root."""
+    if view:
+        source, roots, _map = view
+        for root in roots:
+            if root != source and path.startswith(root + "/"):
+                return f"{source}/{path[len(root) + 1:]}"
+    return None
+
+
 def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, str],
-            errors: list[dict]) -> list[dict]:
+            errors: list[dict], generated: frozenset[str] | set[str] = frozenset()) -> list[dict]:
     """Every entry the branch ADDS to the grant surface against its merge-base with `base`:
     `tools:`/`allowed-tools:` of an agent, command or skill (an agent with no `tools:` is `*`), a
     deny rule removed (`kind: deny`), and the added lines of a settings file under `.agents/` or
@@ -558,7 +621,12 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
     manifest or server config (`(removed or rewritten lines)`), a surface path changed with no
     `+`/`-` line read (`(no line read)`), a changed block it cannot read whole (`(unparsed frontmatter)`), and a sensitive
     file deleted (`(deleted)`), and every symlink the branch adds or repoints, at any path
-    (`(symlink)`), its target never read. Unchanged never appears, nor a narrowing that removes no surface line."""
+    (`(symlink)`), its target never read. Unchanged never appears, nor a narrowing that removes no surface line.
+    Two relocations are not a widening, and only on proof: a path in `generated` (a byte-for-byte copy of
+    its source that exists at the tip) adds nothing the source does not hold, and the source is audited
+    itself when it changed; and a `tools:` entry that is exactly the namespace rewrite
+    (`quenching:<head>` -> `<module>:<head>`, by the BASE manifest) of an entry the old file held is not
+    added. The old file of a new path in a module is its same relative path under the source at the fork."""
     code, out, err = _git_run(cwd, *SAFE, "merge-base", base, tip, env=env)
     if code != 0 or not out.strip():
         errors.append(_error(("merge-base", base), code, err or "no common ancestor"))
@@ -577,11 +645,15 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
         return text if code == 0 else None
 
     roots = _plugin_roots(cwd, (fork, tip), env, errors) + _ci_includes(cwd, (fork, tip), env, errors)
+    view = _modules(cwd, base, env, errors)
+    mapping = view[2] if view else {}
     found = []
     for path in changed:
         if path in symlinks:   # its target is never read: a link into the tree or a directory fails closed
             found.append({"path": path, "kind": "unknown", "added": ["(symlink)"]})
             continue
+        if path in generated and show(tip, path) is not None:
+            continue           # a reproduced copy: its source is audited by its own change
         by_root, agent_by_root = _component(path, roots)
         frontmatter = (FRONTMATTER_GRANT.search(path) or by_root) and not DOCS.match(path)
         surface = SURFACE.search(path) or any(kind == "surface" and _under(path, p) for kind, p in roots)
@@ -592,6 +664,9 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
             found.append({"path": path, "kind": "unknown", "added": ["(deleted)"]})
             continue
         old = show(fork, path)
+        origin = _origin(path, view) if old is None else None
+        if origin:
+            old = show(fork, origin)
         unparsed = False
         if frontmatter:
             agent = bool(AGENT.search(path)) or agent_by_root
@@ -603,7 +678,9 @@ def _grants(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, st
                 found.append({"path": path, "kind": "unknown", "added": ["(unparsed frontmatter)"]})
             else:
                 old_grants = _grant_entries(old, old_fm, agent)
-                added = [] if "*" in old_grants else sorted(_grant_entries(new, new_fm, agent) - old_grants)
+                new_grants = _grant_entries(new, new_fm, agent)
+                swapped = {_swap(e, mapping) for e in old_grants - new_grants}
+                added = [] if "*" in old_grants else sorted(new_grants - old_grants - swapped)
                 if added:
                     found.append({"path": path, "kind": "tools", "added": added})
                 unknown = _unknown_keys(old_keys, new_keys)
@@ -713,7 +790,8 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
     the base, a gate file (`scripts/verify_repo.sh`, `plugins/quenching/assets/checks/**`) deleted or
     with a removed non-comment line that no added line of that file repeats; `severity: warn` — a
     `noqa`, `type: ignore`, `skip`, `skipIf`, `skipUnless` or `xfail` added to a code file. A reworded
-    gate step reads as shrunk: the conductor settles it."""
+    gate step reads as shrunk: the conductor settles it, except a line whose `quenching:<head>`
+    ids, rewritten by the BASE manifest's namespace map, are an added line verbatim."""
     code, out, err = _git_run(cwd, *SAFE, "diff", "--no-ext-diff", "--no-textconv", "--name-status",
                               "-z", "--no-renames", f"{base}...{tip}", env=env)
     if code != 0:
@@ -727,6 +805,8 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
         return text if c == 0 else ""
 
     pairs = list(zip(fields[0::2], fields[1::2]))
+    view = _modules(cwd, base, env, errors)
+    mapping = view[2] if view else {}
     disc = _read_discover(show(tip, "scripts/verify_repo.sh"))
     root, pattern = disc if disc else (None, "test*.py")
     inconclusive = disc is False
@@ -808,7 +888,8 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
             found.append({"path": path, "severity": "fail", "kind": "test-lost-asserts",
                           "detail": "no assert left"})
         if gate:
-            lost = [m for m in minus if m and not m.startswith("#") and m not in plus]
+            lost = [m for m in minus if m and not m.startswith("#") and m not in plus
+                    and _swap(m, mapping) not in plus]
             if lost:
                 found.append({"path": path, "severity": "fail", "kind": "gate-shrunk", "detail": lost})
         if CODE_EXT.search(path):
@@ -816,6 +897,41 @@ def _lowered(cwd: str, base: str, tip: str, env: dict[str, str], errors: list[di
             if muted:
                 found.append({"path": path, "severity": "warn", "kind": "suppression-added",
                               "detail": muted})
+    return found
+
+
+def _blob(cwd: str, tip: str, path: str, env: dict[str, str]) -> str | None:
+    code, out = _run(cwd, "rev-parse", "--verify", "--quiet", "--end-of-options", f"{tip}:{path}", env=env)
+    return out.strip() if code == 0 and out.strip() else None
+
+
+def _generated(cwd: str, base: str, tip: str, changed: list[str], env: dict[str, str],
+               errors: list[dict]) -> list[str]:
+    """The changed paths that are a byte-for-byte copy of their source file in a declared module.
+    The manifest is read from the BASE, so the branch cannot declare its own outputs."""
+    if not changed:
+        return []
+    code, out, err = _git_run(cwd, *SAFE, "show", f"{base}:{MODULES}", env=env)
+    if code != 0:
+        return []                         # no manifest at the base: nothing is declared generated
+    try:
+        manifest = json.loads(out)
+        source = manifest["source"].strip("/")
+        roots = [m["path"].strip("/") for m in manifest["modules"]
+                 if m.get("published") and ("generated" in m or "owned" in m)]
+    except (ValueError, KeyError, TypeError, AttributeError) as exc:
+        errors.append(_error(("show", MODULES), 0, f"unreadable module manifest: {exc}"))
+        return []
+    found = []
+    for path in changed:
+        for root in roots:
+            if root != source and path.startswith(root + "/"):
+                rel = path[len(root) + 1:]
+                mine = _blob(cwd, tip, path, env)
+                theirs = _blob(cwd, tip, f"{source}/{rel}", env)
+                if mine == theirs:
+                    found.append(path)
+                break
     return found
 
 
@@ -865,13 +981,16 @@ def cmd_audit(args) -> int:
         "rewrites": {"branch": _rewrites(worktree, f"refs/heads/{args.branch}", env, errors),
                      "head": _rewrites(worktree, "HEAD", env, errors)},
     }
-    payload["grants"] = _grants(worktree, base, tip, payload["changed"], env, errors)
+    payload["generated"] = _generated(worktree, base, tip, payload["changed"], env, errors)
+    payload["grants"] = _grants(worktree, base, tip, payload["changed"], env, errors,
+                                set(payload["generated"]))
     payload["lowered"] = _lowered(worktree, base, tip, env, errors)
     payload["errors"] = errors
     payload["complete"] = not errors
 
     lines = [f"worktree: {worktree}", f"branch: {args.branch} ({tip[:12]}) over {args.base}",
              f"commits: {len(payload['commits'])}", f"changed: {len(payload['changed'])} path(s)",
+             f"generated: {len(payload['generated'])} path(s)",
              f"status: {len(payload['status'])} entries", f"stash: {len(payload['stash'])} entries",
              f"grants added: {sum(len(g['added']) for g in payload['grants'])}",
              f"lowered: {len(payload['lowered'])} entr(ies)"]
