@@ -60,5 +60,57 @@
       "claude-stream-json-surface-load",
       "claude-transcript-token-cost"
     ]
-  }
+  },
+  "removals": [
+    {
+      "command": "specs/autopilot",
+      "from": " The Codex review of step 6 is one\n  call per epic and its tokens are reported, or `not measured`.",
+      "replace": ""
+    },
+    {
+      "command": "specs/autopilot",
+      "from": "**Codex, in parallel.**",
+      "until": "**Consolidate by `path:line`.**",
+      "replace": "**Codex review: unavailable on this surface.** A Codex run never launches Codex (no nested Codex); the report names the review `unavailable`.\n\n"
+    },
+    {
+      "command": "specs/autopilot",
+      "from": "Merge both lists, one entry per `path:line`, marked claude,",
+      "until": "Each finding kept becomes",
+      "replace": "The reviewer's findings stand once reproduced, with the command and its output. "
+    },
+    {
+      "command": "specs/autopilot",
+      "from": " (and Codex returned or fell back, reported)",
+      "replace": ""
+    },
+    {
+      "command": "specs/autopilot",
+      "from": "; plus the Codex review of each epic —",
+      "until": ".\n**Done when:** the report is printed",
+      "replace": ""
+    },
+    {
+      "command": "specs/conclude",
+      "from": "| Step 2 — the Codex review |",
+      "until": "| Step 3 — the emergent",
+      "replace": ""
+    },
+    {
+      "command": "specs/conclude",
+      "from": "**Independent Codex review, in parallel",
+      "until": "Present the findings.",
+      "replace": "**Codex review: unavailable on this surface.** A Codex run never launches Codex (no nested Codex); the report names the review `unavailable`.\n\n"
+    },
+    {
+      "command": "specs/conclude",
+      "from": "(and the Codex line: `Codex: reviewed (<n> findings, <m> reproduced)` or `Codex: fallback (<reason>)`)",
+      "replace": "(and the line `Codex: unavailable (no nested Codex)`)"
+    },
+    {
+      "command": "specs/execute",
+      "from": "\n\n   A repository that wants a Codex review per task declares it as this hook; the recipe is\n   `docs/standards/architecture/codex-pillar.md` §The per-task review hook.",
+      "replace": ""
+    }
+  ]
 }

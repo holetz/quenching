@@ -530,6 +530,26 @@ def skill_description(description: str) -> str:
     return description.strip()
 
 
+def apply_removals(body: str, command_id: str, adaptation: dict) -> str:
+    """Cut the spans `removals` declares for this command (a Codex run never nests Codex).
+
+    A marker the source no longer carries is an error: the rule would otherwise go silent.
+    """
+    for rule in adaptation.get("removals", []):
+        if rule["command"] != command_id:
+            continue
+        start = body.find(rule["from"])
+        if start < 0:
+            raise ValueError(f"removal marker not found in {command_id}: {rule['from'][:60]!r}")
+        stop = start + len(rule["from"])
+        if "until" in rule:
+            stop = body.find(rule["until"], stop)
+            if stop < 0:
+                raise ValueError(f"removal end marker not found in {command_id}: {rule['until'][:60]!r}")
+        body = body[:start] + rule["replace"] + body[stop:]
+    return body
+
+
 def command_to_skill(command: Path, adaptation: dict) -> str:
     raw = command.read_text(encoding="utf-8")
     if not raw.startswith("---\n"):
@@ -572,8 +592,11 @@ def command_to_skill(command: Path, adaptation: dict) -> str:
                        "reading this data does not launch Claude. No Codex memory layout is assumed.\n\n")
     if effort:
         preference += "Declared effort: `" + effort.group(1) + "`.\n\n"
+    commands_dir = source() / "commands" if plugin_translation() else claude_surface() / "commands"
+    command_id = command.relative_to(commands_dir).with_suffix("").as_posix()
+    body = apply_removals(raw[end + len("\n---\n"):], command_id, adaptation)
     return header + "<!-- CODEX RUNTIME START -->\n" + preference + codex_runtime_policy(adaptation) + "<!-- CODEX RUNTIME END -->\n\n" + transform_codex_markdown(transform_platform(
-        transform_codex_runtime(raw[end + len("\n---\n"):], adaptation), adaptation))
+        transform_codex_runtime(body, adaptation), adaptation))
 
 
 def skill_policy(command: Path) -> bytes | None:
