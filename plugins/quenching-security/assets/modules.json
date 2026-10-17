@@ -435,6 +435,53 @@
           "read-only"
         ]
       }
+    },
+    {
+      "name": "quenching-opensource",
+      "path": "plugins/quenching-opensource",
+      "published": true,
+      "versionFile": true,
+      "cqPathOwner": false,
+      "owned": {
+        "commands": [
+          "opensource"
+        ],
+        "packages": [
+          "opensource"
+        ],
+        "agents": false
+      },
+      "generatedSupport": {
+        "packages": [
+          "common",
+          "controls"
+        ],
+        "references": [
+          "align",
+          "components-command-new",
+          "git",
+          "knowledge-add",
+          "knowledge-align",
+          "knowledge-import",
+          "specs-align",
+          "specs-conclude",
+          "specs-develop",
+          "specs-execute",
+          "front-align",
+          "opensource-controls",
+          "opensource-align"
+        ],
+        "router": true
+      },
+      "metadata": {
+        "description": "The open source front: /quenching-opensource:opensource:* reports every owner's catalog answers and the baseline level, and writes license, community and governance artifacts from pinned templates. Requires quenching-specs for cq.",
+        "keywords": [
+          "claude-code",
+          "open-source",
+          "governance",
+          "conformance"
+        ]
+      }
     }
   ]
 }
