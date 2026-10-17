@@ -1,6 +1,6 @@
 ---
 name: quenching-specs-autopilot
-description: "Run improvement rounds (triage, map, epic, orchestrate, review, gate) until a deadline or a dry queue. Use for \"run the autopilot until 7am\". Not for: ONE epic → quenching-specs-orchestrate; owner-decided map → quenching-specs-improve."
+description: "Run ONE improvement round (triage, map, epic, orchestrate, review, gate); `--until-dry` or `--until` repeat rounds until a dry queue or a deadline. Use for \"run the autopilot until 7am\". Not for: ONE epic → quenching-specs-orchestrate; owner-decided map → quenching-specs-improve."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/specs/autopilot.md -->
@@ -15,10 +15,13 @@ Tier mapping: opus → `gpt-6-astra`; sonnet → `gpt-6.1-sol`; haiku → `gpt-6
 <!-- CODEX RUNTIME END -->
 
 
-# quenching-specs-autopilot — rounds of improvement until a deadline or a dry queue
+# quenching-specs-autopilot — one round of improvement; more only on request
 
-**Input**: `$ARGUMENTS` — `--until <date-time with offset>` (e.g. `2026-10-09T07:00-03:00`), or
-nothing to run until the queue runs dry; optionally focus areas as in `quenching-specs-improve`.
+**Input**: `$ARGUMENTS` — no flag runs **ONE round** (steps 1–8) and stops. `--until-dry` repeats
+rounds until the queue runs dry; `--until <date-time with offset>` (e.g. `2026-10-09T07:00-03:00`)
+repeats them until the deadline (and still stops at a dry queue). `--max-launches <n>` sets the
+launch ceiling (default **40**, provisional: it is fixed only after the human reads the measurement
+of the last three runs). Optionally focus areas as in `quenching-specs-improve`.
 Typed by the human only: **the invocation is the human's delegation** for the whole run — every
 forced execution, push, PR and merge below is authorized by it, and by nothing else.
 
@@ -53,6 +56,15 @@ non-`cq`, non-`git` command is run.
 - **Cost.** At most 3 workers at a time; each brief ≤ 1,500 characters, each return ≤ 800 words.
   Wait for completion notifications instead of polling. One correctness review per epic, never per
   spec. The conductor reads summaries, never diffs or file dumps.
+- **The launch ceiling binds the whole tree.** Every `Agent`/`Task` launched in the run counts —
+  children, grandchildren reported by returns, Liveness relaunches and follow-ups — in the
+  `launches` field of the round record. Before each launch the conductor compares it with
+  `--max-launches`; at the ceiling it admits nothing more, writes the record (`open`, next step)
+  and reports `continue`. The count covers what the conductor and the returned reports show; what
+  is in flight is declared `not measured`.
+- **The round record is resumable.** Each round writes `<ephemeral area>/autopilot/<date>/rounds.md`
+  (one block per round: number, start ref, epic, specs placed, `launches`, next step,
+  `open|closed`) at the end of every step 1–7. A round that returns `continue` stays `open`.
 - **The deadline binds launches.** With `--until`, no worker starts if it cannot finish before the
   deadline; what is in flight at the deadline is reported `continue` with its state.
 
@@ -63,8 +75,10 @@ Resolve `cq` per [align/tool-resolution.md](../../references/align/tool-resoluti
 §Resolving the tool; branch on the exit code. Read the root harness for the gate command and the
 ephemeral area. Check, on `main`: the checkout is clean (`git status --short`), `git stash list` is
 empty, `git worktree list` holds only this run's worktrees, and the gate is green. Anything red →
-this round's first spec is fixing it (`cq specs new`, then steps 4–5 on it alone). Record the round's
-start ref: `git rev-parse main`.
+this round's first spec is fixing it (`cq specs new`, then steps 4–5 on it alone). Read the
+round record first: an `open` round whose start ref is still reachable from `main` resumes at its
+recorded next step and keeps its `launches`; any other record opens a new round. Record the
+round's start ref: `git rev-parse main`.
 **Done when:** `main` is clean and green, or the fix is this round's first spec.
 
 ### 2. Queue
@@ -129,11 +143,17 @@ Then decide whether to stop:
 - **dry queue** — a whole round in which the queue (step 2), the map (step 3) and the review
   (step 6) produced **no** spec with evidence and consequence.
 
-Neither → the next round starts at step 1.
-**Done when:** the gate and the audit were read, and the run either stops or starts a new round.
+Neither → without `--until-dry`/`--until`, close the round record (`closed`), print step 8 and
+**stop: one round is the default**. With either flag, close the record and open the next round in a
+**fresh context**: launch one sub-agent that follows this body from step 1 with the record as its
+only input (counted as a launch). If a sub-agent cannot launch sub-agents, stop instead, with the
+record `closed` and the next step printed as the invocation to resume in a new session
+(`quenching-specs-autopilot --until-dry`).
+**Done when:** the gate and the audit were read, and the run either stops or starts the next round
+the flags asked for.
 
 ### 8. Final report
-Print: per epic, the merged specs with their PRs; the human epic and its members; every decision
+Print: the launches used against `--max-launches`; per epic, the merged specs with their PRs; the human epic and its members; every decision
 this session took as the delegated owner; specs in flight at the deadline, as `continue` with their
 state; second stalls; and the tokens the run spent per model and agent type, from host-provided Codex telemetry (otherwise `not measured`) and never summed across tiers.
 **Done when:** the report is printed.
