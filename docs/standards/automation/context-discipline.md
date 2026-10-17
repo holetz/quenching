@@ -7,7 +7,7 @@ tags: [automation, context, reading, cost, commands, references]
 timestamp: 2026-10-17
 audience: both
 authority: background
-source: read-by-section-not-by-file, narrow-the-execute-preamble, extensible-surface-and-budget-retirement, 2026-08-06, 2026-08-04, scope-the-handoff-rewrite; specs 1629 (2026-10-13), 1631, 1633 (2026-10-14), 1754 (2026-10-16), 1632 (2026-10-17); lineage in ADR 0004
+source: read-by-section-not-by-file, narrow-the-execute-preamble, extensible-surface-and-budget-retirement, 2026-08-06, 2026-08-04, scope-the-handoff-rewrite; specs 1629 (2026-10-13), 1631, 1633 (2026-10-14), 1754 (2026-10-16), 1632, 1875 (2026-10-17); lineage in ADR 0004
 maintainer: quenching
 ---
 
@@ -236,8 +236,21 @@ boundary, and a build offers to stop there.
   section boundary and, over budget (exit 1), stops there; the `spec-runner` returns
   `STATE: continue` with `NOTE: budget: <peak>/<budget> after section <N>`, the orchestrator
   re-spawns a fresh worker without counting it as a failure re-spawn, and its totals line reports
-  `BUDGET:` from `cq components session cost --json`'s `overBudget`. Exit 2 never stops a run. The
-  conductor budget is still not enforced by code.
+  `BUDGET:` from `cq components session cost --json`'s `overBudget`. Exit 2 never stops a run. **The
+  conductor budget of the `orchestrator` is enforced by code between waves:** it measures itself
+  with `cq components session context --self orchestrator-<id> --json` before admitting each wave
+  and, over budget (exit 1), lets the workers in flight finish (a stop is never mid-wave) and
+  returns `STATE: continue` with `NOTE: budget: <peak>/<budget> before wave <N>` for each spec not
+  yet launched; the autopilot relaunches it in a fresh context, counted in `launches` and only
+  while a spec more is `done` or `merged`, else `needs-human`. The budget of the top-level
+  conductor (the autopilot in the main session) is still not enforced by code.
+- **The tree-token ceiling is opt-in.** `/quenching-specs:specs:autopilot --max-tree-tokens <n>`
+  has no default value; without it nothing is read. With it, before each launch the conductor
+  reads `cq components session cost "$CLAUDE_CODE_SESSION_ID" --json` and compares, per model and
+  never summed across tiers, `input + cacheRead + cacheWrite + output` of that model's `byModel`
+  row with `<n>`; a model at the ceiling, or whose total plus the largest measured total of one
+  agent of that model reaches it, admits no launch, and the round record is written `open` with
+  `continue`. In-flight and unmeasured tokens are declared, never estimated.
 - **It writes no new state.** The resumption trail — `## Handoff`, `git log`, and the recorded
   commit subjects — is already maintained for other reasons. Preparation in the new context still
   has a measured cost; §Measured context budgets records that cost separately. An offer needing a record of its own would be moving cost, not cutting it.
