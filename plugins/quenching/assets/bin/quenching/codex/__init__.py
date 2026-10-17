@@ -1,10 +1,12 @@
-"""The ``codex`` pillar: whether the Codex quota allows a call, and nothing that writes code.
+"""The ``codex`` pillar: whether the Codex quota allows a call, and which spec tasks Codex may write.
 
     cq codex probe [--json]    exit 0 available · 1 unavailable · 2 unknown (the quota);
                                `sandbox` says whether Codex can run commands on this host
     cq codex review --worktree <dir> --prompt <file> [--base <ref> [--head <ref>]]
                     [--run <name>] [--json]
                                exit 0 reviewed · 1 fall back to Claude · 2 refusal
+    cq codex eligible --spec <id> --task <tid> [--json]
+                               exit 0 Codex may write the task · 1 Claude writes it · 2 refusal
 """
 from __future__ import annotations
 
@@ -13,6 +15,7 @@ import json
 import os
 
 from quenching.codex.config import load_settings
+from quenching.codex.eligible import run_eligible
 from quenching.codex.probe import EXIT, probe, sandbox
 from quenching.codex.review import run_review
 from quenching.common.front import resolve_root
@@ -27,7 +30,8 @@ def build_parser() -> argparse.ArgumentParser:
     common.add_argument("--json", action="store_true", default=argparse.SUPPRESS,
                         help="print machine-readable output")
     parser = NoAbbrevParser(prog="cq codex", parents=[common],
-                            description="read the Codex quota and run Codex read-only")
+                            description="read the Codex quota, run Codex read-only, and decide "
+                                        "which spec tasks Codex may write")
     parser.add_argument("--version", action="store_true", help="print the codex version")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("probe", parents=[common],
@@ -40,7 +44,23 @@ def build_parser() -> argparse.ArgumentParser:
     review.add_argument("--base", help="the ref whose diff goes into the prompt when the "
                                        "sandbox is unavailable")
     review.add_argument("--head", default="HEAD", help="the diff's other end (default: HEAD)")
+    eligible = sub.add_parser("eligible", parents=[common],
+                              help="exit 0 when Codex may write the task, 1 when Claude writes it")
+    eligible.add_argument("--spec", required=True, help="the spec id")
+    eligible.add_argument("--task", required=True, help="the task id, e.g. 2.1")
     return parser
+
+
+def _eligible(root: str, args, as_json: bool) -> int:
+    settings, warnings = load_settings(root)
+    payload, code = run_eligible(root, settings, args.spec, args.task)
+    if code == 2:
+        return refuse({k: v for k, v in payload.items() if k != "ok"}, as_json)
+    payload["warnings"] = warnings
+    verdict = f"{payload['class']} -> {payload['model']}" if code == 0 else "claude"
+    emit(as_json, payload, f"codex eligible — {args.spec} {args.task}: {verdict}; "
+                           f"{payload['reason']}")
+    return code
 
 
 def _probe(root: str, as_json: bool) -> int:
@@ -66,6 +86,8 @@ def main(argv: list[str]) -> int:
                        "message": f"repository root does not exist: {root}"}, as_json)
     if args.command == "probe":
         return _probe(root, as_json)
+    if args.command == "eligible":
+        return _eligible(root, args, as_json)
     settings, warnings = load_settings(root)
     payload, code = run_review(root, settings, args.worktree, args.prompt, args.run,
                                base=args.base, head=args.head)
