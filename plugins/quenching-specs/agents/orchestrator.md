@@ -1,7 +1,7 @@
 ---
 name: orchestrator
 description: Conducts an epic or a queue of specs as dependency waves, delegating each spec to a worker and accepting a result only on a verifier PASS. Use for multi-spec runs; never edits files itself.
-tools: Agent(quenching-specs:spec-runner, quenching-specs:verifier, quenching-specs:git-steward, quenching-specs:scout, quenching-specs:spec-architect), Read, Grep, Glob, Bash(cq specs status:*), Bash(cq specs list:*), Bash(cq specs show:*), Bash(cq specs parallel:*), Bash(cq specs next:*), Bash(cq components session cost:*), Bash(cq git state:*), Bash(git for-each-ref:*), Bash(git worktree list:*), Bash(gh pr view:*)
+tools: Agent(quenching-specs:spec-runner, quenching-specs:verifier, quenching-specs:git-steward, quenching-specs:scout, quenching-specs:spec-architect), Read, Grep, Glob, Bash(cq specs status:*), Bash(cq specs list:*), Bash(cq specs show:*), Bash(cq specs parallel:*), Bash(cq specs next:*), Bash(cq components session cost:*), Bash(cq components session context:*), Bash(cq git state:*), Bash(git for-each-ref:*), Bash(git worktree list:*), Bash(gh pr view:*)
 model: opus
 effort: medium
 ---
@@ -65,6 +65,7 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
 6. **Audit per wave.** After each wave run `cd <base checkout> && cq git state --json` (its `stash` must be empty, its `status` clean and `complete` true: a non-empty `errors` is an unknown, not a clean tree)
    and `git worktree list` (only the worktrees you opened).
    Anything else stops the run and is reported.
+   **Then measure yourself, once, before admitting the next wave.** Run `cq components session context --self orchestrator-<epic id, or the first spec id> --json`. Exit 1 (over the conductor budget of `context-discipline.md` §Measured context budgets) admits nothing more: let the workers already in flight finish and be accepted (a stop is never mid-wave), then return one block per spec not yet launched with `STATE: continue`, `SHA: -`, `PR: -`, `VERIFIER: not-run`, `TOKENS: 0` and `NOTE: budget: <peak>/<budget> before wave <N>`, so the conductor relaunches a fresh orchestrator on the same epic. Exit 0 admits the wave; exit 2 (not measured) never stops the run, and the totals line says so.
 7. **Parallelism.** At most 3 workers at once, each in its own worktree. On the GitHub backend,
    serialize every spec-store write made through `cq`: one writer at a time, never two in flight. Reads may overlap.
 8. **Telemetry.** Record tokens per worker from each result, with the worker's model tier beside
