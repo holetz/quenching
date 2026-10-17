@@ -49,7 +49,7 @@ class StageEndContractTests(unittest.TestCase):
 
     def test_execute_offer_recommends_a_new_session_over_budget(self):
         body = text(SPECS / "execute.md")
-        self.assertIn("\"(Recommended)\", is to run `/quenching-specs:specs:conclude <id>` in a new session", body)
+        self.assertIn("(A, recommended) is to run `/quenching-specs:specs:conclude <id>` in a new session", body)
 
 
 class SectionBoundaryContractTests(unittest.TestCase):
@@ -60,7 +60,8 @@ class SectionBoundaryContractTests(unittest.TestCase):
         self.assertIn("cq components session context --json", step)
         self.assertIn("Exit 0 or 2 → continue to the next task: the boundary is not a question", step)
         self.assertIn("Exit 1 → ask once", step)
-        self.assertIn("in a new session \"(Recommended)\"", step)
+        self.assertIn("in a new session", step)
+        self.assertIn("as option A (recommended)", step)
         self.assertNotIn("section-boundary offer", body)
 
     def test_cadence_lets_the_size_decide_only_the_tone(self):

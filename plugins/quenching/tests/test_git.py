@@ -31,7 +31,7 @@ from quenching.git.pr import (labelled_links, normalize_azure_pull_request,
                               review_link)
 from quenching.git.slugs import _read_specs, cmd_specs
 from quenching.git.stale import (_gone_branches, _merged_branches, _merged_remote_branches,
-                                 _orphan_worktrees, _unregistered_worktrees)
+                                 _orphan_worktrees, _unregistered_worktrees, stale_report)
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
@@ -262,6 +262,33 @@ class Stale(RepoCase):
         names = {b["branch"] for b in payload["staleBranches"]}
         self.assertIn("feature-e", names)
         self.assertNotIn("main", names)
+
+    def test_cq_git_stale_keeps_unmerged_and_checked_out_branches_with_reasons(self):
+        _run(self.repo, "branch", "merged-one")
+        _run(self.repo, "checkout", "-q", "-b", "ahead-one")
+        with open(os.path.join(self.repo, "ahead.txt"), "w") as f:
+            f.write("x")
+        _run(self.repo, "add", "ahead.txt")
+        _run(self.repo, "commit", "-q", "-m", "ahead")
+        _run(self.repo, "checkout", "-q", "main")
+        wt = os.path.join(self.tmp, "held-wt")
+        _run(self.repo, "worktree", "add", "-q", "-b", "held-one", wt)
+        payload = _cq_json(self.repo, "stale")
+        kept = {b["branch"]: b["reasons"] for b in payload["keptBranches"]}
+        stale = {b["branch"] for b in payload["staleBranches"]}
+        self.assertEqual(kept["ahead-one"], ["unmerged-commits"])
+        self.assertEqual(kept["held-one"], ["worktree"])
+        self.assertIn("merged-one", stale)
+        self.assertNotIn("held-one", stale)
+        self.assertIn(payload["prLookup"], ("ok", "unavailable"))
+
+    def test_open_pr_moves_a_merged_branch_to_kept(self):
+        _run(self.repo, "branch", "pr-open")
+        with mock.patch("quenching.git.stale._open_pr_heads", return_value={"pr-open"}):
+            report = stale_report(self.repo)
+        self.assertEqual({b["branch"]: b["reasons"] for b in report["keptBranches"]}["pr-open"],
+                         ["open-pr"])
+        self.assertNotIn("pr-open", {b["branch"] for b in report["staleBranches"]})
 
     def test_merged_origin_branch_is_reported_with_remote_identity(self):
         self._origin_with_merged_branch()
@@ -1626,7 +1653,7 @@ class PullRequestPayload(unittest.TestCase):
         self.assertIn("do not invent a `Closes #<n>` sentence", self.payload_step)
 
     def test_payload_is_shown_once_before_the_single_external_write_confirmation(self):
-        self.assertEqual(self.command.count("**AskUserQuestion**"), 1)
+        self.assertEqual(self.command.count("decision sheet"), 1)
         self.assertIn("provider-native link (or its absence)", self.payload_step)
         self.assertIn("one confirmation", self.command.lower())
 
@@ -1798,7 +1825,8 @@ class PullRequestPayload(unittest.TestCase):
         self.assertIn("remote selection", cleanup)
         self.assertIn("remote branch is never", cleanup)
         self.assertIn("confirmation", cleanup)
-        self.assertEqual(cleanup.count("**askuserquestion**"), 2)
+        self.assertIn("decision sheet", cleanup)
+        self.assertEqual(cleanup.count("**askuserquestion**"), 0)
 
     def test_cleanup_does_not_fetch_or_prune_implicitly(self):
         cleanup = CLEANUP_COMMAND.read_text(encoding="utf-8").lower()
@@ -2451,6 +2479,34 @@ class WorktreeRetire(RepoCase):
         proc = self._retire()
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertFalse(os.path.exists(self.wt))
+
+    def _seed_pytest_cache(self):
+        cache = pathlib.Path(self.wt, ".pytest_cache")
+        (cache / "v" / "cache").mkdir(parents=True)
+        (cache / ".gitignore").write_text("*\n", encoding="utf-8")
+        (cache / "CACHEDIR.TAG").write_text("x\n", encoding="utf-8")
+        (cache / "v" / "cache" / "lastfailed").write_text("{}\n", encoding="utf-8")
+
+    def test_pytest_cache_is_discarded_when_declared_regenerable(self):
+        self._merge_through_gh()
+        self._seed_pytest_cache()
+        self._declare_regenerable(".pytest_cache")
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertFalse(os.path.exists(self.wt))
+
+    def test_pytest_cache_blocks_retire_when_not_declared(self):
+        self._merge_through_gh()
+        self._seed_pytest_cache()
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        self.assertIn(".pytest_cache", json.loads(proc.stdout)["ignored"][0])
+        self.assertTrue(os.path.isdir(self.wt))
+
+    def test_repo_config_declares_pytest_cache_regenerable(self):
+        root = pathlib.Path(__file__).resolve().parents[3]
+        config = json.loads((root / ".claude" / "quenching.json").read_text(encoding="utf-8"))
+        self.assertIn(".pytest_cache", config["shared"]["regenerablePaths"])
 
     def test_an_undeclared_ignored_file_still_stands_beside_declared_ones(self):
         self._merge_through_gh()

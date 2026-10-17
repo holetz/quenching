@@ -84,8 +84,11 @@ marketplace entry with no `version`, or entries that disagree with published mod
 are refused. Afterwards `python3 scripts/generate_plugin_modules.py --write` regenerates the
 copied assets; `--check` proves generated consumers, published versions and the single active
 PATH `cq` owner together. The old `sync_specs_reader_plugin.py` invocation remains a compatibility
-wrapper over that same generator. The generated Codex
-sibling (`plugins/quenching-codex/`) was retired on 2026-10-11 and is no longer a release artifact.
+wrapper over that same generator. The generated Codex sibling
+(`plugins/quenching-codex/VERSION` and `.codex-plugin/plugin.json`), declared under
+`siblingArtifacts` in `assets/modules.json`, moves in the same lockstep. Afterwards
+`sync_codex_plugin.py --write` regenerates its payload and translation manifest; the repository
+gate checks both translation drift and package validity.
 `test_specs_release.py` asserts that every one of these versions is equal. The manifests carry no hard-coded command counts, since they drift on the next command change.
 
 ## When the bump happens — once, at the release, on the primary branch

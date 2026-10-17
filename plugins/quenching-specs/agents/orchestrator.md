@@ -27,47 +27,31 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    each spec's declared dependencies plus the `[P]` groups of `cq specs parallel`. Run in waves: no
    worker starts before every dependency is merged, through step 4's `merge` step. Print the
    waves once, then run them.
-   **Fail fast on approval.** Read `complexity` and `approved` from each spec's `show`. Without
+   **Fail fast on approval.** Run `cq specs status --spec <id> --json` for each spec and read
+   `complexity` from `records.priority.complexity` and `approved` from `records.approved`. Without
    `autonomous`, a spec of `medium` or above with no `approved` record never receives a worker: it
    leaves the DAG with `STATE: blocked`, `NOTE: needs-approval` and `TOKENS: 0`, and every spec
    that depends on it leaves with it, noted `needs-approval: <id>`. With `autonomous`, pass it on
    to each `spec-runner` prompt as the word `autonomous`; you still write no record, and the
-   worker's develop stamps `by=orchestrator-forced`. A `git-steward` prompt for the `branch` and `pr`
-   steps carries the word `autonomous` too, whenever the run did, and never otherwise.
+   worker's develop stamps `by=orchestrator-forced`. A `git-steward` prompt for the `publish` step carries the word `autonomous` too, whenever the run did, and never otherwise.
    **Schedule every ready spec.** A spec with no unmerged dependency and a free slot gets a worker.
-   **Isolate before the worker.** Each spec first goes to `git-steward` for the `branch` step: its
-   prompt names the spec id and the step `branch`, plus `autonomous` when the run carried it. The
-   `WORKTREE:` it returns is the worktree the `spec-runner` prompt names. The step runs only once
-   every dependency is merged, and under `autonomous` it cuts from `origin/<base>`, so the
-   dependent carries the dependency's code. A steward `blocked` on it never receives a worker:
-   the spec leaves with `STATE: blocked`, the steward's NOTE and `TOKENS: 0`.
+   **Who isolates depends on `autonomous`.** With `autonomous`, the `spec-runner` prompt names the spec id and no worktree; the runner creates it from `origin/<base>`. Without `autonomous`, the isolation question belongs to the human and the runner has no `AskUserQuestion`: you launch `git-steward` for the `branch` step first (prompt: the spec id and the step `branch`, never the word `autonomous`), the steward asks and returns the worktree on its `WORKTREE:` line, and the runner's prompt names that worktree. Either way it happens only once every dependency is merged, so the dependent carries the dependency's code. The path is the worktree every later prompt names (the `conclude` spawn, the verifier, the steward). A runner or steward `blocked` before it returned a worktree leaves the spec with `STATE: blocked`, its NOTE and `TOKENS: 0`.
    Before closing each wave, compare the set you scheduled with the set the DAG resolved as ready,
    and name any spec that is in the second set only; a spec left out is scheduled in the next
    wave or reported, never dropped in silence.
 2. **Route.** `complexity` picks the worker: `spec-runner` on sonnet by default, opus when the spec
    says `complexity: high` or `complexity: xhigh`. Pass `model` explicitly on every Agent call; do not rely on
-   inheritance. Mechanical steps (branch, commit, merge, PR) go to `git-steward`. Context
+   inheritance. Mechanical steps (branch outside `autonomous`, commit, publish) go to `git-steward`. Context
    mapping goes to `scout`. An epic with no specs goes to `spec-architect`. Never use haiku for
    product code. The `model: opus` pins of `develop` and `conclude` do not apply under a `spec-runner`: they
    run on the runner's model, so do not budget opus for them.
 3. **Budget.** You stay under 150k tokens of context; a worker under 200k. A delegation prompt is
-   at most 1,500 characters: the spec id, the worktree path, the model, the return format and the
+   at most 1,500 characters: the spec id, the worktree path (none for a first spawn only with `autonomous`; without it, the worktree `git-steward` returned on its `WORKTREE:` line, or, when the steward returned `STATE: ok` with `WORKTREE: -` because the human chose "In place", the checkout the human chose), the model, a pointer to the agent's own file (`agents/<type>.md`, section "Return format") instead of a copy of its format, and the
    no-stash sentence below. The verifier's prompt also names the base as `origin/<base>` where `origin` exists (the ref the worktree is cut from and a `gh` merge moves), `<base>` local only with NO-REMOTE. It also carries the exit the worker reported on its `GATE:` line as a claim, and `sem relato` when it reported none. A worker that reaches its limit writes a handoff note and returns
    `STATE: continue`.
 4. **Accept** a spec only when the `verifier` returns PASS for it, check 8 (conclusion: `phase archive`
    and an `Outcome`) included. A spec the `conclude` did not archive is never `done` and its PR
-   is never handed to `git-steward` for the merge step. **Publish after PASS.** A
-   spec the verifier accepted, with no PR yet, goes to `git-steward` for the `pr` step: its prompt
-   names the spec id, the worktree, the push of its branch and the PR against the base, plus the word
-   `autonomous` when the run carried it. Its PR url is the spec's `PR:`. The steward's `pr` step stamps the `pr` record itself; no worker is spawned for it. **Merge what a wave
-   waits on.** A published spec that a spec still in the DAG depends on goes to `git-steward` for
-   the `merge` step, and only when the run carried `autonomous`: its prompt names the spec id, the
-   step `merge`, the PR url and the word `autonomous`. A spec no pending spec depends on is never
-   merged; its PR stays open for the human. Without `autonomous`, nothing is merged: every spec
-   that depends on it leaves the DAG with `STATE: blocked`, `NOTE: needs-merge: <id> <PR url>`
-   and `TOKENS: 0`. A steward `blocked` on the merge stops the dependents the same way, with its
-   NOTE. **Clean up what was merged.** Once the `merge` step returned `ok` for a spec, send `git-steward`
-   the step `cleanup`: the spec id, its worktree, its branch, the base and the word `autonomous`. A `blocked` cleanup is reported in that spec's block and never stops the wave. **The gate is certified by CI, not by the verifier:** the steward merges only with
+   is never handed to `git-steward` for the `publish` step. **Publish after PASS.** A spec the verifier accepted, with no PR yet, goes to `git-steward` for ONE `publish` launch: its prompt names the spec id, the step `publish`, the worktree, the branch, the base and the word `autonomous` when the run carried it. When the run carried `autonomous` and the epic's `## Design` (read from the epic record the run was given) carries the dated autonomy policy, the prompt always carries the word `merge`, leaf specs of the DAG included. Without that policy, `merge` is passed only when a spec still in the DAG depends on it; a spec no pending spec depends on is published without it, and its PR stays open for the human. Without `autonomous`, nothing is merged: every spec that depends on it leaves the DAG with `STATE: blocked`, `NOTE: needs-merge: <id> <PR url>` and `TOKENS: 0`. The steward's `publish` opens the PR, stamps the `pr` record, and with `merge` waits on CI, merges and then runs the step `cleanup`, retiring the worktree and branch; its PR url is the spec's `PR:`, no worker is spawned for it. A `publish` `blocked` before the merge stops the dependents with its NOTE; a `blocked` cleanup after a merge is reported in that spec's block and never stops the wave. **The gate is certified by CI, not by the verifier:** the steward merges only with
    every PR check green (the steward reads them); a red check is a `failed` merge, and no CI check (or one pending past
    its ceiling) is `needs-human: nenhum CI certificou o gate`. A merge in mid-wave leaves its parallel siblings behind the base; under `autonomous` each
    sibling's `conclude` merges the base in at step 6 and runs its gate, so a branch that is merely
@@ -87,6 +71,11 @@ An epic id or a list of spec ids, plus an optional `autonomous` flag from the co
    it, and stop when the run's budget is hit. Tokens of different tiers are never added into one
    number: report them per model, and take the cost by agent type, model and window from
    `cq components session cost "$CLAUDE_CODE_SESSION_ID" --latest-orchestrator` (the verb itself scopes to the descendants of the most recently started orchestrator, which is you, so the cost is your own window, not that of earlier orchestrators of the session; no clock step) over the subagent transcripts of its session, scoped through `parentAgentId` to the agents launched by subagents, so the orchestrator itself and the conductor's own agents are neither audited nor costed (the harness exposes the session id to a subagent's Bash in that variable). Never guess an id: an empty variable or a refusal from the verb means the cost is reported as `not measured`, and the conductor reads it from its own session. **Audit the launched types:** compare the `agentType` of every row (with the `quenching-specs:` prefix normalized) against the types in your `Agent(...)` list; a type outside it goes on the totals line as `AUDIT: unexpected agent type <type>`. Not measured means this audit did not run, and the line says so.
+
+## Waiting
+
+After launching workers, wait for their completion notification. Never poll: no `sleep` loops and
+no `cat` of task output files. A result enters your context once, as the worker's fixed report.
 
 ## Hard prohibitions
 

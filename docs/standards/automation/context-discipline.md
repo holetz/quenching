@@ -4,10 +4,10 @@ title: Context discipline — open less, run for less time, and emit fewer turns
 description: The two halves of a run's integral `tokens × turns remaining` and the three ways to cut it — open less (the declared files rather than the folder, the cited sections rather than the file, N sections in ONE call, the block rather than the section where a section has blocks, and the rules/rationale marker convention), run for less time (the section boundary as a legitimate stopping point, with measured role budgets checked only at existing boundaries), and emit fewer turns per unit of work (the batching contract, and the ban on a turn that exists only to announce the next tool call); plus the two things measured and refused, segmenting the bundle into more files and deleting rationale to compact it
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/agents/**, scripts/measure_context_distribution.py
 tags: [automation, context, reading, cost, commands, references]
-timestamp: 2026-10-14
+timestamp: 2026-10-16
 audience: both
 authority: background
-source: read-by-section-not-by-file, narrow-the-execute-preamble, extensible-surface-and-budget-retirement, 2026-08-06, 2026-08-04, scope-the-handoff-rewrite; spec 1629 measured context budgets (2026-10-13); spec 1631 measured stage-boundary tone (2026-10-14); spec 1633 declared-reading estimation and build-cost provenance (2026-10-14); lineage in ADR 0004
+source: read-by-section-not-by-file, narrow-the-execute-preamble, extensible-surface-and-budget-retirement, 2026-08-06, 2026-08-04, scope-the-handoff-rewrite; spec 1629 measured context budgets (2026-10-13); spec 1631 measured stage-boundary tone (2026-10-14); spec 1633 declared-reading estimation and build-cost provenance (2026-10-14); lineage in ADR 0004; spec 1754 decision sheet as the default question form (2026-10-16)
 maintainer: quenching
 ---
 
@@ -402,9 +402,11 @@ rules, both about turns rather than tokens:
   own output will not say, and costs a re-send of the whole conversation to say it. Narration that
   carries content — a plan, a report, a stop condition — is not this.
 
-Where a turn must carry a recommendation, the recommendation lives **inside the question's own
-payload** — an option marked "(Recommended)", the reasoning in its description — never in a turn of
-prose set in front of the question.
+Where a turn must carry a recommendation, the recommendation lives **inside the question itself**
+— option A of each `D<n>` on the decision sheet, its reasoning in A's own text, or the option
+marked "(Recommended)" on a menu the human asked for — never in a turn of prose set in front of the
+question. The decision sheet, which ends the turn, is that question; its shape is owned by
+`specs-develop/questions.md` §The four shared mechanics.
 
 **Neither rule reaches how questions are grouped.** Two questions whose answers can change each
 other are asked separately whatever this axis costs. That limit is owned by the command surface's

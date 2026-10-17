@@ -48,6 +48,10 @@ class GeneratedDistribution(unittest.TestCase):
             directory.mkdir(parents=True)
             (directory / "sample.txt").write_text(tree + "\n")
         (self.source / "assets/bin/quenching/common/version.py").write_text('VERSION = "1.2.3"\n')
+        for rel, kind in self.manifest.get("siblingArtifacts", []):
+            sibling = self.root / rel
+            sibling.parent.mkdir(parents=True, exist_ok=True)
+            sibling.write_text(json.dumps({"version": "1.2.3"}) if kind == "json" else "1.2.3\n")
         self.market = self.root / self.manifest["marketplace"]
         self.market.parent.mkdir(parents=True)
         self.market.write_text(json.dumps({"plugins": [
@@ -152,6 +156,14 @@ class GeneratedDistribution(unittest.TestCase):
         self.assertTrue(any("version drift" in f for f in findings))
         self.assertTrue(any("PATH cq ownership" in f for f in findings))
         self.assertIn("marketplace membership disagrees with published modules", findings)
+
+    def test_sibling_artifact_version_drift_is_a_finding(self):
+        self.assertEqual(0, self.run_generator("--write"))
+        rel = next(rel for rel, kind in self.manifest["siblingArtifacts"] if kind == "json")
+        (self.root / rel).write_text(json.dumps({"version": "1.2.2"}))
+        self.assertEqual(1, self.run_generator("--check"))
+        findings = generator.published_findings(self.root, load_manifest(self.root))
+        self.assertTrue(any(f.startswith("version drift " + rel) for f in findings))
 
     def test_multiple_declared_path_owners_are_refused(self):
         self.manifest["modules"][1]["cqPathOwner"] = True

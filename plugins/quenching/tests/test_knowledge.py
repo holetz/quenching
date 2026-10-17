@@ -156,6 +156,75 @@ RETIRED_LOG_FIXTURE = {
 }
 
 
+class NavRefusalsAndConfigTolerance(unittest.TestCase):
+    def _nav(self, tmp, *extra):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = knowledge_cli.main(["nav", "--root", tmp, "--check", *extra])
+        return code, out.getvalue(), err.getvalue()
+
+    def test_missing_bundle_is_a_refusal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            code, _, err = self._nav(tmp)
+        self.assertEqual(code, 2)
+        self.assertIn("is not a directory", err)
+
+    def test_missing_config_is_a_refusal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.mkdir(os.path.join(tmp, "docs"))
+            code, out, _ = self._nav(tmp, "--json")
+        self.assertEqual(code, 2)
+        self.assertEqual(json.loads(out)["code"], "nav-config-unreadable")
+
+    def test_non_utf8_nav_config_is_a_refusal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.mkdir(os.path.join(tmp, "docs"))
+            pathlib.Path(tmp, "zensical.toml").write_bytes(b"\xff\xfe\x00nav = [")
+            code, out, _ = self._nav(tmp, "--json")
+        self.assertEqual(code, 2)
+        self.assertEqual(json.loads(out)["code"], "nav-config-unreadable")
+
+    def _validate_with_config(self, raw: bytes):
+        with tempfile.TemporaryDirectory() as tmp:
+            hooks = pathlib.Path(tmp, ".claude", "hooks")
+            hooks.mkdir(parents=True)
+            cfg = hooks / "hooks-config.json"
+            cfg.write_bytes(raw)
+            os.mkdir(os.path.join(tmp, "docs"))
+            out, err = io.StringIO(), io.StringIO()
+            with (mock.patch.dict(os.environ, {"CLAUDE_PROJECT_DIR": tmp}),
+                  contextlib.redirect_stdout(out), contextlib.redirect_stderr(err)):
+                code = knowledge_cli.main(["validate", "--json", "--root", tmp, "docs"])
+            return code, out.getvalue(), str(cfg)
+
+    def _assert_refused(self, raw: bytes):
+        code, out, cfg = self._validate_with_config(raw)
+        self.assertEqual(code, 2)
+        payload = json.loads(out)
+        self.assertEqual(payload["code"], "config-unreadable")
+        self.assertIn(cfg, payload["message"])
+
+    def test_non_utf8_hooks_config_is_a_refusal(self):
+        self._assert_refused(b'{"okfValidate":{"warnAsError":true},"x":"caf\xe9"}')
+
+    def test_array_hooks_config_is_a_refusal(self):
+        self._assert_refused(b'[{"okfValidate":{"warnAsError":true}}]')
+
+    def test_null_hooks_config_is_a_refusal(self):
+        self._assert_refused(b"null")
+
+    def test_truncated_hooks_config_is_a_refusal(self):
+        self._assert_refused(b'{"okfValidate":{"warnAs')
+
+    def test_absent_okf_section_still_uses_defaults(self):
+        from quenching.knowledge.config import DEFAULTS, _load_config
+        with tempfile.TemporaryDirectory() as tmp:
+            hooks = pathlib.Path(tmp, ".claude", "hooks")
+            hooks.mkdir(parents=True)
+            (hooks / "hooks-config.json").write_bytes(b"{}")
+            self.assertEqual(_load_config(tmp), DEFAULTS)
+
+
 class RetiredLogChecker(unittest.TestCase):
     """Prove the retirement in all three places it has to hold at once."""
 
@@ -653,3 +722,68 @@ class RegenerateListing(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TargetRootConfiguration(unittest.TestCase):
+    """The checker's settings come from the target root, whatever the cwd or the `--root` placement."""
+
+    def _target(self, tmp, config):
+        hooks = pathlib.Path(tmp, ".claude", "hooks")
+        hooks.mkdir(parents=True)
+        (hooks / "hooks-config.json").write_text(json.dumps(config), encoding="utf-8")
+        docs = pathlib.Path(tmp, "docs")
+        (docs / "external").mkdir(parents=True)
+        (docs / "index.md").write_text(_ROOT_INDEX, encoding="utf-8")
+        (docs / "a.md").write_text(_GOOD_DOC % ("a", "a"), encoding="utf-8")
+        (docs / "external" / "bad.md").write_text("no frontmatter\n", encoding="utf-8")
+
+    def _run(self, argv, cwd):
+        out = io.StringIO()
+        env = {k: v for k, v in os.environ.items() if k != "CLAUDE_PROJECT_DIR"}
+        old = os.getcwd()
+        os.chdir(cwd)
+        try:
+            with mock.patch.dict(os.environ, env, clear=True), contextlib.redirect_stdout(out), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                code = knowledge_cli.main(argv)
+        finally:
+            os.chdir(old)
+        return code, out.getvalue()
+
+    def test_ignore_globs_hold_for_every_verb_and_placement(self):
+        with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as other:
+            self._target(tmp, {"okfValidate": {"ignoreGlobs": ["external"]}})
+            for argv in (["validate", "--json", "--root", tmp],
+                         ["--root", tmp, "validate", "--json"],
+                         ["doctor", "--json", "--root", tmp],
+                         ["--root", tmp, "doctor", "--json"],
+                         ["status", "--json", "--root", tmp],
+                         ["--root", tmp, "status", "--json"]):
+                for cwd in (tmp, other):
+                    with self.subTest(argv=argv[:3], cwd=cwd == tmp):
+                        _, out = self._run(argv, cwd)
+                        self.assertEqual(self._paths(out), ["a.md"])
+
+    @staticmethod
+    def _paths(out):
+        data = json.loads(out)
+        findings = data if isinstance(data, list) else data["findings"]
+        return sorted(item["path"] for item in findings)
+
+    def test_unrelated_findings_remain_in_doctor(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._target(tmp, {"okfValidate": {"ignoreGlobs": ["external"]}})
+            pathlib.Path(tmp, "docs", "b.md").write_text("no frontmatter\n", encoding="utf-8")
+            code, out = self._run(["doctor", "--json", "--root", tmp], tmp)
+        self.assertEqual(code, 1)
+        self.assertEqual(sorted(set(self._paths(out))), ["a.md", "b.md"])
+
+    def test_warn_as_error_follows_the_target_not_the_cwd(self):
+        with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as other:
+            self._target(tmp, {"okfValidate": {"warnAsError": True, "ignoreGlobs": ["external"]}})
+            pathlib.Path(tmp, "docs", "w.md").write_text(
+                _GOOD_DOC % ("w", "w") + "[x](nowhere.md)\n", encoding="utf-8")
+            codes = {cwd: self._run(["validate", "--json", "--root", tmp], cwd)[0]
+                     for cwd in (tmp, other)}
+        self.assertEqual(codes[tmp], 1)
+        self.assertEqual(codes[other], 1)

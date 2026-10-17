@@ -53,6 +53,7 @@ Report one compact table:
 | Mechanical | `tc-lock-stale`, `tc-config-duplicate`, `tc-generated-stale` counts and evidence |
 | Structural | `tc-runtime-drift`, `tc-tool-unpinned`, `tc-build-backend-missing`, `tc-key-unarbitered` counts and evidence |
 | Judgement | no initial `tc-*` code; state the target-owner boundary when a policy is unmeasured |
+| Catalog controls | the `controls` block — each catalog control id, its requirement ids with `present`, `missing`, `not-measured`, `refused` or `retired`, and the evidence paths. `present` is candidate evidence, never conformance; the block never changes `ok` or the exit code |
 
 Keep severity and disposition separate. A clean applicable front is conformant; a missing
 recognized artifact is not a defect when it is outside the target's declared ecosystem. A target

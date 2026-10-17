@@ -7,6 +7,7 @@ import os
 from quenching.common.front import resolve_root
 from quenching.common.output import NoAbbrevParser, emit, refuse
 from quenching.common.version import VERSION
+from quenching.controls.evaluate import owner_controls, summary_line
 from quenching.security.probe import build_report
 
 
@@ -25,7 +26,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _human(payload: dict) -> str:
     states = ", ".join(f"{item['key']}={item['state']}" for item in payload["questions"])
-    return f"security audit — {payload['root']} (read-only); {states}"
+    return (f"security audit — {payload['root']} (read-only); {states}; "
+            f"{summary_line(payload['controls'])}")
 
 
 def main(argv: list[str]) -> int:
@@ -44,5 +46,6 @@ def main(argv: list[str]) -> int:
             "message": f"repository root does not exist: {root}",
         }, as_json)
     payload = build_report(root).as_dict()
+    payload["controls"] = owner_controls("security", root)
     emit(as_json, payload, _human(payload))
     return 0 if payload["ok"] else 2

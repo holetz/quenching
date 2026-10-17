@@ -3,7 +3,7 @@
 Moved verbatim out of the pre-refactor OKF validator script.
 
 Config (target repo's `.claude/hooks/hooks-config.json` + `hooks-config.local.json`, block
-`okfValidate`): `warnAsError`, `ignoreGlobs`. An empty/absent config uses the defaults below.
+`okfValidate`): `warnAsError`, `ignoreGlobs`. An absent config uses the defaults below; an unreadable, invalid or non-object one is refused.
 The file and directory keep the `hooks` name for the two keys that survive it — the plugin's
 self-installed hook that once read the rest of this block (`enabled`, `blockOnFail`, `hardBlock`,
 `deadlineMs`, `stopScan`) was retired, and `warnAsError`/`ignoreGlobs` stayed on the same config
@@ -26,6 +26,10 @@ DEFAULTS: dict = {
 }
 
 
+class ConfigError(Exception):
+    """A declared config file that cannot be honoured; the caller refuses, never defaults."""
+
+
 def _load_config(project_dir: str) -> dict:
     cfg = dict(DEFAULTS)
     for name in ("hooks-config.json", "hooks-config.local.json"):
@@ -35,9 +39,13 @@ def _load_config(project_dir: str) -> dict:
         try:
             with pathlib.Path(path).open(encoding="utf-8") as fh:
                 data = json.load(fh)
-        except (OSError, json.JSONDecodeError):
-            continue
-        cfg.update(data.get("okfValidate") or {})
+        except (OSError, ValueError) as exc:
+            raise ConfigError(f"{path} is unreadable or not valid UTF-8 JSON: {exc}") from exc
+        if not isinstance(data, dict):
+            raise ConfigError(f"{path} is not a JSON object")
+        section = data.get("okfValidate")
+        if isinstance(section, dict):
+            cfg.update(section)
     return cfg
 
 

@@ -39,6 +39,7 @@ CONFIG_PATH = "quenching.json"
 LOCATOR_PREFIX = "quenching:"
 COMMIT_PREFIX = "[skip ci] specs:"
 FETCH_TTL_S = 30
+TIP_MEMO_S = 1.0   # one read pass resolves the tip once; a longer-lived process re-reads it
 MAX_ATTEMPTS = 5
 CACHE_VERSION = 1
 GIT_TIMEOUT_S = 120
@@ -92,7 +93,7 @@ class GitBackend(SpecBackend):
         self.read_only = self.mirror_dir is not None
         self.remote_url = remote_url
         self.tracking_ref = f"refs/remotes/{remote}/{branch}"
-        self._fetched = False
+        self._fetched_at: float | None = None
         self._snapshots: dict[str, dict[str, str]] = {}
         self._blob_text: dict[str, str] = {}
         cache_key = f"{self.mirror_dir or self.repo_root}\0{remote}\0{branch}"
@@ -183,7 +184,7 @@ class GitBackend(SpecBackend):
         source = self._fetch_source()
         code, _, err = self._git("fetch", "--quiet", "--no-tags", "--no-write-fetch-head",
                                  source, f"+refs/heads/{self.branch}:{self.tracking_ref}")
-        self._fetched = True
+        self._fetched_at = time.monotonic()
         if code != 0:
             if "couldn't find remote ref" in err:
                 self._git("update-ref", "-d", self.tracking_ref)
@@ -221,17 +222,25 @@ class GitBackend(SpecBackend):
         except OSError:
             pass
 
+    def _fetched_fresh(self) -> bool:
+        return self._fetched_at is not None and time.monotonic() - self._fetched_at <= FETCH_TTL_S
+
     def _tip(self) -> str | None:
-        """The tip a read sees: at most one fetch per process, none while the cache is fresh
-        and none at all under `QUENCHING_SPECS_NO_FETCH` (the local ref as it stands).
-        Memoized per process; any write clears the memo so the next read sees the new tip."""
-        if getattr(self, "_tip_memo", None) is None:
-            if self._fetched or os.environ.get(NO_FETCH_ENV, "") not in ("", "0") \
-                    or self._cache_fresh():
-                self._tip_memo = self._local_tip()
-            else:
-                self._tip_memo = self._fetch()
-        return self._tip_memo
+        """The tip a read sees: no fetch while this process fetched or wrote within the TTL or
+        the cache is fresh, and none at all under `QUENCHING_SPECS_NO_FETCH` (the local ref as it
+        stands). The tip is memoized for `TIP_MEMO_S` only, so one read pass resolves it once and
+        a long-lived process (the portal) still sees a commit made outside it; any write clears
+        the memo so the next read sees the new tip."""
+        memo = getattr(self, "_tip_memo", None)
+        if memo is not None and time.monotonic() - memo[0] <= TIP_MEMO_S:
+            return memo[1]
+        if self._fetched_fresh() or os.environ.get(NO_FETCH_ENV, "") not in ("", "0") \
+                or self._cache_fresh():
+            tip = self._local_tip()
+        else:
+            tip = self._fetch()
+        self._tip_memo = (time.monotonic(), tip)
+        return tip
 
     # -- the read model -------------------------------------------------------- #
     def _snapshot(self, tip: str | None) -> "_Tree":
@@ -303,7 +312,9 @@ class GitBackend(SpecBackend):
                 info = derive_info(row, snapshot[path][1])
                 row.update({"title": info["frontmatter"].get("title", ""),
                             "state": "closed" if spec_phase == "archive" else "open",
-                            "records": derive_labels(info)})
+                            "records": derive_labels(info),
+                            "epic": info["frontmatter"].get("epic"),
+                            "workItemType": info["frontmatter"].get("workItemType")})
             rows.append(row)
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["id"]))
 
@@ -564,7 +575,7 @@ class GitBackend(SpecBackend):
             said = out.decode("utf-8", "replace") + err
             if code == 0:
                 self._git("update-ref", self.tracking_ref, commit)
-                self._fetched = True
+                self._fetched_at = time.monotonic()
                 self._touch_cache()
                 return blobs
             if not any(marker in said for marker in _REJECTED_MARKERS):

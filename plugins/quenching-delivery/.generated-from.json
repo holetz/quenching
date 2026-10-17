@@ -13,7 +13,8 @@
   },
   "generatedSupport": {
     "packages": [
-      "common"
+      "common",
+      "controls"
     ],
     "references": [
       "align",

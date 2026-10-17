@@ -72,7 +72,7 @@ Build one plan grouped by the three bands in `bands.md`:
 | --- | --- | --- |
 | Mechanical | `op-undocumented`, `op-registry-stale` | regenerate the registry under the run's authorization |
 | Structural | `op-adhoc-root`, `op-untyped-exit`, `op-no-router` | make one bounded edit per affected entry point, then re-probe |
-| Judgement | `op-unarmed-write`, `op-disabled-check`, `op-orphan` | report evidence and the command that closes each; never run it |
+| Judgement | `op-unarmed-write`, `op-disabled-check`, `op-orphan`, `op-registry-malformed` | report evidence and the command that closes each; never run it |
 
 Keep `op-config-missing` as a refusal from step 1, never as an inventory finding. Do not turn a
 judgement finding into a mechanical or structural repair, and do not infer an operational policy
