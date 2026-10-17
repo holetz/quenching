@@ -144,6 +144,7 @@ class Portal:
                  host: str = "127.0.0.1", port: int = 0, nonce: str | None = None,
                  sessions: dict | None = None, chat: dict | None = None) -> None:
         self.root, self.token, self.read_only = root, token, read_only
+        self.serve_cmd = "cq specs serve"  # the command the 401 names; the central door overrides
         self.sessions = sessions  # {"read"} lent by the session pillar under --sessions, else None
         self.chat = chat  # {"claude", "budget", "worktrees"} under --chat, else None
         self.jobs: dict[str, chat_mod.Job] = {}
@@ -214,7 +215,7 @@ class Portal:
                 if method == "GET" and self.redeem_nonce((query.get("nonce") or [None])[0]):
                     return 303, {"Location": "/", "Set-Cookie": self.cookie(),
                                  "Cache-Control": "no-store", "Referrer-Policy": "no-referrer"}, b""
-                return _error(401, "sp-portal-token", "open the URL `cq specs serve` printed")
+                return _error(401, "sp-portal-token", f"open the URL `{self.serve_cmd}` printed")
             return self._static(path)
         except BackendRefusal as e:
             return _json(_status_for(e.err), {"ok": False, **{

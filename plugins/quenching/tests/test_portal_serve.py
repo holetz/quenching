@@ -126,6 +126,12 @@ class Gates(CentralCase):
         self.assertEqual(self.call("GET", "/api/projects", HOST)[0], 401)
         self.assertEqual(self.call("GET", "/p/alpha/api/specs", HOST)[0], 401)
 
+    def test_the_door_401_names_the_central_command(self):
+        status, _, body = self.central.handle("GET", "/", HOST)
+        self.assertEqual(status, 401)
+        self.assertIn(b"cq portal serve", body)
+        self.assertNotIn(b"cq specs serve", body)
+
     def test_forged_host_is_403(self):
         forged = {**AUTH, "Host": "evil.example"}
         self.assertEqual(self.call("GET", "/p/alpha/api/specs", forged)[1]["code"],
