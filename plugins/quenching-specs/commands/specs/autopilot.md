@@ -39,8 +39,8 @@ non-`cq`, non-`git` command is run.
   left to polish" is never a reason to invent work.
 - **Findings become specs, never hot fixes.** What the correctness review finds is a spec of the
   next round; the conductor never patches `main` itself.
-- **Liveness.** A worker with no activity for more than `shared.autonomy.livenessMinutes` (default **20 min**; its transcript's mtime) and no
-  live child process is stopped with `TaskStop` and relaunched **once**. A second stall goes to the
+- **Liveness.** A worker with no activity for more than **20 min** (its transcript's mtime) and no
+  live child process is stopped with `TaskStop` and relaunched **once**. `shared.autonomy.livenessMinutes` replaces the 20 minutes when set. A second stall goes to the
   final report, never a third launch.
 - **Git is read-only for every agent this session briefs, except the orchestrator's workers.**
   Each brief forbids `git stash`, `checkout`, `switch`, `reset`, `restore`, `rebase`, `clean`,
