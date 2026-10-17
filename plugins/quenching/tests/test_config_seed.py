@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 try:
     import _paths  # noqa: F401 — must precede the `quenching` import
@@ -17,6 +18,7 @@ except ModuleNotFoundError:
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
 from quenching.codex import config as codex_config
+from quenching.common import doctor
 from quenching.config import main as config_main
 from quenching.config import autonomy, host, seed
 from quenching.knowledge import config as knowledge_config
@@ -128,6 +130,41 @@ class InitAndCheck(unittest.TestCase):
 
     def test_check_refuses_when_the_file_is_absent(self):
         self.assertEqual(2, self.run_cli("check")[0])
+
+
+class DoctorReport(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.repo = pathlib.Path(tmp.name) / "repo"
+        self.repo.mkdir()
+        subprocess.run(["git", "init", "-q", str(self.repo)], check=True)
+
+    def test_absent_file_is_reported_not_missing_keys(self):
+        self.assertEqual({"present": False, "missing": []}, doctor.config_report(str(self.repo)))
+
+    def test_missing_keys_are_named(self):
+        (self.repo / ".claude").mkdir()
+        (self.repo / ".claude" / "quenching.json").write_text(json.dumps({"shared": {}}))
+        report = doctor.config_report(str(self.repo))
+        self.assertTrue(report["present"])
+        self.assertIn("shared.codex.executor.sandbox", report["missing"])
+        self.assertIn("missing", doctor._config_line(report))
+
+    def test_a_module_without_the_seed_reports_nothing(self):
+        with mock.patch.dict(sys.modules, {"quenching.config.seed": None}):
+            self.assertIsNone(doctor.config_report(str(self.repo)))
+        self.assertIsNone(doctor._config_line(None))
+
+    def test_run_adds_the_block_to_the_json(self):
+        out = io.StringIO()
+        with mock.patch.object(doctor, "inspect_environment", return_value={
+                "root": str(self.repo), "python": {"available": True, "version": "3.12.0",
+                                                    "required": ">=3.11"},
+                "backend": None, "profile": {"effective": []}, "requirements": [],
+                "missing": []}), contextlib.redirect_stdout(out):
+            self.assertEqual(0, doctor.run(True, str(self.repo)))
+        self.assertEqual({"present": False, "missing": []}, json.loads(out.getvalue())["config"])
 
 
 if __name__ == "__main__":
