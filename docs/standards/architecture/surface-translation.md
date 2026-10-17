@@ -4,9 +4,9 @@ title: Surface translation — Claude and Codex coexistence
 description: A repository may carry Claude and Codex surfaces together; Claude owns configuration and deterministic translation keeps their command, reference, and harness artifacts aligned
 resource: plugins/quenching/assets/bin/quenching/components/commands/translate.py, plugins/quenching/assets/translation/codex-adaptation.json
 tags: [architecture, claude-code, codex, translation, surfaces]
-timestamp: 2026-08-18
+timestamp: 2026-10-17
 audience: both
-authority: background
+authority: current
 source: alinhar-plugin-a-agents-md spec, tasks 2.1–2.4 (2026-08-18)
 maintainer: quenching
 ---
@@ -62,8 +62,12 @@ Runtime adaptation is generated from `assets/translation/codex-adaptation.json` 
 `components/commands/translate.py`, never edited in generated skills or an installed cache.
 The project's role mapping is `opus` → `gpt-6-astra`, `sonnet` → `gpt-6.1-sol`, and
 `haiku` → `gpt-6-luna`; these are project routing choices, not measured model equivalence.
-Declared efforts survive. Product-code workers and import-memory classifiers/executors
-must never use Luna. Source Claude model pins remain intact.
+Declared efforts survive. Luna writes product code only on ONE task whose
+`cq specs estimate --task` reports `oracleProtected` and `smallTierEligible` — an executable
+`verify:` whose tests sit outside the task's `files:`, nothing under `/docs/`, projected context
+at or under 80k — the same conditions as `haiku` (ADR 0014); a failed `verify:` returns the task
+to the session model. Judgment roles and import-memory classifiers/executors never use Luna.
+Source Claude model pins remain intact.
 
 A Codex run delegates exclusively through the Codex host's subagent tools, with explicit
 models and role protocols. It must never launch Claude CLI or fall back to Claude models.
