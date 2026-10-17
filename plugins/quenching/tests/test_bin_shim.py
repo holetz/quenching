@@ -123,7 +123,7 @@ class EnabledModules(unittest.TestCase):
         manifest = copy.deepcopy(generator.load_manifest(REPO_ROOT))
         cls.roots = {}
         for module in manifest["modules"]:
-            if module["name"] in ("quenching-specs", "quenching-design"):
+            if module["name"] in ("quenching-specs", "quenching-design", "quenching-proof", "quenching-ops"):
                 target = root / module["name"]
                 for rel, (data, mode) in generator.principal_tree(REPO_ROOT, manifest, module).items():
                     path = target / rel
@@ -161,6 +161,17 @@ class EnabledModules(unittest.TestCase):
         self.assertEqual(str(self.roots["quenching-design"].resolve()),
                          str(pathlib.Path(rows["quenching-design"]["root"]).resolve()))
         self.assertIsNone(rows["quenching-security"]["root"])
+
+    def test_a_package_copied_into_another_module_does_not_enable_its_owner(self):
+        enabled = ("quenching-specs", "quenching-proof")
+        rows = {row["name"]: row for row in json.loads(self.cq("modules", "--json", enabled=enabled).stdout)["modules"]}
+        self.assertFalse(rows["quenching-ops"]["enabled"])
+        self.assertIsNone(rows["quenching-ops"]["root"])
+        self.assertEqual(2, self.cq("ops", "--help", enabled=enabled).returncode)
+        both = ("quenching-specs", "quenching-proof", "quenching-ops")
+        rows = {row["name"]: row for row in json.loads(self.cq("modules", "--json", enabled=both).stdout)["modules"]}
+        self.assertTrue(rows["quenching-ops"]["enabled"])
+        self.assertEqual(str(self.roots["quenching-ops"].resolve()), str(pathlib.Path(rows["quenching-ops"]["root"]).resolve()))
 
     def test_a_module_of_another_version_is_not_loaded(self):
         version = self.roots["quenching-design"] / "VERSION"

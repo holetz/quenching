@@ -553,7 +553,7 @@
     "references/specs-execute/execution-tooling.md": "7e8958173a4f4e88d68b092086e644a802a6cf513eb0485651c2a19b6ddd1cfe",
     "references/specs-execute/execution.md": "1a6298b8996587e127ce5b0a9dc12bb4edae72807ffdc3036fad707f395ab07f",
     "references/toolchain-align/bands.md": "e2c57eb87ac507550a0afb2b90bcba7b66974f11ab5f22b6a63d468a4ff95f71",
-    "scripts/bin/cq": "d8b02309b9c6156205366d150c8d09f25a3b0cea606ad02d6abfc8fee8e207f4",
+    "scripts/bin/cq": "03e6b6fcc4d1e5d8783fd04d49f5c9d74d811d5050ac0ce173beab2d797b8724",
     "scripts/bin/quenching/codex/__init__.py": "80bdeea566201c5f88a2a19e2b2432d43a624daf228cbc4c85c1a7e593427f38",
     "scripts/bin/quenching/codex/config.py": "a3b1a949b5bfd3386d345cb741ff293a7f2b30656e67652673d6168ee141e3aa",
     "scripts/bin/quenching/codex/probe.py": "5b9e9971756c29324265168b5d598b7b51a329b81d1a8e87a21e33cb638b4bd3",
