@@ -187,6 +187,55 @@ class ContextTests(unittest.TestCase):
             self.assertEqual(run("--agent", "../a")[0], 2)
             self.assertEqual(run("--agent", "missing")[0], 2)
 
+    def call(self, stamp, command, *, path):
+        """Append a recorded Bash call, the way the host writes an in-flight tool use."""
+        record = {"type": "assistant", "timestamp": stamp, "message": {
+            "id": f"call-{stamp}", "usage": usage(5, [5]),
+            "content": [{"type": "tool_use", "name": "Bash", "input": {"command": command}}]}}
+        with path.open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps(record) + "\n")
+
+    def self_session(self):
+        project = self.base / "projects" / "-home-checkout"
+        main = self.write(request("main", usage(1, [1])), path=project / "live.jsonl")
+        agents = {}
+        for name in ("w1", "w2"):
+            agent = self.write(request(name, usage(2, [2])), path=project / f"live/subagents/agent-{name}.jsonl")
+            agent.with_suffix(".meta.json").write_text('{"agentType":"quenching-specs:spec-runner"}')
+            agents[name] = agent
+        return project, main, agents
+
+    def test_self_marker_selects_the_caller_transcript(self):
+        project, main, agents = self.self_session()
+        self.call("2026-10-17T10:00:00Z", "cq components session context --self 1632 --json", path=agents["w1"])
+        self.call("2026-10-17T10:05:00Z", "cq components session context --self 1700 --json", path=agents["w2"])
+        self.call("2026-10-17T10:06:00Z", "grep -- '--self 1632' notes.md", path=main)
+        with mock.patch.dict(os.environ, {"CLAUDE_CODE_SESSION_ID": "live",
+                                          "QUENCHING_TRANSCRIPTS_ROOT": str(project.parent)}):
+            code, data = run("--self", "1632")
+            self.assertEqual(data["transcript"], str(agents["w1"]))
+            self.assertEqual((data["role"], data["budget"]), ("worker", 100000))
+            self.assertIn("self marker", data["resolvedBy"])
+            self.assertEqual(run("--self", "999")[1]["code"], "se-self-not-found")
+            self.assertEqual(run("--self", "163")[1]["code"], "se-self-not-found")
+            self.call("2026-10-17T10:00:00Z", "cq components session context --self 1632", path=agents["w2"])
+            self.assertEqual(run("--self", "1632")[1]["code"], "se-self-ambiguous")
+            self.call("2026-10-17T10:09:00Z", "cq components session context --self 1632", path=main)
+            code, data = run("--self", "1632")
+            self.assertEqual((data["transcript"], data["role"]), (str(main), "main"))
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+            run("--self", "1632", "--agent", "w1")
+
+    def test_bare_session_id_resolves_from_a_sibling_worktree(self):
+        root = self.base / "projects"
+        target = self.write(request("main", usage(7, [7])), path=root / "-home-checkout" / "live.jsonl")
+        with mock.patch.dict(os.environ, {"CLAUDE_CODE_SESSION_ID": "live", "QUENCHING_TRANSCRIPTS_ROOT": str(root)}):
+            code, data = run()
+            self.assertEqual((code, data["transcript"]), (0, str(target)))
+            self.assertEqual(data["resolvedBy"], "session id across project dirs")
+            self.write(request("x", usage(1, [1])), path=root / "-home-other" / "live.jsonl")
+            self.assertEqual(run()[1]["code"], "se-no-transcript")
+
     def test_public_cq_route_json_at_both_levels(self):
         self.write(request("a", usage(3, [3])))
         for argv in (["components", "session", "context", str(self.path), "--json"],
