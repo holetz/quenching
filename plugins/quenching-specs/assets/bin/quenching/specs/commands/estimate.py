@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+import sys
 from pathlib import Path
 
 from quenching.specs.backends import open_backend
@@ -95,6 +96,13 @@ def estimate_build(info: dict, root: str | Path, budget: int = WORKER_BUDGET_TOK
 
 
 def cmd_estimate(args, root: str, out: Emitter) -> int:
+    if args.worker_budget is None:
+        from quenching.common.config import setting
+        args.worker_budget, warning = setting(
+            root, "shared", "contextBudgets.worker", WORKER_BUDGET_TOKENS,
+            lambda v: isinstance(v, int) and not isinstance(v, bool) and v > 0)
+        if warning:
+            print(f"warning: {warning}", file=sys.stderr)
     if args.worker_budget <= 0:
         return out.emit_err(args.json, {"code": "sp-bad-worker-budget", "exit": 2,
                                        "message": "worker budget must be a positive token count"})
