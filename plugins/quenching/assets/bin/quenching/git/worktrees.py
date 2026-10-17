@@ -108,8 +108,10 @@ def list_worktrees(root: str) -> list[dict]:
                 pointer = stream.read().strip()
         except OSError:
             continue
-        path = os.path.dirname(pointer)
-        if pointer and os.path.isdir(path):
+        if not pointer:
+            continue
+        path = os.path.dirname(os.path.normpath(os.path.join(entry, pointer)))
+        if os.path.isdir(path):
             linked.append({"path": path, "branch": worktree_branch(entry), "main": False})
     return found + sorted(linked, key=lambda row: row["path"])
 
