@@ -159,5 +159,23 @@ class ApplyTest(unittest.TestCase):
             self.assertEqual([], list(pathlib.Path(root).iterdir()))
 
 
+class ReadinessRouteTest(unittest.TestCase):
+    def test_the_route_reports_an_unmeasured_assessment_as_inconclusive(self):
+        with tempfile.TemporaryDirectory() as root:
+            code, payload = _cq("--root", root, "opensource", "readiness", "--json")
+            self.assertEqual([], list(pathlib.Path(root).iterdir()))
+        self.assertEqual(2, code)
+        self.assertFalse(payload["grantsPublication"])
+        self.assertEqual({"refused"}, {row["state"] for row in payload["coverage"]})
+
+    def test_the_human_rendering_names_what_stayed_unmeasured(self):
+        with tempfile.TemporaryDirectory() as root:
+            run = subprocess.run([sys.executable, str(CQ), "--root", root, "opensource", "readiness"],
+                                 capture_output=True, text=True)
+        self.assertEqual(2, run.returncode)
+        self.assertIn("unmeasured: secrets", run.stdout)
+        self.assertIn("never a publication approval", run.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
