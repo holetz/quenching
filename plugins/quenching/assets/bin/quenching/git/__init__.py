@@ -19,6 +19,7 @@ from quenching.git.audit import cmd_audit
 from quenching.git.base import cmd_base
 from quenching.git.commit import cmd_commit
 from quenching.git.conventions import cmd_conventions
+from quenching.git.history import cmd_history
 from quenching.git.prune import cmd_prune
 from quenching.git.pull import cmd_pr
 from quenching.git.push import cmd_push
@@ -30,7 +31,8 @@ from quenching.git.worktree import cmd_worktree
 DISPATCH = {"base": cmd_base, "specs": cmd_specs, "stale": cmd_stale,
             "conventions": cmd_conventions, "worktree": cmd_worktree,
             "commit": cmd_commit, "audit": cmd_audit, "state": cmd_state,
-            "push": cmd_push, "prune": cmd_prune, "pr": cmd_pr}
+            "push": cmd_push, "prune": cmd_prune, "pr": cmd_pr,
+            "history": cmd_history}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -92,6 +94,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp = sub.add_parser("state", help="the checkout's branch, porcelain status, staged paths, stash "
                                        "entries and remotes — read with a fixed argv")
+    sp.add_argument("--json", action="store_true", help="machine-readable output")
+
+    sp = sub.add_parser("history", help="read-only: a range's log, one commit's show, or a diff — "
+                                         "a fixed argv with no output-to-file option")
+    sp.add_argument("kind", choices=("log", "show", "diff"))
+    sp.add_argument("revs", nargs="+", metavar="REV", help="log: a range or ref; show: one sha; "
+                                                           "diff: one or two revisions")
+    sp.add_argument("--path", action="append", default=[], metavar="PATH",
+                    help="limit to this path; repeat for each")
+    sp.add_argument("--max-count", type=int, default=50, metavar="N", help="log: commits shown")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("push", help="push one local branch to one remote under its own name, "
