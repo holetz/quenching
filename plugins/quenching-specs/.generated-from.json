@@ -13,7 +13,8 @@
       "git",
       "session",
       "codex",
-      "portal"
+      "portal",
+      "config"
     ],
     "agents": true
   },
