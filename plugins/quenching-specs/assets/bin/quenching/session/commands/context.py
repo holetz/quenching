@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 from pathlib import Path
 
 from quenching.common.output import FINDINGS, OK, REFUSAL, emit, refuse
@@ -24,7 +25,7 @@ def token_input(usage: dict) -> int | None:
     return sum(usage.get(key, 0) for key in TOKEN_KEYS)
 
 
-def measure_context(path: Path) -> dict:
+def measure_context(path: Path, budgets: dict | None = None) -> dict:
     """Deduplicate streamed request usage; incomplete windows remain unknown."""
     requests, anomalies = {}, []
     with path.open(encoding="utf-8") as stream:
@@ -96,7 +97,7 @@ def measure_context(path: Path) -> dict:
         role = ROLES.get(bare_agent(agent_type), "unknown") \
             if isinstance(agent_type, str) else "unknown"
     peak = max(measured) if complete else None
-    budget = BUDGETS.get(role)
+    budget = (budgets or BUDGETS).get(role)
     return {"peakContext": peak, "peakUpperBound": max(exposure) if exposure else None,
             "observedIterationPeak": max(measured) if measured else None,
             "turns": len(requests), "measuredTurns": len(exposure),
@@ -158,6 +159,18 @@ def find_self(main: Path, marker: str, verb: str = "context",
     return (paths[0], "self marker") if len(paths) == 1 else (None, "se-self-ambiguous")
 
 
+def effective_budgets(root) -> dict:
+    """`shared.contextBudgets` over the code defaults; a bad leaf warns on stderr and is ignored."""
+    from quenching.common.config import setting
+    out = dict(BUDGETS)
+    for role, default in BUDGETS.items():
+        out[role], warning = setting(str(root), "shared", f"contextBudgets.{role}", default,
+                                     lambda v: isinstance(v, int) and not isinstance(v, bool) and v > 0)
+        if warning:
+            print(f"warning: {warning}", file=sys.stderr)
+    return out
+
+
 def cmd_context(args) -> int:
     selector = args.transcript or os.environ.get("CLAUDE_CODE_SESSION_ID")
     if not selector:
@@ -179,7 +192,7 @@ def cmd_context(args) -> int:
         path = path.with_suffix("") / "subagents" / f"agent-{args.agent}.jsonl"
         how += "; agent id"
     try:
-        out = measure_context(path)
+        out = measure_context(path, effective_budgets(Path.cwd()))
     except (OSError, UnicodeError) as error:
         return refuse({"code": "se-unreadable-transcript", "message": str(error)}, args.json)
     out.update(transcript=str(path), resolvedBy=how)

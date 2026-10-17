@@ -36,8 +36,8 @@ def deny_settings() -> dict:
             "disableAllHooks": True}
 
 
-def chat_argv(claude: str, budget: float, settings: str) -> list[str]:
-    return [claude, "-p", "--model", "sonnet", "--output-format", "stream-json", "--verbose",
+def chat_argv(claude: str, budget: float, settings: str, model: str = "sonnet") -> list[str]:
+    return [claude, "-p", "--model", model, "--output-format", "stream-json", "--verbose",
             "--tools", TOOLS, "--strict-mcp-config", "--no-session-persistence",
             "--disable-slash-commands", "--permission-mode", "dontAsk",
             "--setting-sources", "project", "--max-budget-usd", f"{budget:g}",
@@ -76,7 +76,7 @@ class Job:
     """One question: the process, its reader thread, its timer, and the projected events."""
 
     def __init__(self, claude: str, budget: float, cwd: str, question: str,
-                 timeout: float = CHAT_TIMEOUT_SECONDS) -> None:
+                 timeout: float = CHAT_TIMEOUT_SECONDS, model: str = "sonnet") -> None:
         self.id = secrets.token_urlsafe(12)
         self.cwd, self.question = cwd, question
         self.status, self.error, self.cost = "running", "", None
@@ -89,7 +89,7 @@ class Job:
             json.dump(deny_settings(), handle)
         try:
             self.proc = subprocess.Popen(
-                chat_argv(claude, budget, self.settings), cwd=cwd, stdin=subprocess.PIPE,
+                chat_argv(claude, budget, self.settings, model), cwd=cwd, stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8",
                 errors="replace")
         except OSError as exc:
