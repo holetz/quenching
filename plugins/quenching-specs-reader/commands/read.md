@@ -3,7 +3,7 @@ description: >-
   Read another project's quenching specs as a to-do list, without writing anything. Triggers on
   "what is left to do in <project>", "list the open specs", "read the specs of <project>", "show
   the tasks of spec <id>", or "what should I work on next". Not for: creating, developing,
-  executing or closing a spec → the full `quenching` plugin's /quenching:specs:* commands.
+  executing or closing a spec → the `quenching-specs` plugin's /quenching-specs:specs:* commands.
 argument-hint: "[spec-id] [--root <checkout>]"
 allowed-tools: Bash(cq-specs-read:*)
 ---

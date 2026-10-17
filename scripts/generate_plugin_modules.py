@@ -128,6 +128,17 @@ def closure_findings(root: Path, manifest: dict, module: dict, tree: dict) -> li
     return findings
 
 
+def authored_findings(root: Path, module: dict) -> list[str]:
+    """A consumer's hand-written prose never names an unpublished /quenching: id."""
+    findings = []
+    for rel in module.get("authored", []):
+        path = root / module["path"] / rel
+        if rel.endswith(".md") and path.is_file() and "/quenching:" in path.read_text(
+                encoding="utf-8", errors="replace"):
+            findings.append(f"{module['name']}: unpublished /quenching: id in {rel}")
+    return findings
+
+
 def existing_generated(root: Path, module: dict) -> set[str]:
     target = root / module["path"]
     if "owned" in module:
@@ -237,6 +248,8 @@ def main(argv: list[str] | None = None) -> int:
         findings += [line for module in manifest["modules"] if "owned" in module
                      for line in closure_findings(ROOT, manifest, module,
                                                   principal_tree(ROOT, manifest, module))]
+        findings += [line for module in manifest["modules"] if module["published"]
+                     for line in authored_findings(ROOT, module)]
         drift = [line for module, tree in consumers for line in differences(ROOT, module, tree)]
         if args.check:
             if findings or drift:
@@ -251,7 +264,8 @@ def main(argv: list[str] | None = None) -> int:
         # Generation repairs copied surfaces only; authored version drift remains a finding.
         remaining = published_findings(ROOT, manifest) + [
             line for module, tree in consumers if "owned" in module
-            for line in closure_findings(ROOT, manifest, module, tree)]
+            for line in closure_findings(ROOT, manifest, module, tree)] + [
+            line for module, _ in consumers for line in authored_findings(ROOT, module)]
         if remaining:
             print("\n".join(remaining), file=sys.stderr)
             return 1
