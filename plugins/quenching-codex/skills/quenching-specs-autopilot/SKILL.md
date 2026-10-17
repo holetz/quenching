@@ -21,7 +21,8 @@ Tier mapping: opus → `gpt-6-astra`; sonnet → `gpt-6.1-sol`; haiku → `gpt-6
 rounds until the queue runs dry; `--until <date-time with offset>` (e.g. `2026-10-09T07:00-03:00`)
 repeats them until the deadline (and still stops at a dry queue). `--max-launches <n>` sets the
 launch ceiling (default **40**, provisional: it is fixed only after the human reads the measurement
-of the last three runs). Optionally focus areas as in `quenching-specs-improve`.
+of the last three runs). `--max-tree-tokens <n>` sets an opt-in ceiling on the tokens measured per
+model across the tree, with **no default**: without it nothing is read or compared. Optionally focus areas as in `quenching-specs-improve`.
 Typed by the human only: **the invocation is the human's delegation** for the whole run — every
 forced execution, push, PR and merge below is authorized by it, and by nothing else.
 
@@ -62,6 +63,19 @@ non-`cq`, non-`git` command is run.
   `--max-launches`; at the ceiling it admits nothing more, writes the record (`open`, next step)
   and reports `continue`. The count covers what the conductor and the returned reports show; what
   is in flight is declared `not measured`.
+- **The tree-token ceiling is opt-in and per model.** Only with `--max-tree-tokens <n>`, before each
+  launch the conductor reads `cq components session cost "$CLAUDE_CODE_SESSION_ID" --json` and
+  compares, per model, the measured tokens (`input + cacheRead + cacheWrite + output` of that
+  model's `byModel` row) with `<n>`, never summing tiers. A model already at the ceiling, or with no
+  margin (its measured total plus the largest measured total of a single agent of that model in the
+  tree reaches `<n>`; with no agent measured, only the raw ceiling counts), admits nothing more: the
+  conductor writes the record (`open`, next step) and reports `continue`. What is in flight or
+  unmeasured is declared, never estimated.
+- **A `budget:` continue is relaunched, not retried.** When the orchestrator returns `continue`
+  with `NOTE: budget: …`, the conductor launches it again in a fresh context on the same epic. The
+  relaunch counts in `launches` and is not a failure, but needs progress: at least one more spec
+  `done` or `merged` than at the previous return. Without progress the epic goes to the report as
+  `needs-human`.
 - **The round record is resumable.** Each round writes `<ephemeral area>/autopilot/<date>/rounds.md`
   (one block per round: number, start ref, epic, specs placed, `launches`, next step,
   `open|closed`) at the end of every step 1–7. A round that returns `continue` stays `open`.
@@ -116,7 +130,8 @@ after a verifier PASS, authorized by this invocation, with its date. Check the r
 Start `quenching-specs:orchestrator` on the epic with the word `autonomous`, the base branch and the
 deadline (≤ 1,500 characters). Apply **Liveness** to every worker it reports. A spec it returns
 `blocked` with a `needs-human:` note moves to the human epic; `failed` or `continue` is carried to
-the report with its note, never retried in this round.
+the report with its note, never retried in this round; a `continue` whose note starts with `budget:`
+is the exception, relaunched as the invariant above says.
 **Done when:** the orchestrator returned its fixed report and every non-`done` spec is placed.
 
 ### 6. Correctness review
