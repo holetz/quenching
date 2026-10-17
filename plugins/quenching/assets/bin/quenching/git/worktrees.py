@@ -36,8 +36,23 @@ def worktree_branch(gitdir: str) -> str | None:
     return head[len(prefix):] if head.startswith(prefix) else None
 
 
+def _checkout_root(start: str) -> str | None:
+    """The nearest directory at or above `start` that holds a `.git` entry."""
+    current = os.path.realpath(start)
+    while True:
+        if os.path.lexists(os.path.join(current, ".git")):
+            return current
+        parent = os.path.dirname(current)
+        if parent == current:
+            return None
+        current = parent
+
+
 def _common_dir(root: str) -> str | None:
-    dot_git = os.path.join(root, ".git")
+    checkout = _checkout_root(root)
+    if checkout is None:
+        return None
+    dot_git = os.path.join(checkout, ".git")
     if os.path.isdir(dot_git):
         return os.path.realpath(dot_git)
     gitdir = worktree_gitdir(dot_git)

@@ -49,6 +49,14 @@ class ListWorktreesTest(unittest.TestCase):
         subprocess.run(["rm", "-rf", self.plain], check=True)
         self.assertNotIn(self.plain, [row["path"] for row in self._rows(self.main)])
 
+    def test_a_subdirectory_resolves_to_the_enclosing_checkout(self):
+        sub = os.path.join(self.main, "plugins", "deep")
+        os.makedirs(sub)
+        self.assertEqual(self._rows(sub), self._rows(self.main))
+        nested = os.path.join(self.plain, "x")
+        os.mkdir(nested)
+        self.assertEqual(self._rows(nested), self._rows(self.main))
+
     def test_not_a_repository_is_empty(self):
         self.assertEqual(list_worktrees(self.base), [])
 
