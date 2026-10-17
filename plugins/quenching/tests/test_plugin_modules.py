@@ -273,6 +273,18 @@ class PrincipalGeneration(unittest.TestCase):
             self.assertIn(needle, err.getvalue())
 
 
+    def test_check_names_an_unpublished_id_in_an_authored_consumer_file(self):
+        self.manifest["modules"][2]["authored"] = ["commands/notes.md"]
+        (self.root / MANIFEST).write_text(json.dumps(self.manifest))
+        notes = self.root / "plugins/quenching-design/commands/notes.md"
+        notes.parent.mkdir(parents=True)
+        notes.write_text(f"see /{OLD}specs:x\n")
+        with patch.object(generator, "ROOT", self.root), \
+                patch("sys.stderr", new_callable=__import__("io").StringIO) as err:
+            self.assertEqual(1, generator.main(["--check"]))
+        self.assertIn("unpublished /quenching: id in commands/notes.md", err.getvalue())
+
+
 class PrincipalPartition(unittest.TestCase):
     def test_single_repository_gate_checks_the_general_distribution(self):
         gate = (REPO / "scripts/verify_repo.sh").read_text()
