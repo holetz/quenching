@@ -418,7 +418,7 @@
   "sha256": {
     ".codex-plugin/plugin.json": "5fea2138fae6abfa89e2bb5a173af5efb6001565d608c9f5aea1c682bd418591",
     ".generated-from.json": "7eec9a6572cd3d3dfb37585685d027007776cffe93baabae3f1ce6082dee449c",
-    "README.md": "877cc69bd02114406301f1d8282e1888c9b48ce71cfdb2406386bd509dc98982",
+    "README.md": "ad5f71c5d363d1616354556fcd7d74fc8482c9a7fdfe9b0c9b50b2e1f715373c",
     "VERSION": "3754366908ac60b46e7aab559e5d23fa7eea0ff51835fb9fd72ba76aab3bcafd",
     "agents/git-steward.md": "815eea32e3978f2fcb299d76272779ac0a277abd1e013e139cc0690556e125d9",
     "agents/orchestrator.md": "674a60a8def5b640d6a9a1a6aaf0e2a7fff8f80083c96773f896051a584012d1",
@@ -789,7 +789,7 @@
     "skills/quenching-proof-status/agents/openai.yaml": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94",
     "skills/quenching-security-status/SKILL.md": "c2b4b15d77fe16726aa401a7fb06c723fb77b03227b49629be70557afc664912",
     "skills/quenching-security-status/agents/openai.yaml": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94",
-    "skills/quenching-specs-autopilot/SKILL.md": "9934f883642fb59763aeef059a10babe3d467310a5648dd7e30f1989cd74684d",
+    "skills/quenching-specs-autopilot/SKILL.md": "19860ca131ba514c455d7ae35ab10b4d8ddd64aa12d58d18aa6913c4014bd708",
     "skills/quenching-specs-autopilot/agents/openai.yaml": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94",
     "skills/quenching-specs-board/SKILL.md": "d649b1fbb456bbd76a365965a36590ae6be46357c0b32a190deed726a12f33d8",
     "skills/quenching-specs-board/agents/openai.yaml": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94",
