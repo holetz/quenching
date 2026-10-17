@@ -1,5 +1,5 @@
 <!-- quenching-proof-readme-start -->
-<!-- quenching-proof-readme-sha256 fbaa555188059d91be350f8e500b1c8f49f3ee02440461febbd02be31f5bc8e7 -->
+<!-- quenching-proof-readme-sha256 5d5b2d79981135bad2696f72269b0553498b3f7015668242579964bb75cd833c -->
 ## Declared proof layers
 
 ### quenching
@@ -8,6 +8,6 @@
 - Reach: tree
 - Budget: not declared
 - Required: yes
-- Test modules: 94
+- Test modules: 96
 - Fixture modules: none
 <!-- quenching-proof-readme-end -->
