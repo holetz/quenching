@@ -7,7 +7,7 @@ tags: [workflows, specs, configuration, provider, plugin]
 timestamp: 2026-10-17
 audience: both
 authority: current
-source: spec 1065 (task 3.1) — the namespaced envelope and migration refusal are implemented and covered by the source test matrix; extended by spec 1075 (2026-09-01) with `shared.gitConventions`, the `git` pillar's per-artifact writing directives; extended by spec 1405 (2026-10-08) with `shared.regenerablePaths`; by spec 1907 (2026-10-17) with the user layer; by spec 1908 (2026-10-17) with the `quenching` branch layer and `cq config show --effective`
+source: spec 1065 (task 3.1) — the namespaced envelope and migration refusal are implemented and covered by the source test matrix; extended by spec 1075 (2026-09-01) with `shared.gitConventions`, the `git` pillar's per-artifact writing directives; extended by spec 1405 (2026-10-08) with `shared.regenerablePaths`; by spec 1907 (2026-10-17) with the user layer; by spec 1908 (2026-10-17) with the `quenching` branch layer and `cq config show --effective`; by spec 1911 (2026-10-17) with `shared.autonomy`
 maintainer: quenching
 ---
 
@@ -62,7 +62,7 @@ The precedence, lowest to highest, is `default` < `user` < `repository` < `branc
 `cq config show --effective [--json]` prints every key with its effective value and the layer that
 supplied it, plus each layer's path, `present` and `unparseable` state (the branch layer also
 carries `applies`). A key is one row per `namespace.key`, because layers replace a key whole; the
-exception is a key whose default lives in code as data (today `shared.codex`), shown leaf by leaf
+exception is a key whose default lives in code as data (`shared.codex` and `shared.autonomy`), shown leaf by leaf
 with `default` where no layer declares the leaf. A key absent from every layer and without a
 default in code does not appear. The verb only reads: an unreadable layer is reported on its row of
 `layers` and never fatal.
@@ -119,7 +119,7 @@ Ownership follows the meaning of the key, not the module that happens to read it
 | Namespace | Owned declarations | Boundary |
 | --- | --- | --- |
 | root | `backend` | legacy/provider metadata only; provider selection comes from `origin` |
-| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions` | settings used by more than one local surface or by isolation |
+| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `autonomy` | settings used by more than one local surface or by isolation |
 | `specs` | Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes` | provider-owned plan lifecycle and proposal conventions |
 | `ops` | `opsRoot`, `router`, `registry` | operations inventory, router and generated registry |
 | `proof` | `proofRoot`, `layers`, `measuredRoots`, `proofExclusions`, `ratchetPath` | verification inventory, layers and coverage evidence |
@@ -128,6 +128,25 @@ The shared loader discovers the home, parses JSON, derives provider metadata, an
 envelope. It does not interpret a front's values. Each adapter validates and resolves only its own
 namespace. `ops`, `proof`, and `git` consume the common boundary directly; they do not import the
 specs adapter to obtain shared configuration.
+
+## The autonomy block
+
+`shared.autonomy` holds five keys whose defaults live in code (`config/autonomy.py`) and reproduce the
+behavior before the block existed. A partial block completes leaf by leaf; `cq config show --effective`
+lists each leaf with its value and layer.
+
+| Key | Values | Default | Read by |
+| --- | --- | --- | --- |
+| `runAloneUpTo` | `none` · `low` · `medium` · `high` · `xhigh` | `low` | `/quenching-specs:specs:orchestrate` and the `orchestrator`: the highest `complexity` that runs without `approved` |
+| `merge` | `policy` · `never` · `dependencies` · `all` | `policy` | the `orchestrator`: `policy` defers to the epic's dated text, `never` merges nothing, `dependencies` only specs with a dependent, `all` every leaf |
+| `maxWorkers` | integer 1-8 | `3` | the `orchestrator`'s parallelism |
+| `maxLaunches` | integer ≥ 1 | `40` | `/quenching-specs:specs:autopilot`, when `--max-launches` is absent |
+| `livenessMinutes` | integer ≥ 1 | `20` | `/quenching-specs:specs:autopilot`'s liveness stop |
+
+A value of the wrong shape falls back to the leaf default and is named in the `warnings` of the
+effective view; it is never applied silently. An explicit flag wins over the key. No value grants a
+permission, removes a sandbox or loosens a verifier check: `merge: all` applies only under
+`autonomous`, still on green CI and a verifier PASS.
 
 ## Provider-derived selection
 
