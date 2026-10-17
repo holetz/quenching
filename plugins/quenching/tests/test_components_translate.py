@@ -580,3 +580,35 @@ class CodexRuntimeTranslation(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "runtime policy change"):
                 translate.propagate_bodies_from_codex(tree)
             self.assertEqual(command.read_text(), COMMAND)
+
+
+class CodexReviewRemoval(unittest.TestCase):
+    """A Codex run never nests Codex: the generated surface carries no Codex review step."""
+
+    def setUp(self):
+        saved = (translate.SOURCE, translate.TARGET, translate.MANIFEST)
+        self.addCleanup(lambda: setattr(translate, "SOURCE", saved[0]))
+        self.addCleanup(lambda: setattr(translate, "TARGET", saved[1]))
+        self.addCleanup(lambda: setattr(translate, "MANIFEST", saved[2]))
+        translate.configure(str(translate.payload_root()), str(translate.payload_root()))
+
+    def test_removal_cuts_the_span_and_keeps_the_rest(self):
+        adaptation = {"removals": [{"command": "specs/x", "from": "A", "until": "C", "replace": "N "}]}
+        self.assertEqual(translate.apply_removals("1 A B C 2", "specs/x", adaptation), "1 N C 2")
+        self.assertEqual(translate.apply_removals("1 A B C 2", "specs/y", adaptation), "1 A B C 2")
+
+    def test_missing_marker_fails_instead_of_going_silent(self):
+        adaptation = {"removals": [{"command": "specs/x", "from": "ZZZ", "replace": ""}]}
+        with self.assertRaises(ValueError):
+            translate.apply_removals("1 A B C 2", "specs/x", adaptation)
+
+    def test_generated_skills_carry_no_codex_review_step(self):
+        skills = {path: data.decode() for path, data in translate.generated_tree().items()
+                  if path.startswith("skills/") and path.endswith("SKILL.md")}
+        self.assertTrue(skills)
+        for path, text in skills.items():
+            with self.subTest(skill=path):
+                self.assertNotRegex(text, r"cq codex (probe|review)")
+                self.assertNotRegex(text, r"scripts/cq'[^\n]*\bcodex (probe|review)\b")
+        for name in ("autopilot", "conclude"):
+            self.assertIn("Codex review: unavailable", skills[f"skills/quenching-specs-{name}/SKILL.md"])
