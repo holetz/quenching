@@ -149,7 +149,7 @@ PILLARS: dict[str, Pillar] = {
         "the open source front — every owner's catalog answers and the baseline level"),
     "codex": Pillar(
         "quenching.codex", True,
-        "the Codex CLI, read-only — quota probe and an independent review"),
+        "the Codex CLI — quota probe, an independent read-only review, and the per-task executor"),
     "git": Pillar(
         "quenching.git", False,
         "a repository's git facts — the base branch, and whether it is the host's own default"),
