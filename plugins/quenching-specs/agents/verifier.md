@@ -82,7 +82,7 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    branch adds or repoints at any path (`(symlink)`, its target never read), a changed surface path with no
    `+`/`-` line read — a mode flip, an empty file, a diff `.gitattributes` marks binary (`(no line read)`), any other frontmatter key added, removed or changed (its name in `added`), a
    changed frontmatter it cannot read whole (`(unparsed frontmatter)`), and a deleted settings file,
-   hook, workflow, agent, command or skill (`(deleted)`). Unchanged never appears, nor a narrowing that removes no surface line. In an autonomous
+   hook, workflow, agent, command or skill (`(deleted)`). Unchanged never appears, nor a narrowing that removes no surface line, nor a relocation proved by the audit: a file that is a byte-for-byte copy of its source (the payload's `generated`) and a `tools:` entry that is exactly the namespace rewrite (`quenching:<head>` to `<module>:<head>`) of an entry the source had, by the map of the BASE manifest (the branch's own manifest never proves its equivalence). In an autonomous
    run a non-empty `grants` is FAIL with `needs-human: alargamento`, quoting each `path` and its
    `added` entries: the orchestrator takes the spec to the human epic, and the verifier never
    judges whether the widening is justified. Empty is ok; a non-autonomous run reports the list.
@@ -98,7 +98,7 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    conductor; it never dispenses the FAIL by itself. `severity: warn` entries (`suppression-added`: a new
    `noqa`, `type: ignore`, `skip`, `skipIf`, `skipUnless`, `xfail`; `discover-unrecognized`: the gate's test-discovery command was not recognised, so a moved
    test was judged by folder name) are listed in the evidence and never
-   block. Empty is ok. A weakened task `verify:` is not read here: the spec store is not in the diff.
+   block. Empty is ok. A gate line removed from a gate file is absolved only when its namespace rewrite by the same BASE map is a line the branch added; an unknown head never absolves, and a deleted or relocated gate stays FAIL. A weakened task `verify:` is not read here: the spec store is not in the diff.
 
 If a check does not apply (no PR yet, no declared `files:`), mark it `n/a`; do not fail on it.
 
