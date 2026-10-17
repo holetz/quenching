@@ -1,6 +1,6 @@
 ---
 name: quenching-align
-description: "Align the whole repository (docs, design, .claude, ops, proof, toolchain, delivery) on one confirmation. Use for \"align the repo\", \"align everything\", \"set up quenching here\". Not for: one front → its /quenching-<module>:<front>:align."
+description: "Align the whole repository (docs, design, .claude, ops, proof, toolchain, delivery, opensource) on one confirmation. Use for \"align the repo\", \"align everything\", \"set up quenching here\". Not for: one front → its /quenching-<module>:<front>:align."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/align.md -->
@@ -34,6 +34,7 @@ front named in that cell has completed its inherited authorization.
 | `proof` — verification surface | `quenching-proof-align` | `ops` |
 | `toolchain` — toolchain surface | `quenching-toolchain-align` | `proof` |
 | `delivery` — delivery surface | `quenching-delivery-align` | `toolchain` |
+| `opensource` — community, license and governance artifacts | `quenching-opensource-align` | `delivery` |
 
 **Only enabled modules are conducted.** Before the first front, read `cq modules --json` once
 ([tool-resolution.md](../../references/align/tool-resolution.md) §Routing into
@@ -41,8 +42,8 @@ another module). A front whose module reports `enabled: false` is `not-installed
 skipped, named in the report, and its dependants depend on the nearest earlier front that ran.
 
 **How a front is run.** `knowledge` and `components` are model-invocable: invoke them through the
-Skill tool. `design`, `ops`, `proof`, `toolchain` and `delivery` are typed-only commands
-(`disable-model-invocation: true`), so the Skill tool refuses them. For those five, Read the
+Skill tool. `design`, `ops`, `proof`, `toolchain`, `delivery` and `opensource` are typed-only
+commands (`disable-model-invocation: true`), so the Skill tool refuses them. For those six, Read the
 front's own body at `<root>/commands/<front>/align.md`, where `<root>` is the `root` that
 `cq modules --json` reports for the front's module, and follow it inline, substituting that same
 `<root>` for any `../..` it cites, with the same inherited authorization and the
@@ -56,7 +57,7 @@ Every applicable front must expose the common front mold at
 `../../references/front-align/mold.md`. The conductor sequences and reports;
 it never reimplements a front's verifier or repair logic.
 
-Before probing, read `cq specs config --json`. An absent `shared.profiles.installed` means all seven
+Before probing, read `cq specs config --json`. An absent `shared.profiles.installed` means all eight
 local fronts are eligible; a declared list limits the conductor to its named local fronts, in the
 dependency order above. Report other local fronts as skipped by profile. This scope affects only
 this conductor run: it does not remove commands or change a command's own invocation contract.
@@ -82,6 +83,9 @@ inside one, probe only that front and mark the others skipped by scope.
   manifests, locks, language pins and tool configuration as the complete probe result.
 - **`delivery`** — run `cq delivery doctor --json`; use its applicability signal and workflow
   inventory as the complete probe result.
+- **`opensource`** — run `cq opensource doctor --json`; its `applicability` (a root `LICENSE*` or
+  `COPYING*`, or `opensource` in `shared.profiles.installed`) and findings are the complete probe
+  result.
 
 Use **not applicable** only when the probe found no declared root or conventional signal. Use
 **skipped** only for explicit scope exclusion or an earlier hard failure. A present front with no
@@ -154,12 +158,22 @@ run `quenching-delivery-align` (read its body) after `toolchain`, with the inher
 the workflow inventory and reports pipeline reachability while leaving provider, environment,
 promotion, publication and permission policy with the target owner.
 
+### Front: `opensource`
+
+When the applicability probe reports `not-applicable`, report `opensource` not applicable. Otherwise
+run `quenching-opensource-align` (read its body) after `delivery`, with the inherited
+authorization. It writes only the community, license and governance artifacts the catalog gives it,
+through `cq opensource apply`; the license, maintainers, code owners, conduct contact, citation and
+funding remain the owner's individual answers, never covered by the batch OK. Another owner's
+control stays with that owner's front.
+
 ### Re-probe and convergence
 
 Re-run the applicability probes and cross-front edges after a pass. Check whether design added
 product/design standards, components changed the automation registry, ops changed the operations
 inventory or registry for `/docs/`, proof gained resources for generated listings, toolchain
-changed runtime/dependency evidence, or delivery changed workflow reachability. A changed edge
+changed runtime/dependency evidence, delivery changed workflow reachability, or opensource wrote a
+community artifact another front's catalog answer reads. A changed edge
 justifies another pass under the same authorization; an unchanged pass with residue is residue, not
 a reason to spin. Stop at convergence, residue, or the cap of 3 cross-front passes.
 
