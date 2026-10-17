@@ -1,4 +1,4 @@
-"""The ``codex`` pillar: whether the Codex quota allows a call, and which spec tasks Codex may write.
+"""The ``codex`` pillar: whether the Codex quota allows a call, and Codex writing one eligible task.
 
     cq codex probe [--json]    exit 0 available · 1 unavailable · 2 unknown (the quota);
                                `sandbox` says whether Codex can run commands on this host
@@ -7,6 +7,10 @@
                                exit 0 reviewed · 1 fall back to Claude · 2 refusal
     cq codex eligible --spec <id> --task <tid> [--json]
                                exit 0 Codex may write the task · 1 Claude writes it · 2 refusal
+    cq codex implement --spec <id> --task <tid> --worktree <dir> --prompt <file> [--run <name>]
+                       [--json]
+                               exit 0 written inside files: · 1 Claude writes it ·
+                               2 refusal or the git guard saw a divergence
 """
 from __future__ import annotations
 
@@ -16,6 +20,7 @@ import os
 
 from quenching.codex.config import load_settings
 from quenching.codex.eligible import run_eligible
+from quenching.codex.implement import run_implement
 from quenching.codex.probe import EXIT, probe, sandbox
 from quenching.codex.review import run_review
 from quenching.common.front import resolve_root
@@ -30,8 +35,8 @@ def build_parser() -> argparse.ArgumentParser:
     common.add_argument("--json", action="store_true", default=argparse.SUPPRESS,
                         help="print machine-readable output")
     parser = NoAbbrevParser(prog="cq codex", parents=[common],
-                            description="read the Codex quota, run Codex read-only, and decide "
-                                        "which spec tasks Codex may write")
+                            description="read the Codex quota, run Codex read-only, and let Codex "
+                                        "write one eligible spec task")
     parser.add_argument("--version", action="store_true", help="print the codex version")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("probe", parents=[common],
@@ -48,7 +53,30 @@ def build_parser() -> argparse.ArgumentParser:
                               help="exit 0 when Codex may write the task, 1 when Claude writes it")
     eligible.add_argument("--spec", required=True, help="the spec id")
     eligible.add_argument("--task", required=True, help="the task id, e.g. 2.1")
+    implement = sub.add_parser("implement", parents=[common],
+                               help="let Codex write one eligible task inside a worktree")
+    implement.add_argument("--spec", required=True, help="the spec id")
+    implement.add_argument("--task", required=True, help="the task id, e.g. 2.1")
+    implement.add_argument("--worktree", required=True, help="the checkout Codex writes in")
+    implement.add_argument("--prompt", required=True, help="file whose text is sent on stdin")
+    implement.add_argument("--run", help="run name under .quenching/codex/ (default: UTC stamp)")
     return parser
+
+
+def _implement(root: str, args, as_json: bool) -> int:
+    settings, warnings = load_settings(root)
+    payload, code = run_implement(root, settings, args.spec, args.task, args.worktree,
+                                  args.prompt, args.run)
+    if code == 2 and payload.get("code") != "codex-git-guard":
+        return refuse({k: v for k, v in payload.items() if k != "ok"}, as_json)
+    payload["warnings"] = warnings
+    tokens = payload["tokens"]
+    if isinstance(tokens, dict):
+        tokens = tokens.get("total_tokens", json.dumps(tokens))
+    emit(as_json, payload,
+         f"codex implement — {args.spec} {args.task}: {payload['reason']}; tokens: {tokens}; "
+         f"quota delta: {payload['quotaDelta']}; stop-loss: {payload['stopLoss']}")
+    return code
 
 
 def _eligible(root: str, args, as_json: bool) -> int:
@@ -88,6 +116,8 @@ def main(argv: list[str]) -> int:
         return _probe(root, as_json)
     if args.command == "eligible":
         return _eligible(root, args, as_json)
+    if args.command == "implement":
+        return _implement(root, args, as_json)
     settings, warnings = load_settings(root)
     payload, code = run_review(root, settings, args.worktree, args.prompt, args.run,
                                base=args.base, head=args.head)
