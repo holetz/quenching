@@ -20,6 +20,7 @@ from quenching.git.base import cmd_base
 from quenching.git.commit import cmd_commit
 from quenching.git.conventions import cmd_conventions
 from quenching.git.history import cmd_history
+from quenching.git.preflight import cmd_preflight
 from quenching.git.prune import cmd_prune
 from quenching.git.pull import cmd_pr
 from quenching.git.push import cmd_push
@@ -32,7 +33,7 @@ DISPATCH = {"base": cmd_base, "specs": cmd_specs, "stale": cmd_stale,
             "conventions": cmd_conventions, "worktree": cmd_worktree,
             "commit": cmd_commit, "audit": cmd_audit, "state": cmd_state,
             "push": cmd_push, "prune": cmd_prune, "pr": cmd_pr,
-            "history": cmd_history}
+            "history": cmd_history, "preflight": cmd_preflight}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -111,6 +112,12 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--branch", required=True, metavar="BRANCH", help="the local branch to push")
     sp.add_argument("--remote", default="origin", metavar="REMOTE",
                     help="a configured remote (default: origin)")
+    sp.add_argument("--json", action="store_true", help="machine-readable output")
+
+    sp = sub.add_parser("preflight", help="read-only: store writable, type catalog, push reach, "
+                                           "gh auth and base CI availability — never skips a hook")
+    sp.add_argument("--remote", default="origin", metavar="REMOTE",
+                    help="the remote probed (default: origin)")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("prune", help="delete one item `cq git stale` reports — `branch -d`, "
