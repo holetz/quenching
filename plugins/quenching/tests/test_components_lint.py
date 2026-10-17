@@ -203,6 +203,21 @@ class ReferenceRoot(unittest.TestCase):
             self.assertEqual(self._codes(bad, tmp), ["sk-reference-root"])
             self.assertEqual(self._codes(bare, tmp), ["sk-reference-root"])
 
+    def test_a_url_to_a_references_path_is_not_a_finding(self):
+        body = "[API](https://example.org/references/api.md) and [b](https://x.io/assets/references/b.md)\n"
+        self.assertEqual(self._codes(body), [])
+
+    def test_a_user_doc_link_with_a_references_directory_is_not_a_finding(self):
+        body = "[the API](../../docs/references/api.md)\n"
+        self.assertEqual(self._codes(body), [])
+
+    def test_a_quoted_components_read_target_without_the_root_is_an_error(self):
+        for q in ('"', "'"):
+            body = f"Run cq components read {q}assets" + f"/references/a.md{q} --sections x.\n"
+            self.assertEqual(self._codes(body), ["sk-reference-root"], q)
+        quoted_ok = 'cq components read "${CLAUDE_PLUGIN_ROOT}/assets' + '/references/a.md"\n'
+        self.assertEqual(self._codes(quoted_ok), [])
+
 
 class StepCriterion(unittest.TestCase):
     def test_child_headings_under_workflow_are_steps_without_numbers(self):
