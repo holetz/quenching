@@ -1447,6 +1447,15 @@ class VerifierGrants(unittest.TestCase):
                         "transitively"):
             self.assertIn(surface, text)
 
+    def test_checks_9_and_10_name_the_proof_that_absolves_a_relocation(self):
+        text = " ".join((PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8").split())
+        for phrase in ("a relocation proved by the audit", "byte-for-byte copy of its source",
+                       "`quenching:<head>` to `<module>:<head>`", "the branch's own manifest never proves",
+                       "its namespace rewrite by the same BASE map", "an unknown head never absolves",
+                       "a deleted or relocated gate stays FAIL"):
+            self.assertIn(phrase, text)
+
+
 class VerifierScopeCheck(unittest.TestCase):
     def test_check_4_names_where_the_tasks_files_are_read(self):
         text = " ".join((PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8").split())
