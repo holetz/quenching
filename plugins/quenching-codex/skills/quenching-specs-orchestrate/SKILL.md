@@ -31,10 +31,13 @@ Resolve `cq` per [align/tool-resolution.md](../../references/align/tool-resoluti
 **Done when:** the epic id or the list of spec ids is verified to exist.
 
 ### 2. Check who can run alone
-Read each spec's metadata with `cq specs status --spec <id> --json`: `complexity` comes from
+Read `cq config show --effective --json` once and take the `shared.autonomy.runAloneUpTo`,
+`shared.autonomy.merge` and `shared.autonomy.maxWorkers` lines; exit 0 without a line means the
+default (`low`, `policy`, `3`). Read each spec's metadata with `cq specs status --spec <id> --json`: `complexity` comes from
 `records.priority.complexity` and `approved` from `records.approved`. Split the set from these
 `status` payloads: **runs alone** is a spec with `approved` recorded or
-`complexity: low`; **needs a human** is `medium` or above with no `approved`. Nothing needs a
+a `complexity` at or below `runAloneUpTo` (`none` leaves only the approved ones); **needs a human**
+is any other spec with no `approved`. Nothing needs a
 human → go to step 3. Otherwise ask once on a decision sheet, naming the specs on each side:
 
 - **Develop now** — run `quenching-specs-develop <id>` in this session, one spec after another,
@@ -51,7 +54,8 @@ human → go to step 3. Otherwise ask once on a decision sheet, naming the specs
 
 ### 3. Launch the orchestrator
 Start the `quenching-specs:orchestrator` agent with a prompt of at most 1,500 characters: the epic id or
-the spec ids, the base branch, and the word `autonomous` when it was forced. Pass nothing else; it
+the spec ids, the base branch, the word `autonomous` when it was forced, and the three values as
+`runAloneUpTo=<v> merge=<v> maxWorkers=<v>`. Pass nothing else; it
 carries its own protocol, and without `autonomous` it blocks a spec that still needs approval.
 **Done when:** the orchestrator has returned its fixed report.
 
