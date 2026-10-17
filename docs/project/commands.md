@@ -9,7 +9,7 @@ tags:
 timestamp: 2026-08-28
 audience: both
 authority: current
-source: plugins/quenching/README.md §The 60 commands (long rows condensed); command set held in lockstep by test_commands_catalog.py
+source: plugins/quenching/README.md §The 61 commands (long rows condensed); command set held in lockstep by test_commands_catalog.py
 maintainer: Israel Holetz
 ---
 
@@ -157,6 +157,7 @@ owner's open source catalog answers.
 | --- | --- |
 | `/quenching-opensource:opensource:align` | Plans the license, community and governance artifacts on one OK and writes each from a pinned template through `cq opensource apply`, never choosing the owner's answers. |
 | `/quenching-opensource:opensource:status` | Reports every owner's catalog answers, the baseline level reached and `os-*` findings without writing. |
+| `/quenching-opensource:opensource:readiness` | Assesses tree and history before publication and reports blockers, warnings and unmeasured coverage, read-only; never approves publication. |
 
 ## The security pillar
 
