@@ -1,13 +1,13 @@
 ---
 type: standard
 title: The specs portal reads one store and widens nothing without a decision
-description: The local spec portal (cq specs serve) reads only the specs store open_backend reads, exposes a fixed set of GET and POST routes plus, under --chat, a read-only claude -p chat polled by job, keeps its loopback, token, Host/Origin and CSP guarantees, builds every node with textContent, reuses cockpit UX patterns but never its code, and regenerates the reader copy and the Codex mirror with every change
+description: The local spec portal (cq specs serve) reads only the specs store open_backend reads, exposes a fixed set of GET and POST routes plus, under --chat, a read-only claude -p chat polled by job, keeps its loopback, token, Host/Origin and CSP guarantees, builds every node with textContent, reuses cockpit UX patterns but never its code, shows the spec-runner's run record on the card, and regenerates the reader copy and the Codex mirror with every change
 resource: plugins/quenching/assets/bin/quenching/specs/portal.py, plugins/quenching/assets/bin/quenching/specs/chat.py, plugins/quenching/assets/portal/**, plugins/quenching/assets/bin/quenching/portal/**, plugins/quenching/assets/bin/quenching/common/lent.py, plugins/quenching/assets/bin/quenching/session/portal.py
 tags: [architecture, portal, specs, security, ux]
 timestamp: 2026-10-17
 audience: both
 authority: current
-source: spec 1769 and the fixed owner decisions B-O1 to B-O4 of epic 1768; spec 1812 (epic 1810) for the sessions read; spec 1814 (epic 1810) for the central server; spec 1815 (epic 1810) for the chat
+source: specs 1769, 1812, 1814, 1815, 1816 and the owner decisions B-O1 to B-O4 of epics 1768 and 1810
 maintainer: quenching
 ---
 
@@ -114,6 +114,7 @@ under `/`. With `--sessions` only, also `GET /api/sessions`; without the flag it
 - No new POST route enters without a human decision; `/api/chat` is the one epic 1810 decided. Reading more is a GET over the same store.
 - A GET request starts no process beyond the read the store backend already makes (on the git backend, `git` reading the `quenching` branch), and never calls `gh`.
 - A POST request writes to the store and pushes to git through the CLI's own verb. Every write route goes through the backend's write path, and with a card provider configured (`card: {provider: github}`) that path reaches `gh`: it creates the card on capture (`cmd_new` → `resolve_card_client`) and, through `_card_transitions` in the git backend, updates it when the `lifecycle_key` changes (title, board state, phase, labels or tags). Which routes trigger it follows from that mechanism, not from a list. This describes what exists; it grants nothing new.
+- `GET /api/specs` rows carry `run`: the spec's `run` record (`state`, `verifier`, `date`), rebuilt field by field, or null. The `quenching:spec-runner` writes it through `cq specs record` at the end of its step (spec 1774, decision A: the orchestrator holds no write grant); `NOTE` and `TOKENS` never reach the store or the page. The card shows it as a chip and the drawer's records timeline lists it. It is a read of the same store: no route, no process.
 - Static assets are read-only: any non-GET/HEAD method on them is a 405.
 - `GET /api/sessions` returns `generatedAt`, `windowMinutes` and, per session, exactly
   `sessionId`, `cwd`, `worktree` (`{path, branch, main}` or null), `state`, `status`,

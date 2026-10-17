@@ -52,7 +52,7 @@ DEFAULT_SCHEMA: dict = {
     "frontmatter": {
         "required": ["title", "date"],
         "optional": ["verification", "priority", "refined", "approved", "branch", "pr", "reviewed",
-                     "merge", "buildCost", "outcome", "workItemType", "epic", "tags", "assignee", "start", "target"],
+                     "merge", "buildCost", "run", "outcome", "workItemType", "epic", "tags", "assignee", "start", "target"],
         "verification": list(VERIFICATION_POLICIES),
         "outcome": list(OUTCOMES),
         "records": {
@@ -82,6 +82,10 @@ DEFAULT_SCHEMA: dict = {
             "buildCost": {"fields": ["status", "date", "source", "measurements", "reason"],
                           "status": {"levels": ["measured", "unavailable"]},
                           "writtenBy": "conclude", "writeOnce": False},
+            "run": {"fields": ["state", "verifier", "date"],
+                    "state": {"levels": ["done", "continue", "blocked", "failed"]},
+                    "verifier": {"levels": ["pass", "fail", "not-run"]},
+                    "writtenBy": "spec-runner", "writeOnce": False},
             "outcome": {"valuesFrom": "frontmatter.outcome",
                         "writtenBy": "conclude", "writeOnce": True},
         },
