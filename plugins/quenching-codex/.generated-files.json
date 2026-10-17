@@ -426,7 +426,7 @@
   "sha256": {
     ".codex-plugin/plugin.json": "c5be1866d445e75cbbcd11d654bad33fa9a790e758d1d20bde3b890a046ed88a",
     ".generated-from.json": "7eec9a6572cd3d3dfb37585685d027007776cffe93baabae3f1ce6082dee449c",
-    "README.md": "7654743c63a626f57ca609cfa5d34e151a283d9201889cadd0db155880979ff7",
+    "README.md": "5e8903f1920a511041181c2917088e728523c2b7e254f15031944b122be32734",
     "VERSION": "3eb8e06ca1e02f0a30b0e3eebd289494b35d4fd1466ed907b9148e03b2459b00",
     "agents/git-steward.md": "1f44f3530bab12cebbc4f6bc96734f0c7fdd00864b3ea4d6ae3731699108e66c",
     "agents/orchestrator.md": "8f8482a2a88e11bb5ad8108d2d2cba9821e3ae5f5cafa3a969f92aca658caa97",
