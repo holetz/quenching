@@ -1,8 +1,8 @@
 ---
 type: standard
 title: Align surface — one align per front, probe first
-description: The aligned-front column — one align per local front carrying its content stages, the `security` and `git` pillars declared outside the conductor, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, the rule that no sweep records itself, and the conductor categories sharing the cycle-authorization contract — `/align` conducts the seven local fronts (`knowledge`, `design`, `components`, `ops`, `proof`, `toolchain`, `delivery`); none reimplements what it conducts
-resource: plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/design/align.md, plugins/quenching/commands/components/align.md, plugins/quenching/commands/ops/align.md, plugins/quenching/commands/proof/align.md, plugins/quenching/commands/toolchain/align.md, plugins/quenching/commands/delivery/align.md, plugins/quenching/commands/security/status.md, plugins/quenching/assets/bin/quenching/design/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/bin/quenching/toolchain/**, plugins/quenching/assets/bin/quenching/delivery/**, plugins/quenching/assets/bin/quenching/security/**, plugins/quenching/assets/references/align/**, plugins/quenching/assets/references/proof-align/**
+description: The aligned-front column — one align per local front carrying its content stages, the `security` and `git` pillars declared outside the conductor, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, the rule that no sweep records itself, and the conductor categories sharing the cycle-authorization contract — `/align` conducts the eight local fronts (`knowledge`, `design`, `components`, `ops`, `proof`, `toolchain`, `delivery`, `opensource`); none reimplements what it conducts
+resource: plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/design/align.md, plugins/quenching/commands/components/align.md, plugins/quenching/commands/ops/align.md, plugins/quenching/commands/proof/align.md, plugins/quenching/commands/toolchain/align.md, plugins/quenching/commands/delivery/align.md, plugins/quenching/commands/opensource/align.md, plugins/quenching/commands/security/status.md, plugins/quenching/assets/bin/quenching/design/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/assets/bin/quenching/toolchain/**, plugins/quenching/assets/bin/quenching/delivery/**, plugins/quenching/assets/bin/quenching/security/**, plugins/quenching/assets/references/align/**, plugins/quenching/assets/references/proof-align/**
 tags: [architecture, aligns, commands, probe, convergence]
 timestamp: 2026-08-31
 audience: both
@@ -33,10 +33,11 @@ The executable order has one owner: the declaration table in
 | `ops → proof` | proof may classify active operations entry points using the ops inventory |
 | `proof → toolchain` | toolchain reads the proof gate and tool declarations without taking ownership of proof |
 | `toolchain → delivery` | delivery consumes runtime and dependency provenance from the toolchain surface |
+| `delivery → opensource` | opensource aggregates the catalog answers the earlier fronts own, after they converged, and writes only its community artifacts |
 
 The conductor has a separate named `Applicability` stage before those front stages. Each applicable
 front then runs as `Front: knowledge`, `Front: design`, `Front: components`, `Front: ops`,
-`Front: proof`, `Front: toolchain` and `Front: delivery`; absent fronts are `not applicable`, scoped exclusions are `skipped`, and a present
+`Front: proof`, `Front: toolchain`, `Front: delivery` and `Front: opensource`; absent fronts are `not applicable`, scoped exclusions are `skipped`, and a present
 front with no findings is `conformant`. This standard explains the membership and edges; it does not
 create a second executable order list.
 
@@ -95,12 +96,13 @@ conductor boundary; it does not transfer ownership between toolchain, delivery o
 | `proof` | `/quenching-proof:proof:align` |
 | `toolchain` | `/quenching-toolchain:toolchain:align` |
 | `delivery` | `/quenching-delivery:delivery:align` |
+| `opensource` | `/quenching-opensource:opensource:align` |
 | `security` | **none** — read-only pillar; see §The security subject is pillar-shaped, above |
 | `git` | **none** — see §The git pillar has no align, below |
-| all seven aligned fronts | `/align` — conducts them in dependency order, on one nested OK |
+| all eight aligned fronts | `/align` — conducts them in dependency order, on one nested OK |
 
-The column has seven aligned local fronts (`knowledge`, `design`, `components`, `ops`, `proof`,
-`toolchain`, `delivery`), one provider-owned axis with no local tree (`specs`), and two
+The column has eight aligned local fronts (`knowledge`, `design`, `components`, `ops`, `proof`,
+`toolchain`, `delivery`, `opensource`), one provider-owned axis with no local tree (`specs`), and two
 intentionally alignless pillars (`security`, `git`). Each non-front has its own structural reason.
 
 There is no `align-and-update` anywhere. The previous surface was a 2×4 matrix — a structural
@@ -153,7 +155,7 @@ conducts only through a stage's own gate.
 
 The two real loops survive where the looping is real: `/quenching-align:knowledge:align` keeps its
 internal fixpoint (memory → harness → glossary feed each other), and `/align` keeps the
-cross-front pass, because the seven aligned fronts feed each other (the design front's standards,
+cross-front pass, because the eight aligned fronts feed each other (the design front's standards,
 the components front's registry, the ops front's inventory and registry, the proof front's gate,
 the toolchain's runtime evidence and the delivery front's pipeline reachability all form a
 dependency chain). The conductor contract — one human OK
@@ -178,11 +180,11 @@ The conductor contract is shared, never owned by a single command. Conductors ar
 
 | The conductor | What it conducts | The contract |
 | --- | --- | --- |
-| `/align` | the seven local fronts (`knowledge`, `design`, `components`, `ops`, `proof`, `toolchain`, `delivery`), in dependency order, on one nested OK | `align/convergence.md` — cited, never restated |
+| `/align` | the eight local fronts (`knowledge`, `design`, `components`, `ops`, `proof`, `toolchain`, `delivery`, `opensource`), in dependency order, on one nested OK | `align/convergence.md` — cited, never restated |
 
 The provider-owned specs front has no conductor row: its commands handle individual lifecycle
 stages and retain their own authorization and verification boundaries. The same
-conduct-never-reimplement rule binds `/align`, which invokes only the seven local fronts listed
+conduct-never-reimplement rule binds `/align`, which invokes only the eight local fronts listed
 above.
 
 ## Probe before the inventory

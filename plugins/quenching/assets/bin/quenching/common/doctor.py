@@ -26,7 +26,7 @@ from quenching.common.output import OK, emit, refuse
 
 PYTHON_FLOOR = (3, 11)
 LOCAL_PROFILES = (
-    "knowledge", "design", "components", "ops", "proof", "toolchain", "delivery",
+    "knowledge", "design", "components", "ops", "proof", "toolchain", "delivery", "opensource",
 )
 BACKEND_TO_TOOL = {"github": "gh", "azure-boards": "az"}
 TOOL_ORDER = ("gh", "az", "uv", "zensical")
