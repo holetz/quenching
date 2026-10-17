@@ -194,5 +194,179 @@ class EngineTest(ReadinessCase):
             self.assertTrue(location(unsafe).startswith("opaque:"), unsafe)
 
 
+class AdversarialTest(ReadinessCase):
+    """Scanners that misbehave, history that hides things, and evidence nobody settled."""
+
+    def gitleaks(self, rows: list[dict], **env: str) -> tuple[dict, int]:
+        self.install("gitleaks")
+        with mock.patch.dict(os.environ, {"FAKE_GITLEAKS_ROWS": json.dumps(rows), **env}):
+            return self.assess()
+
+    def test_a_secret_removed_from_the_tree_still_blocks_from_history(self):
+        sha = commit(self.root, "deploy/key.pem", f"{SENTINEL}\n")
+        git(self.root, "rm", "-q", "deploy/key.pem")
+        git(self.root, "commit", "-q", "-m", "remove")
+        payload, _ = self.gitleaks([{"File": "deploy/key.pem", "Commit": sha, "Secret": SENTINEL}])
+        [blocker] = payload["blockers"]
+        self.assertEqual((sha, "deploy/key.pem"), (blocker["commit"], blocker["location"]))
+        self.assertNotIn("deploy/key.pem", git(self.root, "ls-files"))
+
+    def test_a_current_tree_secret_in_a_secret_like_path_is_opaque(self):
+        name = f"keys/{SENTINEL}.txt"
+        sha = commit(self.root, name, "x\n")
+        payload, _ = self.gitleaks([{"File": name, "Commit": sha}, {"File": "a.txt", "Commit": SENTINEL}])
+        first, second = payload["blockers"]
+        self.assertTrue(first["location"].startswith("opaque:"))
+        self.assertNotIn("commit", second, "an invalid commit hash is dropped, not echoed")
+
+    def test_a_failing_scanner_falls_through_to_the_next_supported_one(self):
+        sha = commit(self.root, "a.txt", "x\n")
+        self.install("gitleaks", "trufflehog")
+        rows = [{"SourceMetadata": {"Data": {"Git": {"file": "a.txt", "commit": sha}}}, "Raw": SENTINEL}]
+        with mock.patch.dict(os.environ, {"FAKE_GITLEAKS_MODE": "fail", "FAKE_TRUFFLEHOG_ROWS": json.dumps(rows)}):
+            payload, _ = self.assess()
+        states = {row["name"]: (row["state"], row["code"]) for row in payload["scanners"]}
+        self.assertEqual(("failed", "pr-scanner-failed"), states["gitleaks"])
+        self.assertEqual(("used", None), states["trufflehog"])
+        self.assertEqual("trufflehog", self.coverage(payload)["secrets"]["scanner"])
+        self.assertEqual(sha, payload["blockers"][0]["commit"])
+
+    def test_scanner_failures_leave_secrets_unmeasured(self):
+        commit(self.root, "a.txt", "x\n")
+        cases = {"fail": "pr-scanner-failed", "malformed": "pr-scanner-malformed", "sleep": "pr-scanner-timeout"}
+        self.install("gitleaks")
+        for mode, code in cases.items():
+            with self.subTest(mode=mode), mock.patch.dict(os.environ, {"FAKE_GITLEAKS_MODE": mode}):
+                payload, exit_code = self.assess(timeout=1)
+                self.assertEqual(2, exit_code)
+                self.assertEqual("not-measured", self.coverage(payload)["secrets"]["state"])
+                self.assertEqual(code, payload["scanners"][0]["code"])
+
+    def test_malformed_trufflehog_and_reuse_payloads_never_read_clean(self):
+        commit(self.root, "a.txt", "x\n")
+        self.install("trufflehog", "reuse")
+        with mock.patch.dict(os.environ, {"FAKE_TRUFFLEHOG_MODE": "malformed", "FAKE_REUSE_MODE": "malformed"}):
+            payload, code = self.assess()
+        self.assertEqual(2, code)
+        cover = self.coverage(payload)
+        self.assertEqual("not-measured", cover["secrets"]["state"])
+        self.assertEqual("pr-scanner-malformed", cover["attribution"]["code"])
+
+    def test_unsupported_or_unknown_versions_are_refused_without_running(self):
+        commit(self.root, "a.txt", "x\n")
+        self.install("gitleaks", "trufflehog", "reuse")
+        env = {"FAKE_GITLEAKS_VERSION": "8.10.0", "FAKE_TRUFFLEHOG_VERSION": "trufflehog dev",
+               "FAKE_REUSE_VERSION": "reuse 1.1.0", "FAKE_GITLEAKS_MODE": "fail"}
+        with mock.patch.dict(os.environ, env):
+            payload, code = self.assess()
+        self.assertEqual(2, code)
+        self.assertEqual({"gitleaks": "pr-scanner-unsupported", "trufflehog": "pr-scanner-version-unknown",
+                          "reuse": "pr-scanner-unsupported"},
+                         {row["name"]: row["code"] for row in payload["scanners"]})
+        self.assertEqual({"refused"}, {row["state"] for row in payload["scanners"]})
+
+    def test_branches_and_tags_are_the_declared_history_scope(self):
+        sha = commit(self.root, "a.txt", "x\n")
+        git(self.root, "branch", "feature")
+        git(self.root, "tag", "v1")
+        payload, _ = self.assess()
+        self.assertEqual({("refs/heads/feature", sha), ("refs/heads/main", sha), ("refs/tags/v1", sha)},
+                         {(row["ref"], row["commit"]) for row in payload["scope"]["refs"]})
+
+    def test_a_shallow_clone_is_partial_and_keeps_its_findings(self):
+        commit(self.root, "a.txt", "x\n")
+        sha = commit(self.root, "b.txt", "y\n")
+        clone = os.path.join(self.tmp.name, "shallow")
+        git(self.tmp.name, "clone", "-q", "--depth", "1", "file://" + self.root, clone)
+        self.root = clone
+        payload, code = self.gitleaks([{"File": "b.txt", "Commit": sha}])
+        self.assertEqual(2, code)
+        self.assertTrue(payload["scope"]["shallow"])
+        self.assertFalse(payload["scope"]["historyComplete"])
+        self.assertEqual(("partial", "pr-history-incomplete"),
+                         (self.coverage(payload)["secrets"]["state"], self.coverage(payload)["secrets"]["code"]))
+        self.assertEqual(1, len(payload["blockers"]))
+
+    def test_large_generated_and_binary_files_are_warnings_only_where_text(self):
+        commit(self.root, "assets/blob.bin", b"\x00\x01 10.0.0.1 " * 4)
+        commit(self.root, "dist/app.js", "x\n")
+        commit(self.root, "lib/app.min.js", "x\n")
+        with mock.patch("quenching.opensource.readiness.LARGE_BYTES", 32):
+            payload, _ = self.assess()
+        codes = {(row["code"], row["location"]) for row in payload["warnings"]}
+        self.assertIn(("pr-large-file", "assets/blob.bin"), codes)
+        self.assertIn(("pr-generated-artifact", "dist/app.js"), codes)
+        self.assertIn(("pr-generated-artifact", "lib/app.min.js"), codes)
+        self.assertNotIn("pr-internal-identifier", {row["code"] for row in payload["warnings"]})
+
+    def test_internal_identifiers_in_files_and_commit_metadata(self):
+        commit(self.root, "conf/db.yml", "host: db.corp\nreplica: 192.168.1.20\n", email="ana@acme.example")
+        commit(self.root, "README.md", "version 10.0.0.1.2 is not an address\n")
+        payload, _ = self.assess()
+        warnings = {row["code"]: row for row in payload["warnings"]}
+        self.assertEqual("conf/db.yml", warnings["pr-internal-identifier"]["location"])
+        self.assertEqual(1, warnings["pr-identity-in-metadata"]["addresses"])
+        self.assertNotIn("acme", json.dumps(payload))
+
+    def test_missing_attribution_counts_tracked_files_only(self):
+        commit(self.root, "src/a.py", "x = 1\n")
+        pathlib.Path(self.root, "scratch.py").write_text("y\n", encoding="utf-8")
+        self.install("reuse")
+        reuse = {"non_compliant": {"missing_licensing_info": ["src/a.py", "scratch.py"],
+                                   "missing_copyright_info": ["src/a.py"], "missing_licenses": {"MIT": ["src/a.py"]}},
+                 "summary": {"compliant": False}}
+        with mock.patch.dict(os.environ, {"FAKE_REUSE_ROWS": json.dumps(reuse)}):
+            payload, _ = self.assess()
+        attribution = [(r["code"], r.get("location")) for r in payload["blockers"] if r["class"] == "attribution"]
+        self.assertEqual([("pr-attribution-missing", "src/a.py"), ("pr-license-text-missing", None)], attribution)
+        self.assertEqual(1, payload["scope"]["untracked"])
+        self.assertFalse(payload["scope"]["untrackedScanned"])
+
+    def test_incompatible_licenses_block_while_unknown_ones_stay_unmeasured(self):
+        commit(self.root, "a.txt", "x\n")
+        cases = [({"state": "incompatible", "reviewedBy": "Reviewer Ana"}, "measured", ["pr-license-incompatible"]),
+                 ({"state": "unknown", "reviewedBy": "Reviewer Ana"}, "pr-evidence-ambiguous", []),
+                 ({"state": "compatible", "reviewedBy": " "}, "pr-evidence-unreviewed", [])]
+        for entry, expected, blockers in cases:
+            with self.subTest(entry=entry):
+                payload, _ = self.assess(evidence=self.evidence(licenses=entry))
+                cover = self.coverage(payload)["dependency-license"]
+                self.assertEqual(expected, cover["state"] if cover["state"] == "measured" else cover["code"])
+                self.assertEqual(blockers, [r["code"] for r in payload["blockers"]])
+                self.assertNotIn("Reviewer Ana", json.dumps(payload))
+
+    def test_unknown_or_withheld_consent_never_reads_as_granted(self):
+        commit(self.root, "a.txt", "x\n")
+        payload, _ = self.assess(evidence=self.evidence(consent={"state": "withheld", "reviewedBy": "owner"}))
+        self.assertEqual(["pr-consent-withheld"], [r["code"] for r in payload["blockers"]])
+        payload, _ = self.assess(evidence=self.evidence())
+        self.assertEqual("pr-evidence-absent", self.coverage(payload)["history-consent"]["code"])
+        unreadable = os.path.join(self.tmp.name, "broken.json")
+        pathlib.Path(unreadable).write_text(f"{{{SENTINEL}", encoding="utf-8")
+        payload, _ = self.assess(evidence=unreadable)
+        self.assertEqual("pr-evidence-unreadable", self.coverage(payload)["history-consent"]["code"])
+
+    def test_a_scratch_directory_inside_the_target_refuses_the_scanner(self):
+        commit(self.root, "a.txt", "x\n")
+        self.install("gitleaks")
+        with mock.patch.object(tempfile, "tempdir", self.root):
+            payload, _ = self.assess()
+        self.assertEqual("pr-scratch-inside-target", payload["scanners"][0]["code"])
+
+    def test_the_cli_never_prints_the_sentinel_on_any_stream(self):
+        sha = commit(self.root, f"k/{SENTINEL}", "x\n")
+        self.install("gitleaks", "reuse")
+        rows = [{"File": f"k/{SENTINEL}", "Commit": sha, "Secret": SENTINEL}]
+        env = dict(os.environ, FAKE_GITLEAKS_ROWS=json.dumps(rows), FAKE_REUSE_MODE="malformed")
+        cq = pathlib.Path(__file__).resolve().parent.parent / "assets" / "bin" / "cq"
+        for extra in ([], ["--json"]):
+            run = subprocess.run([sys.executable, str(cq), "--root", self.root, "opensource", "readiness", *extra],
+                                 capture_output=True, text=True, env=env)
+            with self.subTest(extra=extra):
+                self.assertEqual(2, run.returncode, run.stderr)
+                self.assertNotIn(SENTINEL, run.stdout + run.stderr)
+                self.assertNotIn(self.tmp.name, run.stdout + run.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()
