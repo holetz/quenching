@@ -44,7 +44,8 @@ non-`cq`, non-`git` command is run.
   `git stash list` and `git worktree list`; any change is reported, never silently reverted.
 - **Cost.** At most 3 workers at a time; each brief ≤ 1,500 characters, each return ≤ 800 words.
   Wait for completion notifications instead of polling. One correctness review per epic, never per
-  spec. The conductor reads summaries, never diffs or file dumps.
+  spec. The conductor reads summaries, never diffs or file dumps. The Codex review of step 6 is one
+  call per epic and its tokens are reported, or `not measured`.
 - **The deadline binds launches.** With `--until`, no worker starts if it cannot finish before the
   deadline; what is in flight at the deadline is reported `continue` with its state.
 
@@ -139,5 +140,7 @@ Neither → the next round starts at step 1.
 Print: per epic, the merged specs with their PRs; the human epic and its members; every decision
 this session took as the delegated owner; specs in flight at the deadline, as `continue` with their
 state; second stalls; and the tokens the run spent per model and agent type, read with
-`cq components session cost` and never summed across tiers.
+`cq components session cost` and never summed across tiers; plus the Codex review of each epic —
+ran or fallback with its reason, findings by origin, dropped unreproduced count, and its tokens or
+`not measured`, kept apart from the Claude tiers.
 **Done when:** the report is printed.
