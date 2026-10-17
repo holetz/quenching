@@ -7,7 +7,7 @@ tags: [workflows, specs, configuration, provider, plugin]
 timestamp: 2026-10-17
 audience: both
 authority: current
-source: spec 1065 (task 3.1) — the namespaced envelope and migration refusal are implemented and covered by the source test matrix; extended by spec 1075 (2026-09-01) with `shared.gitConventions`, the `git` pillar's per-artifact writing directives; extended by spec 1405 (2026-10-08) with `shared.regenerablePaths`; by spec 1907 (2026-10-17) with the user layer; by spec 1908 (2026-10-17) with the `quenching` branch layer and `cq config show --effective`; by spec 1911 (2026-10-17) with `shared.autonomy`; by spec 1910 (2026-10-17) with `shared.okfValidate`, `shared.contextBudgets` and `specs.chat`; by spec 1909 (2026-10-17) with the seed (`cq config init`) and the missing-keys check
+source: spec 1065 (task 3.1) — the namespaced envelope and migration refusal are implemented and covered by the source test matrix; extended by spec 1075 (2026-09-01) with `shared.gitConventions`, the `git` pillar's per-artifact writing directives; extended by spec 1405 (2026-10-08) with `shared.regenerablePaths`; by spec 1907 (2026-10-17) with the user layer; by spec 1908 (2026-10-17) with the `quenching` branch layer and `cq config show --effective`; by spec 1911 (2026-10-17) with `shared.autonomy`; by spec 1910 (2026-10-17) with `shared.okfValidate`, `shared.contextBudgets` and `specs.chat`; by spec 1909 (2026-10-17) with the seed (`cq config init`) and the missing-keys check; by spec 1912 (2026-10-17) aligning the standard to the loader (no second repository path, `shared.codex`, `delivery`, `artifactLanguage`/`card`/`cardAt`, the settings read outside the file and `cq doctor --setup`)
 maintainer: quenching
 ---
 
@@ -15,7 +15,7 @@ maintainer: quenching
 
 <!-- rules -->
 
-The target repository has one configuration home. It is a plain JSON object whose root carries
+The target repository has one configuration file; the layers around it (user, `quenching` branch) and the few settings read outside it are named below. It is a plain JSON object whose root carries
 provider-neutral metadata and explicit namespaces for settings owned by a front or shared by more
 than one pillar. The file is configuration, not a second specs store: specs remain
 on the `quenching` branch (or, deprecated, in the selected tracker).
@@ -28,9 +28,9 @@ The Claude projection reads:
 .claude/quenching.json
 ```
 
-The file is at the root of the target repository, beside the rest of `.claude/`. The Codex
-projection uses the corresponding `.agents/quenching.json` home; both projections carry the same
-envelope and namespace contract. A leftover `/.specs/config.json` is diagnostic residue and is
+The file is at the root of the target repository, beside the rest of `.claude/`. It is the only
+repository file the loader reads (`common/config.py`): no other path is discovered, whichever
+projection runs (the Codex projection included). A leftover `/.specs/config.json` is diagnostic residue and is
 never merged with this file.
 
 There is no per-front configuration file. One repository file and one namespace owner keep a
@@ -138,8 +138,9 @@ Ownership follows the meaning of the key, not the module that happens to read it
 | Namespace | Owned declarations | Boundary |
 | --- | --- | --- |
 | root | `backend` | legacy/provider metadata only; provider selection comes from `origin` |
-| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `autonomy`, `workHost`, `okfValidate`, `contextBudgets` | settings used by more than one local surface or by isolation |
-| `specs` | Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes`, `chat` | provider-owned plan lifecycle and proposal conventions |
+| `shared` | `worktreeSetup`, `sharedPaths`, `regenerablePaths`, `hooks`, `profiles`, `gitConventions`, `autonomy`, `workHost`, `okfValidate`, `contextBudgets`, `codex` | settings used by more than one local surface or by isolation |
+| `specs` | Azure state and placement mappings, `subjects`, `tagCatalog`, `workItemTypes`, `chat`, `artifactLanguage`, `card`, `cardAt` | provider-owned plan lifecycle and proposal conventions |
+| `delivery` | `provider` | the delivery front's explicit provider declaration; it chooses no pipeline policy |
 | `ops` | `opsRoot`, `router`, `registry` | operations inventory, router and generated registry |
 | `proof` | `proofRoot`, `layers`, `measuredRoots`, `proofExclusions`, `ratchetPath` | verification inventory, layers and coverage evidence |
 
@@ -147,6 +148,30 @@ The shared loader discovers the home, parses JSON, derives provider metadata, an
 envelope. It does not interpret a front's values. Each adapter validates and resolves only its own
 namespace. `ops`, `proof`, and `git` consume the common boundary directly; they do not import the
 specs adapter to obtain shared configuration.
+
+## The `shared.codex` block
+
+`shared.codex` configures `cq codex` (`codex/config.py`): `crossReview` (`auto` · `off`),
+`maxUsedPercent` (`{primary: 80, secondary: 90}`), `timeoutSeconds` (`900`), `model` (`gpt-6-astra`)
+and the `executor` object. Its keys and their effect are owned by
+[codex-pillar.md](../architecture/codex-pillar.md); a leaf of the wrong shape falls back to its
+default and is named in the payload's warnings, and `cq config show --effective` lists every leaf.
+`delivery.provider` is read by `delivery/config.py`; `specs.artifactLanguage`, `specs.card` and
+`specs.cardAt` by `specs/config.py` (the last three may also sit on the `quenching` branch).
+
+## Settings read outside the file
+
+Three things configure the plugin without being keys of `.claude/quenching.json`, and none is a
+second home for those keys:
+
+- `.claude/hooks/hooks-config.json` and `hooks-config.local.json` carry the checker's `okfValidate`
+  block; `shared.okfValidate` wins key by key (`knowledge/config.py`).
+- `~/.config/quenching/projects.json` is the portal's registry of projects (`portal/registry.py`).
+- Constants in code: the `git` and `gh` timeouts and the probe's app-server deadline are not keys.
+
+`cq doctor --setup` previews a minimal `.claude/quenching.json` from the detected provider and
+fronts, and `--write` confirms it. It records the deprecated root `backend` of the detected tracker;
+`cq config init` (above) is the seed to use, because it writes `backend: git` and every default.
 
 ## The autonomy block
 
@@ -315,6 +340,5 @@ destination namespace named by `sp-config-unscoped`, then run the owning front's
 configuration is ready only when the refusal disappears and the front-specific defaults or
 required declarations are evaluated normally.
 
-This standard defines the source projection's contract. Its Codex projection must preserve the
-same ownership, refusal payload and no-fallback rule while using `.agents/quenching.json` as its
-configuration home.
+This standard defines the contract for every projection: the Codex projection preserves the same
+ownership, refusal payload and no-fallback rule and reads the same `.claude/quenching.json`.
