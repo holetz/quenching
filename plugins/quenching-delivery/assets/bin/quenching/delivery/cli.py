@@ -6,6 +6,7 @@ import argparse
 from quenching.common.front import build_parser as build_front_parser, resolve_root
 from quenching.common.output import emit, refuse
 from quenching.common.version import VERSION
+from quenching.controls.evaluate import owner_controls, summary_line
 from quenching.delivery.doctor import doctor, inspect_delivery
 from quenching.delivery.inventory import build_inventory
 
@@ -42,11 +43,13 @@ def _status_payload(payload: dict) -> dict:
         "inventory": payload["inventory"],
         "findings": payload["findings"],
         "ok": payload["ok"],
+        "controls": owner_controls("delivery", payload["root"]),
     }
 
 
 def _human_status(payload: dict) -> str:
-    return f"delivery status — {payload['root']} ({payload['applicability']['state']})"
+    return (f"delivery status — {payload['root']} ({payload['applicability']['state']}); "
+            f"{summary_line(payload['controls'])}")
 
 
 def main(argv: list[str]) -> int:

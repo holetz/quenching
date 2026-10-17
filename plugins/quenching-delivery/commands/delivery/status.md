@@ -49,6 +49,7 @@ Report one compact table:
 | Structural | `delivery-trigger-unreachable`, `delivery-stage-unreachable`, `delivery-checkout-missing`, `delivery-setup-missing`, `delivery-runtime-drift`, `delivery-release-unreachable` |
 | Judgement | `delivery-provider-policy`, `delivery-environment-policy`, `delivery-publish-scope`, `delivery-permission-policy` |
 | Counts | errors, warnings and overall `ok` state |
+| Catalog controls | the `controls` block — each catalog control id, its requirement ids with `present`, `missing`, `not-measured`, `refused` or `retired`, and the evidence paths. `present` is candidate evidence, never conformance; the block never changes `ok` or the exit code |
 
 Preserve every finding's code, band, severity, message and path. Distinguish no delivery signal
 (`not-applicable`) from an applicable provider whose workflow shape was not measured. For an

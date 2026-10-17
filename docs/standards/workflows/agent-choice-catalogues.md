@@ -4,10 +4,10 @@ title: Agent-choice catalogues
 description: The one shape `subjects`, `tagCatalog` and `workItemTypes` all share — an abstract key mapping to a human-facing description an agent reads to PROPOSE and a human CONFIRMS — why the three converged on it independently, the one invariant that shape enforces on every consumer, and why a fourth catalogue should reuse it rather than invent its own review mechanism
 resource: plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/create.md
 tags: [workflows, specs, configuration, agent-choice]
-timestamp: 2026-08-11
+timestamp: 2026-10-16
 audience: both
 authority: current
-source: suportar-tipo-workitem-azure-por-tags plan (task 6.3) — distilled once `workItemTypes` made a third independently-arrived-at instance of the shape `subjects` and `tagCatalog` already had; the pattern was proven live (task 4.3) against a real Azure Boards project before this standard named it
+source: suportar-tipo-workitem-azure-por-tags plan (task 6.3) — distilled once `workItemTypes` made a third independently-arrived-at instance of the shape `subjects` and `tagCatalog` already had; the pattern was proven live (task 4.3) against a real Azure Boards project before this standard named it; spec 1754 decision sheet as the default question form (2026-10-16)
 maintainer: quenching
 ---
 
@@ -95,6 +95,7 @@ REQUIRES an answer and has nowhere else to fall.
 
 A future key that maps an abstract choice to a description an agent proposes from should reuse
 this shape rather than invent a fourth review mechanism: one abstract key, a `description` an
-agent reads, an `AskUserQuestion` confirmation, and a closed set at whichever boundary that
+agent reads, a human confirmation — a decision sheet by default, the `AskUserQuestion` menu when
+the human asks for one — and a closed set at whichever boundary that
 catalogue's own consumer needs one. What varies is only the extra fields the catalogue's own job
 needs beside `description` — never the confirmation contract around it.

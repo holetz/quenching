@@ -62,6 +62,7 @@ Report one compact table:
 | Mechanical | `pf-unmarked` and any future generated-proof finding, reported by code |
 | Structural | `pf-stop-first`, `pf-loose-fixture`, `pf-fat-conftest`, `pf-no-floor`, and applicable `pf-order-unproven` findings |
 | Judgement | `pf-unlayered`, `pf-empty-layer`, `pf-unmeasured-surface`, `pf-no-ci`, `pf-untested-entrypoint`, and non-structural order findings |
+| Catalog controls | the `controls` block — each catalog control id, its requirement ids with `present`, `missing`, `not-measured`, `refused` or `retired`, and the evidence paths. `present` is candidate evidence, never conformance; the block never changes `ok` or the exit code |
 
 Preserve each finding code, path, severity, evidence and disposition. If no layers are declared,
 say so and report the unlayered modules without inferring a taxonomy. If `ops` is absent, include

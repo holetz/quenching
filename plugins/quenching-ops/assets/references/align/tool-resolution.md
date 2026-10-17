@@ -2,7 +2,7 @@
 
 Front-neutral: every command body shells out to the same single entry point, `cq`, naming its
 front as the first argument. The fronts are `specs`, `git`, `knowledge`, `components`, `design`,
-`ops`, `proof`, `toolchain`, `delivery` and `security`; all resolve it the same way.
+`ops`, `proof`, `toolchain`, `delivery`, `security` and `codex`; all resolve it the same way.
 
 ## Resolving the tool
 
@@ -17,7 +17,7 @@ to reach the tool.
 
 The command is followed by the front and its subcommand: `cq specs ...`, `cq git ...`,
 `cq knowledge ...`, `cq components ...`, `cq design ...`, `cq ops ...`, `cq proof ...`,
-`cq toolchain ...`, `cq delivery ...`, `cq security ...`. **There is no second form and no third
+`cq toolchain ...`, `cq delivery ...`, `cq security ...`, `cq codex ...`. **There is no second form and no third
 rung**: never look for a copy under a target's `.claude/hooks/`, never install one there, never
 merge anything into a target's `.claude/settings.json` to make a tool resolve.
 

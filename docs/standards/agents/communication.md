@@ -4,10 +4,10 @@ title: Agent communication
 description: The two language bands an agent writes in — artifacts, English in this repository and declared per target by a standard or the artifactLanguage config key, and conversation in the one BCP-47 tag the root harness line declares — and the conduct contract that holds whether or not a language is declared
 resource: /docs/**
 tags: [agents, language, communication, harness]
-timestamp: 2026-10-06
+timestamp: 2026-10-16
 audience: both
 authority: background
-source: spec plan/declare-repo-body-language — binds the loose language clause that six standards and shipped references deferred to without any of them defining it
+source: spec plan/declare-repo-body-language — binds the loose language clause that six standards and shipped references deferred to without any of them defining it; spec 1754 decision sheet as the default question form (2026-10-16)
 maintainer: quenching
 ---
 
@@ -141,7 +141,7 @@ drawn explicitly:
 | Ground | Owner | This doc |
 | --- | --- | --- |
 | What one command promises, refuses and routes elsewhere | that command's own body and `description` under `plugins/quenching/commands/**` | never restates it |
-| The mechanics of actually asking — how a question is posed, accumulated and applied | `specs-develop/questions.md` §The four shared mechanics (`plugins/quenching/assets/references/specs-develop/questions.md`) | cites it |
+| The mechanics of actually asking — how a question is posed (the decision sheet, by default), accumulated and applied | `specs-develop/questions.md` §The four shared mechanics (`plugins/quenching/assets/references/specs-develop/questions.md`) | cites it |
 | How commands, hooks and agent definitions are classified, authored, budgeted and swept | [../automation/](../automation/index.md) | cites it |
 
 What is left — and what this doc owns — is only what holds in **every** task, command or not. That

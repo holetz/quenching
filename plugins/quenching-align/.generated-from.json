@@ -17,7 +17,8 @@
   "generatedSupport": {
     "packages": [
       "common",
-      "session"
+      "session",
+      "controls"
     ],
     "references": [
       "align",

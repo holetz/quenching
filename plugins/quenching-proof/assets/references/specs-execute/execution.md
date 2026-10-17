@@ -137,11 +137,13 @@ Two rules bound the loop:
 **`--block` requires `--reason`** (the tool refuses without one).
 
 **A regression test's RED is measured in a base worktree, never with `git stash`.** To prove a
-test fails without the fix, add a worktree of the base (`git worktree add <path> <base>`), copy the
+test fails without the fix, add a worktree of the base (`git worktree add --detach .quenching/red <base>`; `--detach` because the base is checked out in the primary), copy the
 test in and run it there: the base does not contain the fix, so the test fails with no patch to
 apply (a reverse patch of the production diff cannot apply to a tree that lacks it). The stash,
 checkout or reset this replaces would erase other agents' work in the shared checkout. Record the
 result as one evidence line in the task's report: `RED: <test> fails without <fix> (copied test, base worktree)`.
+
+**Remove the RED worktree before returning**, never with `--force` and only at the fixed path you created: make the tree match the base again (delete the copied test if it is new; when it overwrote a file that already exists in the base, rewrite that file with `git -C .quenching/red cat-file --filters HEAD:<file> > .quenching/red/<file>`, never checkout or restore; the filters restore checkout bytes, including EOL and configured smudge conversions), run `git worktree remove .quenching/red`, then `rmdir .quenching` if empty. A leftover worktree or empty `.quenching/` under the spec's worktree keeps `retire` from retiring it.
 
 A human resumes a blocked task by fixing the cause and un-blocking it —
 `cq specs task --spec <id> --uncheck <id>` returns it to `- [ ]` — after changing something,

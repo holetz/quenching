@@ -35,12 +35,13 @@ outside this command). Never check out the base here.
 stopped for lack of one.
 
 ### 2. Offer the strategy, and the branch's fate under squash
-Show the trade in one line each, from §Merge strategies, and ask with **AskUserQuestion**:
+Show the trade in one line each, from §Merge strategies, and put it on ONE decision sheet ([specs-develop/questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §1) that ends the turn; the options
+of `D1`, with A the recommended one:
 
-- **merge commit** *(default)* — every per-task commit stays on the base, one extra commit.
-- **squash** — one commit on the base; the per-task commits survive only on the branch itself.
-- **rebase** — linear history, per-task commits preserved through the rewrite.
-- **fast-forward** — nothing rewritten or added; only possible when the base has not moved.
+- **A (recommended) merge commit** — every per-task commit stays on the base, one extra commit.
+- **B squash** — one commit on the base; the per-task commits survive only on the branch itself.
+- **C rebase** — linear history, per-task commits preserved through the rewrite.
+- **D fast-forward** — nothing rewritten or added; only possible when the base has not moved.
 
 **Squash chosen → offer, separately, not to delete the branch** — deleting it strands every commit
 subject the archived record resolves against. The offer records the human's preference, but this

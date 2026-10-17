@@ -74,6 +74,7 @@ The verifier and align use these stable codes:
 | `op-disabled-check` | A verification call is commented out inside an entry point's control flow. | Judgement |
 | `op-orphan` | An entry point is present in the operations tree but is not reachable from the canonical router. | Judgement |
 | `op-no-router` | The repository has no single declared router for its normalized operations surface. | Structural |
+| `op-registry-malformed` | The registry file is unreadable as a registry: its generated zone is duplicated or the file is not valid UTF-8. | Judgement |
 
 <!-- rationale -->
 

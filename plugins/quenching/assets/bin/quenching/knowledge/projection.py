@@ -29,6 +29,7 @@ GLOSSARY_REL = "glossary.md"
 # `assets/` is pruned from the OKF walk, and `.txt` keeps the generator from rendering the
 # 14k-word term list as a page of its own.
 DEFAULT_SNIPPET = "assets/glossary-abbreviations.txt"
+BULLET_SPLIT = re.compile(r"^(?P<label>\[[^\]]*\]\([^)]*\)|\*\*.+?\*\*|.+?) — (?P<definition>.*)$")
 LINK_LABEL = re.compile(r"^\[(?P<label>.*)\]\((?P<link>[^)]+)\)$")
 # An abbr definition is plain text: a link inside one would be rendered as literal syntax
 # in the tooltip, so the label survives and the target is dropped.
@@ -97,10 +98,10 @@ def parse_glossary(markdown: str) -> list[GlossaryEntry]:
         if not in_terms:
             continue
         candidate = line.strip()
-        if candidate.startswith(("- ", "* ")) and " — " in candidate:
-            label, definition = candidate[2:].rsplit(" — ", 1)
+        split = BULLET_SPLIT.match(candidate[2:]) if candidate.startswith(("- ", "* ")) else None
+        if split:
             flush()
-            pending = (label, [definition])
+            pending = (split.group("label"), [split.group("definition")])
             continue
         if pending is not None and line.strip() and not line.lstrip().startswith(("- ", "* ", "#")):
             pending[1].append(line.strip())

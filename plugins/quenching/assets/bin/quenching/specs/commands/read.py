@@ -22,6 +22,17 @@ from quenching.specs.parse.tasks import task_progress
 from quenching.specs.schema import canonical_headings, load_schema
 
 
+def epic_meta(row_id, fm: dict) -> dict:
+    """`epic` and `workItemType` as stored in frontmatter; absent is `null`. `epic` takes the
+    identifier type of the row's `id`."""
+    epic = fm.get("epic")
+    epic = None if epic in (None, "") else str(epic).strip().lstrip("#") or None
+    if epic is not None and isinstance(row_id, int) and epic.isdigit():
+        epic = int(epic)
+    wit = fm.get("workItemType")
+    return {"epic": epic, "workItemType": None if wit in (None, "") else str(wit)}
+
+
 def cmd_list(args, root: str, out: Emitter) -> int:
     backend, err = open_backend(root)
     if err:
@@ -32,6 +43,7 @@ def cmd_list(args, root: str, out: Emitter) -> int:
             "id": s["id"], "title": s.get("title", ""), "phase": s["phase"],
             "state": s.get("state"), "path": display_locator(s["path"], root),
             "records": s.get("records", []),
+            **epic_meta(s["id"], {"epic": s.get("epic"), "workItemType": s.get("workItemType")}),
         } for s in backend.list_specs(phase, lean=True)]
         unavailable = ["date", "stage", "outcome", "verification",
                        "ready", "sections", "tasks", "unreadable"]
@@ -80,6 +92,7 @@ def cmd_list(args, root: str, out: Emitter) -> int:
             "unreadable": unreadable,
             "tasks": {"checked": checked, "blocked": blocked, "total": total},
             "path": display_locator(s["path"], root),
+            **epic_meta(s["id"], info["frontmatter"]),
         })
     if args.json:
         print(json.dumps({"ok": True, **front_fields(root), "count": len(rows), "specs": rows},

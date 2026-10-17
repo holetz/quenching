@@ -8,7 +8,7 @@ allowed-tools: Bash(cq:*), Read, Agent, Task
 # /quenching-specs:specs:orchestrate — conduct an epic or a queue
 
 **Input**: `$ARGUMENTS` — an epic id or a list of spec ids, and optionally `--autonomous`. Empty or ambiguous → run
-`cq specs list --json` and ask which with **AskUserQuestion**.
+`cq specs list --json` and ask which on a decision sheet ([questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared mechanics §1).
 
 This command is a launcher. The protocol (waves, routing, budgets, acceptance, audit) lives in the
 `orchestrator` agent definition, `plugins/quenching/agents/orchestrator.md`; do not restate it.
@@ -21,9 +21,11 @@ Resolve `cq` per [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/referen
 **Done when:** the epic id or the list of spec ids is verified to exist.
 
 ### 2. Check who can run alone
-Split the set from the `show` payloads: **runs alone** is a spec with `approved` recorded or
+Read each spec's metadata with `cq specs status --spec <id> --json`: `complexity` comes from
+`records.priority.complexity` and `approved` from `records.approved`. Split the set from these
+`status` payloads: **runs alone** is a spec with `approved` recorded or
 `complexity: low`; **needs a human** is `medium` or above with no `approved`. Nothing needs a
-human → go to step 3. Otherwise ask once with **AskUserQuestion**, naming the specs on each side:
+human → go to step 3. Otherwise ask once on a decision sheet, naming the specs on each side:
 
 - **Develop now** — run `/quenching-specs:specs:develop <id>` in this session, one spec after another,
   for the specs that need a human, then launch everything. A develop of a `medium` spec costs about

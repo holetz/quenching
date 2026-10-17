@@ -1,19 +1,11 @@
 "use strict";
-/* Quenching spec portal. No build, no CDN, no innerHTML: every node is created with
+/* Quenching spec portal. No build, no CDN, no HTML strings: every node is created with
    textContent, so spec text can never inject markup. */
 (() => {
-  const params = new URLSearchParams(location.search);
-  const TOKEN = params.get("token") || sessionStorageGet("qtoken") || "";
-  if (TOKEN) { sessionStorageSet("qtoken", TOKEN); }
-  if (params.has("token")) history.replaceState(null, "", location.pathname + location.hash);
-
-  function sessionStorageGet(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
-  function sessionStorageSet(k, v) { try { sessionStorage.setItem(k, v); } catch (e) { /* private mode */ } }
-
   const $ = (s) => document.querySelector(s);
   const state = { specs: [], stages: [], fetchedAt: 0, ttl: 5, writable: false, why: "",
                   filters: { subject: "", tag: "", type: "", assignee: "", complexity: "" },
-                  epics: { supported: false, epics: [] }, busy: false };
+                  epics: { supported: false, epics: [] }, human: null, busy: false };
 
   /* ── helpers ─────────────────────────────────────────────────────────────── */
   function h(tag, attrs, ...kids) {
@@ -34,13 +26,24 @@
   }
   function safeHref(url) { return /^https?:\/\//i.test(url) ? url : ""; }
 
+  /* Change token: the list reads carry an ETag. The server answers no-store, so the page keeps
+     the validator and the body itself and sends If-None-Match; a 304 reuses the kept body. */
+  const validated = {};
+  let changed = false;
   async function api(path, opts = {}) {
-    const init = { method: opts.body ? "POST" : "GET", headers: { "X-Quenching-Token": TOKEN } };
+    const init = { method: opts.body ? "POST" : "GET", headers: {}, credentials: "same-origin" };
+    const kept = !opts.body && /^(specs|epics|human)(\?|$)/.test(path) ? validated[path] : null;
+    if (kept) init.headers["If-None-Match"] = kept.etag;
     if (opts.body) { init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(opts.body); }
     let res, data;
-    try { res = await fetch("/api/" + path, init); data = await res.json(); }
-    catch (e) { throw { code: "network", message: "the portal server is not reachable" }; }
+    try {
+      res = await fetch("/api/" + path, init);
+      if (res.status === 304 && kept) return kept.data;
+      data = await res.json();
+    } catch (e) { throw { code: "network", message: "the portal server is not reachable" }; }
     if (!res.ok || data.ok === false) throw { code: data.code || "http-" + res.status, message: data.message || res.statusText, data };
+    const etag = res.headers.get("ETag");
+    if (etag && !opts.body && /^(specs|epics|human)(\?|$)/.test(path)) { validated[path] = { etag, data }; changed = true; }
     return data;
   }
   function toast(msg, ok) {
@@ -105,15 +108,41 @@
 
   /* ── data ────────────────────────────────────────────────────────────────── */
   async function load(refresh) {
+    changed = false;
+    const before = state.human ? state.human.count : null;
     const data = await api("specs" + (refresh ? "?refresh=1" : ""));
     state.specs = data.specs; state.stages = data.stages; state.ttl = data.ttlSeconds;
-    state.fetchedAt = data.fetchedAt * 1000;
+    state.fetchedAt = Date.now();
     try {
       const ep = await api("epics");
       state.epics = ep;
     } catch (e) { state.epics = { supported: false, epics: [] }; }
     $("#nav-epics").hidden = !state.epics.supported;
+    try { state.human = await api("human"); } catch (e) { state.human = null; }
+    paintHumanCount();
+    notifyGrowth(before, state.human ? state.human.count : 0);
     tickFreshness();
+    return changed;
+  }
+  /* Opt-in browser notification (off by default, no Claude permission): only when the queue grows. */
+  function notifyOn() { return localStorageGet("qnotify") === "1" && typeof Notification !== "undefined" && Notification.permission === "granted"; }
+  function localStorageGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function localStorageSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } }
+  function notifyGrowth(before, now) {
+    if (before == null || now <= before || !notifyOn()) return;
+    try { new Notification("Quenching specs", { body: `${now} ${now === 1 ? "spec waits" : "specs wait"} for the human` }); } catch (e) { /* unsupported */ }
+  }
+  function paintNotify() {
+    const b = $("#notify");
+    if (typeof Notification === "undefined") { b.hidden = true; return; }
+    b.textContent = notifyOn() ? "Notifications: on" : "Notifications: off";
+    b.setAttribute("aria-pressed", notifyOn() ? "true" : "false");
+  }
+  async function toggleNotify() {
+    if (notifyOn()) { localStorageSet("qnotify", "0"); paintNotify(); return; }
+    const perm = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
+    if (perm === "granted") localStorageSet("qnotify", "1"); else toast("Notifications were not allowed by the browser.");
+    paintNotify();
   }
   async function loadConfig() {
     try {
@@ -134,7 +163,7 @@
   }
   async function refresh(force) {
     $("#refresh").disabled = true;
-    try { await load(force); await render(); } catch (e) { fail(e); } finally { $("#refresh").disabled = false; }
+    try { const did = await load(force); if (force || did) await render(); } catch (e) { fail(e); } finally { $("#refresh").disabled = false; }
   }
 
   /* ── views ───────────────────────────────────────────────────────────────── */
@@ -192,6 +221,10 @@
   }
   function anyFilter() { return Object.values(state.filters).some(Boolean); }
 
+  function stagePill(stage) {
+    return h("span", { class: "chip stage-" + stage }, stage);
+  }
+
   function viewList() {
     const plans = state.specs.filter((s) => s.phase === "plans").sort((a, b) => a.rank - b.rank);
     const visible = filtered().filter((s) => s.phase === "plans").sort((a, b) => a.rank - b.rank);
@@ -208,7 +241,7 @@
         } },
         h("td", { class: "num" }, s.rank),
         h("td", {}, h("a", { href: "#/spec/" + s.id }, `${s.id} · ${s.title}`)),
-        h("td", {}, s.stage), h("td", {}, cardMeta(s)),
+        h("td", {}, stagePill(s.stage)), h("td", {}, cardMeta(s)),
         h("td", { class: "grip" },
           h("button", { type: "button", disabled: !canDrag || idx === 0, "aria-label": `Move ${s.id} up`, on: { click: () => step(plans, s.id, -1) } }, "▲"),
           h("button", { type: "button", disabled: !canDrag || idx === visible.length - 1, "aria-label": `Move ${s.id} down`, on: { click: () => step(plans, s.id, 1) } }, "▼")));
@@ -240,11 +273,82 @@
     if (focusId != null) { const b = document.querySelector(`tr[data-id="${focusId}"] button:not(:disabled)`); if (b) b.focus(); }
   }
 
+  function epicItem(it, critical) {
+    const on = critical.includes(it.label);
+    return h("li", { class: "wave-item" + (on ? " critical" : ""), "data-label": it.label },
+      h("div", {}, h("strong", {}, it.label), " ", it.spec ? h("a", { href: "#/spec/" + it.spec }, it.title) : it.title),
+      h("div", { class: "meta" }, h("span", { class: "chip st-" + it.status }, it.status), on ? h("span", { class: "chip crit" }, "critical path") : null),
+      it.after.length ? h("div", { class: "meta" }, "after: " + it.after.join(", ") + (it.waitingOn.length ? " (waiting on " + it.waitingOn.join(", ") + ")" : "")) : null);
+  }
+
   function viewEpics() {
     return state.epics.epics.map((e) => h("section", { class: "panel" },
       h("div", { class: "sechead" }, h("h2", {}, h("a", { href: "#/spec/" + e.id }, `${e.id} · ${e.title}`)), h("span", {}, `${e.done}/${e.total} done`)),
       e.total ? h("div", { class: "meta" }, h("span", { class: "bar", role: "img", "aria-label": `${e.done} of ${e.total} children archived` }, h("i", { style: `width:${Math.round(100 * e.done / e.total)}%` }))) : h("p", { class: "empty" }, "no children yet"),
-      h("ul", {}, e.children.map((c) => h("li", {}, h("a", { href: "#/spec/" + c.id }, `${c.id} · ${c.title}`), " ", h("span", { class: "chip" }, c.stage))))));
+      e.cycle ? h("p", { class: "bad", role: "alert" }, "Dependency cycle: " + e.cycle.join(" → ")) : null,
+      e.criticalPath.length ? h("p", { class: "meta" }, "Critical path: " + e.criticalPath.join(" → ")) : null,
+      e.items.length
+        ? h("div", { class: "waves" }, e.groups.map((g) => h("div", { class: "wave" },
+          h("h3", {}, `Wave ${g.group}${g.title ? " · " + g.title : ""}`, " ", h("span", { class: "meta" }, `${g.done}/${g.total}`)),
+          h("ul", {}, e.items.filter((it) => it.group === g.group).map((it) => epicItem(it, e.criticalPath))))))
+        : h("ul", {}, e.children.map((c) => h("li", {}, h("a", { href: "#/spec/" + c.id }, `${c.id} · ${c.title}`), " ", stagePill(c.stage))))));
+  }
+
+  /* ── decidir com o humano ────────────────────────────────────────────────── */
+  function paintHumanCount() {
+    const n = state.human ? state.human.count : 0;
+    $("#human-count").textContent = n;
+    $("#human-count").classList.toggle("hot", n > 0);
+    document.title = (n > 0 ? `(${n}) ` : "") + "Quenching specs";
+    const c = document.createElement("canvas");
+    c.width = c.height = 32;
+    const g = c.getContext && c.getContext("2d");
+    if (!g) return;
+    g.fillStyle = n > 0 ? "#b4410a" : "#5f5c56";
+    g.beginPath(); g.arc(16, 16, 15, 0, 2 * Math.PI); g.fill();
+    g.fillStyle = "#ffffff"; g.font = "bold 20px sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(n > 99 ? "99" : String(n), 16, 17);
+    $("#favicon").href = c.toDataURL("image/png");
+  }
+  let drawerOpener = null;
+  function closeDrawer() {
+    const d = $("#drawer");
+    if (d.hidden) return;
+    d.hidden = true; d.replaceChildren();
+    if (drawerOpener && drawerOpener.isConnected) drawerOpener.focus();
+    drawerOpener = null;
+  }
+  async function openDrawer(id, opener) {
+    drawerOpener = opener;
+    const d = $("#drawer");
+    let det;
+    try { det = await api("specs/" + encodeURIComponent(id)); } catch (e) { fail(e); return; }
+    const problem = det.sections.find((x) => x.heading === "Problem");
+    d.replaceChildren(
+      h("div", { class: "sechead" }, h("h2", { id: "drawer-title" }, `${det.spec.id} · ${det.spec.title}`),
+        h("button", { type: "button", id: "drawer-close", on: { click: closeDrawer } }, "Close (Esc)")),
+      h("div", { class: "meta" }, stagePill(det.spec.stage), " ", h("a", { href: "#/spec/" + det.spec.id }, "open the whole spec")),
+      h("h3", {}, "Problem"),
+      problem && problem.state !== "absent" ? markdown(problem.body) : h("p", { class: "empty" }, "no Problem written"));
+    d.hidden = false;
+    $("#drawer-close").focus();
+  }
+  function humanRow(id, title, stage, extra, label) {
+    const btn = id ? h("button", { type: "button", class: "link", on: { click: (e) => openDrawer(id, e.currentTarget) } }, `${id} · ${title}`) : h("span", {}, `${label || "?"} · ${title}`);
+    return h("li", {}, btn, " ", stagePill(stage), extra);
+  }
+  function viewHuman() {
+    const hu = state.human;
+    if (!hu) return h("p", { class: "empty" }, "The waiting list could not be read.");
+    const list = (title, rows, empty) => h("section", { class: "panel" },
+      h("div", { class: "sechead" }, h("h2", {}, title), h("span", {}, rows.length)),
+      rows.length ? h("ul", { class: "humanlist" }, rows) : h("p", { class: "empty" }, empty));
+    return [
+      h("div", { class: "hero", role: "status" }, h("strong", { class: "heronum" }, hu.count),
+        h("span", {}, hu.count === 1 ? "spec waits for the human" : "specs wait for the human")),
+      list("Open in human-decision epics", hu.epicMembers.map((m) => humanRow(m.id, m.title, m.stage, h("span", { class: "meta" }, ` epic ${m.epic} · ${m.label}`), m.label)), "no open decision"),
+      list("Blocked tasks", hu.blocked.map((b) => humanRow(b.id, b.title, b.stage, h("div", { class: "bad" }, b.reasons.map((r) => `${r.task}: ${r.reason || "(no reason)"}`).join("; ")))), "nothing blocked"),
+      list("Ready, awaiting approval", hu.awaitingApproval.map((r) => humanRow(r.id, r.title, r.stage)), "nothing to approve")];
   }
 
   async function viewDetail(id) {
@@ -324,11 +428,12 @@
     let r;
     try { r = await api("search?q=" + encodeURIComponent(q)); } catch (e) { fail(e); return h("p", {}, "Search failed."); }
     return h("section", { class: "panel" }, h("h2", {}, `${r.count} result(s) for "${q}"`),
-      h("ul", {}, r.results.map((x) => h("li", {}, h("a", { href: "#/spec/" + x.id }, `${x.id} · ${x.title}`), " ", h("span", { class: "chip" }, x.stage), x.snippet ? h("div", { class: "meta" }, "…" + x.snippet + "…") : null))));
+      h("ul", {}, r.results.map((x) => h("li", {}, h("a", { href: "#/spec/" + x.id }, `${x.id} · ${x.title}`), " ", stagePill(x.stage), x.snippet ? h("div", { class: "meta" }, "…" + x.snippet + "…") : null))));
   }
 
   /* ── router ──────────────────────────────────────────────────────────────── */
   async function render() {
+    closeDrawer();
     const route = location.hash.replace(/^#\/?/, "") || "board";
     const [view, arg] = route.split("/");
     document.querySelectorAll("#nav a").forEach((a) => { if (a.dataset.view === view) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
@@ -336,6 +441,7 @@
     if (view === "spec") content = await viewDetail(decodeURIComponent(arg || ""));
     else if (view === "search") content = await viewSearch(decodeURIComponent(arg || ""));
     else if (view === "list") content = viewList();
+    else if (view === "human") content = viewHuman();
     else if (view === "epics" && state.epics.supported) content = viewEpics();
     else content = viewBoard();
     $("#main").replaceChildren(...[content].flat());
@@ -347,13 +453,17 @@
   $("#search-form").addEventListener("submit", (e) => { e.preventDefault(); const q = $("#q").value.trim(); if (q) location.hash = "#/search/" + encodeURIComponent(q); });
   window.addEventListener("hashchange", () => { render().then(() => $("#main").focus()); });
   document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeDrawer();
     if (e.key === "/" && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) { e.preventDefault(); $("#q").focus(); }
   });
   setInterval(tickFreshness, 1000);
-  setInterval(() => { if (!document.hidden && !$("#dlg").open) refresh(false); }, 30000);
+  $("#notify").addEventListener("click", toggleNotify);
+  paintNotify();
+  /* 8 s: just above the server's 5 s cache; a 304 makes each unchanged poll nearly free, and a
+     hidden tab keeps polling so the title, the favicon and the notification still move. */
+  setInterval(() => { if (!$("#dlg").open) refresh(false); }, 8000);
 
   (async () => {
-    if (!TOKEN) { $("#main").replaceChildren(h("p", { class: "bad" }, "Open the URL printed by `cq specs serve`: it carries the access token.")); return; }
     await loadConfig();
     try { await load(false); } catch (e) { fail(e); }
     await render();

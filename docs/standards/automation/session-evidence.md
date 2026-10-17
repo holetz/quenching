@@ -43,6 +43,22 @@ A command is reached two ways, and each leaves a different mark, both read
 Detecting only the typed form makes every conducted stage invisible — the exact failure this
 standard exists to prevent, since a conductor's own stages are ordinary, frequent work.
 
+## A round of questions has two forms
+
+A question round put to the human is one of two marks, and both are read:
+
+- **Menu**: a `tool_use` named `AskUserQuestion`, used only when the human asks for a menu.
+- **Decision sheet**: an assistant text turn that ends the turn — an opening reply-format line
+  (`D1 A · D2 B …`) and one or more `### D<n> — <title>` headings — followed by the human's reply
+  as the next turn. Each sheet is one round; an ambiguous reply is answered by a new sheet.
+
+The sheet is recognised by its structure (`D<n>` and the `###` headings), never by label words:
+the labels follow the declared language, so `(recommended)` and `(recomendada)` are the same
+sheet. A count of rounds that reads only `AskUserQuestion` calls misses every sheet and makes a
+session with several sheets look as if it never asked. The sheet has no `tool_use` of its own, so
+the parser does not register it: the count is read from the assistant's text, an estimate stated as
+such ([parse-honesty.md](../quality/parse-honesty.md)).
+
 ## What a command's run cost — and what that claim is worth
 
 `attributionSkill` marks the command each turn belongs to, covering both entry forms — but it is
@@ -51,7 +67,7 @@ Skill-invoked stages in an 86-transcript corpus, attribution reverts to the cond
 stage returns exactly **once**; it never returns 36 times, and jumps to a third command 6 times.
 Reporting every command's counts as exact off this pointer alone over-credits a conducted stage
 with its conductor's own later work — concretely, `/specs:isolate` was once credited with 5
-`AskUserQuestion` calls that were `/quenching-specs:specs:develop`'s own composition questions (recorded in
+question rounds (then `AskUserQuestion` calls; today often decision sheets) that were `/quenching-specs:specs:develop`'s own composition questions (recorded in
 `improve-command-from-session`'s `## Discoveries`, session 94120e96).
 
 <!-- rationale -->

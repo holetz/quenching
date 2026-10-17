@@ -27,8 +27,8 @@ total absence is the opt-out, and `--write` creates the surface.
 
 A caller that wants to reconcile the generated copy runs `cq components translate --write` and
 then checks again. `/quenching-align:components:align` reports the same findings; it does not write the
-generated surface as a side effect of its taxonomy sweep. This repository retired its own Codex
-mirror on 2026-10-11, so its gate no longer runs the check.
+generated surface as a side effect of its taxonomy sweep. This repository checks its generated Codex
+plugin in `scripts/verify_repo.sh`, alongside package validation.
 
 Exit 2 remains reserved for refusal, including an invalid translation input. Consumers must branch
 on the exit code and JSON `findings`, never treat a nonzero result as one undifferentiated failure.

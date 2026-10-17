@@ -11,17 +11,20 @@ tests call without a socket; `serve` only wraps it in `ThreadingHTTPServer`.
 SECURITY
 --------
 * Loopback only: a non-loopback `--host` is refused before a socket opens.
-* A random per-run token is required on every `/api/` call (header `X-Quenching-Token`, or
-  `?token=` for reads). The page itself needs it too; static assets carry no data and need none.
-* `Host` must name the bound loopback address (DNS rebinding) and `Origin`, when sent, must be
-  this server (CSRF from another tab).
-* Writes need the header token (never the query), `application/json`, and are refused SERVER-SIDE
+* A random per-run token is required on every `/api/` call and for the page, carried by the
+  `qtoken` cookie (`HttpOnly; SameSite=Strict; Path=/`) or the `X-Quenching-Token` header; it is
+  never accepted in a URL. The URL the portal prints and `--open` passes holds only a one-use
+  nonce, which `GET /?nonce=` trades for the cookie (303 to `/`). Static assets need nothing.
+* `Host` must name the bound loopback address (DNS rebinding); `Origin`, when sent, must be this
+  server, and every POST must send it (CSRF from another tab).
+* Writes need `application/json` and are refused SERVER-SIDE
   when the portal is `--read-only` or the backend itself is read-only.
 * A refusal or conflict is an HTTP error that carries the CLI's refusal `code`; never a success.
 """
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import hmac
 import io
 import ipaddress
@@ -33,6 +36,7 @@ import sys
 import threading
 import time
 from argparse import Namespace
+from http.cookies import CookieError, SimpleCookie
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
@@ -46,6 +50,7 @@ from quenching.specs.commands.granular import cmd_section
 from quenching.specs.commands.next import _priority_rank
 from quenching.specs.commands.output import Emitter
 from quenching.specs.commands.task import cmd_discover
+from quenching.specs.parse.epics import derive_epic
 from quenching.specs.parse.fields import set_frontmatter_record
 from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.sections import ready_report, section_state
@@ -53,9 +58,11 @@ from quenching.specs.parse.tasks import task_progress
 from quenching.specs.schema import canonical_headings
 
 TOKEN_HEADER = "X-Quenching-Token"
+COOKIE_NAME = "qtoken"
 TTL_SECONDS = 5.0
 MAX_BODY = 1_000_000
-STAGE_ORDER = ["captured", "ready", "approved", "executing", "review", "archived"]
+STAGE_ORDER = ["captured", "ready", "approved", "executing", "blocked", "review",
+               "archived"]
 CONFLICT_MARKERS = ("stale", "conflict", "write-once", "changed")
 
 
@@ -77,6 +84,18 @@ def _json(status: int, obj: dict) -> tuple[int, dict, bytes]:
         json.dumps(obj, ensure_ascii=False).encode("utf-8")
 
 
+def _validated(headers: dict, obj: dict) -> tuple[int, dict, bytes]:
+    """A list read with a change token: the ETag hashes the content without `fetchedAt` (which
+    moves on every snapshot rebuild), and a matching `If-None-Match` is a body-less 304."""
+    stable = {k: v for k, v in obj.items() if k != "fetchedAt"}
+    etag = '"' + hashlib.sha256(json.dumps(
+        stable, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()[:32] + '"'
+    if etag in [t.strip() for t in headers.get("if-none-match", "").split(",")]:
+        return 304, {"ETag": etag, "Cache-Control": "no-store"}, b""
+    status, out, body = _json(200, obj)
+    return status, {**out, "ETag": etag}, body
+
+
 def _error(status: int, code: str, message: str, **extra) -> tuple[int, dict, bytes]:
     return _json(status, {"ok": False, "code": code, "message": message, **extra})
 
@@ -92,13 +111,26 @@ def _status_for(payload: dict) -> int:
     return 422
 
 
+_EPIC_ITEM_KEYS = ("label", "title", "spec", "after", "group", "groupTitle", "waitingOn",
+                   "status")
+
+
+HUMAN_EPIC_MARK = "decidir com o humano"
+
+# sys.stdin/stdout/stderr belong to the process, so the lock that guards their redirection does too.
+# Always taken after `Portal.lock` and never held while taking another: no deadlock between portals.
+_STDIO_LOCK = threading.RLock()
+
+
 class Portal:
-    """One portal over one repository root. Every backend touch happens under `self.lock`
-    because the CLI verbs print to the process-wide stdout, which the lock lets us capture."""
+    """One portal over one repository root. Every backend touch happens under `self.lock`;
+    the CLI verbs print to the process-wide stdout, so `_verb` also takes the module-wide
+    `_STDIO_LOCK` around the redirection, which keeps two portals from capturing each other."""
 
     def __init__(self, root: str, token: str, read_only: bool = False,
-                 host: str = "127.0.0.1", port: int = 0) -> None:
+                 host: str = "127.0.0.1", port: int = 0, nonce: str | None = None) -> None:
         self.root, self.token, self.read_only = root, token, read_only
+        self.nonce: str | None = nonce if nonce is not None else secrets.token_urlsafe(18)
         self.host, self.port = host, port
         self.lock = threading.RLock()
         self._cache: dict | None = None
@@ -112,17 +144,31 @@ class Portal:
     def check_host(self, headers: dict) -> bool:
         return headers.get("host", "").lower() in {h.lower() for h in self.allowed_hosts()}
 
-    def check_origin(self, headers: dict) -> bool:
+    def check_origin(self, headers: dict, required: bool = False) -> bool:
         origin = headers.get("origin")
         if origin is None:
-            return True
+            return not required
         return origin.lower() in {f"http://{h}".lower() for h in self.allowed_hosts()}
 
-    def check_token(self, headers: dict, query: dict, header_only: bool) -> bool:
+    def check_token(self, headers: dict) -> bool:
         given = headers.get(TOKEN_HEADER.lower())
-        if given is None and not header_only:
-            given = (query.get("token") or [None])[0]
+        if given is None:
+            jar = SimpleCookie()
+            try:
+                jar.load(headers.get("cookie", ""))
+            except CookieError:
+                return False
+            morsel = jar.get(COOKIE_NAME)
+            given = morsel.value if morsel else None
         return bool(given) and hmac.compare_digest(str(given), self.token)
+
+    def redeem_nonce(self, given: str | None) -> bool:
+        """The one-use nonce of the printed URL: true once, then never again."""
+        with self.lock:
+            if not given or self.nonce is None or not hmac.compare_digest(given, self.nonce):
+                return False
+            self.nonce = None
+            return True
 
     def writes_enabled(self) -> tuple[bool, str]:
         if self.read_only:
@@ -137,7 +183,7 @@ class Portal:
         headers = {k.lower(): v for k, v in headers.items()}
         if not self.check_host(headers):
             return _error(403, "sp-portal-bad-host", "Host header is not this server")
-        if not self.check_origin(headers):
+        if not self.check_origin(headers, required=method == "POST"):
             return _error(403, "sp-portal-bad-origin", "Origin is not this server")
         parts = urlsplit(target)
         query = parse_qs(parts.query)
@@ -147,12 +193,18 @@ class Portal:
                 return self._api(method, path, query, headers, body)
             if method not in ("GET", "HEAD"):
                 return _error(405, "sp-portal-method", "static files are read-only")
-            if path in ("/", "/index.html") and not self.check_token(headers, query, False):
+            if path in ("/", "/index.html") and not self.check_token(headers):
+                if method == "GET" and self.redeem_nonce((query.get("nonce") or [None])[0]):
+                    return 303, {"Location": "/", "Set-Cookie": self.cookie(),
+                                 "Cache-Control": "no-store", "Referrer-Policy": "no-referrer"}, b""
                 return _error(401, "sp-portal-token", "open the URL `cq specs serve` printed")
             return self._static(path)
         except BackendRefusal as e:
             return _json(_status_for(e.err), {"ok": False, **{
                 k: v for k, v in e.err.items() if k != "exit"}})
+
+    def cookie(self) -> str:
+        return f"{COOKIE_NAME}={self.token}; HttpOnly; SameSite=Strict; Path=/"
 
     def _static(self, path: str) -> tuple[int, dict, bytes]:
         root = static_dir()
@@ -173,7 +225,7 @@ class Portal:
         write = method == "POST"
         if method not in ("GET", "POST"):
             return _error(405, "sp-portal-method", "GET or POST only")
-        if not self.check_token(headers, query, header_only=write):
+        if not self.check_token(headers):
             return _error(401, "sp-portal-token", "a valid token is required on every API call")
         route = path[len("/api/"):].strip("/")
         if write:
@@ -191,10 +243,10 @@ class Portal:
             if not isinstance(data, dict):
                 return _error(400, "sp-portal-bad-json", "the body must be a JSON object")
             return self._post(route, data)
-        return self._get(route, query)
+        return self._get(route, query, headers)
 
     # ── reads ────────────────────────────────────────────────────────────────────────────
-    def _get(self, route: str, query: dict):
+    def _get(self, route: str, query: dict, headers: dict):
         fresh = (query.get("refresh") or ["0"])[0] == "1"
         if route == "config":
             ok, why = self.writes_enabled()
@@ -206,15 +258,17 @@ class Portal:
             if isinstance(snap, tuple):
                 return snap
             if route == "specs":
-                return _json(200, {"ok": True, "fetchedAt": snap["at"], "ttlSeconds": TTL_SECONDS,
-                                   "count": len(snap["rows"]), "specs": snap["rows"],
-                                   "stages": STAGE_ORDER})
+                return _validated(headers, {
+                    "ok": True, "fetchedAt": snap["at"], "ttlSeconds": TTL_SECONDS,
+                    "count": len(snap["rows"]), "specs": snap["rows"], "stages": STAGE_ORDER})
             if route.startswith("specs/"):
                 return self._detail(snap, route.split("/", 1)[1])
             if route == "search":
                 return self._search(snap, (query.get("q") or [""])[0])
             if route == "epics":
-                return _json(200, {"ok": True, **self._epics(snap)})
+                return _validated(headers, {"ok": True, **self._epics(snap)})
+            if route == "human":
+                return _validated(headers, {"ok": True, **self._human(snap)})
         return _error(404, "sp-portal-not-found", f"no such route: /api/{route}")
 
     def _snapshot(self, fresh: bool):
@@ -243,6 +297,8 @@ class Portal:
     def _stage(info: dict) -> str:
         if info["phase"] == "archive":
             return "archived"
+        if task_progress(info["tasks"])[1] > 0:
+            return "blocked"
         if info["frontmatter"].get("reviewed"):
             return "review"
         stage = info["stage"]
@@ -309,18 +365,66 @@ class Portal:
         an epic through a `parent:` (or `epic:`) frontmatter key."""
         epics = [i for i in snap["infos"].values()
                  if str(i["frontmatter"].get("workItemType") or "").lower() == "epic"]
+        members = {str(i["id"]): i for i in snap["infos"].values()}
         rows = []
         for e in epics:
             kids = [i for i in snap["infos"].values()
                     if str(i["frontmatter"].get("parent") or i["frontmatter"].get("epic") or "")
                     .lstrip("#") == str(e["id"])]
             done = [k for k in kids if k["phase"] == "archive"]
+            derived = derive_epic(e, members)
+            items = [{k: v for k, v in i.items() if k in _EPIC_ITEM_KEYS} for i in derived["items"]]
             rows.append({"id": e["id"], "title": str(e["frontmatter"].get("title") or ""),
+                         "items": items, "groups": derived["groups"],
+                         "cycle": derived["cycle"], "criticalPath": derived["criticalPath"],
                          "children": [{"id": k["id"], "title": str(k["frontmatter"].get("title")
                                                                     or ""),
                                        "stage": self._stage(k)} for k in kids],
                          "done": len(done), "total": len(kids)})
         return {"supported": bool(epics), "epics": rows}
+
+    def _human(self, snap: dict) -> dict:
+        """What waits for the human, read from the snapshot alone: open members of the epics
+        titled `HUMAN_EPIC_MARK`, specs with a blocked task, and ready specs nobody approved."""
+        infos = snap["infos"]
+        rows = {str(r["id"]): r for r in snap["rows"]}
+        members = {k: v for k, v in infos.items()}
+        epic_members, seen = [], set()
+        for e in infos.values():
+            if HUMAN_EPIC_MARK not in str(e["frontmatter"].get("title") or "").lower():
+                continue
+            if str(e["frontmatter"].get("workItemType") or "").lower() != "epic" \
+                    or e["phase"] == "archive":
+                continue
+            for it in derive_epic(e, members)["items"]:
+                if it["status"] in ("done", "dropped"):
+                    continue
+                sid = str(it["spec"]) if it["spec"] else ""
+                row = rows.get(sid)
+                epic_members.append({"epic": e["id"], "label": it["label"],
+                                     "id": it["spec"] or None,
+                                     "title": row["title"] if row else it["title"],
+                                     "stage": row["stage"] if row else "missing",
+                                     "status": it["status"]})
+                if sid:
+                    seen.add(sid)
+        blocked, waiting = [], []
+        for sid, info in infos.items():
+            row = rows[sid]
+            if info["phase"] != "plans":
+                continue
+            reasons = [{"task": t.get("id"), "reason": t.get("reason") or ""}
+                       for t in info["tasks"] if t.get("blocked")]
+            if reasons:
+                blocked.append({"id": info["id"], "title": row["title"], "stage": row["stage"],
+                                "reasons": reasons})
+                seen.add(sid)
+            if info["stage"] == "ready" and not info["frontmatter"].get("approved"):
+                waiting.append({"id": info["id"], "title": row["title"], "stage": row["stage"]})
+                seen.add(sid)
+        return {"fetchedAt": snap["at"], "count": len(seen) + sum(
+                    1 for m in epic_members if not m["id"]),
+                "epicMembers": epic_members, "blocked": blocked, "awaitingApproval": waiting}
 
     # ── writes ───────────────────────────────────────────────────────────────────────────
     def _post(self, route: str, data: dict):
@@ -342,19 +446,20 @@ class Portal:
         """Run one CLI verb in-process and parse its `--json` payload. Returns the payload dict
         on success or a ready `(status, headers, body)` for a refusal."""
         out_buf, err_buf = io.StringIO(), io.StringIO()
-        old_in = sys.stdin
-        sys.stdin = io.StringIO(stdin)
         rc = 2
-        try:
-            with contextlib.redirect_stdout(out_buf), contextlib.redirect_stderr(err_buf):
-                try:
-                    rc = fn(Namespace(json=True, **args), self.root, Emitter())
-                except BackendRefusal as e:
-                    rc = e.err.get("exit", 2)
-                    print(json.dumps({"ok": False, **{k: v for k, v in e.err.items()
-                                                      if k != "exit"}}))
-        finally:
-            sys.stdin = old_in
+        with _STDIO_LOCK:
+            old_in = sys.stdin
+            sys.stdin = io.StringIO(stdin)
+            try:
+                with contextlib.redirect_stdout(out_buf), contextlib.redirect_stderr(err_buf):
+                    try:
+                        rc = fn(Namespace(json=True, **args), self.root, Emitter())
+                    except BackendRefusal as e:
+                        rc = e.err.get("exit", 2)
+                        print(json.dumps({"ok": False, **{k: v for k, v in e.err.items()
+                                                          if k != "exit"}}))
+            finally:
+                sys.stdin = old_in
         try:
             payload = json.loads(out_buf.getvalue())
         except ValueError:
@@ -541,7 +646,7 @@ def cmd_serve(args, root: str, out: Emitter) -> int:
     portal = server.portal
     shown = "localhost" if host == "localhost" else host
     url = f"http://{shown if ':' not in shown else '[' + shown + ']'}:{portal.port}/" \
-          f"?token={portal.token}"
+          f"?nonce={portal.nonce}"
     writable, why = portal.writes_enabled()
     info = {"ok": True, "url": url, "host": host, "port": portal.port, "backend": backend.name,
             "writable": writable, "readOnlyReason": why}

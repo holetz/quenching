@@ -58,7 +58,7 @@ Report one compact table:
 | Lifecycle | active, archived, and undeclared counts |
 | Mechanical | `op-undocumented` and `op-registry-stale` counts, with registry freshness state |
 | Structural | `op-adhoc-root`, `op-untyped-exit`, and `op-no-router` counts |
-| Judgement | `op-unarmed-write`, `op-disabled-check`, and `op-orphan` counts, reported only |
+| Judgement | `op-unarmed-write`, `op-disabled-check`, `op-orphan`, and `op-registry-malformed` counts, reported only |
 
 Map findings to their bands through `bands.md`, preserve every finding code, and distinguish
 errors from warnings using the payload's `errors` and `warnings`. A missing or stale registry is

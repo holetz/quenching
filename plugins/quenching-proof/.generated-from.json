@@ -14,7 +14,8 @@
   "generatedSupport": {
     "packages": [
       "common",
-      "ops"
+      "ops",
+      "controls"
     ],
     "references": [
       "align",

@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import importlib
 import json
+import os
 import pathlib
+import re
 import subprocess
 import sys
 import tempfile
@@ -94,6 +96,10 @@ class FrontKernel(unittest.TestCase):
         self.assertEqual(resolve_root(None), str(pathlib.Path.cwd()))
 
 
+def bash_commands(transcript):
+    return " ".join(call for tool, call in transcript if tool == "Bash")
+
+
 class AlignCleanPath(unittest.TestCase):
     def test_conformant_fixture_stops_after_two_calls_before_inventory(self):
         """The clean branch proves the probe-first stop, not just a prose substring.
@@ -136,18 +142,34 @@ class AlignCleanPath(unittest.TestCase):
                          '"$TARGET_ROOT" ops inventory --json')
             probe_at = body.index(probe)
             clean_stop_at = body.index("When it exits `0` with no findings", probe_at)
-            inventory_at = body.index(inventory, clean_stop_at)
+            clean_end_at = body.index("When it exits `2`", clean_stop_at)
+            next_stage_at = body.index("\n### 2.", probe_at)
+            inventory_at = body.index(inventory, probe_at)
             self.assertLess(probe_at, clean_stop_at)
-            self.assertLess(clean_stop_at, inventory_at)
-            clean_branch = " ".join(body[clean_stop_at:inventory_at].split())
-            self.assertIn("ops inventory", clean_branch)
+            self.assertLess(clean_stop_at, clean_end_at)
+            self.assertLess(clean_end_at, next_stage_at)
+            self.assertGreater(
+                inventory_at, next_stage_at,
+                "ops inventory is called before the inventory stage")
+            clean_branch = " ".join(body[clean_stop_at:clean_end_at].split())
+            self.assertIn("and stop", clean_branch)
+            self.assertIn("Do not run `ops inventory`", clean_branch)
+            self.assertIsNone(
+                re.search(r"(?<!not )run `ops inventory`", clean_branch),
+                "clean branch instructs running `ops inventory`")
+            self.assertIsNone(
+                re.search(r"continue|inventory stage|write the registry",
+                          clean_branch),
+                "clean branch continues past the stop")
+            self.assertEqual(clean_branch.count("ops inventory"), 1)
 
-            transcript = [
-                ("Read", str(ALIGN_BODY)),
-                ("Bash", probe),
-            ]
-            self.assertEqual(len(transcript), 2)
-            self.assertNotIn("inventory", " ".join(call for _, call in transcript))
+    def test_read_path_containing_inventory_is_not_an_inventory_call(self):
+        body_path = "/work/quenching-inventory/plugins/quenching/commands/ops/align.md"
+        probe = 'cq --root "$TARGET_ROOT" ops doctor --json'
+        clean = [("Read", body_path), ("Bash", probe)]
+        self.assertNotIn("inventory", bash_commands(clean))
+        called = clean + [("Bash", 'cq --root "$TARGET_ROOT" ops inventory --json')]
+        self.assertIn("inventory", bash_commands(called))
 
 
 class AlignThreeBands(unittest.TestCase):
@@ -755,6 +777,97 @@ class FindingFixtures(unittest.TestCase):
             self.assertEqual(err, {})
             self.assertIsNotNone(payload)
             self.assertEqual(code, 1)
+
+
+class MalformedRegistry(unittest.TestCase):
+    """A registry the generator cannot read is a typed refusal or a finding, never a traceback."""
+
+    def _target(self, readme: bytes) -> pathlib.Path:
+        root = pathlib.Path(self.raw.name)
+        (root / ".claude").mkdir()
+        (root / "scripts").mkdir()
+        (root / ".claude" / "quenching.json").write_text(
+            json.dumps({"ops": {"opsRoot": "scripts", "router": "pyproject.toml"}}),
+            encoding="utf-8")
+        (root / "pyproject.toml").write_text("[project.scripts]\nrun = 'run:main'\n",
+                                             encoding="utf-8")
+        (root / "scripts" / "run.py").write_text(
+            "from pathlib import Path\n\nROOT = Path(__file__).resolve()\n\n"
+            "def main():\n    return 0\n\nif __name__ == '__main__':\n    raise SystemExit(main())\n",
+            encoding="utf-8")
+        (root / "scripts" / "README.md").write_bytes(readme)
+        return root
+
+    def setUp(self):
+        self.raw = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.raw.cleanup()
+
+    def _cq(self, root: pathlib.Path, *args: str):
+        from quenching.ops.cli import main
+        import contextlib
+        import io
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = main(["--root", str(root), *args])
+        return code, out.getvalue(), err.getvalue()
+
+    def _duplicated(self) -> bytes:
+        zone = f"{REGISTRY_START}\nrows\n{REGISTRY_END}\n"
+        return (zone + "\n" + zone).encode()
+
+    def test_duplicate_zones_refuse_registry_with_exit_2(self):
+        root = self._target(self._duplicated())
+        for args in (("registry",), ("registry", "--write")):
+            with self.subTest(args=args):
+                code, _, err = self._cq(root, *args)
+                self.assertEqual(code, 2)
+                self.assertIn("more than one generated zone", err)
+
+    def test_invalid_utf8_refuses_registry_with_exit_2(self):
+        root = self._target(b"\xff\xfe not utf-8\n")
+        for args in (("registry",), ("registry", "--write")):
+            with self.subTest(args=args):
+                code, _, err = self._cq(root, *args)
+                self.assertEqual(code, 2)
+                self.assertIn("not valid UTF-8", err)
+
+    def test_doctor_reports_malformed_zone_and_keeps_unrelated_findings(self):
+        root = self._target(self._duplicated())
+        code, out, _ = self._cq(root, "doctor", "--json")
+        codes = {item["code"] for item in json.loads(out)["findings"]}
+        self.assertIn("op-registry-malformed", codes)
+        self.assertIn("op-adhoc-root", codes)
+        self.assertNotIn("op-registry-stale", codes)
+        self.assertEqual(code, 1)
+
+    def test_doctor_reports_invalid_utf8_registry_as_malformed(self):
+        root = self._target(b"\xff\xfe not utf-8\n")
+        code, out, _ = self._cq(root, "doctor", "--json")
+        findings = json.loads(out)["findings"]
+        malformed = [item for item in findings if item["code"] == "op-registry-malformed"]
+        self.assertEqual(len(malformed), 1)
+        self.assertIn("not valid UTF-8", malformed[0]["message"])
+        self.assertNotIn("op-registry-stale", {item["code"] for item in findings})
+        self.assertEqual(code, 1)
+
+    @unittest.skipIf(hasattr(os, "geteuid") and os.geteuid() == 0, "root reads any file")
+    def test_unreadable_registry_is_malformed_finding_and_exit_2(self):
+        root = self._target(b"# readme\n")
+        readme = root / "scripts" / "README.md"
+        readme.chmod(0)
+        try:
+            code, out, _ = self._cq(root, "doctor", "--json")
+            codes = {item["code"] for item in json.loads(out)["findings"]}
+            code2, _, err = self._cq(root, "registry")
+        finally:
+            readme.chmod(0o644)
+        self.assertIn("op-registry-malformed", codes)
+        self.assertEqual(code, 1)
+        code = code2
+        self.assertEqual(code, 2)
+        self.assertIn("cannot be read", err)
 
 
 if __name__ == "__main__":

@@ -3,6 +3,16 @@
   "source": "plugins/quenching",
   "marketplace": ".claude-plugin/marketplace.json",
   "versionConstant": "plugins/quenching/assets/bin/quenching/common/version.py",
+  "siblingArtifacts": [
+    [
+      "plugins/quenching-codex/VERSION",
+      "plain"
+    ],
+    [
+      "plugins/quenching-codex/.codex-plugin/plugin.json",
+      "json"
+    ]
+  ],
   "modules": [
     {
       "name": "quenching",
@@ -122,7 +132,8 @@
       "generatedSupport": {
         "packages": [
           "common",
-          "session"
+          "session",
+          "controls"
         ],
         "references": [
           "align",
@@ -262,7 +273,8 @@
       "generatedSupport": {
         "packages": [
           "common",
-          "ops"
+          "ops",
+          "controls"
         ],
         "references": [
           "align",
@@ -307,7 +319,8 @@
       },
       "generatedSupport": {
         "packages": [
-          "common"
+          "common",
+          "controls"
         ],
         "references": [
           "align",
@@ -351,7 +364,8 @@
       },
       "generatedSupport": {
         "packages": [
-          "common"
+          "common",
+          "controls"
         ],
         "references": [
           "align",
@@ -396,7 +410,8 @@
       },
       "generatedSupport": {
         "packages": [
-          "common"
+          "common",
+          "controls"
         ],
         "references": [
           "align",

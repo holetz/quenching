@@ -4,10 +4,10 @@ title: When a command's plan gate may drop
 description: The two protected classes — a code-coupled item, an irreversible cycle action — are the whole test, and a command in which neither occurs has nothing to confirm; what replaces the approval window when the gate goes (the record's URL, announced before any read and repeated in the report), the difference between the confirmation that drops and the consolidation that stays, what still stops the pass either way, the three intermediate forms measured and rejected, and the three conditions under which a gear's authority replaces the person at the go/no-go
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/align/convergence.md, plugins/quenching/assets/references/specs-develop/questions.md
 tags: [automation, commands, gates, confirmation, cost, turns]
-timestamp: 2026-08-25
+timestamp: 2026-10-16
 audience: both
 authority: background
-source: revisar-fluxo-do-develop-custo-e-gates, 2026-08-16, 2026-08-22; lineage in ADR 0004
+source: revisar-fluxo-do-develop-custo-e-gates, 2026-08-16, 2026-08-22; lineage in ADR 0004; spec 1754 decision sheet as the default question form (2026-10-16)
 maintainer: quenching
 ---
 
@@ -39,8 +39,8 @@ scattered edits are not, gate or no gate.
 
 **What still stops the pass after the gate drops:**
 
-- the questions the work itself asks — an `AskUserQuestion` whose answer changes what gets written
-  is not a plan gate and does not go with it;
+- the questions the work itself asks — a decision sheet (or the `AskUserQuestion` menu the human
+  asked for) whose answer changes what gets written is not a plan gate and does not go with it;
 - any go/no-go that is the **sole origin** of a record of human judgment — unless the record writes
   down **whose** authority stamped it (§When authority replaces the person).
 

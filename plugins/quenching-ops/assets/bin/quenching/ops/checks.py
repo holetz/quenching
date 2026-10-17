@@ -106,10 +106,15 @@ def check_undocumented(inventory: Inventory) -> list[Finding]:
 
 def check_registry_stale(inventory: Inventory) -> list[Finding]:
     """An existing registry must match the generator's current output exactly."""
-    text = _registry_text(inventory)
-    if text is None:
+    registry_path = _registry_path(inventory)
+    if not registry_path.is_file():
         return []
-    expected = registry.render_registry_document(text, inventory)
+    path = os.path.relpath(registry_path, inventory.root).replace(os.sep, "/")
+    try:
+        text = registry.read_registry(registry_path)
+        expected = registry.render_registry_document(text, inventory)
+    except registry.RegistryError as exc:
+        return [_finding("op-registry-malformed", str(exc), path=path)]
     if expected == text:
         return []
     return [_finding(
