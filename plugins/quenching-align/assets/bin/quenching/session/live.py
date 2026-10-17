@@ -47,6 +47,22 @@ def _parse_ts(value):
         return None
 
 
+def _from_millis(value):
+    """A UTC datetime from epoch milliseconds, or None for anything out of range or not a number."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    try:
+        return datetime.fromtimestamp(value / 1000, timezone.utc)
+    except (ValueError, OverflowError, OSError):
+        return None
+
+
+def _valid_identity(info: dict) -> bool:
+    pid = info.get("pid")
+    return (isinstance(pid, int) and not isinstance(pid, bool)
+            and isinstance(info.get("sessionId"), str) and isinstance(info.get("cwd"), str))
+
+
 def _iso(moment) -> str | None:
     return moment.strftime("%Y-%m-%dT%H:%M:%SZ") if moment else None
 
@@ -164,9 +180,7 @@ def _session_row(info: dict, projects: Path, now: datetime) -> dict:
     cwd = info.get("cwd")
     session_id = info.get("sessionId")
     status = info.get("status") if isinstance(info.get("status"), str) else None
-    since = info.get("statusUpdatedAt")
-    since = datetime.fromtimestamp(since / 1000, timezone.utc) \
-        if isinstance(since, (int, float)) else None
+    since = _from_millis(info.get("statusUpdatedAt"))
     activity = [0] * WINDOW_MINUTES
     events, bad, subagents = [], 0, []
     if isinstance(cwd, str) and isinstance(session_id, str):
@@ -194,7 +208,7 @@ def read_live(claude_root, projects=None, now=None, cwds=None, alive=_alive) -> 
             info = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             continue
-        if not isinstance(info, dict) or not alive(info.get("pid")):
+        if not isinstance(info, dict) or not _valid_identity(info) or not alive(info["pid"]):
             continue
         cwd = info.get("cwd")
         if keep is not None:

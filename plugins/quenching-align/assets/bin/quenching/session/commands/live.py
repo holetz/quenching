@@ -11,15 +11,23 @@ from quenching.session.live import read_live
 from quenching.session.transcript import projects_root
 
 
+def _projects(configured, root: Path) -> Path:
+    """Transcripts live beside the sessions when only the Claude root is configured."""
+    if configured and not os.environ.get("QUENCHING_TRANSCRIPTS_ROOT"):
+        return root / "projects"
+    return projects_root()
+
+
 def cmd_live(args) -> int:
-    root = Path(os.environ.get("QUENCHING_CLAUDE_ROOT") or Path.home() / ".claude")
+    configured = os.environ.get("QUENCHING_CLAUDE_ROOT")
+    root = Path(configured) if configured else Path.home() / ".claude"
     if not (root / "sessions").is_dir():
         return refuse({"code": "se-no-sessions", "message": f"no sessions directory at {root}"},
                       args.json)
     cwds = None
     if args.cwd:
         cwds = [row["path"] for row in list_worktrees(args.cwd)] or [args.cwd]
-    out = read_live(root, projects=projects_root(), cwds=cwds)
+    out = read_live(root, projects=_projects(configured, root), cwds=cwds)
     out["ok"] = True
     if args.json:
         print(json.dumps(out, indent=2, ensure_ascii=False))

@@ -2,12 +2,18 @@
 from __future__ import annotations
 
 import json
+import contextlib
+import io
+import os
 import tempfile
 import unittest
+from types import SimpleNamespace
+from unittest import mock
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
+from quenching.session.commands.live import cmd_live
 from quenching.session.live import read_live
 from quenching.session.transcript import encode_cwd
 
@@ -113,9 +119,53 @@ class LiveTest(unittest.TestCase):
         kept = self._read(cwds=[self.repo])["sessions"]
         self.assertEqual([r["sessionId"] for r in kept], ["s1"])
 
+    def test_structured_identity_fields_drop_the_record_and_never_leak(self):
+        self._session(1, "s1", self.repo, "idle", [])
+        bad = {"sessionId": {"messagingSocketPath": SECRET}, "cwd": self.repo, "status": "idle"}
+        for pid, patch in ((2, {"pid": 2}), (3, {"pid": 3, "cwd": [SECRET], "sessionId": "x"}),
+                           (4, {"pid": True, "sessionId": "x", "cwd": self.repo}),
+                           (5, {"pid": "5", "sessionId": "x", "cwd": self.repo})):
+            _write(self.root / "sessions" / f"{pid}.json", [{**bad, **patch}])
+        out = self._read()
+        self.assertEqual([r["sessionId"] for r in out["sessions"]], ["s1"])
+        self.assertNotIn(SECRET, json.dumps(out))
+
+    def test_out_of_range_timestamp_becomes_null_and_keeps_other_sessions(self):
+        self._session(1, "good", self.repo, "idle", [])
+        for pid, value in ((2, 253402300800000), (3, 1e30), (4, float("inf")),
+                           (5, float("nan")), (6, True)):
+            _write(self.root / "sessions" / f"{pid}.json", [{
+                "pid": pid, "sessionId": f"s{pid}", "cwd": self.repo, "status": "idle",
+                "statusUpdatedAt": value}])
+        rows = {r["sessionId"]: r for r in self._read()["sessions"]}
+        self.assertEqual(len(rows), 6)
+        self.assertIsNotNone(rows["good"]["statusSince"])
+        for sid in ("s2", "s3", "s4", "s5", "s6"):
+            self.assertIsNone(rows[sid]["statusSince"])
+
     def test_no_sessions_is_an_empty_result(self):
         (self.root / "sessions").mkdir()
         self.assertEqual(self._read()["sessions"], [])
+
+    def test_transcripts_derive_from_the_configured_claude_root(self):
+        waiting = [{"type": "assistant", "timestamp": _ts(1), "message": {"content": [
+            {"type": "tool_use", "id": "q", "name": "AskUserQuestion",
+             "input": {"questions": [{"question": "Pick?"}]}}]}}]
+        self._session(os.getpid(), "s1", self.repo, "busy", waiting)
+        elsewhere = self.root / "elsewhere"
+        elsewhere.mkdir()
+
+        def run(env):
+            with mock.patch.dict(os.environ, env), contextlib.redirect_stdout(io.StringIO()) as out:
+                self.assertEqual(cmd_live(SimpleNamespace(json=True, cwd=None)), 0)
+            return json.loads(out.getvalue())["sessions"][0]
+
+        only_root = {"QUENCHING_CLAUDE_ROOT": str(self.root)}
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("QUENCHING_TRANSCRIPTS_ROOT", None)
+            self.assertEqual(run(only_root)["pendingQuestion"], "Pick?")
+        explicit = {**only_root, "QUENCHING_TRANSCRIPTS_ROOT": str(elsewhere)}
+        self.assertIsNone(run(explicit)["pendingQuestion"])
 
 
 if __name__ == "__main__":
