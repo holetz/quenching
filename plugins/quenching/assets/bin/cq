@@ -109,6 +109,9 @@ PILLARS: dict[str, Pillar] = {
     "git": Pillar(
         "quenching.git", False,
         "a repository's git facts — the base branch, and whether it is the host's own default"),
+    "portal": Pillar(
+        "quenching.portal", False,
+        "the project registry the local portal shows — add, remove, list"),
 }
 
 
