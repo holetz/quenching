@@ -17,7 +17,10 @@ try:
 except ModuleNotFoundError:
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
+from quenching.specs import backends as backends_mod
 from quenching.specs import chat as chat_mod
+from quenching.specs import portal as portal_mod
+from quenching.specs.backends.memory import MemoryBackend
 
 FAKE = """#!{python}
 import json, os, sys, time
@@ -146,6 +149,141 @@ class TheJob(unittest.TestCase):
         job = chat_mod.Job(os.path.join(self.cwd, "nope"), 0.5, self.cwd, "q")
         self.assertEqual("failed", job.status)
         self.assertFalse(os.path.exists(job.settings))
+
+
+TOKEN = "t0ken"
+PORT = 4321
+HOST = {"Host": f"127.0.0.1:{PORT}"}
+AUTH = {**HOST, "X-Quenching-Token": TOKEN}
+ORIGIN = {"Origin": f"http://127.0.0.1:{PORT}"}
+JSON = {**AUTH, **ORIGIN, "Content-Type": "application/json"}
+
+
+class ThePortalRoutes(unittest.TestCase):
+    read_only = False
+
+    def setUp(self):
+        self.claude, self.log = install_fake(self)
+        self.root = os.path.realpath(tempfile.mkdtemp(prefix="quenching-chat-root-"))
+        self.addCleanup(shutil.rmtree, self.root, True)
+        backends_mod._BACKEND_CACHE.clear()
+        backends_mod._BACKEND_CACHE[self.root] = MemoryBackend()
+        self.addCleanup(backends_mod._BACKEND_CACHE.clear)
+        chat, refusal = portal_mod.chat_source(True, None)
+        self.assertIsNone(refusal)
+        self.portal = portal_mod.Portal(self.root, TOKEN, self.read_only, "127.0.0.1", PORT,
+                                        chat=chat)
+
+    def call(self, method, target, headers, data=None, portal=None):
+        body = json.dumps(data).encode() if data is not None else b""
+        status, _, out = (portal or self.portal).handle(method, target, headers, body)
+        return status, json.loads(out)
+
+    def ask(self, data=None, headers=JSON):
+        return self.call("POST", "/api/chat", headers, data or {"question": "what is ready?"})
+
+    def poll(self, job):
+        end = time.time() + 10
+        events, after = [], 0
+        while time.time() < end:
+            status, body = self.call("GET", f"/api/chat/{job}?after={after}", AUTH)
+            self.assertEqual(200, status, body)
+            events += body["events"]
+            after = body["next"]
+            if body["status"] != "running":
+                return body, events
+            time.sleep(0.05)
+        self.fail("the chat job never finished")
+
+    def test_config_reports_the_chat_and_its_budget(self):
+        status, body = self.call("GET", "/api/config", AUTH)
+        self.assertEqual((True, 0.5), (body["chat"], body["chatBudgetUsd"]))
+
+    def test_a_question_is_a_job_polled_to_done_without_raw_tool_data(self):
+        status, body = self.ask()
+        self.assertEqual(202, status, body)
+        self.assertEqual(self.root, body["worktree"])
+        final, events = self.poll(body["job"])
+        self.assertEqual("done", final["status"])
+        self.assertEqual(["text", "tool", "result"], [e["kind"] for e in events])
+        self.assertNotIn("RAW TOOL RESULT", json.dumps(events))
+        self.assertEqual(self.root, os.path.realpath(
+            json.loads(pathlib.Path(self.log).read_text())["cwd"]))
+
+    def test_a_post_without_origin_is_refused(self):
+        headers = {k: v for k, v in JSON.items() if k != "Origin"}
+        status, body = self.ask(headers=headers)
+        self.assertEqual((403, "sp-portal-bad-origin"), (status, body["code"]))
+        self.assertFalse(os.path.exists(self.log))
+
+    def test_a_foreign_origin_and_a_missing_token_are_refused(self):
+        status, body = self.ask(headers={**JSON, "Origin": "http://evil.example"})
+        self.assertEqual((403, "sp-portal-bad-origin"), (status, body["code"]))
+        headers = {k: v for k, v in JSON.items() if k != "X-Quenching-Token"}
+        status, body = self.ask(headers=headers)
+        self.assertEqual((401, "sp-portal-token"), (status, body["code"]))
+        self.assertFalse(os.path.exists(self.log))
+
+    def test_a_worktree_outside_the_project_is_refused(self):
+        status, body = self.ask({"question": "q", "worktree": "/"})
+        self.assertEqual((400, "sp-portal-chat-worktree"), (status, body["code"]))
+
+    def test_an_empty_or_long_question_is_refused(self):
+        for question in ("  ", "x" * (chat_mod.MAX_QUESTION + 1), 3):
+            status, body = self.ask({"question": question})
+            self.assertEqual((400, "sp-portal-bad-input"), (status, body["code"]))
+
+    def test_a_second_question_while_one_runs_is_busy(self):
+        with mock.patch.dict(os.environ, {"FAKE_CLAUDE_MODE": "sleep"}):
+            status, body = self.ask()
+            self.assertEqual(202, status)
+            job = self.portal.jobs[body["job"]]
+            self.addCleanup(lambda: (job.proc.kill(), job.thread.join(5)))
+            status, body = self.ask()
+        self.assertEqual((409, "sp-portal-chat-busy"), (status, body["code"]))
+
+    def test_an_unknown_job_is_404(self):
+        status, body = self.call("GET", "/api/chat/nope", AUTH)
+        self.assertEqual((404, "sp-portal-chat-unknown-job"), (status, body["code"]))
+
+    def test_without_chat_the_routes_do_not_exist(self):
+        off = portal_mod.Portal(self.root, TOKEN, False, "127.0.0.1", PORT)
+        status, body = self.call("POST", "/api/chat", JSON, {"question": "q"}, portal=off)
+        self.assertEqual((404, "sp-portal-not-found"), (status, body["code"]))
+        self.assertEqual(404, self.call("GET", "/api/chat/x", AUTH, portal=off)[0])
+        self.assertFalse(self.call("GET", "/api/config", AUTH, portal=off)[1]["chat"])
+
+    def test_chat_needs_no_store_write_but_read_only_keeps_the_other_posts_closed(self):
+        ro = portal_mod.Portal(self.root, TOKEN, True, "127.0.0.1", PORT, chat=self.portal.chat)
+        status, body = self.call("POST", "/api/chat", JSON, {"question": "q"}, portal=ro)
+        self.assertEqual(202, status, body)
+        self.poll_on(ro, body["job"])
+        status, body = self.call("POST", "/api/capture", JSON, {"title": "t", "problem": "p"},
+                                 portal=ro)
+        self.assertEqual((403, "sp-read-only"), (status, body["code"]))
+
+    def poll_on(self, portal, job):
+        wait(portal.jobs[job])
+
+
+class TheChatSource(unittest.TestCase):
+    def test_off_is_none_and_no_refusal(self):
+        self.assertEqual((None, None), portal_mod.chat_source(False, None))
+
+    def test_a_non_positive_budget_is_refused(self):
+        for budget in (0, -1.0):
+            chat, refusal = portal_mod.chat_source(True, budget)
+            self.assertEqual("sp-portal-chat-budget", refusal["code"])
+
+    def test_no_claude_on_path_is_refused(self):
+        with mock.patch.object(chat_mod.shutil, "which", return_value=None):
+            chat, refusal = portal_mod.chat_source(True, None)
+        self.assertEqual("sp-portal-chat-unavailable", refusal["code"])
+
+    def test_the_given_budget_is_kept(self):
+        with mock.patch.object(chat_mod.shutil, "which", return_value="/bin/claude"):
+            chat, _ = portal_mod.chat_source(True, 1.5)
+        self.assertEqual({"claude": "/bin/claude", "budget": 1.5, "worktrees": None}, chat)
 
 
 if __name__ == "__main__":

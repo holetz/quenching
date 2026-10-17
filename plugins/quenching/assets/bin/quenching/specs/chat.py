@@ -125,6 +125,8 @@ class Job:
             for out in project(event):
                 self._add(out)
         stderr = self.proc.stderr.read()
+        self.proc.stdout.close()
+        self.proc.stderr.close()
         code = self.proc.wait()
         self.timer.cancel()
         try:
