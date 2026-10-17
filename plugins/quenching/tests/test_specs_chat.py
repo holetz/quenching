@@ -113,7 +113,8 @@ class TheJob(unittest.TestCase):
         job = wait(chat_mod.Job(self.claude, 0.5, self.cwd, "q"))
         log = self.logged()
         self.assertEqual({"permissions": {"deny": [
-            "Read(~/.ssh/**)", "Read(~/.config/**)", "Read(**/*.key)", "Read(**/.env)"]},
+            "Read(~/.ssh/**)", "Read(~/.config/**)", "Read(//**/*.key)", "Read(//**/.env)",
+            "Read(**/.env.*)", "Read(//**/.env.*)"]},
             "disableAllHooks": True}, log["settings"])
         self.assertEqual("0o600", log["mode"])
         self.assertFalse(os.path.exists(job.settings))

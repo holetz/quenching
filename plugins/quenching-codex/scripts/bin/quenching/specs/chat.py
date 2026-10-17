@@ -25,7 +25,8 @@ MAX_EVENTS = 500
 MAX_CHARS = 200_000
 KEEP_JOBS = 20
 TOOLS = "Read,Grep,Glob"
-DENIED_PATHS = ("~/.ssh/**", "~/.config/**", "**/*.key", "**/.env")
+DENIED_PATHS = ("~/.ssh/**", "~/.config/**", "//**/*.key", "//**/.env",
+                "**/.env.*", "//**/.env.*")
 
 
 def deny_settings() -> dict:
