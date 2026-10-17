@@ -213,9 +213,9 @@ class ReferenceRoot(unittest.TestCase):
 
     def test_a_quoted_components_read_target_without_the_root_is_an_error(self):
         for q in ('"', "'"):
-            body = f"Run cq components read {q}assets/references/a.md{q} --sections x.\n"
+            body = f"Run cq components read {q}assets" + f"/references/a.md{q} --sections x.\n"
             self.assertEqual(self._codes(body), ["sk-reference-root"], q)
-        quoted_ok = 'cq components read "${CLAUDE_PLUGIN_ROOT}/assets/references/a.md"\n'
+        quoted_ok = 'cq components read "${CLAUDE_PLUGIN_ROOT}/assets' + '/references/a.md"\n'
         self.assertEqual(self._codes(quoted_ok), [])
 
 
