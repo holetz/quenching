@@ -1289,6 +1289,57 @@ class Audit(RepoCase):
         self.assertIn("--base origin/<base>", verifier)
 
 
+class AuditGenerated(RepoCase):
+    """`generated`: the changed paths that are a byte-for-byte copy of their source in a module the
+    BASE manifest declares. Nothing of the branch is executed."""
+
+    def setUp(self):
+        super().setUp()
+        manifest = {"source": "plugins/quenching",
+                    "modules": [{"name": "m", "path": "plugins/m", "published": True,
+                                 "owned": {"commands": []}}]}
+        for rel, text in (("plugins/quenching/assets/modules.json", json.dumps(manifest)),
+                          ("plugins/quenching/commands/x.md", "x\n"),
+                          ("plugins/m/commands/x.md", "x\n")):
+            path = pathlib.Path(self.repo, rel)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding="utf-8")
+        _run(self.repo, "add", ".")
+        _run(self.repo, "commit", "-q", "-m", "manifest")
+        self.wt = os.path.join(self.tmp, "wt")
+        _run(self.repo, "worktree", "add", "-q", "-b", "spec/1", self.wt)
+        _run(self.wt, "config", "user.email", "test@example.com")
+        _run(self.wt, "config", "user.name", "Test")
+
+    def _generated(self, files: dict[str, str]) -> list[str]:
+        for rel, text in files.items():
+            path = pathlib.Path(self.wt, rel)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding="utf-8")
+        _run(self.wt, "add", ".")
+        _run(self.wt, "commit", "-q", "-m", "task")
+        sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.wt, check=True,
+                             capture_output=True, text=True).stdout.strip()
+        payload = _cq_json(self.repo, "audit", "--worktree", self.wt, "--base", "main",
+                           "--branch", "spec/1", "--sha", sha)
+        self.assertTrue(payload["complete"], payload["errors"])
+        return payload["generated"]
+
+    def test_a_reproduced_copy_is_generated_and_its_source_is_not(self):
+        got = self._generated({"plugins/quenching/commands/x.md": "y\n", "plugins/m/commands/x.md": "y\n"})
+        self.assertEqual(got, ["plugins/m/commands/x.md"])
+
+    def test_a_hand_edited_copy_is_not_generated(self):
+        self.assertEqual(self._generated({"plugins/m/commands/x.md": "edited\n"}), [])
+
+    def test_an_authored_file_outside_a_module_is_not_generated(self):
+        self.assertEqual(self._generated({"docs/a.md": "a\n"}), [])
+
+    def test_a_module_the_manifest_does_not_declare_is_not_generated(self):
+        self.assertEqual(self._generated({"plugins/quenching/commands/z.md": "z\n",
+                                          "plugins/other/commands/z.md": "z\n"}), [])
+
+
 class VerifierGrants(unittest.TestCase):
     """The read-only `verifier` holds no grant whose `*` sits mid-pattern, and no raw `git` or
     `bash` grant: those admitted `branch -D`, `clean -fdx`, `--output=<file>` and arbitrary code."""
