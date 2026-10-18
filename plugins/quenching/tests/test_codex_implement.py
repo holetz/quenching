@@ -172,6 +172,8 @@ class Implement(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn("head", payload["guard"]["moved"])
         self.assertIn("reflogLength", payload["guard"]["moved"])
+        self.assertEqual(payload["outside"], [])
+        self.assertNotIn("needs-human", payload["message"])
 
     def test_a_failing_or_hanging_codex_falls_back(self):
         self.env["FAKE_MODE"] = "fail"
