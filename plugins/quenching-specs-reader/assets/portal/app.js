@@ -350,6 +350,7 @@
         h("div", { class: "sechead" }, h("h2", {}, "Esperando você"), h("span", {}, waiting.length)),
         waiting.length ? h("ul", { class: "humanlist" }, waiting.map((s) => h("li", {},
           h("strong", {}, sessionLabel(s)), " ", h("span", { class: "meta" }, "since " + since(s.statusSince || s.lastEvent)),
+          s.pendingTool ? h("span", { class: "chip" }, s.pendingTool) : null,
           h("blockquote", { class: "question" }, s.pendingQuestion || "(waiting, no question text)"))))
           : h("p", { class: "empty" }, "no session is waiting for you")),
       h("section", { class: "panel" },
