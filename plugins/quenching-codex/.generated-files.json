@@ -712,7 +712,7 @@
     "scripts/bin/quenching/specs/commands/release.py": "ac76ff3083a2d1f621cc053f7fceeceefcfc1adbc6a695bb33c4fef52577c07b",
     "scripts/bin/quenching/specs/commands/task.py": "61385bd1d508ae0cce551ba25dd3286801c8316282581ad6fba35e28544932ec",
     "scripts/bin/quenching/specs/commands/validate.py": "375695a3a0e30b710e73268b6c900fba6ef95b957607a03829c48f76ff7b1916",
-    "scripts/bin/quenching/specs/config.py": "0dc4089710543d542814b856f2aec2e10370cd7bea8fd3286749c1d9289a6caf",
+    "scripts/bin/quenching/specs/config.py": "16bd8b2cae83306e10d98cc5c19dd2c3e68744868bf4fafc9e6be455e2738435",
     "scripts/bin/quenching/specs/parse/__init__.py": "26c420fca154b9dedd3ff506a754d8aa4e8fd23013c8ba0c59bd90a5a8f26356",
     "scripts/bin/quenching/specs/parse/derive.py": "8372edc14ae64518411ebd6513d61f3e9e3657cbbff32a374917aa57afe24238",
     "scripts/bin/quenching/specs/parse/edit.py": "873dba7f627d7d6d204fa0b96bb73e9ed5242f68ecbeb506fb5befee5898dbfb",
