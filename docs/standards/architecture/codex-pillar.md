@@ -90,7 +90,7 @@ are state.
   hash of the index (`git ls-files -s`, so a swapped staged blob moves it), the hash of the index
   flags (`git ls-files -v`, so `assume-unchanged` and `skip-worktree` move it) and, for every path
   `git status` reports and every file those flags hide, its status code and the hash of its bytes
-  (a symlink is hashed as its `os.readlink` target) — the run's own
+  (a symlink is hashed as its `os.readlink` target plus the bytes it resolves to) — the run's own
   `.quenching/codex/<run>/` excepted. The ignored files that hold local configuration (`.claude/**`
   and `*.local.json`) are recorded too; the other ignored files (caches) are not. A git command of
   the review's snapshot that fails is never an empty tree: before the run it refuses, after it the
