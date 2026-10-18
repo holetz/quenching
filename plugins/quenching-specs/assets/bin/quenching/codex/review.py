@@ -9,8 +9,10 @@ arrives on stdin, after the rule that Codex only reads; the events and the last 
 `.quenching/codex/<run>/`.
 
 The git guard is read before and after: the refs (`HEAD`, branch, reflog, stash, every worktree's
-`HEAD`) and, for every path `git status` reports, its status and bytes. Any change is exit 2
-`codex-git-guard` naming it: the caller never cleans it and hands the tree to the human.
+`HEAD`, every ref), the index hash, the ignored local configuration (`.claude/**`, `*.local.json`)
+and, for every path `git status` reports, its status and bytes. Any change, or a git command that
+fails, is exit 2 `codex-git-guard` naming it: the caller never cleans it and hands the tree to the
+human.
 
     exit 0  Codex finished, wrote the review and changed nothing
     exit 1  Codex failed, wrote nothing or ran past `timeoutSeconds` — the caller falls back
@@ -26,7 +28,7 @@ import shutil
 import subprocess
 import time
 
-from quenching.codex.guard import BYPASS, clean_env, git, refs, tree
+from quenching.codex.guard import BYPASS, GuardError, clean_env, git, refs, strict_refs, tree
 from quenching.codex.probe import stop
 
 RUN_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
@@ -90,7 +92,7 @@ def measured_tokens(events_path: str):
 
 
 def snapshot(worktree: str, skip: str | None) -> dict:
-    return {**refs(worktree), "tree": tree(worktree, skip)}
+    return {**refs(worktree), **strict_refs(worktree), "tree": tree(worktree, skip)}
 
 
 def refusal(code: str, message: str) -> tuple[dict, int]:
@@ -131,7 +133,12 @@ def run_review(root: str, settings: dict, worktree: str, prompt: str, run: str |
     events_path = os.path.join(run_dir, "events.jsonl")
     argv = build_argv(settings["model"], worktree, review_path)
     timed_out = False
-    before = snapshot(toplevel, skip)
+    try:
+        before = snapshot(toplevel, skip)
+    except GuardError as error:
+        shutil.rmtree(run_dir, ignore_errors=True)
+        return refusal("codex-git-guard", f"the guard cannot read the tree before the run, so "
+                                          f"nothing can be proved: {error}")
     with open(prompt_path, encoding="utf-8") as stdin, \
             open(events_path, "w", encoding="utf-8") as stdout, \
             open(os.path.join(run_dir, "stderr.log"), "w", encoding="utf-8") as stderr:
@@ -142,7 +149,13 @@ def run_review(root: str, settings: dict, worktree: str, prompt: str, run: str |
         except subprocess.TimeoutExpired:
             stop(process)
             code, timed_out = process.returncode, True
-    after = snapshot(toplevel, skip)
+    try:
+        after = snapshot(toplevel, skip)
+    except GuardError as error:
+        return {"ok": False, "code": "codex-git-guard",
+                "message": f"the guard cannot read the tree after the run, so it cannot prove the "
+                           f"review changed nothing: {error}. Stop and hand the tree to the human.",
+                "runDir": run_dir, "reason": f"git guard: {error}"}, 2
     wrote = os.path.isfile(review_path) and os.path.getsize(review_path) > 0
     out = {"ok": False, "fallback": True, "run": run, "runDir": run_dir,
            "reviewPath": review_path if wrote else None, "eventsPath": events_path,
