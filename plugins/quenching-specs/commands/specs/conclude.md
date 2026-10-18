@@ -152,14 +152,16 @@ diff contradicts.
 **Independent Codex review, in parallel, by default when there is quota.** Before reading, run
 `cq codex probe --json`: exit 0 (available) or 2 (unknown) → write the prompt (the diff range
 `origin/<base>...HEAD`, asking for findings as `path:line` with severity) to
-`.quenching/codex/<run>/prompt.md` and run, in the background,
-`cq codex review --worktree <work checkout> --prompt <that file> --run <run> --base origin/<base> --json` (NO-REMOTE: the local `<base>`, in the prompt and `--base` alike)
+`.quenching/codex/<run>-prompt.md` and run, in the background,
+`cq codex review --worktree <work checkout> --prompt <that file> --run <run> --json` (NO-REMOTE: the local `<base>` in the prompt)
 while you read the diff yourself. Exit 1 from the probe, a timeout or any failure of the review →
 **fallback**: the Claude review stands alone and the report says `Codex: fallback (<reason>)`; it is
 never a conclude error and never blocks `reviewed`. Consolidate both lists by `path:line`: a finding
 both reviewers share counts; one **only Codex** raised counts only once reproduced (by your own
 reading, or by a command whose output you quote), otherwise it is reported as unreproduced and
-never becomes a fix. Codex runs read-only; its output is never applied unread. A Codex-surface run
+never becomes a fix. Codex must change nothing: exit 2 `codex-git-guard` means it did, so stop
+conclude and hand the tree to the human naming the payload's `changed` and `guard.moved` — never
+clean them. Its output is never applied unread. A Codex-surface run
 skips this paragraph (no nested Codex).
 
 Present the findings. Fixes go in as ordinary commits on the branch, before the merge. Then stamp

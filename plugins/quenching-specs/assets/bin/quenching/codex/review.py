@@ -1,22 +1,21 @@
-"""Run Codex as an independent, read-only reviewer of a worktree.
+"""Run Codex as an independent reviewer of a worktree, and prove by code it changed nothing.
 
-The argv is fixed here and nowhere else: `-s read-only --ignore-user-config --ignore-rules`
-always, so the user's `~/.codex/config.toml` (sandbox, approval policy, plugins, hooks) never
-applies, and never `--ephemeral`, which would erase the quota snapshot the probe falls back on.
-The prompt arrives on stdin; the events and the last message land in `.quenching/codex/<run>/`.
+The argv is fixed here and nowhere else: `--dangerously-bypass-approvals-and-sandbox
+--ignore-user-config --ignore-rules` always, so Codex's native sandbox is never asked for (it fails
+on hosts without unprivileged user namespaces) and the user's `~/.codex/config.toml` (approval
+policy, plugins, hooks) never applies; and never `--ephemeral`, which would erase the quota snapshot
+the probe falls back on. The environment loses the same secrets as the executor's. The prompt
+arrives on stdin, after the rule that Codex only reads; the events and the last message land in
+`.quenching/codex/<run>/`.
 
-The sandbox is checked first, without spending quota. Where it fails, every command Codex would
-run fails with it, so the review turns `prompt-only`: `cq` puts `git diff <base>..<head>` and the
-touched files into `prompt.md`, and Codex only reads. The argv stays the same read-only one —
-never `workspace-write`, never `danger-full-access`. Without `--base` there is nothing to put in
-the prompt, and Codex is not called at all.
+The git guard is read before and after: the refs (`HEAD`, branch, reflog, stash, every worktree's
+`HEAD`) and, for every path `git status` reports, its status and bytes. Any change is exit 2
+`codex-git-guard` naming it: the caller never cleans it and hands the tree to the human.
 
-    mode    sandboxed · prompt-only · unavailable
-    exit 0  Codex finished and wrote the review
-    exit 1  Codex failed, wrote nothing, ran past `timeoutSeconds`, or no mode could run —
-            the caller falls back
-    exit 2  refusal: a missing worktree, prompt or `codex`, a run name already used, or a diff
-            that could not be read
+    exit 0  Codex finished, wrote the review and changed nothing
+    exit 1  Codex failed, wrote nothing or ran past `timeoutSeconds` — the caller falls back
+    exit 2  refusal: a missing worktree, prompt or `codex`, a worktree outside git, a run name
+            already used; or `codex-git-guard`: the guard saw a change
 """
 from __future__ import annotations
 
@@ -27,18 +26,19 @@ import shutil
 import subprocess
 import time
 
-from quenching.codex.probe import APP_SERVER_DEADLINE, check_sandbox, stop
+from quenching.codex.guard import BYPASS, clean_env, git, refs, tree
+from quenching.codex.probe import stop
 
 RUN_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 NOT_MEASURED = "not measured"
-PROMPT_ONLY_RULE = (
-    "Modo prompt-only: o sandbox do Codex não funciona neste host. Não execute comandos e não "
-    "leia arquivos: revise apenas o diff e os arquivos abaixo. Cite cada achado por path:line; "
-    "o lado Claude reproduz cada achado antes de agir sobre ele.")
+RULE = (
+    "Regras do revisor: apenas leia. Não escreva, crie, mova nem apague nenhum arquivo, e não rode "
+    "comandos git que alterem algo (commit, add, stash, reset, checkout, branch, push). Cite cada "
+    "achado por path:line; o lado Claude reproduz cada achado antes de agir sobre ele.")
 
 
 def build_argv(model: str, worktree: str, review_path: str) -> list[str]:
-    return ["exec", "-s", "read-only", "--ignore-user-config", "--ignore-rules",
+    return ["exec", BYPASS, "--ignore-user-config", "--ignore-rules",
             "-m", model, "-c", "model_reasoning_effort=high", "-C", worktree,
             "--json", "-o", review_path, "-"]
 
@@ -89,21 +89,8 @@ def measured_tokens(events_path: str):
     return found[-1] if found else NOT_MEASURED
 
 
-def _git(worktree: str, *args: str) -> str:
-    return subprocess.run(["git", "-C", worktree, *args], capture_output=True, text=True,
-                          errors="replace", check=True).stdout
-
-
-def prompt_only(worktree: str, prompt: str, base: str, head: str) -> str:
-    """The prompt, the rule that Codex only reads, the diff, and every touched file at `head`."""
-    diff = _git(worktree, "diff", f"{base}..{head}")
-    touched = _git(worktree, "diff", "--name-only", "--diff-filter=ACMR", f"{base}..{head}")
-    with open(prompt, encoding="utf-8") as handle:
-        parts = [handle.read().rstrip("\n"), PROMPT_ONLY_RULE,
-                 f"## git diff {base}..{head}\n\n```diff\n{diff}```"]
-    for path in touched.splitlines():
-        parts.append(f"## {path} @ {head}\n\n```\n{_git(worktree, 'show', f'{head}:{path}')}```")
-    return "\n\n".join(parts) + "\n"
+def snapshot(worktree: str, skip: str | None) -> dict:
+    return {**refs(worktree), "tree": tree(worktree, skip)}
 
 
 def refusal(code: str, message: str) -> tuple[dict, int]:
@@ -111,12 +98,14 @@ def refusal(code: str, message: str) -> tuple[dict, int]:
 
 
 def run_review(root: str, settings: dict, worktree: str, prompt: str, run: str | None,
-               env: dict | None = None, base: str | None = None,
-               head: str = "HEAD") -> tuple[dict, int]:
+               env: dict | None = None) -> tuple[dict, int]:
     env = dict(os.environ if env is None else env)
-    worktree, prompt = os.path.abspath(worktree), os.path.abspath(prompt)
+    worktree, prompt = os.path.realpath(worktree), os.path.abspath(prompt)
     if not os.path.isdir(worktree):
         return refusal("codex-worktree-missing", f"worktree does not exist: {worktree}")
+    if git(worktree, "rev-parse", "--is-inside-work-tree").strip() != "true":
+        return refusal("codex-worktree-not-git",
+                       f"worktree is not inside a git checkout, so no guard can hold: {worktree}")
     if not os.path.isfile(prompt):
         return refusal("codex-prompt-missing", f"prompt file does not exist: {prompt}")
     binary = shutil.which("codex", path=env.get("PATH"))
@@ -128,42 +117,51 @@ def run_review(root: str, settings: dict, worktree: str, prompt: str, run: str |
     run_dir = os.path.join(root, ".quenching", "codex", run)
     if os.path.exists(run_dir):
         return refusal("codex-run-exists", f"run directory already exists: {run_dir}")
-    sandbox = check_sandbox(binary, worktree,
-                            min(APP_SERVER_DEADLINE, settings["timeoutSeconds"]), env)
-    mode = "sandboxed" if sandbox["state"] == "available" else "prompt-only"
-    if mode == "prompt-only":
-        if base is None:
-            return {"ok": False, "fallback": True, "mode": "unavailable", "sandbox": sandbox,
-                    "reason": "the sandbox is unavailable and no --base was given",
-                    "run": run, "runDir": None, "reviewPath": None, "eventsPath": None,
-                    "argv": None, "exitCode": None, "timedOut": False,
-                    "model": settings["model"], "timeoutSeconds": settings["timeoutSeconds"],
-                    "tokens": NOT_MEASURED}, 1
-        try:
-            text = prompt_only(worktree, prompt, base, head)
-        except subprocess.CalledProcessError as exc:
-            return refusal("codex-diff-unreadable",
-                           f"git diff {base}..{head} failed: {exc.stderr.strip()}")
+    toplevel = os.path.realpath(git(worktree, "rev-parse", "--show-toplevel").strip())
+    inside = os.path.relpath(os.path.realpath(run_dir), toplevel)
+    skip = None if inside.startswith("..") else inside  # the run's own output
+
     os.makedirs(run_dir)
-    if mode == "prompt-only":
-        prompt = os.path.join(run_dir, "prompt.md")
-        with open(prompt, "w", encoding="utf-8") as handle:
-            handle.write(text)
+    prompt_path = os.path.join(run_dir, "prompt.md")
+    with open(prompt, encoding="utf-8") as handle:
+        text = handle.read().rstrip("\n")
+    with open(prompt_path, "w", encoding="utf-8") as handle:
+        handle.write(f"{text}\n\n{RULE}\n")
     review_path = os.path.join(run_dir, "review.md")
     events_path = os.path.join(run_dir, "events.jsonl")
     argv = build_argv(settings["model"], worktree, review_path)
     timed_out = False
-    with open(prompt, encoding="utf-8") as stdin, \
+    before = snapshot(toplevel, skip)
+    with open(prompt_path, encoding="utf-8") as stdin, \
             open(events_path, "w", encoding="utf-8") as stdout, \
             open(os.path.join(run_dir, "stderr.log"), "w", encoding="utf-8") as stderr:
         process = subprocess.Popen([binary, *argv], stdin=stdin, stdout=stdout, stderr=stderr,
-                                   cwd=worktree, env=env, start_new_session=True)
+                                   cwd=worktree, env=clean_env(env), start_new_session=True)
         try:
             code = process.wait(timeout=settings["timeoutSeconds"])
         except subprocess.TimeoutExpired:
             stop(process)
             code, timed_out = process.returncode, True
+    after = snapshot(toplevel, skip)
     wrote = os.path.isfile(review_path) and os.path.getsize(review_path) > 0
+    out = {"ok": False, "fallback": True, "run": run, "runDir": run_dir,
+           "reviewPath": review_path if wrote else None, "eventsPath": events_path,
+           "argv": ["codex", *argv], "exitCode": code, "timedOut": timed_out,
+           "model": settings["model"], "timeoutSeconds": settings["timeoutSeconds"],
+           "tokens": measured_tokens(events_path), "guard": None, "changed": []}
+    moved = sorted(key for key in before if key != "tree" and before[key] != after[key])
+    out["changed"] = sorted(path for path in before["tree"].keys() | after["tree"].keys()
+                            if before["tree"].get(path) != after["tree"].get(path))
+    if moved or out["changed"]:
+        out["guard"] = {"moved": moved, "before": before, "after": after}
+        detail = "; ".join(filter(None, [moved and "moved: " + ", ".join(moved),
+                                         out["changed"] and "changed: "
+                                         + ", ".join(out["changed"])]))
+        return {**out, "code": "codex-git-guard",
+                "message": f"the review changed the tree — {detail}. Claude may not clean it "
+                           "(no reset, stash, checkout or restore): stop and hand the tree to "
+                           "the human, naming these paths.",
+                "reason": f"git guard: {detail}"}, 2
     if timed_out:
         reason = f"codex ran past {settings['timeoutSeconds']}s and was stopped"
     elif code != 0:
@@ -173,9 +171,4 @@ def run_review(root: str, settings: dict, worktree: str, prompt: str, run: str |
     else:
         reason = "review written"
     ok = not timed_out and code == 0 and wrote
-    return {"ok": ok, "fallback": not ok, "mode": mode, "sandbox": sandbox, "reason": reason,
-            "run": run, "runDir": run_dir,
-            "reviewPath": review_path if wrote else None, "eventsPath": events_path,
-            "argv": ["codex", *argv], "exitCode": code, "timedOut": timed_out,
-            "model": settings["model"], "timeoutSeconds": settings["timeoutSeconds"],
-            "tokens": measured_tokens(events_path)}, 0 if ok else 1
+    return {**out, "ok": ok, "fallback": not ok, "reason": reason}, 0 if ok else 1

@@ -12,7 +12,7 @@ answer `available` under every ceiling lowered by `reservePercent`, so a dispatc
 margin the human kept. `crossReview: "off"` turns off the review, never the executor, so the probe
 is asked as if the review were on.
 
-    exit 0  eligible: `class`, `model`, `reasoningEffort`, `sandbox` in the payload
+    exit 0  eligible: `class`, `model`, `reasoningEffort` in the payload
     exit 1  not eligible: `reason` names the first rule that failed — Codex writes the task
     exit 2  refusal: the spec or the task does not exist
 """
@@ -60,8 +60,7 @@ def eligibility(task: dict, settings: dict, root: str, quota=None,
     """
     executor = settings["executor"]
     out = {"ok": False, "task": task["id"], "class": None, "model": None,
-           "reasoningEffort": executor["reasoningEffort"], "sandbox": executor["sandbox"],
-           "tokens": None, "maxTaskTokens": executor["maxTaskTokens"], "quota": None}
+           "reasoningEffort": executor["reasoningEffort"], "tokens": None, "maxTaskTokens": executor["maxTaskTokens"], "quota": None}
 
     def no(reason: str) -> tuple[dict, int]:
         out["reason"] = reason

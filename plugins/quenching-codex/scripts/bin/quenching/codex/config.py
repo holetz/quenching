@@ -6,8 +6,8 @@ explicit opt-out. A value of the wrong shape falls back to its default and is na
 
 `executor` configures Codex writing one task's code inside `quenching-specs-execute`. It is
 on by default and independent of `crossReview`: `crossReview: "off"` turns off the review, never
-the executor. `sandbox: "off"` runs Codex without its sandbox, inside the worktree only;
-`"workspace-write"` is the opt-in for a host whose sandbox works.
+the executor. Codex's native sandbox is not configurable: the executor always runs with the
+bypass, inside the worktree, under the git guard.
 """
 from __future__ import annotations
 
@@ -24,8 +24,6 @@ DEFAULTS = {
         "modelVerified": "gpt-6.1-sol",
         "modelSmallTier": "gpt-6-luna",
         "reasoningEffort": "medium",
-        "sandbox": "off",
-        "windowsSandbox": "unelevated",
         "maxTaskTokens": 20000,
         "reservePercent": 10,
         "stopLossPercent": 15,
@@ -34,8 +32,6 @@ DEFAULTS = {
 CROSS_REVIEW = ("auto", "off")
 CHOICES = {
     "reasoningEffort": ("minimal", "low", "medium", "high"),
-    "sandbox": ("off", "workspace-write"),
-    "windowsSandbox": ("elevated", "unelevated"),
 }
 
 
