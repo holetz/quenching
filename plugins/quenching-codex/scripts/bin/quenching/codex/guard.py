@@ -93,14 +93,17 @@ def run_skip(run_dir: str, toplevel: str, pathmod=os.path) -> str | None:
         inside = pathmod.relpath(run_dir, toplevel)
     except ValueError:
         return None
-    inside = inside.replace("\\", "/")
+    if pathmod.sep != "/":
+        inside = inside.replace(pathmod.sep, "/")
     return None if inside == ".." or inside.startswith("../") else inside
 
 
 def _skipped(path: str, skip: str | None) -> bool:
     if not skip:
         return False
-    skip = skip.replace("\\", "/").rstrip("/")
+    if os.sep != "/":
+        skip = skip.replace(os.sep, "/")
+    skip = skip.rstrip("/")
     return path == skip or path.startswith(skip + "/")
 
 

@@ -195,7 +195,8 @@ class TheReview(unittest.TestCase):
         self.assertNotIn(".quenching/codex/r1/review.md", tree(str(self.worktree), skip))
         self.assertIn(".quenching/codex/r1/review.md", tree(str(self.worktree), None))
         raw = ntpath.join(".quenching", "codex", "r1")
-        self.assertNotIn(".quenching/codex/r1/review.md", tree(str(self.worktree), raw))
+        with mock.patch("os.sep", "\\"):  # as on Windows
+            self.assertNotIn(".quenching/codex/r1/review.md", tree(str(self.worktree), raw))
 
     def test_a_run_dir_on_another_drive_has_no_skip_and_does_not_raise(self):
         self.assertIsNone(run_skip("C:\\repo\\.quenching\\codex\\r1", "D:\\worktree", ntpath))
