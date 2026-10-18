@@ -77,6 +77,24 @@ if sys.argv[1:2] == ["exec"]:
         import subprocess
         subprocess.run(["git", "-C", cwd, "commit", "-q", "--allow-empty", "-m", "codex"],
                        check=True)
+    if mode in ("branch", "tag", "index", "ignored", "break-index"):
+        import subprocess
+        def run(*a):
+            subprocess.run(["git", "-C", cwd, *a], check=True)
+        if mode == "branch":
+            run("branch", "x")
+        if mode == "tag":
+            run("tag", "y")
+        if mode == "index":
+            blob = subprocess.run(["git", "-C", cwd, "hash-object", "-w", "--stdin"], check=True,
+                                  input="x = 7\n", text=True, capture_output=True).stdout.strip()
+            run("update-index", "--cacheinfo", f"100644,{blob},kept.py")
+        if mode == "ignored":
+            os.makedirs(os.path.join(cwd, ".claude"), exist_ok=True)
+            with open(os.path.join(cwd, ".claude", "settings.local.json"), "w") as handle:
+                handle.write("{}\n")
+        if mode == "break-index":
+            os.chmod(os.path.join(cwd, ".git", "index"), 0)
     out = sys.argv[sys.argv.index("-o") + 1]
     events = [{"type": "thread.started"},
               {"type": "token_count", "info": {"total_token_usage": {"total_tokens": 100}}},

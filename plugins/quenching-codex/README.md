@@ -320,9 +320,10 @@ the rule that Codex only reads), `review.md` and `events.jsonl`.
 **No sandbox, a git guard instead.** Codex runs with `--dangerously-bypass-approvals-and-sandbox`,
 because the native sandbox needs admin rights most machines lack and fails there with errors. The
 environment loses `GH_TOKEN`, `GITHUB_TOKEN`, `AWS_*`, `AZURE_*` and `GOOGLE_*`, and the guard
-compares `HEAD`, branch, reflog, stash, every worktree's `HEAD` and the status and bytes of every
-path `git status` reports, before and after. Any change is exit `2` `codex-git-guard`: the tree is
-never cleaned by Codex and goes to the human.
+compares `HEAD`, branch, reflog, stash, every ref, the index, every worktree's `HEAD`, the status
+and bytes of every path `git status` reports and the ignored local configuration (`.agents/**`,
+`*.local.json`), before and after. Any change, or a git command of the guard that fails, is exit `2`
+`codex-git-guard`: the tree is never cleaned by Codex and goes to the human.
 
 **Fallback.** A probe that exits `1`, or a review that times out or exits `1`, leaves the step with
 the Codex review alone, and the final report names the fallback and its reason. A refusal (exit

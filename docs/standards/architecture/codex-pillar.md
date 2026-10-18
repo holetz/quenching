@@ -84,9 +84,14 @@ codex exec --dangerously-bypass-approvals-and-sandbox --ignore-user-config --ign
 worktree's `HEAD`, branch, reflog length, the stash ref and every worktree's `HEAD`, and `git
 status` with untracked files.
 
-- **The review** also records, for every path `git status` reports, its status code and the hash
-  of its bytes — the run's own `.quenching/codex/<run>/` excepted. Any moved ref or any path whose
-  entry differs is exit 2 `codex-git-guard`, with `guard.moved` and `changed`. The caller never
+- **The review** also records every ref (`git for-each-ref`, so a new branch or tag moves it), the
+  hash of the index (`git ls-files -s`, so a swapped staged blob moves it), and, for every path
+  `git status` reports, its status code and the hash of its bytes — the run's own
+  `.quenching/codex/<run>/` excepted. The ignored files that hold local configuration (`.claude/**`
+  and `*.local.json`) are recorded too; the other ignored files (caches) are not. A git command of
+  the review's snapshot that fails is never an empty tree: before the run it refuses, after it the
+  guard cannot prove anything. Both are exit 2 `codex-git-guard`. Any moved ref or any path whose
+  entry differs is the same exit 2, with `guard.moved` and `changed`. The caller never
   cleans it (no `reset`, `stash`, `checkout` or `restore`): it stops and hands the tree to the
   human, naming the paths.
 - **The executor** checks that `git status` stays inside the task's `files:` (§The executor).
