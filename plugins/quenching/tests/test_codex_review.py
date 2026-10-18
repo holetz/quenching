@@ -121,6 +121,64 @@ class TheReview(unittest.TestCase):
         self.assertIn("head", payload["guard"]["moved"])
         self.assertEqual([], payload["changed"])
 
+    def guarded(self, mode: str, run: str = "r1") -> tuple[dict, int]:
+        self.env.update({**GIT_ENV, "FAKE_CODEX_MODE": mode, "HOME": str(self.tmp)})
+        self.env["PATH"] += os.pathsep + os.path.dirname(shutil.which("git"))
+        return self.review(run=run)
+
+    def commit_ignore(self, rules: str) -> None:
+        (self.worktree / ".gitignore").write_text(rules, encoding="utf-8")
+        env = {**GIT_ENV, "PATH": os.environ["PATH"], "HOME": str(self.tmp)}
+        for args in (["add", "."], ["commit", "-q", "-m", "ignore"]):
+            subprocess.run(["git", "-C", str(self.worktree), *args], check=True, env=env,
+                           capture_output=True)
+
+    def test_a_new_branch_trips_the_guard(self):
+        payload, code = self.guarded("branch")
+        self.assertEqual((2, "codex-git-guard"), (code, payload["code"]))
+        self.assertIn("allRefs", payload["guard"]["moved"])
+
+    def test_a_new_tag_trips_the_guard(self):
+        payload, code = self.guarded("tag")
+        self.assertEqual((2, "codex-git-guard"), (code, payload["code"]))
+        self.assertIn("allRefs", payload["guard"]["moved"])
+
+    def test_a_swapped_index_blob_trips_the_guard(self):
+        env = {**GIT_ENV, "PATH": os.environ["PATH"], "HOME": str(self.tmp)}
+        (self.worktree / "kept.py").write_text("x = 5\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(self.worktree), "add", "kept.py"], check=True, env=env)
+        (self.worktree / "kept.py").write_text("x = 9\n", encoding="utf-8")  # status stays MM
+        payload, code = self.guarded("index")
+        self.assertEqual((2, "codex-git-guard"), (code, payload["code"]))
+        self.assertIn("index", payload["guard"]["moved"])
+        self.assertEqual([], payload["changed"])
+
+    def test_a_local_settings_file_ignored_by_git_trips_the_guard(self):
+        self.commit_ignore("settings.local.json\n")
+        payload, code = self.guarded("ignored")
+        self.assertEqual((2, "codex-git-guard"), (code, payload["code"]))
+        self.assertEqual([".claude/settings.local.json"], payload["changed"])
+
+    def test_an_unrelated_ignored_file_is_not_a_change(self):
+        self.commit_ignore("cache/\n")
+        (self.worktree / "cache").mkdir()
+        (self.worktree / "cache" / "x.pyc").write_text("1", encoding="utf-8")
+        payload, code = self.review()
+        self.assertEqual(0, code, payload)
+
+    def test_a_git_that_fails_after_the_run_fails_closed(self):
+        payload, code = self.guarded("break-index")
+        self.assertEqual((2, "codex-git-guard"), (code, payload["code"]))
+        self.assertIn("cannot read the tree after", payload["message"])
+
+    def test_a_git_that_fails_before_the_run_refuses(self):
+        os.chmod(self.worktree / ".git" / "index", 0)
+        self.addCleanup(os.chmod, self.worktree / ".git" / "index", 0o644)
+        payload, code = self.review()
+        self.assertEqual((2, "codex-git-guard"), (code, payload["code"]))
+        self.assertIn("before the run", payload["message"])
+        self.assertFalse(self.log.exists())
+
     def test_the_run_dir_inside_the_worktree_is_not_a_change(self):
         payload, code = self.review(root=self.worktree)
         self.assertEqual(0, code, payload)
