@@ -257,6 +257,13 @@ def _is_regenerable(entry: str, declared: list[str]) -> bool:
     return False
 
 
+def _is_codex_artifact(entry: str, sep: str = os.sep) -> bool:
+    """Whether an ignored entry is `.quenching/codex` or sits under it; `os.walk` entries carry
+    the platform separator, so it is normalized to `/` before the comparison."""
+    entry = entry.replace(sep, "/")
+    return entry == ".quenching/codex" or entry.startswith(".quenching/codex/")
+
+
 def _undeclared(path: str, entries: list[str], declared: list[str]) -> list[str]:
     """The ignored entries no declaration covers; git reports a wholly ignored directory as one
     entry, so a directory that merely contains a declared path is opened to its files."""
@@ -349,8 +356,7 @@ def _retire(args) -> int:
     if ignored is None:
         return refuse({"code": "git-worktree-retire-status-failed",
                        "message": f"git status failed in {path}; nothing was removed"}, args.json)
-    ignored = [entry for entry in ignored
-               if entry != ".quenching/codex" and not entry.startswith(".quenching/codex/")]
+    ignored = [entry for entry in ignored if not _is_codex_artifact(entry)]
     if ignored:
         payload.update(ignored=ignored, message=f"the worktree holds ignored files that removal "
                        f"would delete: {', '.join(ignored)}; pass --discard-ignored to remove anyway")
