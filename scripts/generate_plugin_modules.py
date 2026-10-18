@@ -67,6 +67,8 @@ def principal_tree(root: Path, manifest: dict, module: dict) -> dict:
         copy_files(tree, source, "commands/" + rel)
     if owned["agents"]:
         copy_files(tree, source, "agents")
+    if owned.get("hooks"):
+        copy_files(tree, source, "hooks")
     for package in [*owned["packages"], *support["packages"]]:
         copy_files(tree, source, "assets/bin/quenching/" + package)
     for reference in support["references"]:
@@ -150,6 +152,8 @@ def ownership_findings(root: Path, manifest: dict) -> list[str]:
     for path in sorted((source / "assets/references").iterdir()):
         if path.is_dir() and path.name not in references:
             findings.append(f"reference {path.name} is shipped by no module")
+    if (source / "hooks").is_dir() and not any(m["owned"].get("hooks") for m in principal):
+        findings.append("hooks/ is shipped by no module (owned.hooks)")
     return findings
 
 
