@@ -170,7 +170,9 @@ judges the task again and runs, from `.quenching/codex/<run>/`:
 A **git guard** is read before and after: the worktree's `HEAD`, branch, reflog length, the stash
 ref, every worktree's `HEAD`, and `git status` contained in `files:`. Any divergence is exit 2
 `codex-git-guard` with the offending paths and `discard: <files>`; the caller discards inside
-`files:` only — never `reset`, `stash`, `checkout` or `restore` — and writes the task itself.
+`files:` only — never `reset`, `stash`, `checkout` or `restore` — and writes the task itself. When
+`outside` is non-empty (paths `files:` never declared) the caller may not clean them and stops the
+task as `needs-human` naming them instead.
 
 Exit 0 is a diff inside `files:`; exit 1 (ineligible, timeout, Codex error) falls back to Claude.
 The payload carries `tokens` (from `turn.completed.usage`, or `not measured`), `quotaBefore`,
