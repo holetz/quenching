@@ -72,8 +72,8 @@ Source Claude model pins remain intact.
 A Codex run delegates exclusively through the Codex host's subagent tools, with explicit
 models and role protocols. It must never launch Claude CLI or fall back to Claude models.
 Claude workflows may still delegate development to Codex, and may also ask Codex for an
-independent review of their own work. That review runs only as read-only `codex exec` with
-`-s read-only --ignore-user-config`, in parallel with the Claude review, by default when quota is
+independent review of their own work. That review runs only as `codex exec` under the bypass with
+`--ignore-user-config` and no native sandbox, a git guard proving the tree unchanged, and runs in parallel with the Claude review, by default when quota is
 available. When Codex is unavailable or out of quota the workflow reports the fallback and keeps
 the Claude review rather than skipping the step in silence. A Codex run never launches Codex or
 Claude CLI, so the review step belongs to the Claude surface and is absent from the generated
