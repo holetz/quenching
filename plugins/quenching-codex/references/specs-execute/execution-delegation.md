@@ -120,7 +120,7 @@ cq codex implement --spec "<id>" --task "<task-id>" --worktree "<work checkout>"
   then execute's self-review (step 5d). A red `verify:` is fixed by you **on top of Codex's
   diff**, fed its output; start from scratch only when the self-review judges the approach wrong. Codex never
   gets a second attempt at the task.
-- **Exit 1** (quota, timeout, unavailable sandbox, Codex error) → write the task yourself.
+- **Exit 1** (quota, timeout, Codex error) → write the task yourself.
 - **Exit 2** (`codex-git-guard`), payload `outside` **non-empty** → those paths were never in
   `files:` and you may not clean them: stop the task as `needs-human` naming them, so the human
   cleans the tree; write nothing and do not discard.

@@ -31,8 +31,6 @@ argv = sys.argv[1:]
 with open(os.environ["FAKE_LOG"], "a", encoding="utf-8") as handle:
     handle.write(json.dumps({"argv": argv, "env": sorted(os.environ), "stdin": sys.stdin.read()})
                  + "\n")
-if argv[:1] == ["sandbox"]:
-    sys.exit(0 if os.environ.get("FAKE_SANDBOX", "ok") == "ok" else 1)
 mode = os.environ.get("FAKE_MODE", "write")
 cwd = argv[argv.index("-C") + 1]
 if mode == "hang":
@@ -116,22 +114,15 @@ class Implement(unittest.TestCase):
     def calls(self) -> list:
         return [json.loads(line) for line in self.log.read_text(encoding="utf-8").splitlines()]
 
-    def test_the_default_argv_bypasses_and_never_also_sandboxes(self):
+    def test_the_argv_always_bypasses_and_never_asks_for_a_sandbox(self):
         argv = build_argv(DEFAULTS["executor"], "m", "/w", "/w/m.md")
-        self.assertIn(BYPASS, argv)
+        self.assertEqual(["exec", BYPASS], argv[:2])
         self.assertNotIn("-s", argv)
+        self.assertFalse([a for a in argv if "sandbox" in a and a != BYPASS])
         for flag in ("--ignore-user-config", "--ignore-rules", "--json"):
             self.assertIn(flag, argv)
         self.assertIn("model_reasoning_effort=medium", argv)
         self.assertEqual(argv[argv.index("-C") + 1], "/w")
-
-    def test_the_sandbox_opt_in_replaces_the_bypass(self):
-        executor = {**DEFAULTS["executor"], "sandbox": "workspace-write"}
-        argv = build_argv(executor, "m", "/w", "/w/m.md", windows=False)
-        self.assertNotIn(BYPASS, argv)
-        self.assertEqual(argv[argv.index("-s") + 1], "workspace-write")
-        windows = build_argv(executor, "m", "/w", "/w/m.md", windows=True)
-        self.assertIn('windows.sandbox="unelevated"', windows)
 
     def test_secrets_never_reach_codex(self):
         env = clean_env({"GH_TOKEN": "1", "GITHUB_TOKEN": "2", "AWS_X": "3", "AZURE_Y": "4",
@@ -197,12 +188,9 @@ class Implement(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertFalse(self.log.exists())
 
-    def test_an_unavailable_opt_in_sandbox_falls_back_instead_of_bypassing(self):
-        self.env["FAKE_SANDBOX"] = "bwrap"
-        payload, code = self.implement(sandbox="workspace-write")
-        self.assertEqual(code, 1)
-        self.assertIn("workspace-write sandbox is unavailable", payload["reason"])
-        self.assertTrue(all(c["argv"][:1] == ["sandbox"] for c in self.calls()))
+    def test_codex_is_the_only_process_started(self):
+        self.implement()
+        self.assertEqual([["exec", BYPASS]], [c["argv"][:2] for c in self.calls()])
 
     def test_a_dirty_tree_outside_files_is_refused(self):
         (self.repo / "loose.txt").write_text("x", encoding="utf-8")

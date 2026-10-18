@@ -9,14 +9,9 @@ event in `$CODEX_HOME/sessions/**/rollout-*.jsonl`. `auth.json` is never opened.
                           `crossReview: "off"`, or no `codex` on PATH
     unknown     (exit 2)  no source could be read, or the only snapshot is stale
 
-The app-server takes no `--ignore-user-config`; the probe starts no thread and no turn, and still
-overrides the sandbox policy so nothing of the user's `danger-full-access` applies.
-
-The sandbox is a separate question, asked without spending quota: `codex sandbox -- true` under
-the read-only policy. A host that forbids unprivileged user namespaces fails it (`bwrap:
-loopback: Failed RTM_NEWADDR`), and then every command Codex runs inside a review fails too.
-When `shared.codex.executor.sandbox` is `workspace-write`, the executor's own sandbox is asked the
-same way, under that policy; with `off` it is not run at all.
+The app-server starts no thread and no turn, so it runs nothing. Codex's native sandbox is never
+asked for anywhere in this pillar: the review and the executor both run with the bypass, bounded by
+the git guard (`quenching.codex.guard`).
 """
 from __future__ import annotations
 
@@ -33,9 +28,7 @@ import tempfile
 import time
 
 APP_SERVER_DEADLINE = 15
-APP_SERVER_ARGV = ("app-server", "-c", 'sandbox_mode="read-only"')
-SANDBOX_ARGV = ("sandbox", "-c", 'sandbox_mode="read-only"')  # no -C: it demands --permission-profile
-WORKSPACE_WRITE_ARGV = ("sandbox", "-c", 'sandbox_mode="workspace-write"')
+APP_SERVER_ARGV = ("app-server",)
 EXIT = {"available": 0, "unavailable": 1, "unknown": 2}
 WINDOWS = ("primary", "secondary")
 
@@ -120,62 +113,6 @@ def read_app_server(binary: str, seconds: float,
         for stream in (process.stdin, process.stdout):
             with contextlib.suppress(OSError):
                 stream.close()
-
-
-def check_sandbox(binary: str, cwd: str, seconds: float, env: dict | None = None,
-                  argv: tuple = SANDBOX_ARGV) -> dict:
-    """Run `true` inside a Codex sandbox, read-only by default: no model call, no quota spent."""
-    policy = argv[-1].split("=", 1)[1].strip('"')
-    try:
-        process = subprocess.Popen([binary, *argv, "--", "true"],
-                                   stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                                   stderr=subprocess.PIPE, text=True, cwd=cwd, env=env,
-                                   start_new_session=True)
-    except OSError as exc:
-        return {"state": "unavailable", "reason": f"codex sandbox did not start: {exc}"}
-    try:
-        _, stderr = process.communicate(timeout=seconds)
-    except subprocess.TimeoutExpired:
-        stop(process)
-        return {"state": "unavailable", "reason": f"codex sandbox ran past {seconds:g}s"}
-    if process.returncode == 0:
-        return {"state": "available", "reason": f"codex sandbox ran `true` {policy}"}
-    last = [line.strip() for line in (stderr or "").splitlines() if line.strip()]
-    detail = last[-1] if last else "no stderr"
-    return {"state": "unavailable",
-            "reason": f"codex sandbox exited {process.returncode}: {detail}"}
-
-
-def sandbox(settings: dict, cwd: str, env: dict | None = None) -> dict:
-    """The sandbox half of the probe, short-circuited by the same known facts as the quota.
-
-    `executor` carries the executor's own check, which `crossReview: "off"` never short-circuits.
-    """
-    env = os.environ if env is None else env
-    executor = executor_sandbox(settings, cwd, env)
-    if settings["crossReview"] == "off":
-        return {"state": "unavailable", "reason": "shared.codex.crossReview is off",
-                "executor": executor}
-    binary = shutil.which("codex", path=env.get("PATH"))
-    if binary is None:
-        return {"state": "unavailable", "reason": "codex is not on PATH", "executor": executor}
-    return {**check_sandbox(binary, cwd, min(APP_SERVER_DEADLINE, settings["timeoutSeconds"]),
-                            dict(env)), "executor": executor}
-
-
-def executor_sandbox(settings: dict, cwd: str, env: dict | None = None) -> dict:
-    """The executor's `workspace-write` sandbox, checked only when the executor asks for it."""
-    env = os.environ if env is None else env
-    executor = settings["executor"]
-    if not executor["enabled"]:
-        return {"state": "off", "reason": "shared.codex.executor.enabled is false"}
-    if executor["sandbox"] == "off":
-        return {"state": "off", "reason": "shared.codex.executor.sandbox is off"}
-    binary = shutil.which("codex", path=env.get("PATH"))
-    if binary is None:
-        return {"state": "unavailable", "reason": "codex is not on PATH"}
-    return check_sandbox(binary, cwd, min(APP_SERVER_DEADLINE, settings["timeoutSeconds"]),
-                         dict(env), WORKSPACE_WRITE_ARGV)
 
 
 def _window(raw, used: str, minutes: str, resets: str) -> dict | None:
