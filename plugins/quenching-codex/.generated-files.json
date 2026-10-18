@@ -697,7 +697,7 @@
     "scripts/bin/quenching/specs/chat.py": "c1a116cce83d37351834e32b62e46f3d7bc34ff05a5a79f10ca40d29122a547b",
     "scripts/bin/quenching/specs/commands/cli.py": "50685940c7cd6d4b62fc6ea2b64146004c550ec909a44dd8c01b9f45978fa43b",
     "scripts/bin/quenching/specs/commands/create.py": "a70a83b681aa0fd3ace7115a716cf1281ace51673fba4f375186753d755c1aba",
-    "scripts/bin/quenching/specs/commands/doctor.py": "2bc985cae14bc3665c3dbeb4fe56f7f9452f2a6735b3679f081ed5c7597fca75",
+    "scripts/bin/quenching/specs/commands/doctor.py": "e3d9bf06e438bfd6d9d1bb26e9e5b297d8e550ce25579683de8ea04c78eeb0e0",
     "scripts/bin/quenching/specs/commands/epic.py": "464a0b7ef3369aa3bc3fde587f70ca99e9d770643701009af82bdb33a84853b6",
     "scripts/bin/quenching/specs/commands/estimate.py": "34795aaab9e16fae93706a33042c434835f940f011fd8b23a7bfca7df02a8ca4",
     "scripts/bin/quenching/specs/commands/fields.py": "807d0a02d89112eafd1e7351c73b9be3d5ea7ef2e8ae370e1520f37251402813",
