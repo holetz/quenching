@@ -28,7 +28,8 @@ import shutil
 import subprocess
 import time
 
-from quenching.codex.guard import BYPASS, GuardError, clean_env, git, refs, strict_refs, tree
+from quenching.codex.guard import (BYPASS, GuardError, clean_env, git, refs, run_skip, strict_refs,
+                                  tree)
 from quenching.codex.probe import stop
 
 RUN_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
@@ -120,8 +121,7 @@ def run_review(root: str, settings: dict, worktree: str, prompt: str, run: str |
     if os.path.exists(run_dir):
         return refusal("codex-run-exists", f"run directory already exists: {run_dir}")
     toplevel = os.path.realpath(git(worktree, "rev-parse", "--show-toplevel").strip())
-    inside = os.path.relpath(os.path.realpath(run_dir), toplevel)
-    skip = None if inside.startswith("..") else inside  # the run's own output
+    skip = run_skip(os.path.realpath(run_dir), toplevel)  # the run's own output
 
     os.makedirs(run_dir)
     prompt_path = os.path.join(run_dir, "prompt.md")

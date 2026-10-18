@@ -4,6 +4,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import ntpath
 import os
 import pathlib
 import shutil
@@ -22,7 +23,7 @@ except ModuleNotFoundError:  # package-qualified unittest invocation from the re
 import test_codex_probe as fake  # the fake binary; a module import collects no test twice
 from quenching.codex import main
 from quenching.codex.config import DEFAULTS
-from quenching.codex.guard import BYPASS
+from quenching.codex.guard import BYPASS, run_skip, tree
 from quenching.codex.review import NOT_MEASURED, RULE, build_argv, measured_tokens, run_review
 
 GIT_ENV = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
@@ -183,6 +184,28 @@ class TheReview(unittest.TestCase):
         payload, code = self.review(root=self.worktree)
         self.assertEqual(0, code, payload)
         self.assertTrue((self.worktree / ".quenching" / "codex" / "r1" / "review.md").is_file())
+
+    def test_a_backslash_skip_still_hides_the_run_dir(self):
+        out = self.worktree / ".quenching" / "codex" / "r1"
+        out.mkdir(parents=True)
+        (out / "review.md").write_text("ok", encoding="utf-8")
+        skip = run_skip(ntpath.join(str(self.worktree), ".quenching", "codex", "r1"),
+                        str(self.worktree), ntpath)
+        self.assertEqual(".quenching/codex/r1", skip)
+        self.assertNotIn(".quenching/codex/r1/review.md", tree(str(self.worktree), skip))
+        self.assertIn(".quenching/codex/r1/review.md", tree(str(self.worktree), None))
+        raw = ntpath.join(".quenching", "codex", "r1")
+        with mock.patch("os.sep", "\\"):  # as on Windows
+            self.assertNotIn(".quenching/codex/r1/review.md", tree(str(self.worktree), raw))
+
+    def test_a_run_dir_on_another_drive_has_no_skip_and_does_not_raise(self):
+        self.assertIsNone(run_skip("C:\\repo\\.quenching\\codex\\r1", "D:\\worktree", ntpath))
+        self.assertIsNone(run_skip("D:\\other\\r1", "D:\\worktree", ntpath))
+
+    def test_a_cross_drive_run_dir_does_not_break_the_review(self):
+        with mock.patch("os.path.relpath", side_effect=ValueError("path is on mount 'C:'")):
+            payload, code = self.review()
+        self.assertEqual(0, code, payload)
 
     def test_a_timeout_stops_codex_and_reports_the_fallback(self):
         self.env["FAKE_CODEX_MODE"] = "hang"

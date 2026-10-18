@@ -86,8 +86,25 @@ def _digest(full: str) -> str:
     return "-"
 
 
+def run_skip(run_dir: str, toplevel: str, pathmod=os.path) -> str | None:
+    """The run's own output as a `/`-separated path under `toplevel`, as `git status` prints it.
+    `None` when the folder is outside the worktree, including a different drive (`ValueError`)."""
+    try:
+        inside = pathmod.relpath(run_dir, toplevel)
+    except ValueError:
+        return None
+    if pathmod.sep != "/":
+        inside = inside.replace(pathmod.sep, "/")
+    return None if inside == ".." or inside.startswith("../") else inside
+
+
 def _skipped(path: str, skip: str | None) -> bool:
-    return bool(skip) and (path == skip or path.startswith(skip.rstrip("/") + "/"))
+    if not skip:
+        return False
+    if os.sep != "/":
+        skip = skip.replace(os.sep, "/")
+    skip = skip.rstrip("/")
+    return path == skip or path.startswith(skip + "/")
 
 
 def _local_config(path: str) -> bool:
