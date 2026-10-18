@@ -93,7 +93,7 @@ def measured_tokens(events_path: str):
 
 
 def snapshot(worktree: str, skip: str | None) -> dict:
-    return {**refs(worktree), **strict_refs(worktree), "tree": tree(worktree, skip)}
+    return {**refs(worktree, strict=True), **strict_refs(worktree), "tree": tree(worktree, skip)}
 
 
 def refusal(code: str, message: str) -> tuple[dict, int]:
