@@ -61,7 +61,7 @@ class EligibilityTest(unittest.TestCase):
         self.assertEqual((payload["class"], payload["model"]), ("small", "small-m"))
         self.assertEqual(payload["tokens"], 100)
         self.assertEqual(payload["reasoningEffort"], "medium")
-        self.assertEqual(payload["sandbox"], "off")
+        self.assertNotIn("sandbox", payload)
 
     def test_large_task_with_verify_is_verified(self):
         self.write("src/a.py", 4000)

@@ -166,15 +166,17 @@ driver in `.git/config`): the audit is no sandbox. Never a second review of the 
 **Codex, in parallel.** Right after launching the reviewer, run `cq codex probe --json`. Exit 0 or 2
 → write a prompt file under `<ephemeral area>/autopilot/<date>/` (the range, one line per finding as
 `path:line — what — why`, no style) and run `cq codex review --worktree <checkout> --prompt <file>
---base <round start> --run <name> --json` while the reviewer works. The reviewer gets no Codex grant;
+--run <name> --json` while the reviewer works. The reviewer gets no Codex grant;
 the conductor alone calls `cq codex`. Exit 1 of the probe, or exit 1 or a timeout of the review →
 no Codex findings: the final report names the fallback and its reason, and the step goes on with the
-Claude review alone; a refusal (exit 2) is reported the same way and never blocks the step.
+Claude review alone; a refusal (exit 2) is reported the same way and never blocks the step. The one
+exception is exit 2 `codex-git-guard`: the review changed the tree, so stop the round and hand it to
+the human naming the payload's `changed` and `guard.moved` — never clean them.
 
 **Consolidate by `path:line`.** Merge both lists, one entry per `path:line`, marked claude,
 codex or both. A finding the reviewer reproduced stands. A `codex`-only finding becomes a spec
 only once reproduced — by the reviewer or by the conductor, with the command and its output; the
-payload's `findingsNeedReproduction` binds, and a `prompt-only` finding was never run by Codex.
+payload's `findingsNeedReproduction` binds.
 Unreproduced ones are dropped and counted in the report. Keep the Codex tokens from the payload, or
 `not measured`. Each finding kept becomes a loose spec (`cq specs new`, then its `## Problem` with
 the reproduction), queued for the next round; `NONE` creates none.
