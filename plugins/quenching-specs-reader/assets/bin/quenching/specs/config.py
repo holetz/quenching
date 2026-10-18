@@ -208,15 +208,6 @@ def _read_scalars(out: dict, values: dict) -> None:
     if isinstance(val, str) and val.strip():
         out["worktreeSetup"] = val.strip()
 
-    # The operations front has no safe default: `scripts/` is the conventional shape, but
-    # the same path may be an imported helper tree or a target's own domain package.  Keep
-    # both declarations as data here; `quenching.ops.config` is the boundary that refuses a
-    # run when either is absent and resolves them relative to the repository root.
-    for key in ("opsRoot", "router"):
-        value = values.get(key)
-        if isinstance(value, str) and value.strip():
-            out[key] = value.strip()
-
 
 def _read_azure_states(out: dict, values: dict) -> None:
     # Both phases or neither. A half-declared mapping is worse than none: it would archive a
