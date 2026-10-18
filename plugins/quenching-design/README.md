@@ -204,6 +204,15 @@ motion, shadows, breakpoints, and snippets remain in the source and sidecar.
 | `/quenching-specs:git:cleanup` | Prunes branches merged or gone and worktrees git still registers with no directory on disk — nothing pruned the human did not pick from that report. |
 | `/quenching-specs:git:pr:review` | Works through a PR's unresolved review threads, one confirmation per thread. |
 
+**The one plugin-wide hook.** `quenching-specs` ships `hooks/hooks.json`: a `PreToolUse` hook on
+`Bash` that **denies** any `git commit`/`merge`/`tag`/`notes`, `gh pr` or `cq git` command whose
+message carries Claude's co-authorship (`Co-Authored-By: Claude …`, `noreply@anthropic.com`,
+`Generated with Claude Code`), so Claude reruns it without the attribution. It never rewrites the
+command (`updatedInput` only applies paired with `allow`, which would auto-approve whatever the
+command chains), fails open without `python3`, and is off when `QUENCHING_ALLOW_CLAUDE_COAUTHOR=1`.
+Pair it with `"attribution": {"commit": "", "pr": ""}` in the target's settings so the trailer is
+never written in the first place.
+
 The `security` and `git` pillars carry no `align`: they converge no tree, only answer read-only
 questions about the target's live evidence, so there is nothing a probe could find drifted
 ([`architecture/align-surface.md`](../../docs/standards/architecture/align-surface.md) §The

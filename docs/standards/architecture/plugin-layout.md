@@ -4,7 +4,7 @@ title: Plugin layout — what may live under commands/
 description: one editable source generates eight module plugins; in each, commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
 resource: plugins/quenching/commands/**, plugins/quenching/assets/**, plugins/quenching/bin/**, plugins/quenching-*/**, scripts/generate_plugin_modules.py
 tags: [architecture, plugin, commands, layout, claude-code]
-timestamp: 2026-10-14
+timestamp: 2026-10-18
 audience: both
 authority: current
 source: collapse-skills-into-commands, 2026-07-26, self-contained-mold, verify-allowed-tools-enforcement, 2026-07-28, collapse-remaining-language-clause-restatements, spec 1635 (module extraction); lineage in ADR 0004 and ADR 0013
@@ -180,9 +180,10 @@ serves both a command body and a hook lives in `bin/`.** `cq` answered `hooks/ho
 `PostToolUse`/`Stop` wiring (`cq knowledge hook`) *and* every pillar's own command bodies (`cq
 specs …`, `cq components …`), so it sat in `bin/` — the invocation that was not exclusive to the
 hook path won the placement. `hooks/hooks.json` was later retired outright, along with the `hook`
-event it wired: the plugin answers no hook event at all now, so `hooks/` has no member left to
-hold and `cq` stays in `bin/` on the same invocation reasoning, now the only reasoning left to
-state.
+event it wired, and `cq` stays in `bin/` on the same invocation reasoning. `hooks/hooks.json`
+returned on 2026-10-18 holding only the wiring of `deny-claude-coauthor`, a handler dedicated to
+that one event; the handler itself sits in `assets/hooks/` beside `warn-git-add-all.sh`, and the
+generator ships `hooks/` only to the module whose `owned.hooks` is true (`quenching-specs`).
 
 **The adjacency that used to justify a hook handler sitting beside its config was already gone
 before that retirement.** The original reasoning was that the knowledge checker had to sit beside

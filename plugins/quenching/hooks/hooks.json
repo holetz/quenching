@@ -1,0 +1,17 @@
+{
+  "description": "Remove Claude co-authorship from commit and PR messages. Operation-scoped (PreToolUse on Bash): a skill-scoped hook would miss every commit made outside /quenching-specs:git:commit. Cost: one bash+grep per Bash call, zero tokens on no-match.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -f \"${CLAUDE_PLUGIN_ROOT}/assets/hooks/deny-claude-coauthor.sh\" || exit 0; bash \"${CLAUDE_PLUGIN_ROOT}/assets/hooks/deny-claude-coauthor.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
