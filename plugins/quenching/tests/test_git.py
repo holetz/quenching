@@ -32,6 +32,7 @@ from quenching.git.pr import (labelled_links, normalize_azure_pull_request,
 from quenching.git.slugs import _read_specs, cmd_specs
 from quenching.git.stale import (_gone_branches, _merged_branches, _merged_remote_branches,
                                  _orphan_worktrees, _unregistered_worktrees, stale_report)
+from quenching.git.worktree import _is_codex_artifact
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
@@ -2595,6 +2596,13 @@ class WorktreeRetire(RepoCase):
         proc = self._retire("--discard-ignored")
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertFalse(os.path.exists(self.wt))
+
+    def test_codex_artifacts_are_recognized_with_a_backslash_separator(self):
+        self.assertTrue(_is_codex_artifact(".quenching\\codex\\r1\\prompt.md", "\\"))
+        self.assertTrue(_is_codex_artifact(".quenching\\codex", "\\"))
+        self.assertTrue(_is_codex_artifact(".quenching/codex/r1/prompt.md"))
+        self.assertFalse(_is_codex_artifact(".quenching\\codexx\\a", "\\"))
+        self.assertFalse(_is_codex_artifact(".env", "\\"))
 
     def test_ignored_codex_files_are_archived_before_retiring(self):
         self._merge_through_gh()
