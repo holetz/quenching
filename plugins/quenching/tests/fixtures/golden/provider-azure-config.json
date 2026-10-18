@@ -1,6 +1,7 @@
 {
   "ok": true,
   "backend": "azure-boards",
+  "backendDeclared": false,
   "root": null,
   "path": "<WS>/.claude/quenching.json",
   "present": false,
