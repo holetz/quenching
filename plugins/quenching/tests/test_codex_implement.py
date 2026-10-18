@@ -163,6 +163,8 @@ class Implement(unittest.TestCase):
         self.assertEqual((code, payload["code"]), (2, "codex-git-guard"))
         self.assertEqual(payload["outside"], ["other.py"])
         self.assertEqual(payload["discard"], ["src/a.py"])
+        self.assertIn("other.py", payload["message"])
+        self.assertIn("needs-human", payload["message"])
 
     def test_a_commit_trips_the_guard(self):
         self.env["FAKE_MODE"] = "commit"
@@ -204,6 +206,8 @@ class Implement(unittest.TestCase):
         (self.repo / "loose.txt").write_text("x", encoding="utf-8")
         payload, code = self.implement()
         self.assertEqual((code, payload["code"]), (2, "codex-tree-dirty"))
+        self.assertIn("loose.txt", payload["message"])
+        self.assertIn("needs-human", payload["message"])
 
     def test_the_cli_emits_the_guard_payload_instead_of_a_bare_refusal(self):
         self.env["FAKE_MODE"] = "stray"

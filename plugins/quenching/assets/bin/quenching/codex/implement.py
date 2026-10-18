@@ -42,6 +42,8 @@ RULE = (
     "Não rode nenhum comando git (nem commit, stash, reset, checkout, branch ou push) e não "
     "escreva fora do diretório de trabalho. Não rode testes que gastem cota de agentes. "
     "O lado Claude verifica, revisa e faz o commit.")
+WAY_OUT = ("Claude may not clean these paths (no reset, stash or checkout) and files: never "
+           "declared them: stop the task as needs-human naming them, so the human cleans the tree.")
 
 
 def clean_env(env: dict) -> dict:
@@ -138,7 +140,7 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
     dirty = sorted(touched(worktree) - set(files))
     if dirty:
         return refusal("codex-tree-dirty", "the tree is dirty outside files: "
-                       + ", ".join(dirty))
+                       + ", ".join(dirty) + f". {WAY_OUT}")
     binary = shutil.which("codex", path=env.get("PATH"))
     if binary is None:
         return refusal("codex-missing", "codex is not on PATH")
@@ -199,8 +201,10 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
         detail = "; ".join(filter(None, [moved and "moved: " + ", ".join(moved),
                                          out["outside"] and "outside files: "
                                          + ", ".join(out["outside"])]))
+        way_out = f" {WAY_OUT}" if out["outside"] else ""
         return {**out, "code": "codex-git-guard",
-                "discard": files, "message": f"the git guard saw a divergence — {detail}",
+                "discard": files,
+                "message": f"the git guard saw a divergence — {detail}.{way_out}",
                 "reason": f"git guard: {detail}"}, 2
     if out["timedOut"]:
         reason = f"codex ran past {settings['timeoutSeconds']}s and was stopped"
