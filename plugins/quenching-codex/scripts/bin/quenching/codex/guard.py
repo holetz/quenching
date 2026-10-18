@@ -96,12 +96,13 @@ def refs(worktree: str, strict: bool = False) -> dict:
 
 
 def _digest(full: str) -> str:
-    if os.path.islink(full):
-        return "link:" + os.readlink(full)
+    body = "-"
     if os.path.isfile(full):
         with open(full, "rb") as handle:
-            return hashlib.sha256(handle.read()).hexdigest()
-    return "-"
+            body = hashlib.sha256(handle.read()).hexdigest()
+    if os.path.islink(full):
+        return f"link:{os.readlink(full)} {body}"
+    return body
 
 
 def run_skip(run_dir: str, toplevel: str, pathmod=os.path) -> str | None:
