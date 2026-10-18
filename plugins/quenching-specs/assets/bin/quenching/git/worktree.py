@@ -8,6 +8,7 @@ relative ``.git`` and would create a different sibling store depending on the ca
 from __future__ import annotations
 
 import os
+import shutil
 from types import SimpleNamespace
 
 from quenching.common.git import _git, _git_run
@@ -280,10 +281,13 @@ def _retire(args) -> int:
 
     Merged means the branch tip is an ancestor of `<remote>/<base>` (fetched here; the local base
     when the remote does not exist), because a PR merged through `gh` moves the remote base. Every
-    refusal (exit 2) happens before a write. The worktree goes first, since git will not delete a
-    branch checked out in one; `worktree remove` runs without `--force`, so a dirty worktree
+    preflight refusal (exit 2) happens before a write. The worktree goes first, since git will not
+    delete a branch checked out in one; `worktree remove` runs without `--force`, so a dirty worktree
     stands. A worktree holding ignored files that are not symlinks stands too (exit 1, `ignored`
-    lists them) unless `shared.regenerablePaths` declares them regenerable or `--discard-ignored` is passed. `branch -d` compares the branch with its upstream when one is configured, so a published branch is
+    lists them) unless `shared.regenerablePaths` declares them regenerable or `--discard-ignored`
+    is passed.
+    A real `.quenching/codex` directory is archived in the primary checkout before removal.
+    `branch -d` compares the branch with its upstream when one is configured, so a published branch is
     deleted even while the local base is behind; with no upstream it compares with the checked-out
     HEAD and refuses when the local base is behind: the branch stands, exit 1."""
     cwd = os.getcwd()
@@ -337,7 +341,7 @@ def _retire(args) -> int:
                        "message": f"{args.branch} is not merged into {target}; nothing was removed"},
                       args.json)
     payload = {"ok": False, "path": path, "branch": args.branch, "base": target,
-               "worktreeRemoved": False, "branchDeleted": False}
+               "worktreeRemoved": False, "branchDeleted": False, "archived": None}
     ignored = [] if args.discard_ignored else _ignored_files(path)
     if ignored:
         declared = _regenerable_paths(load_config(_repo_root(cwd)))
@@ -345,11 +349,29 @@ def _retire(args) -> int:
     if ignored is None:
         return refuse({"code": "git-worktree-retire-status-failed",
                        "message": f"git status failed in {path}; nothing was removed"}, args.json)
+    ignored = [entry for entry in ignored
+               if entry != ".quenching/codex" and not entry.startswith(".quenching/codex/")]
     if ignored:
         payload.update(ignored=ignored, message=f"the worktree holds ignored files that removal "
                        f"would delete: {', '.join(ignored)}; pass --discard-ignored to remove anyway")
         emit(args.json, payload, f"worktree {path} kept: {payload['message']}")
         return FINDINGS
+    source = os.path.join(path, ".quenching", "codex")
+    if os.path.isdir(source) and not os.path.islink(source):
+        destination = os.path.join(registered[0][0], ".quenching", "codex", "retired",
+                                   os.path.basename(path))
+        archived = destination
+        suffix = 2
+        while os.path.lexists(archived):
+            archived = f"{destination}-{suffix}"
+            suffix += 1
+        try:
+            os.makedirs(os.path.dirname(archived), exist_ok=True)
+            shutil.move(source, archived)
+        except (OSError, shutil.Error) as exc:
+            return refuse({"code": "git-worktree-retire-archive-failed",
+                           "message": f"could not archive {source}: {exc}"}, args.json)
+        payload["archived"] = archived
     code, _out, err = _git_run(cwd, *SAFE, "worktree", "remove", "--", path)
     if code != 0:
         payload["message"] = err.strip()
