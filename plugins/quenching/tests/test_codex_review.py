@@ -201,6 +201,11 @@ class TheReview(unittest.TestCase):
         self.assertIsNone(run_skip("C:\\repo\\.quenching\\codex\\r1", "D:\\worktree", ntpath))
         self.assertIsNone(run_skip("D:\\other\\r1", "D:\\worktree", ntpath))
 
+    def test_a_cross_drive_run_dir_does_not_break_the_review(self):
+        with mock.patch("os.path.relpath", side_effect=ValueError("path is on mount 'C:'")):
+            payload, code = self.review()
+        self.assertEqual(0, code, payload)
+
     def test_a_timeout_stops_codex_and_reports_the_fallback(self):
         self.env["FAKE_CODEX_MODE"] = "hang"
         started = time.monotonic()
