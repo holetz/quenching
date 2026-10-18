@@ -382,6 +382,8 @@ the portable form, including for sub-agents.
 
 def codex_readme(text: str) -> str:
     """Keep the generated README aligned with Codex's actual tool-loading contract."""
+    # The plugin-wide hook is Claude Code's hooks/hooks.json; Codex loads none of it.
+    text = re.sub(r"^\*\*The one plugin-wide hook\.\*\*[\s\S]*?\n\n", "", text, flags=re.M)
     if "## Install" in text and "## Uninstall or reverse" in text:
         install_start = text.index("## Install")
         uninstall_start = text.index("## Uninstall or reverse", install_start)
