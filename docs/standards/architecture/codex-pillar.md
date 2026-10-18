@@ -82,15 +82,20 @@ codex exec --dangerously-bypass-approvals-and-sandbox --ignore-user-config --ign
 
 `quenching.codex.guard` reads, before and after each run and without writing anything, the
 worktree's `HEAD`, branch, reflog length, the stash ref and every worktree's `HEAD`, and `git
-status` with untracked files.
+status` with untracked files. The review reads the refs strictly: a git command that fails is
+`GuardError`, never an empty value, while a detached `HEAD` and a repository without `refs/stash`
+are state.
 
 - **The review** also records every ref (`git for-each-ref`, so a new branch or tag moves it), the
-  hash of the index (`git ls-files -s`, so a swapped staged blob moves it), and, for every path
-  `git status` reports, its status code and the hash of its bytes — the run's own
+  hash of the index (`git ls-files -s`, so a swapped staged blob moves it), the hash of the index
+  flags (`git ls-files -v`, so `assume-unchanged` and `skip-worktree` move it) and, for every path
+  `git status` reports and every file those flags hide, its status code and the hash of its bytes
+  (a symlink is hashed as its `os.readlink` target) — the run's own
   `.quenching/codex/<run>/` excepted. The ignored files that hold local configuration (`.claude/**`
   and `*.local.json`) are recorded too; the other ignored files (caches) are not. A git command of
   the review's snapshot that fails is never an empty tree: before the run it refuses, after it the
-  guard cannot prove anything. Both are exit 2 `codex-git-guard`. Any moved ref or any path whose
+  guard cannot prove anything. Both are exit 2 `codex-git-guard`, and the payload carries the keys
+  the CLI prints (`tokens`, `reason`, `runDir`), so the exit 2 is never lost to a missing key. Any moved ref or any path whose
   entry differs is the same exit 2, with `guard.moved` and `changed`. The caller never
   cleans it (no `reset`, `stash`, `checkout` or `restore`): it stops and hands the tree to the
   human, naming the paths.
