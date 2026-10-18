@@ -371,6 +371,10 @@ class Security(PortalCase):
         for needle in ("X-Quenching-Token", "sessionStorage", "?token", 'get("token")'):
             self.assertNotIn(needle, js)
 
+    def test_the_waiting_panel_shows_the_pending_tool_as_a_chip(self):
+        js = (portal_mod.static_dir() / "app.js").read_text()
+        self.assertIn('s.pendingTool ? h("span", { class: "chip" }, s.pendingTool) : null', js)
+
     def test_the_open_url_carries_the_nonce_and_never_the_token(self):
         server = portal_mod.make_server(self.tmp, token=TOKEN)
         self.addCleanup(server.server_close)
