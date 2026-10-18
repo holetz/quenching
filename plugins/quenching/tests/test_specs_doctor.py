@@ -91,6 +91,18 @@ class GithubDoctorFindings(unittest.TestCase):
         self.assertEqual("warn", self.deprecation[0]["severity"])
         self.assertIn("migrate --to git", self.deprecation[0]["remedy"])
 
+    def test_a_backend_inferred_from_the_remote_says_so_and_asks_for_a_declaration(self):
+        self._findings(_StubBackend(rows=[], open_issues=0), present=False)
+        self.assertEqual(1, len(self.deprecation))
+        self.assertIn("inferred", self.deprecation[0]["message"])
+        self.assertIn("no config declares it", self.deprecation[0]["message"])
+        self.assertIn("backend: git", self.deprecation[0]["remedy"])
+        self.assertIn("migrate --to git", self.deprecation[0]["remedy"])
+
+    def test_a_declared_tracker_backend_is_not_called_inferred(self):
+        self._findings(_StubBackend(rows=[], open_issues=0), present=True)
+        self.assertNotIn("inferred", self.deprecation[0]["message"])
+
     def test_zero_specs_with_open_issues_is_a_warn_and_names_the_number(self):
         findings, code = self._findings(_StubBackend(rows=[], open_issues=38))
         suspect = [f for f in findings if f["code"] == "sp-gh-listing-suspect"]

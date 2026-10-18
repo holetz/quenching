@@ -89,14 +89,22 @@ def cmd_doctor(args, root: str, out: Emitter) -> int:
     # The tracker backends keep working, and their removal is a future major. Said here, where
     # a human asks what is wrong with the workspace, rather than on every command.
     if cfg["backend"] in ("github", "azure-boards"):
+        # With no config file the backend is INFERRED from the remote (`present` false): the
+        # one shape where a new project lands on the deprecated store without ever choosing it.
+        inferred = not cfg.get("present", True)
+        origin = " — inferred from the git remote, since no config declares it" if inferred else ""
+        remedy = ("run `cq specs migrate --to git` to preview the move, then `--write`, then "
+                  "set `backend: git` as it says")
+        if inferred:
+            remedy = ("run `cq specs migrate --to git` to preview the move, then `--write`; "
+                      f"either way, declare `backend: git` in {CONFIG_FILE} so the store is "
+                      "chosen, not inferred")
         findings.append(_finding("sp-backend-deprecated", "warn",
-                                 f"backend `{cfg['backend']}` is deprecated: the spec lives "
-                                 "in the tracker item, which costs a request per edit; the "
-                                 "`git` store keeps it on branch `quenching` behind a thin "
-                                 "card",
-                                 path=CONFIG_FILE, backend=cfg["backend"],
-                                 remedy="run `cq specs migrate --to git` to preview the move, "
-                                        "then `--write`, then set `backend: git` as it says"))
+                                 f"backend `{cfg['backend']}`{origin} is deprecated: the spec "
+                                 "lives in the tracker item, which costs a request per edit; "
+                                 "the `git` store keeps it on branch `quenching` behind a "
+                                 "thin card",
+                                 path=CONFIG_FILE, backend=cfg["backend"], remedy=remedy))
     # The config moved to `.agents/`, and a repo that upgrades without moving its file is the
     # one shape where every command keeps working while nothing it declared is read — the
     # silence the two findings above exist to prevent, reappearing one directory over. Named
