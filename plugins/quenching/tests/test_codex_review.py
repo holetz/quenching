@@ -234,6 +234,18 @@ class TheReview(unittest.TestCase):
         os.symlink("/two", link)
         self.assertNotEqual(before, self.snap())
 
+    def test_writing_through_an_ignored_symlink_changes_the_snapshot(self):
+        self.commit_ignore(".claude/skills/\ncache/\n")
+        target = self.worktree / "cache" / "real.json"
+        target.parent.mkdir(parents=True)
+        target.write_text("one", encoding="utf-8")
+        link = self.worktree / ".claude" / "skills" / "foo"
+        link.parent.mkdir(parents=True)
+        os.symlink(target, link)
+        before = self.snap()
+        target.write_text("two", encoding="utf-8")
+        self.assertNotEqual(before, self.snap())
+
     def test_the_run_dir_inside_the_worktree_is_not_a_change(self):
         payload, code = self.review(root=self.worktree)
         self.assertEqual(0, code, payload)
