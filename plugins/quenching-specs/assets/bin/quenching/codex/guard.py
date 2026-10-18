@@ -5,7 +5,8 @@ here, before and after the run. `refs` are the worktree's `HEAD`, branch, reflog
 and every worktree's `HEAD`. `tree` maps every path `git status` reports to its status code and
 the hash of its bytes, so the review can prove it changed nothing at all. The review's snapshot
 also holds every ref, the hash of the index and the ignored files that carry local configuration
-(`.claude/**` and `*.local.json`), and a git command that fails is `GuardError`: the guard fails
+(`.claude/**` and `*.local.json`), the `ls-files -v` flags and the bytes of every file they hide
+(`assume-unchanged`, `skip-worktree`), and a symlink by its target. A git command that fails is `GuardError`: the guard fails
 closed, never as an empty tree.
 """
 from __future__ import annotations
@@ -65,21 +66,38 @@ def touched(worktree: str) -> set[str]:
     return {path for _, path in status(worktree)}
 
 
-def refs(worktree: str) -> dict:
-    """The refs Codex must not move."""
+def _state(worktree: str, *args: str) -> str:
+    """Strict read of a query whose exit 1 with no message means "absent" (a detached HEAD has no
+    symbolic ref, a repository without a stash has no `refs/stash`): that is state, not failure."""
+    result = subprocess.run(["git", "-C", worktree, *args], capture_output=True, text=True,
+                            errors="replace")
+    if result.returncode == 1 and not result.stderr.strip():
+        return ""
+    if result.returncode != 0:
+        raise GuardError(f"git {' '.join(args)} failed ({result.returncode}): "
+                         f"{result.stderr.strip()}")
+    return result.stdout
+
+
+def refs(worktree: str, strict: bool = False) -> dict:
+    """The refs Codex must not move. `strict` raises `GuardError` when git fails, instead of
+    reading the failure as an empty value."""
+    run, state = (git_strict, _state) if strict else (git, git)
     others = {}
-    for block in git(worktree, "worktree", "list", "--porcelain").split("\n\n"):
+    for block in run(worktree, "worktree", "list", "--porcelain").split("\n\n"):
         fields = dict(line.split(" ", 1) for line in block.splitlines() if " " in line)
         if "worktree" in fields:
             others[fields["worktree"]] = fields.get("HEAD")
-    return {"head": git(worktree, "rev-parse", "HEAD").strip(),
-            "branch": git(worktree, "symbolic-ref", "-q", "HEAD").strip(),
-            "reflogLength": len(git(worktree, "reflog", "--format=%H").splitlines()),
-            "stash": git(worktree, "rev-parse", "-q", "--verify", "refs/stash").strip(),
+    return {"head": run(worktree, "rev-parse", "HEAD").strip(),
+            "branch": state(worktree, "symbolic-ref", "-q", "HEAD").strip(),
+            "reflogLength": len(run(worktree, "reflog", "--format=%H").splitlines()),
+            "stash": state(worktree, "rev-parse", "-q", "--verify", "refs/stash").strip(),
             "worktrees": others}
 
 
 def _digest(full: str) -> str:
+    if os.path.islink(full):
+        return "link:" + os.readlink(full)
     if os.path.isfile(full):
         with open(full, "rb") as handle:
             return hashlib.sha256(handle.read()).hexdigest()
@@ -113,10 +131,12 @@ def _local_config(path: str) -> bool:
 
 def strict_refs(worktree: str) -> dict:
     """Every ref (`for-each-ref`) and the hash of the index (`ls-files -s`); fails closed."""
+    flags = git_strict(worktree, "ls-files", "-v", "-z")
     return {"allRefs": git_strict(worktree, "for-each-ref", "--format=%(refname) %(objectname)"),
             "index": hashlib.sha256(
                 git_strict(worktree, "ls-files", "-s", "-z").encode("utf-8", "replace")
-            ).hexdigest()}
+            ).hexdigest(),
+            "flags": hashlib.sha256(flags.encode("utf-8", "replace")).hexdigest()}
 
 
 def tree(worktree: str, skip: str | None = None) -> dict[str, str]:
@@ -127,6 +147,10 @@ def tree(worktree: str, skip: str | None = None) -> dict[str, str]:
         if _skipped(path, skip):
             continue
         out[path] = f"{code} {_digest(os.path.join(worktree, path))}"
+    for entry in git_strict(worktree, "ls-files", "-v", "-z").split("\0"):
+        # assume-unchanged (lowercase) and skip-worktree (`S`) hide edits from `git status`
+        if len(entry) > 2 and entry[0] != "H" and not _skipped(entry[2:], skip):
+            out.setdefault(entry[2:], f"{entry[0]} {_digest(os.path.join(worktree, entry[2:]))}")
     ignored = git_strict(worktree, "ls-files", "--others", "--ignored", "--exclude-standard",
                          "-z").split("\0")
     for path in ignored:
