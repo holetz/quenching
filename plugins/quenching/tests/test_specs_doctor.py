@@ -71,7 +71,7 @@ class GithubDoctorFindings(unittest.TestCase):
             # in a real repository on this backend.
             root = os.path.join(tmp, ".specs")
             buf = io.StringIO()
-            cfg = {"backend": "github", "unknownBackend": None, "unknownKeys": [],
+            cfg = {"backend": "github", "backendDeclared": True, "unknownBackend": None, "unknownKeys": [],
                    "legacyPath": None,
                    "unparseable": None, "unknownGitConventions": [],
                    "badGitConventions": [], **cfg_overrides}
@@ -92,7 +92,8 @@ class GithubDoctorFindings(unittest.TestCase):
         self.assertIn("migrate --to git", self.deprecation[0]["remedy"])
 
     def test_a_backend_inferred_from_the_remote_says_so_and_asks_for_a_declaration(self):
-        self._findings(_StubBackend(rows=[], open_issues=0), present=False)
+        self._findings(_StubBackend(rows=[], open_issues=0), present=False,
+                        backendDeclared=False)
         self.assertEqual(1, len(self.deprecation))
         self.assertIn("inferred", self.deprecation[0]["message"])
         self.assertIn("no config declares it", self.deprecation[0]["message"])
@@ -305,6 +306,37 @@ class FirstUseConfig(unittest.TestCase):
             plan, error = common_config.prepare_minimal_config(root)
         self.assertIsNone(plan)
         self.assertEqual("cq-setup-provider-missing", error["code"])
+
+
+class InferredBackendWarning(unittest.TestCase):
+    """The real `load_config`, not a mock: the warning must say `inferred` whenever the file
+    does not declare `backend`, not only when the file is missing."""
+
+    def _deprecated(self, document: dict) -> dict:
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, ".claude"))
+            Path(tmp, ".claude", "quenching.json").write_text(json.dumps(document),
+                                                              encoding="utf-8")
+            buf = io.StringIO()
+            with mock.patch.object(common_config, "detect_provider",
+                                   return_value=("github", "github.com")), \
+                    mock.patch.object(doctor_mod, "open_github_backend",
+                                      lambda _root: (_StubBackend(rows=[], open_issues=0), {})), \
+                    contextlib.redirect_stdout(buf):
+                cmd_doctor(argparse.Namespace(json=True), os.path.join(tmp, ".specs"), Emitter())
+        found = [f for f in json.loads(buf.getvalue())["findings"]
+                 if f["code"] == "sp-backend-deprecated"]
+        self.assertEqual(1, len(found))
+        return found[0]
+
+    def test_a_config_without_the_backend_key_is_flagged_as_inferred(self):
+        finding = self._deprecated({"specs": {}})
+        self.assertIn("inferred", finding["message"])
+        self.assertIn("backend: git", finding["remedy"])
+
+    def test_a_config_declaring_the_backend_is_not_flagged_as_inferred(self):
+        finding = self._deprecated({"backend": "github"})
+        self.assertNotIn("inferred", finding["message"])
 
 
 if __name__ == "__main__":

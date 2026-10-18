@@ -179,6 +179,9 @@ def detect_provider(root: str) -> tuple[str | None, str | None]:
 
 def _read_backend(out: dict, obj: dict, values: dict, root: str) -> None:
     backend = obj.get("backend")
+    # What the file DECLARES, apart from `out["backend"]`, which is inferred from the remote
+    # whenever the file is silent: `doctor` reads this to tell a chosen store from a default.
+    out["backendDeclared"] = isinstance(backend, str) and bool(backend.strip())
     if isinstance(backend, str) and backend.strip() and backend.strip() not in BACKENDS:
         out["unknownBackend"] = backend.strip()
     if isinstance(backend, str) and backend.strip() == "git":
@@ -380,7 +383,7 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
            "unknownKeys": envelope["unknownKeys"],
            "unknownNamespaces": envelope["unknownNamespaces"],
            "migrationRefusal": envelope["migrationRefusal"],
-           "backend": provider, "provider": provider,
+           "backend": provider, "provider": provider, "backendDeclared": False,
            "unknownProvider": provider_host if provider is None else None,
            "unknownBackend": None,
            "worktreeSetup": None,
