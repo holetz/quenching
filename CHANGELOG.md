@@ -13,6 +13,22 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 6.6.0
+
+**Codex became a per-task executor, on by default**, and **configuration became one visible home**.
+  `/quenching-specs:specs:execute` hands a task to Codex when `cq codex eligible` admits it — small
+  by its declared `files:`, or carrying a runnable `verify:` — one dispatch at a time, behind a quota
+  reserve and a stop-loss, through `cq codex implement` (bypass by default, native sandbox opt-in),
+  with a git guard and the session model correcting on top of the Codex diff when `verify:` fails.
+  The model policy now admits the small tier — `haiku` and `gpt-6-luna` — on a task with a protected
+  `verify:` oracle projected under 80k (`cq specs estimate --task`), provisional until the pilot (ADR
+  0014); judgment never moves down. Configuration gained a user layer
+  (`~/.config/quenching/config.json`, the repository wins key by key), `cq config show --effective`
+  with each value's origin, `cq config init` seeding every tunable default, `shared.autonomy`
+  (which complexity runs unattended, merge, parallelism, stops), `shared.workHost` for heavy work
+  over SSH, and the context budgets, launch ceiling and portal chat limits as keys. `cq specs
+  release` now regenerates the module copies and commits the changelog entry.
+
 ## 6.5.0
 
 the plugin **split into installable modules** (`quenching-specs`, `-align`, `-design`, `-ops`,
