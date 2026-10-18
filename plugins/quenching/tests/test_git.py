@@ -2596,6 +2596,67 @@ class WorktreeRetire(RepoCase):
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertFalse(os.path.exists(self.wt))
 
+    def test_ignored_codex_files_are_archived_before_retiring(self):
+        self._merge_through_gh()
+        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
+            ".quenching/\n", encoding="utf-8")
+        source = pathlib.Path(self.wt, ".quenching", "codex", "1.1.md")
+        source.parent.mkdir(parents=True)
+        source.write_text("keep\n", encoding="utf-8")
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertFalse(os.path.exists(self.wt))
+        archived = pathlib.Path(self.repo, ".quenching", "codex", "retired", "wt")
+        self.assertEqual((archived / "1.1.md").read_text(encoding="utf-8"), "keep\n")
+        self.assertEqual(json.loads(proc.stdout)["archived"], str(archived))
+
+    def test_other_ignored_files_prevent_codex_archiving(self):
+        self._merge_through_gh()
+        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
+            ".quenching/\n.env\n", encoding="utf-8")
+        source = pathlib.Path(self.wt, ".quenching", "codex", "x")
+        source.parent.mkdir(parents=True)
+        source.write_text("keep\n", encoding="utf-8")
+        pathlib.Path(self.wt, ".env").write_text("secret\n", encoding="utf-8")
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        self.assertEqual(json.loads(proc.stdout)["ignored"], [".env"])
+        self.assertIsNone(json.loads(proc.stdout)["archived"])
+        self.assertFalse(pathlib.Path(self.repo, ".quenching", "codex", "retired").exists())
+        self.assertTrue(os.path.isdir(self.wt))
+        self.assertEqual(source.read_text(encoding="utf-8"), "keep\n")
+
+    def test_discard_ignored_still_archives_codex_files(self):
+        self._merge_through_gh()
+        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
+            ".quenching/\n", encoding="utf-8")
+        source = pathlib.Path(self.wt, ".quenching", "codex", "x")
+        source.parent.mkdir(parents=True)
+        source.write_text("keep\n", encoding="utf-8")
+        proc = self._retire("--discard-ignored")
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertFalse(os.path.exists(self.wt))
+        archived = pathlib.Path(self.repo, ".quenching", "codex", "retired", "wt")
+        self.assertEqual((archived / "x").read_text(encoding="utf-8"), "keep\n")
+        self.assertEqual(json.loads(proc.stdout)["archived"], str(archived))
+
+    def test_codex_archive_uses_a_suffix_when_the_destination_exists(self):
+        self._merge_through_gh()
+        pathlib.Path(self.repo, ".git", "info", "exclude").write_text(
+            ".quenching/\n", encoding="utf-8")
+        source = pathlib.Path(self.wt, ".quenching", "codex", "x")
+        source.parent.mkdir(parents=True)
+        source.write_text("keep\n", encoding="utf-8")
+        existing = pathlib.Path(self.repo, ".quenching", "codex", "retired", "wt")
+        existing.mkdir(parents=True)
+        (existing / "x").write_text("original\n", encoding="utf-8")
+        proc = self._retire()
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        archived = existing.with_name("wt-2")
+        self.assertEqual((archived / "x").read_text(encoding="utf-8"), "keep\n")
+        self.assertEqual((existing / "x").read_text(encoding="utf-8"), "original\n")
+        self.assertEqual(json.loads(proc.stdout)["archived"], str(archived))
+
     def test_an_ignored_file_stands_under_show_untracked_files_no(self):
         self._merge_through_gh()
         info = os.path.join(self.repo, ".git", "info", "exclude")
