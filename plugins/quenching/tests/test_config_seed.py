@@ -73,9 +73,9 @@ class SeedDocument(unittest.TestCase):
         doc = seed.seed_document(str(self.repo))
         self.assertEqual([], seed.missing_keys(doc, str(self.repo)))
         cut = copy.deepcopy(doc)
-        del cut["shared"]["codex"]["executor"]["sandbox"]
+        del cut["shared"]["codex"]["executor"]["reasoningEffort"]
         del cut["specs"]["chat"]
-        self.assertEqual(["shared.codex.executor.sandbox", "specs.chat.budgetUsd",
+        self.assertEqual(["shared.codex.executor.reasoningEffort", "specs.chat.budgetUsd",
                           "specs.chat.model", "specs.chat.timeoutSeconds"],
                          seed.missing_keys(cut, str(self.repo)))
 
@@ -148,7 +148,7 @@ class DoctorReport(unittest.TestCase):
         (self.repo / ".claude" / "quenching.json").write_text(json.dumps({"shared": {}}))
         report = doctor.config_report(str(self.repo))
         self.assertTrue(report["present"])
-        self.assertIn("shared.codex.executor.sandbox", report["missing"])
+        self.assertIn("shared.codex.executor.reasoningEffort", report["missing"])
         self.assertIn("missing", doctor._config_line(report))
 
     def test_a_module_without_the_seed_reports_nothing(self):

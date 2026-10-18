@@ -22,8 +22,11 @@ except ModuleNotFoundError:  # package-qualified unittest invocation from the re
 import test_codex_probe as fake  # the fake binary; a module import collects no test twice
 from quenching.codex import main
 from quenching.codex.config import DEFAULTS
-from quenching.codex.review import (NOT_MEASURED, PROMPT_ONLY_RULE, build_argv, measured_tokens,
-                                    run_review)
+from quenching.codex.guard import BYPASS
+from quenching.codex.review import NOT_MEASURED, RULE, build_argv, measured_tokens, run_review
+
+GIT_ENV = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
+           "GIT_COMMITTER_EMAIL": "t@t"}
 
 
 class TheReview(unittest.TestCase):
@@ -36,6 +39,12 @@ class TheReview(unittest.TestCase):
         self.worktree = self.tmp / "worktree"
         self.root.mkdir()
         self.worktree.mkdir()
+        git = {**GIT_ENV, "PATH": os.environ["PATH"], "HOME": str(self.tmp)}
+        for args in (["init", "-q", "-b", "main"], ["add", "."], ["commit", "-q", "-m", "base"]):
+            if args[0] == "add":
+                (self.worktree / "kept.py").write_text("x = 1\n", encoding="utf-8")
+            subprocess.run(["git", "-C", str(self.worktree), *args], check=True, env=git,
+                           capture_output=True)
         self.prompt = self.tmp / "prompt.md"
         self.prompt.write_text("Revise o diff contra origin/main.\n", encoding="utf-8")
         self.log = self.tmp / "argv.log"
@@ -43,37 +52,79 @@ class TheReview(unittest.TestCase):
                     "FAKE_CODEX_LOG": str(self.log)}
         self.settings = {**DEFAULTS, "timeoutSeconds": 20}
 
-    def review(self, run: str | None = "r1", **settings) -> tuple[dict, int]:
-        return run_review(str(self.root), {**self.settings, **settings}, str(self.worktree),
-                          str(self.prompt), run, env=self.env)
+    def review(self, run: str | None = "r1", root: pathlib.Path | None = None,
+               **settings) -> tuple[dict, int]:
+        return run_review(str(root or self.root), {**self.settings, **settings},
+                          str(self.worktree), str(self.prompt), run, env=self.env)
 
     def calls(self) -> list:
         return [json.loads(line) for line in self.log.read_text(encoding="utf-8").splitlines()]
 
-    def test_the_argv_is_always_read_only_and_ignores_the_user(self):
+    def test_the_argv_bypasses_the_sandbox_and_ignores_the_user(self):
         argv = build_argv("m", "/w", "/w/review.md")
-        self.assertEqual(["exec", "-s", "read-only", "--ignore-user-config", "--ignore-rules"],
-                         argv[:5])
+        self.assertEqual(["exec", BYPASS, "--ignore-user-config", "--ignore-rules"], argv[:4])
+        self.assertNotIn("-s", argv)
         self.assertEqual("-", argv[-1])
         self.assertNotIn("--ephemeral", argv)
         self.assertIn("model_reasoning_effort=high", argv)
 
     def test_a_review_writes_the_run_and_measures_tokens(self):
         payload, code = self.review()
-        self.assertEqual(0, code)
+        self.assertEqual(0, code, payload)
         self.assertFalse(payload["fallback"])
+        self.assertIsNone(payload["guard"])
         run_dir = self.root / ".quenching" / "codex" / "r1"
         self.assertEqual(str(run_dir / "review.md"), payload["reviewPath"])
         self.assertIn("no findings", (run_dir / "review.md").read_text(encoding="utf-8"))
         self.assertTrue((run_dir / "events.jsonl").is_file())
         self.assertEqual({"total_tokens": 4242}, payload["tokens"])
 
-    def test_the_fake_receives_the_fixed_argv_and_the_prompt_on_stdin(self):
+    def test_the_fake_receives_the_fixed_argv_and_the_prompt_with_the_rule(self):
         self.review(model="gpt-test")
         argv, stdin = self.calls()
         review_path = str(self.root / ".quenching" / "codex" / "r1" / "review.md")
-        self.assertEqual(build_argv("gpt-test", str(self.worktree), review_path), argv)
-        self.assertEqual({"stdin": "Revise o diff contra origin/main.\n"}, stdin)
+        self.assertEqual(build_argv("gpt-test", str(self.worktree.resolve()), review_path), argv)
+        expected = f"Revise o diff contra origin/main.\n\n{RULE}\n"
+        self.assertEqual({"stdin": expected}, stdin)
+        prompt_md = self.root / ".quenching" / "codex" / "r1" / "prompt.md"
+        self.assertEqual(expected, prompt_md.read_text(encoding="utf-8"))
+
+    def test_secrets_never_reach_codex(self):
+        self.env.update({"GH_TOKEN": "s", "GITHUB_TOKEN": "s", "AWS_SECRET_ACCESS_KEY": "s",
+                         "FAKE_CODEX_MODE": "env"})
+        payload, code = self.review()
+        self.assertEqual(0, code)
+        seen = pathlib.Path(payload["reviewPath"]).read_text(encoding="utf-8")
+        for secret in ("GH_TOKEN", "GITHUB_TOKEN", "AWS_SECRET_ACCESS_KEY"):
+            self.assertNotIn(f'"{secret}"', seen)
+        self.assertIn('"PATH"', seen)
+
+    def test_a_new_file_trips_the_guard(self):
+        self.env["FAKE_CODEX_MODE"] = "write"
+        payload, code = self.review()
+        self.assertEqual((2, "codex-git-guard"), (code, payload["code"]))
+        self.assertEqual(["stray.txt"], payload["changed"])
+        self.assertIn("stray.txt", payload["message"])
+        self.assertIn("human", payload["message"])
+
+    def test_an_edit_to_an_already_dirty_file_trips_the_guard(self):
+        (self.worktree / "kept.py").write_text("x = 2\n", encoding="utf-8")
+        self.env["FAKE_CODEX_MODE"] = "edit"
+        payload, code = self.review()
+        self.assertEqual((2, ["kept.py"]), (code, payload["changed"]))
+
+    def test_a_commit_trips_the_guard(self):
+        self.env.update({**GIT_ENV, "FAKE_CODEX_MODE": "commit", "HOME": str(self.tmp)})
+        self.env["PATH"] += os.pathsep + os.path.dirname(shutil.which("git"))
+        payload, code = self.review()
+        self.assertEqual(2, code)
+        self.assertIn("head", payload["guard"]["moved"])
+        self.assertEqual([], payload["changed"])
+
+    def test_the_run_dir_inside_the_worktree_is_not_a_change(self):
+        payload, code = self.review(root=self.worktree)
+        self.assertEqual(0, code, payload)
+        self.assertTrue((self.worktree / ".quenching" / "codex" / "r1" / "review.md").is_file())
 
     def test_a_timeout_stops_codex_and_reports_the_fallback(self):
         self.env["FAKE_CODEX_MODE"] = "hang"
@@ -125,21 +176,26 @@ class TheReview(unittest.TestCase):
         self.assertEqual("codex-run-exists", self.review()[0]["code"])
         self.prompt.unlink()
         self.assertEqual("codex-prompt-missing", self.review(run="r2")[0]["code"])
-        shutil.rmtree(self.worktree)
-        self.assertEqual("codex-worktree-missing", self.review(run="r3")[0]["code"])
-        self.worktree.mkdir()
         self.prompt.write_text("x", encoding="utf-8")
         self.env["PATH"] = str(self.tmp / "empty")
         payload, code = self.review(run="r4")
         self.assertEqual((2, "codex-missing"), (code, payload["code"]))
+        shutil.rmtree(self.worktree)
+        self.assertEqual("codex-worktree-missing", self.review(run="r3")[0]["code"])
+        self.worktree.mkdir()
+        payload, code = self.review(run="r5")
+        self.assertEqual((2, "codex-worktree-not-git"), (code, payload["code"]))
 
     def test_a_default_run_name_is_a_utc_stamp(self):
         payload, _ = self.review(run=None)
         self.assertRegex(payload["run"], r"^\d{8}T\d{6}Z$")
 
     def run_main(self, argv: list[str]) -> tuple[int, str]:
+        # the fake stays first on PATH; git's own directory follows, as the guard reads git
+        env = {**self.env, "PATH": self.env["PATH"] + os.pathsep
+               + os.path.dirname(shutil.which("git"))}
         buffer = io.StringIO()
-        with mock.patch.dict(os.environ, self.env), contextlib.redirect_stdout(buffer):
+        with mock.patch.dict(os.environ, env), contextlib.redirect_stdout(buffer):
             code = main(argv)
         return code, buffer.getvalue()
 
@@ -156,96 +212,20 @@ class TheReview(unittest.TestCase):
         code, out = self.run_main([*base, "--run", "c2", "--json"])
         self.assertEqual(1, code)
         self.assertTrue(json.loads(out)["fallback"])
-
-
-class ThePromptOnlyFallback(unittest.TestCase):
-    """The host's sandbox fails, as `bwrap` does where unprivileged user namespaces are denied."""
-
-    calls = TheReview.calls
-    run_main = TheReview.run_main
-
-    def setUp(self):
-        TheReview.setUp(self)
-        self.env["FAKE_CODEX_SANDBOX"] = "bwrap"
-        git = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
-               "GIT_COMMITTER_EMAIL": "t@t", "PATH": os.environ["PATH"], "HOME": str(self.tmp)}
-
-        def run(*args: str) -> None:
-            subprocess.run(["git", "-C", str(self.worktree), *args], check=True, env=git,
-                           capture_output=True)
-
-        run("init", "-q", "-b", "main")
-        (self.worktree / "kept.py").write_text("x = 1\n", encoding="utf-8")
-        (self.worktree / "gone.py").write_text("y = 1\n", encoding="utf-8")
-        run("add", ".")
-        run("commit", "-q", "-m", "base")
-        run("tag", "base")
-        (self.worktree / "kept.py").write_text("x = 2\n", encoding="utf-8")
-        (self.worktree / "gone.py").unlink()
-        run("add", "-A")
-        run("commit", "-q", "-m", "head")
-
-    def test_the_sandbox_failure_turns_the_review_prompt_only(self):
-        payload, code = run_review(str(self.root), self.settings, str(self.worktree),
-                                   str(self.prompt), "p1", env=self.env, base="base")
-        self.assertEqual((0, "prompt-only"), (code, payload["mode"]))
-        self.assertIn("RTM_NEWADDR", payload["sandbox"]["reason"])
-        argv, stdin = self.calls()
-        self.assertEqual(["exec", "-s", "read-only", "--ignore-user-config", "--ignore-rules"],
-                         argv[:5])
-        for wider in ("workspace-write", "danger-full-access",
-                      "--dangerously-bypass-approvals-and-sandbox"):
-            self.assertNotIn(wider, " ".join(argv))
-        text = stdin["stdin"]
-        self.assertTrue(text.startswith("Revise o diff contra origin/main."))
-        self.assertIn(PROMPT_ONLY_RULE, text)
-        self.assertIn("-x = 1\n+x = 2", text)
-        self.assertIn("## kept.py @ HEAD", text)
-        self.assertNotIn("## gone.py @", text)
-        prompt_md = self.root / ".quenching" / "codex" / "p1" / "prompt.md"
-        self.assertEqual(text, prompt_md.read_text(encoding="utf-8"))
-
-    def test_without_a_base_codex_is_never_called(self):
-        payload, code = run_review(str(self.root), self.settings, str(self.worktree),
-                                   str(self.prompt), "p2", env=self.env)
-        self.assertEqual((1, "unavailable"), (code, payload["mode"]))
-        self.assertTrue(payload["fallback"])
-        self.assertFalse(self.log.exists())
-        self.assertFalse((self.root / ".quenching" / "codex" / "p2").exists())
-
-    def test_an_unreadable_diff_is_a_refusal(self):
-        payload, code = run_review(str(self.root), self.settings, str(self.worktree),
-                                   str(self.prompt), "p3", env=self.env, base="no-such-ref")
-        self.assertEqual((2, "codex-diff-unreadable"), (code, payload["code"]))
-        self.assertFalse(self.log.exists())
-
-    def test_a_working_sandbox_stays_sandboxed(self):
-        self.env["FAKE_CODEX_SANDBOX"] = "ok"
-        payload, code = run_review(str(self.root), self.settings, str(self.worktree),
-                                   str(self.prompt), "p4", env=self.env, base="base")
-        self.assertEqual((0, "sandboxed"), (code, payload["mode"]))
-        self.assertEqual({"stdin": "Revise o diff contra origin/main.\n"}, self.calls()[1])
-
-    def test_the_command_line_takes_base_and_head(self):
-        # the fake stays first on PATH; git's own directory is added only so `cq` can diff
-        self.env["PATH"] += os.pathsep + os.path.dirname(shutil.which("git"))
-        code, out = self.run_main(["--root", str(self.root), "review", "--worktree",
-                                   str(self.worktree), "--prompt", str(self.prompt), "--run",
-                                   "p5", "--base", "base", "--head", "HEAD", "--json"])
-        self.assertEqual((0, "prompt-only"), (code, json.loads(out)["mode"]))
         self.assertTrue(json.loads(out)["findingsNeedReproduction"])
 
-    def test_the_report_names_each_mode(self):
-        base = ["--root", str(self.root), "review", "--worktree", str(self.worktree),
-                "--prompt", str(self.prompt)]
-        self.env["PATH"] += os.pathsep + os.path.dirname(shutil.which("git"))
-        modes = []
-        for run, sandbox, extra in (("m1", "ok", []), ("m2", "bwrap", ["--base", "base"]),
-                                    ("m3", "bwrap", [])):
-            self.env["FAKE_CODEX_SANDBOX"] = sandbox
-            code, out = self.run_main([*base, "--run", run, *extra])
-            modes.append((code, out.split("; mode: ")[1].split(";")[0]))
-        self.assertEqual([(0, "sandboxed"), (0, "prompt-only"), (1, "unavailable")], modes)
+    def test_the_cli_emits_the_guard_payload_instead_of_a_bare_refusal(self):
+        self.env["FAKE_CODEX_MODE"] = "write"
+        code, out = self.run_main(["--root", str(self.root), "review", "--worktree",
+                                   str(self.worktree), "--prompt", str(self.prompt),
+                                   "--run", "g1", "--json"])
+        self.assertEqual(2, code)
+        self.assertEqual(["stray.txt"], json.loads(out)["changed"])
+
+    def test_base_and_head_are_gone(self):
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+            main(["--root", str(self.root), "review", "--worktree", str(self.worktree),
+                  "--prompt", str(self.prompt), "--base", "main"])
 
 
 if __name__ == "__main__":

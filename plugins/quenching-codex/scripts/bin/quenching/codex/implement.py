@@ -1,12 +1,11 @@
 """Let Codex write one eligible spec task inside a worktree — and prove by code it touched nothing else.
 
 The task is judged again by `eligibility` (the quota included), so a caller cannot dispatch what
-`cq codex eligible` would refuse. The argv is fixed here: `--dangerously-bypass-approvals-and-sandbox`
-by default (`shared.codex.executor.sandbox: "off"`, for the hosts whose sandbox needs admin to
-work) or `-s workspace-write` when the executor opts in — never both — and always
-`--ignore-user-config --ignore-rules -m <model> -c model_reasoning_effort=<effort> -C <worktree>
---json`. The environment loses `GH_TOKEN`, `GITHUB_TOKEN` and every `AWS_*`, `AZURE_*` and
-`GOOGLE_*` variable; the prompt forbids git and any write outside the task's `files:`.
+`cq codex eligible` would refuse. The argv is fixed here: `--dangerously-bypass-approvals-and-sandbox
+--ignore-user-config --ignore-rules -m <model> -c model_reasoning_effort=<effort> -C <worktree>
+--json`. Codex's native sandbox is never asked for; the bounds are the plugin's. The environment
+loses `GH_TOKEN`, `GITHUB_TOKEN` and every `AWS_*`, `AZURE_*` and `GOOGLE_*` variable; the prompt
+forbids git and any write outside the task's `files:`.
 
 The git guard is read before and after: the worktree's `HEAD` and branch, its reflog tip, the
 stash ref, every worktree's `HEAD`, and `git status` contained in `files:`. A divergence is
@@ -20,7 +19,7 @@ The quota is probed again afterwards. A primary window that moved by more than
 of the execution.
 
     exit 0  Codex finished and its diff stays inside `files:` — Codex verifies, reviews, commits
-    exit 1  fall back to Codex: ineligible, sandbox opt-in unavailable, Codex failed or timed out
+    exit 1  fall back to Codex: ineligible, Codex failed or timed out
     exit 2  refusal (missing worktree, prompt, spec, task or `codex`, a dirty tree outside
             `files:`), or `codex-git-guard`: the guard saw a divergence
 """
@@ -32,13 +31,11 @@ import subprocess
 import time
 
 from quenching.codex.eligible import eligibility, strip_annotation
-from quenching.codex.probe import executor_sandbox, probe, stop
+from quenching.codex.guard import BYPASS, clean_env, git, refs, touched
+from quenching.codex.probe import probe, stop
 from quenching.codex.review import RUN_NAME, measured_tokens, refusal
 from quenching.specs.backends import open_backend
 
-SECRET_NAMES = ("GH_TOKEN", "GITHUB_TOKEN")
-SECRET_PREFIXES = ("AWS_", "AZURE_", "GOOGLE_")
-BYPASS = "--dangerously-bypass-approvals-and-sandbox"
 RULE = (
     "Regras do executor: escreva apenas nos arquivos listados abaixo, dentro deste diretório. "
     "Não rode nenhum comando git (nem commit, stash, reset, checkout, branch ou push) e não "
@@ -48,58 +45,10 @@ WAY_OUT = ("Codex may not clean these paths (no reset, stash or checkout) and fi
            "declared them: stop the task as needs-human naming them, so the human cleans the tree.")
 
 
-def clean_env(env: dict) -> dict:
-    return {k: v for k, v in env.items()
-            if k not in SECRET_NAMES and not k.startswith(SECRET_PREFIXES)}
-
-
-def build_argv(executor: dict, model: str, worktree: str, message_path: str,
-               windows: bool = os.name == "nt") -> list[str]:
-    if executor["sandbox"] == "off":
-        isolation = [BYPASS]
-    else:
-        isolation = ["-s", "workspace-write"]
-        if windows:
-            isolation += ["-c", f'windows.sandbox="{executor["windowsSandbox"]}"']
-    return ["exec", *isolation, "--ignore-user-config", "--ignore-rules", "-m", model,
+def build_argv(executor: dict, model: str, worktree: str, message_path: str) -> list[str]:
+    return ["exec", BYPASS, "--ignore-user-config", "--ignore-rules", "-m", model,
             "-c", f"model_reasoning_effort={executor['reasoningEffort']}", "-C", worktree,
             "--json", "-o", message_path, "-"]
-
-
-def _git(worktree: str, *args: str) -> str:
-    result = subprocess.run(["git", "-C", worktree, *args], capture_output=True, text=True,
-                            errors="replace")
-    return result.stdout if result.returncode == 0 else ""
-
-
-def touched(worktree: str) -> set[str]:
-    """Every path `git status` reports, rename sources included."""
-    entries = _git(worktree, "status", "--porcelain=v1", "-z", "--untracked-files=all").split("\0")
-    paths: set[str] = set()
-    skip = False
-    for entry in entries:
-        if skip:
-            paths.add(entry)
-            skip = False
-            continue
-        if len(entry) > 3:
-            paths.add(entry[3:])
-            skip = "R" in entry[:2] or "C" in entry[:2]
-    return paths
-
-
-def guard(worktree: str) -> dict:
-    """The refs Codex must not move, read without writing anything."""
-    others = {}
-    for block in _git(worktree, "worktree", "list", "--porcelain").split("\n\n"):
-        fields = dict(line.split(" ", 1) for line in block.splitlines() if " " in line)
-        if "worktree" in fields:
-            others[fields["worktree"]] = fields.get("HEAD")
-    return {"head": _git(worktree, "rev-parse", "HEAD").strip(),
-            "branch": _git(worktree, "symbolic-ref", "-q", "HEAD").strip(),
-            "reflogLength": len(_git(worktree, "reflog", "--format=%H").splitlines()),
-            "stash": _git(worktree, "rev-parse", "-q", "--verify", "refs/stash").strip(),
-            "worktrees": others}
 
 
 def primary_used(quota: dict | None):
@@ -130,7 +79,7 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
     worktree, prompt = os.path.realpath(worktree), os.path.abspath(prompt)
     if not os.path.isdir(worktree):
         return refusal("codex-worktree-missing", f"worktree does not exist: {worktree}")
-    if os.path.realpath(_git(worktree, "rev-parse", "--show-toplevel").strip() or "/") != worktree:
+    if os.path.realpath(git(worktree, "rev-parse", "--show-toplevel").strip() or "/") != worktree:
         return refusal("codex-worktree-not-toplevel",
                        f"worktree is not the top level of a git checkout: {worktree}")
     if not os.path.isfile(prompt):
@@ -156,17 +105,12 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
     judged, code = eligibility(task, settings, worktree, lambda s: quota(s, env=env))
     executor = settings["executor"]
     out = {"ok": False, "fallback": True, "spec": str(spec), "task": task_id, "files": files,
-           "class": judged["class"], "model": judged["model"], "sandbox": executor["sandbox"],
+           "class": judged["class"], "model": judged["model"],
            "run": run, "runDir": None, "argv": None, "exitCode": None, "timedOut": False,
            "tokens": None, "quotaBefore": primary_used(judged["quota"]), "quotaAfter": None,
            "quotaDelta": None, "stopLoss": False, "guard": None, "outside": []}
     if code != 0:
         return {**out, "reason": judged["reason"]}, 1
-    if executor["sandbox"] != "off":
-        box = executor_sandbox(settings, worktree, env)
-        if box["state"] != "available":
-            return {**out, "reason": f"the workspace-write sandbox is {box['state']}: "
-                                     f"{box['reason']}"}, 1
 
     os.makedirs(run_dir)
     prompt_path = os.path.join(run_dir, "prompt.md")
@@ -177,7 +121,7 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
     with open(prompt_path, "w", encoding="utf-8") as handle:
         handle.write(f"{text}\n\n{RULE}\n\nArquivos: {', '.join(files)}\n")
     argv = build_argv(executor, judged["model"], worktree, message_path)
-    before = guard(worktree)
+    before = refs(worktree)
     with open(prompt_path, encoding="utf-8") as stdin, \
             open(events_path, "w", encoding="utf-8") as stdout, \
             open(os.path.join(run_dir, "stderr.log"), "w", encoding="utf-8") as stderr:
@@ -188,7 +132,7 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
         except subprocess.TimeoutExpired:
             stop(process)
             exit_code, out["timedOut"] = process.returncode, True
-    after = guard(worktree)
+    after = refs(worktree)
     out.update(runDir=run_dir, argv=["codex", *argv], exitCode=exit_code,
                tokens=measured_tokens(events_path))
     out["quotaAfter"] = primary_used(quota({**settings, "crossReview": "auto"}, env=env))

@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Codex pillar
-description: A pillar that reads the Codex quota, runs the Codex CLI as an independent read-only reviewer, and lets it write one eligible spec task inside a worktree — app-server quota first, exit 0/1/2 failing closed, a quota-free sandbox check, a prompt-only review where the sandbox fails, an executor that runs with bypass by default or `workspace-write` on opt-in under a git guard and a stop-loss, and argv that never inherits the user's Codex configuration
+description: A pillar that reads the Codex quota, runs the Codex CLI as an independent reviewer that must change nothing, and lets it write one eligible spec task inside a worktree — app-server quota first, exit 0/1/2 failing closed, Codex's native sandbox never asked for, both runs under the bypass bounded by a git guard (the review's proves the tree unchanged, the executor's proves its diff inside `files:`), a stop-loss, and argv that never inherits the user's Codex configuration
 resource: plugins/quenching/assets/bin/quenching/codex/**, plugins/quenching/tests/test_codex_probe.py, plugins/quenching/tests/test_codex_review.py, plugins/quenching/tests/test_codex_eligible.py, plugins/quenching/tests/test_codex_implement.py, plugins/quenching/tests/fixtures/codex/**, .claude/quenching.json
-tags: [architecture, codex, pillar, read-only, quota, review, executor]
-timestamp: 2026-10-17
+tags: [architecture, codex, pillar, git-guard, quota, review, executor]
+timestamp: 2026-10-18
 audience: both
 authority: current
-source: spec 1818 (tasks 2.1, 3.3) — the `cq codex` pillar of epic 1817 (D8 A), absorbing the quota probe of spec 1660; spec 1879 (task 4.1) — the per-task executor of epic 1914 (E1 A, E2 bypass by default); spec 1661 (task 5.1) — `modelSmallTier` for the protected-oracle verified class (ADR 0014)
+source: spec 1818 (tasks 2.1, 3.3) — the `cq codex` pillar of epic 1817 (D8 A), absorbing the quota probe of spec 1660; spec 1879 (task 4.1) — the per-task executor of epic 1914 (E1 A, E2 bypass by default); spec 1661 (task 5.1) — `modelSmallTier` for the protected-oracle verified class (ADR 0014); the removal of every native-sandbox path, at the human's request on 2026-10-18 (bwrap errors on hosts without unprivileged user namespaces)
 maintainer: quenching
 ---
 
@@ -16,10 +16,15 @@ maintainer: quenching
 <!-- rules -->
 
 `codex` is a pillar of `cq`, not a front: it owns no converged tree. It answers one live question
-— may Codex be called now — and runs two bounded actions: a read-only review of a worktree, and
-the code of one eligible spec task (§The executor). The review never writes; the executor writes
-only inside the task's `files:`, never runs git, and never touches the spec's bookkeeping. Neither
+— may Codex be called now — and runs two bounded actions: a review of a worktree, and the code of
+one eligible spec task (§The executor). The review must change nothing; the executor writes only
+inside the task's `files:`, never runs git, and never touches the spec's bookkeeping. Neither
 grants a tool to anyone.
+
+**Codex's native sandbox is never asked for.** No argv carries `-s`, `sandbox_mode` or
+`codex sandbox`; both runs pass `--dangerously-bypass-approvals-and-sandbox`, and their bounds are
+the plugin's: `--ignore-user-config`, an environment without forge tokens or cloud credentials, a
+prompt rule, and a git guard read before and after (§The git guard).
 
 ## The quota probe
 
@@ -42,61 +47,49 @@ grants a tool to anyone.
   app-server is `unknown`, and the percentages are not used to infer past it.
 - **Never read `auth.json`.**
 
-### The sandbox check
+## The review
 
-The probe also answers whether Codex can run commands on this host, without spending quota:
-`codex sandbox -c sandbox_mode="read-only" -- true`, under the same deadline. When
-`shared.codex.executor.sandbox` is not `off`, it runs the same check under
-`sandbox_mode="workspace-write"` and reports it as `sandbox.executor: {state: off | available |
-unavailable, reason}`. The payload
-carries `sandbox: {state: available | unavailable, reason}`, the reason being the last stderr line
-— `bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted` on a host with
-`apparmor_restrict_unprivileged_userns=1`. `crossReview: "off"` and a missing `codex` report the
-sandbox `unavailable` without spawning anything. **The exit stays the quota's**: a broken
-sandbox still leaves the prompt-only review.
-
-## The read-only review
-
-`cq codex review --worktree <dir> --prompt <file> [--base <ref> [--head <ref>]] [--run <name>]
-[--json]` runs exactly:
+`cq codex review --worktree <dir> --prompt <file> [--run <name>] [--json]` runs exactly:
 
 ```text
-codex exec -s read-only --ignore-user-config --ignore-rules -m <model> \
-  -c model_reasoning_effort=high -C <worktree> --json \
-  -o .quenching/codex/<run>/review.md - < <prompt> > .quenching/codex/<run>/events.jsonl
+codex exec --dangerously-bypass-approvals-and-sandbox --ignore-user-config --ignore-rules \
+  -m <model> -c model_reasoning_effort=high -C <worktree> --json \
+  -o .quenching/codex/<run>/review.md - < .quenching/codex/<run>/prompt.md \
+  > .quenching/codex/<run>/events.jsonl
 ```
 
-- The argv is built in one function and asserted literally by the tests. `-s read-only`,
+- The argv is built in one function and asserted literally by the tests. The bypass,
   `--ignore-user-config` and `--ignore-rules` are never optional, and `--ephemeral` is never
   passed (it would erase the quota snapshot the probe falls back on).
-- The prompt travels on stdin. The run lands under `.quenching/codex/<run>/` at the repository
-  root; `<run>` defaults to a UTC stamp, and a run name already used is refused.
-- **Exit 0** — Codex finished and wrote the review. **Exit 1** — Codex exited non-zero, wrote
-  nothing, or ran past `timeoutSeconds` and was killed; the payload carries `fallback: true` and
-  the caller falls back to the Claude review, saying so. **Exit 2** — refusal: a missing worktree,
-  prompt or `codex`, or a bad or reused run name.
+- `prompt.md` is the caller's prompt followed by the rule that Codex only reads: no file written,
+  created, moved or deleted, no git command that changes anything. It travels on stdin. The run
+  lands under `.quenching/codex/<run>/` at the repository root; `<run>` defaults to a UTC stamp,
+  and a run name already used is refused.
+- The environment loses `GH_TOKEN`, `GITHUB_TOKEN` and every `AWS_*`, `AZURE_*`, `GOOGLE_*`.
+- **Exit 0** — Codex finished, wrote the review and the guard saw no change. **Exit 1** — Codex
+  exited non-zero, wrote nothing, or ran past `timeoutSeconds` and was killed; the payload carries
+  `fallback: true` and the caller falls back to the Claude review, saying so. **Exit 2** —
+  refusal: a missing worktree, prompt or `codex`, a worktree outside a git checkout (no guard
+  could hold), or a bad or reused run name; or `codex-git-guard` (§The git guard).
 - **Tokens only when measured:** the last `total_token_usage` in `events.jsonl`, else the string
   `not measured`.
-- The review never calls the probe: whether to run is the caller's decision. It does run the
-  sandbox check first, which spends no quota.
-
-### The three modes
-
-The payload's `mode` names how the review ran, and the human line carries `; mode: <mode>`:
-
-| `mode` | When | What Codex sees |
-| --- | --- | --- |
-| `sandboxed` | the sandbox check passed | the worktree, through read-only commands |
-| `prompt-only` | the sandbox failed and `--base` was given | only `.quenching/codex/<run>/prompt.md`: the prompt, the rule not to run commands, `git diff <base>..<head>` (`--head` defaults to `HEAD`) and every touched file at `<head>` |
-| `unavailable` | the sandbox failed and no `--base` was given | nothing — Codex is not called; exit 1 with `fallback: true` |
-
-- The review's argv is the same in every mode. A broken sandbox never widens it: no
-  `workspace-write`, no `danger-full-access`, no `--dangerously-bypass-approvals-and-sandbox`. The
-  bypass belongs to the executor alone (§The executor).
-- A diff `cq` cannot read (an unknown `--base`) is a refusal, exit 2 `codex-diff-unreadable`.
+- The review never calls the probe: whether to run is the caller's decision.
 - **Every finding needs reproduction.** The payload carries `findingsNeedReproduction: true`: a
   Codex finding becomes work only once the Claude side reproduces it, with the command and its
-  output (decision 3 of epic 1817). A `prompt-only` finding was never run by Codex at all.
+  output (decision 3 of epic 1817).
+
+## The git guard
+
+`quenching.codex.guard` reads, before and after each run and without writing anything, the
+worktree's `HEAD`, branch, reflog length, the stash ref and every worktree's `HEAD`, and `git
+status` with untracked files.
+
+- **The review** also records, for every path `git status` reports, its status code and the hash
+  of its bytes — the run's own `.quenching/codex/<run>/` excepted. Any moved ref or any path whose
+  entry differs is exit 2 `codex-git-guard`, with `guard.moved` and `changed`. The caller never
+  cleans it (no `reset`, `stash`, `checkout` or `restore`): it stops and hands the tree to the
+  human, naming the paths.
+- **The executor** checks that `git status` stays inside the task's `files:` (§The executor).
 
 ## Configuration
 
@@ -106,13 +99,14 @@ The optional `shared.codex` block of `.claude/quenching.json`:
 {"crossReview": "auto", "maxUsedPercent": {"primary": 80, "secondary": 90},
  "timeoutSeconds": 900, "model": "gpt-6-astra",
  "executor": {"enabled": true, "modelSmall": "gpt-6.1-sol", "modelVerified": "gpt-6.1-sol",
-              "modelSmallTier": "gpt-6-luna", "reasoningEffort": "medium", "sandbox": "off", "windowsSandbox": "unelevated",
+              "modelSmallTier": "gpt-6-luna", "reasoningEffort": "medium",
               "maxTaskTokens": 20000, "reservePercent": 10, "stopLossPercent": 15}}
 ```
 
 These are the defaults; an absent block is every default. `crossReview: "off"` is the explicit
 opt-out of the review; it never turns off the executor, whose own switch is `executor.enabled`. A value of the wrong shape falls back to its default and is named in the payload's
-`warnings`.
+`warnings`. There is no sandbox key: a leftover `executor.sandbox` or `executor.windowsSandbox` is
+ignored.
 
 ## The per-task review hook
 
@@ -132,9 +126,10 @@ body runs, in order:
    the Claude review stands. Exit 2 (`unknown`) tries the review and reports the fallback if it fails.
 2. Writes the prompt to a file, naming the diff the execute step hands the hook
    (`review: git -C <toplevel> diff origin/<base>...HEAD`) and asking for an independent review.
-3. `cq codex review --worktree <toplevel> --prompt <file> --base origin/<base> --run <spec>-<task>`.
-4. Reports the review path `.quenching/codex/<run>/review.md`, the `mode`, the tokens (or
-   `not measured`) and, on exit 1, the `fallback: true` fallback to the Claude review.
+3. `cq codex review --worktree <toplevel> --prompt <file> --run <spec>-<task>`.
+4. Reports the review path `.quenching/codex/<run>/review.md`, the tokens (or `not measured`)
+   and, on exit 1, the `fallback: true` fallback to the Claude review. On exit 2
+   `codex-git-guard` it stops the build and names the changed paths for the human.
 
 - **The hook is `optional: true`:** an absent `codex`, a spent quota or a timeout never pauses the build.
 - **Worktree limit.** `/quenching-specs:specs:execute` never invokes a hook in a linked worktree
@@ -159,16 +154,13 @@ windows; an unknown quota is not eligible.
 `cq codex implement --spec <id> --task <tid> --worktree <dir> --prompt <file> [--run <name>]`
 judges the task again and runs, from `.quenching/codex/<run>/`:
 
-- `codex exec` with `--dangerously-bypass-approvals-and-sandbox` when `executor.sandbox` is `off`
-  (the default), or `-s workspace-write` (plus `-c windows.sandbox="<windowsSandbox>"` on Windows)
-  when it opts in — never both. An opt-in whose `workspace-write` check fails is exit 1, never a
-  silent bypass.
+- `codex exec --dangerously-bypass-approvals-and-sandbox`, always, and never `-s`;
 - always `--ignore-user-config --ignore-rules -m <model> -c model_reasoning_effort=<effort>
   -C <worktree> --json`, the prompt on stdin, which forbids git and any write outside `files:`;
 - an environment without `GH_TOKEN`, `GITHUB_TOKEN` or any `AWS_*`, `AZURE_*`, `GOOGLE_*`.
 
-A **git guard** is read before and after: the worktree's `HEAD`, branch, reflog length, the stash
-ref, every worktree's `HEAD`, and `git status` contained in `files:`. Any divergence is exit 2
+The **git guard** (§The git guard) is read before and after, with `git status` contained in
+`files:`. Any divergence is exit 2
 `codex-git-guard` with the offending paths and `discard: <files>`; the caller discards inside
 `files:` only — never `reset`, `stash`, `checkout` or `restore` — and writes the task itself. When
 `outside` is non-empty (paths `files:` never declared) the caller may not clean them and stops the
@@ -190,31 +182,27 @@ No test reaches the real Codex. Every test of the pillar runs with `PATH` reduce
 
 ## Why the user's configuration is never inherited
 
-A user's `~/.codex/config.toml` can carry `sandbox_mode = "danger-full-access"`,
-`approval_policy = "never"`, plugins and hooks. A reviewer launched by an orchestrated run must not
-inherit any of that, so `codex exec` always runs with `--ignore-user-config`, and the review with
-a read-only sandbox. `codex app-server` takes no `--ignore-user-config`; the probe starts no thread
-and no turn, and still passes `-c sandbox_mode="read-only"`.
+A user's `~/.codex/config.toml` can carry `approval_policy = "never"`, plugins and hooks. A Codex
+launched by an orchestrated run must not inherit any of that, so `codex exec` always runs with
+`--ignore-user-config`. `codex app-server` takes no `--ignore-user-config`; the probe starts no
+thread and no turn, so nothing of the user's configuration runs.
 
-## Why the executor runs with bypass by default
+## Why Codex's native sandbox is never asked for
 
 Most of the machines this plugin runs on have no admin rights, and the native sandbox needs them:
-unprivileged user namespaces for `bwrap` on Linux, `codex sandbox setup --elevated` on Windows.
-Defaulting to `workspace-write` would turn the executor off on exactly those hosts (decision E2 of
-epic 1914). The bypass is bounded by what the plugin controls instead — `-C <worktree>`, a clean
-environment, a prompt that forbids git, and a guard that proves by code nothing outside `files:`
-moved. The risk that remains is a command run outside the worktree that git cannot see; a host
-that can afford it opts into `workspace-write`.
+unprivileged user namespaces for `bwrap` on Linux (`bwrap: loopback: Failed RTM_NEWADDR:
+Operation not permitted` under `apparmor_restrict_unprivileged_userns=1`), `codex sandbox setup
+--elevated` on Windows. Where it cannot start, every command a sandboxed Codex runs fails and the
+review comes back empty — observed on 2026-10-16. The earlier answers (a quota-free sandbox check,
+a `prompt-only` review mode, a `workspace-write` opt-in for the executor) kept the sandbox as a
+path and kept raising its errors; on 2026-10-18 the human chose to remove every sandbox path.
 
-`codex exec review --base` is not used: its help shows no `-s`, so the read-only sandbox could not
-be proved.
+The bounds are what the plugin controls instead — `-C <worktree>`, a clean environment, a prompt
+rule, and a guard that proves by code what moved: for the review nothing, for the executor nothing
+outside `files:`. The risk that remains is a command run outside the worktree, or a network call,
+that git cannot see.
 
-## Why prompt-only and not a wider sandbox
-
-Where the sandbox cannot start, every command a `sandboxed` review runs fails and the review comes
-back empty — observed on 2026-10-16 on a host with `apparmor_restrict_unprivileged_userns=1`.
-Widening the sandbox to make the commands run would give a reviewer write access to the tree it
-reviews. Moving the material into the prompt keeps Codex a reader: `cq`, not Codex, runs `git`.
+`codex exec review --base` is not used: the plugin's own argv, prompt and guard would not apply.
 
 ## Why the app-server comes first
 
