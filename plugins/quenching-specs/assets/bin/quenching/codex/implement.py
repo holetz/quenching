@@ -10,8 +10,10 @@ work) or `-s workspace-write` when the executor opts in — never both — and a
 
 The git guard is read before and after: the worktree's `HEAD` and branch, its reflog tip, the
 stash ref, every worktree's `HEAD`, and `git status` contained in `files:`. A divergence is
-exit 2 with the offending paths: Claude discards the diff inside `files:` (never `reset`,
-`stash` or `checkout`) and writes the task itself.
+exit 2 with the offending paths. With `outside` non-empty (paths `files:` never declared) Claude
+may not clean them: it stops the task as `needs-human` naming them. With `outside` empty (a moved
+`HEAD`, branch, reflog or stash) Claude discards the diff inside `files:` (never `reset`, `stash`
+or `checkout`) and writes the task itself.
 
 The quota is probed again afterwards. A primary window that moved by more than
 `stopLossPercent` points sets `stopLoss`: the diff stands, and the executor stays off for the rest
