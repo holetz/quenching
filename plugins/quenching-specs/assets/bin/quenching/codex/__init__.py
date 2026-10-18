@@ -66,7 +66,7 @@ def _implement(root: str, args, as_json: bool) -> int:
     if code == 2 and payload.get("code") != "codex-git-guard":
         return refuse({k: v for k, v in payload.items() if k != "ok"}, as_json)
     payload["warnings"] = warnings
-    tokens = payload["tokens"]
+    tokens = payload.get("tokens", "not measured")
     if isinstance(tokens, dict):
         tokens = tokens.get("total_tokens", json.dumps(tokens))
     emit(as_json, payload,
@@ -118,9 +118,10 @@ def main(argv: list[str]) -> int:
         return refuse({k: v for k, v in payload.items() if k != "ok"}, as_json)
     payload["findingsNeedReproduction"] = True  # a Codex finding is work only once reproduced
     payload["warnings"] = warnings
-    tokens = payload["tokens"]
+    tokens = payload.get("tokens", "not measured")
     if isinstance(tokens, dict):
         tokens = tokens.get("total_tokens", json.dumps(tokens))
     emit(as_json, payload,
-         f"codex review — {payload['reason']}; tokens: {tokens}; run: {payload['runDir']}")
+         f"codex review — {payload.get('reason', payload.get('message'))}; tokens: {tokens}; "
+         f"run: {payload.get('runDir')}")
     return code

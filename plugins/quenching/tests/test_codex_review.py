@@ -23,7 +23,7 @@ except ModuleNotFoundError:  # package-qualified unittest invocation from the re
 import test_codex_probe as fake  # the fake binary; a module import collects no test twice
 from quenching.codex import main
 from quenching.codex.config import DEFAULTS
-from quenching.codex.guard import BYPASS, run_skip, tree
+from quenching.codex.guard import BYPASS, GuardError, refs, run_skip, strict_refs, tree
 from quenching.codex.review import NOT_MEASURED, RULE, build_argv, measured_tokens, run_review
 
 GIT_ENV = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
@@ -180,6 +180,72 @@ class TheReview(unittest.TestCase):
         self.assertIn("before the run", payload["message"])
         self.assertFalse(self.log.exists())
 
+    def git(self, *args: str) -> None:
+        env = {**GIT_ENV, "PATH": os.environ["PATH"], "HOME": str(self.tmp)}
+        subprocess.run(["git", "-C", str(self.worktree), *args], check=True, env=env,
+                       capture_output=True)
+
+    def snap(self) -> dict:
+        return {**refs(str(self.worktree), strict=True), **strict_refs(str(self.worktree)),
+                "tree": tree(str(self.worktree))}
+
+    def test_refs_reads_strictly_and_a_failing_reflog_is_not_zero(self):
+        real = subprocess.run
+
+        def broken(argv, *a, **kw):
+            if "reflog" in argv:
+                return subprocess.CompletedProcess(argv, 128, "", "fatal: bad reflog")
+            return real(argv, *a, **kw)
+
+        with mock.patch("quenching.codex.guard.subprocess.run", broken):
+            with self.assertRaises(GuardError):
+                refs(str(self.worktree), strict=True)
+            self.assertEqual(0, refs(str(self.worktree))["reflogLength"])
+
+    def test_a_detached_head_and_no_stash_are_state_not_failure(self):
+        self.git("checkout", "-q", "--detach")
+        state = refs(str(self.worktree), strict=True)
+        self.assertEqual(("", ""), (state["branch"], state["stash"]))
+
+    def test_an_edit_behind_assume_unchanged_or_skip_worktree_changes_the_snapshot(self):
+        for flag, undo in (("--assume-unchanged", "--no-assume-unchanged"),
+                           ("--skip-worktree", "--no-skip-worktree")):
+            with self.subTest(flag=flag):
+                self.git("update-index", flag, "kept.py")
+                before = self.snap()
+                (self.worktree / "kept.py").write_text(f"x = {flag}\n", encoding="utf-8")
+                self.assertNotEqual(before, self.snap())
+                self.git("update-index", undo, "kept.py")
+                (self.worktree / "kept.py").write_text("x = 1\n", encoding="utf-8")
+
+    def test_marking_a_file_assume_unchanged_changes_the_snapshot(self):
+        before = self.snap()
+        self.git("update-index", "--assume-unchanged", "kept.py")
+        self.assertNotEqual(before, self.snap())
+
+    def test_retargeting_an_ignored_symlink_changes_the_snapshot(self):
+        self.commit_ignore(".claude/skills/\n")
+        link = self.worktree / ".claude" / "skills" / "foo"
+        link.parent.mkdir(parents=True)
+        os.symlink("/one", link)
+        before = self.snap()
+        self.assertIn(".claude/skills/foo", before["tree"])
+        link.unlink()
+        os.symlink("/two", link)
+        self.assertNotEqual(before, self.snap())
+
+    def test_writing_through_an_ignored_symlink_changes_the_snapshot(self):
+        self.commit_ignore(".claude/skills/\ncache/\n")
+        target = self.worktree / "cache" / "real.json"
+        target.parent.mkdir(parents=True)
+        target.write_text("one", encoding="utf-8")
+        link = self.worktree / ".claude" / "skills" / "foo"
+        link.parent.mkdir(parents=True)
+        os.symlink(target, link)
+        before = self.snap()
+        target.write_text("two", encoding="utf-8")
+        self.assertNotEqual(before, self.snap())
+
     def test_the_run_dir_inside_the_worktree_is_not_a_change(self):
         payload, code = self.review(root=self.worktree)
         self.assertEqual(0, code, payload)
@@ -279,6 +345,32 @@ class TheReview(unittest.TestCase):
         with mock.patch.dict(os.environ, env), contextlib.redirect_stdout(buffer):
             code = main(argv)
         return code, buffer.getvalue()
+
+    def cli_review(self, run: str, *flags: str) -> tuple[int, str]:
+        return self.run_main(["--root", str(self.root), "review", "--worktree",
+                              str(self.worktree), "--prompt", str(self.prompt), "--run", run,
+                              *flags])
+
+    def test_the_cli_exits_2_when_git_fails_after_the_run(self):
+        self.env.update({**GIT_ENV, "FAKE_CODEX_MODE": "break-index", "HOME": str(self.tmp)})
+        code, out = self.cli_review("after", "--json")
+        payload = json.loads(out)
+        self.assertEqual((2, "codex-git-guard"), (code, payload["code"]))
+        self.assertIn("cannot read the tree after", payload["message"])
+
+    def test_the_cli_exits_2_when_git_fails_before_the_run(self):
+        os.chmod(self.worktree / ".git" / "index", 0)
+        self.addCleanup(os.chmod, self.worktree / ".git" / "index", 0o644)
+        code, out = self.cli_review("before")
+        self.assertEqual(2, code, out)
+        self.assertIn("git guard", out)
+        code, out = self.cli_review("before2", "--json")
+        self.assertEqual((2, "codex-git-guard"), (code, json.loads(out)["code"]))
+
+    def test_the_cli_exits_2_when_the_review_changed_the_tree(self):
+        self.env["FAKE_CODEX_MODE"] = "write"
+        code, out = self.cli_review("changed", "--json")
+        self.assertEqual((2, "codex-git-guard"), (code, json.loads(out)["code"]))
 
     def test_the_command_line(self):
         base = ["--root", str(self.root), "review", "--worktree", str(self.worktree),
