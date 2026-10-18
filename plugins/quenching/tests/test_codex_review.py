@@ -334,6 +334,32 @@ class TheReview(unittest.TestCase):
             code = main(argv)
         return code, buffer.getvalue()
 
+    def cli_review(self, run: str, *flags: str) -> tuple[int, str]:
+        return self.run_main(["--root", str(self.root), "review", "--worktree",
+                              str(self.worktree), "--prompt", str(self.prompt), "--run", run,
+                              *flags])
+
+    def test_the_cli_exits_2_when_git_fails_after_the_run(self):
+        self.env.update({**GIT_ENV, "FAKE_CODEX_MODE": "break-index", "HOME": str(self.tmp)})
+        code, out = self.cli_review("after", "--json")
+        payload = json.loads(out)
+        self.assertEqual((2, "codex-git-guard"), (code, payload["code"]))
+        self.assertIn("cannot read the tree after", payload["message"])
+
+    def test_the_cli_exits_2_when_git_fails_before_the_run(self):
+        os.chmod(self.worktree / ".git" / "index", 0)
+        self.addCleanup(os.chmod, self.worktree / ".git" / "index", 0o644)
+        code, out = self.cli_review("before")
+        self.assertEqual(2, code, out)
+        self.assertIn("git guard", out)
+        code, out = self.cli_review("before2", "--json")
+        self.assertEqual((2, "codex-git-guard"), (code, json.loads(out)["code"]))
+
+    def test_the_cli_exits_2_when_the_review_changed_the_tree(self):
+        self.env["FAKE_CODEX_MODE"] = "write"
+        code, out = self.cli_review("changed", "--json")
+        self.assertEqual((2, "codex-git-guard"), (code, json.loads(out)["code"]))
+
     def test_the_command_line(self):
         base = ["--root", str(self.root), "review", "--worktree", str(self.worktree),
                 "--prompt", str(self.prompt)]

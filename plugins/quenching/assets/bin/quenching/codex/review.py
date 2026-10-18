@@ -100,6 +100,14 @@ def refusal(code: str, message: str) -> tuple[dict, int]:
     return {"ok": False, "code": code, "message": message}, 2
 
 
+def guard_refusal(message: str, run_dir: str | None, error: GuardError) -> tuple[dict, int]:
+    """A `codex-git-guard` refusal carrying every key `cq codex review` prints, so the exit 2 that
+    hands the tree to the human is never lost to a missing key."""
+    return {"ok": False, "code": "codex-git-guard", "message": message, "runDir": run_dir,
+            "reason": f"git guard: {error}", "tokens": NOT_MEASURED, "guard": None,
+            "changed": []}, 2
+
+
 def run_review(root: str, settings: dict, worktree: str, prompt: str, run: str | None,
                env: dict | None = None) -> tuple[dict, int]:
     env = dict(os.environ if env is None else env)
@@ -137,8 +145,8 @@ def run_review(root: str, settings: dict, worktree: str, prompt: str, run: str |
         before = snapshot(toplevel, skip)
     except GuardError as error:
         shutil.rmtree(run_dir, ignore_errors=True)
-        return refusal("codex-git-guard", f"the guard cannot read the tree before the run, so "
-                                          f"nothing can be proved: {error}")
+        return guard_refusal(f"the guard cannot read the tree before the run, so nothing can "
+                             f"be proved: {error}", None, error)
     with open(prompt_path, encoding="utf-8") as stdin, \
             open(events_path, "w", encoding="utf-8") as stdout, \
             open(os.path.join(run_dir, "stderr.log"), "w", encoding="utf-8") as stderr:
@@ -152,10 +160,9 @@ def run_review(root: str, settings: dict, worktree: str, prompt: str, run: str |
     try:
         after = snapshot(toplevel, skip)
     except GuardError as error:
-        return {"ok": False, "code": "codex-git-guard",
-                "message": f"the guard cannot read the tree after the run, so it cannot prove the "
-                           f"review changed nothing: {error}. Stop and hand the tree to the human.",
-                "runDir": run_dir, "reason": f"git guard: {error}"}, 2
+        return guard_refusal(f"the guard cannot read the tree after the run, so it cannot prove "
+                             f"the review changed nothing: {error}. Stop and hand the tree to "
+                             f"the human.", run_dir, error)
     wrote = os.path.isfile(review_path) and os.path.getsize(review_path) > 0
     out = {"ok": False, "fallback": True, "run": run, "runDir": run_dir,
            "reviewPath": review_path if wrote else None, "eventsPath": events_path,
