@@ -256,9 +256,14 @@ can never carry `[P]`, whichever way the work would actually have gone. Decide t
 declare the paths; do not leave it to whether the line felt worth typing.
 
 **Declare every generated mirror the diff changes.** A task that edits a translated source also
-rewrites what the generator emits from it — `quenching-specs-reader/**`, `plugins/README.md`, the
-goldens. List each such generated mirror in the task's `files:` beside the source; the scope check
-stays strict, so an undeclared mirror is an out-of-scope diff.
+rewrites what the generator emits from it. List each such derived output in the task's `files:`
+beside the source, whichever of these the diff changes: the plugin mirrors of the source
+(`quenching-specs/**`, `quenching-specs-reader/**` and the other `plugins/quenching-*/` copies), the
+Codex mirror (`plugins/quenching-codex/**`), `plugins/quenching-codex/.generated-files.json`,
+`plugins/README.md`, every `plugin.json` and `.generated-from.json` the generators rewrite, and the
+goldens. The scope check stays strict and the verifier executes nothing from the branch, so it
+cannot regenerate or discount a derived output: an undeclared one is an out-of-scope diff. Run the
+generators in the task, read what changed, and declare exactly that set.
 
 **Scope each `verify:` to what its own task could break** — not to what the repo can check. A gate
 that re-runs a check whose inputs the section could not have touched is a `verify:` written too
