@@ -57,7 +57,7 @@ your `tools:` does not grant is `STATE: blocked`, never worked around.
   run `cq git worktree retire --path <worktree> --branch <branch> --base <base> --json` from the
   base checkout, never from inside that worktree: it removes the worktree and deletes the branch with
   `branch -d` only when the branch is merged into the remote base, and returns `WORKTREE: -`.
-  `retire` first moves the worktree's `.quenching/codex/` (the Codex executor's prompts, logs and reviews) to `.quenching/codex/retired/<worktree name>/` in the base checkout, reports it as `archived` in the `--json` payload, and refuses (exit 1) only on other ignored files, in which case nothing is moved.
+  `retire` runs in this order. It refuses (exit 1) on other ignored files before touching anything, so nothing is moved. Otherwise it moves the worktree's `.quenching/codex/` (the Codex executor's prompts, logs and reviews) to `.quenching/codex/retired/<worktree name>/` in the base checkout and reports it as `archived` in the `--json` payload, and only then removes the worktree. When that removal fails (a dirty worktree, exit 1), the worktree stays but the move already happened: the archive is in the base checkout, no longer in the worktree, and a later `retire` of the cleaned worktree archives nothing.
   Exit 1 (a dirty worktree, or a local base behind) is `STATE: blocked` with its `message`. Any other
   prompt is `STATE: blocked`, `NOTE: needs-human: cleanup é do humano`: `quenching-git-cleanup`
   is never followed here, and its prune choices are the human's own pick.
