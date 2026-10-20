@@ -9,6 +9,7 @@ import json
 import os
 import subprocess
 
+from quenching.common.config import detect_provider
 from quenching.common.git import _git
 from quenching.common.output import emit
 from quenching.git.base import resolve_base
@@ -132,15 +133,26 @@ def _checked_out_branches(cwd: str) -> set[str]:
 
 
 def _open_pr_heads(cwd: str) -> set[str] | None:
-    """Head branches of open PRs, or None when the lookup is unavailable (no `gh`, no host)."""
+    """Head branches of open PRs, or None when the lookup is unavailable (no `gh`/`az`, no
+    host). An Azure DevOps origin is read with `az repos pr list`, any other with `gh`."""
     try:
-        done = subprocess.run(["gh", "pr", "list", "--state", "open", "--limit", "500",
-                               "--json", "headRefName"], cwd=cwd, capture_output=True,
-                              text=True, timeout=20)
+        provider = detect_provider(cwd)[0]
+    except Exception:  # an unreadable origin keeps the GitHub route
+        provider = None
+    if provider == "azure-boards":
+        argv = ["az", "repos", "pr", "list", "--status=active", "--top=500", "--detect=true",
+                "--output=json"]
+        key = "sourceRefName"
+    else:
+        argv = ["gh", "pr", "list", "--state", "open", "--limit", "500", "--json", "headRefName"]
+        key = "headRefName"
+    try:
+        done = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, timeout=20)
         if done.returncode != 0:
             return None
-        return {row["headRefName"] for row in json.loads(done.stdout)}
-    except (OSError, subprocess.SubprocessError, ValueError, KeyError, TypeError):
+        return {row[key].removeprefix("refs/heads/") for row in json.loads(done.stdout)}
+    except (OSError, subprocess.SubprocessError, ValueError, KeyError, TypeError,
+            AttributeError):
         return None
 
 
@@ -165,7 +177,7 @@ def stale_report(cwd: str, remote: str = "origin") -> dict:
     for b in _gone_branches(cwd, protected):
         reasons.setdefault(b, set()).add("gone")
     # Guidance first: a branch that must stay is listed with the reason, never offered for
-    # deletion. `open-pr` needs the host (`gh`); when it is unreachable the report says so.
+    # deletion. `open-pr` needs the host (`gh` or `az`); when it is unreachable the report says so.
     open_prs = _open_pr_heads(cwd)
     checked_out = _checked_out_branches(cwd)
     kept: dict[str, set[str]] = {}
