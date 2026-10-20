@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import json
 import re
+import os
 import subprocess
 
+from quenching.common.config import detect_provider
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, front_fields
 from quenching.specs.parse.edit import upsert_section
@@ -21,6 +23,8 @@ from quenching.specs.parse.text import HEADING_RE, mask_comments, split_lines
 
 LABEL_RE = re.compile(r"^[A-Za-z0-9][\w.-]*$")
 GROUP_NUMBER_RE = re.compile(r"^\d+\.\s*")
+# `az repos pr` `status` in `gh pr view`'s `state` vocabulary, so the derivation reads one.
+AZURE_PR_STATE = {"completed": "MERGED", "active": "OPEN", "abandoned": "CLOSED"}
 
 
 def _refuse(out: Emitter, args, code: str, message: str, **extra) -> int:
@@ -35,29 +39,58 @@ def _pr_target(member: dict) -> str:
     return url if url.startswith(("http://", "https://")) else pr_number(member)
 
 
+def _provider(root: str | None) -> str | None:
+    """`github`, `azure-boards`, or None when the origin names neither host."""
+    try:
+        return detect_provider(root or os.getcwd())[0]
+    except Exception:  # an unreadable origin keeps the GitHub route
+        return None
+
+
+def _pr_view(member: dict, provider: str | None, root: str | None,
+             timeout: int) -> tuple[str, str] | None:
+    """`(state, head branch)` of the member's PR as its provider reports it, or None. Azure is read
+    with `az repos pr show --detect`, which resolves the organization from `root`'s origin."""
+    if provider == "azure-boards":
+        argv = ["az", "repos", "pr", "show", f"--id={pr_number(member)}", "--detect=true",
+                "--output=json"]
+    else:
+        argv = ["gh", "pr", "view", _pr_target(member), "--json", "state,headRefName"]
+    try:
+        r = subprocess.run(argv, capture_output=True, text=True, timeout=timeout, cwd=root)
+        got = json.loads(r.stdout) if r.returncode == 0 else {}
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return None
+    if not isinstance(got, dict):
+        return None
+    if provider == "azure-boards":
+        state = AZURE_PR_STATE.get(str(got.get("status") or "").strip().lower(), "")
+        head = str(got.get("sourceRefName") or "").removeprefix("refs/heads/")
+    else:
+        state, head = str(got.get("state") or "").strip(), got.get("headRefName")
+    return (state, head) if state else None
+
+
 def pr_states(members: dict, root: str | None = None, timeout: int = 15) -> dict[str, str]:
-    """`member id -> PR state` for every archived member carrying a `pr:` record, read with
-    `gh pr view` from `root` (the repository `--root` names, not the process cwd). A lookup that
-    fails, or whose `headRefName` is not the member's recorded `branch.work`, is left out, and the
-    derivation then marks it `unverified`. A member with no `branch.work` has nothing to contradict."""
+    """`member id -> PR state` for every archived member carrying a `pr:` record, read from `root`
+    (the repository `--root` names, not the process cwd) with `gh pr view`, or `az repos pr show`
+    when the origin is Azure DevOps. A lookup that fails, or whose head is not the member's
+    recorded `branch.work`, is left out, and the derivation then marks it `unverified`. A member
+    with no `branch.work` has nothing to contradict."""
     out: dict[str, str] = {}
+    provider = None
     for sid, m in members.items():
         if not m or m["phase"] != "archive" or not pr_number(m):
             continue
-        try:
-            r = subprocess.run(["gh", "pr", "view", _pr_target(m), "--json", "state,headRefName"],
-                               capture_output=True, text=True, timeout=timeout, cwd=root)
-            got = json.loads(r.stdout) if r.returncode == 0 else {}
-        except (OSError, subprocess.SubprocessError, ValueError):
-            continue
-        state = str(got.get("state") or "").strip() if isinstance(got, dict) else ""
-        if not state:
+        provider = provider or _provider(root) or "github"
+        got = _pr_view(m, provider, root, timeout)
+        if got is None:
             continue
         rec = m["frontmatter"].get("branch")
         work = str(rec.get("work", "")).strip() if isinstance(rec, dict) else ""
-        if work and got.get("headRefName") != work:
+        if work and got[1] != work:
             continue
-        out[str(sid)] = state
+        out[str(sid)] = got[0]
     return out
 
 
