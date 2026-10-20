@@ -1,7 +1,7 @@
 ---
 name: verifier
 description: Audits a spec's real git and spec state and returns PASS or FAIL with evidence. Use before accepting any worker result. Read-only; never edits or fixes.
-tools: Read, Grep, Glob, Bash(cq specs status:*), Bash(cq specs show:*), Bash(cq git audit:*), Bash(gh pr view:*)
+tools: Read, Grep, Glob, Bash(cq specs status:*), Bash(cq specs show:*), Bash(cq git audit:*), Bash(cq git pr view:*)
 model: sonnet
 effort: low
 ---
@@ -28,7 +28,7 @@ verdict is FAIL with the error quoted; an empty `status` or `stash` proves nothi
 
 Run it from the base checkout; it refuses (exit 2) a path the repository does not register as a
 worktree and any ref that does not resolve to a commit. Your only shell grants are this verb,
-`cq specs status`/`show` and `gh pr view`: never `git`, `bash` or `cd <wt> && …`, which no grant
+`cq specs status`/`show` and `cq git pr view`: never `git`, `bash` or `cd <wt> && …`, which no grant
 matches. Without a worktree, `--worktree` is the base checkout itself.
 
 1. Tasks: `cq specs status --spec <id> --json` shows checked == total.
@@ -45,7 +45,8 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    edited by hand, a derived output that is no copy and an authored file are not in `generated`,
    so they stay listed.
 5. Hygiene: the payload's `stash` and `status` are both empty.
-6. Delivery: when the worker reported a PR, `gh pr view <n>` exists and targets the base.
+6. Delivery: when the worker reported a PR, `cq git pr view --number <n> --json` is `ok` and its
+   `base` is the base (it reads GitHub or Azure DevOps, whichever the origin names).
 
 7. History: every sha the worker named in `SHAS` is `true` under the payload's `ancestry`, and
    `rewrites.branch` plus `rewrites.head` are empty. A rewrite is a reflog move that is not a

@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CQ = str(PLUGIN_ROOT / "assets" / "bin" / "cq")
@@ -93,6 +94,33 @@ class AutopilotContract(unittest.TestCase):
         self.assertIn("mergesAllowed", body)
         self.assertIn("no merges", body)
         self.assertIn("Bash(cq:*)", body)
+
+
+class AzurePreflight(unittest.TestCase):
+    """On an Azure DevOps origin `ghAuth` probes the `az` PR route and `ci` is not read."""
+
+    def setUp(self):
+        sys.path.insert(0, str(PLUGIN_ROOT / "assets" / "bin"))
+        from quenching.git import preflight
+        self.preflight = preflight
+
+    def test_the_auth_check_reads_az_on_azure(self):
+        with unittest.mock.patch.object(self.preflight, "_tool",
+                                        return_value=(0, "[]", "")) as tool:
+            got = self.preflight._gh_auth("/r", "azure-boards")
+        self.assertEqual((got["id"], got["status"]), ("ghAuth", "ok"))
+        self.assertEqual(tool.call_args.args[1:5], ("az", "repos", "pr", "list"))
+
+    def test_an_unreachable_az_route_fails(self):
+        with unittest.mock.patch.object(self.preflight, "_tool",
+                                        return_value=(1, "", "please run az login")):
+            self.assertEqual(self.preflight._gh_auth("/r", "azure-boards")["status"], "fail")
+
+    def test_ci_is_unknown_on_azure_and_runs_nothing(self):
+        with unittest.mock.patch.object(self.preflight, "_tool") as tool:
+            got = self.preflight._ci("/r", "main", "azure-boards")
+        tool.assert_not_called()
+        self.assertEqual(got["status"], "unknown")
 
 
 if __name__ == "__main__":
