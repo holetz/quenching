@@ -1432,6 +1432,7 @@ class VerifierGrants(unittest.TestCase):
         tools = next(line for line in text.splitlines() if line.startswith("tools:"))
         grants = re.findall(r"Bash\(([^)]*)\)", tools)
         self.assertIn("cq git audit:*", grants)
+        self.assertIn("cq git pr view:*", grants)
         for grant in grants:
             self.assertNotIn("*", grant.removesuffix(":*"), grant)
             self.assertFalse(grant.startswith(("git ", "bash ")), grant)
@@ -3520,3 +3521,64 @@ class ReviewerHistory(RepoCase):
             proc = _cq(self.repo, "history", *argv)
             self.assertNotEqual(proc.returncode, 0)
             self.assertFalse(target.exists())
+
+
+class PullRequestView(unittest.TestCase):
+    """`cq git pr view` reads one PR on the provider the origin names, and writes nothing."""
+
+    def view(self, provider, payload, code=0):
+        from quenching.git import pull
+        out = json.dumps(payload) if payload is not None else ""
+        args = SimpleNamespace(action="view", number=7, json=True)
+        with mock.patch.object(pull, "_provider", return_value=provider), \
+                mock.patch.object(pull, "_az", return_value=(code, out, "boom")) as az, \
+                mock.patch.object(pull, "_gh", return_value=(code, out, "boom")) as gh, \
+                contextlib.redirect_stdout(io.StringIO()) as buf:
+            exit_code = pull.cmd_pr(args)
+        return exit_code, json.loads(buf.getvalue()), az, gh
+
+    def test_azure_is_read_with_az_and_its_status_mapped(self):
+        code, got, az, gh = self.view("azure-boards", {
+            "pullRequestId": 7, "status": "completed", "sourceRefName": "refs/heads/plan/7-x",
+            "targetRefName": "refs/heads/master",
+            "repository": {"webUrl": "https://dev.azure.com/o/p/_git/r"}})
+        self.assertEqual(code, 0)
+        az.assert_called_once_with("repos", "pr", "show", "--id=7", "--detect=true",
+                                   "--output=json")
+        gh.assert_not_called()
+        self.assertEqual((got["state"], got["base"], got["head"], got["url"]),
+                         ("MERGED", "master", "plan/7-x",
+                          "https://dev.azure.com/o/p/_git/r/pullrequest/7"))
+
+    def test_github_is_read_with_gh(self):
+        code, got, az, gh = self.view("github", {
+            "number": 7, "state": "OPEN", "baseRefName": "main", "headRefName": "plan/7-x",
+            "url": "https://github.com/o/r/pull/7"})
+        self.assertEqual(code, 0)
+        az.assert_not_called()
+        self.assertEqual((got["provider"], got["state"], got["base"]), ("github", "OPEN", "main"))
+
+    def test_an_unreadable_pr_exits_1(self):
+        code, got, _, _ = self.view("azure-boards", None, code=1)
+        self.assertEqual((code, got["ok"], got["reason"]), (1, False, "unreadable"))
+
+
+class StaleOpenPullRequests(unittest.TestCase):
+    """The `open-pr` guard reads open PRs on the provider the origin names."""
+
+    def heads(self, provider, rows):
+        from quenching.git import stale
+        with mock.patch.object(stale, "detect_provider", return_value=(provider, "h")), \
+                mock.patch.object(stale.subprocess, "run", return_value=mock.Mock(
+                    returncode=0, stdout=json.dumps(rows))) as run:
+            return stale._open_pr_heads("/r"), run.call_args.args[0]
+
+    def test_azure_reads_active_prs_with_az(self):
+        got, argv = self.heads("azure-boards", [{"sourceRefName": "refs/heads/plan/7-x"}])
+        self.assertEqual(got, {"plan/7-x"})
+        self.assertEqual(argv[:4], ["az", "repos", "pr", "list"])
+        self.assertIn("--status=active", argv)
+
+    def test_github_reads_open_prs_with_gh(self):
+        got, argv = self.heads("github", [{"headRefName": "plan/7-x"}])
+        self.assertEqual((got, argv[:3]), ({"plan/7-x"}, ["gh", "pr", "list"]))
