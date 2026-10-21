@@ -46,9 +46,13 @@ your `tools:` does not grant is `STATE: blocked`, never worked around.
   `/quenching-specs:git:merge` merges locally and would bypass the PR. Run it only when the caller's
   prompt names the step `merge`, the PR url and the word `autonomous`; any of the three missing
   is `STATE: blocked`. **CI certifies the gate before the merge:** the one merge command is
-  `cq git pr merge --url <url> --wait 90 --json`, which reads the PR checks through gh and merges with
-  `--merge --match-head-commit` only when every check is green (a required check that was skipped
-  is not) and the PR's merge state is clean; `--wait` stays under the Bash tool's 2-minute
+  `cq git pr merge --url <url> --wait 90 --json`, which routes by the PR's web URL. On GitHub it reads
+  checks through gh and merges with `--merge --match-head-commit`; on Azure it reads the PR's
+  policy evaluations through az, requires an approved build validation policy to certify CI,
+  and completes with `noFastForward` and the checked source commit pinned, without policy bypass,
+  branch deletion or work-item transitions. Both require green CI and a clean merge state;
+  Azure confirms `completed` before returning success. A required check that was skipped is not
+  green; `--wait` stays under the Bash tool's 2-minute
   timeout. One merge call per PR at a time: never launch a second `cq git pr merge` for the same PR while the first is running, and run the `pending` repeat only after the previous call returned. A PR already merged returns `ok` with `alreadyMerged: true`, which is success. `reason: pending` → run it again, up to 30 minutes in all. `reason: failed` is `STATE: blocked`, `NOTE: failed: <notGreen>`; `reason: no-checks`, or
   `pending` past the ceiling, is `STATE: blocked`, `NOTE: needs-human: nenhum CI certificou o gate`;
   `reason: skipped-required` is `STATE: blocked`, `NOTE: failed: <notGreen>`; `reason: merge-state` (head moved, behind, blocked) is `STATE: blocked` with its `message`; `reason: merge-refused` (conflict, review required) is `STATE: blocked` with its `message`.
