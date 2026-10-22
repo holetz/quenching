@@ -181,6 +181,21 @@ class TheReview(unittest.TestCase):
         self.assertEqual((2, "codex-git-guard"), (code, payload["code"]))
         self.assertIn("cannot read the tree after", payload["message"])
 
+    def test_every_exit_2_guard_refusal_says_there_is_no_fallback(self):
+        self.env["FAKE_CODEX_MODE"] = "write"
+        changed, code = self.review("changed")
+        self.assertEqual((2, "codex-git-guard"), (code, changed["code"]))
+        git_failed, code = self.guarded("break-index")
+        self.assertEqual((2, "codex-git-guard"), (code, git_failed["code"]))
+        path = self.worktree / "unreadable.txt"
+        path.write_text("x\n", encoding="utf-8")
+        os.chmod(path, 0)
+        self.addCleanup(os.chmod, path, 0o644)
+        unreadable, code = self.review("unreadable")
+        self.assertEqual((2, "codex-git-guard"), (code, unreadable["code"]))
+        for payload in (changed, git_failed, unreadable):
+            self.assertIs(False, payload.get("fallback"), payload["message"])
+
     def test_an_unreadable_file_before_the_run_fails_closed_and_removes_the_run_dir(self):
         path = self.worktree / "unreadable.txt"
         path.write_text("x\n", encoding="utf-8")
