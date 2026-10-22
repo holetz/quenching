@@ -127,7 +127,8 @@ class AlignCleanPath(unittest.TestCase):
             inventory, inventory_error = build_inventory(str(scripts))
             self.assertEqual(inventory_error, {})
             assert inventory is not None
-            registry.write_text(render_registry_document("", inventory), encoding="utf-8")
+            registry.write_text(
+                render_registry_document("`run.py` \u2014 active\n", inventory), encoding="utf-8")
 
             payload, err, exit_code = doctor(str(root))
             self.assertEqual(err, {})
@@ -459,6 +460,22 @@ class RegistryStale(unittest.TestCase):
             )
             self.assertEqual(_registry_lifecycle(str(root), str(path)),
                              {"a.py": "archived", "b.py": "active"})
+
+    def test_generated_zone_is_never_read_as_a_declaration(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            path = root / "registry.md"
+            inventory = Inventory(
+                str(root),
+                Router("pyproject.toml", "python-console-script", True),
+                (EntryPoint("run.py", "run", "/run", "Run", lifecycle="active"),),
+            )
+            write_registry(path, inventory)
+            self.assertIn("| active |", path.read_text(encoding="utf-8"))
+            self.assertEqual(_registry_lifecycle(str(root), str(path)), {})
+            path.write_text("`run.py` \u2014 archived\n\n" + path.read_text(encoding="utf-8"),
+                            encoding="utf-8")
+            self.assertEqual(_registry_lifecycle(str(root), str(path)), {"run.py": "archived"})
 
     def test_stale_check_delegates_to_registry_generator(self):
         with tempfile.TemporaryDirectory() as raw:
