@@ -7,7 +7,7 @@ tags: [architecture, codex, pillar, git-guard, quota, review, executor]
 timestamp: 2026-10-18
 audience: both
 authority: current
-source: spec 1818 (tasks 2.1, 3.3) — the `cq codex` pillar of epic 1817 (D8 A), absorbing the quota probe of spec 1660; spec 1879 (task 4.1) — the per-task executor of epic 1914 (E1 A, E2 bypass by default); spec 1661 (task 5.1) — `modelSmallTier` for the protected-oracle verified class (ADR 0014); the removal of every native-sandbox path, at the human's request on 2026-10-18 (bwrap errors on hosts without unprivileged user namespaces)
+source: specs 1818, 1879, 1661, 1660, 1817, 1914, ADR 0014 — lineage in decision 0004
 maintainer: quenching
 ---
 

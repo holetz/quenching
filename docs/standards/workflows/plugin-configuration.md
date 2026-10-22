@@ -7,7 +7,7 @@ tags: [workflows, specs, configuration, provider, plugin]
 timestamp: 2026-10-17
 audience: both
 authority: current
-source: spec 1065 (task 3.1) — the namespaced envelope and migration refusal are implemented and covered by the source test matrix; extended by spec 1075 (2026-09-01) with `shared.gitConventions`, the `git` pillar's per-artifact writing directives; extended by spec 1405 (2026-10-08) with `shared.regenerablePaths`; by spec 1907 (2026-10-17) with the user layer; by spec 1908 (2026-10-17) with the `quenching` branch layer and `cq config show --effective`; by spec 1911 (2026-10-17) with `shared.autonomy`; by spec 1910 (2026-10-17) with `shared.okfValidate`, `shared.contextBudgets` and `specs.chat`; by spec 1909 (2026-10-17) with the seed (`cq config init`) and the missing-keys check; by spec 1912 (2026-10-17) aligning the standard to the loader (no second repository path, `shared.codex`, `delivery`, `artifactLanguage`/`card`/`cardAt`, the settings read outside the file and `cq doctor --setup`)
+source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912 — lineage in decision 0004
 maintainer: quenching
 ---
 
