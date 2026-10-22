@@ -93,7 +93,13 @@ def measured_tokens(events_path: str):
 
 
 def snapshot(worktree: str, skip: str | None) -> dict:
-    return {**refs(worktree, strict=True), **strict_refs(worktree), "tree": tree(worktree, skip)}
+    try:
+        return {**refs(worktree, strict=True), **strict_refs(worktree),
+                "tree": tree(worktree, skip)}
+    except GuardError:
+        raise
+    except Exception as error:  # an unreadable file or any other failure: fail closed
+        raise GuardError(f"{type(error).__name__}: {error}") from error
 
 
 def refusal(code: str, message: str) -> tuple[dict, int]:
