@@ -1,6 +1,6 @@
 {
   "name": "quenching-ops",
-  "version": "6.8.0",
+  "version": "6.9.0",
   "description": "The declared-operations front: /quenching-ops:ops:* aligns and reports the operations registry a repository declares. Requires quenching-specs for cq.",
   "author": {
     "name": "Israel Holetz",
