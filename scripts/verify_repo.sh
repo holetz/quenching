@@ -68,6 +68,8 @@ run_check "harness (AGENTS.md / CLAUDE.md)" \
   python3 scripts/check_claude_harness.py
 run_check "docs bundle" \
   python3 plugins/quenching/assets/bin/cq knowledge validate docs
+run_check "docs doctor" \
+  python3 plugins/quenching/assets/bin/cq knowledge doctor docs
 run_check "generated plugin modules and published lockstep" \
   python3 scripts/generate_plugin_modules.py --check
 run_check "Claude/Codex translation" \
