@@ -119,8 +119,13 @@ steps end in checkable **Done when** criteria; every line passes the no-op test;
 prescriptions positive; body well under 500 lines; the description within the 1,536-char cap.
 The description is the **only** always-on text there is — its triggers and its boundary are what
 route a spoken request here. For an edit, apply the doctrine to the diff — cure the named failure mode
-(sediment, sprawl, negation, …), keep the rest. **Done when:** the draft passes the
-doctrine's failure-mode table read top to bottom.
+(sediment, sprawl, negation, …), keep the rest. **Before drafting an edit, list every quoted trigger
+of the current description; after drafting, each one is still there.** A quoted trigger is never
+cut for length ([doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md)):
+one the edit drops, or one that looks like sediment, is restored or goes to the report as a line with
+the `/quenching-align:components:command:eval <command>` that decides its retirement.
+**Done when:** the draft passes the doctrine's failure-mode table read top to bottom, and every
+quoted trigger of the old description is present or reported.
 
 ### 6. Present ONE plan → gate on the OK
 Show: axis value + bound folder, the command path, **the execution profile** (each
