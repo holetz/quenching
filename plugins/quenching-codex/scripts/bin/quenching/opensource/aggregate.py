@@ -38,6 +38,12 @@ ARTIFACT_CODES = {
     "issue-bug": "os-templates-missing",
     "issue-feature": "os-templates-missing",
 }
+LANGUAGE = "en"
+# README and SECURITY keep their owners: this front reports the hand-off, never writes them.
+LANGUAGE_HANDOFFS = (
+    {"artifact": "readme", "owner": "knowledge", "command": "quenching-knowledge-align"},
+    {"artifact": "security", "owner": "security", "command": "quenching-security-status"},
+)
 OWNER_COMMANDS = {
     "opensource": "quenching-opensource-align",
     "security": "quenching-security-status",
@@ -109,6 +115,7 @@ def _artifacts(root: str) -> list[dict[str, Any]]:
             continue
         seen.add(entry["artifact"])
         rows.append({"artifact": entry["artifact"], "target": entry["target"],
+                     "language": entry["language"],
                      "present": os.path.isfile(os.path.join(root, entry["target"]))})
     return rows
 
@@ -138,6 +145,8 @@ def status(root: str) -> dict[str, Any]:
         "baseline": {"version": catalog.get("baseline", {}).get("version"), **_level(blocks, optional)},
         "owners": [{**block, "command": OWNER_COMMANDS.get(block["owner"])} for block in blocks],
         "artifacts": artifacts,
+        "artifactLanguage": {"language": LANGUAGE, "basis": "template-declaration",
+                             "contentVerified": False, "handoffs": list(LANGUAGE_HANDOFFS)},
         "findings": findings,
         "advisories": advisories,
     }
