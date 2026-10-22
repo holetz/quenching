@@ -471,11 +471,11 @@ class PullRequestAdapterFixture(unittest.TestCase):
     AZURE_RESPONSE = {
         "pullRequestId": 314,
         "title": "Normalize review URLs",
-        "url": "https://dev.azure.com/unicred/proj/_apis/git/repositories/repo/pullRequests/314",
+        "url": "https://dev.azure.com/example-org/proj/_apis/git/repositories/repo/pullRequests/314",
         "repository": {
             "id": "repo-id",
             "name": "repo",
-            "webUrl": "https://dev.azure.com/unicred/proj/_git/repo",
+            "webUrl": "https://dev.azure.com/example-org/proj/_git/repo",
         },
     }
 
@@ -483,7 +483,7 @@ class PullRequestAdapterFixture(unittest.TestCase):
         snapshot = normalize_pull_request("azure-boards", self.AZURE_RESPONSE)
         self.assertEqual(snapshot, {
             "id": 314,
-            "webUrl": "https://dev.azure.com/unicred/proj/_git/repo/pullrequest/314",
+            "webUrl": "https://dev.azure.com/example-org/proj/_git/repo/pullrequest/314",
             "apiUrl": self.AZURE_RESPONSE["url"],
         })
         labels = labelled_links(snapshot)
@@ -685,8 +685,8 @@ class GhRefusal(unittest.TestCase):
 # --------------------------------------------------------------------------- #
 GH_NATIVE_FIELD_CASES = (
     ({}, {}, "no labels and no assignees reassembles nothing"),
-    ({"labels": [{"name": "bug"}, {"name": "Vertical: Risco"}]},
-     {"tags": ["bug", "Vertical: Risco"]}, "every label becomes a tag, in order"),
+    ({"labels": [{"name": "bug"}, {"name": "Vertical: Example"}]},
+     {"tags": ["bug", "Vertical: Example"]}, "every label becomes a tag, in order"),
     ({"assignees": [{"login": "holetz"}, {"login": "second"}]},
      {"assignee": "holetz"},
      "only the FIRST assignee is reflected — the canonical field is singular"),

@@ -263,8 +263,8 @@ class AzureNativeField(unittest.TestCase):
     CASES = (
         ({}, "quenching-spec", {"System.Tags": "quenching-spec"}, None,
          "no tags at all still writes the discovery tag alone"),
-        ({"tags": ["Vertical: Risco"]}, "quenching-spec",
-         {"System.Tags": "Vertical: Risco; quenching-spec"}, None,
+        ({"tags": ["Vertical: Example"]}, "quenching-spec",
+         {"System.Tags": "Vertical: Example; quenching-spec"}, None,
          "a declared tag is joined with the discovery tag, never instead of it"),
         ({"tags": ["quenching-spec"]}, "quenching-spec",
          {"System.Tags": "quenching-spec"}, None,
@@ -489,7 +489,7 @@ class AzureBoardFieldType(unittest.TestCase):
             os.environ["XDG_CACHE_HOME"] = tmp
             try:
                 az = AzureBoardsBackend("test-org-4-2", "test-proj-4-2", AZ_STATES, ".",
-                                        team="Diretoria Risco")
+                                        team="Example Team")
                 boards = {
                     "1": {"allowedMappings": {"x": ["Bug"]},
                          "fields": {"columnField": {
