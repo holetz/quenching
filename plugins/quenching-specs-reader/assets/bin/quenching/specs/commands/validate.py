@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 
 from quenching.common.frontmatter import frontmatter_anomalies
 from quenching.common.output import exit_for
@@ -19,6 +20,11 @@ from quenching.specs.parse.tasks import _files_bad_annotation
 from quenching.specs.schema import (MERGE_ANCHORLESS_STRATEGIES, MERGE_NO_PR_STRATEGIES,
                                     MERGE_STRATEGIES, RECORD_NONE_RE, VERIFICATION_POLICIES,
                                     canonical_headings, load_schema)
+
+
+# A task whose title or `verify:` runs a generator writes files; with `files:` empty the
+# verifier fails the scope of what it wrote. Heuristic by design: a warning, never an error.
+_GENERATOR_RE = re.compile(r"generate_|regenera|espelho", re.IGNORECASE)
 
 
 def _finding(code: str, severity: str, message: str, **extra) -> dict:
@@ -158,6 +164,18 @@ def validate_spec(backend: SpecBackend, s: dict,
                                     task=t["id"] or t["index"], entry=entry,
                                     remedy="remove the comment — `(new)` is the only "
                                            "reserved `files:` annotation"))
+
+    for t in tasks:
+        # `files: []` is parsed as the single entry `[]`: the explicit empty declaration.
+        if any(f.strip() != "[]" for f in t["files"]) or t["checked"]:
+            continue
+        if _GENERATOR_RE.search(f"{t['text']} {t['verify'] or ''}"):
+            out.append(_finding("sp-generator-no-files", "warn",
+                                f"{where}: task {t['id'] or t['index']} runs a generator but "
+                                f"declares no `files:` — the verifier fails the scope of what "
+                                f"it writes", spec=spec_id, path=where,
+                                task=t["id"] or t["index"],
+                                remedy="declare the generator's outputs in the task's `files:`"))
 
     # Judged against the READY gate: a spec is "unrefined" once it could be built, not the
     # moment it is captured. Warning on every fresh capture would train the reader to

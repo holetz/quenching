@@ -38,7 +38,8 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    (the git-steward `merge` step). A missing report is inconclusive; neither a reported pass nor
    a reported failure decides your verdict on its own, and a claimed failure is FAIL.
 4. Scope: the payload's `changed` is a subset of the union of the tasks' `files:` (plus spec
-   records). The `tasks` list of `cq specs show --spec <id> --json` carries no `files:`: read it
+   records). One rule: `n/a` only when `changed` is empty; a non-empty `changed` against an empty or
+   non-covering union of `files:` (a task with `files: []` that regenerated mirrors included) is FAIL. The `tasks` list of `cq specs show --spec <id> --json` carries no `files:`: read it
    per task with `cq specs show --spec <id> --task <t> --json` (`--task` repeats). First remove the
    payload's `generated`: paths the audit proved a byte-for-byte copy of their source in a module the
    base manifest declares. List every remaining path outside the union. A generated file that was
@@ -101,7 +102,7 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    test was judged by folder name) are listed in the evidence and never
    block. Empty is ok. A gate line removed from a gate file is absolved only when its namespace rewrite by the same BASE map is a line the branch added; an unknown head never absolves, and a deleted or relocated gate stays FAIL. A weakened task `verify:` is not read here: the spec store is not in the diff.
 
-If a check does not apply (no PR yet, no declared `files:`), mark it `n/a`; do not fail on it.
+If a check does not apply (no PR yet; scope with an empty `changed`), mark it `n/a`; do not fail on it. An absent `files:` never makes scope `n/a` while `changed` is non-empty.
 
 ## Not checked here
 
