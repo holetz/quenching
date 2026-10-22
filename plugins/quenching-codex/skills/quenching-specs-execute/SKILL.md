@@ -301,7 +301,7 @@ e. **Then verify, stage, commit and confirm the spec task as ONE chained operati
    §The verification policy); otherwise the chain starts at `git add`. A task with
    **no `files:` declared** — the line absent, or `files: []` — has no diff to commit, so its
    chain *ends* at the tick, run without `--subject` or `--commit`, and with neither `git add` nor
-   run `cq git commit`. A `branch:` record also gets the branch marked, per the rule loaded in 5d.
+   run `cq git commit`. **A task that runs generators writes files, so it declares their outputs in `files:`**; with `files: []` the verifier fails the scope of whatever it wrote. A `branch:` record also gets the branch marked, per the rule loaded in 5d.
 
 f. **Read the chain's tail, and act on which link broke** — per §The commit, already loaded in
    5d: `verify:`/staging failed → nothing ticked, nothing committed; fix and retry, or block it
