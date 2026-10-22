@@ -320,8 +320,12 @@ because the native sandbox needs admin rights most machines lack and fails there
 environment loses `GH_TOKEN`, `GITHUB_TOKEN`, `AWS_*`, `AZURE_*` and `GOOGLE_*`, and the guard
 compares `HEAD`, branch, reflog, stash, every ref, the index, every worktree's `HEAD`, the status
 and bytes of every path `git status` reports and the ignored local configuration (`.claude/**`,
-`*.local.json`), before and after. Any change, or a git command of the guard that fails, is exit `2`
-`codex-git-guard`: the tree is never cleaned by Claude and goes to the human.
+`*.local.json`), before and after. Every symlink that resolves to a file (tracked, ignored or
+pointing outside the worktree) is recorded with its target and the hash of the resolved bytes; a
+symlink to a directory is not walked and stays a residual risk. Any change, a git command of the
+guard that fails, or any file-system error while taking the snapshot, before or after, is exit `2`
+`codex-git-guard` with no fallback (the refusal before the run removes the run's folder): the tree
+is never cleaned by Claude and goes to the human.
 
 **Fallback.** A probe that exits `1`, or a review that times out or exits `1`, leaves the step with
 the Claude review alone, and the final report names the fallback and its reason. A refusal (exit

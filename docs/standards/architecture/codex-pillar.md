@@ -90,11 +90,15 @@ are state.
   hash of the index (`git ls-files -s`, so a swapped staged blob moves it), the hash of the index
   flags (`git ls-files -v`, so `assume-unchanged` and `skip-worktree` move it) and, for every path
   `git status` reports and every file those flags hide, its status code and the hash of its bytes
-  (a symlink is hashed as its `os.readlink` target plus the bytes it resolves to) — the run's own
+  (a symlink is hashed as its `os.readlink` target plus the bytes it resolves to; every symlink that
+  resolves to a file enters this way — tracked, ignored or pointing outside the worktree — while a
+  symlink to a directory is not walked, so writes through it stay unseen) — the run's own
   `.quenching/codex/<run>/` excepted. The ignored files that hold local configuration (`.claude/**`
   and `*.local.json`) are recorded too; the other ignored files (caches) are not. A git command of
-  the review's snapshot that fails is never an empty tree: before the run it refuses, after it the
-  guard cannot prove anything. Both are exit 2 `codex-git-guard`, and the payload carries the keys
+  the review's snapshot that fails is never an empty tree, and neither is a file-system error
+  (an unreadable file, a vanished path): before the run it refuses, after it the guard cannot
+  prove anything. Both are exit 2 `codex-git-guard` with no fallback, the refusal before the run
+  removes the run's `.quenching/codex/<run>/` folder, and the payload carries the keys
   the CLI prints (`tokens`, `reason`, `runDir`), so the exit 2 is never lost to a missing key. Any moved ref or any path whose
   entry differs is the same exit 2, with `guard.moved` and `changed`. The caller never
   cleans it (no `reset`, `stash`, `checkout` or `restore`): it stops and hands the tree to the
@@ -209,8 +213,9 @@ path and kept raising its errors; on 2026-10-18 the human chose to remove every 
 
 The bounds are what the plugin controls instead — `-C <worktree>`, a clean environment, a prompt
 rule, and a guard that proves by code what moved: for the review nothing, for the executor nothing
-outside `files:`. The risk that remains is a command run outside the worktree, or a network call,
-that git cannot see.
+outside `files:`. The risks that remain are a command run outside the worktree, or a network call,
+that git cannot see, and a write through a symlink to a directory, which the guard does not walk
+(walking it has no bound on cost).
 
 `codex exec review --base` is not used: the plugin's own argv, prompt and guard would not apply.
 
