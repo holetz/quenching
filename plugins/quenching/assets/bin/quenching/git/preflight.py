@@ -1,8 +1,10 @@
 """`cq git preflight` — five deterministic questions answered before a run expands: is the spec
-store writable, is the provider's type catalog there, does a push reach the remote, is `gh`
-authenticated, and is the base branch's CI available.
+store writable, is the provider's type catalog there, does a push reach the remote, is the PR
+route authenticated (`gh`, or `az` on an Azure DevOps origin), and is the base branch's CI
+available.
 
-Read-only: pushes use `--dry-run`, CI is read with `gh run list` / `gh run view`, and no hook is
+Read-only: pushes use `--dry-run`, CI is read with `gh run list` / `gh run view` (GitHub only:
+on Azure DevOps `ci` is `unknown`), and no hook is
 ever disabled or skipped. Each check is `{id, status, message}` with status `ok`, `fail`,
 `unknown` (could not answer, never promoted to ok) or `skipped`. `ci` also answers
 `unavailable` when the latest finished run has jobs with no steps (a blocked runner or billing).
@@ -93,7 +95,17 @@ def _push(cwd: str, remote: str) -> dict:
                   hooks=_hooks(cwd), noVerify=False)
 
 
-def _gh_auth(cwd: str) -> dict:
+def _gh_auth(cwd: str, provider: str | None) -> dict:
+    """The PR route's authentication: `gh` on GitHub, `az` on an Azure DevOps origin. The id
+    stays `ghAuth` on both, because the autopilot reads it by that name."""
+    if provider == "azure-boards":
+        code, _out, err = _tool(cwd, "az", "repos", "pr", "list", "--status=all", "--top=1",
+                                "--detect=true", "--output=json")
+        if code in (124, 127):
+            return _check("ghAuth", "unknown", err.strip() or "az unavailable")
+        return _check("ghAuth", "ok" if code == 0 else "fail",
+                      "az reaches the Azure DevOps PRs" if code == 0
+                      else f"az does not reach the Azure DevOps PRs: {err.strip()}".rstrip(": "))
     code, _out, err = _tool(cwd, "gh", "auth", "status")
     if code in (124, 127):
         return _check("ghAuth", "unknown", err.strip() or "gh unavailable")
@@ -101,7 +113,10 @@ def _gh_auth(cwd: str) -> dict:
                   "gh is authenticated" if code == 0 else "gh is not authenticated")
 
 
-def _ci(cwd: str, base: str) -> dict:
+def _ci(cwd: str, base: str, provider: str | None) -> dict:
+    if provider == "azure-boards":
+        return _check("ci", "unknown", "the CI probe reads GitHub Actions; Azure Pipelines "
+                                       "is not read")
     code, out, err = _tool(cwd, "gh", "run", "list", "--branch", base, "--limit", "3",
                            "--json", "databaseId,status,conclusion")
     if code != 0:
@@ -136,7 +151,7 @@ def cmd_preflight(args) -> int:
     backend = cfg.get("backend") or "git"
     base, _default = resolve_base(cwd)
     checks = [_store(cwd, args.remote, backend), _types(backend), _push(cwd, args.remote),
-              _gh_auth(cwd), _ci(cwd, base)]
+              _gh_auth(cwd, cfg.get("provider")), _ci(cwd, base, cfg.get("provider"))]
     bad = [c["id"] for c in checks if c["status"] in BAD]
     ci = next(c for c in checks if c["id"] == "ci")
     merges = ci["status"] != "unavailable"

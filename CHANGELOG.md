@@ -13,6 +13,22 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 6.7.0
+
+**Azure DevOps pull requests are read wherever `cq` judged them through `gh` alone**, and **Codex
+  runs only under bypass with a git guard**. On an Azure origin the epic derivation (`status
+  --epic`, `next --epic`, `promote`) reads member PRs with `az repos pr show` instead of marking
+  every merged member `unverified`; the new read-only `cq git pr view --number N` gives the
+  verifier's delivery check one route on GitHub and Azure; `cq git stale`/`prune` keep an Azure
+  branch with an open PR; and `cq git preflight` probes the `az` route under `ghAuth`. The native
+  Codex sandbox path is gone: review and executor run under bypass behind a git guard that now
+  also catches the index, refs outside `HEAD`, ignored files, a failing `git status`,
+  assume-unchanged/skip-worktree entries and ignored symlinks, and `cq git worktree retire` no
+  longer refuses the `.quenching/codex/` artifacts (Windows paths included). A plugin-wide hook
+  denies Claude co-authorship in commit and PR messages; the portal's sessions panel shows the
+  pending question's `pendingTool`; `files:` must name derived mirrors from develop on; and `cq
+  specs doctor` warns when the `github` backend is only inferred from the remote.
+
 ## 6.6.0
 
 **Codex became a per-task executor, on by default**, and **configuration became one visible home**.

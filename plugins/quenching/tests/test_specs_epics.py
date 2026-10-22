@@ -463,15 +463,22 @@ class PrStatesTarget(unittest.TestCase):
             fm["branch"] = {"base": "main", "work": work}
         return {"phase": "archive", "frontmatter": fm}
 
-    def call(self, rec, root, work=None, head="plan/7-x"):
+    def call(self, rec, root, work=None, head="plan/7-x", provider="github", payload=None):
         seen = {}
 
         def fake(cmd, **kw):
             seen.update(cmd=cmd, **kw)
-            return mock.Mock(returncode=0, stdout=json.dumps({"state": "MERGED", "headRefName": head}))
-        with mock.patch.object(epic_cmd.subprocess, "run", side_effect=fake):
+            return mock.Mock(returncode=0, stdout=json.dumps(
+                payload or {"state": "MERGED", "headRefName": head}))
+        with mock.patch.object(epic_cmd, "_provider", return_value=provider), \
+                mock.patch.object(epic_cmd.subprocess, "run", side_effect=fake):
             got = epic_cmd.pr_states({"7": self.member(rec, work)}, root)
         return got, seen
+
+    def azure(self, status, head="refs/heads/plan/7-x", work="plan/7-x"):
+        return self.call({"number": 5, "url": "https://dev.azure.com/o/p/_git/r/pullrequest/5"},
+                         "/r", work=work, provider="azure-boards",
+                         payload={"status": status, "sourceRefName": head})
 
     def test_a_head_other_than_the_members_branch_is_left_out(self):
         got, _ = self.call({"number": 5, "url": "u"}, "/r", work="plan/7-x", head="plan/9-y")
@@ -491,6 +498,20 @@ class PrStatesTarget(unittest.TestCase):
         url = "https://github.com/o/r/pull/5"
         _, seen = self.call({"number": 5, "url": url}, "/some/repo")
         self.assertEqual(url, seen["cmd"][3])
+
+    def test_an_azure_origin_reads_the_pr_with_az_by_its_number(self):
+        got, seen = self.azure("completed")
+        self.assertEqual({"7": "MERGED"}, got)
+        self.assertEqual(["az", "repos", "pr", "show", "--id=5"], seen["cmd"][:5])
+        self.assertEqual("/r", seen["cwd"])
+
+    def test_azure_statuses_map_onto_the_derivations_states(self):
+        self.assertEqual({"7": "OPEN"}, self.azure("active")[0])
+        self.assertEqual({"7": "CLOSED"}, self.azure("abandoned")[0])
+        self.assertEqual({}, self.azure("notSet")[0])
+
+    def test_an_azure_head_other_than_the_members_branch_is_left_out(self):
+        self.assertEqual({}, self.azure("completed", head="refs/heads/plan/9-y")[0])
 
 
 if __name__ == "__main__":
