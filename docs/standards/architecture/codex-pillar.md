@@ -7,7 +7,7 @@ tags: [architecture, codex, pillar, git-guard, quota, review, executor]
 timestamp: 2026-10-18
 audience: both
 authority: current
-source: specs 1818, 1879, 1661, 1660 — lineage in decision 0004
+source: specs 1818, 1879, 1661, 1660, 1817, 1914, ADR 0014 — lineage in decision 0004
 maintainer: quenching
 ---
 
