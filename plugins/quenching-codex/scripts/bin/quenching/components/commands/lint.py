@@ -869,6 +869,11 @@ def resolve_lint_targets(path_arg: str | None, root: str) -> tuple[str, list[dic
 
 def cmd_lint(args, root: str) -> int:
     base, commands, references = resolve_lint_targets(args.path, root)
+    if not commands and base == root and agent_definitions(root):
+        # A surface of agents alone is still a surface: its agents are checked, not refused.
+        return report_findings(args.json, f"components lint — {base} (0 commands)",
+                               {"root": base, "commandCount": 0},
+                               lint_agents(root, base), "command")
     if not commands:
         return report_findings(args.json, f"components lint — {base}",
                                {"root": base, "commandCount": 0},
