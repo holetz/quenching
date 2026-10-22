@@ -75,7 +75,7 @@ Apply the classification test ([components-command-new/taxonomy.md](${CLAUDE_PLU
   repo, with nothing else recorded.
 
 For an **edit**, re-derive category, axis and (if both apply) the nest-vs-replace read, and diff
-them against the command's current path; a difference is a rename, and step 3 sweeps it.
+them against the current path; a difference is a rename (step 3).
 **Done when:** the category (or its absence), the axis
 value and bound folder (if any), and the nest-vs-replace read (if it applies) are fixed.
 
@@ -89,25 +89,21 @@ is no second name to derive: the path is it. `Glob` `.claude/commands/**` for co
 existing path is a MERGE target (edit), never silently overwritten. Nothing but entry points goes
 under `commands/`: shared procedure lives outside it and is cited by absolute path.
 
-**Rename sweep — only for an edit whose derived path differs from the old path.** The path is the
-name, so moving the file renames the command. `Grep` (never `git grep`: the grant is `Grep`) for the
-old `/<namespace>:<verb>` invocation and for the old path across `.claude/commands/**`,
-`CLAUDE.md`, `AGENTS.md`, `docs/`, `.claude/settings*.json` (hooks) and `.claude/evals/`. Every
-hit is a plan entry carrying its disposition (rewrite to the new name, keep as history, or ask);
-nothing is rewritten before the single OK. A mirrored `evals/<old path>/` moves with the command in
-the same plan. The old file is never deleted: the report lists it as residue for the human.
-**Done when:** the path to be written is fixed, collision-free or resolved as an edit, and a rename
-carries every hit of the old name and old path with a disposition, or states that the sweep found none.
+**Rename sweep (an edit whose derived path differs from the old path).** The path is the name:
+`Grep` the old `/<namespace>:<verb>` and the old path in `.claude/commands/**`, `CLAUDE.md`,
+`AGENTS.md`, `docs/`, `.claude/settings*.json` and `.claude/evals/`. Each hit is a plan entry with a
+disposition (rewrite, keep, ask); the mirrored `evals/<old path>/` moves in the same plan; the old
+file is reported as residue, never deleted.
+**Done when:** the path is fixed, collision-free or resolved as an edit, and a rename carries every
+hit with a disposition (or states the sweep found none).
 
 ### 4. Choose the execution profile
 Walk [components-command-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md):
 the default profile is **all levers off**, and each departure needs a stated buy — `context:
-fork` (+ `agent`, `background`) only for a self-contained, noisy, summary-out run with **no
-mid-flow gate**; an `effort`/`model` pin only for genuinely mechanical work, priced against
-the cache it invalidates inline; `paths` to bind a domain-bound command's autonomous firing
-to its folder; `disable-model-invocation` only for a human-must-choose command (it also
-removes the description from always-on context entirely); frontmatter `hooks:` only for a check
-tied to this command's own workflow. For an **edit**, re-derive the profile and flag any
+fork` only for a self-contained, noisy, summary-out run with **no mid-flow gate**; an
+`effort`/`model` pin only for genuinely mechanical work; `paths` to bind a domain-bound command to
+its folder; `disable-model-invocation` only for a human-must-choose command; frontmatter `hooks:`
+only for a check tied to this command's own workflow. For an **edit**, re-derive the profile and flag any
 lever whose original buy no longer holds. **Done when:** each non-default lever is listed
 with its one-line reason — or the profile is stated as default.
 
@@ -119,18 +115,18 @@ steps end in checkable **Done when** criteria; every line passes the no-op test;
 prescriptions positive; body well under 500 lines; the description within the 1,536-char cap.
 The description is the **only** always-on text there is — its triggers and its boundary are what
 route a spoken request here. For an edit, apply the doctrine to the diff — cure the named failure mode
-(sediment, sprawl, negation, …), keep the rest. **Before drafting an edit, list every quoted trigger
-of the current description; after drafting, each one is still there.** A quoted trigger is never
-cut for length ([doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md)):
-one the edit drops, or one that looks like sediment, is restored or goes to the report as a line with
-the `/quenching-align:components:command:eval <command>` that decides its retirement.
+(sediment, sprawl, negation, …), keep the rest. List the old description's quoted triggers first;
+each survives the draft, or is reported with the `/quenching-align:components:command:eval <command>`
+that decides its retirement — a quoted trigger is never cut for length.
 **Done when:** the draft passes the doctrine's failure-mode table read top to bottom, and every
-quoted trigger of the old description is present or reported.
+quoted trigger is present or reported.
 
 ### 6. Present ONE plan → gate on the OK
 Show: axis value + bound folder, the command path, **the execution profile** (each
 non-default lever with its reason, or "default"), every file (the command, rule if planned,
-  registry create-or-regenerate), and the tail steps. Wait for the single confirmation.
+  registry create-or-regenerate), and the tail steps. For an edit, also: the rename hits and, when `evals.json` exists
+in the mirrored tree (`.claude/evals/<path>/`; `${CLAUDE_PLUGIN_ROOT}/assets/evals/<path>/` here),
+its case count and rerun cost (two subagents per case). Wait for the single confirmation.
 **Done when:** the user has answered; declined → report "nothing written" and stop.
 
 ### 7. Write
@@ -155,14 +151,13 @@ cq components lint <command-file> --json   # this command's conformance
 cq components doctor --json                # the surface invariant it just changed
 cq components registry reindex --json      # `changed: false` — nothing wrote inside the markers after the description pass
 ```
-`lint` decides the description caps, trigger position, the `Not for:` boundary, body length, the
-per-step criteria, unscoped `Bash`, and invocation coherence; `doctor` decides that every command
-carries a description, that no two resolve to the same `/` path, and that every segment is
-kebab-case. Fix every `error`; report every `warn`
-with its `sk-*` code rather than silently accepting it. What no parser can decide — the no-op
-test, sediment, sprawl, positive prescription — is still read by eye against
+Fix every `error`; report every `warn` with its `sk-*` code. What no parser can decide — the no-op
+test, sediment, sprawl, positive prescription — is read by eye against
 [components-command-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md). Any OKF doc touched passes
 [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md).
+An edit's `evals.json` (step 6's path), when present, is rerun if the plan listed it, as
+`/quenching-align:components:command:eval` does; else reported "present, not rerun" with that command.
+Assertions on changed branches are reported stale, never rewritten.
 So this step, not a later one, owns the functional proof: **where the repo ships a harness that
 spawns a fresh session and asserts on captured tool calls, run it now** — scoped to what this mint
 changed. In this plugin that is
@@ -172,8 +167,8 @@ session** — never report a linter's exit 0 as evidence that the surface loaded
 
 Report what was written, the invocation (`/…:…:<verb>`), the functional result or its absence, and
 any residue. **Done when:** `lint` and `doctor` exit 0, `registry reindex` reports `changed: false`,
-the surface was either functionally proved or reported unproven, and every remaining `warn` is
-named in the report with its code.
+the surface was either functionally proved or reported unproven, an edit's `evals.json` was rerun
+or reported, and every remaining `warn` is named in the report with its code.
 
 ## Invariants
 
