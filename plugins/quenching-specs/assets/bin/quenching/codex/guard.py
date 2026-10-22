@@ -152,9 +152,19 @@ def tree(worktree: str, skip: str | None = None) -> dict[str, str]:
         # assume-unchanged (lowercase) and skip-worktree (`S`) hide edits from `git status`
         if len(entry) > 2 and entry[0] != "H" and not _skipped(entry[2:], skip):
             out.setdefault(entry[2:], f"{entry[0]} {_digest(os.path.join(worktree, entry[2:]))}")
+    for entry in git_strict(worktree, "ls-files", "-s", "-z").split("\0"):
+        # a tracked, clean symlink is invisible to `git status`; its target is not
+        if entry.startswith("120000 "):
+            path = entry.split("\t", 1)[1]
+            full = os.path.join(worktree, path)
+            if os.path.isfile(full) and not _skipped(path, skip):
+                out.setdefault(path, f"L {_digest(full)}")
     ignored = git_strict(worktree, "ls-files", "--others", "--ignored", "--exclude-standard",
                          "-z").split("\0")
     for path in ignored:
-        if path and _local_config(path) and not _skipped(path, skip):
-            out[path] = f"!! {_digest(os.path.join(worktree, path))}"
+        if not path or _skipped(path, skip):
+            continue
+        full = os.path.join(worktree, path)
+        if _local_config(path) or (os.path.islink(full) and os.path.isfile(full)):
+            out[path] = f"!! {_digest(full)}"
     return out
