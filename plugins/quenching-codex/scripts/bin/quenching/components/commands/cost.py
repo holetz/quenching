@@ -18,6 +18,7 @@ import re
 from pathlib import Path
 
 from quenching.common.output import finding, refuse, report_findings
+from quenching.components.commands.lint import resolve_lint_targets, surface_root_of
 from quenching.components.sections import markdown_sections, select_sections
 from quenching.components.surface import (REFERENCES_DIR, body_after_frontmatter,
                                           discover_references, load_surface, rel)
@@ -190,9 +191,12 @@ def measure_command(command: dict, references: dict[str, dict], root: str) -> tu
     return row, findings
 
 
-def measure_surface(root: str) -> tuple[dict, list[dict]]:
-    """Measure every command on a surface in invocation order."""
+def measure_surface(root: str, commands: list[dict] | None = None) -> tuple[dict, list[dict]]:
+    """Measure every command on a surface in invocation order. `commands` narrows the
+    measured set to what the caller's target named; references always resolve on `root`."""
     surface = load_surface(root)
+    if commands is not None:
+        surface = {**surface, "commands": commands}
     references = _reference_index(root)
     rows, findings = [], []
     for command in surface["commands"]:
@@ -235,7 +239,11 @@ def _ratchet_finding(path: str, current: int) -> tuple[dict | None, dict | None]
 
 
 def cmd_cost(args, root: str) -> int:
-    payload, findings = measure_surface(root)
+    # The target the path names is measured, never the cwd surface: a root, a commands/
+    # directory or one file, resolved exactly as `lint` resolves it.
+    base, commands, _ = resolve_lint_targets(getattr(args, "path", None), root)
+    root = surface_root_of(base, root) if getattr(args, "path", None) else root
+    payload, findings = measure_surface(root, commands if getattr(args, "path", None) else None)
     if args.ratchet:
         ratchet, ratchet_finding = _ratchet_finding(args.ratchet, payload["totalBytes"])
         payload["ratchet"] = ratchet

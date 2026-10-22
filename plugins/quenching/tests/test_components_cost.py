@@ -103,5 +103,49 @@ class ComponentsCost(unittest.TestCase):
         self.assertEqual(json.loads(output.getvalue())["findings"][0]["code"], "ct-cost-ratchet")
 
 
+class CostTargetsThePathItNames(unittest.TestCase):
+    def _target(self):
+        root, references = surface()
+        (references / "r.md").write_text("## Rule\n\nBinding.\n", encoding="utf-8")
+        (root / "commands" / "front" / "a.md").write_text(
+            "---\ndescription: a\n---\n\nA body.\n\n[r](assets/references/front/r.md) §Rule\n",
+            encoding="utf-8")
+        (root / "commands" / "front" / "b.md").write_text(
+            "---\ndescription: b\n---\n\nB.\n", encoding="utf-8")
+        return root
+
+    def _cost(self, path, cwd, ratchet=None):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            status = cmd_cost(SimpleNamespace(path=str(path) if path else None,
+                                              ratchet=ratchet, json=True), str(cwd))
+        return status, json.loads(output.getvalue())
+
+    def test_root_commands_dir_and_file_are_measured_from_another_cwd(self):
+        target, cwd = self._target(), pathlib.Path(tempfile.mkdtemp())
+        (cwd / "commands").mkdir()
+        (cwd / "commands" / "other.md").write_text("---\ndescription: o\n---\n\nO.\n",
+                                                   encoding="utf-8")
+        for path, count in ((target, 2), (target / "commands", 2),
+                            (target / "commands" / "front" / "a.md", 1)):
+            status, payload = self._cost(path, cwd)
+            self.assertEqual(status, 0, path)
+            self.assertEqual(payload["commandCount"], count, path)
+            self.assertEqual(payload["root"], str(target), path)
+        status, payload = self._cost(target / "commands" / "front" / "a.md", cwd)
+        self.assertEqual(payload["commands"][0]["sections"][0]["heading"], "Rule")
+
+    def test_ratchet_compares_the_target_not_the_cwd_surface(self):
+        target, cwd = self._target(), pathlib.Path(tempfile.mkdtemp())
+        _, measured = self._cost(target, cwd)
+        baseline = cwd / "b.json"
+        baseline.write_text(json.dumps({"totalBytes": measured["totalBytes"] - 1}),
+                            encoding="utf-8")
+        status, payload = self._cost(target, cwd, ratchet=str(baseline))
+        self.assertEqual(status, 1)
+        self.assertEqual(payload["findings"][0]["code"], "ct-cost-regression")
+        self.assertEqual(payload["findings"][0]["currentBytes"], measured["totalBytes"])
+
+
 if __name__ == "__main__":
     unittest.main()
