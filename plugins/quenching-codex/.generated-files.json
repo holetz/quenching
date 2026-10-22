@@ -593,7 +593,7 @@
     "scripts/bin/quenching/components/commands/doctor.py": "140b35e20315b60666bc76b2778eeb48fe446bd4f9c23110b27ce3feb59edd8a",
     "scripts/bin/quenching/components/commands/lint.py": "10a5aaa6cac80a7a0495b22bc0cc91faa59a583d1fc3f1d4982b6476d2036916",
     "scripts/bin/quenching/components/commands/read.py": "a0dd7e9c409dda70939e3c1d502da0154bfb02c81d92d09e038c75926567964f",
-    "scripts/bin/quenching/components/commands/registry.py": "b1aece1a797267ff0005237e33bafe7a9e53ef18dc98b6c495528e67eda9d312",
+    "scripts/bin/quenching/components/commands/registry.py": "954486747de7b5278a985b6d86b106a67b7a1776b39f91ce74b7bfb7ef89ee4d",
     "scripts/bin/quenching/components/commands/translate.py": "66e89bbc0528ce7245b9231d9f05345198515bec5cb8a954ad93854aba0adf26",
     "scripts/bin/quenching/components/cq_calls.py": "cc6471ddca5eb2c79b42b63d513afedc0ffd7a9c296fa8f9b94725193855f31c",
     "scripts/bin/quenching/components/hooks.py": "7f0e840b70c5878b2f63d5d461cbe2551b9915dd0a9ab32ef6bab8b8c900a473",
