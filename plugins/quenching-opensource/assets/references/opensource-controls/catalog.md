@@ -69,6 +69,9 @@ ID does not settle the future front's name, module layout, command API or adopti
 
 ## Evidence and provider absence
 
+The artifacts the `opensource` owner writes are English by template declaration
+(`artifactLanguage` in its `status`); the catalog assesses presence, never the language of content.
+
 Candidate paths identify where evidence may live. They are not required filenames in every
 target and file existence alone proves no requirement. For example, a SECURITY file may name
 a contact without specifying disclosure timing; a workflow may declare permissions without
