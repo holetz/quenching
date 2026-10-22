@@ -57,6 +57,8 @@ def render_registry_zone(rows: list[dict]) -> str:
 
 
 def find_registry(registry_arg: str | None, root: str) -> str | None:
+    """The climb stops at the first directory holding `.git`: a registry above the target's own
+    repository belongs to another repository and is never touched."""
     if registry_arg:
         return os.path.abspath(registry_arg)
     d = root
@@ -64,6 +66,8 @@ def find_registry(registry_arg: str | None, root: str) -> str | None:
         cand = os.path.join(d, *REGISTRY_RELPATH)
         if os.path.isfile(cand):
             return cand
+        if os.path.exists(os.path.join(d, ".git")):
+            return None
         parent = os.path.dirname(d)
         if parent == d:
             return None
@@ -77,7 +81,7 @@ def cmd_registry(args, root: str) -> int:
         return report_findings(
             args.json, f"components registry — {root}", {"root": root},
             [finding("sk-no-registry", "error",
-                     f"no registry at {'/'.join(REGISTRY_RELPATH)} above {root}", command="-",
+                     f"no registry at {'/'.join(REGISTRY_RELPATH)} within the repository containing {root}", command="-",
                      remedy="install it from assets/templates/automation/registry.md, then rerun")],
             "command")
     text = read_text(path)
