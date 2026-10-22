@@ -109,7 +109,8 @@ def refusal(code: str, message: str) -> tuple[dict, int]:
 def guard_refusal(message: str, run_dir: str | None, error: GuardError) -> tuple[dict, int]:
     """A `codex-git-guard` refusal carrying every key `cq codex review` prints, so the exit 2 that
     hands the tree to the human is never lost to a missing key."""
-    return {"ok": False, "code": "codex-git-guard", "message": message, "runDir": run_dir,
+    return {"ok": False, "fallback": False, "code": "codex-git-guard", "message": message,
+            "runDir": run_dir,
             "reason": f"git guard: {error}", "tokens": NOT_MEASURED, "guard": None,
             "changed": []}, 2
 
@@ -183,7 +184,7 @@ def run_review(root: str, settings: dict, worktree: str, prompt: str, run: str |
         detail = "; ".join(filter(None, [moved and "moved: " + ", ".join(moved),
                                          out["changed"] and "changed: "
                                          + ", ".join(out["changed"])]))
-        return {**out, "code": "codex-git-guard",
+        return {**out, "fallback": False, "code": "codex-git-guard",
                 "message": f"the review changed the tree — {detail}. Claude may not clean it "
                            "(no reset, stash, checkout or restore): stop and hand the tree to "
                            "the human, naming these paths.",
