@@ -1,6 +1,6 @@
 {
   "name": "quenching-security",
-  "version": "6.7.0",
+  "version": "6.8.0",
   "description": "The read-only security pillar: /quenching-security:security:* reports the security posture a repository declares, without a local align. Requires quenching-specs for cq.",
   "author": {
     "name": "Israel Holetz",

@@ -1,6 +1,6 @@
 {
   "name": "quenching-opensource",
-  "version": "6.7.0",
+  "version": "6.8.0",
   "description": "The open source front: /quenching-opensource:opensource:* reports every owner's catalog answers and the baseline level, and writes license, community and governance artifacts from pinned templates. Requires quenching-specs for cq.",
   "author": {
     "name": "Israel Holetz",

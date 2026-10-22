@@ -1,6 +1,6 @@
 {
   "name": "quenching-toolchain",
-  "version": "6.7.0",
+  "version": "6.8.0",
   "description": "The toolchain front: /quenching-toolchain:toolchain:* aligns and reports the toolchain a repository declares. Requires quenching-specs for cq.",
   "author": {
     "name": "Israel Holetz",
