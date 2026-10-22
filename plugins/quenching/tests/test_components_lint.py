@@ -48,6 +48,7 @@ from quenching.components.commands.lint import (
     _cq_call_findings,
     _step_criteria,
     cmd_lint,
+    dangling_citations,
     lint_agents,
     lint_command,
     marker_present,
@@ -572,6 +573,52 @@ class AgentGrantGap(unittest.TestCase):
                                             encoding="utf-8")
             found = lint_agents(root, root)
         self.assertEqual([(f["code"], f["tool"]) for f in found], [("sk-agent-skill-widens", "Skill")])
+
+
+class DanglingCitation(unittest.TestCase):
+    """A target's own surface: a cited `/front:verb` whose front exists but whose verb was
+    removed is a finding in `lint` and in `doctor`; a plugin's command is not."""
+
+    def _target(self, root: str, bodies: dict[str, str]) -> None:
+        for rel_path, body in bodies.items():
+            path = pathlib.Path(root, "commands", rel_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(f"---\ndescription: d\n---\n{body}\n", encoding="utf-8")
+
+    def _codes(self, fn, root: str) -> list[str]:
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            fn(SimpleNamespace(path=None, json=True), root)
+        return [f["code"] for f in json.loads(out.getvalue())["findings"]
+                if f["code"] == "sk-dangling-citation"]
+
+    def test_a_removed_verb_of_an_existing_front_is_reported_by_lint_and_doctor(self):
+        from quenching.components.commands.doctor import cmd_doctor
+        with tempfile.TemporaryDirectory() as root:
+            self._target(root, {"frente/novo.md": "Run /frente:velho first.",
+                                "frente/outro.md": "Body."})
+            self.assertEqual(self._codes(cmd_lint, root), ["sk-dangling-citation"])
+            self.assertEqual(self._codes(cmd_doctor, root), ["sk-dangling-citation"])
+
+    def test_live_plugin_and_unknown_front_citations_are_silent(self):
+        from quenching.components.commands.doctor import cmd_doctor
+        body = ("See /frente:novo, /quenching-specs:specs:develop and /alheia:coisa, "
+                "and the namespace /frente:grupo.")
+        with tempfile.TemporaryDirectory() as root:
+            self._target(root, {"frente/novo.md": body, "frente/grupo/a.md": "Body."})
+            self.assertEqual(self._codes(cmd_lint, root), [])
+            self.assertEqual(self._codes(cmd_doctor, root), [])
+
+    def test_a_plugin_surface_is_left_to_the_bare_citation_check(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._target(root, {"frente/novo.md": "Run /frente:velho first."})
+            manifest = pathlib.Path(root, ".claude-plugin", "plugin.json")
+            manifest.parent.mkdir()
+            manifest.write_text('{"name": "p"}', encoding="utf-8")
+            self.assertEqual(self._codes(cmd_lint, root), [])
+
+    def test_the_predicate_reports_each_miss_once(self):
+        self.assertEqual(dangling_citations("/a:x /a:x /a:y /b:z", {"/a:x"}), ["/a:y"])
 
 
 if __name__ == "__main__":

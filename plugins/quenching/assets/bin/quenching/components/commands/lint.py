@@ -846,6 +846,42 @@ def lint_citations(prefix: str, body: str, invocations: set[str], where: dict) -
                     citations=bare, **where)]
 
 
+def dangling_citations(body: str, invocations: set[str]) -> list[str]:
+    """The `/front:verb` citations in `body` whose front exists on THIS surface but whose
+    command does not — a command removed or renamed while another body still cites it.
+
+    A citation whose first segment is no front of the surface (a plugin's command, another
+    namespace) is not this surface's to judge. A citation that is a leading part of an
+    existing command (`/front:sub` beside `/front:sub:verb`) names a namespace, not a miss."""
+    fronts = {c[1:].split(":", 1)[0] for c in invocations}
+    seen: list[str] = []
+    for m in CITATION_RE.finditer(body):
+        cite = "/" + m.group(1)
+        if cite in seen or cite in invocations or m.group(1).split(":", 1)[0] not in fronts:
+            continue
+        if any(i.startswith(cite + ":") for i in invocations):
+            continue
+        seen.append(cite)
+    return seen
+
+
+def lint_dangling(body: str, invocations: set[str], where: dict) -> list[dict]:
+    """One finding per file, like `lint_citations`: the citations that resolve to nothing."""
+    dangling = dangling_citations(body, invocations)
+    if not dangling:
+        return []
+    shown = ", ".join(f"`{c}`" for c in dangling[:CITATION_SAMPLE])
+    more = (f" (+{len(dangling) - CITATION_SAMPLE} more)"
+            if len(dangling) > CITATION_SAMPLE else "")
+    return [finding("sk-dangling-citation", "warn",
+                    f"{plural(len(dangling), 'citation')} of a command this surface no longer "
+                    f"has — {shown}{more}. The front exists but the command does not: it was "
+                    "removed or renamed while this file still cites it",
+                    citations=dangling,
+                    remedy="cite the command that replaced it, or drop the citation",
+                    **where)]
+
+
 def resolve_lint_targets(path_arg: str | None, root: str) -> tuple[str, list[dict], list[dict]]:
     """(base, commands, references). Accepts a single command file, a commands/ directory,
     or a surface root — so `lint commands`, `lint .claude`, and `lint commands/docs/add.md`
@@ -907,6 +943,17 @@ def cmd_lint(args, root: str) -> int:
             findings.extend(lint_citations(prefix, ref["body"], invocations,
                                            {"command": SURFACE_MISSING,
                                             "path": rel(ref["path"], base)}))
+
+    else:
+        invocations = {c["command"] for c in surface_commands}
+        for cmd in commands:
+            findings.extend(lint_dangling(cmd["body"], invocations,
+                                          {"command": cmd["command"],
+                                           "path": rel(cmd["path"], base)}))
+        for ref in references:
+            findings.extend(lint_dangling(ref["body"], invocations,
+                                          {"command": SURFACE_MISSING,
+                                           "path": rel(ref["path"], base)}))
 
     header = f"components lint — {base} ({plural(len(commands), 'command')}"
     header += f", {plural(len(references), 'reference')})" if references else ")"
