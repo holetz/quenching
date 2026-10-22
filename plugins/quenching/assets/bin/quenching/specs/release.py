@@ -14,7 +14,7 @@ from pathlib import Path
 
 from quenching.common.git import _git
 from quenching.common.io import read_text, write_text
-from quenching.common.modules import load_manifest, release_artifacts
+from quenching.common.modules import distribution_findings, load_manifest, release_artifacts
 
 
 # --------------------------------------------------------------------------- #
@@ -52,6 +52,9 @@ def bump_release_artifacts(repo_root: str, new_version: str) -> dict:
         manifest = load_manifest(Path(repo_root))
     except (OSError, ValueError, KeyError, TypeError) as exc:
         return {"ok": False, "error": f"module manifest refused: {exc}", "artifacts": []}
+    findings = distribution_findings(Path(repo_root), manifest)
+    if findings:
+        return {"ok": False, "error": "; ".join(findings), "artifacts": []}
     for rel, kind in release_artifacts(manifest):
         path = os.path.join(repo_root, rel)
         text = read_text(path)

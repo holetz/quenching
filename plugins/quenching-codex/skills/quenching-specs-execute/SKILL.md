@@ -50,7 +50,28 @@ is under way, or run `cq specs list --json` and pick on a decision sheet ([quest
 **The precondition comes first.** Load the rule that binds this step:
 
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-execute/execution.md \
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+cq components read ../../references/specs-execute/execution.md \
   --sections "§The precondition"
 ```
 
@@ -58,13 +79,34 @@ The rest of this step is read in **one call** — the tree, the isolation ref, t
 and the environment probe below:
 
 ```bash
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
 git status --porcelain
 git branch --list "plan/<id>-<handle>"
 git branch --show-current
 git worktree list
 git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs status --spec "<id>" --json
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs config --json
+cq specs status --spec "<id>" --json
+cq specs config --json
 # and the hook probe of 2b, in this same call
 ```
 
@@ -96,7 +138,28 @@ checkout. Show the inference on the same line as the confirmation, before stampi
 `base: main — inferred; this branch was not cut by this command` — and stamp:
 
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record "<id>" branch --set base=<resolved base> --set work=<current branch>
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+cq specs record "<id>" branch --set base=<resolved base> --set work=<current branch>
 ```
 
 Never derive `base` from `git merge-base` or `--fork-point`; they answer a commit, not a branch
@@ -122,7 +185,28 @@ its question. Otherwise it asks on its own decision sheet; it is a `Skill` call,
 re-read the state it left:
 
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs status --spec "<id>" --json
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+cq specs status --spec "<id>" --json
 ```
 
 `branch.work` now set → the chosen form was taken, or **In place** was chosen and stamped `work`
@@ -158,7 +242,28 @@ verifies.
 **Load the stage ladder first** — what the derived stage names and means:
 
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/spec-driven.md \
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+cq components read ../../references/specs-develop/spec-driven.md \
   --sections "§Derived stages"
 ```
 
@@ -187,7 +292,28 @@ this spec), `sp-impact-uncovered` (a declared standard no task writes) — and o
 Ask for the `build` moment — the six sections an executor needs — never by naming them:
 
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs section "<id>" --moment build --scope current --json
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+cq specs section "<id>" --moment build --scope current --json
 ```
 
 Branch on the payload, never the exit code. `sections[].state`, already read once in step 2, is
@@ -222,7 +348,28 @@ building, and `quenching-specs-develop` repairs `## Impact`.
 ### 5. Implement tasks — loop until done or blocked
 Ask the tool for the next task; **never pick one by reading the file**:
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs next --spec "<id>" --json
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+cq specs next --spec "<id>" --json
 ```
 It returns that task's `verify`, `files`, `pattern` and `parallel`, plus the spec's `verification`
 policy, and it **skips `[!]` blocked tasks** (`action: "blocked"` once every remaining task is).
@@ -237,7 +384,28 @@ b. **Write the code**, minimal and scoped to the declared files. A task that dec
    §Delegating an executor; when it is, load the rules that bound it before dispatching:
 
    ```bash
-   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-execute/execution-delegation.md \
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+   cq components read ../../references/specs-execute/execution-delegation.md \
      --sections "§Delegating an executor"
    ```
 
@@ -245,9 +413,30 @@ c. **Write only the `/docs/` this task names.** When this task writes `/docs/`, 
    draws the line between declared and emergent, and the boundary it crosses:
 
    ```bash
-   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-execute/execution-delegation.md \
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+   cq components read ../../references/specs-execute/execution-delegation.md \
      --sections "§Declared versus emergent"
-   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/spec-driven.md \
+   cq components read ../../references/specs-develop/spec-driven.md \
      --sections "§Boundary"
    ```
 
@@ -264,14 +453,35 @@ d. **On the first pass through 5d–5e, load the rules the chain runs under — 
    then the git conventions that name the subject — one call per file:
 
    ```bash
-   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-execute/execution.md \
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+   cq components read ../../references/specs-execute/execution.md \
      --sections "§The verification policy" --sections "§The validation loop" \
      --sections "§The diff self-review" --sections "§The commit"
-   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/conventions.md \
+   cq components read ../../references/git/conventions.md \
      --sections "§The declared-directive layer" --sections "§The read-if-present rule"
-   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git conventions --json
-   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/commit.md --sections "§Commit messages" --sections "§The subject is the anchor"
-   python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/isolation.md --sections "§Marking the branch with the specs it built"
+   cq git conventions --json
+   cq components read ../../references/git/commit.md --sections "§Commit messages" --sections "§The subject is the anchor"
+   cq components read ../../references/git/isolation.md --sections "§Marking the branch with the specs it built"
    ```
 
    **Self-review the task's diff** on the four items — reuse · useless defense · obvious comment ·
@@ -287,10 +497,31 @@ e. **Then verify, stage, commit and confirm the spec task as ONE chained operati
    subject and sha it reports to `cq specs task --check`:
 
    ```bash
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
    <the task's verify:> \
      && git add <the task's declared files> \
-     && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git commit --subject "<subject>" --json \
-     && python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs task --check <task-id> --spec "<spec-id>" --subject "<subject reported by python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git commit>" --commit "<sha reported by python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git commit>"
+     && cq git commit --subject "<subject>" --json \
+     && cq specs task --check <task-id> --spec "<spec-id>" --subject "<subject reported by cq git commit>" --commit "<sha reported by cq git commit>"
    ```
 
    **The ordering remains explicit:** verify precedes staging, staging precedes the
@@ -386,8 +617,29 @@ Rewrite the **relevant block** of `## Handoff` to the state of play a fresh exec
 A rewrite touches ONE of the two — never both, never a closed section's:
 
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs section "<id>" Handoff --write --scope global   # the evergreen block
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs section "<id>" Handoff --write --scope current  # the block of the open section
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+cq specs section "<id>" Handoff --write --scope global   # the evergreen block
+cq specs section "<id>" Handoff --write --scope current  # the block of the open section
 ```
 
 Everything a resumed run *can* derive — which tasks are done, which commit carried each — is
@@ -410,7 +662,28 @@ it stands after the run's last commit.
 **When this run's input carried `autonomous`, skip the read below and the mold with it** — a conductor presents the report, not this run; return the content in the fixed shape the caller specified. Otherwise:
 
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/specs-develop/report-mold.md \
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+cq components read ../../references/specs-develop/report-mold.md \
   --sections "§The report mold" --rules-only
 ```
 

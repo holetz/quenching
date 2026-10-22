@@ -27,13 +27,34 @@ The four strategies, the squash caveat and the post-merge worktree removal are i
 
 ### 1. Load the rules and resolve branch, base and checkout
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/merge.md \
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+cq components read ../../references/git/merge.md \
   --sections "§Merge strategies" --sections "§The squash caveat" \
   --sections "§The worktree is removed after a successful merge"
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/conventions.md \
+cq components read ../../references/git/conventions.md \
   --sections "§The declared-directive layer"
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git conventions --json   # `config.mergeSubject`, or absent
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git base --json
+cq git conventions --json   # `config.mergeSubject`, or absent
+cq git base --json
 git worktree list --porcelain
 ```
 An ID in `$ARGUMENTS` → `cq specs status --spec "<id>" --json`, its `branch.work` is the branch
@@ -72,7 +93,28 @@ merge command exits 0, or the run has stopped on its failure.
 
 ### 4. Stamp, with an ID
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record "<id>" merge --set strategy=<strategy> --set subject=<the merge commit's subject, or "none — <why>" under fast-forward/rebase>
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+cq specs record "<id>" merge --set strategy=<strategy> --set subject=<the merge commit's subject, or "none — <why>" under fast-forward/rebase>
 ```
 Write-once — a record already present is read, never overwritten. No ID → nothing to stamp.
 **Done when:** the record is stamped (with an ID) or explicitly skipped (without one).

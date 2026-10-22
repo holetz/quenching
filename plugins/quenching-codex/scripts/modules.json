@@ -3,15 +3,15 @@
   "source": "plugins/quenching",
   "marketplace": ".claude-plugin/marketplace.json",
   "versionConstant": "plugins/quenching/assets/bin/quenching/common/version.py",
-  "siblingArtifacts": [
-    [
-      "plugins/quenching-codex/VERSION",
-      "plain"
-    ],
-    [
-      "plugins/quenching-codex/.codex-plugin/plugin.json",
-      "json"
-    ]
+  "distributions": [
+    {
+      "platform": "codex",
+      "name": "quenching-codex",
+      "path": "plugins/quenching-codex",
+      "marketplace": ".agents/plugins/marketplace.json",
+      "pluginManifest": ".codex-plugin/plugin.json",
+      "versionFile": true
+    }
   ],
   "modules": [
     {

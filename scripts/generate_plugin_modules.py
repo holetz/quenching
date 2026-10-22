@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "plugins/quenching/assets/bin"))
 from quenching.common.modules import (MANIFEST, load_manifest, namespace_map,  # noqa: E402
-                                      release_artifacts, safe_path)
+                                      distribution_findings, release_artifacts, safe_path)
 
 
 def build_artifact(path: Path) -> bool:
@@ -218,7 +218,7 @@ def write_tree(root: Path, module: dict, tree: dict) -> None:
 
 def published_findings(root: Path, manifest: dict) -> list[str]:
     source_version = (root / manifest["source"] / "VERSION").read_text().strip()
-    findings = []
+    findings = distribution_findings(root, manifest)
     for rel, kind in release_artifacts(manifest):
         path = safe_path(root, rel)
         if not path.is_file():

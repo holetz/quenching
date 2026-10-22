@@ -43,6 +43,27 @@ on exit code and JSON: `0` is clean, `1` carries findings, and `2` is a refusal.
 Run the verifier before reading the proof tree:
 
 ```bash
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
 cq --root "$TARGET_ROOT" proof doctor --json
 ```
 
@@ -59,6 +80,27 @@ has authorized the inventory stage below.
 Only after exit `1`, run the single inventory pass:
 
 ```bash
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
 cq --root "$TARGET_ROOT" proof inventory --json
 ```
 
@@ -105,6 +147,27 @@ only when `bands.md`'s non-blocking condition is satisfied. Raise a floor only a
 scope is unchanged and the target has produced the artifact the ratchet reads:
 
 ```bash
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
 cq --root "$TARGET_ROOT" proof ratchet --raise --json
 ```
 
@@ -127,6 +190,27 @@ not call the ratchet; state the reason in the report.
 After edits, run the same probe again:
 
 ```bash
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
 cq --root "$TARGET_ROOT" proof doctor --json
 ```
 
