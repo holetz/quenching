@@ -1,4 +1,4 @@
-"""`cq git pr create|probe|record|merge` — the pull-request writes, with a fixed argv.
+"""`cq git pr create|probe|view|record|merge` — the pull-request writes, with a fixed argv.
 
 The `git-steward` holds no `gh pr create`/`gh pr merge` grant and no `az repos pr` grant: a
 pattern on the command text never fenced `-d`, `-s`, `-r`, an alias, or Azure's
@@ -6,7 +6,9 @@ pattern on the command text never fenced `-d`, `-s`, `-r`, an alias, or Azure's
 the route is the `provider` `cq specs config --json` prints. `create` names the base and the head
 explicitly — on GitHub the body goes on stdin; on Azure it opens the PR with no completion
 option at all, so no policy is bypassed and nothing completes on its own. `probe` reads the
-provider's route and writes nothing. `merge` (GitHub only) reads `gh pr checks`
+provider's route and `view` one PR's state, base and head; neither writes. `merge` dispatches
+Azure web URLs to `azure_pull` (build validation policies, pinned head, no-fast-forward,
+no policy bypass). On GitHub it reads `gh pr checks`
 first and merges only with every check green — a `skipping` check the gate requires is not
 green — and the PR's `mergeStateStatus` clean, pinning the head it read with
 `--match-head-commit`, always with `--merge` — never `--squash`,
@@ -29,6 +31,7 @@ from quenching.common.output import FINDINGS, OK, emit, refuse
 from quenching.git.audit import _branch_ok
 from quenching.specs.commands.fields import cmd_record
 from quenching.specs.backends import open_backend
+from quenching.specs.commands.epic import AZURE_PR_STATE
 from quenching.specs.commands.output import Emitter, read_one
 from quenching.git.pr import normalize_azure_pull_request
 from quenching.specs.config import find_repo_root, load_config
@@ -125,13 +128,18 @@ def _is_merged(url: str) -> bool:
 
 
 def _merge(args) -> int:
+    from quenching.git.azure_pull import AZURE_PR_URL, merge_azure
+
+    azure = AZURE_PR_URL.fullmatch(args.url or "")
     match = PR_URL.fullmatch(args.url or "")
-    if not match:
+    if not match and not azure:
         return refuse({"code": "git-pr-url-invalid",
                        "message": f"not a pull-request URL: {args.url}"}, args.json)
     if not 0 <= args.wait <= WAIT_MAX_S:
         return refuse({"code": "git-pr-wait-invalid",
                        "message": f"--wait must be between 0 and {WAIT_MAX_S} seconds"}, args.json)
+    if azure:
+        return merge_azure(args, azure)
     if _is_merged(args.url):
         emit(args.json, {"ok": True, "url": args.url, "number": int(match.group(1)),
                          "alreadyMerged": True}, f"already merged {args.url}")
@@ -378,7 +386,47 @@ def _probe(args) -> int:
     return OK
 
 
+def _show(args) -> int:
+    """Read-only: the PR's `state` (`MERGED`/`OPEN`/`CLOSED`), `base` and `head` on its provider."""
+    if args.number < 1:
+        return refuse({"code": "git-pr-number-invalid",
+                       "message": "--number must be positive"}, args.json)
+    provider = _provider()
+    if provider == "azure-boards":
+        code, out, err = _az("repos", "pr", "show", f"--id={args.number}", "--detect=true",
+                             "--output=json")
+    else:
+        provider = "github"
+        code, out, err = _gh("pr", "view", str(args.number), "--json",
+                             "number,state,baseRefName,headRefName,url")
+    try:
+        data = json.loads(out) if code == 0 else None
+    except json.JSONDecodeError:
+        data = None
+    if not isinstance(data, dict):
+        message = (err or out).strip() or "the provider returned no pull request"
+        emit(args.json, {"ok": False, "provider": provider, "number": args.number,
+                         "reason": "unreadable", "message": message},
+             f"PR #{args.number} unreadable: {message}")
+        return FINDINGS
+    if provider == "azure-boards":
+        state = AZURE_PR_STATE.get(str(data.get("status") or "").lower(), "")
+        base, head = data.get("targetRefName"), data.get("sourceRefName")
+        url = normalize_azure_pull_request(data)["webUrl"]
+    else:
+        state, base, head = str(data.get("state") or ""), data.get("baseRefName"), \
+            data.get("headRefName")
+        url = data.get("url")
+    base, head = (str(ref or "").removeprefix("refs/heads/") for ref in (base, head))
+    payload = {"ok": True, "provider": provider, "number": args.number, "url": url,
+               "state": state, "base": base, "head": head}
+    emit(args.json, payload, f"PR #{args.number} {state}: {head} -> {base} {url or ''}".rstrip())
+    return OK
+
+
 def cmd_pr(args) -> int:
+    if args.action == "view":
+        return _show(args)
     if args.action == "record":
         return _record(args)
     if args.action == "probe":

@@ -73,6 +73,7 @@
           "git",
           "handoff.md"
         ],
+        "hooks": true,
         "packages": [
           "specs",
           "git",

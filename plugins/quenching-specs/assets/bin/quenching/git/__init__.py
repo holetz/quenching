@@ -152,6 +152,10 @@ def build_parser() -> argparse.ArgumentParser:
     pp = pr.add_parser("probe", help="read-only: is there an authenticated PR route for the "
                                      "configured provider?")
     pp.add_argument("--json", action="store_true", help="machine-readable output")
+    pp = pr.add_parser("view", help="read-only: one PR's number, state, base and head as the "
+                                    "configured provider reports them")
+    pp.add_argument("--number", required=True, type=int, metavar="N", help="the PR's id")
+    pp.add_argument("--json", action="store_true", help="machine-readable output")
     pp = pr.add_parser("record", help="stamp a spec's `pr` record with a PR opened elsewhere"
                                       "; checks --spec owns --head and the "
                                       "PR really publishes it")
@@ -160,7 +164,7 @@ def build_parser() -> argparse.ArgumentParser:
     pp.add_argument("--number", required=True, type=int, metavar="N", help="the PR's id")
     pp.add_argument("--url", required=True, metavar="URL", help="the PR's webUrl")
     pp.add_argument("--json", action="store_true", help="machine-readable output")
-    pp = pr.add_parser("merge", help="merge with --merge, only when every check is green")
+    pp = pr.add_parser("merge", help="merge on GitHub or Azure with a merge commit, only on green CI")
     pp.add_argument("--url", required=True, metavar="URL", help="the PR's URL")
     pp.add_argument("--wait", type=int, default=0, metavar="SECONDS",
                     help="re-read pending checks every 20s for up to this long (max 540); "

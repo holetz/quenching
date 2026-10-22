@@ -4,7 +4,7 @@ title: Scoped hooks
 description: Where a hook may be installed, what each scope and handler costs, and the policy defaults every hook obeys
 resource: .claude/settings.json, plugins/quenching/commands/**, plugins/quenching/assets/bin/quenching/components/**
 tags: [automation, hooks, performance, budget]
-timestamp: 2026-08-15
+timestamp: 2026-10-18
 audience: both
 authority: current
 source: 2026-07-27, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, 2026-08-06; lineage in ADR 0004
@@ -68,7 +68,18 @@ deterministic 95% may share a matcher with a `prompt` rung for the judgment tail
 
 ## What this repo's own surface does under it
 
-**This repo wires no hook of its own today.** It once wired the OKF checker itself, at rungs 2 and
+**The plugin wires one hook of its own: `deny-claude-coauthor`.** `quenching-specs` ships
+`hooks/hooks.json` with one rung-2 `PreToolUse` hook matched to `Bash`, running
+`assets/hooks/deny-claude-coauthor.sh` (5-second timeout, absence-guarded). It denies a
+message-writing command (`git commit`/`merge`/`tag`/`notes`, `gh pr`, `cq git`) that carries Claude's
+co-authorship trailer or `Generated with Claude Code` line — a block chosen by the owner on
+2026-10-18. Rung 1 does not suffice: a skill-scoped hook misses every commit made outside
+`/quenching-specs:git:commit`. Cost claim: every `Bash` call × one `bash`+`grep` fast path, zero
+tokens on no-match; `python3` runs only when the raw input names a co-author. It denies rather than
+rewrites, because `updatedInput` applies only paired with `allow`, which would auto-approve the
+whole command. Opt-out: `QUENCHING_ALLOW_CLAUDE_COAUTHOR=1`.
+
+**Before it, this repo wired no hook of its own.** It once wired the OKF checker itself, at rungs 2 and
 3, via a `hooks.json` shipped under this plugin's own `hooks/` — a `PostToolUse` hook matched to `Write|Edit` and a
 `stopScan: "dirty"`-gated `Stop` sweep, both invoking `cq knowledge hook` — for every repo that had
 the plugin installed. The capability was discontinued outright (`descontinuar-hooks-do-plugin`
