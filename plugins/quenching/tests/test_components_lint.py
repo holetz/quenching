@@ -496,6 +496,19 @@ class AgentGrantGap(unittest.TestCase):
             codes = sorted(f["code"] for f in lint_agents(root, root))
         self.assertEqual(codes, ["sk-agent-grant-gap", "sk-cq-flag"])
 
+    def test_lint_without_commands_still_checks_the_agents(self):
+        from quenching.components.commands.lint import cmd_lint
+        with tempfile.TemporaryDirectory() as root:
+            agents = pathlib.Path(root, "agents")
+            agents.mkdir()
+            (agents / "a.md").write_text(
+                "---\nname: a\ntools: Read, Skill\n---\nbody\n", encoding="utf-8")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                cmd_lint(SimpleNamespace(path=None, json=True), root)
+        codes = [f["code"] for f in json.loads(out.getvalue())["findings"]]
+        self.assertEqual(codes, ["sk-agent-skill-widens"])
+
     def test_a_bash_pattern_in_disallowed_tools_is_an_error(self):
         with tempfile.TemporaryDirectory() as root:
             agents = pathlib.Path(root, "agents")
