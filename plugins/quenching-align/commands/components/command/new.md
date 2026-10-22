@@ -126,7 +126,7 @@ Show: axis value + bound folder, the command path, **the execution profile** (ea
 non-default lever with its reason, or "default"), every file (the command, rule if planned,
   registry create-or-regenerate), and the tail steps. For an edit, also: the rename hits and, when `evals.json` exists
 in the mirrored tree (`.claude/evals/<path>/`; `${CLAUDE_PLUGIN_ROOT}/assets/evals/<path>/` here),
-its case count and rerun cost (two subagents per case). Wait for the single confirmation.
+its case count and that the rerun is yours to run, not this command's. Wait for the single confirmation.
 **Done when:** the user has answered; declined → report "nothing written" and stop.
 
 ### 7. Write
@@ -155,8 +155,8 @@ Fix every `error`; report every `warn` with its `sk-*` code. What no parser can 
 test, sediment, sprawl, positive prescription — is read by eye against
 [components-command-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md). Any OKF doc touched passes
 [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md).
-An edit's `evals.json` (step 6's path), when present, is rerun if the plan listed it, as
-`/quenching-align:components:command:eval` does; else reported "present, not rerun" with that command.
+An edit's `evals.json` (step 6's path), when present, is reported "present, not rerun", with the next
+human action `/quenching-align:components:command:eval <path>` — this command holds no `Task` and cannot rerun it.
 Assertions on changed branches are reported stale, never rewritten.
 So this step, not a later one, owns the functional proof: **where the repo ships a harness that
 spawns a fresh session and asserts on captured tool calls, run it now** — scoped to what this mint
@@ -167,8 +167,8 @@ session** — never report a linter's exit 0 as evidence that the surface loaded
 
 Report what was written, the invocation (`/…:…:<verb>`), the functional result or its absence, and
 any residue. **Done when:** `lint` and `doctor` exit 0, `registry reindex` reports `changed: false`,
-the surface was either functionally proved or reported unproven, an edit's `evals.json` was rerun
-or reported, and every remaining `warn` is named in the report with its code.
+the surface was either functionally proved or reported unproven, an edit's `evals.json` was reported
+with its eval command, and every remaining `warn` is named in the report with its code.
 
 ## Invariants
 
