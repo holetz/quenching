@@ -10,7 +10,7 @@ from unittest import mock
 
 import _paths  # noqa: F401
 from quenching.git import azure_pull, pull
-from test_git_azure_merge import BUILD, HEAD, PR, URL as AZURE_URL
+from test_git_azure_merge import BUILD, PR, URL as AZURE_URL
 
 GH_URL = "https://github.com/o/r/pull/7"
 GREEN = [{"name": "gate", "bucket": "pass"}]
