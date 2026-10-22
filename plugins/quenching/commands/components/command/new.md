@@ -75,7 +75,8 @@ Apply the classification test ([components-command-new/taxonomy.md](${CLAUDE_PLU
   repo, with nothing else recorded.
 
 For an **edit**, re-derive category, axis and (if both apply) the nest-vs-replace read, and diff
-them against the command's current path. **Done when:** the category (or its absence), the axis
+them against the command's current path; a difference is a rename, and step 3 sweeps it.
+**Done when:** the category (or its absence), the axis
 value and bound folder (if any), and the nest-vs-replace read (if it applies) are fixed.
 
 ### 3. Derive the path — which is the name
@@ -86,8 +87,17 @@ bound folder, or the convention reads **replace** → `.claude/commands/<categor
 `.claude/commands/<categoria>/<folder-path>/<verb>.md` → `/<categoria>:<subfolder>:<verb>`. There
 is no second name to derive: the path is it. `Glob` `.claude/commands/**` for collisions — an
 existing path is a MERGE target (edit), never silently overwritten. Nothing but entry points goes
-under `commands/`: shared procedure lives outside it and is cited by absolute path. **Done when:**
-the path to be written is fixed, collision-free or resolved as an edit.
+under `commands/`: shared procedure lives outside it and is cited by absolute path.
+
+**Rename sweep — only for an edit whose derived path differs from the old path.** The path is the
+name, so moving the file renames the command. `Grep` (never `git grep`: the grant is `Grep`) for the
+old `/<namespace>:<verb>` invocation and for the old path across `.claude/commands/**`,
+`CLAUDE.md`, `AGENTS.md`, `docs/`, `.claude/settings*.json` (hooks) and `.claude/evals/`. Every
+hit is a plan entry carrying its disposition (rewrite to the new name, keep as history, or ask);
+nothing is rewritten before the single OK. A mirrored `evals/<old path>/` moves with the command in
+the same plan. The old file is never deleted: the report lists it as residue for the human.
+**Done when:** the path to be written is fixed, collision-free or resolved as an edit, and a rename
+carries every hit of the old name and old path with a disposition, or states that the sweep found none.
 
 ### 4. Choose the execution profile
 Walk [components-command-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md):
