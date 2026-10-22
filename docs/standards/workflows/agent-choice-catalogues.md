@@ -7,7 +7,7 @@ tags: [workflows, specs, configuration, agent-choice]
 timestamp: 2026-10-16
 audience: both
 authority: current
-source: suportar-tipo-workitem-azure-por-tags plan (task 6.3) — distilled once `workItemTypes` made a third independently-arrived-at instance of the shape `subjects` and `tagCatalog` already had; the pattern was proven live (task 4.3) against a real Azure Boards project before this standard named it; spec 1754 decision sheet as the default question form (2026-10-16)
+source: specs suportar-tipo-workitem-azure-por-tags, 1754 — lineage in decision 0004
 maintainer: quenching
 ---
 
