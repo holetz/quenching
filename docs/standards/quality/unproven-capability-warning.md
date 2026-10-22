@@ -83,8 +83,8 @@ that warns about a capability it has since proved teaches its readers to ignore 
 
 **This is not the hypothetical case — `azure-boards` was the one name this tuple carried, and
 `provar-e-posicionar-o-backend-azure-boards` (task 7.1) is the edit that retired it.** §6 of that
-plan ran the backend end to end against a real Azure DevOps project (org `unicredbr`, team
-"Diretoria Risco"): `new --subject`, every `section --write`, `record`, `task --check`, `status`,
+plan ran the backend end to end against a real Azure DevOps project (a real
+organization and team): `new --subject`, every `section --write`, `record`, `task --check`, `status`,
 `show` and `promote --outcome done`, each compared against `files` for the same state and
 matching, the board's own column tracked through every transition against the declared de-para.
 The one edit — the tuple losing its one name — is what took the `doctor` finding and the

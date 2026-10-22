@@ -7,7 +7,7 @@ tags: [azure-devops, azure-boards, cli, wiql, work-item, tooling]
 timestamp: 2026-08-11
 audience: both
 authority: background
-source: provar-e-posicionar-o-backend-azure-boards spec §6 — measured against org `unicredbr`, team "Diretoria Risco", with `az` 2.89.0 and the `azure-devops` extension 1.0.6, on Linux
+source: provar-e-posicionar-o-backend-azure-boards spec §6 — measured against a real organization and team, with `az` 2.89.0 and the `azure-devops` extension 1.0.6, on Linux
 maintainer: quenching
 ---
 
@@ -21,7 +21,7 @@ target repository declares to reach this backend is
 [standards/workflows/plugin-configuration.md](../../standards/workflows/plugin-configuration.md).
 
 Everything below was measured against a real project, not read from documentation: `az` 2.89.0 with
-the `azure-devops` extension 1.0.6, org `unicredbr`, team "Diretoria Risco", Agile-derived process.
+the `azure-devops` extension 1.0.6, a real organization and team, Agile-derived process.
 Each row cost a live call, and several contradict what the CLI's own help implies. A version bump
 on either component invalidates this page rather than extending it.
 
