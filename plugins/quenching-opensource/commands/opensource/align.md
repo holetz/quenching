@@ -71,6 +71,13 @@ judgement artifact enters the batch only with the owner's explicit answer: the S
 `Apache-2.0` are vendored) with year and holders, the maintainers, the code owners, the citation
 authors, the funding account. Never propose a default for any of them.
 
+Every community artifact and every owner-supplied placeholder prose is written in English: each
+template declares `language: en`, and the `artifactLanguage` block of the probe carries that
+declaration. Ask the owner for English prose when collecting placeholders; apply accepts the values
+unchanged and answers with the informational `os-var-language-unverified` warning, because nothing
+here detects a language. README and SECURITY are hand-offs in `artifactLanguage.handoffs`, left to
+their owners.
+
 If authorization is rejected, write nothing and report the findings unchanged.
 
 **Done when:** one complete plan has been presented and either authorized, with every declared
@@ -117,5 +124,6 @@ and every residual owner action.
 - The doctor is probed before any confirmation, and the closing verifier is `cq opensource status --json`.
 - Every write goes through `cq opensource apply`; upstream text is never adapted and an existing file is never overwritten.
 - License, maintainers, code owners, conduct contact, citation and funding are the owner's answers, never defaults.
+- Community artifacts and placeholder prose are English by template declaration, never by detection; a residual target-language doubt is the owner's judgement, not a finding.
 - Another owner's control is reported with its owner's command, never closed here.
 - No configuration namespace is created: the owner's answers live in the plan and in the artifacts.

@@ -60,6 +60,11 @@ def apply(root: str, artifact: str, values: dict[str, str], dry_run: bool = Fals
         os.makedirs(os.path.dirname(target), exist_ok=True)
         with open(target, "xb") as handle:
             handle.write(content)
+    supplied = sorted(set(values) & set(placeholders))
+    warnings = [{"code": "os-var-language-unverified", "severity": "info", "placeholders": supplied,
+                 "message": "Owner-supplied placeholder prose must be English; values are not language-verified."}
+                ] if supplied else []
     return {"ok": True, "artifact": artifact, "target": entry["target"], "source": entry["path"],
-            "url": entry.get("url"), "substituted": sorted(placeholders), "dryRun": dry_run,
+            "url": entry.get("url"), "language": entry["language"], "contentVerified": False,
+            "substituted": sorted(placeholders), "warnings": warnings, "dryRun": dry_run,
             "written": not dry_run}
