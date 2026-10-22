@@ -127,7 +127,8 @@ class AlignCleanPath(unittest.TestCase):
             inventory, inventory_error = build_inventory(str(scripts))
             self.assertEqual(inventory_error, {})
             assert inventory is not None
-            registry.write_text(render_registry_document("", inventory), encoding="utf-8")
+            registry.write_text(
+                render_registry_document("`run.py` \u2014 active\n", inventory), encoding="utf-8")
 
             payload, err, exit_code = doctor(str(root))
             self.assertEqual(err, {})
