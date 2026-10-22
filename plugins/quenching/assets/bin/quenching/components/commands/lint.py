@@ -898,7 +898,7 @@ def lint_dangling(body: str, invocations: set[str], where: dict) -> list[dict]:
 
 def nearest_commands_dir(file_path: str) -> str | None:
     """The closest ancestor directory named `commands`, or None: the tree whose relative paths
-    ARE the file's invocation, so a nested file keeps `/docs:add` instead of `/add`."""
+    ARE the file's invocation, so a nested file keeps its full name instead of the bare file name."""
     probe = os.path.dirname(os.path.abspath(file_path))
     while True:
         if os.path.basename(probe) == COMMANDS_DIR:
