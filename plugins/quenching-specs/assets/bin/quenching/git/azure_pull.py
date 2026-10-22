@@ -151,6 +151,10 @@ def merge_azure(args, match: re.Match) -> int:
         path.write_text(json.dumps(body), encoding="utf-8")
         code, out, err = _az(*route, "--http-method=PATCH", f"--in-file={path}")
     if code != 0:
+        late, _ = _read(route + ["--http-method=GET"], dict)
+        if (late is not None and late.get("pullRequestId") == number
+                and late.get("status") == "completed"):
+            return finish(alreadyMerged=True)
         return finish("merge-refused", (err or out).strip())
     # Completion is asynchronous. Never retire a branch merely because PATCH was accepted.
     while True:
