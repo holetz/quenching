@@ -107,6 +107,26 @@ def load_manifest(root: Path) -> dict:
         raise ValueError("the editable source cannot stay published beside the principal modules")
     if active != {True} and not source_published:
         raise ValueError("the editable source must be a published module")
+    distributions = data.get("distributions", [])
+    if not isinstance(distributions, list):
+        raise ValueError("distributions must be a list")
+    identities = set()
+    for distribution in distributions:
+        if not isinstance(distribution, dict) or distribution.get("platform") != "codex":
+            raise ValueError("unsupported distribution platform")
+        name, path = distribution["name"], distribution["path"]
+        identity = (distribution["platform"], name)
+        if not isinstance(name, str) or not name or identity in identities or path in paths:
+            raise ValueError(f"duplicate or invalid distribution identity: {name}")
+        identities.add(identity)
+        paths.add(path)
+        for field in ("path", "marketplace"):
+            safe_path(root, distribution[field])
+        safe_path(root / path, distribution["pluginManifest"])
+        if not isinstance(distribution.get("versionFile"), bool):
+            raise ValueError(f"{name}: versionFile must be boolean")
+        if distribution["marketplace"] == data["marketplace"]:
+            raise ValueError("platforms must have separate marketplace catalogs")
     for left in paths:
         for right in paths - {left}:
             if left.startswith(right + "/"):
@@ -123,10 +143,64 @@ def release_artifacts(manifest: dict) -> tuple[tuple[str, str], ...]:
             if module["versionFile"]:
                 artifacts.append((module["path"] + "/VERSION", "plain"))
             artifacts.append((module["path"] + "/.claude-plugin/plugin.json", "json"))
-    # A generated sibling outside the Codex marketplace (the Codex plugin) moves in lockstep too.
+    for distribution in manifest.get("distributions", []):
+        if distribution["versionFile"]:
+            artifacts.append((distribution["path"] + "/VERSION", "plain"))
+        artifacts.append((distribution["path"] + "/" + distribution["pluginManifest"], "json"))
+    # Compatibility with manifests predating platform distributions.
     artifacts.extend((rel, kind) for rel, kind in manifest.get("siblingArtifacts", []))
     return tuple(artifacts + [(manifest["marketplace"], "jsonall"),
                               (manifest["versionConstant"], "py")])
+
+
+def distribution_findings(root: Path, manifest: dict) -> list[str]:
+    """Prove that each platform's declared packages are discoverable at their catalog paths.
+
+    Versionless Codex catalog entries resolve their version through the plugin manifest. This
+    check is shared by the repository gate and release preflight, before any version is written.
+    """
+    catalogs = {manifest["marketplace"]: ("claude", [
+        {**m, "pluginManifest": ".claude-plugin/plugin.json"}
+        for m in manifest["modules"] if m["published"]])}
+    for distribution in manifest.get("distributions", []):
+        _, packages = catalogs.setdefault(
+            distribution["marketplace"], (distribution["platform"], []))
+        packages.append(distribution)
+    findings = []
+    for rel, (platform, packages) in catalogs.items():
+        try:
+            catalog = json.loads(safe_path(root, rel).read_text(encoding="utf-8"))
+            if not isinstance(catalog, dict) or not isinstance(catalog.get("plugins"), list):
+                raise ValueError("catalog must contain a plugins list")
+            entries = catalog["plugins"]
+            if any(not isinstance(entry, dict) for entry in entries):
+                raise ValueError("catalog entries must be objects")
+            expected = {package["name"]: package for package in packages}
+            if len(entries) != len(expected) or {e.get("name") for e in entries} != set(expected):
+                findings.append(f"{rel}: marketplace membership disagrees with published modules ({platform})")
+            for entry in entries:
+                package = expected.get(entry.get("name"))
+                if package is None:
+                    continue
+                source = entry.get("source")
+                source_path = source.get("path") if isinstance(source, dict) else source
+                if (source_path != "./" + package["path"]
+                        or isinstance(source, dict) and source.get("source") != "local"):
+                    findings.append(f"{rel}: marketplace source disagrees: {package['name']}")
+                if platform == "codex":
+                    policy = entry.get("policy", {})
+                    if (not isinstance(policy, dict) or policy.get("installation") != "AVAILABLE"
+                            or policy.get("authentication") != "ON_INSTALL"
+                            or not isinstance(entry.get("category"), str) or not entry["category"]):
+                        findings.append(f"{rel}: invalid install policy: {package['name']}")
+            for package in packages:
+                plugin = safe_path(root, package["path"] + "/" + package["pluginManifest"])
+                document = json.loads(plugin.read_text(encoding="utf-8"))
+                if document.get("name") != package["name"]:
+                    findings.append(f"{plugin.relative_to(root)}: plugin identity disagrees")
+        except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
+            findings.append(f"{rel}: distribution refused: {exc}")
+    return findings
 
 
 def namespace_map(root: Path, manifest: dict) -> dict[str, str]:

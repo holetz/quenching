@@ -54,6 +54,8 @@ class Lockstep(unittest.TestCase):
                                if m["published"] or m["path"] == manifest["source"]]
         source = Path(self.tmp) / manifest["source"] / "assets"
         for module in manifest["modules"]:
+            plugin = Path(self.tmp) / module["path"] / ".claude-plugin/plugin.json"
+            plugin.write_text(json.dumps({"name": module["name"], "version": "9.9.9"}))
             module.pop("generated", None)
             # Principal records name source closures load_manifest checks exist; stand them up empty.
             if "owned" in module:
@@ -62,9 +64,23 @@ class Lockstep(unittest.TestCase):
                     (source / "bin/quenching" / package).mkdir(parents=True, exist_ok=True)
                 for reference in support["references"]:
                     (source / "references" / reference).mkdir(parents=True, exist_ok=True)
+        market = Path(self.tmp) / manifest["marketplace"]
+        market.write_text(json.dumps({"plugins": [
+            {"name": m["name"], "source": "./" + m["path"], "version": "9.9.9"}
+            for m in manifest["modules"] if m["published"]]}))
+        for distribution in manifest.get("distributions", []):
+            plugin = Path(self.tmp) / distribution["path"] / distribution["pluginManifest"]
+            plugin.write_text(json.dumps({"name": distribution["name"], "version": "9.9.9"}))
+            catalog = Path(self.tmp) / distribution["marketplace"]
+            catalog.parent.mkdir(parents=True, exist_ok=True)
+            catalog.write_text(json.dumps({"plugins": [{
+                "name": distribution["name"], "source": "./" + distribution["path"],
+                "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+                "category": "Developer Tools"}]}))
         self.manifest_path = Path(self.tmp) / MANIFEST
         self.manifest_path.write_text(json.dumps(manifest))
         write_text(os.path.join(self.tmp, "CHANGELOG.md"), "# Changelog\n\n## 9.10.0\n")
+        self.initial = {rel: read_text(os.path.join(self.tmp, rel)) for rel, _ in RELEASE_ARTIFACTS}
 
     def test_four_agreeing_artifacts_are_reported_moved(self):
         result = bump_release_artifacts(self.tmp, "9.10.0")
@@ -107,7 +123,7 @@ class Lockstep(unittest.TestCase):
         self.assertIn("9.10.0", result["error"])
         for rel, kind in RELEASE_ARTIFACTS:
             with self.subTest(artifact=rel):
-                self.assertEqual(read_text(os.path.join(self.tmp, rel)), KINDS[kind])
+                self.assertEqual(read_text(os.path.join(self.tmp, rel)), self.initial[rel])
 
     def test_a_lockstep_already_drifted_is_refused_rather_than_compounded(self):
         # Precondition: one artifact disagreeing with the rest BEFORE the bump is a refusal,
@@ -123,7 +139,7 @@ class Lockstep(unittest.TestCase):
             if rel == "plugins/quenching/VERSION":
                 continue
             with self.subTest(artifact=rel):
-                self.assertEqual(read_text(os.path.join(self.tmp, rel)), KINDS[kind])
+                self.assertEqual(read_text(os.path.join(self.tmp, rel)), self.initial[rel])
 
     def test_a_marketplace_entry_without_a_version_is_refused(self):
         path = os.path.join(self.tmp, ".claude-plugin/marketplace.json")
@@ -138,10 +154,12 @@ class Lockstep(unittest.TestCase):
         folder = Path(self.tmp) / "plugins/quenching-extra"
         (folder / ".claude-plugin").mkdir(parents=True)
         (folder / "VERSION").write_text(KINDS["plain"])
-        (folder / ".claude-plugin/plugin.json").write_text(KINDS["json"])
+        (folder / ".claude-plugin/plugin.json").write_text(json.dumps({
+            "name": "quenching-extra", "version": "9.9.9"}))
         market_path = Path(self.tmp) / ".claude-plugin/marketplace.json"
         market = json.loads(market_path.read_text())
-        market["plugins"].append({"name": "quenching-extra", "version": "9.9.9"})
+        market["plugins"].append({"name": "quenching-extra", "source": "./plugins/quenching-extra",
+                                 "version": "9.9.9"})
         market_path.write_text(json.dumps(market))
         return folder
 
@@ -181,6 +199,31 @@ class Lockstep(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertIn("published modules", result["error"])
         self.assertEqual(before, {p: p.read_bytes() for p in before})
+
+    def test_codex_distribution_failure_refuses_before_any_version_moves(self):
+        manifest = json.loads(self.manifest_path.read_text())
+        catalog = Path(self.tmp) / manifest["distributions"][0]["marketplace"]
+        original = catalog.read_text()
+        for failure in ("missing", "unlisted", "wrong path", "malformed"):
+            with self.subTest(failure=failure):
+                catalog.write_text(original)
+                document = json.loads(original)
+                if failure == "missing":
+                    catalog.unlink()
+                else:
+                    if failure == "unlisted":
+                        document["plugins"] = []
+                    elif failure == "wrong path":
+                        document["plugins"][0]["source"] = "./plugins/absent"
+                    else:
+                        document["plugins"] = None
+                    catalog.write_text(json.dumps(document))
+                before = {p: p.read_bytes() for p in Path(self.tmp).rglob("*") if p.is_file()}
+                result = bump_release_artifacts(self.tmp, "9.10.0")
+                self.assertFalse(result["ok"], result)
+                self.assertIn(str(catalog.relative_to(self.tmp)), result["error"])
+                self.assertEqual(before, {p: p.read_bytes() for p in before})
+        catalog.write_text(original)
 
 
 GENERATOR = (
@@ -245,6 +288,18 @@ class CmdReleaseCommit(Lockstep):
                    "raise SystemExit(3)\n")
         self.git("add", "-A")
         self.git("commit", "-q", "-m", "break generator")
+        head = self.git("rev-parse", "HEAD")
+        self.assertEqual(self.release(), 2)
+        self.assertEqual(self.git("rev-parse", "HEAD"), head)
+        self.assertEqual(self.git("tag"), "")
+
+    def test_a_generator_that_drops_the_codex_catalog_cannot_commit_or_tag(self):
+        manifest = json.loads(self.manifest_path.read_text())
+        catalog = manifest["distributions"][0]["marketplace"]
+        write_text(os.path.join(self.tmp, "scripts/generate_plugin_modules.py"),
+                   f"from pathlib import Path\nPath({catalog!r}).unlink()\n")
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "generator drops publication")
         head = self.git("rev-parse", "HEAD")
         self.assertEqual(self.release(), 2)
         self.assertEqual(self.git("rev-parse", "HEAD"), head)

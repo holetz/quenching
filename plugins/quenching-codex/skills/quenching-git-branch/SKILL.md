@@ -32,15 +32,36 @@ than restated; this command is its standalone entry point for a caller with no b
 
 ### 1. Load the rules and the state in one read
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/isolation.md \
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+cq components read ../../references/git/isolation.md \
   --sections "§Isolation happens on the way into a build" --sections "§Branch and worktree names" \
   --sections "§Recording the isolation"
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components read ../../references/git/conventions.md \
+cq components read ../../references/git/conventions.md \
   --sections "§The declared-directive layer" --sections "§The read-if-present rule"
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git conventions --json   # `config.branchName`, or absent
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git state --json           # `branch`, `status` (porcelain), `staged`, `remotes`
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git base --json
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs config --json        # `worktreeSetup`, `sharedPaths`, or their empty values — exit 0 either way
+cq git conventions --json   # `config.branchName`, or absent
+cq git state --json           # `branch`, `status` (porcelain), `staged`, `remotes`
+cq git base --json
+cq specs config --json        # `worktreeSetup`, `sharedPaths`, or their empty values — exit 0 either way
 ```
 `status` non-empty → refuse, name the offending paths, and stop; isolating a dirty
 tree carries whatever was already sitting there into the first commit on the new ref, silently.
@@ -87,7 +108,28 @@ reported verbatim and nothing is stamped. **The Worktree cut starts from the rem
 a PR merged through `gh` moves no local ref and the local `<base>` may miss the dependency the run
 waited on:
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git worktree add --path <path> --branch <branch> --base <base> [--spec "<id>"] --json
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+cq git worktree add --path <path> --branch <branch> --base <base> [--spec "<id>"] --json
 ```
 With an ID from step 2, pass `--spec`: the verb refuses (exit 2, nothing cut) a spec that does not
 exist or does not own `<branch>`, and after the cut stamps the `branch:` record itself
@@ -107,8 +149,29 @@ change. `cq git …` takes no `--root`
 (`git declares no --root`): it always runs as `cd <worktree> && cq git …`. Then, only with an ID from step 2
 (the Worktree form already stamped `branch:` through `--spec`; **Branch** form stamps it by hand):
 ```bash
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" specs record "<id>" branch --set base=<base> --set work=<branch>   # Branch form only
-python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" git specs <branch> --add "<id>" --json
+cq() {
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
+  if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
+    echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
+    return 2
+  fi
+  python3 "$plugin_root/scripts/cq" "$@"
+}
+cq specs record "<id>" branch --set base=<base> --set work=<branch>   # Branch form only
+cq git specs <branch> --add "<id>" --json
 ```
 **In place** stamps `work` equal to `base` instead of skipping the record — §Recording the isolation
 draws that distinction; nothing is marked on the branch description under **In place**, since this

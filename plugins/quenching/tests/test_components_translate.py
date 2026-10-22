@@ -478,6 +478,64 @@ class ConcludeGeneratedConflictRecipeTest(unittest.TestCase):
 
 
 class CodexRuntimeTranslation(unittest.TestCase):
+    def test_skill_refuses_ambiguous_missing_or_failed_host_resolution(self):
+        import os
+        import subprocess
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            cached = root / "plugins/cache/quenching/quenching-codex/6.4.0/scripts"
+            cached.mkdir(parents=True)
+            (cached / "cq").write_text("print('stale cache must not run')\n")
+            tools = root / "tools"
+            tools.mkdir()
+            host = tools / "codex"
+            active = {"name": "quenching-codex", "version": "6.4.0",
+                      "marketplaceName": "quenching", "enabled": True}
+            env = {**os.environ, "CODEX_HOME": str(root), "PATH": str(tools) + os.pathsep + os.environ["PATH"]}
+            env.pop("PLUGIN_ROOT", None)
+            env.pop("CODEX_PLUGIN_ROOT", None)
+            for plugins, exit_code in (([], 0), ([active, active], 0),
+                                       ([{**active, "version": "9.9.9"}], 0), ([active], 1)):
+                with self.subTest(plugins=plugins, exit_code=exit_code):
+                    payload = json.dumps({"installed": plugins})
+                    host.write_text(f"#!/usr/bin/env python3\nprint({payload!r})\nraise SystemExit({exit_code})\n")
+                    host.chmod(0o755)
+                    result = subprocess.run(["bash", "-c", translate.CODEX_CQ_WRAPPER + "\ncq git status"],
+                                            cwd=root, env=env, capture_output=True, text=True)
+                    self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+                    self.assertNotIn("stale cache must not run", result.stdout)
+
+    def test_skill_uses_the_enabled_package_instead_of_the_first_cached_copy(self):
+        import os
+        import re
+        import subprocess
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for version in ("6.4.0", "6.8.0"):
+                plugin = root / "plugins/cache/quenching/quenching-codex" / version
+                (plugin / "scripts").mkdir(parents=True)
+                (plugin / "scripts/cq").write_text(f"print({version!r})\n")
+            tools = root / "tools"
+            tools.mkdir()
+            host = tools / "codex"
+            first = subprocess.check_output(["find", str(root), "-name", "cq", "-print", "-quit"], text=True)
+            selected = "6.8.0" if "/6.4.0/" in first else "6.4.0"
+            payload = json.dumps({"installed": [{"name": "quenching-codex", "version": selected,
+                                                 "marketplaceName": "quenching", "enabled": True}]})
+            host.write_text(f"#!/usr/bin/env python3\nprint({payload!r})\n")
+            host.chmod(0o755)
+            env = {**os.environ, "CODEX_HOME": str(root), "PATH": str(tools) + os.pathsep + os.environ["PATH"]}
+            env.pop("PLUGIN_ROOT", None)
+            env.pop("CODEX_PLUGIN_ROOT", None)
+            for command in ("cq git status", "cq --root . ops status", "cq --version"):
+                with self.subTest(command=command):
+                    text = translate.transform_codex_shell_blocks(f"```bash\n{command}\n```\n")
+                    block = re.search(r"```bash\n(.*?)\n```", text, re.S)[1]
+                    result = subprocess.run(["bash", "-c", block], cwd=root, env=env,
+                                            capture_output=True, text=True)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(result.stdout.strip(), selected)
+
     def test_generated_cli_runs_from_an_isolated_plugin_install(self):
         import subprocess
         import sys

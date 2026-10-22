@@ -9,7 +9,9 @@ import unittest
 from unittest.mock import patch
 
 import _paths  # noqa: F401
-from quenching.common.modules import MANIFEST, load_manifest, namespace_map, published_id, release_artifacts
+from quenching.common.modules import (
+    MANIFEST, distribution_findings, load_manifest, namespace_map, published_id, release_artifacts,
+)
 
 REPO = Path(__file__).resolve().parents[3]
 spec = importlib.util.spec_from_file_location("generate_plugin_modules", REPO / "scripts/generate_plugin_modules.py")
@@ -48,10 +50,17 @@ class GeneratedDistribution(unittest.TestCase):
             directory.mkdir(parents=True)
             (directory / "sample.txt").write_text(tree + "\n")
         (self.source / "assets/bin/quenching/common/version.py").write_text('VERSION = "1.2.3"\n')
-        for rel, kind in self.manifest.get("siblingArtifacts", []):
-            sibling = self.root / rel
-            sibling.parent.mkdir(parents=True, exist_ok=True)
-            sibling.write_text(json.dumps({"version": "1.2.3"}) if kind == "json" else "1.2.3\n")
+        for distribution in self.manifest.get("distributions", []):
+            plugin = self.root / distribution["path"] / distribution["pluginManifest"]
+            plugin.parent.mkdir(parents=True, exist_ok=True)
+            plugin.write_text(json.dumps({"name": distribution["name"], "version": "1.2.3"}))
+            (self.root / distribution["path"] / "VERSION").write_text("1.2.3\n")
+            catalog = self.root / distribution["marketplace"]
+            catalog.parent.mkdir(parents=True, exist_ok=True)
+            catalog.write_text(json.dumps({"plugins": [{
+                "name": distribution["name"], "source": "./" + distribution["path"],
+                "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+                "category": "Developer Tools"}]}))
         self.market = self.root / self.manifest["marketplace"]
         self.market.parent.mkdir(parents=True)
         self.market.write_text(json.dumps({"plugins": [
@@ -157,18 +166,70 @@ class GeneratedDistribution(unittest.TestCase):
         self.assertTrue(any("PATH cq ownership" in f for f in findings))
         self.assertIn("marketplace membership disagrees with published modules", findings)
 
-    def test_sibling_artifact_version_drift_is_a_finding(self):
+    def test_platform_distribution_version_drift_is_a_finding(self):
         self.assertEqual(0, self.run_generator("--write"))
-        rel = next(rel for rel, kind in self.manifest["siblingArtifacts"] if kind == "json")
-        (self.root / rel).write_text(json.dumps({"version": "1.2.2"}))
+        distribution = self.manifest["distributions"][0]
+        rel = distribution["path"] + "/" + distribution["pluginManifest"]
+        (self.root / rel).write_text(json.dumps({"name": distribution["name"], "version": "1.2.2"}))
         self.assertEqual(1, self.run_generator("--check"))
         findings = generator.published_findings(self.root, load_manifest(self.root))
         self.assertTrue(any(f.startswith("version drift " + rel) for f in findings))
+
+    def test_codex_publication_failures_are_named_without_writes(self):
+        self.assertEqual(0, self.run_generator("--write"))
+        distribution = self.manifest["distributions"][0]
+        catalog = self.root / distribution["marketplace"]
+        plugin = self.root / distribution["path"] / distribution["pluginManifest"]
+        original, original_plugin = catalog.read_bytes(), plugin.read_bytes()
+        for failure in ("missing catalog", "missing entry", "wrong source", "missing plugin",
+                        "wrong identity", "unavailable", "malformed catalog"):
+            with self.subTest(failure=failure):
+                catalog.write_bytes(original)
+                plugin.write_bytes(original_plugin)
+                document = json.loads(original)
+                if failure == "missing catalog":
+                    catalog.unlink()
+                elif failure == "missing entry":
+                    document["plugins"] = []
+                elif failure == "wrong source":
+                    document["plugins"][0]["source"] = "./plugins/nonexistent"
+                elif failure == "missing plugin":
+                    plugin.unlink()
+                elif failure == "wrong identity":
+                    plugin.write_text(json.dumps({"name": "wrong", "version": "1.2.3"}))
+                elif failure == "unavailable":
+                    document["plugins"][0]["policy"]["installation"] = "NOT_AVAILABLE"
+                elif failure == "malformed catalog":
+                    document["plugins"] = "invalid"
+                if failure != "missing catalog":
+                    catalog.write_text(json.dumps(document))
+                before = self.snapshot()
+                findings = generator.published_findings(self.root, load_manifest(self.root))
+                identity_path = distribution["path"] + "/" + distribution["pluginManifest"]
+                self.assertTrue(any(distribution["marketplace"] in f or identity_path in f
+                                    for f in findings), findings)
+                self.assertEqual(1, self.run_generator("--check"))
+                self.assertEqual(before, self.snapshot())
 
     def test_multiple_declared_path_owners_are_refused(self):
         self.manifest["modules"][1]["cqPathOwner"] = True
         self.save_manifest()
         self.assertEqual(2, self.run_generator("--write"))
+
+    def test_unsafe_or_ambiguous_platform_distribution_refuses_before_writes(self):
+        original = copy.deepcopy(self.manifest)
+        variants = [("path", "../outside"), ("marketplace", "/outside.json"),
+                    ("pluginManifest", "../plugin.json"), ("versionFile", "yes"),
+                    ("platform", "unknown"), ("path", self.manifest["source"]),
+                    ("marketplace", self.manifest["marketplace"])]
+        for key, value in variants:
+            with self.subTest(key=key, value=value):
+                self.manifest = copy.deepcopy(original)
+                self.manifest["distributions"][0][key] = value
+                self.save_manifest()
+                before = self.snapshot()
+                self.assertEqual(2, self.run_generator("--write"))
+                self.assertEqual(before, self.snapshot())
 
 
 ROOT_TOKEN = "${CLAUDE_" + "PLUGIN_ROOT}"  # split so the repository citation check reads no claim
@@ -286,6 +347,17 @@ class PrincipalGeneration(unittest.TestCase):
 
 
 class PrincipalPartition(unittest.TestCase):
+    def test_codex_is_declared_published_and_in_the_release_lockstep(self):
+        manifest = load_manifest(REPO)
+        distributions = manifest["distributions"]
+        self.assertEqual([("codex", "quenching-codex")],
+                         [(d["platform"], d["name"]) for d in distributions])
+        self.assertEqual([], distribution_findings(REPO, manifest))
+        package = distributions[0]
+        self.assertIn((package["path"] + "/VERSION", "plain"), release_artifacts(manifest))
+        self.assertIn((package["path"] + "/" + package["pluginManifest"], "json"),
+                      release_artifacts(manifest))
+
     def test_single_repository_gate_checks_the_general_distribution(self):
         gate = (REPO / "scripts/verify_repo.sh").read_text()
         self.assertIn("python3 scripts/generate_plugin_modules.py --check", gate)

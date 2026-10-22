@@ -54,6 +54,19 @@ jobs:
       - name: Ruff (E, F)
         run: uv run ruff check .
 
+  distribution:
+    name: Codex marketplace upgrade (6.4.0 to candidate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # The upgrade starts from the actual published 6.4.0 package.
+      - name: Install the tested Codex host
+        run: npm install --global @openai/codex@0.163.0
+      - name: Upgrade through Git marketplace in an isolated home (no model calls)
+        run: python3 scripts/check_codex_upgrade.py
+
   functional:
     name: Functional checks (static guards only; the surface-load measurement runs in the opt-in gate and the release)
     runs-on: ubuntu-latest

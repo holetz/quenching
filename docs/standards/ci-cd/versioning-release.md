@@ -2,12 +2,12 @@
 type: standard
 title: Versioning and release — the version lockstep
 description: The version surfaces cq specs release bumps together — the unpublished source, every published module manifest (the eight principal modules, the specs reader and the HUD) and every marketplace entry
-resource: plugins/quenching/assets/modules.json, plugins/quenching-*/VERSION, plugins/quenching-*/.claude-plugin/plugin.json, plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py, scripts/generate_plugin_modules.py
+resource: plugins/quenching/assets/modules.json, plugins/quenching-*/VERSION, plugins/quenching-*/.claude-plugin/plugin.json, plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, .agents/plugins/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py, scripts/generate_plugin_modules.py, scripts/check_codex_upgrade.py
 tags: [release, versioning, lockstep, plugin, distribution]
-timestamp: 2026-10-14
+timestamp: 2026-10-22
 audience: both
 authority: current
-source: modularizar-specs-knowledge-components, one-entry-point, notice-installed-tool-version-drift, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, configurable-branch-strategy, spec 1634, spec 1635 (module extraction); lineage in ADR 0004 and ADR 0013
+source: modularizar-specs-knowledge-components, one-entry-point, notice-installed-tool-version-drift, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, configurable-branch-strategy, spec 1634, spec 1635 (module extraction); Codex marketplace upgrade regression, 2026-10-22; lineage in ADR 0004 and ADR 0013
 maintainer: quenching
 ---
 
@@ -90,12 +90,56 @@ marketplace entry with no `version`, or entries that disagree with published mod
 are refused. Afterwards `python3 scripts/generate_plugin_modules.py --write` regenerates the
 copied assets; `--check` proves generated consumers, published versions and the single active
 PATH `cq` owner together. The old `sync_specs_reader_plugin.py` invocation remains a compatibility
-wrapper over that same generator. The generated Codex sibling
+wrapper over that same generator. The generated Codex package
 (`plugins/quenching-codex/VERSION` and `.codex-plugin/plugin.json`), declared under
-`siblingArtifacts` in `assets/modules.json`, moves in the same lockstep. Afterwards
+`distributions` in `assets/modules.json` with its platform, identity, package path, plugin manifest
+and marketplace path, moves in the same lockstep. Afterwards
 `sync_codex_plugin.py --write` regenerates its payload and translation manifest; the repository
 gate checks both translation drift and package validity.
 `test_specs_release.py` asserts that every one of these versions is equal. The manifests carry no hard-coded command counts, since they drift on the next command change.
+
+## Publication is checked per platform
+
+The principal `modules` declare the Claude distribution and its `.claude-plugin/marketplace.json`.
+Additional `distributions` declare the Codex package and `.agents/plugins/marketplace.json`.
+The latter catalog keeps the existing `quenching` marketplace and `quenching-codex` plugin identity
+so installations from 6.4.0 retain their update route. Its entries are versionless: Codex reads the
+version from the package manifest, which moves with `VERSION` in the release lockstep.
+
+`distribution_findings` in `common/modules.py` checks both catalogs before a release writes any
+version. Every declared package must be listed exactly once, at its declared source path, with an
+existing manifest bearing the declared identity; the Codex entry must be installable. The
+repository gate uses the same check. A missing catalog, missing entry, wrong source or wrong
+identity is a failure even when generation and version equality pass.
+
+Removing or renaming a published package also requires an explicit migration path for existing
+installations. Keep the old catalog identity until the host upgrade test proves the replacement;
+changing the declared set and the catalog together is not evidence of a successful migration.
+
+## Upgrade acceptance
+
+`python3 scripts/check_codex_upgrade.py` measures the actual Codex CLI installation route without
+calling a model. It installs the published `6.4.0` Codex package in an isolated home, advances a
+disposable Git marketplace to the candidate package, runs `plugin marketplace upgrade` and
+`plugin add`, then checks the installed cleanup skill against the candidate bytes, executes that
+skill's own tool resolver and runs the installed `scripts/cq --version`. It also checks that the
+installed plugin is enabled. Git rewrites
+a reserved test URL to the disposable local repository; no user installation or cache is edited.
+
+CI runs this check with Codex CLI 0.163.0. The ordinary repository gate reports it skipped unless
+`QUENCHING_DISTRIBUTION=1`; `/release` requires that flag alongside `QUENCHING_FUNCTIONAL=1`
+before the bump. Missing Codex or the baseline tag exits 2 (inconclusive), which blocks a release.
+The baseline is kept until an explicit migration changes the acceptance contract.
+
+This proves package delivery, not the skills loaded in an existing model session. Start a new
+session after updating; the generated Codex README includes installation, upgrade, version/path
+inspection and migration guidance for mixed installations.
+
+Generated shell blocks resolve the host-provided plugin root or the single enabled installation
+from `codex plugin list --json`, including its exact cache version. They never choose the first
+or newest cached directory. Regression tests retain multiple cache versions and require the
+selected host version; missing or ambiguous selections refuse instead of falling back to a stale
+copy. This check is separate from session loading.
 
 ## When the bump happens — once, at the release, on the primary branch
 
