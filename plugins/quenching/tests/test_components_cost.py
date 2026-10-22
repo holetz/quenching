@@ -147,7 +147,7 @@ class CostTargetsThePathItNames(unittest.TestCase):
         self.assertEqual(payload["findings"][0]["currentBytes"], measured["totalBytes"])
 
     def test_a_path_with_no_command_is_refused_even_with_a_ratchet(self):
-        target, cwd = self._target(), pathlib.Path(tempfile.mkdtemp())
+        cwd = pathlib.Path(tempfile.mkdtemp())
         (cwd / "empty" / "commands").mkdir(parents=True)
         (cwd / "nomd").mkdir()
         (cwd / "nomd" / "x.txt").write_text("x", encoding="utf-8")
