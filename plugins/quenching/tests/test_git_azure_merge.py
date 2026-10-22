@@ -131,7 +131,7 @@ class AzureMergeTests(unittest.TestCase):
                 self.assertEqual(self.bodies, [])
 
     def test_refused_or_asynchronous_patch_is_not_success(self):
-        code, result = self.run_merge(patch_code=1)
+        code, result = self.run_merge(prs=[PR, PR, PR], patch_code=1)
         self.assertEqual((code, result["reason"]), (1, "merge-refused"))
         for change, reason in (({"mergeStatus": "queued"}, "pending"),
                                ({"mergeStatus": "succeeded"}, "pending"),
