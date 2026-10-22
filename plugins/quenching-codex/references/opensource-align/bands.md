@@ -9,6 +9,16 @@ shapes. The common axis is defined in [`front-align/mold.md`](../front-align/mol
 `cq opensource apply`, which copies the pinned template byte for byte and substitutes only the
 placeholders `sources.json` declares.
 
+## Artifact language
+
+Every template in `sources.json` declares `language: en`, and `status` and `doctor` expose it as
+`artifactLanguage` (`basis: template-declaration`, `contentVerified: false`) whatever language the
+target declares for itself. The contract covers community artifacts and owner-supplied placeholder
+prose. No `os-*` finding detects a language: `apply` returns the informational
+`os-var-language-unverified` warning for supplied placeholders and accepts the values unchanged.
+README and SECURITY stay with their owners, reported as `artifactLanguage.handoffs`
+(`knowledge` and `security`).
+
 ## Mechanical findings
 
 There is no mechanical `os-*` finding in a target. Every artifact this front writes carries an
