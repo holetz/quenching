@@ -8,8 +8,7 @@ import sys
 from pathlib import Path
 
 
-CQ_INVOCATION = re.compile(r"(?<![A-Za-z0-9_./-])cq\s+(?:specs|knowledge|components|git)\b")
-CQ_COMMAND = re.compile(r'python3\s+"\$\(find .*quenching-codex.*/scripts/cq"')
+CQ_INVOCATION = re.compile(r"(?<![A-Za-z0-9_./-])cq\s+(?:--root|--version|--help|specs|knowledge|design|components|git|ops|proof|toolchain|delivery|security|opensource|config|portal|session)\b")
 
 
 class ValidationError(Exception):
@@ -44,10 +43,11 @@ def validate_cq_resolution(root: Path) -> None:
             # Scoped to the executable blocks: prose legitimately names the relative path
             # when explaining how resolution works, and the file-wide form banned that too.
             check("../../scripts/cq" not in block, path)
-            if CQ_COMMAND.search(block):
-                check("quenching-codex" in block and "scripts/cq" in block, path)
-            elif CQ_INVOCATION.search(block):
-                check("cq() {" in block and "scripts/cq" in block, path)
+            check(not re.search(r"find .*quenching-codex.*-print -quit", block),
+                  f"{path}: resolves an arbitrary cached version")
+            if CQ_INVOCATION.search(block):
+                check("cq() {" in block and "scripts/cq" in block
+                      and "codex plugin list --json" in block, path)
 
 
 AGENT_PATH = re.compile(r"(?:plugins/quenching(?:-codex)?/|\.\./\.\./)agents/([a-z][a-z0-9-]*)\.md")

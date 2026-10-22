@@ -2,9 +2,9 @@
 type: standard
 title: Surface translation — Claude and Codex coexistence
 description: A repository may carry Claude and Codex surfaces together; Claude owns configuration and deterministic translation keeps their command, reference, and harness artifacts aligned
-resource: plugins/quenching/assets/bin/quenching/components/commands/translate.py, plugins/quenching/assets/translation/codex-adaptation.json
+resource: plugins/quenching/assets/bin/quenching/components/commands/translate.py, plugins/quenching/assets/translation/codex-adaptation.json, .agents/plugins/marketplace.json
 tags: [architecture, claude-code, codex, translation, surfaces]
-timestamp: 2026-10-17
+timestamp: 2026-10-22
 audience: both
 authority: current
 source: alinhar-plugin-a-agents-md spec, tasks 2.1–2.4 (2026-08-18)
@@ -21,6 +21,11 @@ This marketplace repository publishes and checks its generated Codex plugin unde
 for target repositories. A repository may expose `.claude/` and `.agents/` at the same time. They are paired surfaces,
 not alternatives: Claude remains the authoritative source for configuration and the translator
 generates the Codex representation deterministically.
+
+The package's platform, identity, manifest and catalog are declared in `assets/modules.json` under
+`distributions`. Publication and the isolated marketplace upgrade check are governed by
+[versioning-release.md](../ci-cd/versioning-release.md); translation drift alone does not prove
+that an installed consumer can discover or upgrade the package.
 
 ## What translates
 

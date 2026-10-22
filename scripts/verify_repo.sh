@@ -76,6 +76,13 @@ run_check "Claude/Codex translation" \
   python3 scripts/sync_codex_plugin.py --source plugins/quenching --target plugins/quenching-codex --check --json
 run_check "Codex artifact lockstep" \
   python3 scripts/validate_codex_plugin.py
+printf '\n==> Codex marketplace upgrade\n'
+if [ "${QUENCHING_DISTRIBUTION:-}" != "1" ]; then
+  printf 'SKIPPED: set QUENCHING_DISTRIBUTION=1 to exercise a real Codex marketplace upgrade (required by /release).\n'
+else
+  run_check "Codex marketplace upgrade from 6.4.0" \
+    python3 scripts/check_codex_upgrade.py
+fi
 run_check "citation checks" \
   bash plugins/quenching/assets/checks/citation-check.sh
 run_check "documentation site source" \

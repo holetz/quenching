@@ -21,9 +21,20 @@ FORBIDDEN_AFTER_TRANSLATION = ("${CLAUDE_PLUGIN_ROOT}", "${CLAUDE_PROJECT_DIR}",
 PLATFORM_NEUTRAL_CLAUDE_CODEX = "\u0043laude or \u0043odex"
 
 CODEX_CQ_WRAPPER = r"""cq() {
-  local plugin_root="${PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-}}"
-  [ -n "$plugin_root" ] || plugin_root="$(codex plugin list 2>/dev/null | awk '$1 ~ /^quenching-codex@/ {print $NF; exit}')"
-  [ -n "$plugin_root" ] || plugin_root="$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f \( -path '*/quenching-codex/*/scripts/cq' -o -path '*/quenching-codex/scripts/cq' \) -print -quit 2>/dev/null | sed 's#/scripts/cq$##')"
+  local plugin_root="${CODEX_PLUGIN_ROOT:-${PLUGIN_ROOT:-}}"
+  if [ -z "$plugin_root" ]; then
+    plugin_root="$(set -o pipefail
+codex plugin list --json | python3 -c '
+import json, os, sys
+from pathlib import Path
+plugins = [p for p in json.load(sys.stdin)["installed"] if p.get("name") == "quenching-codex" and p.get("enabled")]
+if len(plugins) != 1:
+    sys.exit("quenching-codex: enable exactly one installation, or provide its plugin root")
+p = plugins[0]
+home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / p["name"] / p["version"])
+')" || return 2
+  fi
   if [ -z "$plugin_root" ] || [ ! -f "$plugin_root/scripts/cq" ]; then
     echo "quenching-codex: installed plugin root not found; enable the plugin first" >&2
     return 2
@@ -31,10 +42,9 @@ CODEX_CQ_WRAPPER = r"""cq() {
   python3 "$plugin_root/scripts/cq" "$@"
 }"""
 
-CQ_INVOCATION = re.compile(r"(?<![A-Za-z0-9_./-])cq(?=\s+(?:specs|knowledge|design|components|git)\b)")
+CQ_INVOCATION = re.compile(r"(?<![A-Za-z0-9_./-])cq(?=\s+(?:--root|--version|--help|specs|knowledge|design|components|git|ops|proof|toolchain|delivery|security|opensource|config|portal|session)\b)")
 EXPLICIT_CQ_INVOCATION = re.compile(r"python3\s+(?:\"?\.\./\.\./scripts/cq\"?|\"?scripts/bin/cq\"?)")
 RELATIVE_CQ_PATH = re.compile(r"(?<![A-Za-z0-9_./])(?:python3\s+)?\"?\.\./\.\./scripts/cq\"?")
-CODEX_CQ_COMMAND = 'python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path \'*/quenching-codex*/scripts/cq\' -print -quit 2>/dev/null)"'
 
 
 def payload_root() -> Path:
@@ -302,7 +312,7 @@ def transform_codex_shell_blocks(text: str) -> str:
     """Make every generated shell invocation independent of the user's PATH.
 
     A Codex Bash call starts a fresh shell, so each cq invocation carries its own
-    one-line lookup of the installed plugin copy instead of relying on state from a
+    wrapper resolving the enabled plugin copy instead of relying on state from a
     previous call or on a host-specific PATH mutation.
     """
     lines = text.splitlines()
@@ -312,8 +322,8 @@ def transform_codex_shell_blocks(text: str) -> str:
 
     def flush_block() -> None:
         if has_cq_invocation("\n".join(block)):
-            body = [EXPLICIT_CQ_INVOCATION.sub(CODEX_CQ_COMMAND, line) for line in block]
-            body = [CQ_INVOCATION.sub(CODEX_CQ_COMMAND, line) for line in body]
+            body = [EXPLICIT_CQ_INVOCATION.sub("cq", line) for line in block]
+            output.extend(CODEX_CQ_WRAPPER.splitlines())
             output.extend(body)
         else:
             output.extend(block)
@@ -356,7 +366,9 @@ their shell startup files.
 ```
 
 The function uses the plugin-provided root when the host exposes one, otherwise it resolves the
-installed `quenching-codex` copy through `codex plugin list` or the standard Codex cache.  It then
+single enabled `quenching-codex` copy through `codex plugin list --json` and its exact cache
+version. Multiple enabled installations or a missing selected package are refusals; never choose
+the first or newest directory in a cache. It then
 executes the bundled `scripts/cq` by absolute path.  Defining it again in each Bash call is
 intentional: shell state does not survive between calls, and sub-agents may receive a fresh
 environment.
@@ -389,19 +401,16 @@ def codex_readme(text: str) -> str:
         uninstall_start = text.index("## Uninstall or reverse", install_start)
         codex_install = """## Install
 
-For a disposable study target, make this plugin's generated `skills/` tree available under the
-target repository's `.agents/skills/` directory, then run `codex` from that target. Codex discovers
-repository-local skills there, and symlinks are supported. For a managed installation, use Codex's
-plugin mechanism for the published `quenching-codex` plugin. The official [skills documentation](https://learn.chatgpt.com/docs/build-skills)
-describes the discovery and plugin model.
+Install the generated Codex package through its own marketplace catalog,
+`.agents/plugins/marketplace.json`. The Claude module catalog is a separate distribution.
 
 ```bash
-mkdir -p /path/to/target/.agents/skills/quenching-codex
-cp -R /path/to/this/checkout/plugins/quenching-codex/skills/. \\
-  /path/to/target/.agents/skills/quenching-codex/
-codex
+codex plugin marketplace add https://github.com/holetz/quenching.git
+codex plugin add quenching-codex@quenching --json
 ```
 
+Start a new Codex session after installation. Existing sessions may still carry earlier skills.
+The official [plugin documentation](https://learn.chatgpt.com/docs/plugins) describes the host flow.
 There is no Claude-style `--plugin-dir` command here. The experiment in
 `docs/tutorials/first-workflow-study.md` uses the bundled `cq` directly and is the deterministic
 path for inspecting the workflow without installing a host integration.
@@ -413,6 +422,22 @@ path for inspecting the workflow without installing a host integration.
         install = text.index(install_marker)
     else:
         install = text.index("The tool itself is reached through **two doors onto one file**.")
+    if "## Uninstall or reverse" in text:
+        uninstall = text.index("## Uninstall or reverse")
+        text = text[:uninstall] + """## Uninstall or reverse
+
+Remove the Codex package through its host:
+
+```bash
+codex plugin remove quenching-codex@quenching --json
+```
+
+Repository-owned docs, configuration and commits remain in the target. Reverse an alignment by
+reviewing and reverting its commits. Start a new session after changing the installation.
+
+""" + text[install:]
+        install = text.index(install_marker) if install_marker in text else text.index(
+            "The tool itself is reached through **two doors onto one file**.")
     upgrade = text.index("## Upgrade", install)
     text = (
         text[:install]
@@ -433,6 +458,15 @@ path for inspecting the workflow without installing a host integration.
         "Resolution is **plugin-first, with no user-level install**: every skill resolves the "
         "installed plugin copy at call time, so a version bump reaches consumers when Codex "
         "refreshes the plugin. There is no global `cq` executable to keep in sync."
+        "\n\nRefresh the marketplace and install its current package:\n\n"
+        "```bash\ncodex plugin marketplace upgrade quenching --json\n"
+        "codex plugin add quenching-codex@quenching --json\n"
+        "codex plugin list --marketplace quenching --json\n```\n\n"
+        "Check the reported `version` and `installedPath`, then start a new session. "
+        "Updating Claude modules does not update the Codex package. If migrating from a "
+        "mixed installation, disable the old monolith and translated Claude modules in the "
+        "Codex plugin browser once `quenching-codex` is installed; duplicate skills can retain "
+        "old behavior. Do not repair an installation by editing its cache."
     )
     text = (
         text[:upgrade]

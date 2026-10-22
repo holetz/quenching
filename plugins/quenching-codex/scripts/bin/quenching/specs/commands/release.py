@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 from quenching.common.git import _git, _git_run
 from quenching.common.config import load_config
+from quenching.common.modules import distribution_findings, load_manifest
 from quenching.specs.commands.output import Emitter
 from quenching.specs.config import infer_base_branch
 from quenching.specs.release import (
@@ -83,6 +85,16 @@ def cmd_release(args, root: str, out: Emitter) -> int:
         return out.emit_err(args.json, {"code": "sp-release-regenerate-failed", "exit": 2,
                                         "message": f"regeneration failed at {failed} — the bump "
                                                    "is uncommitted in the tree; no commit, no tag"})
+
+    # Generators must not remove a package's delivery route between the preflight and the tag.
+    try:
+        findings = distribution_findings(Path(repo), load_manifest(Path(repo)))
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        findings = [str(exc)]
+    if findings:
+        return out.emit_err(args.json, {"code": "sp-release-distribution-failed", "exit": 2,
+                                        "message": "; ".join(findings)
+                                        + " — the bump is uncommitted; no commit, no tag"})
 
     # The tree was clean but for the CHANGELOG, so everything dirty now belongs to the release.
     code, _, err = _git_run(repo, "add", "-A")

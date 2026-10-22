@@ -485,44 +485,43 @@ Shared contracts keep gates explicit; missing `gh` or `az` is a named refusal
 
 ## Install
 
-For a disposable study target, make this plugin's generated `skills/` tree available under the
-target repository's `.agents/skills/` directory, then run `codex` from that target. Codex discovers
-repository-local skills there, and symlinks are supported. For a managed installation, use Codex's
-plugin mechanism for the published `quenching-codex` plugin. The official [skills documentation](https://learn.chatgpt.com/docs/build-skills)
-describes the discovery and plugin model.
+Install the generated Codex package through its own marketplace catalog,
+`.agents/plugins/marketplace.json`. The Claude module catalog is a separate distribution.
 
 ```bash
-mkdir -p /path/to/target/.agents/skills/quenching-codex
-cp -R /path/to/this/checkout/plugins/quenching-codex/skills/. \
-  /path/to/target/.agents/skills/quenching-codex/
-codex
+codex plugin marketplace add https://github.com/holetz/quenching.git
+codex plugin add quenching-codex@quenching --json
 ```
 
+Start a new Codex session after installation. Existing sessions may still carry earlier skills.
+The official [plugin documentation](https://learn.chatgpt.com/docs/plugins) describes the host flow.
 There is no Claude-style `--plugin-dir` command here. The experiment in
 `docs/tutorials/first-workflow-study.md` uses the bundled `cq` directly and is the deterministic
 path for inspecting the workflow without installing a host integration.
 
 ## Uninstall or reverse
 
-To remove an installed module while keeping the marketplace available:
+Remove the Codex package through its host:
 
-```text
-/plugin uninstall quenching-design@quenching
-/reload-plugins
+```bash
+codex plugin remove quenching-codex@quenching --json
 ```
 
-Uninstall `quenching-specs` last: every other module runs its `cq` through it.
-
-Removing the marketplace itself (`/plugin marketplace remove quenching`) also uninstalls plugins
-installed from it. Neither operation deletes the target repository's `/docs/`, `.agents/` or
-`.claude/quenching.json` files: those are repository-owned data and configuration. To reverse an
-alignment, review and revert the target repository's own commits; uninstalling the plugin is not
-a data rollback. If an upgrade is the problem, disable or uninstall the plugin first, then
-reinstall the previously published version or load its known checkout with `--plugin-dir` for
-development-only recovery. Reload the session after changing the installation.
+Repository-owned docs, configuration and commits remain in the target. Reverse an alignment by
+reviewing and reverting its commits. Start a new session after changing the installation.
 
 The CLI is bundled inside the plugin and is **not** installed in the user's PATH. Codex skills define a per-call `cq` wrapper that resolves the installed plugin and executes `scripts/cq` by absolute path; the wrapper is repeated because each Bash call and each sub-agent may start with a fresh shell. The resolver and its no-global-install rule live in `references/align/tool-resolution.md`.
 
 ## Upgrade
 
 Resolution is **plugin-first, with no user-level install**: every skill resolves the installed plugin copy at call time, so a version bump reaches consumers when Codex refreshes the plugin. There is no global `cq` executable to keep in sync.
+
+Refresh the marketplace and install its current package:
+
+```bash
+codex plugin marketplace upgrade quenching --json
+codex plugin add quenching-codex@quenching --json
+codex plugin list --marketplace quenching --json
+```
+
+Check the reported `version` and `installedPath`, then start a new session. Updating Claude modules does not update the Codex package. If migrating from a mixed installation, disable the old monolith and translated Claude modules in the Codex plugin browser once `quenching-codex` is installed; duplicate skills can retain old behavior. Do not repair an installation by editing its cache.
