@@ -921,6 +921,8 @@ def surface_root_of(base: str, root: str) -> str:
     """The surface root that judges `base`: `base` itself when it holds `commands/`, else the
     nearest ancestor whose `commands/` contains it, else the cwd surface `root`."""
     probe = os.path.abspath(base)
+    if os.path.basename(probe) == COMMANDS_DIR:
+        return os.path.dirname(probe)
     while True:
         commands = os.path.join(probe, COMMANDS_DIR)
         if os.path.isdir(commands) and (probe == os.path.abspath(base)
@@ -934,24 +936,25 @@ def surface_root_of(base: str, root: str) -> str:
 
 def cmd_lint(args, root: str) -> int:
     base, commands, references = resolve_lint_targets(args.path, root)
-    if not commands and base == root and agent_definitions(root):
+    if not commands and not os.path.isfile(os.path.abspath(args.path or base)) \
+            and agent_definitions(base):
         # A surface of agents alone is still a surface: its agents are checked, not refused.
         return report_findings(args.json, f"components lint — {base} (0 commands)",
                                {"root": base, "commandCount": 0},
-                               lint_agents(root, base), "command")
+                               lint_agents(base, base), "command")
     if not commands:
         return report_findings(args.json, f"components lint — {base}",
                                {"root": base, "commandCount": 0},
                                [finding("sk-no-commands", "error",
                                         f"no command file found under {base}",
                                         command=SURFACE_MISSING)], "command")
-    prefix = plugin_prefix(root)
+    surface = surface_root_of(base, root)
+    prefix = plugin_prefix(surface)
     # Same surface-versus-scope rule as the citations below, and for the same reason: the
     # body that names a stage is usually NOT the file being linted, so deriving this from
     # `commands` would make `lint <one file>` blind to the conductor that reaches it.
-    surface_commands = (commands if base == root
-                        else discover_commands(os.path.join(surface_root_of(base, root),
-                                                            COMMANDS_DIR)))
+    surface_commands = (commands if base == surface
+                        else discover_commands(os.path.join(surface, COMMANDS_DIR)))
     named_by = named_by_bodies(surface_commands, prefix) if prefix else {}
 
     findings: list[dict] = []
@@ -960,8 +963,8 @@ def cmd_lint(args, root: str) -> int:
                                      named_by.get(cmd["command"]) if prefix else None))
         findings.extend(_cq_call_findings(cmd["body"], {"command": cmd["command"],
                                                          "path": rel(cmd["path"], base)}))
-    if base == root:
-        findings.extend(lint_agents(root, base))
+    if base == surface:
+        findings.extend(lint_agents(base, base))
 
     if prefix:
         invocations = {c["command"] for c in surface_commands}
