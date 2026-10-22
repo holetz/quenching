@@ -119,8 +119,8 @@ DEFAULT_RELEASE_BRANCH = "main"
 
 # The backends that ship without ever having run against a real target. Empty now:
 # `azure-boards` was the one name here, and the provar-e-posicionar-o-backend-azure-boards
-# plan's §6 ran it end to end against a real Azure DevOps project (org unicredbr, team "Diretoria
-# Risco") — `new --subject`, every `section --write`, `record`, `task --check`, `status`,
+# plan's §6 ran it end to end against a real Azure DevOps project (a real
+# organization and team) — `new --subject`, every `section --write`, `record`, `task --check`, `status`,
 # `show` and `promote --outcome done`, each compared against `files` for the same state and
 # matching, plus the board's own column tracking the de-para through every transition. This
 # tuple losing the name is what retires the caveat everywhere at once: the doctor finding

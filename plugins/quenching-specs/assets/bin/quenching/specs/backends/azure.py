@@ -327,7 +327,7 @@ def resolve_azure_project(cwd: str) -> tuple[tuple[str, str], dict]:
     #
     # CACHED, because this answer does not change. A project is renamed about as often as it
     # is created, and the call to ask cost 0,5s of `az` startup on EVERY process — measured
-    # 2026-08-06 on `unicredbr`, whose configured default is itself a GUID, which is exactly
+    # 2026-08-06 on a real organization, whose configured default is itself a GUID, which is exactly
     # the case a local shape test cannot shortcut. The cache is keyed on the RAW default, so
     # a human who runs `az devops configure --defaults project=…` is followed rather than
     # ignored: a changed default is a different key and resolves again.
@@ -536,7 +536,7 @@ def azure_artifact_url(kind: str, project_id: str, repo_id: str, value: str) -> 
 
 
 # `attributes.name` per relation — MEASURED live (task 5.4) against a throwaway work item
-# (org `unicredbr`, project `TI`): `rel: "ArtifactLink"` alone answers 400 "Artifact links
+# (a real organization and project): `rel: "ArtifactLink"` alone answers 400 "Artifact links
 # must have a valid name specified", regardless of what the `url` scheme already says. The
 # url disambiguates WHICH artifact; this name is Azure's own display label for the relation
 # and is a second, independent requirement — read back and confirmed via `--expand relations`
@@ -1215,8 +1215,8 @@ class AzureBoardsBackend(SpecBackend):
 
         FOUND, NEVER GUESSED: the guid is per-TEAM, so a second team's board carries a
         different one. This asks the team for every board it has and keeps the one whose
-        `allowedMappings` names `type_name` — measured on this org, team 'Diretoria
-        Risco' has six boards (Stories, OKR, Releases, Funcionalidades, Iniciativas, Épicos)
+        `allowedMappings` names `type_name` — measured on a real org, a team
+        has six boards (Stories, OKR, Releases, Funcionalidades, Iniciativas, Épicos)
         and 'User Story' resolves to 'Stories'."""
         if type_name in self._board_field:
             return self._board_field[type_name]
