@@ -1,6 +1,6 @@
 {
   "name": "quenching-delivery",
-  "version": "6.7.0",
+  "version": "6.8.0",
   "description": "The delivery front: /quenching-delivery:delivery:* aligns and reports the delivery surfaces a repository declares. Requires quenching-specs for cq.",
   "author": {
     "name": "Israel Holetz",

@@ -13,6 +13,27 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 6.8.0
+
+**`git cleanup` assesses registered worktrees and works from one dated manifest**, and **Azure
+  DevOps pull requests complete through `cq git pr merge`**. `cq git stale` now assesses every
+  registered worktree (dirty, unpushed, locked, merged) next to the branches, dates each item by its
+  tip's committer date, and emits a manifest of stable ids with the exact action per item and
+  recommended groups; `/git:cleanup` offers grouped local and remote choices over that manifest and
+  stops only when it is empty, so a clean detached candidate worktree is offered too; `cq git prune`
+  takes `--id`/`--expect-tip` and refuses an item whose tip moved since the report, and a live
+  worktree only with `--confirm-inactive`. The merge route accepts modern and legacy Azure browser
+  URLs, requires an approved build-validation policy, pins the verified source commit and completes
+  no-fast-forward without bypassing policies, deleting the source branch or transitioning work
+  items, confirming completion before cleanup. The Codex review guard fails closed on any
+  file-system error while taking its snapshot (the run folder is removed before the run) and sees
+  writes through tracked and ignored symlinks to files; a symlink to a directory stays a declared
+  residual risk. The ops registry reads the lifecycle only from hand-written lines, never from its
+  generated zone, so a component can move to `archived`; the opensource front writes and audits
+  community artifacts in English through a declarative `language: en` per template, whatever the
+  repository's declared language; and the repository no longer carries employer identifiers in
+  code comments, docs or test fixtures.
+
 ## 6.7.0
 
 **Azure DevOps pull requests are read wherever `cq` judged them through `gh` alone**, and **Codex

@@ -1,6 +1,6 @@
 {
   "name": "quenching-align",
-  "version": "6.7.0",
+  "version": "6.8.0",
   "description": "The repository-wide align and the two knowledge fronts it conducts first: /quenching-align:align over every enabled module, the docs/ OKF bundle (/quenching-align:knowledge:*) and the .claude/ automation surface (/quenching-align:components:*). Fronts whose module is not enabled are reported not-installed, never invoked. Requires quenching-specs for cq.",
   "author": {
     "name": "Israel Holetz",
