@@ -132,6 +132,8 @@ def _registry_lifecycle(root: str, registry_path: str | None = None) -> dict[str
         elif "quenching-ops-registry-end" in line:
             in_zone = False
             continue
+        if in_zone:
+            continue
         is_row = line.lstrip().startswith("|")
         if is_row and not in_table:
             column = None
@@ -153,8 +155,6 @@ def _registry_lifecycle(root: str, registry_path: str | None = None) -> dict[str
                  if m.group(1).replace("\\", "/").endswith(_SCRIPT_SUFFIXES)),
                 None,
             )
-        elif in_zone:
-            continue
         else:
             declared = re.fullmatch(
                 r"\s*(?:[-*+]\s+)?`([^`]+)`\s*[—–-]+\s*(.*)", line
