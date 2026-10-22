@@ -148,7 +148,7 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
                                          out["outside"] and "outside files: "
                                          + ", ".join(out["outside"])]))
         way_out = f" {WAY_OUT}" if out["outside"] else ""
-        return {**out, "code": "codex-git-guard",
+        return {**out, "fallback": False, "code": "codex-git-guard",
                 "discard": files,
                 "message": f"the git guard saw a divergence — {detail}.{way_out}",
                 "reason": f"git guard: {detail}"}, 2
