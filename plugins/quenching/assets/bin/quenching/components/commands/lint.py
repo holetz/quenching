@@ -896,6 +896,19 @@ def lint_dangling(body: str, invocations: set[str], where: dict) -> list[dict]:
                     **where)]
 
 
+def nearest_commands_dir(file_path: str) -> str | None:
+    """The closest ancestor directory named `commands`, or None: the tree whose relative paths
+    ARE the file's invocation, so a nested file keeps `/docs:add` instead of `/add`."""
+    probe = os.path.dirname(os.path.abspath(file_path))
+    while True:
+        if os.path.basename(probe) == COMMANDS_DIR:
+            return probe
+        parent = os.path.dirname(probe)
+        if parent == probe:
+            return None
+        probe = parent
+
+
 def resolve_lint_targets(path_arg: str | None, root: str) -> tuple[str, list[dict], list[dict]]:
     """(base, commands, references). Accepts a single command file, a commands/ directory,
     or a surface root — so `lint commands`, `lint .claude`, and `lint commands/docs/add.md`
@@ -908,9 +921,9 @@ def resolve_lint_targets(path_arg: str | None, root: str) -> tuple[str, list[dic
                 discover_references(os.path.join(root, REFERENCES_DIR)))
     target = os.path.abspath(path_arg)
     if os.path.isfile(target):
-        parent = os.path.dirname(target)
-        return parent, [c for c in discover_commands(parent)
-                        if os.path.abspath(c["path"]) == target], []
+        base = nearest_commands_dir(target) or os.path.dirname(target)
+        return base, [c for c in discover_commands(base)
+                      if os.path.abspath(c["path"]) == target], []
     if os.path.isdir(os.path.join(target, COMMANDS_DIR)):
         return (target, discover_commands(os.path.join(target, COMMANDS_DIR)),
                 discover_references(os.path.join(target, REFERENCES_DIR)))
