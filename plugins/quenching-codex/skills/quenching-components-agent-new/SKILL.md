@@ -98,10 +98,12 @@ for a coined repo-specific term; the user decides both. **Done when:** each offe
 ### 8. Self-check
 ```bash
 python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components doctor --json
+python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/quenching-codex*/scripts/cq' -print -quit 2>/dev/null)" components lint --json
 ```
-Then read the definition against the contract by eye: tools scoped, voice second-person, a
+`lint` takes no argument here: `lint <file>` never reaches the agents. Keep the `sk-agent-*`
+findings whose `path` is this file, from either payload. Then read the definition against the contract by eye: tools scoped, voice second-person, a
 verifier states it never edits. Report what was written and the always-on cost the
-description adds. **Done when:** `doctor` reports no `sk-agent-*` finding for this file and
+description adds. **Done when:** neither `doctor` nor `lint` reports an `sk-agent-*` finding for this file and
 the report states the description's parsed character count.
 
 ## Invariants
