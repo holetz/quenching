@@ -917,6 +917,21 @@ def resolve_lint_targets(path_arg: str | None, root: str) -> tuple[str, list[dic
     return target, discover_commands(target), []
 
 
+def surface_root_of(base: str, root: str) -> str:
+    """The surface root that judges `base`: `base` itself when it holds `commands/`, else the
+    nearest ancestor whose `commands/` contains it, else the cwd surface `root`."""
+    probe = os.path.abspath(base)
+    while True:
+        commands = os.path.join(probe, COMMANDS_DIR)
+        if os.path.isdir(commands) and (probe == os.path.abspath(base)
+                                        or os.path.abspath(base).startswith(commands + os.sep)):
+            return probe
+        parent = os.path.dirname(probe)
+        if parent == probe:
+            return root
+        probe = parent
+
+
 def cmd_lint(args, root: str) -> int:
     base, commands, references = resolve_lint_targets(args.path, root)
     if not commands and base == root and agent_definitions(root):
@@ -935,7 +950,8 @@ def cmd_lint(args, root: str) -> int:
     # body that names a stage is usually NOT the file being linted, so deriving this from
     # `commands` would make `lint <one file>` blind to the conductor that reaches it.
     surface_commands = (commands if base == root
-                        else discover_commands(os.path.join(root, COMMANDS_DIR)))
+                        else discover_commands(os.path.join(surface_root_of(base, root),
+                                                            COMMANDS_DIR)))
     named_by = named_by_bodies(surface_commands, prefix) if prefix else {}
 
     findings: list[dict] = []
