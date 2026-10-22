@@ -146,6 +146,23 @@ class CostTargetsThePathItNames(unittest.TestCase):
         self.assertEqual(payload["findings"][0]["code"], "ct-cost-regression")
         self.assertEqual(payload["findings"][0]["currentBytes"], measured["totalBytes"])
 
+    def test_a_path_with_no_command_is_refused_even_with_a_ratchet(self):
+        target, cwd = self._target(), pathlib.Path(tempfile.mkdtemp())
+        (cwd / "empty" / "commands").mkdir(parents=True)
+        (cwd / "nomd").mkdir()
+        (cwd / "nomd" / "x.txt").write_text("x", encoding="utf-8")
+        (cwd / "notes.txt").write_text("x", encoding="utf-8")
+        baseline = cwd / "b.json"
+        baseline.write_text(json.dumps({"totalBytes": 100}), encoding="utf-8")
+        for path in (cwd / "missing", cwd / "empty" / "commands", cwd / "empty", cwd / "nomd",
+                     cwd / "notes.txt"):
+            for ratchet in (None, str(baseline)):
+                status, payload = self._cost(path, cwd, ratchet=ratchet)
+                self.assertEqual(status, 1, (path, ratchet))
+                self.assertEqual(payload["findings"][0]["code"], "sk-no-commands", path)
+                self.assertNotIn("ratchet", payload, path)
+                self.assertEqual(payload["root"], str(path), path)
+
 
 if __name__ == "__main__":
     unittest.main()
