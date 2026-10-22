@@ -35,6 +35,7 @@ sentence that names it. A rule with no case that fails without it is a rule nobo
 import contextlib
 import io
 import json
+import os
 import pathlib
 import tempfile
 import unittest
@@ -632,6 +633,31 @@ class DanglingCitation(unittest.TestCase):
             manifest.parent.mkdir()
             manifest.write_text('{"name": "p"}', encoding="utf-8")
             self.assertEqual(self._codes(cmd_lint, root), [])
+
+    def _lint_other(self, cwd: str, path: str) -> list[str]:
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            cmd_lint(SimpleNamespace(path=path, json=True), cwd)
+        return [f["code"] for f in json.loads(out.getvalue())["findings"]
+                if f["code"] == "sk-dangling-citation"]
+
+    def test_the_target_surface_judges_its_citations_not_the_cwd_surface(self):
+        with tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as target:
+            self._target(cwd, {"frente/velho.md": "Body.", "frente/outro.md": "Body."})
+            self._target(target, {"frente/novo.md": "Run /frente:velho first.",
+                                  "frente/outro.md": "Body."})
+            tgt = os.path.join(target)
+            self.assertEqual(self._lint_other(cwd, tgt), ["sk-dangling-citation"])
+            # a file inside the target keeps the surface that contains it
+            one = os.path.join(target, "commands", "frente", "novo.md")
+            self.assertEqual(self._lint_other(cwd, one), ["sk-dangling-citation"])
+
+    def test_a_cwd_front_does_not_accuse_a_target_citation_that_exists_there(self):
+        with tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as target:
+            self._target(cwd, {"frente/outro.md": "Body."})
+            self._target(target, {"frente/novo.md": "Run /frente:velho first.",
+                                  "frente/velho.md": "Body."})
+            self.assertEqual(self._lint_other(cwd, target), [])
 
     def test_the_predicate_reports_each_miss_once(self):
         self.assertEqual(dangling_citations("/a:x /a:x /a:y /b:z", {"/a:x"}), ["/a:y"])
