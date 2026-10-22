@@ -18,7 +18,8 @@ import re
 from pathlib import Path
 
 from quenching.common.output import finding, refuse, report_findings
-from quenching.components.commands.lint import resolve_lint_targets, surface_root_of
+from quenching.components.commands.lint import (SURFACE_MISSING, resolve_lint_targets,
+                                                     surface_root_of)
 from quenching.components.sections import markdown_sections, select_sections
 from quenching.components.surface import (REFERENCES_DIR, body_after_frontmatter,
                                           discover_references, load_surface, rel)
@@ -242,6 +243,15 @@ def cmd_cost(args, root: str) -> int:
     # The target the path names is measured, never the cwd surface: a root, a commands/
     # directory or one file, resolved exactly as `lint` resolves it.
     base, commands, _ = resolve_lint_targets(getattr(args, "path", None), root)
+    if getattr(args, "path", None) and not commands:
+        # Nothing to measure is a refusal, as in `lint`: a ratchet never approves a surface
+        # that was not seen.
+        target = os.path.abspath(args.path)
+        return report_findings(args.json, f"components cost — {target}",
+                               {"root": target, "commandCount": 0, "totalBytes": 0},
+                               [finding("sk-no-commands", "error",
+                                        f"no command file found under {target}",
+                                        command=SURFACE_MISSING)], "command")
     root = surface_root_of(base, root) if getattr(args, "path", None) else root
     payload, findings = measure_surface(root, commands if getattr(args, "path", None) else None)
     if args.ratchet:
