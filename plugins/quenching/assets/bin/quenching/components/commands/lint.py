@@ -308,16 +308,30 @@ def _agent_grant_findings(body: str, tools: str, where: dict) -> list[dict]:
     return out
 
 
-def _agent_disallowed_bash_findings(disallowed: str, where: dict) -> list[dict]:
+def _agent_disallowed_bash_findings(disallowed: str, where: dict, tools: str = "",
+                                    body: str = "") -> list[dict]:
     """A `Bash(...)` pattern in an agent's `disallowedTools` removes the whole Bash tool
-    (measured, Claude Code 2.1.294), so the agent's scoped `tools:` grants silently vanish."""
+    (measured, Claude Code 2.1.294), so the agent's scoped `tools:` grants silently vanish. A
+    bare `Bash` there is the same deny: a fence when the agent never uses shell, a contradiction
+    when `tools:` grants Bash or the body runs `cq`, `git` or `gh`."""
     out = []
+    uses_shell = None
     for tool in _split_tools(disallowed):
         if tool.startswith("Bash("):
             remedy = "drop it: fence Bash through the scoped grants of `tools:`"
             out.append(finding("sk-agent-disallowed-bash", "error",
                                f"`disallowedTools: {tool}` removes the whole Bash tool from the "
                                "agent — " + remedy, tool=tool, remedy=remedy, **where))
+        elif tool == "Bash":
+            if uses_shell is None:
+                uses_shell = (any(t == "Bash" or t.startswith("Bash(") for t in _split_tools(tools))
+                              or bool(extract_calls(body, ("cq", "git", "gh"))))
+            if uses_shell:
+                remedy = "drop the deny, or drop the Bash grants and the shell calls of the body"
+                out.append(finding("sk-agent-disallowed-bash", "error",
+                                   "`disallowedTools: Bash` removes the whole Bash tool, yet the "
+                                   "agent's `tools:` or body still need it — " + remedy,
+                                   tool=tool, remedy=remedy, **where))
     return out
 
 
@@ -349,11 +363,11 @@ def lint_agents(root: str, base: str) -> list[dict]:
         disallowed = fm.get("disallowedTools", "")
         if isinstance(disallowed, list):
             disallowed = ", ".join(str(item) for item in disallowed)
-        out.extend(_agent_disallowed_bash_findings(str(disallowed), where))
+        tools = fm.get("tools", "")
+        if isinstance(tools, list):
+            tools = ", ".join(str(item) for item in tools)
+        out.extend(_agent_disallowed_bash_findings(str(disallowed), where, str(tools), body))
         if "tools" in fm:
-            tools = fm["tools"]
-            if isinstance(tools, list):
-                tools = ", ".join(str(item) for item in tools)
             out.extend(_agent_skill_findings(str(tools), where))
             out.extend(_agent_grant_findings(body, str(tools), where))
     return out
