@@ -539,6 +539,22 @@ class AgentGrantGap(unittest.TestCase):
                          [("sk-agent-disallowed-bash", f"agent:{n}") for n in ("block", "flow", "scalar")])
 
 
+    def test_a_bare_bash_in_disallowed_tools_is_an_error_when_the_agent_needs_shell(self):
+        cases = {
+            "grant": "---\nname: grant\ntools: Bash(git status:*)\ndisallowedTools: Bash\n---\nBody.\n",
+            "call": "---\nname: call\ntools: Read\ndisallowedTools: Bash\n---\nRun `git status --short`.\n",
+            "fence": "---\nname: fence\ntools: Read\ndisallowedTools: Bash\n---\nOnly read.\n",
+        }
+        with tempfile.TemporaryDirectory() as root:
+            agents = pathlib.Path(root, "agents")
+            agents.mkdir()
+            for name, text in cases.items():
+                (agents / f"{name}.md").write_text(text, encoding="utf-8")
+            found = [f for f in lint_agents(root, root) if f["code"] == "sk-agent-disallowed-bash"]
+        self.assertEqual(sorted((f["code"], f["command"]) for f in found),
+                         [("sk-agent-disallowed-bash", "agent:call"),
+                          ("sk-agent-disallowed-bash", "agent:grant")])
+
     def test_skill_without_unrestricted_bash_is_an_error(self):
         with tempfile.TemporaryDirectory() as root:
             agents = pathlib.Path(root, "agents")
