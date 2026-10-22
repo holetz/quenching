@@ -70,6 +70,11 @@ if sys.argv[1:2] == ["exec"]:
     if mode == "write":
         with open(os.path.join(cwd, "stray.txt"), "w", encoding="utf-8") as handle:
             handle.write("x\n")
+    if mode == "unreadable":
+        path = os.path.join(cwd, "unreadable.txt")
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write("x\n")
+        os.chmod(path, 0)
     if mode == "edit":
         with open(os.path.join(cwd, "kept.py"), "a", encoding="utf-8") as handle:
             handle.write("z = 3\n")
