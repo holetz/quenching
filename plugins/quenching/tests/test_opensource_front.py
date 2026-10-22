@@ -57,6 +57,34 @@ class AggregateTest(unittest.TestCase):
             payload = status(root)
         self.assertTrue(all(row["control"] in owned for row in payload["findings"]))
 
+    def test_language_contract_is_declarative_and_routes_other_owners(self):
+        with tempfile.TemporaryDirectory() as root:
+            target = pathlib.Path(root)
+            (target / ".claude").mkdir()
+            (target / ".claude/quenching.json").write_text(
+                json.dumps({"artifactLanguage": "pt-BR"}))
+            (target / "LICENSE").write_text("MIT\n")
+            for name in ("CONTRIBUTING.md", "README.md", "SECURITY.md"):
+                (target / name).write_text("Este projeto aceita contribuições em português.\n")
+            for verb in ("status", "doctor"):
+                code, payload = _cq("--root", root, "opensource", verb, "--json")
+                self.assertIn(code, (0, 1))
+                contract = payload["artifactLanguage"]
+                self.assertEqual("en", contract["language"])
+                self.assertEqual("template-declaration", contract["basis"])
+                self.assertFalse(contract["contentVerified"])
+                self.assertEqual([
+                    {"artifact": "readme", "owner": "knowledge",
+                     "command": "/quenching-align:knowledge:align"},
+                    {"artifact": "security", "owner": "security",
+                     "command": "/quenching-security:security:status"},
+                ], contract["handoffs"])
+                self.assertTrue(all(row["language"] == "en" for row in payload["artifacts"]))
+                self.assertNotIn("os-artifact-not-english",
+                                 {row["code"] for row in payload["findings"] + payload["advisories"]})
+            self.assertEqual("Este projeto aceita contribuições em português.\n",
+                             (target / "CONTRIBUTING.md").read_text())
+
     def test_the_level_climbs_only_over_met_levels(self):
         met = _block(("a", [1], "present"), ("b", [2], "not-measured"), ("c", [3], "missing"))
         result = _level([met], set())
@@ -103,6 +131,31 @@ class DoctorTest(unittest.TestCase):
 
 
 class ApplyTest(unittest.TestCase):
+    def test_every_template_declares_english(self):
+        for entry in load_sources()["templates"]:
+            with self.subTest(path=entry["path"]):
+                self.assertEqual("en", entry["language"])
+
+    def test_apply_reports_english_and_warns_without_rejecting_owner_values(self):
+        values = {"project": "Projeto", "discussion": "Converse com os mantenedores"}
+        with tempfile.TemporaryDirectory() as root:
+            for dry_run in (True, False):
+                result = apply(root, "contributing", values, dry_run=dry_run)
+                self.assertEqual("en", result["language"])
+                self.assertFalse(result["contentVerified"])
+                self.assertEqual([{
+                    "code": "os-var-language-unverified", "severity": "info",
+                    "placeholders": ["discussion", "project"],
+                    "message": "Owner-supplied placeholder prose must be English; values are not language-verified.",
+                }], result["warnings"])
+            written = pathlib.Path(root, "CONTRIBUTING.md").read_bytes()
+        expected = (TEMPLATES / "authored/CONTRIBUTING.md").read_bytes()
+        for key, value in values.items():
+            expected = expected.replace(("{{" + key + "}}").encode(), value.encode())
+        self.assertEqual(expected, written)
+        with tempfile.TemporaryDirectory() as root:
+            self.assertEqual([], apply(root, "pr-template", {}, dry_run=True)["warnings"])
+
     def test_every_upstream_template_matches_its_pinned_sha256(self):
         pinned = [e for e in load_sources()["templates"] if e.get("sha256")]
         self.assertEqual({"license", "conduct", "dco"}, {e["artifact"] for e in pinned})
