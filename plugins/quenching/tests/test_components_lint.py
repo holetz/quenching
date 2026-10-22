@@ -659,6 +659,53 @@ class DanglingCitation(unittest.TestCase):
                                   "frente/velho.md": "Body."})
             self.assertEqual(self._lint_other(cwd, target), [])
 
+    def _findings_other(self, cwd: str, path: str) -> list[dict]:
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            cmd_lint(SimpleNamespace(path=path, json=True), cwd)
+        return json.loads(out.getvalue())["findings"]
+
+    def test_the_commands_dir_of_a_target_is_judged_by_the_target_surface(self):
+        with tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as target:
+            self._target(cwd, {"frente/outro.md": "Body."})
+            self._target(target, {"frente/novo.md": "Run /frente:velho first.",
+                                  "frente/velho.md": "Body."})
+            commands_dir = os.path.join(target, "commands")
+            self.assertEqual(self._lint_other(cwd, commands_dir), [])
+
+    def test_a_plugin_target_keeps_its_prefix_from_a_cwd_without_manifest(self):
+        with tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as target:
+            self._target(cwd, {"frente/outro.md": "Body."})
+            self._target(target, {"frente/novo.md": "Run /frente:outro first.",
+                                  "frente/outro.md": "Body."})
+            manifest = pathlib.Path(target, ".claude-plugin", "plugin.json")
+            manifest.parent.mkdir()
+            manifest.write_text('{"name": "p"}', encoding="utf-8")
+            codes = [f["code"] for f in self._findings_other(cwd, target)]
+            self.assertIn("sk-bare-citation", codes)
+
+    def test_a_cwd_plugin_prefix_is_not_applied_to_a_bare_target(self):
+        with tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as target:
+            self._target(cwd, {"frente/outro.md": "Body."})
+            manifest = pathlib.Path(cwd, ".claude-plugin", "plugin.json")
+            manifest.parent.mkdir()
+            manifest.write_text('{"name": "p"}', encoding="utf-8")
+            self._target(target, {"frente/novo.md": "Run /frente:outro first.",
+                                  "frente/outro.md": "Body."})
+            codes = [f["code"] for f in self._findings_other(cwd, target)]
+            self.assertNotIn("sk-bare-citation", codes)
+
+    def test_the_agents_of_a_target_are_judged_from_another_cwd(self):
+        with tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as target:
+            self._target(cwd, {"frente/outro.md": "Body."})
+            self._target(target, {"frente/outro.md": "Body."})
+            agents = pathlib.Path(target, "agents")
+            agents.mkdir()
+            (agents / "a.md").write_text(
+                "---\nname: a\ntools: Read, Skill\n---\nbody\n", encoding="utf-8")
+            codes = [f["code"] for f in self._findings_other(cwd, target)]
+            self.assertIn("sk-agent-skill-widens", codes)
+
     def test_the_predicate_reports_each_miss_once(self):
         self.assertEqual(dangling_citations("/a:x /a:x /a:y /b:z", {"/a:x"}), ["/a:y"])
 
