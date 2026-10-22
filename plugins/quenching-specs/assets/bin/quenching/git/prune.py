@@ -17,7 +17,7 @@ from quenching.common.git import _git, _git_run
 from quenching.common.output import FINDINGS, OK, emit, refuse
 from quenching.git.audit import SAFE
 from quenching.git.push import remote_ok
-from quenching.git.stale import stale_report
+from quenching.git.stale import entry_id, stale_report
 
 
 def _same_path(a: str | None, b: str) -> bool:
@@ -30,13 +30,17 @@ def cmd_prune(args) -> int:
         return refuse({"code": "git-prune-remote-unknown",
                        "message": f"not a configured remote: {args.remote}"}, args.json)
     report = stale_report(cwd, args.remote)
+    live = None
     if args.branch is not None:
         kind, target = "branch", args.branch
         listed = any(b["branch"] == target for b in report["staleBranches"])
         argv = ("branch", "-d", "--", target)
     elif args.worktree is not None:
         kind, target = "worktree", args.worktree
-        listed = any(_same_path(w["path"], target) for w in report["orphanWorktrees"])
+        orphan = any(_same_path(w["path"], target) for w in report["orphanWorktrees"])
+        live = next((w for w in report["worktrees"]
+                     if w["eligible"] and _same_path(w["path"], target)), None)
+        listed = orphan or live is not None
         argv = ("worktree", "remove", "--", target)
     else:
         kind, target = "remote-branch", args.remote_branch
@@ -51,6 +55,31 @@ def cmd_prune(args) -> int:
         return refuse({"code": "git-prune-not-reported",
                        "message": f"`cq git stale` does not report the {kind} {target}"},
                       args.json)
+    if listed and live is not None:
+        if not args.confirm_inactive:
+            return refuse({"code": "git-prune-inactivity-unconfirmed",
+                           "message": f"worktree {target} needs --confirm-inactive: eligibility "
+                                      "is not evidence that nobody is using it"}, args.json)
+        if not args.expect_tip:
+            return refuse({"code": "git-prune-tip-required",
+                           "message": "a live worktree is removed only against its approved tip"},
+                          args.json)
+    observed = {"branch": lambda: _git(cwd, "rev-parse", "--verify", "--quiet",
+                                       f"refs/heads/{target}").strip(),
+                "remote-branch": lambda: seen if kind == "remote-branch" else "",
+                "worktree": lambda: live["tip"] if live else None}[kind]()
+    if listed and args.expect_tip and observed is not None and observed != args.expect_tip:
+        return refuse({"code": "git-prune-tip-changed",
+                       "message": f"{kind} {target} is at {observed or 'no tip'}, not the "
+                                  f"approved {args.expect_tip}; read a fresh report"}, args.json)
+    if listed and args.id:
+        ref = f"{args.remote}/{target}" if kind == "remote-branch" else (
+            live["path"] if live else target)
+        entry_kind = "orphan-worktree" if kind == "worktree" and live is None else kind
+        if args.id != entry_id(entry_kind, ref):
+            return refuse({"code": "git-prune-id-mismatch",
+                           "message": f"{args.id} does not identify the {kind} {target}"},
+                          args.json)
     if kind == "remote-branch" and not seen:
         return refuse({"code": "git-prune-no-lease",
                        "message": f"no tracking ref to lease for {args.remote}/{target}"},
