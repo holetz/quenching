@@ -373,7 +373,25 @@ unchanged, and it is separate from `branch:`, `pr:` and `merge:` records. The de
 uses no implicit fetch or remote-prune: a caller that needs newer facts fetches explicitly and
 starts a fresh report.
 
-`/quenching-specs:git:cleanup` presents remote branches together with local branches and orphan worktrees
+`cq git stale` also assesses registered linked worktrees and prints a complete `manifest`: every
+local branch, remote branch and worktree, candidate or preserved, with a stable `id` (derived from
+the kind and the exact ref or canonical path), the observed `tip`, its `tipDate` (the tip's committer
+date, `git show -s --format=%cI`, never creation or last use; `null` with a named source when
+unknown), the reasons, the exact action and a `recommended` flag. The legacy
+`staleBranches`/`keptBranches`/`remoteBranches`/`orphanWorktrees` lists keep their shape. A linked
+worktree is a candidate only when inspection succeeded, its HEAD is merged into the base, it holds no
+tracked, untracked or ignored content, is not locked, is not the main or current checkout or the base
+branch, and has no open PR with the PR lookup available. That is eligibility, not evidence of
+inactivity. Homogeneous candidates are summarized in `groups` by scope, kind, reasons and date
+provenance, always resolving to the displayed ids. The recommendation is the evidenced subset, or
+none when the PR lookup is unavailable, and it never grants execution.
+
+`/quenching-specs:git:cleanup` presents concise grouped choices over that manifest, local and remote
+decisions kept separate, and a live worktree needs the owner's own confirmation that it is inactive.
+`cq git prune` re-reads a fresh report and refuses (exit 2) when the approved `--expect-tip` or
+`--id` no longer matches, when a live worktree lacks `--expect-tip` or `--confirm-inactive`, or when
+the target is no longer eligible; deletes stay `-d`, no force, and the remote delete keeps its
+exact-tip lease. The command presents remote branches together with local branches and orphan worktrees
 in one human selection. A selected remote item is deleted only with the exact `git push origin
 --delete <branch>` action shown before confirmation. `origin/HEAD`, the resolved base, the current
 branch and every remote branch absent from the fresh report remain protected; a refusal leaves the

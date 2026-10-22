@@ -129,6 +129,11 @@ def build_parser() -> argparse.ArgumentParser:
                         help="a branch reported under remoteBranches for --remote")
     sp.add_argument("--remote", default="origin", metavar="REMOTE",
                     help="the remote the report reads (default: origin)")
+    sp.add_argument("--expect-tip", metavar="SHA",
+                    help="the tip the human approved; a moved tip is refused")
+    sp.add_argument("--id", metavar="ID", help="the manifest id the human approved")
+    sp.add_argument("--confirm-inactive", action="store_true",
+                    help="the owner confirms the live worktree is inactive")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
     sp = sub.add_parser("pr", help="the pull-request writes, with a fixed argv")
