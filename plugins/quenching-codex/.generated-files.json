@@ -761,7 +761,7 @@
     "skills/quenching-design-status/SKILL.md": "9be4463e223c63df1335e3948adc71fb8a4a2a59c7675807a155c579a4d42623",
     "skills/quenching-design-status/agents/openai.yaml": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94",
     "skills/quenching-git-branch/SKILL.md": "fa825d667160018a39a49c3a85682b9af1bfa9173cd10cc262bfb0645808e6a6",
-    "skills/quenching-git-cleanup/SKILL.md": "3cf1de2276c10833d9727835081f3859480f69c6c94cbb379005d692f4203ce6",
+    "skills/quenching-git-cleanup/SKILL.md": "b2f2d13d1e5832af98559b4e2e1e7b0a2d71ce66fa31ca24195aedacbd531643",
     "skills/quenching-git-cleanup/agents/openai.yaml": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94",
     "skills/quenching-git-commit-incremental/SKILL.md": "776ab8ec5aabecd9124e83d188b4abb1d9a63b006bb92eefb7152acdb7064f50",
     "skills/quenching-git-commit-incremental/agents/openai.yaml": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94",
