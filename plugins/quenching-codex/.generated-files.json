@@ -589,7 +589,7 @@
     "scripts/bin/quenching/common/text.py": "9413f35123d304aa08c1647ce811fdb111ff44612054469591b696394f39fc4c",
     "scripts/bin/quenching/common/version.py": "638affa3266170816db749dbb055ffa5ba24e1a2be7ccc56597c54f5c86dcc49",
     "scripts/bin/quenching/components/commands/cli.py": "ba3bd64258e7f764320c9d4eb0b737e9cd383eba89db5b88891559748b950f88",
-    "scripts/bin/quenching/components/commands/cost.py": "2004c5fbe1365fa473d899862ea52eae216e88b2132bb79ead5ca9ab18a0d8a5",
+    "scripts/bin/quenching/components/commands/cost.py": "d913fc8b6b12b9d6b6c556fa274cbc24ce28411a4b591a1c3de182d07e3983eb",
     "scripts/bin/quenching/components/commands/doctor.py": "140b35e20315b60666bc76b2778eeb48fe446bd4f9c23110b27ce3feb59edd8a",
     "scripts/bin/quenching/components/commands/lint.py": "10a5aaa6cac80a7a0495b22bc0cc91faa59a583d1fc3f1d4982b6476d2036916",
     "scripts/bin/quenching/components/commands/read.py": "a0dd7e9c409dda70939e3c1d502da0154bfb02c81d92d09e038c75926567964f",
