@@ -684,6 +684,28 @@ class DanglingCitation(unittest.TestCase):
             codes = [f["code"] for f in self._findings_other(cwd, target)]
             self.assertIn("sk-bare-citation", codes)
 
+    def test_a_nested_command_file_is_judged_by_the_commands_dir_that_holds_it(self):
+        with tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as target:
+            self._target(cwd, {"frente/outro.md": "Body."})
+            self._target(target, {"frente/novo.md": "Run /frente:velho first.",
+                                  "frente/outro.md": "Body."})
+            commands_dir = os.path.join(target, "commands")
+            one = os.path.join(commands_dir, "frente", "novo.md")
+
+            def payload(path: str) -> dict:
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out):
+                    cmd_lint(SimpleNamespace(path=path, json=True), cwd)
+                return json.loads(out.getvalue())
+
+            folder, single = payload(commands_dir), payload(one)
+            self.assertEqual(single["root"], commands_dir)
+            expected = [f for f in folder["findings"] if f.get("command") == "/frente:novo"]
+            self.assertTrue(expected)
+            self.assertEqual(single["findings"], expected)
+            self.assertEqual({f["command"] for f in single["findings"]}, {"/frente:novo"})
+
+
     def test_a_cwd_plugin_prefix_is_not_applied_to_a_bare_target(self):
         with tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as target:
             self._target(cwd, {"frente/outro.md": "Body."})
