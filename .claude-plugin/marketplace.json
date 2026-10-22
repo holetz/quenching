@@ -10,7 +10,7 @@
       "name": "quenching-specs",
       "source": "./plugins/quenching-specs",
       "description": "The spec-driven cycle and its git hand-offs: /quenching-specs:specs:* (create, develop, execute, conclude, triage, status), /quenching-specs:git:* and /quenching-specs:handoff, the verifier agents, and the one cq command-line tool every other quenching module routes through. Enable it alone for a provider-owned backlog; the other modules add their fronts beside it.",
-      "version": "6.8.0",
+      "version": "6.9.0",
       "author": {
         "name": "Israel Holetz",
         "email": "holetz@gmail.com"
@@ -29,7 +29,7 @@
       "name": "quenching-align",
       "source": "./plugins/quenching-align",
       "description": "The repository-wide align and the two knowledge fronts it conducts first: /quenching-align:align over every enabled module, the docs/ OKF bundle (/quenching-align:knowledge:*) and the .claude/ automation surface (/quenching-align:components:*). Fronts whose module is not enabled are reported not-installed, never invoked. Requires quenching-specs for cq.",
-      "version": "6.8.0",
+      "version": "6.9.0",
       "author": {
         "name": "Israel Holetz",
         "email": "holetz@gmail.com"
@@ -50,7 +50,7 @@
       "name": "quenching-design",
       "source": "./plugins/quenching-design",
       "description": "The /.design/ source front: /quenching-design:design:* aligns and reports the design source a repository declares. Requires quenching-specs for cq.",
-      "version": "6.8.0",
+      "version": "6.9.0",
       "author": {
         "name": "Israel Holetz",
         "email": "holetz@gmail.com"
@@ -67,7 +67,7 @@
       "name": "quenching-ops",
       "source": "./plugins/quenching-ops",
       "description": "The declared-operations front: /quenching-ops:ops:* aligns and reports the operations registry a repository declares. Requires quenching-specs for cq.",
-      "version": "6.8.0",
+      "version": "6.9.0",
       "author": {
         "name": "Israel Holetz",
         "email": "holetz@gmail.com"
@@ -84,7 +84,7 @@
       "name": "quenching-proof",
       "source": "./plugins/quenching-proof",
       "description": "The verification front: /quenching-proof:proof:* aligns and reports the proof layers a repository declares. Requires quenching-specs for cq.",
-      "version": "6.8.0",
+      "version": "6.9.0",
       "author": {
         "name": "Israel Holetz",
         "email": "holetz@gmail.com"
@@ -102,7 +102,7 @@
       "name": "quenching-toolchain",
       "source": "./plugins/quenching-toolchain",
       "description": "The toolchain front: /quenching-toolchain:toolchain:* aligns and reports the toolchain a repository declares. Requires quenching-specs for cq.",
-      "version": "6.8.0",
+      "version": "6.9.0",
       "author": {
         "name": "Israel Holetz",
         "email": "holetz@gmail.com"
@@ -119,7 +119,7 @@
       "name": "quenching-delivery",
       "source": "./plugins/quenching-delivery",
       "description": "The delivery front: /quenching-delivery:delivery:* aligns and reports the delivery surfaces a repository declares. Requires quenching-specs for cq.",
-      "version": "6.8.0",
+      "version": "6.9.0",
       "author": {
         "name": "Israel Holetz",
         "email": "holetz@gmail.com"
@@ -137,7 +137,7 @@
       "name": "quenching-security",
       "source": "./plugins/quenching-security",
       "description": "The read-only security pillar: /quenching-security:security:* reports the security posture a repository declares, without a local align. Requires quenching-specs for cq.",
-      "version": "6.8.0",
+      "version": "6.9.0",
       "author": {
         "name": "Israel Holetz",
         "email": "holetz@gmail.com"
@@ -154,7 +154,7 @@
       "name": "quenching-opensource",
       "source": "./plugins/quenching-opensource",
       "description": "The open source front: /quenching-opensource:opensource:* reports every owner's catalog answers and the baseline level, and writes license, community and governance artifacts from pinned templates. Requires quenching-specs for cq.",
-      "version": "6.8.0",
+      "version": "6.9.0",
       "author": {
         "name": "Israel Holetz",
         "email": "holetz@gmail.com"
@@ -172,7 +172,7 @@
       "name": "quenching-specs-reader",
       "source": "./plugins/quenching-specs-reader",
       "description": "Read-only view of another project's provider-owned quenching specs: one command, /quenching-specs-reader:read, that a target (an Obsidian vault reading its to-do list, for example) enables alone, without the full quenching plugin. Its cq-specs-read entry admits only read verbs and disables every backend write. Its payload and version are generated from plugins/quenching.",
-      "version": "6.8.0",
+      "version": "6.9.0",
       "author": {
         "name": "Israel Holetz",
         "email": "holetz@gmail.com"
@@ -191,7 +191,7 @@
       "name": "quenching-hud",
       "source": "./plugins/quenching-hud",
       "description": "Band above the prompt: the worktree's active quenching spec, its stage and task progress, read through cq specs status --no-fetch. Runs only git branch --show-current and cq specs status; writes no spec or branch and never fetches: it reads the local refs/remotes/origin/quenching, so the band can lag the remote.",
-      "version": "6.8.0",
+      "version": "6.9.0",
       "author": {
         "name": "Israel Holetz",
         "email": "holetz@gmail.com"

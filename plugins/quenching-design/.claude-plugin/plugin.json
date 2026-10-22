@@ -1,6 +1,6 @@
 {
   "name": "quenching-design",
-  "version": "6.8.0",
+  "version": "6.9.0",
   "description": "The /.design/ source front: /quenching-design:design:* aligns and reports the design source a repository declares. Requires quenching-specs for cq.",
   "author": {
     "name": "Israel Holetz",

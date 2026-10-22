@@ -13,6 +13,28 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 6.9.0
+
+**The Codex package is published through the Git marketplace and its upgrade is measured before
+  every release**, and **the `components` verbs judge the target they are given**. A new
+  `.agents/plugins/marketplace.json` lists `quenching-codex` under the existing `quenching`
+  identity, so installations from 6.4.0 keep their update route; `assets/modules.json` declares
+  each package under `distributions`, and `distribution_findings` refuses a release whose catalogs
+  miss, misplace or misname a package. `scripts/check_codex_upgrade.py` installs the published 6.4.0
+  package in an isolated home, upgrades it through a disposable Git marketplace and checks the
+  installed skill and bundled `cq --version` without a model call; CI runs it, and the gate runs it
+  under `QUENCHING_DISTRIBUTION=1`, which `/release` requires. Generated Codex shell blocks resolve
+  the host-provided root or the single enabled installation, never the first or newest cache
+  directory. `cq components lint` and `cq components cost` now judge the path passed (citations,
+  a nested command file named by its full nested path, agents, a surface with no commands refused
+  with `sk-no-commands` before any ratchet); the agent autocheck keeps every error of the agent
+  itself; a removed command still cited elsewhere is a finding; `cq components registry reindex`
+  stops at the target repository's root. `cq git pr merge` re-reads the provider state before
+  reporting a refusal, so a concurrent merge is reported as merged; `cq codex implement` no longer
+  returns `fallback: true` on a `codex-git-guard` refusal. The repository gate runs
+  `cq knowledge doctor`, the validator warns `sp-generator-no-files` on a generator task with
+  `files: []`, and the verifier's scope rule covers such tasks.
+
 ## 6.8.0
 
 **`git cleanup` assesses registered worktrees and works from one dated manifest**, and **Azure

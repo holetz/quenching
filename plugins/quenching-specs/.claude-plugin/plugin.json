@@ -1,6 +1,6 @@
 {
   "name": "quenching-specs",
-  "version": "6.8.0",
+  "version": "6.9.0",
   "description": "The spec-driven cycle and its git hand-offs: /quenching-specs:specs:* (create, develop, execute, conclude, triage, status), /quenching-specs:git:* and /quenching-specs:handoff, the verifier agents, and the one cq command-line tool every other quenching module routes through. Enable it alone for a provider-owned backlog; the other modules add their fronts beside it.",
   "author": {
     "name": "Israel Holetz",

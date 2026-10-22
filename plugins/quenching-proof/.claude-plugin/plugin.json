@@ -1,6 +1,6 @@
 {
   "name": "quenching-proof",
-  "version": "6.8.0",
+  "version": "6.9.0",
   "description": "The verification front: /quenching-proof:proof:* aligns and reports the proof layers a repository declares. Requires quenching-specs for cq.",
   "author": {
     "name": "Israel Holetz",
