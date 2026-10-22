@@ -11,7 +11,9 @@ archived and to decide whether archiving may move its path.
 
 ## The two lifecycle states
 
-Every entry point declares exactly one state in the generated registry:
+Every entry point declares exactly one state in the registry document, in a hand-written line
+outside the generated zone. The generated zone is derived output and is never read back as a
+declaration; editing one of its cells changes nothing, and the next `--write` replaces it:
 
 | State | Location and reachability | Registry |
 | --- | --- | --- |
@@ -48,7 +50,8 @@ guess.
 Every transition to `archived` records the entry-point name, the evidence used, the date, and the
 reason. The generated registry is the searchable record; it never presents an archived entry point
 as an active operation. Re-activation reverses the transition only when the router and registry
-again provide an explicit active declaration.
+again provide an explicit active declaration. The transition is made by editing the
+hand-written declaration; the generated zone then follows on the next `--write`.
 
 <!-- rationale -->
 
