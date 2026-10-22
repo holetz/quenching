@@ -140,10 +140,13 @@ def _merge(args) -> int:
                        "message": f"--wait must be between 0 and {WAIT_MAX_S} seconds"}, args.json)
     if azure:
         return merge_azure(args, azure)
-    if _is_merged(args.url):
+    def already_merged() -> int:
         emit(args.json, {"ok": True, "url": args.url, "number": int(match.group(1)),
                          "alreadyMerged": True}, f"already merged {args.url}")
         return OK
+
+    if _is_merged(args.url):
+        return already_merged()
     deadline = time.monotonic() + args.wait
     head, _ = _view(args.url)
     while True:
@@ -166,12 +169,16 @@ def _merge(args) -> int:
         return FINDINGS
     now, merge_state = _view(args.url)
     if not head or now != head or merge_state not in MERGEABLE:
+        if _is_merged(args.url):
+            return already_merged()
         payload.update(reason="merge-state", message=f"head {head or '?'} -> {now or '?'}, "
                        f"mergeStateStatus {merge_state or 'unreadable'}")
         emit(args.json, payload, f"not merged: {payload['message']}")
         return FINDINGS
     code, out, err = _gh("pr", "merge", args.url, "--merge", f"--match-head-commit={head}")
     if code != 0:
+        if _is_merged(args.url):
+            return already_merged()
         payload.update(reason="merge-refused", message=(err or out).strip())
         emit(args.json, payload, f"not merged: {payload['message']}")
         return FINDINGS
