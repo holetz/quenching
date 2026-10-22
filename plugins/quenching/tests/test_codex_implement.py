@@ -156,6 +156,7 @@ class Implement(unittest.TestCase):
         self.assertEqual(payload["discard"], ["src/a.py"])
         self.assertIn("other.py", payload["message"])
         self.assertIn("needs-human", payload["message"])
+        self.assertIs(False, payload["fallback"])
 
     def test_a_commit_trips_the_guard(self):
         self.env["FAKE_MODE"] = "commit"
@@ -165,6 +166,7 @@ class Implement(unittest.TestCase):
         self.assertIn("reflogLength", payload["guard"]["moved"])
         self.assertEqual(payload["outside"], [])
         self.assertNotIn("needs-human", payload["message"])
+        self.assertIs(False, payload["fallback"])
 
     def test_a_failing_or_hanging_codex_falls_back(self):
         self.env["FAKE_MODE"] = "fail"
