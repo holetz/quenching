@@ -25,9 +25,10 @@ import re
 
 from quenching.common.io import read_text
 from quenching.common.output import finding, report_findings
+from quenching.components.commands.lint import lint_dangling
 from quenching.components.hooks import hook_ladder_findings
 from quenching.components.surface import (COMMANDS_DIR, SURFACE_MISSING, agent_definitions,
-                                          load_surface, plural)
+                                          load_surface, plugin_prefix, plural)
 
 KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
@@ -67,6 +68,14 @@ def _doctor_findings(surface: dict) -> list[dict]:
                                     f"{c['command']} collides with {clash} on a case-insensitive "
                                     "filesystem", **where,
                                     remedy="rename one of the two commands"))
+
+    if plugin_prefix(surface["root"]) is None:
+        # A target's own surface: the bare form is the one that resolves, so a citation of a
+        # front it has but a verb it lost is a removal nobody swept.
+        invocations = {c["command"] for c in commands}
+        for c in commands:
+            findings.extend(lint_dangling(c["body"], invocations,
+                                          {"command": c["command"], "path": c["relpath"]}))
 
     findings.extend(_wider_findings(surface["root"]))
     return findings
