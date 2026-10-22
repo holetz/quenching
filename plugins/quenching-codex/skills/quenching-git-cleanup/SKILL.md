@@ -28,7 +28,7 @@ python3 "$(find "${CODEX_HOME:-$HOME/.codex}" "$HOME/.codex" -type f -path '*/qu
 ```
 The report contains local `staleBranches` (removable), `keptBranches` (staying, with reasons), fetched `remoteBranches` from `<remote>`, registered
 `orphanWorktrees`, assessed `worktrees`, the `manifest` and its `groups`, and unregistered `unregisteredWorktrees` siblings with their path, branch and
-size. All four lists empty → say so and stop; there is nothing to prune. Do not fetch or run `git
+size. `manifest` empty → say so and stop; there is nothing to prune. The `manifest` is the complete list, so a candidate that sits in no legacy list (a detached worktree) still keeps the run going. Do not fetch or run `git
 remote prune` here: if the caller needs newer remote facts, it must fetch explicitly and start a
 fresh cleanup run. The report's `remote` must equal the selected remote. **Done when:** the manifest and the selected remote are in hand.
 

@@ -151,6 +151,11 @@ class CommandBody(unittest.TestCase):
             self.assertIn(needle, text)
         self.assertNotIn("git branch -D", text.replace("Never `git branch -D`", ""))
 
+    def test_cleanup_stops_only_when_the_manifest_is_empty(self):
+        text = " ".join(CLEANUP_COMMAND.read_text(encoding="utf-8").split())
+        self.assertIn("`manifest` empty", text)
+        self.assertNotIn("All four lists", text)
+
 
 if __name__ == "__main__":
     unittest.main()
