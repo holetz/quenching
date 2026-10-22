@@ -172,6 +172,25 @@ class TheReview(unittest.TestCase):
         self.assertEqual((2, "codex-git-guard"), (code, payload["code"]))
         self.assertIn("cannot read the tree after", payload["message"])
 
+    def test_an_unreadable_file_after_the_run_fails_closed(self):
+        self.env.update({**GIT_ENV, "FAKE_CODEX_MODE": "unreadable", "HOME": str(self.tmp)})
+        self.addCleanup(lambda: os.path.exists(self.worktree / "unreadable.txt")
+                        and os.chmod(self.worktree / "unreadable.txt", 0o644))
+        code, out = self.cli_review("unreadable", "--json")
+        payload = json.loads(out)
+        self.assertEqual((2, "codex-git-guard"), (code, payload["code"]))
+        self.assertIn("cannot read the tree after", payload["message"])
+
+    def test_an_unreadable_file_before_the_run_fails_closed_and_removes_the_run_dir(self):
+        path = self.worktree / "unreadable.txt"
+        path.write_text("x\n", encoding="utf-8")
+        os.chmod(path, 0)
+        self.addCleanup(os.chmod, path, 0o644)
+        code, out = self.cli_review("early", "--json")
+        self.assertEqual((2, "codex-git-guard"), (code, json.loads(out)["code"]))
+        self.assertFalse((self.root / ".quenching" / "codex" / "early").exists())
+        self.assertFalse(self.log.exists())
+
     def test_a_git_that_fails_before_the_run_refuses(self):
         os.chmod(self.worktree / ".git" / "index", 0)
         self.addCleanup(os.chmod, self.worktree / ".git" / "index", 0o644)
@@ -243,6 +262,29 @@ class TheReview(unittest.TestCase):
         link.parent.mkdir(parents=True)
         os.symlink(target, link)
         before = self.snap()
+        target.write_text("two", encoding="utf-8")
+        self.assertNotEqual(before, self.snap())
+
+    def test_writing_through_a_tracked_symlink_changes_the_snapshot(self):
+        self.commit_ignore("cache/\n")
+        target = self.worktree / "cache" / "config.json"
+        target.parent.mkdir(parents=True)
+        target.write_text("one", encoding="utf-8")
+        os.symlink("cache/config.json", self.worktree / "link.json")
+        self.git("add", "link.json")
+        self.git("commit", "-q", "-m", "link")
+        before = self.snap()
+        self.assertIn("link.json", before["tree"])
+        target.write_text("two", encoding="utf-8")
+        self.assertNotEqual(before, self.snap())
+
+    def test_writing_through_an_ignored_symlink_outside_local_config_changes_the_snapshot(self):
+        self.commit_ignore("link.txt\n")
+        target = self.tmp / "outside.txt"
+        target.write_text("one", encoding="utf-8")
+        os.symlink(target, self.worktree / "link.txt")
+        before = self.snap()
+        self.assertIn("link.txt", before["tree"])
         target.write_text("two", encoding="utf-8")
         self.assertNotEqual(before, self.snap())
 
