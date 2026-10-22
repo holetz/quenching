@@ -5,18 +5,26 @@ the human's own confirmation, the same split every other destructive step in thi
 keeps between "what is true" and "what to do about it"."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import subprocess
 
 from quenching.common.config import detect_provider
-from quenching.common.git import _git
+from quenching.common.git import _git, _git_run
 from quenching.common.output import emit
 from quenching.git.base import resolve_base
 from quenching.session.worktrees import worktree_branch as _worktree_branch
 from quenching.session.worktrees import worktree_gitdir as _worktree_gitdir
 
 UNREGISTERED_WORKTREES_KEY = "unregisteredWorktrees"
+DATE_SOURCE = "git show -s --format=%cI <tip> (committer date of the observed tip)"
+
+
+def entry_id(kind: str, identity: str) -> str:
+    """A stable identity: derived from the kind and the exact ref or canonical path only."""
+    digest = hashlib.sha256(f"{kind}\0{identity}".encode("utf-8")).hexdigest()[:12]
+    return f"{kind}:{digest}"
 
 
 def _merged_branches(cwd: str, base: str, protected: set[str]) -> set[str]:
@@ -161,6 +169,140 @@ def _local_branches(cwd: str) -> set[str]:
     return {b for b in out.splitlines() if b}
 
 
+def _tip_date(cwd: str, tip: str | None, cache: dict) -> str | None:
+    if not tip:
+        return None
+    if tip not in cache:
+        out = _git(cwd, "show", "-s", "--format=%cI", tip).strip()
+        cache[tip] = out or None
+    return cache[tip]
+
+
+def _registered_worktrees(cwd: str) -> list[dict]:
+    """Registered worktrees with path, HEAD, branch (None when detached) and lock state."""
+    out = _git(cwd, "worktree", "list", "--porcelain")
+    rows, row = [], None
+    for line in out.splitlines() + [""]:
+        if line.startswith("worktree "):
+            row = {"path": line[len("worktree "):], "head": None, "branch": None,
+                   "locked": False}
+        elif row is None:
+            continue
+        elif line.startswith("HEAD "):
+            row["head"] = line[len("HEAD "):]
+        elif line.startswith("branch "):
+            row["branch"] = line[len("branch "):].removeprefix("refs/heads/")
+        elif line == "locked" or line.startswith("locked "):
+            row["locked"] = True
+        elif not line:
+            rows.append(row)
+            row = None
+    return rows
+
+
+def _assess_worktrees(cwd: str, base: str, open_prs: set[str] | None) -> list[dict]:
+    """Assess each linked worktree whose directory exists. `eligible` is eligibility for a
+    guarded removal, never evidence of inactivity: the owner confirms that separately."""
+    registered = _registered_worktrees(cwd)
+    here = os.path.realpath(_git(cwd, "rev-parse", "--show-toplevel").strip() or cwd)
+    assessed = []
+    for index, row in enumerate(registered):
+        path = row["path"]
+        if index == 0 or not os.path.isdir(path):
+            continue
+        real = os.path.realpath(path)
+        blockers = []
+        if real == here:
+            blockers.append("current-checkout")
+        if row["locked"]:
+            blockers.append("locked")
+        if row["branch"] == base:
+            blockers.append("base-branch")
+        if open_prs is None:
+            blockers.append("pr-lookup-unavailable")
+        elif row["branch"] and row["branch"] in open_prs:
+            blockers.append("open-pr")
+        tip = row["head"]
+        if not tip or _git_run(cwd, "merge-base", "--is-ancestor", tip, base)[0] != 0:
+            blockers.append("unmerged-head")
+        code, status, _err = _git_run(path, "status", "--porcelain", "--ignored",
+                                      "--untracked-files=all")
+        if code != 0:
+            blockers.append("inspection-failed")
+        elif status.strip():
+            blockers.append("dirty-or-ignored-content")
+        assessed.append({"path": real, "branch": row["branch"], "detached": row["branch"] is None,
+                         "tip": tip, "eligible": not blockers, "blockers": blockers})
+    return assessed
+
+
+def _manifest(cwd: str, remote: str, report: dict, worktrees: list[dict]) -> list[dict]:
+    cache: dict = {}
+    entries = []
+
+    def add(kind, identity, scope, ref, tip, status, reasons, argv, cq, recommended):
+        entries.append({
+            "id": entry_id(kind, identity), "kind": kind, "scope": scope, "ref": ref,
+            "tip": tip, "tipDate": _tip_date(cwd, tip, cache),
+            "dateSource": DATE_SOURCE if tip else None, "status": status,
+            "reasons": reasons, "action": {"argv": argv, "cq": cq} if argv else None,
+            "recommended": recommended})
+
+    lookup_ok = report["prLookup"] == "ok"
+
+    def tips(ref: str) -> str | None:
+        return _git(cwd, "rev-parse", "--verify", "--quiet", ref).strip() or None
+
+    for b in report["staleBranches"]:
+        tip = tips(f"refs/heads/{b['branch']}")
+        add("branch", b["branch"], "local", b["branch"], tip, "candidate", b["reasons"],
+            ["git", "branch", "-d", "--", b["branch"]],
+            ["cq", "git", "prune", "--branch", b["branch"], "--expect-tip", tip or ""],
+            lookup_ok and tip is not None)
+    for b in report["keptBranches"]:
+        add("branch", b["branch"], "local", b["branch"], tips(f"refs/heads/{b['branch']}"),
+            "preserved", b["reasons"], None, None, False)
+    for b in report["remoteBranches"]:
+        tip = tips(f"refs/remotes/{remote}/{b['branch']}")
+        add("remote-branch", f"{remote}/{b['branch']}", "remote", f"{remote}/{b['branch']}",
+            tip, "candidate", b["reasons"],
+            ["git", "push", remote, "--delete", b["branch"]],
+            ["cq", "git", "prune", "--remote-branch", b["branch"], "--remote", remote,
+             "--expect-tip", tip or ""], lookup_ok and tip is not None)
+    for w in worktrees:
+        ok = w["eligible"]
+        add("worktree", w["path"], "local", w["path"], w["tip"],
+            "candidate" if ok else "preserved", ["merged-clean"] if ok else w["blockers"],
+            ["git", "worktree", "remove", "--", w["path"]] if ok else None,
+            ["cq", "git", "prune", "--worktree", w["path"], "--expect-tip", w["tip"] or "",
+             "--confirm-inactive"] if ok else None, False)
+    for w in report["orphanWorktrees"]:
+        add("orphan-worktree", w["path"], "local", w["path"], None, "candidate",
+            ["directory-missing"], ["git", "worktree", "remove", "--", w["path"]],
+            ["cq", "git", "prune", "--worktree", w["path"]], False)
+    return entries
+
+
+def _groups(entries: list[dict]) -> list[dict]:
+    """Homogeneous candidates by scope, kind, reasons and date provenance; each group lists the
+    immutable ids it covers, so a group never resolves to a target discovered later."""
+    groups: dict[tuple, dict] = {}
+    for e in entries:
+        if e["status"] != "candidate":
+            continue
+        key = (e["scope"], e["kind"], tuple(e["reasons"]), e["dateSource"])
+        g = groups.setdefault(key, {"scope": e["scope"], "kind": e["kind"],
+                                    "reasons": e["reasons"], "dateSource": e["dateSource"],
+                                    "ids": [], "oldest": None, "newest": None,
+                                    "recommended": True})
+        g["ids"].append(e["id"])
+        if e["tipDate"]:
+            g["oldest"] = min(filter(None, (g["oldest"], e["tipDate"])))
+            g["newest"] = max(filter(None, (g["newest"], e["tipDate"])))
+        g["recommended"] = g["recommended"] and e["recommended"]
+    return list(groups.values())
+
+
 def stale_report(cwd: str, remote: str = "origin") -> dict:
     """The report `cq git stale` prints, and the one `cq git prune` re-reads before it acts."""
     base, _is_default = resolve_base(cwd)
@@ -195,11 +337,15 @@ def stale_report(cwd: str, remote: str = "origin") -> dict:
     branches = [{"branch": b, "reasons": sorted(r)} for b, r in sorted(reasons.items())]
     kept_branches = [{"branch": b, "reasons": sorted(r)} for b, r in sorted(kept.items())]
     remote_branches = _merged_remote_branches(cwd, base, protected, remote)
-    return {"ok": True, "base": base, "remote": remote, "staleBranches": branches,
-            "keptBranches": kept_branches,
-            "prLookup": "ok" if open_prs is not None else "unavailable",
-            "remoteBranches": remote_branches, "orphanWorktrees": _orphan_worktrees(cwd),
-            UNREGISTERED_WORKTREES_KEY: _unregistered_worktrees(cwd)}
+    report = {"ok": True, "base": base, "remote": remote, "staleBranches": branches,
+              "keptBranches": kept_branches,
+              "prLookup": "ok" if open_prs is not None else "unavailable",
+              "remoteBranches": remote_branches, "orphanWorktrees": _orphan_worktrees(cwd),
+              UNREGISTERED_WORKTREES_KEY: _unregistered_worktrees(cwd)}
+    worktrees = _assess_worktrees(cwd, base, open_prs)
+    manifest = _manifest(cwd, remote, report, worktrees)
+    report.update(worktrees=worktrees, manifest=manifest, groups=_groups(manifest))
+    return report
 
 
 def cmd_stale(args) -> int:
@@ -222,6 +368,10 @@ def cmd_stale(args) -> int:
     lines.append("orphan worktrees:" if worktrees else "orphan worktrees: none")
     for w in worktrees:
         lines.append(f"  {w['path']} ({w['branch'] or 'detached'})")
+    lines.append("assessed worktrees:" if report["worktrees"] else "assessed worktrees: none")
+    for w in report["worktrees"]:
+        state = "candidate" if w["eligible"] else "kept: " + ", ".join(w["blockers"])
+        lines.append(f"  {w['path']} ({w['branch'] or 'detached'}, {state})")
     lines.append("unregistered worktrees (repository siblings):"
                  if unregistered_worktrees
                  else "unregistered worktrees (repository siblings): none")

@@ -20,48 +20,61 @@ from a fresh report for the selected remote.
 cq git stale --remote <remote> --json
 ```
 The report contains local `staleBranches` (removable), `keptBranches` (staying, with reasons), fetched `remoteBranches` from `<remote>`, registered
-`orphanWorktrees`, and unregistered `unregisteredWorktrees` siblings with their path, branch and
+`orphanWorktrees`, assessed `worktrees`, the `manifest` and its `groups`, and unregistered `unregisteredWorktrees` siblings with their path, branch and
 size. All four lists empty → say so and stop; there is nothing to prune. Do not fetch or run `git
 remote prune` here: if the caller needs newer remote facts, it must fetch explicitly and start a
-fresh cleanup run. The report's `remote` must equal the selected remote. **Done when:** all four
-lists and the selected remote are in hand.
+fresh cleanup run. The report's `remote` must equal the selected remote. **Done when:** the manifest and the selected remote are in hand.
 
 ### 2. Let the human pick what to prune
-Show every local stale branch with its reason(s), every remote branch as `<remote>/<branch>` with
-its reason(s), and every orphan worktree with its path and branch. Show each `keptBranches` entry with its reasons (`open-pr`, `worktree`,
-`unmerged-commits`) as information under "kept — not removable", and do not include it in the prune choices. Show each `unregisteredWorktrees`
-finding with its path, branch and size as information, but do not include it in the prune choices.
+The report's `manifest` is the complete list: every entry carries a stable `id`, `kind`, `ref`, the
+observed `tip`, `tipDate` (the committer date of that tip, never creation or last use; `null` when
+unknown) with its `dateSource`, `status` (`candidate` or `preserved`), `reasons`, the exact
+`action` and a `recommended` flag. Show every `preserved` entry (kept branches, ineligible
+worktrees) with its reasons as information under "kept — not removable", and do not include it in the
+prune choices. Show each `unregisteredWorktrees` finding with its path, branch and size as
+information too.
+
+Present concise choices, not one line per entry: summarize the report's `groups` (homogeneous
+candidates by scope, kind, reasons and date provenance) with their count and `oldest`–`newest` tip
+date, and expand an entry only when it stands alone. A group resolves to the `ids` it displays —
+never to a target discovered later — and every selected item has its exact action available on
+request (`git branch -d <branch>`, `git worktree remove <path>`; `cq git prune` runs them).
+
 Put ONE decision sheet ([specs-develop/questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §1) that ends the turn; its decision lists the local
-branches and live worktrees as numbered items and accepts several of them in the reply
-(`D1 1,3`), or `none` — option A (recommended) is `none`, never "all". An unclear reply is asked again. Show the exact local actions in those choices:
-`git branch -d <branch>` or `git worktree remove <path>`, which `cq git prune` runs. **Done when:** the local selection is
-settled.
+groups and items as numbered choices and accepts several in the reply (`D1 1,3`), or `none`.
+Option A (recommended) is the `recommended` subset when the report marks one, else `none`; never
+"all". A recommendation never authorizes anything. An unclear reply is asked again. **Done when:**
+the local selection is settled.
+
+A live `worktrees` candidate is eligibility only: it is merged, clean and unlocked, which is not
+evidence that nobody uses it. Ask for the owner's explicit confirmation that each selected worktree
+is inactive, separate from the local selection; without it, drop that worktree.
 
 For any remote branch in the fresh `remoteBranches` list, show its exact destructive action
-`git push <remote> --delete <branch>`, which `cq git prune --remote-branch` runs, and put it as its own decision on the sheet (`D2`, `none` recommended). A remote branch is never
+`git push <remote> --delete <branch>`, which `cq git prune --remote-branch` runs, and put it as its own decision on the sheet (`D2`, same recommendation rule). A remote branch is never
 included in the local confirmation. **Done when:** the remote selection is settled and every selected
 item has one explicit action.
 
 ### 3. Delete the chosen branches
 ```bash
-cq git prune --branch <branch> --json
+cq git prune --branch <branch> --id <id> --expect-tip <tip> --json
 ```
-The verb re-reads the stale report and acts only on a branch it still lists (exit 2 otherwise);
+`<id>` and `<tip>` are the ones the manifest displayed. The verb re-reads the stale report and acts only on a branch it still lists at that tip (exit 2 otherwise, and a moved tip means a fresh run);
 git refusing (`error: the branch '<branch>' is not fully merged`, exit 1) → report why and leave it standing;
 this command never escalates to `-D`. **Done when:** every chosen branch is deleted, or its refusal
 is reported.
 
 ### 4. Remove the chosen worktrees
 ```bash
-cq git prune --worktree <path> --json
+cq git prune --worktree <path> --id <id> --expect-tip <tip> --confirm-inactive --json
 ```
-Worktree removal is **never --force**. A refusal (modified or untracked files inside) is reported with git's own
+`--confirm-inactive` is passed only for a worktree the owner confirmed inactive. Orphan worktrees (directory missing) take neither flag. Worktree removal is **never --force**. A refusal (modified or untracked files inside) is reported with git's own
 message, and that worktree is left standing. **Done when:** every chosen worktree is
 removed, or its refusal is reported.
 
 ### 5. Delete the chosen remote branches
 ```bash
-cq git prune --remote-branch <branch> --remote <remote> --json
+cq git prune --remote-branch <branch> --remote <remote> --id <id> --expect-tip <tip> --json
 ```
 Run this only for a selected item from the fresh `remoteBranches` list, after the separate remote
 confirmation. The command is an external write: report its exact remote/branch and its output. A
@@ -77,7 +90,8 @@ the three outcome classes are named.
 ## Invariants
 
 - Never prune a branch or worktree `cq git stale` did not report.
-- Never offer `keptBranches` for pruning: each is listed with the reason it stays.
+- Never offer `keptBranches` or `preserved` manifest entries for pruning: each is listed with the reason it stays.
+- Never remove a live worktree without the owner's explicit inactivity confirmation, the displayed `id` and the approved tip.
 - Never offer `unregisteredWorktrees` for pruning: `git worktree remove` does not act on an
   unregistered directory, and this class carries no action.
 - Never delete a remote branch that `cq git stale` did not report in `remoteBranches`.
