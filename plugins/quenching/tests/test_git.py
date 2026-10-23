@@ -1459,6 +1459,16 @@ class VerifierGrants(unittest.TestCase):
 
 
 class VerifierScopeCheck(unittest.TestCase):
+    def test_check_4_applies_scope_only_after_removing_proven_copies(self):
+        text = (PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8")
+        check = " ".join(text.split("4. Scope:", 1)[1].split("5. Hygiene:", 1)[0].split())
+        self.assertIn("`n/a` only when `changed` is empty", check)
+        self.assertIn("Every remaining path outside the union is FAIL, including when the union is empty", check)
+        self.assertLess(check.index("remove the payload's `generated`"),
+                        check.index("Every remaining path outside the union is FAIL"))
+        self.assertIn("only proven generated copies passes scope, never `n/a`", check)
+        self.assertNotIn("a task with `files: []` that regenerated mirrors included", check)
+
     def test_check_4_names_where_the_tasks_files_are_read(self):
         text = " ".join((PLUGIN_ROOT / "agents" / "verifier.md").read_text(encoding="utf-8").split())
         self.assertIn("cq specs show --spec <id> --task <t> --json", text)
