@@ -58,14 +58,15 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    gate as a CLAIM, not a verdict: the gate is certified by CI on the PR before the merge
    (the git-steward `merge` step). A missing report is inconclusive; neither a reported pass nor
    a reported failure decides your verdict on its own, and a claimed failure is FAIL.
-4. Scope: the payload's `changed` is a subset of the union of the tasks' `files:` (plus spec
-   records). One rule: `n/a` only when `changed` is empty; a non-empty `changed` against an empty or
-   non-covering union of `files:` (a task with `files: []` that regenerated mirrors included) is FAIL. The `tasks` list of `cq specs show --spec <id> --json` carries no `files:`: read it
-   per task with `cq specs show --spec <id> --task <t> --json` (`--task` repeats). First remove the
-   payload's `generated`: paths the audit proved a byte-for-byte copy of their source in a module the
-   base manifest declares. List every remaining path outside the union. A generated file that was
-   edited by hand, a derived output that is no copy and an authored file are not in `generated`,
-   so they stay listed.
+4. Scope: `n/a` only when `changed` is empty. Otherwise, first remove the payload's `generated`:
+   paths the audit proved a byte-for-byte copy of their source in a module the base manifest
+   declares. Compare the remaining paths with the union of the tasks' `files:` (plus spec records).
+   The `tasks` list of `cq specs show --spec <id> --json` carries no `files:`: read it per task with
+   `cq specs show --spec <id> --task <t> --json` (`--task` repeats).
+   Every remaining path outside the union is FAIL, including when the union is empty; list each
+   one. A non-empty `changed` containing only proven generated copies passes scope, never `n/a`.
+   A generated file that was edited by hand, a derived output that is no copy and an authored file
+   are not in `generated`, so they stay listed.
 5. Hygiene: the payload's `stash` and `status` are both empty.
 6. Delivery: when the worker reported a PR, `cq git pr view --number <n> --json` is `ok` and its
    `base` is the base (it reads GitHub or Azure DevOps, whichever the origin names).
