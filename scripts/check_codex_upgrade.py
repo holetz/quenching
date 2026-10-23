@@ -18,6 +18,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "plugins/quenching/assets/bin"))
 from quenching.common.modules import distribution_findings, load_manifest  # noqa: E402
 
+# Codex clones the disposable source by local path, copying .git/objects file by file. Since Git
+# 2.54 every commit there starts a detached geometric repack once 100 loose objects exist, which
+# deletes loose objects mid-clone ("failed to copy file ... No such file or directory").
+SOURCE_GIT_CONFIG = (("user.name", "Upgrade check"), ("user.email", "check@example.com"),
+                     ("commit.gpgsign", "false"), ("core.hooksPath", "/dev/null"),
+                     ("maintenance.auto", "false"), ("gc.auto", "0"))
+
 
 def run(argv: list[str], cwd: Path, env: dict[str, str] | None = None) -> str:
     result = subprocess.run(argv, cwd=cwd, env=env, capture_output=True, text=True, timeout=60)
@@ -51,8 +58,7 @@ def check_upgrade(root: Path, baseline: str, codex: str) -> dict:
             tar.extractall(source, filter="data")
         git = ["git", "-C", str(source)]
         run([*git, "init", "-q", "-b", "main"], work)
-        for key, value in (("user.name", "Upgrade check"), ("user.email", "check@example.com"),
-                           ("commit.gpgsign", "false"), ("core.hooksPath", "/dev/null")):
+        for key, value in SOURCE_GIT_CONFIG:
             run([*git, "config", key, value], work)
 
         def commit(message: str) -> None:
