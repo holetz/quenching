@@ -12,7 +12,7 @@ from quenching.specs.backends.base import SpecBackend
 from quenching.specs.commands.output import Emitter, front_fields, read_one
 from quenching.specs.parse import PHASES
 from quenching.specs.members import origin_url, own_repo, read_members
-from quenching.specs.parse.deps import dep_findings, deps_of, find_cycle
+from quenching.specs.parse.deps import dep_findings, deps_of, find_cycle, find_cycle_through
 from quenching.specs.parse.epics import (claim_findings, epic_findings, epic_ref, is_epic,
                                          is_remote, parse_items)
 from quenching.specs.parse.text import body_after_frontmatter
@@ -303,9 +303,11 @@ def dependency_sweep(backend: SpecBackend, read: dict[str, dict]) -> list[dict]:
     findings = dep_findings(known)
     # `dep_findings` reports one cycle; a scoped sweep may need another one, so cut the
     # reported cycle's closing edge and look again until none is left. Cutting an edge, not
-    # its nodes, keeps the cycles that overlap the reported one.
+    # its nodes, keeps some overlapping cycles; the scoped sweep also searches a cycle
+    # through each swept spec on the uncut graph.
     edges = {spec: [d for d in deps_of(info["frontmatter"]) if d != spec]
              for spec, info in known.items()}
+    original = {k: list(v) for k, v in edges.items()}
     seen = set()
     cycle = next((f["cycle"] for f in findings if f["code"] == "sp-dep-cycle"), None)
     while cycle:
@@ -313,6 +315,14 @@ def dependency_sweep(backend: SpecBackend, read: dict[str, dict]) -> list[dict]:
         edges[cycle[-2]] = [d for d in edges[cycle[-2]] if d != cycle[-1]]
         cycle = find_cycle(edges)
         if cycle and frozenset(cycle) not in seen:
+            findings.append({
+                "code": "sp-dep-cycle", "severity": "error", "spec": cycle[0],
+                "cycle": cycle, "message": "dependency cycle: " + " -> ".join(cycle),
+            })
+    for spec in sorted(read):
+        cycle = find_cycle_through(original, spec)
+        if cycle and frozenset(cycle) not in seen:
+            seen.add(frozenset(cycle))
             findings.append({
                 "code": "sp-dep-cycle", "severity": "error", "spec": cycle[0],
                 "cycle": cycle, "message": "dependency cycle: " + " -> ".join(cycle),
