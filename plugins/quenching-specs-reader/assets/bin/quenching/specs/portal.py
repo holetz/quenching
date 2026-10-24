@@ -139,8 +139,8 @@ _STDIO_LOCK = threading.RLock()
 class _SnapshotStore:
     """`read_specs` over the snapshot, so a self-reference resolves without a second read."""
 
-    def __init__(self, infos: dict):
-        self.infos = infos
+    def __init__(self, infos: dict, name: str):
+        self.infos, self.name = infos, name
 
     def read_specs(self, ids) -> dict:
         return {str(i): self.infos.get(str(i)) for i in ids}
@@ -436,7 +436,7 @@ class Portal:
                          if i["spec"] and split_ref(str(i["spec"]))[0]})
         if not remote:
             return members, set()
-        got, unreadable = read_members(_SnapshotStore(snap["infos"]), remote, self.root)
+        got, unreadable = read_members(_SnapshotStore(snap["infos"], snap["backend"]), remote, self.root)
         members.update(got)
         return members, unreadable
 

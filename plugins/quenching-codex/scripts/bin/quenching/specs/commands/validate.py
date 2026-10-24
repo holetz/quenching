@@ -271,7 +271,7 @@ def epic_sweep(backend: SpecBackend, read: dict, root: str | None = None) -> lis
     self_repo = own_repo(origin_url(root)) if root else None
     for info in read.values():
         if is_epic(info["frontmatter"]):
-            out.extend(epic_findings(info, known, unreadable))
+            out.extend(epic_findings(info, known, unreadable, self_repo))
         out.extend(claim_findings(info, known, self_repo))
     return out
 

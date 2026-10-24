@@ -247,7 +247,8 @@ def open_items(info: dict, members: dict[str, dict | None],
 
 
 def epic_findings(info: dict, members: dict[str, dict | None],
-                  unreadable: set[str] | None = None) -> list[dict]:
+                  unreadable: set[str] | None = None,
+                  self_repo: str | None = None) -> list[dict]:
     """Finding rows for ONE epic: missing members, divergence, unknown dependencies, cycles.
     A cross-repository member carries no back-reference, and a store that could not be read
     is a warning, never a missing member."""
@@ -306,7 +307,7 @@ def epic_findings(info: dict, members: dict[str, dict | None],
             add("sp-epic-nested", "error",
                 f"epic {eid}: member {i['spec']} is itself an epic — one level only",
                 member=i["spec"])
-        if is_remote(i["spec"]):
+        if is_remote(local_key(i["spec"], self_repo)):
             continue
         back = epic_ref(m["frontmatter"])
         if back != eid:
