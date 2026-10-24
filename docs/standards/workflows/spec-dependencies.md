@@ -60,7 +60,7 @@ out of the critical path. The critical path follows, from the latest known
 | --- | --- | --- |
 | `sp-dep-missing` | error | the id names no spec |
 | `sp-dep-self` | error | a spec depends on itself |
-| `sp-dep-cycle` | error | the graph closes a cycle; the message names the path; a narrowed `--spec` sweep also reports cycles that share a node with an earlier one |
+| `sp-dep-cycle` | error | the graph closes a cycle; the message names the path; a narrowed `--spec` sweep reports one cycle through each swept spec, even when it shares an edge with another cycle |
 | `sp-dep-dropped` | warn | depends on a spec archived with an outcome other than `done` |
 
 ## What it does not replace
