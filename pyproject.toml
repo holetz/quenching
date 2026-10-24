@@ -35,7 +35,7 @@ source = ["plugins/quenching/assets/bin/quenching"]
 [tool.ruff]
 target-version = "py311"
 # Generated module trees are byte copies of plugins/quenching, which is linted once as the source.
-extend-exclude = ["site", "site-source", "plugins/quenching-specs-reader", "plugins/quenching-codex", "plugins/quenching-specs",
+extend-exclude = ["site", "site-source", "plugins/quenching-specs-reader", "plugins/quenching-codex", "plugins/quenching-opencode", "plugins/quenching-specs",
                   "plugins/quenching-align", "plugins/quenching-design", "plugins/quenching-ops",
                   "plugins/quenching-proof", "plugins/quenching-toolchain",
                   "plugins/quenching-delivery", "plugins/quenching-security", "plugins/quenching-opensource",
