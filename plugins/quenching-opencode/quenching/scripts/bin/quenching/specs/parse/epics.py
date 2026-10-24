@@ -4,7 +4,9 @@ Pure derivation, no backend and no I/O: the caller hands over the epic's `info` 
 `info` rows it read, and gets the state back. That is what keeps one answer across the memory
 fake, the git store and the tracker backends.
 
-An epic item reads `- [ ] S2 Title — spec: #1202 — after: S1,S3`. The `### N.` headings above
+An epic item reads `- [ ] S2 Title — spec: #1202 — after: S1,S3`; a member kept in another
+repository's store reads `— spec: <owner>/<repo>#<id>`, and its key keeps that form (owner and
+repo lower-cased) so it never collides with a local id. The `### N.` headings above
 the items are its groups (waves). The item's state is DERIVED from the member document: done when
 the member is archived with `outcome: done` (and, when its PR is known, merged: `unmerged`
 otherwise), blocked when one of its tasks is `[!]`. The box
@@ -25,6 +27,31 @@ _SPEC_RE = re.compile(r"(?:^|\s)—\s*spec\s*:\s*#?([^\s—]+)", re.IGNORECASE)
 _AFTER_RE = re.compile(r"(?:^|\s)—\s*after\s*:\s*([^—]*?)\s*(?=—|$)", re.IGNORECASE)
 _TAIL_RE = re.compile(r"\s—\s*(?:spec|after|blocked|descoped)\s*:.*$", re.IGNORECASE)
 _LABEL_NUM_RE = re.compile(r"(\d+)$")
+_REF_RE = re.compile(r"^([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)#(\w[\w.-]*)$")
+
+
+def member_key(raw: str) -> str:
+    """The member key an item's `spec:` value names: a bare id for this store, else
+    `owner/repo#id` with owner and repo lower-cased."""
+    raw = raw.strip().lstrip("#")
+    m = _REF_RE.match(raw)
+    return f"{m.group(1).lower()}/{m.group(2).lower()}#{m.group(3)}" if m else raw
+
+
+def split_ref(key: str) -> tuple[str | None, str]:
+    """`("owner/repo", id)` for a cross-repository key, `(None, key)` for a local one."""
+    m = _REF_RE.match(str(key))
+    return (f"{m.group(1).lower()}/{m.group(2).lower()}", m.group(3)) if m else (None, str(key))
+
+
+def local_key(key: str, self_repo: str | None) -> str:
+    """The bare id for a reference naming this repository; `key` unchanged otherwise."""
+    repo, spec_id = split_ref(key)
+    return spec_id if repo is not None and repo == self_repo else key
+
+
+def is_remote(key: str) -> bool:
+    return split_ref(key)[0] is not None
 
 
 def is_epic(fm: dict) -> bool:
@@ -55,7 +82,7 @@ def parse_items(info: dict) -> list[dict]:
         sm, am = _SPEC_RE.search(body), _AFTER_RE.search(body)
         group = t["section"]
         items.append({
-            "label": label, "title": title.strip(), "spec": sm.group(1) if sm else None,
+            "label": label, "title": title.strip(), "spec": member_key(sm.group(1)) if sm else None,
             "after": [a.strip() for a in am.group(1).split(",") if a.strip()] if am else [],
             "group": group, "groupTitle": titles[group - 1] if 0 < group <= len(titles) else None,
             "writtenState": t["state"], "lineno": t["lineno"],
@@ -122,8 +149,11 @@ def find_cycle(items: list[dict]) -> list[str] | None:
 
 
 def derive_epic(info: dict, members: dict[str, dict | None],
-                pr_state: dict[str, str] | None = None) -> dict:
-    """The epic's whole derived state. `members` maps a member id string to its `info`, or `None`.
+                pr_state: dict[str, str] | None = None,
+                unreadable: set[str] | None = None) -> dict:
+    """The epic's whole derived state. `members` maps a member key to its `info`, or `None`;
+    `unreadable` names the keys whose store could not be read, which derive `unreadable` and
+    never satisfy a dependency.
     `pr_state` maps a member id to its PR's state (`MERGED`, `OPEN`, `CLOSED`); the derivation
     stays pure, the caller does the lookup. `None` means no lookup was made; a dict (even empty)
     means it was, and a member with a `pr:` record absent from it is `unverified`."""
@@ -132,9 +162,12 @@ def derive_epic(info: dict, members: dict[str, dict | None],
     for i in items:
         m = members.get(str(i["spec"])) if i["spec"] else None
         i["member"] = m
-        i["memberState"] = member_state(m, (pr_state or {}).get(str(i["spec"])),
-                                       looked_up=pr_state is not None) \
-            if i["spec"] else "missing"
+        if i["spec"] and str(i["spec"]) in (unreadable or ()):
+            i["memberState"] = "unreadable"
+        else:
+            i["memberState"] = member_state(m, (pr_state or {}).get(str(i["spec"])),
+                                           looked_up=pr_state is not None) \
+                if i["spec"] else "missing"
         i["prState"] = (pr_state or {}).get(str(i["spec"]))
     for i in items:
         m, st = i["member"], i["memberState"]
@@ -199,19 +232,25 @@ def next_label(items: list[dict]) -> str:
 
 
 def render_item(label: str, title: str, spec_id: str, after: list[str]) -> str:
-    line = f"- [ ] {label} {title} — spec: #{spec_id}"
+    ref = spec_id if is_remote(spec_id) else f"#{spec_id}"
+    line = f"- [ ] {label} {title} — spec: {ref}"
     return line + (f" — after: {','.join(after)}" if after else "")
 
 
 def open_items(info: dict, members: dict[str, dict | None],
-               pr_state: dict[str, str] | None = None) -> list[dict]:
+               pr_state: dict[str, str] | None = None,
+               unreadable: set[str] | None = None) -> list[dict]:
     """Items that keep an epic from being archived as `done`. With `pr_state` (the caller's PR
     lookup) a member whose PR is not merged, or could not be read, stays open."""
-    return [i for i in derive_epic(info, members, pr_state)["items"] if i["status"] != "done"]
+    return [i for i in derive_epic(info, members, pr_state, unreadable)["items"]
+            if i["status"] != "done"]
 
 
-def epic_findings(info: dict, members: dict[str, dict | None]) -> list[dict]:
-    """Finding rows for ONE epic: missing members, divergence, unknown dependencies, cycles."""
+def epic_findings(info: dict, members: dict[str, dict | None],
+                  unreadable: set[str] | None = None) -> list[dict]:
+    """Finding rows for ONE epic: missing members, divergence, unknown dependencies, cycles.
+    A cross-repository member carries no back-reference, and a store that could not be read
+    is a warning, never a missing member."""
     eid = str(info["id"])
     items = parse_items(info)
     rows: list[dict] = []
@@ -252,6 +291,11 @@ def epic_findings(info: dict, members: dict[str, dict | None]) -> list[dict]:
                 add("sp-epic-unknown-dependency", "error",
                     f"epic {eid}: item {i['label']} comes after `{d}`, which is not an item",
                     label=i["label"], dependency=d)
+        if i["spec"] in (unreadable or ()):
+            add("sp-epic-member-unreadable", "warn",
+                f"epic {eid}: item {i['label']} references {i['spec']}, whose store could not "
+                f"be read", label=i["label"], member=i["spec"])
+            continue
         m = members.get(i["spec"])
         if m is None:
             add("sp-epic-missing-member", "error",
@@ -262,6 +306,8 @@ def epic_findings(info: dict, members: dict[str, dict | None]) -> list[dict]:
             add("sp-epic-nested", "error",
                 f"epic {eid}: member {i['spec']} is itself an epic — one level only",
                 member=i["spec"])
+        if is_remote(i["spec"]):
+            continue
         back = epic_ref(m["frontmatter"])
         if back != eid:
             add("sp-epic-divergent", "error",
@@ -275,10 +321,11 @@ def epic_findings(info: dict, members: dict[str, dict | None]) -> list[dict]:
     return rows
 
 
-def claim_findings(info: dict, epics: dict[str, dict | None]) -> list[dict]:
+def claim_findings(info: dict, epics: dict[str, dict | None],
+                   self_repo: str | None = None) -> list[dict]:
     """The member's side: its `epic:` names an epic that is absent, not an epic, or omits it."""
     ref = epic_ref(info["frontmatter"])
-    if not ref:
+    if not ref or is_remote(ref):
         return []
     sid, parent = str(info["id"]), epics.get(ref)
     if parent is None:
@@ -286,7 +333,7 @@ def claim_findings(info: dict, epics: dict[str, dict | None]) -> list[dict]:
     elif not is_epic(parent["frontmatter"]):
         code, msg = ("sp-epic-not-an-epic", f"spec {sid} declares `epic: {ref}`, which is not a "
                                              f"`workItemType: epic` spec")
-    elif sid not in {str(i["spec"]) for i in parse_items(parent)}:
+    elif sid not in {local_key(str(i["spec"]), self_repo) for i in parse_items(parent)}:
         code, msg = "sp-epic-divergent", (f"spec {sid} declares `epic: {ref}`, but that epic "
                                           f"does not list it")
     else:

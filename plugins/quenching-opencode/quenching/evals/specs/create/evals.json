@@ -1,0 +1,49 @@
+{
+  "skill": "quenching-specs-create",
+  "cases": [
+    {
+      "id": "capture-happy-path",
+      "branch": "steps 1-5 — a prose problem is captured as one spec in ONE call, with a descriptive title and the metadata resolved without asking",
+      "prompt": "Add this to the backlog: our CLI prints a Python traceback instead of a one-line error when the config file is missing. It should name the missing path and exit 2.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "exactly one spec exists in the store after the run, as listed by the inspect.sh output",
+        "the spec's title describes the missing-config error rather than repeating the prompt verbatim",
+        "the reply names the spec's id or locator",
+        "the reply does not ask scope, design or task questions before the spec was created"
+      ]
+    },
+    {
+      "id": "thin-input-parks-rather-than-invents",
+      "branch": "step 4 and invariants — a capture too thin to plan parks what it cannot know in `## Open Decisions` rather than inventing a design",
+      "prompt": "Create a spec: something about making the release faster.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "at most one spec exists in the store after the run",
+        "no task list with concrete implementation steps is invented for the release, since the prompt names none",
+        "the reply either asks what to capture or states that the open questions were left for development, rather than presenting an invented plan as settled"
+      ]
+    },
+    {
+      "id": "execute-request-declines",
+      "branch": "Not for: executing → quenching-specs-execute — a build request creates no spec",
+      "prompt": "Go ahead and implement the spec about the missing config error, task by task.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "no spec exists in the store after the run, as listed by the inspect.sh output",
+        "the reply routes the request to quenching-specs-execute or says there is no spec to build",
+        "no file outside .claude/ is changed in the working tree"
+      ]
+    }
+  ],
+  "triggers": {
+    "shouldTrigger": [
+      "create a spec",
+      "add to the backlog",
+      "convert this plan to a spec",
+      "capture this as a spec before I forget it"
+    ],
+    "shouldNotTrigger": [
+      "refine spec 12 until it is ready",
+      "build spec 12 task by task",
+      "merge the branch for spec 12"
+    ]
+  }
+}
