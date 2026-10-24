@@ -393,6 +393,32 @@ class PureDerivation(unittest.TestCase):
         self.assertIsNone(find_cycle([{"label": "A", "after": []},
                                       {"label": "B", "after": ["A", "Z"]}]))
 
+    def test_a_long_dependency_chain_has_no_cycle(self):
+        items = [{"label": f"S{i}", "after": [f"S{i + 1}"]} for i in range(1100)]
+        self.assertIsNone(find_cycle(items))
+
+    def test_a_cycle_through_a_long_dependency_chain_returns_the_path(self):
+        items = [{"label": f"S{i}", "after": [f"S{i + 1}"]} for i in range(1100)]
+        items[-1]["after"] = ["S0"]
+        self.assertEqual([f"S{i}" for i in range(1100)] + ["S0"], find_cycle(items))
+
+    def test_a_self_edge_returns_the_repeated_label(self):
+        self.assertEqual(["A", "A"], find_cycle([{"label": "A", "after": ["A"]}]))
+
+    def test_a_two_node_cycle_returns_the_stack_slice(self):
+        items = [{"label": "start", "after": ["A"]},
+                 {"label": "A", "after": ["B"]}, {"label": "B", "after": ["A"]}]
+        self.assertEqual(["A", "B", "A"], find_cycle(items))
+
+    def test_unknown_labels_are_ignored(self):
+        self.assertIsNone(find_cycle([{"label": "A", "after": ["unknown"]}]))
+
+    def test_cycle_search_keeps_item_and_dependency_declaration_order(self):
+        items = [{"label": "Z", "after": ["C", "B"]},
+                 {"label": "B", "after": ["Z"]}, {"label": "C", "after": ["Z"]},
+                 {"label": "A", "after": ["A"]}]
+        self.assertEqual(["Z", "C", "Z"], find_cycle(items))
+
     def test_a_cyclic_epic_offers_nothing_and_has_no_critical_path(self):
         b = MemoryBackend()
         b.create_spec("plans", epic_doc(
