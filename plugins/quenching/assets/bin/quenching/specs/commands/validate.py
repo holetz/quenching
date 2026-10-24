@@ -12,6 +12,7 @@ from quenching.specs.backends.base import SpecBackend
 from quenching.specs.commands.output import Emitter, front_fields, read_one
 from quenching.specs.parse import PHASES
 from quenching.specs.members import origin_url, own_repo, read_members
+from quenching.specs.parse.deps import dep_findings, deps_of
 from quenching.specs.parse.epics import (claim_findings, epic_findings, epic_ref, is_epic,
                                          is_remote, parse_items)
 from quenching.specs.parse.text import body_after_frontmatter
@@ -275,6 +276,35 @@ def epic_sweep(backend: SpecBackend, read: dict, root: str | None = None) -> lis
     return out
 
 
+def dependency_sweep(backend: SpecBackend, read: dict[str, dict]) -> list[dict]:
+    """Check the swept specs against their dependency closure, reading extra ids once.
+
+    A narrowed sweep still needs existing targets and cycle paths outside its selection.
+    Extra specs supply graph context; their own findings are outside the requested scope.
+    """
+    known = dict(read)
+    attempted = set(read)
+    pending = {dep for info in read.values() for dep in deps_of(info["frontmatter"])}
+    while missing := sorted(pending - attempted):
+        attempted.update(missing)
+        got = backend.read_specs(missing)
+        pending = set()
+        for spec, info in got.items():
+            if info is not None:
+                known[spec] = info
+                pending.update(deps_of(info["frontmatter"]))
+
+    remedies = {
+        "sp-dep-missing": "correct or remove the missing id in `dependsOn`",
+        "sp-dep-self": "remove the spec's own id from `dependsOn`",
+        "sp-dep-cycle": "remove a dependency in the reported cycle from `dependsOn`",
+        "sp-dep-dropped": "review and remove or replace the dropped dependency in `dependsOn`",
+    }
+    return [_finding(**finding, remedy=remedies[finding["code"]])
+            for finding in dep_findings(known)
+            if finding["spec"] in read or set(finding.get("cycle", [])) & set(read)]
+
+
 def _emit_by_code(args, root: str, specs: list, findings: list, errors: list) -> int:
     """The same sweep, one line per `(code, severity)` instead of one per finding.
 
@@ -340,6 +370,7 @@ def cmd_validate(args, root: str, out: Emitter) -> int:
     for s in target:
         findings.extend(validate_spec(backend, s, out, sink=read))
     findings.extend(epic_sweep(backend, read, root))
+    findings.extend(dependency_sweep(backend, read))
 
     errors = [f for f in findings if f["severity"] == "error"]
     if getattr(args, "by_code", False):

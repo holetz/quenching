@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import _paths  # noqa: F401
 from quenching.specs.backends.memory import MemoryBackend
-from quenching.specs.commands import deps
+from quenching.specs.commands import deps, validate
 from quenching.specs.commands.cli import main
 
 
@@ -21,6 +21,8 @@ class DependencyCommands(unittest.TestCase):
         self.writer = self.enterContext(patch.object(self.backend, "write_spec",
                                                     wraps=self.backend.write_spec))
         self.enterContext(patch.object(deps, "open_backend", return_value=(self.backend, {})))
+        self.enterContext(patch.object(validate, "open_backend", return_value=(self.backend, {})))
+        self.enterContext(patch.object(validate, "origin_url", return_value=None))
 
     def call(self, *argv, as_json=True):
         stream = io.StringIO()
@@ -93,6 +95,85 @@ class DependencyCommands(unittest.TestCase):
                 fm += "dependsOn: [3]\n"
             self.backend.docs[spec] = (phase, text.replace("date: 2026-10-24\n",
                                                          "date: 2026-10-24\n" + fm))
+
+    def seed_dependency(self, spec, dependencies, phase="plans", outcome=None):
+        text = self.text(spec)
+        fm = f"dependsOn: [{', '.join(map(str, dependencies))}]\n"
+        if outcome is not None:
+            fm += f"outcome: {outcome}\n"
+        self.backend.docs[spec] = (phase, text.replace("date: 2026-10-24\n",
+                                                     "date: 2026-10-24\n" + fm))
+
+    def dependency_findings(self, *flags):
+        _, payload = self.call("validate", *flags)
+        self.writer.assert_not_called()
+        return [f for f in payload["findings"] if f["code"].startswith("sp-dep-")]
+
+    def test_validate_missing_and_self_dependencies_have_remedies(self):
+        self.seed_dependency(1, [99, 1])
+        findings = self.dependency_findings()
+        self.assertEqual([("sp-dep-missing", "error", "1"),
+                          ("sp-dep-self", "error", "1")],
+                         [(f["code"], f["severity"], f["spec"]) for f in findings])
+        self.assertIn("99", findings[0]["message"])
+        self.assertTrue(all(f["remedy"] for f in findings))
+
+    def test_validate_cycle_names_full_path(self):
+        self.seed_dependency(1, [2])
+        self.seed_dependency(2, [3])
+        self.seed_dependency(3, [1])
+        for flags in ((), ("--spec", "1")):
+            with self.subTest(flags=flags):
+                findings = self.dependency_findings(*flags)
+                self.assertEqual(1, len(findings))
+                finding = findings[0]
+                self.assertEqual(("sp-dep-cycle", "error", ["1", "2", "3", "1"]),
+                                 (finding["code"], finding["severity"], finding["cycle"]))
+                self.assertIn("1 -> 2 -> 3 -> 1", finding["message"])
+                self.assertTrue(finding["remedy"])
+
+    def test_validate_warns_for_archived_dependencies_unless_done(self):
+        self.seed_dependency(1, [2])
+        for outcome in ("abandoned", "superseded", "", "done"):
+            with self.subTest(outcome=outcome):
+                # Replace the target body so each outcome is an independent fixture.
+                self.backend.docs[2] = ("archive", "---\ntitle: Second\n"
+                                       f"outcome: {outcome}\n---\n")
+                findings = self.dependency_findings("--spec", "1")
+                if outcome == "done":
+                    self.assertEqual([], findings)
+                else:
+                    self.assertEqual(1, len(findings))
+                    self.assertEqual(("sp-dep-dropped", "warn", "1", outcome),
+                                     tuple(findings[0][k] for k in
+                                           ("code", "severity", "spec", "outcome")))
+                    self.assertTrue(findings[0]["remedy"])
+
+    def test_validate_clean_graph_reuses_sweep_and_bulk_reads_extra_ids_once(self):
+        self.seed_dependency(1, [2, 3])
+        self.seed_dependency(2, [3])
+        self.seed_dependency(3, [], phase="archive", outcome="done")
+        before = copy.deepcopy(self.backend.docs)
+        with patch.object(self.backend, "read_specs", wraps=self.backend.read_specs) as reader:
+            self.assertEqual([], self.dependency_findings())
+            reader.assert_not_called()
+            self.assertEqual([], self.dependency_findings("--spec", "1"))
+            reader.assert_called_once_with(["2", "3"])
+            reader.reset_mock()
+            self.assertEqual([], self.dependency_findings("--phase", "plans"))
+            reader.assert_called_once_with(["3"])
+        self.assertEqual(before, self.backend.docs)
+
+    def test_validate_narrowed_scope_reads_transitive_ids_and_missing_ids_once(self):
+        self.seed_dependency(1, [2, 99])
+        self.seed_dependency(2, [3, 99])
+        self.seed_dependency(3, [99])
+        with patch.object(self.backend, "read_specs", wraps=self.backend.read_specs) as reader:
+            findings = self.dependency_findings("--spec", "1")
+        self.assertEqual([["2", "99"], ["3"]],
+                         [call.args[0] for call in reader.call_args_list])
+        self.assertEqual([("sp-dep-missing", "1")],
+                         [(f["code"], f["spec"]) for f in findings])
 
     def test_schedule_payload_bulk_reads_and_never_writes(self):
         self.seed_schedule()
