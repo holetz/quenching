@@ -27,6 +27,7 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 EVALS_ROOT = ROOT / "plugins/quenching/assets/evals"
+COMMANDS_ROOT = ROOT / "plugins/quenching/commands"
 PROFILES = Path(__file__).resolve().with_name("eval_harnesses.json")
 CQ = ROOT / "plugins/quenching/assets/bin/cq"
 CQ_BIN = ROOT / "plugins/quenching/bin"
@@ -70,6 +71,27 @@ def suite_name(directory: Path) -> str:
         return directory.resolve().relative_to(EVALS_ROOT.resolve()).as_posix()
     except ValueError:
         return directory.name
+
+
+def command_model(skill: str) -> str | None:
+    """The `model:` the evaluated command pins in its own frontmatter, or None when it pins none."""
+    _, _, path = skill.lstrip("/").partition(":")
+    if not path:
+        return None
+    file = COMMANDS_ROOT / (path.replace(":", "/") + ".md")
+    try:
+        lines = file.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return None
+    if not lines or lines[0].strip() != "---":
+        return None
+    for line in lines[1:]:
+        if line.strip() == "---":
+            break
+        key, _, value = line.partition(":")
+        if key.strip() == "model":
+            return value.strip() or None
+    return None
 
 
 def check_suite(directory: Path) -> tuple[dict | None, list[str], list[str]]:
@@ -374,6 +396,7 @@ def aggregate(cases: list[dict], arm: str) -> dict:
 def benchmark(data: dict, cases: list[dict], args, arms: list[str]) -> dict:
     result = {"skill": data["skill"], "cases": len(cases), "runId": args.run_id,
               "harness": args.harness, "model": args.model,
+              "commandModel": command_model(data["skill"]),
               "grader": {"harness": args.grader_harness, "model": args.grader_model}}
     for arm in arms:
         result[arm] = aggregate(cases, arm)
@@ -437,7 +460,7 @@ def run(args) -> int:
         bench = benchmark(data, graded, args, arms)
         (target / "grading.json").write_text(json.dumps(graded, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         (target / "benchmark.json").write_text(json.dumps(bench, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        summary["suites"].append({"suite": name, **{k: bench[k] for k in ("skill", "cases", *arms)}})
+        summary["suites"].append({"suite": name, **{k: bench[k] for k in ("skill", "commandModel", "cases", *arms)}})
     every = summary["suites"]
     summary["overall"] = {}
     for arm in arms:
