@@ -35,8 +35,8 @@ ARMS = ("with", "without")
 RESULTS = ("pass", "fail", "unknown")
 GIT_ENV = {"GIT_AUTHOR_NAME": "Eval fixture", "GIT_AUTHOR_EMAIL": "eval@example.com",
            "GIT_COMMITTER_NAME": "Eval fixture", "GIT_COMMITTER_EMAIL": "eval@example.com"}
-# The workspace config belongs to the agent under evaluation: -c wins over it, so the snapshot never runs its commands.
-# The filter drivers are named by that config, so snapshot() empties them per name (filter_overrides).
+# The workspace config belongs to the agent under evaluation: these -c entries override its commands.
+# snapshot() disables its named filter drivers through environment config (filter_overrides).
 SAFE_GIT = ["-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null", "-c", "diff.external=",
             "-c", "gpg.program=/bin/false", "-c", "log.showSignature=false"]
 MATERIAL_LIMIT = 60000
@@ -259,26 +259,35 @@ def provision(suite: Path, case_id: str, parent: Path) -> tuple[Path, dict]:
     return workspace, env
 
 
-def filter_overrides(workspace: Path, env: dict) -> list[str]:
-    """`-c` pairs that empty every filter driver the workspace config declares (reading it runs nothing)."""
-    listing = subprocess.run(["git", "config", "--name-only", "--list"], cwd=workspace, env=env,
-                             capture_output=True, text=True, timeout=120).stdout
-    drivers = {name[len("filter."):name.rindex(".")] for name in listing.splitlines()
+def filter_overrides(workspace: Path, env: dict) -> dict[str, str]:
+    """Environment config disabling every declared filter driver, appended after existing entries."""
+    listing = subprocess.run(["git", "config", "--name-only", "--list", "-z"], cwd=workspace, env=env,
+                             capture_output=True, text=True, encoding="utf-8", errors="surrogateescape",
+                             timeout=120).stdout
+    drivers = {name[len("filter."):name.rindex(".")] for name in listing.split("\0")[:-1]
                if name.startswith("filter.") and name.count(".") >= 2}
-    args = []
+    overrides = {}
+    count = int(env.get("GIT_CONFIG_COUNT", "0"))
     for driver in sorted(drivers):
         for key, value in (("clean", ""), ("smudge", ""), ("process", ""), ("required", "false")):
-            args += ["-c", f"filter.{driver}.{key}={value}"]
-    return args
+            while f"GIT_CONFIG_KEY_{count}" in env or f"GIT_CONFIG_VALUE_{count}" in env:
+                count += 1
+            overrides[f"GIT_CONFIG_KEY_{count}"] = f"filter.{driver}.{key}"
+            overrides[f"GIT_CONFIG_VALUE_{count}"] = value
+            count += 1
+    overrides["GIT_CONFIG_COUNT"] = str(count)
+    return overrides
 
 
 def snapshot(suite: Path, workspace: Path, env: dict) -> str:
-    safe = [*SAFE_GIT, *filter_overrides(workspace, env)]
+    overrides = filter_overrides(workspace, env)
 
     def capture(argv: list[str]) -> str:
+        capture_env = {**env, "GIT_OPTIONAL_LOCKS": "0"}
         if argv[0] == "git":
-            argv = ["git", *safe, *argv[1:]]
-        result = subprocess.run(argv, cwd=workspace, env={**env, "GIT_OPTIONAL_LOCKS": "0"},
+            argv = ["git", *SAFE_GIT, *argv[1:]]
+            capture_env.update(overrides)
+        result = subprocess.run(argv, cwd=workspace, env=capture_env,
                                 capture_output=True, text=True, timeout=120)
         return (result.stdout + result.stderr).strip() or "(empty)"
 
