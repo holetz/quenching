@@ -2,9 +2,9 @@
 type: standard
 title: Skill evaluation
 description: What it takes to claim a skill works — with/without runs in isolated processes, assertions graded on quoted evidence, a rate reported with its fixture, and a delta reported even when it is zero
-resource: plugins/quenching/assets/evals/**, plugins/quenching/commands/components/command/eval.md
+resource: plugins/quenching/assets/evals/**, plugins/quenching/commands/components/command/eval.md, scripts/run_evals.py
 tags: [automation, skills, evaluation, testing, benchmark]
-timestamp: 2026-08-10
+timestamp: 2026-10-24
 audience: both
 authority: current
 source: "instrument-and-extend-skill-front plan — formats adopted from Anthropic's skill-creator. Graduated to current on its own stated gate: /quenching-align:components:agent:new and /quenching-align:components:hook:new each carry a committed evals.json + grading.json + benchmark.json with a non-zero stated delta (2026-07-27)"
@@ -117,6 +117,34 @@ Two rules follow:
   about migrations needs a migration; a phrase whose command wants an OKF bundle needs one, or the
   probe spends its budget discovering the subject is missing. Seed the smallest repo in which every
   phrase can be answered without exploring.
+
+## Across harnesses and models
+
+`scripts/run_evals.py` runs the same committed case sets against any harness and model through the
+profiles in `scripts/eval_harnesses.json` (`claude`, `codex`, `opencode`, or a custom file passed
+with `--harnesses`). It keeps both arms: the `with` arm loads the quenching modules and reaches
+`cq` on its `PATH`, the `without` arm loads nothing and gets no path to the tool.
+
+- **A cross-model rate measures the models, never the skill.** The comparable number it writes
+  to `summary.json` is the case approval rate — the share of cases whose every assertion passed —
+  per harness and model. Two such rates side by side say which model, on which harness, passes
+  more of this case set with the skill loaded. They are never reported as a skill delta; the
+  delta stays the within-model comparison of [Two arms or no claim](#two-arms-or-no-claim).
+- **The grader is fixed for the whole comparison.** One grader harness and model
+  (`--grader-harness`, `--grader-model`) grades every arm of every model compared, in an empty
+  directory and without the skill. A comparison whose grader changed between runs measures the
+  graders. A grade whose quoted evidence is not a verbatim substring of the arm's output or of the
+  fixture snapshot is downgraded to `unknown`, so an unquoted pass never counts.
+- **The fixture lives beside the case set, by convention.** `evals.json` keeps the shape
+  `evaluation.md` owns; a sibling `fixture/` tree is copied into a disposable directory and
+  committed as a git repository, an optional `setup.sh` prepares it per case (it receives the case
+  id, with `CQ`, `EVAL_CASE` and `EVAL_WORKSPACE` exported), and an optional `inspect.sh` adds
+  to the snapshot the grader reads beside `git status`, the refs' logs and the diff. The rule of
+  [A measured rate is conditional on its fixture](#a-measured-rate-is-conditional-on-its-fixture)
+  holds unchanged: the fixture is reported with the rate.
+- `--check` validates every suite without running anything, and the repository gate runs it
+  through the runner's unit tests. A live run needs a harness and costs tokens, so it is never part
+  of the gate.
 
 ## Description tuning is the one edit measurement authorizes
 
