@@ -123,6 +123,14 @@ class TwoStores(unittest.TestCase):
         self.assertIsNone(members["holetz/absent#1"])
         self.assertEqual("Forge one", members["1"]["frontmatter"]["title"])
 
+    def test_a_tracker_backend_resolves_nothing_even_when_the_store_exists(self):
+        tracker = mock.Mock(wraps=self.local)
+        tracker.name = "github"
+        members, unreadable = read_members(tracker, ["holetz/quenching#1"], self.forge)
+        self.assertEqual({"holetz/quenching#1"}, unreadable)
+        self.assertIsNone(members["holetz/quenching#1"])
+        self.assertEqual({}, members_mod._FOREIGN)
+
     def test_no_fetch_without_a_mirror_is_unreadable(self):
         with mock.patch.dict(os.environ, {git_mod.NO_FETCH_ENV: "1"}):
             _, unreadable = self.read(["holetz/quenching#1"])
@@ -219,6 +227,18 @@ class CrossRepositoryEpic(TwoStores):
         self.assertIn("Quenching two — spec: holetz/quenching#2 — after: S1", text)
         self.assertEqual(self.quenching_tip,
                          _sh(self.quenching_remote, "rev-parse", "quenching").strip())
+
+    def test_an_item_naming_this_repository_is_the_bare_member_for_add_and_validate(self):
+        self.extend_epic("- [ ] S3 Forge one — spec: holetz/forge#1\n")
+        info, _ = self.local.read_spec(1)
+        self.local.write_spec(info, set_frontmatter_key(info["text"], "epic", self.epic))
+        code, got = self.run_cmd(epic_cmd.cmd_epic, epic_cmd="add", epic=self.epic, spec="1",
+                                 after=None, group=None, label=None)
+        self.assertEqual(0, code, got)
+        text = self.local.read_spec(self.epic)[0]["text"]
+        self.assertEqual(1, text.count("Forge one — spec:"), text)
+        _, got = self.run_cmd(validate_cmd.cmd_validate, spec=None, phase=None, by_code=False)
+        self.assertNotIn("sp-epic-divergent", {f["code"] for f in got["findings"]})
 
     def test_add_refuses_a_reference_whose_store_cannot_be_read(self):
         code, got = self.run_cmd(epic_cmd.cmd_epic, epic_cmd="add", epic=self.epic,

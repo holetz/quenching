@@ -286,6 +286,28 @@ workItemType: epic
         self.assertEqual("done", status["S2"])
         self.assertEqual("unreadable", status["S3"])
 
+    def test_an_epic_of_only_cross_repository_members_counts_them(self):
+        self.backend.create_spec("plans", """---
+title: Program
+date: 2026-01-01
+workItemType: epic
+---
+
+## Tasks
+
+- [ ] S1 There — spec: holetz/quenching#7
+- [ ] S2 Gone — spec: holetz/forge#9
+""")
+
+        def read(backend, keys, root):
+            got, unreadable = self._remote_read(backend, ["holetz/forge#9", "holetz/quenching#7"],
+                                                root)
+            return got, unreadable
+
+        with mock.patch.object(portal_mod, "read_members", side_effect=read):
+            row = self.get("/api/epics?refresh=1")[1]["epics"][0]
+        self.assertEqual((1, 2), (row["done"], row["total"]))
+
     def test_epics_without_cross_repository_members_read_no_other_store(self):
         self.backend.create_spec("plans", """---
 title: Program
@@ -424,6 +446,14 @@ class Security(PortalCase):
         js = (portal_mod.static_dir() / "app.js").read_text()
         for needle in ("X-Quenching-Token", "sessionStorage", "?token", 'get("token")'):
             self.assertNotIn(needle, js)
+
+    def test_a_cross_repository_id_is_shown_never_linked_or_opened(self):
+        js = (portal_mod.static_dir() / "app.js").read_text()
+        self.assertIn("const isRemoteId = (id) => /[\\/#]/.test(String(id));", js)
+        self.assertIn('it.spec && !isRemoteId(it.spec) ? h("a"', js)
+        self.assertIn('const btn = id && !isRemoteId(id) ? h("button"', js)
+        # The detail route serves the local snapshot only, so a reference there is a 404.
+        self.assertEqual(self.get("/api/specs/acme/remote%237")[0], 404)
 
     def test_the_waiting_panel_shows_the_pending_tool_as_a_chip(self):
         js = (portal_mod.static_dir() / "app.js").read_text()

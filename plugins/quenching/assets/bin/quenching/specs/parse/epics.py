@@ -44,6 +44,12 @@ def split_ref(key: str) -> tuple[str | None, str]:
     return (f"{m.group(1).lower()}/{m.group(2).lower()}", m.group(3)) if m else (None, str(key))
 
 
+def local_key(key: str, self_repo: str | None) -> str:
+    """The bare id for a reference naming this repository; `key` unchanged otherwise."""
+    repo, spec_id = split_ref(key)
+    return spec_id if repo is not None and repo == self_repo else key
+
+
 def is_remote(key: str) -> bool:
     return split_ref(key)[0] is not None
 
@@ -315,7 +321,8 @@ def epic_findings(info: dict, members: dict[str, dict | None],
     return rows
 
 
-def claim_findings(info: dict, epics: dict[str, dict | None]) -> list[dict]:
+def claim_findings(info: dict, epics: dict[str, dict | None],
+                   self_repo: str | None = None) -> list[dict]:
     """The member's side: its `epic:` names an epic that is absent, not an epic, or omits it."""
     ref = epic_ref(info["frontmatter"])
     if not ref or is_remote(ref):
@@ -326,7 +333,7 @@ def claim_findings(info: dict, epics: dict[str, dict | None]) -> list[dict]:
     elif not is_epic(parent["frontmatter"]):
         code, msg = ("sp-epic-not-an-epic", f"spec {sid} declares `epic: {ref}`, which is not a "
                                              f"`workItemType: epic` spec")
-    elif sid not in {str(i["spec"]) for i in parse_items(parent)}:
+    elif sid not in {local_key(str(i["spec"]), self_repo) for i in parse_items(parent)}:
         code, msg = "sp-epic-divergent", (f"spec {sid} declares `epic: {ref}`, but that epic "
                                           f"does not list it")
     else:
