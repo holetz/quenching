@@ -92,7 +92,9 @@ def read_members(backend, keys, root: str | None = None) -> tuple[dict, set[str]
             try:
                 got = store.read_specs(sorted(set(wanted.values())))
             except BackendRefusal:
-                pass
+                # A failed fetch still counts as fresh to this instance, which would then read
+                # an empty mirror as "missing": the next read starts from a new one.
+                _FOREIGN.pop(target, None)
         if got is None:
             unreadable.update(wanted)
         members.update({key: (got or {}).get(spec_id) for key, spec_id in wanted.items()})
