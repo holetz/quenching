@@ -116,6 +116,8 @@ _REGENERATE_STEPS = (
     ("generate_plugin_modules", ("scripts/generate_plugin_modules.py", "--write")),
     ("sync_codex_plugin", ("scripts/sync_codex_plugin.py", "--source", "plugins/quenching",
                            "--target", "plugins/quenching-codex", "--write")),
+    # After the Codex step: the OpenCode tree carries the Codex `cq` payload verbatim.
+    ("sync_opencode_plugin", ("scripts/sync_opencode_plugin.py", "--write")),
 )
 
 
