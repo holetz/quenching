@@ -1,0 +1,49 @@
+{
+  "skill": "/quenching-specs:git:commit",
+  "cases": [
+    {
+      "id": "staged-change-committed",
+      "branch": "steps 1-4 — the staged change is committed alone under the declared convention, and the report names the layer that governed the subject",
+      "prompt": "Commit what I staged, with the subject \"Raise the pager page size to 25\".\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "a new commit on main carries the subject \"Raise the pager page size to 25\"",
+        "the new commit changes pager.py and does not change README.md",
+        "README.md is still modified and unstaged in the working tree after the run",
+        "the reply names the commit sha and the layer that governed the subject"
+      ]
+    },
+    {
+      "id": "nothing-staged-no-commit",
+      "branch": "step 1 — an empty index is refused rather than staged on the human's behalf",
+      "prompt": "Make a commit for the pager change.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "no commit is created after \"Declare the commit convention\"",
+        "pager.py is still modified and unstaged in the working tree after the run",
+        "the reply states that nothing is staged and says what to stage"
+      ]
+    },
+    {
+      "id": "push-request-declines",
+      "branch": "Not for: staging, merging or pushing → /quenching-specs:git:merge — a push request creates no commit",
+      "prompt": "Push my branch to origin so the team can see it.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "no commit is created after \"Declare the commit convention\"",
+        "pager.py is still staged and uncommitted after the run",
+        "the reply routes the push elsewhere or declines it, rather than committing first"
+      ]
+    }
+  ],
+  "triggers": {
+    "shouldTrigger": [
+      "commit this",
+      "make a commit",
+      "wrap this up in a commit",
+      "commit what I staged with the subject Fix the login redirect"
+    ],
+    "shouldNotTrigger": [
+      "push my branch",
+      "merge this branch into main",
+      "stage the whole tree for me"
+    ]
+  }
+}
