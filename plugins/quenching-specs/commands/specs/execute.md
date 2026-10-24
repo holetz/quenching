@@ -220,7 +220,8 @@ Then, for that task:
 
 a. **Show what is being worked on** — the ID, its declared `files:` and its `verify:`.
 
-b. **Write the code**, minimal and scoped to the declared files. A task that declares `files:` and
+b. **Write the code**, minimal and scoped to the declared files — but only after the Codex
+   consultation below, which is the first action of 5b for EVERY task, not a choice. A task that declares `files:` and
    writes nothing under `/docs/` **may** go to an executor sub-agent under
    [execution-delegation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-delegation.md)
    §Delegating an executor; when it is, load the rules that bound it before dispatching:
@@ -230,11 +231,12 @@ b. **Write the code**, minimal and scoped to the declared files. A task that dec
      --sections "§Delegating an executor"
    ```
 
-   **The Codex executor comes first, one task at a time.** Unless stop-loss switched it off in this
-   run, `cq codex eligible --spec "<id>" --task "<task-id>" --json`: exit 0 → dispatch it, and act
-   on its exit, per
+   **The Codex executor comes first, one task at a time.** For EVERY task, before writing anything and
+   unless stop-loss switched it off in this run, run `cq codex eligible --spec "<id>" --task "<task-id>" --json`:
+   exit 0 → dispatch it, and act on its exit, per
    [execution-delegation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution-delegation.md)
-   §The Codex executor, loaded then; exit 1 or 2 → the executor above.
+   §The Codex executor, loaded then; exit 1 or 2 → the executor above. Every task leaves one `Codex:`
+   line, also when `eligible` refuses or stop-loss is on (`skipped`).
 
    **The `haiku` rung is per task.** For the `Task` executor, `cq specs estimate --spec "<id>"
    --task "<task-id>" --json` reporting `smallTierEligible: true` admits a `haiku` pin for one

@@ -73,6 +73,7 @@ WORKTREE: <absolute path>
 STATE: done | continue | blocked | failed
 SHAS: <task commit shas, 7 characters each, oldest first>
 TASKS: <checked>/<total>
+CODEX: <wrote n; fallback n; guard n; skipped n> — ids without a `Codex:` line: <ids or ->
 GATE: pass | fail | not-run — <command and exit code>
 PR: <url or ->
 DISCOVERIES: <count> — <one line each, max 5>

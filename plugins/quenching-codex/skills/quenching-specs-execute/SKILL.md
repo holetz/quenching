@@ -378,7 +378,8 @@ Then, for that task:
 
 a. **Show what is being worked on** — the ID, its declared `files:` and its `verify:`.
 
-b. **Write the code**, minimal and scoped to the declared files. A task that declares `files:` and
+b. **Write the code**, minimal and scoped to the declared files — but only after the Codex
+   consultation below, which is the first action of 5b for EVERY task, not a choice. A task that declares `files:` and
    writes nothing under `/docs/` **may** go to an executor sub-agent under
    [execution-delegation.md](../../references/specs-execute/execution-delegation.md)
    §Delegating an executor; when it is, load the rules that bound it before dispatching:
