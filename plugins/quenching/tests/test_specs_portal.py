@@ -257,6 +257,60 @@ date: 2026-01-01
         self.assertEqual(body["epicMembers"], [])
         self.assertEqual(body["count"], 0)
 
+    def _remote_epic(self, title="Program"):
+        self.backend.create_spec("plans", f"""---
+title: {title}
+date: 2026-01-01
+workItemType: epic
+---
+
+## Tasks
+
+- [ ] S1 Here — spec: #1
+- [ ] S2 There — spec: holetz/quenching#7 — after: S1
+- [ ] S3 Gone — spec: holetz/forge#9
+""")
+
+    def _remote_read(self, backend, keys, root):
+        self.assertEqual(["holetz/forge#9", "holetz/quenching#7"], keys)
+        local = self.backend.read_specs(["2"])["2"]
+        foreign = dict(local, id=7, phase="archive",
+                       frontmatter={**local["frontmatter"], "outcome": "done"})
+        return {"holetz/quenching#7": foreign, "holetz/forge#9": None}, {"holetz/forge#9"}
+
+    def test_epics_resolve_cross_repository_members_from_their_store(self):
+        self._remote_epic()
+        with mock.patch.object(portal_mod, "read_members", side_effect=self._remote_read):
+            row = self.get("/api/epics?refresh=1")[1]["epics"][0]
+        status = {i["label"]: i["status"] for i in row["items"]}
+        self.assertEqual("done", status["S2"])
+        self.assertEqual("unreadable", status["S3"])
+
+    def test_epics_without_cross_repository_members_read_no_other_store(self):
+        self.backend.create_spec("plans", """---
+title: Program
+date: 2026-01-01
+workItemType: epic
+---
+
+## Tasks
+
+- [ ] S1 Here — spec: #1
+""")
+        with mock.patch.object(portal_mod, "read_members") as reader:
+            self.assertTrue(self.get("/api/epics?refresh=1")[1]["supported"])
+        reader.assert_not_called()
+
+    def test_human_lists_a_cross_repository_member_with_its_own_title_and_stage(self):
+        self._remote_epic("Autopilot - decidir com o humano")
+        with mock.patch.object(portal_mod, "read_members", side_effect=self._remote_read):
+            body = self.get("/api/human?refresh=1")[1]
+        by_label = {m["label"]: m for m in body["epicMembers"]}
+        self.assertNotIn("S2", by_label)  # an archived foreign member is done
+        self.assertEqual(("holetz/forge#9", "unreadable", "unreadable"),
+                         (by_label["S3"]["id"], by_label["S3"]["stage"],
+                          by_label["S3"]["status"]))
+
     def test_human_needs_the_token(self):
         status, _, _ = self.portal.handle("GET", "/api/human", HOST, b"")
         self.assertEqual(status, 401)
