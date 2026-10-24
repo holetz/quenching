@@ -5,7 +5,7 @@ import json
 
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, read_one
-from quenching.specs.parse.deps import dep_findings, deps_of, find_cycle, schedule
+from quenching.specs.parse.deps import dep_findings, deps_of, find_cycle_through, schedule
 from quenching.specs.parse.fields import set_frontmatter_key
 
 
@@ -37,18 +37,19 @@ def cmd_depends(args, root: str, out: Emitter) -> int:
         spec = str(info["id"])
         added = deps_of({"dependsOn": args.add})
         removed = deps_of({"dependsOn": args.remove})
-        # Validate all requested ids, even if --remove would cancel an --add.
+        # Only ids to add are validated: `--remove` is the repair for a missing or own id.
         findings = dep_findings({**infos, spec: {
-            **info, "frontmatter": {**info["frontmatter"], "dependsOn": added + removed},
+            **info, "frontmatter": {**info["frontmatter"], "dependsOn": added},
         }})
         refusal = next((row for row in findings if row["spec"] == spec
                         and row["code"] in ("sp-dep-self", "sp-dep-missing")), None)
         if refusal:
             return out.emit_err(args.json, {**refusal, "exit": 2})
         desired = [dep for dep in dict.fromkeys(current + added) if dep not in removed]
-        edges = {key: deps_of(value["frontmatter"]) for key, value in infos.items()}
-        edges[spec] = desired
-        cycle = find_cycle(edges)
+        edges = {key: [d for d in deps_of(value["frontmatter"]) if d != key]
+                 for key, value in infos.items()}
+        edges[spec] = [d for d in desired if d != spec]
+        cycle = find_cycle_through(edges, spec)
         if cycle:
             return out.emit_err(args.json, {
                 "code": "sp-dep-cycle", "exit": 2, "cycle": cycle,
