@@ -726,7 +726,7 @@
     "scripts/bin/quenching/specs/parse/deps.py": "e246323c975b2b9de27460138c7114d6ab9292536ef890d718c5cf33cbe06ea7",
     "scripts/bin/quenching/specs/parse/derive.py": "8372edc14ae64518411ebd6513d61f3e9e3657cbbff32a374917aa57afe24238",
     "scripts/bin/quenching/specs/parse/edit.py": "873dba7f627d7d6d204fa0b96bb73e9ed5242f68ecbeb506fb5befee5898dbfb",
-    "scripts/bin/quenching/specs/parse/epics.py": "4d77e3d54cc357ba242fc359e6866714ba0ff05261ba235c44882e744f6fdef2",
+    "scripts/bin/quenching/specs/parse/epics.py": "04063948516602d219003998e3fc88df50f87510debd6bbfbb2b18381b0d4b4c",
     "scripts/bin/quenching/specs/parse/fields.py": "76daf0506802f483dfa95b34932be2597da41b50f7ce450bd5eb11344eb090e3",
     "scripts/bin/quenching/specs/parse/handoff.py": "b36657f84c2c21591b8c15c7c9fabc3cbd8c1dd98a2a31eac9c05c879dcbaf77",
     "scripts/bin/quenching/specs/parse/records.py": "09e271bba9fc792601593ac406719f43e783b960285e1478d001683fe1121fef",

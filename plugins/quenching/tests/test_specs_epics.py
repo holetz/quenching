@@ -397,6 +397,37 @@ class PureDerivation(unittest.TestCase):
         items = [{"label": f"S{i}", "after": [f"S{i + 1}"]} for i in range(1100)]
         self.assertIsNone(find_cycle(items))
 
+    def test_a_long_dependency_chain_has_a_critical_path(self):
+        b = MemoryBackend()
+        lines = []
+        for i in range(1100):
+            after = f" — after: S{i + 1}" if i < 1099 else ""
+            lines.append(f"- [ ] S{i} Member {i} — spec: #{i + 2}{after}\n")
+        b.create_spec("plans", epic_doc("## Tasks\n\n" + "".join(lines)))
+        for i in range(1100):
+            b.create_spec("plans", doc(f"Member {i}", "approved: yes\nepic: 1\n"))
+        info, _ = b.read_spec(EPIC_ID)
+        members = b.read_specs(range(2, 1102))
+        got = derive_epic(info, members)
+        self.assertIsNone(got["cycle"])
+        self.assertTrue(all(i["status"] != "done" for i in got["items"]))
+        self.assertEqual([f"S{i}" for i in reversed(range(1100))], got["criticalPath"])
+
+    def test_a_diamond_critical_path_keeps_dependency_declaration_order(self):
+        for after, chosen in (("S2,S1", "S2"), ("S1,S2", "S1")):
+            with self.subTest(after=after):
+                b = MemoryBackend()
+                b.create_spec("plans", epic_doc(
+                    f"## Tasks\n\n- [ ] S0 Last — spec: #2 — after: {after}\n"
+                    "- [ ] S1 Left — spec: #3 — after: S3\n"
+                    "- [ ] S2 Right — spec: #4 — after: S3\n"
+                    "- [ ] S3 First — spec: #5\n"))
+                for i in range(4):
+                    b.create_spec("plans", doc(f"Member {i}", "approved: yes\nepic: 1\n"))
+                info, _ = b.read_spec(EPIC_ID)
+                got = derive_epic(info, b.read_specs([2, 3, 4, 5]))
+                self.assertEqual(["S3", chosen, "S0"], got["criticalPath"])
+
     def test_a_cycle_through_a_long_dependency_chain_returns_the_path(self):
         items = [{"label": f"S{i}", "after": [f"S{i + 1}"]} for i in range(1100)]
         items[-1]["after"] = ["S0"]
