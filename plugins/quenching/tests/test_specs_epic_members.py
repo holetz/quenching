@@ -265,6 +265,22 @@ class CrossRepositoryEpic(TwoStores):
         self.assertEqual((2, "sp-epic-move-dependents"), (code, got.get("code")), got)
         self.assertIn("Forge one", self.local.read_spec("3")[0]["text"])
 
+    def _divergent(self):
+        _, got = self.run_cmd(validate_cmd.cmd_validate, spec=None, phase=None, by_code=False)
+        return [f for f in got["findings"] if f["code"] == "sp-epic-divergent"]
+
+    def test_a_self_qualified_item_whose_spec_has_no_epic_is_divergent(self):
+        self.extend_epic("- [ ] S3 Forge one — spec: holetz/forge#1\n")
+        found = self._divergent()
+        self.assertEqual(["holetz/forge#1"], [f["member"] for f in found], found)
+
+    def test_a_self_qualified_item_whose_spec_names_another_epic_is_divergent(self):
+        self.extend_epic("- [ ] S3 Forge one — spec: holetz/forge#1\n")
+        info, _ = self.local.read_spec(1)
+        self.local.write_spec(info, set_frontmatter_key(info["text"], "epic", "9"))
+        found = self._divergent()
+        self.assertEqual(["holetz/forge#1"], [f["member"] for f in found], found)
+
     def test_add_refuses_a_reference_whose_store_cannot_be_read(self):
         code, got = self.run_cmd(epic_cmd.cmd_epic, epic_cmd="add", epic=self.epic,
                                  spec="holetz/absent#1", after=None, group=None, label=None)
