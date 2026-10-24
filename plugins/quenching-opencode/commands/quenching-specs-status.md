@@ -1,0 +1,45 @@
+---
+description: "Report the specs front and store configuration, read-only. Use for \"specs status\", \"store configuration\". Not for: developing or executing → quenching-specs-develop; ranking → quenching-specs-triage."
+---
+
+<!-- GENERATED FROM plugins/quenching/commands/specs/status.md -->
+
+<!-- OPENCODE RUNTIME START -->
+## OpenCode runtime
+
+Delegate only through OpenCode's task tool, to the registered subagents named `quenching-<agent>` (protocol copies live under `~/.config/opencode/quenching/agents/`). Never launch the Claude CLI and never request a Claude model during an OpenCode run. Source model tiers are not pinned here: every command and subagent runs on the model the OpenCode session configures; a declared tier or effort below is a preference to report, not a switch. Token usage comes from host telemetry when it exists, otherwise it is `not measured`; `cq components session cost` and `context` read no OpenCode log and refuse (exit 2, unmeasured). If delegation is unavailable, report the limitation; never replace a required independent verification with self-review.
+
+<!-- OPENCODE RUNTIME END -->
+
+
+# quenching-specs-status — read the specs front
+
+The canonical documents live on the `quenching` branch (the git store), or in a deprecated tracker
+backend. There is no local `/.specs/` root.
+
+The recognised configuration envelope and its defaults live in
+[specs-align/plugin-configuration.md](~/.config/opencode/quenching/references/specs-align/plugin-configuration.md)
+§The envelope and recognised namespaces. This command reports that state; it does
+not create a local specs store or infer missing configuration.
+
+## Workflow
+
+1. Resolve `cq` through the repository's declared tool-resolution rule.
+   **Done when:** the tool path is resolved or refusal is reported.
+2. With an ID, run `cq specs status --spec <id> --json`; without one, run `cq specs list --json`.
+   The command's payload is the source of the stage, records, task progress and provider locator.
+   **Done when:** the requested spec list or record is in hand.
+3. Run `cq specs config --json` when the report needs to explain provider selection. A missing or
+   unrecognised provider is a refusal, never a fallback to local files. **Done when:** provider
+   configuration is reported when needed.
+4. Report the tool's JSON and exit code. Do not enumerate local folders, infer a filesystem root,
+   or re-render provider data into a second source of truth. **Done when:** the JSON, exit code, and
+   refusal/absence state are reported.
+
+## Invariants
+
+- Never write, scaffold, align, migrate or repair anything.
+- Never treat an absent local `/.specs/` directory as a finding; external backends do not use it.
+- Never call `FilesBackend`, infer `backend: files`, or offer a local fallback.
+- Use `quenching-specs-develop`, `quenching-specs-execute`, or `quenching-specs-conclude` for
+  lifecycle work on one named provider-owned spec.
