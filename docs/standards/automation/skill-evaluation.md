@@ -130,6 +130,11 @@ with `--harnesses`). It keeps both arms: the `with` arm loads the quenching modu
   per harness and model. Two such rates side by side say which model, on which harness, passes
   more of this case set with the skill loaded. They are never reported as a skill delta; the
   delta stays the within-model comparison of [Two arms or no claim](#two-arms-or-no-claim).
+- **A command that pins its own model is recorded beside the run's.** `benchmark.json` carries
+  `model` (the `--model` of the invocation) and `commandModel` (the `model:` in the frontmatter of
+  the command the suite evaluates, `null` when it pins none). Where `commandModel` is not `null`,
+  that command ran on its own model whatever `--model` said, so the rate belongs to
+  `commandModel` and is never compared as a rate of `model`.
 - **The grader is fixed for the whole comparison.** One grader harness and model
   (`--grader-harness`, `--grader-model`) grades every arm of every model compared, in an empty
   directory and without the skill. A comparison whose grader changed between runs measures the
