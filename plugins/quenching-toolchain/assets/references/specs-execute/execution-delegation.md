@@ -134,3 +134,6 @@ cq codex implement --spec "<id>" --task "<task-id>" --worktree "<work checkout>"
 
 Each dispatch is one report line: `Codex: <task-id> <wrote|fallback|guard> — <reason>, <tokens or
 not measured>, quota +<delta or not measured>`.
+
+A task the consultation did not dispatch still leaves its line: `Codex: <task-id> skipped — <reason
+from eligible, or stop-loss>`. Every task has one `Codex:` line; its absence is the anomaly.
