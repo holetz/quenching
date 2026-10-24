@@ -119,32 +119,35 @@ def member_state(member: dict | None, pr_state: str | None = None,
 
 
 def find_cycle(items: list[dict]) -> list[str] | None:
-    """One dependency cycle as a label path (`A, B, A`), or `None`. Unknown labels are ignored."""
+    """Iteratively find one dependency cycle as a label path (`A, B, A`), or `None`.
+
+    Unknown labels are ignored.
+    """
     graph = {i["label"]: list(i["after"]) for i in items}
     color: dict[str, int] = {}
     stack: list[str] = []
 
-    def visit(n: str) -> list[str] | None:
+    for n in graph:
+        if color.get(n, 0):
+            continue
         color[n] = 1
         stack.append(n)
-        for d in graph.get(n, []):
-            if d not in graph:
-                continue
-            if color.get(d, 0) == 1:
-                return stack[stack.index(d):] + [d]
-            if color.get(d, 0) == 0:
-                found = visit(d)
-                if found:
-                    return found
-        stack.pop()
-        color[n] = 2
-        return None
-
-    for n in graph:
-        if color.get(n, 0) == 0:
-            found = visit(n)
-            if found:
-                return found
+        frames = [iter(graph[n])]
+        while frames:
+            for d in frames[-1]:
+                if d not in graph:
+                    continue
+                state = color.get(d, 0)
+                if state == 1:
+                    return stack[stack.index(d):] + [d]
+                if state == 0:
+                    color[d] = 1
+                    stack.append(d)
+                    frames.append(iter(graph[d]))
+                    break
+            else:
+                color[stack.pop()] = 2
+                frames.pop()
     return None
 
 
