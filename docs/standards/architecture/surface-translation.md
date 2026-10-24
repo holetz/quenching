@@ -106,7 +106,7 @@ and checked by `--check` in the repository gate; the release regeneration runs i
 Codex step. It is laid out as an OpenCode configuration directory: `commands/quenching-<front>-<verb>.md`
 for each source command, `agents/quenching-<agent>.md` for each source agent registered as an
 OpenCode subagent, and `quenching/` carrying the cited references, templates, specs, knowledge,
-design, portal, agent protocols and the bundled `cq`. It has no marketplace entry and no
+design, portal, checks (Python only), zensical, evals, opensource, agent protocols and the bundled `cq`. It has no marketplace entry and no
 `distributions` row: installing it is copying it into the OpenCode configuration directory.
 
 Markdown is translated from the Claude source with the OpenCode vocabulary: module-qualified ids
