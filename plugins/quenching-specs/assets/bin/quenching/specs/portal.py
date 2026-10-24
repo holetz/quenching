@@ -60,7 +60,8 @@ from quenching.specs.commands.granular import cmd_section
 from quenching.specs.commands.next import _priority_rank
 from quenching.specs.commands.output import Emitter
 from quenching.specs.commands.task import cmd_discover
-from quenching.specs.parse.epics import derive_epic
+from quenching.specs.members import read_members
+from quenching.specs.parse.epics import derive_epic, parse_items, split_ref
 from quenching.specs.parse.fields import set_frontmatter_record
 from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.sections import ready_report, section_state
@@ -133,6 +134,16 @@ HUMAN_EPIC_MARK = "decidir com o humano"
 # sys.stdin/stdout/stderr belong to the process, so the lock that guards their redirection does too.
 # Always taken after `Portal.lock` and never held while taking another: no deadlock between portals.
 _STDIO_LOCK = threading.RLock()
+
+
+class _SnapshotStore:
+    """`read_specs` over the snapshot, so a self-reference resolves without a second read."""
+
+    def __init__(self, infos: dict):
+        self.infos = infos
+
+    def read_specs(self, ids) -> dict:
+        return {str(i): self.infos.get(str(i)) for i in ids}
 
 
 class Portal:
@@ -394,46 +405,68 @@ class Portal:
         an epic through a `parent:` (or `epic:`) frontmatter key."""
         epics = [i for i in snap["infos"].values()
                  if str(i["frontmatter"].get("workItemType") or "").lower() == "epic"]
-        members = {str(i["id"]): i for i in snap["infos"].values()}
+        members, unreadable = self._members(snap, epics)
         rows = []
         for e in epics:
             kids = [i for i in snap["infos"].values()
                     if str(i["frontmatter"].get("parent") or i["frontmatter"].get("epic") or "")
                     .lstrip("#") == str(e["id"])]
             done = [k for k in kids if k["phase"] == "archive"]
-            derived = derive_epic(e, members)
+            derived = derive_epic(e, members, unreadable=unreadable)
             items = [{k: v for k, v in i.items() if k in _EPIC_ITEM_KEYS} for i in derived["items"]]
+            # A cross-repository member has no back-reference here: it counts through its item.
+            outside = [i for i in derived["items"] if i["spec"] and split_ref(str(i["spec"]))[0]
+                       and (i["member"] is None
+                            or snap["infos"].get(str(i["member"]["id"])) is not i["member"])]
             rows.append({"id": e["id"], "title": str(e["frontmatter"].get("title") or ""),
                          "items": items, "groups": derived["groups"],
                          "cycle": derived["cycle"], "criticalPath": derived["criticalPath"],
                          "children": [{"id": k["id"], "title": str(k["frontmatter"].get("title")
                                                                     or ""),
                                        "stage": self._stage(k)} for k in kids],
-                         "done": len(done), "total": len(kids)})
+                         "done": len(done) + sum(i["status"] == "done" for i in outside),
+                         "total": len(kids) + len(outside)})
         return {"supported": bool(epics), "epics": rows}
+
+    def _members(self, snap: dict, epics: list[dict]) -> tuple[dict, set[str]]:
+        """The snapshot's infos, plus every cross-repository member of `epics` read from its own
+        store through `members.py`; the second value names the keys whose store was unreadable."""
+        members = dict(snap["infos"])
+        remote = sorted({str(i["spec"]) for e in epics for i in parse_items(e)
+                         if i["spec"] and split_ref(str(i["spec"]))[0]})
+        if not remote:
+            return members, set()
+        got, unreadable = read_members(_SnapshotStore(snap["infos"]), remote, self.root)
+        members.update(got)
+        return members, unreadable
 
     def _human(self, snap: dict) -> dict:
         """What waits for the human, read from the snapshot alone: open members of the epics
         titled `HUMAN_EPIC_MARK`, specs with a blocked task, and ready specs nobody approved."""
         infos = snap["infos"]
         rows = {str(r["id"]): r for r in snap["rows"]}
-        members = {k: v for k, v in infos.items()}
+        epics = [e for e in infos.values()
+                 if HUMAN_EPIC_MARK in str(e["frontmatter"].get("title") or "").lower()
+                 and str(e["frontmatter"].get("workItemType") or "").lower() == "epic"
+                 and e["phase"] != "archive"]
+        members, unreadable = self._members(snap, epics)
         epic_members, seen = [], set()
-        for e in infos.values():
-            if HUMAN_EPIC_MARK not in str(e["frontmatter"].get("title") or "").lower():
-                continue
-            if str(e["frontmatter"].get("workItemType") or "").lower() != "epic" \
-                    or e["phase"] == "archive":
-                continue
-            for it in derive_epic(e, members)["items"]:
+        for e in epics:
+            for it in derive_epic(e, members, unreadable=unreadable)["items"]:
                 if it["status"] in ("done", "dropped"):
                     continue
                 sid = str(it["spec"]) if it["spec"] else ""
-                row = rows.get(sid)
+                row, member = rows.get(sid), it["member"]
+                if row:
+                    title, stage = row["title"], row["stage"]
+                elif member:
+                    title = str(member["frontmatter"].get("title") or it["title"])
+                    stage = self._stage(member)
+                else:
+                    title = it["title"]
+                    stage = "unreadable" if it["status"] == "unreadable" else "missing"
                 epic_members.append({"epic": e["id"], "label": it["label"],
-                                     "id": it["spec"] or None,
-                                     "title": row["title"] if row else it["title"],
-                                     "stage": row["stage"] if row else "missing",
+                                     "id": it["spec"] or None, "title": title, "stage": stage,
                                      "status": it["status"]})
                 if sid:
                     seen.add(sid)

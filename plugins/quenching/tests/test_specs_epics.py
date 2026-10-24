@@ -28,7 +28,9 @@ from quenching.specs.commands import read as read_cmd
 from quenching.specs.commands import task as task_cmd
 from quenching.specs.commands import validate as validate_cmd
 from quenching.specs.commands.output import Emitter
-from quenching.specs.parse.epics import derive_epic, find_cycle, parse_items
+from quenching.specs.parse.epics import (claim_findings, derive_epic, epic_findings,
+                                         find_cycle, parse_items, render_item,
+                                         split_ref)
 from quenching.specs.parse.fields import set_frontmatter_key
 
 EPIC_ID = 1
@@ -412,6 +414,52 @@ class PureDerivation(unittest.TestCase):
         self.assertEqual("ready", got["items"][0]["status"])
         _, report = run(validate_cmd.cmd_validate, b, spec=None, phase=None, by_code=False)
         self.assertIn("sp-epic-manual-tick", {f["code"] for f in report["findings"]})
+
+
+class CrossRepositoryGrammar(unittest.TestCase):
+    """`spec: <owner>/<repo>#<id>` names a member in another store; the derivation stays pure."""
+
+    TASKS = ("## Tasks\n\n- [ ] S1 Remote — spec: Holetz/Quenching#2036\n"
+             "- [ ] S2 Local — spec: #2 — after: S1\n")
+
+    def epic(self):
+        b = MemoryBackend()
+        b.create_spec("plans", epic_doc(self.TASKS))
+        b.create_spec("plans", doc("Local", "approved: yes\nepic: 1\n"))
+        return b, b.read_spec(1)[0]
+
+    def test_the_reference_is_parsed_into_a_normalized_key(self):
+        _, info = self.epic()
+        self.assertEqual(["holetz/quenching#2036", "2"], [i["spec"] for i in parse_items(info)])
+        self.assertEqual(("holetz/quenching", "2036"), split_ref("holetz/quenching#2036"))
+        self.assertEqual((None, "2"), split_ref("2"))
+        self.assertEqual("- [ ] S3 T — spec: holetz/forge#1",
+                         render_item("S3", "T", "holetz/forge#1", []))
+        self.assertEqual("- [ ] S3 T — spec: #4", render_item("S3", "T", "4", []))
+
+    def test_an_unreadable_store_holds_its_dependents_and_is_a_warning(self):
+        b, info = self.epic()
+        members = {"2": b.read_spec(2)[0], "holetz/quenching#2036": None}
+        got = derive_epic(info, members, unreadable={"holetz/quenching#2036"})
+        self.assertEqual(["unreadable", "waiting"], [i["status"] for i in got["items"]])
+        rows = {f["code"]: f["severity"]
+                for f in epic_findings(info, members, {"holetz/quenching#2036"})}
+        self.assertEqual("warn", rows.pop("sp-epic-member-unreadable"))
+        self.assertEqual({}, rows)
+
+    def test_a_remote_member_needs_no_back_reference_and_a_read_absence_is_missing(self):
+        b, info = self.epic()
+        remote = dict(b.read_spec(2)[0], frontmatter={"title": "Remote"})
+        members = {"2": b.read_spec(2)[0], "holetz/quenching#2036": remote}
+        self.assertEqual([], epic_findings(info, members))
+        members["holetz/quenching#2036"] = None
+        self.assertEqual(["sp-epic-missing-member"],
+                         [f["code"] for f in epic_findings(info, members)])
+
+    def test_a_reference_form_epic_key_on_a_member_is_not_an_orphan(self):
+        b = MemoryBackend()
+        b.create_spec("plans", doc("M", "epic: holetz/forge#1\n"))
+        self.assertEqual([], claim_findings(b.read_spec(1)[0], {}))
 
 
 class InsertItemGroupNumbering(unittest.TestCase):
