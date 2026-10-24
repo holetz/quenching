@@ -145,6 +145,7 @@
         "standards/workflows/plan-lifecycle.md",
         "standards/workflows/plugin-configuration.md",
         "standards/workflows/retiring-a-standard.md",
+        "standards/workflows/spec-dependencies.md",
         "standards/workflows/task-execution.md",
         "standards/workflows/worktree-setup.md",
         "standards/workflows/work-host.md",
