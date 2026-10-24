@@ -15,9 +15,13 @@ spec = importlib.util.spec_from_file_location("run_evals", REPO / "scripts/run_e
 runner = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(runner)
 
-AGENT = """import pathlib, sys
+AGENT = """import os, pathlib, subprocess, sys
 pathlib.Path("made.txt").write_text("hello\\n")
-print("AGENT DONE for: " + sys.argv[1][:20])
+pathlib.Path("kept.txt").write_text("COMMITTED CONTENT\\n")
+subprocess.run(["git", "add", "kept.txt"], check=True)
+subprocess.run(["git", "commit", "-q", "-m", "keep"], check=True)
+print("AGENT DONE for: " + sys.argv[-1][:20])
+print("CQ=" + os.environ.get("CQ", "<absent>"))
 """
 SLEEPER = "import time; print('started', flush=True); time.sleep(5)\n"
 GRADER = """import json
@@ -89,6 +93,7 @@ class Runner(unittest.TestCase):
         self.assertIn("setup-ran-c1", snap)
         self.assertIn("made.txt", snap)
         self.assertIn("INSPECT OK", snap)
+        self.assertIn("COMMITTED CONTENT", snap)
         bench = json.loads((out / "suite/benchmark.json").read_text())
         self.assertEqual(bench["with"]["passRate"], round(4 / 5, 4))
         self.assertEqual(bench["with"]["caseApprovalRate"], 0.5)
@@ -103,6 +108,15 @@ class Runner(unittest.TestCase):
         bench = json.loads((out / "suite/benchmark.json").read_text())
         self.assertEqual(bench["delta"]["passRate"], 0.0)
         self.assertIn("without", json.loads((out / "suite/grading.json").read_text())[0]["arms"])
+        self.assertIn("CQ=<absent>", (out / "suite/c1.without.output.txt").read_text())
+        self.assertNotIn("CQ=<absent>", (out / "suite/c1.with.output.txt").read_text())
+
+    def test_a_failing_setup_is_recorded_and_the_run_goes_on(self):
+        (self.suite / "setup.sh").write_text('[ "$1" = c1 ] && exit 3\necho ok\n')
+        out = self.full_run("fake")
+        grading = json.loads((out / "suite/grading.json").read_text())
+        self.assertIn("could not be provisioned", grading[0]["arms"]["with"]["error"])
+        self.assertNotIn("error", grading[1]["arms"]["with"])
 
     def test_a_dead_or_slow_arm_is_recorded_never_dropped(self):
         for harness, reason in (("dead", "no-such-harness"), ("slow", "timeout")):
@@ -149,6 +163,11 @@ class Runner(unittest.TestCase):
         self.assertIn("duplicate id", buffer.getvalue())
         self.assertIn("`prompt`", buffer.getvalue())
         self.assertIn("Not for:", buffer.getvalue())
+        for body in ("[]", json.dumps({"skill": "s", "cases": [7, {"id": [], "branch": "b", "prompt": "p",
+                                                                    "assertions": ["a"]}]})):
+            (bad / "evals.json").write_text(body)
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(runner.main(["--check", "--suite", str(bad)]), 1)
 
     def test_every_committed_suite_passes_check(self):
         buffer = io.StringIO()
@@ -163,6 +182,21 @@ class Grades(unittest.TestCase):
         self.assertEqual([g["result"] for g in grades], ["unknown", "unknown"])
         grades = runner.verify_grades(["a"], [{"assertion": "a", "result": "maybe", "evidence": "x"}], "x")
         self.assertEqual(grades[0]["result"], "unknown")
+
+    def test_a_grade_for_another_assertion_is_never_reused(self):
+        grades = runner.verify_grades(["a", "b"], [{"assertion": "b", "result": "pass", "evidence": "x"}], "x")
+        self.assertEqual([g["result"] for g in grades], ["unknown", "pass"])
+
+    def test_the_codex_event_stream_yields_its_agent_messages(self):
+        stream = "\n".join(json.dumps(e) for e in (
+            {"type": "thread.started"},
+            {"type": "item.completed", "item": {"type": "command_execution", "command": "ls"}},
+            {"type": "item.completed", "item": {"type": "agent_message",
+                                                "text": '[{"assertion": "a", "result": "pass", "evidence": "x"}]'}},
+            {"type": "turn.completed", "usage": {"input_tokens": 10, "cached_input_tokens": 8, "output_tokens": 2}}))
+        text, tokens = runner.output_text({"output": "codex-jsonl"}, stream)
+        self.assertEqual(tokens, 12)
+        self.assertEqual(runner.parse_grades(text)[0]["result"], "pass")
 
     def test_evidence_matches_across_whitespace(self):
         grades = runner.verify_grades(["a"], [{"assertion": "a", "result": "fail",

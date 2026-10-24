@@ -78,6 +78,8 @@ def check_suite(directory: Path) -> tuple[dict | None, list[str], list[str]]:
         data = json.loads(file.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         return None, [f"{file}: not JSON ({exc})"], []
+    if not isinstance(data, dict):
+        return None, [f"{file}: the root must be a JSON object"], []
     errors, warnings = [], []
     if not isinstance(data.get("skill"), str) or not data["skill"]:
         errors.append(f"{file}: `skill` must be a non-empty string")
@@ -94,9 +96,10 @@ def check_suite(directory: Path) -> tuple[dict | None, list[str], list[str]]:
         for key in ("id", "branch", "prompt"):
             if not isinstance(case.get(key), str) or not case[key].strip():
                 errors.append(f"{where}: `{key}` must be a non-empty string")
-        if case.get("id") in seen:
-            errors.append(f"{where}: duplicate id {case['id']!r}")
-        seen.add(case.get("id"))
+        if isinstance(case.get("id"), str):
+            if case["id"] in seen:
+                errors.append(f"{where}: duplicate id {case['id']!r}")
+            seen.add(case["id"])
         assertions = case.get("assertions")
         if not isinstance(assertions, list) or not assertions or \
                 not all(isinstance(a, str) and a.strip() for a in assertions):
@@ -105,7 +108,8 @@ def check_suite(directory: Path) -> tuple[dict | None, list[str], list[str]]:
     if not isinstance(triggers, dict) or not all(
             isinstance(triggers.get(k), list) for k in ("shouldTrigger", "shouldNotTrigger")):
         errors.append(f"{file}: `triggers` needs `shouldTrigger` and `shouldNotTrigger` lists")
-    if cases and not any("not for" in str(c.get("branch", "")).lower() for c in cases):
+    if cases and not any(isinstance(c, dict) and "not for" in str(c.get("branch", "")).lower()
+                         for c in cases):
         warnings.append(f"{file}: no case branch names the `Not for:` boundary")
     for script in ("setup.sh", "inspect.sh"):
         if (directory / script).exists() and not (directory / script).is_file():
@@ -149,8 +153,31 @@ def render(profile: dict, arm: str | None, values: dict, extra: list[str]) -> li
     return argv
 
 
+def codex_output(stdout: str) -> tuple[str, int | None]:
+    """The agent messages of a `codex exec --json` event stream, and the turn's tokens."""
+    messages, tokens = [], None
+    for line in stdout.splitlines():
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(event, dict):
+            continue
+        item = event.get("item")
+        if event.get("type") == "item.completed" and isinstance(item, dict) \
+                and item.get("type") == "agent_message":
+            messages.append(str(item.get("text", "")))
+        usage = event.get("usage") if event.get("type") == "turn.completed" else None
+        if isinstance(usage, dict):
+            counted = [usage.get(k) for k in ("input_tokens", "output_tokens")]
+            tokens = (tokens or 0) + sum(v for v in counted if isinstance(v, int))
+    return ("\n\n".join(messages) if messages else stdout), tokens or None
+
+
 def output_text(profile: dict, stdout: str) -> tuple[str, int | None]:
     """The text to grade and the tokens the run reported, when the profile can parse them."""
+    if profile.get("output") == "codex-jsonl":
+        return codex_output(stdout)
     if profile.get("output") != "claude-json":
         return stdout, None
     try:
@@ -197,6 +224,9 @@ def provision(suite: Path, case_id: str, parent: Path) -> tuple[Path, dict]:
     if (suite / "setup.sh").is_file():
         subprocess.run(["bash", str(suite / "setup.sh"), case_id], cwd=workspace, env=env,
                        check=True, capture_output=True, text=True, timeout=120)
+    base = subprocess.run(["git", "rev-parse", "HEAD"], cwd=workspace, env=env, check=True,
+                          capture_output=True, text=True).stdout.strip()
+    env["EVAL_BASE"] = base
     return workspace, env
 
 
@@ -209,6 +239,10 @@ def snapshot(suite: Path, workspace: Path, env: dict) -> str:
     refs = capture(["git", "for-each-ref", "--format=%(refname:short)", "refs/heads"]).splitlines()
     for ref in refs:
         parts.append((f"git log --stat -n 5 {ref}", capture(["git", "log", "--stat", "-n", "5", ref])))
+    base = env.get("EVAL_BASE")
+    if base:
+        parts.append((f"git diff {base[:12]} (every change since the fixture, committed or not)",
+                      capture(["git", "diff", base])))
     parts.append(("git diff HEAD", capture(["git", "diff", "HEAD"])))
     parts.append(("untracked files", capture(["git", "ls-files", "--others", "--exclude-standard"])))
     if (suite / "inspect.sh").is_file():
@@ -240,7 +274,11 @@ def verify_grades(assertions: list[str], raw: list | None, material: str) -> lis
     haystack = squash(material)
     grades = []
     for index, assertion in enumerate(assertions):
-        grade = by_text.get(assertion) or (raw[index] if raw and index < len(raw) else None)
+        grade = by_text.get(assertion)
+        if grade is None and raw and index < len(raw):
+            named = str(raw[index].get("assertion", ""))
+            # a positional match only when that grade does not belong to another assertion
+            grade = raw[index] if named not in assertions else None
         if grade is None:
             grades.append({"assertion": assertion, "result": "unknown", "evidence": "",
                            "reason": "the grader returned no grade for this assertion"})
@@ -264,15 +302,29 @@ def material_of(output: str, snap: str) -> str:
 def run_arm(args, profiles: dict, suite: Path, case: dict, arm: str) -> dict:
     profile = profiles[args.harness]
     with tempfile.TemporaryDirectory(prefix="eval-") as temporary:
-        workspace, env = provision(suite, case["id"], Path(temporary))
+        try:
+            workspace, env = provision(suite, case["id"], Path(temporary))
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+            detail = getattr(exc, "stderr", None) or ""
+            detail = detail.decode(errors="replace") if isinstance(detail, bytes) else detail
+            error = f"the fixture could not be provisioned: {exc}"
+            return {"tokens": None, "durationMs": 0, "output": detail, "snapshot": "(not provisioned)",
+                    "error": error, "assertions": [{"assertion": a, "result": "unknown", "evidence": "",
+                                                    "reason": error} for a in case["assertions"]]}
+        arm_env = dict(env)
         if arm == "with" and CQ_BIN.is_dir():
-            env["PATH"] = f"{CQ_BIN}{os.pathsep}{env.get('PATH', '')}"
+            arm_env["PATH"] = f"{CQ_BIN}{os.pathsep}{env.get('PATH', '')}"
+        if arm != "with":
+            arm_env.pop("CQ", None)  # the without arm gets no path to the tool or the skill bodies
         values = {"prompt": case["prompt"], "model": args.model, "workdir": str(workspace),
                   "max_turns": str(args.max_turns)}
-        record = invoke(render(profile, arm, values, args.extra_arg), workspace, env, args.timeout)
+        record = invoke(render(profile, arm, values, args.extra_arg), workspace, arm_env, args.timeout)
         text, tokens = output_text(profile, record["stdout"])
         output = text + (f"\n[stderr]\n{record['stderr'][-4000:]}" if record["stderr"] else "")
-        snap = snapshot(suite, workspace, env)
+        try:
+            snap = snapshot(suite, workspace, env)
+        except (subprocess.TimeoutExpired, OSError) as exc:
+            snap = f"(the snapshot failed: {exc})"
     entry = {"tokens": tokens, "durationMs": record["durationMs"], "output": output, "snapshot": snap}
     if record["error"]:
         entry["error"] = record["error"]

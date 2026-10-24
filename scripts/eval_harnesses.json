@@ -13,7 +13,7 @@
       "argv": ["codex", "exec", "--json", "--skip-git-repo-check", "-m", "{model}", "-C", "{workdir}",
                "{arm}", "{extra}", "{prompt}"],
       "arms": {"with": []},
-      "output": "text",
+      "output": "codex-jsonl",
       "note": "Codex loads the quenching-codex plugin from its own installation, so only the with arm exists here."
     },
     "opencode": {
