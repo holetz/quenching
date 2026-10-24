@@ -67,6 +67,102 @@ class DeclaredReading(unittest.TestCase):
         self.assertIsNone(row["files"][0]["bytes"])
         self.assertGreater(row["estimatedTokens"], 0)
 
+    def test_generated_mirror_keeps_size_but_adds_no_reading_tokens(self):
+        mirror = self.root / "plugins/quenching-specs/big.py"
+        mirror.parent.mkdir(parents=True)
+        mirror.write_bytes(b"x" * 4000)
+        (mirror.parent / ".generated-from.json").write_text("{}")
+        task = "- [ ] 1.1 Task\n      files: a.py\n"
+        baseline = self.estimate(task)["sections"][0]
+        info = self.info(task)
+        info["tasks"][0]["files"].append("plugins/quenching-specs/big.py")
+        row = estimate_build(info, self.root, preamble=self.preamble)["sections"][0]
+        self.assertEqual(baseline["estimatedTokens"], row["estimatedTokens"])
+        self.assertEqual(baseline["bytes"], row["bytes"])
+        self.assertEqual({"path": "plugins/quenching-specs/big.py", "bytes": 4000,
+                          "writeOnly": "generated mirror"}, row["files"][1])
+        self.assertEqual([], row["unresolved"])
+
+    def test_missing_generated_mirror_is_not_unresolved(self):
+        generated = self.root / "plugins/quenching-specs"
+        generated.mkdir(parents=True)
+        (generated / ".generated-files.json").write_text("{}")
+        for suffix in ("", " (new)"):
+            with self.subTest(suffix=suffix):
+                row = self.estimate("- [ ] 1.1 Task\n      files: "
+                                    f"plugins/quenching-specs/nested/missing.py{suffix}\n")["sections"][0]
+                self.assertEqual("generated mirror", row["files"][0]["writeOnly"])
+                self.assertIsNone(row["files"][0]["bytes"])
+                self.assertEqual([], row["unresolved"])
+                self.assertTrue(row["complete"])
+
+    def test_authored_file_under_generated_directory_is_counted(self):
+        authored = self.root / "plugins/quenching-specs/big.py"
+        authored.parent.mkdir(parents=True)
+        authored.write_bytes(b"x" * 4000)
+        (authored.parent / ".generated-from.json").write_text("{}")
+        manifest = self.root / "plugins/quenching/assets/modules.json"
+        manifest.parent.mkdir(parents=True)
+        manifest.write_text(json.dumps({"modules": [{"path": "plugins/quenching-specs",
+                                                     "authored": ["big.py"]}]}))
+        result = self.estimate("- [ ] 1.1 Task\n      files: plugins/quenching-specs/big.py\n")
+        row = result["sections"][0]
+        self.assertEqual([{"path": "plugins/quenching-specs/big.py", "bytes": 4000}], row["files"])
+        self.assertEqual(20 + result["specBuildBytes"] + 4000, row["bytes"])
+        self.assertEqual([], row["unresolved"])
+
+    def test_normal_file_is_counted(self):
+        result = self.estimate("- [ ] 1.1 Task\n      files: a.py\n")
+        row = result["sections"][0]
+        self.assertEqual([{"path": "a.py", "bytes": 400}], row["files"])
+        self.assertEqual(20 + result["specBuildBytes"] + 400, row["bytes"])
+        self.assertEqual([], row["unresolved"])
+
+    def test_impact_standard_is_counted_even_when_also_declared_under_generated_dir(self):
+        (self.root / "docs/.generated-from.json").write_text("{}")
+        standard = "docs/standards/agents/communication.md"
+        result = self.estimate(f"- [ ] 1.1 Task\n      files: {standard}\n", f"- /{standard}\n")
+        row = result["sections"][0]
+        self.assertEqual([{"path": standard, "bytes": 80}], row["files"])
+        self.assertEqual(20 + result["specBuildBytes"] + 80, row["bytes"])
+
+    def test_invalid_module_manifest_does_not_prevent_mirror_detection(self):
+        generated = self.root / "plugins/quenching-specs"
+        generated.mkdir(parents=True)
+        (generated / ".generated-from.json").write_text("{}")
+        manifest = self.root / "plugins/quenching/assets/modules.json"
+        manifest.parent.mkdir(parents=True)
+        for contents in ("{invalid", "[]", '{"modules": null}'):
+            with self.subTest(contents=contents):
+                manifest.write_text(contents)
+                row = self.estimate("- [ ] 1.1 Task\n      files: "
+                                    "plugins/quenching-specs/missing.py\n")["sections"][0]
+                self.assertEqual("generated mirror", row["files"][0]["writeOnly"])
+                self.assertEqual([], row["unresolved"])
+
+    def test_root_marker_and_invalid_paths_do_not_make_mirrors(self):
+        (self.root / ".generated-from.json").write_text("{}")
+        (self.root / "escape").symlink_to(self.root.parent, target_is_directory=True)
+        result = self.estimate("- [ ] 1.1 Task\n      files: a.py, ../outside, /absolute, "
+                               "escape/outside, a.py (comment)\n")
+        row = result["sections"][0]
+        self.assertEqual(4, len(row["unresolved"]))
+        self.assertTrue(all("writeOnly" not in file for file in row["files"]))
+
+    def test_nearest_generated_directory_controls_authored_exception(self):
+        nested = self.root / "plugins/quenching-specs/nested"
+        nested.mkdir(parents=True)
+        (nested / ".generated-files.json").write_text("{}")
+        (nested.parent / ".generated-from.json").write_text("{}")
+        (nested / "big.py").write_bytes(b"x" * 4000)
+        manifest = self.root / "plugins/quenching/assets/modules.json"
+        manifest.parent.mkdir(parents=True)
+        manifest.write_text(json.dumps({"modules": [{"path": "plugins/quenching-specs",
+                                                     "authored": ["nested/big.py"]}]}))
+        row = self.estimate("- [ ] 1.1 Task\n      files: "
+                            "plugins/quenching-specs/nested/big.py\n")["sections"][0]
+        self.assertEqual("generated mirror", row["files"][0]["writeOnly"])
+
     def test_empty_spec_and_unavailable_preamble_are_incomplete(self):
         self.assertFalse(self.estimate("- none — no tasks")["complete"])
         self.preamble.unlink()
