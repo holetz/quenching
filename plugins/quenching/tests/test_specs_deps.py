@@ -9,7 +9,7 @@ try:
 except ModuleNotFoundError:  # package-qualified unittest invocation from the repository root
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
-from quenching.specs.parse.deps import dep_findings, deps_of, find_cycle, schedule
+from quenching.specs.parse.deps import dep_findings, deps_of, find_cycle, find_cycle_through, schedule
 
 
 def info(phase="plans", **fm):
@@ -38,6 +38,21 @@ class DependencyParsing(unittest.TestCase):
         }))
         self.assertIsNone(find_cycle({"B": ["A", "missing"], "A": []}))
         self.assertIsNone(find_cycle({}))
+
+    def test_cycle_search_survives_a_chain_past_the_recursion_limit(self):
+        chain = {str(i): [str(i + 1)] for i in range(1100)}
+        self.assertIsNone(find_cycle(chain))
+        chain["1100"] = ["0"]
+        cycle = find_cycle(chain)
+        self.assertEqual(("0", "0"), (cycle[0], cycle[-1]))
+        self.assertEqual(1102, len(cycle))
+
+    def test_cycle_through_a_node_ignores_self_edges_and_unrelated_cycles(self):
+        edges = {"X": ["X"], "Y": [], "P": ["Q"], "Q": ["P"], "1": ["2"], "2": ["3"], "3": ["1"]}
+        self.assertIsNone(find_cycle_through(edges, "Y"))
+        self.assertIsNone(find_cycle_through(edges, "X"))
+        self.assertEqual(["1", "2", "3", "1"], find_cycle_through(edges, "3"))
+        self.assertEqual(["P", "Q", "P"], find_cycle_through(edges, "Q"))
 
 
 class DependencyFindings(unittest.TestCase):
@@ -142,6 +157,21 @@ class DependencySchedule(unittest.TestCase):
                 self.assertEqual(("2026-01-05", "2026-01-07", 0, None),
                                  tuple(node[key] for key in
                                        ("earliestStart", "earliestFinish", "slipDays", "drivenBy")))
+
+    def test_dropped_dependency_stays_off_the_critical_path(self):
+        got = schedule({"A": info("archive", outcome="dropped", target="2026-02-01"),
+                        "B": info(dependsOn="A", start="2026-01-05", target="2026-01-07")})
+        self.assertEqual(["B"], got["criticalPath"])
+        self.assertTrue(by_id(got)["B"]["critical"])
+        self.assertFalse(by_id(got)["A"]["critical"])
+
+    def test_archived_done_with_an_open_undated_dependency_finishes_at_its_target(self):
+        got = schedule({"X": info(),
+                        "A": info("archive", dependsOn="X", outcome="done", target="2026-01-10"),
+                        "B": info(dependsOn="A", start="2026-01-05", target="2026-01-07")})
+        nodes = by_id(got)
+        self.assertEqual("2026-01-10", nodes["A"]["earliestFinish"])
+        self.assertEqual(("2026-01-10", "A"), (nodes["B"]["earliestStart"], nodes["B"]["drivenBy"]))
 
     def test_unknown_open_dependency_finish_propagates_as_unknown(self):
         got = schedule({"A": info(),
