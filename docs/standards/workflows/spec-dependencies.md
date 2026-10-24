@@ -27,9 +27,13 @@ epic members.
 ## The verbs
 
 - `cq specs depends <id> [--add 12,34] [--remove 12] [--json]` is the only writer of the key. It is
-  idempotent and prints the key when given no flag. It refuses, exit 2 and nothing written, an
+  idempotent and prints the key when given no flag. `--add` refuses, exit 2 and nothing written, an
   unknown id (`sp-dep-missing`), a self-reference (`sp-dep-self`) and an edge that would close a
-  cycle (`sp-dep-cycle`).
+  cycle (`sp-dep-cycle`). `--remove` is a repair and is never validated against the store: it
+  removes an id that is absent or is the spec's own id, which is the fix those two codes prescribe;
+  removing an id not in `dependsOn` is a no-op with no write. The cycle refusal is scoped: only a
+  cycle that passes through the edited spec blocks the edit, so self-edges and cycles among other
+  specs never block an edit of an unrelated spec.
 - `cq specs schedule [--spec <id>] [--json]` prints the derived schedule: per spec the planned
   `start` and `target`, `earliestStart`, `earliestFinish`, `slipDays` (only when positive) and
   `critical`, plus `criticalPath` as an id list and `cycle` when one exists. Exit 1 on a cycle,
@@ -42,8 +46,10 @@ included as fixed inputs. In topological order, `earliestStart` is the latest `e
 among the dependencies, never earlier than the spec's own `start`; `earliestFinish` is
 `earliestStart` plus the days between `start` and `target`, or the spec's `target` when only that is
 set. An unknown stays `null` and propagates as unknown, never as zero. A dependency archived `done`
-finishes at its `target` when it has one, else it constrains nothing. `slipDays` is
-`earliestFinish` minus `target` when positive. The critical path follows, from the latest known
+finishes at its `target` when it has one, even when one of its own dependencies is open and
+undated; else it constrains nothing. `slipDays` is
+`earliestFinish` minus `target` when positive. A dependency archived with an outcome other than `done` (dropped) stays in `nodes` but is left
+out of the critical path. The critical path follows, from the latest known
 `earliestFinish`, the dependency that fixed each `earliestStart`. Durations are calendar days.
 
 ## The findings
@@ -54,7 +60,7 @@ finishes at its `target` when it has one, else it constrains nothing. `slipDays`
 | --- | --- | --- |
 | `sp-dep-missing` | error | the id names no spec |
 | `sp-dep-self` | error | a spec depends on itself |
-| `sp-dep-cycle` | error | the graph closes a cycle; the message names the path |
+| `sp-dep-cycle` | error | the graph closes a cycle; the message names the path; a narrowed `--spec` sweep also reports cycles that share a node with an earlier one |
 | `sp-dep-dropped` | warn | depends on a spec archived with an outcome other than `done` |
 
 ## What it does not replace

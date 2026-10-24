@@ -22,31 +22,57 @@ def deps_of(fm: dict) -> list[str]:
 
 
 def find_cycle(edges: dict[str, list[str]]) -> list[str] | None:
-    """One dependency cycle as an id path, or `None`; unknown nodes are ignored."""
+    """One dependency cycle as an id path, or `None`; unknown nodes are ignored.
+
+    Iterative, so a long chain is bounded by memory and not by the recursion limit.
+    """
     color: dict[str, int] = {}
     stack: list[str] = []
+    for root in sorted(edges):
+        if color.get(root, 0):
+            continue
+        color[root] = 1
+        stack.append(root)
+        frames = [iter(edges[root])]
+        while frames:
+            for dep in frames[-1]:
+                if dep not in edges:
+                    continue
+                state = color.get(dep, 0)
+                if state == 1:
+                    return stack[stack.index(dep):] + [dep]
+                if state == 0:
+                    color[dep] = 1
+                    stack.append(dep)
+                    frames.append(iter(edges[dep]))
+                    break
+            else:
+                color[stack.pop()] = 2
+                frames.pop()
+    return None
 
-    def visit(n: str) -> list[str] | None:
-        color[n] = 1
-        stack.append(n)
-        for dep in edges[n]:
-            if dep not in edges:
-                continue
-            if color.get(dep, 0) == 1:
-                return stack[stack.index(dep):] + [dep]
-            if color.get(dep, 0) == 0:
-                found = visit(dep)
-                if found:
-                    return found
-        stack.pop()
-        color[n] = 2
-        return None
 
-    for n in sorted(edges):
-        if color.get(n, 0) == 0:
-            found = visit(n)
-            if found:
-                return found
+def find_cycle_through(edges: dict[str, list[str]], node: str) -> list[str] | None:
+    """A cycle through `node` as an id path starting at its smallest id, or `None`.
+
+    Self-edges and cycles that do not pass through `node` are ignored.
+    """
+    path = [node]
+    visited = {node}
+    frames = [iter(edges.get(node, []))]
+    while frames:
+        for dep in frames[-1]:
+            if dep == node and len(path) > 1:
+                loop = path[path.index(min(path)):] + path[:path.index(min(path))]
+                return loop + [loop[0]]
+            if dep in edges and dep not in visited:
+                visited.add(dep)
+                path.append(dep)
+                frames.append(iter(edges[dep]))
+                break
+        else:
+            path.pop()
+            frames.pop()
     return None
 
 
@@ -136,16 +162,17 @@ def schedule(infos: dict[str, dict], ids: list[str] | None = None) -> dict:
         duration = (target - start).days if start and target and target >= start else None
         earliest, driven_by = start, None
         blocked = False
+        archived_done = info["phase"] == "archive" and str(fm.get("outcome") or "").strip() == "done"
         for dep in edges[spec]:
             finish = finishes[dep]
             if finish is None and infos[dep]["phase"] != "archive":
                 blocked = True
             elif finish is not None and (earliest is None or finish > earliest):
                 earliest, driven_by = finish, dep
-        if blocked:
-            earliest, driven_by, finish = None, None, None
-        elif info["phase"] == "archive" and str(fm.get("outcome") or "").strip() == "done":
+        if archived_done:
             finish = target
+        elif blocked:
+            earliest, driven_by, finish = None, None, None
         else:
             finish = earliest + timedelta(days=duration) \
                 if earliest is not None and duration is not None else target
@@ -166,7 +193,9 @@ def schedule(infos: dict[str, dict], ids: list[str] | None = None) -> dict:
             if remaining[successor] == 0:
                 heapq.heappush(ready, successor)
 
-    known = [spec for spec in nodes if nodes[spec]["earliestFinish"] is not None]
+    known = [spec for spec in nodes if nodes[spec]["earliestFinish"] is not None
+             and not (infos[spec]["phase"] == "archive"
+                      and str(infos[spec]["frontmatter"].get("outcome") or "").strip() != "done")]
     critical_path = []
     if known:
         latest = max(nodes[spec]["earliestFinish"] for spec in known)

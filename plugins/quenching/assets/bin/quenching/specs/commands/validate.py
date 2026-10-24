@@ -301,18 +301,18 @@ def dependency_sweep(backend: SpecBackend, read: dict[str, dict]) -> list[dict]:
         "sp-dep-dropped": "review and remove or replace the dropped dependency in `dependsOn`",
     }
     findings = dep_findings(known)
-    # `dep_findings` reports one cycle; a scoped sweep may need another one, so peel the
-    # reported cycle's nodes off and look again until none touches the selection.
+    # `dep_findings` reports one cycle; a scoped sweep may need another one, so cut the
+    # reported cycle's closing edge and look again until none is left. Cutting an edge, not
+    # its nodes, keeps the cycles that overlap the reported one.
     edges = {spec: [d for d in deps_of(info["frontmatter"]) if d != spec]
              for spec, info in known.items()}
-    seen = {f["spec"] for f in findings if f["code"] == "sp-dep-cycle"}
+    seen = set()
     cycle = next((f["cycle"] for f in findings if f["code"] == "sp-dep-cycle"), None)
     while cycle:
-        peeled = set(cycle)
-        edges = {n: [d for d in ds if d not in peeled] for n, ds in edges.items() if n not in peeled}
+        seen.add(frozenset(cycle))
+        edges[cycle[-2]] = [d for d in edges[cycle[-2]] if d != cycle[-1]]
         cycle = find_cycle(edges)
-        if cycle and cycle[0] not in seen:
-            seen.add(cycle[0])
+        if cycle and frozenset(cycle) not in seen:
             findings.append({
                 "code": "sp-dep-cycle", "severity": "error", "spec": cycle[0],
                 "cycle": cycle, "message": "dependency cycle: " + " -> ".join(cycle),
