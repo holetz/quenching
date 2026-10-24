@@ -1,0 +1,6 @@
+{
+  "source": "plugins/quenching",
+  "generator": "scripts/sync_opencode_plugin.py",
+  "command_count": 61,
+  "agent_count": 7
+}
