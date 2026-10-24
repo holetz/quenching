@@ -32,7 +32,8 @@ TARGET = REPO / "plugins/quenching-opencode"
 CODEX_TARGET = REPO / "plugins/quenching-codex"
 MANIFEST = ".generated-files.json"
 ROOT = "~/.config/opencode/quenching"
-PAYLOAD_DIRS = ("references", "templates", "specs", "knowledge", "design", "portal")
+PAYLOAD_DIRS = ("references", "templates", "specs", "knowledge", "design", "portal",
+                "checks", "zensical", "evals", "opensource")
 AGENT_PREFIX = "quenching-"
 
 OPENCODE_CQ_WRAPPER = ('cq() { python3 "${QUENCHING_OPENCODE_ROOT:-${XDG_CONFIG_HOME:-$HOME/.config}'
@@ -219,7 +220,8 @@ Copy the three parts into the OpenCode configuration directory:
 ```bash
 mkdir -p ~/.config/opencode
 cp -R commands agents ~/.config/opencode/
-cp -R quenching ~/.config/opencode/quenching
+mkdir -p ~/.config/opencode/quenching
+cp -R quenching/. ~/.config/opencode/quenching/
 ```
 
 Commands run as `/quenching-<front>-<verb>` (`opencode run --command quenching-specs-status`).
@@ -242,6 +244,8 @@ def generated_tree() -> dict[str, bytes]:
         root = SOURCE / "assets" / directory
         for path in sorted(p for p in root.rglob("*") if p.is_file() and not translate._is_build_artefact(p)):
             relative = path.relative_to(root)
+            if directory == "checks" and path.suffix == ".sh":
+                continue  # the repository's own surface gates name Claude paths and never ship
             if relative.name == "CLAUDE.md":
                 relative = relative.with_name("AGENTS.md")
             text = path.read_text(encoding="utf-8")
@@ -288,6 +292,23 @@ def validate(tree: dict[str, bytes]) -> list[str]:
         for block in re.findall(r"^\s*```bash\n([\s\S]*?)^\s*```", text, re.MULTILINE):
             if translate.has_cq_invocation(block) and OPENCODE_CQ_WRAPPER not in block:
                 problems.append(f"{rel}: a bash block invokes cq without the OpenCode wrapper")
+    problems.extend(dangling_payload_citations(tree))
+    return problems
+
+
+CITED_PAYLOAD = re.compile(re.escape(ROOT) + r"/((?:" + "|".join(PAYLOAD_DIRS) + r")/[A-Za-z0-9_./-]*[A-Za-z0-9_])")
+
+
+def dangling_payload_citations(tree: dict[str, bytes]) -> list[str]:
+    """A cited payload path that the generated `quenching/` tree does not carry."""
+    problems = []
+    for rel, content in tree.items():
+        if not rel.endswith(".md"):
+            continue
+        for cited in sorted(set(CITED_PAYLOAD.findall(content.decode("utf-8")))):
+            target = f"quenching/{cited}"
+            if target not in tree and not any(key.startswith(target + "/") for key in tree):
+                problems.append(f"{rel}: cites {ROOT}/{cited}, which the tree does not carry")
     return problems
 
 

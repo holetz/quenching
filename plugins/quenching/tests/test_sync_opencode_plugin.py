@@ -58,6 +58,28 @@ class GeneratedTree(unittest.TestCase):
         self.assertEqual(codex["scripts/cq"], self.tree["quenching/scripts/cq"])
 
 
+class Payload(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tree = sync.generated_tree()
+
+    def test_the_payload_carries_the_checks_and_the_zensical_assets_the_commands_cite(self):
+        self.assertIn("quenching/checks/documentation-site-check.py", self.tree)
+        self.assertTrue(any(r.startswith("quenching/zensical/") for r in self.tree))
+        self.assertFalse([r for r in self.tree if r.startswith("quenching/checks/") and r.endswith(".sh")])
+
+    def test_a_cited_payload_path_the_tree_lacks_is_a_finding(self):
+        tree = {"commands/x.md": f"see {sync.ROOT}/checks/gone.py".encode(), "quenching/checks/here.py": b""}
+        self.assertEqual(1, len(sync.dangling_payload_citations(tree)))
+        tree["quenching/checks/gone.py"] = b""
+        self.assertEqual([], sync.dangling_payload_citations(tree))
+
+    def test_the_readme_install_copies_into_the_destination_without_nesting_on_reinstall(self):
+        readme = self.tree["README.md"].decode()
+        self.assertIn("cp -R quenching/. ~/.config/opencode/quenching/", readme)
+        self.assertNotIn("cp -R quenching ~/.config/opencode/quenching\n", readme)
+
+
 class Permissions(unittest.TestCase):
     def test_scoped_bash_is_ask_and_unrestricted_bash_is_allow(self):
         self.assertEqual("ask", sync.permissions("Read, Bash(cq specs status:*), Bash(cq git audit:*)")["bash"])

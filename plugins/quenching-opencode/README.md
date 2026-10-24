@@ -13,7 +13,8 @@ Copy the three parts into the OpenCode configuration directory:
 ```bash
 mkdir -p ~/.config/opencode
 cp -R commands agents ~/.config/opencode/
-cp -R quenching ~/.config/opencode/quenching
+mkdir -p ~/.config/opencode/quenching
+cp -R quenching/. ~/.config/opencode/quenching/
 ```
 
 Commands run as `/quenching-<front>-<verb>` (`opencode run --command quenching-specs-status`).
