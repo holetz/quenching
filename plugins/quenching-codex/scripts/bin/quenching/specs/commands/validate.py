@@ -11,7 +11,7 @@ from quenching.specs.backends import open_backend
 from quenching.specs.backends.base import SpecBackend
 from quenching.specs.commands.output import Emitter, front_fields, read_one
 from quenching.specs.parse import PHASES
-from quenching.specs.members import read_members
+from quenching.specs.members import origin_url, own_repo, read_members
 from quenching.specs.parse.epics import (claim_findings, epic_findings, epic_ref, is_epic,
                                          is_remote, parse_items)
 from quenching.specs.parse.text import body_after_frontmatter
@@ -267,10 +267,11 @@ def epic_sweep(backend: SpecBackend, read: dict, root: str | None = None) -> lis
     got, unreadable = read_members(backend, missing, root) if missing else ({}, set())
     known = {**read, **got}
     out: list[dict] = []
+    self_repo = own_repo(origin_url(root)) if root else None
     for info in read.values():
         if is_epic(info["frontmatter"]):
             out.extend(epic_findings(info, known, unreadable))
-        out.extend(claim_findings(info, known))
+        out.extend(claim_findings(info, known, self_repo))
     return out
 
 

@@ -414,13 +414,18 @@ class Portal:
             done = [k for k in kids if k["phase"] == "archive"]
             derived = derive_epic(e, members, unreadable=unreadable)
             items = [{k: v for k, v in i.items() if k in _EPIC_ITEM_KEYS} for i in derived["items"]]
+            # A cross-repository member has no back-reference here: it counts through its item.
+            outside = [i for i in derived["items"] if i["spec"] and split_ref(str(i["spec"]))[0]
+                       and (i["member"] is None
+                            or snap["infos"].get(str(i["member"]["id"])) is not i["member"])]
             rows.append({"id": e["id"], "title": str(e["frontmatter"].get("title") or ""),
                          "items": items, "groups": derived["groups"],
                          "cycle": derived["cycle"], "criticalPath": derived["criticalPath"],
                          "children": [{"id": k["id"], "title": str(k["frontmatter"].get("title")
                                                                     or ""),
                                        "stage": self._stage(k)} for k in kids],
-                         "done": len(done), "total": len(kids)})
+                         "done": len(done) + sum(i["status"] == "done" for i in outside),
+                         "total": len(kids) + len(outside)})
         return {"supported": bool(epics), "epics": rows}
 
     def _members(self, snap: dict, epics: list[dict]) -> tuple[dict, set[str]]:

@@ -15,7 +15,7 @@ import subprocess
 from quenching.common.config import find_repo_root
 from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.backends.git import DEFAULT_REMOTE, GIT_TIMEOUT_S, NO_FETCH_ENV, GitBackend
-from quenching.specs.parse.epics import split_ref
+from quenching.specs.parse.epics import local_key, split_ref
 
 # `<owner>/<repo>[.git][/]` at the end of a URL, after `/` or the scp-like `:`.
 _TAIL_RE = re.compile(r"(?P<sep>[/:])(?P<owner>[^/:]+)/(?P<repo>[^/]+?)(?P<git>\.git)?/?$")
@@ -47,10 +47,7 @@ def sibling_url(url: str | None, repo: str) -> str | None:
     return f"{url[:m.start()]}{m.group('sep')}{repo}{m.group('git') or ''}"
 
 
-def local_key(key: str, self_repo: str | None) -> str:
-    """The bare id for a reference naming this repository; `key` unchanged otherwise."""
-    repo, spec_id = split_ref(key)
-    return spec_id if repo is not None and repo == self_repo else key
+_STORE_BACKENDS = ("git", "memory")
 
 
 def _foreign(root: str, url: str) -> GitBackend:
@@ -86,6 +83,9 @@ def read_members(backend, keys, root: str | None = None) -> tuple[dict, set[str]
     no_fetch = os.environ.get(NO_FETCH_ENV, "") not in ("", "0")
     for repo, wanted in foreign.items():
         target = sibling_url(url, repo)
+        # A tracker backend resolves nothing: its foreign members are unreadable by contract.
+        if getattr(backend, "name", "git") not in _STORE_BACKENDS:
+            target = None
         store = _foreign(find_repo_root(root or os.getcwd()), target) if target else None
         got = None
         if store is not None and not (no_fetch and not store.has_local_ref()):

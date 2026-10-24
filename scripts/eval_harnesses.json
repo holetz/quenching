@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "about": "Harness profiles for scripts/run_evals.py. `argv` is one invocation; the standalone tokens {arm} and {extra} expand to the arm's extras and the operator's --extra-arg values, {plugin_dirs} expands to one `--plugin-dir <module>` pair per principal module, and {prompt}, {model}, {workdir}, {max_turns} are substituted inside any token. An arm absent from `arms` cannot run on that profile. No profile widens a tool permission: pass one with --extra-arg.",
+  "profiles": {
+    "claude": {
+      "argv": ["claude", "-p", "--setting-sources", "project", "--model", "{model}",
+               "--max-turns", "{max_turns}", "--output-format", "json", "{arm}", "{extra}", "{prompt}"],
+      "arms": {"with": ["{plugin_dirs}"], "without": []},
+      "output": "claude-json",
+      "note": "--plugin-dir loads the generated modules for the with arm; the without arm loads none. Run from a fixture whose project settings enable no plugin."
+    },
+    "codex": {
+      "argv": ["codex", "exec", "--json", "--skip-git-repo-check", "-m", "{model}", "-C", "{workdir}",
+               "{arm}", "{extra}", "{prompt}"],
+      "arms": {"with": []},
+      "output": "codex-jsonl",
+      "note": "Codex loads the quenching-codex plugin from its own installation, so only the with arm exists here."
+    },
+    "opencode": {
+      "argv": ["opencode", "run", "--model", "{model}", "--format", "json", "{arm}", "{extra}", "{prompt}"],
+      "arms": {"with": []},
+      "output": "text",
+      "note": "Flags from OpenCode's documented `opencode run`; the command surface port is spec 2038, so only the with arm exists until it lands."
+    }
+  }
+}

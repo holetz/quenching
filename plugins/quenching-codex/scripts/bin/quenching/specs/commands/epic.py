@@ -240,7 +240,9 @@ def cmd_epic(args, root: str, out: Emitter) -> int:
             if code is not None:
                 return code
     items = parse_items(epic)
-    existing = next((i for i in items if i["spec"] == spec_id), None)
+    mine = own_repo(origin_url(root))
+    existing = next((i for i in items
+                     if i["spec"] and local_key(i["spec"], mine) == spec_id), None)
     new_epic, label = None, None
     if existing:
         label = existing["label"]
