@@ -168,7 +168,10 @@ def invoke(argv: list[str], cwd: Path, env: dict, timeout: int) -> dict:
         result = subprocess.run(argv, cwd=cwd, env=env, capture_output=True, text=True,
                                 timeout=timeout, stdin=subprocess.DEVNULL)
     except subprocess.TimeoutExpired as exc:
-        return {"stdout": exc.stdout or "", "stderr": exc.stderr or "", "error": f"timeout after {timeout}s",
+        def text(raw) -> str:  # TimeoutExpired carries bytes even when the run asked for text
+            return raw.decode(errors="replace") if isinstance(raw, bytes) else (raw or "")
+
+        return {"stdout": text(exc.stdout), "stderr": text(exc.stderr), "error": f"timeout after {timeout}s",
                 "durationMs": int((time.monotonic() - started) * 1000)}
     except OSError as exc:
         return {"stdout": "", "stderr": "", "error": f"{argv[0]}: {exc.strerror}",
