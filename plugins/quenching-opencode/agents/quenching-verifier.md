@@ -114,9 +114,9 @@ matches. Without a worktree, `--worktree` is the base checkout itself.
    test was judged by folder name) are listed in the evidence and never
    block. Empty is ok. A gate line removed from a gate file is absolved only when its namespace rewrite by the same BASE map is a line the branch added; an unknown head never absolves, and a deleted or relocated gate stays FAIL. A weakened task `verify:` is not read here: the spec store is not in the diff.
 
-11. Codex: warning level, never FAIL. You execute nothing: read the worker's `CODEX:` line and compare its
-   counts with the checked tasks. Every checked task should have one `Codex:` line (`wrote`, `fallback`,
-   `guard` or `skipped`); list the ids without one, or a missing `CODEX:` line, as a warning in the evidence.
+11. Codex: warning level, never FAIL. You execute nothing: read the worker's `CODEX:` line from the prompt
+   (the orchestrator passes it as a claim) and compare its counts with the checked tasks. Every checked task should have one `Codex:` line (`wrote`, `fallback`,
+   `guard` or `skipped`); list the ids without one, or `sem relato` or no line in the prompt as "missing CODEX: line", as a warning in the evidence.
    The worker's report is a claim: this check accuses an absent line, it does not prove the consultation.
    Not every run has Codex installed, so `n/a` when the worker reports no `CODEX:` line and no Codex in the run.
 
