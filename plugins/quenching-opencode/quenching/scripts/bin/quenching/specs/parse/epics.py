@@ -206,27 +206,43 @@ def _groups(info: dict, items: list[dict]) -> list[dict]:
 
 def _critical_path(items: list[dict], by_label: dict[str, dict]) -> list[str]:
     """The longest dependency chain of items not yet done, in execution order."""
-    memo: dict[str, list[str]] = {}
-
-    def chain(label: str) -> list[str]:
-        if label in memo:
-            return memo[label]
-        best: list[str] = []
-        for d in by_label[label]["after"]:
-            if d in by_label and by_label[d]["status"] != "done":
-                c = chain(d)
-                if len(c) > len(best):
-                    best = c
-        memo[label] = best + [label]
-        return memo[label]
-
-    longest: list[str] = []
+    # The caller has ruled out cycles. Finish dependencies before their dependents,
+    # keeping only each chain's length and predecessor rather than copying lists.
+    memo: dict[str, tuple[int, str | None]] = {}
+    longest: str | None = None
+    longest_length = 0
     for i in items:
-        if i["status"] != "done":
-            c = chain(i["label"])
-            if len(c) > len(longest):
-                longest = c
-    return longest
+        if i["status"] == "done":
+            continue
+        label = i["label"]
+        if label not in memo:
+            stack = [label]
+            frames = [iter(by_label[label]["after"])]
+            while frames:
+                for d in frames[-1]:
+                    if d in by_label and by_label[d]["status"] != "done" and d not in memo:
+                        stack.append(d)
+                        frames.append(iter(by_label[d]["after"]))
+                        break
+                else:
+                    current = stack.pop()
+                    frames.pop()
+                    best_length, predecessor = 0, None
+                    for d in by_label[current]["after"]:
+                        if d in by_label and by_label[d]["status"] != "done":
+                            length = memo[d][0]
+                            if length > best_length:
+                                best_length, predecessor = length, d
+                    memo[current] = (best_length + 1, predecessor)
+        if memo[label][0] > longest_length:
+            longest, longest_length = label, memo[label][0]
+
+    path = []
+    while longest is not None:
+        path.append(longest)
+        longest = memo[longest][1]
+    path.reverse()
+    return path
 
 
 def next_label(items: list[dict]) -> str:
