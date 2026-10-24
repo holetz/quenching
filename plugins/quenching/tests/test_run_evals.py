@@ -176,6 +176,30 @@ class Runner(unittest.TestCase):
         self.assertNotIn("ERROR", buffer.getvalue())
 
 
+class Containment(unittest.TestCase):
+    def test_the_snapshot_never_runs_the_workspace_fsmonitor(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp) / "workspace"
+            workspace.mkdir()
+            mark = Path(tmp) / "ran"
+            env = {**runner.os.environ, **runner.GIT_ENV}
+            for argv in (["git", "init", "-q", "-b", "main"],
+                         ["git", "config", "core.fsmonitor", f"touch {mark}; false"]):
+                runner.subprocess.run(argv, cwd=workspace, env=env, check=True)
+            runner.snapshot(Path(tmp) / "no-suite", workspace, env)
+            self.assertFalse(mark.exists(), "the workspace fsmonitor ran during the snapshot")
+
+
+    def test_a_timeout_kills_the_grandchildren_too(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            mark = Path(tmp) / "M"
+            record = runner.invoke(["bash", "-c", f"(sleep 2; touch {mark}) & sleep 30"], Path(tmp),
+                                   runner.os.environ.copy(), 1)
+            runner.time.sleep(3)
+            self.assertIn("timeout", record["error"])
+            self.assertFalse(mark.exists(), "a grandchild outlived the timeout")
+
+
 class Grades(unittest.TestCase):
     def test_unparsed_or_unanswered_grades_are_unknown(self):
         grades = runner.verify_grades(["a", "b"], runner.parse_grades("no json here"), "material")
