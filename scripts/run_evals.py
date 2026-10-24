@@ -19,6 +19,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -194,19 +195,21 @@ def output_text(profile: dict, stdout: str) -> tuple[str, int | None]:
 def invoke(argv: list[str], cwd: Path, env: dict, timeout: int) -> dict:
     started = time.monotonic()
     try:
-        result = subprocess.run(argv, cwd=cwd, env=env, capture_output=True, text=True,
-                                timeout=timeout, stdin=subprocess.DEVNULL)
-    except subprocess.TimeoutExpired as exc:
-        def text(raw) -> str:  # TimeoutExpired carries bytes even when the run asked for text
-            return raw.decode(errors="replace") if isinstance(raw, bytes) else (raw or "")
-
-        return {"stdout": text(exc.stdout), "stderr": text(exc.stderr), "error": f"timeout after {timeout}s",
-                "durationMs": int((time.monotonic() - started) * 1000)}
+        # A new session makes the arm a process group, so the timeout can kill its grandchildren too.
+        proc = subprocess.Popen(argv, cwd=cwd, env=env, text=True, stdin=subprocess.DEVNULL,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
+        try:
+            stdout, stderr = proc.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            os.killpg(proc.pid, signal.SIGKILL)
+            stdout, stderr = proc.communicate()
+            return {"stdout": stdout or "", "stderr": stderr or "", "error": f"timeout after {timeout}s",
+                    "durationMs": int((time.monotonic() - started) * 1000)}
     except OSError as exc:
         return {"stdout": "", "stderr": "", "error": f"{argv[0]}: {exc.strerror}",
                 "durationMs": int((time.monotonic() - started) * 1000)}
-    error = f"exit {result.returncode}" if result.returncode else None
-    return {"stdout": result.stdout, "stderr": result.stderr, "error": error,
+    error = f"exit {proc.returncode}" if proc.returncode else None
+    return {"stdout": stdout, "stderr": stderr, "error": error,
             "durationMs": int((time.monotonic() - started) * 1000)}
 
 

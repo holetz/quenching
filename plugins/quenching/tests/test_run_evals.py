@@ -190,6 +190,16 @@ class Containment(unittest.TestCase):
             self.assertFalse(mark.exists(), "the workspace fsmonitor ran during the snapshot")
 
 
+    def test_a_timeout_kills_the_grandchildren_too(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            mark = Path(tmp) / "M"
+            record = runner.invoke(["bash", "-c", f"(sleep 2; touch {mark}) & sleep 30"], Path(tmp),
+                                   runner.os.environ.copy(), 1)
+            runner.time.sleep(3)
+            self.assertIn("timeout", record["error"])
+            self.assertFalse(mark.exists(), "a grandchild outlived the timeout")
+
+
 class Grades(unittest.TestCase):
     def test_unparsed_or_unanswered_grades_are_unknown(self):
         grades = runner.verify_grades(["a", "b"], runner.parse_grades("no json here"), "material")
