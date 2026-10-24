@@ -61,6 +61,20 @@ class RunRecord(unittest.TestCase):
         self.assertNotEqual(0, code)
         self.assertIsNone(spec_records(self.backend.read_spec(1)[0]["frontmatter"])["run"])
 
+    def test_omitting_verifier_in_a_later_stamp_keeps_the_stored_verdict(self):
+        self.write(["state=continue", "verifier=pass", "date=2026-10-17"])
+        code, _ = self.write(["state=done", "date=2026-10-18"])
+        self.assertEqual(0, code)
+        self.assertEqual({"state": "done", "verifier": "pass", "date": "2026-10-18"},
+                         spec_records(self.backend.read_spec(1)[0]["frontmatter"])["run"])
+
+    def test_spec_runner_contract_does_not_derive_verifier_from_the_gate(self):
+        path = pathlib.Path(__file__).resolve().parents[1] / "agents" / "spec-runner.md"
+        text = path.read_text()
+        self.assertIn("NEVER the source of `verifier`", text)
+        self.assertIn("OMIT `--set verifier=`", text)
+        self.assertNotIn("verdict of the repository gate or verifier", text)
+
 
 if __name__ == "__main__":
     unittest.main()
