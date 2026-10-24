@@ -216,6 +216,39 @@ class Containment(unittest.TestCase):
             runner.snapshot(Path(tmp) / "no-suite", workspace, env)
             self.assertFalse(mark.exists(), "the workspace clean filter ran during the snapshot")
 
+    def test_the_snapshot_never_runs_a_workspace_filter_with_a_unicode_line_separator(self):
+        self.assert_workspace_filter_is_neutralized("evil\u0085driver")
+
+    def test_the_snapshot_never_runs_a_workspace_filter_with_an_equals_sign(self):
+        self.assert_workspace_filter_is_neutralized("a=b")
+
+    def assert_workspace_filter_is_neutralized(self, driver):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp) / "workspace"
+            workspace.mkdir()
+            mark = Path(tmp) / "ran"
+            env = {**runner.os.environ, **runner.GIT_ENV}
+            (workspace / ".gitattributes").write_text(f"f filter={driver}\n", encoding="utf-8")
+            (workspace / "f").write_text("one\n")
+            for argv in (["git", "init", "-q", "-b", "main"], ["git", "add", "-A"],
+                         ["git", "commit", "-q", "-m", "x"]):
+                runner.subprocess.run(argv, cwd=workspace, env=env, check=True)
+            if driver == "evil\u0085driver":
+                config = workspace / ".git/config"
+                config.write_text(config.read_text(encoding="utf-8") +
+                                  f'\n[filter "{driver}"]\n\tclean = "touch {mark}; cat"\n',
+                                  encoding="utf-8")
+            else:
+                runner.subprocess.run(["git", "config", f"filter.{driver}.clean", f"touch {mark}; cat"],
+                                      cwd=workspace, env=env, check=True)
+            (workspace / "f").write_text("two\n")
+            runner.subprocess.run(["git", "status", "--porcelain"], cwd=workspace, env=env,
+                                  check=True, capture_output=True)
+            self.assertTrue(mark.exists(), f"the fixture did not trigger the {driver!r} clean filter")
+            mark.unlink()
+            runner.snapshot(Path(tmp) / "no-suite", workspace, env)
+            self.assertFalse(mark.exists(), f"the {driver!r} workspace clean filter ran during the snapshot")
+
     def test_a_timeout_kills_the_grandchildren_too(self):
         with tempfile.TemporaryDirectory() as tmp:
             mark = Path(tmp) / "M"
