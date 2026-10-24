@@ -14,15 +14,19 @@ import subprocess
 from quenching.common.config import detect_provider
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, front_fields
+from quenching.specs.members import local_key, origin_url, own_repo, read_members
 from quenching.specs.parse.edit import upsert_section
 from quenching.specs.parse.epics import (derive_epic, epic_ref, group_titles, is_epic,
-                                         next_label, parse_items, pr_number, render_item)
+                                         member_key, next_label, parse_items, pr_number,
+                                         render_item, split_ref)
 from quenching.specs.parse.fields import scalar_break, set_frontmatter_key
 from quenching.specs.parse.sections import parse_sections
 from quenching.specs.parse.text import HEADING_RE, mask_comments, split_lines
 
 LABEL_RE = re.compile(r"^[A-Za-z0-9][\w.-]*$")
 GROUP_NUMBER_RE = re.compile(r"^\d+\.\s*")
+# The item states `status --epic` lists as blocked, each with its reasons.
+HELD = ("blocked", "dropped", "missing", "unmerged", "unverified", "unreadable")
 # `az repos pr` `status` in `gh pr view`'s `state` vocabulary, so the derivation reads one.
 AZURE_PR_STATE = {"completed": "MERGED", "active": "OPEN", "abandoned": "CLOSED"}
 
@@ -48,10 +52,14 @@ def _provider(root: str | None) -> str | None:
 
 
 def _pr_view(member: dict, provider: str | None, root: str | None,
-             timeout: int) -> tuple[str, str] | None:
+             timeout: int, repo: str | None = None) -> tuple[str, str] | None:
     """`(state, head branch)` of the member's PR as its provider reports it, or None. Azure is read
-    with `az repos pr show --detect`, which resolves the organization from `root`'s origin."""
-    if provider == "azure-boards":
+    with `az repos pr show --detect`, which resolves the organization from `root`'s origin; a
+    member of another repository's store is read with `gh pr view --repo <owner>/<repo>`."""
+    if repo:
+        argv = ["gh", "pr", "view", _pr_target(member), "--repo", repo,
+                "--json", "state,headRefName"]
+    elif provider == "azure-boards":
         argv = ["az", "repos", "pr", "show", f"--id={pr_number(member)}", "--detect=true",
                 "--output=json"]
     else:
@@ -82,8 +90,10 @@ def pr_states(members: dict, root: str | None = None, timeout: int = 15) -> dict
     for sid, m in members.items():
         if not m or m["phase"] != "archive" or not pr_number(m):
             continue
-        provider = provider or _provider(root) or "github"
-        got = _pr_view(m, provider, root, timeout)
+        repo = split_ref(sid)[0]
+        if repo is None:
+            provider = provider or _provider(root) or "github"
+        got = _pr_view(m, provider, root, timeout, repo)
         if got is None:
             continue
         rec = m["frontmatter"].get("branch")
@@ -106,8 +116,8 @@ def load_epic(backend, epic_id, args, out: Emitter, root: str | None = None):
                                    f"spec {epic_id} is not a `workItemType: epic` spec",
                                    id=epic_id)
     ids = [i["spec"] for i in parse_items(info) if i["spec"]]
-    members = backend.read_specs(ids)
-    return info, derive_epic(info, members, pr_states(members, root)), None
+    members, unreadable = read_members(backend, ids, root)
+    return info, derive_epic(info, members, pr_states(members, root), unreadable), None
 
 
 def _find_group(titles: list[str], wanted: str) -> int | None:
@@ -196,19 +206,28 @@ def cmd_epic(args, root: str, out: Emitter) -> int:
     backend, err = open_backend(root)
     if err:
         return out.emit_err(args.json, err)
-    epic_id, spec_id = str(args.epic), str(args.spec)
+    epic_id, spec_id = str(args.epic), member_key(str(args.spec))
+    if split_ref(spec_id)[0]:
+        spec_id = local_key(spec_id, own_repo(origin_url(root)))
+    foreign = split_ref(spec_id)[0] is not None
     if epic_id == spec_id:
         return _refuse(out, args, "sp-epic-self", "an epic cannot be its own member")
     epic, _, code = load_epic(backend, epic_id, args, out, root)
     if code is not None:
         return code
-    member = backend.read_specs([spec_id]).get(spec_id)
+    got, unreadable = read_members(backend, [spec_id], root)
+    if unreadable:
+        return _refuse(out, args, "sp-epic-member-unreadable",
+                       f"the store holding {spec_id} could not be read", id=spec_id)
+    member = got.get(spec_id)
     if member is None:
         return _refuse(out, args, "sp-unknown-id", f"no spec with id '{spec_id}'", id=spec_id)
     if is_epic(member["frontmatter"]):
         return _refuse(out, args, "sp-epic-nested",
                        f"spec {spec_id} is itself an epic — an epic has one level only")
-    current = epic_ref(member["frontmatter"])
+    # A member in another store keeps its own `epic:` (an epic of its store): nothing is
+    # written there, so it is never claimed, moved or stamped from here.
+    current = epic_id if foreign else epic_ref(member["frontmatter"])
     old_epic, old_text = None, None
     if current and current != epic_id:
         if not getattr(args, "move", False):
@@ -277,10 +296,11 @@ def cmd_epic_status(args, root: str, out: Emitter) -> int:
     done = sum(1 for i in items if i["status"] == "done")
     blocked = [{**_row(i), "reasons": [t["reason"] or t["text"] for t in i["member"]["tasks"]
                                        if t["blocked"]] if i["member"] else []}
-               for i in items if i["status"] in ("blocked", "dropped", "missing", "unmerged", "unverified")]
-    for b, i in zip(blocked, [i for i in items if i["status"] in
-                              ("blocked", "dropped", "missing", "unmerged", "unverified")]):
-        if i["status"] == "unmerged":
+               for i in items if i["status"] in HELD]
+    for b, i in zip(blocked, [i for i in items if i["status"] in HELD]):
+        if i["status"] == "unreadable":
+            b["reasons"] = [f"the store of {split_ref(i['spec'])[0]} could not be read"]
+        elif i["status"] == "unmerged":
             b["reasons"] = [f"PR #{pr_number(i['member'])} is {i['prState']}"]
         elif i["status"] == "unverified":
             b["reasons"] = [f"PR #{pr_number(i['member'])} state could not be read"]

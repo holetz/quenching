@@ -11,8 +11,9 @@ from quenching.specs.backends import open_backend
 from quenching.specs.backends.base import SpecBackend
 from quenching.specs.commands.output import Emitter, front_fields, read_one
 from quenching.specs.parse import PHASES
+from quenching.specs.members import read_members
 from quenching.specs.parse.epics import (claim_findings, epic_findings, epic_ref, is_epic,
-                                         parse_items)
+                                         is_remote, parse_items)
 from quenching.specs.parse.text import body_after_frontmatter
 from quenching.specs.parse.sections import (duplicate_headings, gate_report, parse_impact_standards, ready_report,
                                             section_state, stray_headings)
@@ -249,24 +250,26 @@ def merge_record_finding(fm: dict, where: str, spec_id: str) -> dict | None:
 BY_CODE_SPECS_SHOWN = 6
 
 
-def epic_sweep(backend: SpecBackend, read: dict) -> list[dict]:
+def epic_sweep(backend: SpecBackend, read: dict, root: str | None = None) -> list[dict]:
     """The epic findings for the specs a sweep already read (`read`: id -> info).
 
-    Only an id the sweep did not read — a member outside a narrowed `--spec` — costs one more
-    `read_specs` call, so a full sweep adds no reads at all."""
+    Only an id the sweep did not read — a member outside a narrowed `--spec`, or one in another
+    repository's store — costs one more `read_specs` call per store, so a full sweep of local
+    members adds no reads at all. A reference-form `epic:` on a member is never read."""
     wanted: set[str] = set()
     for info in read.values():
         fm = info["frontmatter"]
         if is_epic(fm):
             wanted.update(str(i["spec"]) for i in parse_items(info) if i["spec"])
-        elif epic_ref(fm):
+        elif epic_ref(fm) and not is_remote(epic_ref(fm)):
             wanted.add(epic_ref(fm))
     missing = sorted(wanted - set(read))
-    known = {**read, **(backend.read_specs(missing) if missing else {})}
+    got, unreadable = read_members(backend, missing, root) if missing else ({}, set())
+    known = {**read, **got}
     out: list[dict] = []
     for info in read.values():
         if is_epic(info["frontmatter"]):
-            out.extend(epic_findings(info, known))
+            out.extend(epic_findings(info, known, unreadable))
         out.extend(claim_findings(info, known))
     return out
 
@@ -335,7 +338,7 @@ def cmd_validate(args, root: str, out: Emitter) -> int:
     read: dict[str, dict] = {}
     for s in target:
         findings.extend(validate_spec(backend, s, out, sink=read))
-    findings.extend(epic_sweep(backend, read))
+    findings.extend(epic_sweep(backend, read, root))
 
     errors = [f for f in findings if f["severity"] == "error"]
     if getattr(args, "by_code", False):
