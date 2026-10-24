@@ -364,6 +364,9 @@ SHIPPED = (plugin + "/assets/knowledge/", plugin + "/assets/templates/", plugin 
            # target under Codex really does carry `AGENTS.md`, and one of the four was a sentence
            # SAYING a path does not exist, read as a claim that it does.
            "plugins/quenching-codex/",
+           # The OpenCode distribution is the same generated prose again, its payload under
+           # `quenching/`: 33 findings before it was listed, every one a target-describing path.
+           "plugins/quenching-opencode/",
            # The read-only reader ships a generated copy of `assets/bin/` and one command body run
            # inside the target, which cites its own `bin/` through ${CLAUDE_PLUGIN_ROOT}: the
            # same four findings the source trees are exempt from, measured when it was added.
