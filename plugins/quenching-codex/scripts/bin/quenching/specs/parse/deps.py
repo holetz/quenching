@@ -135,12 +135,20 @@ def schedule(infos: dict[str, dict], ids: list[str] | None = None) -> dict:
         start, target = _date(fm.get("start")), _date(fm.get("target"))
         duration = (target - start).days if start and target and target >= start else None
         earliest, driven_by = start, None
+        blocked = False
         for dep in edges[spec]:
             finish = finishes[dep]
-            if finish is not None and (earliest is None or finish > earliest):
+            if finish is None and infos[dep]["phase"] != "archive":
+                blocked = True
+            elif finish is not None and (earliest is None or finish > earliest):
                 earliest, driven_by = finish, dep
-        finish = earliest + timedelta(days=duration) \
-            if earliest is not None and duration is not None else target
+        if blocked:
+            earliest, driven_by, finish = None, None, None
+        elif info["phase"] == "archive" and str(fm.get("outcome") or "").strip() == "done":
+            finish = target
+        else:
+            finish = earliest + timedelta(days=duration) \
+                if earliest is not None and duration is not None else target
         nodes[spec] = {
             "id": spec, "title": fm.get("title") or "", "phase": info["phase"],
             "start": _iso(start), "target": _iso(target), "dependsOn": deps[spec],

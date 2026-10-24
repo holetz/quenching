@@ -143,6 +143,23 @@ class DependencySchedule(unittest.TestCase):
                                  tuple(node[key] for key in
                                        ("earliestStart", "earliestFinish", "slipDays", "drivenBy")))
 
+    def test_unknown_open_dependency_finish_propagates_as_unknown(self):
+        got = schedule({"A": info(),
+                        "B": info(dependsOn="A", start="2026-01-05", target="2026-01-07")}, ["B"])
+        node = by_id(got)["B"]
+        self.assertEqual((None, None, 0), (node["earliestStart"], node["earliestFinish"], node["slipDays"]))
+
+    def test_archived_done_node_reports_its_own_target_as_finish(self):
+        got = schedule({
+            "X": info(start="2026-01-01", target="2026-01-08"),
+            "A": info("archive", dependsOn="X", outcome="done",
+                      start="2026-01-01", target="2026-01-10"),
+            "B": info(dependsOn="A", start="2026-01-01", target="2026-01-03"),
+        }, ["B"])
+        nodes = by_id(got)
+        self.assertEqual("2026-01-10", nodes["A"]["earliestFinish"])
+        self.assertEqual("2026-01-10", nodes["B"]["earliestStart"])
+
     def test_selection_closes_dependencies_and_skips_missing_specs(self):
         infos = {"A": info(), "B": info(dependsOn="A, ghost"),
                  "C": info(dependsOn="B"), "isolated": info(),
