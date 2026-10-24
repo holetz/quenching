@@ -813,7 +813,7 @@
     "quenching/scripts/bin/quenching/specs/commands/deps.py": "76ee2110e61f33ea32aa82a95cfbb80c0262a2b5000051ff80882c562dbfa0e8",
     "quenching/scripts/bin/quenching/specs/commands/doctor.py": "60609728c07d00e18090a81b21f98148071a552f35619394060b94fa7b3e63ff",
     "quenching/scripts/bin/quenching/specs/commands/epic.py": "37af3580f04a6c0812dc070620f1411e948b5636aacc5a6a14d64b194a7a5f2b",
-    "quenching/scripts/bin/quenching/specs/commands/estimate.py": "34795aaab9e16fae93706a33042c434835f940f011fd8b23a7bfca7df02a8ca4",
+    "quenching/scripts/bin/quenching/specs/commands/estimate.py": "47bedc83716efec62dcd8954fdfd637d544696fbca7dca2ee6ca1b779db8efa5",
     "quenching/scripts/bin/quenching/specs/commands/fields.py": "807d0a02d89112eafd1e7351c73b9be3d5ea7ef2e8ae370e1520f37251402813",
     "quenching/scripts/bin/quenching/specs/commands/find.py": "3b930b6ab48d50d5e0fe6eaa61df112bb66929d7596821859e008d571acd6d56",
     "quenching/scripts/bin/quenching/specs/commands/granular.py": "5c040850d8e766a275bdced1ad76ed6a6415de46548a19970e2d6cf448e105a9",
