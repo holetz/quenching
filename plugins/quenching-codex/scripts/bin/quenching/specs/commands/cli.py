@@ -22,6 +22,7 @@ from quenching.common.version import VERSION
 from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.parse.fields import UnclosedFence
 from quenching.specs.commands.create import cmd_new
+from quenching.specs.commands.deps import cmd_depends, cmd_schedule
 from quenching.specs.commands.doctor import cmd_config, cmd_doctor
 from quenching.specs.commands.epic import cmd_epic
 from quenching.specs.commands.estimate import cmd_estimate
@@ -49,7 +50,8 @@ def add_json(sp):
 
 
 # Verbs that take the spec id as a positional as well as `--spec`; True = the id is required.
-SPEC_POSITIONAL = {"status": False, "show": True, "parallel": True, "estimate": True}
+SPEC_POSITIONAL = {"status": False, "show": True, "parallel": True, "estimate": True,
+                   "depends": True, "schedule": False}
 
 
 def add_spec(sp, required: bool):
@@ -323,6 +325,14 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     p.add_argument("--version", action="store_true", help="print the version and exit")
     sub = p.add_subparsers(dest="cmd")
 
+    sp = add_json(sub.add_parser("depends", help="read or edit ONE spec's dependencies"))
+    add_spec(sp, True)
+    sp.add_argument("--add", help="comma-separated dependency ids to add")
+    sp.add_argument("--remove", help="comma-separated dependency ids to remove")
+
+    sp = add_json(sub.add_parser("schedule", help="derive dates and the critical path"))
+    add_spec(sp, False)
+
     _add_new(sub)
     _add_read(sub)
     _add_section_and_fields(sub)
@@ -334,6 +344,8 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
 
 
 DISPATCH: dict = {
+    "depends": cmd_depends,
+    "schedule": cmd_schedule,
     "estimate": cmd_estimate,
     "new": cmd_new,
     "list": cmd_list,

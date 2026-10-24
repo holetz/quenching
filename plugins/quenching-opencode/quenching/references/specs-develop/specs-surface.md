@@ -35,6 +35,8 @@ missing one is a **refusal (exit 2) naming it, never a traceback**.
 | `cq specs task --spec <id> --check ID [--subject LINE] [--commit SHA] \| --uncheck ID \| --block ID --reason MSG` | flip, record, or block a checkbox mechanically; `--commit` is **additive** to `--subject`, never its replacement |
 | `cq specs discover <id> <text>` | append one line to `## Discoveries` |
 | `cq specs parallel --spec <id> [--json]` | verify each `[P]` group's `files:` sets are disjoint — **exit 1** when any group is ineligible |
+| `cq specs schedule [--spec <id>] [--json]` | the schedule derived from `dependsOn` plus `start`/`target` — `earliestStart`, `earliestFinish`, `slipDays`, `critical`, `criticalPath`; **exit 1** on a cycle, nothing written |
+| `cq specs depends <id> [--add 12,34] [--remove 12] [--json]` | read or edit the `dependsOn` key (ids of this store); idempotent, **exit 2** and nothing written on an unknown id, a self-reference or an edge that would close a cycle |
 | `cq specs validate [--spec <id>] [--by-code]` | the canonical heading set, the stage-scoped rule, the `sp-*` vocabulary. `--by-code` renders the same sweep as one line per `(code, severity)` with the count and the specs — grouped, never filtered |
 | `cq specs doctor` | workspace shape — the two folders, strays, older layouts; remedies **declared** for the command to apply |
 | `cq specs migrate` | one-way fold to the current layout (`backlog/` + `ready/` → `plans/`, and v1 three-file folders → one file); **exit 2** when there is nothing to migrate; `specs/archive/**` never touched |
