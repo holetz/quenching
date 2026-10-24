@@ -287,10 +287,12 @@
     if (focusId != null) { const b = document.querySelector(`tr[data-id="${focusId}"] button:not(:disabled)`); if (b) b.focus(); }
   }
 
+  // A cross-repository id (`owner/repo#id`) has no detail in this store: it is shown, never linked.
+  const isRemoteId = (id) => /[\/#]/.test(String(id));
   function epicItem(it, critical) {
     const on = critical.includes(it.label);
     return h("li", { class: "wave-item" + (on ? " critical" : ""), "data-label": it.label },
-      h("div", {}, h("strong", {}, it.label), " ", it.spec ? h("a", { href: "#/spec/" + it.spec }, it.title) : it.title),
+      h("div", {}, h("strong", {}, it.label), " ", it.spec && !isRemoteId(it.spec) ? h("a", { href: "#/spec/" + it.spec }, it.title) : it.title),
       h("div", { class: "meta" }, h("span", { class: "chip st-" + it.status }, it.status), on ? h("span", { class: "chip crit" }, "critical path") : null),
       it.after.length ? h("div", { class: "meta" }, "after: " + it.after.join(", ") + (it.waitingOn.length ? " (waiting on " + it.waitingOn.join(", ") + ")" : "")) : null);
   }
@@ -474,7 +476,7 @@
     $("#drawer-close").focus();
   }
   function humanRow(id, title, stage, extra, label) {
-    const btn = id ? h("button", { type: "button", class: "link", on: { click: (e) => openDrawer(id, e.currentTarget) } }, `${id} · ${title}`) : h("span", {}, `${label || "?"} · ${title}`);
+    const btn = id && !isRemoteId(id) ? h("button", { type: "button", class: "link", on: { click: (e) => openDrawer(id, e.currentTarget) } }, `${id} · ${title}`) : h("span", {}, `${id || label || "?"} · ${title}`);
     return h("li", {}, btn, " ", stagePill(stage), extra);
   }
   function viewHuman() {
