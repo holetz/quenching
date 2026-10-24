@@ -156,6 +156,13 @@ class DependencyCommands(unittest.TestCase):
         self.assertEqual([["2", "3", "2"]],
                          [f["cycle"] for f in findings if f["code"] == "sp-dep-cycle"])
 
+    def test_validate_narrowed_scope_keeps_cycles_sharing_the_cut_edge(self):
+        for spec, deps_ in ((1, [2, 3]), (2, [1]), (3, [2])):
+            self.seed_dependency(spec, deps_)
+        findings = self.dependency_findings("--spec", "3")
+        self.assertEqual([["1", "3", "2", "1"]],
+                         [f["cycle"] for f in findings if f["code"] == "sp-dep-cycle"])
+
     def test_validate_warns_for_archived_dependencies_unless_done(self):
         self.seed_dependency(1, [2])
         for outcome in ("abandoned", "superseded", "", "done"):

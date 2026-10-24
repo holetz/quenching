@@ -825,7 +825,7 @@
     "quenching/scripts/bin/quenching/specs/commands/read.py": "8d18b78fcb865fc973dce4bb9f75df3fef83747475d288fa151d461677c818f4",
     "quenching/scripts/bin/quenching/specs/commands/release.py": "6096c2d53bb6d3ceb03499e8209f01601b492471178050f5cc0dec40533b87c8",
     "quenching/scripts/bin/quenching/specs/commands/task.py": "61385bd1d508ae0cce551ba25dd3286801c8316282581ad6fba35e28544932ec",
-    "quenching/scripts/bin/quenching/specs/commands/validate.py": "8a96d3085e2d1b2adac5b3b39fa0f777097ca11aaa0737c5c3a4621a637eab65",
+    "quenching/scripts/bin/quenching/specs/commands/validate.py": "0f4a922abf2d110cb306676c9da49f957a406a05a867bee32cf9183de870652c",
     "quenching/scripts/bin/quenching/specs/config.py": "5893fe01205d32acef9c248363d720a3f8fc55750f3aa43a0d016eecdb568a2b",
     "quenching/scripts/bin/quenching/specs/members.py": "868c5873366280a3613fee5b9d1389f3716cb7ee84e5e368e0e8495f333b78b6",
     "quenching/scripts/bin/quenching/specs/parse/__init__.py": "26c420fca154b9dedd3ff506a754d8aa4e8fd23013c8ba0c59bd90a5a8f26356",
