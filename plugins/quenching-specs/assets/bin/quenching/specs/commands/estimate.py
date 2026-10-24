@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import fnmatch
+import json
 import math
 import re
 import shlex
@@ -51,6 +52,37 @@ def _file_size(root: Path, entry: str, standard: bool = False) -> dict:
             **({"reason": "missing, new or unreadable file"} if size is None else {})}
 
 
+def _is_generated_mirror(root: Path, entry: str) -> bool:
+    """Find the nearest generated directory, honoring its module's authored files."""
+    raw = re.sub(r"\s*\(new\)\s*$", "", entry).strip()
+    if _files_bad_annotation(entry) or not raw or Path(raw).is_absolute():
+        return False
+    resolved = (root / raw).resolve()
+    if not resolved.is_relative_to(root):
+        return False
+    for directory in resolved.parents:
+        if directory == root:
+            break
+        if not any((directory / marker).is_file()
+                   for marker in (".generated-from.json", ".generated-files.json")):
+            continue
+        try:
+            manifest = json.loads((root / "plugins/quenching/assets/modules.json")
+                                  .read_text(encoding="utf-8"))
+        except (OSError, ValueError, UnicodeError):
+            manifest = {}
+        modules = manifest.get("modules", []) if isinstance(manifest, dict) else []
+        if isinstance(modules, list):
+            for module in modules:
+                if (isinstance(module, dict)
+                        and module.get("path") == directory.relative_to(root).as_posix()):
+                    authored = module.get("authored", [])
+                    return not (isinstance(authored, list)
+                                and resolved.relative_to(directory).as_posix() in authored)
+        return True
+    return False
+
+
 def estimate_build(info: dict, root: str | Path, budget: int = WORKER_BUDGET_TOKENS,
                    preamble: Path = EXECUTE_BODY) -> dict:
     """Load no task file contents: sizes and the backend's parsed document are enough."""
@@ -74,17 +106,21 @@ def estimate_build(info: dict, root: str | Path, budget: int = WORKER_BUDGET_TOK
         for entry in standards:
             row = _file_size(root, entry, standard=True)
             files[row["path"]] = row
+        standard_paths = set(files)
         for task in tasks:
             for entry in task["files"]:
                 row = _file_size(root, entry)
+                if row["path"] not in standard_paths and _is_generated_mirror(root, entry):
+                    row["writeOnly"] = "generated mirror"
                 files[row["path"]] = row
         unresolved = [{"path": row["path"], "reason": row["reason"]}
-                      for row in files.values() if row["bytes"] is None]
+                      for row in files.values() if row["bytes"] is None and not row.get("writeOnly")]
         unresolved.extend({"task": task["id"], "reason": "no files declared"}
                           for task in tasks if not task["files"])
         if preamble_missing:
             unresolved.append({"path": str(preamble), "reason": "execute preamble unavailable"})
-        byte_count = common_bytes + sum(row["bytes"] or 0 for row in files.values())
+        byte_count = common_bytes + sum(row["bytes"] or 0 for row in files.values()
+                                        if not row.get("writeOnly"))
         tokens = (byte_count + BYTES_PER_TOKEN - 1) // BYTES_PER_TOKEN
         rows.append({"section": section, "tasks": [task["id"] for task in tasks],
                      "taskCount": len(tasks), "files": sorted(files.values(), key=lambda r: r["path"]),

@@ -119,7 +119,7 @@ class DeclaredReading(unittest.TestCase):
         self.assertEqual([], row["unresolved"])
 
     def test_impact_standard_is_counted_even_when_also_declared_under_generated_dir(self):
-        (self.root / "docs/.generated-from.json").write_text("{}")
+        (self.root / "docs" / ".generated-from.json").write_text("{}")
         standard = "docs/standards/agents/communication.md"
         result = self.estimate(f"- [ ] 1.1 Task\n      files: {standard}\n", f"- /{standard}\n")
         row = result["sections"][0]
