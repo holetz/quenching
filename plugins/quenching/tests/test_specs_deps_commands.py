@@ -61,9 +61,7 @@ class DependencyCommands(unittest.TestCase):
 
     def test_unknown_and_self_references_refuse_without_writes(self):
         for flag, value, expected in (("--add", "2,99", "sp-dep-missing"),
-                                      ("--remove", "99", "sp-dep-missing"),
-                                      ("--add", "2,1", "sp-dep-self"),
-                                      ("--remove", "1", "sp-dep-self")):
+                                      ("--add", "2,1", "sp-dep-self")):
             with self.subTest(flag=flag, value=value):
                 before = copy.deepcopy(self.backend.docs)
                 code, payload = self.call("depends", "1", flag, value)
@@ -74,6 +72,19 @@ class DependencyCommands(unittest.TestCase):
         self.assertNotEqual(0, code)
         self.assertEqual("sp-unknown-id", payload["code"])
         self.writer.assert_not_called()
+
+    def test_remove_repairs_a_missing_or_own_id(self):
+        self.seed_dependency(1, [99, 1, 2])
+        code, payload = self.call("depends", "1", "--remove", "99,1")
+        self.assertEqual((0, ["2"]), (code, payload["dependsOn"]))
+        self.assertIn("dependsOn: [2]\n", self.text())
+
+    def test_edit_refuses_only_a_cycle_through_the_edited_spec(self):
+        self.seed_dependency(2, [2])
+        self.seed_dependency(3, [4])
+        self.seed_dependency(4, [3])
+        code, payload = self.call("depends", "1", "--add", "2")
+        self.assertEqual((0, ["2"]), (code, payload["dependsOn"]))
 
     def test_transitive_cycle_refuses_entire_edit(self):
         self.call("depends", "1", "--add", "2")
@@ -137,6 +148,13 @@ class DependencyCommands(unittest.TestCase):
             self.seed_dependency(spec, deps_)
         findings = self.dependency_findings("--spec", "3")
         self.assertEqual([["3", "4", "3"]], [f["cycle"] for f in findings if f["code"] == "sp-dep-cycle"])
+
+    def test_validate_narrowed_scope_keeps_cycles_that_overlap_the_reported_one(self):
+        for spec, deps_ in ((1, [2]), (2, [1, 3]), (3, [2])):
+            self.seed_dependency(spec, deps_)
+        findings = self.dependency_findings("--spec", "3")
+        self.assertEqual([["2", "3", "2"]],
+                         [f["cycle"] for f in findings if f["code"] == "sp-dep-cycle"])
 
     def test_validate_warns_for_archived_dependencies_unless_done(self):
         self.seed_dependency(1, [2])
