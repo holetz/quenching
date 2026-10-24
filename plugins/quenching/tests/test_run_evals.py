@@ -103,6 +103,17 @@ class Runner(unittest.TestCase):
         self.assertEqual(summary["overall"]["with"]["cases"], 2)
         self.assertEqual(summary["overall"]["with"]["caseApprovalRate"], 0.5)
 
+    def test_the_commands_own_model_is_recorded_beside_the_run_model(self):
+        self.assertEqual(runner.command_model("/quenching-specs:specs:create"), "sonnet")
+        self.assertEqual(runner.command_model("/quenching-specs:specs:develop"), "opus")
+        self.assertIsNone(runner.command_model("/quenching-specs:git:commit"))
+        self.assertIsNone(runner.command_model("/fake:skill"))
+        out = self.full_run("fake")
+        bench = json.loads((out / "suite/benchmark.json").read_text())
+        self.assertEqual((bench["model"], bench["commandModel"]), ("m1", None))
+        summary = json.loads((out / "summary.json").read_text())
+        self.assertIsNone(summary["suites"][0]["commandModel"])
+
     def test_both_arms_report_a_delta(self):
         out = self.full_run("fake", "--arms", "with,without")
         bench = json.loads((out / "suite/benchmark.json").read_text())
