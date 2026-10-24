@@ -286,6 +286,14 @@ workItemType: epic
         self.assertEqual("done", status["S2"])
         self.assertEqual("unreadable", status["S3"])
 
+    def test_a_tracker_backend_reports_a_foreign_member_unreadable_like_the_cli(self):
+        self._remote_epic()
+        self.backend.name = "github"
+        row = self.get("/api/epics?refresh=1")[1]["epics"][0]
+        status = {i["label"]: i["status"] for i in row["items"]}
+        self.assertEqual("unreadable", status["S2"])
+        self.assertEqual("unreadable", status["S3"])
+
     def test_an_epic_of_only_cross_repository_members_counts_them(self):
         self.backend.create_spec("plans", """---
 title: Program

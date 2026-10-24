@@ -240,6 +240,47 @@ class CrossRepositoryEpic(TwoStores):
         _, got = self.run_cmd(validate_cmd.cmd_validate, spec=None, phase=None, by_code=False)
         self.assertNotIn("sp-epic-divergent", {f["code"] for f in got["findings"]})
 
+    def _old_epic(self, tasks):
+        self.local.create_spec("plans", "---\ntitle: Old\ndate: 2026-10-24\n"
+                               "workItemType: epic\n---\n\n## Problem\n\nx\n\n## Tasks\n\n"
+                               + tasks)
+        info, _ = self.local.read_spec(1)
+        self.local.write_spec(info, set_frontmatter_key(info["text"], "epic", "3"))
+
+    def _move(self):
+        return self.run_cmd(epic_cmd.cmd_epic, epic_cmd="add", epic=self.epic, spec="1",
+                            after=None, group=None, label=None, move=True)
+
+    def test_move_takes_a_self_qualified_item_out_of_the_old_epic(self):
+        self._old_epic("- [ ] A Forge one — spec: holetz/forge#1\n")
+        code, got = self._move()
+        self.assertEqual(0, code, got)
+        self.assertNotIn("Forge one", self.local.read_spec("3")[0]["text"])
+        self.assertIn("Forge one — spec: #1", self.local.read_spec(self.epic)[0]["text"])
+
+    def test_move_of_a_self_qualified_item_still_refuses_while_another_waits_on_it(self):
+        self._old_epic("- [ ] A Forge one — spec: holetz/forge#1\n"
+                       "- [ ] B Later — spec: holetz/quenching#2 — after: A\n")
+        code, got = self._move()
+        self.assertEqual((2, "sp-epic-move-dependents"), (code, got.get("code")), got)
+        self.assertIn("Forge one", self.local.read_spec("3")[0]["text"])
+
+    def _divergent(self):
+        _, got = self.run_cmd(validate_cmd.cmd_validate, spec=None, phase=None, by_code=False)
+        return [f for f in got["findings"] if f["code"] == "sp-epic-divergent"]
+
+    def test_a_self_qualified_item_whose_spec_has_no_epic_is_divergent(self):
+        self.extend_epic("- [ ] S3 Forge one — spec: holetz/forge#1\n")
+        found = self._divergent()
+        self.assertEqual(["holetz/forge#1"], [f["member"] for f in found], found)
+
+    def test_a_self_qualified_item_whose_spec_names_another_epic_is_divergent(self):
+        self.extend_epic("- [ ] S3 Forge one — spec: holetz/forge#1\n")
+        info, _ = self.local.read_spec(1)
+        self.local.write_spec(info, set_frontmatter_key(info["text"], "epic", "9"))
+        found = self._divergent()
+        self.assertEqual(["holetz/forge#1"], [f["member"] for f in found], found)
+
     def test_add_refuses_a_reference_whose_store_cannot_be_read(self):
         code, got = self.run_cmd(epic_cmd.cmd_epic, epic_cmd="add", epic=self.epic,
                                  spec="holetz/absent#1", after=None, group=None, label=None)

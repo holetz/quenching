@@ -172,11 +172,12 @@ def insert_item(info: dict, line: str, group: str | None) -> str:
     return "".join(lines)
 
 
-def _without_item(old: dict, spec_id: str, args, out: Emitter):
+def _without_item(old: dict, spec_id: str, args, out: Emitter, self_repo: str | None = None):
     """`(text, None)`: `old` without the item that lists `spec_id` (`text` is `None` when it lists
     none), or `(None, exit_code)` when another item waits on that item."""
     items = parse_items(old)
-    mine = next((i for i in items if i["spec"] == spec_id), None)
+    mine = next((i for i in items if i["spec"] and local_key(i["spec"], self_repo) == spec_id),
+                None)
     if mine is None:
         return None, None
     waiting = [i["label"] for i in items if i is not mine and mine["label"] in i["after"]]
@@ -236,7 +237,8 @@ def cmd_epic(args, root: str, out: Emitter) -> int:
                            "(--move takes it out of that epic)", epic=current)
         old_epic = backend.read_specs([current]).get(current)
         if old_epic is not None:
-            old_text, code = _without_item(old_epic, spec_id, args, out)
+            old_text, code = _without_item(old_epic, spec_id, args, out,
+                                                own_repo(origin_url(root)))
             if code is not None:
                 return code
     items = parse_items(epic)
