@@ -200,6 +200,21 @@ class Containment(unittest.TestCase):
             runner.snapshot(Path(tmp) / "no-suite", workspace, env)
             self.assertFalse(mark.exists(), "the workspace fsmonitor ran during the snapshot")
 
+    def test_the_snapshot_never_runs_a_workspace_filter(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp) / "workspace"
+            workspace.mkdir()
+            mark = Path(tmp) / "ran"
+            env = {**runner.os.environ, **runner.GIT_ENV}
+            (workspace / ".gitattributes").write_text("f filter=evil\n")
+            (workspace / "f").write_text("one\n")
+            for argv in (["git", "init", "-q", "-b", "main"], ["git", "add", "-A"],
+                         ["git", "commit", "-q", "-m", "x"],
+                         ["git", "config", "filter.evil.clean", f"touch {mark}; cat"]):
+                runner.subprocess.run(argv, cwd=workspace, env=env, check=True)
+            (workspace / "f").write_text("two\n")
+            runner.snapshot(Path(tmp) / "no-suite", workspace, env)
+            self.assertFalse(mark.exists(), "the workspace clean filter ran during the snapshot")
 
     def test_a_timeout_kills_the_grandchildren_too(self):
         with tempfile.TemporaryDirectory() as tmp:

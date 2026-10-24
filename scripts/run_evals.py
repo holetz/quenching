@@ -36,7 +36,9 @@ RESULTS = ("pass", "fail", "unknown")
 GIT_ENV = {"GIT_AUTHOR_NAME": "Eval fixture", "GIT_AUTHOR_EMAIL": "eval@example.com",
            "GIT_COMMITTER_NAME": "Eval fixture", "GIT_COMMITTER_EMAIL": "eval@example.com"}
 # The workspace config belongs to the agent under evaluation: -c wins over it, so the snapshot never runs its commands.
-SAFE_GIT = ["-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null", "-c", "diff.external="]
+# The filter drivers are named by that config, so snapshot() empties them per name (filter_overrides).
+SAFE_GIT = ["-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null", "-c", "diff.external=",
+            "-c", "gpg.program=/bin/false", "-c", "log.showSignature=false"]
 MATERIAL_LIMIT = 60000
 
 GRADER_PROMPT = """You grade one run of a coding agent. For EVERY assertion below, decide whether the
@@ -257,10 +259,25 @@ def provision(suite: Path, case_id: str, parent: Path) -> tuple[Path, dict]:
     return workspace, env
 
 
+def filter_overrides(workspace: Path, env: dict) -> list[str]:
+    """`-c` pairs that empty every filter driver the workspace config declares (reading it runs nothing)."""
+    listing = subprocess.run(["git", "config", "--name-only", "--list"], cwd=workspace, env=env,
+                             capture_output=True, text=True, timeout=120).stdout
+    drivers = {name[len("filter."):name.rindex(".")] for name in listing.splitlines()
+               if name.startswith("filter.") and name.count(".") >= 2}
+    args = []
+    for driver in sorted(drivers):
+        for key, value in (("clean", ""), ("smudge", ""), ("process", ""), ("required", "false")):
+            args += ["-c", f"filter.{driver}.{key}={value}"]
+    return args
+
+
 def snapshot(suite: Path, workspace: Path, env: dict) -> str:
+    safe = [*SAFE_GIT, *filter_overrides(workspace, env)]
+
     def capture(argv: list[str]) -> str:
         if argv[0] == "git":
-            argv = ["git", *SAFE_GIT, *argv[1:]]
+            argv = ["git", *safe, *argv[1:]]
         result = subprocess.run(argv, cwd=workspace, env={**env, "GIT_OPTIONAL_LOCKS": "0"},
                                 capture_output=True, text=True, timeout=120)
         return (result.stdout + result.stderr).strip() or "(empty)"
