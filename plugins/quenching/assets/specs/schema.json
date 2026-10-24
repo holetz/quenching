@@ -11,7 +11,7 @@
 
   "frontmatter": {
     "required": ["title", "date"],
-    "optional": ["verification", "priority", "refined", "approved", "branch", "pr", "reviewed", "merge", "buildCost", "run", "outcome", "workItemType", "epic", "tags", "assignee", "start", "target"],
+    "optional": ["verification", "priority", "refined", "approved", "branch", "pr", "reviewed", "merge", "buildCost", "run", "outcome", "workItemType", "epic", "dependsOn", "tags", "assignee", "start", "target"],
     "verification": ["per-task", "per-section", "end-of-plan"],
     "outcome": ["done", "abandoned"],
 
