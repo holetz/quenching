@@ -438,7 +438,7 @@
     "agents/spec-runner.md": "f3be2ce6c6969abfc827563b5005d0b610d0cfc19c5ec1954f2efa441e5f7a55",
     "agents/verifier.md": "0b351c88b064e82db885ec424d0005b032c09a16efc88fd06569b1dfe9e8afa5",
     "checks/catalog-publication-check.py": "9f4c9b75b524e31bd9420036a5384801ef707ef5708956abba1d6eb62c398f9e",
-    "checks/citation-check.sh": "fe686c9b8fb8ac91cf86bbfbfc64d91a4ce7172d6b9a866b527d822231d12b36",
+    "checks/citation-check.sh": "f02e54273433b029c3419cc9abafb5eb5b4e44a883b8704e665baf0adeb0929f",
     "checks/documentation-site-check.py": "2705065249db133ccf896d27c44571dca3e623b09b01dfa3fef6233212ab0b19",
     "checks/fixtures/catalog-publication/healthy/reference/catalog/clientes.md": "23c305552a83a1c9ab89ae0d556388391de8b0f3d8130da0a45cb9bec1662492",
     "checks/fixtures/catalog-publication/healthy/reference/catalog/index.md": "53a852f7503ee551ebbb387f21cdd2e0d10e92f75e176b169ea130d1d883dd19",

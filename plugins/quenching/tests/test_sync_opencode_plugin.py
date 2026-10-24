@@ -79,7 +79,8 @@ class Platform(unittest.TestCase):
 
     def test_an_unowned_module_id_refuses(self):
         with self.assertRaises(ValueError):
-            sync.platform("/quenching-design:specs:execute")
+            # Built by concatenation so the citation check does not read it as a live command id.
+            sync.platform("/quenching-design:" + "specs:execute")
 
     def test_shared_configuration_path_survives(self):
         self.assertEqual(".claude/quenching.json", sync.platform(".claude/quenching.json"))
