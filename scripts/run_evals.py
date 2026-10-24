@@ -33,6 +33,8 @@ ARMS = ("with", "without")
 RESULTS = ("pass", "fail", "unknown")
 GIT_ENV = {"GIT_AUTHOR_NAME": "Eval fixture", "GIT_AUTHOR_EMAIL": "eval@example.com",
            "GIT_COMMITTER_NAME": "Eval fixture", "GIT_COMMITTER_EMAIL": "eval@example.com"}
+# The workspace config belongs to the agent under evaluation: -c wins over it, so the snapshot never runs its commands.
+SAFE_GIT = ["-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null", "-c", "diff.external="]
 MATERIAL_LIMIT = 60000
 
 GRADER_PROMPT = """You grade one run of a coding agent. For EVERY assertion below, decide whether the
@@ -232,18 +234,21 @@ def provision(suite: Path, case_id: str, parent: Path) -> tuple[Path, dict]:
 
 def snapshot(suite: Path, workspace: Path, env: dict) -> str:
     def capture(argv: list[str]) -> str:
-        result = subprocess.run(argv, cwd=workspace, env=env, capture_output=True, text=True, timeout=120)
+        if argv[0] == "git":
+            argv = ["git", *SAFE_GIT, *argv[1:]]
+        result = subprocess.run(argv, cwd=workspace, env={**env, "GIT_OPTIONAL_LOCKS": "0"},
+                                capture_output=True, text=True, timeout=120)
         return (result.stdout + result.stderr).strip() or "(empty)"
 
     parts = [("git status --porcelain", capture(["git", "status", "--porcelain"]))]
     refs = capture(["git", "for-each-ref", "--format=%(refname:short)", "refs/heads"]).splitlines()
     for ref in refs:
-        parts.append((f"git log --stat -n 5 {ref}", capture(["git", "log", "--stat", "-n", "5", ref])))
+        parts.append((f"git log --stat -n 5 {ref}", capture(["git", "log", "--stat", "--no-ext-diff", "--no-textconv", "-n", "5", ref])))
     base = env.get("EVAL_BASE")
     if base:
         parts.append((f"git diff {base[:12]} (every change since the fixture, committed or not)",
-                      capture(["git", "diff", base])))
-    parts.append(("git diff HEAD", capture(["git", "diff", "HEAD"])))
+                      capture(["git", "diff", "--no-ext-diff", "--no-textconv", base])))
+    parts.append(("git diff HEAD", capture(["git", "diff", "--no-ext-diff", "--no-textconv", "HEAD"])))
     parts.append(("untracked files", capture(["git", "ls-files", "--others", "--exclude-standard"])))
     if (suite / "inspect.sh").is_file():
         parts.append(("inspect.sh", capture(["bash", str(suite / "inspect.sh")])))
