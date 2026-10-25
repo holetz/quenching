@@ -7,11 +7,16 @@ real repository.
 
 import json
 import os
+import shutil
+import subprocess
+import tempfile
 import unittest
 from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 import quenching.specs.backends.github as gh_mod
+from quenching.specs import backends as backends_mod
+from quenching.specs import mcp
 from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.parse.fields import set_frontmatter_key
 from test_specs_backends import GithubRemoteFixture, _external_case_doc
@@ -152,6 +157,32 @@ class BackendDependencies(unittest.TestCase):
             self.backend.create_spec("plans", _with_deps(_external_case_doc(), many))
         self.assertEqual("sp-gh-dependency-limit", ctx.exception.err["code"])
         self.assertEqual([], self.transport.calls)
+
+
+class BehindTheSpecsService(unittest.TestCase):
+    """The stdio MCP server (2085) is a second port of the same core: a read tool answers
+    from a spec the GitHub backend holds, over the same offline double."""
+
+    def test_an_mcp_section_read_answers_from_the_github_backend(self):
+        tmp = os.path.realpath(tempfile.mkdtemp(prefix="quenching-gh-mcp-"))
+        self.addCleanup(shutil.rmtree, tmp, True)
+        subprocess.run(["git", "init", "-q", tmp], check=True)
+        transport = DependencyFixture()
+        backend = GitHubBackend("owner/repo", tmp, types={"incidente": "Bug"}, open_issues=0)
+        backends_mod._BACKEND_CACHE.clear()
+        backends_mod._BACKEND_CACHE[tmp] = backend
+        self.addCleanup(backends_mod._BACKEND_CACHE.clear)
+        with mock.patch.object(gh_mod, "_gh_run", side_effect=transport):
+            backend.create_spec("plans", _external_case_doc())
+            before = len(transport.calls)
+            payload, failed = mcp.call_tool("specs_section",
+                                            {"spec": 101, "headings": "Problem"}, tmp)
+        self.assertFalse(failed, payload)
+        self.assertEqual(["Problem"], [s["heading"] for s in payload["sections"]])
+        self.assertIn("A discriminant fixture.", json.dumps(payload))
+        read = transport.calls[before:]
+        self.assertTrue(read, "the MCP read reached the GitHub transport")
+        self.assertEqual({"GET"}, {c.get("method", "GET") for c in read})
 
 
 if __name__ == "__main__":
