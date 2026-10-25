@@ -1,0 +1,21 @@
+spec_version: 1
+name: "quenching-knowledge-import"
+description: "Import an external source (files, folders, URLs) into the OKF bundle as many docs. Use for \"ingest a source into the base\", \"generate OKF docs from these files\". Not for: one item → quenching-knowledge-add."
+instructions: instructions.md
+executor:
+  type: omnigent
+  config:
+    harness: opencode
+os_env:
+  type: caller_process
+  cwd: .
+spawn: true
+guardrails:
+  policies:
+    source_tools:
+      type: function
+      function:
+        path: omnigent.policies.builtins.cel.cel_policy
+        arguments:
+          expression: "(event.type == \"tool_call\" && event.data.name in [\"NotebookEdit\", \"Skill\"]) ? {\"result\": \"DENY\", \"reason\": \"Tool not granted by the quenching source.\"} : ((event.type == \"tool_call\" && event.data.name in [\"sys_os_shell\", \"Bash\", \"Shell\", \"bash\"] && !(\"arguments\" in event.data && \"command\" in event.data.arguments && type(event.data.arguments.command) == string && event.data.arguments.command.matches(r\"^[ \\t]*cq(?: [^;&|<>$`\\\\\\n]*)?(?:[ \\t]*(?:&&|\\|\\||;)[ \\t]*cq(?: [^;&|<>$`\\\\\\n]*)?)*[ \\t]*$\"))) ? {\"result\": \"DENY\", \"reason\": \"Shell call outside the granted cq verbs.\"} : {\"result\": \"ALLOW\"})"
+          reason: "Denied by the quenching source tool grant."

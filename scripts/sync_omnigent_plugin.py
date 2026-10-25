@@ -235,9 +235,9 @@ def compat_doc(ids: list[str], data: dict) -> str:
     figure = costs(data)
     lines = ["# Model compatibility (generated)", "",
              "Cells are filled only where spike H1 measured them. H1 ran "
-             f"{data['harness']}, not an Omnigent-hosted run, so a cell is evidence about the model on "
+             f"{data['harness']}, so a cell is evidence about the model on "
              "that harness and not about Omnigent. Every other cell reads `unmeasured`.", "",
-             f"Source: {data['source']}. Grader in H1: {data['grader']}.", "",
+             f"Source: {data['source']}. Grader: {data['grader']}.", "",
              "Cell form: `approved/cases, assertion pass rate`.", "",
              "| Command | " + " | ".join(models) + " |", "| --- | " + " | ".join("---" for _ in models) + " |"]
     for ident in ids:

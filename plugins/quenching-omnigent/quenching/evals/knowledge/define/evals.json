@@ -1,0 +1,49 @@
+{
+  "skill": "quenching-knowledge-define",
+  "cases": [
+    {
+      "id": "new-term-added",
+      "branch": "steps 1-5 — a new term is merged into docs/glossary.md in alphabetical order, unlinked because no concept doc exists",
+      "prompt": "Add \"Backoff\" to the glossary: the growing wait between two retries of a failed page fetch.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "docs/glossary.md gains exactly one new entry for Backoff",
+        "the Backoff entry sits before the Cursor entry, keeping the list alphabetical",
+        "the Backoff entry is unlinked, since no concept doc for it exists in the bundle",
+        "the existing Cursor, Page and Page size entries are unchanged"
+      ]
+    },
+    {
+      "id": "existing-term-refined",
+      "branch": "step 2 classifies as refine — an existing entry is rewritten in place rather than duplicated",
+      "prompt": "The glossary's definition of \"Page size\" is vague. Define it properly: the number of lines one page holds, 20 by default.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "docs/glossary.md still holds exactly one Page size entry",
+        "the Page size entry now states the number of lines one page holds and the default of 20",
+        "the vague wording \"something about how many lines\" no longer appears in docs/glossary.md",
+        "no other glossary entry is changed"
+      ]
+    },
+    {
+      "id": "standard-request-declines",
+      "branch": "Not for: concept docs → quenching-knowledge-learn — a request for a standard leaves the glossary untouched",
+      "prompt": "Write a standard for how our pager service paginates results, covering cursors, page sizes and the retry policy.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "docs/glossary.md is unchanged after the run",
+        "the reply routes the request to another command, such as quenching-knowledge-add or quenching-knowledge-learn, rather than writing a glossary entry"
+      ]
+    }
+  ],
+  "triggers": {
+    "shouldTrigger": [
+      "add a term to the glossary",
+      "define this term",
+      "what does Cursor mean here — put it in the glossary",
+      "refine the glossary entry for Page"
+    ],
+    "shouldNotTrigger": [
+      "write a standard for pagination",
+      "backfill the glossary with every term we never added",
+      "record what we learned about retries"
+    ]
+  }
+}
