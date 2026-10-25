@@ -21,6 +21,7 @@ from quenching.common.git import COMMAND_TIMEOUT_S, _git
 from quenching.common.output import emit
 from quenching.common.config import infer_base_branch, load_config
 from quenching.specs.backends.azure import _az_run
+from quenching.specs.backends.base import BackendRefusal
 
 
 def _origin_head_branch(cwd: str) -> str | None:
@@ -42,8 +43,11 @@ def _is_host_default(cwd: str, backend: str, base: str) -> bool | None:
         argv = ["gh", "repo", "view", "--json", "defaultBranchRef",
                 "-q", ".defaultBranchRef.name"]
     elif backend == "azure-boards":
-        code, stdout, _stderr = _az_run(
-            cwd, "repos", "show", "--query", "defaultBranch", "-o", "tsv")
+        try:
+            code, stdout, _stderr = _az_run(
+                cwd, "repos", "show", "--query", "defaultBranch", "-o", "tsv")
+        except BackendRefusal:
+            return None
         if code != 0:
             return None
         default = stdout.strip().rsplit("/", 1)[-1]

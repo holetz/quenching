@@ -21,6 +21,7 @@ from quenching.specs.backends.hybrid import (GH_BODY_MAX, GH_PART_MAX, hybrid_jo
                                              hybrid_project, hybrid_split, hybrid_title_join,
                                              hybrid_unwrap, hybrid_unwrap_part, hybrid_wrap,
                                              hybrid_wrap_part)
+from quenching.specs import store
 from quenching.specs.config import load_config
 from quenching.specs.parse import (PHASES, carry_forward_fields, declared_tags,
                                    derive_info, derive_labels, reconcile_label_set,
@@ -187,11 +188,12 @@ def _gh_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, s
     # fire after GitHub accepted a POST, and a second attempt would then create a second issue
     # or comment; a failed POST is reported once and the caller decides what is safe to do next.
     max_attempts = GH_MAX_ATTEMPTS if _gh_is_idempotent(argv) else 1
+    env = store.subprocess_env("github")
     for attempt in range(1, max_attempts + 1):
         try:
             out = subprocess.run(["gh", *argv], capture_output=True, text=True,
                                  timeout=COMMAND_TIMEOUT_S,
-                                 cwd=cwd, input=stdin)
+                                 cwd=cwd, input=stdin, env=env)
             code, stdout, stderr = out.returncode, out.stdout, out.stderr
         except FileNotFoundError as e:
             return GH_MISSING, "", str(e), attempt
@@ -468,6 +470,11 @@ def resolve_github_repo(cwd: str) -> tuple[str, int | None, dict]:
 
     Never guesses a repository it cannot name. A wrong answer here does not fail — it
     silently reads and writes somebody else's issues."""
+    declared, refusal = store.declared_store(cwd)
+    if refusal:
+        return "", None, refusal
+    if "github" in declared:
+        return declared["github"]["repository"], None, {}
     remote = _git(cwd, "remote", "get-url", "origin").strip()
     normalized_remote = normalize_github_remote(remote)
     cached = github_cache_read(normalized_remote)

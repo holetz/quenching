@@ -396,6 +396,12 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
         return out
     if not out["present"]:
         return out
+    from quenching.specs.store import declared_store   # store imports backends, which import this
+    store, refusal = declared_store(root)
+    if store:
+        out["store"] = store
+    if refusal:
+        out["storeRefusal"] = refusal
     obj = raw
     _read_backend(out, obj, values, root)
     _read_scalars(out, values)

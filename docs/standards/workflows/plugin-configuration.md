@@ -2,12 +2,12 @@
 type: standard
 title: Plugin configuration contract
 description: "`.claude/quenching.json` is the plugin's single configuration home; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles, proposal catalogues and the `git` pillar's per-artifact writing directives remain explicit target settings"
-resource: .claude/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/specs/config.py, plugins/quenching/assets/bin/quenching/ops/**, plugins/quenching/assets/bin/quenching/proof/**, plugins/quenching/assets/bin/quenching/git/base.py, plugins/quenching/assets/bin/quenching/git/conventions.py, plugins/quenching/assets/bin/quenching/config/**
+resource: .claude/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/specs/config.py, plugins/quenching/assets/bin/quenching/specs/store.py, plugins/quenching/assets/bin/quenching/ops/**, plugins/quenching/assets/bin/quenching/proof/**, plugins/quenching/assets/bin/quenching/git/base.py, plugins/quenching/assets/bin/quenching/git/conventions.py, plugins/quenching/assets/bin/quenching/config/**
 tags: [workflows, specs, configuration, provider, plugin]
-timestamp: 2026-10-17
+timestamp: 2026-10-25
 audience: both
 authority: current
-source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912 — lineage in decision 0004
+source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092 — lineage in decision 0004
 maintainer: quenching
 ---
 
@@ -224,6 +224,43 @@ refused. Specs are read and written only after that selection succeeds.
 
 The `specs` namespace does not name a local specs root, archive, or storage branch.
 The retired `specsBranch` key is no longer read.
+
+## The store and its credential
+
+<!-- rules -->
+
+Location is data of the repository; the credential is data of the person. The repository file may
+say which store the specs live in; it never carries anything that authenticates.
+
+```json
+// .claude/quenching.json
+{"specs": {"store": {"azure": {"organization": "https://dev.azure.com/<org>", "project": "<project>"},
+                     "github": {"repository": "<owner>/<name>"}}}}
+
+// ~/.config/quenching/config.json (user layer)
+{"specs": {"credential": {"azure":  {"source": "login", "configDir": "~/.config/azure-<name>"},
+                          "github": {"source": "env",   "env": "<VARIABLE_NAME>"}}}}
+```
+
+- **Declared wins; nothing declared is the previous behaviour.** A declared Azure pair is returned
+  without `az devops configure --list` and without the project-name round trip; a declared GitHub
+  repository is returned without `gh repo view` (the open-issue count is then unknown). A bare
+  organisation name is normalised to `https://dev.azure.com/<name>`.
+- **The repository layer is read raw** from `.claude/quenching.json`, because the merged view hides
+  which file a key came from. `specs.credential` there, or any `specs.store` key named like a secret
+  (`token`, `pat`, `password`, `secret`, `key`, case-insensitive, any depth), is refused as
+  `sp-store-secret`; any other unknown store key as `sp-store-unknown-key`; a wrong shape or value as
+  `sp-store-invalid`.
+- **Sources** are `login` and `env`. `login` optionally sets `AZURE_CONFIG_DIR` / `GH_CONFIG_DIR` from
+  `configDir` (expanded; a path, not a secret). `env` reads the named variable at call time and sets
+  `AZURE_DEVOPS_EXT_PAT` / `GH_TOKEN`. Any other source, `keyring` included, is `sp-credential-source`
+  (a keyring is reached through the CLI's own login); an unset variable is
+  `sp-credential-env-missing`, naming the variable only.
+- **The secret travels only in the environment of the one `az`/`gh` subprocess.** It is never put in
+  argv, a refusal, a cache file or the config view; `cq specs config --json` prints the declared
+  `store` and a `storeRefusal`, never a credential.
+- Every refusal is an exit-2 `BackendRefusal` with nothing read or written; the leak gate stays in
+  force on every write.
 
 ## No flat fallback and no merge
 
