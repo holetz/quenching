@@ -5,7 +5,8 @@ permission:
   edit: deny
   webfetch: deny
   bash:
-    "cq *": allow
+    "cq specs show *": allow
+    "cq components read *": allow
     "*": ask
 tools:
   task: false

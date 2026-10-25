@@ -5,7 +5,11 @@ permission:
   edit: deny
   webfetch: deny
   bash:
-    "cq *": allow
+    "cq specs new *": allow
+    "cq specs list *": allow
+    "cq specs show *": allow
+    "cq specs next *": allow
+    "cq specs epic add *": allow
     "*": ask
 tools:
   task: false

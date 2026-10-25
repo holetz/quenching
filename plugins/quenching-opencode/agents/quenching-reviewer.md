@@ -5,7 +5,7 @@ permission:
   edit: deny
   webfetch: deny
   bash:
-    "cq *": allow
+    "cq git history *": allow
     "*": ask
 tools:
   task: false

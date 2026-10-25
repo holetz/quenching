@@ -5,7 +5,10 @@ permission:
   edit: deny
   webfetch: deny
   bash:
-    "cq *": allow
+    "cq specs status *": allow
+    "cq specs show *": allow
+    "cq git audit *": allow
+    "cq git pr view *": allow
     "*": ask
 tools:
   task: false

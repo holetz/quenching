@@ -5,7 +5,15 @@ permission:
   edit: deny
   webfetch: deny
   bash:
-    "cq *": allow
+    "cq specs status *": allow
+    "cq specs list *": allow
+    "cq specs show *": allow
+    "cq specs parallel *": allow
+    "cq specs next *": allow
+    "cq specs record *": allow
+    "cq components session cost *": allow
+    "cq components session context *": allow
+    "cq git state *": allow
     "*": ask
 ---
 

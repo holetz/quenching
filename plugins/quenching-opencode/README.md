@@ -23,8 +23,9 @@ Commands and subagents pin no model: the session's configured model runs every r
 
 ## Permissions
 
-Subagents that hold scoped `cq` access in the source carry `bash: {"cq *": allow, "*": ask}`;
-`edit` and `webfetch` stay `deny` where the source grants none. Commands take their permissions from
+Subagents that hold scoped `cq` access in the source carry one `"cq <verbs> *": allow` pattern per
+`Bash(cq <verbs>:*)` grant, then `"*": ask`; `edit` and `webfetch` stay `deny` where the source
+grants none. Commands take their permissions from
 the session, so allow `cq` there the same way in `opencode.json`:
 
 ```json
