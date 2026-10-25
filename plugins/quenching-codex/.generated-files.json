@@ -445,7 +445,7 @@
     "agents/scout.md": "8482ed1ffdeedd2d1fead4bed0e715a88484b6fb68101fa05e8459d9c5ebb47c",
     "agents/spec-architect.md": "56c1277fcb9d859ac160789a78284779210f1c56b804c9d5f37841356f2f7ec5",
     "agents/spec-runner.md": "bfe6f27b574b05b4e5db43d701a1bfa4644468b2492507103e1b0f9d8e4d71b3",
-    "agents/verifier.md": "5500c1c92ad0a899fb6c281524794c03031c73b03feac600c134d20ecfc17dc3",
+    "agents/verifier.md": "a4f11b2047ddd24c4d4d1336fd01b291f90d2ef4f146244a2743105ac8764406",
     "checks/catalog-publication-check.py": "9f4c9b75b524e31bd9420036a5384801ef707ef5708956abba1d6eb62c398f9e",
     "checks/citation-check.sh": "f02e54273433b029c3419cc9abafb5eb5b4e44a883b8704e665baf0adeb0929f",
     "checks/documentation-site-check.py": "2705065249db133ccf896d27c44571dca3e623b09b01dfa3fef6233212ab0b19",

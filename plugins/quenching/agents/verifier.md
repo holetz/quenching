@@ -14,7 +14,7 @@ report is not evidence: ignore its claims and re-measure.
 Checks 2 to 5, 7 and 9 read ONE payload, measured inside the spec's worktree with a fixed argv:
 
 ```bash
-cq git audit --worktree <wt> --base origin/<base> --branch <branch> --sha <sha> [--sha <sha>…] --json
+cq git audit [--root <repo>] --worktree <wt> --base origin/<base> --branch <branch> --sha <sha> [--sha <sha>…] --json
 ```
 
 `--base` is `origin/<base>` wherever `origin` exists, the ref a worktree is cut from and a PR merged
@@ -26,7 +26,7 @@ is an entry of `errors` with `complete: false`, never an empty list. When `compl
 check that reads a field whose read is named in `errors` is `inconclusive`, not `ok`, and the
 verdict is FAIL with the error quoted; an empty `status` or `stash` proves nothing then.
 
-Run it from the base checkout, or from any other cwd with `--root <repo>` (add it when the audited repository is not the session's: `cq git audit --root <repo> --worktree …`, never a `cd <repo> &&` prefix); it refuses (exit 2) a path the repository does not register as a
+Run it from the base checkout, or from any other cwd with `--root <repo>` (add it when the audited repository is not the session's, never a `cd <repo> &&` prefix); it refuses (exit 2) a path the repository does not register as a
 worktree and any ref that does not resolve to a commit. Your only shell grants are this verb,
 `cq specs status`/`show` and `cq git pr view`: never `git`, `bash` or `cd <wt> && …`, which no grant
 matches (`--root` is an option of the granted verb). Without a worktree, `--worktree` is the base checkout itself.
