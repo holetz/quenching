@@ -119,8 +119,13 @@ Codex, its `.agents/` surface model and its telemetry refusals included.
 No model is pinned: commands and subagents run on the model the OpenCode session configures,
 and the source tier and effort survive as prose. Agent permissions are mapped deny-only from the
 source `tools:` — no edit tool → `edit: deny`, no `WebFetch` → `webfetch: deny`, no `Agent` →
-the task tool off, scoped `Bash(...)` only → `bash: ask`, unrestricted `Bash` → `bash: allow` —
-so a generated subagent is never wider than its source. Command `allowed-tools` are dropped, as
-on Codex. Exact allow-patterns, per-command permission sets and hooks are not generated; they
-widen or reshape grants and stay a human decision. The generated tree is never edited by hand,
+the task tool off, unrestricted `Bash` → `bash: allow`, no `Bash` → `bash: deny` — with one
+decided exception: a scoped `Bash(cq ...)` grant → `bash: {"cq *": allow, "*": ask}`, mirroring the
+`Bash(cq:*)` of the Claude commands, and a scoped `Bash(...)` with no `cq` → `bash: ask`. `cq *` is
+the only allow-pattern the generator writes; every other allow-pattern stays a human decision. The
+generated README shows the same `permission.bash` map for the session's `opencode.json`, because a
+command carries no permission of its own. Command `allowed-tools` are dropped, as on Codex. The CI
+templates `ci-github-pages.yml` and `azure-pipelines-docs.yml` of `assets/zensical/` are not copied
+into the payload. Per-command permission sets and hooks are not generated; they widen or reshape
+grants and stay a human decision. The generated tree is never edited by hand,
 and nothing flows back from it to the source.
