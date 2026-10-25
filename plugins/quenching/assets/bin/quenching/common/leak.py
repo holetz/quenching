@@ -147,11 +147,21 @@ def normalize_paths(text: str, root: str | None = None) -> str:
     return text
 
 
-def guard_text(text: str, root: str | None = None) -> tuple[str, list[Finding]]:
+def guard_text(text: str, root: str | None = None,
+               previous: str | None = None) -> tuple[str, list[Finding]]:
     """The specs store guard: normalize the paths, then scan what is left with the generic
-    patterns, the path patterns and — when it exists — the denylist."""
+    patterns, the path patterns and — when it exists — the denylist.
+
+    With the `previous` document, only the lines it does not already hold are judged, the
+    model `pre-push` follows: a legacy spec that predates the gate stays writable, and what a
+    write adds is still refused."""
     clean = normalize_paths(text, root)
-    return clean, scan_text("spec", clean, patterns(require_denylist=False))
+    findings = scan_text("spec", clean, patterns(require_denylist=False))
+    if previous is not None and findings:
+        held = set(normalize_paths(previous, root).splitlines())
+        lines = clean.splitlines()
+        findings = [f for f in findings if lines[f.line - 1] not in held]
+    return clean, findings
 
 
 def store_refusal(findings: list[Finding]) -> dict:
@@ -164,6 +174,16 @@ def store_refusal(findings: list[Finding]) -> dict:
                    f"{f' and {len(findings) - 1} more' if len(findings) > 1 else ''}); "
                    "remove the content and write again — nothing was written",
     }
+
+
+def guard_store_write(text: str, root: str | None, previous: str | None,
+                      refusal: type[Exception]) -> str:
+    """The text a store write may land, or `refusal(store_refusal(...))` raised before anything
+    is written — `refusal` is the caller's own exception type, so this module needs no backend."""
+    clean, findings = guard_text(text, root, previous)
+    if findings:
+        raise refusal(store_refusal(findings))
+    return clean
 
 
 def _git(root: str, *args: str) -> str:

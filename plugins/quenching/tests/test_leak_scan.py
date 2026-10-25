@@ -98,6 +98,13 @@ class Normalize(LeakEnv):
         self.assertEqual((refusal["code"], refusal["exit"]), ("sp-leak", 2))
         self.assertIn("nothing was written", refusal["message"])
 
+    def test_guard_with_previous_judges_only_the_lines_it_adds(self):
+        previous = f"legacy acme-corp\np {HOME}/x\n"
+        clean, found = leak.guard_text(previous + "new line\n", None, previous)
+        self.assertEqual((clean, found), ("legacy acme-corp\np ~/x\nnew line\n", []))
+        _, found = leak.guard_text(previous + "added acme-corp\n", None, previous)
+        self.assertEqual([(f.line, f.label) for f in found], [(3, "denylist:3")])
+
     def test_guard_runs_without_a_denylist(self):
         self.denylist.unlink()
         _, found = leak.guard_text(f"host {DATABRICKS_HOST}\n", None)
