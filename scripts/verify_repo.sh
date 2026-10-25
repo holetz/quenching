@@ -44,6 +44,10 @@ fi
 # The CI `lint` job runs this exact command; the local gate must not pass what the CI refuses.
 run_check "ruff" \
   uv run ruff check .
+# The leak gate's generic patterns (no private denylist on CI); the hooks in scripts/githooks/ add
+# the denylist locally.
+run_check "leak gate (generic patterns)" \
+  python3 plugins/quenching/assets/bin/cq security leak --all --generic-only
 run_check "open source controls catalog" \
   python3 scripts/check_opensource_controls.py
 run_check "proof doctor" \

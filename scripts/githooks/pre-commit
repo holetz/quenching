@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# pre-commit — refuse a commit whose staged content or author email leaks.
+# Install: git config core.hooksPath scripts/githooks (see CONTRIBUTING.md).
+set -Eeuo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+exec python3 "$ROOT/plugins/quenching/assets/bin/cq" security leak --staged --root "$ROOT"
