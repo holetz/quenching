@@ -50,7 +50,9 @@ class GeneratedTree(unittest.TestCase):
         header = self.text("agents/quenching-verifier.md").split("\n---\n", 1)[0]
         self.assertIn("mode: subagent", header)
         self.assertIn("edit: deny", header)
-        self.assertIn('bash:\n    "cq *": allow\n    "*": ask', header)
+        self.assertIn('bash:\n    "cq specs status *": allow\n    "cq specs show *": allow\n'
+                      '    "cq git audit *": allow\n    "cq git pr view *": allow\n    "*": ask', header)
+        self.assertNotIn('"cq *"', header)
         self.assertIn("webfetch: deny", header)
         self.assertIn("task: false", header)
         self.assertNotIn("model:", header)
@@ -74,6 +76,7 @@ class Payload(unittest.TestCase):
     def test_the_ci_templates_do_not_ship_and_the_readme_shows_the_cq_pattern(self):
         self.assertFalse([r for r in self.tree if r.endswith(("ci-github-pages.yml", "azure-pipelines-docs.yml"))])
         self.assertIn('"cq *": "allow"', self.tree["README.md"].decode())
+        self.assertIn('"cq <verbs> *": allow', self.tree["README.md"].decode())
 
     def test_a_cited_payload_path_the_tree_lacks_is_a_finding(self):
         tree = {"commands/x.md": f"see {sync.ROOT}/checks/gone.py".encode(), "quenching/checks/here.py": b""}
@@ -88,11 +91,12 @@ class Payload(unittest.TestCase):
 
 
 class Permissions(unittest.TestCase):
-    def test_scoped_cq_bash_allows_cq_and_asks_for_the_rest(self):
-        self.assertEqual({"cq *": "allow", "*": "ask"},
+    def test_scoped_cq_bash_allows_only_the_granted_verbs_and_asks_for_the_rest(self):
+        self.assertEqual({"cq specs status *": "allow", "cq git audit *": "allow", "*": "ask"},
                          sync.permissions("Read, Bash(cq specs status:*), Bash(cq git audit:*)")["bash"])
-        self.assertEqual({"cq *": "allow", "*": "ask"},
+        self.assertEqual({"cq specs show *": "allow", "*": "ask"},
                          sync.permissions("Read, Bash(git ls-files:*), Bash(cq specs show:*)")["bash"])
+        self.assertEqual({"cq *": "allow", "*": "ask"}, sync.permissions("Read, Bash(cq:*)")["bash"])
 
     def test_scoped_bash_without_cq_stays_ask(self):
         self.assertEqual("ask", sync.permissions("Read, Bash(git ls-files:*)")["bash"])
@@ -100,7 +104,7 @@ class Permissions(unittest.TestCase):
     def test_registered_agent_carries_the_cq_pattern_map_and_denies_edit_and_webfetch(self):
         registered, _ = sync.agent_files(sync.SOURCE / "agents" / "scout.md")
         header = registered.split("\n---\n", 1)[0]
-        self.assertIn('  bash:\n    "cq *": allow\n    "*": ask\n', header)
+        self.assertIn('  bash:\n    "cq specs show *": allow\n    "cq components read *": allow\n    "*": ask\n', header)
         self.assertIn("  edit: deny\n  webfetch: deny\n", header)
 
     def test_unrestricted_bash_is_allow(self):

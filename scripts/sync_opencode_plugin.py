@@ -163,12 +163,18 @@ def preferences(fields: dict[str, str]) -> str:
     return text + (f"Declared effort: `{fields['effort']}`.\n\n" if fields.get("effort") else "")
 
 
-CQ_BASH = {"cq *": "allow", "*": "ask"}
+CQ_GRANT = re.compile(r"Bash\(cq(?: ([^:()]+))?:\*\)$")
 CI_TEMPLATES = ("ci-github-pages.yml", "azure-pipelines-docs.yml")
 
 
+def cq_patterns(names: list[str]) -> list[str]:
+    """One `cq <verbs> *` pattern per scoped `Bash(cq <verbs>:*)` grant, in source order."""
+    matches = (CQ_GRANT.match(name) for name in names)
+    return [f"cq {m.group(1)} *" if m.group(1) else "cq *" for m in matches if m]
+
+
 def permissions(tools: str | None) -> dict[str, str | dict[str, str]]:
-    """Mapping of a source `tools:` list: deny-only, except that scoped `cq` grants allow `cq *`."""
+    """Mapping of a source `tools:` list: deny-only, except that each scoped `Bash(cq <verbs>:*)` allows `cq <verbs> *`."""
     if tools is None:
         return {}
     names = [item.strip() for item in re.split(r",\s*(?![^()]*\))", tools) if item.strip()]
@@ -178,8 +184,8 @@ def permissions(tools: str | None) -> dict[str, str | dict[str, str]]:
     granted["webfetch"] = "allow" if "WebFetch" in heads else "deny"
     if "Bash" in names:
         granted["bash"] = "allow"
-    elif any(name.startswith("Bash(cq ") for name in names):
-        granted["bash"] = dict(CQ_BASH)
+    elif patterns := cq_patterns(names):
+        granted["bash"] = {**dict.fromkeys(patterns, "allow"), "*": "ask"}
     else:
         granted["bash"] = "ask" if "Bash" in heads else "deny"
     granted["task"] = "allow" if heads & {"Agent", "Task"} else "deny"
@@ -245,8 +251,9 @@ Commands and subagents pin no model: the session's configured model runs every r
 
 ## Permissions
 
-Subagents that hold scoped `cq` access in the source carry `bash: {{"cq *": allow, "*": ask}}`;
-`edit` and `webfetch` stay `deny` where the source grants none. Commands take their permissions from
+Subagents that hold scoped `cq` access in the source carry one `"cq <verbs> *": allow` pattern per
+`Bash(cq <verbs>:*)` grant, then `"*": ask`; `edit` and `webfetch` stay `deny` where the source
+grants none. Commands take their permissions from
 the session, so allow `cq` there the same way in `opencode.json`:
 
 ```json
