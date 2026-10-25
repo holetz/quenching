@@ -533,6 +533,62 @@ def resource_templates() -> list[dict]:
              "title": "Glossary entries by term", "mimeType": "text/markdown"}]
 
 
+_FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+_HEADING = re.compile(r"^ {0,3}(#{1,6})\s+(.+?)\s*#*\s*$")
+
+
+def _norm_heading(name: str) -> str:
+    return " ".join(name.strip().lstrip("#§").strip().split()).casefold()
+
+
+def markdown_sections(text: str) -> list[dict]:
+    """Every heading with the body it owns (to the next heading of the same level or shallower);
+    a fenced block is never read as a heading. The slice this module ships in carries no
+    `components` pillar, so the rule is restated here."""
+    lines = text.splitlines()
+    if lines and lines[0].strip() == "---":
+        for end in range(1, len(lines)):
+            if lines[end].strip() == "---":
+                lines = lines[end + 1:]
+                break
+    heads, fence = [], None
+    for lineno, line in enumerate(lines):
+        mark = _FENCE.match(line)
+        if mark:
+            ticks = mark.group(1)
+            if fence is None:
+                fence = ticks[0] * len(ticks)
+            elif ticks[0] == fence[0] and len(ticks) >= len(fence):
+                fence = None
+            continue
+        found = None if fence else _HEADING.match(line)
+        if found:
+            heads.append({"level": len(found.group(1)), "heading": found.group(2).strip(),
+                          "lineno": lineno})
+    for i, head in enumerate(heads):
+        end = next((n["lineno"] for n in heads[i + 1:] if n["level"] <= head["level"]),
+                   len(lines))
+        head["body"] = "\n".join(lines[head["lineno"] + 1:end]).strip("\n")
+    return heads
+
+
+def select_sections(heads: list[dict], wanted: list[str]) -> tuple[list[dict], list[str]]:
+    """The asked sections in order and the names that resolved to nothing: an exact name wins,
+    else a UNIQUE prefix; duplicates resolve to the first."""
+    index: dict[str, dict] = {}
+    for head in heads:
+        index.setdefault(_norm_heading(head["heading"]), head)
+    got, missing = [], []
+    for name in wanted:
+        key = _norm_heading(name)
+        head = index.get(key)
+        if head is None:
+            hits = [v for k, v in index.items() if k.startswith(key)]
+            head = hits[0] if len(hits) == 1 else None
+        (got.append(head) if head else missing.append(name))
+    return got, missing
+
+
 def _outline(heads: list[dict]) -> list[dict]:
     return [{"level": h["level"], "heading": h["heading"], "chars": len(h["body"])}
             for h in heads]
@@ -556,7 +612,6 @@ def _read_standards_index(root: str) -> tuple[str, str]:
 
 
 def _read_standard(root: str, rel: str, query: dict) -> list[tuple[str, str]]:
-    from quenching.components.sections import markdown_sections, select_sections
     if not RESOURCE_PATH.match(rel) or any(p in ("", ".", "..") for p in rel.split("/")):
         raise ResourceError(BAD_PARAMS, "not a standard path")
     base = _docs_dir(root, "standards")

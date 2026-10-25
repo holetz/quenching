@@ -16,15 +16,21 @@ validation, the paging and the size ceiling, and nothing about the store.
   only after that confirmation.
 * Size is a contract: no tool returns a whole spec. Reads go by section and by task, listings are
   paged, and a final guard cuts any answer above `MAX_CHARS` with `truncated: true`.
+* Resources (read-only context): the specs configuration (`quenching://config`, the payload of
+  `cq specs config`), the standards under `docs/standards/` and the OKF glossary. A document is
+  read whole only when it fits `DOC_WHOLE`; otherwise by outline and `?section=`; the glossary by
+  `?term=`. A URI resolves only to the two fixed files or to a `.md` inside `docs/standards/`.
 """
 from __future__ import annotations
 
 import contextlib
 import io
 import json
+import os
 import re
 import sys
 from datetime import date
+from urllib.parse import parse_qs, urlsplit
 
 from quenching.common.output import OK
 from quenching.common.version import VERSION
@@ -35,6 +41,14 @@ MAX_CHARS = 60_000
 DEFAULT_LIMIT, MAX_LIMIT = 50, 200
 MOMENTS = ("decision", "build", "close")
 SCOPES = ("global", "current")
+
+DOC_WHOLE = 24_000
+RESOURCE_SCHEME = "quenching"
+RESOURCE_PATH = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*$")
+GLOSSARY_ENTRY = re.compile(
+    r"^\s*[*-]\s+(?:\[(?P<linked>[^\]]+)\]\([^)]*\)|\*\*(?P<plain>[^*]+)\*\*)")
+MAX_TERMS = 20
+NOT_FOUND, BAD_PARAMS = -32002, -32602
 
 ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 FIELD = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
@@ -418,6 +432,283 @@ def run_core(argv: list[str], root: str,
     return code, payload, err.getvalue().strip()
 
 
+class ResourceError(Exception):
+    """A resource read that fails: a JSON-RPC error with the MCP code, never a crash."""
+
+    def __init__(self, code: int, message: str):
+        super().__init__(message)
+        self.code, self.message = code, message
+
+
+def _dump(payload: dict) -> str:
+    return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+
+
+def _split_frontmatter(text: str) -> tuple[dict, str]:
+    """`(metadata, body)`: the leading `---` block read as flat `key: value` lines."""
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}, text
+    for end in range(1, len(lines)):
+        if lines[end].strip() == "---":
+            meta = {}
+            for line in lines[1:end]:
+                key, sep, value = line.partition(":")
+                if sep and key.strip() and not key.startswith((" ", "\t")):
+                    meta[key.strip()] = value.strip()
+            return meta, "\n".join(lines[end + 1:]).lstrip("\n")
+    return {}, text
+
+
+def _docs_dir(root: str, *parts: str) -> str:
+    return os.path.join(root, "docs", *parts)
+
+
+def _inside(base: str, path: str) -> bool:
+    base, path = os.path.realpath(base), os.path.realpath(path)
+    return path.startswith(base + os.sep)
+
+
+def _standard_files(root: str) -> list[str]:
+    """Relative paths (no `.md`) of every standard that really lives under `docs/standards`."""
+    base = _docs_dir(root, "standards")
+    found = []
+    for folder, dirs, files in os.walk(base, followlinks=False):
+        dirs.sort()
+        for name in sorted(files):
+            full = os.path.join(folder, name)
+            if name.endswith(".md") and _inside(base, full) and os.path.isfile(full):
+                found.append(os.path.relpath(full, base)[:-3].replace(os.sep, "/"))
+    return found
+
+
+def _read_text(path: str) -> str:
+    with open(path, encoding="utf-8", errors="replace") as handle:
+        return handle.read()
+
+
+def _cut(text: str, mime: str, hint: str) -> tuple[str, str]:
+    """`(mime, text)` bounded by `MAX_CHARS`; above it the answer says it was cut."""
+    if len(text) <= MAX_CHARS:
+        return mime, text
+    return "application/json", _dump({"ok": True, "truncated": True, "chars": len(text),
+                                      "kept": MAX_CHARS, "hint": hint,
+                                      "text": text[:MAX_CHARS]})
+
+
+def list_resources(root: str) -> list[dict]:
+    items = [{"uri": "quenching://config", "name": "config",
+              "title": "Specs service configuration",
+              "description": "The repository's specs configuration (`cq specs config`): "
+                             "backend, hooks, profiles.",
+              "mimeType": "application/json"}]
+    glossary = _docs_dir(root, "glossary.md")
+    if os.path.isfile(glossary):
+        items.append({"uri": "quenching://glossary", "name": "glossary",
+                      "title": "OKF glossary",
+                      "description": "The term list; read `?term=<term>` for the entries.",
+                      "mimeType": "application/json"})
+    files = _standard_files(root)
+    if files:
+        items.append({"uri": "quenching://standards", "name": "standards",
+                      "title": "Standards index",
+                      "description": "Every standard under docs/standards with its authority.",
+                      "mimeType": "application/json"})
+    for rel in files:
+        meta, _ = _split_frontmatter(_read_text(_docs_dir(root, "standards", rel + ".md")))
+        description = meta.get("description", "")
+        if meta.get("authority"):
+            description = f"[{meta['authority']}] {description}".strip()
+        items.append({"uri": f"quenching://standards/{rel}", "name": rel,
+                      "title": meta.get("title") or rel, "description": description,
+                      "mimeType": "text/markdown"})
+    return items
+
+
+def resource_templates() -> list[dict]:
+    return [{"uriTemplate": "quenching://standards/{path}{?section}", "name": "standard",
+             "title": "A standard, whole when small, else by section",
+             "mimeType": "text/markdown"},
+            {"uriTemplate": "quenching://glossary{?term}", "name": "glossary-term",
+             "title": "Glossary entries by term", "mimeType": "text/markdown"}]
+
+
+_FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+_HEADING = re.compile(r"^ {0,3}(#{1,6})\s+(.+?)\s*#*\s*$")
+
+
+def _norm_heading(name: str) -> str:
+    return " ".join(name.strip().lstrip("#§").strip().split()).casefold()
+
+
+def markdown_sections(text: str) -> list[dict]:
+    """Every heading with the body it owns (to the next heading of the same level or shallower);
+    a fenced block is never read as a heading. The slice this module ships in carries no
+    `components` pillar, so the rule is restated here."""
+    lines = text.splitlines()
+    if lines and lines[0].strip() == "---":
+        for end in range(1, len(lines)):
+            if lines[end].strip() == "---":
+                lines = lines[end + 1:]
+                break
+    heads, fence = [], None
+    for lineno, line in enumerate(lines):
+        mark = _FENCE.match(line)
+        if mark:
+            ticks = mark.group(1)
+            if fence is None:
+                fence = ticks[0] * len(ticks)
+            elif ticks[0] == fence[0] and len(ticks) >= len(fence):
+                fence = None
+            continue
+        found = None if fence else _HEADING.match(line)
+        if found:
+            heads.append({"level": len(found.group(1)), "heading": found.group(2).strip(),
+                          "lineno": lineno})
+    for i, head in enumerate(heads):
+        end = next((n["lineno"] for n in heads[i + 1:] if n["level"] <= head["level"]),
+                   len(lines))
+        head["body"] = "\n".join(lines[head["lineno"] + 1:end]).strip("\n")
+    return heads
+
+
+def select_sections(heads: list[dict], wanted: list[str]) -> tuple[list[dict], list[str]]:
+    """The asked sections in order and the names that resolved to nothing: an exact name wins,
+    else a UNIQUE prefix; duplicates resolve to the first."""
+    index: dict[str, dict] = {}
+    for head in heads:
+        index.setdefault(_norm_heading(head["heading"]), head)
+    got, missing = [], []
+    for name in wanted:
+        key = _norm_heading(name)
+        head = index.get(key)
+        if head is None:
+            hits = [v for k, v in index.items() if k.startswith(key)]
+            head = hits[0] if len(hits) == 1 else None
+        (got.append(head) if head else missing.append(name))
+    return got, missing
+
+
+def _outline(heads: list[dict]) -> list[dict]:
+    return [{"level": h["level"], "heading": h["heading"], "chars": len(h["body"])}
+            for h in heads]
+
+
+def _read_config(root: str) -> tuple[str, str]:
+    code, payload, stderr = run_core(["config"], root)
+    if payload is None or code > 1:
+        raise ResourceError(NOT_FOUND, stderr or "the core answered with no JSON")
+    return _cut(_dump(payload), "application/json", "the configuration is above the ceiling")
+
+
+def _read_standards_index(root: str) -> tuple[str, str]:
+    rows = []
+    for rel in _standard_files(root):
+        meta, _ = _split_frontmatter(_read_text(_docs_dir(root, "standards", rel + ".md")))
+        rows.append({"uri": f"quenching://standards/{rel}", "title": meta.get("title"),
+                     "authority": meta.get("authority")})
+    return _cut(_dump({"ok": True, "count": len(rows), "standards": rows}), "application/json",
+                "read one standard instead")
+
+
+def _read_standard(root: str, rel: str, query: dict) -> list[tuple[str, str]]:
+    if not RESOURCE_PATH.match(rel) or any(p in ("", ".", "..") for p in rel.split("/")):
+        raise ResourceError(BAD_PARAMS, "not a standard path")
+    base = _docs_dir(root, "standards")
+    full = os.path.join(base, *rel.split("/")) + ".md"
+    if not _inside(base, full) or not os.path.isfile(full):
+        raise ResourceError(NOT_FOUND, f"no such standard: {rel}")
+    text = _read_text(full)
+    meta, body = _split_frontmatter(text)
+    heads = markdown_sections(text)
+    wanted = query.get("section")
+    if wanted:
+        got, missing = select_sections(heads, wanted)
+        if missing:
+            raise ResourceError(BAD_PARAMS, "no such section: " + "; ".join(missing)
+                                + " — read the standard without `section` for its outline")
+        merged = "\n\n".join(f"{'#' * h['level']} {h['heading']}\n\n{h['body']}".rstrip()
+                             for h in got)
+        return [_cut(merged, "text/markdown", "ask for fewer sections")]
+    outline = _dump({"ok": True, "title": meta.get("title"), "authority": meta.get("authority"),
+                     "chars": len(body), "outline": _outline(heads)})
+    if len(body) <= DOC_WHOLE:
+        return [("text/markdown", body), ("application/json", outline)]
+    note = _dump({"ok": True, "title": meta.get("title"), "authority": meta.get("authority"),
+                  "chars": len(body), "truncated": True,
+                  "hint": "above the document ceiling: ask `?section=<heading>` for one section",
+                  "outline": _outline(heads)})
+    return [_cut(note, "application/json", "ask for one section")]
+
+
+def _glossary_entries(text: str) -> list[tuple[str, str]]:
+    """`(term, entry text)` for each bullet; an indented line continues the entry above it."""
+    entries: list[tuple[str, list[str]]] = []
+    open_entry = False
+    for line in text.splitlines():
+        found = GLOSSARY_ENTRY.match(line)
+        if found:
+            entries.append(((found.group("linked") or found.group("plain")).strip(), [line]))
+            open_entry = True
+        elif open_entry and line.startswith((" ", "\t")) and line.strip():
+            entries[-1][1].append(line)
+        else:
+            open_entry = False
+    return [(term, "\n".join(lines)) for term, lines in entries]
+
+
+def _read_glossary(root: str, query: dict) -> tuple[str, str]:
+    path = _docs_dir(root, "glossary.md")
+    if not os.path.isfile(path):
+        raise ResourceError(NOT_FOUND, "this repository has no docs/glossary.md")
+    entries = _glossary_entries(_read_text(path))
+    terms = query.get("term")
+    if not terms:
+        return _cut(_dump({"ok": True, "count": len(entries), "terms": [t for t, _ in entries],
+                           "hint": "read `quenching://glossary?term=<term>` for the entries"}),
+                    "application/json", "ask for a term")
+    if len(terms) > MAX_TERMS:
+        raise ResourceError(BAD_PARAMS, f"at most {MAX_TERMS} terms per read")
+    chosen, missing = [], []
+    for term in terms:
+        key = " ".join(term.split()).casefold()
+        hits = [e for e in entries if e[0].casefold() == key] \
+            or [e for e in entries if e[0].casefold().startswith(key)]
+        (chosen.extend(h for h in hits if h not in chosen) if hits and key else missing.append(term))
+    if missing:
+        raise ResourceError(BAD_PARAMS, "no glossary entry for: " + "; ".join(missing)
+                            + " — read `quenching://glossary` for the terms")
+    return _cut("\n".join(text for _, text in chosen), "text/markdown", "ask for fewer terms")
+
+
+def read_resource(uri, root: str) -> list[dict]:
+    """The `contents` of one `resources/read`. Raises `ResourceError`."""
+    if not isinstance(uri, str) or len(uri) > 500:
+        raise ResourceError(BAD_PARAMS, "`uri` must be a string")
+    try:
+        parts = urlsplit(uri)
+        query = parse_qs(parts.query, keep_blank_values=True, strict_parsing=bool(parts.query))
+    except ValueError:
+        raise ResourceError(BAD_PARAMS, "malformed uri") from None
+    name, rest = parts.netloc, parts.path.lstrip("/")
+    if parts.scheme != RESOURCE_SCHEME or name not in ("config", "glossary", "standards"):
+        raise ResourceError(NOT_FOUND, f"unknown resource: {uri}")
+    allowed = {"config": (), "glossary": ("term",), "standards": ("section",)}[name]
+    if set(query) - set(allowed) or (name != "standards" and rest):
+        raise ResourceError(BAD_PARAMS, f"`{name}` does not take that part of the uri")
+    if name == "config":
+        pairs = [_read_config(root)]
+    elif name == "glossary":
+        pairs = [_read_glossary(root, query)]
+    elif not rest:
+        if query:
+            raise ResourceError(BAD_PARAMS, "the standards index takes no `section`")
+        pairs = [_read_standards_index(root)]
+    else:
+        pairs = _read_standard(root, rest, query)
+    return [{"uri": uri, "mimeType": mime, "text": text} for mime, text in pairs]
+
+
 def _guard(payload: dict) -> dict:
     """The last line of defence: an answer above the ceiling is cut and says so."""
     text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
@@ -512,7 +803,8 @@ def handle(message, root: str, session: Session | None = None):
                                          dict)
         return _result(request_id, {
             "protocolVersion": asked if asked in PROTOCOL_VERSIONS else PROTOCOL_VERSIONS[0],
-            "capabilities": {"tools": {"listChanged": False}},
+            "capabilities": {"tools": {"listChanged": False},
+                             "resources": {"subscribe": False, "listChanged": False}},
             "serverInfo": {"name": "quenching-specs", "version": VERSION}})
     if method == "ping":
         return _result(request_id, {})
@@ -526,6 +818,15 @@ def handle(message, root: str, session: Session | None = None):
              "annotations": {"readOnlyHint": False, "destructiveHint": spec[4] is not None,
                              "idempotentHint": False, "openWorldHint": False}}
             for name, spec in WRITES.items()]})
+    if method == "resources/list":
+        return _result(request_id, {"resources": list_resources(root)})
+    if method == "resources/templates/list":
+        return _result(request_id, {"resourceTemplates": resource_templates()})
+    if method == "resources/read":
+        try:
+            return _result(request_id, {"contents": read_resource(params.get("uri"), root)})
+        except ResourceError as exc:
+            return _error(request_id, exc.code, exc.message)
     if method == "tools/call":
         name, args = params.get("name"), params.get("arguments") or {}
         if name not in TOOLS and name not in WRITES or not isinstance(args, dict):

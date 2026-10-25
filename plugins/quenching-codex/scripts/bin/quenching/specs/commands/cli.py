@@ -313,7 +313,8 @@ def _add_migrate_export_serve(sub) -> None:
 
     sub.add_parser("mcp", help="the MCP server over stdio — a second port of this same "
                                "core: six read tools, seven write tools, human "
-                               "confirmation on the gated moves")
+                               "confirmation on the gated moves, and read-only "
+                               "resources (config, standards, glossary)")
 
     sp = add_json(sub.add_parser("serve", help="the local spec portal — a browser board over "
                                                 "the same backend, loopback only"))

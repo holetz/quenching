@@ -332,6 +332,16 @@ passthrough, so no other verb is reachable and a flag-shaped value is refused be
 failure is a result with `isError: true` and the CLI's refusal `code`. Registering the server adds no
 permission or grant, and nothing here swaps a `Bash(cq specs ...)` grant for these tools.
 
+Resources: the server also lists and reads read-only context, so an agent can fetch the contracts without a
+file path. `quenching://config` is the payload of `cq specs config`; `quenching://standards` lists the
+standards under `docs/standards/` (title, authority, URI) and `quenching://standards/<path>.md` reads one;
+`quenching://glossary` lists the OKF glossary terms. A standard under `DOC_WHOLE` (24,000 characters) comes
+whole with its outline; a larger one answers the outline, and `quenching://standards/<path>.md?section=<heading>`
+reads one section. `quenching://glossary?term=<term>` reads the entries (comma-separated, at most 20 terms).
+A URI resolves only to those two fixed files or to a `.md` inside `docs/standards/`: any other path, a
+traversal or an unknown URI is a JSON-RPC error (`-32602` bad parameters, `-32002` not found), never a file
+read. The same 60,000-character ceiling cuts an oversized answer with `truncated: true` and a `hint`.
+
 ### A revisão Codex independente
 
 Step 6 of `/quenching-specs:specs:autopilot` runs, once per epic, a second and independent
