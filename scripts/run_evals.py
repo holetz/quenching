@@ -33,6 +33,7 @@ ROOT = Path(__file__).resolve().parents[1]
 EVALS_ROOT = ROOT / "plugins/quenching/assets/evals"
 COMMANDS_ROOT = ROOT / "plugins/quenching/commands"
 PROFILES = Path(__file__).resolve().with_name("eval_harnesses.json")
+OMNIGENT_AGENTS = Path(__file__).resolve().parents[1] / "plugins/quenching-omnigent/agents"
 CQ = ROOT / "plugins/quenching/assets/bin/cq"
 CQ_BIN = ROOT / "plugins/quenching/bin"
 ARMS = ("with", "without")
@@ -167,6 +168,23 @@ def plugin_dirs() -> list[str]:
     return [str(ROOT / m["path"]) for m in modules]
 
 
+def bundle_path(skill: str) -> Path:
+    """The generated Omnigent bundle of the command a suite evaluates, `/quenching-specs:git:commit` -> `quenching-git-commit`."""
+    _, _, path = skill.lstrip("/").partition(":")
+    return OMNIGENT_AGENTS / ("quenching-" + path.replace(":", "-"))
+
+
+def arm_values(args, profile: dict, case: dict, workdir: str, skill: str | None = None) -> dict:
+    """The substitution values of one arm; a profile that names `{agent}` also gets its bundle, refused when missing."""
+    values = {"prompt": case["prompt"], "model": args.model, "workdir": workdir, "max_turns": str(args.max_turns)}
+    if "{agent}" in json.dumps(profile):
+        bundle = bundle_path(skill or "")
+        if not (bundle / "config.yaml").is_file():
+            raise ValueError(f"no generated Omnigent bundle for {skill!r} at {bundle}; run scripts/sync_omnigent_plugin.py --write")
+        values |= {"agent": str(bundle), "agent_harness": args.agent_harness}
+    return values
+
+
 def render(profile: dict, arm: str | None, values: dict, extra: list[str], container: bool = False) -> list[str]:
     """The argv for one invocation; `arm=None` is the grader's, which loads nothing.
 
@@ -205,7 +223,7 @@ def container_argv(args, inner: list[str], mount: str, workdir: str) -> list[str
             *[a for k, v in GIT_ENV.items() for a in ("-e", f"{k}={v}")],
             *[a for name in names for a in ("-e", name)],
             "--mount", f"type=bind,source={mount},target={mount}", "-w", workdir,
-            "--label", "quenching.eval=1", args.image, *inner]
+            "--label", "quenching.eval=1", args.image or "<image>", *inner]
 
 
 def arm_argv(args, profile: dict, arm: str, values: dict, mount: str) -> list[str]:
@@ -410,7 +428,7 @@ def material_of(output: str, snap: str) -> str:
 
 # --------------------------------------------------------------------------- run
 
-def run_arm(args, profiles: dict, suite: Path, case: dict, arm: str) -> dict:
+def run_arm(args, profiles: dict, suite: Path, case: dict, arm: str, skill: str | None = None) -> dict:
     profile = profiles[args.harness]
     with tempfile.TemporaryDirectory(prefix="eval-") as temporary:
         try:
@@ -427,8 +445,7 @@ def run_arm(args, profiles: dict, suite: Path, case: dict, arm: str) -> dict:
             arm_env["PATH"] = f"{CQ_BIN}{os.pathsep}{env.get('PATH', '')}"
         if arm != "with":
             arm_env.pop("CQ", None)  # the without arm gets no path to the tool or the skill bodies
-        values = {"prompt": case["prompt"], "model": args.model, "workdir": str(workspace),
-                  "max_turns": str(args.max_turns)}
+        values = arm_values(args, profile, case, str(workspace), skill)
         record = invoke(arm_argv(args, profile, arm, values, temporary), workspace, arm_env, args.timeout)
         text, tokens = output_text(profile, record["stdout"])
         output = text + (f"\n[stderr]\n{record['stderr'][-4000:]}" if record["stderr"] else "")
@@ -521,11 +538,11 @@ def benchmark(data: dict, cases: list[dict], args, arms: list[str]) -> dict:
 
 
 def refusal_without_container(args, profile: dict) -> str | None:
-    """Why the default mode cannot run, or None. The way out is always named."""
+    """Why the default mode cannot run, or None. The way out is always named; a dry run needs no image."""
     if "argv" not in profile.get("container", {}):
         return (f"harness {args.harness!r} declares no `container` block; pass --host to run it on the host, "
                 "where no permission is widened and the mode comes through --extra-arg")
-    if not args.image:
+    if not args.image and not args.dry_run:
         return "the default mode runs each arm in a container: pass --image, or --host to run on the host"
     return None
 
@@ -554,12 +571,17 @@ def run(args) -> int:
             return 2
         cases = [c for c in data["cases"] if not args.case or c["id"] in args.case]
         suites.append((directory, data, cases))
+    for _, data, cases in suites:
+        try:
+            arm_values(args, profiles[args.harness], cases[0] if cases else {"prompt": ""}, "<workspace>", data["skill"])
+        except ValueError as exc:
+            print(f"run_evals: {exc}", file=sys.stderr)
+            return 2
     if args.dry_run:
-        for directory, _, cases in suites:
+        for directory, data, cases in suites:
             for case in cases:
                 for arm in arms:
-                    values = {"prompt": case["prompt"], "model": args.model,
-                              "workdir": "<workspace>", "max_turns": str(args.max_turns)}
+                    values = arm_values(args, profiles[args.harness], case, "<workspace>", data["skill"])
                     argv = arm_argv(args, profiles[args.harness], arm, values, "<fixture>")
                     print(json.dumps({"suite": suite_name(directory), "case": case["id"], "arm": arm,
                                       "argv": argv}, ensure_ascii=False))
@@ -578,7 +600,7 @@ def run(args) -> int:
         for case in cases:
             entry = {"case": case["id"], "branch": case["branch"], "arms": {}}
             for arm in arms:
-                arm_record = run_arm(args, profiles, directory, case, arm)
+                arm_record = run_arm(args, profiles, directory, case, arm, data["skill"])
                 (target / f"{case['id']}.{arm}.output.txt").write_text(arm_record.pop("output"), encoding="utf-8")
                 (target / f"{case['id']}.{arm}.snapshot.txt").write_text(arm_record.pop("snapshot"), encoding="utf-8")
                 results = [a["result"] for a in arm_record["assertions"]]
@@ -631,6 +653,8 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--harnesses", default=str(PROFILES), help="the harness profile file")
     p.add_argument("--harness", help="the profile the arms run under")
     p.add_argument("--model", help="the model the arms run on")
+    p.add_argument("--agent-harness", default="opencode",
+                   help="the harness an Omnigent bundle runs on (profiles that name {agent_harness}; default: opencode)")
     p.add_argument("--arms", default="with", help="comma-separated: with, without (default: with)")
     p.add_argument("--grader-harness", default=DEFAULT_GRADER_HARNESS,
                    help=f"the profile the grader runs under (default: {DEFAULT_GRADER_HARNESS})")

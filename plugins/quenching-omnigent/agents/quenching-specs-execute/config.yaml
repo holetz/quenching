@@ -1,0 +1,21 @@
+spec_version: 1
+name: "quenching-specs-execute"
+description: "Build ONE spec task by task: write, verify, self-review, tick, commit. Use for \"execute this spec\", \"build it\", \"implement the tasks\", \"continue building\". Not for: sharpening → quenching-specs-develop; closing → quenching-specs-conclude."
+instructions: instructions.md
+executor:
+  type: omnigent
+  config:
+    harness: opencode
+os_env:
+  type: caller_process
+  cwd: .
+spawn: true
+guardrails:
+  policies:
+    source_tools:
+      type: function
+      function:
+        path: omnigent.policies.builtins.cel.cel_policy
+        arguments:
+          expression: "(event.type == \"tool_call\" && event.data.name in [\"NotebookEdit\", \"WebFetch\", \"webfetch\", \"WebSearch\", \"websearch\"]) ? {\"result\": \"DENY\", \"reason\": \"Tool not granted by the quenching source.\"} : ((false) ? {\"result\": \"DENY\", \"reason\": \"Shell call outside the granted cq verbs.\"} : {\"result\": \"ALLOW\"})"
+          reason: "Denied by the quenching source tool grant."

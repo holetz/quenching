@@ -82,6 +82,8 @@ run_check "Codex artifact lockstep" \
   python3 scripts/validate_codex_plugin.py
 run_check "Claude/OpenCode distribution" \
   python3 scripts/sync_opencode_plugin.py --check --json
+run_check "Claude/Omnigent distribution" \
+  python3 scripts/sync_omnigent_plugin.py --check --json
 printf '\n==> Codex marketplace upgrade\n'
 if [ "${QUENCHING_DISTRIBUTION:-}" != "1" ]; then
   printf 'SKIPPED: set QUENCHING_DISTRIBUTION=1 to exercise a real Codex marketplace upgrade (required by /release).\n'

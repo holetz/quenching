@@ -23,6 +23,13 @@
       "output": "text",
       "note": "Flags from OpenCode's documented `opencode run`: `--model`, `--format json`, `--command` and `--auto` are the ones the spike H1 runs used against OpenCode 1.19.4; this profile has not been re-run against a live OpenCode since. `--auto` lives only in `container.permission`. The command surface port is spec 2038, so only the with arm exists until it lands."
     },
+    "omnigent": {
+      "argv": ["omnigent", "run", "{arm}", "--harness", "{agent_harness}", "--model", "{model}", "--no-session", "{extra}", "-p", "{prompt}"],
+      "arms": {"with": ["{agent}"], "without": []},
+      "container": {"argv": ["omnigent", "run", "{arm}", "--harness", "{agent_harness}", "--model", "{model}", "--no-session", "{extra}", "-p", "{prompt}"]},
+      "output": "text",
+      "note": "The with arm runs the generated Omnigent bundle of the suite's `skill` ({agent}, plugins/quenching-omnigent/agents/<id>) on --agent-harness (default opencode); the without arm is the bare harness. {agent} is refused when the bundle is missing. No permission token: the bundle's own deny-only policy governs the arm. Proven with --dry-run and a stub only; no Omnigent-hosted measurement has been run."
+    },
     "gateway": {
       "argv": ["python3", "-I", "{root}/scripts/eval_gateway_grader.py", "--model", "{model}",
                "--max-tokens", "16000", "--prompt-file", "{prompt_file}"],
