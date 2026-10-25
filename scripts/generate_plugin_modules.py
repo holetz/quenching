@@ -82,6 +82,7 @@ def principal_tree(root: Path, manifest: dict, module: dict) -> dict:
         copy_files(tree, source, "assets/bin/cq")
     if module["cqPathOwner"]:
         copy_files(tree, source, "bin/cq")
+        copy_files(tree, source, "bin/cq.cmd")
     copy_files(tree, source, "README.md")
     version = (source / "VERSION").read_text().strip()
     original = json.loads((source / ".claude-plugin/plugin.json").read_text())
@@ -260,6 +261,8 @@ def published_findings(root: Path, manifest: dict) -> list[str]:
                 findings.append(f"PATH cq ownership drift: {module['name']}")
             elif shim.is_file() and not shim.stat().st_mode & 0o111:
                 findings.append(f"PATH cq is not executable: {module['name']}")
+            if safe_path(root, module["path"] + "/bin/cq.cmd").is_file() != module["cqPathOwner"]:
+                findings.append(f"PATH cq.cmd ownership drift: {module['name']}")
     return findings
 
 

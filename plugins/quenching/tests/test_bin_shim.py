@@ -33,6 +33,15 @@ class ThePathShim(unittest.TestCase):
         self.assertTrue(SHIM.is_file(), f"the shim does not resolve: {SHIM}")
         self.assertTrue(os.access(SHIM, os.X_OK), f"the shim carries no execute bit: {SHIM}")
 
+    def test_the_windows_launcher_forwards_arguments_and_the_exit_code(self):
+        """`cq.cmd` is not runnable here, so its text carries the contract: the real entry point, `%*`, the exit code."""
+        source = (PLUGIN_ROOT / "bin" / "cq.cmd").read_text(encoding="utf-8")
+        self.assertIn("..\\assets\\bin\\cq", source)
+        self.assertIn("py -3", source)
+        self.assertIn("%*", source)
+        self.assertIn("exit /b %ERRORLEVEL%", source)
+        self.assertNotIn("execv", source)
+
     def test_it_exposes_fourteen_pillars(self):
         run = subprocess.run([sys.executable, str(REAL), "--help"], capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stderr)
