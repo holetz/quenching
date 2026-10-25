@@ -36,7 +36,7 @@
   async function api(path, opts = {}) {
     const init = { method: opts.body ? "POST" : "GET", headers: {}, credentials: "same-origin" };
     const key = state.base + path;
-    const kept = !opts.body && /^(specs|epics|human|sessions)(\?|$)/.test(path) ? validated[key] : null;
+    const kept = !opts.body && /^(specs|epics|human|sessions|schedule)(\?|$)/.test(path) ? validated[key] : null;
     if (kept) init.headers["If-None-Match"] = kept.etag;
     if (opts.body) { init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(opts.body); }
     let res, data;
@@ -47,7 +47,7 @@
     } catch (e) { throw { code: "network", message: "the portal server is not reachable" }; }
     if (!res.ok || data.ok === false) throw { code: data.code || "http-" + res.status, message: data.message || res.statusText, data };
     const etag = res.headers.get("ETag");
-    if (etag && !opts.body && /^(specs|epics|human|sessions)(\?|$)/.test(path)) { validated[key] = { etag, data }; changed = true; }
+    if (etag && !opts.body && /^(specs|epics|human|sessions|schedule)(\?|$)/.test(path)) { validated[key] = { etag, data }; changed = true; }
     return data;
   }
   function toast(msg, ok) {
@@ -606,6 +606,79 @@
     else await render();
   }
 
+  /* ── gantt: the server derives dates and the critical path; the page only draws them ── */
+  const SVGNS = "http://www.w3.org/2000/svg";
+  function svg(tag, attrs, ...kids) {
+    const el = document.createElementNS(SVGNS, tag);
+    for (const [k, v] of Object.entries(attrs || {})) if (v != null && v !== false) el.setAttribute(k, String(v));
+    for (const kid of kids.flat()) if (kid != null && kid !== false) el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+    return el;
+  }
+  const DAY = 86400000;
+  function dayOf(iso) { return Date.parse(iso + "T00:00:00Z") / DAY; }
+  function isoOf(day) { return new Date(day * DAY).toISOString().slice(0, 10); }
+
+  async function viewGantt() {
+    let data;
+    try { data = await api("schedule"); } catch (e) { fail(e); return h("p", { class: "empty" }, "The schedule could not be read."); }
+    const root = h("div", { class: "gantt" }, h("h2", {}, "Gantt"));
+    if (data.cycle) {
+      root.append(h("p", { class: "gantt-alert", role: "alert" }, "Dependency cycle: " + data.cycle.join(" → ") + ". Fix the dependsOn records; no schedule is drawn until then."));
+      return root;
+    }
+    const placed = data.nodes.filter((n) => n.earliestStart && n.earliestFinish);
+    const undated = data.nodes.filter((n) => !(n.earliestStart && n.earliestFinish));
+    if (!data.nodes.length) { root.append(h("p", { class: "empty" }, "No open spec declares a dependency, so there is nothing to schedule.")); return root; }
+    if (data.criticalPath.length) root.append(h("p", { class: "meta" }, "Critical path: " + data.criticalPath.join(" → ")));
+    if (placed.length) {
+      const today = Math.floor(Date.now() / DAY);
+      const spans = placed.map((n) => { const a = dayOf(n.earliestStart); return [n, a, Math.max(dayOf(n.earliestFinish), a + 1)]; });
+      const lo = Math.min(today, ...spans.map((s) => s[1])) - 3, hi = Math.max(today, ...spans.map((s) => s[2])) + 3;
+      const LABEL = 200, W = 900, ROW = 30, TOP = 28;
+      const x = (d) => LABEL + ((d - lo) / (hi - lo)) * W;
+      const row = new Map(spans.map((s, i) => [s[0].id, i]));
+      const el = svg("svg", { class: "gantt-svg", width: LABEL + W + 20, height: TOP + spans.length * ROW + 8, role: "img",
+        "aria-label": "Gantt chart of " + spans.length + " specs" });
+      el.append(svg("defs", {}, svg("marker", { id: "gantt-arrow", viewBox: "0 0 8 8", refX: 7, refY: 4, markerWidth: 6, markerHeight: 6, orient: "auto" },
+        svg("path", { d: "M0,0 L8,4 L0,8 z", class: "gantt-arrowhead" }))));
+      const first = new Date(lo * DAY);
+      for (let t = Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 1) / DAY; t < hi; ) {
+        el.append(svg("line", { class: "gantt-grid", x1: x(t), x2: x(t), y1: TOP - 6, y2: TOP + spans.length * ROW }),
+                  svg("text", { class: "gantt-tick", x: x(t) + 3, y: 14 }, isoOf(t).slice(0, 7)));
+        const d = new Date(t * DAY); t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1) / DAY;
+      }
+      for (const [n, a, b] of spans) {
+        const y = TOP + row.get(n.id) * ROW;
+        for (const dep of n.dependsOn || []) {
+          const di = row.get(dep);
+          if (di == null) continue;
+          const ds = spans[di], x1 = x(ds[2]), y1 = TOP + di * ROW + ROW / 2, x2 = x(a), y2 = y + ROW / 2;
+          el.append(svg("path", { class: "gantt-dep" + (n.critical && ds[0].critical ? " critical" : ""), "marker-end": "url(#gantt-arrow)",
+            d: `M${x1},${y1} H${x1 + 8} V${y2} H${Math.max(x2 - 2, x1 + 8)}` }));
+        }
+      }
+      for (const [n, a, b] of spans) {
+        const y = TOP + row.get(n.id) * ROW, w = Math.max(x(b) - x(a), 6);
+        const label = `${n.id} ${n.title || "(untitled)"}, ${n.earliestStart} to ${n.earliestFinish}` + (n.critical ? ", critical path" : "") + (n.slipDays ? `, slips ${n.slipDays} days` : "");
+        el.append(svg("a", { href: "#/spec/" + encodeURIComponent(n.id), class: "gantt-bar", "aria-label": label },
+          svg("title", {}, label),
+          svg("text", { class: "gantt-label", x: 4, y: y + ROW / 2 + 4 }, `${n.id} · ${(n.title || "").slice(0, 24)}`),
+          svg("rect", { class: "gantt-rect st-" + n.stage + (n.critical ? " critical" : "") + (n.slipDays ? " slip" : ""), x: x(a), y: y + 5, width: w, height: ROW - 10, rx: 3 }),
+          n.critical ? svg("text", { class: "gantt-chip", x: x(a) + 4, y: y + ROW / 2 + 4 }, "critical") : null,
+          n.slipDays ? svg("text", { class: "gantt-slip", x: x(a) + w + 4, y: y + ROW / 2 + 4 }, "+" + n.slipDays + "d") : null));
+      }
+      el.append(svg("line", { class: "gantt-today", x1: x(today), x2: x(today), y1: TOP - 6, y2: TOP + spans.length * ROW }),
+                svg("text", { class: "gantt-todaylabel", x: x(today) + 3, y: TOP + spans.length * ROW + 6 }, "today"));
+      root.append(h("div", { class: "gantt-scroll", tabindex: 0, role: "region", "aria-label": "Gantt chart, scrollable" }, el));
+    }
+    if (undated.length) {
+      root.append(h("h3", {}, "No dates"), h("ul", { class: "gantt-undated" }, undated.map((n) =>
+        h("li", {}, h("a", { href: "#/spec/" + encodeURIComponent(n.id) }, `${n.id} · ${n.title || "(untitled)"}`), " ", stagePill(n.stage),
+          n.dependsOn && n.dependsOn.length ? h("span", { class: "meta" }, " after " + n.dependsOn.join(", ")) : null))));
+    }
+    return root;
+  }
+
   /* ── router ──────────────────────────────────────────────────────────────── */
   async function render() {
     closeDrawer();
@@ -617,6 +690,7 @@
     else if (view === "search") content = await viewSearch(decodeURIComponent(arg || ""));
     else if (view === "list") content = viewList();
     else if (view === "human") content = viewHuman();
+    else if (view === "gantt") content = await viewGantt();
     else if (view === "epics" && state.epics.supported) content = viewEpics();
     else if (view === "sessions" && state.sessionsOn) content = viewSessions();
     else if (view === "chat" && state.chatOn) content = viewChat();
