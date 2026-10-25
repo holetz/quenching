@@ -223,6 +223,17 @@ class Runner(unittest.TestCase):
         _, lines, _ = self.omnigent_lines(suite, "--case", "staged-change-committed", "--agent-harness", "codex")
         self.assertEqual(lines[0]["argv"][lines[0]["argv"].index("--harness") + 1], "codex")
 
+    def test_a_dry_run_in_the_default_mode_needs_no_image(self):
+        out, err = io.StringIO(), io.StringIO()
+        suite = REPO / "plugins/quenching/assets/evals/git/commit"
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = runner.main(["--suite", str(suite), "--case", "staged-change-committed", "--dry-run",
+                                "--harness", "omnigent", "--model", "stub", "--run-id", "r"])
+        self.assertEqual(code, 0, err.getvalue())
+        argv = json.loads(out.getvalue().splitlines()[0])["argv"]
+        image = argv.index("<image>")
+        self.assertEqual(argv[image + 1:image + 3], ["omnigent", "run"])
+
     def test_the_omnigent_profile_refuses_a_suite_without_a_bundle(self):
         code, lines, err = self.omnigent_lines(self.suite)
         self.assertEqual((code, lines), (2, []))

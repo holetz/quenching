@@ -223,7 +223,7 @@ def container_argv(args, inner: list[str], mount: str, workdir: str) -> list[str
             *[a for k, v in GIT_ENV.items() for a in ("-e", f"{k}={v}")],
             *[a for name in names for a in ("-e", name)],
             "--mount", f"type=bind,source={mount},target={mount}", "-w", workdir,
-            "--label", "quenching.eval=1", args.image, *inner]
+            "--label", "quenching.eval=1", args.image or "<image>", *inner]
 
 
 def arm_argv(args, profile: dict, arm: str, values: dict, mount: str) -> list[str]:
@@ -538,11 +538,11 @@ def benchmark(data: dict, cases: list[dict], args, arms: list[str]) -> dict:
 
 
 def refusal_without_container(args, profile: dict) -> str | None:
-    """Why the default mode cannot run, or None. The way out is always named."""
+    """Why the default mode cannot run, or None. The way out is always named; a dry run needs no image."""
     if "argv" not in profile.get("container", {}):
         return (f"harness {args.harness!r} declares no `container` block; pass --host to run it on the host, "
                 "where no permission is widened and the mode comes through --extra-arg")
-    if not args.image:
+    if not args.image and not args.dry_run:
         return "the default mode runs each arm in a container: pass --image, or --host to run on the host"
     return None
 
