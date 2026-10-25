@@ -291,9 +291,10 @@ def _add_inspection(sub) -> None:
 def _add_migrate_export_serve(sub) -> None:
     sp = add_json(sub.add_parser("migrate", help="move the specs of a tracker backend onto the "
                                                  "`quenching` branch (`--to git`), or the git "
-                                                 "store onto Azure Boards (`--to azure`); dry "
-                                                 "run unless --write"))
-    sp.add_argument("--to", choices=["git", "azure"], help="the destination store")
+                                                 "store onto Azure Boards (`--to azure`) or "
+                                                 "GitHub Issues (`--to github`); dry run "
+                                                 "unless --write"))
+    sp.add_argument("--to", choices=["git", "azure", "github"], help="the destination store")
     sp.add_argument("--write", action="store_true",
                     help="commit the batch to the branch, or create the work items "
                          "(default: report only)")

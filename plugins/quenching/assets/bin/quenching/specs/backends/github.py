@@ -15,6 +15,7 @@ from quenching.common.remote import github_slug, normalize_remote
 from quenching.common.config import CONFIG_FILE, find_repo_root
 from quenching.common.io import read_text, write_text
 from quenching.common.leak import guard_store_write
+from quenching.specs.backends.azure import azure_predecessor_ids
 from quenching.specs.backends.base import (BackendRefusal, SpecBackend, parse_retry_after,
                                            read_only_refusal, transport_read_only)
 from quenching.specs.backends.hybrid import (GH_BODY_MAX, GH_PART_MAX, hybrid_join,
@@ -534,6 +535,45 @@ SPEC_LABEL_META = {
 }
 
 
+# -- native issue dependencies ------------------------------------------------- #
+# `dependsOn` is carried as GitHub's "blocked by" relation (GA August 2025), over the REST
+# endpoints `repos/{repo}/issues/{n}/dependencies/blocked_by` (GET lists, POST adds with the
+# blocking issue's REST `id`, DELETE `.../{id}` removes). The ids that count are the ones the
+# Azure backend already keeps: numeric, never the spec's own, declaration order, deduplicated.
+GH_DEPENDENCY_LIMIT = 50
+
+
+def github_blocked_by(listing, repo: str | None = None) -> dict[int, int]:
+    """`{issue number: REST id}` of the issues a `blocked_by` listing names. With `repo`, an
+    issue whose `repository_url` names another repository is left out: its number is not a
+    spec of this store, and it is a relation this backend never touches."""
+    pages = listing if listing and isinstance(listing[0], list) else [listing or []]
+    return {int(issue["number"]): int(issue["id"])
+            for page in pages for issue in (page or [])
+            if isinstance(issue, dict) and issue.get("number") and issue.get("id")
+            and not (repo and issue.get("repository_url")
+                     and not str(issue["repository_url"]).endswith(f"/repos/{repo}"))}
+
+
+def github_dependency_diff(current, wanted: list[int]) -> tuple[list[int], list[int]]:
+    """`(numbers to add, numbers to remove)` that make the blocked-by set equal `wanted`,
+    diffed by issue number: an unchanged set is two empty lists."""
+    return ([n for n in wanted if n not in current],
+            sorted(n for n in current if n not in wanted))
+
+
+def github_dependency_limit_refusal(number: int | None, wanted: list[int]) -> dict | None:
+    """The refusal for a spec waiting on more issues than one relation type holds."""
+    if len(wanted) <= GH_DEPENDENCY_LIMIT:
+        return None
+    target = f"issue #{number}" if number else "a new issue"
+    return {"code": "sp-gh-dependency-limit", "exit": 2, "count": len(wanted),
+            "max": GH_DEPENDENCY_LIMIT,
+            "message": f"`dependsOn` names {len(wanted)} issues and GitHub holds at most "
+                       f"{GH_DEPENDENCY_LIMIT} blocked-by relations on {target}; nothing was "
+                       "written"}
+
+
 class GitHubBackend(SpecBackend):
     """Specs as GitHub issues, reached through `gh api` in a subprocess.
 
@@ -862,6 +902,13 @@ class GitHubBackend(SpecBackend):
     def write_spec(self, info: dict, text: str) -> None:
         text = guard_store_write(text, self.cwd, info.get("text"), BackendRefusal)
         number = int(info["id"])
+        # The dependency cap refuses BEFORE any request, the revision check's GET included.
+        wanted = azure_predecessor_ids(derive_info(info, text)["frontmatter"], number)
+        deps_changed = wanted != azure_predecessor_ids(info["frontmatter"], number)
+        if deps_changed:
+            refusal = github_dependency_limit_refusal(number, wanted)
+            if refusal:
+                raise BackendRefusal(refusal)
         expected_updated_at = info.get("_github_updated_at")
         if expected_updated_at:
             current = self._api(f"checking issue #{number} before writing",
@@ -891,6 +938,12 @@ class GitHubBackend(SpecBackend):
         # stored tags are.
         desired = derive_labels(new_info)
         labels = reconcile_label_set(declared_tags(native_fields.get("tags") or []), desired)
+        # DEPENDENCIES BEFORE THE BODY, and only when `dependsOn` changed: GitHub carries the
+        # two in separate requests, and this order makes a retry converge — a failed link
+        # leaves the old `dependsOn` in the body, so the retry still sees the change and
+        # re-diffs against the live relations.
+        if deps_changed:
+            self._sync_dependencies(number, wanted)
         self._store(number, text, had_parts, labels, native_fields)
         # AFTER `_store`: a label `_store`'s own PATCH just created does not exist yet
         # before that call, and fixing a nonexistent label's color 404s. Gated on an
@@ -959,6 +1012,10 @@ class GitHubBackend(SpecBackend):
     def create_spec(self, phase: str, text: str) -> str:
         text = guard_store_write(text, self.cwd, None, BackendRefusal)
         fresh = derive_info({"phase": phase}, text)
+        refusal = github_dependency_limit_refusal(
+            None, azure_predecessor_ids(fresh["frontmatter"]))
+        if refusal:
+            raise BackendRefusal(refusal)
         stripped = strip_frontmatter_keys(text, self.GH_STORED_KEYS)
         stored, title = hybrid_project(stripped)
         chunks = hybrid_split(stored, GH_PART_MAX)
@@ -1012,12 +1069,44 @@ class GitHubBackend(SpecBackend):
             print(f"note: workItemType '{type_key}' has no `github` name declared in "
                   f"{CONFIG_FILE} — no type applied to this issue", file=sys.stderr)
         self._sync_parts(number, chunks)
+        # A new issue is blocked by nothing yet: every wanted dependency is an add.
+        wanted = azure_predecessor_ids(fresh["frontmatter"], number)
+        if wanted:
+            self._sync_dependencies(number, wanted, current={})
         if phase == "archive":
             # Created open and then closed, because "closed" is not a state an issue can be
             # born in. Two calls for a case `new` never takes — only a migration does.
             self._set_state(number, "closed")
         self._invalidate()
         return url
+
+    def _blocked_by(self, number: int) -> dict[int, int]:
+        """`{number: REST id}` of the issues this issue is blocked by."""
+        return github_blocked_by(self._api(
+            f"reading what issue #{number} is blocked by", "--paginate", "--slurp",
+            f"repos/{self.repo}/issues/{number}/dependencies/blocked_by?per_page=100"),
+            self.repo)
+
+    def _sync_dependencies(self, number: int, wanted: list[int],
+                           current: dict[int, int] | None = None) -> None:
+        """Make the issue's blocked-by set equal `wanted`. A removal uses the REST id the
+        listing returned; an add reads the blocking issue once for its id."""
+        if current is None:
+            current = self._blocked_by(number)
+        adds, removes = github_dependency_diff(current, wanted)
+        path = f"repos/{self.repo}/issues/{number}/dependencies/blocked_by"
+        for dep in removes:
+            self._api(f"removing #{dep} from what issue #{number} is blocked by",
+                      "-X", "DELETE", f"{path}/{current[dep]}")
+        for dep in adds:
+            blocking = self._api(f"reading issue #{dep}, which issue #{number} waits for",
+                                 f"repos/{self.repo}/issues/{dep}")
+            self._write_api(f"marking issue #{number} as blocked by #{dep}", "POST", path,
+                            {"issue_id": int(blocking["id"])})
+
+    def predecessor_links(self, spec_id: str | int) -> list[int]:
+        """The sorted issue numbers this spec's issue is blocked by."""
+        return sorted(self._blocked_by(int(spec_id)))
 
     def move_spec(self, info: dict, dest_phase: str) -> str:
         number = int(info["id"])
