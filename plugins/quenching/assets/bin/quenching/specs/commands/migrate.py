@@ -20,6 +20,7 @@ import re
 from quenching.common.config import load_config as load_envelope, namespace
 from quenching.common.frontmatter import parse_frontmatter
 from quenching.specs.backends import open_backend
+from quenching.specs.backends.azure import AZ_DESCRIPTION_MAX, open_azure_backend
 from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.backends.git import open_git_backend
 from quenching.specs.commands.output import Emitter
@@ -227,6 +228,136 @@ def document_matches(expected: str, info: dict) -> bool:
     return same_body and all(_norm(held.get(k)) == _norm(want.get(k)) for k in FIELD_KEYS)
 
 
+def _refuse(code: str, message: str, **extra) -> BackendRefusal:
+    return BackendRefusal({"code": code, "exit": 2, "message": message, **extra})
+
+
+def migrate_to_azure(source, target, *, write: bool) -> dict:
+    """Run (or preview) the move of a git store onto Azure Boards; returns the report.
+
+    Creates through the destination's own `create_spec`, in dependency order, so every
+    predecessor link is born with its item. Raises `BackendRefusal` (nothing written) on a
+    non-empty destination, an unreadable spec, an unresolvable reference or an oversize
+    document; the dry run reports the same conditions instead."""
+    infos, unreadable = read_front(source)
+    items = [(int(i["id"]), i["phase"], reassemble(i)) for i in infos]
+    docs = {spec_id: (phase, text) for spec_id, phase, text in items}
+    order, unresolved = azure_order(items)
+    oversize = [i for i, _, text in items if len(text) > AZ_DESCRIPTION_MAX]
+    occupied = len(target.list_specs())
+    open_count = sum(1 for _, phase, _ in items if phase == "plans")
+    report = {"ok": True, "from": source.name, "to": target.name, "dryRun": not write,
+              "count": len(items), "open": open_count, "closed": len(items) - open_count,
+              "unreadable": unreadable, "order": order, "idMap": {},
+              "unresolved": unresolved, "oversize": oversize, "occupied": occupied,
+              "configChange": {"file": CONFIG_FILE, "set": {"backend": "azure-boards"},
+                               "note": "apply once the equality holds; the git store is "
+                                       "left untouched and the id map above is the only "
+                                       "record of the old ids"}}
+    blocked = bool(unreadable or unresolved or oversize or occupied)
+    if not write:
+        report["diffs"] = []
+        report["ok"] = not blocked
+        return report
+    if occupied:
+        raise _refuse("sp-migrate-target-not-empty", f"the Azure Boards destination already "
+                      f"lists {occupied} spec(s); a tracker create is not idempotent, so a "
+                      "re-run would duplicate them — nothing was written")
+    if unreadable:
+        raise _refuse("sp-migrate-unreadable", "specs the source could not read: "
+                      + ", ".join(str(u["id"]) for u in unreadable) + " — nothing was written")
+    if unresolved:
+        raise _refuse("sp-migrate-unresolved-references", "references to ids the front does "
+                      "not hold, or a dependency cycle — nothing was written",
+                      unresolved=unresolved)
+    if oversize:
+        raise _refuse("sp-migrate-description-ceiling", "documents over the description "
+                      f"ceiling of {AZ_DESCRIPTION_MAX} characters: "
+                      + ", ".join(map(str, oversize)) + " — nothing was written")
+    idmap: dict[int, int] = {}
+    created: dict[int, str] = {}
+    current = None
+    try:
+        for current in order:
+            phase, text = docs[current]
+            created[current] = remap_text(text, idmap, members=False)
+            locator = target.create_spec(phase, created[current])
+            idmap[current] = int(re.search(r"(\d+)/?$", locator).group(1))
+        for current in order:
+            expected = remap_text(docs[current][1], idmap)
+            if expected != created[current]:
+                info, _ = target.read_spec(idmap[current])
+                target.write_spec(info, expected)
+    except BackendRefusal as exc:
+        report.update(ok=False, idMap=idmap, failed={"id": current, "code": exc.err.get("code"),
+                                                      "message": exc.err.get("message")})
+        return report
+    report["idMap"] = idmap
+    left, right, mismatched = [], [], []
+    for spec_id in order:
+        phase, text = docs[spec_id]
+        expected = remap_text(text, idmap)
+        new = idmap[spec_id]
+        left.append(derive_info({"id": new, "phase": phase}, expected))
+        info, _ = target.read_spec(new)
+        right.append(info)
+        if info is None or not document_matches(expected, info):
+            mismatched.append(spec_id)
+    report["diffs"] = [{**d, "sourceId": next(k for k, v in idmap.items() if v == d["id"])}
+                       for d in diff_fronts(left, [r for r in right if r])]
+    report["identical"] = not mismatched
+    report["mismatched"] = mismatched
+    report["ok"] = not report["diffs"] and not mismatched
+    return report
+
+
+def _cmd_migrate_azure(args, root: str, out: Emitter, cfg: dict) -> int:
+    if cfg.get("backend") != "git":
+        return out.emit_err(args.json, {
+            "code": "sp-migrate-source-not-git", "exit": 2, "backend": cfg.get("backend"),
+            "message": "`--to azure` moves the `git` store onto Azure Boards; this repository's "
+                       "backend is not `git`"})
+    if args.thin_open_cards:
+        return out.emit_err(args.json, {
+            "code": "sp-migrate-thin-git-only", "exit": 2,
+            "message": "--thin-open-cards belongs to `--to git`; there is no card to thin here"})
+    source, err = open_git_backend(root)
+    if err:
+        return out.emit_err(args.json, err)
+    target, err = open_azure_backend(root)
+    if err:
+        return out.emit_err(args.json, err)
+    try:
+        report = migrate_to_azure(source, target, write=args.write)
+    except BackendRefusal as exc:
+        return out.emit_err(args.json, exc.err)
+    if args.json:
+        out.emit(True, report, "")
+        return 0 if report["ok"] else 1
+    verb = "migrated" if args.write else "dry run — would migrate"
+    lines = [f"{verb} {report['count']} specs ({report['open']} open, {report['closed']} "
+             f"archived) from the `quenching` branch to Azure Boards"]
+    lines += [f"  unreadable: {u['id']} ({u['code']})" for u in report["unreadable"]]
+    lines += [f"  unresolved: {u['id']} {u['kind']} {u['ref']}" for u in report["unresolved"]]
+    lines += [f"  oversize: {i}" for i in report["oversize"]]
+    if report["occupied"]:
+        lines.append(f"  destination already lists {report['occupied']} spec(s)")
+    if report.get("failed"):
+        lines.append(f"  FAILED at {report['failed']['id']}: {report['failed']['message']}")
+    lines += [f"  {old} -> {new}" for old, new in report["idMap"].items()]
+    lines += [f"  diff: {d['sourceId']} -> {d['id']} {d['kind']} {d.get('fields', '')}"
+              for d in report["diffs"]]
+    lines += [f"  document differs: {i}" for i in report.get("mismatched", [])]
+    if args.write:
+        lines.append("equality: " + ("every item read back equals its source modulo id"
+                                     if report["ok"] else "not proved"))
+    lines.append(f"apply in {CONFIG_FILE}: " + json.dumps(report["configChange"]["set"]))
+    if not args.write:
+        lines.append("nothing was written — pass --write to create the work items")
+    out.emit(False, report, "\n".join(lines))
+    return 0 if report["ok"] else 1
+
+
 def cmd_migrate(args, root: str, out: Emitter) -> int:
     cfg = load_config(root)
     if not getattr(args, "to", None):
@@ -236,6 +367,8 @@ def cmd_migrate(args, root: str, out: Emitter) -> int:
             "message": "`cq specs migrate` needs a destination: `--to git` moves the specs of "
                        "a tracker backend onto the `quenching` branch (the removed local "
                        "files backend has no migration)"})
+    if args.to == "azure":
+        return _cmd_migrate_azure(args, root, out, cfg)
     if cfg.get("backend") == "git":
         return out.emit_err(args.json, {
             "code": "sp-migrate-already-git", "exit": 2,
