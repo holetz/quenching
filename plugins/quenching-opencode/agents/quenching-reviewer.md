@@ -4,7 +4,9 @@ mode: subagent
 permission:
   edit: deny
   webfetch: deny
-  bash: ask
+  bash:
+    "cq *": allow
+    "*": ask
 tools:
   task: false
 ---
