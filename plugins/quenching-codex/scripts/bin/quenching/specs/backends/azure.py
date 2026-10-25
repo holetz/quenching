@@ -1020,6 +1020,23 @@ class AzureBoardsBackend(SpecBackend):
                 if phase is None or d["phase"] == phase]
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["id"]))
 
+    def revisions(self) -> dict[int, int]:
+        """`id -> rev` of every work item the listing names, with no document body fetched.
+
+        The `rev` is a top-level field of a work item, so the lean batch already carries it.
+        The sync cache diffs this against what it holds; an item that is not a spec is
+        included, because the lean batch cannot tell, and the cache drops it on its refetch."""
+        found = self._az("querying the project's work items (revisions)", "query",
+                         "--project", self.project, "--wiql",
+                         azure_query_wiql(self.project, self.area_path, self.discovery_tag),
+                         expect="array") or []
+        self._guard_wiql("querying the project's work items (revisions)", found)
+        ids = [int(r.get("id") or (r.get("fields") or {}).get("System.Id") or 0)
+               for r in found]
+        return {int(item["id"]): int(item.get("rev") or 0)
+                for item in self._show_many([i for i in ids if i], lean=True)
+                if item.get("id")}
+
     def read_spec(self, spec_id: str | int) -> tuple[dict | None, dict]:
         """One spec, by the work-item ID the board allocated.
 
