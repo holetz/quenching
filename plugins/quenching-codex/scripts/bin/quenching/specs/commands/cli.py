@@ -311,8 +311,9 @@ def _add_migrate_export_serve(sub) -> None:
     sp.add_argument("--out", default="specs-export",
                     help="destination directory (default: ./specs-export)")
 
-    sub.add_parser("mcp", help="the read-only MCP server over stdio — a second port of this "
-                               "same core, six tools, no write verb")
+    sub.add_parser("mcp", help="the MCP server over stdio — a second port of this same "
+                               "core: six read tools, seven write tools, human "
+                               "confirmation on the gated moves")
 
     sp = add_json(sub.add_parser("serve", help="the local spec portal — a browser board over "
                                                 "the same backend, loopback only"))
