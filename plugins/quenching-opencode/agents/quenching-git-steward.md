@@ -5,8 +5,24 @@ permission:
   edit: deny
   webfetch: deny
   bash:
-    "cq *": allow
     "*": ask
+    "cq git base *": allow
+    "cq git commit *": allow
+    "cq git conventions *": allow
+    "cq git specs *": allow
+    "cq git state *": allow
+    "cq git push *": allow
+    "cq git pr create *": allow
+    "cq git pr probe *": allow
+    "cq git pr merge *": allow
+    "cq git pr record *": allow
+    "cq git worktree add *": allow
+    "cq git worktree retire *": allow
+    "cq specs config *": allow
+    "cq specs status *": allow
+    "cq specs show *": allow
+    "cq specs next *": allow
+    "cq components read *": allow
 tools:
   task: false
 ---

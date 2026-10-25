@@ -126,11 +126,18 @@ No model is pinned: commands and subagents run on the model the OpenCode session
 and the source tier and effort survive as prose. Agent permissions are mapped deny-only from the
 source `tools:` — no edit tool → `edit: deny`, no `WebFetch` → `webfetch: deny`, no `Agent` →
 the task tool off, unrestricted `Bash` → `bash: allow`, no `Bash` → `bash: deny` — with one
-decided exception: a scoped `Bash(cq ...)` grant → `bash: {"cq *": allow, "*": ask}`, mirroring the
-`Bash(cq:*)` of the Claude commands, and a scoped `Bash(...)` with no `cq` → `bash: ask`. `cq *` is
-the only allow-pattern the generator writes; every other allow-pattern stays a human decision. The
-generated README shows the same `permission.bash` map for the session's `opencode.json`, because a
-command carries no permission of its own. Command `allowed-tools` are dropped, as on Codex. The CI
+decided exception, set per agent: the agent's `bash` map opens with `"*": ask`, then each scoped
+`Bash(cq <verbs>:*)` grant → one `"cq <verbs> *": allow` pattern, in source order. OpenCode applies the
+last rule that matches (`findLast` in its permission evaluator), so a catch-all written last would
+override every allow: the order is the policy (the reviewer gets
+`"cq git history *": allow` and nothing else), and a scoped `Bash(...)` with no `cq` → `bash: ask`.
+Only the verbs the source grants are allowed, so a read-only agent never runs `cq git push` or
+`cq specs record` unasked; OpenCode checks each parsed command node, so a prefix pattern cannot be
+chained past with `;`, `&&` or `$(...)`. The pattern `cq *` is written only for a source
+`Bash(cq:*)`; every other allow-pattern stays a human decision. A test locks every agent's map
+against its source `tools:`. The
+generated README shows a session-wide `cq *` allow for `opencode.json`, because a command carries no
+permission of its own. Command `allowed-tools` are dropped, as on Codex. The CI
 templates `ci-github-pages.yml` and `azure-pipelines-docs.yml` of `assets/zensical/` are not copied
 into the payload. Per-command permission sets and hooks are not generated; they widen or reshape
 grants and stay a human decision. The generated tree is never edited by hand,
