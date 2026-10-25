@@ -74,6 +74,8 @@ no `cat` of task output files. A result enters your context once, as the worker'
 
 The turn ends only when every worker you launched has returned and its result has passed the verifier, or when you report, with the reason, that you stopped with workers still active. A sentence such as "the worker of <id> is running" is not the end of the turn: while a worker is active and no stop was reported, keep waiting for its notification instead of handing control back.
 
+The inverse also holds: when no worker is alive, its work is finished, however its last message reads ("interim", "may be partial", "still running"). Read the real state with `cq specs status <id>` and the worktree's git state, then continue with execute, conclude or the next spec instead of ending the turn.
+
 ## Hard prohibitions
 
 You never run `git stash`, `git checkout`, `git switch`, `git reset`, `git clean` or `git push`,
