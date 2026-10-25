@@ -104,6 +104,37 @@ class Migration(unittest.TestCase):
         self.assertIn("GitHub Issues", caught.exception.err["message"])
         self.assertEqual(1, busy.created)
 
+    def test_a_spec_over_the_dependency_cap_blocks_the_dry_run_and_the_write(self):
+        source = GitSource()
+        preds = list(range(100, 100 + migrate_mod.GH_DEPENDENCY_LIMIT + 1))
+        for n in preds:
+            source.docs[n] = ("plans", doc(f"Pred {n}"))
+        source.docs[10] = ("plans", doc("Waits", dependsOn="[" + ", ".join(map(str, preds)) + "]"))
+        report = migrate_mod.migrate_to_github(source, GitHubDouble(), write=False)
+        self.assertFalse(report["ok"])
+        self.assertEqual(([], [10]), (report["unresolved"], report["overlinked"]))
+        target = GitHubDouble()
+        with self.assertRaises(BackendRefusal) as caught:
+            migrate_mod.migrate_to_github(source, target, write=True)
+        self.assertEqual("sp-migrate-dependency-limit", caught.exception.err["code"])
+        self.assertEqual(0, target.created)
+
+    def test_azure_keeps_its_report_without_a_dependency_cap(self):
+        report = migrate_mod.migrate_to_azure(front(), AzureDouble(), write=False)
+        self.assertNotIn("overlinked", report)
+
+    def test_a_refusal_while_reading_back_keeps_the_id_map(self):
+        target = GitHubDouble()
+
+        def refuse(spec_id):
+            raise BackendRefusal({"code": "sp-gh-transport", "message": "HTTP 503"})
+        target.predecessor_links = refuse
+        report = migrate_mod.migrate_to_github(front(), target, write=True)
+        self.assertFalse(report["ok"])
+        self.assertEqual(4, len(report["idMap"]))
+        self.assertEqual(("verify", "sp-gh-transport"),
+                         (report["failed"]["stage"], report["failed"]["code"]))
+
     def test_a_destination_without_predecessor_links_still_matches(self):
         report = migrate_mod.migrate_to_tracker(GitSource(), AzureDouble(),
                                                 migrate_mod.GITHUB_PROFILE, write=True)

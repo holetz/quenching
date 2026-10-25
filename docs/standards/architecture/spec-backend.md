@@ -225,7 +225,8 @@ and discuss under. The spec on the branch stays the source of truth.
   change is printed, never applied. The git store is left untouched.
   `cq specs migrate --to github` is the same tracker migration onto GitHub Issues, with the same
   contract. Only the destination profile differs: no description ceiling (an oversize body
-  spills into part comments) and `{"backend": "github"}` as the printed config change. On both
+  spills into part comments), a 50-issue `dependsOn` cap checked before anything is created
+  (`sp-migrate-dependency-limit`), and `{"backend": "github"}` as the printed config change. On both
   destinations the equality also compares each spec's `predecessor_links` with its remapped
   numeric `dependsOn`, and a difference fails the proof.
 

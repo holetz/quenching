@@ -543,12 +543,16 @@ SPEC_LABEL_META = {
 GH_DEPENDENCY_LIMIT = 50
 
 
-def github_blocked_by(listing) -> dict[int, int]:
-    """`{issue number: REST id}` of the issues a `blocked_by` listing names."""
+def github_blocked_by(listing, repo: str | None = None) -> dict[int, int]:
+    """`{issue number: REST id}` of the issues a `blocked_by` listing names. With `repo`, an
+    issue whose `repository_url` names another repository is left out: its number is not a
+    spec of this store, and it is a relation this backend never touches."""
     pages = listing if listing and isinstance(listing[0], list) else [listing or []]
     return {int(issue["number"]): int(issue["id"])
             for page in pages for issue in (page or [])
-            if isinstance(issue, dict) and issue.get("number") and issue.get("id")}
+            if isinstance(issue, dict) and issue.get("number") and issue.get("id")
+            and not (repo and issue.get("repository_url")
+                     and not str(issue["repository_url"]).endswith(f"/repos/{repo}"))}
 
 
 def github_dependency_diff(current, wanted: list[int]) -> tuple[list[int], list[int]]:
@@ -898,6 +902,13 @@ class GitHubBackend(SpecBackend):
     def write_spec(self, info: dict, text: str) -> None:
         text = guard_store_write(text, self.cwd, info.get("text"), BackendRefusal)
         number = int(info["id"])
+        # The dependency cap refuses BEFORE any request, the revision check's GET included.
+        wanted = azure_predecessor_ids(derive_info(info, text)["frontmatter"], number)
+        deps_changed = wanted != azure_predecessor_ids(info["frontmatter"], number)
+        if deps_changed:
+            refusal = github_dependency_limit_refusal(number, wanted)
+            if refusal:
+                raise BackendRefusal(refusal)
         expected_updated_at = info.get("_github_updated_at")
         if expected_updated_at:
             current = self._api(f"checking issue #{number} before writing",
@@ -931,11 +942,7 @@ class GitHubBackend(SpecBackend):
         # two in separate requests, and this order makes a retry converge — a failed link
         # leaves the old `dependsOn` in the body, so the retry still sees the change and
         # re-diffs against the live relations.
-        wanted = azure_predecessor_ids(new_info["frontmatter"], number)
-        if wanted != azure_predecessor_ids(info["frontmatter"], number):
-            refusal = github_dependency_limit_refusal(number, wanted)
-            if refusal:
-                raise BackendRefusal(refusal)
+        if deps_changed:
             self._sync_dependencies(number, wanted)
         self._store(number, text, had_parts, labels, native_fields)
         # AFTER `_store`: a label `_store`'s own PATCH just created does not exist yet
@@ -1077,7 +1084,8 @@ class GitHubBackend(SpecBackend):
         """`{number: REST id}` of the issues this issue is blocked by."""
         return github_blocked_by(self._api(
             f"reading what issue #{number} is blocked by", "--paginate", "--slurp",
-            f"repos/{self.repo}/issues/{number}/dependencies/blocked_by?per_page=100"))
+            f"repos/{self.repo}/issues/{number}/dependencies/blocked_by?per_page=100"),
+            self.repo)
 
     def _sync_dependencies(self, number: int, wanted: list[int],
                            current: dict[int, int] | None = None) -> None:

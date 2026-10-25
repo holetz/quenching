@@ -42,6 +42,14 @@ class PureDependencies(unittest.TestCase):
         self.assertEqual({}, github_blocked_by([]))
         self.assertEqual({}, github_blocked_by(None))
 
+    def test_an_issue_of_another_repository_is_not_a_dependency_of_this_store(self):
+        page = [{"number": 3, "id": 903,
+                 "repository_url": "https://api.github.com/repos/other/repo"},
+                {"number": 5, "id": 905,
+                 "repository_url": "https://api.github.com/repos/owner/repo"}]
+        self.assertEqual({5: 905}, github_blocked_by(page, "owner/repo"))
+        self.assertEqual({3: 903, 5: 905}, github_blocked_by(page))
+
     def test_add_remove_and_no_op(self):
         current = {3: 903, 5: 905}
         self.assertEqual(([7], []), github_dependency_diff(current, [3, 5, 7]))
@@ -155,6 +163,16 @@ class BackendDependencies(unittest.TestCase):
         many = "[" + ", ".join(str(n) for n in range(1, GH_DEPENDENCY_LIMIT + 2)) + "]"
         with self.assertRaises(BackendRefusal) as ctx:
             self.backend.create_spec("plans", _with_deps(_external_case_doc(), many))
+        self.assertEqual("sp-gh-dependency-limit", ctx.exception.err["code"])
+        self.assertEqual([], self.transport.calls)
+
+    def test_a_write_over_the_limit_refuses_before_the_revision_check(self):
+        info = self._create("[3]")
+        info = {**info, "_github_updated_at": "2026-01-01T00:00:00Z"}   # arms the revision GET
+        self.transport.calls.clear()
+        many = "[" + ", ".join(str(n) for n in range(1, GH_DEPENDENCY_LIMIT + 2)) + "]"
+        with self.assertRaises(BackendRefusal) as ctx:
+            self.backend.write_spec(info, _with_deps(info["text"], many))
         self.assertEqual("sp-gh-dependency-limit", ctx.exception.err["code"])
         self.assertEqual([], self.transport.calls)
 

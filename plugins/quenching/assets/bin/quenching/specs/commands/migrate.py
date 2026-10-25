@@ -25,7 +25,7 @@ from quenching.specs.backends.azure import (AZ_DESCRIPTION_MAX, azure_predecesso
                                              open_azure_backend)
 from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.backends.git import open_git_backend
-from quenching.specs.backends.github import open_github_backend
+from quenching.specs.backends.github import GH_DEPENDENCY_LIMIT, open_github_backend
 from quenching.specs.commands.output import Emitter
 from quenching.specs.config import BRANCH_CONFIG_KEYS, CONFIG_FILE, load_config
 from quenching.specs.commands.deps import _flow
@@ -157,16 +157,18 @@ def migrate(source, target, source_namespace: dict, *, write: bool,
 
 class TrackerProfile(NamedTuple):
     """What differs between two tracker destinations: the `--to` value, the name a message
-    shows, the backend the config change sets, and the document ceiling (`None` when the
-    backend spills an oversize body into parts of its own)."""
+    shows, the backend the config change sets, the document ceiling (`None` when the
+    backend spills an oversize body into parts of its own) and the most predecessor links
+    one item holds (`None` when the backend states no cap)."""
     flag: str
     label: str
     backend: str
     ceiling: int | None
+    link_limit: int | None = None
 
 
 AZURE_PROFILE = TrackerProfile("azure", "Azure Boards", "azure-boards", AZ_DESCRIPTION_MAX)
-GITHUB_PROFILE = TrackerProfile("github", "GitHub Issues", "github", None)
+GITHUB_PROFILE = TrackerProfile("github", "GitHub Issues", "github", None, GH_DEPENDENCY_LIMIT)
 
 AZURE_REF_KEYS = ("epic", "parent")
 _MEMBER_RE = re.compile(r"((?:^|\s)—\s*spec\s*:\s*#?)(\d+)(?=\s|—|$)",
@@ -283,6 +285,10 @@ def migrate_to_tracker(source, target, profile: TrackerProfile, *, write: bool) 
     order, unresolved = azure_order(items)
     oversize = [i for i, _, text in items
                 if profile.ceiling is not None and len(text) > profile.ceiling]
+    # Checked up front like the ceiling: a cap the destination refuses mid-batch would leave
+    # the predecessors created and the dependent spec missing.
+    overlinked = [i for i, _, text in items if profile.link_limit is not None
+                  and len(azure_predecessor_ids(parse_frontmatter(text), i)) > profile.link_limit]
     occupied = len(target.list_specs())
     open_count = sum(1 for _, phase, _ in items if phase == "plans")
     report = {"ok": True, "from": source.name, "to": target.name, "dryRun": not write,
@@ -293,7 +299,9 @@ def migrate_to_tracker(source, target, profile: TrackerProfile, *, write: bool) 
                                "note": "apply once the equality holds; the git store is "
                                        "left untouched and the id map above is the only "
                                        "record of the old ids"}}
-    blocked = bool(unreadable or unresolved or oversize or occupied)
+    if profile.link_limit is not None:
+        report["overlinked"] = overlinked
+    blocked = bool(unreadable or unresolved or oversize or overlinked or occupied)
     if not write:
         report["diffs"] = []
         report["ok"] = not blocked
@@ -313,6 +321,10 @@ def migrate_to_tracker(source, target, profile: TrackerProfile, *, write: bool) 
         raise _refuse("sp-migrate-description-ceiling", "documents over the description "
                       f"ceiling of {profile.ceiling} characters: "
                       + ", ".join(map(str, oversize)) + " — nothing was written")
+    if overlinked:
+        raise _refuse("sp-migrate-dependency-limit", f"specs waiting on more than "
+                      f"{profile.link_limit} issues, which {profile.label} cannot link: "
+                      + ", ".join(map(str, overlinked)) + " — nothing was written")
     idmap: dict[int, int] = {}
     created: dict[int, str] = {}
     current = None
@@ -333,17 +345,25 @@ def migrate_to_tracker(source, target, profile: TrackerProfile, *, write: bool) 
         return report
     report["idMap"] = idmap
     left, right, mismatched, unlinked = [], [], [], []
-    for spec_id in order:
-        phase, text = docs[spec_id]
-        expected = remap_text(text, idmap)
-        new = idmap[spec_id]
-        left.append(derive_info({"id": new, "phase": phase}, expected))
-        info, _ = target.read_spec(new)
-        right.append(info)
-        if info is None or not document_matches(expected, info):
-            mismatched.append(spec_id)
-        if info is not None and not links_match(expected, target, new):
-            unlinked.append(spec_id)
+    # The read-back is requests too: a refusal here keeps the report, whose id map is the
+    # only record of the old ids once the items exist.
+    try:
+        for spec_id in order:
+            phase, text = docs[spec_id]
+            expected = remap_text(text, idmap)
+            new = idmap[spec_id]
+            left.append(derive_info({"id": new, "phase": phase}, expected))
+            info, _ = target.read_spec(new)
+            right.append(info)
+            if info is None or not document_matches(expected, info):
+                mismatched.append(spec_id)
+            if info is not None and not links_match(expected, target, new):
+                unlinked.append(spec_id)
+    except BackendRefusal as exc:
+        report.update(ok=False, failed={"id": spec_id, "stage": "verify",
+                                        "code": exc.err.get("code"),
+                                        "message": exc.err.get("message")})
+        return report
     report["diffs"] = [{**d, "sourceId": next(k for k, v in idmap.items() if v == d["id"])}
                        for d in diff_fronts(left, [r for r in right if r])]
     report["identical"] = not mismatched
@@ -383,13 +403,14 @@ def _cmd_migrate_tracker(args, root: str, out: Emitter, cfg: dict, profile: Trac
     lines += [f"  unreadable: {u['id']} ({u['code']})" for u in report["unreadable"]]
     lines += [f"  unresolved: {u['id']} {u['kind']} {u['ref']}" for u in report["unresolved"]]
     lines += [f"  oversize: {i}" for i in report["oversize"]]
+    lines += [f"  over the dependency cap: {i}" for i in report.get("overlinked", [])]
     if report["occupied"]:
         lines.append(f"  destination already lists {report['occupied']} spec(s)")
     if report.get("failed"):
         lines.append(f"  FAILED at {report['failed']['id']}: {report['failed']['message']}")
     lines += [f"  {old} -> {new}" for old, new in report["idMap"].items()]
     lines += [f"  diff: {d['sourceId']} -> {d['id']} {d['kind']} {d.get('fields', '')}"
-              for d in report["diffs"]]
+              for d in report.get("diffs", [])]
     lines += [f"  document differs: {i}" for i in report.get("mismatched", [])]
     lines += [f"  dependencies differ: {i}" for i in report.get("unlinked", [])]
     if args.write:
