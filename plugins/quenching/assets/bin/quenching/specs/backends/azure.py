@@ -1108,12 +1108,29 @@ class AzureBoardsBackend(SpecBackend):
             if self.parent_id else None
         ops = azure_patch_body(self._raw.get(item_id, {}), desired, markdown=True,
                                parent=parent)
+        # PREDECESSOR LINKS ride the document's own patch, so the `rev` test below guards both
+        # and the write stays all-or-nothing. Read only when `dependsOn` really changed (an
+        # internal diff against the pre-write `info`), so every other write pays no extra call.
+        wanted = azure_predecessor_ids(fresh["frontmatter"], item_id)
+        if wanted != azure_predecessor_ids(info["frontmatter"], item_id):
+            ops += azure_predecessor_ops(self._relations_of(item_id), wanted,
+                                         self._work_item_url)
         if ops:
             rev = info.get("_azure_rev", self._revs.get(item_id))
             self._az_patch(f"updating work item {item_id}", item_id, ops, rev=rev)
         if self.repository:
             self._link_new_artifacts(item_id, info, fresh)
         self._invalidate()
+
+    def _relations_of(self, item_id: int) -> list[dict]:
+        """The item's relations, one `work-item show --expand relations`."""
+        item = self._az(f"reading the relations of work item {item_id}", "work-item", "show",
+                        "--id", str(item_id), "--expand", "relations")
+        return list((item or {}).get("relations") or [])
+
+    def predecessor_links(self, spec_id: str | int) -> list[int]:
+        """The sorted ids this spec's work item is linked to as a predecessor."""
+        return sorted(azure_predecessor_links(self._relations_of(self._item_id(spec_id))))
 
     def _link_new_artifacts(self, item_id: int, old_info: dict, fresh: dict) -> None:
         """`branch`/task-commit `ArtifactLink`s, attempted only for what THIS write actually
@@ -1238,6 +1255,9 @@ class AzureBoardsBackend(SpecBackend):
         parent = (self.parent_id, self._work_item_url(self.parent_id)) \
             if self.parent_id else None
         ops = azure_patch_body({}, desired, markdown=True, parent=parent)
+        # A new item has no relations to read: every wanted predecessor is an add.
+        ops += azure_predecessor_ops([], azure_predecessor_ids(fresh["frontmatter"], item_id),
+                                     self._work_item_url)
         if ops:
             self._az_patch(f"writing the new work item {item_id}", item_id, ops)
         self._invalidate()
