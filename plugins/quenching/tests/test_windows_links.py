@@ -31,6 +31,7 @@ class MakeLinkTest(unittest.TestCase):
 
     def test_refusal_propagates_on_posix(self):
         with mock.patch("os.symlink", side_effect=OSError("denied")), \
+             mock.patch("os.name", "posix"), \
              mock.patch("subprocess.run") as run:
             with self.assertRaises(OSError):
                 worktree._make_link("store", "link")
