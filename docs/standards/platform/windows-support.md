@@ -6,7 +6,7 @@ resource: plugins/quenching/assets/bin/quenching/codex/probe.py, plugins/quenchi
 tags: [windows, platform, prerequisites, junction, process-group]
 timestamp: 2026-10-25
 audience: both
-authority: background
+authority: current
 source: spec 2090 (windows-without-admin)
 maintainer: quenching
 ---
