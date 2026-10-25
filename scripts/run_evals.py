@@ -259,19 +259,38 @@ def provision(suite: Path, case_id: str, parent: Path) -> tuple[Path, dict]:
     return workspace, env
 
 
+def git_config_env(env: dict) -> dict[str, str]:
+    """The environment git config the snapshot trusts: complete inherited pairs, renumbered, no PARAMETERS."""
+    try:
+        count = max(int((env.get("GIT_CONFIG_COUNT") or "0").strip() or "0"), 0)
+    except ValueError:
+        count = 0
+    pairs = [(env[f"GIT_CONFIG_KEY_{i}"], env[f"GIT_CONFIG_VALUE_{i}"]) for i in range(count)
+             if f"GIT_CONFIG_KEY_{i}" in env and f"GIT_CONFIG_VALUE_{i}" in env]
+    clean = {"GIT_CONFIG_COUNT": str(len(pairs))}
+    for i, (key, value) in enumerate(pairs):
+        clean[f"GIT_CONFIG_KEY_{i}"] = key
+        clean[f"GIT_CONFIG_VALUE_{i}"] = value
+    return clean
+
+
+def without_git_config(env: dict) -> dict:
+    return {k: v for k, v in env.items()
+            if k != "GIT_CONFIG_PARAMETERS" and not k.startswith(("GIT_CONFIG_KEY_", "GIT_CONFIG_VALUE_", "GIT_CONFIG_COUNT"))}
+
+
 def filter_overrides(workspace: Path, env: dict) -> dict[str, str]:
-    """Environment config disabling every declared filter driver, appended after existing entries."""
-    listing = subprocess.run(["git", "config", "--name-only", "--list", "-z"], cwd=workspace, env=env,
-                             capture_output=True, text=True, encoding="utf-8", errors="surrogateescape",
-                             timeout=120).stdout
+    """Environment config disabling every declared filter driver, appended after the trusted entries."""
+    inherited = git_config_env(env)
+    listing = subprocess.run(["git", "config", "--name-only", "--list", "-z"], cwd=workspace,
+                             env={**without_git_config(env), **inherited},
+                             capture_output=True, timeout=120).stdout.decode("utf-8", "surrogateescape")
     drivers = {name[len("filter."):name.rindex(".")] for name in listing.split("\0")[:-1]
                if name.startswith("filter.") and name.count(".") >= 2}
-    overrides = {}
-    count = int(env.get("GIT_CONFIG_COUNT", "0"))
+    overrides = dict(inherited)
+    count = int(inherited["GIT_CONFIG_COUNT"])
     for driver in sorted(drivers):
         for key, value in (("clean", ""), ("smudge", ""), ("process", ""), ("required", "false")):
-            while f"GIT_CONFIG_KEY_{count}" in env or f"GIT_CONFIG_VALUE_{count}" in env:
-                count += 1
             overrides[f"GIT_CONFIG_KEY_{count}"] = f"filter.{driver}.{key}"
             overrides[f"GIT_CONFIG_VALUE_{count}"] = value
             count += 1
@@ -286,7 +305,7 @@ def snapshot(suite: Path, workspace: Path, env: dict) -> str:
         capture_env = {**env, "GIT_OPTIONAL_LOCKS": "0"}
         if argv[0] == "git":
             argv = ["git", *SAFE_GIT, *argv[1:]]
-            capture_env.update(overrides)
+            capture_env = {**without_git_config(capture_env), **overrides}
         result = subprocess.run(argv, cwd=workspace, env=capture_env,
                                 capture_output=True, text=True, timeout=120)
         return (result.stdout + result.stderr).strip() or "(empty)"
