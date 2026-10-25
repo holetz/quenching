@@ -8,7 +8,9 @@ loses `GH_TOKEN`, `GITHUB_TOKEN` and every `AWS_*`, `AZURE_*` and `GOOGLE_*` var
 forbids git and any write outside the task's `files:`.
 
 The git guard is read before and after: the reviewed worktree's own `HEAD`, branch, reflog length
-and stash ref (never another worktree's `HEAD`), and `git status` contained in `files:`. A divergence is
+and stash ref (never another worktree's `HEAD`), the base checkout's `HEAD` and the primary branch
+ref (a fast-forward is accepted; a rewind, a branch switch, a detached base `HEAD` or a removed
+ref is a divergence), and `git status` contained in `files:`. A divergence is
 exit 2 with the offending paths. With `outside` non-empty (paths `files:` never declared) Codex
 may not clean them: it stops the task as `needs-human` naming them. With `outside` empty (a moved
 `HEAD`, branch, reflog or stash) Codex discards the diff inside `files:` (never `reset`, `stash`
@@ -31,7 +33,8 @@ import subprocess
 import time
 
 from quenching.codex.eligible import eligibility, strip_annotation
-from quenching.codex.guard import BYPASS, clean_env, git, refs, touched
+from quenching.codex.guard import (BYPASS, GuardError, base_moves, base_state, clean_env, git, refs,
+                                   touched)
 from quenching.codex.probe import group_kwargs, probe, stop
 from quenching.codex.review import RUN_NAME, measured_tokens, refusal
 from quenching.specs.backends import open_backend
@@ -122,6 +125,13 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
         handle.write(f"{text}\n\n{RULE}\n\nArquivos: {', '.join(files)}\n")
     argv = build_argv(executor, judged["model"], worktree, message_path)
     before = refs(worktree)
+    try:
+        base_before = base_state(worktree)
+    except GuardError as error:
+        shutil.rmtree(run_dir, ignore_errors=True)
+        return {**out, "fallback": False, "code": "codex-git-guard",
+                "message": f"the guard cannot read the base checkout before the run: {error}",
+                "reason": f"git guard: {error}"}, 2
     with open(prompt_path, encoding="utf-8") as stdin, \
             open(events_path, "w", encoding="utf-8") as stdout, \
             open(os.path.join(run_dir, "stderr.log"), "w", encoding="utf-8") as stderr:
@@ -133,6 +143,12 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
             stop(process)
             exit_code, out["timedOut"] = process.returncode, True
     after = refs(worktree)
+    base_after = base_before
+    try:
+        base_after = base_state(worktree, base_before["primary"])
+        base_bad = base_moves(worktree, base_before, base_after)
+    except GuardError as error:
+        base_bad = [f"base unreadable ({error})"]
     out.update(runDir=run_dir, argv=["codex", *argv], exitCode=exit_code,
                tokens=measured_tokens(events_path))
     out["quotaAfter"] = primary_used(quota({**settings, "crossReview": "auto"}, env=env))
@@ -141,9 +157,10 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
         out["stopLoss"] = out["quotaDelta"] > executor["stopLossPercent"]
 
     out["outside"] = sorted(touched(worktree) - set(files))
-    moved = sorted(key for key in before if before[key] != after[key])
+    moved = sorted(key for key in before if before[key] != after[key]) + base_bad
     if moved or out["outside"]:
-        out["guard"] = {"moved": moved, "before": before, "after": after}
+        out["guard"] = {"moved": moved, "before": {**before, "base": base_before},
+                        "after": {**after, "base": base_after}}
         detail = "; ".join(filter(None, [moved and "moved: " + ", ".join(moved),
                                          out["outside"] and "outside files: "
                                          + ", ".join(out["outside"])]))
