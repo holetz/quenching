@@ -223,6 +223,11 @@ and discuss under. The spec on the branch stays the source of truth.
   halfway leaves the created items listed in the report; no delete primitive exists. Every spec
   is then read back and compared modulo the native-field keys, and the `.claude/quenching.json`
   change is printed, never applied. The git store is left untouched.
+  `cq specs migrate --to github` is the same tracker migration onto GitHub Issues, with the same
+  contract. Only the destination profile differs: no description ceiling (an oversize body
+  spills into part comments) and `{"backend": "github"}` as the printed config change. On both
+  destinations the equality also compares each spec's `predecessor_links` with its remapped
+  numeric `dependsOn`, and a difference fails the proof.
 
 ## Legacy tracker backends (deprecated)
 
@@ -270,7 +275,13 @@ repository off them. The rules below hold for any backend that keeps a spec in a
   as `System.LinkTypes.Dependency-Reverse` relations on its work item (never its own id, never a
   slug). The links are diffed by id, not by position, and only when `dependsOn` changed in the
   write, then ride the document's own patch, so the revision test guards both and nothing is
-  half-written. Other relations are never touched. `github` has no mapping.
+  half-written. Other relations are never touched. `github` mirrors the same ids as native
+  issue dependencies: one `blocked_by` relation per id, through the REST
+  `issues/{number}/dependencies/blocked_by` endpoints, diffed by issue number and written only
+  when `dependsOn` changed. GitHub cannot carry the relations and the body in one request, so
+  they are written before the body patch, which makes a retry converge. A spec over the 50-issue
+  cap refuses with `sp-gh-dependency-limit` before any request. On both backends
+  `predecessor_links` reads the relations back.
 - **A direct read by ID reuses the listing the process already holds.** A cold read fetches one
   item; a read after a listing in the same process takes the row from that listing, never a request
   per spec. Both paths hand the same document to the one shared derivation.
