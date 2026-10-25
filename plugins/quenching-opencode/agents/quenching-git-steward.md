@@ -74,7 +74,7 @@ your `tools:` does not grant is `STATE: blocked`, never worked around.
   `quenching-git-merge` merges locally and would bypass the PR. Run it only when the caller's
   prompt names the step `merge`, the PR url and the word `autonomous`; any of the three missing
   is `STATE: blocked`. **CI certifies the gate before the merge:** the one merge command is
-  `cq git pr merge --url <url> --wait 90 --json`, which routes by the PR's web URL. On GitHub it reads
+  `cq git pr merge --url <url> --wait 90 --json`, plus `--spec <id>` whenever the prompt names the spec, so the verb stamps the `merge` record itself (`merge.stamped: false` means one was already there; `reason: stamp-failed` is `STATE: blocked` with its `message`, the PR already merged), which routes by the PR's web URL. On GitHub it reads
   checks through gh and merges with `--merge --match-head-commit`; on Azure it reads the PR's
   policy evaluations through az, requires an approved build validation policy to certify CI,
   and completes with `noFastForward` and the checked source commit pinned, without policy bypass,
