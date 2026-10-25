@@ -153,6 +153,50 @@ class Handlers(PortalCase):
         self.assertEqual((status, body["count"]), (200, 3))
         self.assertEqual(self.get("/api/search?q=zzzz")[1]["count"], 0)
 
+    def _dated(self, title, deps="", start="", target=""):
+        extra = "".join(f"{k}: {v}\n" for k, v in
+                        (("dependsOn", deps), ("start", start), ("target", target)) if v)
+        text = READY.format(title=title).replace("tags:", extra + "tags:")
+        self.backend.create_spec("plans", text)
+        return next(r["id"] for r in self.get("/api/specs?refresh=1")[1]["specs"] if r["title"] == title)
+
+    def test_schedule_carries_nodes_dates_stage_and_critical_path(self):
+        first = self._dated("First", start="2026-02-01", target="2026-02-11")
+        second = self._dated("Second", deps=f"[{first}]", target="2026-02-15")
+        status, body = self.get("/api/schedule")
+        self.assertEqual(status, 200)
+        self.assertIsNone(body["cycle"])
+        nodes = {n["id"]: n for n in body["nodes"]}
+        self.assertEqual(nodes[str(second)]["dependsOn"], [str(first)])
+        self.assertEqual(nodes[str(second)]["earliestStart"], "2026-02-11")
+        self.assertEqual(nodes[str(second)]["drivenBy"], str(first))
+        self.assertIn(nodes[str(first)]["stage"], self.get("/api/specs")[1]["stages"])
+        self.assertEqual(body["criticalPath"], [str(first), str(second)])
+
+    def test_schedule_keeps_an_undated_node_with_null_dates(self):
+        first = self._dated("Bare")
+        self._dated("After bare", deps=f"[{first}]")
+        nodes = {n["id"]: n for n in self.get("/api/schedule")[1]["nodes"]}
+        self.assertIsNone(nodes[str(first)]["start"])
+        self.assertIsNone(nodes[str(first)]["earliestStart"])
+
+    def test_schedule_reports_a_cycle_without_nodes(self):
+        a = self._dated("Loop A")
+        b = self._dated("Loop B", deps=f"[{a}]")
+        info, _ = self.backend.read_spec(a)
+        self.backend.write_spec(info, info["text"].replace("tags:", f"dependsOn: [{b}]\ntags:", 1))
+        status, body = self.get("/api/schedule?refresh=1")
+        self.assertEqual(status, 200)
+        self.assertTrue(body["cycle"])
+        self.assertEqual(body["nodes"], [])
+
+    def test_schedule_needs_the_token_and_answers_a_matching_etag_with_304(self):
+        self._dated("Only", start="2026-02-01", target="2026-02-02")
+        raw = self.portal.handle
+        self.assertEqual(raw("GET", "/api/schedule", HOST)[0], 401)
+        etag = raw("GET", "/api/schedule", AUTH)[1]["ETag"]
+        self.assertEqual(raw("GET", "/api/schedule", {**AUTH, "If-None-Match": etag})[0], 304)
+
     def test_epics_are_hidden_when_no_spec_is_an_epic(self):
         self.assertFalse(self.get("/api/epics")[1]["supported"])
 
