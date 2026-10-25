@@ -90,6 +90,11 @@ class RunRecord(unittest.TestCase):
         self.assertIn("NEVER the source of `verifier`", text)
         self.assertIn("OMIT `--set verifier=`", text)
         self.assertNotIn("verdict of the repository gate or verifier", text)
+        self.assertIn("`--set by=verifier`", text)
+        orchestrator = (path.parent / "orchestrator.md").read_text()
+        self.assertIn("--set verifier=<pass|fail> --set by=verifier", orchestrator)
+        steward = (path.parent / "git-steward.md").read_text()
+        self.assertIn("cq git pr merge --url <url> --wait 90 --json`, plus `--spec <id>`", steward)
 
 
 if __name__ == "__main__":
