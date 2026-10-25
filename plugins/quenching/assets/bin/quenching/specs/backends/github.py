@@ -15,6 +15,7 @@ from quenching.common.remote import github_slug, normalize_remote
 from quenching.common.config import CONFIG_FILE, find_repo_root
 from quenching.common.io import read_text, write_text
 from quenching.common.leak import guard_store_write
+from quenching.specs.backends.azure import azure_predecessor_ids
 from quenching.specs.backends.base import (BackendRefusal, SpecBackend, parse_retry_after,
                                            read_only_refusal, transport_read_only)
 from quenching.specs.backends.hybrid import (GH_BODY_MAX, GH_PART_MAX, hybrid_join,
@@ -532,6 +533,41 @@ SPEC_LABEL_META = {
     "spec:reviewed":     ("fbca04", "a human read the whole branch diff"),
     "spec:merged":       ("1d76db", "the branch merged into the integration branch"),
 }
+
+
+# -- native issue dependencies ------------------------------------------------- #
+# `dependsOn` is carried as GitHub's "blocked by" relation (GA August 2025), over the REST
+# endpoints `repos/{repo}/issues/{n}/dependencies/blocked_by` (GET lists, POST adds with the
+# blocking issue's REST `id`, DELETE `.../{id}` removes). The ids that count are the ones the
+# Azure backend already keeps: numeric, never the spec's own, declaration order, deduplicated.
+GH_DEPENDENCY_LIMIT = 50
+
+
+def github_blocked_by(listing) -> dict[int, int]:
+    """`{issue number: REST id}` of the issues a `blocked_by` listing names."""
+    pages = listing if listing and isinstance(listing[0], list) else [listing or []]
+    return {int(issue["number"]): int(issue["id"])
+            for page in pages for issue in (page or [])
+            if isinstance(issue, dict) and issue.get("number") and issue.get("id")}
+
+
+def github_dependency_diff(current, wanted: list[int]) -> tuple[list[int], list[int]]:
+    """`(numbers to add, numbers to remove)` that make the blocked-by set equal `wanted`,
+    diffed by issue number: an unchanged set is two empty lists."""
+    return ([n for n in wanted if n not in current],
+            sorted(n for n in current if n not in wanted))
+
+
+def github_dependency_limit_refusal(number: int | None, wanted: list[int]) -> dict | None:
+    """The refusal for a spec waiting on more issues than one relation type holds."""
+    if len(wanted) <= GH_DEPENDENCY_LIMIT:
+        return None
+    target = f"issue #{number}" if number else "a new issue"
+    return {"code": "sp-gh-dependency-limit", "exit": 2, "count": len(wanted),
+            "max": GH_DEPENDENCY_LIMIT,
+            "message": f"`dependsOn` names {len(wanted)} issues and GitHub holds at most "
+                       f"{GH_DEPENDENCY_LIMIT} blocked-by relations on {target}; nothing was "
+                       "written"}
 
 
 class GitHubBackend(SpecBackend):
