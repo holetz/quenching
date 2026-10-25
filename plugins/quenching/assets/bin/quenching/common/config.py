@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+from typing import Protocol
 
 from quenching.common.git import _git
 from quenching.common.remote import remote_host as _remote_host
@@ -18,6 +19,8 @@ CONFIG_FILE = os.path.join(".claude", "quenching.json")
 LEGACY_CONFIG_FILE = "config.json"
 USER_CONFIG_ENV = "QUENCHING_USER_CONFIG"
 NAMESPACES = ("shared", "specs", "ops", "proof", "delivery")
+PROVIDER_ENV = "QUENCHING_CONFIG_PROVIDER"
+DEFAULT_PROVIDER = "file"
 
 # Root-level keys accepted by the pre-envelope format. They are diagnostic-only now: a front
 # adapter must refuse to interpret them because doing so makes a half-migrated repository look
@@ -52,6 +55,74 @@ LEGACY_DESTINATIONS = {
     "proofExclusions": "proof",
     "ratchetPath": "proof",
 }
+
+
+class ConfigProvider(Protocol):
+    """Where the repository layer of the configuration comes from.
+
+    `read` returns `(document, info)`: the parsed repository envelope, or `None` when there is
+    none or it could not be parsed, and `{name, path, present, unparseable}` describing the read.
+    A provider only changes the origin of the document; the merge with the user layer, the legacy
+    refusal and the meaning of every namespace stay in `load_config` and in each front.
+    """
+
+    name: str
+
+    def read(self, repo_root: str) -> tuple[dict | None, dict]: ...
+
+
+class FileProvider:
+    """The compatibility read: `.claude/quenching.json` at the repository root."""
+
+    name = "file"
+
+    def read(self, repo_root: str) -> tuple[dict | None, dict]:
+        path = os.path.join(repo_root, CONFIG_FILE)
+        info = {"name": self.name, "path": path, "present": os.path.isfile(path),
+                "unparseable": None}
+        if not info["present"]:
+            return None, info
+        try:
+            obj = json.loads(read_text(path) or "")
+        except json.JSONDecodeError as exc:
+            info["unparseable"] = str(exc)
+            return None, info
+        if not isinstance(obj, dict):
+            info["unparseable"] = f"top level is {type(obj).__name__}, not an object"
+            return None, info
+        return obj, info
+
+
+_PROVIDERS: dict[str, ConfigProvider] = {DEFAULT_PROVIDER: FileProvider()}
+
+
+def register_provider(provider: ConfigProvider) -> None:
+    """Make `provider` selectable by `QUENCHING_CONFIG_PROVIDER=<provider.name>`."""
+    _PROVIDERS[provider.name] = provider
+
+
+def unregister_provider(name: str) -> None:
+    """Drop a registered provider; the `file` provider cannot be dropped."""
+    if name != DEFAULT_PROVIDER:
+        _PROVIDERS.pop(name, None)
+
+
+def active_provider() -> tuple[ConfigProvider | None, dict | None]:
+    """The provider `QUENCHING_CONFIG_PROVIDER` names (absent means `file`), or the exit-2
+    refusal naming the registered ones. An unknown name never falls back to the file."""
+    name = (os.environ.get(PROVIDER_ENV) or "").strip() or DEFAULT_PROVIDER
+    provider = _PROVIDERS.get(name)
+    if provider is not None:
+        return provider, None
+    return None, {
+        "code": "cq-config-provider-unknown",
+        "exit": 2,
+        "provider": name,
+        "registered": sorted(_PROVIDERS),
+        "message": f"{PROVIDER_ENV}={name} names no configuration provider; "
+                   f"registered: {', '.join(sorted(_PROVIDERS))}",
+        "remedy": f"unset {PROVIDER_ENV} to read {CONFIG_FILE}, or name a registered provider",
+    }
 
 
 def find_repo_root(specs_root: str) -> str:
@@ -197,16 +268,17 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
                          "ignoredKeys": user["ignoredKeys"],
                          "keys": {name: sorted(value)
                                   for name, value in user["namespaces"].items()}}
-    if not out["present"]:
-        _apply_user_layer(out, user["namespaces"], {})
-        return out
-    try:
-        obj = json.loads(read_text(path) or "")
-    except json.JSONDecodeError as exc:
-        out["unparseable"] = str(exc)
-        return out
-    if not isinstance(obj, dict):
-        out["unparseable"] = f"top level is {type(obj).__name__}, not an object"
+    provider, refusal = active_provider()
+    out["source"] = provider.name if provider else None
+    out["providerRefusal"] = refusal
+    obj, info = provider.read(repo) if provider else (None, {
+        "name": None, "path": path, "present": False, "unparseable": None})
+    out["path"] = info["path"]
+    out["present"] = info["present"]
+    out["unparseable"] = info["unparseable"]
+    if obj is None:
+        if not info["unparseable"]:
+            _apply_user_layer(out, user["namespaces"], {})
         return out
 
     out["data"] = obj
