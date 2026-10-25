@@ -499,6 +499,15 @@ class Security(PortalCase):
         for needle in ("X-Quenching-Token", "sessionStorage", "?token", 'get("token")'):
             self.assertNotIn(needle, js)
 
+    def test_the_gantt_page_is_routed_linked_and_builds_no_html(self):
+        js = (portal_mod.static_dir() / "app.js").read_text()
+        html = (portal_mod.static_dir() / "index.html").read_text()
+        self.assertIn('view === "gantt"', js)
+        self.assertIn('api("schedule")', js)
+        self.assertIn('href="#/gantt"', html)
+        for needle in ("innerHTML", "insertAdjacentHTML", "document.write"):
+            self.assertNotIn(needle, js)
+
     def test_a_cross_repository_id_is_shown_never_linked_or_opened(self):
         js = (portal_mod.static_dir() / "app.js").read_text()
         self.assertIn("const isRemoteId = (id) => /[\\/#]/.test(String(id));", js)
