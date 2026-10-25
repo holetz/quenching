@@ -29,7 +29,7 @@ worktree and any ref that does not resolve to a commit. Your only shell grants a
 `cq specs status`/`show` and `cq git pr view`: never `git`, `bash` or `cd <wt> && …`, which no grant
 matches (`--root` is an option of the granted verb). Without a worktree, `--worktree` is the base checkout itself.
 
-1. Tasks: `cq specs status --spec <id> --json` shows checked == total.
+1. Tasks: `cq specs status --spec <id> --json` shows checked == total. For a spec of another repository add `--root <repo>` after the verb (`cq specs status --root <repo> --spec <id> --json`, same for `show`): a flag before the verb matches no grant.
 2. Commits: the payload's `commits` is non-empty, and each task sha the worker named is in it.
 3. Gate: you execute nothing. Record the exit code the worker reported for the spec's declared
    gate as a CLAIM, not a verdict: the gate is certified by CI on the PR before the merge
