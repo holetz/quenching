@@ -83,10 +83,10 @@ class Patterns(LeakEnv):
 class Normalize(LeakEnv):
     def test_scratchpad_root_home_and_slug_get_their_relative_form(self):
         scratch = "/tmp/claude-1000/-home-alice-repo/0f1e2d3c-4b5a-6978-8a9b-0c1d2e3f4a5b/scratchpad"
-        text = (f"a {scratch}/out.txt\nb {HOME}/repo/docs/x.md\nc {HOME}/repo\n"
+        text = (f"a {scratch}/out.txt\nb {HOME}/repo/docs/index.md\nc {HOME}/repo\n"
                 f"d {HOME}/.config/q\ne ~/.claude/projects/-home-alice-repo/memory/m.md\n")
         self.assertEqual(leak.normalize_paths(text, f"{HOME}/repo"),
-                         "a <scratchpad>/out.txt\nb docs/x.md\nc .\nd ~/.config/q\n"
+                         "a <scratchpad>/out.txt\nb docs/index.md\nc .\nd ~/.config/q\n"
                          "e ~/.claude/projects/<project>/memory/m.md\n")
 
     def test_guard_normalizes_then_refuses_what_has_no_relative_form(self):
