@@ -116,6 +116,12 @@ defines a per-call wrapper honouring `QUENCHING_OPENCODE_ROOT`. The `cq` payload
 translator's own `scripts/` output carried verbatim, so the bundled tool behaves as it does on
 Codex, its `.agents/` surface model and its telemetry refusals included.
 
+The payload root carries `.claude-plugin/plugin.json`, emitted by the generator with `name: quenching`
+and the source `VERSION`. The bundled `cq` enables a pillar only when the root that owns its package
+has a manifest naming the owning module, `quenching` or `quenching-codex`; without the manifest every
+pillar answers `belongs to module ..., which is not enabled` (exit 2) in a clean directory. A test
+runs the bundled `cq` in an empty directory so the manifest cannot regress.
+
 No model is pinned: commands and subagents run on the model the OpenCode session configures,
 and the source tier and effort survive as prose. Agent permissions are mapped deny-only from the
 source `tools:` — no edit tool → `edit: deny`, no `WebFetch` → `webfetch: deny`, no `Agent` →
