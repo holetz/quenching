@@ -292,7 +292,7 @@ write-only, nothing reads it back, so it is never a second store.
 | `quenching-specs-triage` | Ranks the whole front in ONE confirmed table, writing `priority: {level, criticality, complexity, date}` per spec and nothing else — merging, never clobbering a human's ranking. |
 | `quenching-specs-board` | Human-only. Starts `cq specs serve` in the background and prints the URL: a local browser portal (board by derived stage, drag-to-rank list, spec detail, search, capture, approve as `by: human`) over the same backend as the CLI. Loopback only, per-run token, `Host`/`Origin` checks, `--read-only` disables writes on the server; `cq-specs-read serve` is always read-only. |
 
-### The specs MCP server — read-only, stdio
+### The specs MCP server — reads, writes and gated moves, stdio
 
 `cq specs mcp` starts a stdio MCP server (JSON-RPC 2.0, stdlib only) that the plugin registers through
 its `.mcp.json` as the `specs` server, so enabling the plugin makes the tools appear. Every tool
@@ -308,11 +308,31 @@ CLI's; the server holds no store logic.
 | `specs_next` | `spec` or `epic` (neither: the ranked front), `limit` | the next action, the epic's ready members, or the front, paged |
 | `specs_epic_progress` | `epic` | one epic's progress |
 
+Write tools run the same CLI verbs, in the same process, and add no store logic:
+
+| Tool | Arguments | Does |
+|---|---|---|
+| `specs_create` | `name`, `title`, `type`, `tags`, `complexity`, `verification` | captures a spec into `plans/` |
+| `specs_section_write` | `spec`, `heading`, `body`, `scope` | replaces ONE section (body up to 200,000 characters) |
+| `specs_record` | `spec`, `name`, `fields` | merges fields into a record; `priority`, `refined`, `branch`, `pr`, `buildCost`, `run` are free |
+| `specs_task` | `spec`, `action` (check, uncheck, block, descope), `task`, `reason`, `subject`, `commit` | moves one checkbox |
+| `specs_epic_add` | `epic`, `spec`, `after`, `group`, `label`, `move` | lists a spec as an epic item |
+| `specs_discover` | `spec`, `text` | appends one line to `## Discoveries` |
+| `specs_promote` | `spec`, `to`, `outcome` | moves between `plans/` and `archive/`; gated, never forced |
+
+Gated moves: the `approved`, `reviewed`, `merge` and `outcome` records and `specs_promote` stamp a
+human decision, so the server asks the human through the client (MCP `elicitation/create`) and runs
+the verb only on an accept. No argument confirms anything: a client without the `elicitation`
+capability gets `mcp-confirmation-unavailable`, a decline or cancel gets `mcp-confirmation-refused`,
+and nothing changes. `approved` takes no fields: the server writes `date` and `by=human` after the
+accept, and only on a spec that met the ready gate (`mcp-not-ready` otherwise, before the question).
+
 Size policy: no tool returns a whole spec; reads go by section and by task, listings are paged, and any
 answer above 60,000 characters is cut with `truncated: true` and a `hint` naming the narrower call.
-Read-only guarantee: the tool table is a closed map to fixed read verbs, with no generic `cq` tool and no
-argv passthrough, so no write verb is reachable. A failure is a result with `isError: true` and the CLI's
-refusal `code`. Registering the server adds no permission or grant.
+Closed surface: the tool tables are closed maps to fixed verbs, with no generic `cq` tool and no argv
+passthrough, so no other verb is reachable and a flag-shaped value is refused before the core runs. A
+failure is a result with `isError: true` and the CLI's refusal `code`. Registering the server adds no
+permission or grant, and nothing here swaps a `Bash(cq specs ...)` grant for these tools.
 
 ### A revisão Codex independente
 
