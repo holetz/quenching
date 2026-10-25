@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq git base:*), Bash(cq git conventions:*), Bash(cq git state:*), Bash(cq git push:*), Bash(cq git pr create:*), Bash(cq git pr probe:*), Bash(cq git pr record:*), Bash(cq specs config:*), Bash(cq specs status:*), Bash(cq specs show:*), Bash(cq components read:*), Bash(gh repo view:*), Read, AskUserQuestion
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/git/pr/create.md -->
 
 <!-- OMNIGENT RUNTIME START -->

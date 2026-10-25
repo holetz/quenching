@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/specs/triage.md -->
 
 <!-- OMNIGENT RUNTIME START -->

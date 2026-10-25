@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(rm:*), Write, Edit, Task, AskUserQuestion
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/import-memory.md -->
 
 <!-- OMNIGENT RUNTIME START -->

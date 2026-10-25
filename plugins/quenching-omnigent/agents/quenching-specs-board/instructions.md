@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*)
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/specs/board.md -->
 
 <!-- OMNIGENT RUNTIME START -->

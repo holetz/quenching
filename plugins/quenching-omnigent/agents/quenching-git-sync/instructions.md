@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*), Bash(git status:*), Bash(git remote get-url:*), Bash(git fetch:*), Bash(git rebase:*), Bash(git for-each-ref:*), Bash(python3:*), Read
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/git/sync.md -->
 
 <!-- OMNIGENT RUNTIME START -->

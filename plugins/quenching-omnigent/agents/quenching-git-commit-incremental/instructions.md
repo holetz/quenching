@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*), Read, Bash(git status:*), Bash(git diff:*), Bash(git ls-files:*), Bash(git add:*), Bash(git commit:*), Bash(git log:*), Bash(python3:*), AskUserQuestion
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/git/commit-incremental.md -->
 
 <!-- OMNIGENT RUNTIME START -->

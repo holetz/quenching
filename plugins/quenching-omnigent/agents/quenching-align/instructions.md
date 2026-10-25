@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/align.md -->
 
 <!-- OMNIGENT RUNTIME START -->

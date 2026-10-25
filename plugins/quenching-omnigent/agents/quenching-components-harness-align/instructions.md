@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(find:*), Bash(git grep:*), Bash(git check-ignore:*), Bash(grep:*), Bash(python3:*), Bash(py:*), Write, Edit, Task, AskUserQuestion
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/components/harness/align.md -->
 
 <!-- OMNIGENT RUNTIME START -->

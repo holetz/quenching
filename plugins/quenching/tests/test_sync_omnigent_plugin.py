@@ -66,6 +66,15 @@ class SourceToolsLock(unittest.TestCase):
                     self.assertTrue(set(sync.SHELL_TOOLS) <= set(model["denied"]), source.name)
                 self.assertEqual(bool({"Agent", "Task"} & set(names)), model["spawn"], source.name)
 
+    def test_every_instructions_file_carries_the_source_grant_never_a_missing_key(self):
+        for kind, key in (("commands", "allowed-tools"), ("agents", "tools")):
+            for source in sorted((sync.SOURCE / kind).rglob("*.md")):
+                name = ("quenching-" + "-".join(source.relative_to(sync.SOURCE / kind).with_suffix("").parts)
+                        if kind == "commands" else sync.AGENT_PREFIX + source.stem)
+                fields, _ = sync.oc.frontmatter(source.read_text(encoding="utf-8"), source)
+                text = self.tree[f"agents/{name}/instructions.md"].decode("utf-8")
+                self.assertTrue(text.startswith(f"---\n{key}: {fields[key]}\n---\n"), name)
+
     def test_a_scoped_agent_allowlist_and_non_cq_bash_are_listed_never_widened(self):
         model = sync.permission_model("Agent(a, b), Bash(python3:*), Bash(cq specs show:*), Read")
         self.assertTrue(set(sync.SPAWN_TOOLS) <= set(model["denied"]))

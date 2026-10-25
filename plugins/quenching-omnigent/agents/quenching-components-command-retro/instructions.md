@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*), Read, AskUserQuestion, Bash(python3:*), Bash(py:*)
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/components/command/retro.md -->
 
 <!-- OMNIGENT RUNTIME START -->

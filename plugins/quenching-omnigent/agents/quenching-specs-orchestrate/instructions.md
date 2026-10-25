@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*), Read, Agent, Task
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/specs/orchestrate.md -->
 
 <!-- OMNIGENT RUNTIME START -->

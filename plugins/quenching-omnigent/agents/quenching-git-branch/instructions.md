@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq git base:*), Bash(cq git conventions:*), Bash(cq git specs:*), Bash(cq git state:*), Bash(cq git worktree add:*), Bash(cq specs config:*), Bash(cq specs status:*), Bash(cq components read:*), Read, AskUserQuestion
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/git/branch.md -->
 
 <!-- OMNIGENT RUNTIME START -->

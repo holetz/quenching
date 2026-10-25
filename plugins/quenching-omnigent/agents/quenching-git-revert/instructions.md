@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*), Bash(git status:*), Bash(git branch --show-current:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git merge-base:*), Bash(git log:*), Bash(git show:*), Bash(git diff:*), Bash(git revert:*), Bash(python3:*), Read, AskUserQuestion
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/git/revert.md -->
 
 <!-- OMNIGENT RUNTIME START -->

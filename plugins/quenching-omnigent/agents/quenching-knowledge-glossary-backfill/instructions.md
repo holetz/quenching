@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(py:*), Write, Edit, Task, AskUserQuestion
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/knowledge/glossary-backfill.md -->
 
 <!-- OMNIGENT RUNTIME START -->

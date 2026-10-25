@@ -1,3 +1,7 @@
+---
+tools: Read, Grep, Glob, Bash(cq git history:*), Bash(bash scripts/verify_repo.sh:*)
+---
+
 <!-- GENERATED FROM plugins/quenching/agents/reviewer.md -->
 
 <!-- OMNIGENT RUNTIME START -->

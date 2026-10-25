@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*), Bash(python3:*), Read, AskUserQuestion
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/git/cleanup.md -->
 
 <!-- OMNIGENT RUNTIME START -->

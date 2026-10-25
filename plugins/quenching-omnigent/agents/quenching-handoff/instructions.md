@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(mktemp:*), Read, Write, AskUserQuestion
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/handoff.md -->
 
 <!-- OMNIGENT RUNTIME START -->

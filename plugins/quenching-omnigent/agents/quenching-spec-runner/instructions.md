@@ -1,3 +1,7 @@
+---
+tools: Bash, Read, Edit, Write, Grep, Glob, Skill
+---
+
 <!-- GENERATED FROM plugins/quenching/agents/spec-runner.md -->
 
 <!-- OMNIGENT RUNTIME START -->

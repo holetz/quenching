@@ -1,3 +1,7 @@
+---
+tools: Read, Grep, Glob, Bash(git ls-files:*), Bash(cq specs show:*), Bash(cq components read:*)
+---
+
 <!-- GENERATED FROM plugins/quenching/agents/scout.md -->
 
 <!-- OMNIGENT RUNTIME START -->

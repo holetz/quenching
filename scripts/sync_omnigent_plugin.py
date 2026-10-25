@@ -189,7 +189,10 @@ def bundle(name: str, source: Path, kind: str) -> tuple[dict[str, str], dict]:
     description = reroot(oc.platform(fields["description"]))
     origin = f"plugins/quenching/{'agents' if kind == 'agent' else 'commands'}/" + (
         source.name if kind == "agent" else source.relative_to(SOURCE / "commands").as_posix())
-    instructions = (f"<!-- GENERATED FROM {origin} -->\n\n<!-- OMNIGENT RUNTIME START -->\n"
+    key = "tools" if kind == "agent" else "allowed-tools"
+    grant = fields.get(key)   # Omnigent reads instructions.md as plain text; the audit reads this as the source grant, not `*`
+    head = f"---\n{key}: {grant}\n---\n\n" if grant is not None else ""
+    instructions = (head + f"<!-- GENERATED FROM {origin} -->\n\n<!-- OMNIGENT RUNTIME START -->\n"
                     + oc.preferences(fields) + runtime_policy() + "<!-- OMNIGENT RUNTIME END -->\n\n"
                     + markdown(body))
     return {f"agents/{name}/config.yaml": config_yaml(name, description, model),

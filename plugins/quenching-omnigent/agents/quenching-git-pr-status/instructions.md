@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*), Bash(python3:*), Bash(git remote get-url:*), Bash(git branch:*), Bash(gh repo view:*), Bash(gh pr view:*), Bash(gh api graphql:*), Bash(az repos pr:*), Bash(az devops invoke:*), Read
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/git/pr/status.md -->
 
 <!-- OMNIGENT RUNTIME START -->

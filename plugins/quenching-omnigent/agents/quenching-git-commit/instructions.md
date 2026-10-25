@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq git commit:*), Bash(cq git conventions:*), Bash(cq git specs:*), Bash(cq git state:*), Bash(cq specs next:*), Bash(cq components read:*), Read
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/git/commit.md -->
 
 <!-- OMNIGENT RUNTIME START -->

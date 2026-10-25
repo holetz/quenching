@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*), Bash(git worktree:*), Bash(git merge:*), Bash(git rebase:*), Bash(git branch:*), Bash(python3:*), Read, AskUserQuestion
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/git/merge.md -->
 
 <!-- OMNIGENT RUNTIME START -->

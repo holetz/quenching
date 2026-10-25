@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*), Bash(git:*), Bash(wc:*), Bash(mkdir:*), Read, Grep, Glob, Write, Agent, Task, AskUserQuestion
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/specs/improve.md -->
 
 <!-- OMNIGENT RUNTIME START -->

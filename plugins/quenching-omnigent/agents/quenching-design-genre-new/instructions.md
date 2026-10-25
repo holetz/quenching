@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), AskUserQuestion
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/design/genre/new.md -->
 
 <!-- OMNIGENT RUNTIME START -->

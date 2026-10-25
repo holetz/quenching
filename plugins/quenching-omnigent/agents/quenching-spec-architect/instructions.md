@@ -1,3 +1,7 @@
+---
+tools: Read, Grep, Glob, Bash(cq specs new:*), Bash(cq specs list:*), Bash(cq specs show:*), Bash(cq specs next:*), Bash(cq specs epic add:*)
+---
+
 <!-- GENERATED FROM plugins/quenching/agents/spec-architect.md -->
 
 <!-- OMNIGENT RUNTIME START -->

@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*), Bash(git:*), Bash, Read, Grep, Glob, Agent, Task, TaskStop
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/specs/autopilot.md -->
 
 <!-- OMNIGENT RUNTIME START -->

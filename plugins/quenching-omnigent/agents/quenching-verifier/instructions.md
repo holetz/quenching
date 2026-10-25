@@ -1,3 +1,7 @@
+---
+tools: Read, Grep, Glob, Bash(cq specs status:*), Bash(cq specs show:*), Bash(cq git audit:*), Bash(cq git pr view:*)
+---
+
 <!-- GENERATED FROM plugins/quenching/agents/verifier.md -->
 
 <!-- OMNIGENT RUNTIME START -->

@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*), Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Task, Skill
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/specs/execute.md -->
 
 <!-- OMNIGENT RUNTIME START -->

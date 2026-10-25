@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*), Read, Grep, Glob, Bash(python3:*), Bash(mkdir:*), Bash(mv:*), AskUserQuestion, Write, Edit
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/proof/layer/new.md -->
 
 <!-- OMNIGENT RUNTIME START -->

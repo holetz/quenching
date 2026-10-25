@@ -1,3 +1,7 @@
+---
+allowed-tools: Bash(cq:*), Bash(gh pr view:*), Bash(gh repo view:*), Bash(gh api graphql:*), Bash(az repos pr:*), Bash(az devops invoke:*), Bash(az rest:*), Bash(git branch:*), Bash(git remote get-url:*), Bash(git add:*), Bash(python3:*), Read, Edit, AskUserQuestion, Skill
+---
+
 <!-- GENERATED FROM plugins/quenching/commands/git/pr/review.md -->
 
 <!-- OMNIGENT RUNTIME START -->
