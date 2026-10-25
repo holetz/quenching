@@ -9,11 +9,9 @@ their owners by `test_config_seed.py`. A default of `None` (`workHost.target`, `
 from __future__ import annotations
 
 import copy
-import json
-import os
 
 from quenching.codex.config import DEFAULTS as CODEX
-from quenching.common.config import CONFIG_FILE, detect_profile, find_repo_root
+from quenching.common.config import detect_profile, find_repo_root, repository_document
 from quenching.config.autonomy import DEFAULTS as AUTONOMY
 from quenching.config.host import DEFAULTS as WORK_HOST
 from quenching.session.commands.context import BUDGETS
@@ -58,11 +56,5 @@ def missing_keys(document: dict, root: str) -> list[str]:
 
 
 def read_repository(root: str) -> dict | None:
-    """The repository file parsed, `None` when absent or not a JSON object."""
-    path = os.path.join(find_repo_root(root), CONFIG_FILE)
-    try:
-        with open(path, encoding="utf-8") as stream:
-            data = json.load(stream)
-    except (OSError, ValueError):
-        return None
-    return data if isinstance(data, dict) else None
+    """The repository document through the active provider, `None` when absent or not a JSON object."""
+    return repository_document(root)[0]

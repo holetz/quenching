@@ -1,6 +1,6 @@
 """The `config` pillar's own entry point — views over the configuration layers, and the seed.
 
-`init` seeds the file and `check` lists what it lacks. `show --effective` prints every key with
+`export` prints the repository layer through the active provider, `init` seeds the file and `check` lists what it lacks. `show --effective` prints every key with
 its effective value and the layer that supplied it (`default`, `user`, `repository`, `branch`)."""
 from __future__ import annotations
 
@@ -11,7 +11,9 @@ import shlex
 import sys
 
 from quenching.common.front import resolve_root
-from quenching.common.config import CONFIG_FILE, find_repo_root
+from quenching.common.config import (CONFIG_FILE, DEFAULT_PROVIDER, PROVIDER_ENV,
+                                      active_provider,
+                                      find_repo_root, repository_document)
 from quenching.common.io import write_text
 from quenching.common.output import FINDINGS, OK, REFUSAL, NoAbbrevParser, emit, refuse
 from quenching.common.version import VERSION
@@ -68,7 +70,41 @@ def cmd_host(args) -> int:
     return 0
 
 
+def _file_only(verb: str, args) -> int | None:
+    """Refuse a file write or audit while another provider answers: the service would not get it."""
+    provider, refusal = active_provider()
+    if provider is None:
+        return refuse(refusal, args.json)
+    if provider.name == DEFAULT_PROVIDER:
+        return None
+    return refuse({
+        "code": "cq-config-provider-not-file", "provider": provider.name,
+        "message": f"cq config {verb} works on {CONFIG_FILE}, and {PROVIDER_ENV}={provider.name} is active",
+        "remedy": f"unset {PROVIDER_ENV} to use the file, or change the configuration through {provider.name}",
+    }, args.json)
+
+
+def cmd_export(args) -> int:
+    document, info, refusal = repository_document(resolve_root(args.root))
+    if refusal:
+        return refuse(refusal, args.json)
+    if document is None:
+        state = "is unparseable: " + info["unparseable"] if info["unparseable"] else "holds no document"
+        return refuse({
+            "code": "cq-config-unparseable" if info["unparseable"] else "cq-config-absent",
+            "provider": info["name"], "config": info["path"],
+            "message": f"provider {info['name']} {state}",
+            "remedy": "fix or create the repository configuration before exporting it",
+        }, args.json)
+    emit(args.json, {"ok": True, "provider": info["name"], "path": info["path"],
+                     "document": document},
+         json.dumps(document, indent=2, ensure_ascii=False))
+    return OK
+
+
 def cmd_init(args) -> int:
+    if (refused := _file_only("init", args)) is not None:
+        return refused
     root = resolve_root(args.root)
     path = os.path.join(find_repo_root(root), CONFIG_FILE)
     if os.path.isfile(path):
@@ -91,6 +127,8 @@ def cmd_init(args) -> int:
 
 
 def cmd_check(args) -> int:
+    if (refused := _file_only("check", args)) is not None:
+        return refused
     root = resolve_root(args.root)
     path = os.path.join(find_repo_root(root), CONFIG_FILE)
     if not os.path.isfile(path):
@@ -127,6 +165,8 @@ def build_parser() -> argparse.ArgumentParser:
                     help="print the dispatch steps for the command after `--`; runs nothing")
     hp.add_argument("--json", action="store_true", help="machine-readable output")
     hp.add_argument("command", nargs="*", help="the command to dispatch, after `--`")
+    xp = sub.add_parser("export", help="print the repository layer as the envelope a service would hold")
+    xp.add_argument("--json", action="store_true", help="machine-readable output")
     ip = sub.add_parser("init", help="seed .claude/quenching.json with every adjustable default")
     ip.add_argument("--write", action="store_true", help="create the file (default: preview)")
     ip.add_argument("--json", action="store_true", help="machine-readable output")
@@ -144,4 +184,4 @@ def main(argv: list[str]) -> int:
     if not args.cmd:
         parser.print_usage(sys.stderr)
         return REFUSAL
-    return {"host": cmd_host, "init": cmd_init, "check": cmd_check}.get(args.cmd, cmd_show)(args)
+    return {"host": cmd_host, "export": cmd_export, "init": cmd_init, "check": cmd_check}.get(args.cmd, cmd_show)(args)

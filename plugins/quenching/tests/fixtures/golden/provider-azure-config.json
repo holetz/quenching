@@ -2,6 +2,8 @@
   "ok": true,
   "backend": "azure-boards",
   "backendDeclared": false,
+  "configProviderRefusal": null,
+  "configSource": "file",
   "root": null,
   "path": "<WS>/.claude/quenching.json",
   "present": false,

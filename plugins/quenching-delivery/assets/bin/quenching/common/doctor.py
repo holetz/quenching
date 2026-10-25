@@ -19,7 +19,8 @@ import sys
 from pathlib import Path
 from typing import Callable
 
-from quenching.common.config import (detect_profile, load_config, prepare_minimal_config,
+from quenching.common.config import (active_provider, detect_profile, load_config,
+                                     prepare_minimal_config,
                                      write_minimal_config)
 from quenching.common.io import read_text
 from quenching.common.output import OK, emit, refuse
@@ -157,13 +158,23 @@ def config_report(root: str) -> dict | None:
     missing_keys, read_repository = seed.missing_keys, seed.read_repository
     document = read_repository(root)
     if document is None:
-        return {"present": False, "missing": []}
+        provider, refusal = active_provider()
+        report = {"present": False, "missing": []}
+        if refusal:
+            report["refusal"] = refusal["message"]
+        elif provider.name != "file":
+            report["provider"] = provider.name
+        return report
     return {"present": True, "missing": missing_keys(document, root)}
 
 
 def _config_line(config: dict | None) -> str | None:
     if config is None:
         return None
+    if config.get("refusal"):
+        return f"config: {config['refusal']}"
+    if not config["present"] and config.get("provider") not in (None, "file"):
+        return f"config: served by the `{config['provider']}` provider — no document returned"
     if not config["present"]:
         return "config: no .claude/quenching.json — `cq config init --write` seeds it"
     if config["missing"]:
