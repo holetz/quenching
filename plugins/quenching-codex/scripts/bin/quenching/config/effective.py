@@ -8,12 +8,8 @@ longer knows which file a key came from. The `branch` layer is the `quenching` b
 """
 from __future__ import annotations
 
-import json
-import os
-
 from quenching.codex.config import DEFAULTS as CODEX_DEFAULTS
-from quenching.common.config import (CONFIG_FILE, NAMESPACES, _load_user_layer, find_repo_root)
-from quenching.common.io import read_text
+from quenching.common.config import NAMESPACES, _load_user_layer, repository_document
 from quenching.config.autonomy import DEFAULTS as AUTONOMY_DEFAULTS, coerce as coerce_autonomy
 
 # Namespace keys whose defaults live in code as data: the key is shown leaf by leaf, because the
@@ -21,20 +17,13 @@ from quenching.config.autonomy import DEFAULTS as AUTONOMY_DEFAULTS, coerce as c
 DEFAULT_BLOCKS = {("shared", "codex"): CODEX_DEFAULTS, ("shared", "autonomy"): AUTONOMY_DEFAULTS}
 
 
-def _read_repository(path: str) -> tuple[dict, dict]:
-    info = {"name": "repository", "path": path, "present": os.path.isfile(path),
-            "unparseable": None}
-    if not info["present"]:
-        return {}, info
-    try:
-        obj = json.loads(read_text(path) or "")
-    except json.JSONDecodeError as exc:
-        info["unparseable"] = str(exc)
-        return {}, info
-    if not isinstance(obj, dict):
-        info["unparseable"] = f"top level is {type(obj).__name__}, not an object"
-        return {}, info
-    return obj, info
+def _read_repository(root: str) -> tuple[dict, dict]:
+    document, found, refusal = repository_document(root)
+    info = {"name": "repository", "path": found["path"], "present": found["present"],
+            "unparseable": found["unparseable"], "provider": found["name"]}
+    if refusal:
+        info["refusal"] = refusal["message"]
+    return document or {}, info
 
 
 def _branch_layer(root: str, repository: dict) -> tuple[dict, dict]:
@@ -62,8 +51,7 @@ def _leaves(prefix: str, value, defaults: dict):
 
 def effective(root: str) -> dict:
     """The layers read and one row per effective key, sorted by key."""
-    repo_root = find_repo_root(root)
-    repository, repo_info = _read_repository(os.path.join(repo_root, CONFIG_FILE))
+    repository, repo_info = _read_repository(root)
     user = _load_user_layer()
     user_info = {"name": "user", "path": user["path"], "present": user["present"],
                  "unparseable": user["unparseable"]}

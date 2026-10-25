@@ -10,12 +10,10 @@ The secret travels only in the environment of the one `az`/`gh` subprocess that 
 not placed in argv, a refusal, a cache or a file; nothing here writes anywhere."""
 from __future__ import annotations
 
-import json
 import os
 import re
 
-from quenching.common.config import CONFIG_FILE, _load_user_layer, find_repo_root
-from quenching.common.io import read_text
+from quenching.common.config import CONFIG_FILE, _load_user_layer, repository_document
 from quenching.specs.backends.base import BackendRefusal
 
 STORE_KEYS = {"azure": ("organization", "project"), "github": ("repository",)}
@@ -36,12 +34,7 @@ def _refusal(code: str, message: str, **extra) -> dict:
 def _repository_specs(cwd: str) -> dict:
     """The repository file's `specs` block, read raw: the merged envelope no longer knows which
     layer a key came from, and that is exactly what a secret check needs to know."""
-    obj = None
-    text = read_text(os.path.join(find_repo_root(cwd), CONFIG_FILE))
-    try:
-        obj = json.loads(text) if text else None
-    except json.JSONDecodeError:
-        obj = None
+    obj, _info, _refusal = repository_document(cwd)
     block = obj.get("specs") if isinstance(obj, dict) else None
     return block if isinstance(block, dict) else {}
 

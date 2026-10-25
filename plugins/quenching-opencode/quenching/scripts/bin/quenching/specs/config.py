@@ -379,7 +379,8 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
         values.update(namespace(envelope, name))
     provider = envelope["provider"]
     provider_host = envelope["providerHost"]
-    out = {"path": path, "present": os.path.isfile(path), "unparseable": None,
+    out = {"path": path, "present": envelope["present"], "unparseable": None,
+           "configSource": envelope["source"], "configProviderRefusal": envelope["providerRefusal"],
            "unknownKeys": envelope["unknownKeys"],
            "unknownNamespaces": envelope["unknownNamespaces"],
            "migrationRefusal": envelope["migrationRefusal"],
