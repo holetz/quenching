@@ -67,7 +67,8 @@ def open_backend(root: str) -> tuple[SpecBackend | None, dict]:
         az, err = open_azure_backend(root)
         if err:
             return None, err
-        backend = az                                        # type: ignore[assignment]
+        from quenching.specs.sync import wrap_if_enabled   # local: sync imports this package
+        backend = wrap_if_enabled(az)                       # type: ignore[assignment]
     else:
         provider = cfg.get("unknownProvider") or "no recognized repository provider"
         return None, {
