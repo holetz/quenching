@@ -66,7 +66,9 @@ class Protocol(unittest.TestCase):
     def test_initialize_falls_back_to_a_supported_version(self):
         reply = mcp.handle(rpc(1, "initialize", {"protocolVersion": "1999-01-01"}), "/x")
         self.assertEqual(reply["result"]["protocolVersion"], mcp.PROTOCOL_VERSIONS[0])
-        self.assertEqual(set(reply["result"]["capabilities"]), {"tools"})
+        self.assertEqual(set(reply["result"]["capabilities"]), {"tools", "resources"})
+        self.assertEqual(reply["result"]["capabilities"]["resources"],
+                         {"subscribe": False, "listChanged": False})
 
     def test_a_notification_gets_no_reply_and_ping_answers(self):
         self.assertIsNone(mcp.handle({"jsonrpc": "2.0", "method": "notifications/initialized"}, "/x"))
@@ -347,6 +349,157 @@ class Elicitation(unittest.TestCase):
         replies = self.run_session(None)
         body = json.loads(replies[-1]["result"]["content"][0]["text"])
         self.assertEqual(body["code"], "mcp-confirmation-refused")
+
+
+STANDARD = ("---\ntitle: Alpha rule\ndescription: The alpha rule.\nauthority: current\n---\n\n"
+            "# Alpha rule\n\nIntro.\n\n## The first, with a comma\n\nFirst body.\n\n"
+            "```bash\n## not a heading\n```\n\n## The second\n\nSecond body.\n")
+GLOSSARY = ("---\ntitle: Glossary\n---\n\n# Glossary\n\n## Terms\n\n"
+            "- **front** — one local surface.\n"
+            "- [Fixpoint](concepts/fixpoint.md) — the state where one more pass changes nothing.\n"
+            "  A continuation line.\n"
+            "- **probe** — the read-only opening run.\n")
+
+
+class Resources(unittest.TestCase):
+    def setUp(self):
+        self.tmp = os.path.realpath(tempfile.mkdtemp(prefix="quenching-mcp-res-"))
+        self.addCleanup(__import__("shutil").rmtree, self.tmp, True)
+        subprocess.run(["git", "init", "-q", self.tmp], check=True)
+        std = pathlib.Path(self.tmp, "docs", "standards")
+        (std / "area").mkdir(parents=True)
+        (std / "area" / "alpha.md").write_text(STANDARD, encoding="utf-8")
+        (std / "huge.md").write_text(
+            "---\ntitle: Huge\nauthority: background\n---\n\n# Huge\n\n## Part\n\n"
+            + "word " * 9000 + "\n\n## Tail\n\nTail body.\n", encoding="utf-8")
+        pathlib.Path(self.tmp, "docs", "glossary.md").write_text(GLOSSARY, encoding="utf-8")
+
+    def read(self, uri):
+        return mcp.handle(rpc(1, "resources/read", {"uri": uri}), self.tmp)
+
+    def texts(self, uri):
+        reply = self.read(uri)
+        self.assertNotIn("error", reply, reply)
+        return reply["result"]["contents"]
+
+    def test_the_list_names_config_glossary_the_index_and_each_standard_with_its_authority(self):
+        listed = mcp.handle(rpc(1, "resources/list"), self.tmp)["result"]["resources"]
+        by_uri = {r["uri"]: r for r in listed}
+        self.assertEqual(set(by_uri), {
+            "quenching://config", "quenching://glossary", "quenching://standards",
+            "quenching://standards/area/alpha", "quenching://standards/huge"})
+        self.assertIn("[current] The alpha rule.", by_uri["quenching://standards/area/alpha"]["description"])
+        templates = mcp.handle(rpc(2, "resources/templates/list"), self.tmp)["result"]
+        self.assertEqual(len(templates["resourceTemplates"]), 2)
+
+    def test_a_repository_without_docs_lists_only_the_configuration(self):
+        with tempfile.TemporaryDirectory() as bare:
+            listed = mcp.handle(rpc(1, "resources/list"), bare)["result"]["resources"]
+        self.assertEqual([r["uri"] for r in listed], ["quenching://config"])
+
+    def test_config_is_the_payload_of_the_specs_config_verb(self):
+        body = json.loads(self.texts("quenching://config")[0]["text"])
+        self.assertTrue(body["ok"])
+        self.assertIn("backend", body)
+
+    def test_a_small_standard_reads_whole_with_its_outline_and_no_frontmatter(self):
+        contents = self.texts("quenching://standards/area/alpha")
+        self.assertEqual(contents[0]["mimeType"], "text/markdown")
+        self.assertIn("Second body.", contents[0]["text"])
+        self.assertNotIn("authority:", contents[0]["text"])
+        outline = json.loads(contents[1]["text"])
+        self.assertEqual([h["heading"] for h in outline["outline"]],
+                         ["Alpha rule", "The first, with a comma", "The second"])
+
+    def test_a_large_standard_answers_its_outline_and_a_section_read_answers_the_section(self):
+        contents = self.texts("quenching://standards/huge")
+        self.assertEqual(len(contents), 1)
+        body = json.loads(contents[0]["text"])
+        self.assertTrue(body["truncated"])
+        self.assertEqual(body["authority"], "background")
+        self.assertNotIn("word word", contents[0]["text"])
+        tail = self.texts("quenching://standards/huge?section=Tail")[0]["text"]
+        self.assertEqual(tail, "## Tail\n\nTail body.")
+
+    def test_a_section_resolves_by_prefix_and_a_fence_is_not_a_heading(self):
+        text = self.texts("quenching://standards/area/alpha?section=The%20first")[0]["text"]
+        self.assertIn("First body.", text)
+        self.assertIn("## not a heading", text)
+        self.assertNotIn("Second body.", text)
+        reply = self.read("quenching://standards/area/alpha?section=Nope")
+        self.assertEqual(reply["error"]["code"], mcp.BAD_PARAMS)
+        self.assertIn("Nope", reply["error"]["message"])
+
+    def test_a_section_above_the_ceiling_is_cut_and_flagged(self):
+        pathlib.Path(self.tmp, "docs", "standards", "wide.md").write_text(
+            "# Wide\n\n## Body\n\n" + "x" * (mcp.MAX_CHARS + 500) + "\n", encoding="utf-8")
+        content = self.texts("quenching://standards/wide?section=Body")[0]
+        body = json.loads(content["text"])
+        self.assertTrue(body["truncated"])
+        self.assertEqual(body["kept"], mcp.MAX_CHARS)
+
+    def test_the_glossary_lists_terms_and_answers_entries_by_term(self):
+        terms = json.loads(self.texts("quenching://glossary")[0]["text"])
+        self.assertEqual(terms["terms"], ["front", "Fixpoint", "probe"])
+        entry = self.texts("quenching://glossary?term=FIXPOINT")[0]["text"]
+        self.assertIn("A continuation line.", entry)
+        self.assertNotIn("probe", entry)
+        prefix = self.texts("quenching://glossary?term=pro")[0]["text"]
+        self.assertIn("read-only opening run", prefix)
+        reply = self.read("quenching://glossary?term=missing")
+        self.assertEqual(reply["error"]["code"], mcp.BAD_PARAMS)
+
+    def test_a_path_that_leaves_docs_standards_is_refused(self):
+        outside = pathlib.Path(self.tmp, "secret.md")
+        outside.write_text("# Secret\n\nnope\n", encoding="utf-8")
+        link_ok = True
+        try:
+            os.symlink(outside, pathlib.Path(self.tmp, "docs", "standards", "link.md"))
+        except (OSError, NotImplementedError):
+            link_ok = False
+        uris = ["quenching://standards/../../secret", "quenching://standards//etc/passwd",
+                "quenching://standards/area/..%2f..%2fsecret", "quenching://standards/a\\b",
+                "quenching://standards/area/alpha.md", "quenching://standards/.hidden/x"]
+        if link_ok:
+            uris.append("quenching://standards/link")
+        for uri in uris:
+            reply = self.read(uri)
+            self.assertIn("error", reply, uri)
+            self.assertIn(reply["error"]["code"], (mcp.BAD_PARAMS, mcp.NOT_FOUND), uri)
+        if link_ok:
+            listed = mcp.handle(rpc(1, "resources/list"), self.tmp)["result"]["resources"]
+            self.assertNotIn("quenching://standards/link", {r["uri"] for r in listed})
+
+    def test_an_unknown_uri_is_not_found_and_a_foreign_query_is_refused(self):
+        self.assertEqual(self.read("quenching://nope")["error"]["code"], mcp.NOT_FOUND)
+        self.assertEqual(self.read("file:///etc/passwd")["error"]["code"], mcp.NOT_FOUND)
+        self.assertEqual(self.read("quenching://config?x=1")["error"]["code"], mcp.BAD_PARAMS)
+        self.assertEqual(self.read("quenching://glossary?section=a")["error"]["code"],
+                         mcp.BAD_PARAMS)
+        self.assertEqual(self.read(None)["error"]["code"], mcp.BAD_PARAMS)
+
+    def test_the_tool_tables_are_unchanged_and_nothing_here_calls_a_write_verb(self):
+        self.assertEqual(set(mcp.TOOLS), TOOL_NAMES)
+        self.assertEqual(set(mcp.WRITES), WRITE_NAMES)
+        calls = []
+        real = mcp.run_core
+        mcp.run_core = lambda argv, root, stdin=None: (calls.append(argv), real(argv, root, stdin))[1]
+        self.addCleanup(setattr, mcp, "run_core", real)
+        for uri in ("quenching://config", "quenching://glossary",
+                    "quenching://standards/area/alpha"):
+            self.read(uri)
+        self.assertEqual(calls, [["config"]])
+
+    def test_the_real_pipe_serves_a_resource_and_keeps_stdout_to_protocol_lines(self):
+        lines = [rpc(1, "initialize", {"protocolVersion": "2025-06-18"}),
+                 rpc(2, "resources/read", {"uri": "quenching://glossary?term=front"})]
+        run = subprocess.run([sys.executable, str(CQ), "--root", self.tmp, "specs", "mcp"],
+                             input="\n".join(json.dumps(m) for m in lines) + "\n",
+                             capture_output=True, text=True, timeout=60)
+        self.assertEqual(run.returncode, 0, run.stderr)
+        replies = [json.loads(line) for line in run.stdout.splitlines()]
+        self.assertEqual([r["id"] for r in replies], [1, 2])
+        self.assertIn("one local surface", replies[1]["result"]["contents"][0]["text"])
 
 
 if __name__ == "__main__":
