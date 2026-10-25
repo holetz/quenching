@@ -1,4 +1,5 @@
 """`migrate --to git` — move the specs of a tracker backend onto the `quenching` branch.
+(`--to azure` is the other direction, below: the git store onto Azure Boards.)
 
 Dry run unless `--write`. The whole front is read from the configured tracker backend (every
 continuation part included, because `read_spec` reassembles the document), written under the
@@ -14,6 +15,7 @@ rewrites only the OPEN ones to the thin card, after the commit has landed.
 from __future__ import annotations
 
 import json
+import re
 
 from quenching.common.config import load_config as load_envelope, namespace
 from quenching.common.frontmatter import parse_frontmatter
@@ -22,7 +24,10 @@ from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.backends.git import open_git_backend
 from quenching.specs.commands.output import Emitter
 from quenching.specs.config import BRANCH_CONFIG_KEYS, CONFIG_FILE, load_config
-from quenching.specs.parse import FIELD_KEYS, derive_info
+from quenching.specs.commands.deps import _flow
+from quenching.specs.parse import FIELD_KEYS, derive_info, strip_frontmatter_keys
+from quenching.specs.parse.deps import deps_of
+from quenching.specs.parse.epics import is_epic
 from quenching.specs.parse.fields import set_frontmatter_key
 from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.tasks import task_progress
@@ -139,6 +144,87 @@ def migrate(source, target, source_namespace: dict, *, write: bool,
                 report["cardErrors"].append({"id": spec_id, "message": exc.err.get("message")})
         report["ok"] = report["ok"] and not report["cardErrors"]
     return report
+
+
+# -- `--to azure` ----------------------------------------------------------- #
+# Azure allocates the work item ids, so a spec's id changes. These helpers are pure: ordering,
+# the id remap, and the document equality that tolerates the fields the backend stores natively.
+
+AZURE_REF_KEYS = ("epic", "parent")
+_MEMBER_RE = re.compile(r"((?:^|\s)—\s*spec\s*:\s*#?)(\d+)(?=\s|—|$)",
+                        re.IGNORECASE | re.MULTILINE)
+
+
+def azure_order(items: list[tuple[int, str, str]]) -> tuple[list[int], list[dict]]:
+    """`(creation order, unresolved)`: dependencies before dependents, ties by source id.
+
+    A numeric `dependsOn` the front does not hold, a spec waiting for itself, a dependency
+    cycle and an epic member naming an absent id are `unresolved` — the write refuses on any.
+    A non-numeric dependency (slug, `owner/repo#id`) is not this store's and is ignored."""
+    ids = {spec_id for spec_id, _, _ in items}
+    waits: dict[int, set[int]] = {}
+    unresolved: list[dict] = []
+    for spec_id, _, text in sorted(items):
+        fm = parse_frontmatter(text)
+        deps = set()
+        for dep in deps_of(fm):
+            if not dep.isdigit():
+                continue
+            if int(dep) == spec_id:
+                unresolved.append({"id": spec_id, "kind": "self", "ref": int(dep)})
+            elif int(dep) not in ids:
+                unresolved.append({"id": spec_id, "kind": "missing", "ref": int(dep)})
+            else:
+                deps.add(int(dep))
+        waits[spec_id] = deps
+        if is_epic(fm):
+            unresolved += [{"id": spec_id, "kind": "missing-member", "ref": int(m.group(2))}
+                           for m in _MEMBER_RE.finditer(text) if int(m.group(2)) not in ids]
+    order: list[int] = []
+    pending = dict(waits)
+    while pending:
+        ready = sorted(i for i, deps in pending.items() if deps <= set(order))
+        if not ready:
+            unresolved += [{"id": i, "kind": "cycle", "ref": sorted(pending[i])}
+                           for i in sorted(pending)]
+            break
+        order.append(ready[0])
+        del pending[ready[0]]
+    return order, unresolved
+
+
+def remap_text(text: str, idmap: dict[int, int], *, members: bool = True) -> str:
+    """The document with its structured id references moved onto the new ids: `dependsOn`,
+    the `epic`/`parent` keys, and (with `members`) an epic's `— spec: #<id>` items. Prose is
+    never touched. Always called on the SOURCE text, so a new id is never remapped twice."""
+    fm = parse_frontmatter(text)
+    deps = deps_of(fm)
+    if any(d.isdigit() and int(d) in idmap for d in deps):
+        text = set_frontmatter_key(text, "dependsOn", _flow(
+            [str(idmap[int(d)]) if d.isdigit() and int(d) in idmap else d for d in deps]))
+    for key in AZURE_REF_KEYS:
+        value = str(fm.get(key) or "").strip().lstrip("#")
+        if value.isdigit() and int(value) in idmap:
+            text = set_frontmatter_key(text, key, str(idmap[int(value)]))
+    if members and is_epic(fm):
+        text = _MEMBER_RE.sub(lambda m: m.group(1) + str(idmap.get(int(m.group(2)),
+                                                                    m.group(2))), text)
+    return text
+
+
+def _norm(value):
+    return None if value in (None, "", []) else (
+        [str(v) for v in value] if isinstance(value, list) else str(value))
+
+
+def document_matches(expected: str, info: dict) -> bool:
+    """Whether the item read back holds the expected document: the body with the natively
+    stored keys stripped, and those keys compared as values, since the tracker keeps them
+    in fields of its own."""
+    held, want = info["frontmatter"], parse_frontmatter(expected)
+    same_body = (strip_frontmatter_keys(info["text"], FIELD_KEYS).strip()
+                 == strip_frontmatter_keys(expected, FIELD_KEYS).strip())
+    return same_body and all(_norm(held.get(k)) == _norm(want.get(k)) for k in FIELD_KEYS)
 
 
 def cmd_migrate(args, root: str, out: Emitter) -> int:
