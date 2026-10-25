@@ -1,10 +1,11 @@
 """The git guard: what a Codex run must leave as it found it, read without writing anything.
 
 Codex runs with `--dangerously-bypass-approvals-and-sandbox`, so its bounds are proved by code
-here, before and after the run. `refs` are the worktree's `HEAD`, branch, reflog length, stash ref
-and every worktree's `HEAD`. `tree` maps every path `git status` reports to its status code and
+here, before and after the run. `refs` are the worktree's `HEAD`, branch, reflog length and stash
+ref: the guard proves the reviewed worktree unchanged, never a neighbouring worktree's `HEAD` or a
+ref of the shared repository, which a parallel worker moves legitimately. `tree` maps every path `git status` reports to its status code and
 the hash of its bytes, so the review can prove it changed nothing at all. The review's snapshot
-also holds every ref, the hash of the index and the ignored files that carry local configuration
+also holds the hash of the index and the ignored files that carry local configuration
 (`.claude/**` and `*.local.json`), the `ls-files -v` flags and the bytes of every file they hide
 (`assume-unchanged`, `skip-worktree`), and a symlink by its target. A git command that fails is `GuardError`: the guard fails
 closed, never as an empty tree.
@@ -80,19 +81,13 @@ def _state(worktree: str, *args: str) -> str:
 
 
 def refs(worktree: str, strict: bool = False) -> dict:
-    """The refs Codex must not move. `strict` raises `GuardError` when git fails, instead of
+    """The refs of this worktree Codex must not move. `strict` raises `GuardError` when git fails, instead of
     reading the failure as an empty value."""
     run, state = (git_strict, _state) if strict else (git, git)
-    others = {}
-    for block in run(worktree, "worktree", "list", "--porcelain").split("\n\n"):
-        fields = dict(line.split(" ", 1) for line in block.splitlines() if " " in line)
-        if "worktree" in fields:
-            others[fields["worktree"]] = fields.get("HEAD")
     return {"head": run(worktree, "rev-parse", "HEAD").strip(),
             "branch": state(worktree, "symbolic-ref", "-q", "HEAD").strip(),
             "reflogLength": len(run(worktree, "reflog", "--format=%H").splitlines()),
-            "stash": state(worktree, "rev-parse", "-q", "--verify", "refs/stash").strip(),
-            "worktrees": others}
+            "stash": state(worktree, "rev-parse", "-q", "--verify", "refs/stash").strip()}
 
 
 def _digest(full: str) -> str:
@@ -131,10 +126,9 @@ def _local_config(path: str) -> bool:
 
 
 def strict_refs(worktree: str) -> dict:
-    """Every ref (`for-each-ref`) and the hash of the index (`ls-files -s`); fails closed."""
+    """The hash of the index (`ls-files -s`) and of its flags (`ls-files -v`); fails closed."""
     flags = git_strict(worktree, "ls-files", "-v", "-z")
-    return {"allRefs": git_strict(worktree, "for-each-ref", "--format=%(refname) %(objectname)"),
-            "index": hashlib.sha256(
+    return {"index": hashlib.sha256(
                 git_strict(worktree, "ls-files", "-s", "-z").encode("utf-8", "replace")
             ).hexdigest(),
             "flags": hashlib.sha256(flags.encode("utf-8", "replace")).hexdigest()}
