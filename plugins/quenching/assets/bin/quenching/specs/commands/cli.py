@@ -37,6 +37,7 @@ from quenching.specs.commands.promote import cmd_promote
 from quenching.specs.commands.read import cmd_export, cmd_list, cmd_status
 from quenching.specs.commands.release import cmd_release
 from quenching.specs.commands.scrub import cmd_scrub
+from quenching.specs.commands.sync import cmd_sync
 from quenching.specs.commands.task import cmd_discover, cmd_task
 from quenching.specs.commands.validate import cmd_validate
 from quenching.specs.config import find_repo_root
@@ -316,6 +317,18 @@ def _add_migrate_export_serve(sub) -> None:
                                "confirmation on the gated moves, and read-only "
                                "resources (config, standards, glossary)")
 
+    sp = sub.add_parser("sync", help="the local Azure Boards cache: status, reconcile, apply a "
+                                     "service-hook event, or serve the loopback receiver")
+    ssub = sp.add_subparsers(dest="sync_cmd")
+    add_json(ssub.add_parser("status", help="the cache's path, items, stale count, last reconciliation"))
+    add_json(ssub.add_parser("reconcile", help="compare every id and revision with Azure; "
+                                               "refetch what changed"))
+    add_json(ssub.add_parser("apply", help="record ONE service-hook event read from stdin"))
+    sv = add_json(ssub.add_parser("serve", help="the service-hook receiver, loopback only; the "
+                                                "secret comes from QUENCHING_SYNC_HOOK_SECRET"))
+    sv.add_argument("--port", type=int, default=0, help="port (default: a free one)")
+    sv.add_argument("--host", default="127.0.0.1", help="loopback address only")
+
     sp = add_json(sub.add_parser("serve", help="the local spec portal — a browser board over "
                                                 "the same backend, loopback only"))
     sp.add_argument("--port", type=int, default=0, help="port (default: a free one)")
@@ -390,6 +403,7 @@ DISPATCH: dict = {
     "export": cmd_export,
     "serve": cmd_serve,
     "mcp": cmd_mcp,
+    "sync": cmd_sync,
 }
 
 
