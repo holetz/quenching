@@ -1,6 +1,7 @@
 """The OpenCode distribution generator: layout, deny-only permissions, and drift detection."""
 import importlib.util
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -45,6 +46,23 @@ class GeneratedTree(unittest.TestCase):
         text = self.text("quenching/references/align/tool-resolution.md")
         self.assertIn("OpenCode does **not** require `cq`", text)
         self.assertNotIn("codex plugin list", text)
+
+    def test_every_agent_bash_map_mirrors_the_cq_grants_of_its_source_tools(self):
+        for source in sorted((sync.SOURCE / "agents").glob("*.md")):
+            tools = next(line[6:].strip() for line in source.read_text(encoding="utf-8").splitlines()
+                         if line.startswith("tools:"))
+            grants = re.findall(r"Bash\(cq( [^:()]+)?:\*\)", tools)
+            header = self.text(f"agents/quenching-{source.stem}.md").split("\n---\n", 1)[0]
+            if re.search(r"(^|, )Bash(,|$)", tools):
+                expected = "  bash: allow\n"
+            elif grants:
+                rules = "".join(f'    "cq{verbs} *": allow\n' for verbs in grants)
+                expected = f'  bash:\n{rules}    "*": ask\n'
+            elif "Bash(" in tools:
+                expected = "  bash: ask\n"
+            else:
+                expected = "  bash: deny\n"
+            self.assertIn(expected, header + "\n", source.name)
 
     def test_read_only_agent_is_never_wider_than_cq_allow(self):
         header = self.text("agents/quenching-verifier.md").split("\n---\n", 1)[0]
