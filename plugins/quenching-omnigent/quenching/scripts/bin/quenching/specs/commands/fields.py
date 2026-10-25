@@ -17,6 +17,8 @@ from quenching.specs.parse.records import record_keys
 from quenching.specs.schema import (DEFAULT_VERIFICATION, MERGE_NO_PR_STRATEGIES,
                                     VERIFICATION_POLICIES, load_schema)
 
+RUN_VERDICTS = ("pass", "fail")
+
 
 def cmd_verification(args, root: str, out: Emitter) -> int:
     """Read ONE spec's verification policy, or set it — through the backend, after capture.
@@ -279,6 +281,21 @@ def cmd_record(args, root: str, out: Emitter) -> int:
                          f"under it, so there is nothing for `pr:` to record"},
                  f"refused: `pr:` is set but `{merged.get('strategy')}` has no PR route")
         return 2
+    if args.name == "run":
+        verdict = [pair.partition("=")[2].strip() for pair in args.set
+                   if pair.partition("=")[0].strip() == "verifier"]
+        attested = any(pair.replace(" ", "") == "by=verifier" for pair in args.set)
+        if verdict and verdict[-1] in RUN_VERDICTS and not attested:
+            out.emit(args.json,
+                     {"ok": False, "code": "sp-run-verdict-unattested", "record": args.name,
+                      "given": verdict[-1],
+                      "message": f"`verifier={verdict[-1]}` is the verdict of the `verifier` agent: "
+                             f"state it with `--set by=verifier` in the same call, or write "
+                             f"`verifier=not-run`"},
+                     "refused: a verifier verdict needs `--set by=verifier`")
+            return 2
+        if verdict and verdict[-1] not in RUN_VERDICTS:
+            merged.pop("by", None)
     # The schema's field order, so a record reads the same however it was assembled and a
     # re-stamp never reshuffles what a human wrote.
     ordered = {k: merged[k] for k in fields if k in merged}

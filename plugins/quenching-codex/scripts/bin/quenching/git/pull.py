@@ -127,6 +127,49 @@ def _is_merged(url: str) -> bool:
         return False
 
 
+def _stamp_merge(spec: str, number: int, url: str) -> dict:
+    """Merge the `merge` record of the spec this PR was merged for, through `cmd_record`.
+
+    Write-once: a record already present is reported as `stamped: false`, never rewritten.
+    The subject follows GitHub's `Merge pull request #N from owner/head` without the `#`, which frontmatter reads as a comment."""
+    quiet = _Quiet()
+    try:
+        backend, err = open_backend(find_repo_root(os.getcwd()))
+        info, err2 = (None, err) if err else read_one(backend, spec, quiet)
+        if err2 or not info:
+            return {"ok": False, "message": (err2 or {}).get("message", "no such spec")}
+        present = (info.get("frontmatter") or {}).get("merge")
+        if present:
+            return {"ok": True, "stamped": False, "value": present}
+        head = _real_head(number, url)
+        if isinstance(head, str):
+            return {"ok": False, "message": f"head unreadable: {head}"}
+        owner = url.split("/")[3]
+        subject = f"Merge pull request {number} from {owner}/{head[1]}"
+        ns = SimpleNamespace(spec=spec, name="merge", json=True, set=[
+            "strategy=merge-commit", f"subject={subject}", f"pr={number}"])
+        code = cmd_record(ns, find_repo_root(os.getcwd()), quiet)
+    except Exception as e:  # the PR is merged already: a stamp that blew up is reported, not raised
+        return {"ok": False, "message": str(e)}
+    if code != 0:
+        return {"ok": False, "message": quiet.seen.get("message", f"record exited {code}")}
+    return {"ok": True, "stamped": True, "value": quiet.seen.get("value")}
+
+
+def _merged(args, payload: dict, human: str) -> int:
+    """Emit a merge that happened, stamping the spec's `merge` record when `--spec` names one."""
+    spec = getattr(args, "spec", None)
+    if spec:
+        number = int(PR_URL.fullmatch(args.url).group(1))
+        payload["merge"] = stamp = _stamp_merge(spec, number, args.url)
+        if not stamp["ok"]:
+            payload.update(ok=False, reason="stamp-failed", message=stamp["message"])
+            emit(args.json, payload, f"{human}; `merge` record not stamped: {stamp['message']}")
+            return FINDINGS
+    emit(args.json, payload, human)
+    return OK
+
+
 def _merge(args) -> int:
     from quenching.git.azure_pull import AZURE_PR_URL, merge_azure
 
@@ -141,9 +184,8 @@ def _merge(args) -> int:
     if azure:
         return merge_azure(args, azure)
     def already_merged() -> int:
-        emit(args.json, {"ok": True, "url": args.url, "number": int(match.group(1)),
-                         "alreadyMerged": True}, f"already merged {args.url}")
-        return OK
+        return _merged(args, {"ok": True, "url": args.url, "number": int(match.group(1)),
+                              "alreadyMerged": True}, f"already merged {args.url}")
 
     if _is_merged(args.url):
         return already_merged()
@@ -183,8 +225,7 @@ def _merge(args) -> int:
         emit(args.json, payload, f"not merged: {payload['message']}")
         return FINDINGS
     payload["ok"] = True
-    emit(args.json, payload, f"merged {args.url} (--merge)")
-    return OK
+    return _merged(args, payload, f"merged {args.url} (--merge)")
 
 
 class _Quiet(Emitter):
