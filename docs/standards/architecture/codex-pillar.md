@@ -81,13 +81,14 @@ codex exec --dangerously-bypass-approvals-and-sandbox --ignore-user-config --ign
 ## The git guard
 
 `quenching.codex.guard` reads, before and after each run and without writing anything, the
-worktree's `HEAD`, branch, reflog length, the stash ref and every worktree's `HEAD`, and `git
-status` with untracked files. The review reads the refs strictly: a git command that fails is
+worktree's `HEAD`, branch, reflog length and the stash ref, and `git status` with untracked files.
+The guard is narrowed to the reviewed worktree: the `HEAD` of another worktree and the refs of the
+shared repository (other branches, tags, `origin/*`) are not read, so the legitimate commit or push
+of a parallel worker never stops a review. The review reads the refs strictly: a git command that fails is
 `GuardError`, never an empty value, while a detached `HEAD` and a repository without `refs/stash`
 are state.
 
-- **The review** also records every ref (`git for-each-ref`, so a new branch or tag moves it), the
-  hash of the index (`git ls-files -s`, so a swapped staged blob moves it), the hash of the index
+- **The review** also records the hash of the index (`git ls-files -s`, so a swapped staged blob moves it), the hash of the index
   flags (`git ls-files -v`, so `assume-unchanged` and `skip-worktree` move it) and, for every path
   `git status` reports and every file those flags hide, its status code and the hash of its bytes
   (a symlink is hashed as its `os.readlink` target plus the bytes it resolves to; every symlink that

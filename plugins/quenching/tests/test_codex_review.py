@@ -134,15 +134,30 @@ class TheReview(unittest.TestCase):
             subprocess.run(["git", "-C", str(self.worktree), *args], check=True, env=env,
                            capture_output=True)
 
-    def test_a_new_branch_trips_the_guard(self):
-        payload, code = self.guarded("branch")
-        self.assertEqual((2, "codex-git-guard"), (code, payload["code"]))
-        self.assertIn("allRefs", payload["guard"]["moved"])
+    def test_a_new_branch_or_tag_is_not_this_worktrees_state(self):
+        for mode in ("branch", "tag"):
+            with self.subTest(mode=mode):
+                payload, code = self.guarded(mode, run=f"r-{mode}")
+                self.assertEqual(0, code, payload)
 
-    def test_a_new_tag_trips_the_guard(self):
-        payload, code = self.guarded("tag")
-        self.assertEqual((2, "codex-git-guard"), (code, payload["code"]))
-        self.assertIn("allRefs", payload["guard"]["moved"])
+    def test_a_commit_in_a_neighbouring_worktree_does_not_move_the_snapshot(self):
+        before = self.snap()
+        neighbour = self.tmp / "neighbour"
+        self.git("worktree", "add", "-q", "-b", "other", str(neighbour))
+        env = {**GIT_ENV, "PATH": os.environ["PATH"], "HOME": str(self.tmp)}
+        (neighbour / "other.py").write_text("y = 1\n", encoding="utf-8")
+        for args in (["add", "."], ["commit", "-q", "-m", "neighbour"]):
+            subprocess.run(["git", "-C", str(neighbour), *args], check=True, env=env,
+                           capture_output=True)
+        self.git("tag", "from-neighbour")
+        self.assertEqual(before, self.snap())
+
+    def test_a_commit_in_the_reviewed_worktree_moves_the_snapshot(self):
+        before = self.snap()
+        (self.worktree / "own.py").write_text("z = 1\n", encoding="utf-8")
+        self.git("add", ".")
+        self.git("commit", "-q", "-m", "own")
+        self.assertNotEqual(before["head"], self.snap()["head"])
 
     def test_a_swapped_index_blob_trips_the_guard(self):
         env = {**GIT_ENV, "PATH": os.environ["PATH"], "HOME": str(self.tmp)}

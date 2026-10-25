@@ -340,7 +340,7 @@ the rule that Codex only reads), `review.md` and `events.jsonl`.
 **No sandbox, a git guard instead.** Codex runs with `--dangerously-bypass-approvals-and-sandbox`,
 because the native sandbox needs admin rights most machines lack and fails there with errors. The
 environment loses `GH_TOKEN`, `GITHUB_TOKEN`, `AWS_*`, `AZURE_*` and `GOOGLE_*`, and the guard
-compares `HEAD`, branch, reflog, stash, every ref, the index, every worktree's `HEAD`, the status
+compares the reviewed worktree's `HEAD`, branch, reflog, stash, the index, the status
 and bytes of every path `git status` reports and the ignored local configuration (`.claude/**`,
 `*.local.json`), before and after. Every symlink that resolves to a file (tracked, ignored or
 pointing outside the worktree) is recorded with its target and the hash of the resolved bytes; a
@@ -378,8 +378,8 @@ is **on by default**, under `shared.codex.executor` in `.claude/quenching.json`,
 --dangerously-bypass-approvals-and-sandbox -C <worktree>`; Codex's native sandbox is never asked
 for, because most machines lack the admin rights it needs. The bounds are the plugin's: `--ignore-user-config`, an
 environment without `GH_TOKEN`, `GITHUB_TOKEN`, `AWS_*`, `AZURE_*` or `GOOGLE_*`, a prompt that
-forbids git, and a **git guard** that compares `HEAD`, branch, reflog, stash, every worktree's
-`HEAD` and `git status` before and after — any divergence or a path outside `files:` is exit `2`,
+forbids git, and a **git guard** that compares the worktree's `HEAD`, branch, reflog, stash
+and `git status` before and after — any divergence or a path outside `files:` is exit `2`,
 the diff is discarded inside `files:` and Claude writes the task. What remains is a command run
 outside the worktree that git cannot see. There is no sandbox setting: a leftover
 `shared.codex.executor.sandbox` or `windowsSandbox` is ignored.
