@@ -126,9 +126,26 @@ def scan_text(where: str, text: str, pats: dict[str, re.Pattern[str]]) -> list[F
     """Every pattern match in `text`, one finding per line and label."""
     findings: list[Finding] = []
     for number, line in enumerate(text.splitlines(), start=1):
-        findings.extend(Finding(where, number, label, line.strip()[:EXCERPT_CHARS])
-                        for label, pattern in pats.items() if pattern.search(line))
+        matched = [label for label, pattern in pats.items() if pattern.search(line)]
+        if matched:
+            excerpt = _masked(line, pats).strip()[:EXCERPT_CHARS]
+            findings.extend(Finding(where, number, label, excerpt) for label in matched)
     return findings
+
+
+def _masked(line: str, pats: dict[str, re.Pattern[str]]) -> str:
+    """`line` with every non-empty span any pattern matches replaced by a mask."""
+    spans = sorted((m.start(), m.end()) for pattern in pats.values()
+                   for m in pattern.finditer(line) if m.end() > m.start())
+    out, cursor = [], 0
+    for start, end in spans:
+        if end <= cursor:
+            continue
+        out.append(line[cursor:max(start, cursor)])
+        out.append("***")
+        cursor = end
+    out.append(line[cursor:])
+    return "".join(out)
 
 
 def normalize_paths(text: str, root: str | None = None) -> str:

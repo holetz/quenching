@@ -316,10 +316,24 @@ def _run_top_doctor(argv: list[str], command_index: int) -> int:
                       write=parsed.write)
 
 
+def _provider_refusal() -> int | None:
+    """Exit 2 with the reason when `QUENCHING_CONFIG_PROVIDER` names no registered provider.
+
+    Decided here, once, so no front that loads the configuration runs on defaults it was never
+    meant to use: the unknown provider never falls back to the file, and never to nothing."""
+    from quenching.common.config import active_provider
+    _provider, refusal = active_provider()
+    if refusal is None:
+        return None
+    print(f"cq: {refusal['code']}: {refusal['message']}; {refusal['remedy']}", file=sys.stderr)
+    return refusal["exit"]
+
+
 def main(argv: list[str]) -> int:
     command, command_index = _top_level_command(argv)
     if command == "doctor" and command_index is not None:
-        return _run_top_doctor(argv, command_index)
+        refused = _provider_refusal()
+        return refused if refused is not None else _run_top_doctor(argv, command_index)
     if command == "modules" and command_index == 0:
         return run_modules(argv[1:])
     parser = build_parser()
@@ -336,6 +350,9 @@ def main(argv: list[str]) -> int:
         print(f"cq: {args.pillar} belongs to module {module_owners().get(args.pillar, '?')}, "
               "which is not enabled; enable it beside quenching-specs", file=sys.stderr)
         return 2
+    refused = _provider_refusal()
+    if refused is not None:
+        return refused
     for capability, package, module in LOANS.get(args.pillar, ()):
         if present(package):
             lend(capability, module)
