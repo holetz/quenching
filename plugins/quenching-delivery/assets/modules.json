@@ -74,6 +74,7 @@
           "handoff.md"
         ],
         "hooks": true,
+        "mcp": true,
         "packages": [
           "specs",
           "git",

@@ -46,8 +46,6 @@ def load_manifest(root: Path) -> dict:
         if "owned" in module:
             if not isinstance(module["owned"].get("mcp", False), bool):
                 raise ValueError(f"{name}: owned.mcp must be boolean")
-            if module["owned"].get("mcp") and not (root / data["source"] / ".mcp.json").is_file():
-                raise ValueError(f"{name}: owned.mcp needs {data['source']}/.mcp.json")
             for package in module["owned"]["packages"]:
                 if package in planned_owners:
                     raise ValueError(f"duplicate planned package owner: {package}")
