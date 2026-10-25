@@ -11,6 +11,7 @@ already use for their own pillars, kept flat here because five leaf subcommands 
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 
 from quenching.common.output import REFUSAL, NoAbbrevParser
@@ -34,6 +35,9 @@ DISPATCH = {"base": cmd_base, "specs": cmd_specs, "stale": cmd_stale,
             "commit": cmd_commit, "audit": cmd_audit, "state": cmd_state,
             "push": cmd_push, "prune": cmd_prune, "pr": cmd_pr,
             "history": cmd_history, "preflight": cmd_preflight}
+
+
+READ_VERBS = ("base", "stale", "conventions", "state", "history", "preflight", "audit")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -187,6 +191,11 @@ def build_parser() -> argparse.ArgumentParser:
                     help="a sha the worker reported; repeat for each")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
 
+    for verb in READ_VERBS:
+        sub.choices[verb].add_argument(
+            "--root", metavar="PATH",
+            help="read this repository instead of the one the shell starts in; a relative "
+                 "path in another option resolves against it")
     return p
 
 
@@ -199,4 +208,10 @@ def main(argv: list[str]) -> int:
     if not args.cmd:
         parser.print_usage(sys.stderr)
         return REFUSAL
+    root = getattr(args, "root", None)
+    if root is not None:
+        if not os.path.isdir(root):
+            print(f"cq git: --root {root!r} is not a directory", file=sys.stderr)
+            return REFUSAL
+        os.chdir(root)
     return DISPATCH[args.cmd](args)

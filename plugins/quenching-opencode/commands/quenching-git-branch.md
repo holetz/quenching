@@ -102,8 +102,8 @@ directory is not the shell's cwd:** the harness may return the cwd to the base c
 command, so from here on each command carries the worktree explicitly — `cd <worktree> && …` in
 the same call, `git -C <worktree>`, `cq --root <worktree>` — or a cwd-dependent tool (`cq` without
 `--root`, `git diff`, tests) reads the base checkout and reports green over a tree that did not
-change. `cq git …` takes no `--root`
-(`git declares no --root`): it always runs as `cd <worktree> && cq git …`. Then, only with an ID from step 2
+change. `cq git …` takes no `--root` on its write verbs
+(a usage error): it always runs as `cd <worktree> && cq git …`. Then, only with an ID from step 2
 (the Worktree form already stamped `branch:` through `--spec`; **Branch** form stamps it by hand):
 ```bash
 cq() { python3 "${QUENCHING_OPENCODE_ROOT:-${XDG_CONFIG_HOME:-$HOME/.config}/opencode/quenching}/scripts/cq" "$@"; }

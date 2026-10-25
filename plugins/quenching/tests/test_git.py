@@ -3592,3 +3592,43 @@ class StaleOpenPullRequests(unittest.TestCase):
     def test_github_reads_open_prs_with_gh(self):
         got, argv = self.heads("github", [{"headRefName": "plan/7-x"}])
         self.assertEqual((got, argv[:3]), ({"plan/7-x"}, ["gh", "pr", "list"]))
+
+
+class RootOption(RepoCase):
+    """`--root` on the read verbs: the verb reads that repository from any other cwd."""
+
+    def test_read_verbs_read_the_named_repository_from_another_cwd(self):
+        other = os.path.join(self.tmp, "elsewhere")
+        os.makedirs(other)
+        for verb in ("state", "base", "conventions", "stale"):
+            proc = subprocess.run([sys.executable, CQ, "git", verb, "--root", self.repo, "--json"],
+                                  cwd=other, capture_output=True, text=True)
+            self.assertEqual(proc.returncode, 0, (verb, proc.stderr))
+        state = json.loads(subprocess.run(
+            [sys.executable, CQ, "git", "state", "--root", self.repo, "--json"],
+            cwd=other, capture_output=True, text=True).stdout)
+        self.assertEqual(os.path.realpath(state["root"]), os.path.realpath(self.repo))
+        self.assertEqual(state["branch"], "main")
+        log = subprocess.run([sys.executable, CQ, "git", "history", "log", "HEAD",
+                              "--root", self.repo, "--json"],
+                             cwd=other, capture_output=True, text=True)
+        self.assertEqual(log.returncode, 0, log.stderr)
+
+    def test_without_root_the_cwd_still_decides(self):
+        other = os.path.join(self.tmp, "elsewhere")
+        os.makedirs(other)
+        proc = subprocess.run([sys.executable, CQ, "git", "state", "--json"], cwd=other,
+                              capture_output=True, text=True)
+        self.assertNotEqual(os.path.realpath(json.loads(proc.stdout).get("root") or ""),
+                            os.path.realpath(self.repo))
+
+    def test_a_root_that_is_not_a_directory_is_a_refusal(self):
+        proc = subprocess.run([sys.executable, CQ, "git", "state", "--root",
+                               os.path.join(self.tmp, "missing")], capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 2)
+        self.assertIn("not a directory", proc.stderr)
+
+    def test_write_verbs_still_take_no_root(self):
+        proc = subprocess.run([sys.executable, CQ, "git", "commit", "--root", self.repo,
+                               "--subject", "x"], capture_output=True, text=True)
+        self.assertNotEqual(proc.returncode, 0)

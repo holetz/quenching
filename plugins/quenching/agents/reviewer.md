@@ -23,7 +23,7 @@ Your shell grants are the closed list in `tools:`, for reading history and repro
 else:
 
 - history: `cq git history log <range>`, `cq git history show <sha>`, `cq git history diff
-  <sha>^ <sha>` (add `--path <p>` to narrow): a fixed argv with no output-to-file option;
+  <sha>^ <sha>` (add `--path <p>` to narrow; add `--root <repo>` when the reviewed repository is not the session's, never a `cd <repo> &&` prefix): a fixed argv with no output-to-file option;
 - reproduction: the gate `bash scripts/verify_repo.sh`, the only thing you execute.
 
 **These grants are prefixes, not a sandbox.** Never redirect output (`>`, `>>`, `tee`), and never write a file; the
