@@ -155,5 +155,66 @@ class CredentialEnv(unittest.TestCase):
             self.assertNotIn(TOKEN.encode(), b"".join(data for _, data in tree(repo)))
 
 
+class Wiring(unittest.TestCase):
+    def test_declared_azure_skips_every_az_call(self):
+        from quenching.specs.backends import azure
+        decl = {"store": {"azure": {"organization": "acme", "project": "Board"}}}
+        with workspace(decl) as repo, mock.patch("subprocess.run") as run:
+            got, err = azure.resolve_azure_project(repo)
+        self.assertEqual((("https://dev.azure.com/acme", "Board"), {}), (got, err))
+        run.assert_not_called()
+
+    def test_declared_github_skips_every_gh_call(self):
+        from quenching.specs.backends import github
+        decl = {"store": {"github": {"repository": "acme/specs"}}}
+        with workspace(decl) as repo, mock.patch("subprocess.run") as run:
+            got = github.resolve_github_repo(repo)
+        self.assertEqual(("acme/specs", None, {}), got)
+        run.assert_not_called()
+
+    def test_a_refused_declaration_is_returned_not_raised(self):
+        from quenching.specs.backends import azure, github
+        decl = {"store": {"azure": {"organization": "a", "project": "p", "token": "x"}}}
+        with workspace(decl) as repo, mock.patch("subprocess.run") as run:
+            self.assertEqual("sp-store-secret", azure.resolve_azure_project(repo)[1]["code"])
+            self.assertEqual("sp-store-secret", github.resolve_github_repo(repo)[2]["code"])
+        run.assert_not_called()
+
+    def test_nothing_declared_still_asks_az(self):
+        from quenching.specs.backends import azure
+        done = mock.Mock(returncode=1, stdout="", stderr="boom")
+        with workspace() as repo, mock.patch("subprocess.run", return_value=done) as run:
+            azure.resolve_azure_project(repo)
+        self.assertEqual("devops", run.call_args.args[0][1])
+        self.assertIsNone(run.call_args.kwargs["env"])
+
+    def test_az_and_gh_receive_the_token_only_in_env(self):
+        from quenching.specs.backends import azure, github
+        user = {"credential": {"azure": {"source": "env", "env": "MY_AZ"},
+                               "github": {"source": "env", "env": "MY_GH"}}}
+        done = mock.Mock(returncode=0, stdout="{}", stderr="")
+        with workspace(user_specs=user, env={"MY_AZ": TOKEN, "MY_GH": TOKEN}) as repo, \
+                mock.patch("subprocess.run", return_value=done) as run:
+            azure._az_run(repo, "devops", "configure", "--list")
+            github._gh_run(repo, "repo", "view")
+        for call in run.call_args_list:
+            self.assertNotIn(TOKEN, " ".join(call.args[0]))
+        self.assertEqual(TOKEN, run.call_args_list[0].kwargs["env"]["AZURE_DEVOPS_EXT_PAT"])
+        self.assertEqual(TOKEN, run.call_args_list[1].kwargs["env"]["GH_TOKEN"])
+
+    def test_env_missing_refuses_in_the_runner_and_base_stays_safe(self):
+        from quenching.git import base
+        from quenching.specs.backends import azure
+        user = {"credential": {"azure": {"source": "env", "env": "MY_AZ"}}}
+        with workspace(user_specs=user) as repo, \
+                mock.patch.dict(os.environ, {}, clear=False), mock.patch("subprocess.run") as run:
+            os.environ.pop("MY_AZ", None)
+            with self.assertRaises(BackendRefusal) as ctx:
+                azure._az_run(repo, "devops", "configure", "--list")
+            self.assertEqual("sp-credential-env-missing", ctx.exception.err["code"])
+            self.assertIsNone(base._is_host_default(repo, "azure-boards", "main"))
+        run.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()
