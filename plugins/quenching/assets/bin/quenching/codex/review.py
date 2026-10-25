@@ -8,8 +8,8 @@ the probe falls back on. The environment loses the same secrets as the executor'
 arrives on stdin, after the rule that Codex only reads; the events and the last message land in
 `.quenching/codex/<run>/`.
 
-The git guard is read before and after: the refs (`HEAD`, branch, reflog, stash, every worktree's
-`HEAD`, every ref), the index hash, the ignored local configuration (`.claude/**`, `*.local.json`)
+The git guard is read before and after: the reviewed worktree's refs (`HEAD`, branch, reflog,
+stash), the index hash, the ignored local configuration (`.claude/**`, `*.local.json`)
 and, for every path `git status` reports, its status and bytes. Any change, or a git command that
 fails, is exit 2 `codex-git-guard` naming it: the caller never cleans it and hands the tree to the
 human.
