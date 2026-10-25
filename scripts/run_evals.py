@@ -9,6 +9,9 @@ fixture is snapshotted and handed with the arm's output to the grader profile, w
 for every arm and model compared. A grade whose evidence is not a verbatim excerpt of that
 material is downgraded to `unknown`.
 
+By default each arm runs in a disposable container (`--image`) where the profile's `container.permission`
+applies; `--host` runs it on the host, where no permission is widened. The grader always runs on the host.
+
 Writes `<out>/<suite>/grading.json`, `<out>/<suite>/benchmark.json` and `<out>/summary.json`.
 """
 from __future__ import annotations
@@ -159,13 +162,20 @@ def plugin_dirs() -> list[str]:
     return [str(ROOT / m["path"]) for m in modules]
 
 
-def render(profile: dict, arm: str | None, values: dict, extra: list[str]) -> list[str]:
-    """The argv for one invocation; `arm=None` is the grader's, which loads nothing."""
+def render(profile: dict, arm: str | None, values: dict, extra: list[str], container: bool = False) -> list[str]:
+    """The argv for one invocation; `arm=None` is the grader's, which loads nothing.
+
+    `container` renders the command that runs inside the image: the profile's `container.argv`, where the
+    standalone token {permission} expands to `container.permission`. On the host that token expands to nothing.
+    """
     if arm is not None and arm not in profile.get("arms", {}):
         raise ValueError(f"this harness profile has no `{arm}` arm")
     arm_tokens = profile["arms"][arm] if arm is not None else []
+    block = profile.get("container", {})
+    template = block["argv"] if container else profile["argv"]
+    permission = list(block.get("permission", [])) if container else []
     argv: list[str] = []
-    for token in profile["argv"]:
+    for token in template:
         if token == "{arm}":
             for item in arm_tokens:
                 if item == "{plugin_dirs}":
@@ -175,9 +185,30 @@ def render(profile: dict, arm: str | None, values: dict, extra: list[str]) -> li
                     argv.append(item.format(**values))
         elif token == "{extra}":
             argv += extra
+        elif token == "{permission}":
+            argv += permission
         else:
             argv.append(token.format(**values))
     return argv
+
+
+def container_argv(args, inner: list[str], mount: str, workdir: str) -> list[str]:
+    """The disposable container around one arm: only `mount` is bound, variables travel by name."""
+    names = ["EVAL_CASE", "EVAL_BASE", *args.env]
+    return [args.runtime, "run", "--rm", "-i", "--network", "bridge",
+            "--user", f"{os.getuid()}:{os.getgid()}", "-e", "HOME=/tmp/eval-home",
+            *[a for k, v in GIT_ENV.items() for a in ("-e", f"{k}={v}")],
+            *[a for name in names for a in ("-e", name)],
+            "--mount", f"type=bind,source={mount},target={mount}", "-w", workdir,
+            "--label", "quenching.eval=1", args.image, *inner]
+
+
+def arm_argv(args, profile: dict, arm: str, values: dict, mount: str) -> list[str]:
+    """The argv for one arm: the container's in the default mode, the plain profile's under --host."""
+    if args.host:
+        return render(profile, arm, values, args.extra_arg)
+    return container_argv(args, render(profile, arm, values, args.extra_arg, container=True),
+                          mount, values["workdir"])
 
 
 def codex_output(stdout: str) -> tuple[str, int | None]:
@@ -393,7 +424,7 @@ def run_arm(args, profiles: dict, suite: Path, case: dict, arm: str) -> dict:
             arm_env.pop("CQ", None)  # the without arm gets no path to the tool or the skill bodies
         values = {"prompt": case["prompt"], "model": args.model, "workdir": str(workspace),
                   "max_turns": str(args.max_turns)}
-        record = invoke(render(profile, arm, values, args.extra_arg), workspace, arm_env, args.timeout)
+        record = invoke(arm_argv(args, profile, arm, values, temporary), workspace, arm_env, args.timeout)
         text, tokens = output_text(profile, record["stdout"])
         output = text + (f"\n[stderr]\n{record['stderr'][-4000:]}" if record["stderr"] else "")
         try:
@@ -454,6 +485,16 @@ def benchmark(data: dict, cases: list[dict], args, arms: list[str]) -> dict:
     return result
 
 
+def refusal_without_container(args, profile: dict) -> str | None:
+    """Why the default mode cannot run, or None. The way out is always named."""
+    if "argv" not in profile.get("container", {}):
+        return (f"harness {args.harness!r} declares no `container` block; pass --host to run it on the host, "
+                "where no permission is widened and the mode comes through --extra-arg")
+    if not args.image:
+        return "the default mode runs each arm in a container: pass --image, or --host to run on the host"
+    return None
+
+
 def run(args) -> int:
     profiles = load_profiles(Path(args.harnesses))
     arms = [a.strip() for a in args.arms.split(",") if a.strip()]
@@ -464,6 +505,11 @@ def run(args) -> int:
     for arm in arms:
         if arm not in ARMS or arm not in profiles[args.harness].get("arms", {}):
             print(f"run_evals: harness {args.harness!r} has no {arm!r} arm", file=sys.stderr)
+            return 2
+    if not args.host:
+        reason = refusal_without_container(args, profiles[args.harness])
+        if reason:
+            print(f"run_evals: {reason}", file=sys.stderr)
             return 2
     suites = []
     for directory in suite_dirs(args.suite):
@@ -479,14 +525,16 @@ def run(args) -> int:
                 for arm in arms:
                     values = {"prompt": case["prompt"], "model": args.model,
                               "workdir": "<workspace>", "max_turns": str(args.max_turns)}
-                    argv = render(profiles[args.harness], arm, values, args.extra_arg)
+                    argv = arm_argv(args, profiles[args.harness], arm, values, "<fixture>")
                     print(json.dumps({"suite": suite_name(directory), "case": case["id"], "arm": arm,
                                       "argv": argv}, ensure_ascii=False))
         return 0
     out = Path(args.out or ROOT / ".quenching/evals" / args.run_id)
     summary = {"runId": args.run_id, "harness": args.harness, "model": args.model,
                "grader": {"harness": args.grader_harness, "model": args.grader_model},
-               "arms": arms, "suites": []}
+               "arms": arms, "suites": [],
+               "mode": {"where": "host"} if args.host else
+               {"where": "container", "runtime": args.runtime, "image": args.image}}
     for directory, data, cases in suites:
         name = suite_name(directory)
         target = out / name
@@ -557,6 +605,12 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--max-turns", type=int, default=30)
     p.add_argument("--extra-arg", action="append", default=[], help="an argument added to every arm; repeatable")
     p.add_argument("--grader-extra-arg", action="append", default=[], help="an argument added to the grader")
+    p.add_argument("--host", action="store_true",
+                   help="run the arms on the host instead of in a container; no profile widens a permission there")
+    p.add_argument("--image", help="the agent image of the default container mode")
+    p.add_argument("--runtime", choices=("docker", "podman"), default="docker", help="the container runtime")
+    p.add_argument("--env", action="append", default=[], metavar="NAME",
+                   help="a variable passed into the container by name, never by value; repeatable")
     p.add_argument("--json", action="store_true")
     return p
 

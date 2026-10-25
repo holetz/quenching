@@ -147,6 +147,22 @@ with `--harnesses`). It keeps both arms: the `with` arm loads the quenching modu
   to the snapshot the grader reads beside `git status`, the refs' logs and the diff. The rule of
   [A measured rate is conditional on its fixture](#a-measured-rate-is-conditional-on-its-fixture)
   holds unchanged: the fixture is reported with the rate.
+- **The default mode is a disposable container; `--host` is the operator's own.** Without
+  `--host`, each arm runs in a container from `--image`, with only the run directory mounted (the
+  fixture and the `setup.sh` origin), a temporary `HOME`, the fixture's git identity and the
+  invoking user's uid and gid. Automatic permission is a property of that envelope, not of the
+  bare profile: it lives in the profile's `container.permission` (`--auto` for `opencode`) and is
+  expanded only into the argv that runs inside the image. The host argv never receives it, and
+  under `--host` no profile widens a permission: the operator passes the mode through
+  `--extra-arg`. A profile without a `container` block is refused unless `--host` is passed.
+- **The image contract.** `container.argv` is the command the container runs, so the image's
+  `ENTRYPOINT` either does not exist or executes its own arguments. Provider variables travel only
+  by name (`--env NAME`); the value never reaches an argv, and the image removes it from the
+  agent's environment before it calls the harness. The grader stays on the host, with no arm and
+  no permission flag.
+- **The `opencode` flags come from the H1 spike, not from a re-run.** `run --model --format json`
+  and, in the container, `--auto` and `--command` are the ones the spike runs used against
+  OpenCode 1.19.4; no live OpenCode has run them since.
 - `--check` validates every suite without running anything, and the repository gate runs it
   through the runner's unit tests. A live run needs a harness and costs tokens, so it is never part
   of the gate.
