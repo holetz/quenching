@@ -20,3 +20,16 @@ cp -R quenching/. ~/.config/opencode/quenching/
 Commands run as `/quenching-<front>-<verb>` (`opencode run --command quenching-specs-status`).
 Prose paths assume `~/.config/opencode/quenching`; `cq` honours `QUENCHING_OPENCODE_ROOT` for another root.
 Commands and subagents pin no model: the session's configured model runs every role.
+
+## Permissions
+
+Subagents that hold scoped `cq` access in the source carry `bash: {"cq *": allow, "*": ask}`;
+`edit` and `webfetch` stay `deny` where the source grants none. Commands take their permissions from
+the session, so allow `cq` there the same way in `opencode.json`:
+
+```json
+{"permission": {"bash": {"cq *": "allow", "*": "ask"}}}
+```
+
+The CI templates under `assets/zensical/` (`ci-github-pages.yml`, `azure-pipelines-docs.yml`) are not
+shipped in this distribution.
