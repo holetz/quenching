@@ -33,6 +33,10 @@ def open_backend(root: str) -> tuple[SpecBackend | None, dict]:
     if root in _BACKEND_CACHE:
         return _BACKEND_CACHE[root], {}
     cfg = load_config(root)
+    if cfg.get("providerRefusal"):
+        # An unknown configuration provider leaves the envelope empty: the declared backend is
+        # never read, so going on would infer one from the remote.
+        return None, cfg["providerRefusal"]
     name = cfg.get("provider") or cfg.get("backend")
     declared = cfg.get("unknownBackend")
     raw_backend = cfg.get("data", {}).get("backend")

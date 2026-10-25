@@ -7,8 +7,8 @@ The task is judged again by `eligibility` (the quota included), so a caller cann
 loses `GH_TOKEN`, `GITHUB_TOKEN` and every `AWS_*`, `AZURE_*` and `GOOGLE_*` variable; the prompt
 forbids git and any write outside the task's `files:`.
 
-The git guard is read before and after: the worktree's `HEAD` and branch, its reflog tip, the
-stash ref, every worktree's `HEAD`, and `git status` contained in `files:`. A divergence is
+The git guard is read before and after: the reviewed worktree's own `HEAD`, branch, reflog length
+and stash ref (never another worktree's `HEAD`), and `git status` contained in `files:`. A divergence is
 exit 2 with the offending paths. With `outside` non-empty (paths `files:` never declared) Codex
 may not clean them: it stops the task as `needs-human` naming them. With `outside` empty (a moved
 `HEAD`, branch, reflog or stash) Codex discards the diff inside `files:` (never `reset`, `stash`
