@@ -368,6 +368,11 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     _add_next_and_epic(sub)
     _add_inspection(sub)
     _add_migrate_export_serve(sub)
+    for verb in ("status", "show", "section"):
+        sub.choices[verb].add_argument(
+            "--root", metavar="PATH", default=argparse.SUPPRESS,
+            help="read this repository instead of the one the shell starts in; wins over "
+                 "the global --root (a flag after the verb matches the verb's grants)")
     return p, sub
 
 
