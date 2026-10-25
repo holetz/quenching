@@ -123,6 +123,17 @@ class Git(GuardEnv):
                          "git var GIT_COMMITTER_IDENT")
         self.assertEqual(self.remote_log_or_empty(), [])
 
+    def test_a_denylisted_email_refuses_before_the_card_is_created(self):
+        backend = GitBackend(self.clone("a"))
+        card = mock.Mock()
+        card.create.side_effect = no_transport
+        with mock.patch.object(GitBackend, "card", return_value=card), \
+                mock.patch.dict(os.environ, {"GIT_AUTHOR_EMAIL": f"dev@{TERM}.example"}):
+            with self.assertRaises(BackendRefusal) as caught:
+                backend.create_spec("plans", spec("clean"))
+        self.assertLeak(caught.exception, "denylist:1")
+        card.create.assert_not_called()
+
     def remote_log_or_empty(self) -> list[str]:
         try:
             return self.remote_log()

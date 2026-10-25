@@ -63,6 +63,9 @@ class Patterns(LeakEnv):
         self.assertTrue(pats["home-path"].search(f"see {HOME}/x"))
         self.assertTrue(pats["home-slug"].search("~/.claude/projects/-home-alice-repo/memory"))
         self.assertFalse(pats["home-path"].search("/home/alicea/x"))
+        with mock.patch.dict(os.environ, {"HOME": "/home/jane.doe"}):
+            self.assertTrue(leak.path_patterns()["home-slug"].search(
+                "~/.claude/projects/-home-jane-doe-repo/memory"))
         with mock.patch.dict(os.environ, {"HOME": "/"}):
             self.assertEqual(leak.path_patterns(), {})
 
@@ -139,6 +142,38 @@ class Scans(LeakEnv):
         self.assertEqual(sorted(f.label for f in found), ["brazilian-cpf", "denylist:3"])
         deleted = f"(delete) {leak.ZERO_SHA} refs/heads/main {base}\n"
         self.assertEqual(leak.scan_push(self.repo, deleted, leak.patterns()), [])
+
+    def test_push_judges_an_added_line_that_starts_with_plus_plus(self):
+        base = git(self.repo, "rev-parse", "HEAD").strip()
+        pathlib.Path(self.repo, "a.txt").write_text("clean\n++ acme-corp\n", encoding="utf-8")
+        git(self.repo, "commit", "-q", "-am", "plus")
+        head = git(self.repo, "rev-parse", "HEAD").strip()
+        found = leak.scan_push(self.repo, f"refs/heads/main {head} refs/heads/main {base}\n",
+                               leak.patterns())
+        self.assertEqual([f.label for f in found], ["denylist:3"])
+
+    def test_new_ref_is_judged_against_the_destination_remote_only(self):
+        pathlib.Path(self.repo, "a.txt").write_text(f"clean\ncpf {CPF}\n", encoding="utf-8")
+        git(self.repo, "commit", "-q", "-am", "leak")
+        head = git(self.repo, "rev-parse", "HEAD").strip()
+        git(self.repo, "update-ref", "refs/remotes/private/main", head)
+        line = f"refs/heads/main {head} refs/heads/main {leak.ZERO_SHA}\n"
+        pats = leak.patterns(generic_only=True)
+        self.assertEqual([f.label for f in leak.scan_push(self.repo, line, pats, "public")],
+                         ["brazilian-cpf"])
+        self.assertEqual([f.label for f in leak.scan_push(self.repo, line, pats)],
+                         ["brazilian-cpf"])
+        self.assertEqual(leak.scan_push(self.repo, line, pats, "private"), [])
+
+    def test_staged_scans_a_type_change(self):
+        os.remove(pathlib.Path(self.repo, "a.txt"))
+        try:
+            os.symlink(f"{HOME}/secret", pathlib.Path(self.repo, "a.txt"))
+        except (OSError, NotImplementedError):
+            self.skipTest("this platform cannot create a symlink")
+        git(self.repo, "add", "a.txt")
+        found = leak.scan_staged(self.repo, leak.patterns(generic_only=True))
+        self.assertEqual([(f.where, f.label) for f in found], [("a.txt", "home-path")])
 
     def test_all_scans_tracked_files_and_skips_binaries(self):
         pathlib.Path(self.repo, "bin.dat").write_bytes(b"\0" + DATABRICKS_HOST.encode())

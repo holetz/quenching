@@ -60,7 +60,7 @@ of the pattern it matched. Exactly one mode is required:
 | Mode | Scans | Caller |
 | --- | --- | --- |
 | `--staged` | the index's content and the configured `user.email` | the `pre-commit` hook |
-| `--pre-push` | the commits named on stdin by git: added lines, messages, author and committer emails | the `pre-push` hook |
+| `--pre-push [--remote <name>]` | the commits named on stdin by git: added lines, messages, author and committer emails. A new ref is judged against the destination's remote-tracking refs only (`--remote`, the hook's first argument), or whole without it | the `pre-push` hook |
 | `--all` | every tracked file | the repository gate, which CI runs |
 
 Three pattern sets feed one scanner, from one module (`quenching/common/leak.py`) that the specs

@@ -3,4 +3,4 @@
 # Git passes the refs being pushed on stdin; `cq security leak --pre-push` reads them there.
 set -Eeuo pipefail
 ROOT="$(git rev-parse --show-toplevel)"
-exec python3 "$ROOT/plugins/quenching/assets/bin/cq" security leak --pre-push --root "$ROOT"
+exec python3 "$ROOT/plugins/quenching/assets/bin/cq" security leak --pre-push --remote "$1" --root "$ROOT"
