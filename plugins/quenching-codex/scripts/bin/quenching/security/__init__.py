@@ -33,6 +33,8 @@ def build_parser() -> argparse.ArgumentParser:
     mode.add_argument("--pre-push", action="store_true",
                       help="leak: the commits named on stdin by the pre-push hook")
     mode.add_argument("--all", action="store_true", help="leak: every tracked file")
+    parser.add_argument("--remote", help="leak --pre-push: the destination remote's name (the "
+                                         "hook's first argument)")
     parser.add_argument("--generic-only", action="store_true",
                         help="leak: skip the private denylist (CI)")
     parser.add_argument("--json", action="store_true", help="print machine-readable output")
@@ -62,8 +64,8 @@ def main(argv: list[str]) -> int:
         }, as_json)
     if args.command == "leak":
         return _leak(args, root, as_json)
-    if args.staged or args.pre_push or args.all or args.generic_only:
-        parser.error("--staged, --pre-push, --all and --generic-only belong to `leak`")
+    if args.staged or args.pre_push or args.all or args.generic_only or args.remote:
+        parser.error("--staged, --pre-push, --all, --remote and --generic-only belong to `leak`")
     payload = build_report(root).as_dict()
     payload["controls"] = owner_controls("security", root)
     emit(as_json, payload, _human(payload))
@@ -85,7 +87,7 @@ def _leak(args: argparse.Namespace, root: str, as_json: bool) -> int:
         if args.staged:
             found = leak.scan_staged(root, pats)
         elif args.pre_push:
-            found = leak.scan_push(root, sys.stdin.read(), pats)
+            found = leak.scan_push(root, sys.stdin.read(), pats, args.remote)
         else:
             found = leak.scan_all(root, pats)
     except subprocess.CalledProcessError as failed:

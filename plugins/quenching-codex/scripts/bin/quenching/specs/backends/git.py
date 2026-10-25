@@ -410,6 +410,7 @@ class GitBackend(SpecBackend):
                 raise _refusal("sp-card-none", "--card needs a card provider; none is configured")
             spec_id = int(card)
         elif spec_id is None and client is not None:
+            self._guard_identity()  # before the card: a refused identity must leave no orphan
             try:
                 spec_id = client.create(cards.card_state(fresh))
             except BackendRefusal as exc:

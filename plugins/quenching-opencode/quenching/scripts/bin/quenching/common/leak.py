@@ -92,8 +92,9 @@ def _home() -> str:
 
 
 def _home_slug(home: str) -> str:
-    """The prefix Codex gives a project directory under `home`: `/a/b` → `-a-b`."""
-    return "-" + re.sub(r"[/\\:]+", "-", home.strip("/\\")) if home else ""
+    """The prefix Codex gives a project directory under `home`: every `/`, `\\`, `:` and
+    `.` becomes `-`, one for one (`session.transcript.encode_cwd`): `/a/b.c` → `-a-b-c`."""
+    return "".join("-" if c in "\\/:." else c for c in home)
 
 
 def path_patterns() -> dict[str, re.Pattern[str]]:
@@ -200,7 +201,7 @@ def scan_staged(root: str, pats: dict[str, re.Pattern[str]]) -> list[Finding]:
     email = subprocess.run(["git", "config", "user.email"], cwd=root, capture_output=True,
                            text=True).stdout
     findings = scan_text("git config user.email", email, pats)
-    for path in _git(root, "diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z").split("\0"):
+    for path in _git(root, "diff", "--cached", "--name-only", "--diff-filter=ACMRT", "-z").split("\0"):
         if not path:
             continue
         blob = subprocess.run(["git", "show", f":{path}"], cwd=root, check=True,
@@ -210,32 +211,52 @@ def scan_staged(root: str, pats: dict[str, re.Pattern[str]]) -> list[Finding]:
     return findings
 
 
-def _commits_to_push(root: str, local_sha: str, remote_sha: str) -> list[str]:
-    """The commits a push publishes; a new ref publishes what no remote-tracking ref has yet."""
+def _commits_to_push(root: str, local_sha: str, remote_sha: str,
+                     remote: str | None = None) -> list[str]:
+    """The commits a push publishes; a new ref publishes what the destination's remote-tracking
+    refs do not have yet. Without the destination's name every commit of the ref is judged: a
+    commit already on another remote may still be new to this one."""
     if local_sha == ZERO_SHA:
         return []
-    revs = [local_sha, "--not", "--remotes"] if remote_sha == ZERO_SHA else [f"{remote_sha}..{local_sha}"]
+    if remote_sha != ZERO_SHA:
+        revs = [f"{remote_sha}..{local_sha}"]
+    elif remote:
+        revs = [local_sha, "--not", f"--remotes={remote}"]
+    else:
+        revs = [local_sha]
     return _git(root, "rev-list", *revs).split()
 
 
-def scan_push(root: str, hook_input: str, pats: dict[str, re.Pattern[str]]) -> list[Finding]:
+def _added_lines(patch: str) -> list[str]:
+    """The `+` rows of a patch, without its `+++ <path>` headers: a header follows `--- `, so an
+    added line that itself starts with `++` is still judged."""
+    added, previous = [], ""
+    for row in patch.splitlines():
+        if row.startswith("+") and not (row.startswith("+++ ") and previous.startswith("--- ")):
+            added.append(row[1:])
+        previous = row
+    return added
+
+
+def scan_push(root: str, hook_input: str, pats: dict[str, re.Pattern[str]],
+              remote: str | None = None) -> list[Finding]:
     """Emails, messages and added lines of every commit named by `pre-push`'s stdin lines
-    (`<local ref> <local sha> <remote ref> <remote sha>`)."""
+    (`<local ref> <local sha> <remote ref> <remote sha>`); `remote` is the destination's name,
+    the hook's first argument."""
     findings: list[Finding] = []
     seen: set[str] = set()
     for line in hook_input.splitlines():
         fields = line.split()
         if len(fields) != 4:
             continue
-        for sha in _commits_to_push(root, fields[1], fields[3]):
+        for sha in _commits_to_push(root, fields[1], fields[3], remote):
             if sha in seen:
                 continue
             seen.add(sha)
             header = _git(root, "show", "-s", "--format=%ae%n%ce%n%B", sha)
             findings.extend(scan_text(f"commit {sha[:12]} (header)", header, pats))
-            added = [row[1:] for row in
-                     _git(root, "show", "--format=", "--unified=0", "--no-color", sha).splitlines()
-                     if row.startswith("+") and not row.startswith("+++")]
+            added = _added_lines(
+                _git(root, "show", "--format=", "--unified=0", "--no-color", sha))
             findings.extend(scan_text(f"commit {sha[:12]} (diff)", "\n".join(added), pats))
     return findings
 
