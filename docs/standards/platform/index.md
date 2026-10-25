@@ -20,4 +20,5 @@ records the rest below as deferrals (never a silent skip):
 Per-subject ledger the verify gate reads. A subject is "done" only when every candidate is
 **present or listed here** with a one-line why.
 
-- _(none yet — fill on population)_
+- [windows-support.md](windows-support.md) — Windows without administrator rights.
+- _(other candidates: not yet populated)_
