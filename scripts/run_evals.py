@@ -7,7 +7,7 @@ harness is a profile from `eval_harnesses.json` (an argv template), so the same 
 Claude Code, Codex, OpenCode or any command line. After the arm, the observable state of the
 fixture is snapshotted and handed with the arm's output to the grader profile, which is the same
 for every arm and model compared (default: the Flash 1017 model service through the gateway profile; an
-`unknown` regraded only by an declared escalation grader). A grade whose evidence is not a verbatim excerpt of that
+`unknown` regraded only by a declared escalation grader). A grade whose evidence is not a verbatim excerpt of that
 material is downgraded to `unknown`.
 
 By default each arm runs in a disposable container (`--image`) where the profile's `container.permission`
