@@ -30,7 +30,7 @@ import time
 
 from quenching.codex.guard import (BYPASS, GuardError, clean_env, git, refs, run_skip, strict_refs,
                                   tree)
-from quenching.codex.probe import stop
+from quenching.codex.probe import group_kwargs, stop
 
 RUN_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 NOT_MEASURED = "not measured"
@@ -158,7 +158,7 @@ def run_review(root: str, settings: dict, worktree: str, prompt: str, run: str |
             open(events_path, "w", encoding="utf-8") as stdout, \
             open(os.path.join(run_dir, "stderr.log"), "w", encoding="utf-8") as stderr:
         process = subprocess.Popen([binary, *argv], stdin=stdin, stdout=stdout, stderr=stderr,
-                                   cwd=worktree, env=clean_env(env), start_new_session=True)
+                                   cwd=worktree, env=clean_env(env), **group_kwargs())
         try:
             code = process.wait(timeout=settings["timeoutSeconds"])
         except subprocess.TimeoutExpired:

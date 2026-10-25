@@ -37,12 +37,23 @@ def codex_home(env: dict) -> str:
     return env.get("CODEX_HOME") or os.path.join(os.path.expanduser("~"), ".codex")
 
 
+def group_kwargs() -> dict:
+    """`Popen` keywords that put the child in a group of its own, so `stop` can end its tree."""
+    if os.name == "nt":
+        return {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+    return {"start_new_session": True}
+
+
 def stop(process: subprocess.Popen) -> None:
-    """Kill the whole process group: a hung Codex may have children of its own."""
-    try:
-        os.killpg(process.pid, signal.SIGKILL)
-    except (ProcessLookupError, PermissionError):
-        pass
+    """Kill the whole process tree: a hung Codex may have children of its own."""
+    if os.name == "nt":
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(process.pid)],
+                       capture_output=True, check=False)
+    else:
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
     process.wait()
 
 
@@ -83,7 +94,7 @@ def read_app_server(binary: str, seconds: float,
     try:
         process = subprocess.Popen([binary, *APP_SERVER_ARGV], stdin=subprocess.PIPE,
                                    stdout=subprocess.PIPE, stderr=errors, text=True,
-                                   start_new_session=True, env=env)
+                                   env=env, **group_kwargs())
     except OSError as exc:
         errors.close()
         return None, f"app-server did not start: {exc}"
