@@ -28,6 +28,13 @@ class TurnEndTests(unittest.TestCase):
     def test_a_waiting_sentence_is_not_the_end_of_the_turn(self):
         self.assertIn("is not the end of the turn", waiting_section())
 
+    def test_with_no_live_worker_the_work_is_finished_and_the_real_state_is_read(self):
+        text = waiting_section()
+        self.assertIn("when no worker is alive, its work is finished", text)
+        self.assertIn("however its last message reads", text)
+        self.assertIn("Read the real state with `cq specs status <id>` and the worktree's git state", text)
+        self.assertIn("then continue with execute, conclude or the next spec", text)
+
 
 if __name__ == "__main__":
     unittest.main()
