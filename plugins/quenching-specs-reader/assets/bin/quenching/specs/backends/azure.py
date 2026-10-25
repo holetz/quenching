@@ -19,6 +19,7 @@ from quenching.specs.backends.hybrid import (hybrid_project, hybrid_split, hybri
                                              hybrid_unwrap, hybrid_wrap)
 from quenching.specs.config import (AZ_DEFAULT_DISCOVERY_TAG, announce_unproved, load_config,
                                     resolve_work_item_type)
+from quenching.specs.parse.deps import deps_of
 from quenching.specs.parse import (FIELD_KEYS, PHASES, board_state_of,
                                    carry_forward_fields, declared_tags, derive_info,
                                    derive_labels, strip_frontmatter_keys, tags_outside_catalog)
@@ -498,6 +499,52 @@ def azure_patch_body(current: dict, desired: dict, *, markdown: bool = False,
                               "url": parent[1]}})
     return ops
 
+
+
+AZ_PREDECESSOR_REL = "System.LinkTypes.Dependency-Reverse"
+_AZ_URL_ID = re.compile(r"/(\d+)/?$")
+
+
+def azure_predecessor_ids(fm: dict, own_id: int | None = None) -> list[int]:
+    """The work item ids a spec waits for: its `dependsOn`, keeping only the all-digit ids (a
+    work item of this store) and never its own. Declaration order, deduplicated."""
+    ids: list[int] = []
+    for dep in deps_of(fm):
+        if dep.isdigit() and int(dep) != own_id and int(dep) not in ids:
+            ids.append(int(dep))
+    return ids
+
+
+def azure_predecessor_links(relations: list[dict]) -> dict[int, int]:
+    """`{predecessor id: index in the item's relations}` for its predecessor links only.
+
+    The id is read off the tail of the relation's url; any other relation type (parent,
+    `ArtifactLink`) and any url that does not end in an id is not a predecessor and is left out."""
+    links: dict[int, int] = {}
+    for index, rel in enumerate(relations or []):
+        if rel.get("rel") != AZ_PREDECESSOR_REL:
+            continue
+        m = _AZ_URL_ID.search(str(rel.get("url") or ""))
+        if m:
+            links.setdefault(int(m.group(1)), index)
+    return links
+
+
+def azure_predecessor_ops(relations: list[dict], wanted: list[int],
+                          url_of) -> list[dict]:
+    """The JSON patch ops that make the item's predecessor links equal `wanted`.
+
+    DIFFED BY ID, never by position: a link already present emits nothing, so an unchanged
+    set is an empty list. Removes come first and highest index first, so every index still
+    names the relation it was read as; adds append with `/relations/-`."""
+    linked = azure_predecessor_links(relations)
+    ops = [{"op": "remove", "path": f"/relations/{index}"}
+           for dep, index in sorted(linked.items(), key=lambda kv: -kv[1])
+           if dep not in wanted]
+    ops += [{"op": "add", "path": "/relations/-",
+             "value": {"rel": AZ_PREDECESSOR_REL, "url": url_of(dep)}}
+            for dep in wanted if dep not in linked]
+    return ops
 
 
 AZ_PATCH_TYPE_ERROR = "The type changed without a value"
@@ -1061,12 +1108,29 @@ class AzureBoardsBackend(SpecBackend):
             if self.parent_id else None
         ops = azure_patch_body(self._raw.get(item_id, {}), desired, markdown=True,
                                parent=parent)
+        # PREDECESSOR LINKS ride the document's own patch, so the `rev` test below guards both
+        # and the write stays all-or-nothing. Read only when `dependsOn` really changed (an
+        # internal diff against the pre-write `info`), so every other write pays no extra call.
+        wanted = azure_predecessor_ids(fresh["frontmatter"], item_id)
+        if wanted != azure_predecessor_ids(info["frontmatter"], item_id):
+            ops += azure_predecessor_ops(self._relations_of(item_id), wanted,
+                                         self._work_item_url)
         if ops:
             rev = info.get("_azure_rev", self._revs.get(item_id))
             self._az_patch(f"updating work item {item_id}", item_id, ops, rev=rev)
         if self.repository:
             self._link_new_artifacts(item_id, info, fresh)
         self._invalidate()
+
+    def _relations_of(self, item_id: int) -> list[dict]:
+        """The item's relations, one `work-item show --expand relations`."""
+        item = self._az(f"reading the relations of work item {item_id}", "work-item", "show",
+                        "--id", str(item_id), "--expand", "relations")
+        return list((item or {}).get("relations") or [])
+
+    def predecessor_links(self, spec_id: str | int) -> list[int]:
+        """The sorted ids this spec's work item is linked to as a predecessor."""
+        return sorted(azure_predecessor_links(self._relations_of(self._item_id(spec_id))))
 
     def _link_new_artifacts(self, item_id: int, old_info: dict, fresh: dict) -> None:
         """`branch`/task-commit `ArtifactLink`s, attempted only for what THIS write actually
@@ -1191,6 +1255,9 @@ class AzureBoardsBackend(SpecBackend):
         parent = (self.parent_id, self._work_item_url(self.parent_id)) \
             if self.parent_id else None
         ops = azure_patch_body({}, desired, markdown=True, parent=parent)
+        # A new item has no relations to read: every wanted predecessor is an add.
+        ops += azure_predecessor_ops([], azure_predecessor_ids(fresh["frontmatter"], item_id),
+                                     self._work_item_url)
         if ops:
             self._az_patch(f"writing the new work item {item_id}", item_id, ops)
         self._invalidate()
