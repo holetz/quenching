@@ -19,6 +19,7 @@ from quenching.specs.backends.hybrid import (hybrid_project, hybrid_split, hybri
                                              hybrid_unwrap, hybrid_wrap)
 from quenching.specs.config import (AZ_DEFAULT_DISCOVERY_TAG, announce_unproved, load_config,
                                     resolve_work_item_type)
+from quenching.specs.parse.deps import deps_of
 from quenching.specs.parse import (FIELD_KEYS, PHASES, board_state_of,
                                    carry_forward_fields, declared_tags, derive_info,
                                    derive_labels, strip_frontmatter_keys, tags_outside_catalog)
@@ -498,6 +499,52 @@ def azure_patch_body(current: dict, desired: dict, *, markdown: bool = False,
                               "url": parent[1]}})
     return ops
 
+
+
+AZ_PREDECESSOR_REL = "System.LinkTypes.Dependency-Reverse"
+_AZ_URL_ID = re.compile(r"/(\d+)/?$")
+
+
+def azure_predecessor_ids(fm: dict, own_id: int | None = None) -> list[int]:
+    """The work item ids a spec waits for: its `dependsOn`, keeping only the all-digit ids (a
+    work item of this store) and never its own. Declaration order, deduplicated."""
+    ids: list[int] = []
+    for dep in deps_of(fm):
+        if dep.isdigit() and int(dep) != own_id and int(dep) not in ids:
+            ids.append(int(dep))
+    return ids
+
+
+def azure_predecessor_links(relations: list[dict]) -> dict[int, int]:
+    """`{predecessor id: index in the item's relations}` for its predecessor links only.
+
+    The id is read off the tail of the relation's url; any other relation type (parent,
+    `ArtifactLink`) and any url that does not end in an id is not a predecessor and is left out."""
+    links: dict[int, int] = {}
+    for index, rel in enumerate(relations or []):
+        if rel.get("rel") != AZ_PREDECESSOR_REL:
+            continue
+        m = _AZ_URL_ID.search(str(rel.get("url") or ""))
+        if m:
+            links.setdefault(int(m.group(1)), index)
+    return links
+
+
+def azure_predecessor_ops(relations: list[dict], wanted: list[int],
+                          url_of) -> list[dict]:
+    """The JSON patch ops that make the item's predecessor links equal `wanted`.
+
+    DIFFED BY ID, never by position: a link already present emits nothing, so an unchanged
+    set is an empty list. Removes come first and highest index first, so every index still
+    names the relation it was read as; adds append with `/relations/-`."""
+    linked = azure_predecessor_links(relations)
+    ops = [{"op": "remove", "path": f"/relations/{index}"}
+           for dep, index in sorted(linked.items(), key=lambda kv: -kv[1])
+           if dep not in wanted]
+    ops += [{"op": "add", "path": "/relations/-",
+             "value": {"rel": AZ_PREDECESSOR_REL, "url": url_of(dep)}}
+            for dep in wanted if dep not in linked]
+    return ops
 
 
 AZ_PATCH_TYPE_ERROR = "The type changed without a value"

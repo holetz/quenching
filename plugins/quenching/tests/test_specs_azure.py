@@ -24,6 +24,8 @@ from quenching.specs.backends.azure import (
     azure_native_fields,
     azure_patch_body,
     azure_patch_culprit,
+    azure_predecessor_ids,
+    azure_predecessor_ops,
     azure_query_wiql,
     azure_restore_trailing_newline,
 )
@@ -393,6 +395,46 @@ class AzurePatch(unittest.TestCase):
                     if op["path"] == "/relations/-":
                         self.assertFalse(op["value"]["url"].isdigit(),
                                         "the relation carries a bare id, not a work-item url")
+
+
+class AzurePredecessorOps(unittest.TestCase):
+    """The pure half of the predecessor links: which ids are wanted, and the ops that make the
+    item's links equal them."""
+
+    @staticmethod
+    def _url(dep: int) -> str:
+        return f"https://dev.azure.com/o/p/_apis/wit/workItems/{dep}"
+
+    def _rel(self, dep: int, rel: str = "System.LinkTypes.Dependency-Reverse") -> dict:
+        return {"rel": rel, "url": self._url(dep)}
+
+    def test_ids_keep_numeric_deduplicated_and_not_the_spec_itself(self):
+        fm = {"dependsOn": ["#5", "7", "5", "x-1", "9"]}
+        self.assertEqual(azure_predecessor_ids(fm, own_id=9), [5, 7])
+        self.assertEqual(azure_predecessor_ids({}), [])
+
+    def test_a_missing_link_is_one_add_with_the_work_item_url(self):
+        ops = azure_predecessor_ops([], [4], self._url)
+        self.assertEqual(ops, [{"op": "add", "path": "/relations/-",
+                                "value": {"rel": "System.LinkTypes.Dependency-Reverse",
+                                          "url": self._url(4)}}])
+
+    def test_an_unchanged_set_emits_nothing(self):
+        self.assertEqual(azure_predecessor_ops([self._rel(4), self._rel(5)], [5, 4],
+                                               self._url), [])
+
+    def test_removes_go_first_and_highest_index_first(self):
+        rels = [self._rel(1), self._rel(2), self._rel(3)]
+        ops = azure_predecessor_ops(rels, [2, 9], self._url)
+        self.assertEqual([(o["op"], o["path"]) for o in ops],
+                         [("remove", "/relations/2"), ("remove", "/relations/0"),
+                          ("add", "/relations/-")])
+
+    def test_other_relation_types_are_never_touched(self):
+        rels = [self._rel(7, "System.LinkTypes.Hierarchy-Reverse"),
+                {"rel": "ArtifactLink", "url": "vstfs:///Git/Commit/P%2FR%2Fabc"},
+                self._rel(7, "System.LinkTypes.Dependency-Forward")]
+        self.assertEqual(azure_predecessor_ops(rels, [], self._url), [])
 
 
 class AzureTrailingNewline(unittest.TestCase):
