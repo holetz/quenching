@@ -163,8 +163,12 @@ def preferences(fields: dict[str, str]) -> str:
     return text + (f"Declared effort: `{fields['effort']}`.\n\n" if fields.get("effort") else "")
 
 
-def permissions(tools: str | None) -> dict[str, str]:
-    """Deny-only mapping of a source `tools:` list: the generated agent is never wider."""
+CQ_BASH = {"cq *": "allow", "*": "ask"}
+CI_TEMPLATES = ("ci-github-pages.yml", "azure-pipelines-docs.yml")
+
+
+def permissions(tools: str | None) -> dict[str, str | dict[str, str]]:
+    """Mapping of a source `tools:` list: deny-only, except that scoped `cq` grants allow `cq *`."""
     if tools is None:
         return {}
     names = [item.strip() for item in re.split(r",\s*(?![^()]*\))", tools) if item.strip()]
@@ -172,7 +176,12 @@ def permissions(tools: str | None) -> dict[str, str]:
     granted = {}
     granted["edit"] = "allow" if heads & {"Edit", "Write", "NotebookEdit"} else "deny"
     granted["webfetch"] = "allow" if "WebFetch" in heads else "deny"
-    granted["bash"] = "allow" if "Bash" in names else "ask" if "Bash" in heads else "deny"
+    if "Bash" in names:
+        granted["bash"] = "allow"
+    elif any(name.startswith("Bash(cq ") for name in names):
+        granted["bash"] = dict(CQ_BASH)
+    else:
+        granted["bash"] = "ask" if "Bash" in heads else "deny"
     granted["task"] = "allow" if heads & {"Agent", "Task"} else "deny"
     return granted
 
@@ -195,7 +204,13 @@ def agent_files(agent: Path) -> tuple[str, str]:
     header = ["---", f"description: {json.dumps(platform(fields['description']), ensure_ascii=False)}",
               "mode: subagent"]
     if granted:
-        header += ["permission:"] + [f"  {key}: {value}" for key, value in granted.items()]
+        header.append("permission:")
+        for key, value in granted.items():
+            if isinstance(value, dict):
+                header.append(f"  {key}:")
+                header += [f'    "{pattern}": {mode}' for pattern, mode in value.items()]
+            else:
+                header.append(f"  {key}: {value}")
     if tools:
         header += ["tools:"] + [f"  {key}: false" for key in tools]
     origin = f"plugins/quenching/agents/{agent.name}"
@@ -227,6 +242,19 @@ cp -R quenching/. ~/.config/opencode/quenching/
 Commands run as `/quenching-<front>-<verb>` (`opencode run --command quenching-specs-status`).
 Prose paths assume `{ROOT}`; `cq` honours `QUENCHING_OPENCODE_ROOT` for another root.
 Commands and subagents pin no model: the session's configured model runs every role.
+
+## Permissions
+
+Subagents that hold scoped `cq` access in the source carry `bash: {{"cq *": allow, "*": ask}}`;
+`edit` and `webfetch` stay `deny` where the source grants none. Commands take their permissions from
+the session, so allow `cq` there the same way in `opencode.json`:
+
+```json
+{{"permission": {{"bash": {{"cq *": "allow", "*": "ask"}}}}}}
+```
+
+The CI templates under `assets/zensical/` (`ci-github-pages.yml`, `azure-pipelines-docs.yml`) are not
+shipped in this distribution.
 """
 
 
@@ -246,6 +274,8 @@ def generated_tree() -> dict[str, bytes]:
             relative = path.relative_to(root)
             if directory == "checks" and path.suffix == ".sh":
                 continue  # the repository's own surface gates name Claude paths and never ship
+            if directory == "zensical" and relative.name in CI_TEMPLATES:
+                continue  # opt-in CI templates of a target repository, not part of an OpenCode run
             if relative.name == "CLAUDE.md":
                 relative = relative.with_name("AGENTS.md")
             text = path.read_text(encoding="utf-8")
