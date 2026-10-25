@@ -36,6 +36,7 @@ from quenching.specs.commands.parallel import cmd_parallel
 from quenching.specs.commands.promote import cmd_promote
 from quenching.specs.commands.read import cmd_export, cmd_list, cmd_status
 from quenching.specs.commands.release import cmd_release
+from quenching.specs.commands.scrub import cmd_scrub
 from quenching.specs.commands.task import cmd_discover, cmd_task
 from quenching.specs.commands.validate import cmd_validate
 from quenching.specs.config import find_repo_root
@@ -250,6 +251,11 @@ def _add_inspection(sub) -> None:
     sp.add_argument("--task", help="project ONE task's executor context and judge the small-tier "
                                    "conditions (ADR 0014) instead of the section reading")
 
+    sp = add_json(sub.add_parser("scrub", help="list the specs the leak gate flags; --apply "
+                                               "normalizes their paths only"))
+    sp.add_argument("--apply", action="store_true",
+                    help="write the path normalization (never a denylist or generic hit)")
+
     sp = add_json(sub.add_parser("parallel", help="prove a [P] group's files: are disjoint"))
     add_spec(sp, True)
 
@@ -351,6 +357,7 @@ DISPATCH: dict = {
     "depends": cmd_depends,
     "schedule": cmd_schedule,
     "estimate": cmd_estimate,
+    "scrub": cmd_scrub,
     "new": cmd_new,
     "list": cmd_list,
     "status": cmd_status,
