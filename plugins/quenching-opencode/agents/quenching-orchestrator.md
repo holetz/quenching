@@ -5,6 +5,7 @@ permission:
   edit: deny
   webfetch: deny
   bash:
+    "*": ask
     "cq specs status *": allow
     "cq specs list *": allow
     "cq specs show *": allow
@@ -14,7 +15,6 @@ permission:
     "cq components session cost *": allow
     "cq components session context *": allow
     "cq git state *": allow
-    "*": ask
 ---
 
 <!-- GENERATED FROM plugins/quenching/agents/orchestrator.md -->

@@ -23,13 +23,14 @@ Commands and subagents pin no model: the session's configured model runs every r
 
 ## Permissions
 
-Subagents that hold scoped `cq` access in the source carry one `"cq <verbs> *": allow` pattern per
-`Bash(cq <verbs>:*)` grant, then `"*": ask`; `edit` and `webfetch` stay `deny` where the source
+Subagents that hold scoped `cq` access in the source carry `"*": ask` first, then one
+`"cq <verbs> *": allow` pattern per `Bash(cq <verbs>:*)` grant: OpenCode applies the last rule that
+matches, so the order is the policy; `edit` and `webfetch` stay `deny` where the source
 grants none. Commands take their permissions from
 the session, so allow `cq` there the same way in `opencode.json`:
 
 ```json
-{"permission": {"bash": {"cq *": "allow", "*": "ask"}}}
+{"permission": {"bash": {"*": "ask", "cq *": "allow"}}}
 ```
 
 The CI templates under `assets/zensical/` (`ci-github-pages.yml`, `azure-pipelines-docs.yml`) are not

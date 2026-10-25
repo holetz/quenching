@@ -126,8 +126,10 @@ No model is pinned: commands and subagents run on the model the OpenCode session
 and the source tier and effort survive as prose. Agent permissions are mapped deny-only from the
 source `tools:` — no edit tool → `edit: deny`, no `WebFetch` → `webfetch: deny`, no `Agent` →
 the task tool off, unrestricted `Bash` → `bash: allow`, no `Bash` → `bash: deny` — with one
-decided exception, set per agent: each scoped `Bash(cq <verbs>:*)` grant → one `"cq <verbs> *": allow`
-pattern in that agent's `bash` map, in source order, followed by `"*": ask` (the reviewer gets
+decided exception, set per agent: the agent's `bash` map opens with `"*": ask`, then each scoped
+`Bash(cq <verbs>:*)` grant → one `"cq <verbs> *": allow` pattern, in source order. OpenCode applies the
+last rule that matches (`findLast` in its permission evaluator), so a catch-all written last would
+override every allow: the order is the policy (the reviewer gets
 `"cq git history *": allow` and nothing else), and a scoped `Bash(...)` with no `cq` → `bash: ask`.
 Only the verbs the source grants are allowed, so a read-only agent never runs `cq git push` or
 `cq specs record` unasked; OpenCode checks each parsed command node, so a prefix pattern cannot be

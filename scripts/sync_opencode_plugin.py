@@ -185,7 +185,8 @@ def permissions(tools: str | None) -> dict[str, str | dict[str, str]]:
     if "Bash" in names:
         granted["bash"] = "allow"
     elif patterns := cq_patterns(names):
-        granted["bash"] = {**dict.fromkeys(patterns, "allow"), "*": "ask"}
+        # OpenCode applies the last matching rule, so the catch-all comes first.
+        granted["bash"] = {"*": "ask", **dict.fromkeys(patterns, "allow")}
     else:
         granted["bash"] = "ask" if "Bash" in heads else "deny"
     granted["task"] = "allow" if heads & {"Agent", "Task"} else "deny"
@@ -251,13 +252,14 @@ Commands and subagents pin no model: the session's configured model runs every r
 
 ## Permissions
 
-Subagents that hold scoped `cq` access in the source carry one `"cq <verbs> *": allow` pattern per
-`Bash(cq <verbs>:*)` grant, then `"*": ask`; `edit` and `webfetch` stay `deny` where the source
+Subagents that hold scoped `cq` access in the source carry `"*": ask` first, then one
+`"cq <verbs> *": allow` pattern per `Bash(cq <verbs>:*)` grant: OpenCode applies the last rule that
+matches, so the order is the policy; `edit` and `webfetch` stay `deny` where the source
 grants none. Commands take their permissions from
 the session, so allow `cq` there the same way in `opencode.json`:
 
 ```json
-{{"permission": {{"bash": {{"cq *": "allow", "*": "ask"}}}}}}
+{{"permission": {{"bash": {{"*": "ask", "cq *": "allow"}}}}}}
 ```
 
 The CI templates under `assets/zensical/` (`ci-github-pages.yml`, `azure-pipelines-docs.yml`) are not

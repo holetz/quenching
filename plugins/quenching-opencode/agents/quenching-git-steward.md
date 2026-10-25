@@ -5,6 +5,7 @@ permission:
   edit: deny
   webfetch: deny
   bash:
+    "*": ask
     "cq git base *": allow
     "cq git commit *": allow
     "cq git conventions *": allow
@@ -22,7 +23,6 @@ permission:
     "cq specs show *": allow
     "cq specs next *": allow
     "cq components read *": allow
-    "*": ask
 tools:
   task: false
 ---
