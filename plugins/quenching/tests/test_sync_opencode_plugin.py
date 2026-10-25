@@ -1,6 +1,8 @@
 """The OpenCode distribution generator: layout, deny-only permissions, and drift detection."""
 import importlib.util
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -125,6 +127,27 @@ class Platform(unittest.TestCase):
 
     def test_shared_configuration_path_survives(self):
         self.assertEqual(".claude/quenching.json", sync.platform(".claude/quenching.json"))
+
+
+class BundledCq(unittest.TestCase):
+    def test_the_bundled_cq_enables_every_module_in_an_empty_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(0, sync.main(["--write", "--target", tmp]))
+            cq = str(Path(tmp) / "quenching/scripts/cq")
+            work = Path(tmp) / "work"
+            work.mkdir()
+
+            def run(*args):
+                return subprocess.run([sys.executable, cq, *args], cwd=work, capture_output=True, text=True)
+
+            modules = run("modules", "--json")
+            self.assertEqual(0, modules.returncode, modules.stderr)
+            rows = json.loads(modules.stdout)["modules"]
+            self.assertEqual([], [m["name"] for m in rows if not m["enabled"]])
+            config = run("specs", "config")
+            self.assertEqual(0, config.returncode, config.stderr)
+            manifest = json.loads((Path(tmp) / "quenching/.claude-plugin/plugin.json").read_text())
+            self.assertEqual((sync.SOURCE / "VERSION").read_text().strip(), manifest["version"])
 
 
 class CheckAndWrite(unittest.TestCase):

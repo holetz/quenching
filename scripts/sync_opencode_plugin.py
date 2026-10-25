@@ -258,6 +258,15 @@ shipped in this distribution.
 """
 
 
+def plugin_manifest() -> str:
+    """The manifest `cq` reads at the payload root to enable the modules it ships."""
+    return json.dumps({
+        "name": "quenching",
+        "version": (SOURCE / "VERSION").read_text(encoding="utf-8").strip(),
+        "description": "Bundled quenching payload for OpenCode; the manifest lets the bundled cq enable its modules.",
+    }, indent=2) + "\n"
+
+
 def generated_tree() -> dict[str, bytes]:
     out: dict[str, str | bytes] = {}
     commands = sorted((SOURCE / "commands").rglob("*.md"))
@@ -287,6 +296,7 @@ def generated_tree() -> dict[str, bytes]:
     for rel, content in translate.generated_tree().items():
         if rel.startswith("scripts/"):
             out[f"quenching/{rel}"] = content
+    out["quenching/.claude-plugin/plugin.json"] = plugin_manifest()
     out["README.md"] = readme(len(commands), len(agent_names()))
     out[".generated-from.json"] = json.dumps({"source": "plugins/quenching",
         "generator": "scripts/sync_opencode_plugin.py", "command_count": len(commands),
