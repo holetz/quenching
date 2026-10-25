@@ -224,7 +224,7 @@ class ConfigView(unittest.TestCase):
         with workspace(decl, user, {"MY_GH": TOKEN}) as repo:
             cfg = load_config(repo)
         self.assertEqual({"github": {"repository": "acme/specs"}}, cfg["store"])
-        self.assertEqual({}, cfg["storeRefusal"])
+        self.assertNotIn("storeRefusal", cfg)
         self.assertNotIn(TOKEN, json.dumps(cfg))
 
     def test_load_config_carries_the_refusal_as_data(self):
@@ -232,7 +232,7 @@ class ConfigView(unittest.TestCase):
         decl = {"store": {"azure": {"organization": "a", "project": "p", "pat": "x"}}}
         with workspace(decl) as repo:
             cfg = load_config(repo)
-        self.assertEqual({}, cfg["store"])
+        self.assertNotIn("store", cfg)
         self.assertEqual("sp-store-secret", cfg["storeRefusal"]["code"])
 
 

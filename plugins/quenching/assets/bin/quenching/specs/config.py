@@ -394,11 +394,14 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     if envelope["unparseable"]:
         out["unparseable"] = envelope["unparseable"]
         return out
-    out["store"], out["storeRefusal"] = {}, {}
     if not out["present"]:
         return out
     from quenching.specs.store import declared_store   # store imports backends, which import this
-    out["store"], out["storeRefusal"] = declared_store(root)
+    store, refusal = declared_store(root)
+    if store:
+        out["store"] = store
+    if refusal:
+        out["storeRefusal"] = refusal
     obj = raw
     _read_backend(out, obj, values, root)
     _read_scalars(out, values)
