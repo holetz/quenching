@@ -2,12 +2,12 @@
 type: standard
 title: Security pillar
 description: A read-only pillar that reports workflow permissions, secret and ignore coverage, advisory dependency configuration and access ownership without owning a converged tree
-resource: .github/workflows/**, .gitignore, pyproject.toml, .claude/quenching.json, plugins/quenching/commands/security/**, plugins/quenching/assets/bin/quenching/security/**, plugins/quenching/assets/bin/quenching/controls/**
+resource: .github/workflows/**, .gitignore, pyproject.toml, .claude/quenching.json, plugins/quenching/commands/security/**, plugins/quenching/assets/bin/quenching/security/**, plugins/quenching/assets/bin/quenching/controls/**, plugins/quenching/assets/bin/quenching/common/leak.py, scripts/githooks/**
 tags: [architecture, security, pillar, read-only, permissions]
-timestamp: 2026-10-14
+timestamp: 2026-10-24
 audience: both
 authority: background
-source: spec 1071 (task 1.1) — the security subject was classified as pillar-shaped by the axis contract; this declaration fixes its questions and boundary before route implementation
+source: spec 1071 (task 1.1) — the security subject was classified as pillar-shaped by the axis contract; this declaration fixes its questions and boundary before route implementation; spec 2097 (task 3.2) — the `leak` verb
 maintainer: quenching
 ---
 
@@ -48,6 +48,43 @@ The route may report `not-measured` when a target provider has no comparable sta
 preserve the distinction between a source that is absent, a source that cannot be read, and a
 source that was read and contains no matching declaration.
 
+<!-- rules -->
+
+## The leak gate
+
+`cq security leak` is the pillar's only verb that refuses: it answers whether content may leave
+the machine, and its exit code is the answer — `0` clean, `1` findings, `2` configuration (no mode,
+or the private denylist absent). Each finding carries the file or commit, the line and the label
+of the pattern it matched. Exactly one mode is required:
+
+| Mode | Scans | Caller |
+| --- | --- | --- |
+| `--staged` | the index's content and the configured `user.email` | the `pre-commit` hook |
+| `--pre-push [--remote <name>]` | the commits named on stdin by git: added lines, messages, author and committer emails. A new ref is judged against the destination's remote-tracking refs only (`--remote`, the hook's first argument), or whole without it | the `pre-push` hook |
+| `--all` | every tracked file | the repository gate, which CI runs |
+
+Three pattern sets feed one scanner, from one module (`quenching/common/leak.py`) that the specs
+store guard imports too ([`spec-backend.md`](spec-backend.md) §Every store write passes the leak
+guard):
+
+- **Generic patterns**, safe to publish: Brazilian CPF and CNPJ, Azure Databricks workspace hosts,
+  Databricks personal access tokens, classic cluster ids, private-key headers.
+- **Path patterns**, built at run time from `$HOME`: the home directory and the slug Claude Code
+  derives from it. No user name is written into the repository, so a machine with another `$HOME`
+  finds nothing that only exists on this one.
+- **A private denylist** outside the repository, one case-insensitive regex per line, read from
+  `$QUENCHING_DENYLIST_FILE` or `~/.config/quenching/denylist.txt`. The hooks fail closed without
+  it (exit 2); `--generic-only` skips it, for CI, which never sees it.
+
+The verb reads and never corrects: the hook refuses the commit, and a finding is fixed by removing
+the content, never by weakening a pattern or passing `--no-verify`. The repository publishes the two
+hooks under `scripts/githooks/`; pointing `core.hooksPath` at them is a per-machine choice.
+
+<!-- rationale -->
+
+The denylist cannot live in the repository: committing it would leak the very terms it protects.
+Deriving the path patterns from the environment keeps the same property for user names.
+
 ## Boundary with fronts
 
 The axis contract in [`align-surface.md`](align-surface.md) distinguishes a front, which owns a
@@ -71,7 +108,7 @@ The pillar exposes a normalized `cq security --json` route and one human-facing 
 The JSON payload contains data only on stdout, with diagnostics on stderr, and uses the plugin's
 typed exits: `0` for a conformant or measured result, `1` for reported observations and `2` for
 misuse or refusal. The route never writes values, repair files, configuration or generated
-artifacts.
+artifacts; `leak` is read-only too, and the refusal it causes belongs to the hook that called it.
 
 The status/audit body presents the route's structured results and names the owner of any action.
 It is not a dry-run mode of an align command, and it does not invent a security-specific

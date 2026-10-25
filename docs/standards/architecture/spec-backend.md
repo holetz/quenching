@@ -2,12 +2,12 @@
 type: standard
 title: Spec backend interface
 description: The spec store is a git branch holding the canonical documents, with thin tracker cards as a projection written at lifecycle transitions; five document primitives, one ID identity and one refusal boundary keep every backend identical, and the deprecated tracker backends keep their serialisation rules
-resource: plugins/quenching/assets/bin/quenching/specs/backends/**, plugins/quenching/assets/bin/quenching/specs/commands/**, plugins/quenching/assets/references/specs-develop/spec-driven.md
+resource: plugins/quenching/assets/bin/quenching/specs/backends/**, plugins/quenching/assets/bin/quenching/specs/commands/**, plugins/quenching/assets/references/specs-develop/spec-driven.md, plugins/quenching/assets/bin/quenching/common/leak.py
 tags: [architecture, specs, backend, interface, serialization]
-timestamp: 2026-10-07
+timestamp: 2026-10-24
 audience: both
 authority: current
-source: history in ADR 0001 and ADR 0006
+source: history in ADR 0001 and ADR 0006; spec 2097 (task 3.2) — the leak guard on every store write
 maintainer: quenching
 ---
 
@@ -76,6 +76,38 @@ The three fixes are the same fix, applied where each answer belongs:
 **One helper and not ten corrections**, for the same reason the interface is five primitives and not
 eight verbs: a rule enforced at each site is a rule the next site is added without. Ten emit sites
 carried the same wrong answer because each wrote its own copy of it.
+
+## Every store write passes the leak guard
+
+**No backend writes a text the leak gate refuses.** Every write primitive of every backend — the
+git store, the GitHub and Azure Boards trackers, and the memory fake — passes the document through
+the shared guard (`quenching/common/leak.py`) before the first byte is stored:
+
+1. **Normalize first.** An absolute path with a known relative form is rewritten: under the
+   repository root it becomes relative, under `$HOME` it becomes `~/…`, and a session scratchpad
+   becomes `<scratchpad>/…`.
+2. **Then refuse.** What still matches a generic pattern, a path pattern or the private denylist
+   refuses with `sp-leak` (exit 2), the label and the line, and nothing is written.
+3. **Only new lines are judged.** With the document the write replaces, a line it already held is
+   not judged again, so a spec that predates the guard stays writable while what the write adds is
+   still refused.
+
+The guard uses the denylist when it exists and the generic patterns always; unlike the hooks of
+[`security-pillar.md`](security-pillar.md) §The leak gate, it never requires the denylist. In the
+git store the `user.email` that signs the store commit is judged too. The guard runs before the
+commit is built, because the store pushes with `--no-verify` and no `pre-push` hook ever sees it.
+
+`cq specs scrub` applies the same patterns to the documents already stored. It writes nothing by
+default; `--apply` writes only the path normalization and never removes a denylist or generic hit,
+which has no relative form and is a human's edit.
+
+<!-- rationale -->
+
+The guard lives in the primitives, not in a proxy around `open_backend`, so type checks on the
+opened backend keep working. Requiring the denylist here would refuse every write of every
+repository the plugin is installed in.
+
+<!-- rules -->
 
 ## The spec ID is the spec identity
 

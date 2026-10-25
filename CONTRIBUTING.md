@@ -20,5 +20,21 @@ accepted issue into a spec. To see only human issues, search `-label:spec`.
 bash scripts/verify_repo.sh
 ```
 
+### The leak hooks
+
+`scripts/githooks/` carries a `pre-commit` and a `pre-push` hook that run `cq security leak`: they
+refuse a commit or a push that carries a CPF, a CNPJ, a Databricks host, token or cluster id, a
+private key, an absolute path under your home directory, or a term of your private denylist. Point
+git at them once per checkout:
+
+```bash
+git config core.hooksPath scripts/githooks
+```
+
+The denylist lives outside the repository, one term per line, in `$QUENCHING_DENYLIST_FILE` or
+`~/.config/quenching/denylist.txt`; without it the hooks exit 2 and refuse. The repository gate runs
+the generic patterns only (`cq security leak --all --generic-only`), as CI does. A finding is fixed
+by removing the content, never by weakening a pattern or passing `--no-verify`.
+
 Durable knowledge lives in [docs/index.md](docs/index.md); the product manual is
 [plugins/quenching/README.md](plugins/quenching/README.md).

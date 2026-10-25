@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: /docs/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-10-16
+timestamp: 2026-10-24
 audience: both
 authority: current
 source: quenching skeleton
@@ -198,6 +198,9 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - [**Language declaration**](standards/agents/communication.md) — the single line on a repo's
 - [**Layer**](standards/architecture/proof-front.md) — a declared, disjoint slice of a test suite
   whose reach and wall-clock budget describe what kind of verification it provides.
+- [**Leak gate**](standards/architecture/security-pillar.md) — `cq security leak`, the check that
+  refuses content (generic patterns, home and scratchpad paths, a private denylist) before it
+  reaches a commit, a push or the specs store.
 - [**Measured surface**](standards/architecture/proof-front.md) — the declared set of source roots a
   verification gate actually measures, with an unmeasured shipped root reported as drift rather than
   hidden behind an honest percentage.
