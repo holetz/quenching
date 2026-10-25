@@ -32,7 +32,7 @@ import time
 
 from quenching.codex.eligible import eligibility, strip_annotation
 from quenching.codex.guard import BYPASS, clean_env, git, refs, touched
-from quenching.codex.probe import probe, stop
+from quenching.codex.probe import group_kwargs, probe, stop
 from quenching.codex.review import RUN_NAME, measured_tokens, refusal
 from quenching.specs.backends import open_backend
 
@@ -126,7 +126,7 @@ def run_implement(root: str, settings: dict, spec: str, task_id: str, worktree: 
             open(events_path, "w", encoding="utf-8") as stdout, \
             open(os.path.join(run_dir, "stderr.log"), "w", encoding="utf-8") as stderr:
         process = subprocess.Popen([binary, *argv], stdin=stdin, stdout=stdout, stderr=stderr,
-                                   cwd=worktree, env=clean_env(env), start_new_session=True)
+                                   cwd=worktree, env=clean_env(env), **group_kwargs())
         try:
             exit_code = process.wait(timeout=settings["timeoutSeconds"])
         except subprocess.TimeoutExpired:

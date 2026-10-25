@@ -116,6 +116,7 @@
       ] },
       { "Platform" = [
         "standards/platform/index.md",
+        "standards/platform/windows-support.md",
       ] },
       { "Quality" = [
         "standards/quality/index.md",

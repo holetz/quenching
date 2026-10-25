@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import os
 import shutil
+import stat
+import subprocess
 from types import SimpleNamespace
 
 from quenching.common.git import _git, _git_run
@@ -54,13 +56,47 @@ def _link_path(repo: str, relative: str) -> str:
     return os.path.join(repo, relative)
 
 
+def _is_link(path: str) -> bool:
+    """A symlink, or on Windows a directory junction (a reparse point `islink` misses before 3.12)."""
+    if os.path.islink(path):
+        return True
+    isjunction = getattr(os.path, "isjunction", None)
+    if isjunction is not None:
+        return isjunction(path)
+    try:
+        attrs = getattr(os.lstat(path), "st_file_attributes", 0)
+    except OSError:
+        return False
+    return bool(attrs & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
+
+
+def _make_link(store: str, link: str) -> None:
+    """Symlink `link` to `store`; on Windows, when the symlink is refused, a junction, which needs no privilege."""
+    try:
+        os.symlink(store, link, target_is_directory=True)
+    except OSError:
+        if os.name != "nt":
+            raise
+        result = subprocess.run(["cmd", "/c", "mklink", "/J", link, store],
+                                capture_output=True, text=True)
+        if result.returncode != 0:
+            raise
+
+
+def _remove_link(link: str) -> None:
+    if os.path.islink(link):
+        os.unlink(link)
+    else:
+        os.rmdir(link)
+
+
 def _materialise(repo: str, relative: str, store: str) -> dict:
     link = _link_path(repo, relative)
-    if os.path.islink(link):
+    if _is_link(link):
         if os.path.realpath(link) == os.path.realpath(store):
             return {"path": relative, "store": store, "state": "unchanged"}
-        os.unlink(link)
-        os.symlink(store, link)
+        _remove_link(link)
+        _make_link(store, link)
         return {"path": relative, "store": store, "state": "repointed"}
 
     empty_directory = False
@@ -74,7 +110,7 @@ def _materialise(repo: str, relative: str, store: str) -> dict:
     os.makedirs(os.path.dirname(link), exist_ok=True)
     if empty_directory:
         os.rmdir(link)
-    os.symlink(store, link)
+    _make_link(store, link)
     return {"path": relative, "store": store, "state": "created"}
 
 
@@ -230,7 +266,7 @@ def _ignored_files(path: str) -> list[str] | None:
     if code != 0:
         return None
     entries = [line[3:] for line in out.splitlines() if line.startswith("!! ")]
-    return [e for e in entries if not os.path.islink(os.path.join(path, e.rstrip("/")))]
+    return [e for e in entries if not _is_link(os.path.join(path, e.rstrip("/")))]
 
 
 def _regenerable_paths(config: dict) -> list[str]:
@@ -363,7 +399,7 @@ def _retire(args) -> int:
         emit(args.json, payload, f"worktree {path} kept: {payload['message']}")
         return FINDINGS
     source = os.path.join(path, ".quenching", "codex")
-    if os.path.isdir(source) and not os.path.islink(source):
+    if os.path.isdir(source) and not _is_link(source):
         destination = os.path.join(registered[0][0], ".quenching", "codex", "retired",
                                    os.path.basename(path))
         archived = destination

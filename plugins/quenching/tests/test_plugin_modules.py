@@ -42,6 +42,7 @@ class GeneratedDistribution(unittest.TestCase):
             if module["versionFile"]:
                 (folder / "VERSION").write_text("1.2.3\n")
         (self.source / "bin").mkdir()
+        (self.source / "bin/cq.cmd").write_text("@echo off\r\n")
         (self.source / "bin/cq").write_text("#!/bin/sh\n")
         (self.source / "bin/cq").chmod(0o755)
         reader = self.manifest["modules"][1]
@@ -258,6 +259,7 @@ class PrincipalGeneration(unittest.TestCase):
             "assets/specs/schema.json": "{}\n",
             "assets/bin/cq": "#!/usr/bin/env python3\n",
             "bin/cq": "#!/usr/bin/env python3\n",
+            "bin/cq.cmd": "@echo off\r\n",
             "README.md": "manual\n",
             "VERSION": "1.2.3\n",
             ".claude-plugin/plugin.json": json.dumps({"name": "quenching", "version": "1.2.3",
