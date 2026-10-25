@@ -125,6 +125,19 @@ def active_provider() -> tuple[ConfigProvider | None, dict | None]:
     }
 
 
+def repository_document(root: str) -> tuple[dict | None, dict, dict | None]:
+    """The repository layer raw, through the active provider: `(document, info, refusal)`.
+
+    For the readers that need the repository's own declaration before any merge. An unknown
+    provider yields no document and the refusal; it never reads the file instead.
+    """
+    provider, refusal = active_provider()
+    if provider is None:
+        return None, {"name": None, "path": None, "present": False, "unparseable": None}, refusal
+    document, info = provider.read(find_repo_root(root))
+    return document, info, None
+
+
 def find_repo_root(specs_root: str) -> str:
     """Find the repository containing the shared configuration home."""
     current = os.path.abspath(specs_root)
