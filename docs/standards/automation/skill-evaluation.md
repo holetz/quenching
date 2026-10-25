@@ -56,7 +56,8 @@ whose settings carry `enabledPlugins` for the with-arm and omit it for the witho
 claim; it does not report the number as if it had.
 
 Both arms run on the **same model**. A delta between arms on different models measures the models.
-Never a cheaper model for one arm, and never for the grader.
+Never a cheaper model for one arm. The grader is the one deliberate exception, decided by the
+human on 2026-10-24 and set out in the grader rule below.
 
 ## Assertions are observable, and grades carry evidence
 
@@ -140,6 +141,19 @@ with `--harnesses`). It keeps both arms: the `with` arm loads the quenching modu
   directory and without the skill. A comparison whose grader changed between runs measures the
   graders. A grade whose quoted evidence is not a verbatim substring of the arm's output or of the
   fixture snapshot is downgraded to `unknown`, so an unquoted pass never counts.
+- **The default grader is the DeepSeek V4.1 Flash 1017 model service.** `run_evals.py` uses the
+  `gateway` profile with `system.ai.deepseek-v4-1-flash-1017` and an output ceiling of at least
+  16,000 tokens when no `--grader-*` flag is given. Over the 36 recorded spike H1 cases it agreed with
+  the Opus grader on 116 of 120 assertions (96.7%), on all 116 it graded, with no risky verdict, for
+  about US$ 0.34 against about US$ 3.34 for Opus (`spikes/h1/REGRADE.md` in the forge). The endpoint
+  and the credential come only from the environment (`EVAL_GATEWAY_URL`, `EVAL_GATEWAY_TOKEN`);
+  neither is written in the repository. A cheaper grader keeps the evidence rule: the quoted excerpt
+  is still checked against the material, whichever model graded.
+- **An `unknown` never counts as an approval.** That includes `finish: length` and any grader
+  failure. It is regraded by the escalation grader, when the run declares one
+  (`--escalate-grader-harness` and `--escalate-grader-model`, for instance the Opus), or redone with a
+  larger ceiling; each regraded entry records `gradedBy: escalation`, and `benchmark.json` records
+  both graders. Without an escalation grader it stays `unknown` in the count.
 - **The fixture lives beside the case set, by convention.** `evals.json` keeps the shape
   `evaluation.md` owns; a sibling `fixture/` tree is copied into a disposable directory and
   committed as a git repository, an optional `setup.sh` prepares it per case (it receives the case
