@@ -292,6 +292,28 @@ write-only, nothing reads it back, so it is never a second store.
 | `quenching-specs-triage` | Ranks the whole front in ONE confirmed table, writing `priority: {level, criticality, complexity, date}` per spec and nothing else — merging, never clobbering a human's ranking. |
 | `quenching-specs-board` | Human-only. Starts `cq specs serve` in the background and prints the URL: a local browser portal (board by derived stage, drag-to-rank list, spec detail, search, capture, approve as `by: human`) over the same backend as the CLI. Loopback only, per-run token, `Host`/`Origin` checks, `--read-only` disables writes on the server; `cq-specs-read serve` is always read-only. |
 
+### The specs MCP server — read-only, stdio
+
+`cq specs mcp` starts a stdio MCP server (JSON-RPC 2.0, stdlib only) that the plugin registers through
+its `.mcp.json` as the `specs` server, so enabling the plugin makes the tools appear. Every tool
+dispatches in-process through the same core as `cq specs`, so the backend, refusals and exit codes are the
+CLI's; the server holds no store logic.
+
+| Tool | Arguments | Answers |
+|---|---|---|
+| `specs_list` | `limit` (default 50, max 200), `offset` | the lean listing, paged (`count`, `returned`, `nextOffset`) |
+| `specs_status` | `spec` | one spec's sections, stage, tasks and gates |
+| `specs_show` | `spec`, `tasks` (ids, at most 20) | the map, or only the named tasks |
+| `specs_section` | `spec`, `headings` or `moment`, `scope` | the named sections only |
+| `specs_next` | `spec` or `epic` (neither: the ranked front), `limit` | the next action, the epic's ready members, or the front, paged |
+| `specs_epic_progress` | `epic` | one epic's progress |
+
+Size policy: no tool returns a whole spec; reads go by section and by task, listings are paged, and any
+answer above 60,000 characters is cut with `truncated: true` and a `hint` naming the narrower call.
+Read-only guarantee: the tool table is a closed map to fixed read verbs, with no generic `cq` tool and no
+argv passthrough, so no write verb is reachable. A failure is a result with `isError: true` and the CLI's
+refusal `code`. Registering the server adds no permission or grant.
+
 ### A revisão Codex independente
 
 Step 6 of `quenching-specs-autopilot` runs, once per epic, a second and independent

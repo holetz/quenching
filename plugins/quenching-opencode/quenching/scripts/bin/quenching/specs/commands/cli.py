@@ -39,6 +39,7 @@ from quenching.specs.commands.release import cmd_release
 from quenching.specs.commands.task import cmd_discover, cmd_task
 from quenching.specs.commands.validate import cmd_validate
 from quenching.specs.config import find_repo_root
+from quenching.specs.mcp import cmd_mcp
 from quenching.specs.portal import cmd_serve
 from quenching.specs.parse import PHASES
 from quenching.specs.schema import DEFAULT_VERIFICATION, OUTCOMES, VERIFICATION_POLICIES
@@ -301,6 +302,9 @@ def _add_migrate_export_serve(sub) -> None:
     sp.add_argument("--out", default="specs-export",
                     help="destination directory (default: ./specs-export)")
 
+    sub.add_parser("mcp", help="the read-only MCP server over stdio — a second port of this "
+                               "same core, six tools, no write verb")
+
     sp = add_json(sub.add_parser("serve", help="the local spec portal — a browser board over "
                                                 "the same backend, loopback only"))
     sp.add_argument("--port", type=int, default=0, help="port (default: a free one)")
@@ -373,6 +377,7 @@ DISPATCH: dict = {
     "migrate": cmd_migrate,
     "export": cmd_export,
     "serve": cmd_serve,
+    "mcp": cmd_mcp,
 }
 
 

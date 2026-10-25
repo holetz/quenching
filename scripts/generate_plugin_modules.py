@@ -69,6 +69,8 @@ def principal_tree(root: Path, manifest: dict, module: dict) -> dict:
         copy_files(tree, source, "agents")
     if owned.get("hooks"):
         copy_files(tree, source, "hooks")
+    if owned.get("mcp"):
+        copy_files(tree, source, ".mcp.json")
     for package in [*owned["packages"], *support["packages"]]:
         copy_files(tree, source, "assets/bin/quenching/" + package)
     for reference in support["references"]:
@@ -154,6 +156,8 @@ def ownership_findings(root: Path, manifest: dict) -> list[str]:
             findings.append(f"reference {path.name} is shipped by no module")
     if (source / "hooks").is_dir() and not any(m["owned"].get("hooks") for m in principal):
         findings.append("hooks/ is shipped by no module (owned.hooks)")
+    if (source / ".mcp.json").is_file() and not any(m["owned"].get("mcp") for m in principal):
+        findings.append(".mcp.json is shipped by no module (owned.mcp)")
     return findings
 
 
