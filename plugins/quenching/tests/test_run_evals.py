@@ -73,7 +73,7 @@ class Runner(unittest.TestCase):
     def run_cli(self, *argv: str) -> tuple[int, str]:
         buffer = io.StringIO()
         with contextlib.redirect_stdout(buffer), contextlib.redirect_stderr(buffer):
-            code = runner.main(["--harnesses", str(self.profiles), "--suite", str(self.suite), *argv])
+            code = runner.main(["--host", "--harnesses", str(self.profiles), "--suite", str(self.suite), *argv])
         return code, buffer.getvalue()
 
     def full_run(self, harness: str, *extra: str) -> Path:
@@ -149,7 +149,7 @@ class Runner(unittest.TestCase):
     def test_dry_run_loads_the_modules_only_in_the_with_arm(self):
         buffer = io.StringIO()
         with contextlib.redirect_stdout(buffer):
-            code = runner.main(["--suite", str(self.suite), "--case", "c1", "--dry-run", "--harness", "claude",
+            code = runner.main(["--host", "--suite", str(self.suite), "--case", "c1", "--dry-run", "--harness", "claude",
                                 "--model", "m", "--run-id", "r", "--arms", "with,without"])
         self.assertEqual(code, 0)
         lines = [json.loads(line) for line in buffer.getvalue().splitlines()]
@@ -160,9 +160,62 @@ class Runner(unittest.TestCase):
         for harness in ("codex", "opencode"):
             buffer = io.StringIO()
             with contextlib.redirect_stdout(buffer):
-                self.assertEqual(runner.main(["--suite", str(self.suite), "--case", "c1", "--dry-run",
+                self.assertEqual(runner.main(["--host", "--suite", str(self.suite), "--case", "c1", "--dry-run",
                                               "--harness", harness, "--model", "m", "--run-id", "r"]), 0)
             self.assertIn(harness, buffer.getvalue())
+
+    def dry_lines(self, *argv: str) -> list[dict]:
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            code = runner.main(["--suite", str(self.suite), "--case", "c1", "--dry-run", "--model", "m",
+                                "--run-id", "r", *argv])
+        self.assertEqual(code, 0)
+        return [json.loads(line) for line in buffer.getvalue().splitlines()]
+
+    def test_the_default_mode_wraps_the_arm_in_a_container_with_the_permission_inside(self):
+        argv = self.dry_lines("--harness", "opencode", "--image", "img:1", "--env", "PROVIDER_TOKEN",
+                              "--extra-arg=--command", "--extra-arg=quenching-specs-create")[0]["argv"]
+        self.assertEqual(argv[:3], ["docker", "run", "--rm"])
+        self.assertEqual(argv.count("--mount"), 1)
+        image = argv.index("img:1")
+        self.assertEqual(argv[image + 1:image + 3], ["opencode", "run"])
+        self.assertIn("--auto", argv[image:])
+        self.assertNotIn("--auto", argv[:image])
+        self.assertIn("PROVIDER_TOKEN", argv[:image])
+        self.assertEqual(argv[-1], "Make the file please.")
+        self.assertIn("--command", argv[image:])
+
+    def test_host_mode_never_widens_a_permission(self):
+        argv = self.dry_lines("--harness", "opencode", "--host")[0]["argv"]
+        self.assertEqual(argv[:2], ["opencode", "run"])
+        self.assertNotIn("--auto", argv)
+        self.assertNotIn("docker", argv)
+
+    def test_no_profile_but_opencode_declares_a_permission_block(self):
+        profiles = json.loads((REPO / "scripts/eval_harnesses.json").read_text())["profiles"]
+        self.assertEqual({n for n, p in profiles.items() if "container" in p}, {"opencode"})
+        for name, profile in profiles.items():
+            self.assertNotIn("--auto", profile["argv"], name)
+            self.assertNotIn("{permission}", profile["argv"], name)
+
+    def test_the_container_values_never_reach_the_argv(self):
+        argv = self.dry_lines("--harness", "opencode", "--image", "img", "--env", "PROVIDER_TOKEN")[0]["argv"]
+        self.assertNotIn("PROVIDER_TOKEN=", " ".join(argv))
+        self.assertIn("-e", argv)
+
+    def test_the_default_mode_refuses_without_an_image_or_a_container_block(self):
+        for argv, needle in ((("--harness", "opencode"), "--image"), (("--harness", "claude", "--image", "i"), "container")):
+            buffer = io.StringIO()
+            with contextlib.redirect_stderr(buffer):
+                code = runner.main(["--suite", str(self.suite), "--model", "m", "--grader-model", "g",
+                                    "--run-id", "r", *argv])
+            self.assertEqual(code, 2)
+            self.assertIn(needle, buffer.getvalue())
+            self.assertIn("--host", buffer.getvalue())
+
+    def test_the_summary_records_the_mode(self):
+        out = self.full_run("fake")
+        self.assertEqual(json.loads((out / "summary.json").read_text())["mode"], {"where": "host"})
 
     def test_check_refuses_a_malformed_suite(self):
         bad = self.tmp / "bad"
