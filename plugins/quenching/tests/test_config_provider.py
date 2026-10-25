@@ -1,6 +1,8 @@
 """Executable proofs for the configuration provider seam: the file stays the default read."""
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import os
 import pathlib
@@ -102,6 +104,46 @@ class ConfigProviderSeam(unittest.TestCase):
         provider, refusal = cfg.active_provider()
         self.assertEqual(provider.name, "file")
         self.assertIsNone(refusal)
+
+
+class ConfigVerbs(ConfigProviderSeam):
+    def _run(self, *argv):
+        from quenching.config import main
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = main(["--root", str(self.repo), *argv])
+        return code, out.getvalue(), err.getvalue()
+
+    def test_export_file(self):
+        self._file(json.dumps({"backend": "git", "shared": {"worktreeSetup": "make"}}))
+        code, out, _ = self._run("export", "--json")
+        payload = json.loads(out)
+        self.assertEqual(code, 0)
+        self.assertEqual((payload["provider"], payload["document"]["shared"]),
+                         ("file", {"worktreeSetup": "make"}))
+
+    def test_export_double_with_no_file(self):
+        cfg.register_provider(Double({"backend": "git"}))
+        with mock.patch.dict(os.environ, {cfg.PROVIDER_ENV: "double"}):
+            code, out, _ = self._run("export", "--json")
+        self.assertEqual((code, json.loads(out)["document"]), (0, {"backend": "git"}))
+
+    def test_export_absent_refuses(self):
+        code, out, _ = self._run("export", "--json")
+        self.assertEqual((code, json.loads(out)["code"]), (2, "cq-config-absent"))
+
+    def test_export_unknown_provider_refuses(self):
+        with mock.patch.dict(os.environ, {cfg.PROVIDER_ENV: "service"}):
+            code, out, _ = self._run("export", "--json")
+        self.assertEqual((code, json.loads(out)["code"]), (2, "cq-config-provider-unknown"))
+
+    def test_init_and_check_refuse_under_a_non_file_provider(self):
+        cfg.register_provider(Double({"backend": "git"}))
+        with mock.patch.dict(os.environ, {cfg.PROVIDER_ENV: "double"}):
+            for verb in ("init", "check"):
+                code, out, _ = self._run(verb, "--json")
+                self.assertEqual((code, json.loads(out)["code"]), (2, "cq-config-provider-not-file"))
+        self.assertFalse((self.repo / ".claude" / "quenching.json").exists())
 
 
 if __name__ == "__main__":
