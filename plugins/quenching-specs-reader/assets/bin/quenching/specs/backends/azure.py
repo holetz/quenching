@@ -17,6 +17,7 @@ from quenching.specs.backends.base import (BackendRefusal, SpecBackend, parse_re
                                            read_only_refusal, transport_read_only)
 from quenching.specs.backends.hybrid import (hybrid_project, hybrid_split, hybrid_title_join,
                                              hybrid_unwrap, hybrid_wrap)
+from quenching.specs import store
 from quenching.specs.config import (AZ_DEFAULT_DISCOVERY_TAG, announce_unproved, load_config,
                                     resolve_work_item_type)
 from quenching.specs.parse.deps import deps_of
@@ -201,10 +202,12 @@ def _az_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, s
     # ONLY READS ARE REPEATED, exactly as in `_gh_run`: a timeout can fire after Azure
     # accepted a create, and repeating it would make a second work item.
     max_attempts = AZ_MAX_ATTEMPTS if reads else 1
+    env = store.subprocess_env("azure")
     for attempt in range(1, max_attempts + 1):
         try:
             out = subprocess.run(["az", *argv, "--only-show-errors"], capture_output=True,
-                                 text=True, timeout=COMMAND_TIMEOUT_S, cwd=cwd, input=stdin)
+                                 text=True, timeout=COMMAND_TIMEOUT_S, cwd=cwd, input=stdin,
+                                 env=env)
             code, stdout, stderr = out.returncode, out.stdout, out.stderr
         except FileNotFoundError as e:
             return AZ_MISSING, "", str(e)
@@ -303,6 +306,11 @@ def resolve_azure_project(cwd: str) -> tuple[tuple[str, str], dict]:
 
     Never guesses. Missing defaults are a refusal naming the exact command that sets them,
     because a wrong answer here does not fail — it reads and writes somebody else's board."""
+    declared, refusal = store.declared_store(cwd)
+    if refusal:
+        return ("", ""), refusal
+    if "azure" in declared:
+        return (declared["azure"]["organization"], declared["azure"]["project"]), {}
     code, out, err = _az_run(cwd, "devops", "configure", "--list")
     if code != 0:
         return ("", ""), az_refusal("resolving the organization and project", code, out, err)
