@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "specs": {
+      "command": "python3",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/assets/bin/cq", "specs", "mcp"]
+    }
+  }
+}
