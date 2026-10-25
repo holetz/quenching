@@ -26,6 +26,7 @@ import tempfile
 import time
 
 from quenching.common.config import find_repo_root
+from quenching.common.leak import guard_store_write, patterns, scan_text, store_refusal
 from quenching.specs.backends.base import BackendRefusal, SpecBackend
 from quenching.specs.parse import PHASES, derive_info, derive_labels, resolve_one
 
@@ -358,6 +359,9 @@ class GitBackend(SpecBackend):
 
         Each item is checked against the blob its `info` was read at, on every attempt: a
         document that changed under the caller refuses the whole batch."""
+        items = [(info, guard_store_write(text, self.repo_root, info.get("text"), BackendRefusal))
+                 for info, text in items]
+
         def apply(snapshot):
             index = self._index(snapshot)
             changes: dict[str, str | None] = {}
@@ -396,6 +400,7 @@ class GitBackend(SpecBackend):
         thin card. `spec_id` alone is the hook for an ID the caller already owns; with none of
         them the branch counter allocates one under the same compare-and-swap."""
         from quenching.specs import cards
+        text = guard_store_write(text, self.repo_root, None, BackendRefusal)
         client = self.card()
         fresh = derive_info({"phase": phase}, text)
         adopting = card is not None
@@ -456,6 +461,9 @@ class GitBackend(SpecBackend):
         batch, because a migration must never overwrite what the branch already holds.
         `config`, when given, is the `specs` namespace written to the branch's
         `quenching.json` in the SAME commit. Returns the paths written."""
+        items = [(spec_id, phase, guard_store_write(text, self.repo_root, None, BackendRefusal))
+                 for spec_id, phase, text in items]
+
         def apply(snapshot):
             index = self._index(snapshot)
             changes: dict[str, str | None] = {}
@@ -556,6 +564,7 @@ class GitBackend(SpecBackend):
         if self.read_only:
             raise _refusal("sp-git-read-only", f"the store mirror at {self.mirror_dir} is "
                            "read-only; nothing was written")
+        self._guard_identity()
         tip = self._tip()
         for attempt in range(MAX_ATTEMPTS):
             if attempt:
@@ -587,6 +596,17 @@ class GitBackend(SpecBackend):
                        f"branch '{self.branch}' kept moving — {MAX_ATTEMPTS} attempts were "
                        "rejected as non-fast-forward; nothing was written",
                        attempts=MAX_ATTEMPTS)
+
+    def _guard_identity(self) -> None:
+        """The author and committer emails `commit-tree` will sign with, judged like the text:
+        `_store` pushes with `--no-verify`, so no hook ever sees them."""
+        for var in ("GIT_AUTHOR_IDENT", "GIT_COMMITTER_IDENT"):
+            code, out, _ = self._git("var", var)
+            email = out.decode("utf-8", "replace").partition("<")[2].partition(">")[0]
+            findings = scan_text(f"git var {var}", email, patterns(require_denylist=False)) \
+                if code == 0 else []
+            if findings:
+                raise BackendRefusal(store_refusal(findings))
 
     def _commit(self, tip: str | None, changes: dict[str, str | None],
                 message: str) -> tuple[str, dict[str, str]]:

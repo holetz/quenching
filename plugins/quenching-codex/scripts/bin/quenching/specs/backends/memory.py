@@ -3,7 +3,8 @@
 Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
-from quenching.specs.backends.base import SpecBackend
+from quenching.common.leak import guard_store_write
+from quenching.specs.backends.base import BackendRefusal, SpecBackend
 from quenching.specs.parse import PHASES, derive_info, derive_labels, resolve_one
 
 
@@ -58,10 +59,11 @@ class MemoryBackend(SpecBackend):
         return derive_info(spec, self.docs[spec["id"]][1]), {}
 
     def write_spec(self, info: dict, text: str) -> None:
-        phase, _ = self.docs[info["id"]]
-        self.docs[info["id"]] = (phase, text)
+        phase, held = self.docs[info["id"]]
+        self.docs[info["id"]] = (phase, guard_store_write(text, None, held, BackendRefusal))
 
     def create_spec(self, phase: str, text: str) -> str:
+        text = guard_store_write(text, None, None, BackendRefusal)
         spec_id = self._next_id
         self._next_id += 1
         self.docs[spec_id] = (phase, text)

@@ -12,6 +12,7 @@ import time
 from quenching.common.git import COMMAND_TIMEOUT_S, _git
 from quenching.common.config import CONFIG_FILE, find_repo_root
 from quenching.common.io import write_text
+from quenching.common.leak import guard_store_write
 from quenching.specs.backends.base import (BackendRefusal, SpecBackend, parse_retry_after,
                                            read_only_refusal, transport_read_only)
 from quenching.specs.backends.hybrid import (hybrid_project, hybrid_split, hybrid_title_join,
@@ -998,6 +999,7 @@ class AzureBoardsBackend(SpecBackend):
 
     def write_spec(self, info: dict, text: str) -> None:
         announce_unproved(self.name)
+        text = guard_store_write(text, self.cwd, info.get("text"), BackendRefusal)
         item_id = self._item_id(info["id"])
         # FRESH, off the text THIS write is putting in place — every caller (`cmd_record`,
         # `cmd_field`, `cmd_promote`...) hands `write_spec` the OLD `info` beside the NEW
@@ -1126,6 +1128,7 @@ class AzureBoardsBackend(SpecBackend):
 
     def create_spec(self, phase: str, text: str) -> str:
         announce_unproved(self.name)
+        text = guard_store_write(text, self.cwd, None, BackendRefusal)
         # `derive_info` off a minimal descriptor — `create_spec` never receives one, and
         # `board_state_of` reads only `phase`/`frontmatter`/`stage`, all of which come back
         # from the text just handed to `az`.

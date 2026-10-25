@@ -14,6 +14,7 @@ from quenching.common.git import COMMAND_TIMEOUT_S, _git
 from quenching.common.remote import github_slug, normalize_remote
 from quenching.common.config import CONFIG_FILE, find_repo_root
 from quenching.common.io import read_text, write_text
+from quenching.common.leak import guard_store_write
 from quenching.specs.backends.base import (BackendRefusal, SpecBackend, parse_retry_after,
                                            read_only_refusal, transport_read_only)
 from quenching.specs.backends.hybrid import (GH_BODY_MAX, GH_PART_MAX, hybrid_join,
@@ -852,6 +853,7 @@ class GitHubBackend(SpecBackend):
     GH_STORED_KEYS = ("tags", "assignee")
 
     def write_spec(self, info: dict, text: str) -> None:
+        text = guard_store_write(text, self.cwd, info.get("text"), BackendRefusal)
         number = int(info["id"])
         expected_updated_at = info.get("_github_updated_at")
         if expected_updated_at:
@@ -948,6 +950,7 @@ class GitHubBackend(SpecBackend):
             self._colors_confirmed.add(name)
 
     def create_spec(self, phase: str, text: str) -> str:
+        text = guard_store_write(text, self.cwd, None, BackendRefusal)
         fresh = derive_info({"phase": phase}, text)
         stripped = strip_frontmatter_keys(text, self.GH_STORED_KEYS)
         stored, title = hybrid_project(stripped)
