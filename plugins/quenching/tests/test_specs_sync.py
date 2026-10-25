@@ -2,9 +2,14 @@
 with revisions, the way Azure Boards numbers them. No `az` process, no network and no real
 organisation is ever reached."""
 
+import base64
+import contextlib
+import http.client
+import io
 import json
 import os
 import tempfile
+import threading
 import unittest
 from unittest import mock
 
@@ -13,6 +18,9 @@ from quenching.specs import sync
 from quenching.specs.backends import azure as azure_mod
 from quenching.specs.backends.azure import AzureBoardsBackend
 from quenching.specs.backends.base import BackendRefusal
+from argparse import Namespace
+from quenching.specs.commands import sync as sync_cmd
+from quenching.specs.commands.output import Emitter
 from quenching.specs.backends.hybrid import hybrid_project, hybrid_wrap
 from quenching.specs.schema import capture_form
 
@@ -298,6 +306,110 @@ class Wiring(Base):
         a = sync.cache_dir("https://dev.azure.com/o", "p")
         self.assertNotEqual(a, sync.cache_dir("https://dev.azure.com/o", "q"))
         self.assertEqual(a, sync.cache_dir("https://dev.azure.com/o", "p"))
+
+
+SECRET = "s3cret-value"
+
+
+def basic(secret: str, user: str = "hook") -> str:
+    return "Basic " + base64.b64encode(f"{user}:{secret}".encode()).decode()
+
+
+class Receiver(Base):
+    def setUp(self):
+        super().setUp()
+        self.server = sync_cmd.make_receiver(self.backend, "127.0.0.1", 0, SECRET)
+        self.port = self.server.server_address[1]
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        self.addCleanup(self.server.server_close)
+        self.addCleanup(self.server.shutdown)
+        self.backend.read_spec(1)
+
+    def call(self, method, path="/hooks/azure", body=None, auth=None):
+        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+        headers = {"Authorization": auth} if auth else {}
+        conn.request(method, path, body=json.dumps(body) if body is not None else None,
+                     headers=headers)
+        resp = conn.getresponse()
+        data = json.loads(resp.read() or b"{}")
+        conn.close()
+        return resp.status, data
+
+    def test_401_without_the_secret_and_with_a_wrong_one(self):
+        event = self.event("workitem.updated", 1, 9)
+        self.assertEqual(401, self.call("POST", body=event)[0])
+        self.assertEqual(401, self.call("POST", body=event, auth=basic("nope"))[0])
+        self.assertEqual(401, self.call("POST", body=event, auth="Bearer " + SECRET)[0])
+        self.assertFalse(self.cache.get(1).get("stale"))
+
+    def test_405_off_post(self):
+        for method in ("GET", "PUT", "DELETE"):
+            self.assertEqual(405, self.call(method, auth=basic(SECRET))[0])
+
+    def test_200_and_a_stale_mark_with_the_secret(self):
+        status, data = self.call("POST", body=self.event("workitem.updated", 1, 9),
+                                 auth=basic(SECRET, user="anyone"))
+        self.assertEqual(200, status)
+        self.assertEqual("stale", data["action"])
+        self.assertTrue(self.cache.get(1)["stale"])
+
+    def test_an_unknown_shape_is_400_and_another_path_is_404(self):
+        self.assertEqual(400, self.call("POST", body={"eventType": "x"}, auth=basic(SECRET))[0])
+        self.assertEqual(404, self.call("POST", path="/other", body={}, auth=basic(SECRET))[0])
+
+    def test_a_non_loopback_host_is_refused(self):
+        with self.assertRaises(ValueError):
+            sync_cmd.make_receiver(self.backend, "0.0.0.0", 0, SECRET)
+        out, err = io.StringIO(), io.StringIO()
+        args = Namespace(sync_cmd="serve", host="0.0.0.0", port=0, json=True)
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = sync_cmd.cmd_sync(args, ".", Emitter())
+        self.assertEqual(2, code)
+        self.assertIn("sp-serve-host", out.getvalue() + err.getvalue())
+
+
+class Verbs(Base):
+    def run_verb(self, verb, stdin="", **extra):
+        args = Namespace(sync_cmd=verb, json=True, host="127.0.0.1", port=0, **extra)
+        out = io.StringIO()
+        with mock.patch.object(sync_cmd, "open_backend", return_value=(self.backend, {})), \
+                mock.patch("sys.stdin", io.StringIO(stdin)), contextlib.redirect_stdout(out):
+            code = sync_cmd.cmd_sync(args, ".", Emitter())
+        return code, out.getvalue()
+
+    def test_status_and_reconcile(self):
+        code, text = self.run_verb("status")
+        self.assertEqual(0, code)
+        self.assertEqual(0, json.loads(text)["items"])
+        code, text = self.run_verb("reconcile")
+        self.assertEqual(0, code)
+        self.assertEqual(2, json.loads(text)["refetched"])
+        self.assertEqual(2, json.loads(self.run_verb("status")[1])["items"])
+
+    def test_apply_reads_one_event_from_stdin(self):
+        self.backend.read_spec(1)
+        code, text = self.run_verb("apply", stdin=json.dumps(self.event("workitem.updated", 1, 7)))
+        self.assertEqual(0, code)
+        self.assertEqual("stale", json.loads(text)["action"])
+        code, _ = self.run_verb("apply", stdin="{not json")
+        self.assertEqual(2, code)
+
+    def test_serve_refuses_to_start_without_the_secret_and_takes_none_in_argv(self):
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop(sync_cmd.ENV_SECRET, None)
+            code, text = self.run_verb("serve")
+        self.assertEqual(2, code)
+        self.assertIn("sp-sync-secret", text)
+        from quenching.specs.commands.cli import build_parser
+        parser, _ = build_parser()
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+            parser.parse_args(["sync", "serve", "--secret", "x"])
+
+    def test_the_secret_is_matched_in_constant_time_form_only(self):
+        self.assertTrue(sync_cmd.secret_ok(basic(SECRET), SECRET))
+        self.assertFalse(sync_cmd.secret_ok(basic(""), SECRET))
+        self.assertFalse(sync_cmd.secret_ok("Basic !!!", SECRET))
+        self.assertFalse(sync_cmd.secret_ok(basic(SECRET), ""))
 
 
 if __name__ == "__main__":
