@@ -22,6 +22,13 @@
                     "permission": ["--auto"]},
       "output": "text",
       "note": "Flags from OpenCode's documented `opencode run`: `--model`, `--format json`, `--command` and `--auto` are the ones the spike H1 runs used against OpenCode 1.19.4; this profile has not been re-run against a live OpenCode since. `--auto` lives only in `container.permission`. The command surface port is spec 2038, so only the with arm exists until it lands."
+    },
+    "gateway": {
+      "argv": ["python3", "-I", "{root}/scripts/eval_gateway_grader.py", "--model", "{model}",
+               "--max-tokens", "16000", "--prompt-file", "{prompt_file}"],
+      "arms": {},
+      "output": "text",
+      "note": "The default grader (system.ai.deepseek-v4-1-flash-1017 through the Unity Gateway). The endpoint and the credential come only from EVAL_GATEWAY_URL and EVAL_GATEWAY_TOKEN in the environment; the profile holds no host. Grader only: it has no arms. {root} and {prompt_file} exist only for the grader."
     }
   }
 }
