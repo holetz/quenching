@@ -141,8 +141,8 @@ class Runner(unittest.TestCase):
         self.assertIn("started", (out / "suite/c1.with.output.txt").read_text())
 
     def test_an_arm_the_profile_lacks_is_refused(self):
-        code, text = self.run_cli("--harness", "slow", "--model", "m", "--grader-model", "g",
-                                  "--run-id", "r", "--arms", "without")
+        code, text = self.run_cli("--harness", "slow", "--model", "m", "--grader-harness", "grader",
+                                  "--grader-model", "g", "--run-id", "r", "--arms", "without")
         self.assertEqual(code, 2)
         self.assertIn("no 'without' arm", text)
 
@@ -212,6 +212,67 @@ class Runner(unittest.TestCase):
             self.assertEqual(code, 2)
             self.assertIn(needle, buffer.getvalue())
             self.assertIn("--host", buffer.getvalue())
+
+    def test_the_default_grader_is_the_flash_gateway_profile(self):
+        args = runner.parser().parse_args([])
+        self.assertEqual((args.grader_harness, args.grader_model),
+                         ("gateway", "system.ai.deepseek-v4-1-flash-1017"))
+        profiles = runner.load_profiles(Path(runner.PROFILES))
+        values = {"prompt": "p", "model": args.grader_model, "workdir": "w", "max_turns": "1",
+                  "root": "/r", "prompt_file": "/tmp/p.txt"}
+        argv = runner.render(profiles["gateway"], None, values, [])
+        self.assertIn("system.ai.deepseek-v4-1-flash-1017", argv)
+        self.assertEqual(argv[argv.index("--max-tokens") + 1], "16000")
+        self.assertEqual(argv[argv.index("--prompt-file") + 1], "/tmp/p.txt")
+
+    def test_a_dry_run_needs_no_grader_model(self):
+        code, _ = self.run_cli("--harness", "fake", "--model", "m", "--grader-harness", "grader", "--run-id", "r", "--dry-run")
+        self.assertEqual(code, 0)
+
+    def test_the_grader_reads_the_prompt_from_a_file(self):
+        (self.tmp / "filegrader.py").write_text(
+            "import sys, json\ntext = open(sys.argv[1]).read()\n"
+            "print(json.dumps([{'assertion': a, 'result': 'pass', 'evidence': 'made.txt'} "
+            "for a in %r if a in text]))\n" % ASSERTIONS)
+        profiles = json.loads(self.profiles.read_text())
+        profiles["profiles"]["filegrader"] = {
+            "argv": [sys.executable, str(self.tmp / "filegrader.py"), "{prompt_file}"], "arms": {}, "output": "text"}
+        self.profiles.write_text(json.dumps(profiles))
+        out = self.tmp / "out-file"
+        code, text = self.run_cli("--harness", "fake", "--model", "m", "--grader-harness", "filegrader",
+                                  "--grader-model", "g", "--run-id", "r", "--out", str(out))
+        self.assertEqual(code, 0, text)
+        grading = json.loads((out / "suite/grading.json").read_text())
+        self.assertEqual({a["result"] for a in grading[1]["arms"]["with"]["assertions"]}, {"pass"})
+
+    def test_an_unknown_is_regraded_by_the_escalation_grader_and_never_approved_otherwise(self):
+        (self.tmp / "escalation.py").write_text(
+            "import json, sys\nprint(json.dumps([{'assertion': a, 'result': 'pass', 'evidence': 'AGENT DONE'} "
+            "for a in %r]))\n" % ASSERTIONS)
+        profiles = json.loads(self.profiles.read_text())
+        profiles["profiles"]["escalation"] = {
+            "argv": [sys.executable, str(self.tmp / "escalation.py"), "{prompt}"], "arms": {}, "output": "text"}
+        self.profiles.write_text(json.dumps(profiles))
+        plain = self.full_run("fake")
+        first = json.loads((plain / "suite/grading.json").read_text())[0]["arms"]["with"]["assertions"]
+        self.assertEqual(first[2]["result"], "unknown")
+        self.assertNotIn("gradedBy", first[2])
+        out = self.tmp / "out-escalated"
+        code, text = self.run_cli("--harness", "fake", "--model", "m1", "--grader-harness", "grader",
+                                  "--grader-model", "g1", "--escalate-grader-harness", "escalation",
+                                  "--escalate-grader-model", "big", "--run-id", "r1", "--out", str(out))
+        self.assertEqual(code, 0, text)
+        graded = json.loads((out / "suite/grading.json").read_text())[0]["arms"]["with"]["assertions"]
+        self.assertEqual([a["result"] for a in graded], ["pass", "pass", "pass"])
+        self.assertEqual([a.get("gradedBy") for a in graded], [None, None, "escalation"])
+        bench = json.loads((out / "suite/benchmark.json").read_text())
+        self.assertEqual(bench["grader"]["escalation"], {"harness": "escalation", "model": "big"})
+
+    def test_an_escalation_needs_both_flags(self):
+        code, text = self.run_cli("--harness", "fake", "--model", "m", "--grader-harness", "grader",
+                                  "--run-id", "r", "--escalate-grader-model", "big")
+        self.assertEqual(code, 2)
+        self.assertIn("together", text)
 
     def test_the_summary_records_the_mode(self):
         out = self.full_run("fake")

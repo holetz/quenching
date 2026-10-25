@@ -6,7 +6,8 @@ directory, committed as a git repository, then prepared by the suite's optional 
 harness is a profile from `eval_harnesses.json` (an argv template), so the same cases run under
 Claude Code, Codex, OpenCode or any command line. After the arm, the observable state of the
 fixture is snapshotted and handed with the arm's output to the grader profile, which is the same
-for every arm and model compared. A grade whose evidence is not a verbatim excerpt of that
+for every arm and model compared (default: the Flash 1017 model service through the gateway profile; an
+`unknown` regraded only by an declared escalation grader). A grade whose evidence is not a verbatim excerpt of that
 material is downgraded to `unknown`.
 
 By default each arm runs in a disposable container (`--image`) where the profile's `container.permission`
@@ -43,6 +44,10 @@ GIT_ENV = {"GIT_AUTHOR_NAME": "Eval fixture", "GIT_AUTHOR_EMAIL": "eval@example.
 SAFE_GIT = ["-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null", "-c", "diff.external=",
             "-c", "gpg.program=/bin/false", "-c", "log.showSignature=false"]
 MATERIAL_LIMIT = 60000
+# The human's decision of 2026-10-24: the default grader is the Flash 1017 model service behind the
+# Unity Gateway (endpoint and credential come from the environment, see eval_gateway_grader.py).
+DEFAULT_GRADER_HARNESS = "gateway"
+DEFAULT_GRADER_MODEL = "system.ai.deepseek-v4-1-flash-1017"
 
 GRADER_PROMPT = """You grade one run of a coding agent. For EVERY assertion below, decide whether the
 material shows it holds. Reply with ONLY a JSON array, one object per assertion, in order:
@@ -441,19 +446,49 @@ def run_arm(args, profiles: dict, suite: Path, case: dict, arm: str) -> dict:
     return entry
 
 
-def grade(args, profiles: dict, assertions: list[str], material: str) -> list[dict]:
-    profile = profiles[args.grader_harness]
+def grade_once(profiles: dict, harness: str, model: str, extra: list[str], timeout: int,
+               assertions: list[str], material: str) -> list[dict]:
+    profile = profiles[harness]
     prompt = GRADER_PROMPT.format(assertions="\n".join(f"- {a}" for a in assertions), material=material)
     with tempfile.TemporaryDirectory(prefix="eval-grader-") as temporary:
-        values = {"prompt": prompt, "model": args.grader_model, "workdir": temporary,
-                  "max_turns": "1"}
-        record = invoke(render(profile, None, values, args.grader_extra_arg), Path(temporary),
-                        dict(os.environ), args.timeout)
+        prompt_file = Path(temporary) / "prompt.txt"
+        prompt_file.write_text(prompt, encoding="utf-8")
+        values = {"prompt": prompt, "model": model, "workdir": temporary, "max_turns": "1",
+                  "root": str(ROOT), "prompt_file": str(prompt_file)}
+        record = invoke(render(profile, None, values, extra), Path(temporary), dict(os.environ), timeout)
     if record["error"]:
         return [{"assertion": a, "result": "unknown", "evidence": "",
                  "reason": f"the grader failed: {record['error']}"} for a in assertions]
     text, _ = output_text(profile, record["stdout"])
     return verify_grades(assertions, parse_grades(text), material)
+
+
+def grade(args, profiles: dict, assertions: list[str], material: str) -> list[dict]:
+    """The default grader's grades; each `unknown` is regraded by the escalation grader, when one is declared.
+
+    An `unknown` that stays `unknown` is never an approval. Only the `unknown` entries are
+    replaced, and each replaced entry says so in `gradedBy`.
+    """
+    grades = grade_once(profiles, args.grader_harness, args.grader_model, args.grader_extra_arg,
+                        args.timeout, assertions, material)
+    if not args.escalate_grader_harness:
+        return grades
+    pending = [g["assertion"] for g in grades if g["result"] == "unknown"]
+    if not pending:
+        return grades
+    second = {g["assertion"]: g for g in grade_once(profiles, args.escalate_grader_harness,
+                                                    args.escalate_grader_model,
+                                                    args.escalate_grader_extra_arg, args.timeout,
+                                                    pending, material)}
+    return [{**second[g["assertion"]], "gradedBy": "escalation"} if g["assertion"] in second else g
+            for g in grades]
+
+
+def grader_record(args) -> dict:
+    record = {"harness": args.grader_harness, "model": args.grader_model}
+    if args.escalate_grader_harness:
+        record["escalation"] = {"harness": args.escalate_grader_harness, "model": args.escalate_grader_model}
+    return record
 
 
 def aggregate(cases: list[dict], arm: str) -> dict:
@@ -473,7 +508,7 @@ def benchmark(data: dict, cases: list[dict], args, arms: list[str]) -> dict:
     result = {"skill": data["skill"], "cases": len(cases), "runId": args.run_id,
               "harness": args.harness, "model": args.model,
               "commandModel": command_model(data["skill"]),
-              "grader": {"harness": args.grader_harness, "model": args.grader_model}}
+              "grader": grader_record(args)}
     for arm in arms:
         result[arm] = aggregate(cases, arm)
     if set(arms) == set(ARMS):
@@ -498,8 +533,8 @@ def refusal_without_container(args, profile: dict) -> str | None:
 def run(args) -> int:
     profiles = load_profiles(Path(args.harnesses))
     arms = [a.strip() for a in args.arms.split(",") if a.strip()]
-    for name in (args.harness, args.grader_harness):
-        if name not in profiles:
+    for name in (args.harness, args.grader_harness, args.escalate_grader_harness):
+        if name and name not in profiles:
             print(f"run_evals: no harness profile {name!r} in {args.harnesses}", file=sys.stderr)
             return 2
     for arm in arms:
@@ -531,7 +566,7 @@ def run(args) -> int:
         return 0
     out = Path(args.out or ROOT / ".quenching/evals" / args.run_id)
     summary = {"runId": args.run_id, "harness": args.harness, "model": args.model,
-               "grader": {"harness": args.grader_harness, "model": args.grader_model},
+               "grader": grader_record(args),
                "arms": arms, "suites": [],
                "mode": {"where": "host"} if args.host else
                {"where": "container", "runtime": args.runtime, "image": args.image}}
@@ -597,8 +632,15 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--harness", help="the profile the arms run under")
     p.add_argument("--model", help="the model the arms run on")
     p.add_argument("--arms", default="with", help="comma-separated: with, without (default: with)")
-    p.add_argument("--grader-harness", help="the profile the grader runs under (default: --harness)")
-    p.add_argument("--grader-model", help="the grader's model, fixed across every compared run")
+    p.add_argument("--grader-harness", default=DEFAULT_GRADER_HARNESS,
+                   help=f"the profile the grader runs under (default: {DEFAULT_GRADER_HARNESS})")
+    p.add_argument("--grader-model", default=DEFAULT_GRADER_MODEL,
+                   help=f"the grader's model, fixed across every compared run (default: {DEFAULT_GRADER_MODEL})")
+    p.add_argument("--escalate-grader-harness",
+                   help="the profile that regrades the assertions the grader left `unknown`; needs --escalate-grader-model")
+    p.add_argument("--escalate-grader-model", help="the escalation grader's model")
+    p.add_argument("--escalate-grader-extra-arg", action="append", default=[],
+                   help="an argument added to the escalation grader")
     p.add_argument("--run-id", help="the run's identifier, e.g. a timestamp; never read from the clock")
     p.add_argument("--out", help="the output directory (default: .quenching/evals/<run-id>)")
     p.add_argument("--timeout", type=int, default=900, help="seconds per invocation")
@@ -621,9 +663,8 @@ def main(argv: list[str] | None = None) -> int:
         return check(args)
     missing = [flag for flag, value in (("--harness", args.harness), ("--model", args.model),
                                         ("--run-id", args.run_id)) if not value]
-    args.grader_harness = args.grader_harness or args.harness
-    if not args.dry_run and not args.grader_model:
-        missing.append("--grader-model")
+    if bool(args.escalate_grader_harness) != bool(args.escalate_grader_model):
+        missing.append("--escalate-grader-harness and --escalate-grader-model together")
     if missing:
         print(f"run_evals: missing {', '.join(missing)}", file=sys.stderr)
         return 2
