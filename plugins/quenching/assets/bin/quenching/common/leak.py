@@ -1,0 +1,233 @@
+"""The leak gate: what must never reach a commit, a push or the specs store.
+
+Three pattern sets, one scanner:
+
+* the GENERIC patterns below, safe to publish (Brazilian tax ids, Azure Databricks workspace
+  hosts, Databricks personal access tokens, classic cluster ids, private keys);
+* the PATH patterns, built at run time from `$HOME` — the home directory itself and the slug
+  Claude Code derives from it for project and scratchpad directories. No user name is ever written
+  into this file, and a machine with another `$HOME` finds nothing that only exists on this one;
+* a private DENYLIST of organization-specific terms, one case-insensitive regex per line, read from
+  `$QUENCHING_DENYLIST_FILE` or `~/.config/quenching/denylist.txt`. It lives outside the repository
+  on purpose: committing it would leak the very terms it protects.
+
+The hooks fail closed without the denylist (`DenylistMissing`), unless the caller asks for the
+generic patterns only (CI, which never sees the denylist). The specs store guard uses the denylist
+when it exists and the generic patterns always: it runs in every repository the plugin is installed
+in, and requiring a private file there would refuse every write of every other user.
+
+A path has a known relative form, so the store guard rewrites it before scanning (`normalize_paths`);
+a generic or denylist hit has none, so it is refused. A finding is fixed by removing the content,
+never by weakening a pattern.
+"""
+from __future__ import annotations
+
+import os
+import re
+import subprocess
+from dataclasses import dataclass
+from pathlib import Path
+
+DENYLIST_ENV = "QUENCHING_DENYLIST_FILE"
+ZERO_SHA = "0" * 40
+EXCERPT_CHARS = 160
+
+GENERIC_PATTERNS: dict[str, re.Pattern[str]] = {
+    "brazilian-cpf": re.compile(r"\b\d{3}\.\d{3}\.\d{3}-\d{2}\b"),
+    "brazilian-cnpj": re.compile(r"\b\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}\b"),
+    "azure-databricks-host": re.compile(r"adb-\d{6,}\.\d+\.azuredatabricks\.net", re.IGNORECASE),
+    "databricks-pat": re.compile(r"\bdapi[0-9a-f]{32}\b"),
+    "classic-cluster-id": re.compile(r"\b\d{4}-\d{6}-[a-z0-9]{8}\b"),
+    "private-key": re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
+}
+
+# A Claude Code session scratchpad: `/tmp/claude-<uid>/<project slug>/<session>/scratchpad`.
+_SCRATCHPAD = re.compile(
+    r"(?:/private)?/tmp/claude-\d+/[^/\s`'\")\]]+(?:/[0-9a-fA-F-]{36})?(?:/scratchpad)?")
+
+
+class DenylistMissing(Exception):
+    """The denylist the caller requires is not on disk."""
+
+    def __init__(self, path: Path) -> None:
+        super().__init__(f"denylist not found at {path}")
+        self.path = path
+
+
+@dataclass(frozen=True)
+class Finding:
+    """One pattern match, located well enough to fix it."""
+
+    where: str
+    line: int
+    label: str
+    excerpt: str
+
+    def render(self) -> str:
+        return f"{self.where}:{self.line}: [{self.label}] {self.excerpt}"
+
+    def as_dict(self) -> dict:
+        return {"where": self.where, "line": self.line, "label": self.label,
+                "excerpt": self.excerpt}
+
+
+def denylist_path() -> Path:
+    raw = os.environ.get(DENYLIST_ENV, "")
+    return Path(raw) if raw else Path.home() / ".config" / "quenching" / "denylist.txt"
+
+
+def load_denylist(path: Path) -> dict[str, re.Pattern[str]]:
+    """One regex per line; blank lines and `#` comments are ignored."""
+    patterns: dict[str, re.Pattern[str]] = {}
+    for number, raw in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        line = raw.strip()
+        if line and not line.startswith("#"):
+            patterns[f"denylist:{number}"] = re.compile(line, re.IGNORECASE)
+    return patterns
+
+
+def _home() -> str:
+    home = os.environ.get("HOME", "").rstrip("/\\")
+    return home if len(home) > 1 else ""
+
+
+def _home_slug(home: str) -> str:
+    """The prefix Claude Code gives a project directory under `home`: `/a/b` → `-a-b`."""
+    return "-" + re.sub(r"[/\\:]+", "-", home.strip("/\\")) if home else ""
+
+
+def path_patterns() -> dict[str, re.Pattern[str]]:
+    """The home directory and its slug, as this process sees them; empty without a `$HOME`."""
+    home = _home()
+    if not home:
+        return {}
+    return {
+        "home-path": re.compile(re.escape(home) + r"(?![\w.-])"),
+        "home-slug": re.compile(re.escape(_home_slug(home)) + r"(?![\w.])"),
+    }
+
+
+def patterns(*, generic_only: bool = False, require_denylist: bool = True) -> dict[str, re.Pattern[str]]:
+    """The patterns a scan applies. Raises `DenylistMissing` when the denylist is required and
+    absent; `generic_only` skips it entirely."""
+    found = dict(GENERIC_PATTERNS) | path_patterns()
+    if generic_only:
+        return found
+    path = denylist_path()
+    if path.is_file():
+        return found | load_denylist(path)
+    if require_denylist:
+        raise DenylistMissing(path)
+    return found
+
+
+def scan_text(where: str, text: str, pats: dict[str, re.Pattern[str]]) -> list[Finding]:
+    """Every pattern match in `text`, one finding per line and label."""
+    findings: list[Finding] = []
+    for number, line in enumerate(text.splitlines(), start=1):
+        findings.extend(Finding(where, number, label, line.strip()[:EXCERPT_CHARS])
+                        for label, pattern in pats.items() if pattern.search(line))
+    return findings
+
+
+def normalize_paths(text: str, root: str | None = None) -> str:
+    """Rewrite the absolute paths that have a known relative form: the scratchpad to
+    `<scratchpad>`, the repository root to a relative path, the home directory to `~`, and the
+    home slug of a Claude Code project directory to `<project>`."""
+    text = _SCRATCHPAD.sub("<scratchpad>", text)
+    if root:
+        top = os.path.abspath(root).rstrip("/\\")
+        if len(top) > 1:
+            text = re.sub(re.escape(top) + r"/", "", text)
+            text = re.sub(re.escape(top) + r"(?![\w./-])", ".", text)
+    home = _home()
+    if home:
+        text = re.sub(re.escape(home) + r"(?![\w.-])", "~", text)
+        text = re.sub(re.escape(_home_slug(home)) + r"(?:-[^/\s`'\")\]]*)?(?![\w.])", "<project>", text)
+    return text
+
+
+def guard_text(text: str, root: str | None = None) -> tuple[str, list[Finding]]:
+    """The specs store guard: normalize the paths, then scan what is left with the generic
+    patterns, the path patterns and — when it exists — the denylist."""
+    clean = normalize_paths(text, root)
+    return clean, scan_text("spec", clean, patterns(require_denylist=False))
+
+
+def store_refusal(findings: list[Finding]) -> dict:
+    """The ready-to-emit refusal a store write gets when `guard_text` found anything."""
+    first = findings[0]
+    return {
+        "code": "sp-leak", "exit": 2,
+        "findings": [f.as_dict() for f in findings],
+        "message": f"the text matches the leak gate ([{first.label}] at line {first.line}"
+                   f"{f' and {len(findings) - 1} more' if len(findings) > 1 else ''}); "
+                   "remove the content and write again — nothing was written",
+    }
+
+
+def _git(root: str, *args: str) -> str:
+    return subprocess.run(["git", *args], cwd=root, check=True, capture_output=True,
+                          text=True).stdout
+
+
+def _is_binary(blob: bytes) -> bool:
+    return b"\0" in blob[:8192]
+
+
+def scan_staged(root: str, pats: dict[str, re.Pattern[str]]) -> list[Finding]:
+    """The index version of every staged file and the email that will sign the commit."""
+    email = subprocess.run(["git", "config", "user.email"], cwd=root, capture_output=True,
+                           text=True).stdout
+    findings = scan_text("git config user.email", email, pats)
+    for path in _git(root, "diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z").split("\0"):
+        if not path:
+            continue
+        blob = subprocess.run(["git", "show", f":{path}"], cwd=root, check=True,
+                              capture_output=True).stdout
+        if not _is_binary(blob):
+            findings.extend(scan_text(path, blob.decode("utf-8", errors="replace"), pats))
+    return findings
+
+
+def _commits_to_push(root: str, local_sha: str, remote_sha: str) -> list[str]:
+    """The commits a push publishes; a new ref publishes what no remote-tracking ref has yet."""
+    if local_sha == ZERO_SHA:
+        return []
+    revs = [local_sha, "--not", "--remotes"] if remote_sha == ZERO_SHA else [f"{remote_sha}..{local_sha}"]
+    return _git(root, "rev-list", *revs).split()
+
+
+def scan_push(root: str, hook_input: str, pats: dict[str, re.Pattern[str]]) -> list[Finding]:
+    """Emails, messages and added lines of every commit named by `pre-push`'s stdin lines
+    (`<local ref> <local sha> <remote ref> <remote sha>`)."""
+    findings: list[Finding] = []
+    seen: set[str] = set()
+    for line in hook_input.splitlines():
+        fields = line.split()
+        if len(fields) != 4:
+            continue
+        for sha in _commits_to_push(root, fields[1], fields[3]):
+            if sha in seen:
+                continue
+            seen.add(sha)
+            header = _git(root, "show", "-s", "--format=%ae%n%ce%n%B", sha)
+            findings.extend(scan_text(f"commit {sha[:12]} (header)", header, pats))
+            added = [row[1:] for row in
+                     _git(root, "show", "--format=", "--unified=0", "--no-color", sha).splitlines()
+                     if row.startswith("+") and not row.startswith("+++")]
+            findings.extend(scan_text(f"commit {sha[:12]} (diff)", "\n".join(added), pats))
+    return findings
+
+
+def scan_all(root: str, pats: dict[str, re.Pattern[str]]) -> list[Finding]:
+    """Every tracked file as it is in the working tree."""
+    findings: list[Finding] = []
+    for path in _git(root, "ls-files", "-z").split("\0"):
+        file = Path(root, path)
+        if not path or not file.is_file():
+            continue
+        blob = file.read_bytes()
+        if not _is_binary(blob):
+            findings.extend(scan_text(path, blob.decode("utf-8", errors="replace"), pats))
+    return findings
