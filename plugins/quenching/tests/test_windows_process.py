@@ -34,14 +34,16 @@ class Stop(unittest.TestCase):
     def test_posix_kills_the_group(self):
         process = mock.Mock(pid=4321)
         with mock.patch.object(probe.os, "name", "posix"), \
+                mock.patch.object(probe.signal, "SIGKILL", 9, create=True), \
                 mock.patch.object(probe.os, "killpg", create=True) as killpg:
             probe.stop(process)
-        killpg.assert_called_once_with(4321, probe.signal.SIGKILL)
+        killpg.assert_called_once_with(4321, 9)
         process.wait.assert_called_once()
 
     def test_posix_tolerates_a_gone_group(self):
         process = mock.Mock(pid=4321)
         with mock.patch.object(probe.os, "name", "posix"), \
+                mock.patch.object(probe.signal, "SIGKILL", 9, create=True), \
                 mock.patch.object(probe.os, "killpg", side_effect=ProcessLookupError, create=True):
             probe.stop(process)
         process.wait.assert_called_once()
