@@ -39,7 +39,7 @@ class RunRecord(unittest.TestCase):
         self.assertIn("run", schema["frontmatter"]["optional"])
         rec = schema["frontmatter"]["records"]["run"]
         self.assertEqual("spec-runner", rec["writtenBy"])
-        self.assertEqual(["state", "verifier", "date"], rec["fields"])
+        self.assertEqual(["state", "verifier", "by", "date"], rec["fields"])
         for state in ("done", "continue", "blocked", "failed"):
             self.assertIsNone(record_field_value_error(rec, "state", state))
         for verdict in ("pass", "fail", "not-run"):
@@ -49,10 +49,10 @@ class RunRecord(unittest.TestCase):
 
     def test_write_merges_without_losing_fields_or_other_records(self):
         self.assertEqual(0, self.write(["state=continue", "verifier=not-run", "date=2026-10-17"])[0])
-        code, payload = self.write(["state=done", "verifier=pass"])
+        code, payload = self.write(["state=done", "verifier=pass", "by=verifier"])
         self.assertEqual(0, code)
         info = self.backend.read_spec(1)[0]
-        self.assertEqual({"state": "done", "verifier": "pass", "date": "2026-10-17"},
+        self.assertEqual({"state": "done", "verifier": "pass", "by": "verifier", "date": "2026-10-17"},
                          spec_records(info["frontmatter"])["run"])
         self.assertEqual("medium", info["frontmatter"]["priority"]["complexity"])
 
@@ -62,11 +62,27 @@ class RunRecord(unittest.TestCase):
         self.assertIsNone(spec_records(self.backend.read_spec(1)[0]["frontmatter"])["run"])
 
     def test_omitting_verifier_in_a_later_stamp_keeps_the_stored_verdict(self):
-        self.write(["state=continue", "verifier=pass", "date=2026-10-17"])
+        self.write(["state=continue", "verifier=pass", "by=verifier", "date=2026-10-17"])
         code, _ = self.write(["state=done", "date=2026-10-18"])
         self.assertEqual(0, code)
-        self.assertEqual({"state": "done", "verifier": "pass", "date": "2026-10-18"},
+        self.assertEqual({"state": "done", "verifier": "pass", "by": "verifier",
+                          "date": "2026-10-18"},
                          spec_records(self.backend.read_spec(1)[0]["frontmatter"])["run"])
+
+    def test_a_verdict_without_the_verifier_attestation_is_refused_and_writes_nothing(self):
+        for verdict in ("pass", "fail"):
+            code, payload = self.write(["state=done", f"verifier={verdict}", "date=2026-10-17"])
+            self.assertEqual(2, code)
+            self.assertEqual("sp-run-verdict-unattested", payload["code"])
+        self.assertIsNone(spec_records(self.backend.read_spec(1)[0]["frontmatter"])["run"])
+
+    def test_not_run_needs_no_attestation_and_drops_a_stored_one(self):
+        self.write(["state=continue", "verifier=pass", "by=verifier", "date=2026-10-17"])
+        code, _ = self.write(["state=done", "verifier=not-run"])
+        self.assertEqual(0, code)
+        run = spec_records(self.backend.read_spec(1)[0]["frontmatter"])["run"]
+        self.assertEqual("not-run", run["verifier"])
+        self.assertNotIn("by", run)
 
     def test_spec_runner_contract_does_not_derive_verifier_from_the_gate(self):
         path = pathlib.Path(__file__).resolve().parents[1] / "agents" / "spec-runner.md"
