@@ -249,6 +249,75 @@ class Containment(unittest.TestCase):
             runner.snapshot(Path(tmp) / "no-suite", workspace, env)
             self.assertFalse(mark.exists(), f"the {driver!r} workspace clean filter ran during the snapshot")
 
+    def hostile_workspace(self, tmp, driver):
+        workspace = Path(tmp) / "workspace"
+        workspace.mkdir()
+        mark = Path(tmp) / "ran"
+        env = {k: v for k, v in runner.os.environ.items() if not k.startswith("GIT_CONFIG_")}
+        env.update(runner.GIT_ENV)
+        (workspace / ".gitattributes").write_text("f filter=evil\n", encoding="utf-8")
+        (workspace / "f").write_text("one\n")
+        for argv in (["git", "init", "-q", "-b", "main"], ["git", "add", "-A"],
+                     ["git", "commit", "-q", "-m", "x"]):
+            runner.subprocess.run(argv, cwd=workspace, env=env, check=True)
+        config = workspace / ".git/config"
+        with config.open("ab") as handle:
+            handle.write(f'\n[filter "{driver}"]\n\tclean = "touch {mark}; cat"\n'.encode())
+        (workspace / "f").write_text("two\n")
+        return workspace, mark, env
+
+    def test_the_snapshot_survives_a_carriage_return_in_a_driver_name(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace, mark, env = self.hostile_workspace(tmp, "a\rb")
+            text = runner.snapshot(Path(tmp) / "no-suite", workspace, env)
+            self.assertNotIn("invalid key", text)
+            self.assertIn("f", text.split("## git status --porcelain\n", 1)[1].splitlines()[0])
+            self.assertFalse(mark.exists())
+
+    def test_an_empty_git_config_count_is_zero(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace, mark, env = self.hostile_workspace(tmp, "evil")
+            text = runner.snapshot(Path(tmp) / "no-suite", workspace, {**env, "GIT_CONFIG_COUNT": ""})
+            self.assertIn("M f", text)
+            self.assertFalse(mark.exists())
+
+    def test_an_inherited_git_config_parameters_filter_does_not_win(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace, mark, env = self.hostile_workspace(tmp, "evil")
+            hostile = {**env, "GIT_CONFIG_PARAMETERS": f"'filter.evil.clean={mark}.sh'"}
+            (Path(f"{mark}.sh")).write_text(f"#!/bin/sh\ntouch {mark}\ncat\n")
+            Path(f"{mark}.sh").chmod(0o755)
+            runner.snapshot(Path(tmp) / "no-suite", workspace, hostile)
+            self.assertFalse(mark.exists(), "an inherited GIT_CONFIG_PARAMETERS filter ran")
+
+    def test_the_snapshot_git_never_receives_an_inherited_git_config_parameters(self):
+        seen = []
+        real = runner.subprocess.run
+
+        def spy(argv, *args, **kwargs):
+            if argv[0] == "git":
+                seen.append(kwargs["env"].get("GIT_CONFIG_PARAMETERS"))
+            return real(argv, *args, **kwargs)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace, mark, env = self.hostile_workspace(tmp, "evil")
+            hostile = {**env, "GIT_CONFIG_PARAMETERS": "'filter.evil.clean=true'"}
+            runner.subprocess.run = spy
+            try:
+                runner.snapshot(Path(tmp) / "no-suite", workspace, hostile)
+            finally:
+                runner.subprocess.run = real
+        self.assertTrue(seen)
+        self.assertEqual({None}, set(seen))
+
+    def test_a_git_config_key_without_its_value_does_not_break_git(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace, mark, env = self.hostile_workspace(tmp, "evil")
+            hostile = {**env, "GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "user.name"}
+            text = runner.snapshot(Path(tmp) / "no-suite", workspace, hostile)
+            self.assertIn("M f", text)
+            self.assertFalse(mark.exists())
+
     def test_a_timeout_kills_the_grandchildren_too(self):
         with tempfile.TemporaryDirectory() as tmp:
             mark = Path(tmp) / "M"
