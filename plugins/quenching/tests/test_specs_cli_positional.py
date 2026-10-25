@@ -11,7 +11,7 @@ import sys
 import tempfile
 import unittest
 
-import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
+import _paths  # must precede the `quenching` import; see its docstring
 from quenching.specs.commands.cli import SPEC_POSITIONAL, build_parser
 
 
@@ -87,7 +87,6 @@ class RootOption(unittest.TestCase):
         self.assertIsNone(parse("status", "1").root)
 
     def test_status_reads_the_named_repository_from_another_cwd(self):
-        import _paths
         cq = os.path.join(os.path.dirname(os.path.abspath(_paths.__file__)),
                           "..", "assets", "bin", "cq")
         repo = os.path.abspath(os.path.join(os.path.dirname(cq), "..", "..", "..", ".."))
