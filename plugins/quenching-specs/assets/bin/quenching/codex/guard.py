@@ -3,7 +3,11 @@
 Codex runs with `--dangerously-bypass-approvals-and-sandbox`, so its bounds are proved by code
 here, before and after the run. `refs` are the worktree's `HEAD`, branch, reflog length and stash
 ref: the guard proves the reviewed worktree unchanged, never a neighbouring worktree's `HEAD` or a
-ref of the shared repository, which a parallel worker moves legitimately. `tree` maps every path `git status` reports to its status code and
+ref of the shared repository, which a parallel worker moves legitimately. The one shared thing it
+does watch is the base checkout (the main worktree of `git worktree list`) and the primary
+branch ref: `base_state` and `base_moves` accept a fast-forward there (the new value descends from
+the old one) and bar a rewind or rewrite, a switch of the base `HEAD`'s branch, a detached base
+`HEAD` and the removal of the ref. `tree` maps every path `git status` reports to its status code and
 the hash of its bytes, so the review can prove it changed nothing at all. The review's snapshot
 also holds the hash of the index and the ignored files that carry local configuration
 (`.claude/**` and `*.local.json`), the `ls-files -v` flags and the bytes of every file they hide
@@ -88,6 +92,65 @@ def refs(worktree: str, strict: bool = False) -> dict:
             "branch": state(worktree, "symbolic-ref", "-q", "HEAD").strip(),
             "reflogLength": len(run(worktree, "reflog", "--format=%H").splitlines()),
             "stash": state(worktree, "rev-parse", "-q", "--verify", "refs/stash").strip()}
+
+
+def _ancestor(worktree: str, old: str, new: str) -> bool:
+    """Whether `new` descends from (or equals) `old`; any git failure other than "no" is fatal."""
+    result = subprocess.run(["git", "-C", worktree, "merge-base", "--is-ancestor", old, new],
+                            capture_output=True, text=True, errors="replace")
+    if result.returncode not in (0, 1):
+        raise GuardError(f"git merge-base --is-ancestor failed ({result.returncode}): "
+                         f"{result.stderr.strip()}")
+    return result.returncode == 0
+
+
+def _primary(worktree: str, base: str) -> str:
+    """The primary branch ref: `origin/HEAD`'s target, else the base checkout's branch, else
+    `main` or `master`, whichever exists."""
+    head = _state(worktree, "symbolic-ref", "-q", "refs/remotes/origin/HEAD").strip()
+    if head.startswith("refs/remotes/origin/"):
+        return "refs/heads/" + head[len("refs/remotes/origin/"):]
+    branch = _state(base, "symbolic-ref", "-q", "HEAD").strip()
+    if branch:
+        return branch
+    for name in ("main", "master"):
+        if _state(worktree, "rev-parse", "-q", "--verify", f"refs/heads/{name}").strip():
+            return f"refs/heads/{name}"
+    return ""
+
+
+def base_state(worktree: str, primary: str | None = None) -> dict:
+    """The base checkout's `HEAD` and branch and the primary branch ref's value. Fails closed."""
+    listing = git_strict(worktree, "worktree", "list", "--porcelain")
+    base = next((line[len("worktree "):] for line in listing.splitlines()
+                 if line.startswith("worktree ")), "")
+    if not base:
+        raise GuardError("git worktree list names no base checkout")
+    primary = primary if primary is not None else _primary(worktree, base)
+    return {"path": base, "primary": primary,
+            "head": _state(base, "rev-parse", "-q", "--verify", "HEAD").strip(),
+            "branch": _state(base, "symbolic-ref", "-q", "HEAD").strip(),
+            "primaryRef": (_state(worktree, "rev-parse", "-q", "--verify", primary).strip()
+                           if primary else "")}
+
+
+def base_moves(worktree: str, before: dict, after: dict) -> list[str]:
+    """What moved in the base checkout or the primary ref that is not a fast-forward."""
+    out: list[str] = []
+    if before["branch"] != after["branch"]:
+        out.append("base branch switched" if after["branch"] else "base HEAD detached")
+    elif not after["branch"] and before["head"] != after["head"]:
+        out.append("base HEAD detached")
+    if before["head"] != after["head"] and after["head"] and before["head"] and \
+            not _ancestor(worktree, before["head"], after["head"]):
+        out.append("base HEAD rewound")
+    if before["primaryRef"]:
+        if not after["primaryRef"]:
+            out.append("primary ref removed")
+        elif before["primaryRef"] != after["primaryRef"] and \
+                not _ancestor(worktree, before["primaryRef"], after["primaryRef"]):
+            out.append("primary ref rewound")
+    return out
 
 
 def _digest(full: str) -> str:

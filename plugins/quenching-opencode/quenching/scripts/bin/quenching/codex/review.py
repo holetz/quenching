@@ -9,7 +9,8 @@ arrives on stdin, after the rule that Codex only reads; the events and the last 
 `.quenching/codex/<run>/`.
 
 The git guard is read before and after: the reviewed worktree's refs (`HEAD`, branch, reflog,
-stash), the index hash, the ignored local configuration (`.agents/**`, `*.local.json`)
+stash), the base checkout's `HEAD` and the primary branch ref (a fast-forward is accepted; a
+rewind, a branch switch, a detached base `HEAD` or a removed ref is not), the index hash, the ignored local configuration (`.agents/**`, `*.local.json`)
 and, for every path `git status` reports, its status and bytes. Any change, or a git command that
 fails, is exit 2 `codex-git-guard` naming it: the caller never cleans it and hands the tree to the
 human.
@@ -28,8 +29,8 @@ import shutil
 import subprocess
 import time
 
-from quenching.codex.guard import (BYPASS, GuardError, clean_env, git, refs, run_skip, strict_refs,
-                                  tree)
+from quenching.codex.guard import (BYPASS, GuardError, base_moves, base_state, clean_env, git, refs,
+                                   run_skip, strict_refs, tree)
 from quenching.codex.probe import group_kwargs, stop
 
 RUN_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
@@ -95,7 +96,7 @@ def measured_tokens(events_path: str):
 def snapshot(worktree: str, skip: str | None) -> dict:
     try:
         return {**refs(worktree, strict=True), **strict_refs(worktree),
-                "tree": tree(worktree, skip)}
+                "tree": tree(worktree, skip), "base": base_state(worktree)}
     except GuardError:
         raise
     except Exception as error:  # an unreadable file or any other failure: fail closed
@@ -176,7 +177,12 @@ def run_review(root: str, settings: dict, worktree: str, prompt: str, run: str |
            "argv": ["codex", *argv], "exitCode": code, "timedOut": timed_out,
            "model": settings["model"], "timeoutSeconds": settings["timeoutSeconds"],
            "tokens": measured_tokens(events_path), "guard": None, "changed": []}
-    moved = sorted(key for key in before if key != "tree" and before[key] != after[key])
+    moved = sorted(key for key in before if key not in ("tree", "base") and before[key] != after[key])
+    try:
+        moved += base_moves(toplevel, before["base"], after["base"])
+    except GuardError as error:
+        return guard_refusal(f"the guard cannot compare the base checkout: {error}. Stop and "
+                             f"hand the tree to the human.", run_dir, error)
     out["changed"] = sorted(path for path in before["tree"].keys() | after["tree"].keys()
                             if before["tree"].get(path) != after["tree"].get(path))
     if moved or out["changed"]:

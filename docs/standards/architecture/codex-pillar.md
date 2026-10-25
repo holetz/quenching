@@ -84,7 +84,12 @@ codex exec --dangerously-bypass-approvals-and-sandbox --ignore-user-config --ign
 worktree's `HEAD`, branch, reflog length and the stash ref, and `git status` with untracked files.
 The guard is narrowed to the reviewed worktree: the `HEAD` of another worktree and the refs of the
 shared repository (other branches, tags, `origin/*`) are not read, so the legitimate commit or push
-of a parallel worker never stops a review. The review reads the refs strictly: a git command that fails is
+of a parallel worker never stops a review. Two shared things are watched, and only for rewinds: the
+`HEAD` of the base checkout (the main worktree of `git worktree list`) and the primary branch ref
+(`origin/HEAD`'s target, else the base checkout's branch, else `main`/`master`). A fast-forward
+there (the new value descends from the old one, as in a `git pull` or the conductor's merge) is
+accepted; a rewind or rewrite (`reset`, `branch -f` to a non-descendant, `update-ref`), a switch of
+the base `HEAD`'s branch, a detached base `HEAD` and the removal of the ref are `moved`. The review reads the refs strictly: a git command that fails is
 `GuardError`, never an empty value, while a detached `HEAD` and a repository without `refs/stash`
 are state.
 
