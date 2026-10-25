@@ -61,6 +61,7 @@ from quenching.specs.commands.next import _priority_rank
 from quenching.specs.commands.output import Emitter
 from quenching.specs.commands.task import cmd_discover
 from quenching.specs.members import read_members
+from quenching.specs.parse.deps import schedule
 from quenching.specs.parse.epics import derive_epic, parse_items, split_ref
 from quenching.specs.parse.fields import set_frontmatter_record
 from quenching.specs.parse.records import spec_records
@@ -307,6 +308,9 @@ class Portal:
                 return _validated(headers, {"ok": True, **self._epics(snap)})
             if route == "human":
                 return _validated(headers, {"ok": True, **self._human(snap)})
+            if route == "schedule":
+                return _validated(headers, {"ok": True, "fetchedAt": snap["at"],
+                                            **self._schedule(snap)})
         return _error(404, "sp-portal-not-found", f"no such route: /api/{route}")
 
     def _snapshot(self, fresh: bool):
@@ -427,6 +431,14 @@ class Portal:
                          "done": len(done) + sum(i["status"] == "done" for i in outside),
                          "total": len(kids) + len(outside)})
         return {"supported": bool(epics), "epics": rows}
+
+    def _schedule(self, snap: dict) -> dict:
+        """The schedule `cq specs schedule` derives over the snapshot, each node carrying the
+        portal's stage. The page draws it and recomputes nothing."""
+        result = schedule(snap["infos"])
+        for node in result["nodes"]:
+            node["stage"] = self._stage(snap["infos"][node["id"]])
+        return result
 
     def _members(self, snap: dict, epics: list[dict]) -> tuple[dict, set[str]]:
         """The snapshot's infos, plus every cross-repository member of `epics` read from its own
