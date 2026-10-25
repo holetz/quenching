@@ -927,6 +927,16 @@ class GitHubBackend(SpecBackend):
         # stored tags are.
         desired = derive_labels(new_info)
         labels = reconcile_label_set(declared_tags(native_fields.get("tags") or []), desired)
+        # DEPENDENCIES BEFORE THE BODY, and only when `dependsOn` changed: GitHub carries the
+        # two in separate requests, and this order makes a retry converge — a failed link
+        # leaves the old `dependsOn` in the body, so the retry still sees the change and
+        # re-diffs against the live relations.
+        wanted = azure_predecessor_ids(new_info["frontmatter"], number)
+        if wanted != azure_predecessor_ids(info["frontmatter"], number):
+            refusal = github_dependency_limit_refusal(number, wanted)
+            if refusal:
+                raise BackendRefusal(refusal)
+            self._sync_dependencies(number, wanted)
         self._store(number, text, had_parts, labels, native_fields)
         # AFTER `_store`: a label `_store`'s own PATCH just created does not exist yet
         # before that call, and fixing a nonexistent label's color 404s. Gated on an
@@ -995,6 +1005,10 @@ class GitHubBackend(SpecBackend):
     def create_spec(self, phase: str, text: str) -> str:
         text = guard_store_write(text, self.cwd, None, BackendRefusal)
         fresh = derive_info({"phase": phase}, text)
+        refusal = github_dependency_limit_refusal(
+            None, azure_predecessor_ids(fresh["frontmatter"]))
+        if refusal:
+            raise BackendRefusal(refusal)
         stripped = strip_frontmatter_keys(text, self.GH_STORED_KEYS)
         stored, title = hybrid_project(stripped)
         chunks = hybrid_split(stored, GH_PART_MAX)
@@ -1048,12 +1062,43 @@ class GitHubBackend(SpecBackend):
             print(f"note: workItemType '{type_key}' has no `github` name declared in "
                   f"{CONFIG_FILE} — no type applied to this issue", file=sys.stderr)
         self._sync_parts(number, chunks)
+        # A new issue is blocked by nothing yet: every wanted dependency is an add.
+        wanted = azure_predecessor_ids(fresh["frontmatter"], number)
+        if wanted:
+            self._sync_dependencies(number, wanted, current={})
         if phase == "archive":
             # Created open and then closed, because "closed" is not a state an issue can be
             # born in. Two calls for a case `new` never takes — only a migration does.
             self._set_state(number, "closed")
         self._invalidate()
         return url
+
+    def _blocked_by(self, number: int) -> dict[int, int]:
+        """`{number: REST id}` of the issues this issue is blocked by."""
+        return github_blocked_by(self._api(
+            f"reading what issue #{number} is blocked by", "--paginate", "--slurp",
+            f"repos/{self.repo}/issues/{number}/dependencies/blocked_by?per_page=100"))
+
+    def _sync_dependencies(self, number: int, wanted: list[int],
+                           current: dict[int, int] | None = None) -> None:
+        """Make the issue's blocked-by set equal `wanted`. A removal uses the REST id the
+        listing returned; an add reads the blocking issue once for its id."""
+        if current is None:
+            current = self._blocked_by(number)
+        adds, removes = github_dependency_diff(current, wanted)
+        path = f"repos/{self.repo}/issues/{number}/dependencies/blocked_by"
+        for dep in removes:
+            self._api(f"removing #{dep} from what issue #{number} is blocked by",
+                      "-X", "DELETE", f"{path}/{current[dep]}")
+        for dep in adds:
+            blocking = self._api(f"reading issue #{dep}, which issue #{number} waits for",
+                                 f"repos/{self.repo}/issues/{dep}")
+            self._write_api(f"marking issue #{number} as blocked by #{dep}", "POST", path,
+                            {"issue_id": int(blocking["id"])})
+
+    def predecessor_links(self, spec_id: str | int) -> list[int]:
+        """The sorted issue numbers this spec's issue is blocked by."""
+        return sorted(self._blocked_by(int(spec_id)))
 
     def move_spec(self, info: dict, dest_phase: str) -> str:
         number = int(info["id"])
