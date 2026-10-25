@@ -24,6 +24,8 @@ from quenching.specs.backends.azure import (
     azure_native_fields,
     azure_patch_body,
     azure_patch_culprit,
+    azure_predecessor_ids,
+    azure_predecessor_ops,
     azure_query_wiql,
     azure_restore_trailing_newline,
 )
@@ -395,6 +397,46 @@ class AzurePatch(unittest.TestCase):
                                         "the relation carries a bare id, not a work-item url")
 
 
+class AzurePredecessorOps(unittest.TestCase):
+    """The pure half of the predecessor links: which ids are wanted, and the ops that make the
+    item's links equal them."""
+
+    @staticmethod
+    def _url(dep: int) -> str:
+        return f"https://dev.azure.com/o/p/_apis/wit/workItems/{dep}"
+
+    def _rel(self, dep: int, rel: str = "System.LinkTypes.Dependency-Reverse") -> dict:
+        return {"rel": rel, "url": self._url(dep)}
+
+    def test_ids_keep_numeric_deduplicated_and_not_the_spec_itself(self):
+        fm = {"dependsOn": ["#5", "7", "5", "x-1", "9"]}
+        self.assertEqual(azure_predecessor_ids(fm, own_id=9), [5, 7])
+        self.assertEqual(azure_predecessor_ids({}), [])
+
+    def test_a_missing_link_is_one_add_with_the_work_item_url(self):
+        ops = azure_predecessor_ops([], [4], self._url)
+        self.assertEqual(ops, [{"op": "add", "path": "/relations/-",
+                                "value": {"rel": "System.LinkTypes.Dependency-Reverse",
+                                          "url": self._url(4)}}])
+
+    def test_an_unchanged_set_emits_nothing(self):
+        self.assertEqual(azure_predecessor_ops([self._rel(4), self._rel(5)], [5, 4],
+                                               self._url), [])
+
+    def test_removes_go_first_and_highest_index_first(self):
+        rels = [self._rel(1), self._rel(2), self._rel(3)]
+        ops = azure_predecessor_ops(rels, [2, 9], self._url)
+        self.assertEqual([(o["op"], o["path"]) for o in ops],
+                         [("remove", "/relations/2"), ("remove", "/relations/0"),
+                          ("add", "/relations/-")])
+
+    def test_other_relation_types_are_never_touched(self):
+        rels = [self._rel(7, "System.LinkTypes.Hierarchy-Reverse"),
+                {"rel": "ArtifactLink", "url": "vstfs:///Git/Commit/P%2FR%2Fabc"},
+                self._rel(7, "System.LinkTypes.Dependency-Forward")]
+        self.assertEqual(azure_predecessor_ops(rels, [], self._url), [])
+
+
 class AzureTrailingNewline(unittest.TestCase):
     """The one case that matters (a stripped newline restored) and the two it must leave
     alone (already-terminated, and genuinely empty)."""
@@ -543,6 +585,75 @@ class AzureCreateType(unittest.TestCase):
         az, calls = self._stubbed()
         az.create_spec("plans", _case_doc("beta"))
         self.assertEqual(_type_argv(calls[-1]), AZ_SPEC_TYPE)
+
+
+class AzurePredecessorRoundTrip(unittest.TestCase):
+    """`create_spec`, `write_spec` and `predecessor_links` against an in-memory double of the
+    `az` calls: one work item's relations, patched the way the server applies JSON patch ops.
+    No organisation is ever contacted."""
+
+    ORG = "https://example.invalid/org"
+
+    def _double(self):
+        az = AzureBoardsBackend(self.ORG, "proj", AZ_STATES, ".")
+        store = {"relations": [], "patches": [], "shows": 0}
+
+        def fake_az(action, *argv, expect="object"):
+            if argv[:2] == ("work-item", "create"):
+                return {"id": 7}
+            if argv[:2] == ("work-item", "show"):
+                store["shows"] += 1
+                return {"id": 7, "relations": list(store["relations"])}
+            return {}
+
+        def fake_patch(action, item_id, ops, rev=None):
+            store["patches"].append(ops)
+            for op in ops:
+                if op["path"].startswith("/relations/"):
+                    if op["op"] == "remove":
+                        del store["relations"][int(op["path"].rsplit("/", 1)[1])]
+                    else:
+                        store["relations"].append(op["value"])
+
+        az._az = fake_az
+        az._az_patch = fake_patch
+        return az, store
+
+    @staticmethod
+    def _with_deps(doc: str, *deps: str) -> str:
+        close = doc.index("\n---\n")
+        line = "\ndependsOn: [" + ", ".join(deps) + "]"
+        return doc[:close] + line + doc[close:]
+
+    def _info(self, az, doc):
+        return {"id": "7", "phase": "plans", "text": doc,
+                "frontmatter": {}, "tasks": [], "sections": []}
+
+    def test_create_links_every_numeric_predecessor_and_reads_them_back(self):
+        az, store = self._double()
+        az.create_spec("plans", self._with_deps(_case_doc("a"), "12", "5", "other-slug"))
+        self.assertEqual(az.predecessor_links(7), [5, 12])
+        self.assertTrue(all(r["url"].startswith(self.ORG) for r in store["relations"]))
+
+    def test_write_changing_dependson_adds_and_removes_by_id(self):
+        az, store = self._double()
+        old_doc = self._with_deps(_case_doc("a"), "5", "12")
+        az.create_spec("plans", old_doc)
+        old = self._info(az, old_doc)
+        old["frontmatter"] = {"dependsOn": ["5", "12"]}
+        az.write_spec(old, self._with_deps(_case_doc("a"), "12", "30"))
+        self.assertEqual(az.predecessor_links(7), [12, 30])
+
+    def test_write_leaving_dependson_alone_reads_no_relations(self):
+        az, store = self._double()
+        doc = self._with_deps(_case_doc("a"), "5")
+        az.create_spec("plans", doc)
+        store["shows"] = 0
+        info = self._info(az, doc)
+        info["frontmatter"] = {"dependsOn": ["5"]}
+        az.write_spec(info, doc)
+        self.assertEqual(store["shows"], 0)
+        self.assertEqual(az.predecessor_links(7), [5])
 
 
 class DeclaredTag(unittest.TestCase):

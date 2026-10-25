@@ -254,6 +254,11 @@ repository off them. The rules below hold for any backend that keeps a spec in a
   commit as `ArtifactLink` relations (with `attributes.name`) only when
   `azurePlacement.repository` is declared, in a separate request that never rolls the document
   back, and never links a `github` PR.
+- **`dependsOn` is the predecessor link.** `azure-boards` mirrors a spec's numeric `dependsOn` ids
+  as `System.LinkTypes.Dependency-Reverse` relations on its work item (never its own id, never a
+  slug). The links are diffed by id, not by position, and only when `dependsOn` changed in the
+  write, then ride the document's own patch, so the revision test guards both and nothing is
+  half-written. Other relations are never touched. `github` has no mapping.
 - **A direct read by ID reuses the listing the process already holds.** A cold read fetches one
   item; a read after a listing in the same process takes the row from that listing, never a request
   per spec. Both paths hand the same document to the one shared derivation.

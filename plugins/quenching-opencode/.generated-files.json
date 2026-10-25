@@ -802,7 +802,7 @@
     "quenching/scripts/bin/quenching/session/transcript.py": "9ab6bbd257c9192b137bcb183c89367c030205f5e2601980d7bf657b81e6bcc9",
     "quenching/scripts/bin/quenching/session/worktrees.py": "dec21a2db63fd2ccffe82e61f354cd7ef54e4951e2a7ac6afbe7a9ef2bd09311",
     "quenching/scripts/bin/quenching/specs/backends/__init__.py": "4a48fcadb75cded02b36aeefe23afcc3c330f28ad0d6a94a0f5939e31ce0801a",
-    "quenching/scripts/bin/quenching/specs/backends/azure.py": "5a049fe21bda98634cb07424c35b4e620fbfafa5c477b032ab8ca32dcf10b892",
+    "quenching/scripts/bin/quenching/specs/backends/azure.py": "c2f2af00d16fc91ad5713643610b86bc27db8ea91813935ad537414f44485cf0",
     "quenching/scripts/bin/quenching/specs/backends/base.py": "4c5673a9a179c45ce9d305c7e664d65d702039027c5e6dcd8c1a0667ee8e2d69",
     "quenching/scripts/bin/quenching/specs/backends/git.py": "4ce4c6d06ca9c7dab1e341e59a73f72cabe12be0431add80950952b32745bf6b",
     "quenching/scripts/bin/quenching/specs/backends/github.py": "376783714a3d6db129b3246566f1cd42c022f9f78a89a8c875979945fa6c07f5",
