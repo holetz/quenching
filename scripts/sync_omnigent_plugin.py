@@ -308,7 +308,9 @@ def generated_tree() -> dict[str, bytes]:
         out.update(files)
         fields, body = oc.frontmatter((SOURCE / "agents" / f"{agent}.md").read_text(encoding="utf-8"),
                                       SOURCE / "agents" / f"{agent}.md")
-        out[f"quenching/agents/{agent}.md"] = markdown(body) + "\n" + runtime_policy()
+        grant = fields.get("tools")   # the protocol copy keeps the source grant in its frontmatter, never a missing key
+        head = f"---\ntools: {grant}\n---\n\n" if grant is not None else ""
+        out[f"quenching/agents/{agent}.md"] = head + markdown(body) + "\n" + runtime_policy()
     for rel, content in oc.generated_tree().items():
         if not rel.startswith("quenching/") or rel.startswith("quenching/agents/"):
             continue
