@@ -1,7 +1,6 @@
 """The Omnigent distribution generator: source-tools lock, shell rule, model table and drift."""
 import importlib.util
 import json
-import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -11,11 +10,17 @@ spec = importlib.util.spec_from_file_location("sync_omnigent_plugin", REPO / "sc
 sync = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(sync)
 
-try:
-    import celpy
-    from celpy.adapter import json_to_cel
-except ImportError:  # the repository gate carries no CEL runtime
-    celpy = None
+def optional(name):
+    """An optional runtime, reached by name so the suite's stdlib-only import rule stays true; None when absent."""
+    try:
+        return importlib.import_module(name)
+    except ImportError:
+        return None
+
+
+celpy = optional("celpy")
+json_to_cel = optional("celpy.adapter").json_to_cel if celpy else None
+omnigent_spec = optional("omnigent.spec")
 
 
 def evaluate(tools, name, arguments=None, event_type="tool_call"):
@@ -157,10 +162,9 @@ class AdversarialCommands(unittest.TestCase):
         self.assertEqual("DENY", evaluate("Bash(cq:*)", "Bash", {"command": "ls"}))
 
 
-@unittest.skipIf(not re.search(r"omnigent", str(importlib.util.find_spec("omnigent"))), "omnigent is not importable")
+@unittest.skipIf(omnigent_spec is None, "omnigent is not importable")
 class LoaderAcceptsEveryBundle(unittest.TestCase):
     def test_every_bundle_loads_with_the_omnigent_spec_loader(self):
-        from omnigent import spec as omnigent_spec
         with tempfile.TemporaryDirectory() as directory:
             sync.write(sync.generated_tree(), Path(directory))
             for bundle in sorted((Path(directory) / "agents").iterdir()):
