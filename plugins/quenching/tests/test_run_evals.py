@@ -193,10 +193,46 @@ class Runner(unittest.TestCase):
 
     def test_no_profile_but_opencode_declares_a_permission_block(self):
         profiles = json.loads((REPO / "scripts/eval_harnesses.json").read_text())["profiles"]
-        self.assertEqual({n for n, p in profiles.items() if "container" in p}, {"opencode"})
+        self.assertEqual({n for n, p in profiles.items() if "container" in p}, {"opencode", "omnigent"})
+        self.assertNotIn("{permission}", profiles["omnigent"]["container"]["argv"])
+        self.assertNotIn("permission", profiles["omnigent"]["container"])
         for name, profile in profiles.items():
             self.assertNotIn("--auto", profile["argv"], name)
             self.assertNotIn("{permission}", profile["argv"], name)
+
+    def omnigent_lines(self, suite: Path, *argv: str) -> tuple[int, list[dict], str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = runner.main(["--host", "--suite", str(suite), "--dry-run", "--harness", "omnigent", "--model", "stub",
+                                "--run-id", "r", "--arms", "with,without", *argv])
+        return code, [json.loads(line) for line in out.getvalue().splitlines()], err.getvalue()
+
+    def test_the_omnigent_profile_runs_the_generated_bundle_on_the_agent_harness(self):
+        suite = REPO / "plugins/quenching/assets/evals/git/commit"
+        code, lines, _ = self.omnigent_lines(suite, "--case", "staged-change-committed")
+        self.assertEqual(code, 0)
+        by_arm = {line["arm"]: line["argv"] for line in lines}
+        bundle = str(REPO / "plugins/quenching-omnigent/agents/quenching-git-commit")
+        self.assertEqual(by_arm["with"][:3], ["omnigent", "run", bundle])
+        self.assertEqual(by_arm["without"][:2], ["omnigent", "run"])
+        self.assertNotIn(bundle, by_arm["without"])
+        for argv in by_arm.values():
+            self.assertEqual(argv[argv.index("--harness") + 1], "opencode")
+            self.assertEqual(argv[argv.index("--model") + 1], "stub")
+            self.assertIn("--no-session", argv)
+        _, lines, _ = self.omnigent_lines(suite, "--case", "staged-change-committed", "--agent-harness", "codex")
+        self.assertEqual(lines[0]["argv"][lines[0]["argv"].index("--harness") + 1], "codex")
+
+    def test_the_omnigent_profile_refuses_a_suite_without_a_bundle(self):
+        code, lines, err = self.omnigent_lines(self.suite)
+        self.assertEqual((code, lines), (2, []))
+        self.assertIn("no generated Omnigent bundle", err)
+
+    def test_other_profiles_take_no_agent_values(self):
+        profile = json.loads((REPO / "scripts/eval_harnesses.json").read_text())["profiles"]["opencode"]
+        args = runner.parser().parse_args(["--model", "m"])
+        self.assertEqual({"prompt", "model", "workdir", "max_turns"},
+                         set(runner.arm_values(args, profile, {"prompt": "p"}, "w", "/fake:skill")))
 
     def test_the_container_values_never_reach_the_argv(self):
         argv = self.dry_lines("--harness", "opencode", "--image", "img", "--env", "PROVIDER_TOKEN")[0]["argv"]
