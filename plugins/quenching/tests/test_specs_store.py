@@ -216,5 +216,25 @@ class Wiring(unittest.TestCase):
         run.assert_not_called()
 
 
+class ConfigView(unittest.TestCase):
+    def test_load_config_prints_the_declared_store_and_no_secret(self):
+        from quenching.specs.config import load_config
+        decl = {"store": {"github": {"repository": "acme/specs"}}}
+        user = {"credential": {"github": {"source": "env", "env": "MY_GH"}}}
+        with workspace(decl, user, {"MY_GH": TOKEN}) as repo:
+            cfg = load_config(repo)
+        self.assertEqual({"github": {"repository": "acme/specs"}}, cfg["store"])
+        self.assertEqual({}, cfg["storeRefusal"])
+        self.assertNotIn(TOKEN, json.dumps(cfg))
+
+    def test_load_config_carries_the_refusal_as_data(self):
+        from quenching.specs.config import load_config
+        decl = {"store": {"azure": {"organization": "a", "project": "p", "pat": "x"}}}
+        with workspace(decl) as repo:
+            cfg = load_config(repo)
+        self.assertEqual({}, cfg["store"])
+        self.assertEqual("sp-store-secret", cfg["storeRefusal"]["code"])
+
+
 if __name__ == "__main__":
     unittest.main()
