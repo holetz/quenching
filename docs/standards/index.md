@@ -125,6 +125,12 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 | --- | --- |
 | [command-surface.md](naming/command-surface.md) | How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the module prefix each front publishes under and the full command and agent mapping; the design namespace for DTCG source and projections; the proof namespace for the verification surface rather than its test artifact; the seventh namespace (`git`, a pillar rather than a front) and its coexistence with a target's own `git` category; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context |
 
+### platform/
+
+| Doc | Covers |
+| --- | --- |
+| [windows-support.md](platform/windows-support.md) | What "supported on Windows without administrator rights" means for the cq tool, the user-scope prerequisites, the three code paths that were POSIX-only (process groups, symlinks, the PATH launcher) and the one CI job that exercises them |
+
 ### quality/
 
 | Doc | Covers |
