@@ -2,11 +2,11 @@
 
 A second port of the SAME core `cq specs` runs on. Every tool builds the argv of the CLI verb it
 mirrors and dispatches it in-process through `quenching.specs.commands.cli.main`, so the backend,
-the CAS, the refusals and the exit codes are the CLI's; this module owns the protocol, the argument
-validation, the paging and the size ceiling, and nothing about the store.
+the CAS, the refusals and the exit codes are the CLI's; this module owns the specs tool tables,
+their argument validation, the paging and the specs resources, and nothing about the store. The
+protocol, the transport and the size ceiling are the common core's (`quenching.mcp.server`), the
+same one `cq mcp` mounts with these tables inside its wider catalog.
 
-* Transport: JSON-RPC 2.0, one message per line on stdin/stdout. stdout carries protocol lines
-  ONLY — every verb runs with stdout and stderr captured.
 * Closed by construction: the tool tables are closed maps from a tool name to a fixed verb. No
   tool takes an argv, so no argument can reach a verb the table does not name.
 * Gated moves (`approved`, `reviewed`, `merge`, `outcome` records and `promote`) stamp a human
@@ -23,21 +23,17 @@ validation, the paging and the size ceiling, and nothing about the store.
 """
 from __future__ import annotations
 
-import contextlib
-import io
 import json
 import os
 import re
-import sys
 from datetime import date
 from urllib.parse import parse_qs, urlsplit
 
-from quenching.common.output import OK
-from quenching.common.version import VERSION
+from quenching.mcp import server
+from quenching.mcp.server import (BAD_PARAMS, MAX_CHARS, NOT_FOUND,  # noqa: F401 — re-exported
+                                  PROTOCOL_VERSIONS, ResourceError, Session, ToolArgs)
 from quenching.specs.parse import PHASES
 
-PROTOCOL_VERSIONS = ("2025-06-18", "2025-03-26", "2024-11-05")
-MAX_CHARS = 60_000
 DEFAULT_LIMIT, MAX_LIMIT = 50, 200
 MOMENTS = ("decision", "build", "close")
 SCOPES = ("global", "current")
@@ -48,7 +44,6 @@ RESOURCE_PATH = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*$")
 GLOSSARY_ENTRY = re.compile(
     r"^\s*[*-]\s+(?:\[(?P<linked>[^\]]+)\]\([^)]*\)|\*\*(?P<plain>[^*]+)\*\*)")
 MAX_TERMS = 20
-NOT_FOUND, BAD_PARAMS = -32002, -32602
 
 ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 FIELD = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
@@ -56,10 +51,6 @@ MAX_BODY = 200_000
 GATED_RECORDS = ("approved", "reviewed", "merge", "outcome")
 FREE_RECORDS = ("priority", "refined", "branch", "pr", "buildCost", "run")
 TASK_ACTIONS = ("check", "uncheck", "block", "descope")
-
-
-class ToolArgs(ValueError):
-    """A tool argument that fails validation — reported as a tool error, never a crash."""
 
 
 def _text(args: dict, key: str, required: bool = False) -> str | None:
@@ -394,54 +385,19 @@ WRITES: dict[str, tuple] = {
 }
 
 
-class Session:
-    """What one stdio connection negotiated: whether the client can ask the human, and how."""
-
-    def __init__(self, ask=None, elicitation: bool = False):
-        self.ask, self.elicitation = ask, elicitation
-
-    def confirm(self, message: str) -> bool | None:
-        """True on an accept, False on a decline/cancel, None when the human cannot be asked."""
-        if not (self.elicitation and self.ask):
-            return None
-        reply = self.ask(message)
-        if not isinstance(reply, dict) or reply.get("action") != "accept":
-            return False
-        return (reply.get("content") or {}).get("confirm") is True
-
-
 def run_core(argv: list[str], root: str,
              stdin: str | None = None) -> tuple[int, dict | None, str]:
     """The CLI verb, in this process, with its output captured: `(exit code, payload, stderr)`."""
     from quenching.specs.commands import cli       # lazy: cli mounts this module's `cmd_mcp`
-    out, err = io.StringIO(), io.StringIO()
-    held = sys.stdin
-    sys.stdin = io.StringIO(stdin or "")      # a verb never reads the protocol's own stdin
+    code, out, err = server.dispatch(cli.main, ["--root", root, *argv, "--json"], stdin)
     try:
-        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            try:
-                code = cli.main(["--root", root, *argv, "--json"])
-            except SystemExit as exc:
-                code = exc.code if isinstance(exc.code, int) else 2
-    finally:
-        sys.stdin = held
-    try:
-        payload = json.loads(out.getvalue())
+        payload = json.loads(out)
     except ValueError:
         payload = None
-    return code, payload, err.getvalue().strip()
+    return code, payload, err
 
 
-class ResourceError(Exception):
-    """A resource read that fails: a JSON-RPC error with the MCP code, never a crash."""
-
-    def __init__(self, code: int, message: str):
-        super().__init__(message)
-        self.code, self.message = code, message
-
-
-def _dump(payload: dict) -> str:
-    return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+_dump = server.dump
 
 
 def _split_frontmatter(text: str) -> tuple[dict, str]:
@@ -710,15 +666,8 @@ def read_resource(uri, root: str) -> list[dict]:
 
 
 def _guard(payload: dict) -> dict:
-    """The last line of defence: an answer above the ceiling is cut and says so."""
-    text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
-    if len(text) <= MAX_CHARS:
-        return payload
-    return {"ok": payload.get("ok", True), "truncated": True, "chars": len(text),
-            "kept": MAX_CHARS,
-            "hint": "narrow the call: fewer headings, `specs_show` with `tasks`, or a smaller "
-                    "`limit`",
-            "text": text[:MAX_CHARS]}
+    return server.guard(payload, "narrow the call: fewer headings, `specs_show` with `tasks`, "
+                                 "or a smaller `limit`")
 
 
 def _refusal(code: str, message: str) -> tuple[dict, bool]:
@@ -775,120 +724,60 @@ def call_tool(name: str, args: dict, root: str,
     return _guard(payload), code > 1
 
 
-def _result(request_id, result: dict) -> dict:
-    return {"jsonrpc": "2.0", "id": request_id, "result": result}
+def list_tools() -> list[dict]:
+    return [{"name": name, "description": spec[0], "inputSchema": spec[1],
+             "annotations": {"readOnlyHint": True, "destructiveHint": False,
+                             "idempotentHint": True, "openWorldHint": False}}
+            for name, spec in TOOLS.items()] + [
+           {"name": name, "description": spec[0], "inputSchema": spec[1],
+            "annotations": {"readOnlyHint": False, "destructiveHint": spec[4] is not None,
+                            "idempotentHint": False, "openWorldHint": False}}
+           for name, spec in WRITES.items()]
 
 
-def _error(request_id, code: int, message: str) -> dict:
-    return {"jsonrpc": "2.0", "id": request_id, "error": {"code": code, "message": message}}
+class _Surface:
+    """The specs tables as a surface of the common core; every hook reads this module's globals,
+    so a replaced `run_core` or table is what the protocol serves."""
+
+    name = "quenching-specs"
+
+    @staticmethod
+    def has_tool(name: str) -> bool:
+        return name in TOOLS or name in WRITES
+
+    @staticmethod
+    def list_tools() -> list[dict]:
+        return list_tools()
+
+    @staticmethod
+    def call_tool(name, args, root, session):
+        return call_tool(name, args, root, session)
+
+    @staticmethod
+    def list_resources(root):
+        return list_resources(root)
+
+    @staticmethod
+    def resource_templates():
+        return resource_templates()
+
+    @staticmethod
+    def read_resource(uri, root):
+        return read_resource(uri, root)
+
+
+SURFACE = _Surface()
 
 
 def handle(message, root: str, session: Session | None = None):
     """One JSON-RPC message in, its response out (`None` for a notification)."""
-    session = session if session is not None else Session()
-    if isinstance(message, list):
-        replies = [r for r in (handle(m, root, session) for m in message) if r is not None]
-        return replies or None
-    if not isinstance(message, dict) or message.get("jsonrpc") != "2.0" \
-            or not isinstance(message.get("method"), str):
-        return _error(message.get("id") if isinstance(message, dict) else None,
-                      -32600, "invalid request")
-    method, request_id = message["method"], message.get("id")
-    params = message.get("params") or {}
-    if "id" not in message:
-        return None
-    if method == "initialize":
-        asked = params.get("protocolVersion")
-        session.elicitation = isinstance((params.get("capabilities") or {}).get("elicitation"),
-                                         dict)
-        return _result(request_id, {
-            "protocolVersion": asked if asked in PROTOCOL_VERSIONS else PROTOCOL_VERSIONS[0],
-            "capabilities": {"tools": {"listChanged": False},
-                             "resources": {"subscribe": False, "listChanged": False}},
-            "serverInfo": {"name": "quenching-specs", "version": VERSION}})
-    if method == "ping":
-        return _result(request_id, {})
-    if method == "tools/list":
-        return _result(request_id, {"tools": [
-            {"name": name, "description": spec[0], "inputSchema": spec[1],
-             "annotations": {"readOnlyHint": True, "destructiveHint": False,
-                             "idempotentHint": True, "openWorldHint": False}}
-            for name, spec in TOOLS.items()] + [
-            {"name": name, "description": spec[0], "inputSchema": spec[1],
-             "annotations": {"readOnlyHint": False, "destructiveHint": spec[4] is not None,
-                             "idempotentHint": False, "openWorldHint": False}}
-            for name, spec in WRITES.items()]})
-    if method == "resources/list":
-        return _result(request_id, {"resources": list_resources(root)})
-    if method == "resources/templates/list":
-        return _result(request_id, {"resourceTemplates": resource_templates()})
-    if method == "resources/read":
-        try:
-            return _result(request_id, {"contents": read_resource(params.get("uri"), root)})
-        except ResourceError as exc:
-            return _error(request_id, exc.code, exc.message)
-    if method == "tools/call":
-        name, args = params.get("name"), params.get("arguments") or {}
-        if name not in TOOLS and name not in WRITES or not isinstance(args, dict):
-            return _error(request_id, -32602, f"unknown tool or bad arguments: {name!r}")
-        payload, failed = call_tool(name, args, root, session)
-        return _result(request_id, {
-            "content": [{"type": "text",
-                         "text": json.dumps(payload, ensure_ascii=False,
-                                            separators=(",", ":"))}],
-            "isError": failed})
-    return _error(request_id, -32601, f"method not found: {method}")
-
-
-def _emit(stdout, message: dict) -> None:
-    stdout.write(json.dumps(message, ensure_ascii=False, separators=(",", ":")) + "\n")
-    stdout.flush()
+    return server.handle(message, root, session, SURFACE)
 
 
 def serve(root: str, stdin=None, stdout=None) -> int:
     """The stdio loop: one JSON message per line until EOF."""
-    stdin, stdout = stdin or sys.stdin, stdout or sys.stdout
-    lines = iter(stdin)
-    counter = [0]
-
-    def ask(message: str):
-        """Server-to-client `elicitation/create`, read synchronously: the loop is serial, so the
-        next line answering this id is the human's reply. Anything else meanwhile is dropped."""
-        counter[0] += 1
-        request_id = f"elicit-{counter[0]}"
-        _emit(stdout, {"jsonrpc": "2.0", "id": request_id, "method": "elicitation/create",
-                       "params": {"message": message, "requestedSchema": {
-                           "type": "object",
-                           "properties": {"confirm": {"type": "boolean", "title": "Confirm"}},
-                           "required": ["confirm"]}}})
-        for line in lines:
-            try:
-                reply = json.loads(line)
-            except ValueError:
-                continue
-            if isinstance(reply, dict) and reply.get("id") == request_id:
-                result = reply.get("result")
-                return result if isinstance(result, dict) else {"action": "cancel"}
-        return {"action": "cancel"}
-
-    session = Session(ask=ask)
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            reply = handle(json.loads(line), root, session)
-        except ValueError:
-            reply = _error(None, -32700, "parse error")
-        if reply is not None:
-            _emit(stdout, reply)
-    return OK
+    return server.serve(root, SURFACE, stdin, stdout)
 
 
 def cmd_mcp(args, root: str, out) -> int:
-    for stream in (sys.stdin, sys.stdout):
-        try:
-            stream.reconfigure(encoding="utf-8")
-        except (AttributeError, OSError, ValueError):
-            pass
-    return serve(root)
+    return server.run_stdio(root, SURFACE)
