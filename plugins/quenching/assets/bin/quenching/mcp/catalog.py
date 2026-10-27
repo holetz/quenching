@@ -281,7 +281,11 @@ def call(name: str, args: dict, root: str) -> tuple[dict, bool]:
         cmd, as_json = argv(row, args, root)
     except ToolArgs as exc:
         return {"ok": False, "code": "mcp-bad-arguments", "message": str(exc)}, True
-    code, out, err = server.dispatch(router().main, cmd, cwd=root)
+    try:
+        code, out, err = server.dispatch(router().main, cmd, cwd=root)
+    except Exception as exc:  # a verb's crash is this call's error, never the server's exit
+        return {"ok": False, "code": "mcp-core-failure",
+                "message": f"{type(exc).__name__}: {exc}"}, True
     hint = "narrow the call: a smaller path, fewer sections, or a filter the verb offers"
     if not as_json:
         return server.guard({"ok": code <= 1, "exit": code, "text": (out + err).strip()},

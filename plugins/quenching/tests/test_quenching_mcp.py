@@ -3,6 +3,7 @@
 The schemas are derived from each pillar's own parser, so these tests read the parser back and
 compare; the calls dispatch in-process through the `cq` router against a throwaway git repo.
 """
+import io
 import json
 import os
 import pathlib
@@ -178,6 +179,79 @@ class Calls(unittest.TestCase):
         self.assertTrue(result["isError"])
         self.assertEqual(json.loads(result["content"][0]["text"])["code"], "mcp-bad-arguments")
         self.assertEqual(os.getcwd(), held)
+
+
+class Hostile(unittest.TestCase):
+    """Every catalogued tool, fed arguments it does not admit: a tool error each time, the cwd
+    where it was, and a server that still answers afterwards."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = git_repo(self._tmp.name)
+        self.addCleanup(self._tmp.cleanup)
+        self.surface = catalog.surface()
+
+    def bad_calls(self):
+        for name, row in catalog.CATALOG.items():
+            yield name, {"not_an_argument": True}
+            for prop in catalog.schema(catalog.resolve(row))["properties"]:
+                yield name, {prop: {"an": "object"}}
+
+    def test_every_tool_refuses_every_ill_typed_argument_and_the_loop_survives(self):
+        held = os.getcwd()
+        calls = list(self.bad_calls())
+        lines = [json.dumps(rpc(i, "tools/call", {"name": name, "arguments": args}))
+                 for i, (name, args) in enumerate(calls)] + [json.dumps(rpc("last", "ping"))]
+        out = io.StringIO()
+        self.assertEqual(server.serve(self.root, self.surface,
+                                      io.StringIO("\n".join(lines) + "\n"), out), 0)
+        replies = [json.loads(line) for line in out.getvalue().splitlines()]
+        self.assertEqual(len(replies), len(calls) + 1)
+        for (name, args), reply in zip(calls, replies):
+            with self.subTest(name=name, args=args):
+                self.assertTrue(reply["result"]["isError"])
+                payload = json.loads(reply["result"]["content"][0]["text"])
+                self.assertEqual(payload["code"], "mcp-bad-arguments")
+        self.assertEqual(replies[-1], {"jsonrpc": "2.0", "id": "last", "result": {}})
+        self.assertEqual(os.getcwd(), held)
+
+    def test_a_missing_required_argument_is_refused_for_every_tool_that_has_one(self):
+        for name, row in catalog.CATALOG.items():
+            if catalog.schema(catalog.resolve(row)).get("required"):
+                payload, failed = catalog.call(name, {}, self.root)
+                self.assertTrue(failed, name)
+                self.assertEqual(payload["code"], "mcp-bad-arguments", name)
+
+    def test_a_verb_that_exits_or_crashes_after_moving_the_cwd_is_contained(self):
+        held = os.getcwd()
+        router = catalog.router()
+        real = router.main
+
+        def exits(argv):
+            os.chdir(tempfile.gettempdir())
+            raise SystemExit(3)
+
+        def crashes(argv):
+            os.chdir(tempfile.gettempdir())
+            raise RuntimeError("boom")
+
+        try:
+            for fake, code in ((exits, "mcp-core-failure"), (crashes, "mcp-core-failure")):
+                router.main = fake
+                payload, failed = catalog.call("git_base", {}, self.root)
+                self.assertTrue(failed)
+                self.assertEqual(payload["code"], code)
+                self.assertEqual(os.getcwd(), held)
+        finally:
+            router.main = real
+        payload, failed = catalog.call("git_base", {}, self.root)
+        self.assertFalse(failed)
+
+    def test_a_root_that_does_not_exist_is_a_tool_error(self):
+        payload, failed = catalog.call("git_history_log", {"revs": ["HEAD"], "max_count": 1},
+                                       os.path.join(self.root, "missing"))
+        self.assertTrue(failed)
+        self.assertEqual(payload["code"], "mcp-core-failure")
 
 
 if __name__ == "__main__":
