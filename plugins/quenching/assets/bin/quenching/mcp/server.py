@@ -94,6 +94,41 @@ def guard(payload: dict, hint: str) -> dict:
             "kept": MAX_CHARS, "hint": hint, "text": text[:MAX_CHARS]}
 
 
+class Composite:
+    """Several surfaces served as one: tools and resources are the union, a call goes to the
+    first part that names the tool, a read to the first part that knows the uri."""
+
+    def __init__(self, name: str, parts: list):
+        self.name, self.parts = name, parts
+
+    def _owner(self, name: str):
+        return next((p for p in self.parts if p.has_tool(name)), None)
+
+    def has_tool(self, name: str) -> bool:
+        return self._owner(name) is not None
+
+    def list_tools(self) -> list[dict]:
+        return [tool for part in self.parts for tool in part.list_tools()]
+
+    def call_tool(self, name, args, root, session):
+        return self._owner(name).call_tool(name, args, root, session)
+
+    def list_resources(self, root) -> list[dict]:
+        return [res for part in self.parts for res in part.list_resources(root)]
+
+    def resource_templates(self) -> list[dict]:
+        return [tpl for part in self.parts for tpl in part.resource_templates()]
+
+    def read_resource(self, uri, root):
+        for part in self.parts[:-1]:
+            try:
+                return part.read_resource(uri, root)
+            except ResourceError as exc:
+                if exc.code != NOT_FOUND:
+                    raise
+        return self.parts[-1].read_resource(uri, root)
+
+
 def _result(request_id, result: dict) -> dict:
     return {"jsonrpc": "2.0", "id": request_id, "result": result}
 
