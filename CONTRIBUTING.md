@@ -24,16 +24,17 @@ bash scripts/verify_repo.sh
 
 `scripts/githooks/` carries a `pre-commit` and a `pre-push` hook that run `cq security leak`: they
 refuse a commit or a push that carries a CPF, a CNPJ, a Databricks host, token or cluster id, a
-private key, an absolute path under your home directory, or a term of your private denylist. Point
+private key or an absolute path under your home directory. Point
 git at them once per checkout:
 
 ```bash
 git config core.hooksPath scripts/githooks
 ```
 
-The denylist lives outside the repository, one term per line, in `$QUENCHING_DENYLIST_FILE` or
-`~/.config/quenching/denylist.txt`; without it the hooks exit 2 and refuse. The repository gate runs
-the generic patterns only (`cq security leak --all --generic-only`), as CI does. A finding is fixed
+The hooks run the generic patterns only (`--generic-only`), like the repository gate
+(`cq security leak --all --generic-only`) and CI. There is no private denylist: a list of
+organization-specific terms kept next to the repository would itself be the trace it should prevent,
+so it was retired on 2026-10-27, and keeping those terms out is a review duty on every change. A finding is fixed
 by removing the content, never by weakening a pattern or passing `--no-verify`.
 
 Durable knowledge lives in [docs/index.md](docs/index.md); the product manual is

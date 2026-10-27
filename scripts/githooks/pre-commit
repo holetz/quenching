@@ -3,4 +3,5 @@
 # Install: git config core.hooksPath scripts/githooks (see CONTRIBUTING.md).
 set -Eeuo pipefail
 ROOT="$(git rev-parse --show-toplevel)"
-exec python3 "$ROOT/plugins/quenching/assets/bin/cq" security leak --staged --root "$ROOT"
+# Generic patterns only: there is no private denylist (retired on 2026-10-27; see CONTRIBUTING.md).
+exec python3 "$ROOT/plugins/quenching/assets/bin/cq" security leak --staged --generic-only --root "$ROOT"
