@@ -42,15 +42,15 @@ class ThePathShim(unittest.TestCase):
         self.assertIn("exit /b %ERRORLEVEL%", source)
         self.assertNotIn("execv", source)
 
-    def test_it_exposes_fourteen_pillars(self):
+    def test_it_exposes_fifteen_pillars(self):
         run = subprocess.run([sys.executable, str(REAL), "--help"], capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stderr)
         choices = next(line.strip() for line in run.stdout.splitlines()
                        if line.strip().startswith("{") and line.strip().endswith("}"))
         pillars = set(choices[1:-1].split(","))
-        self.assertEqual(14, len(pillars))
+        self.assertEqual(15, len(pillars))
         self.assertEqual({"specs", "knowledge", "design", "components", "ops", "proof", "git",
-                          "toolchain", "delivery", "security", "opensource", "codex", "portal", "config"}, pillars)
+                          "toolchain", "delivery", "security", "opensource", "codex", "portal", "config", "mcp"}, pillars)
 
     def test_it_answers_the_version_lockstep(self):
         run = subprocess.run([str(SHIM), "--version"], capture_output=True, text=True)

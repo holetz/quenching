@@ -17,7 +17,10 @@ try:
 except ModuleNotFoundError:
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import _paths  # noqa: F401
-from quenching.mcp import catalog, server
+from quenching.mcp import catalog, cli, server
+
+PLUGIN = pathlib.Path(__file__).resolve().parents[1]
+CQ = PLUGIN / "assets" / "bin" / "cq"
 
 
 def rpc(request_id, method, params=None):
@@ -252,6 +255,46 @@ class Hostile(unittest.TestCase):
                                        os.path.join(self.root, "missing"))
         self.assertTrue(failed)
         self.assertEqual(payload["code"], "mcp-core-failure")
+
+
+class EntryPoint(unittest.TestCase):
+    def test_the_router_carries_the_mcp_pillar_with_its_own_root(self):
+        pillar = catalog.router().PILLARS["mcp"]
+        self.assertEqual(pillar.module, "quenching.mcp.cli")
+        self.assertTrue(pillar.takes_root)
+        self.assertFalse({row.pillar for row in catalog.CATALOG.values()} & {"mcp"})
+
+    def test_the_server_is_the_references_then_the_catalog(self):
+        surface = cli.surface()
+        self.assertEqual(surface.name, "quenching")
+        tools = {t["name"] for t in surface.list_tools()}
+        self.assertTrue(set(catalog.CATALOG) <= tools)
+        self.assertIn("specs_status", tools)
+        uris = {r["uri"] for r in surface.list_resources("/x")}
+        self.assertIn("quenching://references", uris)
+
+    def test_cq_mcp_answers_initialize_and_tools_list_over_stdio(self):
+        requests = "".join(json.dumps(m) + "\n" for m in (
+            rpc(1, "initialize", {"protocolVersion": "2025-06-18"}),
+            rpc(2, "tools/list")))
+        with tempfile.TemporaryDirectory() as tmp:
+            done = subprocess.run([sys.executable, str(CQ), "--root", tmp, "mcp"], input=requests,
+                                  capture_output=True, text=True, timeout=60)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        replies = [json.loads(line) for line in done.stdout.splitlines()]
+        self.assertEqual([r["id"] for r in replies], [1, 2])
+        self.assertEqual(replies[0]["result"]["serverInfo"]["name"], "quenching")
+        self.assertIn("git_base", {t["name"] for t in replies[1]["result"]["tools"]})
+
+    def test_the_plugin_registers_the_quenching_server_and_specs_owns_the_package(self):
+        servers = json.loads((PLUGIN / ".mcp.json").read_text(encoding="utf-8"))["mcpServers"]
+        self.assertEqual(list(servers), ["quenching"])
+        self.assertEqual(servers["quenching"]["args"][1:], ["mcp"])
+        modules = {m["name"]: m for m in json.loads(
+            (PLUGIN / "assets" / "modules.json").read_text(encoding="utf-8"))["modules"]}
+        self.assertIn("mcp", modules["quenching-specs"]["owned"]["packages"])
+        self.assertIn("assets/bin/quenching/mcp",
+                      modules["quenching-specs-reader"]["generated"]["trees"])
 
 
 if __name__ == "__main__":
