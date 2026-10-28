@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "specs": {
+    "quenching": {
       "command": "python3",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/assets/bin/cq", "specs", "mcp"]
+      "args": ["${CLAUDE_PLUGIN_ROOT}/assets/bin/cq", "mcp"]
     }
   }
 }

@@ -16,7 +16,8 @@
       "session",
       "codex",
       "portal",
-      "config"
+      "config",
+      "mcp"
     ],
     "agents": true
   },

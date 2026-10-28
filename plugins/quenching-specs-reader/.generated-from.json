@@ -5,6 +5,7 @@
   "copied": [
     "assets/bin/quenching/common",
     "assets/bin/quenching/specs",
+    "assets/bin/quenching/mcp",
     "assets/specs",
     "assets/portal",
     "assets/modules.json"

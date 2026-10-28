@@ -13,6 +13,7 @@ The write block runs in a subprocess: it patches backend classes, and the discov
 one interpreter with every other suite that writes through `MemoryBackend`.
 """
 
+import ast
 import json
 import os
 import pathlib
@@ -30,6 +31,37 @@ SYNC = REPO_ROOT / "scripts" / "sync_specs_reader_plugin.py"
 def run_shim(*argv, env=None):
     return subprocess.run([sys.executable, str(SHIM), *argv], capture_output=True, text=True,
                           env={**os.environ, **(env or {})})
+
+
+def imported_pillars(tree):
+    """Every `quenching.<pillar>` import in the tree, keyed by the importing node's id."""
+    found = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            parts = node.module.split(".")
+            if len(parts) > 1 and parts[0] == "quenching":
+                found[id(node)] = parts[1]
+        elif isinstance(node, ast.Import):
+            for alias in node.names:
+                parts = alias.name.split(".")
+                if len(parts) > 1 and parts[0] == "quenching":
+                    found[id(node)] = parts[1]
+    return found
+
+
+def import_error_guarded(tree):
+    """The ids of imports inside a `try` that catches ImportError."""
+    guarded = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Try):
+            continue
+        catches = any(isinstance(handler.type, ast.Name) and handler.type.id == "ImportError"
+                      for handler in node.handlers)
+        if catches:
+            for child in ast.walk(ast.Module(body=node.body, type_ignores=[])):
+                if isinstance(child, (ast.Import, ast.ImportFrom)):
+                    guarded.add(id(child))
+    return guarded
 
 
 class TheReaderSurface(unittest.TestCase):
@@ -61,12 +93,17 @@ class TheReaderSurface(unittest.TestCase):
 
     def test_it_carries_only_the_slice_specs_imports(self):
         package = READER / "assets" / "bin" / "quenching"
-        self.assertEqual(["common", "specs"], sorted(p.name for p in package.iterdir()))
-        import re
+        self.assertEqual(["common", "mcp", "specs"], sorted(p.name for p in package.iterdir()))
+        mandatory = {"common", "mcp", "specs"}
         for path in package.rglob("*.py"):
-            for pillar in re.findall(r"^\s*(?:from|import) quenching\.(\w+)", path.read_text(),
-                                    re.M):
-                self.assertIn(pillar, ("common", "specs"), path)
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            optional = import_error_guarded(tree)
+            for node_id, pillar in imported_pillars(tree).items():
+                if pillar == "components":
+                    self.assertIn(node_id, optional,
+                                  f"{path}: `components` must stay under its ImportError fallback")
+                else:
+                    self.assertIn(pillar, mandatory, path)
 
 
 class TheAllowlist(unittest.TestCase):

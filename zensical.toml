@@ -56,6 +56,7 @@
         "standards/architecture/front-mold.md",
         "standards/architecture/generated-listings.md",
         "standards/architecture/install-profiles.md",
+        "standards/architecture/mcp-server.md",
         "standards/architecture/opensource-front.md",
         "standards/architecture/ops-front.md",
         "standards/architecture/plugin-layout.md",
@@ -68,8 +69,8 @@
         "standards/architecture/security-pillar.md",
         "standards/architecture/shared-mold-keys.md",
         "standards/architecture/spec-backend.md",
-        "standards/architecture/specs-reader-plugin.md",
         "standards/architecture/specs-portal.md",
+        "standards/architecture/specs-reader-plugin.md",
         "standards/architecture/surface-translation.md",
         "standards/architecture/toolchain-front.md",
         "standards/architecture/type-follows-home.md",
@@ -148,8 +149,8 @@
         "standards/workflows/retiring-a-standard.md",
         "standards/workflows/spec-dependencies.md",
         "standards/workflows/task-execution.md",
-        "standards/workflows/worktree-setup.md",
         "standards/workflows/work-host.md",
+        "standards/workflows/worktree-setup.md",
       ] },
     ] },
     { "Concepts" = [
@@ -162,6 +163,9 @@
         "concepts/automation/skills-lint-warning-exit-code.md",
         "concepts/automation/test-layering.md",
       ] },
+    ] },
+    { "Vision" = [
+      "vision/index.md",
     ] },
     { "Decisions" = [
       "decisions/index.md",
@@ -179,9 +183,6 @@
       "decisions/0012-lista-agent-do-orchestrator-e-documental.md",
       "decisions/0013-plugin-module-split.md",
       "decisions/0014-tier-pequeno-em-tarefa-testavel.md",
-    ] },
-    { "Vision" = [
-      "vision/index.md",
     ] },
     "glossary.md",
   ]
