@@ -1,4 +1,4 @@
-"""Where the workspace is, and what `.claude/quenching.json` declares about it.
+"""Where the workspace is, and what `.agents/quenching.json` declares about it.
 
 Moved verbatim out of the pre-refactor specs script. `AZ_SPEC_TYPE` is imported INSIDE the two
 functions that read it: it belongs to `quenching.specs.backends.azure`, which
@@ -74,8 +74,8 @@ CONFIG_KEYS = ("backend", "worktreeSetup", "sharedPaths", "azureStates",
                "workItemTypes")
 BACKENDS = ("github", "azure-boards", "git")
 # The specs-axis keys the `git` store's branch `quenching.json` may declare. With `"backend":
-# "git"`, each one present on the branch replaces the same key from `.claude/quenching.json`;
-# what describes the code tree stays in `.claude/quenching.json`.
+# "git"`, each one present on the branch replaces the same key from `.agents/quenching.json`;
+# what describes the code tree stays in `.agents/quenching.json`.
 BRANCH_CONFIG_KEYS = ("subjects", "tagCatalog", "workItemTypes", "azurePlacement",
                       "azureColumns", "azureStates", "artifactLanguage", "card", "cardAt")
 # `azurePlacement`'s recognised sub-keys. Only `areaPath` is required, and its absence is a
@@ -349,7 +349,7 @@ def _read_work_item_types(out: dict, values: dict) -> None:
 
 
 def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
-    """`.claude/quenching.json` — the plugin's declared parameters, read as data and never
+    """`.agents/quenching.json` — the plugin's declared parameters, read as data and never
     as a refusal.
 
     THE FILE MOVED, AND THE MOVE IS THE POINT. It used to be `/.specs/config.json`, at the
