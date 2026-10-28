@@ -26,9 +26,10 @@
     "omnigent": {
       "argv": ["omnigent", "run", "{arm}", "--harness", "{agent_harness}", "--model", "{model}", "--no-session", "{extra}", "-p", "{prompt}"],
       "arms": {"with": ["{agent}"], "without": []},
+      "prompts": {"with": "/{skill} {prompt}"},
       "container": {"argv": ["omnigent", "run", "{arm}", "--harness", "{agent_harness}", "--model", "{model}", "--no-session", "{extra}", "-p", "{prompt}"]},
       "output": "text",
-      "note": "The with arm runs the generated Omnigent bundle of the suite's `skill` ({agent}, plugins/quenching-omnigent/agents/<id>) on --agent-harness (default opencode); the without arm is the bare harness. {agent} is refused when the bundle is missing. No permission token: the bundle's own deny-only policy governs the arm. Proven with --dry-run and a stub only; no Omnigent-hosted measurement has been run."
+      "note": "The with arm runs the generated operator agent ({agent}, plugins/omnigent/quenching) on --agent-harness (default opencode) and invokes the suite's `skill` in the session as `/<skill>` before the prompt (`prompts.with`); the without arm is the bare harness with the bare prompt. {agent} is refused when the skill is missing from the bundle. No permission token: the operator runs with the session's tools. Proven with --dry-run and a stub only; no Omnigent-hosted measurement has been run."
     },
     "gateway": {
       "argv": ["python3", "-I", "{root}/scripts/eval_gateway_grader.py", "--model", "{model}",

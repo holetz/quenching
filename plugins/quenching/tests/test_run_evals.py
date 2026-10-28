@@ -207,14 +207,17 @@ class Runner(unittest.TestCase):
                                 "--run-id", "r", "--arms", "with,without", *argv])
         return code, [json.loads(line) for line in out.getvalue().splitlines()], err.getvalue()
 
-    def test_the_omnigent_profile_runs_the_generated_bundle_on_the_agent_harness(self):
+    def test_the_omnigent_profile_runs_the_operator_agent_and_invokes_the_skill_in_the_session(self):
         suite = REPO / "plugins/quenching/assets/evals/git/commit"
         code, lines, _ = self.omnigent_lines(suite, "--case", "staged-change-committed")
         self.assertEqual(code, 0)
         by_arm = {line["arm"]: line["argv"] for line in lines}
-        bundle = str(REPO / "plugins/quenching-omnigent/agents/quenching-git-commit")
+        bundle = str(REPO / "plugins/omnigent/quenching")
+        prompt = json.loads((suite / "evals.json").read_text())["cases"][0]["prompt"]
         self.assertEqual(by_arm["with"][:3], ["omnigent", "run", bundle])
+        self.assertEqual(by_arm["with"][-2:], ["-p", "/quenching-git-commit " + prompt])
         self.assertEqual(by_arm["without"][:2], ["omnigent", "run"])
+        self.assertEqual(by_arm["without"][-2:], ["-p", prompt])
         self.assertNotIn(bundle, by_arm["without"])
         for argv in by_arm.values():
             self.assertEqual(argv[argv.index("--harness") + 1], "opencode")
@@ -234,10 +237,10 @@ class Runner(unittest.TestCase):
         image = argv.index("<image>")
         self.assertEqual(argv[image + 1:image + 3], ["omnigent", "run"])
 
-    def test_the_omnigent_profile_refuses_a_suite_without_a_bundle(self):
+    def test_the_omnigent_profile_refuses_a_suite_without_a_skill(self):
         code, lines, err = self.omnigent_lines(self.suite)
         self.assertEqual((code, lines), (2, []))
-        self.assertIn("no generated Omnigent bundle", err)
+        self.assertIn("no generated Omnigent skill", err)
 
     def test_other_profiles_take_no_agent_values(self):
         profile = json.loads((REPO / "scripts/eval_harnesses.json").read_text())["profiles"]["opencode"]
