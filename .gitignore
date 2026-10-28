@@ -33,8 +33,6 @@ site-source/
 !plugins/codex/quenching-codex/checks/fixtures/documentation-site-check/glossary/site/**
 !plugins/opencode/quenching-opencode/quenching/checks/fixtures/documentation-site-check/glossary/site/
 !plugins/opencode/quenching-opencode/quenching/checks/fixtures/documentation-site-check/glossary/site/**
-!plugins/quenching-omnigent/quenching/checks/fixtures/documentation-site-check/glossary/site/
-!plugins/quenching-omnigent/quenching/checks/fixtures/documentation-site-check/glossary/site/**
 
 # Secrets an agent or a developer may create locally (keep the template trackable)
 .env*
