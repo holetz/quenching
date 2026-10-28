@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Command surface naming
-description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the module prefix each front publishes under and the full command and agent mapping; the design namespace for DTCG source and projections; the proof namespace for the verification surface rather than its test artifact; the seventh namespace (`git`, a pillar rather than a front) and its coexistence with a target's own `git` category; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context
+description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the module prefix each front publishes under and the full command and agent mapping; the design namespace for DTCG source and projections; the proof namespace for the verification surface rather than its test artifact; the seventh namespace (`git`, a pillar rather than a front) and its coexistence with a target's own `git` category; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context; and the one-segment skill name of a target repository
 resource: plugins/quenching/commands/**, plugins/quenching/agents/**, plugins/quenching/assets/modules.json
 tags: [naming, commands, taxonomy]
-timestamp: 2026-10-17
+timestamp: 2026-10-28
 audience: both
 authority: current
-source: rename-command-surface, 2026-07-21, 2026-07-24, collapse-skills-into-commands, 2026-07-26, correct-command-citation-form, spec 1635 (module extraction), spec 1637 (the `quenching-opensource` module); lineage in ADR 0004 and ADR 0013
+source: rename-command-surface, 2026-07-21, 2026-07-24, collapse-skills-into-commands, 2026-07-26, correct-command-citation-form, spec 1635 (module extraction), spec 1637 (the `quenching-opensource` module), spec 2118 (one-segment target skill names); lineage in ADR 0004 and ADR 0013
 maintainer: quenching
 ---
 
@@ -33,7 +33,8 @@ and only one of them is unconditionally correct for this repo's commands:
 | --- | --- | --- |
 | Registry name (no `/`) | `quenching-specs:specs:develop` | the `Skill` tool resolves it — always, for a plugin command |
 | Plugin-prefixed slash | `/quenching-specs:specs:develop` | a human types it wherever `quenching` is installed **as a plugin** |
-| Bare slash | `/commands:tighten` | **only** where that command file lives in the target repo's own `.claude/commands/` |
+| Bare slash | `/commands:tighten` | **only** where that command file lives in the target repo's own `.claude/commands/` (legacy layout) |
+| Target skill | `/commands-tighten` | the skill lives in the target repo's own `.agents/skills/commands-tighten/` (§A target's skill name is one segment) |
 
 So `commands/specs/develop.md` is cited as `quenching-specs:specs:develop` for the tool and
 `/quenching-specs:specs:develop` for the human — and bare **only** by a repo that vendored the file into
@@ -59,6 +60,18 @@ mandated existed to be *mirrored* by a command path; with nothing to mirror, it 
 with it the bijection rule, the mirroring requirement, and the two root exceptions that needed
 `sk-path-mismatch` recorded as intended. Nothing derives a name that could disagree with the path,
 so nothing checks that they agree.
+
+### A target's skill name is one segment
+
+In a target repository a skill lives at `.agents/skills/<name>/SKILL.md`, and `<name>` is **one path
+segment**: `<front>-<verb>`, or `<front>-<object>-<verb>`, joined by `-`. The `SKILL.md` frontmatter
+`name:` equals the folder name, and the skill is invoked as `/<name>`. Claude Code 2.1.312 does not
+discover a nested `.claude/skills/<a>/<b>/SKILL.md` (only the flat sibling is listed), and the Claude
+bridge is a byte copy of `.agents/skills/` ([surface-translation.md](../architecture/surface-translation.md)
+§Target repositories), so a nested source would vanish from Claude. The legacy
+`.claude/commands/<a>/<b>.md` (`/a:b`) migrates to `.agents/skills/<a>-<b>/SKILL.md` (`/a-b`), and
+`cq components migrate` rewrites the `/a:b` invocations in the bodies it moves. The plugin's own
+commands keep their `:` identity: this rule governs a target's surface, not the package.
 
 ## The plugin prefix is the module
 
