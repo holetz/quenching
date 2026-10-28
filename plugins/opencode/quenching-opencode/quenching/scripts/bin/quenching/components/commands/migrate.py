@@ -254,6 +254,9 @@ def build_plan(repo: Path) -> Plan:
             else:
                 plan.conflicts.append({"path": home, "with": legacy,
                                        "why": "two configuration files differ"})
+        elif (repo / home).exists():
+            plan.conflicts.append({"path": home, "with": legacy,
+                                   "why": "the home exists but is not tracked"})
         else:
             plan.move(legacy, home)
     claude_md, agents_md = repo / "AGENTS.md", repo / "AGENTS.md"
