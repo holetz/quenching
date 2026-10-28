@@ -99,7 +99,8 @@ names record admitted boundaries, not surfaces that this repository claims to ha
 
 ## What this standard does not decide
 
-This contract does not rename or migrate `.claude/quenching.json`, extract its shared loader, or
+This contract does not rename or migrate the configuration file (`.agents/quenching.json`, with
+`.claude/quenching.json` read as legacy), extract its shared loader, or
 define per-front configuration namespaces. It does not make consumer readers enforce ownership, mint
 future command surfaces, or turn a read-only report into an align. Those decisions belong to the
 configuration-home and consuming-front work that follows this first declaration.

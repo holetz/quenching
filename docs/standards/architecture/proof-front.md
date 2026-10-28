@@ -2,7 +2,7 @@
 type: standard
 title: Proof front
 description: The target repository's canonical verification surface — layered tests, explicit fixture reach, measured source roots, a coverage ratchet, order evidence and a CI gate
-resource: .claude/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/proof/**, plugins/quenching/assets/references/proof-align/target-structure.md, plugins/quenching/assets/references/proof-align/layer-contract.md, plugins/quenching/assets/references/proof-align/gate-contract.md
+resource: .agents/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/proof/**, plugins/quenching/assets/references/proof-align/target-structure.md, plugins/quenching/assets/references/proof-align/layer-contract.md, plugins/quenching/assets/references/proof-align/gate-contract.md
 tags: [architecture, proof, tests, coverage, verification]
 timestamp: 2026-08-31
 audience: both
@@ -24,7 +24,7 @@ that every adopting repository already has every layer.
 
 The proof front adopts the common minimum from
 [`front-mold.md`](front-mold.md). Its applicability signal is the `proof` namespace in the
-target's `.claude/quenching.json`; its read model is `cq proof status`, and its verifier is
+target's `.agents/quenching.json`; its read model is `cq proof status`, and its verifier is
 `cq proof doctor`. The align and status bodies cite the executor projection at
 `plugins/quenching/assets/references/front-align/mold.md`, while this front keeps proof-specific
 disposition in `plugins/quenching/assets/references/proof-align/bands.md`.
@@ -68,7 +68,7 @@ The target-structure, layer and gate details are self-contained in the proof-fro
 ## Configuration home
 
 The proof declarations are owned by the `proof` namespace in the target repository's single
-configuration home, `.claude/quenching.json`:
+configuration home, `.agents/quenching.json` (or the legacy `.claude/quenching.json`):
 
 ```json
 {
@@ -149,7 +149,7 @@ may rise to the measured value but may never fall. The front does not impose a u
 percentage. A repository with no meaningful measurable source root records that decision and its
 reason rather than publishing an empty green number.
 
-Unless `.claude/quenching.json` declares `proof.ratchetPath`, the floor lives at
+Unless `.agents/quenching.json` declares `proof.ratchetPath`, the floor lives at
 `<proofRoot>/../.coverage-floor.json` — `/.coverage-floor.json` for the default `tests/` root.
 An explicit path is resolved from the repository root and is the only override; the verifier never
 searches for a convenient floor file.

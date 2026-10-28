@@ -1,6 +1,7 @@
-# `.claude/quenching.json` — the envelope and recognised namespaces
+# `.agents/quenching.json` — the envelope and recognised namespaces
 
-The specs front's own copy of what `.claude/quenching.json` recognises — the root metadata and
+The specs front's own copy of what `.agents/quenching.json` recognises, with `.claude/quenching.json`
+read as legacy while it exists — the root metadata and
 namespaced declarations `cq specs config` reads, their defaults, and the refusals a malformed value
 earns. Specs live on the `quenching` branch: the file selects that store and configures the tracker card
 and, for deprecated tracker backends, their transport and placement, never a repository specs

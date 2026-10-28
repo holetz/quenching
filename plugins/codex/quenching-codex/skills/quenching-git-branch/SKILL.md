@@ -191,4 +191,4 @@ names every fact step 4 produced.
   `autonomous` input word takes it unasked.
 - Stamp `branch:` only once per id — a record already present is read, never overwritten.
 - Never install `docs/standards/git/**` into the target, and never write `gitConventions` into its
-  `.claude/quenching.json`; a repo's own conventions are read, never written, by this command.
+  `.agents/quenching.json`; a repo's own conventions are read, never written, by this command.

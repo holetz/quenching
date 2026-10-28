@@ -53,8 +53,9 @@ that spawns subagents per run, and the human is authorizing that spend.
 **Done when:** the user has answered; declined → nothing written, run ends.
 
 ### 5. Write the case set, then run both arms
-Write `evals.json` into the tree mirroring the command's path — `.agents/evals/<path>/` in a
-target repo, `../../assets/evals/<path>/` in this plugin
+Write `evals.json` beside the skill it measures — `.agents/evals/<name>/` in a target repo
+(the skill name, never the generated `.agents/skills/` bridge), `../../assets/evals/<path>/`
+in this plugin, `<path>` mirroring the command path
 ([components-command-eval/evaluation.md](../../references/components-command-eval/evaluation.md)
 §Where the artifacts live). Then, per case, dispatch **two** `Task` subagents — one told the
 skill is available, one given the same prompt with no reference to it. Pin both to the session

@@ -150,7 +150,7 @@ the set of sections a spec must have filled before a heading counts as required,
 
 ## Plugin config
 
-`.claude/quenching.json`, the single file a target repository uses to declare anything to this plugin: `backend`, `worktreeSetup`, `azureStates`, `azurePlacement`, `azureColumns`, `subjects`, `tagCatalog`, `workItemTypes` and `shared.gitConventions` — the last of which carries the `git` pillar's per-artifact writing directives and outranks the target's own `docs/standards/git/**` for every artifact it names. It replaced `/.specs/config.json`, whose home stopped working once a repository could have no `/.specs/` folder at all. Absence yields the documented defaults, never a null and never a refusal — except `azureStates` and `azurePlacement.areaPath`, neither of which has a default because the project itself defines them, and whose absence refuses instead of guessing; every other way it can be wrong comes back as a field for `doctor` to judge.
+`.agents/quenching.json`, the single file a target repository uses to declare anything to this plugin (`.claude/quenching.json` is read as legacy while it exists): `backend`, `worktreeSetup`, `azureStates`, `azurePlacement`, `azureColumns`, `subjects`, `tagCatalog`, `workItemTypes` and `shared.gitConventions` — the last of which carries the `git` pillar's per-artifact writing directives and outranks the target's own `docs/standards/git/**` for every artifact it names. It replaced `/.specs/config.json`, whose home stopped working once a repository could have no `/.specs/` folder at all. Absence yields the documented defaults, never a null and never a refusal — except `azureStates` and `azurePlacement.areaPath`, neither of which has a default because the project itself defines them, and whose absence refuses instead of guessing; every other way it can be wrong comes back as a field for `doctor` to judge.
 
 ## PR record
 
@@ -230,7 +230,7 @@ the four version strings a release must bump together, split into two halves rea
 
 ## Worktree setup
 
-the single key `worktreeSetup` in `.claude/quenching.json`, holding a command `/quenching:specs:execute` runs once inside a newly created worktree so a repo with installed dependencies gets a usable tree rather than one that breaks at the first `verify:`. `cq specs` reads it and never executes it. Declaring nothing is the normal case and never a finding; the two that are — `sp-config-unknown-key` and `sp-config-unparseable` — exist only so a mistyped key cannot fail silently. Its consent is the isolation offer itself: the command is shown verbatim in the plan block, and choosing Worktree is the OK for it.
+the single key `worktreeSetup` in `.agents/quenching.json` (or the legacy `.claude/quenching.json`), holding a command `/quenching:specs:execute` runs once inside a newly created worktree so a repo with installed dependencies gets a usable tree rather than one that breaks at the first `verify:`. `cq specs` reads it and never executes it. Declaring nothing is the normal case and never a finding; the two that are — `sp-config-unknown-key` and `sp-config-unparseable` — exist only so a mistyped key cannot fail silently. Its consent is the isolation offer itself: the command is shown verbatim in the plan block, and choosing Worktree is the OK for it.
 
 ## Withdrawn contract residue
 

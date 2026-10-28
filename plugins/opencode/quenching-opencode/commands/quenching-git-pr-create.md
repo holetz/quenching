@@ -155,4 +155,4 @@ are named.
 - Never claim a provider-native issue/work-item link closes or transitions anything beyond the
   host CLI's documented effect; report the provider and the selected base plainly instead.
 - Never install `docs/standards/git/**` into the target, and never write `gitConventions` into its
-  `.claude/quenching.json`; a declared convention is read here, never written back.
+  `.agents/quenching.json`; a declared convention is read here, never written back.

@@ -27,11 +27,8 @@ The four strategies, the squash caveat and the post-merge worktree removal are i
 ### 1. Load the rules and resolve branch, base and checkout
 ```bash
 cq() { python3 "${QUENCHING_OMNIGENT_ROOT:-$HOME/.omnigent/quenching}/scripts/cq" "$@"; }
-cq components read quenching://references/git/merge.md \
-  --sections "§Merge strategies" --sections "§The squash caveat" \
-  --sections "§The worktree is removed after a successful merge"
-cq components read quenching://references/git/conventions.md \
-  --sections "§The declared-directive layer"
+# Read the quenching MCP resource: quenching://references/git/merge.md?section=%C2%A7Merge%20strategies&section=%C2%A7The%20squash%20caveat&section=%C2%A7The%20worktree%20is%20removed%20after%20a%20successful%20merge
+# Read the quenching MCP resource: quenching://references/git/conventions.md?section=%C2%A7The%20declared-directive%20layer
 cq git conventions --json   # `config.mergeSubject`, or absent
 cq git base --json
 git worktree list --porcelain
@@ -100,4 +97,4 @@ subject**, what was stamped, and the worktree's fate. **Done when:** all four ar
 - Never `--force` a worktree removal, and never remove one before a merge verified at exit 0.
 - Offer the strategy; never choose it for the human.
 - Never install `docs/standards/git/**` into the target, and never write `gitConventions` into its
-  `.claude/quenching.json`; a declared convention is read here, never written back.
+  `.agents/quenching.json`; a declared convention is read here, never written back.

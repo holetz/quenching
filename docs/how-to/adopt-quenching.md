@@ -50,7 +50,7 @@ To stop using the plugin but keep the marketplace configured, run:
 ```
 
 Uninstalling the plugin does not remove the target repository's `/docs/`, `.claude/` or
-`.claude/quenching.json`; those files belong to the repository. If you need to undo an alignment,
+`.agents/quenching.json` (or the legacy `.claude/quenching.json`); those files belong to the repository. If you need to undo an alignment,
 review the target's commits and use its normal Git revert workflow. Removing the plugin is not a
 rollback of data it already wrote. For an upgrade regression, disable or uninstall the plugin,
 then reinstall the previously published version (or use a known checkout with `--plugin-dir` for
@@ -102,7 +102,7 @@ flowchart LR
 2. Type `/quenching-align:align`. The probe runs each applicable front's own verifier first
    (`cq knowledge validate`, `cq design doctor`, `cq components doctor`/`lint`, `cq ops doctor`,
    `cq proof doctor`, `cq toolchain doctor`, `cq delivery doctor`); a clean front stops without ceremony. `ops` and `proof` are applicable
-   when `.claude/quenching.json` declares `ops.opsRoot` or `proof.proofRoot`, or when their fixed conventional-root
+   when `.agents/quenching.json` (or the legacy `.claude/quenching.json`) declares `ops.opsRoot` or `proof.proofRoot`, or when their fixed conventional-root
    probes find an entry point or test module. Otherwise the report says *not applicable* and
    offers the declaration path without inventing a plan.
 3. Read the ONE plan per drifted front. It names every move: which stray docs fold into which
@@ -113,7 +113,7 @@ flowchart LR
 
 ## What the operations and proof fronts add
 
-The operations front reads `ops.opsRoot` and `ops.router` from `.claude/quenching.json`, then probes before
+The operations front reads `ops.opsRoot` and `ops.router` from `.agents/quenching.json` (or the legacy `.claude/quenching.json`), then probes before
 it inventories. It may regenerate a stale registry and make bounded structural repairs; it never
 arms a write-capable entry point, chooses an undeclared router, or drives judgement findings.
 `/quenching-ops:ops:status` is the read-only report, and `/quenching-ops:ops:entrypoint:new` is the gated

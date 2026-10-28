@@ -64,6 +64,11 @@ class Reading(unittest.TestCase):
         self.assertTrue(section["text"].startswith(f"## {heading}"))
         self.assertLess(len(section["text"]), size)
 
+    def test_a_served_reference_links_its_siblings_as_resources(self):
+        text = resources._read("git/commit.md")
+        self.assertIn("quenching://references/git/conventions.md", text)
+        self.assertNotIn("${CLAUDE_PLUGIN_ROOT}/assets/references/", text)
+
     def test_an_absent_section_is_a_refusal_naming_it(self):
         small, _, _ = self.small_and_large()
         with self.assertRaises(server.ResourceError) as caught:

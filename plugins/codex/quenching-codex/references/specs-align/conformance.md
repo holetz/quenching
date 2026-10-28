@@ -7,7 +7,8 @@ reads and writes both. The `github` and `azure-boards` backends are deprecated, 
 
 ## Store configuration
 
-The target's `.claude/quenching.json` selects the store (`"backend": "git"`) and may refine card
+The target's `.agents/quenching.json` (or the legacy `.claude/quenching.json`) selects the store
+(`"backend": "git"`) and may refine card
 settings and project conventions; the branch's `quenching.json` holds the specs-axis keys. No
 command silently switches the store. A legacy repository-store value is refused with an actionable
 finding.

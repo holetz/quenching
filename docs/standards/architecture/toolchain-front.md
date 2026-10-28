@@ -2,7 +2,7 @@
 type: standard
 title: Toolchain front
 description: The target repository's toolchain surface — manifests, locks, language pins and tool configuration, with explicit ownership boundaries and stable tc-* findings
-resource: .claude/quenching.json, pyproject.toml, uv.lock, CLAUDE.md, .github/workflows/**, plugins/quenching/assets/zensical/ci-github-pages.yml
+resource: .agents/quenching.json, pyproject.toml, uv.lock, CLAUDE.md, .github/workflows/**, plugins/quenching/assets/zensical/ci-github-pages.yml
 tags: [architecture, toolchain, dependencies, build, configuration]
 timestamp: 2026-08-31
 audience: both
@@ -46,7 +46,7 @@ namespace; its future read model and verifier are downstream implementation deci
 preserve the common `status`/`doctor` floor. Its domain-specific reference is
 `plugins/quenching/assets/references/toolchain-align/bands.md`.
 
-The name is `toolchain`, not `config`: `.claude/quenching.json` is the plugin configuration home,
+The name is `toolchain`, not `config`: `.agents/quenching.json` is the plugin configuration home,
 and treating it as a toolchain artifact would recreate competing sources of truth. The `tc-`
 prefix is reserved for this front's findings and must not be reused by configuration or a
 neighbouring front.
@@ -67,7 +67,7 @@ toolchain surface
 
 The list is a candidate family, not an inventory of files the target must create. A later
 implementation may extend it only after measuring a real target corpus and adding the extension to
-the verifier's declared contract. `.claude/quenching.json` is never a member of this tree.
+the verifier's declared contract. `.agents/quenching.json` is never a member of this tree.
 
 ## Configuration and ownership boundaries
 
@@ -84,7 +84,7 @@ The neighbouring-front boundaries are fixed as follows:
 | `tool.pytest`, `tool.coverage` and CI gate invocation | `proof` | Read as evidence of the verification surface; never turned into toolchain ownership. |
 | Workflow triggers, jobs and stages | `delivery` | Read runtime declarations as evidence; workflow control remains delivery-owned. |
 | Permission inspection | `security` | Remains a read-only pillar concern, outside the toolchain tree. |
-| `.claude/quenching.json` | shared configuration loader | Names front configuration; it is not a toolchain source. |
+| `.agents/quenching.json` | shared configuration loader | Names front configuration; it is not a toolchain source. |
 
 CI runtime declarations may therefore be evidence for toolchain version agreement while CI gate
 invocation is proof evidence. Multiple readers do not create multiple writers.

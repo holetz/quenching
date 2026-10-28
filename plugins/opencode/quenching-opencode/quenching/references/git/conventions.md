@@ -14,8 +14,9 @@ any of them.
 
 <!-- rules -->
 
-A target declares its directives for the texts this pillar writes in `.claude/quenching.json`,
-under `gitConventions` — one sub-key per artifact:
+A target declares its directives for the texts this pillar writes in `.agents/quenching.json`
+(or the legacy `.claude/quenching.json` while it exists), under `gitConventions` — one sub-key per
+artifact:
 
 ```json
 {
@@ -54,7 +55,7 @@ cq git conventions --json
 and `declared` answer the docs layer and only it. **State in the report which layer governed each
 artifact it wrote.**
 
-**Never write `gitConventions` into a target's `.claude/quenching.json`.** Same prohibition as
+**Never write `gitConventions` into a target's `.agents/quenching.json`.** Same prohibition as
 §What is never done, and for the same reason: a directive the plugin authored stops being the
 target's.
 
@@ -89,7 +90,7 @@ ls docs/standards/git/ 2>/dev/null
 | a doc that covers only part (e.g. commit subjects but not merges) | the target's for what it covers, the defaults for the rest |
 
 State in the report which one governed. This rule answers the docs layer only — a
-`gitConventions.<artifact>` declared in `.claude/quenching.json` outranks it for that
+`gitConventions.<artifact>` declared in `.agents/quenching.json` outranks it for that
 artifact, per §The declared-directive layer's table.
 
 **Never install a git standard into a target.** Not as a fixup, not as a suggestion applied, not
@@ -111,7 +112,7 @@ This file owns three prohibitions, and all are about **whose** conventions win:
 
 - **Never install `docs/standards/git/**` into a target.** See §The read-if-present rule. A default
   written into the repo stops being a default.
-- **Never write `gitConventions` into a target's `.claude/quenching.json`.** Same argument one key
+- **Never write `gitConventions` into a target's `.agents/quenching.json`.** Same argument one key
   down; see §The declared-directive layer.
 - **Never apply a convention the target did not declare and this file does not name.** A commit
   style inferred from reading `git log` is a guess, and a guess about house style is worse than the

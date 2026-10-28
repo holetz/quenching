@@ -189,9 +189,7 @@ returned is in hand.
 ### 6. The one screen — capture, correction and direction
 
 ```bash
-cq() { python3 "${QUENCHING_OMNIGENT_ROOT:-$HOME/.omnigent/quenching}/scripts/cq" "$@"; }
-cq components read quenching://references/specs-develop/report-mold.md \
-  --sections "§The report mold" --rules-only
+# Read the quenching MCP resource: quenching://references/specs-develop/report-mold.md?section=%C2%A7The%20report%20mold
 ```
 
 Emit §The report mold's fixed header, then one body block showing what was written and what was

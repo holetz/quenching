@@ -36,7 +36,7 @@ choose a target-specific operational policy.
 ## Unconfigured operations roots
 
 Configuration is a prerequisite for the inventory, not a default the align may invent. When either
-`opsRoot` or `router` is absent from `.claude/quenching.json`, `cq ops doctor --json` refuses with
+`opsRoot` or `router` is absent from `.agents/quenching.json` (or the legacy `.claude/quenching.json`), `cq ops doctor --json` refuses with
 `op-config-missing`, names both required keys and exits `2`. The align reports that refusal and
 stops after the probe; it does not guess `scripts/`, select a router, or turn the refusal into an
 `op-no-router` finding.

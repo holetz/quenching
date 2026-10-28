@@ -31,8 +31,7 @@ never a guess at which files belong together.
 ### 1. Read-if-present, and the staged diff
 ```bash
 cq() { python3 "${QUENCHING_OMNIGENT_ROOT:-$HOME/.omnigent/quenching}/scripts/cq" "$@"; }
-cq components read quenching://references/git/conventions.md \
-  --sections "§The declared-directive layer" --sections "§The read-if-present rule"
+# Read the quenching MCP resource: quenching://references/git/conventions.md?section=%C2%A7The%20declared-directive%20layer&section=%C2%A7The%20read-if-present%20rule
 cq git conventions --json
 cq git state --json   # `staged` is the index, `branch` the current branch
 ```
@@ -47,8 +46,7 @@ list are both known.
 step 1 wins where it is declared; else a target doc naming a subject format wins outright, and a doc
 covering only part of it governs that part. With neither declared:
 ```bash
-cq() { python3 "${QUENCHING_OMNIGENT_ROOT:-$HOME/.omnigent/quenching}/scripts/cq" "$@"; }
-cq components read quenching://references/git/commit.md --sections "§Commit messages"
+# Read the quenching MCP resource: quenching://references/git/commit.md?section=%C2%A7Commit%20messages
 ```
 `$ARGUMENTS` given → use it verbatim, wrapped rather than truncated past 72 characters where the
 title allows; an explicit subject always wins. When it is omitted, resolve the current branch and
@@ -93,4 +91,4 @@ are named.
   obstacle to route around.
 - **Never amend or rewrite an existing commit, and never force-push.**
 - **Never install `docs/standards/git/**` into the target, and never write `gitConventions` into
-  its `.claude/quenching.json`.** A convention read here is followed, never written back.
+  its `.agents/quenching.json`.** A convention read here is followed, never written back.

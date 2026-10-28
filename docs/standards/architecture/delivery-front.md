@@ -2,7 +2,7 @@
 type: standard
 title: Delivery front
 description: The target repository's delivery surface — bounded pipeline shape, release reachability and ownership boundaries across workflow, proof, ops, toolchain and security
-resource: .github/workflows/**, .claude/quenching.json, plugins/quenching/assets/bin/quenching/delivery/**
+resource: .github/workflows/**, .agents/quenching.json, plugins/quenching/assets/bin/quenching/delivery/**
 tags: [architecture, delivery, ci, pipelines, release]
 timestamp: 2026-08-31
 audience: both
@@ -25,7 +25,7 @@ the owner.
 
 The delivery front adopts the common minimum from
 [`front-mold.md`](front-mold.md). Its applicability signal is a `delivery` namespace in the
-target's `.claude/quenching.json`; its read model will be `cq delivery status`, and its verifier
+target's `.agents/quenching.json` (or the legacy `.claude/quenching.json`); its read model will be `cq delivery status`, and its verifier
 will be `cq delivery doctor`. The future align and status bodies must preserve the common
 `doctor`/`status` floor while keeping delivery-specific evidence in the delivery route's own
 references.

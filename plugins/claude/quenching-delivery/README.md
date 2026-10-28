@@ -259,7 +259,7 @@ everything else — `ready` is a *derived* stage, and the OK to build is the
 natively instead). A fifth key, `summary:`, is neither a record nor one of those four — one line
 saying what the spec is, written at capture and refreshed by every
 `/quenching-specs:specs:develop` pass, and it is what
-`cq specs next --front --table` prints as its `Summary` column. `.claude/quenching.json` is where a target declares
+`cq specs next --front --table` prints as its `Summary` column. `.agents/quenching.json` (or the legacy `.claude/quenching.json`) is where a target declares
 `backend`, the `card`, the Azure placement (`azureStates`, `azurePlacement`, `azureColumns`) and the
 project's own `subjects`/`tagCatalog` — the closed sets `/quenching-specs:specs:create` proposes a spec's subject
 and tags from, confirmed by a human, never picked silently. Because a spec writes its durable rule
@@ -273,9 +273,9 @@ write-only, nothing reads it back, so it is never a second store.
 
 `cq config show --effective [--json]` prints every configuration key with its effective value and the layer it came from (`default`, `user`, `repository`, `branch`), plus the path and state of each layer; it only reads.
 
-`cq config init [--write]` seeds `.claude/quenching.json` with every adjustable default spelled out (preview without `--write`; an existing file is refused, never merged), and `cq config check [--json]` lists the seeded keys the file lacks (exit 1). `cq doctor` prints the same list in a `config` block and only reports it; `/quenching-align:align` runs the check and seeds an absent file under its one authorization.
+`cq config init [--write]` seeds `.agents/quenching.json` with every adjustable default spelled out (preview without `--write`; an existing file is refused, never merged), and `cq config check [--json]` lists the seeded keys the file lacks (exit 1). `cq doctor` prints the same list in a `config` block and only reports it; `/quenching-align:align` runs the check and seeds an absent file under its one authorization.
 
-The repository layer is read through a configuration provider. `file` is the default and the compatibility read: with nothing declared, every value, refusal and `cq config show --effective` row is what it was, `.claude/quenching.json` included. `QUENCHING_CONFIG_PROVIDER=<name>` (read from the environment, never from the file) selects another registered provider; a name nothing answers to is a refusal (exit 2) naming the registered providers, never a fallback to the file. Under a non-file provider the repository needs no `.claude/quenching.json`, `cq doctor` stops asking for it, `cq config show --effective` names the provider as the repository layer's source, and `cq config init` and `cq config check` refuse, because a write the provider did not receive would be a silent divergence. `cq config export [--json]` prints the repository layer as the envelope a service would hold, so the file can be loaded there and then deleted; it only reads. No service provider ships yet: this release delivers the seam.
+The repository layer is read through a configuration provider. `file` is the default and the compatibility read: with nothing declared, every value, refusal and `cq config show --effective` row is what it was, `.agents/quenching.json` included (and the legacy `.claude/quenching.json`). `QUENCHING_CONFIG_PROVIDER=<name>` (read from the environment, never from the file) selects another registered provider; a name nothing answers to is a refusal (exit 2) naming the registered providers, never a fallback to the file. Under a non-file provider the repository needs no `.agents/quenching.json`, `cq doctor` stops asking for it, `cq config show --effective` names the provider as the repository layer's source, and `cq config init` and `cq config check` refuse, because a write the provider did not receive would be a silent divergence. `cq config export [--json]` prints the repository layer as the envelope a service would hold, so the file can be loaded there and then deleted; it only reads. No service provider ships yet: this release delivers the seam.
 
 ### Azure Boards sync — a local cache kept in step by service hooks
 
@@ -394,7 +394,7 @@ reviewer gets no Codex grant. Two verbs of the `codex` pillar carry it:
   git guard proves afterwards that the review changed nothing.
 
 **Default and opt-out.** The review runs by default whenever the quota allows
-(`shared.codex.crossReview: "auto"`); `"off"` in `.claude/quenching.json` is the explicit refusal.
+(`shared.codex.crossReview: "auto"`); `"off"` in `.agents/quenching.json` is the explicit refusal.
 The optional `shared.codex` block defaults to `maxUsedPercent` `80` (primary) and `90`
 (secondary), `timeoutSeconds` `900` and `model` `gpt-6-astra`; an absent block is every default.
 
@@ -429,7 +429,7 @@ side reproduces it, with the command and its output. The Codex surface (`quenchi
 
 Step 5b of `/quenching-specs:specs:execute` hands **one task at a time** to Codex when the code
 admits it; Claude keeps the self-review, the `verify:`, the commit, the tick and the verifier. It
-is **on by default**, under `shared.codex.executor` in `.claude/quenching.json`, and independent of
+is **on by default**, under `shared.codex.executor` in `.agents/quenching.json`, and independent of
 `crossReview` (`executor.enabled: false` is its opt-out).
 
 - **Eligibility** — `cq codex eligible --spec <id> --task <tid> --json`: an open task that declares
@@ -634,7 +634,7 @@ installed target migrates once:
    (`quenching-specs:verifier`).
 5. `/reload-plugins`, then run `cq modules --json` to confirm each module reports `enabled: true`.
 
-Nothing in the target's `/docs/`, `.claude/quenching.json` or spec store changes: a declared
+Nothing in the target's `/docs/`, `.agents/quenching.json` (or legacy `.claude/quenching.json`) or spec store changes: a declared
 `shared.profiles.installed` keeps its meaning, now intersected with the installed modules.
 
 ### Read-only: another project's specs only
@@ -664,7 +664,7 @@ Uninstall `quenching-specs` last: every other module runs its `cq` through it.
 
 Removing the marketplace itself (`/plugin marketplace remove quenching`) also uninstalls plugins
 installed from it. Neither operation deletes the target repository's `/docs/`, `.claude/` or
-`.claude/quenching.json` files: those are repository-owned data and configuration. To reverse an
+`.agents/quenching.json` (legacy `.claude/quenching.json`) files: those are repository-owned data and configuration. To reverse an
 alignment, review and revert the target repository's own commits; uninstalling the plugin is not
 a data rollback. If an upgrade is the problem, disable or uninstall the plugin first, then
 reinstall the previously published version or load its known checkout with `--plugin-dir` for

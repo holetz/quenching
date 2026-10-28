@@ -32,7 +32,8 @@ flowchart LR
 
 !!! note "Before you start"
     The specs live on the `quenching` branch, selected with `"backend": "git"` in
-    `.claude/quenching.json` (the project's own `subjects`/`tagCatalog` may live on the branch).
+    `.agents/quenching.json` (or the legacy `.claude/quenching.json`; the project's own
+    `subjects`/`tagCatalog` may live on the branch).
     A tracker card is optional (`card`). Missing remote access, or a missing `gh`/`az` binary or
     auth for the card, is a named refusal (exit 2) on the first operation, never mid-build. The
     `github` and `azure-boards` backends still work but are deprecated: `doctor` flags them and

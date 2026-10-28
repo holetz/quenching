@@ -32,11 +32,8 @@ than restated; this command is its standalone entry point for a caller with no b
 ### 1. Load the rules and the state in one read
 ```bash
 cq() { python3 "${QUENCHING_OMNIGENT_ROOT:-$HOME/.omnigent/quenching}/scripts/cq" "$@"; }
-cq components read quenching://references/git/isolation.md \
-  --sections "§Isolation happens on the way into a build" --sections "§Branch and worktree names" \
-  --sections "§Recording the isolation"
-cq components read quenching://references/git/conventions.md \
-  --sections "§The declared-directive layer" --sections "§The read-if-present rule"
+# Read the quenching MCP resource: quenching://references/git/isolation.md?section=%C2%A7Isolation%20happens%20on%20the%20way%20into%20a%20build&section=%C2%A7Branch%20and%20worktree%20names&section=%C2%A7Recording%20the%20isolation
+# Read the quenching MCP resource: quenching://references/git/conventions.md?section=%C2%A7The%20declared-directive%20layer&section=%C2%A7The%20read-if-present%20rule
 cq git conventions --json   # `config.branchName`, or absent
 cq git state --json           # `branch`, `status` (porcelain), `staged`, `remotes`
 cq git base --json
@@ -130,4 +127,4 @@ names every fact step 4 produced.
   `autonomous` input word takes it unasked.
 - Stamp `branch:` only once per id — a record already present is read, never overwritten.
 - Never install `docs/standards/git/**` into the target, and never write `gitConventions` into its
-  `.claude/quenching.json`; a repo's own conventions are read, never written, by this command.
+  `.agents/quenching.json`; a repo's own conventions are read, never written, by this command.

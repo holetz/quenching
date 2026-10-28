@@ -81,8 +81,8 @@ declares it in one of two places:
 
 - a **standard** under its own `/docs/standards/` that names the language its artifacts use; or
 - the **`artifactLanguage`** key (one BCP-47 tag) in its quenching configuration —
-  `.claude/quenching.json` or, when specs-axis configuration lives on the `quenching` branch, the
-  `quenching.json` at that branch's root.
+  `.agents/quenching.json` (or the legacy `.claude/quenching.json`) or, when specs-axis
+  configuration lives on the `quenching` branch, the `quenching.json` at that branch's root.
 
 Either one is enough. If both exist and disagree, the standard is the written contract and the key
 is the defect to fix. The two bands may take different languages: a team can converse in `pt-BR`

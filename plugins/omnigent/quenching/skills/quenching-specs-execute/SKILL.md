@@ -49,9 +49,7 @@ is under way, or run `cq specs list --json` and pick on a decision sheet ([quest
 **The precondition comes first.** Load the rule that binds this step:
 
 ```bash
-cq() { python3 "${QUENCHING_OMNIGENT_ROOT:-$HOME/.omnigent/quenching}/scripts/cq" "$@"; }
-cq components read quenching://references/specs-execute/execution.md \
-  --sections "§The precondition"
+# Read the quenching MCP resource: quenching://references/specs-execute/execution.md?section=%C2%A7The%20precondition
 ```
 
 The rest of this step is read in **one call** — the tree, the isolation ref, the spec's own state,
@@ -160,9 +158,7 @@ verifies.
 **Load the stage ladder first** — what the derived stage names and means:
 
 ```bash
-cq() { python3 "${QUENCHING_OMNIGENT_ROOT:-$HOME/.omnigent/quenching}/scripts/cq" "$@"; }
-cq components read quenching://references/specs-develop/spec-driven.md \
-  --sections "§Derived stages"
+# Read the quenching MCP resource: quenching://references/specs-develop/spec-driven.md?section=%C2%A7Derived%20stages
 ```
 
 The `cq specs status --json` payload is **already in hand** from step 2 — do not read it again.
@@ -243,9 +239,7 @@ b. **Write the code**, minimal and scoped to the declared files — but only aft
    §Delegating an executor; when it is, load the rules that bound it before dispatching:
 
    ```bash
-cq() { python3 "${QUENCHING_OMNIGENT_ROOT:-$HOME/.omnigent/quenching}/scripts/cq" "$@"; }
-   cq components read quenching://references/specs-execute/execution-delegation.md \
-     --sections "§Delegating an executor"
+   # Read the quenching MCP resource: quenching://references/specs-execute/execution-delegation.md?section=%C2%A7Delegating%20an%20executor
    ```
 
    **The Codex executor comes first, one task at a time.** For EVERY task, before writing anything and
@@ -263,11 +257,8 @@ c. **Write only the `/docs/` this task names.** When this task writes `/docs/`, 
    draws the line between declared and emergent, and the boundary it crosses:
 
    ```bash
-cq() { python3 "${QUENCHING_OMNIGENT_ROOT:-$HOME/.omnigent/quenching}/scripts/cq" "$@"; }
-   cq components read quenching://references/specs-execute/execution-delegation.md \
-     --sections "§Declared versus emergent"
-   cq components read quenching://references/specs-develop/spec-driven.md \
-     --sections "§Boundary"
+   # Read the quenching MCP resource: quenching://references/specs-execute/execution-delegation.md?section=%C2%A7Declared%20versus%20emergent
+   # Read the quenching MCP resource: quenching://references/specs-develop/spec-driven.md?section=%C2%A7Boundary
    ```
 
    A `/docs/standards/` path declared under `## Impact` and named by this task is part of its
@@ -284,14 +275,11 @@ d. **On the first pass through 5d–5e, load the rules the chain runs under — 
 
    ```bash
 cq() { python3 "${QUENCHING_OMNIGENT_ROOT:-$HOME/.omnigent/quenching}/scripts/cq" "$@"; }
-   cq components read quenching://references/specs-execute/execution.md \
-     --sections "§The verification policy" --sections "§The validation loop" \
-     --sections "§The diff self-review" --sections "§The commit"
-   cq components read quenching://references/git/conventions.md \
-     --sections "§The declared-directive layer" --sections "§The read-if-present rule"
+   # Read the quenching MCP resource: quenching://references/specs-execute/execution.md?section=%C2%A7The%20verification%20policy&section=%C2%A7The%20validation%20loop&section=%C2%A7The%20diff%20self-review&section=%C2%A7The%20commit
+   # Read the quenching MCP resource: quenching://references/git/conventions.md?section=%C2%A7The%20declared-directive%20layer&section=%C2%A7The%20read-if-present%20rule
    cq git conventions --json
-   cq components read quenching://references/git/commit.md --sections "§Commit messages" --sections "§The subject is the anchor"
-   cq components read quenching://references/git/isolation.md --sections "§Marking the branch with the specs it built"
+   # Read the quenching MCP resource: quenching://references/git/commit.md?section=%C2%A7Commit%20messages&section=%C2%A7The%20subject%20is%20the%20anchor
+   # Read the quenching MCP resource: quenching://references/git/isolation.md?section=%C2%A7Marking%20the%20branch%20with%20the%20specs%20it%20built
    ```
 
    **Self-review the task's diff** on the four items — reuse · useless defense · obvious comment ·
@@ -435,9 +423,7 @@ it stands after the run's last commit.
 **When this run's input carried `autonomous`, skip the read below and the mold with it** — a conductor presents the report, not this run; return the content in the fixed shape the caller specified. Otherwise:
 
 ```bash
-cq() { python3 "${QUENCHING_OMNIGENT_ROOT:-$HOME/.omnigent/quenching}/scripts/cq" "$@"; }
-cq components read quenching://references/specs-develop/report-mold.md \
-  --sections "§The report mold" --rules-only
+# Read the quenching MCP resource: quenching://references/specs-develop/report-mold.md?section=%C2%A7The%20report%20mold
 ```
 
 Emit §The report mold. The single-spec header line carries overall progress; three body blocks:

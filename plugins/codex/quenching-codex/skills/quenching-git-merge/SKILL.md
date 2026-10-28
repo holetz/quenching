@@ -141,4 +141,4 @@ subject**, what was stamped, and the worktree's fate. **Done when:** all four ar
 - Never `--force` a worktree removal, and never remove one before a merge verified at exit 0.
 - Offer the strategy; never choose it for the human.
 - Never install `docs/standards/git/**` into the target, and never write `gitConventions` into its
-  `.claude/quenching.json`; a declared convention is read here, never written back.
+  `.agents/quenching.json`; a declared convention is read here, never written back.

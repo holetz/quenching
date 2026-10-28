@@ -401,9 +401,7 @@ nothing could be handed off — a red gate, or (abandoned) the branch's own fate
 **When this run's input carried `autonomous`, skip the read below and the mold with it** — a conductor presents the report, not this run; return the content in the fixed shape the caller specified. Otherwise:
 
 ```bash
-cq() { python3 "${QUENCHING_OMNIGENT_ROOT:-$HOME/.omnigent/quenching}/scripts/cq" "$@"; }
-cq components read quenching://references/specs-develop/report-mold.md \
-  --sections "§The report mold" --rules-only
+# Read the quenching MCP resource: quenching://references/specs-develop/report-mold.md?section=%C2%A7The%20report%20mold
 ```
 
 Emit §The report mold. The single-spec header line carries the archived locator and the outcome; three

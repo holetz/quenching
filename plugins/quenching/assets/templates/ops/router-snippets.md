@@ -1,6 +1,7 @@
 # Ops router snippets
 
-Choose exactly one snippet: the router declared by `.claude/quenching.json`. Replace
+Choose exactly one snippet: the router declared by `.agents/quenching.json` (or the legacy
+`.claude/quenching.json`). Replace
 `<operation>` with the normalized entry-point name and `<module.path>` with the Python module
 that exposes `main`. The router is the active surface; it does not copy domain logic.
 

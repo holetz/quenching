@@ -25,7 +25,8 @@ configurable.
 - **The design source** lives at `/.design/` — at the same repository root, beside the OKF bundle;
   `/.design/tokens.json` is the only primitive source the design front writes.
 
-The bundle root is a **convention, not a setting**. It is not named by `.claude/quenching.json`, which
+The bundle root is a **convention, not a setting**. It is not named by `.agents/quenching.json` (or the
+legacy `.claude/quenching.json`), which
 recognises no key that is a path
 ([plugin-configuration.md](../workflows/plugin-configuration.md)); nor by the target's
 `.claude/hooks/hooks-config.json`, which carries only the checker's behaviour knobs. The

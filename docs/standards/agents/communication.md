@@ -85,8 +85,9 @@ the owner stays in the `Language:` tag above, which is `pt-BR` here.
 **A target repository decides its own.** It declares its artifact language in one of two places:
 
 - a **standard** under its own `/docs/standards/` that names the language its artifacts use; or
-- the **`artifactLanguage`** key (one BCP-47 tag) in its quenching configuration — `.claude/quenching.json`
-  or, when the target keeps its specs-axis configuration on the `quenching` branch, the
+- the **`artifactLanguage`** key (one BCP-47 tag) in its quenching configuration —
+  `.agents/quenching.json` (or the legacy `.claude/quenching.json`) or, when the target keeps its
+  specs-axis configuration on the `quenching` branch, the
   `quenching.json` at that branch's root.
 
 Either one is enough. If both exist and disagree, the standard is the written contract and the key

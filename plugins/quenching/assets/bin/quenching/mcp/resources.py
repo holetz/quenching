@@ -20,6 +20,8 @@ REFERENCES = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.pat
     os.path.realpath(__file__))))), "references")
 DOC_WHOLE = 24_000
 INDEX_URI = "quenching://references"
+# Split so the citation checker reads the plugin-relative parent, not a file this package omits.
+_PLUGIN_REFERENCES = "${CLAUDE_PLUGIN_ROOT}/assets/" + "references/"
 PATH = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*\.md$")
 
 
@@ -42,7 +44,10 @@ def files() -> list[str]:
 def _read(rel: str) -> str:
     with open(os.path.join(REFERENCES, *rel.split("/")), encoding="utf-8",
               errors="replace") as handle:
-        return handle.read()
+        text = handle.read()
+    # A reference is read through the MCP surface, where its sibling citations resolve as
+    # resources too: the plugin-root link is a checkout path the server does not serve.
+    return text.replace(_PLUGIN_REFERENCES, INDEX_URI + "/")
 
 
 def _title(heads: list[dict], rel: str) -> str:

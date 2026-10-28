@@ -45,7 +45,7 @@ result has stopped the pass without an inventory read or a write.
 Only after exit `1`, use the `inventory`, `manifests`, `locks`, `languagePins` and
 `toolConfigurations` rows already returned by the doctor payload. Do not walk the target again or
 launch a package manager. Read the front contract and the bands reference before classifying a
-row; `.claude/quenching.json` remains configuration, never a toolchain artifact.
+row; `.agents/quenching.json` remains configuration, never a toolchain artifact.
 
 **Done when:** the applicable artifacts, parsed declarations, configuration blocks and findings are
 in hand from one read model.
@@ -118,4 +118,4 @@ and every residual owner action.
 - The doctor payload is the authoritative finding and inventory source for this pass.
 - Mechanical and bounded structural findings may be applied; build policy and judgement remain report-only.
 - The closing verifier is the same `cq toolchain doctor --json` program as the probe.
-- The command never rewrites `.claude/quenching.json` into a toolchain artifact or creates a second configuration home.
+- The command never rewrites `.agents/quenching.json` into a toolchain artifact or creates a second configuration home.

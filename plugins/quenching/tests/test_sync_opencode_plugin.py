@@ -107,6 +107,13 @@ class Payload(unittest.TestCase):
         self.assertIn("cp -R quenching/. ~/.opencode/quenching/", readme)
         self.assertNotIn("cp -R quenching ~/.opencode/quenching\n", readme)
 
+    def test_the_readme_removes_the_pre_6_10_install_before_the_new_root(self):
+        readme = self.tree["README.md"].decode()
+        self.assertIn("### Upgrade from 6.9.0", readme)
+        self.assertIn("rm -f ~/.config/opencode/commands/quenching-*.md", readme)
+        self.assertIn("rm -f ~/.config/opencode/agents/quenching-*.md", readme)
+        self.assertIn("rm -rf ~/.config/opencode/quenching", readme)
+
     def test_every_generated_agent_opens_its_bash_map_with_the_catch_all(self):
         for path, content in self.tree.items():
             if path.startswith("agents/") and '"*": ask' in content.decode():

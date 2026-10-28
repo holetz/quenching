@@ -91,4 +91,4 @@ are named.
   obstacle to route around.
 - **Never amend or rewrite an existing commit, and never force-push.**
 - **Never install `docs/standards/git/**` into the target, and never write `gitConventions` into
-  its `.claude/quenching.json`.** A convention read here is followed, never written back.
+  its `.agents/quenching.json`.** A convention read here is followed, never written back.

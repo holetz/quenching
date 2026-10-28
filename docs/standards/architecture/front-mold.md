@@ -145,10 +145,10 @@ The shared minimum does not erase these proven differences:
 | Front | Binding domain delta |
 | --- | --- |
 | design | `/.design/tokens.json` is the DTCG source; projections cover interoperability, editorial and internal adapters; source arbitration with optional Impeccable input remains human-owned; web and non-web detection stay distinct; genres add render destinations. |
-| ops | `.claude/quenching.json` owns `opsRoot`, `router` and optional `registry`; inventory and generated registry are first-class; entry points carry lifecycle, reachability, typed exit, output and write-policy evidence; `op-*` findings retain their existing owners. |
-| proof | `.claude/quenching.json` owns `proofRoot`, layers, fixtures, measured roots, exclusions and ratchet; layer markers and fixture reach are derived evidence; floors, CI and order evidence remain explicit; the target suite is not run by align or status; `pf-*` findings retain their bands. |
-| toolchain | `.claude/quenching.json` owns the declared toolchain scope; manifests, locks, language pins and tool configuration are inventoried without selecting versions or build policy; `tc-*` findings retain their owners. |
-| delivery | `.claude/quenching.json` and provider-equivalent workflow trees define applicability and inventory; triggers, jobs, reachability and release shape are reported while provider, environment, publication and permission policy remain target-owned; `delivery-*` findings retain their owners. |
+| ops | `.agents/quenching.json` owns `opsRoot`, `router` and optional `registry`; inventory and generated registry are first-class; entry points carry lifecycle, reachability, typed exit, output and write-policy evidence; `op-*` findings retain their existing owners. |
+| proof | `.agents/quenching.json` owns `proofRoot`, layers, fixtures, measured roots, exclusions and ratchet; layer markers and fixture reach are derived evidence; floors, CI and order evidence remain explicit; the target suite is not run by align or status; `pf-*` findings retain their bands. |
+| toolchain | `.agents/quenching.json` owns the declared toolchain scope; manifests, locks, language pins and tool configuration are inventoried without selecting versions or build policy; `tc-*` findings retain their owners. |
+| delivery | `.agents/quenching.json` and provider-equivalent workflow trees define applicability and inventory; triggers, jobs, reachability and release shape are reported while provider, environment, publication and permission policy remain target-owned; `delivery-*` findings retain their owners. |
 | security | the security pillar answers read-only questions over workflow permissions, secret-ignore coverage, advisory configuration and access ownership; it owns no converging tree, never exposes values and leaves every policy decision with the target owner. |
 
 These deltas are why the mold is a contract and not a shared runtime implementation. No generic

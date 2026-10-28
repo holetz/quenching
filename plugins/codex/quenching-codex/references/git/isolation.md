@@ -65,8 +65,9 @@ repo to repo cannot be documented in one sentence, and guessing somebody else's 
 recommended path becomes a silent trap. So choosing Branch is a decision the human read rather than
 a discovery at the first `verify:` that fails.
 
-**The configuration has a neutral home.** The target's `.claude/quenching.json` carries
-`worktreeSetup` alongside the provider placement settings, so the same isolation contract applies
+**The configuration has a neutral home.** The target's `.agents/quenching.json` (or the legacy
+`.claude/quenching.json`) carries `worktreeSetup` alongside the provider placement settings, so the
+same isolation contract applies
 regardless of where the spec is hosted. Whether the command resolves can only be judged against
 the new worktree's path, which `cq specs` is never told.
 
@@ -118,7 +119,7 @@ tracks — no installed dependencies, no `.env`, no venv, no build output.
 
 <!-- rules -->
 
-`.claude/quenching.json`, at the repo root, under the `worktreeSetup` key:
+`.agents/quenching.json`, at the repo root, under the `worktreeSetup` key:
 
 ```json
 {"worktreeSetup": "./scripts/wt-setup.sh"}

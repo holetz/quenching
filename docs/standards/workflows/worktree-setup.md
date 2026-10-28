@@ -1,7 +1,7 @@
 ---
 type: standard
 title: Worktree setup contract
-description: The `worktreeSetup` hook prepares a code-isolation worktree from `.claude/quenching.json`; its absence is normal, the execute offer displays and authorizes the command, and provider-owned specs never use this hook as persistent storage
+description: The `worktreeSetup` hook prepares a code-isolation worktree from `.agents/quenching.json`; its absence is normal, the execute offer displays and authorizes the command, and provider-owned specs never use this hook as persistent storage
 resource: plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/git/branch.md, plugins/quenching/assets/references/git/isolation.md
 tags: [workflows, specs, worktree, configuration, consent]
 timestamp: 2026-10-17
@@ -26,7 +26,7 @@ that closes that gap, and the bounds that keep a hook from becoming a configurat
 {"shared": {"worktreeSetup": "./scripts/wt-setup.sh"}}
 ```
 
-In `.claude/quenching.json` at the **repo root**, the plugin's single configuration home. The file
+In `.agents/quenching.json` at the **repo root**, the plugin's single configuration home. The file
 itself — every recognised key, the defaults, the reading rules, and the findings that judge a
 malformed one — is owned by [plugin-configuration.md](plugin-configuration.md). This standard owns
 only what the key *means*.
@@ -92,7 +92,7 @@ having been displayed first.**
 
 <!-- rationale -->
 
-The setting belongs in `.claude/quenching.json` because it is a target-repository operation, not a
+The setting belongs in `.agents/quenching.json` because it is a target-repository operation, not a
 provider storage operation. The shared file already carries Azure placement, hooks, profiles, and
 proposal catalogues; keeping `worktreeSetup` there gives every command one read path and one shape
 checker without making the code worktree part of the provider contract.

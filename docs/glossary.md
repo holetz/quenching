@@ -55,7 +55,7 @@ Fifteen terms to read first; each has its full entry under *Terms*.
 - [**Advisory finding**](standards/quality/bundle-verification.md) — a WARN the commands' verify
   gate does **not** treat as blocking, reported so a human can look and never so a run stops.
 - [**Agent-choice catalogue**](standards/workflows/agent-choice-catalogues.md) — the shared shape
-  `subjects`, `tagCatalog` and `workItemTypes` all follow in `.claude/quenching.json`: an abstract
+  `subjects`, `tagCatalog` and `workItemTypes` all follow in `.agents/quenching.json`: an abstract
   key mapping to a `description` an agent reads to PROPOSE a choice, which a human then CONFIRMS —
   never silently picked.
 - [**Align**](standards/architecture/align-surface.md) — the command of a front that probes it,
@@ -254,8 +254,9 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   `knowledge` and `components`, passed as the first argument (`cq <pilar> <subcomando>…`). It is the
   single vocabulary of the fronts' axis, replacing the names `docs` / `specs` / `skill` that
   competed before the merge into one package.
-- [**Plugin config**](standards/workflows/plugin-configuration.md) — `.claude/quenching.json`, the
-  single file a target repository uses to declare anything to this plugin: `backend`,
+- [**Plugin config**](standards/workflows/plugin-configuration.md) — `.agents/quenching.json`, the
+  single file a target repository uses to declare anything to this plugin (`.claude/quenching.json`
+  is read as legacy while it exists): `backend`,
   `worktreeSetup`, `azureStates`, `azurePlacement`, `azureColumns`, `subjects`, `tagCatalog`,
   `workItemTypes` and `shared.gitConventions` — the last of which carries the `git` pillar's
   per-artifact writing directives and outranks the target's own `docs/standards/git/**` for every
@@ -374,7 +375,8 @@ Fifteen terms to read first; each has its full entry under *Terms*.
   where nothing computes the fact: with no value to spell out, each site wrote the rule in its own
   words, so no grep finds the set.
 - [**Worktree setup**](standards/workflows/worktree-setup.md) — the single key `worktreeSetup` in
-  `.claude/quenching.json`, holding a command `/quenching-specs:specs:execute` runs once inside a newly
+  `.agents/quenching.json` (or the legacy `.claude/quenching.json`), holding a command
+  `/quenching-specs:specs:execute` runs once inside a newly
   created worktree so a repo with installed dependencies gets a usable tree rather than one that
   breaks at the first `verify:`.
 - [**Zensical**](external/tools/zensical-measured-behaviour.md) — the static site generator the

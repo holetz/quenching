@@ -188,8 +188,7 @@ commands together, every stage at once:
 
 ```bash
 cq() { python3 "${QUENCHING_OMNIGENT_ROOT:-$HOME/.omnigent/quenching}/scripts/cq" "$@"; }
-cq components read quenching://references/specs-develop/questions.md \
-  --sections "§Compose" --sections "§Approval"      # + "§Refine" where refine runs,
+# Read the quenching MCP resource: quenching://references/specs-develop/questions.md?section=%C2%A7Compose&section=%C2%A7Approval
                                                     # + "§Who answers", + "§Gathering the evidence"
 cq specs section <id> "<every heading this pass reads or writes>"     # the union, once
 ```
@@ -266,11 +265,7 @@ pass did not reach this stage at all.
 Load the authoring doctrine now — the union of `artifacts.md` sections this pass needs, in one call:
 
 ```bash
-cq() { python3 "${QUENCHING_OMNIGENT_ROOT:-$HOME/.omnigent/quenching}/scripts/cq" "$@"; }
-cq components read quenching://references/specs-develop/artifacts.md \
-  --sections "§Writing a section through stdin" --sections "§The explicit-none rule" \
-  --sections "§The nine definition sections" --sections "§`## Impact`" --sections "§`## Tasks`" \
-  --sections "§Execution metadata"
+# Read the quenching MCP resource: quenching://references/specs-develop/artifacts.md?section=%C2%A7Writing%20a%20section%20through%20stdin&section=%C2%A7The%20explicit-none%20rule&section=%C2%A7The%20nine%20definition%20sections&section=%C2%A7%60%23%23%20Impact%60&section=%C2%A7%60%23%23%20Tasks%60&section=%C2%A7Execution%20metadata
 ```
 
 **The consolidation stays; the confirmation goes.** Show every accumulated answer as a single plan —
@@ -413,9 +408,7 @@ Then report:
 **When this run's input carried `autonomous`, skip the read below and the mold with it** — a conductor presents the report, not this run; return the content in the fixed shape the caller specified. Otherwise:
 
 ```bash
-cq() { python3 "${QUENCHING_OMNIGENT_ROOT:-$HOME/.omnigent/quenching}/scripts/cq" "$@"; }
-cq components read quenching://references/specs-develop/report-mold.md \
-  --sections "§The report mold" --rules-only
+# Read the quenching MCP resource: quenching://references/specs-develop/report-mold.md?section=%C2%A7The%20report%20mold
 ```
 
 Emit §The report mold. The single-spec header line carries the stage **after** the pass; two body

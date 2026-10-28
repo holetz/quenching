@@ -76,7 +76,8 @@ records its non-applicability rather than creating a placeholder.
 | Create `tests/fixtures/<layer>.py` when the declared reach needs shared setup | Gives reused fixtures one library home with the declared reach as its ceiling. |
 | Regenerate `tests/README.md` | Publishes the layer's meaning, reach, budget, marker, test count, and fixture module from the inventory. |
 
-The layer's reach and budget are declarations in `.claude/quenching.json` under `layers`; the
+The layer's reach and budget are declarations in `.agents/quenching.json` (or the legacy
+`.claude/quenching.json`) under `layers`; the
 fixture module does not become a second configuration store. A newly minted layer may be empty
 until the owner separately accepts a proposed test migration, but its five structural edits are
 not split across partially declared states. The collection-hook and fixture templates under

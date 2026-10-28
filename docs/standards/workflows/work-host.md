@@ -22,7 +22,7 @@ user**, not once per project.
 ## Where it is declared
 
 `shared.workHost` in `~/.config/quenching/config.json` (the user layer, `$QUENCHING_USER_CONFIG`
-overrides the path). A repository's `.claude/quenching.json` may declare the same block and then
+overrides the path). A repository's `.agents/quenching.json` may declare the same block and then
 replaces the user's block key by key as every `shared` key does; see
 [plugin-configuration.md](plugin-configuration.md). Absent the block, the host is disabled.
 

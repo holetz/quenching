@@ -35,8 +35,7 @@ as a GitHub repository.
 ```bash
 cq() { python3 "${QUENCHING_OMNIGENT_ROOT:-$HOME/.omnigent/quenching}/scripts/cq" "$@"; }
 cq specs config --json
-cq components read quenching://references/git/conventions.md \
-  --sections "§The declared-directive layer"
+# Read the quenching MCP resource: quenching://references/git/conventions.md?section=%C2%A7The%20declared-directive%20layer
 cq git conventions --json   # `config.prTitle`, `config.prBody`
 cq git state --json   # `remotes`: every remote and its URL
 cq git base --json
@@ -157,4 +156,4 @@ are named.
 - Never claim a provider-native issue/work-item link closes or transitions anything beyond the
   host CLI's documented effect; report the provider and the selected base plainly instead.
 - Never install `docs/standards/git/**` into the target, and never write `gitConventions` into its
-  `.claude/quenching.json`; a declared convention is read here, never written back.
+  `.agents/quenching.json`; a declared convention is read here, never written back.

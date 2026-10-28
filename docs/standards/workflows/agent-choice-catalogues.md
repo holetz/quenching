@@ -15,7 +15,7 @@ maintainer: quenching
 
 <!-- rules -->
 
-Three keys in `.claude/quenching.json` — `subjects`, `tagCatalog` and `workItemTypes` — look
+Three keys in `.agents/quenching.json` — `subjects`, `tagCatalog` and `workItemTypes` — look
 unrelated at a glance: one links a spec to a parent Feature, one applies labels, one picks a work
 item's type. They converged on the same shape anyway, and this standard names that shape once
 rather than leaving it to be re-derived by whoever reads the third.
@@ -81,7 +81,7 @@ propose the wrong subject, tag or type, confidently, every time `/quenching-spec
 
 ## A closed set, read but never widened by this plugin
 
-None of the three is ever written by this plugin — `.claude/quenching.json` belongs to the target
+None of the three is ever written by this plugin — `.agents/quenching.json` belongs to the target
 repository, and whoever maintains it there is who decides what an entry means. `subjects` and
 `tagCatalog` are consulted as a **closed set**: a tag outside the declared catalogue is never
 proposed, and an unresolved subject key refuses rather than inventing one. `workItemTypes` follows

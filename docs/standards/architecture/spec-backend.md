@@ -140,7 +140,7 @@ ignores it. The task-to-commit anchor remains the sha recorded in the document.
 
 ## The git store
 
-`"backend": "git"` in `.claude/quenching.json` selects the `git` store whatever provider the
+`"backend": "git"` in `.agents/quenching.json` selects the `git` store whatever provider the
 remote URL implies. It keeps the canonical documents on a branch of the code repository's remote,
 and the GitHub and Azure Boards backends keep working unchanged beside it.
 
@@ -152,8 +152,8 @@ and the GitHub and Azure Boards backends keep working unchanged beside it.
   namespace. The locator is `quenching:<path>`.
 - **Configuration.** With the git store selected, each specs-axis key the branch declares
   (`subjects`, `tagCatalog`, `workItemTypes`, `azurePlacement`, `azureColumns`, `azureStates`,
-  `artifactLanguage`, `card`, `cardAt`) replaces the same key from `.claude/quenching.json`.
-  Everything that describes the code tree stays in `.claude/quenching.json`.
+  `artifactLanguage`, `card`, `cardAt`) replaces the same key from `.agents/quenching.json`.
+  Everything that describes the code tree stays in `.agents/quenching.json`.
 - **Reads never check out.** A process fetches the branch into its remote-tracking ref at most
   once, and not at all while the per-repository fetch stamp under
   `${XDG_CACHE_HOME:-~/.cache}/quenching/git/` is fresh. It then reads with `git ls-tree` and one
@@ -182,7 +182,7 @@ The card is the thin tracker item beside a git-store spec: a projection a human 
 and discuss under. The spec on the branch stays the source of truth.
 
 - **Configuration.** `card: {"provider": "github" | "azure-boards" | "none", "at": "capture"}`
-  on the branch or in `.claude/quenching.json`. An absent provider is `github` when the remote is
+  on the branch or in `.agents/quenching.json`. An absent provider is `github` when the remote is
   GitHub and `none` otherwise.
 - **Identity.** With a provider, the card is created first, in one request, and its native number
   is the spec ID. `cq specs new --card <n>` adopts an existing issue or work item instead: its
@@ -206,7 +206,7 @@ and discuss under. The spec on the branch stays the source of truth.
   naming the spec, and the next transition refreshes the card.
 - **Migration.** `cq specs migrate --to git` is a dry run unless `--write`. It writes every spec
   under its own ID in one commit (open in `specs/`, closed in `specs/archive/`), copies the
-  specs-axis keys into the branch `quenching.json`, and prints the `.claude/quenching.json`
+  specs-axis keys into the branch `quenching.json`, and prints the `.agents/quenching.json`
   change. It then proves that the `git` listing equals the source modulo locator and reports
   every difference. `--thin-open-cards` rewrites only open items to the thin card; closed ones
   are never touched. The tracker backends stay supported, and `cq specs doctor` flags them as
@@ -221,7 +221,7 @@ and discuss under. The spec on the branch stays the source of truth.
   dry run reports the same conditions. Azure assigns new ids, so the printed id map is the only
   record of the old ones, and prose or other keys naming an old id are not scanned. A failure
   halfway leaves the created items listed in the report; no delete primitive exists. Every spec
-  is then read back and compared modulo the native-field keys, and the `.claude/quenching.json`
+  is then read back and compared modulo the native-field keys, and the `.agents/quenching.json`
   change is printed, never applied. The git store is left untouched.
   `cq specs migrate --to github` is the same tracker migration onto GitHub Issues, with the same
   contract. Only the destination profile differs: no description ceiling (an oversize body

@@ -37,8 +37,8 @@ spec's own conclude — and `cq --version` is what answers which one you are run
   `quenching.json` is read through a configuration provider. OpenCode receives the command surface
   with per-agent `cq` grants. Windows runs without administrator rights, with a Windows job in the
   PR gate. The leak gate covers every project repository. The orchestrator, spec-runner and
-  verifier protocol is tightened: only the verifier stamps `verifier=pass`, and `cq git pr merge`
-  records the merge.
+  verifier protocol is tightened: only the orchestrator stamps `verifier=pass|fail` from a
+  verifier verdict (the verifier itself stays read-only), and `cq git pr merge` records the merge.
 
 ## 6.9.0
 

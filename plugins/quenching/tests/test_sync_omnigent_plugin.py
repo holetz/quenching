@@ -126,6 +126,13 @@ class SourceToolsLock(unittest.TestCase):
         self.assertNotIn(sync.ROOT + "/references/", everything)
         self.assertIn(sync.REFERENCES_URI, text)
 
+    def test_reference_reads_go_through_the_mcp_resource_not_a_cq_shell_call(self):
+        everything = b"".join(self.tree.values()).decode("utf-8")
+        self.assertNotIn("cq components read quenching://", everything)
+        text = self.tree["skills/quenching-git-commit/SKILL.md"].decode("utf-8")
+        self.assertIn("# Read the quenching MCP resource: "
+                      "quenching://references/git/commit.md?section=%C2%A7Commit%20messages", text)
+
     def test_sub_agents_are_cited_by_their_registered_name_and_bundled_protocol(self):
         everything = b"".join(self.tree.values()).decode("utf-8")
         for name in sync.oc.agent_names():

@@ -39,7 +39,8 @@ write-capable script, installs CI, or runs the target suite as part of alignment
 
 ## 1. Declare what already exists
 
-Start in a clean target checkout and inspect the target's `.claude/quenching.json`. Declare the
+Start in a clean target checkout and inspect the target's `.agents/quenching.json` (or the legacy
+`.claude/quenching.json`). Declare the
 operations root and its canonical router in the `ops` namespace when they are known:
 
 ```json

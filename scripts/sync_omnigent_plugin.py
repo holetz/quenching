@@ -24,6 +24,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from urllib.parse import quote as urlquote
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import sync_opencode_plugin as oc  # noqa: E402
@@ -58,6 +59,50 @@ ARG_CLASS = "[^;&|<>$`\\\\\\n]"
 SEPARATOR = r"[ \t]*(?:&&|\|\||;)[ \t]*"
 
 
+def mcp_reference_reads(text: str) -> str:
+    """Replace `cq components read quenching://…` with the resource it should read.
+
+    The bundle carries no payload, so that shell call cannot resolve; the operator has the
+    reference as a `quenching://references/` resource instead. A continued command becomes one
+    comment naming the resource and its sections, never an executable path that fails.
+    """
+    lines, output, index = text.splitlines(), [], 0
+    while index < len(lines):
+        match = re.match(r"^(?P<indent>[ \t]*)cq components read "
+                         r"(?P<uri>quenching://references/\S+)(?P<rest>.*)$", lines[index])
+        if not match:
+            output.append(lines[index])
+            index += 1
+            continue
+        parts = [match.group("rest")]
+        index += 1
+        while parts[-1].rstrip().endswith("\\") and index < len(lines):
+            parts.append(lines[index])
+            index += 1
+        command = (match.group("uri") + " " + " ".join(parts)).replace("\\", " ")
+        sections = [a or b for a, b in re.findall(r'--sections\s+(?:"([^"]*)"|(\S+))', command)]
+        query = "".join(("?" if number == 0 else "&") + "section=" + urlquote(value, safe="")
+                        for number, value in enumerate(sections))
+        output.append(f"{match.group('indent')}# Read the quenching MCP resource: "
+                      f"{match.group('uri')}{query}")
+    # A block that only read a reference no longer invokes `cq`; the wrapper it gained would be
+    # dead shell, so drop it from that block and leave the resource instruction alone.
+    cleaned, index = [], 0
+    while index < len(output):
+        if not re.match(r"^\s*```bash\s*$", output[index]):
+            cleaned.append(output[index])
+            index += 1
+            continue
+        end = next((n for n in range(index + 1, len(output))
+                    if re.match(r"^\s*```\s*$", output[n])), len(output))
+        block = output[index + 1:end]
+        if not translate.has_cq_invocation("\n".join(block)):
+            block = [line for line in block if line.strip() != CQ_WRAPPER]
+        cleaned.extend([output[index], *block, *output[end:end + 1]])
+        index = end + 1
+    return "\n".join(cleaned) + ("\n" if text.endswith("\n") else "")
+
+
 def reroot(text: str) -> str:
     """The OpenCode translation, re-rooted: references become MCP resources, the rest Omnigent paths."""
     text = text.replace(oc.OPENCODE_CQ_WRAPPER, CQ_WRAPPER)
@@ -69,7 +114,8 @@ def reroot(text: str) -> str:
     # bundle, so neither the OpenCode `quenching-<agent>` name nor a payload copy of them survives.
     agents = "|".join(sorted(oc.agent_names(), key=len, reverse=True))
     text = re.sub(rf"{re.escape(ROOT)}/agents/({agents})\.md", r"agents/\1/instructions.md", text)
-    return re.sub(rf"\b{re.escape(oc.AGENT_PREFIX)}({agents})(?![\w/:-])", r"\1", text)
+    text = re.sub(rf"\b{re.escape(oc.AGENT_PREFIX)}({agents})(?![\w/:-])", r"\1", text)
+    return mcp_reference_reads(text)
 
 
 def markdown(text: str) -> str:

@@ -2,7 +2,7 @@
 type: standard
 title: Extension points contract
 description: The extension point — an event a command declares for the repository that installed the plugin to attach its own work; the three-part contract (the declaration lives in config the core reads and never interprets; the body announces name, command and prompt and moves on; `condition` is never evaluated by whoever announces); the declared shape; and why the extension lives in config rather than in a command
-resource: .claude/quenching.json, plugins/quenching/commands/specs/execute.md, plugins/quenching/assets/bin/quenching/specs/**
+resource: .agents/quenching.json, plugins/quenching/commands/specs/execute.md, plugins/quenching/assets/bin/quenching/specs/**
 tags: [automation, extension, configuration, plugin]
 timestamp: 2026-08-11
 audience: both
@@ -32,7 +32,7 @@ same for every event a command declares.
 
 ## The declaration lives in config, and the core reads it without interpreting it
 
-The `.claude/quenching.json` of the target repository declares the hooks under the `hooks` key —
+The `.agents/quenching.json` of the target repository (or the legacy `.claude/quenching.json`) declares the hooks under the `hooks` key —
 [plugin-configuration.md](../workflows/plugin-configuration.md) holds the key's place in the
 recognised set. The core (`cq specs`) reads the file whole and validates its **shape**; it never
 interprets what a hook **does**. It does not know what the declared command is for, does not run

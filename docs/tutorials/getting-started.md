@@ -60,7 +60,8 @@ To remove the plugin without removing the marketplace:
 /reload-plugins
 ```
 
-This leaves the target repository's `/docs/`, `.claude/` and `.claude/quenching.json` intact.
+This leaves the target repository's `/docs/`, `.claude/` and `.agents/quenching.json` (or the
+legacy `.claude/quenching.json`) intact.
 Plugin removal is not a rollback of repository changes: review the target's Git history and
 revert the commits that you want to undo. For a bad plugin upgrade, reinstall the previously
 published version or use a known checkout with `--plugin-dir` only for development recovery, then
