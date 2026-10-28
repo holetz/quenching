@@ -110,6 +110,13 @@ class Migrate(unittest.TestCase):
         self.assertEqual(2, self.run_cli("--write")[0])
         self.assertTrue((self.repo / ".claude/commands/bundle/tabela/criar.md").is_file())
 
+    def test_untracked_home_beside_the_legacy_file_is_a_conflict(self):
+        self.write(".agents/quenching.json", '{"backend": "git"}\n')
+        code, payload = self.run_cli()
+        self.assertEqual(1, code)
+        self.assertEqual("the home exists but is not tracked", payload["conflicts"][0]["why"])
+        self.assertTrue((self.repo / ".claude/quenching.json").is_file())
+
     def test_own_instructions_in_both_harness_files_are_a_conflict(self):
         self.write("AGENTS.md", "# Other\n")
         self.git("add", "-A")

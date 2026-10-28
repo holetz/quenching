@@ -32,11 +32,12 @@ The file sits in the target repository's generic layer, beside `.agents/skills/`
 ([surface-translation.md](../architecture/surface-translation.md) §Target repositories). The loader
 (`common/config.py`, `config_path`) resolves exactly one repository file:
 
-- `.agents/quenching.json` present → it is read.
-- Absent, with `.claude/quenching.json` present → the legacy file is read, unchanged.
-- Both present → the home is read, and the loader's payload (`load_config`) reports the legacy path
-  as `shadowedPath`. The two are never merged; `cq components
-  migrate` removes the legacy file when both are identical and reports a conflict when they differ.
+- `.claude/quenching.json` present → the legacy file is read, unchanged, exactly as before the
+  generic layer existed, so an upgrade never swaps a repository onto a stale `.agents/` copy.
+- Absent → `.agents/quenching.json` is read.
+- Both present → the legacy file is still read, and the loader's payload (`load_config`) reports
+  the home as `shadowedPath`. The two are never merged; `cq components migrate` is what moves the
+  home: it removes the legacy file when both are identical and reports a conflict when they differ.
 
 Whoever writes (`cq config init`, `cq doctor --setup`) writes the file that was read, so a legacy
 target is never split across two files. Every other module resolves the path through

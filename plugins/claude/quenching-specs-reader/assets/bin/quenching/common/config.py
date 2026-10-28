@@ -16,8 +16,9 @@ from quenching.common.io import read_text, write_text
 
 
 CONFIG_FILE = os.path.join(".agents", "quenching.json")
-# The home before the generic `.agents/` layer: still read when the home is absent, and reported as
-# shadowed when both exist, so a half-migrated repository never edits the copy nobody reads.
+# The home before the generic `.agents/` layer: while it exists it is the file read, exactly as
+# before the layer existed, so an upgrade never swaps a repository onto a stale `.agents/` copy;
+# `migrate` is what moves it, and a home beside it is reported as shadowed.
 CLAUDE_CONFIG_FILE = os.path.join(".claude", "quenching.json")
 CONFIG_FILES = (CONFIG_FILE, CLAUDE_CONFIG_FILE)
 LEGACY_CONFIG_FILE = "config.json"
@@ -62,18 +63,17 @@ LEGACY_DESTINATIONS = {
 
 
 def config_path(repo_root: str) -> str:
-    """The configuration file a repository is read from: the home, else the legacy file, else
-    the home a writer should create."""
-    home = os.path.join(repo_root, CONFIG_FILE)
+    """The configuration file a repository is read from: the legacy file while it exists, else
+    the home, which is also where a writer creates one."""
     legacy = os.path.join(repo_root, CLAUDE_CONFIG_FILE)
-    return legacy if not os.path.isfile(home) and os.path.isfile(legacy) else home
+    return legacy if os.path.isfile(legacy) else os.path.join(repo_root, CONFIG_FILE)
 
 
 def shadowed_config_path(repo_root: str) -> str | None:
-    """The legacy file nobody reads, when the home exists beside it."""
-    legacy = os.path.join(repo_root, CLAUDE_CONFIG_FILE)
-    if os.path.isfile(os.path.join(repo_root, CONFIG_FILE)) and os.path.isfile(legacy):
-        return legacy
+    """The home nobody reads, when the legacy file still exists beside it."""
+    home = os.path.join(repo_root, CONFIG_FILE)
+    if os.path.isfile(home) and os.path.isfile(os.path.join(repo_root, CLAUDE_CONFIG_FILE)):
+        return home
     return None
 
 
@@ -92,8 +92,8 @@ class ConfigProvider(Protocol):
 
 
 class FileProvider:
-    """The file read: `.agents/quenching.json` at the repository root, or the legacy
-    `.claude/quenching.json` when the home is absent."""
+    """The file read: the legacy `.claude/quenching.json` at the repository root while it
+    exists, else `.agents/quenching.json`."""
 
     name = "file"
 
