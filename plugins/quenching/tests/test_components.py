@@ -178,6 +178,18 @@ class ComponentsStatus(unittest.TestCase):
         self.assertNotIn("sk-non-canonical-name", codes)
         self.assertIn("sk-agent-no-description", codes)
 
+    def test_doctor_still_flags_a_skill_md_under_commands(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            front = pathlib.Path(tmp, ".claude", "commands", "front")
+            front.mkdir(parents=True)
+            pathlib.Path(front, "SKILL.md").write_text(
+                '---\ndescription: Do it. Use for "do it". Not for: other.\n---\n\nBody.\n',
+                encoding="utf-8")
+            surface = load_surface(str(pathlib.Path(tmp, ".claude")))
+            findings = components_cli._doctor_findings(surface)
+
+        self.assertIn("sk-non-canonical-name", {f["code"] for f in findings})
+
     def test_a_translated_or_nested_agents_tree_leaves_the_legacy_surface_in_place(self):
         with tempfile.TemporaryDirectory() as tmp:
             nested = pathlib.Path(tmp, ".agents", "skills", "front", "verb")

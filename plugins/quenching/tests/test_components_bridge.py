@@ -100,6 +100,9 @@ class Bridge(unittest.TestCase):
         script.chmod(0o755)
         self.run_cli("--write")
         self.assertTrue(os.access(self.copy / "run.sh", os.X_OK))
+        script.chmod(0o555)
+        self.assertEqual(0, self.run_cli("--write")[0])
+        self.assertTrue(os.access(self.copy / "run.sh", os.W_OK))
         (self.copy / "run.sh").chmod(0o644)
         code, payload = self.run_cli("--check")
         self.assertEqual((1, [{"path": "mlops-comum/run.sh", "change": "update"}]),

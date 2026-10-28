@@ -55,8 +55,11 @@ def _doctor_findings(surface: dict) -> list[dict]:
                                            f"{COMMANDS_DIR}/ (shared procedure belongs beside the "
                                            "payload, never beside a command)"))
 
-        stem = (os.path.dirname(c["relpath"]) if os.path.basename(c["relpath"]) == SKILL_FILE
-                else c["relpath"][:-3])
+        # a generic skill is named by its folder (`/<name>` from `<name>/SKILL.md`); a
+        # `SKILL.md` under commands/ is still a command path and is checked whole
+        skill = (os.path.basename(c["relpath"]) == SKILL_FILE
+                 and c["command"] == "/" + os.path.dirname(c["relpath"]))
+        stem = os.path.dirname(c["relpath"]) if skill else c["relpath"][:-3]
         for segment in stem.split("/"):
             if not KEBAB_RE.match(segment):
                 findings.append(finding("sk-non-canonical-name", "error",

@@ -127,7 +127,7 @@ def write(repo: Path, result: dict) -> None:
             continue
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(result["expected"][change["path"]])
-        os.chmod(path, (repo / SOURCE / change["path"]).stat().st_mode & 0o777)
+        os.chmod(path, 0o755 if _mode(repo / SOURCE / change["path"]) else 0o644)
     manifest = {
         "generator": "cq components bridge",
         "source": SOURCE.as_posix(),
