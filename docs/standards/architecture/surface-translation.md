@@ -81,8 +81,8 @@ applies it with `git mv`/`git rm`, preserving history: `.claude/commands/<a>/<b>
 to `.agents/skills/<n>/`, the old translation manifests are removed, `.claude/quenching.json` moves to
 `.agents/quenching.json`, and `CLAUDE.md` content moves to `AGENTS.md`. Moved bodies have `/a:b`
 invocations rewritten to `/a-b` and `.claude/references/` citations to `.agents/references/`. A
-conflict (two divergent configurations, two harness files with their own content) exits 1 and
-writes nothing. A target is **conformant** when `migrate` reports an empty plan
+conflict (two divergent configurations, two harness files with their own content) is reported in
+the plan (exit 1), and `--write` refuses it (exit 2, `ct-migrate-conflict`) and writes nothing. A target is **conformant** when `migrate` reports an empty plan
 (`conformant: true`) and `bridge --check` exits 0.
 
 `cq components translate` never runs on a target that has the generic surface or the bridge

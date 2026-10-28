@@ -110,6 +110,14 @@ class Migrate(unittest.TestCase):
         self.assertEqual([], payload["conflicts"])
         self.assertIn({"op": "pointer", "path": "CLAUDE.md"}, payload["operations"])
 
+    def test_an_agents_md_without_claude_md_gets_the_pointer(self):
+        self.git("mv", "CLAUDE.md", "AGENTS.md")
+        code, payload = self.run_cli()
+        self.assertEqual(1, code)
+        self.assertIn({"op": "pointer", "path": "CLAUDE.md"}, payload["operations"])
+        self.assertEqual(0, self.run_cli("--write")[0])
+        self.assertEqual("@AGENTS.md\n", (self.repo / "CLAUDE.md").read_text())
+
     def test_outside_git_refuses(self):
         with tempfile.TemporaryDirectory() as plain:
             out = io.StringIO()

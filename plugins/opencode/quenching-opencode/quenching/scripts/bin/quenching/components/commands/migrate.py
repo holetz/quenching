@@ -126,6 +126,8 @@ def build_plan(repo: Path) -> Plan:
         else:
             plan.move(legacy, home)
     claude_md, agents_md = repo / "AGENTS.md", repo / "AGENTS.md"
+    if agents_md.is_file() and not claude_md.exists():
+        plan.ops.append({"op": "pointer", "path": "AGENTS.md"})
     if claude_md.is_file() and claude_md.read_text(encoding="utf-8").strip() != POINTER.strip():
         if agents_md.is_file() and agents_md.read_bytes() == claude_md.read_bytes():
             plan.ops.append({"op": "pointer", "path": "AGENTS.md"})

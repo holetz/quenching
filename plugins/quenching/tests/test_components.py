@@ -160,6 +160,24 @@ class ComponentsStatus(unittest.TestCase):
         self.assertEqual(pathlib.Path(root).name, ".agents")
         self.assertEqual([c["command"] for c in surface["commands"]], ["/front-verb"])
 
+    def test_doctor_names_a_skill_by_its_folder_and_reads_claude_agents_beside_it(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            skill = pathlib.Path(tmp, ".agents", "skills", "front-verb")
+            skill.mkdir(parents=True)
+            pathlib.Path(skill, "SKILL.md").write_text(
+                '---\nname: front-verb\ndescription: Do the verb. Use for "do the verb". '
+                'Not for: other work.\n---\n\nBody.\n', encoding="utf-8")
+            agents = pathlib.Path(tmp, ".claude", "agents")
+            agents.mkdir(parents=True)
+            pathlib.Path(agents, "runner.md").write_text("---\nname: runner\n---\n",
+                                                         encoding="utf-8")
+            surface = load_surface(str(pathlib.Path(tmp, ".agents")))
+            findings = components_cli._doctor_findings(surface)
+
+        codes = {f["code"] for f in findings}
+        self.assertNotIn("sk-non-canonical-name", codes)
+        self.assertIn("sk-agent-no-description", codes)
+
     def test_a_translated_or_nested_agents_tree_leaves_the_legacy_surface_in_place(self):
         with tempfile.TemporaryDirectory() as tmp:
             nested = pathlib.Path(tmp, ".agents", "skills", "front", "verb")

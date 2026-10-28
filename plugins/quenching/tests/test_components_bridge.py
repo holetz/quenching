@@ -4,6 +4,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import os
 import pathlib
 import sys
 import tempfile
@@ -92,6 +93,17 @@ class Bridge(unittest.TestCase):
         self.run_cli("--write")
         self.assertFalse((self.copy / "extra.md").exists())
         self.assertEqual(0, self.run_cli("--check")[0])
+
+    def test_an_executable_script_stays_executable_in_the_copy(self):
+        script = self.repo / ".agents" / "skills" / "mlops-comum" / "run.sh"
+        script.write_text("#!/bin/sh\n")
+        script.chmod(0o755)
+        self.run_cli("--write")
+        self.assertTrue(os.access(self.copy / "run.sh", os.X_OK))
+        (self.copy / "run.sh").chmod(0o644)
+        code, payload = self.run_cli("--check")
+        self.assertEqual((1, [{"path": "mlops-comum/run.sh", "change": "update"}]),
+                         (code, payload["changes"]))
 
     def test_the_marker_follows_a_crlf_frontmatter(self):
         text = bridge.with_marker("---\r\nname: x\r\n---\r\nBody\r\n", "x")

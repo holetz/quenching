@@ -15,10 +15,12 @@ rewrites only the OPEN ones to the thin card, after the commit has landed.
 from __future__ import annotations
 
 import json
+import os
 import re
 from typing import NamedTuple
 
-from quenching.common.config import load_config as load_envelope, namespace
+from quenching.common.config import (config_path, find_repo_root, load_config as load_envelope,
+                                     namespace)
 from quenching.common.frontmatter import parse_frontmatter
 from quenching.specs.backends import open_backend
 from quenching.specs.backends.azure import (AZ_DESCRIPTION_MAX, azure_predecessor_ids,
@@ -394,6 +396,7 @@ def _cmd_migrate_tracker(args, root: str, out: Emitter, cfg: dict, profile: Trac
         report = migrate_to_tracker(source, target, profile, write=args.write)
     except BackendRefusal as exc:
         return out.emit_err(args.json, exc.err)
+    report["configChange"]["file"] = _config_file(root)
     if args.json:
         out.emit(True, report, "")
         return 0 if report["ok"] else 1
@@ -416,11 +419,18 @@ def _cmd_migrate_tracker(args, root: str, out: Emitter, cfg: dict, profile: Trac
     if args.write:
         lines.append("equality: " + ("every item read back equals its source modulo id"
                                      if report["ok"] else "not proved"))
-    lines.append(f"apply in {CONFIG_FILE}: " + json.dumps(report["configChange"]["set"]))
+    lines.append(f"apply in {report['configChange']['file']}: " + json.dumps(report["configChange"]["set"]))
     if not args.write:
         lines.append("nothing was written — pass --write to create the work items")
     out.emit(False, report, "\n".join(lines))
     return 0 if report["ok"] else 1
+
+
+def _config_file(root: str) -> str:
+    """The configuration file this repository is actually read from, repo-relative: the
+    `.agents/` home, or the legacy `.claude/quenching.json` while the home is absent."""
+    repo = find_repo_root(root)
+    return os.path.relpath(config_path(repo), repo)
 
 
 def cmd_migrate(args, root: str, out: Emitter) -> int:
@@ -453,6 +463,7 @@ def cmd_migrate(args, root: str, out: Emitter) -> int:
         return out.emit_err(args.json, err)
     report = migrate(source, target, dict(namespace(load_envelope(root), "specs")),
                      write=args.write, thin_cards=args.thin_open_cards)
+    report["configChange"]["file"] = _config_file(root)
     if args.json:
         out.emit(True, report, "")
         return 0 if report["ok"] else 1
@@ -465,7 +476,7 @@ def cmd_migrate(args, root: str, out: Emitter) -> int:
     lines.append("equality: " + ("list --json matches the source modulo locator"
                                  if not report["diffs"]
                                  else f"{len(report['diffs'])} difference(s)"))
-    lines.append(f"apply in {CONFIG_FILE}: " + json.dumps(report["configChange"]["set"])
+    lines.append(f"apply in {report['configChange']['file']}: " + json.dumps(report["configChange"]["set"])
                  + f" (card: {json.dumps(report['configChange']['card'])})")
     if not args.write:
         lines.append("nothing was written — pass --write to commit the batch")

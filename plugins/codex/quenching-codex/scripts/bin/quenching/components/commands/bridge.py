@@ -3,9 +3,10 @@
 A target repository keeps its skills in `.agents/skills/<name>/`, the one editable source. Codex
 Code 2.1.312 does not discover `.agents/skills` (its own importer copies that tree into
 `.agents/skills/`), so this verb generates `.agents/skills/<name>/` as a marked copy: every file of
-the skill folder byte for byte, with one marker line after the `SKILL.md` frontmatter. The
-manifest `.agents/skills/.generated-files.json` records one sha256 per generated file and the
-Codex version the bridge was verified against; freshness is a byte comparison against it.
+the skill folder byte for byte, executable bit included, with one marker line after the `SKILL.md`
+frontmatter. The manifest `.agents/skills/.generated-files.json` records one sha256 per generated
+file and the Codex version the bridge was verified against; freshness is a byte comparison
+against it.
 
 A `.agents/skills/<name>/` the manifest does not list is the human's, and is never overwritten.
 """
@@ -78,6 +79,11 @@ def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def _mode(path: Path) -> int:
+    """The executable bit is part of the copy: a skill script must stay runnable."""
+    return path.stat().st_mode & 0o111
+
+
 def plan(repo: Path) -> dict:
     expected = expected_tree(repo)
     recorded = read_manifest(repo)
@@ -91,7 +97,7 @@ def plan(repo: Path) -> dict:
         path = destination / rel
         if not path.is_file():
             changes.append({"path": rel, "change": "create"})
-        elif path.read_bytes() != data:
+        elif path.read_bytes() != data or _mode(path) != _mode(repo / SOURCE / rel):
             change = "edited" if recorded.get(rel) and sha256(path.read_bytes()) != recorded[rel] \
                 else "update"
             changes.append({"path": rel, "change": change})
@@ -121,6 +127,7 @@ def write(repo: Path, result: dict) -> None:
             continue
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(result["expected"][change["path"]])
+        os.chmod(path, (repo / SOURCE / change["path"]).stat().st_mode & 0o777)
     manifest = {
         "generator": "cq components bridge",
         "source": SOURCE.as_posix(),

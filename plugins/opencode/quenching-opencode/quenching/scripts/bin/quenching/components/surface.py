@@ -242,11 +242,22 @@ def plugin_prefix(root: str) -> str | None:
     return name.strip() if isinstance(name, str) and name.strip() else None
 
 
+def claude_side(root: str) -> str:
+    """Where the Codex-only artefacts of the surface rooted at `root` live.
+
+    A generic `.agents/` surface keeps its subagents, hooks and `settings*.json` in the sibling
+    `.agents/`, which no generic home replaces; every other root holds them itself."""
+    if os.path.basename(os.path.normpath(root)) == AGENTS_DIR:
+        return os.path.join(os.path.dirname(os.path.normpath(root)), CLAUDE_DIR)
+    return root
+
+
 def agent_definitions(root: str) -> list[tuple[str, dict]]:
-    """`(filename, frontmatter)` for every `<root>/agents/*.md`, sorted.
+    """`(filename, frontmatter)` for every `<root>/agents/*.md`, sorted — for a generic
+    `.agents/` root, the sibling `.agents/agents/`.
 
     Read by `doctor` (which checks each definition is reachable)."""
-    agents_dir = os.path.join(root, "agents")
+    agents_dir = os.path.join(claude_side(root), "agents")
     if not os.path.isdir(agents_dir):
         return []
     return [(fn, parse_frontmatter(read_text(os.path.join(agents_dir, fn)) or ""))
