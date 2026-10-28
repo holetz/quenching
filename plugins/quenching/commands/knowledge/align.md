@@ -83,7 +83,8 @@ else:
 cq knowledge validate docs --json          # structure: exit 0 = conformant
 ls ~/.claude/projects/<cwd>/memory/    # out-of-band store 1: any undrained memory?
 ```
-plus one `Read` of each harness file that exists (`CLAUDE.md`, `AGENTS.md`) — a fat one inlines
+plus one `Read` of each harness file that exists (`AGENTS.md`, and a root `CLAUDE.md` that is more
+than `@AGENTS.md`) — a fat one inlines
 durable knowledge; a thin one points. The glossary is **not** probed: it has no cheap signal, so
 it is proxied in step 7 instead.
 
@@ -161,7 +162,7 @@ still pauses for its own confirmation, always."*
 
 For each variant rename, sweep references per sweep-doctrine §The blast-radius sweep and **report
 the scope**: how many files, which reach **product code**, which non-`/docs/` referrers (commands,
-`CLAUDE.md`, prose links) the rename edits. When the rename set is more than a handful, delegate
+`AGENTS.md`, prose links) the rename edits. When the rename set is more than a handful, delegate
 the mechanical collection to **one read-only `Task` sub-agent** (`model: haiku`, `effort: low`)
 returning `rename → [file:line, …]` and classify each hit yourself. The batch OK covers exactly the
 enumerated docs-only set. Each **code-coupled** rename is its **own** confirmation item.
@@ -203,7 +204,8 @@ plan was rejected and nothing was written.
 Both are one-shot scaffolding, not loop stages; skip this step entirely on later passes.
 
 **The language declaration.** Ask **once**, and only when the target's **root** harness file
-(`CLAUDE.md` / `AGENTS.md`) carries no declaration yet. Ask for one BCP-47 tag — `pt-BR`, `en`,
+(`AGENTS.md`; a legacy root `CLAUDE.md` only while no `AGENTS.md` exists) carries no declaration
+yet. Ask for one BCP-47 tag — `pt-BR`, `en`,
 `ja` — and write a single line into that root file:
 
     Language: <tag> — the contract is /docs/standards/agents/communication.md
@@ -256,7 +258,7 @@ is [sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctr
 
 1. `quenching-align:knowledge:import-memory` — drain the project's memory dir into its homes, clearing each
    memory once its doc lands and passes conformance.
-2. `quenching-align:components:harness:align` — thin `CLAUDE.md`/`AGENTS.md`, MOVEing durable knowledge into homes.
+2. `quenching-align:components:harness:align` — thin `AGENTS.md` (root `CLAUDE.md` = `@AGENTS.md`), MOVEing durable knowledge into homes.
 
 The order is
 [knowledge-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/cycle.md) §The stage
