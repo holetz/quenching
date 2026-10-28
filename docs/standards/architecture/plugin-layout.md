@@ -1,19 +1,38 @@
 ---
 type: standard
 title: Plugin layout — what may live under commands/
-description: one editable source generates eight module plugins; in each, commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
-resource: plugins/quenching/commands/**, plugins/quenching/assets/**, plugins/quenching/bin/**, plugins/quenching-*/**, scripts/generate_plugin_modules.py
+description: one editable source generates one tree per harness under plugins/<harness>/<name>/, eight Claude module plugins among them; in each module, commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
+resource: plugins/quenching/commands/**, plugins/quenching/assets/**, plugins/quenching/bin/**, plugins/claude/**, plugins/codex/**, plugins/opencode/**, plugins/omnigent/**, scripts/generate_plugin_modules.py
 tags: [architecture, plugin, commands, layout, claude-code]
-timestamp: 2026-10-18
+timestamp: 2026-10-28
 audience: both
 authority: current
-source: collapse-skills-into-commands, 2026-07-26, self-contained-mold, verify-allowed-tools-enforcement, 2026-07-28, collapse-remaining-language-clause-restatements, spec 1635 (module extraction); lineage in ADR 0004 and ADR 0013
+source: collapse-skills-into-commands, 2026-07-26, self-contained-mold, verify-allowed-tools-enforcement, 2026-07-28, collapse-remaining-language-clause-restatements, spec 1635 (module extraction), spec 2115 (layout per harness); lineage in ADR 0004 and ADR 0013
 maintainer: quenching
 ---
 
 # Plugin layout — what may live under `commands/`
 
 <!-- rules -->
+
+## One tree per harness
+
+The first level under `plugins/` is the source or a harness; the second is the name that harness
+registers. Every tree but the source and the hand-written `quenching-hud` is generated, and its
+generator's `--check` runs in the gate.
+
+| Path | What it is | Generator |
+|---|---|---|
+| `plugins/quenching/` | the source, the only editable tree, never published | — |
+| `plugins/claude/quenching-<module>/` | every Claude module plugin, `quenching-specs-reader` and the hand-written `quenching-hud`, registered in `.claude-plugin/marketplace.json` | `scripts/generate_plugin_modules.py`, `scripts/sync_specs_reader_plugin.py` |
+| `plugins/codex/quenching-codex/` | the Codex plugin, registered in `.agents/plugins/marketplace.json` | `scripts/sync_codex_plugin.py` |
+| `plugins/opencode/quenching-opencode/` | the OpenCode distribution, installed into `~/.opencode/` | `scripts/sync_opencode_plugin.py` |
+| `plugins/omnigent/quenching/` | the Omnigent operator agent, one bundle with no payload | `scripts/sync_omnigent_plugin.py` |
+
+A new harness gets a new first-level directory, never a `plugins/quenching-<harness>/` sibling of
+the source. A move between these paths is a `git mv` followed by the path changes in the
+generators and manifests, so the history follows the files. How each harness tree is translated
+is [surface-translation.md](surface-translation.md).
 
 ## One editable source, eight generated modules
 
@@ -25,7 +44,7 @@ marketplace publishes are the eight principal modules of
 authored `quenching-hud`.
 
 - **Every module tree is generated, never edited.** `scripts/generate_plugin_modules.py --write`
-  materializes `plugins/quenching-<module>/` from that module's record in
+  materializes `plugins/claude/quenching-<module>/` from that module's record in
   `plugins/quenching/assets/modules.json`: the `owned` commands, agents and Python packages, plus
   the `generatedSupport` closure (shared packages, the references its bodies cite, the router
   `assets/bin/cq`). Every other `assets/` subtree except `bin/` and `references/` is copied whole;

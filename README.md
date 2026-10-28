@@ -15,7 +15,7 @@ but no new features. Type the command name to use one.
 
 Release history is maintained in the [`CHANGELOG`](CHANGELOG.md).
 
-The generated Codex sibling lives in `plugins/quenching-codex/` and is registered in
+The generated Codex sibling lives in `plugins/codex/quenching-codex/` and is registered in
 `.agents/plugins/marketplace.json`. Claude remains the editable source; regenerate the plugin with
 `python3 scripts/sync_codex_plugin.py --write`. The repository gate checks translation drift and
 the generated package. To install this checkout locally:

@@ -2,9 +2,9 @@
 type: standard
 title: The specs reader is a generated, read-only sibling plugin
 description: A target that only reads another project's specs enables quenching-specs-reader alone — one command, one read-only entry point that refuses write verbs at the argument boundary and disables every backend write path at runtime, and a payload and version generated from plugins/quenching and held in lockstep by the repository gate
-resource: plugins/quenching-specs-reader/**, plugins/quenching/assets/modules.json, scripts/generate_plugin_modules.py, scripts/sync_specs_reader_plugin.py, scripts/verify_repo.sh, .claude-plugin/marketplace.json
+resource: plugins/claude/quenching-specs-reader/**, plugins/quenching/assets/modules.json, scripts/generate_plugin_modules.py, scripts/sync_specs_reader_plugin.py, scripts/verify_repo.sh, .claude-plugin/marketplace.json
 tags: [architecture, plugin, specs, read-only, marketplace]
-timestamp: 2026-10-14
+timestamp: 2026-10-28
 audience: both
 authority: current
 source: specs 1139 and 1634 — the standalone read-only reader, then manifest-driven generation and published lockstep
@@ -31,7 +31,7 @@ commands.
 
 ## What is hand-owned and what is generated
 
-| Path under `plugins/quenching-specs-reader/` | Owner |
+| Path under `plugins/claude/quenching-specs-reader/` | Owner |
 | --- | --- |
 | `commands/read.md` | hand-owned — the only command |
 | `bin/cq-specs-read` | hand-owned — the read-only entry point |

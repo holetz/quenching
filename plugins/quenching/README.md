@@ -604,7 +604,7 @@ which registers names the bodies do not cite:
 
 ```bash
 python3 scripts/generate_plugin_modules.py --write
-claude --plugin-dir ./plugins/quenching-specs --plugin-dir ./plugins/quenching-align
+claude --plugin-dir ./plugins/claude/quenching-specs --plugin-dir ./plugins/claude/quenching-align
 ```
 
 Add one `--plugin-dir` per further module. `--plugin-dir` loads the checkout directly for plugin

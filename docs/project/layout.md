@@ -4,7 +4,7 @@ title: Repository layout
 description: What sits where in this checkout — the marketplace root, the plugin payload and its asset families, the generated specs-reader sibling, and which command owns each surface
 resource: plugins/**, scripts/**, docs/**
 tags: [repository, layout, plugin, marketplace]
-timestamp: 2026-10-11
+timestamp: 2026-10-28
 audience: both
 authority: current
 source: derived from the checkout itself on 2026-08-29 (`ls` over each directory named below); the ownership column restates each command's own declared write boundary
@@ -24,17 +24,23 @@ of a behaviour and editing a generated copy of it.
 | --- | --- | --- |
 | `docs/` | this OKF bundle — the knowledge tree **and** the source of this site | `/quenching-align:knowledge:*` |
 | `plugins/quenching/` | the plugin payload that gets installed | the owning spec |
-| `plugins/quenching-specs-reader/` | **generated** read-only sibling of the payload | `scripts/sync_specs_reader_plugin.py` |
-| `plugins/quenching-hud/` | band above the prompt (active spec, stage, task progress; read with `cq specs status --no-fetch`: local ref only, no fetch, no network); **hand-written**, validated by the gate with `claude plugin validate` | the owning spec |
+| `plugins/claude/quenching-<module>/` | **generated** Claude module plugins, one per module of `assets/modules.json` | `scripts/generate_plugin_modules.py` |
+| `plugins/claude/quenching-specs-reader/` | **generated** read-only sibling of the payload | `scripts/sync_specs_reader_plugin.py` |
+| `plugins/codex/quenching-codex/` | **generated** Codex plugin | `scripts/sync_codex_plugin.py` |
+| `plugins/opencode/quenching-opencode/` | **generated** OpenCode distribution | `scripts/sync_opencode_plugin.py` |
+| `plugins/omnigent/quenching/` | **generated** Omnigent operator agent, no payload | `scripts/sync_omnigent_plugin.py` |
+| `plugins/claude/quenching-hud/` | band above the prompt (active spec, stage, task progress; read with `cq specs status --no-fetch`: local ref only, no fetch, no network); **hand-written**, validated by the gate with `claude plugin validate` | the owning spec |
 | `.claude/` | this repository's own local command surface | `/quenching-align:components:*` |
 | `scripts/` | thin launchers CI calls | the owning spec |
 | `zensical.toml` | the site layer — outside the bundle, on purpose | `/quenching-align:knowledge:documentation:build` |
 | `CLAUDE.md`, `AGENTS.md` | harness pointers, kept thin over this bundle | `/quenching-align:components:harness:align` |
 
-`plugins/quenching-specs-reader/` is the trap: it is **regenerated wholesale**, so editing it by
+Every generated tree under `plugins/<harness>/` is the trap: it is **regenerated wholesale**, so editing it by
 hand produces a change that survives until the next sync and then vanishes without a diff to
-explain it. The generated Codex mirrors (`plugins/quenching-codex/`, `.agents/`) were retired on
-2026-10-11; `cq components translate` still generates one on demand.
+explain it. The first level under `plugins/` is the source or a harness, the second the name that
+harness registers ([plugin-layout.md](../standards/architecture/plugin-layout.md) §One tree per
+harness). The generated Codex skill mirrors under `.agents/` were retired on 2026-10-11;
+`cq components translate` still generates one on demand.
 
 ## Inside the plugin payload
 

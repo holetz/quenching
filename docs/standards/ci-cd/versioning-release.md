@@ -2,9 +2,9 @@
 type: standard
 title: Versioning and release — the version lockstep
 description: The version surfaces cq specs release bumps together — the unpublished source, every published module manifest (the eight principal modules, the specs reader and the HUD) and every marketplace entry
-resource: plugins/quenching/assets/modules.json, plugins/quenching-*/VERSION, plugins/quenching-*/.claude-plugin/plugin.json, plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, .agents/plugins/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py, scripts/generate_plugin_modules.py, scripts/check_codex_upgrade.py
+resource: plugins/quenching/assets/modules.json, plugins/claude/quenching-*/VERSION, plugins/claude/quenching-*/.claude-plugin/plugin.json, plugins/codex/quenching-codex/VERSION, plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, .agents/plugins/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py, scripts/generate_plugin_modules.py, scripts/check_codex_upgrade.py
 tags: [release, versioning, lockstep, plugin, distribution]
-timestamp: 2026-10-22
+timestamp: 2026-10-28
 audience: both
 authority: current
 source: modularizar-specs-knowledge-components, one-entry-point, notice-installed-tool-version-drift, 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks, configurable-branch-strategy, spec 1634, spec 1635 (module extraction); Codex marketplace upgrade regression, 2026-10-22; lineage in ADR 0004 and ADR 0013
@@ -91,7 +91,7 @@ are refused. Afterwards `python3 scripts/generate_plugin_modules.py --write` reg
 copied assets; `--check` proves generated consumers, published versions and the single active
 PATH `cq` owner together. The old `sync_specs_reader_plugin.py` invocation remains a compatibility
 wrapper over that same generator. The generated Codex package
-(`plugins/quenching-codex/VERSION` and `.codex-plugin/plugin.json`), declared under
+(`plugins/codex/quenching-codex/VERSION` and `.codex-plugin/plugin.json`), declared under
 `distributions` in `assets/modules.json` with its platform, identity, package path, plugin manifest
 and marketplace path, moves in the same lockstep. Afterwards
 `sync_codex_plugin.py --write` regenerates its payload and translation manifest; the repository
