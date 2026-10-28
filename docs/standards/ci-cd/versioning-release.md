@@ -24,8 +24,9 @@ partial bump makes one of them wrong.
 
 The release commit is self-contained: the verb refuses (exit 2, nothing written) when the tree
 has changes beyond `CHANGELOG.md`, bumps, **regenerates the copies**
-(`scripts/generate_plugin_modules.py --write` and `scripts/sync_codex_plugin.py --write`, each when
-present) and commits everything with the `CHANGELOG.md` entry, so `verify_repo.sh` is already green
+(`scripts/generate_plugin_modules.py`, `scripts/sync_codex_plugin.py`, `scripts/sync_opencode_plugin.py`
+and `scripts/sync_omnigent_plugin.py`, each `--write` and each when present; the Omnigent operator pins
+its MCP server to the version tag) and commits everything with the `CHANGELOG.md` entry, so `verify_repo.sh` is already green
 on the tag. A failed regeneration leaves the bump uncommitted and makes no commit or tag.
 
 ## The published set
