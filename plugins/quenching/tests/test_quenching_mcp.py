@@ -95,13 +95,55 @@ class Schema(unittest.TestCase):
 
 
 class Argv(unittest.TestCase):
-    def test_options_go_as_flag_equals_value_and_the_server_adds_root_and_json(self):
+    def test_options_go_as_flag_equals_value_and_the_server_adds_json(self):
         cmd, as_json = catalog.argv(catalog.CATALOG["components_read"],
                                     {"path": "x.md", "sections": ["A", "B"], "rules_only": True},
                                     "/repo")
         self.assertTrue(as_json)
-        self.assertEqual(cmd, ["--root", "/repo", "components", "read", "--sections=A",
+        self.assertEqual(cmd, ["components", "read", "--sections=A",
                                "--sections=B", "--rules-only", "--json", "x.md"])
+
+    def test_a_pillar_with_router_root_gets_the_workspace_as_root(self):
+        cmd, as_json = catalog.argv(catalog.CATALOG["ops_doctor"], {}, "/repo")
+        self.assertEqual(cmd[:3], ["--root", "/repo", "ops"])
+        self.assertTrue(as_json)
+        self.assertEqual(cmd[-1], "--json")
+
+    def test_components_never_receives_the_workspace_as_its_surface_root(self):
+        # `cq components --root` is the surface root holding commands/, not the workspace: the
+        # workspace reaches it as the cwd, where its nearest-.claude/ discovery starts.
+        for name, row in catalog.CATALOG.items():
+            if row.pillar == "components":
+                args = {"path": "x.md"} if name == "components_read" else {}
+                try:
+                    cmd, _ = catalog.argv(row, args, "/repo")
+                except server.ToolArgs:
+                    continue
+                self.assertNotIn("/repo", " ".join(cmd), name)
+
+    def test_an_option_value_may_span_lines_but_a_positional_may_not(self):
+        cmd, _ = catalog.argv(catalog.CATALOG["git_pr_create"],
+                              {"base": "main", "head": "b", "title": "t",
+                               "body": "## Summary\n\nline"}, "/repo")
+        self.assertIn("--body=## Summary\n\nline", cmd)
+        with self.assertRaises(server.ToolArgs):
+            catalog.argv(catalog.CATALOG["components_read"], {"path": "a\nb.md"}, "/repo")
+        with self.assertRaises(server.ToolArgs):
+            catalog.argv(catalog.CATALOG["git_pr_create"],
+                         {"base": "main", "head": "b", "title": "t", "body": "a\0b"}, "/repo")
+
+    def test_pr_merge_cannot_stamp_the_gated_merge_record(self):
+        # The `merge` record is a gated move: it goes through `specs_record` and its elicitation.
+        props = catalog.schema(catalog.resolve(catalog.CATALOG["git_pr_merge"]))["properties"]
+        self.assertNotIn("spec", props)
+        with self.assertRaises(server.ToolArgs):
+            catalog.argv(catalog.CATALOG["git_pr_merge"],
+                         {"url": "https://github.com/o/r/pull/1", "spec": "1"}, "/repo")
+
+    def test_worktree_retire_is_announced_destructive(self):
+        notes = catalog.annotations(catalog.CATALOG["git_worktree_retire"])
+        self.assertTrue(notes["destructiveHint"])
+        self.assertFalse(notes["readOnlyHint"])
 
     def test_a_pillar_without_router_root_gets_the_verbs_own_root(self):
         cmd, _ = catalog.argv(catalog.CATALOG["git_base"], {}, "/repo")

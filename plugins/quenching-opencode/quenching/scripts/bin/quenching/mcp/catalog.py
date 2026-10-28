@@ -31,6 +31,10 @@ from quenching.mcp.server import ToolArgs
 ROUTER_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__)))), "cq")
 SERVER_OWNED = {"root", "json", "help", "version"}
+# A pillar whose `--root` names something narrower than the workspace (`components`: the surface
+# root holding commands/) gets no `--root`; the workspace reaches it as the cwd, from which its own
+# default discovery (nearest `.agents/` upward) runs.
+ROOT_BY_CWD = {"components"}
 CLASSES = ("read", "write", "external")
 
 
@@ -39,6 +43,7 @@ class Row(NamedTuple):
     path: tuple[str, ...]
     cls: str
     destructive: bool = False
+    hidden: frozenset = frozenset()   # parser dests the tool never publishes
 
 
 def _rows(pillar: str, cls: str, *paths: str) -> dict[str, Row]:
@@ -54,10 +59,12 @@ CATALOG: dict[str, Row] = {
     **_rows("knowledge", "write", "site-source", "project", "nav", "listing"),
     **_rows("git", "read", "base", "state", "conventions", "history log", "history show",
             "history diff", "audit", "stale", "preflight", "pr probe", "pr view"),
-    **_rows("git", "write", "commit", "worktree link", "worktree add", "worktree retire",
-            "specs"),
+    **_rows("git", "write", "commit", "worktree link", "worktree add", "specs"),
     **_rows("git", "external", "push", "pr create", "pr record"),
-    "git_pr_merge": Row("git", ("pr", "merge"), "external", True),
+    # `--spec` would stamp the gated `merge` record with no elicitation: the record goes
+    # through `specs_record`, whose elicitation gate asks the human.
+    "git_pr_merge": Row("git", ("pr", "merge"), "external", True, frozenset({"spec"})),
+    "git_worktree_retire": Row("git", ("worktree", "retire"), "write", True),
     "git_prune": Row("git", ("prune",), "external", True),
     **_rows("config", "read", "show", "check", "host"),
     **_rows("config", "write", "init"),
@@ -95,6 +102,7 @@ class Verb(NamedTuple):
     parser: argparse.ArgumentParser
     fixed: dict[str, str]        # positional dest -> the value the verb path fills in
     help: str
+    hidden: frozenset = frozenset()
 
 
 def _subparsers(parser: argparse.ArgumentParser):
@@ -121,7 +129,7 @@ def resolve(row: Row) -> Verb:
         if slot is None:
             raise LookupError(f"{row.pillar} has no verb {' '.join(row.path)!r}")
         fixed[slot.dest] = word
-    return Verb(parser, fixed, help_text or parser.description or "")
+    return Verb(parser, fixed, help_text or parser.description or "", row.hidden)
 
 
 def _declares(parser: argparse.ArgumentParser, flag: str) -> bool:
@@ -132,7 +140,8 @@ def _arguments(verb: Verb) -> list[argparse.Action]:
     return [a for a in verb.parser._actions
             if not isinstance(a, (argparse._HelpAction, argparse._VersionAction,
                                   argparse._SubParsersAction))
-            and a.dest not in SERVER_OWNED and a.dest not in verb.fixed]
+            and a.dest not in SERVER_OWNED and a.dest not in verb.fixed
+            and a.dest not in verb.hidden]
 
 
 def _scalar(action: argparse.Action) -> dict:
@@ -222,7 +231,9 @@ def _check(action: argparse.Action, value):
         elif item["type"] == "number":
             ok = isinstance(one, (int, float)) and not isinstance(one, bool)
         else:
-            ok = isinstance(one, str) and "\n" not in one and "\0" not in one
+            # An option value may span lines (a PR body); a positional never does. NUL never.
+            ok = isinstance(one, str) and "\0" not in one \
+                and (bool(action.option_strings) or "\n" not in one)
         if not ok:
             raise ToolArgs(f"`{action.dest}` must be {item['type']}")
         if "enum" in item and one not in item["enum"]:
@@ -241,7 +252,8 @@ def argv(row: Row, args: dict, root: str) -> tuple[list[str], bool]:
     unknown = sorted(set(args) - set(actions))
     if unknown:
         raise ToolArgs(f"unknown argument(s): {', '.join(unknown)}")
-    head = ["--root", root] if router().PILLARS[row.pillar].takes_root else []
+    by_cwd = row.pillar in ROOT_BY_CWD
+    head = ["--root", root] if router().PILLARS[row.pillar].takes_root and not by_cwd else []
     out = [*head, row.pillar, *row.path]
     options, positionals, skipped = [], [], None
     for dest, action in actions.items():
@@ -266,7 +278,7 @@ def argv(row: Row, args: dict, root: str) -> tuple[list[str], bool]:
                 options.append(flag)
         else:
             options += [f"{flag}={one}" for one in (value if isinstance(value, list) else [value])]
-    if not head and _declares(verb.parser, "--root"):
+    if not head and not by_cwd and _declares(verb.parser, "--root"):
         options.append(f"--root={root}")
     as_json = _declares(verb.parser, "--json")
     if as_json:

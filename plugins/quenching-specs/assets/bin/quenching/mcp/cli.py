@@ -1,6 +1,6 @@
 """`cq mcp` — the whole `quenching` MCP server over stdio.
 
-    python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" [--root PATH] mcp
+    cq [--root PATH] mcp
 
 The server is the references resources plus the catalog of CLI verbs (with the specs tools when
 the `specs` pillar is present). The workspace is the cwd it is launched in, or `--root`; it is

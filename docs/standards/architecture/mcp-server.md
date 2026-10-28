@@ -38,18 +38,21 @@ Specs keep their existing names, including `specs_section_write` and `specs_reco
 The schema comes from each pillar's `build_parser()`: flags become booleans, choices become enums,
 repeated values become arrays, and positional arguments become properties. Required arguments stay
 required. Every schema rejects additional properties. The server owns `--root` and `--json`;
-there is no generic argv passthrough. A new parser option on a catalogued verb is exposed without
+there is no generic argv passthrough. `components` never receives the workspace as `--root`,
+because its `--root` names the surface root holding `commands/`; it runs with the workspace as cwd
+and finds the nearest `.claude/` from there. A new parser option on a catalogued verb is exposed without
 editing the catalog; a new verb requires a new row. Interactive or long-running entry points,
 including `specs serve`, `specs mcp`, `portal serve` and `codex implement`, are not catalogued.
 
 | Class | Meaning | MCP annotation |
 | --- | --- | --- |
 | `read` | Reads the workspace | `readOnlyHint: true` |
-| `write` | Can change the workspace or specs store | `readOnlyHint: false` |
+| `write` | Can change the workspace or specs store | `readOnlyHint: false`; worktree retire also sets `destructiveHint: true` |
 | `external` | Can act outside the machine | `openWorldHint: true`; destructive merge/prune also set `destructiveHint: true` |
 
 Annotations describe capabilities; they grant no permission. The existing specs elicitation gate
-still protects `approved`, `reviewed`, `merge`, `outcome` and promotion. Only a client acceptance
+still protects `approved`, `reviewed`, `merge`, `outcome` and promotion, so `git_pr_merge`
+publishes no `spec` argument: the `merge` record goes through `specs_record`. Only a client acceptance
 permits those moves; missing capability, decline or cancel refuses without a write.
 
 ## Bounded resources
