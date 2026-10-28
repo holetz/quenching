@@ -4,13 +4,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from quenching.common.config import CONFIG_FILE, load_config
+from quenching.common.config import CONFIG_FILE, config_path, load_config
 
 
 def load_delivery_config(root: str) -> tuple[dict[str, Any], dict[str, Any]]:
     """Return the optional delivery declaration or its exact refusal."""
     repo_root = Path(root).resolve()
-    path = repo_root / CONFIG_FILE
+    path = Path(config_path(str(repo_root)))
     if not path.is_file():
         return {}, {}
 

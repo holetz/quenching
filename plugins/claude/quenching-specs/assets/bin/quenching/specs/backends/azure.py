@@ -367,7 +367,7 @@ def azure_query_wiql(project: str, area_path: str | None, discovery_tag: str | N
     just as often as the macro bug it was meant to catch.
 
     `area_path` and `discovery_tag` are optional here — they come from `azurePlacement` in
-    `.claude/quenching.json`, which `open_azure_backend` reads and hands the backend. Unset,
+    `.agents/quenching.json`, which `open_azure_backend` reads and hands the backend. Unset,
     the query is scoped by project alone, which is the same breadth it always had."""
     clauses = [f"[System.TeamProject] = '{project}'"]
     if area_path:
@@ -616,7 +616,7 @@ class AzureBoardsBackend(SpecBackend):
     genuinely differ. GitHub's open/closed is universal, so the mapping could be written in
     code. An Azure Boards state belongs to the project's process — Basic, Agile, Scrum and
     CMMI each name their states differently, and a customised process names them however it
-    likes — so the mapping is read from `azureStates` in `.claude/quenching.json` and is
+    likes — so the mapping is read from `azureStates` in `.agents/quenching.json` and is
     NEVER guessed. Absent, the backend refuses (exit 2) naming the key: a guess would not
     fail loudly, it would silently report every archived spec as active.
 

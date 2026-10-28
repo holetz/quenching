@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 
+from quenching.common.config import CONFIG_FILE
 from quenching.common.front import register_checks
 from quenching.delivery.model import DeliveryInventory, Finding, Workflow
 
@@ -137,7 +138,7 @@ def check_provider_policy(inventory: DeliveryInventory) -> list[Finding]:
         return [_finding(
             "delivery-provider-policy",
             "delivery is applicable but no recognized provider-equivalent workflow is measured",
-            ".claude/quenching.json",
+            CONFIG_FILE,
         )]
     if inventory.applicability.provider == "multiple" or len(providers) > 1:
         return [_finding(

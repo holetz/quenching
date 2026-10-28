@@ -1,7 +1,7 @@
 """The operations front's declared root, registry, and canonical router.
 
 `opsRoot`, `router`, and the optional `registry` path live beside the specs settings in
-`.claude/quenching.json`, but their meaning belongs to this front. The shared loader reads the
+`.agents/quenching.json`, but their meaning belongs to this front. The shared loader reads the
 required declarations as data; this module is the one boundary that turns the paths into
 repository-relative paths and refuses to guess when either required declaration is absent.
 """

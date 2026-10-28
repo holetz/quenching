@@ -48,7 +48,8 @@ def probe_delivery(root: str) -> Applicability:
     providers = sorted({provider for _, provider, _ in rows})
     artifacts = [path for path, _, _ in rows]
     if has_declaration:
-        artifacts.append(".claude/quenching.json#delivery")
+        config_file = Path(config["path"])
+        artifacts.append(f"{config_file.parent.name}/{config_file.name}#delivery")
     if not rows and not has_declaration:
         return Applicability(str(repo_root), "not-applicable", None)
     provider = configured or (providers[0] if len(providers) == 1 else

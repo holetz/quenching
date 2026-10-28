@@ -11,7 +11,7 @@ import shlex
 import sys
 
 from quenching.common.front import resolve_root
-from quenching.common.config import (CONFIG_FILE, DEFAULT_PROVIDER, PROVIDER_ENV,
+from quenching.common.config import (CONFIG_FILE, config_path, DEFAULT_PROVIDER, PROVIDER_ENV,
                                       active_provider,
                                       find_repo_root, repository_document)
 from quenching.common.io import write_text
@@ -106,7 +106,7 @@ def cmd_init(args) -> int:
     if (refused := _file_only("init", args)) is not None:
         return refused
     root = resolve_root(args.root)
-    path = os.path.join(find_repo_root(root), CONFIG_FILE)
+    path = config_path(find_repo_root(root))
     if os.path.isfile(path):
         return refuse({
             "code": "cq-config-present", "config": path,
@@ -130,7 +130,7 @@ def cmd_check(args) -> int:
     if (refused := _file_only("check", args)) is not None:
         return refused
     root = resolve_root(args.root)
-    path = os.path.join(find_repo_root(root), CONFIG_FILE)
+    path = config_path(find_repo_root(root))
     if not os.path.isfile(path):
         return refuse({
             "code": "cq-config-absent", "config": path,
@@ -167,7 +167,7 @@ def build_parser() -> argparse.ArgumentParser:
     hp.add_argument("command", nargs="*", help="the command to dispatch, after `--`")
     xp = sub.add_parser("export", help="print the repository layer as the envelope a service would hold")
     xp.add_argument("--json", action="store_true", help="machine-readable output")
-    ip = sub.add_parser("init", help="seed .claude/quenching.json with every adjustable default")
+    ip = sub.add_parser("init", help="seed .agents/quenching.json with every adjustable default")
     ip.add_argument("--write", action="store_true", help="create the file (default: preview)")
     ip.add_argument("--json", action="store_true", help="machine-readable output")
     kp = sub.add_parser("check", help="list the seeded keys the file lacks")

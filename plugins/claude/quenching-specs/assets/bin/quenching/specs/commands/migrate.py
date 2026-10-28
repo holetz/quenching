@@ -5,7 +5,7 @@ Dry run unless `--write`. The whole front is read from the configured tracker ba
 continuation part included, because `read_spec` reassembles the document), written under the
 SAME IDs in ONE commit — open specs in `specs/`, closed ones in `specs/archive/` — and the
 specs-axis configuration is copied into the branch's `quenching.json`. The command prints the
-change the human applies to `.claude/quenching.json`; it never edits that file.
+change the human applies to `.agents/quenching.json`; it never edits that file.
 
 The check that makes the move trustworthy is an equality, not a promise: after the commit the
 `git` store's listing must equal the source's modulo locator, and every difference is reported.

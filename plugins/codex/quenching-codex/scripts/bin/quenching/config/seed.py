@@ -1,4 +1,4 @@
-"""The seed of `.claude/quenching.json`: every adjustable default spelled out.
+"""The seed of `.agents/quenching.json` (or the legacy `.claude/quenching.json` it finds): every adjustable default spelled out.
 
 The document is built from the owning modules' own constants, so it cannot drift from the code.
 Two defaults live where the `quenching-specs` module cannot import them (`knowledge` is not in

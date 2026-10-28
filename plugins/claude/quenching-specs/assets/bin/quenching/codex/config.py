@@ -1,4 +1,4 @@
-"""The `shared.codex` block of `.claude/quenching.json`, with its defaults.
+"""The `shared.codex` block of `.agents/quenching.json`, with its defaults.
 
 The block is optional: absent, every default holds and `crossReview` is `auto`. `"off"` is the
 explicit opt-out. A value of the wrong shape falls back to its default and is named in

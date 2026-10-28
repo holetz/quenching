@@ -1,7 +1,7 @@
 """Where the spec store lives (the repository's to declare) and where its credential comes
 from (the person's to name).
 
-The repository layer, `.claude/quenching.json`, may say WHICH organisation, project or
+The repository layer, `.agents/quenching.json`, may say WHICH organisation, project or
 repository: `specs.store.azure.{organization, project}`, `specs.store.github.repository`. It may
 never carry anything that authenticates. The user layer, `~/.config/quenching/config.json`, may
 say WHERE the credential comes from, `specs.credential.<azure|github>`, and never which store.
