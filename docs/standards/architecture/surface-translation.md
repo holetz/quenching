@@ -211,3 +211,27 @@ per-case cost is computed from the JSON by the generator, so the figures cannot 
 takes `--agent-harness` (default `opencode`); `arm_values` builds the values of both the dry run and `run_arm`
 and refuses a missing bundle. The wiring is proved by `--dry-run` and a stub; no Omnigent-hosted eval has been
 run. The generated tree is never edited by hand, and nothing flows back from it to the source.
+
+### Live proof on Omnigent 0.19.1 (2026-10-28)
+
+The operator bundle `plugins/omnigent/quenching/` was proved on an isolated `uvx omnigent@0.19.1` server (own
+port, `OMNIGENT_DATA_DIR`, `HOME` and no auth), one host daemon, one session on `harness: opencode` and the
+DeepSeek V4.1 Flash endpoint through the Databricks gateway. What it showed:
+
+- **Registration.** `omnigent server --agent plugins/omnigent/quenching` pre-registers `quenching` beside the
+  built-in agents (`/v1/agents`, 61 skills, one stdio MCP server); `omnigent.spec.load` of 0.19.1 reads the
+  bundle with `skills_filter: none` and the 7 sub-agents.
+- **Skills.** The 61 skills reach the session through `omnigent_load_skill`; a `slash_command` of kind `skill`
+  injects the bundle's `SKILL.md` into the turn.
+- **Sub-agent with policy.** The operator delegated to `scout` through `omnigent_sys_session_send`; the scout's
+  write was denied by its CEL policy (`omnigent-policy`) and no file was created.
+- **`skills: none` does not remove the duplication under OpenCode.** OpenCode's own `skill` tool still listed
+  the host skills planted in `~/.claude/skills/` and `~/.agents/skills/`, including a host copy of
+  `quenching-security-status` beside the bundle's; only `~/.config/opencode/skills/` was hidden, by the
+  per-session `XDG_CONFIG_HOME`. The field stays in the bundle (it binds the Claude SDK harness), and a host
+  that serves the operator must not carry quenching skills in those two directories.
+- **MCP.** The `uvx --from git+…@6.9.0#subdirectory=plugins/quenching quenching-mcp` server does not start:
+  the 6.9.0 tag has no `pyproject.toml` there. It starts only from a release that ships the MCP.
+- **Cost.** Estimated at 150–250k tokens for three turns and one sub-agent; measured 53,195 tokens (49,438
+  input, 1,274 output, 51,921 of them cache reads), with `total_cost_usd` 0.0 because the gateway endpoint
+  carries no price in Omnigent's catalog.
