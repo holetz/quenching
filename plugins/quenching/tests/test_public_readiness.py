@@ -386,11 +386,11 @@ class CleanCloneTest(ReadinessCase):
             self.skipTest("the repository is not a git checkout")
         target = pathlib.Path(self.tmp.name, "export")
         target.mkdir()
-        archive = subprocess.run(["git", "-C", str(REPO), "archive", "HEAD", "plugins/quenching-opensource"],
+        archive = subprocess.run(["git", "-C", str(REPO), "archive", "HEAD", "plugins/claude/quenching-opensource"],
                                  check=True, capture_output=True).stdout
         with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
             tar.extractall(target, filter="data")
-        return target / "plugins" / "quenching-opensource"
+        return target / "plugins" / "claude" / "quenching-opensource"
 
     def test_the_module_carries_the_command_and_the_reference_it_cites(self):
         module = self.export()

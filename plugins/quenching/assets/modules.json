@@ -23,7 +23,7 @@
     },
     {
       "name": "quenching-specs-reader",
-      "path": "plugins/quenching-specs-reader",
+      "path": "plugins/claude/quenching-specs-reader",
       "published": true,
       "versionFile": true,
       "cqPathOwner": false,
@@ -57,14 +57,14 @@
     },
     {
       "name": "quenching-hud",
-      "path": "plugins/quenching-hud",
+      "path": "plugins/claude/quenching-hud",
       "published": true,
       "versionFile": false,
       "cqPathOwner": false
     },
     {
       "name": "quenching-specs",
-      "path": "plugins/quenching-specs",
+      "path": "plugins/claude/quenching-specs",
       "published": true,
       "versionFile": true,
       "cqPathOwner": true,
@@ -120,7 +120,7 @@
     },
     {
       "name": "quenching-align",
-      "path": "plugins/quenching-align",
+      "path": "plugins/claude/quenching-align",
       "published": true,
       "versionFile": true,
       "cqPathOwner": false,
@@ -176,7 +176,7 @@
     },
     {
       "name": "quenching-design",
-      "path": "plugins/quenching-design",
+      "path": "plugins/claude/quenching-design",
       "published": true,
       "versionFile": true,
       "cqPathOwner": false,
@@ -220,7 +220,7 @@
     },
     {
       "name": "quenching-ops",
-      "path": "plugins/quenching-ops",
+      "path": "plugins/claude/quenching-ops",
       "published": true,
       "versionFile": true,
       "cqPathOwner": false,
@@ -264,7 +264,7 @@
     },
     {
       "name": "quenching-proof",
-      "path": "plugins/quenching-proof",
+      "path": "plugins/claude/quenching-proof",
       "published": true,
       "versionFile": true,
       "cqPathOwner": false,
@@ -311,7 +311,7 @@
     },
     {
       "name": "quenching-toolchain",
-      "path": "plugins/quenching-toolchain",
+      "path": "plugins/claude/quenching-toolchain",
       "published": true,
       "versionFile": true,
       "cqPathOwner": false,
@@ -356,7 +356,7 @@
     },
     {
       "name": "quenching-delivery",
-      "path": "plugins/quenching-delivery",
+      "path": "plugins/claude/quenching-delivery",
       "published": true,
       "versionFile": true,
       "cqPathOwner": false,
@@ -402,7 +402,7 @@
     },
     {
       "name": "quenching-security",
-      "path": "plugins/quenching-security",
+      "path": "plugins/claude/quenching-security",
       "published": true,
       "versionFile": true,
       "cqPathOwner": false,
@@ -445,7 +445,7 @@
     },
     {
       "name": "quenching-opensource",
-      "path": "plugins/quenching-opensource",
+      "path": "plugins/claude/quenching-opensource",
       "published": true,
       "versionFile": true,
       "cqPathOwner": false,

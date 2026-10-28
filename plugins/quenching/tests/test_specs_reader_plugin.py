@@ -1,4 +1,4 @@
-"""`plugins/quenching-specs-reader` — the read-only sibling a target enables alone.
+"""`plugins/claude/quenching-specs-reader` — the read-only sibling a target enables alone.
 
 Three claims are load-bearing and each goes silently false without a test:
 
@@ -23,7 +23,7 @@ import tempfile
 import unittest
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
-READER = REPO_ROOT / "plugins" / "quenching-specs-reader"
+READER = REPO_ROOT / "plugins" / "claude" / "quenching-specs-reader"
 SHIM = READER / "bin" / "cq-specs-read"
 SYNC = REPO_ROOT / "scripts" / "sync_specs_reader_plugin.py"
 
@@ -79,7 +79,7 @@ class TheReaderSurface(unittest.TestCase):
         marketplace = json.loads((REPO_ROOT / ".claude-plugin" / "marketplace.json")
                                  .read_text(encoding="utf-8"))
         entry = next(p for p in marketplace["plugins"] if p["name"] == "quenching-specs-reader")
-        self.assertEqual("./plugins/quenching-specs-reader", entry["source"])
+        self.assertEqual("./plugins/claude/quenching-specs-reader", entry["source"])
         version = (REPO_ROOT / "plugins" / "quenching" / "VERSION").read_text().strip()
         self.assertEqual(version, entry["version"])
 

@@ -33,7 +33,7 @@ class GeneratedDistribution(unittest.TestCase):
         source_record = next(m for m in self.manifest["modules"] if m["path"] == self.manifest["source"])
         source_record.update(published=True, cqPathOwner=True)
         self.source = self.root / self.manifest["source"]
-        self.target = self.root / "plugins/quenching-specs-reader"
+        self.target = self.root / "plugins/claude/quenching-specs-reader"
         for module in self.manifest["modules"]:
             folder = self.root / module["path"]
             (folder / ".claude-plugin").mkdir(parents=True)
@@ -152,7 +152,7 @@ class GeneratedDistribution(unittest.TestCase):
 
     def test_version_marketplace_and_path_owner_drift_are_findings(self):
         self.assertEqual(0, self.run_generator("--write"))
-        hud = self.root / "plugins/quenching-hud/.claude-plugin/plugin.json"
+        hud = self.root / "plugins/claude/quenching-hud/.claude-plugin/plugin.json"
         metadata = json.loads(hud.read_text())
         metadata["version"] = "1.2.2"
         hud.write_text(json.dumps(metadata))
@@ -279,11 +279,11 @@ class PrincipalGeneration(unittest.TestCase):
             "modules": [
                 {"name": "quenching", "path": "plugins/quenching", "published": False,
                  "versionFile": True, "cqPathOwner": False},
-                {"name": "quenching-specs", "path": "plugins/quenching-specs", "published": True,
+                {"name": "quenching-specs", "path": "plugins/claude/quenching-specs", "published": True,
                  "versionFile": True, "cqPathOwner": True,
                  "owned": {"commands": ["specs"], "packages": ["specs"], "agents": True},
                  "generatedSupport": {"packages": ["common"], "references": refs, "router": True}},
-                {"name": "quenching-design", "path": "plugins/quenching-design", "published": True,
+                {"name": "quenching-design", "path": "plugins/claude/quenching-design", "published": True,
                  "versionFile": True, "cqPathOwner": False,
                  "owned": {"commands": ["design"], "packages": ["design"], "agents": False},
                  "generatedSupport": {"packages": ["common"], "references": [*refs, "design-align"],
@@ -302,7 +302,7 @@ class PrincipalGeneration(unittest.TestCase):
 
     def test_write_materializes_owned_surface_support_closure_and_one_cq(self):
         self.assertEqual(0, self.run_generator("--write"))
-        specs, design = self.root / "plugins/quenching-specs", self.root / "plugins/quenching-design"
+        specs, design = self.root / "plugins/claude/quenching-specs", self.root / "plugins/claude/quenching-design"
         self.assertTrue((specs / "commands/specs/develop.md").is_file())
         self.assertTrue((specs / "agents/scout.md").is_file())
         self.assertFalse((specs / "commands/design").exists())
@@ -339,7 +339,7 @@ class PrincipalGeneration(unittest.TestCase):
     def test_check_names_an_unpublished_id_in_an_authored_consumer_file(self):
         self.manifest["modules"][2]["authored"] = ["commands/notes.md"]
         (self.root / MANIFEST).write_text(json.dumps(self.manifest))
-        notes = self.root / "plugins/quenching-design/commands/notes.md"
+        notes = self.root / "plugins/claude/quenching-design/commands/notes.md"
         notes.parent.mkdir(parents=True)
         notes.write_text(f"see /{OLD}specs:x\n")
         with patch.object(generator, "ROOT", self.root), \
@@ -428,8 +428,8 @@ class PrincipalPartition(unittest.TestCase):
             root = Path(tmp)
             shutil.copytree(REPO / manifest["source"], root / manifest["source"],
                             ignore=shutil.ignore_patterns("__pycache__", "tests"))
-            reader = REPO / "plugins/quenching-specs-reader"
-            shutil.copytree(reader, root / "plugins/quenching-specs-reader",
+            reader = REPO / "plugins/claude/quenching-specs-reader"
+            shutil.copytree(reader, root / "plugins/claude/quenching-specs-reader",
                             ignore=shutil.ignore_patterns("__pycache__"))
 
             def refused(data):
@@ -462,10 +462,10 @@ class PrincipalPartition(unittest.TestCase):
         manifest = load_manifest(REPO)
         design = next(m for m in manifest["modules"] if m["name"] == "quenching-design")
         design["published"] = False
-        self.assertNotIn(("plugins/quenching-design/VERSION", "plain"), release_artifacts(manifest))
+        self.assertNotIn(("plugins/claude/quenching-design/VERSION", "plain"), release_artifacts(manifest))
         design["published"] = True
-        self.assertIn(("plugins/quenching-design/VERSION", "plain"), release_artifacts(manifest))
-        self.assertIn(("plugins/quenching-design/.claude-plugin/plugin.json", "json"),
+        self.assertIn(("plugins/claude/quenching-design/VERSION", "plain"), release_artifacts(manifest))
+        self.assertIn(("plugins/claude/quenching-design/.claude-plugin/plugin.json", "json"),
                       release_artifacts(manifest))
 
 

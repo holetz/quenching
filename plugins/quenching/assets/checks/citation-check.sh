@@ -372,7 +372,7 @@ SHIPPED = (plugin + "/assets/knowledge/", plugin + "/assets/templates/", plugin 
            # The read-only reader ships a generated copy of `assets/bin/` and one command body run
            # inside the target, which cites its own `bin/` through ${CLAUDE_PLUGIN_ROOT}: the
            # same four findings the source trees are exempt from, measured when it was added.
-           "plugins/quenching-specs-reader/")
+           "plugins/claude/quenching-specs-reader/")
 
 def unmeasurable(p):
     return (not p) or any(c in p for c in "*?<>${}|") or "..." in p \
