@@ -604,7 +604,7 @@ which registers names the bodies do not cite:
 
 ```bash
 python3 scripts/generate_plugin_modules.py --write
-claude --plugin-dir ./plugins/quenching-specs --plugin-dir ./plugins/quenching-align
+claude --plugin-dir ./plugins/claude/quenching-specs --plugin-dir ./plugins/claude/quenching-align
 ```
 
 Add one `--plugin-dir` per further module. `--plugin-dir` loads the checkout directly for plugin
@@ -649,7 +649,7 @@ the specs store or a card:
 
 Point it at a checkout of the project to read with `QUENCHING_SPECS_ROOT` in that project's
 `.claude/settings.json` `env` block, then run `/quenching-specs-reader:read`. Its README is
-[../quenching-specs-reader/README.md](../quenching-specs-reader/README.md).
+[../claude/quenching-specs-reader/README.md](../claude/quenching-specs-reader/README.md).
 
 ## Uninstall or reverse
 

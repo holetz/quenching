@@ -649,7 +649,7 @@ the specs store or a card:
 
 Point it at a checkout of the project to read with `QUENCHING_SPECS_ROOT` in that project's
 `.claude/settings.json` `env` block, then run `/quenching-specs-reader:read`. Its README is
-[../quenching-specs-reader/README.md](../quenching-specs-reader/README.md).
+[../claude/quenching-specs-reader/README.md](../claude/quenching-specs-reader/README.md).
 
 ## Uninstall or reverse
 

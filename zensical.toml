@@ -37,6 +37,7 @@
       "project/changelog.md",
       "project/commands.md",
       "project/layout.md",
+      "project/model-compat.md",
     ] },
     { "Standards" = [
       "standards/index.md",

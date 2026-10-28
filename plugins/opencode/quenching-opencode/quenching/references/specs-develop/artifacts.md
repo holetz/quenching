@@ -260,7 +260,7 @@ declare the paths; do not leave it to whether the line felt worth typing.
 rewrites what the generator emits from it. List each such derived output in the task's `files:`
 beside the source, whichever of these the diff changes: the plugin mirrors of the source
 (`plugins/claude/quenching-specs/**`, `plugins/claude/quenching-specs-reader/**` and the other `plugins/claude/*/` copies), the
-Codex mirror (`plugins/quenching-codex/**`), `plugins/quenching-codex/.generated-files.json`,
+Codex mirror (`plugins/codex/quenching-codex/**`), `plugins/codex/quenching-codex/.generated-files.json`,
 `plugins/README.md`, every `plugin.json` and `.generated-from.json` the generators rewrite, and the
 goldens. The verifier executes nothing from the branch and discounts only the paths its audit
 proved a byte-for-byte copy of their source in a manifest-declared module: an undeclared derived

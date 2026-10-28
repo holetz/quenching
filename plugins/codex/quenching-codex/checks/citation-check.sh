@@ -451,7 +451,10 @@ for rel in sys.stdin.buffer.read().split(b"\x00"):
     in_plugin = rel.startswith(plugin + "/")
     candidates = []
     # ../.. names the plugin the CITING file ships in, not always this one.
-    own_plugin = "/".join(rel.split("/")[:2]) if rel.startswith("plugins/") else plugin
+    # Under plugins/<harness>/<name>/ the plugin is three segments deep; the source is two.
+    parts = rel.split("/")
+    own_plugin = ("/".join(parts[:2]) if parts[1] == "quenching" else "/".join(parts[:3])) \
+        if rel.startswith("plugins/") else plugin
     candidates += [(m, [os.path.join(own_plugin, trim(m))]) for m in PLUGIN_ROOT_RE.findall(text)]
     candidates += [(m, [trim(m)]) for m in REPO_PATH_RE.findall(text)]
     if not in_bundle:

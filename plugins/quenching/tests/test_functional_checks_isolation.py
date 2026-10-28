@@ -80,7 +80,7 @@ class FunctionalSessionIsolation(unittest.TestCase):
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
         self.assertEqual(len(calls), 9)
         self.assertTrue(all(call["isolated"] for call in calls), calls)
-        modules = sorted(str(ROOT / "plugins" / name) for name in (
+        modules = sorted(str(ROOT / "plugins" / "claude" / name) for name in (
             "quenching-specs", "quenching-align", "quenching-design", "quenching-ops",
             "quenching-proof", "quenching-toolchain", "quenching-delivery", "quenching-security",
             "quenching-opensource"))
