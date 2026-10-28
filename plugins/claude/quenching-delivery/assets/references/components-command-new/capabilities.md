@@ -126,7 +126,8 @@ Delegation **wastes** when the output is as large as the work (a rewrite, a full
 transform — the result lands in context anyway), when the task is one quick lookup, or when
 the subagent must be handed so much context that the handoff costs what the isolation saves.
 
-**The definition contract** (`.claude/agents/<name>.md`): frontmatter `name`, `description`
+**The definition contract** (`.claude/agents/<name>.md` — the one Claude-only home: Claude Code
+2.1.312 does not read `.agents/agents/`, so no bridge applies): frontmatter `name`, `description`
 (what it does **and when to invoke it** — the description is always-on context, the same
 cost discipline as a command's), `tools` scoped to the narrowest set, and `model`/`effort`
 under the pinning rules above (an agent's pin is cache-safe — it has its own context). Two

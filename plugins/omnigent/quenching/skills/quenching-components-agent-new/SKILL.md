@@ -26,6 +26,12 @@ The delegation economics and the definition contract live in
 §Subagents. The mold is
 `~/.omnigent/quenching/templates/automation/agent.md`.
 
+**Why `.omnigent/agents/` and not `.agents/`.** Skills, references and instructions live in the
+generic `.agents/` layer, but a subagent has no generic home any harness reads: verified on Omnigent
+Code 2.1.312, a definition in `.agents/agents/` does not appear as a subagent type, and Omnigent
+reads `.omnigent/agent`, not `.agents/agents/`. So the definition is Omnigent's own interface and is
+written where Omnigent reads it, with no bridge copy.
+
 ## Doctrine
 
 - **The rule governs; the plan proposes.** In a target repo the rule is

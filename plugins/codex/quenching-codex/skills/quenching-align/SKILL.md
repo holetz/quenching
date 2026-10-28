@@ -1,6 +1,6 @@
 ---
 name: quenching-align
-description: "Align the whole repository (docs, design, .claude, ops, proof, toolchain, delivery, opensource) on one confirmation. Use for \"align the repo\", \"align everything\", \"set up quenching here\". Not for: one front → its /quenching-<module>:<front>:align."
+description: "Align the whole repository (docs, design, .agents, ops, proof, toolchain, delivery, opensource) on one confirmation. Use for \"align the repo\", \"align everything\", \"set up quenching here\". Not for: one front → its /quenching-<module>:<front>:align."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/align.md -->
@@ -29,7 +29,7 @@ front named in that cell has completed its inherited authorization.
 | --- | --- | --- |
 | `knowledge` — `/docs/` | `quenching-knowledge-align` | applicability |
 | `design` — `/.design/` | `quenching-design-align` | `knowledge` |
-| `components` — `.agents/` | `quenching-components-align` | `design` |
+| `components` — `.agents/` and the Codex bridge | `quenching-components-align` | `design` |
 | `ops` — operations surface | `quenching-ops-align` | `components` |
 | `proof` — verification surface | `quenching-proof-align` | `ops` |
 | `toolchain` — toolchain surface | `quenching-toolchain-align` | `proof` |
@@ -74,10 +74,16 @@ inside one, probe only that front and mark the others skipped by scope.
 - **`design`** — run `cq --root . design status --json` when installed; when absent, run
   `design align --check --json` only when scope or root `PRODUCT.md`/`DESIGN.md` artifacts signal
   adoption.
-- **`components`** — run `cq components doctor --json`; inspect command skills for legacy pairs.
-- **`ops`** — read `.claude/quenching.json` for `ops.opsRoot`; when absent, inspect only
+- **`components`** — run `cq components doctor --json`, `cq components migrate --target . --json`
+  and `cq components bridge --target . --check --json`; inspect command skills for legacy pairs.
+  `migrate` exit 1 puts its whole plan (operations, renames, conflicts) in the Authorization plan
+  as one block; `bridge --check` exit 1 puts its changes there. Conformant is `migrate`
+  `conformant: true` and `bridge --check` exit 0.
+- **`ops`** — read `.agents/quenching.json` (legacy: `.claude/quenching.json`)
+  for `ops.opsRoot`; when absent, inspect only
   `scripts/`, `tools/`, `bin/` and `script/` for an executable entry point.
-- **`proof`** — read `.claude/quenching.json` for `proof.proofRoot`; when absent, inspect only
+- **`proof`** — read `.agents/quenching.json` (legacy: `.claude/quenching.json`)
+  for `proof.proofRoot`; when absent, inspect only
   `tests/` and `test/` for a test module.
 - **`toolchain`** — run `cq toolchain doctor --json`; use its applicability signal and recognized
   manifests, locks, language pins and tool configuration as the complete probe result.
@@ -88,7 +94,7 @@ inside one, probe only that front and mark the others skipped by scope.
   result.
 
 - **configuration** (not a front) — run `cq config check --json`. Exit 2 `cq-config-absent` puts
-  "seed `.claude/quenching.json` with `cq config init --write`" in the plan; the Authorization OK
+  "seed `.agents/quenching.json` with `cq config init --write`" in the plan; the Authorization OK
   covers it, and it runs before the first front so every front reads the seeded file. Exit 1 lists
   the seeded keys the file lacks: report them, never rewrite a file the human edited. Exit 0 is
   conformant.
@@ -135,8 +141,11 @@ remain human choices. A hard failure establishing valid DTCG stops later fronts.
 ### Front: `components`
 
 When the automation surface is empty, skip it rather than scaffolding a taxonomy. Otherwise invoke
-`quenching-components-align` with the inherited authorization after `design` has completed. Its
-rule and registry changes belong to the knowledge bundle; its doctrine findings remain report-only.
+`quenching-components-align` with the inherited authorization after `design` has completed. The
+run-start OK covers the migration plan shown in Authorization: the front applies `migrate --write`
+and then `bridge --write` without asking again; a migrate conflict is never covered and stays the
+human's. Its rule and registry changes belong to the knowledge bundle; its doctrine findings remain
+report-only.
 
 ### Front: `ops`
 

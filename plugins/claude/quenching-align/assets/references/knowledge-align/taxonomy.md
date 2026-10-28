@@ -49,7 +49,7 @@ knowledge/                     # OKF bundle root
 | `external/` | `external` | `tools/`·`libraries/`·`regulations/` |
 | `external/regulations/` (extracts) | `sidecar` | one per binary |
 
-Reserved `index.md` carries **no** `type`; `CLAUDE.md`/`AGENTS.md` are exempt. `log.md` is
+Reserved `index.md` carries **no** `type`; `AGENTS.md`/`CLAUDE.md` are exempt. `log.md` is
 reserved too but **retired** — the tree above no longer grows one, and nothing checks one that
 survived an earlier alignment.
 
