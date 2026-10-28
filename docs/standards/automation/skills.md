@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Command authoring and alignment
-description: How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point, including the admission criterion that decides whether a command's description stays resident in context or goes typed-only
-resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**
+description: How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point, including the admission criterion that decides whether a command's description stays resident in context or goes typed-only, and where a target repository's skill is born and how its Claude bridge is generated and verified
+resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/quenching/components/commands/bridge.py, plugins/quenching/assets/bin/quenching/components/commands/migrate.py
 tags: [automation, commands, taxonomy, authoring]
-timestamp: 2026-08-27
+timestamp: 2026-10-28
 audience: both
 authority: current
-source: collapse-skills-into-commands, 2026-07-26, correct-command-citation-form, 2026-07-31, route-commands-without-always-on-descriptions, 2026-08-02; lineage in ADR 0004
+source: collapse-skills-into-commands, 2026-07-26, correct-command-citation-form, 2026-07-31, route-commands-without-always-on-descriptions, 2026-08-02, spec 2118 (target skills in .agents/skills with a generated Claude bridge, 2026-10-28); lineage in ADR 0004
 maintainer: quenching
 ---
 
@@ -57,13 +57,13 @@ it is never forced.
 
 ### Reading the nest-vs-replace convention
 
-The convention lives entirely inside the **target repo's own** `.claude/commands/<categoria>/`
+The convention lives entirely inside the **target repo's own** `.agents/skills/<categoria>-*/`
 — never in the plugin, and never in a dedicated registry file of its own:
 
-- Files already sitting under `.claude/commands/<categoria>/<folder-path>/` (the real
-  folder present as a subpath) → the convention already in force is **nest**.
-- Files already sitting directly under `.claude/commands/<categoria>/` with no real-folder
-  subpath → the convention already in force is **replace**.
+- Skills already named `<categoria>-<folder>-…-<verb>` (the real folder folded into the one-segment
+  name) → the convention already in force is **nest**.
+- Skills already named `<categoria>-<verb>` with no real-folder segment → the convention already in
+  force is **replace**.
 - The category has no files yet in that repo, or the two shapes are already mixed
   (ambiguous) → ask the human once. The physical structure that first answer produces
   *becomes* the record — reused in silence for every later command of that category in that
@@ -127,6 +127,33 @@ interrogation do not.
   the probe.
 - **Post-apply verification**: regenerate the registry zone, confirm the surface invariant, and
   report residue.
+
+## Where a target's skill is born, and its Claude bridge
+
+In a target repository a skill is born at `.agents/skills/<name>/SKILL.md` — `<name>` one segment
+([command-surface.md](../naming/command-surface.md) §A target's skill name is one segment), the
+frontmatter `name:` equal to it, sibling files in the same folder, references under
+`.agents/references/**` and eval cases under `.agents/evals/<name>/`. That folder is the only
+editable copy. `/quenching-align:components:command:new` writes there and then runs
+`cq components bridge --target <repo> --write`, never writing `.claude/skills/` by hand; a subagent
+stays in `.claude/agents/`, because Claude Code 2.1.312 reads no generic home for it.
+
+The bridge is generated, and verified by code:
+
+- `cq components bridge --write` copies each `.agents/skills/<name>/` to `.claude/skills/<name>/`
+  byte for byte, with one generated-from marker line after the `SKILL.md` frontmatter, and writes
+  `.claude/skills/.generated-files.json` (one sha256 per file, `verifiedClaudeCode`). Claude Code
+  does not read `.agents/skills/`, so without the copy the skill does not exist for it.
+- `cq components bridge --check` exits 1 on drift — an edited copy, a source with no copy, an orphan
+  copy whose source is gone — and 0 when the copy matches. A `.claude/skills/<name>/` the manifest
+  does not list is refused (exit 2, `ct-bridge-unowned`), never overwritten.
+- `cq components migrate --target <repo>` plans the move from the legacy `.claude/commands/` layout;
+  `/quenching-align:align`, `/quenching-align:components:align` and `/quenching-align:components:status`
+  run it with `bridge --check`, and apply a non-empty plan on one confirmation.
+- A target is conformant when `migrate` reports `conformant: true` and `bridge --check` exits 0.
+  `cq components translate` refuses (exit 2) on such a target, so the legacy translation never
+  lands over the source ([surface-translation.md](../architecture/surface-translation.md)
+  §Target repositories).
 
 ## Invocation and permission are authored decisions
 
@@ -269,6 +296,8 @@ refusal, errors setting the exit code and warnings never doing so.
 | `lint [path]` | one command against this standard — the description caps, trigger position, the `Not for:` boundary, body length, a `**Done when:**` per numbered step, unscoped `Bash`, invocation coherence, and the profile's decidable slice (`sk-fork-gate`, `sk-profile-value`). On a surface carrying `.claude-plugin/plugin.json` it also grades **citation form** (`sk-bare-citation`); on a target's own surface it reports a **dangling citation** (`sk-dangling-citation`, warn) — a `/front:verb` whose front exists there but whose command does not. A surface root brings `assets/references/**` into scope alongside `commands/**` |
 | `doctor` | the surface invariant — a non-empty `description` on every command, no two resolving to the same `/` path, kebab-case segments, and on a target's own surface no dangling citation (`sk-dangling-citation`) — plus the **report-only** wider surface: `agents/*.md` and the hooks wired in `settings*.json` (`sk-agent-no-description`, `sk-hook-unmatched`, `sk-hook-llm-frequent`, `sk-hook-unparseable`), each routed to its mint, never migrated. A file parked under `commands/` which is not an entry point is exactly this shape — `sk-no-description` — the layout rule's evidence |
 | `registry reindex` | regenerates the registry's GENERATED zone; it **owns** that format |
+| `bridge --target <repo> [--write\|--check]` | a target's `.claude/skills/` copy matches `.agents/skills/` (§Where a target's skill is born) |
+| `migrate --target <repo> [--write]` | the move plan from the legacy target layout; an empty plan is `conformant: true` |
 
 **The caps, inherited from the README's cost model.** A `description` is bounded by **1,536
 characters** — Claude Code truncates past it, a fact of the host rather than a ceiling of ours,
