@@ -45,6 +45,7 @@
 #
 #   (no flag)        checks 1, 2, 4, 5 — command bodies, citation paths, both declared fronts,
 #                    and the specs-only arrangement
+#   --mcp-smoke      uvx packaging smoke only; no agent session
 #   --only 3         spoken routing — OPT-IN, see below
 #   --only 1,2,3,4,5 all five
 #
@@ -77,12 +78,14 @@ ONLY="1,2,4,5"
 REPO=""
 SELF_CHECK=0
 SELF_TEST=0
+MCP_SMOKE=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --only)   ONLY="${2:-}"; shift 2 ;;
     --only=*) ONLY="${1#*=}"; shift ;;
     --selfcheck) SELF_CHECK=1; shift ;;
     --selftest) SELF_TEST=1; shift ;;
+    --mcp-smoke) MCP_SMOKE=1; shift ;;
     # the whole header comment, however long it grows — a fixed range silently truncates it
     -h|--help) sed -n '2,/^set -uo pipefail/p' "${BASH_SOURCE[0]}" | sed '$d'; exit 0 ;;
     *)        REPO="$1"; shift ;;
@@ -97,6 +100,47 @@ REPO="$(cd "$REPO" 2>/dev/null && pwd)" || {
   exit 2
 }
 SOURCE="$REPO/plugins/quenching"
+if [ "$MCP_SMOKE" -eq 1 ]; then
+  command -v uvx >/dev/null || { echo 'INCONCLUSIVE: uvx is unavailable'; exit 2; }
+  python3 - "$REPO" <<'PYSMOKE'
+import json
+from pathlib import Path
+import subprocess
+import sys
+
+repo = Path(sys.argv[1])
+sys.path.insert(0, str(repo / "plugins/quenching/assets/bin"))
+from quenching.mcp.cli import surface
+
+requests = "\n".join(json.dumps(request) for request in [
+    {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
+    {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
+]) + "\n"
+# Pin HEAD: the package and the in-process catalog must describe the same commit.
+revision = subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True).strip()
+source = f"git+{repo.as_uri()}@{revision}#subdirectory=plugins/quenching"
+try:
+    result = subprocess.run(["uvx", "--from", source, "quenching-mcp"], input=requests,
+                            text=True, capture_output=True, cwd=repo, timeout=180)
+except subprocess.TimeoutExpired:
+    print("INCONCLUSIVE: uvx packaging timed out")
+    sys.exit(2)
+if result.returncode:
+    print(result.stderr, file=sys.stderr)
+    network = ("failed to connect", "network is unreachable", "dns error", "error sending request")
+    sys.exit(2 if any(token in result.stderr.lower() for token in network) else 1)
+try:
+    replies = {item["id"]: item for item in map(json.loads, result.stdout.splitlines())}
+    assert replies[1]["result"]["serverInfo"]["name"] == "quenching"
+    expected = len(surface().list_tools())
+    assert len(replies[2]["result"]["tools"]) == expected
+except (ValueError, KeyError, AssertionError) as exc:
+    print(f"FAIL: packaged MCP response: {exc}: {result.stdout}")
+    sys.exit(1)
+print(f"PASS: packaged quenching initializes and lists {expected} tools")
+PYSMOKE
+  exit $?
+fi
 # The principal modules, the `cq` owner first: every arrangement loads it, because no other module
 # ships `bin/cq`. Read from the module manifest so a new module cannot be born outside the gate.
 mapfile -t MODULE_DIRS < <(python3 -c '

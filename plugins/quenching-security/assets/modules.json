@@ -36,6 +36,7 @@
         "trees": [
           "assets/bin/quenching/common",
           "assets/bin/quenching/specs",
+          "assets/bin/quenching/mcp",
           "assets/specs",
           "assets/portal"
         ],
@@ -81,7 +82,8 @@
           "session",
           "codex",
           "portal",
-          "config"
+          "config",
+          "mcp"
         ],
         "agents": true
       },

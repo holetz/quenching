@@ -302,10 +302,36 @@ With `QUENCHING_SPECS_SYNC=1` and the `azure-boards` backend, every read is answ
 | `/quenching-specs:specs:triage` | Ranks the whole front in ONE confirmed table, writing `priority: {level, criticality, complexity, date}` per spec and nothing else — merging, never clobbering a human's ranking. |
 | `/quenching-specs:specs:board` | Human-only. Starts `cq specs serve` in the background and prints the URL: a local browser portal (board by derived stage, drag-to-rank list, spec detail, search, capture, approve as `by: human`) over the same backend as the CLI. Loopback only, per-run token, `Host`/`Origin` checks, `--read-only` disables writes on the server; `cq-specs-read serve` is always read-only. |
 
+### The quenching MCP server — the CLI catalog and references
+
+`cq mcp` starts the stdio `quenching` server registered by the plugin's `.mcp.json`.
+It exposes a closed catalog of available CLI verbs, including the specs tools below. Tool names
+follow `<pillar>_<verb>[_<subverb>]` (`components_read`, `git_pr_create`); `tools/list` reports
+which are available. Schemas come from each verb's parser. An absent pillar contributes no tool.
+The `read`, `write` and `external` classes describe effects through MCP annotations, without
+adding grants. The workspace is the launch cwd or launch-time `--root`, never a tool argument.
+
+Run a released version without installing the plugin manually:
+
+```bash
+uvx --from "git+https://github.com/holetz/quenching@<tag>#subdirectory=plugins/quenching" quenching-mcp
+```
+
+Replace `<tag>` with a published release tag. The same package exposes `cq` as a console script;
+its runtime uses only the Python standard library (Python 3.11+). The wheel preserves the plugin's
+asset layout under `quenching_plugin/`. Packaging a local committed HEAD can be checked with
+`bash plugins/quenching/assets/checks/functional-checks.sh --mcp-smoke`; exit 2 is inconclusive.
+
+`quenching://references` lists the shipped reference documents; read one with
+`quenching://references/<path>.md`, or select headings with `?section=<heading>`. Large documents
+return outlines, and the shared response guard bounds the result. The specs resources below
+remain available. The architectural contract is
+[mcp-server.md](../../docs/standards/architecture/mcp-server.md).
+
 ### The specs MCP server — reads, writes and gated moves, stdio
 
-`cq specs mcp` starts a stdio MCP server (JSON-RPC 2.0, stdlib only) that the plugin registers through
-its `.mcp.json` as the `specs` server, so enabling the plugin makes the tools appear. Every tool
+`cq specs mcp` remains the specs-only stdio MCP server (JSON-RPC 2.0, stdlib only).
+Its tools also appear in the full `quenching` server above. Every tool
 dispatches in-process through the same core as `cq specs`, so the backend, refusals and exit codes are the
 CLI's; the server holds no store logic.
 
