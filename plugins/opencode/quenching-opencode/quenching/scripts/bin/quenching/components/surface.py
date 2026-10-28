@@ -90,7 +90,7 @@ def _quoted_phrases(text: str) -> list[str]:
     return [m.group(1).strip() for m in QUOTED_RE.finditer(text) if m.group(1).strip()]
 
 
-def _generic_surface(agents: str) -> bool:
+def generic_surface(agents: str) -> bool:
     """`.agents/` is a target's own surface when `skills/` holds a flat `<name>/SKILL.md` and
     no translation manifest marks the tree as generated from `.agents/skills/`."""
     skills = os.path.join(agents, SKILLS_DIR)
@@ -110,7 +110,7 @@ def find_surface_root(root_arg: str | None) -> str:
         return os.path.abspath(env)
     d = os.path.abspath(os.getcwd())
     while True:
-        if _generic_surface(os.path.join(d, AGENTS_DIR)):
+        if generic_surface(os.path.join(d, AGENTS_DIR)):
             return os.path.join(d, AGENTS_DIR)
         if os.path.isdir(os.path.join(d, CLAUDE_DIR, COMMANDS_DIR)):
             return os.path.join(d, CLAUDE_DIR)

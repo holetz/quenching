@@ -9,6 +9,7 @@ import re
 from pathlib import Path
 
 from quenching.common.output import NoAbbrevParser, finding, refuse, report_findings
+from quenching.components.surface import generic_surface
 
 
 SOURCE: Path | None = None
@@ -87,7 +88,7 @@ def _default_pair(payload: Path, root: str | None) -> tuple[Path, Path]:
         raise ValueError("no repository surface to translate; pass --source and --target")
     # `find_surface_root` answers with the `.claude` directory when one exists; both halves of
     # the pair are the repository root, which `claude_surface()`/`codex_surface()` descend from.
-    repository = surface.parent if surface.name == ".claude" else surface
+    repository = surface.parent if surface.name in (".claude", ".agents") else surface
     return repository, repository
 
 
@@ -132,6 +133,23 @@ def claude_surface() -> Path:
 def codex_surface() -> Path:
     """Resolve a repository root or its `.agents` directory to the Codex surface."""
     return target() if target().name == ".agents" else target() / ".agents"
+
+
+def generic_target() -> str | None:
+    """Why a repository-surface translation must not run here, or None.
+
+    A target that keeps its skills in `.agents/skills/` (or carries the Claude bridge generated
+    from them) has `.agents/` as its source; the legacy `.claude` → `.agents` translation would
+    write over it.
+    """
+    if plugin_translation():
+        return None
+    if generic_surface(str(codex_surface())):
+        return f"{codex_surface() / 'skills'} holds the repository's own skills"
+    bridge = claude_surface() / "skills" / ".generated-files.json"
+    if bridge.is_file():
+        return f"{bridge} marks a Claude bridge generated from .agents/skills"
+    return None
 
 
 def read_adaptation() -> dict:
@@ -912,6 +930,14 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
 def cmd_translate(args, root: str) -> int:
     try:
         configure(args.source, args.target, root)
+        reason = generic_target()
+        if reason:
+            return refuse({"code": "ct-translation-refused",
+                           "message": f"{reason}; translating .claude/ into .agents/ would write "
+                                      "the legacy translation over the source",
+                           "remedy": "keep .agents/ as the source and run "
+                                     "`cq components bridge --target <repo> --write` for the "
+                                     "Claude copy"}, args.json)
         tree = generated_tree()
     except ValueError as exc:
         return refuse({"code": "ct-translation-refused", "message": str(exc)}, args.json)
