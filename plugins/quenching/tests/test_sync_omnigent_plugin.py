@@ -126,6 +126,21 @@ class SourceToolsLock(unittest.TestCase):
         self.assertNotIn(sync.ROOT + "/references/", everything)
         self.assertIn(sync.REFERENCES_URI, text)
 
+    def test_sub_agents_are_cited_by_their_registered_name_and_bundled_protocol(self):
+        everything = b"".join(self.tree.values()).decode("utf-8")
+        for name in sync.oc.agent_names():
+            self.assertNotRegex(everything, rf"\bquenching-{name}(?![\w/:-])")
+        self.assertNotIn(sync.ROOT + "/agents/", everything)
+        text = self.tree["skills/quenching-specs-orchestrate/SKILL.md"].decode("utf-8")
+        self.assertIn("`agents/orchestrator/instructions.md`", text)
+        self.assertIn("Start the `orchestrator` agent", text)
+
+    def test_a_payload_sub_agent_protocol_is_a_finding(self):
+        tree = dict(self.tree)
+        rel = "skills/quenching-specs-status/SKILL.md"
+        tree[rel] = tree[rel] + f"\nSee {sync.ROOT}/agents/scout.md.\n".encode()
+        self.assertTrue(any(p.startswith(f"{rel}: cites a sub-agent protocol") for p in sync.validate(tree)))
+
     def test_a_dangling_reference_resource_is_a_finding(self):
         tree = dict(self.tree)
         rel = "skills/quenching-specs-status/SKILL.md"

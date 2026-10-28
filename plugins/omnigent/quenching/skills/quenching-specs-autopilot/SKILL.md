@@ -27,9 +27,9 @@ forced execution, push, PR and merge below is authorized by it, and by nothing e
 
 This session is the **conductor**. It decides as the owner's delegate, keeps only summaries, and
 never builds: reading, mapping, decomposing, building and reviewing are agents
-(`quenching-scout`, `quenching-spec-architect` for real decomposition only, `quenching-orchestrator` or, in economy mode, the spec-runner/verifier/git-steward trio, and the read-only opus
-`quenching-reviewer`, which this conductor launches at step 6). The orchestrator's protocol (waves, workers, verifier, acceptance) lives in
-`~/.omnigent/quenching/agents/orchestrator.md`; do not restate it.
+(`scout`, `spec-architect` for real decomposition only, `orchestrator` or, in economy mode, the spec-runner/verifier/git-steward trio, and the read-only opus
+`reviewer`, which this conductor launches at step 6). The orchestrator's protocol (waves, workers, verifier, acceptance) lives in
+`agents/orchestrator/instructions.md`; do not restate it.
 
 **Why `Bash` is unrestricted here.** Step 1 and step 7 run the gate the target's root harness
 declares in its operating section (`AGENTS.md` or `AGENTS.md`), whose command no fixed grant can name. No other
@@ -103,7 +103,7 @@ round's start ref: `git rev-parse main`.
 
 ### 2. Queue
 List the loose specs — open, in no epic — with `cq specs list --lean --json`, and the store's
-errors with `cq specs validate`. Before any of them enters, one `quenching-scout` per batch proves
+errors with `cq specs validate`. Before any of them enters, one `scout` per batch proves
 it is still relevant against the current code:
 
 - the surface it describes has changed → record the evidence in `## Outcome`
@@ -115,7 +115,7 @@ it is still relevant against the current code:
 
 ### 3. Map
 Only when the queue is short (fewer than three specs): run the mapping of
-`quenching-specs-improve` steps 1–3 — read-only `quenching-scout` agents per area, evidence plus
+`quenching-specs-improve` steps 1–3 — read-only `scout` agents per area, evidence plus
 consequence, no duplicate of an open spec, at most 15 candidates, every `high` re-checked — with
 this session deciding the owner's questions as the delegated owner, except those on the
 **never forced** list, which go to the human epic. Focus areas from `$ARGUMENTS` narrow the areas.
@@ -125,12 +125,12 @@ The map is ephemeral, under `<ephemeral area>/autopilot/<date>/`.
 ### 4. Epic
 **Mechanical capture, by default.** When the queue and the kept candidates already decide the
 members (title, `complexity`, dependencies), this session creates the epic and the members itself,
-with no `quenching-spec-architect`: search by title in `cq specs list --json` first (a match is
+with no `spec-architect`: search by title in `cq specs list --json` first (a match is
 reused), then `cq specs new "<title>" --complexity <level> </dev/null` per member and `cq specs epic
 add <epic> <spec> --group "<wave>" --after <labels>` (labels `S<n>` returned by earlier `epic add`
 calls), serializing any two members that touch the same files with `after:`. Exit 2 is read, never
 repeated blindly. The model restrictions on code and classification stay as they are.
-**Decomposition, by the architect.** `quenching-spec-architect` is launched only for real
+**Decomposition, by the architect.** `spec-architect` is launched only for real
 decomposition: members not yet decided, a spec over the worker budget (`proposal-only`), or waves that
 need reading file overlap. Hand it the queue and the kept candidates; it creates the epic and the
 members.
@@ -143,17 +143,17 @@ and `cq specs validate`.
 
 ### 5. Orchestrate
 **Economy mode.** An epic with **at most 2 members, every one `low` or `medium`**, runs without
-`quenching-orchestrator`: this session launches `quenching-spec-runner` →
-`quenching-verifier` → `quenching-git-steward` for each member, with the acceptance rules
+`orchestrator`: this session launches `spec-runner` →
+`verifier` → `git-steward` for each member, with the acceptance rules
 of the orchestrator's protocol, cited and not restated — steps 3 (budget, `budget:` relaunch), 4
 (acceptance only on a verifier PASS, the `execute-done:`/`conclude` two spawns, `publish` by the
-steward, one re-spawn) and 5 (retry, idempotency) of `~/.omnigent/quenching/agents/orchestrator.md`.
+steward, one re-spawn) and 5 (retry, idempotency) of `agents/orchestrator/instructions.md`.
 Each prompt is ≤ 1,500 characters and carries the word `autonomous`, the model passed explicitly and
 the sentence "No git stash, checkout or reset; work only in your worktree." Two members with a
 dependency run in series; without one, in parallel (never more than 3 workers). Every launch counts
 in `launches`, and the ceilings of the invariants above bind it. No new grant: this session already
 holds `Agent` and `Task`.
-**Otherwise** (3 or more members, or any `high`/`xhigh`), start `quenching-orchestrator` on
+**Otherwise** (3 or more members, or any `high`/`xhigh`), start `orchestrator` on
 the epic with the word `autonomous`, the base branch and the deadline (≤ 1,500 characters).
 Apply **Liveness** to every worker, in either mode. A spec returned `blocked` with a `needs-human:`
 note moves to the human epic; `failed` or `continue` is carried to the report with its note, never
@@ -163,7 +163,7 @@ the invariant above says.
 fixed report and every non-`done` spec is placed.
 
 ### 6. Correctness review
-After every epic that changed code, start `quenching-reviewer` once (`model: opus`) over the epic's
+After every epic that changed code, start `reviewer` once (`model: opus`) over the epic's
 merges (`git log --merges <round start>..main`); the orchestrator does not launch it. It is
 read-only, and the gate is the only thing it executes. It reports only findings it **reproduced** —
 a command, its output, the `path:line` — never style, and a security review of the same range when

@@ -33,6 +33,15 @@ def run(argv: list[str], cwd: Path, env: dict[str, str] | None = None) -> str:
     return result.stdout
 
 
+def baseline_package_path(root: Path, baseline: str, catalog_rel: str, name: str) -> str:
+    """The package path the baseline's own catalog declares for `name`."""
+    catalog = json.loads(run(["git", "show", f"{baseline}:{catalog_rel}"], root))
+    paths = [entry["source"]["path"] for entry in catalog.get("plugins", []) if entry.get("name") == name]
+    if len(paths) != 1:
+        raise ValueError(f"baseline {baseline} catalog does not declare exactly one {name}")
+    return paths[0].removeprefix("./").rstrip("/")
+
+
 def check_upgrade(root: Path, baseline: str, codex: str) -> dict:
     manifest = load_manifest(root)
     findings = distribution_findings(root, manifest)
@@ -51,8 +60,12 @@ def check_upgrade(root: Path, baseline: str, codex: str) -> dict:
         work = Path(temporary)
         source = work / "source"
         source.mkdir()
+        # The baseline names its own package path: a release may move the package (6.4.0 shipped
+        # plugins/quenching-codex/, the candidate plugins/codex/quenching-codex/), so the upgrade
+        # also proves the catalog's path change under the same plugin name.
+        baseline_rel = baseline_package_path(root, baseline, catalog_rel, package["name"])
         archive = subprocess.run(
-            ["git", "archive", baseline, catalog_rel, package_rel], cwd=root,
+            ["git", "archive", baseline, catalog_rel, baseline_rel], cwd=root,
             capture_output=True, timeout=60, check=True).stdout
         with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
             tar.extractall(source, filter="data")
@@ -66,11 +79,11 @@ def check_upgrade(root: Path, baseline: str, codex: str) -> dict:
             run([*git, "commit", "-qm", message], work)
 
         commit("Previously published Codex package")
-        old_plugin = source / package_rel / package["pluginManifest"]
+        old_plugin = source / baseline_rel / package["pluginManifest"]
         old_version = json.loads(old_plugin.read_text())["version"]
         if old_version == version:
             raise ValueError("baseline must precede the candidate version")
-        old_skill = (source / package_rel / "skills/quenching-git-cleanup/SKILL.md").read_bytes()
+        old_skill = (source / baseline_rel / "skills/quenching-git-cleanup/SKILL.md").read_bytes()
         home = work / "home"
         home.mkdir()
         workspace = work / "workspace"
@@ -96,7 +109,7 @@ def check_upgrade(root: Path, baseline: str, codex: str) -> dict:
         installed = host("add", selector)
         if installed["version"] != old_version:
             raise ValueError("baseline installation did not resolve the old package")
-        shutil.rmtree(source / package_rel)
+        shutil.rmtree(source / baseline_rel)
         shutil.copytree(current, source / package_rel,
                         ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
         shutil.copy2(root / catalog_rel, source / catalog_rel)

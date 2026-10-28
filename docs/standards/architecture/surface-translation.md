@@ -172,9 +172,10 @@ template, knowledge, design, zensical, eval or check asset stays under `~/.omnig
 only where a local install sits there, since the bundle ships no payload. Every bundle loads with
 `omnigent.spec.load`; a test loads it when Omnigent is importable.
 
-The operator runs with the session's tools: the 61 skills carry no per-command policy, and `allowed-tools:`,
-`hooks:` and `model:` frontmatter are dropped. Only the sub-agents carry a policy, derived from their source
-`tools:` by the rules below.
+The operator runs with the session's tools: the 61 skills carry no per-command policy. A skill keeps its source
+`allowed-tools:` in its frontmatter as metadata the audit reads, never as a policy Omnigent applies; `hooks:` and
+`model:` frontmatter are dropped. Only the sub-agents carry a policy, derived from their source `tools:` by the
+rules below.
 
 ### Rule ordering
 

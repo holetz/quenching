@@ -56,7 +56,7 @@ one line. Ask only if the focus is genuinely ambiguous.
 Split the repository into at most six areas, chosen from what exists: architecture and code; tests,
 verification and CI; documentation and knowledge; the agent harness and command surface
 (`AGENTS.md`/`AGENTS.md`, `.claude/`, descriptions, context cost); planning and specs flow;
-delivery, operations and security. Run the `quenching-scout` agent per area, at most 3 at a time,
+delivery, operations and security. Run the `scout` agent per area, at most 3 at a time,
 each with: the area, the focus, the open-spec titles, the relevance invariant above, and the
 return format: candidates as `title · evidence (path:line or measurement) · consequence ·
 severity (high/medium) · effort (S/M/L)`. With `--with-session-logs`, one agent instead measures

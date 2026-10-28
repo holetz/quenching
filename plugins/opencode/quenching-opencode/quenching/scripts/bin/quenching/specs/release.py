@@ -118,6 +118,8 @@ _REGENERATE_STEPS = (
                            "--target", "plugins/codex/quenching-codex", "--write")),
     # After the Codex step: the OpenCode tree carries the Codex `cq` payload verbatim.
     ("sync_opencode_plugin", ("scripts/sync_opencode_plugin.py", "--write")),
+    # The Omnigent operator pins its MCP server to the version tag, so a bump rewrites config.yaml.
+    ("sync_omnigent_plugin", ("scripts/sync_omnigent_plugin.py", "--write")),
 )
 
 

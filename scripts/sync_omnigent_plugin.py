@@ -65,7 +65,11 @@ def reroot(text: str) -> str:
                      ("QUENCHING_OPENCODE_ROOT", "QUENCHING_OMNIGENT_ROOT"),
                      (".opencode/", ".omnigent/"), ("OpenCode", "Omnigent")):
         text = text.replace(old, new)
-    return text
+    # The operator registers its sub-agents by their source name and ships their protocols in the
+    # bundle, so neither the OpenCode `quenching-<agent>` name nor a payload copy of them survives.
+    agents = "|".join(sorted(oc.agent_names(), key=len, reverse=True))
+    text = re.sub(rf"{re.escape(ROOT)}/agents/({agents})\.md", r"agents/\1/instructions.md", text)
+    return re.sub(rf"\b{re.escape(oc.AGENT_PREFIX)}({agents})(?![\w/:-])", r"\1", text)
 
 
 def markdown(text: str) -> str:
@@ -385,6 +389,8 @@ def validate(tree: dict[str, bytes]) -> list[str]:
         for block in re.findall(r"^\s*```bash\n([\s\S]*?)^\s*```", text, re.MULTILINE):
             if translate.has_cq_invocation(block) and CQ_WRAPPER not in block:
                 problems.append(f"{rel}: a bash block invokes cq without the wrapper")
+        if re.search(re.escape(ROOT) + r"/agents/", text):
+            problems.append(f"{rel}: cites a sub-agent protocol under {ROOT}/agents/, which the bundle does not carry")
         for path in sorted(set(re.findall(re.escape(REFERENCES_URI) + r"([A-Za-z0-9_./-]*[A-Za-z0-9_])", text))):
             if not (SOURCE / "assets/references" / path).exists():
                 problems.append(f"{rel}: cites {REFERENCES_URI}{path}, which the source does not carry")
