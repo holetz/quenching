@@ -79,7 +79,7 @@ def _default_pair(payload: Path, root: str | None) -> tuple[Path, Path]:
     `cq --root . components translate --check` on the packaged pair and points every other
     invocation at the repository the caller is actually in.
     """
-    codex = payload.parent / "quenching-codex"
+    codex = payload.parent / "codex" / "quenching-codex"
     surface = Path(root).resolve() if root else None
     if codex.is_dir() and (surface is None or surface.is_relative_to(payload.parent.parent)):
         return payload, codex
@@ -99,7 +99,7 @@ def configure(source: str | None, target: str | None, root: str | None = None) -
     MANIFEST = payload / "assets" / "translation" / "codex-adaptation.json"
     if source or target:
         SOURCE = Path(source).resolve() if source else payload
-        TARGET = Path(target).resolve() if target else payload.parent / "quenching-codex"
+        TARGET = Path(target).resolve() if target else payload.parent / "codex" / "quenching-codex"
         return
     SOURCE, TARGET = _default_pair(payload, root)
 
@@ -514,18 +514,11 @@ printf '%s\\n' 'INCONCLUSIVE: no Codex surface-load capture harness is implement
 exit 2
 """
     if relative.as_posix() in {"citation-check.sh", "functional-checks.sh"}:
-        # The packaged Claude checks live four levels below the repository root;
-        # their Codex siblings live three levels below it.
+        # The packaged Claude checks and their Codex siblings both live four levels below the
+        # repository root, so only the comment naming the levels changes.
         text = text.replace(
             "checks -> assets -> quenching -> plugins -> the repo root",
-            "checks -> quenching-codex -> plugins -> the repo root",
-        )
-    if relative.as_posix() == "citation-check.sh":
-        text = text.replace('SELF_DIR/../../../..', 'SELF_DIR/../../../')
-    if relative.as_posix() == "functional-checks.sh":
-        text = text.replace(
-            'dirname "${BASH_SOURCE[0]}")/../../../..',
-            'dirname "${BASH_SOURCE[0]}")/../../../',
+            "checks -> quenching-codex -> codex -> plugins -> the repo root",
         )
     if relative.as_posix() == "align/tool-resolution.md":
         text = codex_tool_resolution(text)

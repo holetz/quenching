@@ -33,7 +33,7 @@ ROOT = Path(__file__).resolve().parents[1]
 EVALS_ROOT = ROOT / "plugins/quenching/assets/evals"
 COMMANDS_ROOT = ROOT / "plugins/quenching/commands"
 PROFILES = Path(__file__).resolve().with_name("eval_harnesses.json")
-OMNIGENT_AGENTS = Path(__file__).resolve().parents[1] / "plugins/quenching-omnigent/agents"
+OMNIGENT_AGENT = ROOT / "plugins/omnigent/quenching"
 CQ = ROOT / "plugins/quenching/assets/bin/cq"
 CQ_BIN = ROOT / "plugins/quenching/bin"
 ARMS = ("with", "without")
@@ -168,20 +168,22 @@ def plugin_dirs() -> list[str]:
     return [str(ROOT / m["path"]) for m in modules]
 
 
-def bundle_path(skill: str) -> Path:
-    """The generated Omnigent bundle of the command a suite evaluates, `/quenching-specs:git:commit` -> `quenching-git-commit`."""
+def skill_name(skill: str) -> str:
+    """The operator agent's skill for the command a suite evaluates, `/quenching-specs:git:commit` -> `quenching-git-commit`."""
     _, _, path = skill.lstrip("/").partition(":")
-    return OMNIGENT_AGENTS / ("quenching-" + path.replace(":", "-"))
+    return "quenching-" + path.replace(":", "-")
 
 
 def arm_values(args, profile: dict, case: dict, workdir: str, skill: str | None = None) -> dict:
-    """The substitution values of one arm; a profile that names `{agent}` also gets its bundle, refused when missing."""
+    """The substitution values of one arm; a profile that names `{agent}` also gets the operator agent and the
+    suite's skill, refused when either is missing from the generated bundle."""
     values = {"prompt": case["prompt"], "model": args.model, "workdir": workdir, "max_turns": str(args.max_turns)}
     if "{agent}" in json.dumps(profile):
-        bundle = bundle_path(skill or "")
-        if not (bundle / "config.yaml").is_file():
-            raise ValueError(f"no generated Omnigent bundle for {skill!r} at {bundle}; run scripts/sync_omnigent_plugin.py --write")
-        values |= {"agent": str(bundle), "agent_harness": args.agent_harness}
+        name = skill_name(skill or "")
+        if not (OMNIGENT_AGENT / "skills" / name / "SKILL.md").is_file():
+            raise ValueError(f"no generated Omnigent skill for {skill!r} in {OMNIGENT_AGENT}; "
+                             "run scripts/sync_omnigent_plugin.py --write")
+        values |= {"agent": str(OMNIGENT_AGENT), "agent_harness": args.agent_harness, "skill": name}
     return values
 
 
@@ -190,6 +192,7 @@ def render(profile: dict, arm: str | None, values: dict, extra: list[str], conta
 
     `container` renders the command that runs inside the image: the profile's `container.argv`, where the
     standalone token {permission} expands to `container.permission`. On the host that token expands to nothing.
+    A profile's `prompts.<arm>` replaces the {prompt} token for that arm, so a skill is invoked in the session.
     """
     if arm is not None and arm not in profile.get("arms", {}):
         raise ValueError(f"this harness profile has no `{arm}` arm")
@@ -210,6 +213,8 @@ def render(profile: dict, arm: str | None, values: dict, extra: list[str], conta
             argv += extra
         elif token == "{permission}":
             argv += permission
+        elif token == "{prompt}" and arm in profile.get("prompts", {}):
+            argv.append(profile["prompts"][arm].format(**values))
         else:
             argv.append(token.format(**values))
     return argv

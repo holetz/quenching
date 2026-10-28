@@ -98,16 +98,16 @@ class GeneratedModuleArrangements(unittest.TestCase):
             assets = repo / "plugins" / "quenching" / "assets"
             assets.mkdir(parents=True)
             modules = [
-                {"name": "quenching-align", "path": "plugins/quenching-align", "owned": {}},
-                {"name": "quenching-specs", "path": "plugins/quenching-specs", "owned": {}, "cqPathOwner": True},
+                {"name": "quenching-align", "path": "plugins/claude/quenching-align", "owned": {}},
+                {"name": "quenching-specs", "path": "plugins/claude/quenching-specs", "owned": {}, "cqPathOwner": True},
             ]
             (assets / "modules.json").write_text(json.dumps({"modules": modules}))
-            manifest = repo / "plugins" / "quenching-specs" / ".claude-plugin"
+            manifest = repo / "plugins" / "claude" / "quenching-specs" / ".claude-plugin"
             manifest.mkdir(parents=True)
             (manifest / "plugin.json").write_text("{}")
             run = self.run_checks(repo=repo)
         self.assertEqual(run.returncode, 2, run.stdout + run.stderr)
-        self.assertIn("plugins/quenching-align", run.stderr)
+        self.assertIn("plugins/claude/quenching-align", run.stderr)
 
     def test_a_manifest_without_principal_modules_is_inconclusive(self):
         with tempfile.TemporaryDirectory() as tmp:

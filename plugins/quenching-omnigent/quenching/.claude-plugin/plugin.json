@@ -1,5 +1,0 @@
-{
-  "name": "quenching",
-  "version": "6.9.0",
-  "description": "Bundled quenching payload for Omnigent; the manifest lets the bundled cq enable its modules."
-}

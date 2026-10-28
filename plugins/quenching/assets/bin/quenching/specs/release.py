@@ -115,9 +115,11 @@ def bump_release_artifacts(repo_root: str, new_version: str) -> dict:
 _REGENERATE_STEPS = (
     ("generate_plugin_modules", ("scripts/generate_plugin_modules.py", "--write")),
     ("sync_codex_plugin", ("scripts/sync_codex_plugin.py", "--source", "plugins/quenching",
-                           "--target", "plugins/quenching-codex", "--write")),
+                           "--target", "plugins/codex/quenching-codex", "--write")),
     # After the Codex step: the OpenCode tree carries the Codex `cq` payload verbatim.
     ("sync_opencode_plugin", ("scripts/sync_opencode_plugin.py", "--write")),
+    # The Omnigent operator pins its MCP server to the version tag, so a bump rewrites config.yaml.
+    ("sync_omnigent_plugin", ("scripts/sync_omnigent_plugin.py", "--write")),
 )
 
 

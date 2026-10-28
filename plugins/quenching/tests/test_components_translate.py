@@ -334,8 +334,10 @@ class RepositorySurfaceTranslation(unittest.TestCase):
         translate.configure(str(source), str(self.root / "quenching-codex"))
         citation = translate.generated_tree()["checks/citation-check.sh"].decode("utf-8")
         functional = translate.generated_tree()["checks/functional-checks.sh"].decode("utf-8")
-        self.assertIn('SELF_DIR/../../../"', citation)
-        self.assertNotIn('SELF_DIR/../../../.."', citation)
+        # plugins/codex/quenching-codex/checks sits four levels below the root, as the source does.
+        self.assertIn('SELF_DIR/../../../.."', citation)
+        self.assertNotIn('SELF_DIR/../../../"', citation)
+        self.assertIn("checks -> quenching-codex -> codex -> plugins -> the repo root", citation)
         self.assertNotIn("claude -p", functional)
         self.assertIn("INCONCLUSIVE", functional)
         self.assertTrue(functional.rstrip().endswith("exit 2"))
@@ -445,9 +447,9 @@ class PayloadResolution(unittest.TestCase):
     def test_bare_invocation_inside_a_marketplace_with_the_sibling_translates_the_packaged_pair(self):
         payload = self.root / "plugins" / "quenching"
         payload.mkdir(parents=True)
-        (self.root / "plugins" / "quenching-codex").mkdir()
+        (self.root / "plugins" / "codex" / "quenching-codex").mkdir(parents=True)
         self.assertEqual(translate._default_pair(payload, str(self.root / ".claude")),
-                         (payload, self.root / "plugins" / "quenching-codex"))
+                         (payload, self.root / "plugins" / "codex" / "quenching-codex"))
 
     def test_bare_invocation_inside_the_marketplace_without_the_sibling_translates_the_repository(self):
         payload = self.root / "plugins" / "quenching"

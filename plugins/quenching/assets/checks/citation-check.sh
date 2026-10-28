@@ -119,7 +119,7 @@ SCOPE_EXCLUDE=(':!plugins/quenching/tests/fixtures/golden/'
                ':!plugins/quenching/tests/capture_golden.py'
                ':(exclude,glob)plugins/quenching/assets/evals/**/runs/**'
                ':!plugins/quenching/assets/checks/citation-check.sh'
-               ':!plugins/quenching-codex/checks/citation-check.sh'
+               ':!plugins/codex/quenching-codex/checks/citation-check.sh'
                "${GENERATED_EXCLUDE[@]}")
 
 want () { case ",$HALF," in *",$1,"*) return 0 ;; *) return 1 ;; esac; }
@@ -217,7 +217,7 @@ if want 1; then
   # A FOURTH SCOPE RULE, AND IT IS THE SAME KIND AS THE THREE ABOVE: what is swept is the prose
   # that INSTRUCTS an agent to route — command bodies, the references they cite, and the moulds
   # stamped into an adopting repo. It stops there because outside those trees the same spelling is
-  # not a routing claim. The TRANSLATED surfaces (`plugins/quenching-codex/**`, `.agents/**`) are
+  # not a routing claim. The TRANSLATED surfaces (`plugins/codex/quenching-codex/**`, `.agents/**`) are
   # the clearest case: Codex has no `:` namespace, so the hyphenated name IS the real skill
   # directory there, and the translator's own tests govern it. `README.md` is the other: its
   # `## Upgrade` changelog names directories that really existed between releases 0.11 and 0.18 —
@@ -363,16 +363,16 @@ SHIPPED = (plugin + "/assets/knowledge/", plugin + "/assets/templates/", plugin 
            # four findings, every one a path that is correct THERE and cannot resolve here — a
            # target under Codex really does carry `AGENTS.md`, and one of the four was a sentence
            # SAYING a path does not exist, read as a claim that it does.
-           "plugins/quenching-codex/",
+           "plugins/codex/quenching-codex/",
            # The OpenCode distribution is the same generated prose again, its payload under
            # `quenching/`: 33 findings before it was listed, every one a target-describing path.
-           "plugins/quenching-opencode/",
-           # The Omnigent distribution re-roots the OpenCode prose: the same target-describing paths.
-           "plugins/quenching-omnigent/",
+           "plugins/opencode/quenching-opencode/",
+           # The Omnigent operator agent re-roots the OpenCode prose: the same target-describing paths.
+           "plugins/omnigent/",
            # The read-only reader ships a generated copy of `assets/bin/` and one command body run
            # inside the target, which cites its own `bin/` through ${CLAUDE_PLUGIN_ROOT}: the
            # same four findings the source trees are exempt from, measured when it was added.
-           "plugins/quenching-specs-reader/")
+           "plugins/claude/quenching-specs-reader/")
 
 def unmeasurable(p):
     return (not p) or any(c in p for c in "*?<>${}|") or "..." in p \
@@ -432,7 +432,7 @@ for rel in sys.stdin.buffer.read().split(b"\x00"):
     rel = rel.decode("utf-8", "replace")
     if not rel or rel.endswith((".png", ".jpg", ".gif", ".ico")):
         continue
-    if rel in (plugin + "/assets/checks/citation-check.sh", "plugins/quenching-codex/checks/citation-check.sh"):
+    if rel in (plugin + "/assets/checks/citation-check.sh", "plugins/codex/quenching-codex/checks/citation-check.sh"):
         continue
     if rel.startswith(FROZEN_DATA) or is_frozen_eval_run(rel):
         continue
@@ -451,7 +451,10 @@ for rel in sys.stdin.buffer.read().split(b"\x00"):
     in_plugin = rel.startswith(plugin + "/")
     candidates = []
     # ${CLAUDE_PLUGIN_ROOT} names the plugin the CITING file ships in, not always this one.
-    own_plugin = "/".join(rel.split("/")[:2]) if rel.startswith("plugins/") else plugin
+    # Under plugins/<harness>/<name>/ the plugin is three segments deep; the source is two.
+    parts = rel.split("/")
+    own_plugin = ("/".join(parts[:2]) if parts[1] == "quenching" else "/".join(parts[:3])) \
+        if rel.startswith("plugins/") else plugin
     candidates += [(m, [os.path.join(own_plugin, trim(m))]) for m in PLUGIN_ROOT_RE.findall(text)]
     candidates += [(m, [trim(m)]) for m in REPO_PATH_RE.findall(text)]
     if not in_bundle:

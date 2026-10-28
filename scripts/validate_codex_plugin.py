@@ -50,7 +50,7 @@ def validate_cq_resolution(root: Path) -> None:
                       and "codex plugin list --json" in block, path)
 
 
-AGENT_PATH = re.compile(r"(?:plugins/quenching(?:-codex)?/|\.\./\.\./)agents/([a-z][a-z0-9-]*)\.md")
+AGENT_PATH = re.compile(r"(?:plugins/quenching/|plugins/codex/quenching-codex/|\.\./\.\./)agents/([a-z][a-z0-9-]*)\.md")
 AGENT_NAME = re.compile(r"(?<![A-Za-z0-9_/.-])quenching:([a-z][a-z0-9-]*)(?![A-Za-z0-9:-])")
 
 
@@ -80,7 +80,7 @@ def validate_codex_runtime(root: Path) -> None:
         check(not re.search(r"^model: (?:opus|sonnet|haiku)$", text, re.MULTILINE), path)
 
 
-def main(path: str = "plugins/quenching-codex") -> int:
+def main(path: str = "plugins/codex/quenching-codex") -> int:
     root = Path(path)
     manifest = json.loads((root / ".codex-plugin/plugin.json").read_text(encoding="utf-8"))
     check(manifest["name"] == "quenching-codex", "manifest name is not quenching-codex")
@@ -114,7 +114,7 @@ def main(path: str = "plugins/quenching-codex") -> int:
 
 if __name__ == "__main__":
     try:
-        raise SystemExit(main(sys.argv[1] if len(sys.argv) > 1 else "plugins/quenching-codex"))
+        raise SystemExit(main(sys.argv[1] if len(sys.argv) > 1 else "plugins/codex/quenching-codex"))
     except ValidationError as err:
         print(f"validate_codex_plugin: FAILED: {err}", file=sys.stderr)
         raise SystemExit(1)

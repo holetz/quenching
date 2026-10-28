@@ -104,8 +104,8 @@ class Payload(unittest.TestCase):
 
     def test_the_readme_install_copies_into_the_destination_without_nesting_on_reinstall(self):
         readme = self.tree["README.md"].decode()
-        self.assertIn("cp -R quenching/. ~/.config/opencode/quenching/", readme)
-        self.assertNotIn("cp -R quenching ~/.config/opencode/quenching\n", readme)
+        self.assertIn("cp -R quenching/. ~/.opencode/quenching/", readme)
+        self.assertNotIn("cp -R quenching ~/.opencode/quenching\n", readme)
 
     def test_every_generated_agent_opens_its_bash_map_with_the_catch_all(self):
         for path, content in self.tree.items():

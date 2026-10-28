@@ -20,7 +20,7 @@ from what accumulated and confirms it with you).
 This repository publishes from a single long-lived branch —
 [docs/standards/git/branching.md](/docs/standards/git/branching.md): every spec lands on the
 primary branch (`main`) through a reviewed pull request, and the release is the one deliberate act
-that moves the plugin's version-carrying artifacts (including the HUD's `plugins/quenching-hud/.claude-plugin/plugin.json`)
+that moves the plugin's version-carrying artifacts (including the HUD's `plugins/claude/quenching-hud/.claude-plugin/plugin.json`)
 ([docs/standards/ci-cd/versioning-release.md](/docs/standards/ci-cd/versioning-release.md))
 and creates a tag. This command is that deliberate act. The mechanical half — the artifact
 bump, the commit, the tag — is `plugins/quenching/assets/bin/cq specs release <version>`, already

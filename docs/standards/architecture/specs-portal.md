@@ -185,7 +185,7 @@ off by default, and uses no Claude permission, so it is not a grant.
 
 Every change to `portal.py` or `assets/portal/**` regenerates the `quenching-specs-reader` copy
 (`python3 scripts/generate_plugin_modules.py --write`) and the Codex mirror
-(`python3 scripts/sync_codex_plugin.py --source plugins/quenching --target plugins/quenching-codex --write`),
+(`python3 scripts/sync_codex_plugin.py --source plugins/quenching --target plugins/codex/quenching-codex --write`),
 and passes `bash scripts/verify_repo.sh`; see [specs-reader-plugin.md](specs-reader-plugin.md).
 
 <!-- rationale -->

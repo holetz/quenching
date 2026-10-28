@@ -77,7 +77,7 @@ run_check "docs doctor" \
 run_check "generated plugin modules and published lockstep" \
   python3 scripts/generate_plugin_modules.py --check
 run_check "Claude/Codex translation" \
-  python3 scripts/sync_codex_plugin.py --source plugins/quenching --target plugins/quenching-codex --check --json
+  python3 scripts/sync_codex_plugin.py --source plugins/quenching --target plugins/codex/quenching-codex --check --json
 run_check "Codex artifact lockstep" \
   python3 scripts/validate_codex_plugin.py
 run_check "Claude/OpenCode distribution" \
@@ -104,10 +104,10 @@ run_check "built-site checks" \
 # stated loudly, as with `coverage`: a local gate must not demand an install, but the release has it.
 if command -v claude >/dev/null 2>&1; then
   run_check "quenching-hud plugin" \
-    claude plugin validate plugins/quenching-hud
+    claude plugin validate plugins/claude/quenching-hud
 else
   printf '\n==> quenching-hud plugin\n'
-  printf 'SKIPPED: `claude` is not on PATH; plugins/quenching-hud was not validated.\n'
+  printf 'SKIPPED: `claude` is not on PATH; plugins/claude/quenching-hud was not validated.\n'
 fi
 
 # Surface-load checks spawn billed `claude -p` sessions, so they are opt-in: without

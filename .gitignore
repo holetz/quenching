@@ -29,16 +29,14 @@ site-source/
 # The documentation-site checker keeps a committed static fixture named `site/`.
 !plugins/quenching/assets/checks/fixtures/documentation-site-check/glossary/site/
 !plugins/quenching/assets/checks/fixtures/documentation-site-check/glossary/site/**
-!plugins/quenching-codex/checks/fixtures/documentation-site-check/glossary/site/
-!plugins/quenching-codex/checks/fixtures/documentation-site-check/glossary/site/**
-!plugins/quenching-opencode/quenching/checks/fixtures/documentation-site-check/glossary/site/
-!plugins/quenching-opencode/quenching/checks/fixtures/documentation-site-check/glossary/site/**
-!plugins/quenching-omnigent/quenching/checks/fixtures/documentation-site-check/glossary/site/
-!plugins/quenching-omnigent/quenching/checks/fixtures/documentation-site-check/glossary/site/**
+!plugins/codex/quenching-codex/checks/fixtures/documentation-site-check/glossary/site/
+!plugins/codex/quenching-codex/checks/fixtures/documentation-site-check/glossary/site/**
+!plugins/opencode/quenching-opencode/quenching/checks/fixtures/documentation-site-check/glossary/site/
+!plugins/opencode/quenching-opencode/quenching/checks/fixtures/documentation-site-check/glossary/site/**
 
 # Secrets an agent or a developer may create locally (keep the template trackable)
 .env*
 !.env.example
 *.pem
 *.key
-!plugins/quenching-*/assets/checks/fixtures/documentation-site-check/glossary/site/
+!plugins/claude/*/assets/checks/fixtures/documentation-site-check/glossary/site/
