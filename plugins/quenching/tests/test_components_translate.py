@@ -444,6 +444,48 @@ class PayloadResolution(unittest.TestCase):
         self.assertEqual(translate.claude_surface(), self.root / ".claude")
         self.assertEqual(translate.codex_surface(), self.root / ".agents")
 
+    def _translate(self, **mode):
+        out = io.StringIO()
+        args = dict(check=False, write=False, diff=False, source=str(self.root), target=str(self.root), json=True)
+        args.update(mode)
+        with contextlib.redirect_stdout(out):
+            code = translate.cmd_translate(argparse.Namespace(**args), str(self.root))
+        return code, out.getvalue()
+
+    def test_a_target_with_its_own_generic_skills_refuses_and_keeps_the_source(self):
+        skill = self.root / ".agents" / "skills" / "specs-status" / "SKILL.md"
+        skill.parent.mkdir(parents=True)
+        skill.write_text("---\nname: specs-status\ndescription: source\n---\nsource body\n", encoding="utf-8")
+        before = sorted(p.relative_to(self.root) for p in (self.root / ".agents").rglob("*"))
+        for mode in ({"write": True}, {"check": True}, {"diff": True}):
+            with self.subTest(mode=mode):
+                code, out = self._translate(**mode)
+                self.assertEqual(code, 2)
+                self.assertIn("ct-translation-refused", out)
+                self.assertIn("cq components bridge", out)
+        self.assertEqual(sorted(p.relative_to(self.root) for p in (self.root / ".agents").rglob("*")), before)
+        self.assertIn("source body", skill.read_text(encoding="utf-8"))
+
+    def test_a_target_with_the_claude_bridge_manifest_refuses(self):
+        bridge = self.root / ".claude" / "skills" / ".generated-files.json"
+        bridge.parent.mkdir(parents=True)
+        bridge.write_text('{"generator": "cq components bridge", "files": {}}\n', encoding="utf-8")
+        code, out = self._translate(write=True)
+        self.assertEqual(code, 2)
+        self.assertIn(".generated-files.json", out)
+        self.assertFalse((self.root / ".agents").exists())
+
+    def test_a_legacy_translated_target_still_translates(self):
+        translate.configure(str(self.root), str(self.root))
+        translate.write_tree(translate.generated_tree())
+        code, out = self._translate(check=True)
+        self.assertEqual(code, 0, out)
+
+    def test_bare_invocation_on_a_generic_surface_resolves_to_the_repository(self):
+        translate.configure(None, None, str(self.root / ".agents"))
+        self.assertEqual(translate.source(), self.root)
+        self.assertEqual(translate.codex_surface(), self.root / ".agents")
+
     def test_bare_invocation_inside_a_marketplace_with_the_sibling_translates_the_packaged_pair(self):
         payload = self.root / "plugins" / "quenching"
         payload.mkdir(parents=True)
