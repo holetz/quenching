@@ -1,5 +1,5 @@
 {
   "name": "quenching",
-  "version": "6.9.0",
+  "version": "6.10.0",
   "description": "Bundled quenching payload for OpenCode; the manifest lets the bundled cq enable its modules."
 }

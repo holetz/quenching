@@ -13,6 +13,33 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 6.10.0
+
+**`plugins/` is organised by harness, target repositories align on the generic `.agents/` layer,
+  and the `cq` core is served over MCP.** The Claude modules live under `plugins/claude/`, the
+  Codex package under `plugins/codex/quenching-codex/`, the OpenCode distribution under
+  `plugins/opencode/quenching-opencode/` (installed at `~/.opencode/quenching`), and Omnigent gets
+  one operator-agent bundle at `plugins/omnigent/quenching/` with the seven sub-agents and the MCP
+  server launched by `uvx` from the tag; under OpenCode `skills: none` does not hide the host's
+  `~/.claude/skills` or `~/.agents/skills`. `cq mcp` serves the whole catalog (specs reads and
+  gated writes, `git_pr_merge`, `git_worktree_retire`, configuration, standards and the glossary),
+  and the Claude plugin's `.mcp.json` names it `quenching`. In a target repository, skills are
+  authored in `.agents/skills/<name>/SKILL.md` with `AGENTS.md` as the instructions source and
+  `CLAUDE.md` reduced to `@AGENTS.md`; `cq components bridge` generates the Claude copy under
+  `.claude/skills/` with a sha256 manifest and fails on drift, and `cq components migrate` plans
+  and applies the move from the old layout, classifying an old translation by its content and
+  reporting anything hand-written as a conflict, with no writes. `cq components translate` refuses a
+  migrated target. The configuration home is `.agents/quenching.json`, but `.claude/quenching.json`
+  is still the file read while it exists, so an upgrade changes no repository's configuration.
+  The specs store gains a GitHub Issues adapter with native dependencies, Azure Boards predecessor
+  links, a migration from the git store onto Azure Boards, a local Azure DevOps cache, a Gantt view
+  in the specs service and `--root` on `cq specs` and `cq git` for cross-repository checks.
+  `quenching.json` is read through a configuration provider. OpenCode receives the command surface
+  with per-agent `cq` grants. Windows runs without administrator rights, with a Windows job in the
+  PR gate. The leak gate covers every project repository. The orchestrator, spec-runner and
+  verifier protocol is tightened: only the verifier stamps `verifier=pass`, and `cq git pr merge`
+  records the merge.
+
 ## 6.9.0
 
 **The Codex package is published through the Git marketplace and its upgrade is measured before
