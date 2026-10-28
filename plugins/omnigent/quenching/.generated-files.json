@@ -82,7 +82,7 @@
   ],
   "sha256": {
     ".generated-from.json": "702470c71a5bb99dcb77d653cf7afbef202ff927b6a851edd7fc3b35ecbc2dd0",
-    "README.md": "e4d30224faff4bbcf5b942b37dfda62c9ae6b02f83d60827eea47b47133e8d20",
+    "README.md": "c16c4a04ff0b5fb7f4e87cce4d63088760d3fa5a1394ab8f0ad25029a90c1840",
     "agents/git-steward/config.yaml": "eafc67726dd1f8a59302404f33187702f2437b156bda88127ffa80c7fc247ec5",
     "agents/git-steward/instructions.md": "adff243084d8d39ee65db0f80829d097cadc8adda944c8bf8daf0f8ba2a7b91f",
     "agents/orchestrator/config.yaml": "ce7ce05a745aaf93460005e1827153aec5b6213eceb0423130e598fb393bd67b",

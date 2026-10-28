@@ -250,7 +250,10 @@ This Omnigent operator agent is generated from `plugins/quenching/`, the only ed
 One bundle, no payload: {commands} skills (`skills/`), {agents} sub-agents (`agents/`), and the
 `quenching` MCP server launched by `uvx` from the tag `{VERSION}`. Built against Omnigent
 `v{OMNIGENT_VERSION}` (server image `omnigent-server:v{OMNIGENT_VERSION}`). The bundle pins no model:
-the server's policy chooses it. `skills: none` keeps the host's own skills out of the session.
+the server's policy chooses it. `skills: none` binds the Claude SDK harness only: under OpenCode the
+`skill` tool still lists the host skills in `~/.claude/skills/` and `~/.agents/skills/` (only
+`~/.config/opencode/skills/` is hidden), so a host that serves this agent must not carry quenching
+skills in those two directories.
 
 ## Install
 
