@@ -33,6 +33,7 @@ from quenching.components.sections import (
     split_rule_and_rationale,
 )
 from quenching.components.commands import cli as components_cli
+from quenching.components.surface import find_surface_root, load_surface
 
 # The fixture lives in `test_sections.py`, which owns it for BOTH readers (task 6.4 collapsed
 # the `EDIT BOTH, OR NEITHER` pair). What stays here is only what this pillar answers alone:
@@ -141,6 +142,35 @@ class ComponentsStatus(unittest.TestCase):
         self.assertEqual(payload["fronts"], {"front": 1})
         self.assertEqual(payload["findings"], {})
         self.assertTrue(payload["ok"])
+
+    def test_a_generic_surface_is_preferred_and_each_skill_is_invoked_by_its_name(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            skill = pathlib.Path(tmp, ".agents", "skills", "front-verb")
+            skill.mkdir(parents=True)
+            pathlib.Path(skill, "SKILL.md").write_text(
+                "---\ndescription: a skill\n---\n\nBody.\n", encoding="utf-8")
+            legacy = pathlib.Path(tmp, ".claude", "commands", "old")
+            legacy.mkdir(parents=True)
+            pathlib.Path(legacy, "verb.md").write_text(
+                "---\ndescription: legacy\n---\n\nBody.\n", encoding="utf-8")
+            with contextlib.chdir(tmp):
+                root = find_surface_root(None)
+            surface = load_surface(root)
+
+        self.assertEqual(pathlib.Path(root).name, ".agents")
+        self.assertEqual([c["command"] for c in surface["commands"]], ["/front-verb"])
+
+    def test_a_translated_or_nested_agents_tree_leaves_the_legacy_surface_in_place(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            nested = pathlib.Path(tmp, ".agents", "skills", "front", "verb")
+            nested.mkdir(parents=True)
+            pathlib.Path(nested, "SKILL.md").write_text("---\ndescription: x\n---\n",
+                                                         encoding="utf-8")
+            pathlib.Path(tmp, ".claude", "commands").mkdir(parents=True)
+            with contextlib.chdir(tmp):
+                root = find_surface_root(None)
+
+        self.assertEqual(pathlib.Path(root).name, ".claude")
 
 
 if __name__ == "__main__":

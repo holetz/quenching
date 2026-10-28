@@ -732,5 +732,27 @@ class DanglingCitation(unittest.TestCase):
         self.assertEqual(dangling_citations("/a:x /a:x /a:y /b:z", {"/a:x"}), ["/a:y"])
 
 
+
+class GenericSurface(unittest.TestCase):
+    def test_lint_reads_skills_by_name_on_a_surface_root_and_on_one_skill_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            agents = pathlib.Path(tmp, ".agents")
+            skill = agents / "skills" / "front-verb"
+            skill.mkdir(parents=True)
+            path = skill / "SKILL.md"
+            path.write_text("---\ndescription: a skill\n---\n\nBody.\n", encoding="utf-8")
+            reports = []
+            for target in (None, str(path)):
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out):
+                    cmd_lint(SimpleNamespace(path=target, json=True), str(agents))
+                reports.append(json.loads(out.getvalue()))
+
+        for report in reports:
+            self.assertEqual(report["commandCount"], 1)
+            self.assertNotIn("sk-no-commands", [f["code"] for f in report["findings"]])
+            self.assertEqual({f["command"] for f in report["findings"]} - {"/front-verb"}, set())
+
+
 if __name__ == "__main__":
     unittest.main()
