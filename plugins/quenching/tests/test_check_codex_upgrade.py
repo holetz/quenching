@@ -15,8 +15,10 @@ spec.loader.exec_module(check)
 
 # Synchronous auto-gc on every commit: the legacy trigger at its lowest threshold, plus the
 # geometric strategy Git 2.54+ uses by default, so the race becomes a deterministic deletion.
+# Git 2.56 stopped reading gc.auto for the geometric strategy: its loose-object threshold is
+# maintenance.geometric-repack.auto (default 6700), which older gits ignore.
 FORCED_GC = {"gc.auto": "1", "gc.autoDetach": "false", "maintenance.autoDetach": "false",
-             "maintenance.strategy": "geometric"}
+             "maintenance.strategy": "geometric", "maintenance.geometric-repack.auto": "1"}
 
 
 def git(repo: Path, *args: str, env: dict | None = None) -> str:
