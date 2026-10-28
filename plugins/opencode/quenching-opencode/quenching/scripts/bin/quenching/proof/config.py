@@ -1,6 +1,6 @@
 """Resolve the proof front's declarations without deciding whether they are healthy.
 
-The shared specs loader owns `.claude/quenching.json`; this module owns the meaning of the proof
+The shared specs loader owns `.agents/quenching.json`; this module owns the meaning of the proof
 keys. Defaults describe the ordinary target shape (`tests/` and no declared layer), while every
 path returned here is resolved against the repository root so inventory and reports never mix a
 config-relative path with a proof-root-relative one.

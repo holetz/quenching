@@ -51,6 +51,22 @@ class ConfigProviderSeam(unittest.TestCase):
     def _load(self):
         return cfg.load_config(str(self.repo), detect_provider_info=False)
 
+    def test_home_is_read_before_the_legacy_file_and_shadows_it(self):
+        self._file(json.dumps({"backend": "github"}))
+        home = self.repo / ".agents" / "quenching.json"
+        home.parent.mkdir()
+        home.write_text(json.dumps({"backend": "git"}))
+        out = self._load()
+        self.assertEqual(out["path"], str(home))
+        self.assertEqual(out["data"]["backend"], "git")
+        self.assertEqual(out["shadowedPath"], str(self.repo / ".claude" / "quenching.json"))
+
+    def test_legacy_file_is_read_when_the_home_is_absent(self):
+        self._file(json.dumps({"backend": "git"}))
+        out = self._load()
+        self.assertEqual(out["path"], str(self.repo / ".claude" / "quenching.json"))
+        self.assertIsNone(out["shadowedPath"])
+
     def test_file_present(self):
         self._file(json.dumps({"backend": "git", "shared": {"worktreeSetup": "make"}}))
         out = self._load()

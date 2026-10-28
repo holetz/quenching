@@ -117,7 +117,7 @@ capture; never create the spec unasked, never write the residue into the repo.
 
 ## Invariants to never violate
 - **Never add `context: fork`.** This is a sweep skill: it gates on a mid-flow plan → OK,
-  which a forked context cannot present (the [CLAUDE.md](../../../../CLAUDE.md) rule).
+  which a forked context cannot present (the [AGENTS.md](../../../../AGENTS.md) rule).
 - Never mint beyond what the source supports; an unproven rule is `authority: background`,
   never `current`; never invent a `resource:`.
 - Never overwrite a filled field or body — MERGE.

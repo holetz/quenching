@@ -93,7 +93,8 @@ cq() { python3 "${QUENCHING_OMNIGENT_ROOT:-$HOME/.omnigent/quenching}/scripts/cq
 cq knowledge validate docs --json          # structure: exit 0 = conformant
 ls ~/.claude/projects/<cwd>/memory/    # out-of-band store 1: any undrained memory?
 ```
-plus one `Read` of each harness file that exists (`AGENTS.md`, `AGENTS.md`) — a fat one inlines
+plus one `Read` of each harness file that exists (`AGENTS.md`, and a root `AGENTS.md` that is more
+than `@AGENTS.md`) — a fat one inlines
 durable knowledge; a thin one points. The glossary is **not** probed: it has no cheap signal, so
 it is proxied in step 7 instead.
 
@@ -213,7 +214,8 @@ plan was rejected and nothing was written.
 Both are one-shot scaffolding, not loop stages; skip this step entirely on later passes.
 
 **The language declaration.** Ask **once**, and only when the target's **root** harness file
-(`AGENTS.md` / `AGENTS.md`) carries no declaration yet. Ask for one BCP-47 tag — `pt-BR`, `en`,
+(`AGENTS.md`; a legacy root `AGENTS.md` only while no `AGENTS.md` exists) carries no declaration
+yet. Ask for one BCP-47 tag — `pt-BR`, `en`,
 `ja` — and write a single line into that root file:
 
     Language: <tag> — the contract is /docs/standards/agents/communication.md
@@ -266,7 +268,7 @@ is [sweep-doctrine.md](quenching://references/align/sweep-doctrine.md) §7. Citi
 
 1. `quenching-align:knowledge:import-memory` — drain the project's memory dir into its homes, clearing each
    memory once its doc lands and passes conformance.
-2. `quenching-align:components:harness:align` — thin `AGENTS.md`/`AGENTS.md`, MOVEing durable knowledge into homes.
+2. `quenching-align:components:harness:align` — thin `AGENTS.md` (root `AGENTS.md` = `@AGENTS.md`), MOVEing durable knowledge into homes.
 
 The order is
 [knowledge-align/cycle.md](quenching://references/knowledge-align/cycle.md) §The stage

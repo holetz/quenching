@@ -1,5 +1,5 @@
 ---
-description: "Mint or edit ONE command in .claude, one file per entry point. Use for \"create a command\", \"mint a command for X\". Not for: agents → quenching-components-agent-new; hooks → quenching-components-hook-new."
+description: "Mint or edit ONE skill in .agents/skills, bridged to OpenCode. Use for \"create a command\", \"mint a command for X\". Not for: agents → quenching-components-agent-new; hooks → quenching-components-hook-new."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/components/command/new.md -->
@@ -17,9 +17,12 @@ Delegate only through OpenCode's task tool, to the registered subagents named `q
 **Input**: `$ARGUMENTS` (the command to create or edit — a name or a description of what it should do).
 
 Creates or edits **ONE FILE** in the **target repo's own** automation surface — a
-`.opencode/commands/<path>.md` carrying both the description that routes to it and the body that
-runs. OpenCode merged commands into skills, so there is no `SKILL.md` half and no wrapper to
-mirror: the command's path IS its identity. The axis, naming, and registry format live in
+`.agents/skills/<name>/SKILL.md` carrying both the description that routes to it and the body that
+runs, invocable as `/<name>`. `.agents/` is the only editable source: OpenCode does not read
+`.agents/skills/`, so `cq components bridge` generates its `.opencode/skills/<name>/` copy, never
+edited by hand. `<name>` is **one segment** — OpenCode does not discover a nested
+`.opencode/skills/<a>/<b>/SKILL.md` — and it IS the skill's identity. The axis, naming, and
+registry format live in
 [components-command-new/taxonomy.md](~/.opencode/quenching/references/components-command-new/taxonomy.md); how the
 body itself is written lives in [components-command-new/doctrine.md](~/.opencode/quenching/references/components-command-new/doctrine.md);
 what a command may strategically use — fork, pins, hooks, the invocation controls — and what
@@ -66,8 +69,8 @@ bundle → note the tail as skipped and plan the `quenching-knowledge-align` sug
 ### 2. Classify — category first, then the axis
 Apply the classification test ([components-command-new/taxonomy.md](~/.opencode/quenching/references/components-command-new/taxonomy.md) §The single axis) in order:
 
-- **Category/subject.** `Glob` `.opencode/commands/*/` for the top-level names already in use in
-  this repo target, and ask which one this command belongs to (`git`, `deploy`, `tests`, ...) —
+- **Category/subject.** `Glob` `.agents/skills/*/` for the `<categoria>-` prefixes already in use
+  in this repo target, and ask which one this command belongs to (`git`, `deploy`, `tests`, ...) —
   offering the existing names, and free text for a new one. No clean, evident subject → there is
   no category; the rest of this step runs exactly as before this rule.
 - **The axis.** Name the one folder the command acts on — one folder → domain-bound; "the repo"
@@ -75,8 +78,8 @@ Apply the classification test ([components-command-new/taxonomy.md](~/.opencode/
   whether it is generic) instead of forcing a value.
 - **Nest vs replace, only with both a category and a bound folder.** Read the convention already
   established for this category in this repo (taxonomy.md §Reading the nest-vs-replace
-  convention): `Glob` `.opencode/commands/<categoria>/**` and infer **nest** (a real-folder subpath
-  already present) or **replace** (files already sitting flat) from what is already there.
+  convention): `Glob` `.agents/skills/<categoria>-*/` and infer **nest** (a real-folder subpath
+  already folded into the name) or **replace** (`<categoria>-<verb>` alone) from what is already there.
   Nothing there yet, or the two shapes are mixed → ask the human once — the first command minted
   under that answer becomes the convention for every later command of the same category in this
   repo, with nothing else recorded.
@@ -86,21 +89,23 @@ them against the current path; a difference is a rename (step 3).
 **Done when:** the category (or its absence), the axis
 value and bound folder (if any), and the nest-vs-replace read (if it applies) are fixed.
 
-### 3. Derive the path — which is the name
-No category: domain-bound → `.opencode/commands/<folder-path>/<verb>.md` →
-`/<folder>:<subfolder>:<verb>`; generic → a flat `.opencode/commands/<verb-object>.md`. Category, no
-bound folder, or the convention reads **replace** → `.opencode/commands/<categoria>/<verb>.md` →
-`/<categoria>:<verb>`. Category, bound folder, convention reads **nest** →
-`.opencode/commands/<categoria>/<folder-path>/<verb>.md` → `/<categoria>:<subfolder>:<verb>`. There
-is no second name to derive: the path is it. `Glob` `.opencode/commands/**` for collisions — an
-existing path is a MERGE target (edit), never silently overwritten. Nothing but entry points goes
-under `commands/`: shared procedure lives outside it and is cited by absolute path.
+### 3. Derive the name — which is the path
+The segments of the classification join with `-` into one folder name under `.agents/skills/`.
+No category: domain-bound → `<folder>-<subfolder>-<verb>`; generic → `<verb-object>`. Category, no
+bound folder, or the convention reads **replace** → `<categoria>-<verb>`. Category, bound folder,
+convention reads **nest** → `<categoria>-<subfolder>-<verb>`. The file is
+`.agents/skills/<name>/SKILL.md`, its frontmatter `name:` equals `<name>` (OpenCode requires the
+match), and the invocation is `/<name>`. There is no second name to derive. `Glob`
+`.agents/skills/*/SKILL.md` for collisions — an existing path is a MERGE target (edit), never
+silently overwritten. A target still on the legacy `.opencode/commands/` layout is
+`quenching-components-align`'s to migrate first; never mint into it. Shared procedure lives in
+`.agents/references/<name>/` or beside `SKILL.md` in the skill's folder, cited by path.
 
 **Rename sweep (an edit whose derived path differs from the old path).** The path is the name:
-`Grep` the old `/<namespace>:<verb>` and the old path in `.opencode/commands/**`, `AGENTS.md`,
-`AGENTS.md`, `docs/`, `.claude/settings*.json` and `.claude/evals/`. Each hit is a plan entry with a
-disposition (rewrite, keep, ask); the mirrored `evals/<old path>/` moves in the same plan; the old
-file is reported as residue, never deleted.
+`Grep` the old `/<name>` and the old path in `.agents/skills/**`, `.agents/references/**`,
+`AGENTS.md`, `docs/`, `.claude/settings*.json` and `.agents/evals/`. Each hit is a plan entry with a
+disposition (rewrite, keep, ask); the mirrored `evals/<old name>/` moves in the same plan; the old
+folder is reported as residue, never deleted, and the bridge reports its copy as orphaned.
 **Done when:** the path is fixed, collision-free or resolved as an edit, and a rename carries every
 hit with a disposition (or states the sweep found none).
 
@@ -130,15 +135,23 @@ quoted trigger is present or reported.
 
 ### 6. Present ONE plan → gate on the OK
 Show: axis value + bound folder, the command path, **the execution profile** (each
-non-default lever with its reason, or "default"), every file (the command, rule if planned,
-  registry create-or-regenerate), and the tail steps. For an edit, also: the rename hits and, when `evals.json` exists
-in the mirrored tree (`.claude/evals/<path>/`; `~/.opencode/quenching/evals/<path>/` here),
+non-default lever with its reason, or "default"), every file (the skill, its generated
+`.opencode/skills/<name>/` bridge copy, rule if planned, registry create-or-regenerate), and the
+tail steps. For an edit, also: the rename hits and, when `evals.json` exists
+in the mirrored tree (`.agents/evals/<name>/`; `~/.opencode/quenching/evals/<path>/` here),
 its case count and that the rerun is yours to run, not this command's. Wait for the single confirmation.
 **Done when:** the user has answered; declined → report "nothing written" and stop.
 
-### 7. Write
-Write the command file from `automation/command.md` — frontmatter and body in the one file;
-write the rule if planned. **Done when:** every planned file exists with its planned content.
+### 7. Write, then bridge
+Write `.agents/skills/<name>/SKILL.md` from `automation/command.md` — frontmatter and body in the
+one file; write the rule if planned. Then generate the OpenCode copy from the source:
+```bash
+cq() { python3 "${QUENCHING_OPENCODE_ROOT:-$HOME/.opencode/quenching}/scripts/cq" "$@"; }
+cq components bridge --target . --write --json
+```
+Exit 2 `ct-bridge-unowned` names a `.opencode/skills/<name>/` the bridge did not generate: report it
+and stop the bridge there, never overwrite it. **Done when:** every planned file exists with its
+planned content and `bridge --write` exited 0.
 
 ### 8. OKF tail (bundle present)
 Create `/docs/project/automation.md` from `automation/registry.md` first if it is
@@ -156,8 +169,9 @@ decides. **Done when:** `registry reindex` exits 0 and the index is honest.
 Ask the tool, do not read for it:
 ```bash
 cq() { python3 "${QUENCHING_OPENCODE_ROOT:-$HOME/.opencode/quenching}/scripts/cq" "$@"; }
-cq components lint <command-file> --json   # this command's conformance
+cq components lint <skill-file> --json     # this skill's conformance
 cq components doctor --json                # the surface invariant it just changed
+cq components bridge --target . --check --json  # exit 0 — the OpenCode copy matches the source
 cq components registry reindex --json      # `changed: false` — nothing wrote inside the markers after the description pass
 ```
 Fix every `error`; report every `warn` with its `sk-*` code. What no parser can decide — the no-op
@@ -174,8 +188,8 @@ changed. In this plugin that is
 **Where the repo ships none, say plainly that the command is written but unproven until a fresh
 session** — never report a linter's exit 0 as evidence that the surface loaded.
 
-Report what was written, the invocation (`/…:…:<verb>`), the functional result or its absence, and
-any residue. **Done when:** `lint` and `doctor` exit 0, `registry reindex` reports `changed: false`,
+Report what was written, the invocation (`/<name>`), the functional result or its absence, and
+any residue. **Done when:** `lint` and `doctor` exit 0, `bridge --check` exits 0, `registry reindex` reports `changed: false`,
 the surface was either functionally proved or reported unproven, an edit's `evals.json` was reported
 with its eval command, and every remaining `warn` is named in the report with its code.
 
@@ -185,6 +199,7 @@ with its eval command, and every remaining `warn` is named in the report with it
 - Never delete a command, and never clobber an existing body — MERGE.
 - Never path a generic command under a folder; never mint a directory-scoped surface
   (accepted variation when found, never generated — taxonomy.md §Placement).
-- Never write anything but an entry point under `commands/` — shared procedure, references and
-  fixtures live outside it and are cited by absolute path.
+- Never write under `.opencode/skills/` by hand — it is the bridge's generated copy; edit the
+  `.agents/skills/<name>/` source and rerun `bridge --write`.
+- Never write a nested skill folder: `<name>` is one segment.
 - Never hand this command file `context: fork` — the plan gate is mid-flow.

@@ -24,6 +24,12 @@ The delegation economics and the definition contract live in
 §Subagents. The mold is
 `~/.opencode/quenching/templates/automation/agent.md`.
 
+**Why `.opencode/agents/` and not `.agents/`.** Skills, references and instructions live in the
+generic `.agents/` layer, but a subagent has no generic home any harness reads: verified on OpenCode
+Code 2.1.312, a definition in `.agents/agents/` does not appear as a subagent type, and OpenCode
+reads `.opencode/agent`, not `.agents/agents/`. So the definition is OpenCode's own interface and is
+written where OpenCode reads it, with no bridge copy.
+
 ## Doctrine
 
 - **The rule governs; the plan proposes.** In a target repo the rule is

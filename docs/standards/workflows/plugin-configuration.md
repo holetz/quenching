@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plugin configuration contract
-description: "`.claude/quenching.json` is the plugin's single configuration home; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles, proposal catalogues and the `git` pillar's per-artifact writing directives remain explicit target settings"
+description: "`.agents/quenching.json` is the plugin's single configuration home, with `.claude/quenching.json` read as legacy; provider selection is derived from the repository remote, while placement, Azure mappings, lifecycle hooks, profiles, proposal catalogues and the `git` pillar's per-artifact writing directives remain explicit target settings"
 resource: .claude/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/specs/config.py, plugins/quenching/assets/bin/quenching/specs/store.py, plugins/quenching/assets/bin/quenching/ops/**, plugins/quenching/assets/bin/quenching/proof/**, plugins/quenching/assets/bin/quenching/git/base.py, plugins/quenching/assets/bin/quenching/git/conventions.py, plugins/quenching/assets/bin/quenching/config/**
 tags: [workflows, specs, configuration, provider, plugin]
-timestamp: 2026-10-25
+timestamp: 2026-10-28
 audience: both
 authority: current
-source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092 — lineage in decision 0004
+source: specs 1065, 1075, 1405, 1907, 1908, 1909, 1910, 1911, 1912, 2092, 2118 — lineage in decision 0004
 maintainer: quenching
 ---
 
@@ -22,15 +22,25 @@ on the `quenching` branch (or, deprecated, in the selected tracker).
 
 ## One configuration home
 
-The Claude projection reads:
+Every projection reads:
 
 ```text
-.claude/quenching.json
+.agents/quenching.json
 ```
 
-The file is at the root of the target repository, beside the rest of `.claude/`. It is the only
-repository file the loader reads (`common/config.py`): no other path is discovered, whichever
-projection runs (the Codex projection included). A leftover `/.specs/config.json` is diagnostic residue and is
+The file sits in the target repository's generic layer, beside `.agents/skills/`
+([surface-translation.md](../architecture/surface-translation.md) §Target repositories). The loader
+(`common/config.py`, `config_path`) resolves exactly one repository file:
+
+- `.agents/quenching.json` present → it is read.
+- Absent, with `.claude/quenching.json` present → the legacy file is read, unchanged.
+- Both present → the home is read, and the loader's payload (`load_config`) reports the legacy path
+  as `shadowedPath`. The two are never merged; `cq components
+  migrate` removes the legacy file when both are identical and reports a conflict when they differ.
+
+Whoever writes (`cq config init`, `cq doctor --setup`) writes the file that was read, so a legacy
+target is never split across two files. Every other module resolves the path through
+`common/config`, never by literal. A leftover `/.specs/config.json` is diagnostic residue and is
 never merged with this file.
 
 There is no per-front configuration file. One repository file and one namespace owner keep a
@@ -69,7 +79,7 @@ default in code does not appear. The verb only reads: an unreadable layer is rep
 
 ## The seed and the missing-keys check
 
-`cq config init [--write]` creates `.claude/quenching.json` with every adjustable default spelled
+`cq config init [--write]` creates the configuration file (`.agents/quenching.json` unless the legacy file is the one read) with every adjustable default spelled
 out: `shared.codex` (including `executor`), `shared.autonomy`, `shared.contextBudgets`,
 `shared.okfValidate`, `shared.workHost` (its leaves with a non-null default; `target`,
 `dockerContext` and `runner` stay absent because the loader warns on a null), `specs.chat`, the
@@ -161,7 +171,7 @@ default and is named in the payload's warnings, and `cq config show --effective`
 
 ## Settings read outside the file
 
-Three things configure the plugin without being keys of `.claude/quenching.json`, and none is a
+Three things configure the plugin without being keys of the configuration file, and none is a
 second home for those keys:
 
 - `.claude/hooks/hooks-config.json` and `hooks-config.local.json` carry the checker's `okfValidate`
@@ -169,7 +179,7 @@ second home for those keys:
 - `~/.config/quenching/projects.json` is the portal's registry of projects (`portal/registry.py`).
 - Constants in code: the `git` and `gh` timeouts and the probe's app-server deadline are not keys.
 
-`cq doctor --setup` previews a minimal `.claude/quenching.json` from the detected provider and
+`cq doctor --setup` previews a minimal configuration file from the detected provider and
 fronts, and `--write` confirms it. It records the deprecated root `backend` of the detected tracker;
 `cq config init` (above) is the seed to use, because it writes `backend: git` and every default.
 
@@ -246,7 +256,7 @@ say which store the specs live in; it never carries anything that authenticates.
   without `az devops configure --list` and without the project-name round trip; a declared GitHub
   repository is returned without `gh repo view` (the open-issue count is then unknown). A bare
   organisation name is normalised to `https://dev.azure.com/<name>`.
-- **The repository layer is read raw** from `.claude/quenching.json`, because the merged view hides
+- **The repository layer is read raw** from the configuration file, because the merged view hides
   which file a key came from. `specs.credential` there, or any `specs.store` key named like a secret
   (`token`, `pat`, `password`, `secret`, `key`, case-insensitive, any depth), is refused as
   `sp-store-secret`; any other unknown store key as `sp-store-unknown-key`; a wrong shape or value as
@@ -378,4 +388,4 @@ configuration is ready only when the refusal disappears and the front-specific d
 required declarations are evaluated normally.
 
 This standard defines the contract for every projection: the Codex projection preserves the same
-ownership, refusal payload and no-fallback rule and reads the same `.claude/quenching.json`.
+ownership, refusal payload and no-fallback rule and reads the same configuration file.

@@ -92,7 +92,7 @@ class InitAndCheck(unittest.TestCase):
         self.repo = pathlib.Path(tmp.name) / "repo"
         self.repo.mkdir()
         subprocess.run(["git", "init", "-q", str(self.repo)], check=True)
-        self.file = self.repo / ".claude" / "quenching.json"
+        self.file = self.repo / ".agents" / "quenching.json"
 
     def run_cli(self, *argv):
         out, err = io.StringIO(), io.StringIO()
@@ -119,6 +119,15 @@ class InitAndCheck(unittest.TestCase):
         self.assertEqual(2, code)
         self.assertIn("already exists", err)
         self.assertEqual("{}", self.file.read_text())
+
+    def test_init_refuses_when_the_legacy_file_exists(self):
+        legacy = self.repo / ".claude" / "quenching.json"
+        legacy.parent.mkdir()
+        legacy.write_text("{}")
+        code, _, err = self.run_cli("init", "--write")
+        self.assertEqual(2, code)
+        self.assertIn("already exists", err)
+        self.assertFalse(self.file.exists())
 
     def test_check_names_the_deleted_leaf_with_exit_1(self):
         self.run_cli("init", "--write")

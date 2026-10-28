@@ -57,7 +57,8 @@ never on prose.
   §Resource activity it emits no finding and never runs in the hook path).
 - `Glob` `/docs/**/*.md` for the density counts (the payload's `density` is not used in its place), and read `/docs/index.md`, each home's `index.md`,
   and `/docs/glossary.md`.
-- `Glob` `~/.claude/projects/<cwd>/memory/*.md` and read the root `CLAUDE.md`/`AGENTS.md` size —
+- `Glob` `~/.claude/projects/<cwd>/memory/*.md` and read the root `AGENTS.md` size (and the root
+  `CLAUDE.md`'s when it is more than `@AGENTS.md`) —
   the two out-of-band stores whose content the cycle would pull in.
 - `Glob` `/docs/**/log.md` — a figure for §5, never a finding. If `$ARGUMENTS` names a home or
   path, restrict the density and named document reads to that scope while keeping the validator's
@@ -115,7 +116,7 @@ table, and give **no row a finding code**:
 
 | Figure | How it is counted |
 | --- | --- |
-| Concept docs, total | `.md` files that are not `index.md` or an EXEMPT basename (`CLAUDE.md`, `AGENTS.md`) |
+| Concept docs, total | `.md` files that are not `index.md` or an EXEMPT basename (`AGENTS.md`, `CLAUDE.md`) |
 | Concept docs **per home** | the same count, grouped by top-level home, with **installed-but-empty homes shown as `0`** — never omitted, since the zero is the signal |
 | Glossary terms | entries under `## Terms` in `glossary.md`; note separately when the shipped **seed placeholder** is still the only one |
 | Unlinked glossary entries | terms with no concept doc yet — a **valid permanent state**, reported as a figure and never as a defect |

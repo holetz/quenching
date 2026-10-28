@@ -5,7 +5,7 @@
   "configProviderRefusal": null,
   "configSource": "file",
   "root": null,
-  "path": "<WS>/.claude/quenching.json",
+  "path": "<WS>/.agents/quenching.json",
   "present": false,
   "unparseable": null,
   "unknownKeys": [],

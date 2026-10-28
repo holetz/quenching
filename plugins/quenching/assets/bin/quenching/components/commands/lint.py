@@ -17,10 +17,13 @@ from quenching.common.io import read_text
 from quenching.common.frontmatter import parse_frontmatter
 from quenching.components.cq_calls import check_cq_calls, extract_calls
 from quenching.components.hooks import hook_ladder_findings
-from quenching.components.surface import (COMMANDS_DIR, REFERENCES_DIR, SURFACE_MISSING,
+from quenching.components.surface import (COMMANDS_DIR, REFERENCES_DIR, SKILL_FILE,
+                                          SURFACE_MISSING,
                                           _quoted_phrases, agent_definitions,
                                           body_after_frontmatter, discover_commands,
-                                          discover_references, plugin_prefix, plural, rel)
+                                          discover_entry_points, discover_references,
+                                          discover_skills, entry_points_dir, plugin_prefix,
+                                          plural, rel)
 
 # conformance thresholds — the normative statement of the front's mechanical rules.
 # `doctrine.md` and `taxonomy.md` cite the sk-* codes rather than restating these numbers,
@@ -917,15 +920,19 @@ def resolve_lint_targets(path_arg: str | None, root: str) -> tuple[str, list[dic
     The references ride along only when the base IS a surface root: linting one file, or a
     bare `commands/` directory, is a scope the caller named and this never widens it."""
     if not path_arg:
-        return (root, discover_commands(os.path.join(root, COMMANDS_DIR)),
+        return (root, discover_entry_points(root),
                 discover_references(os.path.join(root, REFERENCES_DIR)))
     target = os.path.abspath(path_arg)
+    if os.path.isfile(target) and os.path.basename(target) == SKILL_FILE:
+        base = os.path.dirname(os.path.dirname(target))
+        return base, [c for c in discover_skills(base)
+                      if os.path.abspath(c["path"]) == target], []
     if os.path.isfile(target):
         base = nearest_commands_dir(target) or os.path.dirname(target)
         return base, [c for c in discover_commands(base)
                       if os.path.abspath(c["path"]) == target], []
-    if os.path.isdir(os.path.join(target, COMMANDS_DIR)):
-        return (target, discover_commands(os.path.join(target, COMMANDS_DIR)),
+    if os.path.isdir(entry_points_dir(target)):
+        return (target, discover_entry_points(target),
                 discover_references(os.path.join(target, REFERENCES_DIR)))
     return target, discover_commands(target), []
 
@@ -967,7 +974,7 @@ def cmd_lint(args, root: str) -> int:
     # body that names a stage is usually NOT the file being linted, so deriving this from
     # `commands` would make `lint <one file>` blind to the conductor that reaches it.
     surface_commands = (commands if base == surface
-                        else discover_commands(os.path.join(surface, COMMANDS_DIR)))
+                        else discover_entry_points(surface))
     named_by = named_by_bodies(surface_commands, prefix) if prefix else {}
 
     findings: list[dict] = []

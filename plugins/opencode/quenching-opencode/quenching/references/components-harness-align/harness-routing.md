@@ -1,4 +1,4 @@
-# Harness routing — from a AGENTS.md/AGENTS.md unit to its OKF home
+# Harness routing — from an AGENTS.md/AGENTS.md unit to its OKF home
 
 How `quenching-components-harness-align` decides, for each unit of a harness file, whether it **stays** (harness-
 operational) or **moves** into an OKF home (durable knowledge). Once a unit is routed to a home it
@@ -15,8 +15,9 @@ home boundaries.
 ## 1. What a harness file is
 
 <!-- rules -->
-`AGENTS.md` and `AGENTS.md` are **navigation pointers** the OpenCode / agent harness
-auto-loads — `AGENTS.md` repo-wide, a subfolder `AGENTS.md` only when working under its folder.
+`AGENTS.md` and `AGENTS.md` are **navigation pointers** the agent harnesses auto-load — the root
+`AGENTS.md` repo-wide (reached by OpenCode through the root `AGENTS.md` = `@AGENTS.md`, §7), a
+subfolder `AGENTS.md` only when working under its folder.
 OKF-strict point 7 ([knowledge-align/okf-spec.md](~/.opencode/quenching/references/knowledge-align/okf-spec.md))
 says they are **not** OKF concepts, and the validator (`cq knowledge validate`) **skips them entirely**
 — including link checks (`index-broken-link` runs only on `index.md`). The target shape is the
@@ -90,7 +91,8 @@ The validator won't check harness files, so this skill does:
 
 ## 6. Nesting rules
 
-- **Root `AGENTS.md`** = repo-wide operations + the `knowledge/` home map. Auto-loads on every turn.
+- **Root `AGENTS.md`** = repo-wide operations + the `knowledge/` home map, loaded on every turn;
+  the root `AGENTS.md` is only `@AGENTS.md` (§7).
 - **Subfolder `AGENTS.md`** = nearest-file navigation (auto-loads only under that folder): the
   folder's local commands/quirks + a pointer to the home that **covers** it. **Never duplicate the
   root.**
@@ -114,9 +116,21 @@ The validator won't check harness files, so this skill does:
   output earns no harness.
 - `quenching-knowledge-align`'s skeleton already owns `docs/standards/AGENTS.md`.
 
-## 7. AGENTS.md
+## 7. AGENTS.md is the root source; AGENTS.md imports it
 
-Same pipeline as `AGENTS.md`, run **independently**. A fact duplicated between `AGENTS.md` and
-`AGENTS.md` is itself a **FLAG** item; consolidation (make `AGENTS.md` canonical and `AGENTS.md` a
-one-line reference to it, or vice-versa) is a **per-repo proposal**, never assumed — surface it,
-let the user choose.
+<!-- rules -->
+The root `AGENTS.md` carries the repo-wide KEEP residue and pointers; the root `AGENTS.md` is
+exactly one line, `@AGENTS.md`. The pipeline runs on `AGENTS.md`. A root `AGENTS.md` that
+carries its own instructions is consolidated into `AGENTS.md` — moved with `git mv` when
+`AGENTS.md` is absent, unit by unit when both exist, with a fact present in both a **FLAG** — and
+then reduced to the import.
+
+**Fact, and the version it was verified on.** OpenCode 2.1.312 (2026-10-28), in real sessions
+with a positive control: `AGENTS.md` alone is not loaded as project instructions; with
+`AGENTS.md` and `AGENTS.md` side by side, only `AGENTS.md` is. OpenCode 1.18.35 and Codex read
+`AGENTS.md`. A later OpenCode that loads `AGENTS.md` itself makes the import redundant, never
+wrong; re-verify before dropping it.
+
+<!-- rationale -->
+One editable file read by every harness keeps one fact in one place; the import is the cheapest
+interface OpenCode needs, and it holds on Windows, where a link would need administrator rights.

@@ -1,6 +1,6 @@
 ---
 name: quenching-components-align
-description: "Converge the .claude command surface onto one file per entry point and review descriptions. Use for \"align the skills\", \"audit the command bodies\", \"shorten the descriptions\". Not for: one command → quenching-components-command-new."
+description: "Converge the .agents/skills surface and its Codex bridge, and review descriptions. Use for \"align the skills\", \"audit the command bodies\", \"shorten the descriptions\". Not for: one command → quenching-components-command-new."
 ---
 
 <!-- GENERATED FROM plugins/quenching/commands/components/align.md -->
@@ -37,7 +37,7 @@ Molds live at
 ## Doctrine
 
 Read [align/sweep-doctrine.md](../../references/align/sweep-doctrine.md) as
-this skill's doctrine. What follows is specific to `.agents/`:
+this skill's doctrine. What follows is specific to the automation surface:
 
 - **The legacy `openspec-*` surface is not this sweep's.** `.agents/skills/openspec-*/` and
   `.agents/skills/opsx/` are left by a prior `openspec init`; clearing them is a human's call
@@ -48,10 +48,16 @@ this skill's doctrine. What follows is specific to `.agents/`:
   hooks wired in `settings.json` and in command frontmatter are **report-only** surfaces:
   the tool names their findings (`sk-agent-*`, `sk-hook-*`) and each is routed to the mint
   that owns it (`quenching-components-agent-new`, `quenching-components-hook-new`).
-- **Codex translation drift is reported, never repaired here.** When this checkout carries the
-  generated Codex sibling, `cq components translate --check --json` names every divergent file
-  with `ct-translation-drift`. The align report includes those findings and routes the repair to
-  `cq components translate --write`.
+- **`.agents/` is the source; `.agents/skills/` is the generated bridge.** A target's skills live
+  in `.agents/skills/<name>/SKILL.md` (one segment, `/<name>`), its references in
+  `.agents/references/**`, its instructions in `AGENTS.md`. `cq components migrate --target .`
+  plans the move off the legacy layout (`.agents/skills/**`, `.agents/references/**`, the old
+  Codex translation under `.agents/`); `cq components bridge --target . --check` names the drift
+  of the generated `.agents/skills/<name>/` copies. **Conformant means both**: an empty migrate
+  plan (`conformant: true`) and `bridge --check` exit 0.
+- **Never run `cq components translate` on a target.** The `.claude → .agents` translation is the
+  legacy layout `migrate` retires; on the generic layer it would write the old translation back
+  over the source.
 
 ## Resolving the tool
 
@@ -95,32 +101,35 @@ print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / 
   fi
   python3 "$plugin_root/scripts/cq" "$@"
 }
+cq components migrate --target . --json
+cq components bridge --target . --check --json
 cq components doctor --json
 cq components lint --json
-cq components translate --check --json
 ```
 plus one `Glob` for the legacy pairs the tool cannot see (below). Branch as
 [sweep-doctrine](../../references/align/sweep-doctrine.md) §1. Probe before the inventory prescribes:
 
 | Probe result | What happens |
 | --- | --- |
-| both exit 0 with no findings, no translation drift, and no legacy pair | **STOP.** Report "`.agents/` conformant, N commands, nothing to align" and end. No inventory, no plan, no confirmation. |
-| both exit 0 and the only findings are the report-only wider surface (`sk-agent-*`, `sk-hook-*`) | STOP the same way, then list them with the mint that closes each. Nothing here is this sweep's to write. |
+| all four exit 0 with no findings (`migrate` `conformant: true`, the bridge in step) and no legacy pair | **STOP.** Report "`.agents/` conformant, N skills, bridge in step, nothing to align" and end. No inventory, no plan, no confirmation. |
+| all four exit 0 and the only findings are the report-only wider surface (`sk-agent-*`, `sk-hook-*`) | STOP the same way, then list them with the mint that closes each. Nothing here is this sweep's to write. |
 | the only findings are description codes (`sk-metadata-cap`, `sk-description-portable`, `sk-trigger-position`, `sk-no-boundary`) | **Skip to §8.** There is nothing to migrate, and an inventory, a plan and a confirmation for zero renames is ceremony — §8 carries its own gate. |
-| translation reports `ct-translation-drift` only | Report every divergent path and route to `cq components translate --write`; continue no migration for it. |
+| `migrate` exit 1 (a non-empty plan) or `bridge --check` exit 1 (drift), and nothing else | **Skip to §4** with only that block: the `operations`, `conflicts` and `renames` of the plan and the bridge's `changes`. |
+| `migrate` or `bridge` exit 2 | Report the refusal with its code (`ct-bridge-unowned`: a `.agents/skills/<name>/` the bridge did not generate) and stop; it is a human's call. |
 | anything else exits 1 or 2, or a legacy pair exists | Continue to step 2. |
 
 An **empty** surface (no commands, no skills) also stops. Note whether an OKF bundle exists
 (`/docs/index.md` with `okf_version`) and say so once — without one the rule and registry stay out
 of scope.
 
-**Done when:** the three payloads and the glob are in hand, and the run has either stopped,
+**Done when:** the four payloads and the glob are in hand, and the run has either stopped,
 committed to a full sweep, or entered §8 directly.
 
 ### 2. Inventory the surface (read-only)
 `Glob` for legacy pairs:
-`.agents/skills/*/SKILL.md` and directory-scoped `**/.agents/skills/*/SKILL.md`. **Every one of
-those is a pair awaiting collapse** — pair each with the wrapper whose body invokes it (the
+`.agents/skills/*/SKILL.md` and directory-scoped `**/.agents/skills/*/SKILL.md`, **minus every
+folder `.agents/skills/.generated-files.json` lists** — those are the bridge's copies, never a
+pair. **Every remaining one is a pair awaiting collapse** — pair each with the wrapper whose body invokes it (the
 `quenching:<name>` or bare `<name>` reference), and record a skill with no wrapper, or a
 wrapper naming no skill, as an item needing a human decision rather than a mechanical merge.
 Set aside every legacy `openspec-*` skill and `opsx/` wrapper (Doctrine's legacy `openspec-*`
@@ -134,13 +143,13 @@ the rule and the registry (`/docs/project/automation.md`) exist.
 
 **Where an item classifies with an evident category, also read the nest-vs-replace convention**
 already established for that category in this repo (taxonomy.md §Reading the nest-vs-replace
-convention): `Glob` `.agents/skills/<categoria>/**` and infer it from what already sits there.
+convention): `Glob` `.agents/skills/<categoria>-*/` (legacy: `.agents/skills/<categoria>/**`) and infer it from what already sits there.
 Derive the canonical path the classification produces and diff it against the item's current
 path — a mismatch is a relocation candidate, fed into §4's existing renames row like any other,
 never a new plan section or a new confirmation of its own.
 
 **A category whose convention is not readable yields no candidate** (nothing under
-`.agents/skills/<categoria>/` yet, or the two shapes mixed) — record the classification and move on.
+`.agents/skills/<categoria>-*/` yet, or the two shapes mixed) — record the classification and move on.
 **Done when:** the inventory table (item · classification · canonical path if it diverges ·
 `sk-*` gap) covers every item in the working set, and no file changed.
 
@@ -156,18 +165,23 @@ script that *invokes* the command is code-coupled.
 **Done when:** each planned rename is marked coupled or free, with its hits.
 
 ### 4. Present ONE consolidated plan → gate
-One table: **pairs to collapse** (skill + wrapper → the one command file that survives, with
+One table: **the migration block first** — `migrate`'s operations (move · remove · pointer),
+its renames (`/<a>:<b>` → `/<a>-<b>`) and conflicts, and the bridge changes — then **pairs to collapse** (skill + wrapper → the one command file that survives, with
 the skill name being retired), renames (old → canonical new, coupled ones marked), commands to
 create or rewrite (and wrongly nested generic commands to flatten), rule + registry creations
 from the molds when missing (rule born `authority: background`), unroutables kept-and-reported
 with reasons, obsolete-suspect flags (no deletion proposed without the human's word), and —
 labelled **"reported, not applied"** — the wider-surface findings (`sk-agent-*`, `sk-hook-*`),
 each with the mint that closes it.
+A migrate **conflict** (two editable copies that disagree) is listed and never confirmed: `--write`
+refuses while one stands, so it is a human's to settle first.
 Wait for the single confirmation; code-coupled items each await their own.
 **Done when:** the user has answered; declined → nothing written, run ends.
 
 ### 5. Apply
-Execute the confirmed plan: **collapse each pair per §6**, rename command paths, create/rewrite
+Execute the confirmed plan: **the migration first** — `cq components migrate --target . --write
+--json`, which leaves every `openspec-*` skill and `opsx/` command where it stands — then
+**collapse each pair per §6**, rename command paths, create/rewrite
 commands from `automation/command.md`, fix frontmatter gaps per the doctrine (description within
 the cap, triggers second sentence — bodies untouched), write rule and registry from their molds
 when planned, update each code-coupled reference site alongside its individually confirmed
@@ -201,8 +215,9 @@ Delete `skills/<name>/` only once its body is in place and its neighbours are re
 
 **A pair that is not a clean pair is reported, never guessed:** a skill with no wrapper needs a
 path chosen (a human decision), and a wrapper naming no skill has no body to take.
-**Done when:** every confirmed pair is one file, `skills/` holds nothing that was migrated, and
-every unclean pair is listed with what it needs.
+Then regenerate the bridge from the edited bodies: `cq components bridge --target . --write --json`.
+**Done when:** every confirmed pair is one file, `skills/` holds nothing that was migrated, the
+bridge was written after the last body edit, and every unclean pair is listed with what it needs.
 
 ### 7. Audit every body against the doctrine — read-only, always
 Read every body at the path it will keep. This stage **writes nothing** and needs no authorization.
@@ -293,6 +308,9 @@ print(p.get("installedPath") or home / "plugins/cache" / p["marketplaceName"] / 
   python3 "$plugin_root/scripts/cq" "$@"
 }
 cq components registry reindex --json   # the zone, from the post-migration surface and §8's descriptions
+cq components bridge --target . --write --json # the bridge, from §8's descriptions
+cq components migrate --target . --json        # `conformant: true` — an empty plan
+cq components bridge --target . --check --json # exit 0 — the bridge matches .agents/skills/
 cq components doctor --json             # the surface invariant the migration just changed
 cq components lint --json               # the gaps the migration was supposed to close — §8's codes
 cq components registry reindex --json   # `changed: false` — the zone now matches disk
@@ -313,12 +331,12 @@ In an OKF repo, confirm the registry is indexed, per
 [knowledge-add/homes.md](../../references/knowledge-add/homes.md). The migration
 counts go in the report below, not into the bundle.
 Report: passes run; collapsed / renamed / created / flattened / rule+registry created / unroutable /
-flagged; every surviving `sk-*` finding and every `ct-translation-drift` result, by code; §7's doctrine findings, listed
+flagged; every surviving `sk-*` finding, every migrate conflict and every bridge change still standing, by code; §7's doctrine findings, listed
 apart, each with its `quenching-components-command-new`; and §8's line — descriptions reviewed, edited,
 declined; the description-code count before → after from `lint`; every waived boundary with the
 competitor set checked (and its accepted `sk-no-boundary`); and every trigger handed to
-`quenching-components-command-eval`. **Done when:** `doctor` and `lint` exit 0 or each surviving
-finding is named with its code, the second
+`quenching-components-command-eval`. **Done when:** `migrate` reports an empty plan, `bridge --check` exits 0, `doctor` and `lint`
+exit 0 or each surviving finding is named with its code, the second
 `registry reindex` reports `changed: false`, and the counts, the doctrine findings and §8's line
 are reported.
 
@@ -347,4 +365,6 @@ are reported.
   folder moved there would register every file in it as a phantom command.
 - Never leave the GENERATED zone stale, and never write inside its markers by hand — the run
   ends on a `registry reindex` that reports `changed: false`.
+- Never edit a `.agents/skills/<name>/` the bridge generated; edit `.agents/skills/<name>/` and
+  rerun `bridge --write`.
 - Never hand this command file `context: fork` — both gates are mid-flow.

@@ -16,7 +16,7 @@ stage's input. Stage 1 is `quenching-knowledge-align`'s own work; stages 2–4 a
 | --- | --- | --- | --- |
 | 1 | the align's own structural pass | **structure** | Nothing can be filed, listed, or validated into a tree that isn't there. Scaffold homes, migrate variants, stamp frontmatter, regenerate every `index.md`, run the checker. Everything downstream assumes an aligned bundle. |
 | 2 | `quenching-knowledge-import-memory` | **content in from memory** | The project's Claude Code memory is one of two out-of-band stores of durable facts. Drain it into homes **before** the glossary sweep, so terms it introduces are in the bundle when stage 4 reads. |
-| 3 | `quenching-components-harness-align` | **content in from the harness** | `AGENTS.md`/`AGENTS.md` are the other out-of-band store. Harness MOVEs inlined durable knowledge into homes (delegating each MOVE to `quenching-knowledge-add`), leaving thin pointers. Runs after memory so both content feeders finish before the glossary sweep. |
+| 3 | `quenching-components-harness-align` | **content in from the harness** | `AGENTS.md` (and a legacy root `AGENTS.md` with its own content) is the other out-of-band store. Harness MOVEs inlined durable knowledge into homes (delegating each MOVE to `quenching-knowledge-add`), leaving thin pointers. Runs after memory so both content feeders finish before the glossary sweep. |
 | 4 | `quenching-knowledge-glossary-backfill` | **glossary from the whole bundle** | Now the bundle is structurally sound and both feeders have landed, sweep the **complete** bundle for repo-specific terms and backfill the bundle-root `glossary.md`. Swept earlier, it would miss terms stages 2–3 were still importing. |
 
 **Stages 1–3 are probed; stage 4 is offered.** Gate stage 4 on a free proxy (concept-doc count
@@ -75,7 +75,7 @@ auto-closed. The rightmost column is also what the probe reads: a run whose only
 | `dir-no-index` / `index-broken-link` / `index-orphan` (validator WARN) | stage 1 | Yes |
 | `okf-legacy-root` / `okf-legacy-home` / `okf-legacy-doc-quadrant` / `okf-legacy-glossary` — the bundle's own root/home/quadrant/glossary sits in a pre-rename layout | stage 1 | Yes |
 | Undrained facts in `~/.claude/projects/<cwd>/memory/` | `quenching-knowledge-import-memory` | Yes |
-| Fat harness — durable knowledge inlined in `AGENTS.md`/`AGENTS.md` | `quenching-components-harness-align` | Yes (MOVE, via `quenching-knowledge-add`) |
+| Fat harness — durable knowledge inlined in `AGENTS.md` or a legacy root `AGENTS.md` | `quenching-components-harness-align` | Yes (MOVE, via `quenching-knowledge-add`) |
 | Broken / lying harness pointer | `quenching-components-harness-align` | Yes |
 | Repo-specific term in the bundle, absent from the bundle-root `glossary.md` | `quenching-knowledge-glossary-backfill` | **Offered** — no cheap signal proves the gap, so the human is asked once per run |
 | `resource-unresolved` — a `resource` entry matching nothing on disk | *(surface → `quenching-knowledge-add` to restamp)* | **No** — only a human knows what the doc now governs; reported with the entry |

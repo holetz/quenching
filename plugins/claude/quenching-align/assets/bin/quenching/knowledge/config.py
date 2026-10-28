@@ -2,7 +2,7 @@
 
 Moved verbatim out of the pre-refactor OKF validator script.
 
-Config (target repo's `.claude/quenching.json` `shared.okfValidate`, over `.claude/hooks/hooks-config.json` + `hooks-config.local.json`, block
+Config (target repo's `.agents/quenching.json` `shared.okfValidate`, over `.claude/hooks/hooks-config.json` + `hooks-config.local.json`, block
 `okfValidate`): `warnAsError`, `ignoreGlobs`. An absent config uses the defaults below; an unreadable, invalid or non-object one is refused.
 The file and directory keep the `hooks` name for the two keys that survive it — the plugin's
 self-installed hook that once read the rest of this block (`enabled`, `blockOnFail`, `hardBlock`,
@@ -51,7 +51,7 @@ def _load_config(project_dir: str) -> dict:
 
 
 def _apply_shared(project_dir: str, cfg: dict) -> dict:
-    """Lay `shared.okfValidate` of `.claude/quenching.json` over the hooks-config layers.
+    """Lay `shared.okfValidate` of `.agents/quenching.json` over the hooks-config layers.
 
     Key by key: a leaf of the wrong shape is ignored and the lower layer keeps the key.
     """

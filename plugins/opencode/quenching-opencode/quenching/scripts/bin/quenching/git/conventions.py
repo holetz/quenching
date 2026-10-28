@@ -1,6 +1,6 @@
 """`cq git conventions` — the one read every command in the `git` pillar runs once before its
 first commit, over BOTH layers a target may declare: the directives it addressed to the plugin in
-`.claude/quenching.json`'s `shared.gitConventions`, and the standard it published under
+`.agents/quenching.json`'s `shared.gitConventions`, and the standard it published under
 `docs/standards/git/**`. `assets/references/git/conventions.md` §The declared-directive layer and
 §The read-if-present rule are the contract; this is their one mechanical reading, so five commands
 stop repeating the same `ls`, frontmatter peek and config load.
@@ -73,7 +73,7 @@ def cmd_conventions(args) -> int:
     governs = "target" if docs else "defaults"
     lines = []
     if cfg["config"]:
-        lines.append("declared in .claude/quenching.json:")
+        lines.append("declared in .agents/quenching.json:")
         lines += [f"  gitConventions.{key}: {value}"
                   for key, value in sorted(cfg["config"].items())]
     if docs:

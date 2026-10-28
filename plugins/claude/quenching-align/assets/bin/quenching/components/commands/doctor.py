@@ -27,8 +27,9 @@ from quenching.common.io import read_text
 from quenching.common.output import finding, report_findings
 from quenching.components.commands.lint import lint_dangling
 from quenching.components.hooks import hook_ladder_findings
-from quenching.components.surface import (COMMANDS_DIR, SURFACE_MISSING, agent_definitions,
-                                          load_surface, plugin_prefix, plural)
+from quenching.components.surface import (COMMANDS_DIR, SKILL_FILE, SURFACE_MISSING,
+                                          agent_definitions, claude_side, load_surface,
+                                          plugin_prefix, plural)
 
 KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
@@ -54,7 +55,12 @@ def _doctor_findings(surface: dict) -> list[dict]:
                                            f"{COMMANDS_DIR}/ (shared procedure belongs beside the "
                                            "payload, never beside a command)"))
 
-        for segment in c["relpath"][:-3].split("/"):
+        # a generic skill is named by its folder (`/<name>` from `<name>/SKILL.md`); a
+        # `SKILL.md` under commands/ is still a command path and is checked whole
+        skill = (os.path.basename(c["relpath"]) == SKILL_FILE
+                 and c["command"] == "/" + os.path.dirname(c["relpath"]))
+        stem = os.path.dirname(c["relpath"]) if skill else c["relpath"][:-3]
+        for segment in stem.split("/"):
             if not KEBAB_RE.match(segment):
                 findings.append(finding("sk-non-canonical-name", "error",
                                         f"`{segment}` in {c['command']} is not kebab-case",
@@ -99,7 +105,7 @@ def _wider_findings(root: str) -> list[dict]:
                        "(/quenching-align:components:agent:new)"))
 
     for settings_name in ("settings.json", "settings.local.json"):
-        text = read_text(os.path.join(root, settings_name))
+        text = read_text(os.path.join(claude_side(root), settings_name))
         if text is None:
             continue
         try:

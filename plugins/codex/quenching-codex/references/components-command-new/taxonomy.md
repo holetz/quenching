@@ -45,13 +45,13 @@ answer is "several" or "none".
 
 ### Reading the nest-vs-replace convention
 
-The convention lives entirely inside the **target repo's own** `.agents/skills/<categoria>/`
+The convention lives entirely inside the **target repo's own** `.agents/skills/<categoria>-*/`
 — never in the plugin, and never in a dedicated registry file of its own:
 
-- Files already sitting under `.agents/skills/<categoria>/<folder-path>/` (the real
-  folder present as a subpath) → the convention already in force is **nest**.
-- Files already sitting directly under `.agents/skills/<categoria>/` with no real-folder
-  subpath → the convention already in force is **replace**.
+- Skills already named `<categoria>-<folder>-…-<verb>` (the real folder folded into the
+  name) → the convention already in force is **nest**.
+- Skills already named `<categoria>-<verb>` with no real-folder segment → the convention
+  already in force is **replace**.
 - The category has no files yet in that repo, or the two shapes are already mixed
   (ambiguous) → ask the human once. The physical structure that first answer produces
   *becomes* the record — reused in silence for every later skill of that category in that
@@ -67,46 +67,43 @@ repo.
 | --- | --- | --- |
 | No category, domain-bound | flattened folder path + verb, kebab-case | `communications/teams/` + create → `communications-teams-create` |
 | No category, generic | verb-object (or the object alone when the verb is implied), no folder path | `release-notes`, `generate-changelog` |
-| Category, no folder tied | `<categoria>/<verb>` (or `<categoria>/<verb-object>`) | `git` + commit → `git/commit` |
-| Category, folder nests | `<categoria>/<folder-path>/<verb>` | `deploy` + `infra/terraform/` + apply → `deploy/infra/terraform/apply` |
-| Category, folder replaced | `<categoria>/<verb>` | `deploy` + `infra/terraform/` + apply → `deploy/apply` — the category takes the folder's place |
+| Category, no folder tied | `<categoria>-<verb>` (or `<categoria>-<verb-object>`) | `git` + commit → `git-commit` |
+| Category, folder nests | `<categoria>-<folder-path>-<verb>` | `deploy` + `infra/terraform/` + apply → `deploy-infra-terraform-apply` |
+| Category, folder replaced | `<categoria>-<verb>` | `deploy` + `infra/terraform/` + apply → `deploy-apply` — the category takes the folder's place |
 
-The path alone tells where the command acts: a reader scanning `.agents/skills/`
-reconstructs the monorepo map from the domain-bound and category paths, and anything at the
+Every name is **one segment**: Codex discovers `.agents/skills/<name>/SKILL.md` only flat,
+and the bridge copies the source folder as it is. The name alone tells where the skill acts: a
+reader scanning `.agents/skills/` reconstructs the monorepo map from the domain-bound and category paths, and anything at the
 top level is repo-wide by declaration.
 
 ## Placement — the path IS the identity
 
 <!-- rules -->
-- **One file per entry point.** A `.agents/skills/<path>.md` carries both the description
-  that routes to it and the body that runs: a command's path is its whole identity, and
-  nothing derives a second name that could disagree with it.
-- **A domain-bound command with no evident category lives at**
-  `.agents/skills/<folder-path>/<verb>.md`, invocable as `/<folder>:<subfolder>:<verb>` —
-  Codex's native `:` separator maps one `:` per path segment (a `::` in older notes
-  maps to `:`). Mold: `assets/templates/automation/command.md`.
-- **A command with an evident category lives at** `.agents/skills/<categoria>/<verb>.md`
-  when no real folder ties it, or when that category's established convention in this repo
-  is to replace the folder; at `.agents/skills/<categoria>/<folder-path>/<verb>.md` when
-  the convention is to nest. Invocable as `/<categoria>:<verb>` or
-  `/<categoria>:<subfolder>:<verb>` respectively.
-- **A generic command with no evident category is a flat** `.agents/skills/<verb-object>.md`,
-  never nested under a folder or category it does not serve.
+- **One file per entry point.** A `.agents/skills/<name>/SKILL.md` carries both the
+  description that routes to it and the body that runs, invocable as `/<name>`; its frontmatter
+  `name:` equals the folder name. The name is the whole identity, and nothing derives a second
+  name that could disagree with it. Mold: `assets/templates/automation/command.md`.
+- **`.agents/` is the only editable source.** `.agents/skills/<name>/` is the copy
+  `cq components bridge` generates from it, marked as generated and pinned by a sha256
+  manifest; it is never edited, and `bridge --check` names its drift.
+- **A generic skill with no evident category is a flat** `<verb-object>`, never prefixed with a
+  folder or category it does not serve.
 
-**`commands/**` is the only tree Codex registers**, so nothing that is not an entry
-point lives there — shared procedure, references, fixtures and eval cases sit outside it and
-are cited by absolute path. A file parked under `commands/` registers as a command with no
-description, which `doctor` reports as `sk-no-description`; the layout rule needs no check
-of its own.
+**A skill's folder holds only that skill**: `SKILL.md` and the files it alone reads. Shared
+procedure lives in `.agents/references/<name>/` and eval cases in `.agents/evals/<name>/`, cited
+by path. A legacy `.agents/skills/` surface is `quenching-components-align`'s to migrate
+(`cq components migrate`); the mint never writes into it.
 
 **Accepted variation (documented, never generated):** directory-scoped surfaces
-(`<folder>/.agents/skills/`) also bind a command to a folder and are a conformant way
-to express domain-binding — the sweep classifies them in place. The mint always writes into
-the repo-root `.agents/`, keeping the surface auditable in one place.
+(`<folder>/.agents/skills/`) also bind a command to a folder — the sweep classifies them in
+place. The mint always writes into the repo-root `.agents/`, keeping the surface auditable in
+one place.
 
 <!-- rationale -->
-Codex merged custom commands into skills. There is no `SKILL.md` half and no wrapper,
-so there is no mirroring rule and no bijection to check.
+Codex merged custom commands into skills, and OpenCode reads `.agents/skills/` and
+`.agents/skills/` alike. A flat `.agents/skills/<name>/` source copied verbatim into
+`.agents/skills/<name>/` is the one shape all three harnesses discover, with no link, so it holds
+on Windows without administrator rights.
 
 Discovery story: `/` + tab walks the command tree in folder order, so the paths make the
 automation surface navigable the same way the repo is.
@@ -129,7 +126,8 @@ This file owns, because no tool decides it:
   organized, a link to the rule, pointers to installed plugins — lives **outside** the
   markers and is never touched by regeneration. A registry with no markers is
   `sk-no-zone`.
-- **What the zone is derived from.** The local `.agents/skills/**/*.md` frontmatter,
+- **What the zone is derived from.** The local entry points' frontmatter
+  (`.agents/skills/*/SKILL.md`; `.agents/skills/**/*.md` on a legacy layout),
   and only that: the zone lists the repo's **own** surface. Commands contributed by
   installed plugins (`quenching-specs-*`, marketplace plugins) stay out of it and may be pointed
   at from the curated prose.

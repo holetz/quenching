@@ -15,7 +15,11 @@ from quenching.common.remote import remote_host as _remote_host
 from quenching.common.io import read_text, write_text
 
 
-CONFIG_FILE = os.path.join(".claude", "quenching.json")
+CONFIG_FILE = os.path.join(".agents", "quenching.json")
+# The home before the generic `.agents/` layer: still read when the home is absent, and reported as
+# shadowed when both exist, so a half-migrated repository never edits the copy nobody reads.
+CLAUDE_CONFIG_FILE = os.path.join(".claude", "quenching.json")
+CONFIG_FILES = (CONFIG_FILE, CLAUDE_CONFIG_FILE)
 LEGACY_CONFIG_FILE = "config.json"
 USER_CONFIG_ENV = "QUENCHING_USER_CONFIG"
 NAMESPACES = ("shared", "specs", "ops", "proof", "delivery")
@@ -57,6 +61,22 @@ LEGACY_DESTINATIONS = {
 }
 
 
+def config_path(repo_root: str) -> str:
+    """The configuration file a repository is read from: the home, else the legacy file, else
+    the home a writer should create."""
+    home = os.path.join(repo_root, CONFIG_FILE)
+    legacy = os.path.join(repo_root, CLAUDE_CONFIG_FILE)
+    return legacy if not os.path.isfile(home) and os.path.isfile(legacy) else home
+
+
+def shadowed_config_path(repo_root: str) -> str | None:
+    """The legacy file nobody reads, when the home exists beside it."""
+    legacy = os.path.join(repo_root, CLAUDE_CONFIG_FILE)
+    if os.path.isfile(os.path.join(repo_root, CONFIG_FILE)) and os.path.isfile(legacy):
+        return legacy
+    return None
+
+
 class ConfigProvider(Protocol):
     """Where the repository layer of the configuration comes from.
 
@@ -72,14 +92,15 @@ class ConfigProvider(Protocol):
 
 
 class FileProvider:
-    """The compatibility read: `.claude/quenching.json` at the repository root."""
+    """The file read: `.agents/quenching.json` at the repository root, or the legacy
+    `.claude/quenching.json` when the home is absent."""
 
     name = "file"
 
     def read(self, repo_root: str) -> tuple[dict | None, dict]:
-        path = os.path.join(repo_root, CONFIG_FILE)
+        path = config_path(repo_root)
         info = {"name": self.name, "path": path, "present": os.path.isfile(path),
-                "unparseable": None}
+                "unparseable": None, "shadowedPath": shadowed_config_path(repo_root)}
         if not info["present"]:
             return None, info
         try:
@@ -142,7 +163,7 @@ def find_repo_root(specs_root: str) -> str:
     """Find the repository containing the shared configuration home."""
     current = os.path.abspath(specs_root)
     while True:
-        if os.path.isfile(os.path.join(current, CONFIG_FILE)):
+        if any(os.path.isfile(os.path.join(current, name)) for name in CONFIG_FILES):
             return current
         parent = os.path.dirname(current)
         if parent == current:
@@ -248,13 +269,14 @@ def _load_user_layer() -> dict:
 def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     """Return the parsed envelope and metadata without interpreting any namespace."""
     repo = find_repo_root(root)
-    path = os.path.join(repo, CONFIG_FILE)
+    path = config_path(repo)
     provider, provider_host = (detect_provider(root) if detect_provider_info
                                else (None, None))
     out = {
         "path": path,
         "present": os.path.isfile(path),
         "unparseable": None,
+        "shadowedPath": None,
         "provider": provider,
         "providerHost": provider_host,
         "unknownProvider": provider_host if provider is None else None,
@@ -289,6 +311,7 @@ def load_config(root: str, *, detect_provider_info: bool = True) -> dict:
     out["path"] = info["path"]
     out["present"] = info["present"]
     out["unparseable"] = info["unparseable"]
+    out["shadowedPath"] = info.get("shadowedPath")
     if obj is None:
         if not info["unparseable"]:
             _apply_user_layer(out, user["namespaces"], {})
@@ -408,7 +431,7 @@ def detect_profile(root: str, backend: str | None = None) -> list[str]:
 def prepare_minimal_config(root: str) -> tuple[dict | None, dict]:
     """Prepare the first-use envelope without writing it or clobbering an existing one."""
     repo = os.path.abspath(find_repo_root(root))
-    path = os.path.join(repo, CONFIG_FILE)
+    path = config_path(repo)
     if os.path.isfile(path):
         return None, {
             "code": "cq-config-present",

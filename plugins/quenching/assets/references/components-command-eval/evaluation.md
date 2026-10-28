@@ -18,17 +18,19 @@ have installed.
 ## Where the artifacts live
 
 ```
-.claude/commands/<path>.md          # the command being measured — ONE file
-.claude/evals/<path>/
+.agents/skills/<name>/SKILL.md      # the skill being measured — ONE file
+.agents/evals/<name>/
   evals.json                        # the cases — committed, reviewed, edited by hand
   runs/<YYYY-MM-DD-HHMM>/
     grading.json                    # one object per case, with evidence
     benchmark.json                  # the run's aggregate and its delta
 ```
 
-`<path>` **mirrors the command path**: `/quenching-align:knowledge:add` is measured by
-`.claude/evals/knowledge/add/evals.json`. In this plugin the same tree lives at
-`${CLAUDE_PLUGIN_ROOT}/assets/evals/<path>/`.
+In a target repo `<name>` **mirrors the skill name**: `/release-notes` is measured by
+`.agents/evals/release-notes/evals.json`, beside the `.agents/` source and never under the
+generated `.claude/skills/` bridge. In this plugin the tree lives at
+`${CLAUDE_PLUGIN_ROOT}/assets/evals/<path>/`, `<path>` mirroring the command path
+(`knowledge/add` for `/quenching-align:knowledge:add`).
 
 Run outputs are timestamped so two runs can be compared rather than overwriting each other — pass
 the timestamp in; never read the clock inside a case.

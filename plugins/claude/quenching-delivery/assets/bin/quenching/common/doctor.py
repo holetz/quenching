@@ -176,7 +176,7 @@ def _config_line(config: dict | None) -> str | None:
     if not config["present"] and config.get("provider") not in (None, "file"):
         return f"config: served by the `{config['provider']}` provider — no document returned"
     if not config["present"]:
-        return "config: no .claude/quenching.json — `cq config init --write` seeds it"
+        return "config: no .agents/quenching.json — `cq config init --write` seeds it"
     if config["missing"]:
         return (f"config: {len(config['missing'])} seeded key(s) missing "
                 f"({', '.join(config['missing'][:3])}{', …' if len(config['missing']) > 3 else ''})"

@@ -9,6 +9,7 @@ import re
 from pathlib import Path
 
 from quenching.common.output import NoAbbrevParser, finding, refuse, report_findings
+from quenching.components.surface import generic_surface
 
 
 SOURCE: Path | None = None
@@ -87,7 +88,7 @@ def _default_pair(payload: Path, root: str | None) -> tuple[Path, Path]:
         raise ValueError("no repository surface to translate; pass --source and --target")
     # `find_surface_root` answers with the `.claude` directory when one exists; both halves of
     # the pair are the repository root, which `claude_surface()`/`codex_surface()` descend from.
-    repository = surface.parent if surface.name == ".claude" else surface
+    repository = surface.parent if surface.name in (".claude", ".agents") else surface
     return repository, repository
 
 
@@ -132,6 +133,23 @@ def claude_surface() -> Path:
 def codex_surface() -> Path:
     """Resolve a repository root or its `.agents` directory to the Codex surface."""
     return target() if target().name == ".agents" else target() / ".agents"
+
+
+def generic_target() -> str | None:
+    """Why a repository-surface translation must not run here, or None.
+
+    A target that keeps its skills in `.agents/skills/` (or carries the Claude bridge generated
+    from them) has `.agents/` as its source; the legacy `.claude` → `.agents` translation would
+    write over it.
+    """
+    if plugin_translation():
+        return None
+    if generic_surface(str(codex_surface())):
+        return f"{codex_surface() / 'skills'} holds the repository's own skills"
+    bridge = claude_surface() / "skills" / ".generated-files.json"
+    if bridge.is_file():
+        return f"{bridge} marks a Claude bridge generated from .agents/skills"
+    return None
 
 
 def read_adaptation() -> dict:
@@ -583,8 +601,9 @@ def apply_removals(body: str, command_id: str, adaptation: dict) -> str:
     return body
 
 
-def command_to_skill(command: Path, adaptation: dict) -> str:
-    raw = command.read_text(encoding="utf-8")
+def command_to_skill(command: Path, adaptation: dict, raw: str | None = None) -> str:
+    """`raw` translates another version of `command`'s text (`cq components migrate` reads history)."""
+    raw = command.read_text(encoding="utf-8") if raw is None else raw
     if not raw.startswith("---\n"):
         raise ValueError(f"command has no frontmatter: {command}")
     end = raw.find("\n---\n", 4)
@@ -632,13 +651,23 @@ def command_to_skill(command: Path, adaptation: dict) -> str:
         transform_codex_runtime(body, adaptation), adaptation))
 
 
-def skill_policy(command: Path) -> bytes | None:
+def skill_policy(command: Path, raw: str | None = None) -> bytes | None:
     """Codex's `agents/openai.yaml` that keeps a `disable-model-invocation` command human-only."""
-    raw = command.read_text(encoding="utf-8")
+    raw = command.read_text(encoding="utf-8") if raw is None else raw
     end = raw.find("\n---\n", 4) if raw.startswith("---\n") else -1
     flagged = any(line.strip().lower() == "disable-model-invocation: true"
                   for line in raw[4:end].splitlines()) if end > 0 else False
     return b"policy:\n  allow_implicit_invocation: false\n" if flagged else None
+
+
+def reference_translation(reference: Path, text: str, adaptation: dict) -> str:
+    """What a repository's `.claude/references/<rel>` becomes under `.agents/references/<rel>`."""
+    if reference.suffix == ".md":
+        text = transform_codex_runtime(text, adaptation)
+    text = transform_platform(text, adaptation)
+    if reference.suffix == ".md":
+        text = transform_codex_markdown(text)
+    return text
 
 
 def generated_tree() -> dict[str, bytes]:
@@ -654,12 +683,8 @@ def generated_tree() -> dict[str, bytes]:
         if references.is_dir():
             for reference in sorted(path for path in references.rglob("*") if path.is_file()):
                 relative = reference.relative_to(references)
-                translated = reference.read_text(encoding="utf-8")
-                if reference.suffix == ".md":
-                    translated = transform_codex_runtime(translated, adaptation)
-                translated = transform_platform(translated, adaptation)
-                if reference.suffix == ".md":
-                    translated = transform_codex_markdown(translated)
+                translated = reference_translation(reference, reference.read_text(encoding="utf-8"),
+                                                   adaptation)
                 output[str(Path("references") / relative)] = translated.encode()
         harness = claude_surface().parent / "CLAUDE.md"
         if harness.is_file() and not harness.read_text(encoding="utf-8").lstrip().startswith("@AGENTS.md"):
@@ -912,6 +937,14 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
 def cmd_translate(args, root: str) -> int:
     try:
         configure(args.source, args.target, root)
+        reason = generic_target()
+        if reason:
+            return refuse({"code": "ct-translation-refused",
+                           "message": f"{reason}; translating .claude/ into .agents/ would write "
+                                      "the legacy translation over the source",
+                           "remedy": "keep .agents/ as the source and run "
+                                     "`cq components bridge --target <repo> --write` for the "
+                                     "Claude copy"}, args.json)
         tree = generated_tree()
     except ValueError as exc:
         return refuse({"code": "ct-translation-refused", "message": str(exc)}, args.json)

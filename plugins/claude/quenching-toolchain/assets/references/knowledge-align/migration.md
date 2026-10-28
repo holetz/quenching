@@ -252,7 +252,7 @@ built from full path fragments (`docs/arquitetura`), not just folder names, and 
 docstring counts as product code.
 
 **Report the scope in the proposal:** how many files, which reach **code**, and which
-non-`docs/` referrers (skills, `CLAUDE.md`, prose links) the rename will edit. The OK covers
+non-`docs/` referrers (skills, `AGENTS.md`, prose links) the rename will edit. The OK covers
 exactly this **enumerated** set, shown in the proposal — never deferred to an after-the-fact
 wrap-up.
 

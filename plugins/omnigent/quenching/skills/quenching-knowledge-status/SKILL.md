@@ -66,7 +66,8 @@ never on prose.
   §Resource activity it emits no finding and never runs in the hook path).
 - `Glob` `/docs/**/*.md` for the density counts (the payload's `density` is not used in its place), and read `/docs/index.md`, each home's `index.md`,
   and `/docs/glossary.md`.
-- `Glob` `~/.claude/projects/<cwd>/memory/*.md` and read the root `AGENTS.md`/`AGENTS.md` size —
+- `Glob` `~/.claude/projects/<cwd>/memory/*.md` and read the root `AGENTS.md` size (and the root
+  `AGENTS.md`'s when it is more than `@AGENTS.md`) —
   the two out-of-band stores whose content the cycle would pull in.
 - `Glob` `/docs/**/log.md` — a figure for §5, never a finding. If `$ARGUMENTS` names a home or
   path, restrict the density and named document reads to that scope while keeping the validator's
