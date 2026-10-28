@@ -13,6 +13,19 @@ owner: [`ci-cd/versioning-release.md`](docs/standards/ci-cd/versioning-release.m
 short version for a consumer: the version is published once, deliberately, as a release — never at a
 spec's own conclude — and `cq --version` is what answers which one you are running.
 
+## 6.10.1
+
+**The shipped prose cites the generic `.agents/` layer, Omnigent reads references as MCP
+  resources, and the OpenCode upgrade path is explicit.** `components:command:eval` writes the case
+  set beside the skill at `.agents/evals/<name>/`; the plugin README, standards, references,
+  templates and the OKF skeleton name `.agents/quenching.json`, with `.claude/quenching.json` kept
+  as the documented legacy read. The MCP server rewrites a served reference's plugin-root sibling
+  links to `quenching://references/`, and the Omnigent operator replaces the 23 `cq components read
+  quenching://...` shell blocks with the resource URI they should read. The OpenCode distribution
+  documents the 6.9.0 → 6.10.x upgrade: remove the old `~/.config/opencode` copy before installing
+  under `~/.opencode`. The verifier protocol records that the orchestrator stamps
+  `verifier=pass|fail` from a verifier verdict; the verifier itself stays read-only.
+
 ## 6.10.0
 
 **`plugins/` is organised by harness, target repositories align on the generic `.agents/` layer,

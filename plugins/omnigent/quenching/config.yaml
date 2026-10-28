@@ -15,4 +15,4 @@ tools:
   quenching:
     type: mcp
     command: uvx
-    args: ["--from", "git+https://github.com/holetz/quenching@6.10.0#subdirectory=plugins/quenching", "quenching-mcp"]
+    args: ["--from", "git+https://github.com/holetz/quenching@6.10.1#subdirectory=plugins/quenching", "quenching-mcp"]
