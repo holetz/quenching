@@ -149,7 +149,12 @@ The bridge is generated, and verified by code:
   does not list is refused (exit 2, `ct-bridge-unowned`), never overwritten.
 - `cq components migrate --target <repo>` plans the move from the legacy `.claude/commands/` layout;
   `/quenching-align:align`, `/quenching-align:components:align` and `/quenching-align:components:status`
-  run it with `bridge --check`, and apply a non-empty plan on one confirmation.
+  run it with `bridge --check`, and apply a non-empty plan on one confirmation. It trusts no
+  manifest: an `.agents/skills/<path>/` or `.agents/references/<rel>` beside a `.claude/` source is
+  retired as the old translation only when its content is what `translate` generates from some
+  committed version of that source (or that translation plus edits the current source already
+  carries), so a hand-made skill of the same name is a conflict and nothing is written. A nested
+  skill folder flattens whole, sibling files with it; `openspec-*` and `opsx/` stay put.
 - A target is conformant when `migrate` reports `conformant: true` and `bridge --check` exits 0.
   `cq components translate` refuses (exit 2) on such a target, so the legacy translation never
   lands over the source ([surface-translation.md](../architecture/surface-translation.md)

@@ -149,7 +149,8 @@ Wait for the single confirmation; code-coupled items each await their own.
 
 ### 5. Apply
 Execute the confirmed plan: **the migration first** — `cq components migrate --target . --write
---json`, then `cq components bridge --target . --write --json` — then **collapse each pair per §6**, rename command paths, create/rewrite
+--json`, which leaves every `openspec-*` skill and `opsx/` command where it stands — then
+**collapse each pair per §6**, rename command paths, create/rewrite
 commands from `automation/command.md`, fix frontmatter gaps per the doctrine (description within
 the cap, triggers second sentence — bodies untouched), write rule and registry from their molds
 when planned, update each code-coupled reference site alongside its individually confirmed
@@ -183,8 +184,9 @@ Delete `skills/<name>/` only once its body is in place and its neighbours are re
 
 **A pair that is not a clean pair is reported, never guessed:** a skill with no wrapper needs a
 path chosen (a human decision), and a wrapper naming no skill has no body to take.
-**Done when:** every confirmed pair is one file, `skills/` holds nothing that was migrated, and
-every unclean pair is listed with what it needs.
+Then regenerate the bridge from the edited bodies: `cq components bridge --target . --write --json`.
+**Done when:** every confirmed pair is one file, `skills/` holds nothing that was migrated, the
+bridge was written after the last body edit, and every unclean pair is listed with what it needs.
 
 ### 7. Audit every body against the doctrine — read-only, always
 Read every body at the path it will keep. This stage **writes nothing** and needs no authorization.
@@ -254,6 +256,7 @@ deleted.
 Regenerate the zone, then let the tool judge the surface the migration produced:
 ```bash
 cq components registry reindex --json   # the zone, from the post-migration surface and §8's descriptions
+cq components bridge --target . --write --json # the bridge, from §8's descriptions
 cq components migrate --target . --json        # `conformant: true` — an empty plan
 cq components bridge --target . --check --json # exit 0 — the bridge matches .agents/skills/
 cq components doctor --json             # the surface invariant the migration just changed

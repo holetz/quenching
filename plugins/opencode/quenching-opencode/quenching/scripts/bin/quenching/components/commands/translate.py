@@ -601,8 +601,9 @@ def apply_removals(body: str, command_id: str, adaptation: dict) -> str:
     return body
 
 
-def command_to_skill(command: Path, adaptation: dict) -> str:
-    raw = command.read_text(encoding="utf-8")
+def command_to_skill(command: Path, adaptation: dict, raw: str | None = None) -> str:
+    """`raw` translates another version of `command`'s text (`cq components migrate` reads history)."""
+    raw = command.read_text(encoding="utf-8") if raw is None else raw
     if not raw.startswith("---\n"):
         raise ValueError(f"command has no frontmatter: {command}")
     end = raw.find("\n---\n", 4)
@@ -650,13 +651,23 @@ def command_to_skill(command: Path, adaptation: dict) -> str:
         transform_codex_runtime(body, adaptation), adaptation))
 
 
-def skill_policy(command: Path) -> bytes | None:
+def skill_policy(command: Path, raw: str | None = None) -> bytes | None:
     """Codex's `agents/openai.yaml` that keeps a `disable-model-invocation` command human-only."""
-    raw = command.read_text(encoding="utf-8")
+    raw = command.read_text(encoding="utf-8") if raw is None else raw
     end = raw.find("\n---\n", 4) if raw.startswith("---\n") else -1
     flagged = any(line.strip().lower() == "disable-model-invocation: true"
                   for line in raw[4:end].splitlines()) if end > 0 else False
     return b"policy:\n  allow_implicit_invocation: false\n" if flagged else None
+
+
+def reference_translation(reference: Path, text: str, adaptation: dict) -> str:
+    """What a repository's `.claude/references/<rel>` becomes under `.agents/references/<rel>`."""
+    if reference.suffix == ".md":
+        text = transform_codex_runtime(text, adaptation)
+    text = transform_platform(text, adaptation)
+    if reference.suffix == ".md":
+        text = transform_codex_markdown(text)
+    return text
 
 
 def generated_tree() -> dict[str, bytes]:
@@ -672,12 +683,8 @@ def generated_tree() -> dict[str, bytes]:
         if references.is_dir():
             for reference in sorted(path for path in references.rglob("*") if path.is_file()):
                 relative = reference.relative_to(references)
-                translated = reference.read_text(encoding="utf-8")
-                if reference.suffix == ".md":
-                    translated = transform_codex_runtime(translated, adaptation)
-                translated = transform_platform(translated, adaptation)
-                if reference.suffix == ".md":
-                    translated = transform_codex_markdown(translated)
+                translated = reference_translation(reference, reference.read_text(encoding="utf-8"),
+                                                   adaptation)
                 output[str(Path("references") / relative)] = translated.encode()
         harness = claude_surface().parent / "CLAUDE.md"
         if harness.is_file() and not harness.read_text(encoding="utf-8").lstrip().startswith("@AGENTS.md"):
