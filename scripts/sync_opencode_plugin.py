@@ -2,7 +2,8 @@
 """Generate and validate the OpenCode distribution of the quenching plugin.
 
 `plugins/quenching/` is the only editable source. This generator lays the command surface out as
-an OpenCode configuration directory, `plugins/quenching-opencode/`:
+an OpenCode configuration directory, `plugins/opencode/quenching-opencode/`, installed under
+`~/.opencode/` for use outside Omnigent:
 
   commands/quenching-<front>-<verb>.md   one OpenCode command per source command
   agents/quenching-<agent>.md            one OpenCode subagent per source agent (deny-only permissions)
@@ -28,16 +29,15 @@ sys.path.insert(0, str(REPO / "plugins/quenching/assets/bin"))
 from quenching.components.commands import translate  # noqa: E402
 
 SOURCE = REPO / "plugins/quenching"
-TARGET = REPO / "plugins/quenching-opencode"
-CODEX_TARGET = REPO / "plugins/quenching-codex"
+TARGET = REPO / "plugins/opencode/quenching-opencode"
+CODEX_TARGET = REPO / "plugins/codex/quenching-codex"
 MANIFEST = ".generated-files.json"
-ROOT = "~/.config/opencode/quenching"
+ROOT = "~/.opencode/quenching"
 PAYLOAD_DIRS = ("references", "templates", "specs", "knowledge", "design", "portal",
                 "checks", "zensical", "evals", "opensource")
 AGENT_PREFIX = "quenching-"
 
-OPENCODE_CQ_WRAPPER = ('cq() { python3 "${QUENCHING_OPENCODE_ROOT:-${XDG_CONFIG_HOME:-$HOME/.config}'
-                       '/opencode/quenching}/scripts/cq" "$@"; }')
+OPENCODE_CQ_WRAPPER = 'cq() { python3 "${QUENCHING_OPENCODE_ROOT:-$HOME/.opencode/quenching}/scripts/cq" "$@"; }'
 
 # Order matters: the longest, most specific prefix first.
 REPLACEMENTS = (
@@ -109,7 +109,7 @@ shell function defined at the start of the same bash call:
 ```
 
 It runs the bundled `scripts/cq` of the installed payload — `$QUENCHING_OPENCODE_ROOT` when set,
-else `~/.config/opencode/quenching`. Define it again in every bash call: shell state does not
+else `~/.opencode/quenching`. Define it again in every bash call: shell state does not
 survive between calls, and a subagent may start with a fresh environment. Never install `cq`
 into a target repository and never edit the user's PATH to make it resolve.
 
@@ -237,14 +237,19 @@ cite (`quenching/`, including the bundled `cq`).
 
 ## Install
 
-Copy the three parts into the OpenCode configuration directory:
+Copy the three parts into `~/.opencode/`, which OpenCode reads beside its configuration directory
+and which survives an isolated `XDG_CONFIG_HOME`:
 
 ```bash
-mkdir -p ~/.config/opencode
-cp -R commands agents ~/.config/opencode/
-mkdir -p ~/.config/opencode/quenching
-cp -R quenching/. ~/.config/opencode/quenching/
+mkdir -p ~/.opencode
+cp -R commands agents ~/.opencode/
+mkdir -p ~/.opencode/quenching
+cp -R quenching/. ~/.opencode/quenching/
 ```
+
+This distribution is for OpenCode outside Omnigent. On a machine that runs the hosted Omnigent
+operator agent, do not install it: the agent already carries the same commands as skills, and both
+copies would load.
 
 Commands run as `/quenching-<front>-<verb>` (`opencode run --command quenching-specs-status`).
 Prose paths assume `{ROOT}`; `cq` honours `QUENCHING_OPENCODE_ROOT` for another root.

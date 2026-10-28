@@ -366,7 +366,7 @@ SHIPPED = (plugin + "/assets/knowledge/", plugin + "/assets/templates/", plugin 
            "plugins/codex/quenching-codex/",
            # The OpenCode distribution is the same generated prose again, its payload under
            # `quenching/`: 33 findings before it was listed, every one a target-describing path.
-           "plugins/quenching-opencode/",
+           "plugins/opencode/quenching-opencode/",
            # The Omnigent distribution re-roots the OpenCode prose: the same target-describing paths.
            "plugins/quenching-omnigent/",
            # The read-only reader ships a generated copy of `assets/bin/` and one command body run
