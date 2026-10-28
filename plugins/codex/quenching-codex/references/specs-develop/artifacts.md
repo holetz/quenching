@@ -279,7 +279,7 @@ declare the paths; do not leave it to whether the line felt worth typing.
 **Declare every generated mirror the diff changes.** A task that edits a translated source also
 rewrites what the generator emits from it. List each such derived output in the task's `files:`
 beside the source, whichever of these the diff changes: the plugin mirrors of the source
-(`quenching-specs/**`, `quenching-specs-reader/**` and the other `plugins/quenching-*/` copies), the
+(`plugins/claude/quenching-specs/**`, `plugins/claude/quenching-specs-reader/**` and the other `plugins/claude/*/` copies), the
 Codex mirror (`plugins/quenching-codex/**`), `plugins/quenching-codex/.generated-files.json`,
 `plugins/README.md`, every `plugin.json` and `.generated-from.json` the generators rewrite, and the
 goldens. The verifier executes nothing from the branch and discounts only the paths its audit

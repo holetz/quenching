@@ -7,7 +7,7 @@
     "${CLAUDE_PLUGIN_ROOT}/assets/specs/": "../../specs/",
     "${CLAUDE_PLUGIN_ROOT}/assets/knowledge/": "../../knowledge/",
     "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq": "../../scripts/cq",
-    "plugins/quenching/assets/bin/cq": "plugins/quenching-codex/scripts/bin/cq",
+    "plugins/quenching/assets/bin/cq": "plugins/codex/quenching-codex/scripts/bin/cq",
     "assets/bin/cq": "scripts/bin/cq",
     "\"assets\", \"bin\", \"cq\"": "\"scripts\", \"bin\", \"cq\"",
     "${CLAUDE_PLUGIN_ROOT}/assets/checks/": "../../checks/",

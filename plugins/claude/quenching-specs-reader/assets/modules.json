@@ -7,7 +7,7 @@
     {
       "platform": "codex",
       "name": "quenching-codex",
-      "path": "plugins/quenching-codex",
+      "path": "plugins/codex/quenching-codex",
       "marketplace": ".agents/plugins/marketplace.json",
       "pluginManifest": ".codex-plugin/plugin.json",
       "versionFile": true

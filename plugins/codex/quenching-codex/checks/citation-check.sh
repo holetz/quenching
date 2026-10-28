@@ -63,13 +63,13 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-# checks -> quenching-codex -> plugins -> the repo root.
+# checks -> quenching-codex -> codex -> plugins -> the repo root.
 # RESOLVED BEFORE THE `cd`, AND WITHOUT `realpath`. `${BASH_SOURCE[0]}` is relative to the caller's
 # cwd, so reading it after the `cd` names a file that is not there — `bash assets/checks/...` from
 # the plugin directory, the way `AGENTS.md` runs it, left `SELF` empty and every pathspec below
 # unparseable, which reads as `exit 2`, not as a pass. `realpath --relative-to` is GNU-only besides.
 SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO="${REPO:-$(cd "$SELF_DIR/../../../" && pwd)}"
+REPO="${REPO:-$(cd "$SELF_DIR/../../../.." && pwd)}"
 cd "$REPO" || { echo "citation-check: cannot enter $REPO"; exit 2; }
 # Take the repo root back from the shell, absolute, rather than from the argument. `SELF` below is
 # a RELATIVE pathspec derived by stripping this prefix off an absolute `SELF_DIR`, so a caller who
@@ -119,7 +119,7 @@ SCOPE_EXCLUDE=(':!plugins/quenching/tests/fixtures/golden/'
                ':!plugins/quenching/tests/capture_golden.py'
                ':(exclude,glob)plugins/quenching/assets/evals/**/runs/**'
                ':!plugins/quenching/assets/checks/citation-check.sh'
-               ':!plugins/quenching-codex/checks/citation-check.sh'
+               ':!plugins/codex/quenching-codex/checks/citation-check.sh'
                "${GENERATED_EXCLUDE[@]}")
 
 want () { case ",$HALF," in *",$1,"*) return 0 ;; *) return 1 ;; esac; }
@@ -217,7 +217,7 @@ if want 1; then
   # A FOURTH SCOPE RULE, AND IT IS THE SAME KIND AS THE THREE ABOVE: what is swept is the prose
   # that INSTRUCTS an agent to route — command bodies, the references they cite, and the moulds
   # stamped into an adopting repo. It stops there because outside those trees the same spelling is
-  # not a routing claim. The TRANSLATED surfaces (`plugins/quenching-codex/**`, `.agents/**`) are
+  # not a routing claim. The TRANSLATED surfaces (`plugins/codex/quenching-codex/**`, `.agents/**`) are
   # the clearest case: Codex has no `:` namespace, so the hyphenated name IS the real skill
   # directory there, and the translator's own tests govern it. `README.md` is the other: its
   # `## Upgrade` changelog names directories that really existed between releases 0.11 and 0.18 —
@@ -363,7 +363,7 @@ SHIPPED = (plugin + "/assets/knowledge/", plugin + "/assets/templates/", plugin 
            # four findings, every one a path that is correct THERE and cannot resolve here — a
            # target under Codex really does carry `AGENTS.md`, and one of the four was a sentence
            # SAYING a path does not exist, read as a claim that it does.
-           "plugins/quenching-codex/",
+           "plugins/codex/quenching-codex/",
            # The OpenCode distribution is the same generated prose again, its payload under
            # `quenching/`: 33 findings before it was listed, every one a target-describing path.
            "plugins/quenching-opencode/",
@@ -372,7 +372,7 @@ SHIPPED = (plugin + "/assets/knowledge/", plugin + "/assets/templates/", plugin 
            # The read-only reader ships a generated copy of `assets/bin/` and one command body run
            # inside the target, which cites its own `bin/` through ../..: the
            # same four findings the source trees are exempt from, measured when it was added.
-           "plugins/quenching-specs-reader/")
+           "plugins/claude/quenching-specs-reader/")
 
 def unmeasurable(p):
     return (not p) or any(c in p for c in "*?<>${}|") or "..." in p \
@@ -432,7 +432,7 @@ for rel in sys.stdin.buffer.read().split(b"\x00"):
     rel = rel.decode("utf-8", "replace")
     if not rel or rel.endswith((".png", ".jpg", ".gif", ".ico")):
         continue
-    if rel in (plugin + "/assets/checks/citation-check.sh", "plugins/quenching-codex/checks/citation-check.sh"):
+    if rel in (plugin + "/assets/checks/citation-check.sh", "plugins/codex/quenching-codex/checks/citation-check.sh"):
         continue
     if rel.startswith(FROZEN_DATA) or is_frozen_eval_run(rel):
         continue

@@ -436,7 +436,7 @@ never run the gate over a branch you know is behind.
 the ordinary way to be behind, and a `needs-human` there is never relaunched. Run
 `git merge --no-edit origin/<base>` — a merge, never a rebase, so the task shas stay ancestors and
 the verifier's check 7 accepts them — and then the gate over the merged tree. A conflict only in
-generated files (`plugins/quenching-specs-reader/**`) is mechanical: take the base's side
+generated files (`plugins/claude/quenching-specs-reader/**`) is mechanical: take the base's side
 (`git show :3:<path> > <path>`, `git add <path>`), then **regenerate before concluding the merge** —
 `python3 scripts/sync_specs_reader_plugin.py --write` — `git add` what it rewrote, and conclude
 the merge. A manifest taken from the base alone loses the branch's entries. Then
