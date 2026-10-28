@@ -30,6 +30,8 @@ from quenching.components.commands.doctor import _doctor_findings, cmd_doctor
 from quenching.components.commands.lint import cmd_lint
 from quenching.components.commands.read import cmd_read
 from quenching.components.commands.registry import REGISTRY_RELPATH, cmd_registry
+from quenching.components.commands.bridge import add_arguments as add_bridge_arguments
+from quenching.components.commands.bridge import cmd_bridge
 from quenching.components.commands.translate import add_arguments as add_translate_arguments
 from quenching.components.commands.translate import cmd_translate
 from quenching.components.sections import RULES_MARKER
@@ -88,6 +90,10 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("translate",
                         help="translate and reconcile the Claude and Codex surfaces")
     add_translate_arguments(sp)
+
+    sp = sub.add_parser("bridge",
+                        help="generate the Claude Code copy of .agents/skills in .claude/skills")
+    add_bridge_arguments(sp)
 
     sp = sub.add_parser("session",
                         help="read a Claude Code session transcript as evidence")
@@ -154,6 +160,7 @@ DISPATCH: dict = {
     "registry": cmd_registry,
     "read": cmd_read,
     "translate": cmd_translate,
+    "bridge": cmd_bridge,
     "session": cmd_session,
 }
 
@@ -180,7 +187,7 @@ def main(argv: list[str]) -> int:
         return 0
     if not args.cmd:
         return refuse({"code": finding_code("ct", "no-command"), "message":
-                      "choose `cost`, `lint`, `doctor`, `status`, `registry`, `read`, `translate`, or `session`"},
+                      "choose `cost`, `lint`, `doctor`, `status`, `registry`, `read`, `translate`, `bridge`, or `session`"},
                       False)
     if not hasattr(args, "json"):
         args.json = False
