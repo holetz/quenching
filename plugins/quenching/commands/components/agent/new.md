@@ -17,6 +17,12 @@ The delegation economics and the definition contract live in
 §Subagents. The mold is
 `${CLAUDE_PLUGIN_ROOT}/assets/templates/automation/agent.md`.
 
+**Why `.claude/agents/` and not `.agents/`.** Skills, references and instructions live in the
+generic `.agents/` layer, but a subagent has no generic home any harness reads: verified on Claude
+Code 2.1.312, a definition in `.agents/agents/` does not appear as a subagent type, and OpenCode
+reads `.opencode/agent`, not `.agents/agents/`. So the definition is Claude's own interface and is
+written where Claude reads it, with no bridge copy.
+
 ## Doctrine
 
 - **The rule governs; the plan proposes.** In a target repo the rule is
