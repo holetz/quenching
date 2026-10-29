@@ -469,7 +469,8 @@ class GitBackend(SpecBackend):
         self.write_specs([(info, text)])
 
     def write_specs(self, items: list[tuple[dict, str]]) -> None:
-        """Replace N documents in ONE commit — the batch a triage writes its priorities with.
+        """Replace N documents in ONE local pending write — the batch a triage writes its
+        priorities with; the remote sees it at the next sync.
 
         Each item is checked against the blob its `info` was read at, on every attempt: a
         document that changed under the caller refuses the whole batch."""
@@ -695,7 +696,7 @@ class GitBackend(SpecBackend):
                     - {c["id"] for c in replay["conflicts"]}
                 if stale:
                     raise conflict_refusal(replay["conflicts"])
-                base, parent, changes = pending, self._parent(pending), changes
+                base, parent = pending, self._parent(pending)
             else:
                 base, parent, changes = tip, tip, {**replay["changes"], **changes}
             subject = message() if callable(message) else message
