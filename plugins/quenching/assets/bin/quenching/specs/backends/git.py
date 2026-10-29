@@ -702,8 +702,11 @@ class GitBackend(SpecBackend):
             subject = message() if callable(message) else message
             ops = self._ops(pending)
             ops += [subject] if subject not in ops else []
+            # The author date stays the first unsent write's, so `status` can say since when.
+            since = self._git_ok("reading the pending date", "show", "-s", "--format=%aI",
+                                 pending).decode().strip() if pending else None
             commit, blobs = self._commit(base, changes, f"{COMMIT_PREFIX} {'; '.join(ops)}",
-                                         [parent] if parent else [])
+                                         [parent] if parent else [], author_date=since)
             code, _, _ = self._git("update-ref", "-m", "quenching: pending write",
                                    self.pending_ref, commit, pending or "")
             if code == 0:
@@ -849,7 +852,7 @@ class GitBackend(SpecBackend):
         before, local = self._snapshot(base).blobs, self._snapshot(pending).blobs
         specs = sorted({_spec_id(p) for p in set(before) | set(local)
                         if before.get(p) != local.get(p)} - {None})
-        oldest = self._git_ok("reading the pending date", "show", "-s", "--format=%cI",
+        oldest = self._git_ok("reading the pending date", "show", "-s", "--format=%aI",
                               pending).decode().strip()
         return {"specs": specs, "since": oldest, "commit": pending}
 
@@ -865,7 +868,7 @@ class GitBackend(SpecBackend):
                 raise BackendRefusal(store_refusal(findings))
 
     def _commit(self, base: str | None, changes: dict[str, str | None], message: str,
-                parents: list[str]) -> tuple[str, dict[str, str]]:
+                parents: list[str], author_date: str | None = None) -> tuple[str, dict[str, str]]:
         """Build one commit with `base`'s tree plus `changes`, on `parents`, with a throwaway
         index: no checkout, no worktree. A `_Blob` change is staged by sha; `blobs` reports
         only the texts hashed here."""
@@ -902,8 +905,9 @@ class GitBackend(SpecBackend):
                              "--", *removes, env=env)
             tree = self._git_ok("writing the tree", "write-tree", env=env).decode().strip()
             commit = self._git_ok("creating the commit", "commit-tree", tree,
-                                  *[arg for p in parents for arg in ("-p", p)],
-                                  "-m", message).decode().strip()
+                                  *[arg for p in parents for arg in ("-p", p)], "-m", message,
+                                  env={**os.environ, "GIT_AUTHOR_DATE": author_date}
+                                  if author_date else None).decode().strip()
             return commit, blobs
         finally:
             shutil.rmtree(scratch, ignore_errors=True)

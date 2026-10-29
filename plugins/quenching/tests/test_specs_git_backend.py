@@ -330,6 +330,15 @@ class PendingWrites(GitStoreFixture):
         self.assertEqual("[skip ci] specs: write 1; write 2",
                          _sh(backend.repo_root, "log", "-1", "--format=%s", pending).strip())
 
+    def test_the_pending_state_dates_the_first_unsent_write(self):
+        _, backend = self._seeded()
+        with mock.patch.dict(os.environ, {"GIT_AUTHOR_DATE": "2026-01-02T03:04:05+00:00",
+                                          "GIT_COMMITTER_DATE": "2026-01-02T03:04:05+00:00"}):
+            self._append(backend, 1, "first")
+        self._append(backend, 2, "later")
+        self.assertEqual({"specs": [1, 2], "since": "2026-01-02T03:04:05+00:00"},
+                         {k: v for k, v in backend.pending_state().items() if k != "commit"})
+
     def test_reads_see_their_own_writes_across_instances_and_without_a_fetch(self):
         path, backend = self._seeded()
         self._append(backend, 1, "local")
