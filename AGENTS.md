@@ -19,6 +19,12 @@ The gate is zero errors. Surface-load checks live at
 store is the git branch `quenching` (`cq specs config` prints `backend: git`), so there is no local
 `/.specs/` workspace and the GitHub issues are a pre-migration copy `cq` does not read.
 
+This repository runs its own deployed surface: `.agents/quenching/`, `.agents/skills/`, the Claude
+bridge and the OpenCode subagents are generated from `plugins/quenching/`. After changing a command
+body, a reference or the shipped payload, refresh it with
+`python3 plugins/quenching/assets/bin/cq deploy --target . --write`; the gate's `deployed surface
+lockstep` check is what refuses a stale install.
+
 ## Safety that must stay visible
 
 - Do not add `context: fork` beside a command's mid-flow gate; the minimal building cycle is the

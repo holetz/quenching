@@ -147,6 +147,39 @@ class Deploy(unittest.TestCase):
         self.assertEqual("ct-deploy-legacy", payload["code"])
         self.assertFalse((self.target / ".agents/quenching").exists())
 
+    def test_an_upgrade_keeps_the_selection_the_manifest_recorded(self):
+        self.assertEqual(0, self.run_deploy("--modules", "all", "--write")[0])
+        design = self.target / ".agents/skills/quenching-design-align/SKILL.md"
+        self.assertTrue(design.exists())
+        code, payload = self.run_deploy("--write")
+        self.assertEqual(0, code)
+        self.assertEqual([], [change for change in payload["changes"]
+                              if change["change"] == "delete"])
+        self.assertEqual([], payload["changes"])
+        self.assertTrue(design.exists())
+
+    def test_an_explicit_flag_still_narrows_a_recorded_selection(self):
+        self.assertEqual(0, self.run_deploy("--modules", "all", "--write")[0])
+        code, payload = self.run_deploy("--modules", "core", "--write")
+        self.assertEqual(0, code)
+        self.assertIn({"path": ".agents/skills/quenching-design-align/SKILL.md",
+                       "change": "delete"}, payload["changes"])
+        self.assertFalse((self.target / ".agents/skills/quenching-design-align").exists())
+
+    def test_the_opencode_harness_writes_its_subagents(self):
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--write")[0])
+        agent = self.target / ".opencode/agents/quenching-verifier.md"
+        text = agent.read_text(encoding="utf-8")
+        self.assertIn("mode: subagent", text)
+        self.assertIn('".agents/quenching/bin/cq git audit *": allow', text)
+        self.assertIn("Source model tier: `sonnet`.", text)
+        self.assertIn("tools:\n  task: false", text)
+
+    def test_a_harness_that_is_not_selected_writes_no_agents(self):
+        self.assertEqual(0, self.run_deploy("--modules", "core", "--harness", "claude",
+                                            "--write")[0])
+        self.assertFalse((self.target / ".opencode/agents").exists())
+
     def test_uvx_runtime_writes_a_pinned_shim_and_no_vendored_package(self):
         self.assertEqual(0, self.run_deploy("--modules", "specs", "--runtime", "uvx", "--write")[0])
         shim = (self.target / ".agents/quenching/bin/cq").read_text()

@@ -111,6 +111,10 @@ if os.path.isfile(manifest):
 ' "$REPO")
 GENERATED_EXCLUDE=()
 for tree in "${GENERATED[@]}"; do GENERATED_EXCLUDE+=(":!$tree/"); done
+# The surface `cq deploy` installs under `.agents/quenching/` is a byte copy of this source, like
+# the published distributions above: its citations are the source's, checked once. The target's
+# own `.agents/skills/` and `.agents/references/` stay in scope — they are authored here.
+GENERATED_EXCLUDE+=(':!.agents/quenching/')
 export QUENCHING_GENERATED_TREES="${GENERATED[*]}"
 
 # Half 1's own scope, beyond frozen golden data, not live citations — see the header's third scope

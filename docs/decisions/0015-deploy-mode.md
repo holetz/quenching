@@ -38,8 +38,9 @@ The options considered were:
 
 `cq deploy` is a top-level command, not a front. It materializes selected modules in
 `.agents/`, vendors the payload by default (`--runtime vendor`), and offers `--runtime uvx` for a
-pinned shim. It generates one skill per selected command, the Claude bridge, and Claude agent
-definitions when requested. It never invokes a model and never aligns content.
+pinned shim. It generates one skill per selected command, the Claude bridge, Claude agent
+definitions and OpenCode subagents when their harness is selected. It never invokes a model and
+never aligns content.
 
 `uvx` is the official distribution channel: the plugin already publishes a wheel with the `cq`
 entry point, and the package is stdlib-only. `npx` remains a possible thin wrapper, never a second

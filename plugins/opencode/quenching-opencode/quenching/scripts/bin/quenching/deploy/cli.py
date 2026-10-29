@@ -67,6 +67,21 @@ def _seed_plan(target: Path, seeds: dict[str, str]) -> tuple[list[dict], list[st
     return changes, warnings
 
 
+def recorded(previous: dict | None, key: str, allowed: set[str] | None = None):
+    """One recorded selection, or None when absent or malformed.
+
+    The manifest makes `cq deploy --write` an upgrade instead of a fresh `core` install: on a
+    target that deployed `--modules all`, the defaults would otherwise build a core tree and
+    delete every other module's owned file. An explicit flag still wins; this is only the default.
+    """
+    value = (previous or {}).get(key)
+    if allowed is not None:
+        return value if value in allowed else None
+    if isinstance(value, list) and all(isinstance(item, str) and item for item in value):
+        return list(value)
+    return None
+
+
 def plan(target: Path, built: dict, previous: dict | None) -> dict:
     tree, seeds = built["tree"], built["seeds"]
     owned = _owned(previous)
@@ -170,8 +185,9 @@ def _parser() -> argparse.ArgumentParser:
                    help="shared.profiles.installed, comma separated (default: derived)")
     p.add_argument("--harness", action="append", default=None,
                    help="claude, codex, opencode, none (default: claude,codex,opencode)")
-    p.add_argument("--runtime", choices=("vendor", "uvx"), default="vendor",
-                   help="vendored runtime (offline) or a pinned uvx shim")
+    p.add_argument("--runtime", choices=("vendor", "uvx"), default=None,
+                   help="vendored runtime (offline) or a pinned uvx shim; defaults to the "
+                        "manifest's recorded runtime, then vendor")
     mode = p.add_mutually_exclusive_group()
     mode.add_argument("--write", action="store_true", help="write the plan")
     mode.add_argument("--check", action="store_true", help="exit 1 on drift")
@@ -191,24 +207,28 @@ def main(argv: list[str]) -> int:
     refusal = _legacy_refusal(target)
     if refusal:
         return refuse(refusal, args.json)
-    harnesses = _split(args.harness) or ["claude", "codex", "opencode"]
+    previous = read_manifest(str(target))
+    harnesses = (_split(args.harness) or recorded(previous, "harnesses")
+                 or ["claude", "codex", "opencode"])
     if "none" in harnesses:
         harnesses = [h for h in harnesses if h != "none"]
     for harness in harnesses:
         if harness not in {"claude", "codex", "opencode"}:
             return refuse({"code": "ct-deploy-harness", "harness": harness,
                            "message": f"unknown harness: {harness}"}, args.json)
+    runtime = args.runtime or recorded(previous, "runtime", {"vendor", "uvx"}) or "vendor"
     try:
         manifest = deploy_tree.load_modules(deploy_tree.source_root())
-        modules = deploy_tree.normalize_modules(_split(args.modules), manifest)
-        profiles = _split(args.profiles) or deploy_tree.profiles_for(modules)
+        modules = deploy_tree.normalize_modules(
+            _split(args.modules) or recorded(previous, "modules"), manifest)
+        profiles = (_split(args.profiles) or recorded(previous, "profiles")
+                    or deploy_tree.profiles_for(modules))
         built = deploy_tree.build_tree(deploy_tree.source_root(), target, modules, harnesses,
-                                       args.runtime, profiles)
+                                       runtime, profiles)
     except (OSError, ValueError) as exc:
         return refuse({"code": "ct-deploy-source", "message": str(exc),
                        "remedy": "run deploy from a complete quenching checkout or wheel"},
                       args.json)
-    previous = read_manifest(str(target))
     result = plan(target, built, previous)
     if args.write and result["conflicts"]:
         return refuse({"code": "ct-deploy-unowned", "conflicts": result["conflicts"],
@@ -221,7 +241,7 @@ def main(argv: list[str]) -> int:
         written = True
     payload = {"ok": not result["conflicts"], "target": str(target),
                "version": built["manifest"]["version"], "modules": modules,
-               "profiles": profiles, "harnesses": harnesses, "runtime": args.runtime,
+               "profiles": profiles, "harnesses": harnesses, "runtime": runtime,
                "changes": result["changes"], "conflicts": result["conflicts"],
                "warnings": result.get("warnings", []), "written": written}
     emit(args.json, payload, _human(target, built, result, written))

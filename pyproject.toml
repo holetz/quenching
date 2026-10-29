@@ -19,6 +19,8 @@ dev = [
   "coverage>=7.0",
   "pytest-randomly>=3.15",
   "ruff>=0.6",
+  "pytest-cov>=6.0",
+  "pytest-xdist>=3.6",
 ]
 
 [tool.uv]
@@ -34,8 +36,9 @@ source = ["plugins/quenching/assets/bin/quenching"]
 
 [tool.ruff]
 target-version = "py311"
-# Generated module trees are byte copies of plugins/quenching, which is linted once as the source.
-extend-exclude = ["site", "site-source", "plugins/claude/quenching-specs-reader", "plugins/codex/quenching-codex", "plugins/opencode/quenching-opencode", "plugins/omnigent/quenching", "plugins/claude/quenching-specs",
+# Generated module trees are byte copies of plugins/quenching, which is linted once as the source;
+# `.agents/quenching/` is the same copy installed by `cq deploy`.
+extend-exclude = ["site", "site-source", ".agents", ".opencode", "plugins/claude/quenching-specs-reader", "plugins/codex/quenching-codex", "plugins/opencode/quenching-opencode", "plugins/omnigent/quenching", "plugins/claude/quenching-specs",
                   "plugins/claude/quenching-align", "plugins/claude/quenching-design", "plugins/claude/quenching-ops",
                   "plugins/claude/quenching-proof", "plugins/claude/quenching-toolchain",
                   "plugins/claude/quenching-delivery", "plugins/claude/quenching-security", "plugins/claude/quenching-opensource",

@@ -2732,7 +2732,7 @@ class WorktreeRetire(RepoCase):
 
     def test_repo_config_declares_pytest_cache_regenerable(self):
         root = pathlib.Path(__file__).resolve().parents[3]
-        config = json.loads((root / ".claude" / "quenching.json").read_text(encoding="utf-8"))
+        config = json.loads(_paths.repository_config(root).read_text(encoding="utf-8"))
         self.assertIn(".pytest_cache", config["shared"]["regenerablePaths"])
 
     def test_an_undeclared_ignored_file_still_stands_beside_declared_ones(self):

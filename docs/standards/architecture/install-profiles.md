@@ -2,7 +2,7 @@
 type: standard
 title: Install profiles — the front is the unit of alignment
 description: A profile declares which of the eight local fronts a repository asks the root align to conduct; provider-owned specs and the security and git pillars remain available axes, and the profile does not alter command files or host invocation behavior; the root align conducts the intersection of the profile with the enabled modules
-resource: .claude/quenching.json, plugins/quenching/assets/modules.json, plugins/quenching/commands/align.md, plugins/quenching/assets/references/align/tool-resolution.md, plugins/quenching/commands/knowledge/**, plugins/quenching/commands/specs/**, plugins/quenching/commands/design/**, plugins/quenching/commands/components/**, plugins/quenching/commands/ops/**, plugins/quenching/commands/proof/**, plugins/quenching/commands/toolchain/**, plugins/quenching/commands/delivery/**, plugins/quenching/commands/opensource/**, plugins/quenching/commands/security/**, plugins/quenching/commands/git/**
+resource: .agents/quenching.json, plugins/quenching/assets/modules.json, plugins/quenching/commands/align.md, plugins/quenching/assets/references/align/tool-resolution.md, plugins/quenching/commands/knowledge/**, plugins/quenching/commands/specs/**, plugins/quenching/commands/design/**, plugins/quenching/commands/components/**, plugins/quenching/commands/ops/**, plugins/quenching/commands/proof/**, plugins/quenching/commands/toolchain/**, plugins/quenching/commands/delivery/**, plugins/quenching/commands/opensource/**, plugins/quenching/commands/security/**, plugins/quenching/commands/git/**
 tags: [architecture, install, profiles, fronts, configuration]
 timestamp: 2026-10-17
 audience: both

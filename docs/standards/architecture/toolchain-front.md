@@ -2,7 +2,7 @@
 type: standard
 title: Toolchain front
 description: The target repository's toolchain surface — manifests, locks, language pins and tool configuration, with explicit ownership boundaries and stable tc-* findings
-resource: .claude/quenching.json, pyproject.toml, uv.lock, AGENTS.md, .github/workflows/**, plugins/quenching/assets/zensical/ci-github-pages.yml
+resource: .agents/quenching.json, pyproject.toml, uv.lock, AGENTS.md, .github/workflows/**, plugins/quenching/assets/zensical/ci-github-pages.yml
 tags: [architecture, toolchain, dependencies, build, configuration]
 timestamp: 2026-08-31
 audience: both

@@ -19,6 +19,7 @@ PAYLOAD = ".agents/quenching"
 SKILLS = ".agents/skills"
 CLAUDE_SKILLS = ".agents/skills"
 CLAUDE_AGENTS = ".agents/agents"
+OPENCODE_AGENTS = ".opencode/agents"
 MODULE_SHORT = {
     "quenching-specs": "specs",
     "quenching-align": "align",
@@ -304,6 +305,13 @@ def build_tree(source: Path, target: Path, modules: list[str], harnesses: list[s
         for name, path in _agents(source).items():
             _add(tree, f"{CLAUDE_AGENTS}/{translate.agent_name(name)}.md",
                  translate.agent_document(path.read_text(encoding="utf-8"), name).encode(), 0o644)
+    if "opencode" in harnesses:
+        # OpenCode reads `.opencode/agents/`, not `.agents/agents/`; a target without the
+        # marketplace plugin would otherwise keep every skill and lose the operator agents.
+        for name, path in _agents(source).items():
+            _add(tree, f"{OPENCODE_AGENTS}/{translate.agent_name(name)}.md",
+                 translate.opencode_agent_document(path.read_text(encoding="utf-8"), name).encode(),
+                 0o644)
 
     seeds = {
         "AGENTS.md": _agents_md(target),

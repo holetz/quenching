@@ -29,6 +29,9 @@ EXPLICIT_CQ = re.compile(
 PLUGIN_COMMAND = re.compile(r"/(quenching-[a-z]+):([A-Za-z0-9:-]+)")
 BARE_COMMAND = re.compile(r"(?<![/\w-])(quenching-[a-z]+):([A-Za-z0-9:-]+)")
 AGENT_ID = re.compile(r"\bquenching-specs:(" + "|".join(map(re.escape, AGENTS)) + r")\b")
+# Both the source grant and its already-translated form: a target-local `cq deploy` reads the
+# payload's own agent bodies, so the second translation must produce the first one's output.
+CQ_GRANT = re.compile(r"Bash\((?:cq|" + re.escape(CQ) + r")(?: ([^:()]+))?:\*\)$")
 
 
 def skill_name(relpath: str) -> str:
@@ -185,6 +188,67 @@ def command_document(raw: str) -> str:
 
 def reference_document(raw: str) -> str:
     return transform_platform(raw)
+
+
+def _cq_patterns(names: list[str]) -> list[str]:
+    """One `<target cq> <verbs> *` pattern per scoped `Bash(cq <verbs>:*)` grant, in order."""
+    matches = (CQ_GRANT.match(name) for name in names)
+    return [f"{CQ} {match.group(1)} *" if match.group(1) else f"{CQ} *"
+            for match in matches if match]
+
+
+def opencode_permissions(tools: str | None) -> dict[str, str | dict[str, str]]:
+    """A source `tools:` list as OpenCode permissions: deny-first, with the cq grants allowed.
+
+    OpenCode applies the last matching rule, so the catch-all bash pattern comes first. The
+    mapping mirrors the OpenCode distribution's agent writer; it lives here too because the
+    deploy payload must translate without the repository's scripts/ tree.
+    """
+    if tools is None:
+        return {}
+    names = [item.strip() for item in re.split(r",\s*(?![^()]*\))", tools) if item.strip()]
+    heads = {name.split("(", 1)[0] for name in names}
+    granted: dict[str, str | dict[str, str]] = {}
+    granted["edit"] = "allow" if heads & {"Edit", "Write", "NotebookEdit"} else "deny"
+    granted["webfetch"] = "allow" if "WebFetch" in heads else "deny"
+    if "Bash" in names:
+        granted["bash"] = "allow"
+    elif patterns := _cq_patterns(names):
+        granted["bash"] = {"*": "ask", **dict.fromkeys(patterns, "allow")}
+    else:
+        granted["bash"] = "ask" if "Bash" in heads else "deny"
+    granted["task"] = "allow" if heads & {"Agent", "Task"} else "deny"
+    return granted
+
+
+def opencode_agent_document(raw: str, name: str) -> str:
+    """An OpenCode subagent: `mode: subagent`, deny-first permissions and the translated body."""
+    fields, body = split_frontmatter(raw)
+    description = scalar_value(fields.get("description", ""))
+    if not description:
+        raise ValueError(f"agent has no description: {name}")
+    granted = opencode_permissions(fields.get("tools"))
+    denies_task = granted.pop("task", "allow") == "deny"
+    out = ["---", f"description: {json.dumps(transform_platform(description), ensure_ascii=False)}",
+           "mode: subagent"]
+    if granted:
+        out.append("permission:")
+        for key, value in granted.items():
+            if isinstance(value, dict):
+                out.append(f"  {key}:")
+                out.extend(f'    "{pattern}": {mode}' for pattern, mode in value.items())
+            else:
+                out.append(f"  {key}: {value}")
+    if denies_task:
+        out.extend(["tools:", "  task: false"])
+    out.append("---")
+    preferences = []
+    if fields.get("model"):
+        preferences.append(f"Source model tier: `{scalar_value(fields['model'])}`.")
+    if fields.get("effort"):
+        preferences.append(f"Declared effort: `{scalar_value(fields['effort'])}`.")
+    preamble = "\n\n".join(preferences) + "\n\n" if preferences else ""
+    return "\n".join(out) + "\n\n" + HEADER + "\n\n" + preamble + transform_platform(_body(body))
 
 
 def agent_document(raw: str, name: str) -> str:
