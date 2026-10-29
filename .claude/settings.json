@@ -1,6 +1,6 @@
 {
   "enabledPlugins": {
-    "quenching@claude-quenching": true,
+    "quenching@claude-quenching": false,
     "context7@context7-marketplace": true
   },
   "attribution": {
