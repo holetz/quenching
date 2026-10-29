@@ -2,7 +2,7 @@
 type: project
 title: Automation registry
 description: The repo's local Claude Code automation surface — every command, derived from .claude/commands/
-resource: .claude/commands/
+resource: .agents/skills/
 tags:
   - automation
   - commands

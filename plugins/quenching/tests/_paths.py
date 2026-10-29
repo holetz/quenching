@@ -10,6 +10,9 @@ for it once.
 It also points `$QUENCHING_DENYLIST_FILE` at an empty file, so no test reads the machine's private
 denylist: a test that needs denylist terms writes a fixture of its own.
 
+`repository_config` resolves this repository's own configuration the way the tool does: the
+generic `.agents/quenching.json` first, then the legacy `.claude/quenching.json`.
+
 Not named `test*.py`, therefore never collected as a test.
 """
 
@@ -27,3 +30,12 @@ atexit.register(shutil.rmtree, _denylist_dir, True)
 _empty_denylist = pathlib.Path(_denylist_dir, "denylist.txt")
 _empty_denylist.write_text("", encoding="utf-8")
 os.environ["QUENCHING_DENYLIST_FILE"] = str(_empty_denylist)
+
+
+def repository_config(root):
+    """The repository's own configuration file: the generic home first, then the legacy one."""
+    for home in (".agents", ".claude"):
+        path = pathlib.Path(root) / home / "quenching.json"
+        if path.is_file():
+            return path
+    raise FileNotFoundError(f"no .agents/quenching.json or .claude/quenching.json under {root}")

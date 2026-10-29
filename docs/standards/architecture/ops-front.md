@@ -2,7 +2,7 @@
 type: standard
 title: Ops front
 description: The target repository's current operations surface — one normalized router, its entry-point contract, lifecycle and finding vocabulary, verified by the shipped cq ops route
-resource: .claude/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/ops/**
+resource: .agents/quenching.json, plugins/quenching/assets/bin/quenching/common/config.py, plugins/quenching/assets/bin/quenching/ops/**
 tags: [architecture, ops, automation, scripts, contract]
 timestamp: 2026-08-31
 audience: both

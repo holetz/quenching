@@ -2,7 +2,7 @@
 type: standard
 title: Delivery front
 description: The target repository's delivery surface — bounded pipeline shape, release reachability and ownership boundaries across workflow, proof, ops, toolchain and security
-resource: .github/workflows/**, .claude/quenching.json, plugins/quenching/assets/bin/quenching/delivery/**
+resource: .github/workflows/**, .agents/quenching.json, plugins/quenching/assets/bin/quenching/delivery/**
 tags: [architecture, delivery, ci, pipelines, release]
 timestamp: 2026-08-31
 audience: both

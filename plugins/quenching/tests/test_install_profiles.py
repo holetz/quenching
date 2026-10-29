@@ -12,7 +12,7 @@ STANDARD = REPO_ROOT / "docs" / "standards" / "architecture" / "install-profiles
 ALIGN = REPO_ROOT / "plugins" / "quenching" / "commands" / "align.md"
 CONFIG_REFERENCE = (REPO_ROOT / "plugins" / "quenching" / "assets" / "references" /
                     "specs-align" / "plugin-configuration.md")
-REPO_CONFIG = REPO_ROOT / ".claude" / "quenching.json"
+REPO_CONFIG = _paths.repository_config(REPO_ROOT)
 
 
 class InstallProfileContract(unittest.TestCase):
