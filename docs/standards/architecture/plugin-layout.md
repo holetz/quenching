@@ -4,10 +4,10 @@ title: Plugin layout — what may live under commands/
 description: one editable source generates one tree per harness under plugins/<harness>/<name>/, eight Claude module plugins among them; in each module, commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
 resource: plugins/quenching/commands/**, plugins/quenching/assets/**, plugins/quenching/bin/**, plugins/claude/**, plugins/codex/**, plugins/opencode/**, plugins/omnigent/**, scripts/generate_plugin_modules.py
 tags: [architecture, plugin, commands, layout, claude-code]
-timestamp: 2026-10-28
+timestamp: 2026-10-29
 audience: both
 authority: current
-source: collapse-skills-into-commands, 2026-07-26, self-contained-mold, verify-allowed-tools-enforcement, 2026-07-28, collapse-remaining-language-clause-restatements, spec 1635 (module extraction), spec 2115 (layout per harness); lineage in ADR 0004 and ADR 0013
+source: collapse-skills-into-commands, 2026-07-26, self-contained-mold, verify-allowed-tools-enforcement, 2026-07-28, collapse-remaining-language-clause-restatements, spec 1635 (module extraction), spec 2115 (layout per harness), spec 2124 (bin marker); lineage in ADR 0004 and ADR 0013
 maintainer: quenching
 ---
 
@@ -65,8 +65,11 @@ authored `quenching-hud`.
 ### One `cq`, owned by `quenching-specs`
 
 Exactly one published module carries `bin/cq` — `quenching-specs` (`cqPathOwner` in the
-manifest); the host puts `<pluginRoot>/bin` of every enabled plugin on `PATH`, and two shims would
-shadow each other. Every other module ships only the router `assets/bin/cq` and its own packages.
+manifest); two shims on `PATH` would shadow each other. Every other principal module ships the router
+`assets/bin/cq`, its own packages and a `bin/` holding only the non-executable marker `bin/README`:
+the host puts `<pluginRoot>/bin` on `PATH` only when that directory exists, and the marker is what
+makes the module visible to the router. `scripts/generate_plugin_modules.py --check` reports a
+missing marker, a marker in the owner, and a `cq` outside the owner.
 
 - **Enabled packages are found on `PATH`.** The router extends the `quenching` package path with
   `<entry>/../assets/bin/quenching` of every `PATH` entry that is the root of a same-version
@@ -125,9 +128,10 @@ nothing in the repo said so.
 
 `commands/**` is the only tree that becomes an **entry point**, which is what the heading above is
 about — but it is not the only path Claude Code loads from a plugin by name. **Claude Code appends
-`<pluginRoot>/bin` to `PATH` for every enabled plugin, whether or not the directory exists** —
-measured 2026-08-15 on a session with two plugins enabled, whose `PATH` tail held exactly two such
-directories, one per plugin, neither of them present on disk.
+`<pluginRoot>/bin` to `PATH` for every enabled plugin whose `bin/` directory exists** — measured
+2026-10-29 on Claude Code 2.1.312 with `quenching-specs` and `quenching-align` enabled: `PATH`
+held only `quenching-specs/bin`, the one of the two present on disk. (A measurement of 2026-08-15
+had found the entry appended for absent directories too; the host no longer does.)
 
 A convention-named path at the plugin's top level is neither an entry point nor an asset, so it
 sits *outside* both trees rather than being filed under `assets/` — the `assets/` definition
@@ -137,8 +141,10 @@ governs `commands/`: **the path is the identity**, fixed by the host, not chosen
 such path added by Claude Code later inherits this paragraph without amending the `assets/`
 inventory below.
 
-`bin/` holds one file, `bin/cq`, and only in `quenching-specs` (see §One `cq`, owned by
-`quenching-specs`). Two of its properties are load-bearing:
+`bin/` of `quenching-specs` holds `bin/cq` (and its `bin/cq.cmd`); every other principal module's
+`bin/` holds one non-executable marker, `bin/README`, written by the generator so the directory
+exists and reaches `PATH` (see §One `cq`, owned by `quenching-specs`). Two properties of `bin/cq`
+are load-bearing:
 
 - **the execute bit.** The host resolves it off `PATH` and executes it, so a `100644` mode is not a
   cosmetic slip — it is the whole feature missing, and silently: the PATH entry is built at session

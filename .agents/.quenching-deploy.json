@@ -103,7 +103,7 @@
     ".agents/quenching/agents/spec-architect.md": "3c99d27b26664f7cdd2384a0ab6ed5082ad73ddde70c70af5cd30cab30466912",
     ".agents/quenching/agents/spec-runner.md": "f268d8753dc407e1ebd167c2580b008a027e66e3d07c17c77fcb1f1dce672a5d",
     ".agents/quenching/agents/verifier.md": "3ea5bb1e6914e80bd07a3c21c417971438ffc6a090ef98798c1ccd5e9209ac72",
-    ".agents/quenching/assets/bin/cq": "e66921b8e7e26af2cd65d2bdfd018ce446e737cddc04e9c355c64cc9b3662ba3",
+    ".agents/quenching/assets/bin/cq": "df7961aad4473615f0750bfc468d0f3f0265a5cf4e2d34f71cf10b7a8d619b69",
     ".agents/quenching/assets/bin/quenching/codex/__init__.py": "cca88a166bd83ce88de4bad1348c8eb94730066c70e5e21453ba889e634e4ac1",
     ".agents/quenching/assets/bin/quenching/codex/config.py": "a1d74ef6eb5ec687aa3e7115e38d678a9cd7396739b1aedec4e6e96d189c8fea",
     ".agents/quenching/assets/bin/quenching/codex/eligible.py": "ac2a0edf0981e4259413e078a9bbc2a1416563946f347df454cc0e44d67c89a3",

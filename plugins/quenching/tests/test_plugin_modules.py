@@ -311,6 +311,10 @@ class PrincipalGeneration(unittest.TestCase):
         self.assertFalse((design / "agents").exists())
         self.assertTrue((specs / "bin/cq").stat().st_mode & 0o111)
         self.assertFalse((design / "bin/cq").exists())
+        marker = design / generator.PATH_MARKER
+        self.assertTrue(marker.is_file())
+        self.assertFalse(marker.stat().st_mode & 0o111)
+        self.assertFalse((specs / generator.PATH_MARKER).exists())
         self.assertTrue((design / "assets/bin/cq").is_file())
         self.assertTrue((design / "assets/specs/schema.json").is_file())
         self.assertEqual("quenching-design",
@@ -320,6 +324,22 @@ class PrincipalGeneration(unittest.TestCase):
         self.assertEqual(1, self.run_generator("--check"))
         self.assertEqual(0, self.run_generator("--write"))
         self.assertFalse((design / "stale.txt").exists())
+
+    def test_check_names_a_missing_path_marker_and_a_cq_outside_the_owner(self):
+        self.assertEqual(0, self.run_generator("--write"))
+        design = self.root / "plugins/claude/quenching-design"
+        (design / generator.PATH_MARKER).unlink()
+        findings = generator.published_findings(self.root, self.manifest)
+        self.assertIn("PATH bin marker drift: quenching-design", findings)
+        self.assertEqual(1, self.run_generator("--check"))
+        self.assertEqual(0, self.run_generator("--write"))
+        (design / "bin/cq").write_text("#!/bin/sh\n")
+        findings = generator.published_findings(self.root, self.manifest)
+        self.assertIn("PATH cq ownership drift: quenching-design", findings)
+        self.assertEqual(1, self.run_generator("--check"))
+        (self.root / "plugins/claude/quenching-specs" / generator.PATH_MARKER).write_text("x\n")
+        findings = generator.published_findings(self.root, self.manifest)
+        self.assertIn("PATH bin marker drift: quenching-specs", findings)
 
     def test_check_names_dangling_citations_unpublished_ids_and_unshipped_imports(self):
         src = self.root / "plugins/quenching"
