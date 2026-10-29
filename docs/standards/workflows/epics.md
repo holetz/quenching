@@ -4,7 +4,7 @@ title: Epics contract
 description: An epic is a spec whose `## Tasks` items reference member specs — item state derived from the member and never ticked, the `epic:` key read from both ends, members in another repository's store read-only, `epic add`, `status --epic`, `next --epic` and the findings validate raises
 resource: plugins/quenching/assets/bin/quenching/specs/parse/epics.py, plugins/quenching/assets/bin/quenching/specs/members.py, plugins/quenching/assets/bin/quenching/specs/commands/epic.py, plugins/quenching/assets/bin/quenching/specs/portal.py, plugins/quenching/assets/bin/quenching/specs/commands/validate.py, plugins/quenching/assets/specs/schema.json
 tags: [workflows, specs, epics, orchestration]
-timestamp: 2026-10-24
+timestamp: 2026-10-29
 audience: both
 authority: current
 source: S28 of the specs-store program (epics and programs of specs)
@@ -78,7 +78,9 @@ id, so a member is never listed under two spellings.
 - **Read-only by construction.** The store is read through the git backend's read-only mirror under
   `$XDG_CACHE_HOME/quenching/mirrors/`, one `read_specs` per foreign repository; nothing is written
   into either repository's `.git` or store. The fetch TTL and `QUENCHING_SPECS_NO_FETCH` apply as on
-  the local store; with fetching off and no mirror yet, the member is `unreadable`.
+  the local store; with fetching off and no mirror yet, the member is `unreadable`. The mirror reads
+  only the remote branch: a member's writes still pending in its own clone are invisible here until
+  that clone syncs.
 - **Unreadable is a state, not an absence.** A store that cannot be fetched makes its items
   `unreadable`; a store that was read and lacks the id makes the item `missing`.
 - **No back-reference across repositories.** A foreign member's `epic:` names an epic in its own

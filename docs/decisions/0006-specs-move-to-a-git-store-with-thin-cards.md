@@ -44,6 +44,8 @@ compare-and-swap. Git gives all three at the host that already holds the code.
   standard under *Legacy tracker backends*. Their full prose is in this file's repository history
   and in [ADR 0001](0001-spec-backend-measurements.md).
 - Concurrent writes to different specs both land; the same spec lands once and refuses once
-  (`sp-git-stale-write`).
+  (`sp-git-stale-write`). Since [ADR 0016](0016-spec-store-writes-accumulate-locally.md) a write no
+  longer pushes: it accumulates in a local pending commit, the refusal happens at the sync, and
+  each sync leaves the branch a single parentless commit.
 - A card failure never rolls back the spec (`sp-card-failed`).
 - The specs-reader plugin reads the branch through a bare mirror and cannot write.
