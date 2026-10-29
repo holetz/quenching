@@ -55,6 +55,28 @@ class NoFetch(unittest.TestCase):
         self.assertEqual(2, code)
         self.assertEqual("sp-no-local-ref", payload["code"])
 
+    def test_the_pending_writes_are_read_without_a_fetch(self):
+        self.declare_git()
+        doc = os.path.join(self.tmp, "1.md")
+        with open(doc, "w") as handle:
+            handle.write("---\ntitle: Pending only\n---\n\n## Problem\n\nlocal\n")
+        git = ["git", "-C", self.repo]
+        env = {**self.env, "GIT_INDEX_FILE": os.path.join(self.tmp, "index"),
+               "GIT_AUTHOR_NAME": "fixture", "GIT_AUTHOR_EMAIL": "fixture@example.test",
+               "GIT_COMMITTER_NAME": "fixture", "GIT_COMMITTER_EMAIL": "fixture@example.test"}
+        blob = subprocess.run([*git, "hash-object", "-w", doc], capture_output=True, text=True,
+                              check=True).stdout.strip()
+        subprocess.run([*git, "update-index", "--add", "--cacheinfo", f"100644,{blob},specs/1.md"],
+                       check=True, env=env)
+        tree = subprocess.run([*git, "write-tree"], capture_output=True, text=True, check=True,
+                              env=env).stdout.strip()
+        commit = subprocess.run([*git, "commit-tree", tree, "-m", "pending"], capture_output=True,
+                                text=True, check=True, env=env).stdout.strip()
+        subprocess.run([*git, "update-ref", "refs/quenching/pending/quenching", commit], check=True)
+        code, payload = self.status()
+        self.assertEqual(0, code, payload)
+        self.assertEqual("Pending only", payload["title"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -74,7 +74,13 @@ cq() { python3 "${QUENCHING_OPENCODE_ROOT:-$HOME/.opencode/quenching}/scripts/cq
 cq specs record "<id>" merge --set strategy=<strategy> --set subject=<the merge commit's subject, or "none — <why>" under fast-forward/rebase>
 ```
 Write-once — a record already present is read, never overwritten. No ID → nothing to stamp.
-**Done when:** the record is stamped (with an ID) or explicitly skipped (without one).
+A local merge is not a sync point of the git spec store, so the stamp stays in the clone's pending
+commit; send it, with every other pending write, in the same call:
+```bash
+cq() { python3 "${QUENCHING_OPENCODE_ROOT:-$HOME/.opencode/quenching}/scripts/cq" "$@"; }
+cq specs push
+```
+**Done when:** the record is stamped and pushed (with an ID) or explicitly skipped (without one).
 
 ### 5. Remove the worktree, only after a verified merge
 Only when step 1's worktree list held a **separate** worktree for the merged branch (not the base's

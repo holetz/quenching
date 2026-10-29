@@ -105,7 +105,7 @@ Its payload carries `number`, `url` (the `webUrl`) and, on Azure, `apiUrl`: show
 `repository.webUrl/pullrequest/pullRequestId`, while the response's `url` remains `apiUrl`; never
 show a URL containing `/_apis/` as the Link para revisão. The target branch is explicit
 on both routes: `--base`, which may not be omitted. The source is explicit too: `--head <branch>`, so the PR leaves the branch resolved in step 1 and never the one the cwd happens to hold; run from a worktree, `cd <worktree> && .agents/quenching/bin/cq git push --branch <branch> …` carries the push. `.agents/quenching/bin/cq git push` publishes
-`refs/heads/<branch>` under its own name with upstream and never forces; `.agents/quenching/bin/cq git pr create`
+`refs/heads/<branch>` under its own name with upstream and never forces it (only the spec store branch, synced after it, is rewritten under `--force-with-lease`); `.agents/quenching/bin/cq git pr create`
 returns the PR's `number` and `url`, and with `--spec <id>` stamps the spec's `pr` record with them
 (step 5), reporting it as `pr` in its payload; exit 1 with `reason: stamp-failed` means the PR exists and the record does not. Read
 the created PR's `id`, `webUrl` and `apiUrl` from the normalized JSON/CLI result. **Done when:**

@@ -123,8 +123,11 @@ rather than asking it open-ended.
 
 ### 4. Apply exactly what was approved
 One `cq specs record` per approved spec, **in sequence** in one Bash block, and never an edit to
-the file. Each write is a push to the specs branch, so writers run one at a time; a refusal stops
-the block, and the run resumes from the refused line (`sp-git-cas-exhausted` is re-run alone):
+the file. On the git store each write is a local compare-and-swap on the clone's pending commit, so
+writers still run one at a time; a refusal stops the block, and the run resumes from the refused
+line (`sp-git-cas-exhausted` is re-run alone). The priorities reach the branch and the cards at the
+next sync point; run `cq specs push` after the block when another clone or the board needs the
+ranking now:
 ```bash
 cq() { python3 "${QUENCHING_OPENCODE_ROOT:-$HOME/.opencode/quenching}/scripts/cq" "$@"; }
 cq specs record <id1> priority --set level=<n1> --set criticality=<word1> --set complexity=<word1> --set date=<today> \

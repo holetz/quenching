@@ -164,6 +164,7 @@ class CrossRepositoryEpic(TwoStores):
         self.seed.move_spec(self.seed.read_spec(1)[0], "archive")
         info, _ = self.seed.read_spec(2)
         self.seed.write_spec(info, set_frontmatter_key(info["text"], "approved", "2026-10-24"))
+        self.seed.push()
         self.quenching_tip = _sh(self.quenching_remote, "rev-parse", "quenching").strip()
         self.epic = "2"
         self.local.create_spec("plans", "---\ntitle: Program\ndate: 2026-10-24\n"

@@ -370,10 +370,12 @@ class GitStoreEpics(Scenarios, GitStoreFixture):
         b.create_spec("plans", epic_doc())
         b.create_spec("plans", doc("Member", "approved: yes\n"))
         add(b, 2)
-        self.assertEqual("[skip ci] specs: write 1 2", self.remote_log()[0])
+        b.push()
+        self.assertEqual(["[skip ci] specs: write 1 2"], self.remote_log())
 
     def test_a_status_reads_every_member_from_one_snapshot(self):
         self.diamond()
+        self.backend.push()
         fresh = GitBackend(self.clone("b"))
         calls = []
         real = fresh._snapshot

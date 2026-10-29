@@ -64,7 +64,12 @@ merge command exits 0, or the run has stopped on its failure.
 .agents/quenching/bin/cq specs record "<id>" merge --set strategy=<strategy> --set subject=<the merge commit's subject, or "none — <why>" under fast-forward/rebase>
 ```
 Write-once — a record already present is read, never overwritten. No ID → nothing to stamp.
-**Done when:** the record is stamped (with an ID) or explicitly skipped (without one).
+A local merge is not a sync point of the git spec store, so the stamp stays in the clone's pending
+commit; send it, with every other pending write, in the same call:
+```bash
+.agents/quenching/bin/cq specs push
+```
+**Done when:** the record is stamped and pushed (with an ID) or explicitly skipped (without one).
 
 ### 5. Remove the worktree, only after a verified merge
 Only when step 1's worktree list held a **separate** worktree for the merged branch (not the base's

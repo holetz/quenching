@@ -34,6 +34,8 @@ from quenching.specs.backends import open_backend
 from quenching.specs.commands.epic import AZURE_PR_STATE
 from quenching.specs.commands.output import Emitter, read_one
 from quenching.git.pr import normalize_azure_pull_request
+from quenching.git.push import _specs_note
+from quenching.specs.commands.push import sync_store
 from quenching.specs.config import find_repo_root, load_config
 
 PR_URL = re.compile(r"https://[A-Za-z0-9.-]+/[\w.-]+/[\w.-]+/pull/(\d+)")
@@ -166,7 +168,8 @@ def _merged(args, payload: dict, human: str) -> int:
             payload.update(ok=False, reason="stamp-failed", message=stamp["message"])
             emit(args.json, payload, f"{human}; `merge` record not stamped: {stamp['message']}")
             return FINDINGS
-    emit(args.json, payload, human)
+    payload["specs"] = specs = sync_store(find_repo_root(os.getcwd()))
+    emit(args.json, payload, human + _specs_note(specs))
     return OK
 
 
@@ -408,7 +411,8 @@ def _create(args) -> int:
             emit(args.json, payload, f"PR #{number}: {url} opened; `pr` record not stamped: "
                                      f"{stamp['message']}")
             return FINDINGS
-    emit(args.json, payload, f"PR #{number}: {url}")
+    payload["specs"] = specs = sync_store(find_repo_root(os.getcwd()))
+    emit(args.json, payload, f"PR #{number}: {url}" + _specs_note(specs))
     return OK
 
 

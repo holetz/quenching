@@ -11,6 +11,7 @@ from quenching.common.dates import today
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.fields import record_field_value_error
 from quenching.specs.commands.output import Emitter, display_locator
+from quenching.specs.commands.push import card_failures, card_warnings
 from quenching.specs.config import (azure_workitemtype_retirement, load_config,
                                     resolve_subject, resolve_type_key)
 from quenching.specs.parse import derive_info
@@ -193,11 +194,15 @@ def cmd_new(args, root: str, out: Emitter) -> int:
     target = f"--spec {spec_id}" if spec_id is not None else "--spec <id>"
     next_step = (f"cq specs validate {target}" if wrote
                  else "write ## Problem, then continue with the provider-native spec ID")
+    # The sync that wrote the spec may have carried other pending specs whose card could not
+    # follow: the spec exists either way, so that is a warning beside it, never a failure.
+    failures = card_failures(backend)
     out.emit(args.json,
              {"ok": True, "id": spec_id, "title": title, "verification": policy,
               "workItemType": type_key,
               "phase": "plans", "stage": "captured",
-              "path": display_locator(path, root)},
+              "path": display_locator(path, root),
+              **({"cardFailures": failures} if failures else {})},
              f"created '{title}'  (verification: {policy}){id_note}\n"
-             f"next: {next_step}")
+             f"next: {next_step}" + card_warnings(failures))
     return 0

@@ -247,8 +247,12 @@ command on this front reads the `/docs/` bundle as context going in and distils 
 knowledge back out when a spec closes.
 
 The **unit of work is a spec** — ONE canonical markdown document for its whole lifecycle. It is
-`specs/<id>.md` on the branch (`specs/archive/<id>.md` once closed), written without a checkout and
-pushed with compare-and-swap, so concurrent writes to different specs both land. The card holds a
+`specs/<id>.md` on the branch (`specs/archive/<id>.md` once closed), written without a checkout into
+ONE local pending commit and sent only at sync points (`cq specs new`, archive and restore,
+`cq git push`, `cq git pr create|merge`, `cq specs push`): each sync replaces the branch with one
+parentless commit under `--force-with-lease`, so concurrent writes to different specs both land and
+the branch always holds a single commit. `cq specs status` lists the specs with unsent local
+writes. The card holds a
 title, a summary, `Tasks n/N`, the phase and stage, a link to the file and the `spec:*` labels, is
 rewritten only at lifecycle transitions, and never holds the plan; `card: github | azure-boards |
 none` configures it, and `cq specs new --card <n>` adopts an existing issue. **Frontmatter records human judgments** (`priority`, `refined`,

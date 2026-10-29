@@ -110,6 +110,10 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 | step 3b | every stage's own section and the union of the spec sections the pass reads or writes — `cq components read` and `cq specs section` together, never one call per source or per stage |
 | step 7 | the entire application — the section write, every `cq specs discover` line, every `cq specs record`, `cq specs verification`, `cq specs validate` (plus `cq specs parallel` where `## Tasks` moved), and the closing `cq specs status` that verifies where the pass landed |
 
+On the git store every write of step 7 lands in the clone's local pending commit: the remote and
+the card see the pass at the next sync point (`cq git push`, `cq git pr create`, `cq specs push`,
+the next `cq specs new`), and `cq specs status` lists the spec as pending until then.
+
 A call splits only where the next command's **input** depends on the previous one's output. The
 `approved` stamp is the one such split: it waits for step 7's verification to prove `ready` rather
 than asserting it off the drafts.

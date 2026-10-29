@@ -99,11 +99,13 @@ class Git(GuardEnv):
         path = locator.removeprefix("quenching:")
         info, _ = backend.read_spec(spec_id)
         backend.write_spec(info, info["text"] + "a clean line\n")
+        backend.push()
         self.assertIn("a clean line", self.remote_file(path))
         info, _ = backend.read_spec(spec_id)
         with self.assertRaises(BackendRefusal) as caught:
             backend.write_spec(info, info["text"] + f"another {TERM}\n")
         self.assertLeak(caught.exception, "denylist:1")
+        self.assertIsNone(backend._pending())       # refused before the pending commit
         self.assertNotIn("another", self.remote_file(path))
 
     def test_import_is_judged_whole(self):

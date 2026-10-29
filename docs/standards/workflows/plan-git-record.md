@@ -4,7 +4,7 @@ title: Plan git record contract
 description: How a spec records the git facts that cannot be derived later — per-task commit subjects, branch, pull request and merge records, branch marks for conclude discovery, base inference, merge routes, and safe local and remote branch cleanup
 resource: plugins/quenching/assets/references/git/**, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-conclude/auto-discover.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/git/merge.md, plugins/quenching/commands/git/pr/create.md
 tags: [workflows, specs, git, commits, records]
-timestamp: 2026-08-22
+timestamp: 2026-10-29
 audience: both
 authority: background
 source: abandonar-slug-por-id-nativo, vincular-spec-a-branch-commits-e-pr; history in ADR 0003
@@ -121,9 +121,11 @@ matching survives every hook that merely *adds*, which is nearly all of them. `/
 compares `git log -1 --format=%s` against what it recorded and **reports a mismatch as a finding,
 writing nothing** — correcting it after the commit would restore the ordering this contract removed.
 A commit-anchored link has no equivalent subject mismatch, but a `--commit` write that fails (a
-network error or a rejected push to the specs branch, mid-way through recording it) must be **reported, never
-left implicit**: the commit exists either way, and a tick that silently did not land would claim
-proof of nothing.
+refusal, or a local compare-and-swap on the git store's pending ref that kept losing, mid-way through
+recording it) must be **reported, never left implicit**: the commit exists either way, and a tick that
+silently did not land would claim proof of nothing. On the git store the tick lands in the clone's
+pending commit and reaches the specs branch at the next sync point (`cq git push`, `cq git pr create`,
+`cq specs push`); until then `cq specs status` lists the spec as pending.
 
 ## Three frontmatter records carry the underivable git facts
 
