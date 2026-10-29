@@ -37,6 +37,7 @@ for deployment; this verb installs the tool surface. It never invokes a model, n
 | `.agents/.quenching-deploy.json` | manifest: version, modules, profiles, hashes, skills | generated |
 | `.claude/skills/<name>/` | Claude bridge, byte copy of every skill | generated |
 | `.claude/agents/quenching-<name>.md` | Claude subagents | generated when the `claude` harness is selected |
+| `.opencode/agents/quenching-<name>.md` | OpenCode subagents, `mode: subagent` | generated when the `opencode` harness is selected |
 | `CLAUDE.md` | legacy pointer to `AGENTS.md` | never created; removed only by `--prune-legacy` |
 | `.claude/commands/`, `.claude/references/` | legacy layout | refused; run `cq components migrate` first |
 
@@ -51,6 +52,11 @@ is present. A repository therefore never authors `.claude` for quenching.
 `quenching-align` (specs, git, knowledge and components); `specs` is always included because it
 owns the one `cq`. `--profiles` overrides the `shared.profiles.installed` seed; otherwise the
 fronts of the selected modules are derived. `specs` is kept in that list as the provider axis.
+
+A target that already carries a manifest reuses its recorded `modules`, `harnesses`, `runtime` and
+`profiles` for every flag the caller omits, so `cq deploy --write` upgrades what is installed
+instead of reinstall `core`. An explicit flag always wins; the manifest is a default, not an
+authority over the plan.
 
 The manifest is the authority for what deploy owns. A generated file must be listed before it may
 be overwritten; a file at a generated path that the manifest does not own is a conflict
