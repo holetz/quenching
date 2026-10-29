@@ -36,9 +36,11 @@ Per-subject ledger the verify gate reads. A subject is "done" only when every ca
 - `pipeline-stages` — **present, inline.** `.github/workflows/ci.yml` is the plugin's own pipeline:
   it runs on pushes to `main` and on pull requests (never on the `quenching` specs-store branch),
   with one run per ref (`concurrency` cancels superseded runs) and a timeout per job. Jobs: `gate`
-  (Python 3.11 and 3.13 matrix; `scripts/verify_repo.sh`, which measures coverage against
-  `.coverage-floor.json`, then the suite again in randomized order), `lint` (`ruff check`, rules E
-  and F configured in `pyproject.toml`) and `functional` (static only:
+  (Python 3.11 and 3.13 matrix; the 3.11 cell runs `scripts/verify_repo.sh` — one randomized,
+  parallel suite pass under `pytest-randomly`/`pytest-xdist`/`pytest-cov`, measured against
+  `.coverage-floor.json`, then the doctors and builds — and the 3.13 cell runs the same suite alone
+  as a compatibility check, because the deterministic checks read interpreter-independent files),
+  `lint` (`ruff check`, rules E and F configured in `pyproject.toml`) and `functional` (static only:
   `functional-checks.sh --selfcheck` and `--selftest`; CI has no `claude` CLI and measures no surface
   load, which runs under `QUENCHING_FUNCTIONAL=1 bash scripts/verify_repo.sh` and is required by `/release`).
   Actions are pinned by full commit SHA with the tag in a comment.
